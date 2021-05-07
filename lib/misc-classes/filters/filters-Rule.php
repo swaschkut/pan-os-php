@@ -2356,6 +2356,8 @@ RQuery::$defaultFilters['rule']['rule']['operators']['is.unused.fast'] = array(
             derr("unsupported filter : rule type " . $object->ruleNature() . " is not supported yet. " . $object->toString());
 
         $unused_flag = 'unused' . $object->ruleNature();
+        $used_flag = 'used' . $object->ruleNature();
+
         $rule_base = $object->ruleNature();
 
         $sub = $object->owner->owner;
@@ -2378,6 +2380,7 @@ RQuery::$defaultFilters['rule']['rule']['operators']['is.unused.fast'] = array(
         if( !isset($sub->apiCache[$unused_flag]) )
         {
             $sub->apiCache[$unused_flag] = array();
+            $sub->apiCache[$used_flag] = array();
 
             if( $context->object->owner->owner->version < 81 )
                 $apiCmd = '<show><running><rule-use><rule-base>' . $rule_base . '</rule-base><type>unused</type><vsys>' . $sub->name() . '</vsys></rule-use></running></show>';
@@ -2422,8 +2425,10 @@ RQuery::$defaultFilters['rule']['rule']['operators']['is.unused.fast'] = array(
                             {
                                 $hitcount_value = $node->textContent;
                                 if( $hitcount_value != 0 )
+                                {
                                     unset($sub->apiCache[$unused_flag][$ruleName]);
-
+                                    $sub->apiCache[$used_flag][$ruleName]['serial'][] = $connector->info_serial;
+                                }
                             }
                         }
                     }
@@ -2498,7 +2503,11 @@ RQuery::$defaultFilters['rule']['rule']['operators']['is.unused.fast'] = array(
                                         if( $hitcount_value != 0 )
                                         {
                                             if( isset($sub->apiCache[$unused_flag][$ruleName]) )
+                                            {
                                                 unset($sub->apiCache[$unused_flag][$ruleName]);
+                                                $sub->apiCache[$used_flag][$ruleName]['serial'][] = $newConnector->info_serial;
+                                            }
+
 
                                             if( isset($tmpCache[$ruleName]) )
                                                 unset($tmpCache[$ruleName]);
@@ -2513,7 +2522,11 @@ RQuery::$defaultFilters['rule']['rule']['operators']['is.unused.fast'] = array(
                             foreach( $sub->apiCache[$unused_flag] as $unusedEntry )
                             {
                                 if( !isset($tmpCache[$unusedEntry]) )
+                                {
                                     unset($sub->apiCache[$unused_flag][$unusedEntry]);
+                                    $sub->apiCache[$used_flag][$ruleName]['serial'][] = $newConnector->info_serial;
+                                }
+
                             }
                         }
 

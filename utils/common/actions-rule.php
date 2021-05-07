@@ -1622,6 +1622,131 @@ RuleCallContext::$supportedActions[] = array(
     'MainFunction' => function (RuleCallContext $context) {
         $rule = $context->object;
 
+        if( $context->arguments['serial'] == "$\$used$$" )
+        {
+            $sub = $rule->owner->owner;
+
+            //only do it on DG where it has childDeviceGroups
+            if( count($sub->_childDeviceGroups) < 1 )
+                return;
+
+            $used_flag = 'used' . $rule->ruleNature();
+
+            if( !$sub->isVirtualSystem() && !$sub->isDeviceGroup() )
+            {
+                return;
+            }
+
+            if( isset( $sub->apiCache[$used_flag][$rule->name()] ) )
+            {
+                $serials = $sub->apiCache[$used_flag][$rule->name()]['serial'];
+                print_r( $serials );
+
+                $vsys = null;
+                foreach( $serials as $serial )
+                {
+                    /*
+                    if( $context->arguments['vsys'] != '*NULL*' )
+                        $vsys = $context->arguments['vsys'];
+                    $serial = $context->arguments['serial'];
+                    */
+
+                    if( $rule->target_hasDeviceAndVsys($serial, $vsys) )
+                    {
+                        print $context->padding . "   * SKIPPED : firewall/vsys: " . $serial . " is already in the target\n";
+                        return;
+                    }
+
+                    if( $context->isAPI )
+                        $rule->API_target_addDevice($serial, $vsys);
+                    else
+                        $rule->target_addDevice($serial, $vsys);
+
+                }
+
+                return;
+            }
+        }
+
+        $vsys = null;
+        if( $context->arguments['vsys'] != '*NULL*' )
+            $vsys = $context->arguments['vsys'];
+        $serial = $context->arguments['serial'];
+
+        if( $rule->target_hasDeviceAndVsys($serial, $vsys) )
+        {
+            print $context->padding . "   * SKIPPED : firewall/vsys is already in the target\n";
+            return;
+        }
+
+        if( $context->isAPI )
+            $rule->API_target_addDevice($serial, $vsys);
+        else
+            $rule->target_addDevice($serial, $vsys);
+
+    },
+    'args' => array('serial' => array('type' => 'string', 'default' => '*nodefault*'),
+        'vsys' => array('type' => 'string', 'default' => '*NULL*', 'help' => 'if target firewall is single VSYS you should ignore this argument, otherwise just input it')
+    ),
+);
+RuleCallContext::$supportedActions[] = array(
+    'name' => 'target-Add-Tag',
+    'section' => 'target',
+    'MainFunction' => function (RuleCallContext $context) {
+        $rule = $context->object;
+
+        if( $context->arguments['serial'] == "$\$used$$" )
+        {
+            $sub = $rule->owner->owner;
+
+            //only do it on DG where it has childDeviceGroups
+            if( count($sub->_childDeviceGroups) < 1 )
+                return;
+
+            $used_flag = 'used' . $rule->ruleNature();
+
+            if( !$sub->isVirtualSystem() && !$sub->isDeviceGroup() )
+            {
+                return;
+            }
+
+            if( isset( $sub->apiCache[$used_flag][$rule->name()] ) )
+            {
+                $serials = $sub->apiCache[$used_flag][$rule->name()]['serial'];
+                print_r( $serials );
+
+                $vsys = null;
+                foreach( $serials as $serial )
+                {
+                    /*
+                    if( $context->arguments['vsys'] != '*NULL*' )
+                        $vsys = $context->arguments['vsys'];
+                    $serial = $context->arguments['serial'];
+                    */
+
+                    if( $rule->target_hasDeviceAndVsys($serial, $vsys) )
+                    {
+                        print $context->padding . "   * SKIPPED : firewall/vsys: " . $serial . " is already in the target\n";
+                        return;
+                    }
+
+                    if( $context->isAPI )
+                    {
+                        print "API - find a way to add Device TAG\n";
+                        #$rule->API_target_addDevice($serial, $vsys);
+                    }
+
+                    else
+                    {
+                        print "offline = find a way to add Device TAG\n";
+                        #$rule->target_addDevice($serial, $vsys);
+                    }
+                }
+
+                return;
+            }
+        }
+
         $vsys = null;
         if( $context->arguments['vsys'] != '*NULL*' )
             $vsys = $context->arguments['vsys'];
