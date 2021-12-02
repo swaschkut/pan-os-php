@@ -131,6 +131,10 @@ class BPAGENERATOR extends UTIL
         curl_setopt($curl, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
         curl_setopt($curl, CURLOPT_HTTPHEADER, $data);
 
+        //Todo: Sven 20211202 start harding against vulnerability
+        curl_setopt($curl, CURLOPT_PROTOCOLS, CURLPROTO_HTTPS );
+        curl_setopt($curl, CURLOPT_REDIR_PROTOCOLS, CURLPROTO_HTTPS);
+        curl_setopt($curl, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2);
 
         curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, FALSE);
         curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, FALSE);

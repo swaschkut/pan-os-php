@@ -1052,11 +1052,18 @@ class PanAPIConnector
 
         $this->_createOrRenewCurl();
 
+        //Todo: Sven 20211202 start harding against vulnerability
+        curl_setopt($this->_curl_handle, CURLOPT_PROTOCOLS, CURLPROTO_HTTPS );
+        curl_setopt($this->_curl_handle, CURLOPT_REDIR_PROTOCOLS, CURLPROTO_HTTPS);
+        curl_setopt($this->_curl_handle, CURLOPT_MAXREDIRS, 5);
+        curl_setopt($this->_curl_handle, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2);
+
         curl_setopt($this->_curl_handle, CURLOPT_RETURNTRANSFER, TRUE);
         curl_setopt($this->_curl_handle, CURLOPT_SSL_VERIFYPEER, FALSE);
         curl_setopt($this->_curl_handle, CURLOPT_SSL_VERIFYHOST, FALSE);
-        if( defined('CURL_SSLVERSION_TLSv1') ) // for older versions of PHP/openssl bundle
-            curl_setopt($this->_curl_handle, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1);
+
+        #if( defined('CURL_SSLVERSION_TLSv1') ) // for older versions of PHP/openssl bundle
+        #    curl_setopt($this->_curl_handle, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1);
 
         $host = $this->apihost;
         if( $this->port != 443 )
@@ -1117,9 +1124,17 @@ class PanAPIConnector
         curl_setopt($this->_curl_handle, CURLOPT_URL, $finalUrl);
 
         if( isset($moreOptions['timeout']) )
+        {
             curl_setopt($this->_curl_handle, CURLOPT_CONNECTTIMEOUT, $moreOptions['timeout']);
+            curl_setopt($this->_curl_handle, CURLOPT_TIMEOUT, $moreOptions['timeout']);
+        }
+
         else
+        {
             curl_setopt($this->_curl_handle, CURLOPT_CONNECTTIMEOUT, 7);
+            curl_setopt($this->_curl_handle, CURLOPT_TIMEOUT, 10);
+        }
+
 
         curl_setopt($this->_curl_handle, CURLOPT_LOW_SPEED_LIMIT, 500);
         if( isset($moreOptions['lowSpeedTime']) )
@@ -1165,12 +1180,13 @@ class PanAPIConnector
             curl_setopt($this->_curl_handle, CURLOPT_POSTFIELDS, $encodedContent);
         }
 
-        //$this->showApiCalls = true;
         if( $this->showApiCalls )
         {
             if( PH::$displayCurlRequest )
             {
+                //Todo: 20211202 is this needed? harding possible by value FALSE
                 curl_setopt($this->_curl_handle, CURLOPT_FOLLOWLOCATION, TRUE);
+
                 curl_setopt($this->_curl_handle, CURLOPT_VERBOSE, TRUE);
 
                 curl_setopt($this->_curl_handle, CURLOPT_HEADER, 1);
@@ -1193,6 +1209,7 @@ class PanAPIConnector
                 PH::print_stdout("API call: \"" . $finalUrl . "\"" );
         }
 
+        //Todo: 20211202 vulnerability found
         $httpReplyContent = curl_exec($this->_curl_handle);
 
         if( $httpReplyContent === FALSE )
@@ -1271,10 +1288,12 @@ class PanAPIConnector
         $this->_createOrRenewCurl();
 
         curl_setopt($this->_curl_handle, CURLOPT_RETURNTRANSFER, TRUE);
+
         curl_setopt($this->_curl_handle, CURLOPT_SSL_VERIFYPEER, FALSE);
         curl_setopt($this->_curl_handle, CURLOPT_SSL_VERIFYHOST, FALSE);
-        if( defined('CURL_SSLVERSION_TLSv1') ) // for older versions of PHP/openssl bundle
-            curl_setopt($this->_curl_handle, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1);
+        curl_setopt($this->_curl_handle, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2);
+        #if( defined('CURL_SSLVERSION_TLSv1') ) // for older versions of PHP/openssl bundle
+        #    curl_setopt($this->_curl_handle, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1);
 
         $host = $this->apihost;
         if( $this->port != 443 )
