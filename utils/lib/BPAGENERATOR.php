@@ -149,6 +149,7 @@ class BPAGENERATOR extends UTIL
         #PH::enableExceptionSupport();
         try
         {
+            //Todo: 20211202 vulnerability found
             $response = curl_exec($curl);
 
             if( $type == "POST" )

@@ -113,6 +113,7 @@ elseif( !isset(PH::$args['type']) )
         PH::$JSON_TMP[] = $type;
     PH::print_stdout( PH::$JSON_TMP, false, 'type' );
 
+    //Todo: 20211202 vulnerability found
     $typeUTIL->display_error_usage_exit('"type" is missing from arguments');
 }
 elseif( isset(PH::$args['type']) )
