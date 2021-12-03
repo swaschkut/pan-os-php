@@ -276,6 +276,7 @@ function UTILcaller( $url_pieces, $argv, $argc )
             }
         }
 
+        //Todo: Vulnerability ?? calling method like UTIL() / RULEUTIL
         header("Content-Type: application/json");
         $type = $url_pieces[1];
         if( $type == 'rule' )
