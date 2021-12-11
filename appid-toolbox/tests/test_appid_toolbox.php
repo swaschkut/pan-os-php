@@ -1,4 +1,22 @@
 <?php
+/**
+ * ISC License
+ *
+ * Copyright (c) 2019, Palo Alto Networks Inc.
+ *
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ */
+
 require_once("lib/pan_php_framework.php");
 
 PH::print_stdout( "*************************************************");
@@ -56,13 +74,14 @@ $location = 'vsys1';
 $output = '/dev/null';
 $serial = '0123456789';
 
+$dirname = dirname(__FILE__);
 
-$cli_array[] = "php ../rule-marker.php     in=orig/stage00.xml  out=input/stage05.xml location={$location}";
-$cli_array[] = "php ../rule-cloner.php     in=input/stage05.xml out=input/stage10.xml location={$location} serial={$serial}";
-$cli_array[] = "php ../rule-activation.php in=input/stage10.xml out={$output}         location={$location}";
-$cli_array[] = "php ../rule-activation.php in=input/stage10.xml out=input/stage15.xml location={$location} confirm";
-$cli_array[] = "php ../rule-cleaner.php    in=input/stage15.xml out={$output}         location={$location} serial={$serial}";
-$cli_array[] = "php ../rule-cleaner.php    in=input/stage15.xml out=input/stage20.xml location={$location} serial={$serial} confirm";
+$cli_array[] = "php ".$dirname."/../rule-marker.php     in=orig/stage00.xml  out=input/stage05.xml location={$location}";
+$cli_array[] = "php ".$dirname."/../rule-cloner.php     in=input/stage05.xml out=input/stage10.xml location={$location} serial={$serial}";
+$cli_array[] = "php ".$dirname."/../rule-activation.php in=input/stage10.xml out={$output}         location={$location}";
+$cli_array[] = "php ".$dirname."/../rule-activation.php in=input/stage10.xml out=input/stage15.xml location={$location} confirm";
+$cli_array[] = "php ".$dirname."/../rule-cleaner.php    in=input/stage15.xml out={$output}         location={$location} serial={$serial}";
+$cli_array[] = "php ".$dirname."/../rule-cleaner.php    in=input/stage15.xml out=input/stage20.xml location={$location} serial={$serial} confirm";
 
 
 

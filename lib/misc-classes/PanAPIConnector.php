@@ -3,7 +3,7 @@
 /**
  * ISC License
  *
- * Copyright (c) 2014-2018 Christophe Painchaud <shellescape _AT_ gmail.com>
+ * Copyright (c) 2014-2018, Palo Alto Networks Inc.
  * Copyright (c) 2019, Palo Alto Networks Inc.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
@@ -97,7 +97,7 @@ class PanAPIConnector
     public $request_license_info_raw = null;
 
     private $utilType = null;
-    private $utilAction = null;
+    private $utilAction = "";
 
     private $setAuditComment = false;
     private $auditComment = null;
@@ -382,6 +382,12 @@ class PanAPIConnector
             $host = $hostExplode[0];
         }
 
+        $hostExplode = explode('/', $host);
+        if( count($hostExplode) > 1 )
+        {
+            $host = $hostExplode[0];
+        }
+
         $wrongLogin = FALSE;
 
         foreach( self::$savedConnectors as $connector )
@@ -401,8 +407,13 @@ class PanAPIConnector
                     if( $host != "bpa-apikey" && $host != "license-apikey" && $host != "ldap-password" && $host != "maxmind-licensekey" )
                     {
                         $wrongLogin = TRUE;
-                        if( strpos($e->getMessage(), "Invalid credentials.") === FALSE )
+
+                        if( isset( $_SERVER['REQUEST_METHOD'] ) )
                             derr($e->getMessage());
+                        elseif( strpos($e->getMessage(), "Invalid credentials.") === FALSE )
+                        {
+                            derr($e->getMessage(), null , FALSE );
+                        }
                     }
                 }
                 PH::$useExceptions = $exceptionUse;

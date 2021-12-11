@@ -2,7 +2,7 @@
 /**
  * ISC License
  *
- * Copyright (c) 2014-2018 Christophe Painchaud <shellescape _AT_ gmail.com>
+ * Copyright (c) 2014-2018, Palo Alto Networks Inc.
  * Copyright (c) 2019, Palo Alto Networks Inc.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
@@ -33,7 +33,7 @@
  ******************************************************************************/
 
 set_include_path(get_include_path() . PATH_SEPARATOR . dirname(__FILE__) . '/../');
-require_once dirname(__FILE__)."/../lib/pan_php_framework.php";
+require_once dirname(__FILE__)."/../../lib/pan_php_framework.php";
 PH::print_stdout( " - PAN-OS-PHP version: ".PH::frameworkVersion() . " [".PH::frameworkInstalledOS()."]" );
 
 function display_usage_and_exit()

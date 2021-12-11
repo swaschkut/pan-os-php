@@ -1,9 +1,8 @@
 <?php
-
 /**
  * ISC License
  *
- * Copyright (c) 2014-2018 Christophe Painchaud <shellescape _AT_ gmail.com>
+ * Copyright (c) 2014-2018, Palo Alto Networks Inc.
  * Copyright (c) 2019, Palo Alto Networks Inc.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
@@ -19,27 +18,9 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-//------------------------------------------------------------------------------------------------------
 
 set_include_path(dirname(__FILE__) . '/../' . PATH_SEPARATOR . get_include_path());
 require_once dirname(__FILE__)."/../lib/pan_php_framework.php";
 require_once ( "utils/lib/UTIL.php");
 
-//------------------------------------------------------------------------------------------------------
-
-PH::print_stdout("");
-PH::print_stdout("***********************************************");
-PH::print_stdout("*********** " . basename(__FILE__) . " UTILITY **************");
-PH::print_stdout("");
-
-$util = new STATSUTIL( "stats", $argv, $argc, __FILE__);
-
-//------------------------------------------------------------------------------------------------------
-
-PH::print_stdout("");
-PH::print_stdout("************* END OF SCRIPT " . basename(__FILE__) . " ************" );
-PH::print_stdout("");
-
-
-
-
+PH::UTILdeprecated( "stats", $argv, $argc, __FILE__ );

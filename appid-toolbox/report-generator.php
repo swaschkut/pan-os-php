@@ -3,7 +3,7 @@
 /**
  * ISC License
  *
- * Copyright (c) 2014-2018 Christophe Painchaud <shellescape _AT_ gmail.com>
+ * Copyright (c) 2014-2018, Palo Alto Networks Inc.
  * Copyright (c) 2019, Palo Alto Networks Inc.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
@@ -343,8 +343,9 @@ foreach($rules as $rule)
     PH::print_stdout( "" );
 }
 
-//PH::print_stdout( "\n\nExporting stats to html file '{$ruleStatHtmlFile}'... " );
-//$ruleStats->exportToCSV($ruleStatHtmlFile);
+//Todo - export not working for HTML but tool is using XML file - HTML is only for user
+#PH::print_stdout( "\n\nExporting stats to html file '{$ruleStatHtmlFile}'... " );
+#$ruleStats->exportToCSV($ruleStatHtmlFile);
 
 
 

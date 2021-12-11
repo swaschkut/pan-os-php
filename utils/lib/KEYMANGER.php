@@ -1,5 +1,21 @@
 <?php
-
+/**
+ * ISC License
+ *
+ * Copyright (c) 2019, Palo Alto Networks Inc.
+ *
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ */
 
 class KEYMANGER extends UTIL
 {
@@ -115,17 +131,19 @@ class KEYMANGER extends UTIL
             PH::$JSON_TMP['header'] = $string;
             PH::$JSON_TMP[$addHost]['name'] = $addHost;
 
-            if( $addHost == "bpa-apikey" || $addHost == "license-apikey" || $addHost == "ldap-password" )
+            if( $addHost == "bpa-apikey" || $addHost == "license-apikey" || $addHost == "ldap-password" || $addHost == "maxmind-licensekey" )
             {
                 if( !isset(PH::$args['apikey']) )
                     derr( "argument apikey - must be set to add BPA-/License-APIkey" );
 
+                foreach( PanAPIConnector::$savedConnectors as $cIndex => $connector )
+                {
+                    if( $connector->apihost == $addHost )
+                        unset(PanAPIConnector::$savedConnectors[$cIndex]);
+                }
+
                 PanAPIConnector::$savedConnectors[] = new PanAPIConnector($addHost, PH::$args['apikey']);
                 PanAPIConnector::saveConnectorsToUserHome();
-
-                #PH::print_stdout( "" );
-                #PH::print_stdout( "adding 'BPA-/License-APIkey' to .panconfkeystore not implemented yet" );
-                #PH::print_stdout( "" );
             }
             else
             {
@@ -156,7 +174,7 @@ class KEYMANGER extends UTIL
                     PH::print_stdout( " - requested to test Host/IP '{$checkHost}'");
                     PH::$JSON_TMP[$checkHost]['name'] = $checkHost;
 
-                    if( $checkHost == "bpa-apikey" || $checkHost == "license-apikey" )
+                    if( $checkHost == "bpa-apikey" || $checkHost == "license-apikey" || $addHost == "ldap-password" || $addHost == "maxmind-licensekey" )
                     {
                         PH::$JSON_TMP[$checkHost]['status'] = "skipped can not be tested";
                         continue;
@@ -191,7 +209,7 @@ class KEYMANGER extends UTIL
                 PH::print_stdout( " - requested to test Host/IP '{$checkHost}'");
                 PH::$JSON_TMP[$checkHost]['name'] = $checkHost;
 
-                if( $checkHost == "bpa-apikey" || $checkHost == "license-apikey" )
+                if( $checkHost == "bpa-apikey" || $checkHost == "license-apikey" || $addHost == "ldap-password" || $addHost == "maxmind-licensekey" )
                 {
                     PH::$JSON_TMP[$checkHost]['status'] = "skipped can not be tested";
                 }

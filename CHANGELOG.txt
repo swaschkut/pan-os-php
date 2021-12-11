@@ -1,22 +1,61 @@
 CHANGELOG
 
-2.0.25
+2.0.27
+UTILS:
+* pa_gratuitous-arp - extend for SNAT / improve if addressObject value has netmask, to send gARP to all IP Addresses
+
+BUGFIX:
+
+GENERAL:
+
+
+2.0.26 (20211209)
+UTILS:
+* UTIL pan-os-php type=$utiltype is the only supported UTIL script for the future, all other UTIL script are set to deprecated
+* UTIL pan-os-php UI - move to local file usage
+* UTIL all script - introduce new argument "shadow-nojson"
+* UTIL UI - improvement to get filter correctly working for operators like ">,<,=,!"
+* UTIL UI - starting on extended version
+* UTIL UI - extend to delete additional actions/filter column
+* UTIL develop - add multiple script in specific for downloading PAN-OS software
+* UTIL develop | introduce API creation testing script for different objects
+* UTIL develop | introduce reset-config and software-remove script
+* UTIL develop | software-downloader.php improve exception support
+* UTIL introduce new ALIAS: pa_license / pa_software-preparation / pa_software-downloader / pa_config-commit / pa_config-reset / pa_get_system-user-info / pa_software-remove / pa_system-log / pa_traffic-log
+
+BUGFIX:
+* UTIL pan-os-php API - bugfix in relation to shadow-json and previous code reduction
+* UTIL pa_key-manager | bugfix to add host like license-apikey/bpa-apikey/ldap-password/maxmind-licensekey only once and delete previous available key
+* UTIL class UTIL.php | bugfix for adding Audit-Comment
+* UTIL pa_key-manager | bugfix to correctly add password/licensekey if used with add=ldap-password/maxmind-licensekey
+
+GENERAL:
+* Dockerfiles - extend to different PHP versions
+* App-ID version: 8497-7093 update
+* framework examples | update 'example-panapiconnector.php'
+
+
+2.0.25 (20211203)
 UTILS:
 * PAN-OS-PHP API - bugfix for PHP8.1
 * all edit script with method PAN-OS API - introduce sending audit-comment information - default setting "PAN-OS-PHP $UTILtype $timedate"
 * pa_rule-edit | 'actions=exportToExcel:FILE.html,ResolveAddressSummary|ResolveserviceSummary|ResolveApplicationsummary' - improve resolveservicesummary, if application-default is used in service and app-id has specified apps
 * pa_zone-edit | introduce actions=name-rename:NewZoneNAME
 * UTIL all script | introduce new argument "auditComment=XYZ" to bring in your custom auditComment
+* UTIL all script - remove duplicate header / footer
+* UTIL all script - optimise to always use single method entry from PAN-OS-PHP
 
 BUGFIX:
 * UTIL script download predefined PAN-OS content data - bugfix/workaround if PAN-OS API bring in double <response><return
 * pa_tag-edit | actions=created:NewTag - bugfix to not error out on PAN-OS API - first check if NewTag is already availalble
 * framework class App | bugfix as FawkesConf has no appstore at shared level / has no SHARED level
 * UTIL pa_rule-edit | actions=display,ResolveServiceSummary bringing back consistent output for port and application-default app-id port
+* class PanAPIConnector - bugfix if connection timeout
 
 GENERAL:
 * framework - content id update to version 8494-7079
 * class PanAPIConnector - extend AuditComment usage to all kind of manipulation API request set/rename/delete/edit
+* class PanAPIConnector | improve behaviour to request username / password if wrong APIKEY is stored in .panconfkeystore
 
 
 2.0.24 (20211201)

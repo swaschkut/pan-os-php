@@ -2,7 +2,7 @@
 /**
  * ISC License
  *
- * Copyright (c) 2014-2018 Christophe Painchaud <shellescape _AT_ gmail.com>
+ * Copyright (c) 2014-2018, Palo Alto Networks Inc.
  * Copyright (c) 2019, Palo Alto Networks Inc.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
@@ -543,14 +543,14 @@ SecurityProfileCallContext::$supportedActions[] = array(
             }
         }
 
-        $content = file_get_contents(dirname(__FILE__) . '/html-export-template.html');
+        $content = file_get_contents(dirname(__FILE__) . '/html/export-template.html');
         $content = str_replace('%TableHeaders%', $headers, $content);
 
         $content = str_replace('%lines%', $lines, $content);
 
-        $jscontent = file_get_contents(dirname(__FILE__) . '/jquery-1.11.js');
+        $jscontent = file_get_contents(dirname(__FILE__) . '/html/jquery.min.js');
         $jscontent .= "\n";
-        $jscontent .= file_get_contents(dirname(__FILE__) . '/jquery.stickytableheaders.min.js');
+        $jscontent .= file_get_contents(dirname(__FILE__) . '/html/jquery.stickytableheaders.min.js');
         $jscontent .= "\n\$('table').stickyTableHeaders();\n";
 
         $content = str_replace('%JSCONTENT%', $jscontent, $content);

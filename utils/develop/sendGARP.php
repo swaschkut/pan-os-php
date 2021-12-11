@@ -3,7 +3,6 @@
 /**
  * ISC License
  *
- * Copyright (c) 2014-2018 Christophe Painchaud <shellescape _AT_ gmail.com>
  * Copyright (c) 2019, Palo Alto Networks Inc.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
@@ -45,63 +44,67 @@ $supportedArguments['in'] = Array('niceName' => 'in', 'shortHelp' => 'input file
 $supportedArguments['debugapi'] = Array('niceName' => 'DebugAPI', 'shortHelp' => 'prints API calls when they happen');
 $supportedArguments['help'] = Array('niceName' => 'help', 'shortHelp' => 'this message');
 $supportedArguments['test'] = Array('niceName' => 'test', 'shortHelp' => 'command to test against offline config file');
-$supportedArguments['user'] = array('niceName' => 'user', 'shortHelp' => 'can be used in combination with "add" argument to use specific Username provided as an argument.', 'argDesc' => '[USERNAME]');
-$supportedArguments['pw'] = array('niceName' => 'pw', 'shortHelp' => 'can be used in combination with "add" argument to use specific Password provided as an argument.', 'argDesc' => '[PASSWORD]');
+$supportedArguments['user'] = array('niceName' => 'user', 'shortHelp' => 'must be set to trigger sendGARP via SSH', 'argDesc' => '[USERNAME]');
+$supportedArguments['pw'] = array('niceName' => 'pw', 'shortHelp' => 'must be set to trigger sendGARP via SSH', 'argDesc' => '[PASSWORD]');
 
-$usageMsg = PH::boldText('USAGE: ')."php ".basename(__FILE__)." in=api:://[MGMT-IP] file=[csv_text file] [out=]";
+$usageMsg = PH::boldText('USAGE: ')."php ".basename(__FILE__)." in=api:://[MGMT-IP] [test] [user=SSHuser] [pw=SSHpw]" .
+    "
+     - for Firewalls where Interfaces or other config is from Panorama Device-Group / Template please use in=api://FW-MGMT-ip/merged-config";
 
 PH::processCliArgs();
 
-if( isset(PH::$args['test']) )
-    $offline_config_test = true;
-
-if( isset(PH::$args['in']) )
+if( !isset(PH::$args['help']) )
 {
-    $configInput = PH::$args['in'];
+    if( isset(PH::$args['test']) )
+        $offline_config_test = TRUE;
 
-    if( strpos( $configInput, "api://" ) === false && !$offline_config_test )
-        derr( "only PAN-OS API connection is supported" );
+    if( isset(PH::$args['in']) )
+    {
+        $configInput = PH::$args['in'];
 
-    $configInput = str_replace( "api://", "", $configInput);
-}
-else
-    derr( "argument 'in' is needed" );
+        if( strpos($configInput, "api://") === FALSE && !$offline_config_test )
+            derr("only PAN-OS API connection is supported");
 
-if( isset(PH::$args['user']) )
-    $user = PH::$args['user'];
-else
-{
+        $configInput = str_replace("api://", "", $configInput);
+    }
+    else
+        derr("argument 'in' is needed");
+
+
+    if( isset(PH::$args['user']) )
+        $user = PH::$args['user'];
+    else
+    {
+        if( !$offline_config_test )
+            derr("argument 'user' is needed");
+    }
+
+    if( isset(PH::$args['pw']) )
+        $password = PH::$args['pw'];
+    else
+    {
+        if( !$offline_config_test )
+            derr("argument 'pw' is needed");
+    }
+
+    //this is storing the username / pw in .panconfigkeystore
+    $argv2 = array();
+    PH::$args = array();
+    PH::$argv = array();
+    $argv2[] = "key-manager";
+    $argv2[] = "add=" . $configInput;
+    $argv2[] = "user=" . $user;
+    $argv2[] = "pw=" . $password;
+    $argc2 = count($argv2);
+
     if( !$offline_config_test )
-        derr( "argument 'user' is needed" );
+        $util = new KEYMANGER("key-manager", $argv2, $argc2, __FILE__);
 }
 
-if( isset(PH::$args['pw']) )
-    $password = PH::$args['pw'];
-else
-{
-    if( !$offline_config_test )
-        derr( "argument 'pw' is needed" );
-}
-
-
-$argv2 = array();
 PH::$args = array();
 PH::$argv = array();
-$argv2[] = "key-manager";
-$argv2[] = "add=".$configInput;
-$argv2[] = "user=".$user;
-$argv2[] = "pw=".$password;
-$argc2 = count($argv2);
 
-if( !$offline_config_test )
-    $util = new KEYMANGER( "key-manager", $argv2, $argc2, __FILE__ );
-
-PH::$args = array();
-PH::$argv = array();
-
-
-
-$util = new UTIL( "custom", $argv, $argc, __FILE__, $supportedArguments );
+$util = new UTIL( "custom", $argv, $argc, __FILE__, $supportedArguments, $usageMsg );
 $util->utilInit();
 $util->load_config();
 
@@ -114,12 +117,6 @@ if( !$util->apiMode && !$offline_config_test )
 $inputConnector = $util->pan->connector;
 
 
-
-#$cmd = "<show><interface>all</interface></show>";
-#$response = $inputConnector->sendOpRequest( $cmd );
-##$xmlDoc = new DOMDocument();
-##$xmlDoc->loadXML($response);
-##echo $response->saveXML();
 
 $interfaces = $util->pan->network->getAllInterfaces();
 $commands = array();
@@ -143,7 +140,22 @@ foreach($interfaces as $int)
     foreach( $ips as $key => $ip )
     {
         $intIP = explode("/",$ip );
+
         $intIP = $intIP[0];
+        if( !isset($intIP[1]) )
+        {
+            //more validation if object is used
+            /** @var VirtualSystem $vsys */
+            $object = $vsys->addressStore->find( $key );
+
+            if( $object->isType_FQDN() || $object->isType_ipWildcard() )
+                continue;
+
+            $intIP = $object->getNetworkValue();
+        }
+
+        if( filter_var($intIP, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) )
+            continue;
 
         if( $key == 0)
         {
@@ -151,7 +163,7 @@ foreach($interfaces as $int)
         }
         $ipRangeInt[$ip] = $name;
 
-        $commands[] = "test arp gratuitous ip ".$intIP." interface ".$name;
+        $commands[$intIP.$name] = "test arp gratuitous ip ".$intIP." interface ".$name;
     }
 }
 
@@ -161,42 +173,34 @@ $vsyss = $util->pan->getVirtualSystems();
 
 foreach( $vsyss as $vsys )
 {
-    //Todo: get DNAT DST ip from NAT rule
     $natDNATrules = $vsys->natRules->rules( '(dnat is.set)' );
     foreach( $natDNATrules as $rule )
     {
         #print "NAME: ".$rule->name()."\n";
-
-        $TO = $rule->to->getAll();
-        #print "Zone to: ".$TO[0]->name()."\n";
-
-        $DST = $rule->destination->getAll();
-        if( count( $DST ) == 1)
-        {
-            #print "DST: ".$DST[0]->name()."\n";
-            #print "IP: ".$DST[0]->value()."\n";
-
-            $dstIP = $DST[0]->value();
-
-            #print_r( $ipRangeInt );
-            foreach( $ipRangeInt as $key => $intName )
-            {
-
-                $IP_network = explode( "/", $key);
-
-                $network = cidr::cidr2network($IP_network[0], $IP_network[1]);
-
-
-                if( cidr::cidr_match( $DST[0]->value(), $network, $IP_network[1] ) )
-                    $commands[] = "test arp gratuitous ip ".$dstIP." interface ".$intName;
-            }
-        }
-
+        $dstObjects = $rule->destination->getAll();
+        foreach( $dstObjects as $object )
+            getTestCommands( $vsys, $object,$commands );
     }
+
+    $natSNATrules = $vsys->natRules->rules( '(snat is.set)' );
+    foreach( $natSNATrules as $rule )
+    {
+        /** @var NatRule $rule */
+        if( $rule->snatinterface !== null)
+            continue;
+
+        #print "NAME: ".$rule->name()."\n";
+        $snatObjects = $rule->snathosts->getAll();
+
+        foreach( $snatObjects as $object )
+            getTestCommands( $vsys, $object,$commands );
+    }
+
+    //bidirNAT are already involved in the SNAT calculation above
 }
 
 
-if( !$offline_config_test )
+if( !$offline_config_test || $util->apiMode )
 {
     $cmd = "<show><arp><entry name = 'all'/></arp></show>";
     $response = $inputConnector->sendOpRequest( $cmd );
@@ -243,9 +247,75 @@ foreach( $commands as $command )
 PH::print_stdout( "" );
 $output_string = "";
 if( !$offline_config_test )
+{
+    $configInputExplode = explode('/', $configInput);
+    if( count($configInputExplode) > 1 )
+        $configInput = $configInputExplode[0];
     $ssh = new RUNSSH( $configInput, $user, $password, $commands, $output_string );
+}
+
 
 print $output_string;
 ##############################################
 ##############################################
 
+
+function getTestCommands( $vsys, $object, &$commands )
+{
+    global $ipRangeInt;
+
+    /** @var Address $object */
+    #print "DST: ".$object->name()."\n";
+    #print "IP: ".$object->value()."\n";
+
+    if( $object->isType_FQDN() || $object->isType_ipWildcard() )
+        return;
+
+    $dstIP = $object->value();
+    $dstIP = str_replace( "/32", "", $dstIP );
+
+    $IParray = array();
+    if( strpos( $dstIP, "/" ) === FALSE and strpos( $dstIP, "-" ) === FALSE )
+    {
+        $IParray[ $dstIP ] = $dstIP;
+    }
+    else
+    {
+        $startEndarray = CIDR::stringToStartEnd( $dstIP );
+        $IParray = CIDR::StartEndToIParray( $startEndarray );
+    }
+
+
+    foreach( $IParray as $dstIP )
+    {
+        if( filter_var($dstIP, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) )
+            continue;
+
+        //this is from above to get all interfaces
+        foreach( $ipRangeInt as $key => $intName )
+        {
+            $IP_network = explode( "/", $key);
+            $value = $IP_network[0];
+            if( !isset($IP_network[1]) )
+            {
+                //more validation if object is used
+                /** @var VirtualSystem $vsys */
+                $object = $vsys->addressStore->find( $key );
+
+                if( $object->isType_FQDN() || $object->isType_ipWildcard() )
+                    continue;
+
+                $value = $object->getNetworkValue();
+                $netmask = $object->getNetworkMask();
+            }
+            else
+            {
+                $netmask = $IP_network[1];
+            }
+            $network = cidr::cidr2network( $value, $netmask);
+
+            if( cidr::cidr_match( $dstIP, $network, $netmask ) )
+                $commands[$dstIP.$intName] = "test arp gratuitous ip ".$dstIP." interface ".$intName;
+        }
+    }
+}

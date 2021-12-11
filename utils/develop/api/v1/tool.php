@@ -1,4 +1,22 @@
 <?php
+/**
+ * ISC License
+ *
+ * Copyright (c) 2019, Palo Alto Networks Inc.
+ *
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ */
+
 //Todo: swaschkut 20210624
 // - change UTIL script so it can be used here:
 //   - address-merger/addressgroup-merger/service-merger/servicegroup-merge/tag-merger/rule-merger
@@ -25,6 +43,7 @@ $projects_folder = "/project/";
 
 $file_tmp_name = "";
 $upload_dir = "";
+$PHP_FILE = __FILE__;
 if( !isset( $_GET['in'] ) && isset($_FILES['configInput']) )
 {
     #header('Content-Type: application/json; charset=utf-8');
@@ -80,36 +99,13 @@ else
     $url_pieces = array();
 
 
-$supportedRoute = array(
-    "stats",
-    "address", "service", "tag", "schedule", "application", "threat",
-    "rule",
-    "device", "securityprofile", "securityprofilegroup",
-    "zone",  "interface", "virtualwire", "routing",
-    "key-manager",
-    "address-merger", "addressgroup-merger",
-    "service-merger", "servicegroup-merger",
-    "tag-merger",
-    "rule-merger",
-    "override-finder",
-    "diff",
-    "upload",
-    "xml-issue",
-    "appid-enabler",
-    "config-size",
-    "download-predefined",
-    "register-ip-mgr",
-    "userid-mgr",
-    "xml-op-json",
-    "bpa-generator"
-    );
-sort($supportedRoute );
+sort(PH::$supportedUTILTypes );
 
 // catch this here, we don't support many routes yet
-if( empty( $url_pieces) || ( isset($url_pieces[1]) && !in_array( $url_pieces[1], $supportedRoute ) ) )
+if( empty( $url_pieces) || ( isset($url_pieces[1]) && !in_array( $url_pieces[1], PH::$supportedUTILTypes ) ) )
 {
     $example = "http://localhost:8082/utils/develop/api/v1/tool.php/address?shadow-json";
-    $message = 'Unknown endpoint. supported: '.implode( ", ", $supportedRoute ).' Example: '.$example;
+    $message = 'Unknown endpoint. supported: '.implode( ", ", PH::$supportedUTILTypes ).' Example: '.$example;
 
     throw new Exception($message, 404);
 }
@@ -132,19 +128,22 @@ elseif( isset($_GET['help']) || isset($_GET['listfilters']) || isset($_GET['list
 {
 }
 else{
-    #$argv[] = "in=".dirname(__FILE__)."/../../../../tests/input/panorama-10.0-merger.xml";
+    #$argv[] = "in=".dirname($PHP_FILE)."/../../../../tests/input/panorama-10.0-merger.xml";
     $message = 'No File available with argument in=';
     throw new Exception($message, 404);
 }
 
-
+if( !isset( $_GET['shadow-json'] ) && !isset( $_GET['shadow-nojson'] ) )
+{
+    $argv[] = "shadow-json";
+}
 
 
 
 
 switch($verb) {
     case 'GET':
-        UTILcaller( $url_pieces, $argv, $argc );
+        UTILcaller( $url_pieces, $argv, $argc, $PHP_FILE );
 
         break;
     // two cases so similar we'll just share code
@@ -181,7 +180,7 @@ switch($verb) {
         #throw new Exception("PUT");
 
 
-        UTILcaller( $url_pieces, $argv, $argc );
+        UTILcaller( $url_pieces, $argv, $argc, $PHP_FILE );
 
 
         break;
@@ -209,7 +208,7 @@ switch($verb) {
 #header("Content-Type: application/json");
 #print json_encode($data);
 
-function UTILcaller( $url_pieces, $argv, $argc )
+function UTILcaller( $url_pieces, $argv, $argc, $PHP_FILE )
 {
     global $projects_folder;
 
@@ -256,7 +255,7 @@ function UTILcaller( $url_pieces, $argv, $argc )
                 {
                     unset( $argv[1] );
                     if( strpos( $get, "api" ) === false )
-                        $get = dirname(__FILE__).$projects_folder.$get;
+                        $get = dirname($PHP_FILE).$projects_folder.$get;
                     else
                     {
                         #throw new Exception( "PAN-OS XML API mode is NOT yet supported.", 404);
@@ -265,7 +264,7 @@ function UTILcaller( $url_pieces, $argv, $argc )
                 }
                 elseif( $key == "out" )
                 {
-                    $get = dirname(__FILE__).$projects_folder.$get;
+                    $get = dirname($PHP_FILE).$projects_folder.$get;
                 }
 
                 if( !empty($get) )
@@ -279,6 +278,10 @@ function UTILcaller( $url_pieces, $argv, $argc )
         //Todo: Vulnerability ?? calling method like UTIL() / RULEUTIL
         header("Content-Type: application/json");
         $type = $url_pieces[1];
+
+
+        $util = PH::callPANOSPHP( $type, $argv, $argc, $PHP_FILE );
+        /*
         if( $type == 'rule' )
             $util = new RULEUTIL( $type, $argv, $argc, __FILE__);
 
@@ -350,6 +353,6 @@ function UTILcaller( $url_pieces, $argv, $argc )
             || $type == 'threat'
         )
             $util = new UTIL( $type, $argv, $argc, __FILE__);
-
+        */
     }
 }

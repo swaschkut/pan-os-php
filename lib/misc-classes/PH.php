@@ -3,7 +3,7 @@
 /**
  * ISC License
  *
- * Copyright (c) 2014-2018 Christophe Painchaud <shellescape _AT_ gmail.com>
+ * Copyright (c) 2014-2018, Palo Alto Networks Inc.
  * Copyright (c) 2019, Palo Alto Networks Inc.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
@@ -97,6 +97,16 @@ class PH
                     $argc--;
                 continue;
             }
+            elseif( $arg == 'shadow-nojson' )
+            {
+                PH::disableOutputFormatting();
+                PH::$shadow_json = FALSE;
+                PH::$PANC_WARN = FALSE;
+                unset(PH::$argv[$argIndex]);
+                if( !isset( $_SERVER['REQUEST_METHOD'] ) )
+                    $argc--;
+                continue;
+            }
         }
         unset($argIndex);
         unset($arg);
@@ -143,7 +153,7 @@ class PH
 
     private static $library_version_major = 2;
     private static $library_version_sub = 0;
-    private static $library_version_bugfix = 25;
+    private static $library_version_bugfix = 27;
 
     //BASIC AUTH PAN-OS 7.1
     public static $softwareupdate_key = "658d787f293e631196dac9fb29490f1cc1bb3827";
@@ -865,4 +875,118 @@ class PH
         return $files;
     }
 
+    public static function UTILdeprecated( $type, $argv, $argc, $PHP_FILE)
+    {
+        $TESTargv = $argv;
+        unset( $TESTargv[0] );
+        $argString = " type=".$type." '".implode( "' '", $TESTargv)."'";
+
+        mwarning( 'this script '.basename($PHP_FILE).' is deprecated, please use: pan-os-php.php', null, FALSE );
+        PH::print_stdout( PH::boldText("pan-os-php".$argString) );
+
+
+        PH::callPANOSPHP( $type, $argv, $argc, $PHP_FILE );
+
+    }
+
+    public static $supportedUTILTypes = array(
+        "stats",
+        "address", "service", "tag", "schedule", "application", "threat",
+        "rule",
+        "device", "securityprofile", "securityprofilegroup",
+        "zone",  "interface", "virtualwire", "routing",
+        "key-manager",
+        "address-merger", "addressgroup-merger",
+        "service-merger", "servicegroup-merger",
+        "tag-merger",
+        "rule-merger",
+        "override-finder",
+        "diff",
+        "upload",
+        "xml-issue",
+        "appid-enabler",
+        "config-size",
+        "download-predefined",
+        "register-ip-mgr",
+        "userid-mgr",
+        "xml-op-json",
+        "bpa-generator"
+        );
+
+    public static function callPANOSPHP( $type, $argv, $argc, $PHP_FILE )
+    {
+        if( $type == "rule" )
+            $util = new RULEUTIL($type, $argv, $argc,$PHP_FILE." type=".$type);
+
+        elseif( $type == "stats" )
+            $util = new STATSUTIL( $type, $argv, $argc,$PHP_FILE." type=".$type);
+
+        elseif( $type == "securityprofile" )
+            $util = new SECURITYPROFILEUTIL($type, $argv, $argc,$PHP_FILE." type=".$type);
+
+        elseif( $type == "zone"
+            || $type == "interface"
+            || $type == "routing"
+            || $type == "virtualwire"
+        )
+            $util = new NETWORKUTIL($type, $argv, $argc,$PHP_FILE." type=".$type);
+
+        elseif( $type == "device" )
+            $util = new DEVICEUTIL($type, $argv, $argc,$PHP_FILE." type=".$type);
+
+        elseif( $type == "key-manager" )
+            $util = new KEYMANGER($type, $argv, $argc,$PHP_FILE." type=".$type);
+
+        elseif( $type == "address-merger"
+            || $type == "addressgroup-merger"
+            || $type == "service-merger"
+            || $type == "servicegroup-merger"
+            || $type == "tag-merger"
+        )
+            $util = new MERGER($type, $argv, $argc,$PHP_FILE." type=".$type);
+
+        elseif( $type == "rule-merger" )
+            $util = new RULEMERGER($type, $argv, $argc,$PHP_FILE." type=".$type );
+
+        elseif( $type == "override-finder" )
+            $util = new OVERRIDEFINDER($type, $argv, $argc,$PHP_FILE." type=".$type);
+        elseif( $type == "diff" )
+            $util = new DIFF($type, $argv, $argc,$PHP_FILE." type=".$type);
+        elseif( $type == "upload" )
+            $util = new UPLOAD($type, $argv, $argc,$PHP_FILE." type=".$type);
+        elseif( $type == "xml-issue" )
+            $util = new XMLISSUE($type, $argv, $argc,$PHP_FILE." type=".$type);
+
+        elseif( $type == "appid-enabler" )
+            $util = new APPIDENABLER($type, $argv, $argc,$PHP_FILE." type=".$type);
+        elseif( $type == "config-size" )
+            $util = new CONFIGSIZE($type, $argv, $argc,$PHP_FILE." type=".$type);
+
+        elseif( $type == "download-predefined" )
+            $util = new PREDEFINED($type, $argv, $argc,$PHP_FILE." type=".$type);
+
+        elseif( $type == "register-ip-mgr" )
+            $util = new REGISTERIP($type, $argv, $argc,$PHP_FILE." type=".$type );
+
+        elseif( $type == "userid-mgr" )
+            $util = new USERIDMGR($type, $argv, $argc,$PHP_FILE." type=".$type);
+
+        elseif( $type == "xml-op-json" )
+            $util = new XMLOPJSON($type, $argv, $argc,$PHP_FILE." type=".$type );
+
+        elseif( $type == "bpa-generator" )
+            $util = new BPAGENERATOR($type, $argv, $argc,$PHP_FILE." type=".$type);
+
+        elseif( $type == 'address'
+            || $type == 'service'
+            || $type == 'tag'
+            || $type == 'schedule'
+            || $type == 'securityprofilegroup'
+            || $type == 'application'
+            || $type == 'threat'
+        )
+            $util = new UTIL($type, $argv, $argc,$PHP_FILE." type=".$type);
+
+        return $util;
+    }
 }

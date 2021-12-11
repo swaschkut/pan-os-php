@@ -1,4 +1,21 @@
 <?php
+/**
+ * ISC License
+ *
+ * Copyright (c) 2019, Palo Alto Networks Inc.
+ *
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ */
 
 set_include_path( dirname(__FILE__).'/../'. PATH_SEPARATOR . get_include_path() );
 require_once(dirname(__FILE__)."/../common/actions.php");
@@ -80,7 +97,7 @@ class UTIL
     protected $taskId = 0;
     public $log = null;
 
-    public $utilType = null;
+    public $utilType = "";
     public $PHP_FILE = null;
 
     public $location = null;
@@ -91,14 +108,18 @@ class UTIL
 
     function __construct($utilType, $argv, $argc, $PHP_FILE, $_supportedArguments = array(), $_usageMsg = "")
     {
+        $this->PHP_FILE = $PHP_FILE;
+        $this->utilType = $utilType;
         $this->runStartTime = microtime(TRUE);
-
         $tmp_ph = new PH($argv, $argc);
 
-        $this->utilType = $utilType;
-        $this->PHP_FILE = $PHP_FILE;
-
-
+        if( $this->utilType != "custom" )
+        {
+            PH::print_stdout("");
+            PH::print_stdout("***********************************************");
+            PH::print_stdout("*********** " . basename($this->PHP_FILE) . " UTILITY **************");
+            PH::print_stdout("");
+        }
 
         if( empty($_supportedArguments) )
             $this->supportedArguments();
@@ -113,7 +134,7 @@ class UTIL
 
 
 
-        if( $utilType != "custom" )
+        if( $this->utilType != "custom" )
         {
             PH::print_stdout( " - PAN-OS-PHP version: ".PH::frameworkVersion() . " [".PH::frameworkInstalledOS()."]" . " [" . phpversion() ."]" );
             PH::print_stdout( array( "version" => PH::frameworkVersion(), "os" => PH::frameworkInstalledOS(), "php-version" => phpversion() ), false, 'PAN-OS-PHP');
@@ -194,6 +215,7 @@ class UTIL
         $this->supportedArguments['shadow-displaycurlrequest']= array('niceName' => 'shadow-displaycurlrequest', 'shortHelp' => 'display curl information if running in API mode');
         $this->supportedArguments['shadow-reducexml']= array('niceName' => 'shadow-reducexml', 'shortHelp' => 'store reduced XML, without newline and remove blank characters in offline mode');
         $this->supportedArguments['shadow-json']= array('niceName' => 'shadow-json', 'shortHelp' => 'BETA command to display output on stdout not in text but in JSON format');
+        $this->supportedArguments['shadow-nojson']= array('niceName' => 'shadow-nojson', 'shortHelp' => 'BETA command to display output on stdout in text format');
     }
 
     public function utilInit()
@@ -758,7 +780,8 @@ class UTIL
             $this->apiMode = TRUE;
 
             $this->configInput['connector']->setUTILtype( $this->utilType );
-            $this->configInput['connector']->setUTILaction( PH::$args['actions'] );
+            if( !empty(PH::$args['actions']) )
+                $this->configInput['connector']->setUTILaction( PH::$args['actions'] );
 
 
             PH::print_stdout( " - Downloading config from API... " );
@@ -1635,6 +1658,13 @@ class UTIL
         {
             PH::$JSON_OUT['log'] = PH::$JSON_OUTlog;
             print json_encode( PH::$JSON_OUT, JSON_PRETTY_PRINT );
+        }
+
+        if( $this->utilType !== "custom" )
+        {
+            PH::print_stdout("");
+            PH::print_stdout("************* END OF SCRIPT " . basename($this->PHP_FILE) . " ************");
+            PH::print_stdout("");
         }
     }
 }
