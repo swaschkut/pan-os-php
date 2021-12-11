@@ -1,10 +1,22 @@
 <?php
 
 /**
- * © 2019 Palo Alto Networks, Inc.  All rights reserved.
+ * ISC License
  *
- * Licensed under SCRIPT SOFTWARE AGREEMENT, Palo Alto Networks, Inc., at https://www.paloaltonetworks.com/legal/script-software-license-1-0.pdf
+ * Copyright (c) 2014-2018, Palo Alto Networks Inc.
+ * Copyright (c) 2019, Palo Alto Networks Inc.
  *
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
 class HipProfilesProfile
@@ -17,6 +29,7 @@ class HipProfilesProfile
     /** @var SecurityProfileStore|null */
     public $owner = null;
 
+    public $secprof_type;
 
     /**
      * @param SecurityProfileStore|null $owner
@@ -112,21 +125,22 @@ class HipProfilesProfile
 
     public function display()
     {
-        print "     * " . get_class($this) . " '" . $this->name() . "'    \n";
-
+        PH::print_stdout( "     * " . get_class($this) . " '" . $this->name() . "'" );
+        PH::$JSON_TMP['sub']['object'][$this->name()]['name'] = $this->name();
+        PH::$JSON_TMP['sub']['object'][$this->name()]['type'] = get_class($this);
         /*
-        //Todo: continue for print out
+        //Todo: continue for display
         foreach( $this->tmp_url_prof_array as $url_type )
         {
-            print "       ".PH::boldText( strtoupper( $url_type ) )."\n";
+            PH::print_stdout( "       ".PH::boldText( strtoupper( $url_type ) ) );
             foreach( $this->$url_type as $member )
             {
-                print "         - ".$member."\n";
+                PH::print_stdout( "         - ".$member );
             }
         }*/
 
 
-        print "\n\n";
+        PH::print_stdout("");
     }
 
     static public $templatexml = '<entry name="**temporarynamechangeme**"></entry>';

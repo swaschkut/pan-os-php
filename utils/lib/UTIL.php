@@ -1,4 +1,21 @@
 <?php
+/**
+ * ISC License
+ *
+ * Copyright (c) 2019, Palo Alto Networks Inc.
+ *
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ */
 
 set_include_path( dirname(__FILE__).'/../'. PATH_SEPARATOR . get_include_path() );
 require_once(dirname(__FILE__)."/../common/actions.php");
@@ -7,8 +24,28 @@ require_once(dirname(__FILE__)."/logWriter.php");
 require_once(dirname(__FILE__)."/RULEUTIL.php");
 require_once(dirname(__FILE__)."/STATSUTIL.php");
 require_once(dirname(__FILE__)."/SECURITYPROFILEUTIL.php");
+require_once(dirname(__FILE__)."/DEVICEUTIL.php");
+require_once(dirname(__FILE__)."/NETWORKUTIL.php");
 
+require_once(dirname(__FILE__)."/MERGER.php");
 require_once(dirname(__FILE__)."/RULEMERGER.php");
+
+
+require_once(dirname(__FILE__)."/KEYMANGER.php");
+require_once(dirname(__FILE__)."/PREDEFINED.php");
+require_once(dirname(__FILE__)."/UPLOAD.php");
+require_once(dirname(__FILE__)."/XMLISSUE.php");
+require_once(dirname(__FILE__)."/DIFF.php");
+require_once(dirname(__FILE__)."/OVERRIDEFINDER.php");
+require_once(dirname(__FILE__)."/APPIDENABLER.php");
+require_once(dirname(__FILE__)."/CONFIGSIZE.php");
+require_once(dirname(__FILE__)."/BPAGENERATOR.php");
+require_once(dirname(__FILE__)."/XMLOPJSON.php");
+require_once(dirname(__FILE__)."/REGISTERIP.php");
+require_once(dirname(__FILE__)."/USERIDMGR.php");
+
+require_once(dirname(__FILE__)."/RUNSSH.php");
+
 
 class UTIL
 {
@@ -18,17 +55,24 @@ class UTIL
     public $configOutput = null;
     public $doActions = null;
     public $dryRun = FALSE;
+    public $apiTimeoutValue = 60;
     public $objectsLocation = 'shared';
 
     public $objectsLocationCounter = 0;
+    public $objectsTemplate = 'any';
     public $templateName = "";
     public $templateNameCounter = 0;
 
     public $objectsFilter = null;
     public $errorMessage = '';
     public $debugAPI = FALSE;
+
+    /** @var DOMDocument $xmlDoc */
     public $xmlDoc = null;
+
+    /** @var PANConf|PanoramaConf|FawkesConf $pan  */
     public $pan = null;
+
     public $nestedQueries = array();
     public $objectFilterRQuery = null;
     public $objectsToProcess = array();
@@ -38,10 +82,13 @@ class UTIL
     public $usageMsg = "";
     public $apiMode = FALSE;
 
+    public $runStartTime = 0;
+
     public $loadStartTime = 0;
     public $loadStartMem = 0;
     public $loadElapsedTime = 0;
     public $loadUsedMem = 0;
+    public $loadArrayMem = array( "0", "b");
 
     public $expedition = null;
     public $expedition_db_ip = null;
@@ -50,13 +97,29 @@ class UTIL
     protected $taskId = 0;
     public $log = null;
 
-    public $utilType = null;
+    public $utilType = "";
     public $PHP_FILE = null;
 
-    function __construct($utilType, $argv, $PHP_FILE, $_supportedArguments = array(), $_usageMsg = "")
+    public $location = null;
+    public $sub = null;
+    public $template = null;
+
+    public $auditComment = null;
+
+    function __construct($utilType, $argv, $argc, $PHP_FILE, $_supportedArguments = array(), $_usageMsg = "")
     {
-        $this->utilType = $utilType;
         $this->PHP_FILE = $PHP_FILE;
+        $this->utilType = $utilType;
+        $this->runStartTime = microtime(TRUE);
+        $tmp_ph = new PH($argv, $argc);
+
+        if( $this->utilType != "custom" )
+        {
+            PH::print_stdout("");
+            PH::print_stdout("***********************************************");
+            PH::print_stdout("*********** " . basename($this->PHP_FILE) . " UTILITY **************");
+            PH::print_stdout("");
+        }
 
         if( empty($_supportedArguments) )
             $this->supportedArguments();
@@ -69,8 +132,15 @@ class UTIL
         $this->utilLogger();
         $this->log->info("start UTIL: " . $this->PHP_FILE . " | " . implode(", ", $argv));
 
-        if( $utilType != "custom" )
+
+
+        if( $this->utilType != "custom" )
+        {
+            PH::print_stdout( " - PAN-OS-PHP version: ".PH::frameworkVersion() . " [".PH::frameworkInstalledOS()."]" . " [" . phpversion() ."]" );
+            PH::print_stdout( array( "version" => PH::frameworkVersion(), "os" => PH::frameworkInstalledOS(), "php-version" => phpversion() ), false, 'PAN-OS-PHP');
             $this->utilStart();
+        }
+
     }
 
     public function utilStart()
@@ -94,15 +164,15 @@ class UTIL
         PH::print_stdout( "**** PROCESSING OF $this->totalObjectsProcessed OBJECTS DONE ****" );
         PH::print_stdout( "" );
 
+        PH::print_stdout( array("PROCESSING OF $this->totalObjectsProcessed OBJECTS DONE"), false,'summary' );
+
         $this->stats();
 
         $this->save_our_work(TRUE);
 
-        if( PH::$shadow_json )
-            print json_encode( PH::$JSON_OUT, JSON_PRETTY_PRINT );
-
-
         $this->log->info("END UTIL: " . $this->PHP_FILE);
+
+        $this->endOfScript();
     }
 
     /*
@@ -117,18 +187,35 @@ class UTIL
     {
         $this->supportedArguments['in'] = array('niceName' => 'in', 'shortHelp' => 'input file or api. ie: in=config.xml  or in=api://192.168.1.1 or in=api://0018CAEC3@panorama.company.com', 'argDesc' => '[filename]|[api://IP]|[api://serial@IP]');
         $this->supportedArguments['out'] = array('niceName' => 'out', 'shortHelp' => 'output file to save config after changes. Only required when input is a file. ie: out=save-config.xml', 'argDesc' => '[filename]');
-        $this->supportedArguments['location'] = array('niceName' => 'Location', 'shortHelp' => 'specify if you want to limit your query to a VSYS/DG. By default location=shared for Panorama, =vsys1 for PANOS. ie: location=any or location=vsys2,vsys1', 'argDesc' => '=sub1[,sub2]');
+        $this->supportedArguments['location'] = array('niceName' => 'Location', 'shortHelp' => 'specify if you want to limit your query to a VSYS/DG. By default location=shared for Panorama, =vsys1 for PANOS. ie: location=any or location=vsys2,vsys1', 'argDesc' => 'sub1[,sub2]');
         $this->supportedArguments['listactions'] = array('niceName' => 'ListActions', 'shortHelp' => 'lists available Actions');
         $this->supportedArguments['listfilters'] = array('niceName' => 'ListFilters', 'shortHelp' => 'lists available Filters');
         $this->supportedArguments['stats'] = array('niceName' => 'Stats', 'shortHelp' => 'display stats after changes');
         $this->supportedArguments['actions'] = array('niceName' => 'Actions', 'shortHelp' => 'action to apply on each rule matched by Filter. ie: actions=from-Add:net-Inside,netDMZ', 'argDesc' => 'action:arg1[,arg2]');
         $this->supportedArguments['debugapi'] = array('niceName' => 'DebugAPI', 'shortHelp' => 'prints API calls when they happen');
         $this->supportedArguments['filter'] = array('niceName' => 'Filter', 'shortHelp' => "filters objects based on a query. ie: 'filter=((from has external) or (source has privateNet1) and (to has external))'", 'argDesc' => '(field operator [value])');
-        $this->supportedArguments['loadplugin'] = array('niceName' => 'loadPlugin', 'shortHelp' => 'a PHP file which contains a plugin to expand capabilities of this script');
+        $this->supportedArguments['loadplugin'] = array('niceName' => 'loadPlugin', 'shortHelp' => 'a PHP file which contains a plugin to expand capabilities of this script', 'argDesc' => '[filename]');
         $this->supportedArguments['help'] = array('niceName' => 'help', 'shortHelp' => 'this message');
+
         $this->supportedArguments['expedition'] = array('niceName' => 'expedition', 'shortHelp' => 'only used if called from Expedition Tool');
-        $this->supportedArguments['template'] = array('niceName' => 'template', 'shortHelp' => 'Panorama template');
+        $this->supportedArguments['template'] = array('niceName' => 'template', 'shortHelp' => 'specify if you want to limit your query to a TEMPLATE. By default template=any for Panorama', 'argDesc' => 'template');
+
         $this->supportedArguments['loadpanoramapushedconfig'] = array('niceName' => 'loadPanoramaPushedConfig', 'shortHelp' => 'load Panorama pushed config from the firewall to take in account panorama objects and rules');
+        $this->supportedArguments['apitimeout'] = array('niceName' => 'apiTimeout', 'shortHelp' => 'in case API takes too long time to anwer, increase this value (default=60)', 'argDesc' => '60');
+
+        $this->supportedArguments['cycleconnectedfirewalls'] = array('niceName' => 'cycleConnectedFirewalls', 'shortHelp' => 'a listing of all devices connected to Panorama will be collected through API then each firewall will be queried for bpa generator');
+
+        $this->supportedArguments['auditcomment'] = array('niceName' => 'AuditComment', 'shortHelp' => 'set custom AuditComment instead of predefined: "PAN-OS-PHP $actions $time"', 'argDesc' => 'CustomAuditComment');
+
+        $this->supportedArguments['shadow-disableoutputformatting'] = array('niceName' => 'shadow-disableoutputformatting', 'shortHelp' => 'XML output in offline config is not in cleaned PHP DOMDocument structure');
+        $this->supportedArguments['shadow-enablexmlduplicatesdeletion']= array('niceName' => 'shadow-enablexmlduplicatesdeletion', 'shortHelp' => 'if duplicate objects are available, keep only one object of the same name');
+        $this->supportedArguments['shadow-ignoreinvalidaddressobjects']= array('niceName' => 'shadow-ignoreinvalidaddressobjects', 'shortHelp' => 'PAN-OS allow to have invalid address objects available, like object without value or type');
+        $this->supportedArguments['shadow-apikeynohidden'] = array('niceName' => 'shadow-apikeynohidden', 'shortHelp' => 'send API-KEY in clear text via URL. this is needed for all PAN-OS version <9.0 if API mode is used. ');
+        $this->supportedArguments['shadow-apikeynosave']= array('niceName' => 'shadow-apikeynosave', 'shortHelp' => 'do not store API key in .panconfkeystore file');
+        $this->supportedArguments['shadow-displaycurlrequest']= array('niceName' => 'shadow-displaycurlrequest', 'shortHelp' => 'display curl information if running in API mode');
+        $this->supportedArguments['shadow-reducexml']= array('niceName' => 'shadow-reducexml', 'shortHelp' => 'store reduced XML, without newline and remove blank characters in offline mode');
+        $this->supportedArguments['shadow-json']= array('niceName' => 'shadow-json', 'shortHelp' => 'BETA command to display output on stdout not in text but in JSON format');
+        $this->supportedArguments['shadow-nojson']= array('niceName' => 'shadow-nojson', 'shortHelp' => 'BETA command to display output on stdout in text format');
     }
 
     public function utilInit()
@@ -150,9 +237,9 @@ class UTIL
         $this->init_arguments();
     }
 
-    public function utilActionFilter()
+    public function utilActionFilter( $utilType = null)
     {
-        $this->extracting_actions();
+        $this->extracting_actions( $utilType );
         $this->createRQuery();
 
 
@@ -174,16 +261,31 @@ class UTIL
             foreach( RQuery::$defaultFilters[$this->utilType] as $index => &$filter )
             {
                 PH::print_stdout( "* " . $index . "" );
+                PH::$JSON_TMP[$index]['name'] = $index;
+
                 ksort($filter['operators']);
 
                 foreach( $filter['operators'] as $oindex => &$operator )
                 {
                     //if( $operator['arg'] )
                     $output = "    - $oindex";
+                    $output = str_pad($output, 40);
+                    if( isset($operator['help']) )
+                        $output .= ": ".$operator['help'];
 
                     PH::print_stdout( $output . "" );
+                    PH::$JSON_TMP[$index]['operators'][$oindex]['name'] = $oindex;
+                    PH::$JSON_TMP[$index]['operators'][$oindex]['operator'] = $operator;
                 }
                 PH::print_stdout( "" );
+            }
+
+            PH::print_stdout( PH::$JSON_TMP, false, 'listfilters' );
+            PH::$JSON_TMP = array();
+            if( PH::$shadow_json )
+            {
+                PH::$JSON_OUT['log'] = PH::$JSON_OUTlog;
+                print json_encode( PH::$JSON_OUT, JSON_PRETTY_PRINT );
             }
 
             exit(0);
@@ -204,12 +306,28 @@ class UTIL
             $tmp_array = &RuleCallContext::$supportedActions;
         elseif( $this->utilType == 'zone' )
             $tmp_array = &ZoneCallContext::$supportedActions;
-        elseif( $this->utilType == 'vsys' )
-            $tmp_array = &VsysCallContext::$supportedActions;
         elseif( $this->utilType == 'securityprofile' )
             $tmp_array = &SecurityProfileCallContext::$supportedActions;
+        elseif( $this->utilType == 'securityprofilegroup' )
+            $tmp_array = &SecurityProfileGroupCallContext::$supportedActions;
         elseif( $this->utilType == 'schedule' )
             $tmp_array = &ScheduleCallContext::$supportedActions;
+        elseif( $this->utilType == 'application' )
+            $tmp_array = &ApplicationCallContext::$supportedActions;
+        elseif( $this->utilType == 'threat' )
+            $tmp_array = &ThreatCallContext::$supportedActions;
+
+        elseif( $this->utilType == 'device' )
+            $tmp_array = &DeviceCallContext::$supportedActions;
+        elseif( $this->utilType == 'vsys' )
+            $tmp_array = &VsysCallContext::$supportedActions;
+
+        elseif( $this->utilType == 'virtualwire' )
+            $tmp_array = &VirtualWireCallContext::$supportedActions;
+        elseif( $this->utilType == 'routing' )
+            $tmp_array = &RoutingCallContext::$supportedActions;
+        elseif( $this->utilType == 'interface' )
+            $tmp_array = &InterfaceCallContext::$supportedActions;
 
         return $tmp_array;
     }
@@ -235,7 +353,7 @@ class UTIL
             {
 
                 $output = "* " . $action['name'];
-
+                PH::$JSON_TMP['arg'][$action['name']]['name'] = $action['name'];
                 $output = str_pad($output, 28) . '|';
 
                 if( isset($action['args']) )
@@ -248,9 +366,14 @@ class UTIL
                             $output .= "\n" . str_pad('', 28) . '|';
 
                         $output .= " " . str_pad("#$count $argName:{$arg['type']}", 24) . "| " . str_pad("{$arg['default']}", 12) . "| ";
+                        PH::$JSON_TMP['arg'][$action['name']]['arguments'][$count]['argument'] = $argName;
+                        PH::$JSON_TMP['arg'][$action['name']]['arguments'][$count]['type'] = $arg['type'];
+                        PH::$JSON_TMP['arg'][$action['name']]['arguments'][$count]['default'] = $arg['default'];
+
                         if( isset($arg['choices']) )
                         {
                             $output .= PH::list_to_string($arg['choices']);
+                            PH::$JSON_TMP['arg'][$action['name']]['arguments'][$count]['choices'] = $arg['choices'];
                         }
 
                         $count++;
@@ -261,6 +384,14 @@ class UTIL
 
                 PH::print_stdout( $output );
                 PH::print_stdout( str_pad('', 100, '=') );
+            }
+
+            PH::print_stdout( PH::$JSON_TMP, false, 'listactions' );
+            PH::$JSON_TMP = array();
+            if( PH::$shadow_json )
+            {
+                PH::$JSON_OUT['log'] = PH::$JSON_OUTlog;
+                print json_encode( PH::$JSON_OUT, JSON_PRETTY_PRINT );
             }
 
             exit(0);
@@ -291,10 +422,18 @@ class UTIL
                 VsysCallContext::prepareSupportedActions();
             elseif( $this->utilType == 'securityprofile' )
                 SecurityProfileCallContext::prepareSupportedActions();
+            elseif( $this->utilType == 'securityprofilegroup' )
+                SecurityProfileGroupCallContext::prepareSupportedActions();
             elseif( $this->utilType == 'schedule' )
                 ScheduleCallContext::prepareSupportedActions();
+            elseif( $this->utilType == 'application' )
+                ApplicationCallContext::prepareSupportedActions();
+            elseif( $this->utilType == 'threat' )
+                ThreatCallContext::prepareSupportedActions();
+            elseif( $this->utilType == 'device' )
+                DeviceCallContext::prepareSupportedActions();
 
-            PH::print_stdout( "OK!" );
+
         }
     }
 
@@ -368,6 +507,7 @@ class UTIL
                     PH::print_stdout( "" );
                     PH::print_stdout( "" );
                 }
+
             }
 
 
@@ -397,23 +537,37 @@ class UTIL
 
     public function display_error_usage_exit($msg)
     {
-        fwrite(STDERR, PH::boldText("\n**ERROR** ") . $msg . "\n\n");
+        if( PH::$shadow_json )
+            PH::$JSON_OUT['error'] = $msg;
+        else
+            fwrite(STDERR, PH::boldText("\n**ERROR** ") . $msg . "\n\n");
         $this->display_usage_and_exit(TRUE);
     }
 
     public function usageMessage()
     {
-        PH::print_stdout( PH::boldText("USAGE: ") . "php " . basename($this->PHP_FILE) . " in=inputfile.xml out=outputfile.xml location=all|shared|sub " .
-            "actions=action1:arg1 ['filter=(type is.group) or (name contains datacenter-)']" );
-        PH::print_stdout( "php " . basename($this->PHP_FILE) . " listactions   : list supported actions" );
-        PH::print_stdout( "php " . basename($this->PHP_FILE) . " listfilters   : list supported filter" );
-        PH::print_stdout( "php " . basename($this->PHP_FILE) . " help          : more help messages" );
-        PH::print_stdout( PH::boldText("\nExamples:") );
-        PH::print_stdout( " - php " . basename($this->PHP_FILE) . " type=panorama in=api://192.169.50.10 location=DMZ-Firewall-Group actions=displayReferences 'filter=(name eq Mail-Host1)'" );
-        PH::print_stdout( " - php " . basename($this->PHP_FILE) . " type=panos in=config.xml out=output.xml location=any actions=delete" );
-        PH::print_stdout( "" );
-        PH::print_stdout( "" );
-        PH::print_stdout( PH::boldText("PAN-OS API connections for version < 9.0 now need additional argument: 'shadow-apikeynohidden'") );
+        $string = PH::boldText("USAGE: ") . "php " . $this->PHP_FILE . " in=inputfile.xml out=outputfile.xml location=any|shared|sub " .
+                "actions=action1:arg1 ['filter=(type is.group) or (name contains datacenter-)']\n";
+
+        $string .= "php " . $this->PHP_FILE . " listactions   : list supported actions\n";
+
+        $string .= "php " . $this->PHP_FILE . " listfilters   : list supported filter\n";
+
+        $string .= "php " . $this->PHP_FILE . " help          : more help messages";
+
+        $string .= PH::boldText("\nExamples:\n");
+
+        $string .= " - php " . $this->PHP_FILE . " in=api://192.169.50.10 location=DMZ-Firewall-Group actions=displayReferences 'filter=(name eq Mail-Host1)'";
+
+        $string .= " - php " . $this->PHP_FILE . " in=config.xml out=output.xml location=any actions=delete\n";
+
+        $string .= "\n\n";
+
+        $string .= PH::boldText("PAN-OS API connections for version < 9.0 now need additional argument: 'shadow-apikeynohidden'")."\n";
+
+
+        PH::print_stdout( $string );
+        PH::$JSON_TMP['usage'] = $string;
     }
 
     public function display_usage_and_exit($shortMessage = FALSE)
@@ -421,7 +575,11 @@ class UTIL
         if( $this->usageMsg == "" )
             $this->usageMessage();
         else
+        {
             PH::print_stdout( $this->usageMsg );
+            PH::$JSON_TMP['usage'] = $this->usageMsg;
+        }
+
         PH::print_stdout( "" );
         PH::print_stdout( "" );
 
@@ -434,21 +592,45 @@ class UTIL
             ksort($this->supportedArguments);
             foreach( $this->supportedArguments as &$arg )
             {
-                $tmp_text = " - " . PH::boldText($arg['niceName']);
+
+                PH::$JSON_TMP['arguments'][$arg['niceName']]['name'] = $arg['niceName'];
+
+                $tmp_text = PH::boldText($arg['niceName']);
                 if( isset($arg['argDesc']) )
+                {
                     $tmp_text .= '=' . $arg['argDesc'] ;
+                    PH::$JSON_TMP['arguments'][$arg['niceName']]['argdescription'] = $arg['argDesc'];
+                }
+
                 //."=";
-                PH::print_stdout( $tmp_text );
+                PH::print_stdout( " - " .$tmp_text );
+                PH::$JSON_TMP['arguments'][$arg['niceName']]['example'] = $tmp_text;
+
+
+
                 if( isset($arg['shortHelp']) )
+                {
                     PH::print_stdout( "     " . $arg['shortHelp'] );
+                    PH::$JSON_TMP['arguments'][$arg['niceName']]['shorthelp'] = $arg['shortHelp'];
+                }
+
 
                 PH::print_stdout( "" );
             }
+
+            PH::print_stdout( PH::$JSON_TMP, false, 'help' );
+            PH::$JSON_TMP = array();
+
 
             PH::print_stdout( "" );
 
         }
 
+        if( PH::$shadow_json )
+        {
+            PH::$JSON_OUT['log'] = PH::$JSON_OUTlog;
+            print json_encode( PH::$JSON_OUT, JSON_PRETTY_PRINT );
+        }
         exit(1);
     }
 
@@ -496,6 +678,10 @@ class UTIL
                 $this->display_error_usage_exit('"filter" argument is not a valid string');
         }
 
+        if( isset(PH::$args['apiTimeout']) )
+            $this->apiTimeoutValue = PH::$args['apiTimeout'];
+
+
         if( isset(PH::$args['expedition']) )
         {
             $this->expedition = PH::$args['expedition'];
@@ -515,6 +701,10 @@ class UTIL
             unset($tmp_expedition);
         }
 
+        if( isset(PH::$args['auditcomment']) )
+        {
+            $this->auditComment = PH::$args['auditcomment'];
+        }
 
         $this->inputValidation();
 
@@ -548,8 +738,15 @@ class UTIL
 
         if( $this->configInput['status'] == 'fail' )
         {
-            fwrite(STDERR, "\n\n**ERROR** " . $this->configInput['msg'] . "\n\n");
-            exit(1);
+            if( isset( $_SERVER['REQUEST_METHOD'] ) )
+            {
+                throw new Exception( "**ERROR** " . $this->configInput['msg'], 404);
+            }
+            else
+            {
+                fwrite(STDERR, "\n\n**ERROR** " . $this->configInput['msg'] . "\n\n");
+                exit(1);
+            }
         }
 
         if( $this->configInput['type'] == 'file' )
@@ -563,11 +760,7 @@ class UTIL
             {
                 $this->configOutput = PH::$args['out'];
                 if( !is_string($this->configOutput) || strlen($this->configOutput) < 1 )
-                    display_error_usage_exit('"out" argument is not a valid string');
-
-                // destroy destination file if it exists
-                if( file_exists($this->configOutput) && is_file($this->configOutput) )
-                    unlink($this->configOutput);
+                    $this->display_error_usage_exit('"out" argument is not a valid string');
             }
 
             $this->apiMode = FALSE;
@@ -575,19 +768,36 @@ class UTIL
                 derr("file '{$this->configInput['filename']}' not found");
 
             $this->xmlDoc = new DOMDocument();
-            PH::print_stdout( " - Reading XML file from disk... " );
+            PH::print_stdout( " - Reading XML file from disk... ".$this->configInput['filename'] );
             if( !$this->xmlDoc->load($this->configInput['filename'], XML_PARSE_BIG_LINES) )
                 derr("error while reading xml config file");
-            PH::print_stdout( "OK!" );
+
         }
         elseif( $this->configInput['type'] == 'api' )
         {
             if( $this->debugAPI )
                 $this->configInput['connector']->setShowApiCalls(TRUE);
             $this->apiMode = TRUE;
+
+            $this->configInput['connector']->setUTILtype( $this->utilType );
+            if( !empty(PH::$args['actions']) )
+                $this->configInput['connector']->setUTILaction( PH::$args['actions'] );
+
+
             PH::print_stdout( " - Downloading config from API... " );
-            $this->xmlDoc = $this->configInput['connector']->getCandidateConfig();
-            PH::print_stdout( "OK!" );
+
+
+            if( !isset($this->configInput['filename']) || $this->configInput['filename'] == '' || $this->configInput['filename'] == 'candidate-config' )
+                $this->xmlDoc = $this->configInput['connector']->getCandidateConfig( $this->apiTimeoutValue );
+            elseif( $this->configInput['filename'] == 'running-config' )
+                $this->xmlDoc = $this->configInput['connector']->getRunningConfig();
+            elseif( $this->configInput['filename'] == 'merged-config' || $this->configInput['filename'] == 'merged' )
+                $this->xmlDoc = $this->configInput['connector']->getMergedConfig();
+            elseif( $this->configInput['filename'] == 'panorama-pushed-config' || $this->configInput['filename'] == 'panorama-pushed' )
+                $this->xmlDoc = $this->configInput['connector']->getPanoramaPushedConfig();
+            else
+                $this->xmlDoc = $this->configInput['connector']->getSavedConfig($this->configInput['filename']);
+
         }
         else
             derr('not supported yet');
@@ -605,12 +815,20 @@ class UTIL
         $xpathResult = $xpathResult->item(0);
         $fawkes_config_version = DH::findAttribute('fawkes-config-version', $xpathResult);
         if( $fawkes_config_version != null )
-            print "FAWKES-CONFIG-VERSION: ".$fawkes_config_version."\n";
+        {
+            PH::print_stdout( " - FAWKES-CONFIG-VERSION: ".$fawkes_config_version );
+            PH::print_stdout( array( $fawkes_config_version ), false, "fawkes-config-version" );
+        }
+
         else
         {
             $fawkes_config_version = DH::findAttribute('fawkes-config', $xpathResult);
             if( $fawkes_config_version != null )
-                print "FAWKES-CONFIG-VERSION: ".$fawkes_config_version."\n";
+            {
+                PH::print_stdout( " - FAWKES-CONFIG-VERSION: ".$fawkes_config_version );
+                PH::print_stdout( array( $fawkes_config_version ), false, "fawkes-config-version" );
+            }
+
         }
 
 
@@ -638,25 +856,7 @@ class UTIL
                 $inputConnector = $this->configInput['connector'];
 
                 PH::print_stdout( " - 'loadPanoramaPushedConfig' was requested, downloading it through API..." );
-                $panoramaDoc = $inputConnector->getPanoramaPushedConfig();
-
-                $xpathResult = DH::findXPath('/panorama/vsys', $panoramaDoc);
-
-                if( $xpathResult === FALSE )
-                    derr("could not find any VSYS");
-
-                if( $xpathResult->length != 1 )
-                    derr("found more than 1 <VSYS>");
-
-                $fakePanorama = new PanoramaConf();
-                $fakePanorama->_fakeMode = TRUE;
-                $inputConnector->refreshSystemInfos();
-                $newDGRoot = $xpathResult->item(0);
-                $panoramaString = "<config version=\"{$inputConnector->info_PANOS_version}\"><shared></shared><devices><entry name=\"localhost.localdomain\"><device-group>" . DH::domlist_to_xml($newDGRoot->childNodes) . "</device-group></entry></devices></config>";
-
-                $fakePanorama->load_from_xmlstring($panoramaString);
-
-                $this->pan = new PANConf($fakePanorama);
+                $this->pan = $inputConnector->loadPanoramaPushdedConfig( $this->apiTimeoutValue );
             }
             else
                 $this->pan = new PANConf();
@@ -669,6 +869,7 @@ class UTIL
             derr( "configType: ".$this->configType." not supported." );
 
         PH::print_stdout( " - Detected platform type is '{$this->configType}'" );
+        PH::print_stdout( array( get_class( $this->pan ) ), false, "platform" );
 
         if( isset($this->configInput['type']) && $this->configInput['type'] == 'api' )
             $this->pan->connector = $this->configInput['connector'];
@@ -689,25 +890,49 @@ class UTIL
         else
         {
             if( $this->configType == 'panos' )
-            {
-                PH::print_stdout( " - No 'location' provided so using default ='vsys1'" );
                 $this->objectsLocation = 'vsys1';
-            }
             elseif( $this->configType == 'panorama' )
-            {
-                PH::print_stdout( " - No 'location' provided so using default ='shared'" );
                 $this->objectsLocation = 'shared';
-            }
             elseif( $this->configType == 'fawkes' )
-            {
-                PH::print_stdout( " - No 'location' provided so using default ='All'" );
                 $this->objectsLocation = 'All';
-            }
+
+            if( get_class( $this ) == "NETWORKUTIL" )
+                $this->objectsLocation = 'any';
+
+            PH::print_stdout( " - No 'location' provided so using default ='".$this->objectsLocation."'" );
         }
+        PH::print_stdout( array( $this->objectsLocation ), false, "location");
+        //
+        // Template provided in CLI ?
+        //
+        if( isset(PH::$args['template']) )
+        {
+            $this->objectsTemplate = PH::$args['template'];
+            if( !is_string($this->objectsTemplate) || strlen($this->objectsTemplate) < 1 )
+                $this->display_error_usage_exit('"location" argument is not a valid string');
+        }
+        else
+        {
+            if( $this->configType == 'panos' )
+                $this->objectsTemplate = 'any';
+            elseif( $this->configType == 'panorama' )
+                $this->objectsTemplate = 'any';
+            elseif( $this->configType == 'fawkes' )
+                $this->objectsTemplate = 'any';
+
+            if( get_class( $this ) == "NETWORKUTIL" )
+                $this->objectsTemplate = 'any';
+
+            PH::print_stdout( " - No 'template' provided so using default ='".$this->objectsTemplate."'" );
+        }
+        PH::print_stdout( array( $this->objectsTemplate ), false, "template");
     }
 
-    public function extracting_actions()
+    public function extracting_actions( $utilType = null)
     {
+        if( $utilType != null )
+            $this->utilType = $utilType;
+
         $tmp_array = $this->supportedActions();
 
         //
@@ -738,21 +963,38 @@ class UTIL
 
             //variable based on which util script is calling the method
             if( $this->utilType == 'tag' )
-                $context = new TagCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries);
+                $context = new TagCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'address' )
-                $context = new AddressCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries);
+                $context = new AddressCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'service' )
-                $context = new ServiceCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries);
+                $context = new ServiceCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'rule' )
-                $context = new RuleCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries);
-            elseif( $this->utilType == 'zone' )
-                $context = new ZoneCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries);
-            elseif( $this->utilType == 'vsys' )
-                $context = new VsysCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries);
+                $context = new RuleCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+
             elseif( $this->utilType == 'securityprofile' )
-                $context = new SecurityProfileCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries);
+                $context = new SecurityProfileCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+            elseif( $this->utilType == 'securityprofilegroup' )
+                $context = new SecurityProfileGroupCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'schedule' )
-                $context = new ScheduleCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries);
+                $context = new ScheduleCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+            elseif( $this->utilType == 'application' )
+                $context = new ApplicationCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+            elseif( $this->utilType == 'threat' )
+                $context = new ThreatCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+
+            elseif( $this->utilType == 'device' )
+                $context = new DeviceCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+            elseif( $this->utilType == 'vsys' )
+                $context = new VsysCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+
+            elseif( $this->utilType == 'zone' )
+                $context = new ZoneCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+            elseif( $this->utilType == 'virtualwire' )
+                $context = new VirtualWireCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+            elseif( $this->utilType == 'routing' )
+                $context = new RoutingCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+            elseif( $this->utilType == 'interface' )
+                $context = new InterfaceCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
 
             $context->baseObject = $this->pan;
             if( isset($this->configInput['type']) && $this->configInput['type'] == 'api' )
@@ -788,6 +1030,7 @@ class UTIL
             }
 
             PH::print_stdout( " - filter after sanitization : " . $this->objectFilterRQuery->sanitizedString() );
+            PH::print_stdout( array( $this->objectFilterRQuery->sanitizedString() ), false, "filter");
         }
         // --------------------
     }
@@ -798,7 +1041,7 @@ class UTIL
         //
         // load the config
         //
-        PH::print_stdout( " - Loading configuration through PAN-PHP-FRAMEWORK library... " );
+        PH::print_stdout( " - Loading configuration through PAN-OS-PHP library... " );
 
         $this->loadStart();
 
@@ -806,8 +1049,27 @@ class UTIL
 
         $this->loadEnd();
 
-        PH::print_stdout( "OK! ($this->loadElapsedTime seconds, $this->loadUsedMem memory)" );
+        if( isset($this->configInput['type']) && $this->configInput['type'] == 'api' )
+        {
+            //Todo: if AuditComment are only needed if setting _auditComment is forced, please think about additional check
+            #if( isset($this->pan->_auditComment) ){
+                #$this->configInput['connector']->setAuditCommentBool( $this->pan->_auditComment );
+                $this->configInput['connector']->setAuditCommentBool( TRUE );
+                if( $this->auditComment !== null )
+                    $this->configInput['connector']->setAuditComment( $this->auditComment);
+            #}
+        }
+
+
+        PH::print_stdout( "   ($this->loadElapsedTime seconds, $this->loadUsedMem memory)" );
+        PH::print_stdout( array( "value" => $this->loadElapsedTime, "type" => " seconds") , false, "loadtime");
+
+        PH::print_stdout( array( "value" => $this->loadArrayMem[0], "type" => $this->loadArrayMem[1]) , false, "loadmemory");
         // --------------------
+
+        $panc_version = $this->pan->appStore->predefinedStore_appid_version;
+        PH::print_stdout( " - PAN-OS APP-ID version: ".$panc_version );
+        PH::print_stdout( array( $panc_version ), false, "PAN-OS APP-ID version" );
     }
 
     public function loadStart()
@@ -821,7 +1083,7 @@ class UTIL
         $this->loadEndTime = microtime(TRUE);
         $this->loadEndMem = memory_get_usage(TRUE);
         $this->loadElapsedTime = number_format(($this->loadEndTime - $this->loadStartTime), 2, '.', '');
-        $this->loadUsedMem = convert($this->loadEndMem - $this->loadStartMem);
+        $this->loadUsedMem = convert($this->loadEndMem - $this->loadStartMem, $this->loadArrayMem);
     }
 
     public function location_filter()
@@ -836,26 +1098,88 @@ class UTIL
          */
         $this->objectsLocation = explode(',', $this->objectsLocation);
 
-        foreach( $this->objectsLocation as &$location )
+        foreach( $this->objectsLocation as $key => &$location )
         {
             if( strtolower($location) == 'shared' )
-                $location = 'shared';
+                $this->objectsLocation[$key] = 'shared';
             else if( strtolower($location) == 'any' )
-                $location = 'any';
+                $this->objectsLocation[$key] = 'any';
             else if( strtolower($location) == 'all' )
             {
                 if( $this->configType == 'fawkes' )
-                    $location = 'All';
+                    $this->objectsLocation[$key] = 'All';
                 else
-                    $location = 'any';
+                    $this->objectsLocation[$key] = 'any';
             }
 
         }
         unset($location);
 
         $this->objectsLocation = array_unique($this->objectsLocation);
+        if( count( $this->objectsLocation ) == 1 )
+        {
+            $this->location = $this->objectsLocation[0];
+            if( $this->location == 'shared' )
+            {
+                $this->sub = $this->pan;
+            }
+            elseif( $this->location == 'any' )
+            {
+                #
+            }
+            else
+            {
+                $this->sub = $this->pan->findSubSystemByName($this->location);
+                if( $this->sub === null )
+                {
+                    $this->locationNotFound($this->location);
+                }
+            }
+        }
 
+        //
+        // Template Filter Processing
+        //
 
+        // <editor-fold desc=" ****  Location Filter Processing  ****" defaultstate="collapsed" >
+        $this->objectsTemplate = explode(',', $this->objectsTemplate);
+
+        foreach( $this->objectsTemplate as $key => &$location )
+        {
+            if( strtolower($location) == 'any' )
+                $this->objectsTemplate[$key] = 'any';
+            else if( strtolower($location) == 'all' )
+            {
+                $this->objectsTemplate[$key] = 'any';
+            }
+
+        }
+        unset($location);
+
+        $this->objectsTemplate = array_unique($this->objectsTemplate);
+
+        if( count( $this->objectsTemplate ) == 1 )
+        {
+            $this->templateName = $this->objectsTemplate[0];
+
+            if( $this->templateName == 'shared' )
+            {
+                #$this->sub = $this->pan;
+            }
+            elseif( $this->templateName == 'any' )
+            {
+                #
+            }
+            else
+            {
+                $this->template = $this->pan->findTemplate($this->templateName);
+                if( $this->template === null )
+                {
+                    derr("template: " . $this->template . " not found!");
+                    #$this->locationNotFound($this->location);
+                }
+            }
+        }
     }
 
     public function location_filter_object()
@@ -875,53 +1199,66 @@ class UTIL
                         $this->objectsToProcess[] = array('store' => $this->pan->addressStore, 'objects' => $this->pan->addressStore->all(null, TRUE));
                     elseif( $this->utilType == 'service' )
                         $this->objectsToProcess[] = array('store' => $this->pan->serviceStore, 'objects' => $this->pan->serviceStore->all(null, TRUE));
-                    #elseif( $this->utilType == 'rule' )
-                    #$this->objectsToProcess[] = Array('store' => $this->pan->ruleStore, 'objects' => $this->pan->ruleStore->getall());
                     elseif( $this->utilType == 'tag' )
                         $this->objectsToProcess[] = array('store' => $this->pan->tagStore, 'objects' => $this->pan->tagStore->getall());
                     elseif( $this->utilType == 'vsys' )
                         $this->objectsToProcess[] = array('store' => $this->pan, 'objects' => $this->pan->getVirtualSystems());
+                    elseif( $this->utilType == 'securityprofilegroup' )
+                        $this->objectsToProcess[] = array('store' => $this->pan->securityProfileGroupStore, 'objects' => $this->pan->securityProfileGroupStore->getAll());
                     elseif( $this->utilType == 'schedule' )
                         $this->objectsToProcess[] = array('store' => $this->pan->scheduleStore, 'objects' => $this->pan->scheduleStore->getall());
+                    elseif( $this->utilType == 'application' )
+                        $this->objectsToProcess[] = array('store' => $this->pan->appStore, 'objects' => $this->pan->appStore->apps());
+                    elseif( $this->utilType == 'threat' )
+                        $this->objectsToProcess[] = array('store' => $this->pan->threatStore, 'objects' => $this->pan->threatStore->getAll());
 
                     $locationFound = TRUE;
+                    //Todo: check if needed
+                    //self::GlobalInitAction($this->pan);
                 }
                 foreach( $this->pan->getVirtualSystems() as $sub )
                 {
                     if( isset(PH::$args['loadpanoramapushedconfig']) )
                     {
-                        //not yet implemented
-                        //missing stuff for all object store; how to get from panorama pushed config store the information;
-                    }
+                        if( $this->utilType == 'address' )
+                            $this->objectsToProcess[] = array('store' => $sub->addressStore, 'objects' => $sub->addressStore->resultingObjectSet());
+                        elseif( $this->utilType == 'service' )
+                            $this->objectsToProcess[] = array('store' => $sub->serviceStore, 'objects' => $sub->serviceStore->resultingObjectSet());
+                        elseif( $this->utilType == 'tag' )
+                            $this->objectsToProcess[] = array('store' => $sub->tagStore, 'objects' => $sub->tagStore->resultingObjectSet());
+                        elseif( $this->utilType == 'securityprofilegroup' )
+                            $this->objectsToProcess[] = array('store' => $sub->securityProfileGroupStore, 'objects' => $sub->securityProfileGroupStore->resultingObjectSet());
+                        elseif( $this->utilType == 'schedule' )
+                            $this->objectsToProcess[] = array('store' => $sub->scheduleStore, 'objects' => $sub->scheduleStore->resultingObjectSet());
+                        elseif( $this->utilType == 'application' )
+                            $this->objectsToProcess[] = array('store' => $sub->appStore, 'objects' => $sub->appStore->resultingObjectSet());
 
-                    #else{
-                    #if( ($location == 'any' || $location == 'all' || $location == $sub->name() && !isset($ruleStoresToProcess[$sub->name()])) )
-                    if( ($location == 'any' || $location == $sub->name() && !isset($ruleStoresToProcess[$sub->name()])) )
+                        $locationFound = TRUE;
+                        self::GlobalInitAction($sub);
+                    }
+                    elseif( ($location == 'any' || $location == $sub->name() && !isset($ruleStoresToProcess[$sub->name()])) )
                     {
                         if( $this->utilType == 'address' )
                             $this->objectsToProcess[] = array('store' => $sub->addressStore, 'objects' => $sub->addressStore->all(null, TRUE));
                         elseif( $this->utilType == 'service' )
                             $this->objectsToProcess[] = array('store' => $sub->serviceStore, 'objects' => $sub->serviceStore->all(null, TRUE));
-                        #elseif( $this->utilType == 'rule' )
-                        #$this->objectsToProcess[] = Array('store' => $sub->ruleStore, 'objects' => $sub->ruleStore->getall());
                         elseif( $this->utilType == 'tag' )
                             $this->objectsToProcess[] = array('store' => $sub->tagStore, 'objects' => $sub->tagStore->getall());
+                        elseif( $this->utilType == 'securityprofilegroup' )
+                            $this->objectsToProcess[] = array('store' => $sub->securityProfileGroupStore, 'objects' => $sub->securityProfileGroupStore->getAll());
                         elseif( $this->utilType == 'schedule' )
                             $this->objectsToProcess[] = array('store' => $sub->scheduleStore, 'objects' => $sub->scheduleStore->getall());
-                        #elseif( $this->utilType == 'vsys' )
-                        #    $this->objectsToProcess[] = Array('store' => $sub->owner, 'objects' => $sub);
-
-
-                        elseif( $this->utilType == 'zone' )
-                            $this->objectsToProcess[] = array('store' => $sub->zoneStore, 'objects' => $sub->zoneStore->getall());
+                        elseif( $this->utilType == 'application' )
+                            $this->objectsToProcess[] = array('store' => $sub->appStore, 'objects' => $sub->appStore->apps());
 
 
                         $locationFound = TRUE;
+                        self::GlobalInitAction($sub);
                     }
                     #}
 
 
-                    self::GlobalInitAction($sub);
+
                 }
             }
             else
@@ -932,17 +1269,32 @@ class UTIL
                         $this->objectsToProcess[] = array('store' => $this->pan->addressStore, 'objects' => $this->pan->addressStore->all(null, TRUE));
                     elseif( $this->utilType == 'service' )
                         $this->objectsToProcess[] = array('store' => $this->pan->serviceStore, 'objects' => $this->pan->serviceStore->all(null, TRUE));
-                    #elseif( $this->utilType == 'rule' )
-                    #$this->objectsToProcess[] = Array('store' => $this->pan->ruleStore, 'objects' => $this->pan->ruleStore->getall());
+
                     elseif( $this->utilType == 'tag' )
                         $this->objectsToProcess[] = array('store' => $this->pan->tagStore, 'objects' => $this->pan->tagStore->getall());
+                    elseif( $this->utilType == 'securityprofilegroup' )
+                        $this->objectsToProcess[] = array('store' => $this->pan->securityProfileGroupStore, 'objects' => $this->pan->securityProfileGroupStore->getAll());
                     elseif( $this->utilType == 'schedule' )
                         $this->objectsToProcess[] = array('store' => $this->pan->scheduleStore, 'objects' => $this->pan->scheduleStore->getall());
-                    elseif( $this->utilType == 'zone' )
-                        $this->objectsToProcess[] = array('store' => $this->pan->zoneStore, 'objects' => $this->pan->zoneStore->getall());
-
+                    elseif( $this->utilType == 'application' )
+                        $this->objectsToProcess[] = array('store' => $this->pan->appStore, 'objects' => $this->pan->appStore->apps());
+                    elseif( $this->utilType == 'threat' )
+                        $this->objectsToProcess[] = array('store' => $this->pan->threatStore, 'objects' => $this->pan->threatStore->getAll());
 
                     $locationFound = TRUE;
+
+                    self::GlobalInitAction($this->pan);
+                }
+                elseif( $this->configType == 'fawkes' && ($location == 'ANY' || $location == 'any') )
+                {
+                    if( $this->utilType == 'application' )
+                        $this->objectsToProcess[] = array('store' => $this->pan->appStore, 'objects' => $this->pan->appStore->apps());
+                    elseif( $this->utilType == 'threat' )
+                        $this->objectsToProcess[] = array('store' => $this->pan->threatStore, 'objects' => $this->pan->threatStore->getAll());
+
+                    $locationFound = TRUE;
+
+                    self::GlobalInitAction($this->pan);
                 }
 
 
@@ -966,20 +1318,19 @@ class UTIL
                             $this->objectsToProcess[] = array('store' => $sub->addressStore, 'objects' => $sub->addressStore->all(null, TRUE));
                         elseif( $this->utilType == 'service' )
                             $this->objectsToProcess[] = array('store' => $sub->serviceStore, 'objects' => $sub->serviceStore->all(null, TRUE));
-                        #elseif( $this->utilType == 'rule' )
-                        #$this->objectsToProcess[] = Array('store' => $sub->ruleStore, 'objects' => $sub->ruleStore->getall());
+
                         elseif( $this->utilType == 'tag' )
                             $this->objectsToProcess[] = array('store' => $sub->tagStore, 'objects' => $sub->tagStore->getall());
+                        elseif( $this->utilType == 'securityprofilegroup' )
+                            $this->objectsToProcess[] = array('store' => $sub->securityProfileGroupStore, 'objects' => $sub->securityProfileGroupStore->getAll());
                         elseif( $this->utilType == 'schedule' )
                             $this->objectsToProcess[] = array('store' => $sub->scheduleStore, 'objects' => $sub->scheduleStore->getall());
-                        elseif( $this->utilType == 'zone' )
-                            $this->objectsToProcess[] = array('store' => $sub->zoneStore, 'objects' => $sub->zoneStore->getall());
-
-
+                        elseif( $this->utilType == 'application' )
+                            $this->objectsToProcess[] = array('store' => $sub->appStore, 'objects' => $sub->appStore->apps());
+                        
                         $locationFound = TRUE;
+                        $this->GlobalInitAction($sub);
                     }
-
-                    $this->GlobalInitAction($sub);
                 }
             }
 
@@ -998,7 +1349,11 @@ class UTIL
             $this->pan = $pan;
 
         PH::print_stdout( "" );
-        PH::print_stdout( "ERROR: location '$location' was not found. Here is a list of available ones:" );
+        $errorString = "ERROR: location '$location' was not found. Here is a list of available ones:";
+        PH::print_stdout( $errorString );
+        if( PH::$shadow_json )
+            PH::$JSON_OUT['error'] = $errorString;
+
         if( $this->configType != 'fawkes' )
             PH::print_stdout( " - shared" );
         if( $this->configType == 'panos' )
@@ -1027,16 +1382,24 @@ class UTIL
         }
         PH::print_stdout( "" );
         PH::print_stdout( "" );
+
+        if( PH::$shadow_json )
+        {
+            PH::$JSON_OUT['log'] = PH::$JSON_OUTlog;
+            print json_encode( PH::$JSON_OUT, JSON_PRETTY_PRINT );
+        }
         exit(1);
     }
 
-    public function GlobalInitAction($sub)
+    public function GlobalInitAction($sub, $ruletype = null)
     {
         foreach( $this->doActions as $doAction )
         {
             if( $doAction->hasGlobalInitAction() )
             {
                 $doAction->subSystem = $sub;
+                if( $ruletype != null )
+                    $doAction->ruletype = $ruletype;
                 $doAction->executeGlobalInitAction();
             }
         }
@@ -1057,15 +1420,31 @@ class UTIL
             $objects = &$objectsRecord['objects'];
 
             PH::print_stdout( "" );
-            PH::print_stdout( "* processing store '" . PH::boldText($store->toString()) . "' that holds " . count($objects) . " objects" );
+            $string = "* processing store '" . PH::boldText($store->toString()) . "' that holds " . count($objects) . " objects";
+            PH::print_stdout( $string );
+
+            PH::$JSON_TMP = array();
+            PH::$JSON_TMP['header'] = $string;
 
             foreach( $this->doActions as $doAction )
             {
                 if( is_object($store->owner) )
+                {
                     $doAction->subSystem = $store->owner;
+                    PH::$JSON_TMP['sub']['name'] = $store->owner->name();
+                    PH::$JSON_TMP['sub']['type'] = get_class( $store->owner );
+                }
+
                 else
+                {
                     $doAction->subSystem = $store;
+                    PH::$JSON_TMP['sub']['name'] = $store->name();
+                    PH::$JSON_TMP['sub']['type'] = "shared";
+                }
+
             }
+
+            PH::$JSON_TMP['sub']['store'] = get_class( $store );
 
             if( count($objects) > 0 )
             {
@@ -1098,9 +1477,22 @@ class UTIL
             elseif( is_object($store) )
                 $tmp_name = $store->name();
 
+            if( isset($store->owner->owner) && is_object($store->owner->owner) )
+                $tmp_platform = get_class( $store->owner->owner );
+            elseif( isset($store->owner) && is_object($store->owner) )
+                $tmp_platform = get_class( $store->owner );
+            else
+                $tmp_platform = get_class( $store );
+
+
             PH::print_stdout( "" );
             PH::print_stdout( "* objects processed in DG/Vsys '{$tmp_name}' : $subObjectsProcessed" );
             PH::print_stdout( "" );
+            PH::$JSON_TMP['sub']['summary']['processed'] = $subObjectsProcessed;
+            PH::$JSON_TMP['sub']['summary']['available'] = $store->count();
+
+            PH::print_stdout( PH::$JSON_TMP, false, $tmp_platform );
+            PH::$JSON_TMP = array();
         }
         // </editor-fold>
     }
@@ -1125,13 +1517,18 @@ class UTIL
             /** @var PANConf|PanoramaConf|FawkesConf $pan */
             $pan = $this->pan;
 
-            $pan->display_statistics();
+            $mainConnector = null;
+            if( $this->configInput['type'] == 'api' )
+                $mainConnector = findConnector($pan);
+
+            $pan->display_statistics( $mainConnector );
 
 
             $processedLocations = array();
             foreach( $this->objectsToProcess as &$record )
             {
-                if( get_class($record['store']->owner) != 'PanoramaConf' && get_class($record['store']->owner) != 'PANConf' )
+
+                if( (get_class($record['store']->owner) != 'PanoramaConf' && get_class($record['store']->owner) != 'PANConf') )
                 {
                     /** @var DeviceGroup|VirtualSystem|Container|DeviceCloud $sub */
                     $sub = $record['store']->owner;
@@ -1140,8 +1537,32 @@ class UTIL
 
                     $processedLocations[$sub->name()] = TRUE;
 
+                    if( isset(PH::$args['loadpanoramapushedconfig']) && get_class( $this->pan ) != 'PanoramaConf' )
+                        $sub->parentDeviceGroup->display_statistics();
+                    
                     $sub->display_statistics();
+
+
                 }
+            }
+
+            if( isset(PH::$args['cycleconnectedfirewalls']) && $this->configType == 'panorama' && $this->configInput['type'] == 'api' )
+            {
+                $managedSerials = $pan->managedFirewallsSerialsModel;
+                foreach( $managedSerials as $serial => $fw )
+                {
+                    $fwconnector = new PanAPIConnector($mainConnector->apihost, $mainConnector->apikey, 'panos-via-panorama', $serial);
+                    $fwconnector->setShowApiCalls( $mainConnector->showApiCalls );
+
+                    $firewall = $fwconnector->loadPanoramaPushdedConfig( $this->apiTimeoutValue );
+                    $firewall->connector = $fwconnector;
+
+                    $doc = $fwconnector->getMergedConfig();
+                    $firewall->load_from_domxml( $doc );
+
+                    $firewall->display_statistics( $fwconnector );
+                }
+
             }
         }
     }
@@ -1159,24 +1580,40 @@ class UTIL
         {
             if( $this->configOutput != '/dev/null' )
             {
-                //          save_to_file($fileName, $printMessage=true, $lineReturn = true, $indentingXml = 0, $indentingXmlIncreament = 1 )
-                $this->pan->save_to_file($this->configOutput, $printMessage, $lineReturn, $indentingXml, $indentingXmlIncreament);
+                if( PH::$shadow_json )
+                {
+                    //store it JSON out
+                    PH::$JSON_TMP['xmldoc'] = &DH::dom_to_xml($this->pan->xmlroot, $indentingXml, $lineReturn, -1, $indentingXmlIncreament);
+                    PH::print_stdout(PH::$JSON_TMP, false, "out");
+                    PH::$JSON_TMP = array();
+                }
+                elseif( $this->configOutput != 'true' )
+                {
+                    // destroy destination file if it exists
+                    if( file_exists($this->configOutput) && is_file($this->configOutput) )
+                        unlink($this->configOutput);
+
+                    $this->pan->save_to_file($this->configOutput, $printMessage, $lineReturn, $indentingXml, $indentingXmlIncreament);
+                }
             }
         }
 
-
         if( $additional_output )
         {
+            $arg_array = array();
             if( $this->configInput['type'] != 'api' && $this->configOutput == "/dev/null" )
             {
                 PH::print_stdout( "" );
                 PH::print_stdout( "argument 'out' was used with '/dev/null' - nothing is saved to an output file" );
+                $arg_array['out'] = "/dev/null";
             }
 
             if( isset(PH::$args['actions']) && PH::$args['actions'] == "display" )
             {
                 PH::print_stdout( "argument 'actions' was used with 'display'" );
+                $arg_array['actions'] = "display";
             }
+            PH::print_stdout( $arg_array, false, 'argument' );
         }
 
         $this->log->info("END UTIL: " . $this->PHP_FILE);
@@ -1209,5 +1646,25 @@ class UTIL
     static public function shadow_ignoreInvalidAddressObjects()
     {
         PH::$ignoreInvalidAddressObjects = TRUE;
+    }
+
+    public function endOfScript()
+    {
+
+        $runtime = number_format((microtime(TRUE) - $this->runStartTime), 2, '.', '');
+        PH::print_stdout( array( 'value' => $runtime, 'type' => "seconds" ), false,'runtime' );
+
+        if( PH::$shadow_json )
+        {
+            PH::$JSON_OUT['log'] = PH::$JSON_OUTlog;
+            print json_encode( PH::$JSON_OUT, JSON_PRETTY_PRINT );
+        }
+
+        if( $this->utilType !== "custom" )
+        {
+            PH::print_stdout("");
+            PH::print_stdout("************* END OF SCRIPT " . basename($this->PHP_FILE) . " ************");
+            PH::print_stdout("");
+        }
     }
 }

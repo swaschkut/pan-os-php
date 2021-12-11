@@ -15,10 +15,10 @@ class SecurityProfileStore extends ObjStore
 
     public $nameIndex = array();
 
-    /** @var SecurityProfileURL[] */
+    /** @var URLProfile[] */
     public $_all = array();
 
-    /** @var SecurityProfileURL[] */
+    /** @var URLProfile[] */
     public $_SecurityProfiles = array();
 
 
@@ -27,40 +27,30 @@ class SecurityProfileStore extends ObjStore
 
     public static $childn = 'SecurityProfile';
 
-    private $secprof_array = array('virus', 'spyware', 'vulnerability', 'file-blocking', 'wildfire-analysis', 'url-filtering', 'custom-url-category', 'predefined-url');
-    private $secprof_fawkes_array = array('virus-and-wildfire-analysis', 'spyware', 'vulnerability', 'file-blocking', 'dns-security', 'url-filtering', 'custom-url-category', 'predefined-url');
+    private $secprof_array = array('virus', 'spyware', 'vulnerability', 'file-blocking', 'wildfire-analysis', 'url-filtering', 'custom-url-category', 'predefined-url', 'data-filtering');
+    private $secprof_fawkes_array = array('virus-and-wildfire-analysis', 'spyware', 'vulnerability', 'file-blocking', 'dns-security', 'url-filtering', 'custom-url-category', 'predefined-url', 'saas-security');
     /** @var DOMElement */
     public $securityProfileRoot;
 
 
-    /*
-     * FAWKES
-     *    <dns-security>    <spyware>   <vulnerability> <url-filtering> <file-blocking> <saas-security> <virus-and-wildfire-analysis>
-     */
-
-
-    /*
-     * FAWKES
-     * define new ProfileStore:
-     * ->VirusWildfireProfileStore; DnsSecurityProfileStore; SaasSecurityProfileStore
-     */
 
     static private $storeNameByType = array(
+        'URLProfile' => array('name' => 'URL', 'varName' => 'urlSecProf', 'xpathRoot' => 'url-filtering'),
+        'SaasSecurityProfile' => array('name' => 'SaasSecurity', 'varName' => 'saasSecProf', 'xpathRoot' => 'saas-security'),
 
-        'SecurityProfileURL' => array('name' => 'URL', 'varName' => 'urlSecProf', 'xpathRoot' => 'url-filtering'),
-        'SecurityProfileAntiVirus' => array('name' => 'Virus', 'varName' => 'avSecProf', 'xpathRoot' => 'virus'),
+        'AntiVirusProfile' => array('name' => 'Virus', 'varName' => 'avSecProf', 'xpathRoot' => 'virus'),
 
-        'SecurityProfileVirusAndWildfire' => array('name' => 'VirusAndWildfire', 'varName' => 'avawfSecProf', 'xpathRoot' => 'virus-and-wildfire-analysis'),
-        'SecurityProfileDNSSecurity' => array('name' => 'DNSSecurity', 'varName' => 'dnsSecProf', 'xpathRoot' => 'dns-security'),
+        'VirusAndWildfireProfile' => array('name' => 'VirusAndWildfire', 'varName' => 'avawfSecProf', 'xpathRoot' => 'virus-and-wildfire-analysis'),
+        'DNSSecurityProfile' => array('name' => 'DNSSecurity', 'varName' => 'dnsSecProf', 'xpathRoot' => 'dns-security'),
 
-        'SecurityProfileAntiSpyware' => array('name' => 'AntiSpyware', 'varName' => 'asSecProf', 'xpathRoot' => 'spyware'),
-        'SecurityProfileVulnerability' => array('name' => 'Vulnerability', 'varName' => 'fbSecProf', 'xpathRoot' => 'vulnerability'),
-        'SecurityProfileFileBlocking' => array('name' => 'FileBlocking', 'varName' => 'fbSecProf', 'xpathRoot' => 'file-blocking'),
-        'SecurityProfileWildFire' => array('name' => 'Wildfire', 'varName' => 'wfSecProf', 'xpathRoot' => 'wildfire-analysis'),
-        'SecurityProfileDataFiltering' => array('name' => 'Data-Filtering', 'varName' => 'dfSecProf', 'xpathRoot' => 'XYZ'),
-        'SecurityProfileDoSProtection' => array('name' => 'DoSProtection', 'varName' => 'dosSecProf', 'xpathRoot' => 'XYZ'),
+        'AntiSpywareProfile' => array('name' => 'AntiSpyware', 'varName' => 'asSecProf', 'xpathRoot' => 'spyware'),
+        'VulnerabilityProfile' => array('name' => 'Vulnerability', 'varName' => 'fbSecProf', 'xpathRoot' => 'vulnerability'),
+        'FileBlockingProfile' => array('name' => 'FileBlocking', 'varName' => 'fbSecProf', 'xpathRoot' => 'file-blocking'),
+        'WildfireProfile' => array('name' => 'Wildfire', 'varName' => 'wfSecProf', 'xpathRoot' => 'wildfire-analysis'),
+        'DataFilteringProfile' => array('name' => 'DataFiltering', 'varName' => 'dfSecProf', 'xpathRoot' => 'data-filtering'),
+        'DoSProtectionProfile' => array('name' => 'DoSProtection', 'varName' => 'dosSecProf', 'xpathRoot' => 'XYZ'),
 
-        'CustomSecurityProfileURL' => array('name' => 'customURL', 'varName' => 'customUrlSecProf', 'xpathRoot' => 'custom-url-category'),
+        'customURLProfile' => array('name' => 'customURL', 'varName' => 'customUrlSecProf', 'xpathRoot' => 'custom-url-category'),
         'PredefinedSecurityProfileURL' => array('name' => 'predefinedURL', 'varName' => 'predefinedUrlSecProf', 'xpathRoot' => 'predefined-url-category'),
 
         'DecryptionProfile' => array('name' => 'Decryption', 'varName' => 'decryptProf', 'xpathRoot' => 'decryption'),
@@ -81,17 +71,6 @@ class SecurityProfileStore extends ObjStore
         $this->owner = $owner;
         $this->o = array();
 
-        if( isset($owner->parentDeviceGroup) && $owner->parentDeviceGroup !== null )
-            $this->parentCentralStore = $owner->parentDeviceGroup->securityProfileStore;
-        elseif( isset($owner->parentContainer) && $owner->parentContainer !== null )
-        {
-            $this->parentCentralStore = $owner->parentContainer->securityProfileStore;
-        }
-        else
-            $this->findParentCentralStore();
-
-        $this->_SecurityProfiles = array();
-
         $allowedTypes = array_keys(self::$storeNameByType);
         if( !in_array($profileType, $allowedTypes) )
             derr("Error : type '$profileType' is not a valid one");
@@ -99,6 +78,23 @@ class SecurityProfileStore extends ObjStore
         $this->type = $profileType;
 
         $this->name = self::$storeNameByType[$this->type]['name'];
+
+
+        if( isset($owner->parentDeviceGroup) && $owner->parentDeviceGroup !== null && isset( $owner->parentDeviceGroup->$profileType ))
+        {
+            print "NAME: ".$owner->parentDeviceGroup->name()."\n";
+            $this->parentCentralStore = $owner->parentDeviceGroup->$profileType;
+        }
+        elseif( isset($owner->parentContainer) && $owner->parentContainer !== null && isset( $owner->parentContainer->$profileType ))
+        {
+            $this->parentCentralStore = $owner->parentContainer->$profileType;
+        }
+        else
+            $this->findParentCentralStore();
+
+        $this->_SecurityProfiles = array();
+
+
 
     }
 
@@ -145,14 +141,14 @@ class SecurityProfileStore extends ObjStore
                     continue;
                 }
                 $tmp_name = DH::findAttribute('name', $node);
-                /** @var SecurityProfileURL|CustomSecurityProfileURL $nr */
+                /** @var URLProfile|customURLProfile $nr */
                 $nr = new $this->type($tmp_name, $this);
                 $nr->load_from_domxml($node);
                 if( PH::$enableXmlDuplicatesDeletion )
                 {
                     if( isset($this->nameIndex[$nr->name()]) )
                     {
-                        mwarning("SecProf named '{$nr->name()}' is present twice on the config and was cleaned by PAN-PHP-FRAMEWORK");
+                        mwarning("SecProf named '{$nr->name()}' is present twice on the config and was cleaned by PAN-OS-PHP");
                         $duplicatesRemoval[] = $node;
                         continue;
                     }
@@ -190,9 +186,9 @@ class SecurityProfileStore extends ObjStore
     /**
      * Look for a rule named $name. Return NULL if not found
      * @param string $name
-     * @return null|SecurityProfileURL|SecurityProfileAntiVirus|CustomSecurityProfileURL
+     * @return null|URLProfile|AntiVirusProfile|customURLProfile
      */
-    public function find($name)
+    /*public function find($name)
     {
         if( !is_string($name) )
             derr("String was expected for rule name");
@@ -201,10 +197,72 @@ class SecurityProfileStore extends ObjStore
             return $this->_SecurityProfiles[ $name ];
 
         return null;
+    }*/
+
+    /**
+     * Should only be called from a CentralStore or give unpredictable results
+     * @param string $objectName
+     * @param ReferenceableObject $ref
+     * @param bool $nested
+     * @return null|URLProfile|AntiVirusProfile|customURLProfile
+     */
+    public function find($objectName, $ref = null, $nested = TRUE)
+    {
+        $f = null;
+
+        if( isset($this->fastNameToIndex[$objectName]) )
+        {
+            $foundObject = $this->_SecurityProfiles[ $objectName ];
+            $foundObject->addReference($ref);
+            return $foundObject;
+        }
+
+        /*
+        if( isset($this->_all[$objectName]) )
+        {
+            $foundObject = $this->_all[$objectName];
+            $foundObject->addReference($ref);
+            return $foundObject;
+        }*/
+
+        // when load a PANOS firewall attached to a Panorama
+        if( $nested && isset($this->panoramaShared) )
+        {
+            $f = $this->panoramaShared->find($objectName, $ref, FALSE);
+
+            if( $f !== null )
+                return $f;
+        }
+        // when load a PANOS firewall attached to a Panorama
+        if( $nested && isset($this->panoramaDG) )
+        {
+            $f = $this->panoramaDG->find($objectName, $ref, FALSE);
+            if( $f !== null )
+                return $f;
+        }
+
+        if( $nested && $this->parentCentralStore !== null )
+        {
+            $f = $this->parentCentralStore->find($objectName, $ref, $nested);
+        }
+
+        return $f;
+    }
+
+    public function findOrCreate($fn, $ref = null, $nested = TRUE)
+    {
+        $f = $this->find($fn, $ref, $nested);
+
+        if( $f !== null )
+            return $f;
+
+        $f = $this->createTmp($fn, $ref);
+
+        return $f;
     }
 
     /**
-     * @param SecurityProfileURL|SecurityProfileAntiVirus|CustomSecurityProfileURL
+     * @param URLProfile|AntiVirusProfile|customURLProfile
      * @return bool
      */
     function inStore($SecurityProfile)
@@ -220,7 +278,7 @@ class SecurityProfileStore extends ObjStore
     /**
      * Returns an Array with all SecurityProfiles inside this store
      * @param null|string|string[] $withFilter
-     * @return CustomProfileURL[]|SecurityProfileURL
+     * @return CustomProfileURL[]|URLProfile
      */
     public function &securityProfiles($withFilter = null)
     {
@@ -322,7 +380,7 @@ class SecurityProfileStore extends ObjStore
 
 
     /**
-     * @param SecurityProfileURL|CustomSecurityProfileURL|SecurityProfileAntiVirus|SecurityProfileAntiSpyware|SecurityProfileFileBlocking|SecurityProfileVulnerability|SecurityProfileWildfire|SecurityProfileVirusAndWildfire|SecurityProfileDNSSecurity|DecryptionProfile|HipObjectsProfile|HipProfilesProfile $rule
+     * @param URLProfile|customURLProfile|AntiVirusProfile|AntiSpywareProfile|FileBlockingProfile|VulnerabilityProfile|WildfireProfile|VirusAndWildfireProfile|DNSSecurityProfile|DecryptionProfile|HipObjectsProfile|HipProfilesProfile|SaasSecurityProfile $rule
      * @return bool
      */
     public function addSecurityProfile($rule)
@@ -373,16 +431,16 @@ class SecurityProfileStore extends ObjStore
 
 
     /**
-     * Creates a new SecurityProfileURL in this store. It will be placed at the end of the list.
+     * Creates a new URLProfileStore in this store. It will be placed at the end of the list.
      * @param string $name name of the new Rule
      * @param bool $inPost create it in post or pre (if applicable)
-     * @return SecurityProfileURL
+     * @return URLProfile
      */
     public function newSecurityProfileURL($name)
     {
-        $rule = new SecurityProfileURL($this);
+        $rule = new URLProfile($name, $this);
 
-        $xmlElement = DH::importXmlStringOrDie($this->owner->xmlroot->ownerDocument, SecurityProfileURL::$templatexml);
+        $xmlElement = DH::importXmlStringOrDie($this->owner->xmlroot->ownerDocument, URLProfile::$templatexml);
         $rule->load_from_domxml($xmlElement);
 
         $rule->owner = null;
@@ -394,16 +452,16 @@ class SecurityProfileStore extends ObjStore
     }
 
     /**
-     * Creates a new CustomSecurityProfileURL in this store. It will be placed at the end of the list.
+     * Creates a new customURLProfileStore in this store. It will be placed at the end of the list.
      * @param string $name name of the new Rule
      * @param bool $inPost create it in post or pre (if applicable)
-     * @return CustomSecurityProfileURL
+     * @return customURLProfile
      */
     public function newCustomSecurityProfileURL($name)
     {
-        $rule = new CustomSecurityProfileURL($this);
+        $rule = new customURLProfile($name, $this);
 
-        $xmlElement = DH::importXmlStringOrDie($this->owner->xmlroot->ownerDocument, CustomSecurityProfileURL::$templatexml);
+        $xmlElement = DH::importXmlStringOrDie($this->owner->xmlroot->ownerDocument, customURLProfile::$templatexml);
         $rule->load_from_domxml($xmlElement);
 
         $rule->owner = null;
@@ -418,7 +476,7 @@ class SecurityProfileStore extends ObjStore
      * Creates a new PredefinedSecurityProfileURL in this store. It will be placed at the end of the list.
      * @param string $name name of the new Rule
      * @param bool $inPost create it in post or pre (if applicable)
-     * @return CustomSecurityProfileURL
+     * @return customURLProfile
      */
     public function newPredefinedSecurityProfileURL($name)
     {
@@ -567,8 +625,13 @@ class SecurityProfileStore extends ObjStore
     {
         if( $this->xmlroot === null )
         {
+            if( $this->owner->isPanorama() || $this->owner->isFirewall() )
+                $xml = $this->owner->sharedroot;
+            else
+                $xml = $this->owner->xmlroot;
+
             $SecurityProfileTypeForXml = self::$storeNameByType[$this->type]['xpathRoot'];
-            $xml = DH::findFirstElementOrCreate('profiles', $this->owner->xmlroot);
+            $xml = DH::findFirstElementOrCreate('profiles', $xml);
 
             $this->xmlroot = DH::findFirstElementOrCreate($SecurityProfileTypeForXml, $xml);
         }
@@ -583,15 +646,17 @@ class SecurityProfileStore extends ObjStore
     {
         $this->parentCentralStore = null;
 
-        $cur = $this->owner;
+        $profileType = $this->type;
+
+        $cur = $this;
         while( isset($cur->owner) && $cur->owner !== null )
         {
             $ref = $cur->owner;
-            if( isset($ref->securityProfileStore) &&
-                $ref->securityProfileStore !== null )
+            if( isset($ref->$profileType) &&
+                $ref->$profileType !== null )
             {
-                $this->parentCentralStore = $ref->securityProfileStore;
-                //print $this->toString()." : found a parent central store: ".$parentCentralStore->toString()."\n";
+                $this->parentCentralStore = $ref->$profileType;
+                #PH::print_stdout(  $this->toString()." : found a parent central store: ".$this->parentCentralStore->toString() );
                 return;
             }
             $cur = $ref;

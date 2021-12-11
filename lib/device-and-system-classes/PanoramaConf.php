@@ -1,9 +1,21 @@
 <?php
 /**
- * © 2019 Palo Alto Networks, Inc.  All rights reserved.
+ * ISC License
  *
- * Licensed under SCRIPT SOFTWARE AGREEMENT, Palo Alto Networks, Inc., at https://www.paloaltonetworks.com/legal/script-software-license-1-0.pdf
+ * Copyright (c) 2014-2018, Palo Alto Networks Inc.
+ * Copyright (c) 2019, Palo Alto Networks Inc.
  *
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
 /**
@@ -49,6 +61,10 @@ class PanoramaConf
     /** @var string[]|DomNode */
     public $devicegrouproot;
 
+    /** @var string[]|DomNode */
+    public $logcollectorgrouproot;
+
+
     public $version = null;
 
     public $managedFirewallsSerials = array();
@@ -63,6 +79,9 @@ class PanoramaConf
 
     /** @var TemplateStack[] */
     public $templatestacks = array();
+
+    /** @var LogCollectorGroup[] */
+    public $logCollectorGroups = array();
 
     /** @var RuleStore */
     public $securityRules;
@@ -118,6 +137,9 @@ class PanoramaConf
     public $FileBlockingProfileStore = null;
 
     /** @var SecurityProfileStore */
+    public $DataFilteringProfileStore = null;
+
+    /** @var SecurityProfileStore */
     public $WildfireProfileStore = null;
 
 
@@ -150,6 +172,9 @@ class PanoramaConf
     /** @var AppStore */
     public $appStore;
 
+    /** @var ThreatStore */
+    public $threatStore;
+
     /** @var SecurityProfileStore */
     public $urlStore;
 
@@ -162,6 +187,11 @@ class PanoramaConf
     public $_fakeNetworkProperties;
 
     public $name = '';
+
+
+    public $_public_cloud_server = null;
+    public $_auditComment = false;
+
 
     public function name()
     {
@@ -176,7 +206,9 @@ class PanoramaConf
         $this->zoneStore = new ZoneStore($this);
         $this->zoneStore->setName('zoneStore');
 
-        $this->appStore = AppStore::getPredefinedStore();
+        $this->appStore = AppStore::getPredefinedStore( $this );
+
+        $this->threatStore = ThreatStore::getPredefinedStore( $this );
 
         $this->urlStore = SecurityProfileStore::getPredefinedStore();
 
@@ -187,25 +219,29 @@ class PanoramaConf
         $this->addressStore->name = 'addresses';
 
 
-        $this->customURLProfileStore = new SecurityProfileStore($this, "CustomSecurityProfileURL");
+        $this->customURLProfileStore = new SecurityProfileStore($this, "customURLProfile");
         $this->customURLProfileStore->name = 'CustomURL';
 
-        $this->URLProfileStore = new SecurityProfileStore($this, "SecurityProfileURL");
+        $this->URLProfileStore = new SecurityProfileStore($this, "URLProfile");
         $this->URLProfileStore->name = 'URL';
 
-        $this->AntiVirusProfileStore = new SecurityProfileStore($this, "SecurityProfileAntiVirus");
+        $this->AntiVirusProfileStore = new SecurityProfileStore($this, "AntiVirusProfile");
         $this->AntiVirusProfileStore->name = 'AntiVirus';
 
-        $this->VulnerabilityProfileStore = new SecurityProfileStore($this, "SecurityProfileVulnerability");
+
+        $this->VulnerabilityProfileStore = new SecurityProfileStore($this, "VulnerabilityProfile");
         $this->VulnerabilityProfileStore->name = 'Vulnerability';
 
-        $this->AntiSpywareProfileStore = new SecurityProfileStore($this, "SecurityProfileAntiSpyware");
+        $this->AntiSpywareProfileStore = new SecurityProfileStore($this, "AntiSpywareProfile");
         $this->AntiSpywareProfileStore->name = 'AntiSpyware';
 
-        $this->FileBlockingProfileStore = new SecurityProfileStore($this, "SecurityProfileFileBlocking");
+        $this->FileBlockingProfileStore = new SecurityProfileStore($this, "FileBlockingProfile");
         $this->FileBlockingProfileStore->name = 'FileBlocking';
 
-        $this->WildfireProfileStore = new SecurityProfileStore($this, "SecurityProfileWildFire");
+        $this->DataFilteringProfileStore = new SecurityProfileStore($this, "DataFilteringProfile");
+        $this->DataFilteringProfileStore->name = 'DataFiltering';
+
+        $this->WildfireProfileStore = new SecurityProfileStore($this, "WildfireProfile");
         $this->WildfireProfileStore->name = 'WildFire';
 
 
@@ -240,7 +276,8 @@ class PanoramaConf
         $this->dosRules->_networkStore = $this->_fakeNetworkProperties;
         $this->pbfRules->_networkStore = $this->_fakeNetworkProperties;
 
-        $this->managedFirewallsStore = new ManagedDeviceStore($this, 'managedFirewall', TRUE);
+        #$this->managedFirewallsStore = new ManagedDeviceStore($this, 'managedFirewall', TRUE);
+        $this->managedFirewallsStore = new ManagedDeviceStore( $this );
     }
 
 
@@ -292,7 +329,20 @@ class PanoramaConf
 
 
         if( is_object($this->connector) )
+        {
             $this->managedFirewallsSerialsModel = $this->connector->panorama_getConnectedFirewallsSerials();
+            foreach( $this->managedFirewallsSerialsModel as $serial => $fw )
+            {
+                $managedFirewall = $this->managedFirewallsStore->find($serial);
+                $managedFirewall->isConnected = true;
+
+                $managedFirewall->mgmtIP = $fw[ 'ip-address' ];
+                $managedFirewall->version = $fw[ 'sw-version' ];
+                $managedFirewall->model = $fw[ 'model' ];
+                $managedFirewall->hostname = $fw[ 'hostname' ];
+            }
+        }
+
 
         $this->sharedroot = DH::findFirstElementOrCreate('shared', $this->xmlroot);
 
@@ -308,10 +358,12 @@ class PanoramaConf
         }
         */
 
+        $this->deviceconfigroot = DH::findFirstElementOrCreate('deviceconfig', $this->localhostroot);
 
         $this->devicegrouproot = DH::findFirstElementOrCreate('device-group', $this->localhostroot);
         $this->templateroot = DH::findFirstElementOrCreate('template', $this->localhostroot);
         $this->templatestackroot = DH::findFirstElementOrCreate('template-stack', $this->localhostroot);
+        $this->logcollectorgrouproot = DH::findFirstElementOrCreate('log-collector-group', $this->localhostroot);
 
         //
         // Extract Tag objects
@@ -338,6 +390,15 @@ class PanoramaConf
         $tmp = DH::findFirstElementOrCreate('address-group', $this->sharedroot);
         $this->addressStore->load_addressgroups_from_domxml($tmp);
         // End of address groups extraction
+
+        //
+        // Extract region objects
+        //
+        $tmp = DH::findFirstElement('region', $xml);
+        if( $tmp !== false )
+            $this->addressStore->load_regions_from_domxml($tmp);
+        //print "VSYS '".$this->name."' address objectsloaded\n" ;
+        // End of address objects extraction
 
         //
         // Extract services
@@ -425,6 +486,13 @@ class PanoramaConf
                 #if( $tmprulesroot !== FALSE )
                 $this->FileBlockingProfileStore->load_from_domxml($tmproot);
             }
+
+            //
+            // DataFiltering Profile extraction
+            //
+            $tmproot = DH::findFirstElement('data-filtering', $this->securityProfilebaseroot);
+            if( $tmproot !== FALSE )
+                $this->DataFilteringProfileStore->load_from_domxml($tmproot);
 
             //
             // vulnerability Profile extraction
@@ -748,7 +816,7 @@ class PanoramaConf
             $ldv = new Template('*tmp*', $this);
             $ldv->load_from_domxml($node);
             $this->templates[] = $ldv;
-            #print "Template '{$ldv->name()}' found\n";
+            #PH::print_stdout(  "Template '{$ldv->name()}' found" );
         }
         //
         // end of Templates
@@ -764,7 +832,7 @@ class PanoramaConf
             $ldv = new TemplateStack('*tmp*', $this);
             $ldv->load_from_domxml($node);
             $this->templatestacks[] = $ldv;
-            //print "TemplateStack '{$ldv->name()}' found\n";
+            //PH::print_stdout(  "TemplateStack '{$ldv->name()}' found" );
 
             //Todo: add templates to templatestack
         }
@@ -781,7 +849,7 @@ class PanoramaConf
             {
                 if( $node->nodeType != XML_ELEMENT_NODE ) continue;
                 //$lvname = $node->nodeName;
-                //print "Device Group '$lvname' found\n";
+                //PH::print_stdout(  "Device Group '$lvname' found" );
 
                 $ldv = new DeviceGroup($this);
                 $ldv->load_from_domxml($node);
@@ -841,7 +909,7 @@ class PanoramaConf
 
                 if( count($dgLoadOrder) <= $dgLoadOrderCount )
                 {
-                    print "Problems could be available with the following DeviceGroup(s)\n";
+                    PH::print_stdout(  "Problems could be available with the following DeviceGroup(s)" );
                     print_r($dgLoadOrder);
                     derr('dg-meta-data seems to be corrupted, parent.child template cannot be calculated ', $dgMetaDataNode);
                 }
@@ -849,9 +917,9 @@ class PanoramaConf
 
             }
 
-            /*print "DG loading order:\n";
+            /*PH::print_stdout(  "DG loading order:" );
             foreach( $dgLoadOrder as &$dgName )
-                print " - {$dgName}\n";*/
+                PH::print_stdout(  " - {$dgName}");*/
 
 
             $deviceGroupNodes = array();
@@ -905,6 +973,8 @@ class PanoramaConf
                         $ldv->serviceStore->parentCentralStore = $parentDG->serviceStore;
                         $ldv->tagStore->parentCentralStore = $parentDG->tagStore;
                         $ldv->scheduleStore->parentCentralStore = $parentDG->scheduleStore;
+                        $ldv->appStore->parentCentralStore = $parentDG->appStore;
+                        $ldv->securityProfileGroupStore->parentCentralStore = $parentDG->securityProfileGroupStore;
                         //Todo: swaschkut 20210505 - check if other Stores must be added
                         //- appStore;scheduleStore/securityProfileGroupStore/all kind of SecurityProfile
                     }
@@ -920,6 +990,50 @@ class PanoramaConf
         // End of DeviceGroup loading
         //
 
+        //
+        // loading LogCollectorGroup
+        //
+        foreach( $this->logcollectorgrouproot->childNodes as $node )
+        {
+            if( $node->nodeType != XML_ELEMENT_NODE ) continue;
+
+            #$ldv = new LogCollectorGroup('*tmp*', $this);
+            $ldv = new LogCollectorGroup( $this);
+            $ldv->load_from_domxml($node);
+            $this->logCollectorGroups[] = $ldv;
+            //PH::print_stdout(  "TemplateStack '{$ldv->name()}' found" );
+
+            //Todo: add templates to templatestack
+        }
+        //
+        // end of LogCollectorGroup
+        //
+
+
+        //
+        // Extract setting related configs
+        //
+        $settingroot = DH::findFirstElementOrCreate('setting', $this->deviceconfigroot);
+
+        $tmp1 = DH::findFirstElement('wildfire', $settingroot);
+        if( $tmp1 !== FALSE )
+        {
+            $tmp2 = DH::findFirstElement('public-cloud-server', $tmp1);
+            if( $tmp2 )
+            {
+                $this->_public_cloud_server = $tmp1->textContent;
+            }
+        }
+
+        $managementroot = DH::findFirstElement('management', $settingroot);
+        if( $managementroot !== FALSE )
+        {
+            $auditComment = DH::findFirstElement('rule-require-audit-comment', $managementroot);
+            if( $auditComment != FALSE )
+                if( $auditComment->textContent === "yes" )
+                    $this->_auditComment = TRUE;
+        }
+        //
     }
 
 
@@ -929,6 +1043,9 @@ class PanoramaConf
      */
     public function findDeviceGroup($name)
     {
+        if( $name == "shared" )
+            return $this;
+
         foreach( $this->deviceGroups as $dg )
         {
             if( $dg->name() == $name )
@@ -976,15 +1093,20 @@ class PanoramaConf
     public function save_to_file($fileName, $printMessage = TRUE, $lineReturn = TRUE, $indentingXml = 0, $indentingXmlIncreament = 1)
     {
         if( $printMessage )
-            print "Now saving PANConf to file '$fileName'...";
+            PH::print_stdout( "Now saving PANConf to file '$fileName'..." );
 
         //Todo: swaschkut check
         //$indentingXmlIncreament was 2 per default for Panroama
         $xml = &DH::dom_to_xml($this->xmlroot, $indentingXml, $lineReturn, -1, $indentingXmlIncreament + 1);
+
+        $path_parts = pathinfo($fileName);
+        if (!is_dir($path_parts['dirname']))
+            mkdir($path_parts['dirname'], 0777, true);
+
         file_put_contents($fileName, $xml);
 
         if( $printMessage )
-            print "     done!\n\n";
+            PH::print_stdout( "     done!");
     }
 
     /**
@@ -999,7 +1121,7 @@ class PanoramaConf
     }
 
 
-    public function display_statistics()
+    public function display_statistics( $connector = null )
     {
 
         $gpreSecRules = $this->securityRules->countPreRules();
@@ -1076,6 +1198,8 @@ class PanoramaConf
         }
 
         $stdoutarray = array();
+
+        $stdoutarray['type'] = get_class( $this );
 
         $header = "Statistics for PanoramaConf '" . $this->name . "'";
         $stdoutarray['header'] = $header;
@@ -1210,13 +1334,15 @@ class PanoramaConf
         $stdoutarray['sub-interfaces']['ethernet'] = $this->network->ethernetIfStore->countSubInterfaces();
         */
 
-        $return = array();
-        $return['PanoramaConf-stat'] = $stdoutarray;
 
-        #PH::print_stdout( $return );
-        PH::print_stdout( $stdoutarray );
+        $connector = findConnector( $this );
+        if( $connector == null )
+            PH::$JSON_TMP[] = $stdoutarray;
+        else
+            PH::$JSON_TMP[ $connector->info_serial ] = $stdoutarray;
 
-
+        if( !PH::$shadow_json )
+            PH::print_stdout( $stdoutarray, true );
     }
 
     public function API_load_from_running(PanAPIConnector $conn)
@@ -1241,12 +1367,12 @@ class PanoramaConf
      */
     public function API_uploadConfig($config_filename = 'panconfigurator-default.xml')
     {
-        print "Uploadig config to device....";
+        PH::print_stdout(  "Uploadig config to device...." );
 
         $url = "&type=import&category=configuration&category=configuration";
         $this->connector->sendRequest($url, FALSE, DH::dom_to_xml($this->xmlroot), $config_filename);
 
-        print "OK!\n";
+
     }
 
     /**
@@ -1294,7 +1420,7 @@ class PanoramaConf
                     //if( $fc === FALSE )
                     //	derr("could not open file '$file'");
 
-                    print "Loading FW '$serial' from file '$file'.\n";
+                    PH::print_stdout(  "Loading FW '$serial' from file '$file'.");
 
                     $fw = new PANConf($this, $serial);
                     $fw->panorama = $this;
@@ -1326,7 +1452,7 @@ class PanoramaConf
         if( $vsysName === null || strlen($vsysName) < 1 )
             derr('invalid vsys provided!');
 
-        //print "looking for serial $deviceSerial  and vsys $vsysName\n";
+        //PH::print_stdout(  "looking for serial $deviceSerial  and vsys $vsysName" );
 
         foreach( $this->deviceGroups as $dv )
         {
@@ -1335,10 +1461,10 @@ class PanoramaConf
             {
                 if( $d['serial'] == $deviceSerial )
                 {
-                    //print "serial found\n";
+                    //PH::print_stdout(  "serial found" );
                     if( array_search($vsysName, $d['vsyslist']) !== FALSE )
                     {
-                        //print "match!\n";
+                        //PH::print_stdout(  "match!" );
                         return $dv;
                     }
                 }
@@ -1398,6 +1524,8 @@ class PanoramaConf
                 $newDG->serviceStore->parentCentralStore = $parentDG->serviceStore;
                 $newDG->tagStore->parentCentralStore = $parentDG->tagStore;
                 $newDG->scheduleStore->parentCentralStore = $parentDG->scheduleStore;
+                $newDG->appStore->parentCentralStore = $parentDG->appStore;
+                $newDG->securityProfileGroupStore->parentCentralStore = $parentDG->securityProfileGroupStore;
                 //Todo: swaschkut 20210505 - check if other Stores must be added
                 //- appStore;scheduleStore/securityProfileGroupStore/all kind of SecurityProfile
             }
@@ -1406,6 +1534,56 @@ class PanoramaConf
         return $newDG;
     }
 
+    /**
+     * Remove a device group.
+     * @param DeviceGroup $DG
+     **/
+    public function removeDeviceGroup( $DG )
+    {
+        $DGname = $DG->name();
+        $childDGs = $DG->_childDeviceGroups;
+        if( count( $childDGs ) !== 0 )
+        {
+            mwarning("DeviceGroup '$DGname' has ChildDGs. Delete of DG not possible.");
+            return;
+        }
+        else
+        {
+            //remove DG from XML
+            $xPath = "/config/devices/entry[@name='localhost.localdomain']/device-group";
+            $dgNode = DH::findXPathSingleEntryOrDie($xPath, $this->xmlroot);
+            $dgNode->removeChild( $DG->xmlroot );
+
+            //remove DG from DG Meta
+            if( $this->version >= 80 )
+                $dgMetaDataNode = DH::findXPathSingleEntryOrDie('/config/readonly/devices/entry[@name="localhost.localdomain"]/device-group', $this->xmlroot);
+            else
+                $dgMetaDataNode = DH::findXPathSingleEntryOrDie('/config/readonly/dg-meta-data/dg-info', $this->xmlroot);
+
+            $DGmetaData = DH::findFirstElementByNameAttrOrDie('entry', $DGname, $dgMetaDataNode);
+            $dgMetaDataNode->removeChild( $DGmetaData );
+
+            //Todo: cleanup memory
+        }
+
+
+        //API: send empty DG node
+        /*
+        $xpath = "/config/devices/entry[@name='localhost.localdomain']/device-group/entry[@name='".$objectsLocation."']";
+
+        $apiArgs = Array();
+        $apiArgs['type'] = 'config';
+        $apiArgs['action'] = 'delete';
+        $apiArgs['xpath'] = &$xpath;
+
+        PH::print_stdout(  "     "."*** delete each member from ".$entry." " );
+
+        if( $configInput['type'] == 'api' )
+            $response = $pan->connector->sendRequest($apiArgs);
+         */
+
+
+    }
     /**
      * @return DeviceGroup[]
      */
