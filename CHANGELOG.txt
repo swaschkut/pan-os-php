@@ -4,6 +4,7 @@ CHANGELOG
 UTIL:
 
 BUGFIX:
+* type=diff "filter=XPATH" | bugfix as filter was not used
 
 GENERAL:
 * extend different Fawkes and Buckbeak related classes

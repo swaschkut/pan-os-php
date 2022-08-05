@@ -142,9 +142,9 @@ class DIFF extends UTIL
             $matches = null;
             if( isset(PH::$args['filter']) and preg_match( $pattern, PH::$args['filter'], $matches  ) )
             {
-                $substring = str_replace( $matches[1], "", PH::$args['filter'] );
-                $substring = str_replace( $matches[2], "", $substring );
-                $pid = explode( "name", $substring );
+                $substring = str_replace($matches[1], "", PH::$args['filter']);
+                $substring = str_replace($matches[2], "", $substring);
+                $pid = explode("name", $substring);
                 $this->replace = $pid[0];
 
 
@@ -238,6 +238,14 @@ class DIFF extends UTIL
                 PH::print_stdout( "FILTER is set to: '" . PH::boldText( PH::$args['filter'] ) . "'");
                 PH::print_stdout( "");
             }
+        }
+        else
+        {
+            $this->filters[] = PH::$args['filter'];
+
+            PH::print_stdout( "");
+            PH::print_stdout( "FILTER is set to: '" . PH::boldText( PH::$args['filter'] ) . "'");
+            PH::print_stdout( "");
         }
 
         PH::print_stdout( "*** NOW DISPLAY DIFF ***");
