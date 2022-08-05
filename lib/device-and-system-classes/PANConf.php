@@ -248,12 +248,11 @@ class PANConf
             #$tmp_doc = DH::findFirstElementOrDie('config', $tmp_root);
 
             $dom = new DOMDocument();
-            $domNode = $dom->importNode( $xml, true );
+            $domNode = $dom->importNode($xml, TRUE);
 
-            $dom->appendChild( $domNode );
+            $dom->appendChild($domNode);
             $this->xmldoc = $dom;
         }
-
 
 
         if( $this->owner !== null )
@@ -292,16 +291,17 @@ class PANConf
             $this->localhostroot->setAttribute('name', 'localhost.localdomain');
         }
 
-        $this->vsyssroot = DH::findFirstElementOrCreate('vsys', $this->localhostroot);
-
-
-        $this->deviceconfigroot = DH::findFirstElement('deviceconfig', $this->localhostroot);
-
-
-        // Now listing and extracting all DeviceConfig configurations
-        foreach( $this->vsyssroot->childNodes as $node )
+        $this->vsyssroot = DH::findFirstElement('vsys', $this->localhostroot);
+        $this->deviceconfigroot = FALSE;
+        if( $this->vsyssroot !== FALSE )
         {
+            $this->deviceconfigroot = DH::findFirstElement('deviceconfig', $this->localhostroot);
 
+            // Now listing and extracting all DeviceConfig configurations
+            foreach( $this->vsyssroot->childNodes as $node )
+            {
+
+            }
         }
 
 
@@ -340,7 +340,7 @@ class PANConf
             // Extract region objects
             //
             $tmp = DH::findFirstElement('region', $xml);
-            if( $tmp !== false )
+            if( $tmp !== FALSE )
                 $this->addressStore->load_regions_from_domxml($tmp);
             //print "VSYS '".$this->name."' address objectsloaded\n" ;
             // End of address objects extraction
@@ -537,39 +537,41 @@ class PANConf
             $this->network->load_from_domxml($tmp);
         //
 
-        // Now listing and extracting all VirtualSystem configurations
-        foreach( $this->vsyssroot->childNodes as $node )
-        {
-            if( $node->nodeType != 1 ) continue;
-            //PH::print_stdout(  "DOM type: ".$node->nodeType );
-
-            $localVirtualSystemName = DH::findAttribute('name', $node);
-
-            if( $localVirtualSystemName === FALSE || strlen($localVirtualSystemName) < 1 )
-                derr('cannot find VirtualSystem name');
-
-            $dg = null;
-
-            if( isset($this->panorama) )
+        if( $this->vsyssroot !== FALSE )
+        {        // Now listing and extracting all VirtualSystem configurations
+            foreach( $this->vsyssroot->childNodes as $node )
             {
-                if( $this->panorama->_fakeMode )
-                    $dg = $this->panorama->findDeviceGroup($localVirtualSystemName);
+                if( $node->nodeType != 1 ) continue;
+                //PH::print_stdout(  "DOM type: ".$node->nodeType );
+
+                $localVirtualSystemName = DH::findAttribute('name', $node);
+
+                if( $localVirtualSystemName === FALSE || strlen($localVirtualSystemName) < 1 )
+                    derr('cannot find VirtualSystem name');
+
+                $dg = null;
+
+                if( isset($this->panorama) )
+                {
+                    if( $this->panorama->_fakeMode )
+                        $dg = $this->panorama->findDeviceGroup($localVirtualSystemName);
+                    else
+                        $dg = $this->panorama->findApplicableDGForVsys($this->serial, $localVirtualSystemName);
+                }
+
+                if( $dg !== FALSE && $dg !== null )
+                    $localVsys = new VirtualSystem($this, $dg);
                 else
-                    $dg = $this->panorama->findApplicableDGForVsys($this->serial, $localVirtualSystemName);
-            }
+                    $localVsys = new VirtualSystem($this);
 
-            if( $dg !== FALSE && $dg !== null )
-                $localVsys = new VirtualSystem($this, $dg);
-            else
-                $localVsys = new VirtualSystem($this);
+                $localVsys->load_from_domxml($node);
+                $this->virtualSystems[] = $localVsys;
 
-            $localVsys->load_from_domxml($node);
-            $this->virtualSystems[] = $localVsys;
-
-            $importedInterfaces = $localVsys->importedInterfaces->interfaces();
-            foreach( $importedInterfaces as &$ifName )
-            {
-                $ifName->importedByVSYS = $localVsys;
+                $importedInterfaces = $localVsys->importedInterfaces->interfaces();
+                foreach( $importedInterfaces as &$ifName )
+                {
+                    $ifName->importedByVSYS = $localVsys;
+                }
             }
         }
 
