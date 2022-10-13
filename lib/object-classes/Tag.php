@@ -140,6 +140,8 @@ class Tag
     static public $replacewith1 = "/{";
     static public $replacewith2 = "/}";
 
+    protected $typeTmp = false;
+
     /**
      * @param string $name
      * @param TagStore|null $owner
@@ -518,6 +520,30 @@ class Tag
     {
         $name = str_replace( TAG::$replacewith1, TAG::$pattern1, $name);
         $name = str_replace( TAG::$replacewith2, TAG::$pattern2, $name);
+    }
+
+    /**
+     * @return bool true if successful
+     */
+    public function setTypeTmp()
+    {
+        if( $this->typeTmp )
+            return FALSE;
+
+        $this->typeTmp = true;
+
+        return TRUE;
+    }
+
+    /**
+     * @return bool true if successful
+     */
+    public function getTypeTmp()
+    {
+        if( $this->typeTmp )
+            return TRUE;
+
+        return FALSE;
     }
 }
 

@@ -280,6 +280,17 @@ class AppStore extends ObjStore
                     $tag_text = str_replace( "]", "", $tag_text);
 
                     $tag_array[$tag_text] = $tag_text;
+
+
+                    /** @var Tag $tmpTag */
+                    /*
+                    $tmpTag = $app->owner->owner->tagStore->find($tag_text);
+                    if( $tmpTag === null )
+                        $tmpTag = $app->owner->owner->tagStore->createTmp($tag_text);
+                    else
+                        $tmpTag->addReference( $app->appTagContainer );
+                    $app->appTagContainer->addTag( $tmpTag );
+                    */
                 }
                 $app->apptag = $tag_array;
             }

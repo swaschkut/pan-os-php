@@ -192,6 +192,29 @@ class TagStore extends ObjStore
         return $newTag;
     }
 
+    /*
+    * @param string $name
+    * @param ReferenceableObject $ref
+    * @return Tag
+    */
+    function createTmp($name, $ref = null)
+    {
+        if( isset($this->nameIndex[$name]) )
+
+        {
+            mwarning("cannot create a TMP object named '{$name}' because an object with that name already existed and was returned by this function");
+            return $this->nameIndex[$name];
+        }
+
+        $f = new Tag($name, $this);
+
+        $this->add($f);
+        $f->addReference($ref);
+
+        $f->setTypeTmp();
+
+        return $f;
+    }
 
     /**
      * @param Tag $tag

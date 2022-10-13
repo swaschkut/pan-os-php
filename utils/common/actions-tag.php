@@ -362,8 +362,11 @@ TagCallContext::$supportedActions['display'] = array(
     'MainFunction' => function (TagCallContext $context) {
         $object = $context->object;
         $tmpName = $object->name();
+        $tmpinfo = "";
+        if( $object->getTypeTmp() )
+            $tmpinfo = " 'TMP PAN-OS default object'";
         TAG::replaceNamewith( $tmpName );
-        PH::print_stdout( "     * " . get_class($object) . " '{$tmpName}'  color: '{$object->getColor()}'  comments: '{$object->getComments()}'" );
+        PH::print_stdout( "     * " . get_class($object) . " '{$tmpName}'  color: '{$object->getColor()}'  comments: '{$object->getComments()}'".$tmpinfo );
 
         PH::$JSON_TMP['sub']['object'][$object->name()]['name'] = $tmpName;
         PH::$JSON_TMP['sub']['object'][$object->name()]['type'] = get_class($object);

@@ -730,3 +730,293 @@ SecurityProfileCallContext::$supportedActions['url-filtering-action-set'] = arra
         'url-category' => array('type' => 'string', 'default' => 'false'),
     ),
 );
+
+
+SecurityProfileCallContext::$supportedActions[] = array(
+    'name' => 'move',
+    'MainFunction' => function (SecurityProfileCallContext $context) {
+        $object = $context->object;
+
+        $storeType = get_class($object)."Store";
+        /*
+        $storeType = "AntiVirusProfileStore";
+
+        $storeType = "customURLProfileStore";
+        $storeType = "DataFilteringProfileStore";
+        $storeType = "DataObjectsProfileStore";
+        $storeType = "DecryptionProfileStore";
+
+        //DNS
+        $storeType = "FileBlockingProfileStore";
+        $storeType = "GTPProfileStore";
+        $storeType = "HipProfilesProfileStore";
+        $storeType = "HipObjectsProfileStore";
+
+        $storeType = "PacketBrokerProfileStore";
+
+        //saas
+        $storeType = "SCEPProfileStore";
+        $storeType = "SDWanErrorCorrectionProfileStore";
+        $storeType = "SDWanPathQualityProfileStore";
+        $storeType = "SDWanSaasQualityProfileStore";
+        $storeType = "SDWanTrafficDistributionProfileStore";
+
+        $storeType = "URLProfileStore";
+        $storeType = "VulnerabilityProfileStore";
+
+        $storeType = "WildfireProfileStore";
+        */
+
+
+        $localLocation = 'shared';
+
+        if( !$object->owner->owner->isPanorama() && !$object->owner->owner->isFirewall() )
+            $localLocation = $object->owner->owner->name();
+
+        $targetLocation = $context->arguments['location'];
+        $targetStore = null;
+
+        if( $localLocation == $targetLocation )
+        {
+            $string = "because original and target destinations are the same: $targetLocation";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
+        $rootObject = PH::findRootObjectOrDie($object->owner->owner);
+
+        if( $targetLocation == 'shared' )
+        {
+            $targetStore = $rootObject->$storeType;
+        }
+        else
+        {
+            $findSubSystem = $rootObject->findSubSystemByName($targetLocation);
+            if( $findSubSystem === null )
+                derr("cannot find VSYS/DG named '$targetLocation'");
+
+            $targetStore = $findSubSystem->$storeType;
+        }
+
+        if( $localLocation == 'shared' )
+        {
+            $reflocations = $object->getReferencesLocation();
+
+            foreach( $object->getReferences() as $ref )
+            {
+                if( PH::getLocationString($ref) != $targetLocation )
+                {
+                    $skipped = TRUE;
+                    //check if targetLocation is parent of reflocation
+                    $locations = $findSubSystem->childDeviceGroups(TRUE);
+                    foreach( $locations as $childloc )
+                    {
+                        if( PH::getLocationString($ref) == $childloc->name() )
+                            $skipped = FALSE;
+                    }
+
+                    if( $skipped )
+                    {
+                        $string = "moving from SHARED to sub-level is NOT possible because of references on higher DG level";
+                        PH::ACTIONstatus( $context, "SKIPPED", $string );
+                        return;
+                    }
+                }
+            }
+        }
+
+        if( $localLocation != 'shared' && $targetLocation != 'shared' )
+        {
+            if( $context->baseObject->isFirewall() )
+            {
+                $string = "moving between VSYS is not supported";
+                PH::ACTIONstatus( $context, "SKIPPED", $string );
+                return;
+            }
+
+
+            foreach( $object->getReferences() as $ref )
+            {
+                if( PH::getLocationString($ref) != $targetLocation )
+                {
+                    $skipped = TRUE;
+                    //check if targetLocation is parent of reflocation
+                    $locations = $findSubSystem->childDeviceGroups(TRUE);
+                    foreach( $locations as $childloc )
+                    {
+                        if( PH::getLocationString($ref) == $childloc->name() )
+                            $skipped = FALSE;
+                    }
+
+                    if( $skipped )
+                    {
+                        $string = "moving between 2 VSYS/DG is not possible because of references on higher DG level";
+                        PH::ACTIONstatus( $context, "SKIPPED", $string );
+                        return;
+                    }
+                }
+            }
+        }
+
+        $conflictObject = $targetStore->find($object->name(), null, FALSE);
+        if( $conflictObject === null )
+        {
+            $string = "moved, no conflict";
+            PH::ACTIONlog( $context, $string );
+
+            if( $context->isAPI )
+            {
+                //not implemented for each kind of SecurityProfil
+                $oldXpath = $object->getXPath();
+                $object->owner->removeSecurityProfile($object);
+                $targetStore->addSecurityProfile($object);
+                $object->API_sync();
+                $context->connector->sendDeleteRequest($oldXpath);
+            }
+            else
+            {
+                $object->owner->removeSecurityProfile($object);
+                $targetStore->addSecurityProfile($object);
+            }
+            return;
+        }
+
+        if( $context->arguments['mode'] == 'skipifconflict' )
+        {
+            $string = "there is an object with same name. Choose another mode to resolve this conflict";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
+
+        $text = "there is a conflict with an object of same name and type.";
+        $text .= " - ".$conflictObject->type();
+        PH::ACTIONlog( $context, $text );
+
+        /*
+        if( $conflictObject->isGroup() && !$object->isGroup() || !$conflictObject->isGroup() && $object->isGroup() )
+        {
+            $string = "because conflict has mismatching types";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
+        if( $conflictObject->isTmpAddr() )
+        {
+            $string = "because the conflicting object is TMP| value: ".$conflictObject->value();
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            //normally the $object must be moved and the conflicting TMP object must be replaced by this $object
+            return;
+        }
+
+        if( $object->isGroup() )
+        {
+            $localMap = $object->getIP4Mapping();
+            $targetMap = $conflictObject->getIP4Mapping();
+
+            if( $object->equals($conflictObject) && $localMap->equals($targetMap) )
+                //if( $object->equals($conflictObject) )
+            {
+                //
+                //bug; deep matching ip4mapping needed
+
+                $string = "Removed because target has same content";
+                PH::ACTIONlog( $context, $string );
+
+                $object->replaceMeGlobally($conflictObject);
+                if( $context->isAPI )
+                    $object->owner->API_remove($object);
+                else
+                    $object->owner->remove($object);
+
+                return;
+            }
+            else
+            {
+                $object->displayValueDiff($conflictObject, 9);
+                if( $context->arguments['mode'] == 'removeifmatch' )
+                {
+                    $string = "because of mismatching group content";
+                    PH::ACTIONstatus( $context, "SKIPPED", $string );
+                    return;
+                }
+
+                if( !$localMap->equals($targetMap) )
+                {
+                    $string = "because of mismatching group content and numerical values";
+                    PH::ACTIONstatus( $context, "SKIPPED", $string );
+                    return;
+                }
+
+                $string = "Removed because it has same numerical value";
+                PH::ACTIONlog( $context, $string );
+
+                $object->replaceMeGlobally($conflictObject);
+                if( $context->isAPI )
+                    $object->owner->API_remove($object);
+                else
+                    $object->owner->remove($object);
+
+                return;
+
+            }
+        }
+
+        if( $object->equals($conflictObject) )
+        {
+            $string = "Removed because target has same content";
+            PH::ACTIONlog( $context, $string );
+
+            $object->replaceMeGlobally($conflictObject);
+
+            if( $context->isAPI )
+                $object->owner->API_remove($object);
+            else
+                $object->owner->remove($object);
+            return;
+        }
+        elseif( $object->isType_ipNetmask() )
+        {
+            if( str_replace('/32', '', $conflictObject->value()) == str_replace('/32', '', $object->value()) )
+            {
+                $string = "Removed because target has same content";
+                PH::ACTIONlog( $context, $string );
+
+                $object->replaceMeGlobally($conflictObject);
+
+                if( $context->isAPI )
+                    $object->owner->API_remove($object);
+                else
+                    $object->owner->remove($object);
+                return;
+            }
+        }
+
+        if( $context->arguments['mode'] == 'removeifmatch' )
+            return;
+
+        $localMap = $object->getIP4Mapping();
+        $targetMap = $conflictObject->getIP4Mapping();
+
+        if( !$localMap->equals($targetMap) )
+        {
+            $string = "because of mismatching content and numerical values";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
+        $string = "Removed because target has same numerical value";
+        PH::ACTIONlog( $context, $string );
+
+        $object->replaceMeGlobally($conflictObject);
+        if( $context->isAPI )
+            $object->owner->API_remove($object);
+        else
+            $object->owner->remove($object);
+    */
+
+    },
+    'args' => array('location' => array('type' => 'string', 'default' => '*nodefault*'),
+        'mode' => array('type' => 'string', 'default' => 'skipIfConflict', 'choices' => array('skipIfConflict', 'removeIfMatch', 'removeIfNumericalMatch'))
+    ),
+);

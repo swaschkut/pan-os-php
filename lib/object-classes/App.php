@@ -64,6 +64,7 @@ class App
 
     /** @var null|string */
     public $apptag = array();
+    public $appTagContainer = null;
 
     /** @var bool */
     public $virusident = FALSE;
@@ -104,6 +105,7 @@ class App
         $this->name = $name;
         $this->xmlroot = null;
 
+        $this->appTagContainer = new TagRuleContainer($this);
         #foreach( self::$_supportedCharacteristics as $characteristicName )
         #    $this->_characteristics[$characteristicName] = "0";
     }

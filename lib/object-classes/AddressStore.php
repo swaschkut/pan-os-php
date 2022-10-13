@@ -1117,7 +1117,7 @@ class AddressStore
 
         $f = new Address($name, $this);
         $f->setValue($name);
-        //$f->type = 'tmp';
+        $f->setType('tmp');
 
         $this->add($f);
         $f->addReference($ref);
