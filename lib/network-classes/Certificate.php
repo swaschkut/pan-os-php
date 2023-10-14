@@ -50,6 +50,7 @@ class Certificate
     public $notValidafter = null;
 
     public $publicKeyDetailArray = null;
+    public $privateKeyDetailArray = null;
 
     /**
      * @param string $name
@@ -157,6 +158,36 @@ class Certificate
             if( $privatekey->textContent !== "" )
             {
                 $this->privateKey = $privatekey->textContent;
+
+                ###########################################################################
+                if( function_exists('openssl_pkey_get_private')
+                    and
+                    #function_exists('openssl_pkey_get_details') and
+                    #function_exists('openssl_x509_read') and
+                    function_exists('openssl_x509_parse')
+                    )
+                {
+                    $pkey_obj = openssl_pkey_get_private($this->privateKey);
+                    if( $pkey_obj !== FALSE ) {
+                        $cert_details = openssl_pkey_get_details($pkey_obj);
+                        #print_r( $cert_details );
+
+                        //this does not contain the bits
+                        $cert = openssl_x509_read($this->privateKey);
+                        if( $cert !== FALSE )
+                        {
+                            $cert_obj = openssl_x509_parse($cert);
+                            $this->privateKeyDetailArray = $cert_obj ;
+                            #print_r( $cert_obj );
+                        }
+                    }
+                }
+                else
+                {
+                    mwarning( "your PHP installation does not contain support for openssl - libraries missing" );
+                }
+                //openssl_pkey_get_private
+
                 #$this->privateKeyLen = strlen($this->privateKey);
 
                 /*
@@ -232,6 +263,7 @@ class Certificate
                         {
                             $cert_obj = openssl_x509_parse($cert);
                             $this->publicKeyDetailArray = $cert_obj ;
+                            #print_r($cert_obj);
                         }
 
                         //publicKey Signature Algorithm

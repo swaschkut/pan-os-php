@@ -1,6 +1,15 @@
 CHANGELOG
 
-2.1.20
+2.1.21
+UTIL:
+* type=certificate actions=exporttoexcel:FILE.html | improvment to display correct Template / Location if certificate is configured in Panorama Template vsys
+
+BUGFIX:
+
+GENERAL:
+
+
+2.1.20 (20231014)
 UTIL:
 * type=xpath | introduce "actions=set-text:NODETEXT"
 * type=rule | new 'filter=(app has.seen.fast-api unknow-tcp)' - to filter for device traffic log if specific app-id was seen

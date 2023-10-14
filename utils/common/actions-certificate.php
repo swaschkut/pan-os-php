@@ -70,6 +70,8 @@ CertificateCallContext::$supportedActions['display'] = Array(
         PH::print_stdout( $privateKeyLen);
         #PH::print_stdout( $privateKeyLen.$privateKeyAlgorithm.$prviateKeyHash );
         PH::print_stdout( $publicKeyLen.$publicKeyAlgorithm.$publicKeyHash );
+
+        print_r( $object->publicKeyDetailArray );
     },
 );
 
@@ -94,7 +96,7 @@ CertificateCallContext::$supportedActions['exportToExcel'] = array(
 
         $headers = '<th>ID</th><th>template</th><th>location</th><th>name</th>';
         $headers .= '<th>Algorithm</th><th>not Valid before</th><th>not Valid after</th>';
-        $headers .= '<th>Subject</th><th>Issuer</th>';
+        $headers .= '<th>Subject</th><th>Issuer</th><th>CA</th>';
 
 
 
@@ -115,28 +117,52 @@ CertificateCallContext::$supportedActions['exportToExcel'] = array(
 
                 $lines .= $context->encloseFunction((string)$count);
 
-                if( get_class($object->owner->owner) == "PANConf" )
+                if( get_class($object->owner->owner->owner) == "PANConf" )
                 {
-                    if( isset($object->owner->owner->owner) && $object->owner->owner->owner !== null && (get_class($object->owner->owner->owner) == "Template" || get_class($context->subSystem->owner) == "TemplateStack" ) )
+                    if( isset($object->owner->owner->owner->owner) && $object->owner->owner->owner->owner !== null && (get_class($object->owner->owner->owner->owner) == "Template" || get_class($context->subSystem->owner) == "TemplateStack" ) )
                     {
-                        $lines .= $context->encloseFunction($object->owner->owner->owner->name());
-                        $lines .= $context->encloseFunction($object->owner->owner->name());
+                        $lines .= $context->encloseFunction($object->owner->owner->owner->owner->name());
+                        if( $object->owner->owner->name() == "certificateStore" )
+                            $lines .= $context->encloseFunction("shared");
+                        else
+                            $lines .= $context->encloseFunction($object->owner->owner->name());
                     }
                     else
                     {
                         $lines .= $context->encloseFunction("---");
-                        $lines .= $context->encloseFunction($object->owner->owner->name());
+                        if( $object->owner->owner->name() == "certificateStore" )
+                            $lines .= $context->encloseFunction("shared");
+                        else
+                            $lines .= $context->encloseFunction($object->owner->owner->name());
                     }
                 }
                 elseif( isset($object->owner->owner) && $object->owner->owner !== null && (get_class($object->owner->owner) == "Template" || get_class($context->subSystem->owner) == "TemplateStack" ) )
                 {
-                    $lines .= $context->encloseFunction($object->owner->owner->name());
-                    $lines .= $context->encloseFunction($object->owner->name());
+                    if( isset($object->owner->owner->owner) && $object->owner->owner->owner !== null && (get_class($object->owner->owner->owner) == "Template" || get_class($context->subSystem->owner) == "TemplateStack" ) )
+                    {
+                        $lines .= $context->encloseFunction($object->owner->owner->owner->name());
+                        if( $object->owner->owner->name() == "certificateStore" )
+                            $lines .= $context->encloseFunction("shared");
+                        else
+                            $lines .= $context->encloseFunction($object->owner->owner->name());
+                    }
+                    else
+                    {
+                        $lines .= $context->encloseFunction($object->owner->owner->name());
+                        if( $object->owner->name() == "certificateStore" )
+                            $lines .= $context->encloseFunction("shared");
+                        else
+                            $lines .= $context->encloseFunction($object->owner->name());
+                    }
+
                 }
                 else
                 {
                     $lines .= $context->encloseFunction($object->owner->owner->name());
-                    $lines .= $context->encloseFunction($object->owner->name());
+                    if( $object->owner->name() == "certificateStore" )
+                        $lines .= $context->encloseFunction("shared");
+                    else
+                        $lines .= $context->encloseFunction($object->owner->name());
                 }
 
 
@@ -192,6 +218,18 @@ CertificateCallContext::$supportedActions['exportToExcel'] = array(
                     ));
                 }
                 $lines .= $context->encloseFunction($issuer);
+
+
+                $CA = "";
+                if( isset($object->publicKeyDetailArray['extensions']['basicConstraints'] ) )
+                {
+                    if( strpos( $object->publicKeyDetailArray['extensions']['basicConstraints'], "CA:TRUE" ) !== FALSE )
+                        $CA = "Yes";
+                    else
+                        $CA = "No";
+                }
+                $lines .= $context->encloseFunction($CA);
+
 
                 $lines .= "</tr>\n";
 
