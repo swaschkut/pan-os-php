@@ -1708,9 +1708,8 @@ class MERGER extends UTIL
 
                     if( $object->tags->count() + $tmp_address->tags->count() > $object->tagLimit )
                     {
-                        PH::print_stdout("    - SKIP: tag count of name '{$tmp_address->_PANC_shortName()}' [with value '{$tmp_address->value()}'] added with object name from upperlevel '{$object->_PANC_shortName()}' [with value '{$object->value()}'] exceed PAN-OS limit ".$object->tagLimit);
-                        $this->skippedObject( $index, $object, $tmp_address);
-                        continue;
+                        if( $this->address_tag_merge_check( $object, $tmp_address, $index) )
+                            continue;
                     }
 
                     PH::print_stdout("    - replacing '{$object->_PANC_shortName()}' ...");
@@ -1794,9 +1793,8 @@ class MERGER extends UTIL
 
                                 if( $pickedObject->tags->count() + $ancestor->tags->count() > $pickedObject->tagLimit )
                                 {
-                                    PH::print_stdout("    - SKIP: tag count of name '{$ancestor->_PANC_shortName()}' [with value '{$ancestor->value()}'] added with object name from upperlevel '{$pickedObject->_PANC_shortName()}' [with value '{$pickedObject->value()}'] exceed PAN-OS limit ".$pickedObject->tagLimit);
-                                    $this->skippedObject( $index, $pickedObject, $ancestor);
-                                    continue;
+                                    if( $this->address_tag_merge_check( $pickedObject, $ancestor, $index) )
+                                        continue;
                                 }
 
                                 if( $this->action === "merge" )
@@ -1880,9 +1878,8 @@ class MERGER extends UTIL
 
                         if( $object->tags->count() + $pickedObject->tags->count() > $object->tagLimit )
                         {
-                            PH::print_stdout("    - SKIP: tag count of name '{$pickedObject->_PANC_shortName()}' [with value '{$pickedObject->value()}'] added with object name from upperlevel '{$object->_PANC_shortName()}' [with value '{$object->value()}'] exceed PAN-OS limit ".$object->tagLimit);
-                            $this->skippedObject( $index, $object, $pickedObject);
-                            continue;
+                            if( $this->address_tag_merge_check( $object, $pickedObject, $index) )
+                                continue;
                         }
 
                         PH::print_stdout("    - replacing '{$object->_PANC_shortName()}' ...");
@@ -1940,6 +1937,32 @@ class MERGER extends UTIL
         }    
     }
 
+    function address_tag_merge_check( $pickedObject, $ancestor, $index)
+    {
+        $arrayPicked = array();
+        foreach( $pickedObject->tags->getAll() as $key => $tagObj )
+            $arrayPicked[] = $tagObj->name();
+
+        $arrayAncestor = array();
+        foreach( $ancestor->tags->getAll() as $key => $tagObj )
+            $arrayAncestor[] = $tagObj->name();
+
+        $mergeArray = array_unique( array_merge($arrayPicked, $arrayAncestor) );
+
+        if( count($mergeArray) > $pickedObject->tagLimit )
+        {
+            PH::print_stdout("    - SKIP: tag count of name '{$ancestor->_PANC_shortName()}' [with value '{$ancestor->value()}'] added with object name from upperlevel '{$pickedObject->_PANC_shortName()}' [with value '{$pickedObject->value()}'] exceed PAN-OS limit ".$pickedObject->tagLimit." with count: ".count($mergeArray));
+            $this->skippedObject( $index, $pickedObject, $ancestor);
+
+            #PH::print_stdout( count($mergeArray) );
+            #$result=array_intersect($arrayPicked,$arrayAncestor);
+            #print_r( $result );
+
+            return true;
+        }
+
+        return false;
+    }
     function address_get_value_string( $object )
     {
         $value = $object->value();

@@ -40,6 +40,10 @@ CertificateCallContext::$supportedActions['display'] = Array(
         $publicKeyAlgorithm = "";
         $publicKeyHash = "";
 
+        $privateKeyLen = "";
+        $privateKeyAlgorithm = "";
+        $privateKeyHash = "";
+
         if( $object->algorithm != null )
             $algorithm = "Algorithm: ".$object->algorithm;
 
@@ -52,8 +56,8 @@ CertificateCallContext::$supportedActions['display'] = Array(
         {
             $privateKey = $object->privateKey;
             $privateKeyLen = "       - "."privateKey length: ".$object->privateKeyLen;
-            #$privateKeyAlgorithm = " | algorithm: ".$object->privateKeyAlgorithm;
-            #$prviateKeyHash = " |  hash: ".$object->privateKeyHash;
+            $privateKeyAlgorithm = " | algorithm: ".$object->privateKeyAlgorithm;
+            $privateKeyHash = " |  hash: ".$object->privateKeyHash;
         }
 
         if( $object->publicKey != null )
@@ -66,12 +70,61 @@ CertificateCallContext::$supportedActions['display'] = Array(
         //not-valid-before
         //not-valid-after
 
+        $subject = "---";
+        if( isset($object->publicKeyDetailArray['subject'] ) )
+        {
+            $input = $object->publicKeyDetailArray['subject'];
+            $subject = implode(', ', array_map(
+                function ($v, $k) {
+                    if(is_array($v)){
+                        return $k.'[]='.implode('&'.$k.'[]=', $v);
+                    }else{
+                        return $k.'='.$v;
+                    }
+                },
+                $input,
+                array_keys($input)
+            ));
+        }
+
+        $issuer = "---";
+        if( isset($object->publicKeyDetailArray['issuer'] ) )
+        {
+            $input = $object->publicKeyDetailArray['issuer'];
+            $issuer = implode(', ', array_map(
+                function ($v, $k) {
+                    if(is_array($v)){
+                        return $k.'[]='.implode('&'.$k.'[]=', $v);
+                    }else{
+                        return $k.'='.$v;
+                    }
+                },
+                $input,
+                array_keys($input)
+            ));
+        }
+
+
+        $CA = "---";
+        if( isset($object->publicKeyDetailArray['extensions']['basicConstraints'] ) )
+        {
+            if( strpos( $object->publicKeyDetailArray['extensions']['basicConstraints'], "CA:TRUE" ) !== FALSE )
+                $CA = "Yes";
+            else
+                $CA = "No";
+        }
+
+
         PH::print_stdout( "       - ".$algorithm.$notValidbefore." - ".$notValidafter );
-        PH::print_stdout( $privateKeyLen);
-        #PH::print_stdout( $privateKeyLen.$privateKeyAlgorithm.$prviateKeyHash );
+        PH::print_stdout( );
+        #PH::print_stdout( $privateKeyLen.$privateKeyAlgorithm.$privateKeyHash );
         PH::print_stdout( $publicKeyLen.$publicKeyAlgorithm.$publicKeyHash );
 
-        print_r( $object->publicKeyDetailArray );
+        PH::print_stdout( "       - Subject: ".$subject );
+        PH::print_stdout( "       - Issuer:  ".$issuer );
+        PH::print_stdout( "       - CA: ".$CA );
+
+        #print_r( $object->publicKeyDetailArray );
     },
 );
 

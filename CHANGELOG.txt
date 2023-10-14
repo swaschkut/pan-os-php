@@ -5,6 +5,7 @@ UTIL:
 * type=certificate actions=exporttoexcel:FILE.html | improvment to display correct Template / Location if certificate is configured in Panorama Template vsys
 
 BUGFIX:
+* type=address-merger | improve validation of tab objects and tag count for two objects planned to be merged
 
 GENERAL:
 
