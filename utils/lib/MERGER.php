@@ -2580,7 +2580,7 @@ class MERGER extends UTIL
                             $tmp_ancestor_DGname = "shared";
                         PH::print_stdout("    - group '{$object->name()}' cannot be merged because it has an ancestor at DG: ".$tmp_ancestor_DGname );
                         PH::print_stdout( "    - ancestor type: ".get_class( $ancestor ) );
-                        $this->skippedObject( $index, $object, $ancestor);
+                        $this->skippedObject( $index, $object, $ancestor, "ancestor type: ".get_class( $ancestor ));
                         continue;
                     }
 
@@ -2674,7 +2674,7 @@ class MERGER extends UTIL
                             if( $object->name() != $pickedObject->name() )
                             {
                                 PH::print_stdout("    - SKIP: object name '{$pickedObject->_PANC_shortName()}' is not IDENTICAL to object name from upperlevel '{$object->_PANC_shortName()}'");
-                                $this->skippedObject( $index, $object, $pickedObject);
+                                $this->skippedObject( $index, $object, $pickedObject, "not identical");
                                 continue;
                             }
 
@@ -2951,7 +2951,7 @@ class MERGER extends UTIL
                             if( $exit )
                             {
                                 PH::print_stdout( "   * SKIP: no creation of object in DG: '".$tmp_DG_name."' as object with same name '{$exitObject->name()}' and different value '{$exitObject->dstPortMapping()->mappingToText()}' exist at childDG level" );
-                                $this->skippedObject( $index, $pickedObject, $exitObject);
+                                $this->skippedObject( $index, $pickedObject, $exitObject, "different value");
                                 continue;
                             }
                         }
@@ -3014,7 +3014,7 @@ class MERGER extends UTIL
                                 $string .= " [ServiceGroup] ";
 
                             PH::print_stdout( $string );
-                            $this->skippedObject( $index, $pickedObject, $tmp_service);
+                            $this->skippedObject( $index, $pickedObject, $tmp_service, "not identical");
 
                             continue;
                         }

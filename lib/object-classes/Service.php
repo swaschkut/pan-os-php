@@ -36,6 +36,7 @@ class Service
 
     public $migrated;
     public $ancestor;
+    public $childancestor;
 
     /** @var null|DOMElement */
     public $protocolRoot = null;
