@@ -1621,7 +1621,7 @@ class MERGER extends UTIL
                         if( $exit )
                         {
                             PH::print_stdout("   * SKIP: no creation of object in DG: '" . $tmp_DG_name . "' as object with same name '{$exitObject->name()}' and different value '{$exitObject->value()}' exist at childDG/parentDG level");
-                            $this->skippedObject( $index, $pickedObject, $exitObject);
+                            $this->skippedObject( $index, $pickedObject, $exitObject, "object with different value exist at childDG/parentDG level");
                             continue;
                         }
                     }
@@ -1685,7 +1685,7 @@ class MERGER extends UTIL
                             $string .= " [AdressGroup]";
 
                         PH::print_stdout($string);
-                        $this->skippedObject( $index, $pickedObject, $tmp_address);
+                        $this->skippedObject( $index, $pickedObject, $tmp_address, "not identical");
 
                         continue;
                     }
@@ -1702,7 +1702,7 @@ class MERGER extends UTIL
                         if( $object->name() != $tmp_address->name() )
                         {
                             PH::print_stdout("    - SKIP: object name '{$object->_PANC_shortName()}' [with value '{$object->value()}'] is not IDENTICAL to object name from upperlevel '{$tmp_address->_PANC_shortName()}' [with value '{$tmp_address->value()}'] ");
-                            $this->skippedObject( $index, $tmp_address, $object);
+                            $this->skippedObject( $index, $tmp_address, $object, "not identical");
                             continue;
                         }
 
@@ -1765,7 +1765,7 @@ class MERGER extends UTIL
                         if( !$ancestor->isAddress() )
                         {
                             PH::print_stdout("    - SKIP: object name '{$object->_PANC_shortName()}' as one ancestor is of type addressgroup");
-                            $this->skippedObject( $index, $object, $ancestor);
+                            $this->skippedObject( $index, $object, $ancestor, "ancestor of type addressgroup");
                             continue;
                         }
 
@@ -1778,7 +1778,7 @@ class MERGER extends UTIL
                                 if( $this->address_get_value_string($pickedObject) != $this->address_get_value_string($ancestor) )
                                 {
                                     PH::print_stdout("    - SKIP: object name '{$ancestor->_PANC_shortName()}' [with value '{$ancestor->value()}'] is not matching to object name from upperlevel '{$pickedObject->_PANC_shortName()}' [with value '{$pickedObject->value()}'] ");
-                                    $this->skippedObject( $index, $pickedObject, $ancestor);
+                                    $this->skippedObject( $index, $pickedObject, $ancestor, "not matching to object name from upperlevel");
                                     continue;
                                 }
 
@@ -1787,7 +1787,7 @@ class MERGER extends UTIL
                                     {
                                         #PH::print_stdout("    - SKIP: object name '{$pickedObject->_PANC_shortName()}' [with value '{$pickedObject->value()}'] is not IDENTICAL to object name from upperlevel '{$ancestor->_PANC_shortName()}' [with value '{$ancestor->value()}'] ");
                                         PH::print_stdout("    - SKIP: object name '{$ancestor->_PANC_shortName()}' [with value '{$ancestor->value()}'] is not IDENTICAL to object name from upperlevel '{$pickedObject->_PANC_shortName()}' [with value '{$pickedObject->value()}'] ");
-                                        $this->skippedObject( $index, $pickedObject, $ancestor);
+                                        $this->skippedObject( $index, $pickedObject, $ancestor, "not IDENTICAL to object name from upperlevel");
                                         continue;
                                     }
 
@@ -1951,8 +1951,8 @@ class MERGER extends UTIL
 
         if( count($mergeArray) > $pickedObject->tagLimit )
         {
-            PH::print_stdout("    - SKIP: tag count of name '{$ancestor->_PANC_shortName()}' [with value '{$ancestor->value()}'] added with object name from upperlevel '{$pickedObject->_PANC_shortName()}' [with value '{$pickedObject->value()}'] exceed PAN-OS limit ".$pickedObject->tagLimit." with count: ".count($mergeArray));
-            $this->skippedObject( $index, $pickedObject, $ancestor);
+            PH::print_stdout( "    - SKIP: tag count of name '{$ancestor->_PANC_shortName()}' [with value '{$ancestor->value()}'] added with object name from upperlevel '{$pickedObject->_PANC_shortName()}' [with value '{$pickedObject->value()}'] exceed PAN-OS limit ".$pickedObject->tagLimit." with unique tag count: ".count($mergeArray) );
+            $this->skippedObject( $index, $pickedObject, $ancestor, "tag object count exceed PAN-OS limit ".$pickedObject->tagLimit." with unique tag count: ".count($mergeArray) );
 
             #PH::print_stdout( count($mergeArray) );
             #$result=array_intersect($arrayPicked,$arrayAncestor);
@@ -2428,7 +2428,7 @@ class MERGER extends UTIL
                     if( !$tmp_service->isGroup() )
                     {
                         PH::print_stdout( "    - SKIP: object name '{$pickedObject->_PANC_shortName()}' of type ".get_class($pickedObject)." can not be merged with object name: '{$tmp_service->_PANC_shortName()}' of type ".get_class($tmp_service) );
-                        $this->skippedObject( $index, $pickedObject, $tmp_service);
+                        $this->skippedObject( $index, $pickedObject, $tmp_service, "object type is not service-group");
                         continue;
                     }
 
@@ -2442,7 +2442,7 @@ class MERGER extends UTIL
                     else
                     {
                         PH::print_stdout( "    - SKIP: object name '{$pickedObject->_PANC_shortName()}' [with value '{$pickedObject_value}'] is not IDENTICAL to object name: '{$tmp_service->_PANC_shortName()}' [with value '{$tmp_service_value}']" );
-                        $this->skippedObject( $index, $pickedObject, $tmp_service);
+                        $this->skippedObject( $index, $pickedObject, $tmp_service, "not identical");
                         continue;
                     }
                 }
@@ -2458,7 +2458,7 @@ class MERGER extends UTIL
                         if( $object->name() != $tmp_service->name() )
                         {
                             PH::print_stdout("    - SKIP: object name '{$object->_PANC_shortName()}' is not IDENTICAL to object name from upperlevel '{$tmp_service->_PANC_shortName()}'");
-                            $this->skippedObject( $index, $tmp_service, $object);
+                            $this->skippedObject( $index, $tmp_service, $object, "not identical");
                             continue;
                         }
 
@@ -2525,7 +2525,7 @@ class MERGER extends UTIL
                                 if( $object->name() != $ancestor->name() )
                                 {
                                     PH::print_stdout("    - SKIP: object name '{$ancestor->_PANC_shortName()}' is not IDENTICAL to object name from upperlevel '{$object->_PANC_shortName()}'");
-                                    $this->skippedObject( $index, $object, $ancestor);
+                                    $this->skippedObject( $index, $object, $ancestor, "not identical");
                                     continue;
                                 }
 

@@ -3,6 +3,7 @@ CHANGELOG
 2.1.21
 UTIL:
 * type=certificate actions=exporttoexcel:FILE.html | improvment to display correct Template / Location if certificate is configured in Panorama Template vsys
+* type=XYZ-merger | extend with skipped reason for HTML spreadsheet
 
 BUGFIX:
 * type=address-merger | improve validation of tab objects and tag count for two objects planned to be merged
