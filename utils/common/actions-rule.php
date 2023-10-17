@@ -3446,14 +3446,18 @@ RuleCallContext::$supportedActions[] = array(
 
         if( strlen($newName) > 31 )
         {
-            if( $context->object->owner->owner->version > 80 && strlen($newName) <= 63 && $context->arguments['accept63characters'] )
+            if( isset($context->object->owner->owner) && $context->object->owner->owner->version > 80 && strlen($newName) <= 63 )
+            {
+                //do nothing
+            }
+            elseif( $context->arguments['accept63characters'] )
             {
                 //do nothing
             }
             else
             {
                 $string = "because new name '{$newName}' is too long" ;
-            PH::ACTIONstatus( $context, "SKIPPED", $string );
+                PH::ACTIONstatus( $context, "SKIPPED", $string );
             return;
             }
         }
@@ -3510,7 +3514,11 @@ RuleCallContext::$supportedActions[] = array(
 
         if( strlen($newName) > 31 )
         {
-            if( $context->object->owner->owner->version > 80 && strlen($newName) <= 63 && $context->arguments['accept63characters'] )
+            if( isset($context->object->owner->owner) && $context->object->owner->owner->version > 80 && strlen($newName) <= 63 )
+            {
+                //do nothing
+            }
+            elseif( $context->arguments['accept63characters'] )
             {
                 //do nothing
             }
@@ -3574,7 +3582,11 @@ RuleCallContext::$supportedActions[] = array(
 
         if( strlen($newName) > 31 )
         {
-            if( $context->object->owner->owner->version > 80 && strlen($newName) <= 63 && $context->arguments['accept63characters'] )
+            if( isset($context->object->owner->owner) && $context->object->owner->owner->version > 80 && strlen($newName) <= 63 )
+            {
+                //do nothing
+            }
+            elseif( $context->arguments['accept63characters'] )
             {
                 //do nothing
             }
@@ -3637,13 +3649,17 @@ RuleCallContext::$supportedActions[] = array(
 
         if( strlen($newName) > 31 )
         {
-            if( $context->object->owner->owner->version > 80 && strlen($newName) <= 63 && $context->arguments['accept63characters'] )
+            if( $context->object->owner->owner->version > 80 && strlen($newName) <= 63 )
+            {
+                //do nothing
+            }
+            elseif( $context->arguments['accept63characters'] )
             {
                 //do nothing
             }
             else
             {
-                $string = "because new name '{$newName}' is too long" ;
+                $string = "3646 because new name '{$newName}' is too long" ;
                 PH::ACTIONstatus( $context, "SKIPPED", $string );
                 return;
             }
@@ -3669,7 +3685,7 @@ RuleCallContext::$supportedActions[] = array(
         }
     },
     'GlobalFinishFunction' => function (RuleCallContext $context) {
-        if( $context->object->owner->owner->version > 80 && !$context->object->owner->owner->isFirewall() && $context->arguments['accept63characters'] )
+        if( isset($context->object->owner->owner) && $context->object->owner->owner->version > 80 && !$context->object->owner->owner->isFirewall() && $context->arguments['accept63characters'] )
         {
             $string = PH::boldText("\nPanorama PAN-OS version 8.1 allow rule name >31 and <63 characters.\n" .
                 "Please be aware that there is no validation available if DeviceGroup is connected to a firewall running PAN-OS <8.1.\n" .
@@ -3799,15 +3815,19 @@ RuleCallContext::$supportedActions[] = array(
 
         if( strlen($newName) > 31 )
         {
-            if( $context->object->owner->owner->version > 80 && strlen($newName) <= 63 && $context->arguments['accept63characters'] )
+            if( isset($context->object->owner->owner) && $context->object->owner->owner->version > 80 && strlen($newName) <= 63 )
+            {
+                //do nothing
+            }
+            elseif( $context->arguments['accept63characters'] )
             {
                 //do nothing
             }
             else
             {
                 $string = "because new name '{$newName}' is too long" ;
-            PH::ACTIONstatus( $context, "SKIPPED", $string );
-            return;
+                PH::ACTIONstatus( $context, "SKIPPED", $string );
+                return;
             }
         }
 

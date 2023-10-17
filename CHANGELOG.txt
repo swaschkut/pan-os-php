@@ -7,6 +7,7 @@ UTIL:
 
 BUGFIX:
 * type=address-merger | improve validation of tab objects and tag count for two objects planned to be merged
+* type=rule | bugfix for actions=name-rename - if rule name length <= 63 and PAN-OS version > 8.0
 
 GENERAL:
 
