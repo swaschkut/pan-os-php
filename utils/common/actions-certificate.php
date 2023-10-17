@@ -170,7 +170,7 @@ CertificateCallContext::$supportedActions['exportToExcel'] = array(
 
                 $lines .= $context->encloseFunction((string)$count);
 
-                if( get_class($object->owner->owner->owner) == "PANConf" )
+                if( isset($object->owner->owner->owner) && get_class($object->owner->owner->owner) == "PANConf" )
                 {
                     if( isset($object->owner->owner->owner->owner) && $object->owner->owner->owner->owner !== null && (get_class($object->owner->owner->owner->owner) == "Template" || get_class($context->subSystem->owner) == "TemplateStack" ) )
                     {
