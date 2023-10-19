@@ -1583,7 +1583,8 @@ class Rule
             derr( "supported hitType: ".implode( ", ", $supported_hitType ) );
 
 
-        $unused_flag = 'unused' . $this->ruleNature();
+        #$unused_flag = 'unused' . $this->ruleNature();
+        $unused_flag = $hitType . $this->ruleNature();
         $rule_base = $this->ruleNature();
 
         $sub = $this->owner->owner;
@@ -1702,7 +1703,7 @@ class Rule
         if( isset($sub->apiCache[$unused_flag][$this->name()]) )
             return TRUE;
 
-        return FALSE;
+        return null;
     }
 
     function ruleUsage81( &$sub, $vsys, $rule_base, $connector, $hitType, $unused_flag, $context )
