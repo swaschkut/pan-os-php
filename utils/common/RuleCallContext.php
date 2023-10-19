@@ -795,6 +795,13 @@ class RuleCallContext extends CallContext
             else
                 return self::enclose( "" );
         }
+        if( $fieldName == 'rule-creation' )
+        {
+            if( isset($rule_hitcount_array[$fieldName]) )
+                return self::enclose( $rule_hitcount_array[$fieldName] );
+            else
+                return self::enclose( "" );
+        }
         return self::enclose("unsupported: '$fieldName'");
 
     }

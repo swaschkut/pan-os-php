@@ -4063,6 +4063,7 @@ RuleCallContext::$supportedActions[] = array(
                 PH::$JSON_TMP['sub']['object'][$rule->name()]['first-hit'] = $rule_hitcount_array['first-hit'];
                 PH::$JSON_TMP['sub']['object'][$rule->name()]['last-hit'] = $rule_hitcount_array['last-hit'];
                 PH::$JSON_TMP['sub']['object'][$rule->name()]['hit-count'] = $rule_hitcount_array['hit-count'];
+                PH::$JSON_TMP['sub']['object'][$rule->name()]['rule-creation'] = $rule_hitcount_array['rule-creation'];
             }
         }
     },
@@ -4079,7 +4080,7 @@ RuleCallContext::$supportedActions[] = array(
                 "  - ResolveApplicationSummary : fields with application objects will be resolved to their category and risk)\n"  .
                 "  - ResolveScheduleSummary : fields with schedule objects will be resolved to their expire time)\n" .
                 "  - ApplicationSeen : all App-ID seen on the Device SecurityRule will be listed\n" .
-                "  - HitCount : Rule - 'first-hit' - 'last-hit' - 'hit-count' will be listed"
+                "  - HitCount : Rule - 'first-hit' - 'last-hit' - 'hit-count' - 'rule-creation' will be listed"
         )
     )
 );
@@ -4598,7 +4599,8 @@ RuleCallContext::$supportedActions[] = array(
             'target' => 'target',
             'first-hit' => 'first-hit',
             'last-hit' => 'last-hit',
-            'hit-count' => 'hit-count'
+            'hit-count' => 'hit-count',
+            'rule-creation' => 'rule-creation'
         );
 
         $lines = '';
@@ -4635,7 +4637,7 @@ RuleCallContext::$supportedActions[] = array(
                         (($fieldName == 'application_resolved_sum') && !$addResolvedApplicationSummary) ||
                         (($fieldName == 'schedule_resolved_sum' ) && !$addResolvedScheduleSummary) ||
                         (($fieldName == 'application_seen') && (!$addAppSeenSummary || !$context->isAPI) ) ||
-                        (($fieldName == 'first-hit' || $fieldName == 'last-hit' || $fieldName == 'hit-count') && (!$addHitCountSummary || !$context->isAPI) ) ||
+                        (($fieldName == 'first-hit' || $fieldName == 'last-hit' || $fieldName == 'hit-count' || $fieldName == 'rule-creation') && (!$addHitCountSummary || !$context->isAPI) ) ||
                         (($fieldName == 'nat_rule_type' || $fieldName == 'snat_type' || $fieldName == 'snat_address' ||
                                 $fieldName == 'snat_address_resovled_sum' || $fieldName == "dnat_type" || $fieldName == 'dnat_host' ||
                                 $fieldName == 'dnat_host_resovled_sum' || $fieldName == 'dnat_port' || $fieldName == 'dnat_distribution' ||
@@ -4643,7 +4645,7 @@ RuleCallContext::$supportedActions[] = array(
                     )
                         continue;
                     $rule_hitcount_array = array();
-                    if(($fieldName == 'first-hit' || $fieldName == 'last-hit' || $fieldName == 'hit-count') && $addHitCountSummary && $context->isAPI )
+                    if(($fieldName == 'first-hit' || $fieldName == 'last-hit' || $fieldName == 'hit-count' || $fieldName == 'rule-creation') && $addHitCountSummary && $context->isAPI )
                         $rule_hitcount_array = $rule->API_showRuleHitCount( false, false );
                     $lines .= $context->ruleFieldHtmlExport($rule, $fieldID, TRUE, $rule_hitcount_array);
                 }
@@ -4673,7 +4675,7 @@ RuleCallContext::$supportedActions[] = array(
                 (($fieldName == 'application_resolved_sum') && !$addResolvedApplicationSummary) ||
                 (($fieldName == 'schedule_resolved_sum') && !$addResolvedScheduleSummary) ||
                 (($fieldName == 'application_seen') && (!$addAppSeenSummary || !$context->isAPI) ) ||
-                (($fieldName == 'first-hit' || $fieldName == 'last-hit' || $fieldName == 'hit-count') && (!$addHitCountSummary || !$context->isAPI) ) ||
+                (($fieldName == 'first-hit' || $fieldName == 'last-hit' || $fieldName == 'hit-count' || $fieldName == 'rule-creation' ) && (!$addHitCountSummary || !$context->isAPI) ) ||
                 (($fieldName == 'nat_rule_type' || $fieldName == 'snat_type' || $fieldName == 'snat_address' ||
                         $fieldName == 'snat_address_resovled_sum' || $fieldName == "dnat_type" || $fieldName == 'dnat_host' ||
                         $fieldName == 'dnat_host_resovled_sum' || $fieldName == 'dnat_port' || $fieldName == 'dnat_distribution'  ||
@@ -4712,7 +4714,7 @@ RuleCallContext::$supportedActions[] = array(
                     "  - ResolveApplicationSummary : fields with application objects will be resolved to their category and risk\n" .
                     "  - ResolveScheduleSummary : fields with schedule objects will be resolved to their expire time\n" .
                     "  - ApplicationSeen : all App-ID seen on the Device SecurityRule will be listed\n" .
-                    "  - HitCount : Rule - 'first-hit' - 'last-hit' - 'hit-count' will be listed\n"
+                    "  - HitCount : Rule - 'first-hit' - 'last-hit' - 'hit-count' - 'rule-creation will be listed\n"
             )
     )
 );
