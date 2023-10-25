@@ -5,6 +5,7 @@ UTIL:
 * type=certificate actions=exporttoexcel:FILE.html | improvment to display correct Template / Location if certificate is configured in Panorama Template vsys
 * type=XYZ-merger | extend with skipped reason for HTML spreadsheet
 * type=rule actions=exporttoexcel:file.html,hitcount | extend with column rule-creation
+* type=software-download | introduce validation if Server response is still containing valid information
 
 BUGFIX:
 * type=address-merger | improve validation of tab objects and tag count for two objects planned to be merged

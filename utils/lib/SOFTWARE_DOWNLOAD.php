@@ -1138,6 +1138,8 @@ class SOFTWARE_DOWNLOAD extends UTIL
             derr("empty string\n");
 
 
+        if( strpos($curl_response, "404 Not Found" ) !== FALSE )
+            derr("Response include '404 Not Found' not available site", null, FALSE);
         $xmlDoc = new DOMDocument();
         $xmlDoc->loadXML($curl_response, XML_PARSE_BIG_LINES);
 
