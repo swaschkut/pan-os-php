@@ -135,7 +135,7 @@ class KEYMANGER extends UTIL
             PH::$JSON_TMP['header'] = $string;
             PH::$JSON_TMP[$addHost]['name'] = $addHost;
 
-            if( $addHost == "bpa-apikey" || $addHost == "license-apikey" || $addHost == "ldap-password" || $addHost == "maxmind-licensekey" || strpos($addHost, "tsg_id" || $addHost == "gcp-mysql-password") !== FALSE )
+            if( $addHost == "bpa-apikey" || $addHost == "license-apikey" || $addHost == "ldap-password" || $addHost == "maxmind-licensekey" || $addHost == "gcp-mysql-password" || strpos($addHost, "tsg_id" ) !== FALSE )
             {
                 if( strpos($addHost, "tsg_id") !== FALSE )
                 {
@@ -182,7 +182,7 @@ class KEYMANGER extends UTIL
                 else
                 {
                     if( !isset(PH::$args['apikey']) )
-                        derr( "argument apikey - must be set to add BPA-/License-APIkey" );
+                        derr( "argument apikey - must be set to add BPA-/License-APIkey", null, False );
 
                     foreach( PanAPIConnector::$savedConnectors as $cIndex => $connector )
                     {
