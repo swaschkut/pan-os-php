@@ -20,7 +20,9 @@
  */
 
 
-require_once("lib/pan_php_framework.php");
+//problem with API container
+#require_once("lib/pan_php_framework.php");
+#require_once("../../lib/pan_php_framework.php");
 
 $minimumVersion = "1.5.13";
 $maximumVersion = "2.2.0";

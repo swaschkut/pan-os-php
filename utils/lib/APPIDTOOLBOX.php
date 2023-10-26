@@ -61,7 +61,7 @@ class APPIDTOOLBOX extends UTIL
             "   - phase=p2-generator  [phase=phase2] [phase=report-generator] \n" .
             "   - phase=p3-cloner  [phase=phase3] [phase=rule-cloner] \n" .
             "   - [phase=phase4] -- no script available; manual review task \n" .
-            "   - phase=p5-activation [phase=phase5] [phase=rule-activiation] \n" .
+            "   - phase=p5-activation [phase=phase5] [phase=rule-activation] \n" .
             "   - phase=p6-cleaner    [phase=phase6] [phase=rule-cleaner] \n" .
             "";
 
