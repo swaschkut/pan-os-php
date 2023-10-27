@@ -1,6 +1,8 @@
 <?php
 $conn = null;
-include "../db_conn.php";
+//include must be mentioned as below, not ../db_conn.php as session already exist
+//also no session_start() as already started
+include "db_conn.php";
 
 if (isset($_SESSION['username']) && isset($_SESSION['id'])) {
     
