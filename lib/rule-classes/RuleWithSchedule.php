@@ -180,4 +180,13 @@ trait RuleWithSchedule
 
         return $ret;
     }
+
+    public function scheduleHash()
+    {
+        $string = "";
+        if( $this->schedule !== null && $this->schedule !== false )
+            $string = $this->schedule();
+
+        return md5( $string );
+    }
 }

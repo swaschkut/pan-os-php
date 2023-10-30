@@ -93,7 +93,7 @@ class RULEMERGER extends UTIL
             $tmp_additionalmatch = strtolower( PH::$args['additionalmatch'] );
             $this->UTIL_additionalMatch = explode( ",", $tmp_additionalmatch );
 
-            $supportedAdditionalmatch = array( 'tag', 'secprof', 'user', 'urlcategory', 'target', 'logsetting', 'logprof' );
+            $supportedAdditionalmatch = array( 'tag', 'secprof', 'user', 'urlcategory', 'target', 'logsetting', 'logprof', 'schedule' );
             foreach( $this->UTIL_additionalMatch as $value )
             {
                 if( !in_array( $value, $supportedAdditionalmatch ) )
@@ -308,6 +308,8 @@ class RULEMERGER extends UTIL
             $additional_match .= $rule->logSettingHash();
         if( in_array( 'logsetting', $this->UTIL_additionalMatch ) )
             $additional_match .= $rule->logSettingHash();
+        if( in_array( 'schedule', $this->UTIL_additionalMatch ) )
+            $additional_match .= $rule->scheduleHash();
 
         if( $this->UTIL_method == 1 )
             $rule->mergeHash = md5('action:' . $rule->action() . '.*/' . $rule->from->getFastHashComp() . $rule->to->getFastHashComp() .
