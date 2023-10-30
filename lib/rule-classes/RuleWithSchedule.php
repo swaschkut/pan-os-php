@@ -185,7 +185,7 @@ trait RuleWithSchedule
     {
         $string = "";
         if( $this->schedule !== null && $this->schedule !== false )
-            $string = $this->schedule();
+            $string = $this->schedule->name();
 
         return md5( $string );
     }
