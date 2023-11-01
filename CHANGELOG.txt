@@ -18,6 +18,7 @@ BUGFIX:
 GENERAL:
 * db_conn.php | correction of variables for docker compose
 * Docker API | fix members.php to get this working for admin users
+* general | class CallContext.php - bugfix for NULL value
 
 
 2.1.20 (20231014)
