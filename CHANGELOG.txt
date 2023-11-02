@@ -15,6 +15,7 @@ BUGFIX:
 * type=rule 'filter=((timestamp-rule-creation.fast > -180days) AND (rule is.unused.fast))' | bugfix if two xyz.fast filter are used together
 * type=key-manager  | bugfix for Docker API
 * type=appid-toolbox | bugfix for Docker API
+* type=address actions=move:TARGETloc | bugfix to handle correctly if moved from FW shared to vsys1
 
 GENERAL:
 * db_conn.php | correction of variables for docker compose
