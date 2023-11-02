@@ -2,7 +2,7 @@ CHANGELOG
 
 2.1.21
 UTIL:
-* type=certificate actions=exporttoexcel:FILE.html | improvment to display correct Template / Location if certificate is configured in Panorama Template vsys
+* type=certificate actions=exporttoexcel:FILE.html | improvement to display correct Template / Location if certificate is configured in Panorama Template vsys
 * type=XYZ-merger | extend with skipped reason for HTML spreadsheet
 * type=rule actions=exporttoexcel:file.html,hitcount | extend with column rule-creation
 * type=software-download | introduce validation if Server response is still containing valid information
