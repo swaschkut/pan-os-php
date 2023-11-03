@@ -39,6 +39,11 @@ echo "START \"install script for MACOS\"" \
 && brew install jq \
 && echo "" \
 && echo "" \
+&& echo "eval '$(/opt/homebrew/bin/brew shellenv)'" \
+&& echo "alias pan-os-php='php -r "require_once '"'"'utils/pan-os-php.php'"'"';" $@'" \
+&& echo "echo "[ -f /opt/homebrew/etc/bash_completion ] && . /opt/homebrew/etc/bash_completion" >> ~/.bash_profile" \
+&& echo "" \
+&& echo "" \
 && echo "set user bash profile"   \
 && cat ${FOLDER_PATH}/utils/alias.sh >> ${USER_FOLDER_PATH}/.bash_profile \
 && echo "" \
