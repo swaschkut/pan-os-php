@@ -492,7 +492,7 @@ RuleCallContext::$commonActionFunctions['zone-add'] = array(
 
         $objectFind = $zoneContainer->parentCentralStore->find($context->arguments['zoneName']);
         if( $objectFind === null && $force == FALSE )
-            derr("zone named '{$context->arguments['zoneName']}' not found, you can try to use xxx-add-force action instead");
+            derr("zone named '{$context->arguments['zoneName']}' not found, you can try to use xxx-add-force action instead", null, False);
 
         $objectFind = $zoneContainer->parentCentralStore->findOrCreate($context->arguments['zoneName']);
         if( $objectFind === null )
