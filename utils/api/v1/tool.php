@@ -308,5 +308,8 @@ function UTILcaller( $url_pieces, $argv, $argc, $PHP_FILE )
 
 
         $util = PH::callPANOSPHP( $type, $argv, $argc, $PHP_FILE, array(), "", $projects_folder );
+
+        //memory clean up
+        unset($util);
     }
 }
