@@ -1,6 +1,14 @@
 CHANGELOG
 
-2.1.21
+2.1.22
+UTIL:
+
+BUGFIX:
+
+GENERAL:
+
+
+2.1.21  (20231107)
 UTIL:
 * type=certificate actions=exporttoexcel:FILE.html | improvement to display correct Template / Location if certificate is configured in Panorama Template vsys
 * type=XYZ-merger | extend with skipped reason for HTML spreadsheet
