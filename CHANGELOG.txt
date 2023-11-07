@@ -7,6 +7,7 @@ UTIL:
 * type=rule actions=exporttoexcel:file.html,hitcount | extend with column rule-creation
 * type=software-download | introduce validation if Server response is still containing valid information
 * type=rule | introduce 'filter=(src/dst is.fully.included.in.file | is.partially.or.fully.included.in.file |  is.partially.included.in.file(
+* type=rule | extend description for actions=dst/src--Remove-Objects-Matching-Filter:subquery1
 
 BUGFIX:
 * type=address-merger | improve validation of tab objects and tag count for two objects planned to be merged
