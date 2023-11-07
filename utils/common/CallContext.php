@@ -285,7 +285,9 @@ class CallContext
 
     public function encloseFunction( $value, $nowrap = TRUE )
     {
-        if( is_string($value) )
+        if( $value == NULL )
+            $output = "---";
+        elseif( is_string($value) )
             $output = htmlspecialchars($value);
         elseif( is_array($value) )
         {
@@ -307,7 +309,7 @@ class CallContext
             }
         }
         else
-            derr('unsupported');
+            derr('TYPE: '.gettype($value).' unsupported', null, false);
 
         if( $nowrap )
             return '<td style="white-space: nowrap">' . $output . '</td>';

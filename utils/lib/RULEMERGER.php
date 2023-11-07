@@ -93,7 +93,7 @@ class RULEMERGER extends UTIL
             $tmp_additionalmatch = strtolower( PH::$args['additionalmatch'] );
             $this->UTIL_additionalMatch = explode( ",", $tmp_additionalmatch );
 
-            $supportedAdditionalmatch = array( 'tag', 'secprof', 'user', 'urlcategory', 'target', 'logsetting', 'logprof' );
+            $supportedAdditionalmatch = array( 'tag', 'secprof', 'user', 'urlcategory', 'target', 'logsetting', 'logprof', 'schedule' );
             foreach( $this->UTIL_additionalMatch as $value )
             {
                 if( !in_array( $value, $supportedAdditionalmatch ) )
@@ -308,6 +308,8 @@ class RULEMERGER extends UTIL
             $additional_match .= $rule->logSettingHash();
         if( in_array( 'logsetting', $this->UTIL_additionalMatch ) )
             $additional_match .= $rule->logSettingHash();
+        if( in_array( 'schedule', $this->UTIL_additionalMatch ) )
+            $additional_match .= $rule->scheduleHash();
 
         if( $this->UTIL_method == 1 )
             $rule->mergeHash = md5('action:' . $rule->action() . '.*/' . $rule->from->getFastHashComp() . $rule->to->getFastHashComp() .
@@ -826,7 +828,7 @@ class RULEMERGER extends UTIL
         $this->supportedArguments[] = array('niceName' => 'stopMergingIfDenySeen', 'shortHelp' => 'deny rules wont be merged', 'argDesc' => '[yes|no|true|false]');
         $this->supportedArguments[] = array('niceName' => 'mergeAdjacentOnly', 'shortHelp' => 'merge only rules that are adjacent to each other', 'argDesc' => '[yes|no|true|false]');
         $this->supportedArguments[] = array('niceName' => 'filter', 'shortHelp' => 'filter rules that can be converted');
-        $this->supportedArguments[] = array('niceName' => 'additionalMatch', 'shortHelp' => 'add additional matching criterial', 'argDesc' => '[tag,secprof,user,urlcategory,target,logsetting]');
+        $this->supportedArguments[] = array('niceName' => 'additionalMatch', 'shortHelp' => 'add additional matching criteria', 'argDesc' => '[tag,secprof,user,urlcategory,target,logsetting,schedule]');
         $this->supportedArguments[] = array('niceName' => 'DebugAPI', 'shortHelp' => 'prints API calls when they happen');
         $this->supportedArguments[] = array('niceName' => 'exportCSV', 'shortHelp' => 'when this argument is specified, it instructs the script to display the kept and removed objects per value');
     }

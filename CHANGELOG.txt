@@ -2,10 +2,12 @@ CHANGELOG
 
 2.1.21
 UTIL:
-* type=certificate actions=exporttoexcel:FILE.html | improvment to display correct Template / Location if certificate is configured in Panorama Template vsys
+* type=certificate actions=exporttoexcel:FILE.html | improvement to display correct Template / Location if certificate is configured in Panorama Template vsys
 * type=XYZ-merger | extend with skipped reason for HTML spreadsheet
 * type=rule actions=exporttoexcel:file.html,hitcount | extend with column rule-creation
 * type=software-download | introduce validation if Server response is still containing valid information
+* type=rule | introduce 'filter=(src/dst is.fully.included.in.file | is.partially.or.fully.included.in.file |  is.partially.included.in.file(
+* type=rule | extend description for actions=dst/src--Remove-Objects-Matching-Filter:subquery1
 
 BUGFIX:
 * type=address-merger | improve validation of tab objects and tag count for two objects planned to be merged
@@ -14,10 +16,12 @@ BUGFIX:
 * type=rule 'filter=((timestamp-rule-creation.fast > -180days) AND (rule is.unused.fast))' | bugfix if two xyz.fast filter are used together
 * type=key-manager  | bugfix for Docker API
 * type=appid-toolbox | bugfix for Docker API
+* type=address actions=move:TARGETloc | bugfix to handle correctly if moved from FW shared to vsys1
 
 GENERAL:
 * db_conn.php | correction of variables for docker compose
 * Docker API | fix members.php to get this working for admin users
+* general | class CallContext.php - bugfix for NULL value
 
 
 2.1.20 (20231014)

@@ -1361,9 +1361,30 @@ var subjectObject =
             "display": {
                 "name": "display",
                 "MainFunction": {}
+            },
+            "exporttoexcel": {
+                "name": "exportToExcel",
+                "MainFunction": {},
+                "GlobalInitFunction": {},
+                "GlobalFinishFunction": {},
+                "args": {
+                    "filename": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                }
             }
         },
         "filter": {
+            "expired": {
+                "operators": {
+                    ">,<,=,!": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if rule name matches the specified timestamp MM\/DD\/YYYY [american] \/ DD-MM-YYYY [european] \/ 21 September 2021 \/ -90 days"
+                    }
+                }
+            },
             "name": {
                 "operators": {
                     "eq": {
@@ -2483,7 +2504,7 @@ var subjectObject =
                             "ApplicationSeen",
                             "HitCount"
                         ],
-                        "help": "pipe(|) separated list of additional field to include in the report. The following is available:\n  - ResolveAddressSummary : fields with address objects will be resolved to IP addressed and summarized in a new column)\n  - ResolveServiceSummary : fields with service objects will be resolved to their value and summarized in a new column)\n  - ResolveServiceAppDefaultSummary : fields with application objects will be resolved to their service default value and summarized in a new column)\n  - ResolveApplicationSummary : fields with application objects will be resolved to their category and risk)\n  - ResolveScheduleSummary : fields with schedule objects will be resolved to their expire time)\n  - ApplicationSeen : all App-ID seen on the Device SecurityRule will be listed\n  - HitCount : Rule - 'first-hit' - 'last-hit' - 'hit-count' will be listed"
+                        "help": "pipe(|) separated list of additional field to include in the report. The following is available:\n  - ResolveAddressSummary : fields with address objects will be resolved to IP addressed and summarized in a new column)\n  - ResolveServiceSummary : fields with service objects will be resolved to their value and summarized in a new column)\n  - ResolveServiceAppDefaultSummary : fields with application objects will be resolved to their service default value and summarized in a new column)\n  - ResolveApplicationSummary : fields with application objects will be resolved to their category and risk)\n  - ResolveScheduleSummary : fields with schedule objects will be resolved to their expire time)\n  - ApplicationSeen : all App-ID seen on the Device SecurityRule will be listed\n  - HitCount : Rule - 'first-hit' - 'last-hit' - 'hit-count' - 'rule-creation' will be listed"
                     }
                 }
             },
@@ -2650,7 +2671,7 @@ var subjectObject =
                             "ApplicationSeen",
                             "HitCount"
                         ],
-                        "help": "pipe(|) separated list of additional field to include in the report. The following is available:\n  - ResolveAddressSummary : fields with address objects will be resolved to IP addressed and summarized in a new column\n  - ResolveServiceSummary : fields with service objects will be resolved to their value and summarized in a new column\n  - ResolveServiceAppDefaultSummary : fields with application objects will be resolved to their service default value and summarized in a new column\n  - ResolveApplicationSummary : fields with application objects will be resolved to their category and risk\n  - ResolveScheduleSummary : fields with schedule objects will be resolved to their expire time\n  - ApplicationSeen : all App-ID seen on the Device SecurityRule will be listed\n  - HitCount : Rule - 'first-hit' - 'last-hit' - 'hit-count' will be listed\n"
+                        "help": "pipe(|) separated list of additional field to include in the report. The following is available:\n  - ResolveAddressSummary : fields with address objects will be resolved to IP addressed and summarized in a new column\n  - ResolveServiceSummary : fields with service objects will be resolved to their value and summarized in a new column\n  - ResolveServiceAppDefaultSummary : fields with application objects will be resolved to their service default value and summarized in a new column\n  - ResolveApplicationSummary : fields with application objects will be resolved to their category and risk\n  - ResolveScheduleSummary : fields with schedule objects will be resolved to their expire time\n  - ApplicationSeen : all App-ID seen on the Device SecurityRule will be listed\n  - HitCount : Rule - 'first-hit' - 'last-hit' - 'hit-count' - 'rule-creation will be listed\n"
                     }
                 }
             },
@@ -4153,6 +4174,18 @@ var subjectObject =
                         "Function": {},
                         "arg": true,
                         "argType": "commaSeparatedList"
+                    },
+                    "is.fully.included.in.file": {
+                        "Function": {},
+                        "arg": true
+                    },
+                    "is.partially.or.fully.included.in.file": {
+                        "Function": {},
+                        "arg": true
+                    },
+                    "is.partially.included.in.file": {
+                        "Function": {},
+                        "arg": true
                     }
                 }
             },
@@ -5053,6 +5086,18 @@ var subjectObject =
                         "Function": {},
                         "arg": true,
                         "argType": "commaSeparatedList"
+                    },
+                    "is.fully.included.in.file": {
+                        "Function": {},
+                        "arg": true
+                    },
+                    "is.partially.or.fully.included.in.file": {
+                        "Function": {},
+                        "arg": true
+                    },
+                    "is.partially.included.in.file": {
+                        "Function": {},
+                        "arg": true
                     },
                     "has.from.query": {
                         "Function": {},

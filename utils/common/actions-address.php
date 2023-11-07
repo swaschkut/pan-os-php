@@ -1531,7 +1531,7 @@ AddressCallContext::$supportedActions[] = array(
             }
         }
 
-        $conflictObject = $targetStore->find($object->name(), null, TRUE);
+        $conflictObject = $targetStore->find($object->name(), null, FALSE);
         if( $conflictObject === null )
         {
             if( $object->isGroup() && !$object->isDynamic() )
@@ -1546,7 +1546,7 @@ AddressCallContext::$supportedActions[] = array(
                     }
                 }
             }
-            elseif( $object->isAddress() && !$object->isType_TMP() && !!$object->isRegion() )
+            elseif( $object->isAddress() && !$object->isType_TMP() && !$object->isRegion() )
             {
                 foreach( $object->tags->getAll() as $tag )
                 {

@@ -492,7 +492,7 @@ RuleCallContext::$commonActionFunctions['zone-add'] = array(
 
         $objectFind = $zoneContainer->parentCentralStore->find($context->arguments['zoneName']);
         if( $objectFind === null && $force == FALSE )
-            derr("zone named '{$context->arguments['zoneName']}' not found, you can try to use xxx-add-force action instead");
+            derr("zone named '{$context->arguments['zoneName']}' not found, you can try to use xxx-add-force action instead", null, False);
 
         $objectFind = $zoneContainer->parentCentralStore->findOrCreate($context->arguments['zoneName']);
         if( $objectFind === null )
@@ -1309,7 +1309,7 @@ RuleCallContext::$supportedActions[] = array(
         if( $rule->source->count() < 1 )
             return;
 
-        $queryName = $context->arguments['filterName'];
+        $queryName = $context->arguments['SubqueryFilterName'];
 
         if( !isset($context->nestedQueries[$queryName]) )
         {
@@ -1350,8 +1350,8 @@ RuleCallContext::$supportedActions[] = array(
 
 
     },
-    'args' => array('filterName' => array('type' => 'string', 'default' => '*nodefault*',
-        'help' => 'specify the query that will be used to filter the objects to be removed'),
+    'args' => array('SubqueryFilterName' => array('type' => 'string', 'default' => '*nodefault*',
+        'help' => 'specify the subquery that will be used to filter the objects to be removed: "actions=src-Remove-Objects-Matching-Filter:subquery1" "subquery1=!(value ip4.included-in 192.168.10.0/24)"'),
     ),
     'help' => "this action will go through all objects and see if they match the query you input and then remove them if it's the case."
 );
@@ -1420,7 +1420,7 @@ RuleCallContext::$supportedActions[] = array(
         if( $rule->destination->count() < 1 )
             return;
 
-        $queryName = $context->arguments['filterName'];
+        $queryName = $context->arguments['SubqueryFilterName'];
 
         if( !isset($context->nestedQueries[$queryName]) )
         {
@@ -1460,8 +1460,8 @@ RuleCallContext::$supportedActions[] = array(
 
 
     },
-    'args' => array('filterName' => array('type' => 'string', 'default' => '*nodefault*',
-        'help' => 'specify the query that will be used to filter the objects to be removed'),
+    'args' => array('SubqueryFilterName' => array('type' => 'string', 'default' => '*nodefault*',
+        'help' => 'specify the subquery that will be used to filter the objects to be removed: "actions=dst-Remove-Objects-Matching-Filter:subquery1" "subquery1=!(value ip4.included-in 192.168.10.0/24)"'),
     ),
     'help' => "this action will go through all objects and see if they match the query you input and then remove them if it's the case."
 );

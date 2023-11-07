@@ -17,14 +17,6 @@ alias pan-os-php='php -r "require_once '"'"'utils/pan-os-php.php'"'"';" $@'
 ##########################################################################################
 
 
-#APPID TOOLBOX
-#alias pa_appidtoolbox-report-generator='php -r "require_once '"'"'appid-toolbox/report-generator.php'"'"';" $@'
-#alias pa_appidtoolbox-rule-activation='php -r "require_once '"'"'appid-toolbox/rule-activation.php'"'"';" $@'
-#alias pa_appidtoolbox-rule-cleaner='php -r "require_once '"'"'appid-toolbox/rule-cleaner.php'"'"';" $@'
-#alias pa_appidtoolbox-rule-cloner='php -r "require_once '"'"'appid-toolbox/rule-cloner.php'"'"';" $@'
-#alias pa_appidtoolbox-rule-marker='php -r "require_once '"'"'appid-toolbox/rule-marker.php'"'"';" $@'
-
-
 #DEVELOP
 alias pa_ckp-exclude='php -r "require_once '"'"'utils/develop/checkpoint-exclude.php'"'"';" $@'
 

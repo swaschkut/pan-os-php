@@ -665,7 +665,8 @@ RQuery::$defaultFilters['rule']['dnat']['operators']['is.set'] = array(
 //                                              //
 
 
-RQuery::$commonFilters['src-dst']['xxx-is.fully.included.in.list'] = function (RuleRQueryContext $context, AddressRuleContainer $srcOrDst) {
+
+RQuery::$commonFilters['src-dst']['xxx-get.list'] = function (RuleRQueryContext $context) {
     $list = &$context->value;
 
     if( !isset($context->cachedIP4Mapping) )
@@ -681,35 +682,54 @@ RQuery::$commonFilters['src-dst']['xxx-is.fully.included.in.list'] = function (R
     }
     else
         $listMapping = $context->cachedIP4Mapping;
+
+    return $listMapping;
+};
+
+RQuery::$commonFilters['src-dst']['xxx-is.fully.included.in.list'] = function (RuleRQueryContext $context, AddressRuleContainer $srcOrDst) {
+    $f = RQuery::$commonFilters['src-dst']['xxx-get.list'];
+    $listMapping = $f($context);
 
     return $srcOrDst->getIP4Mapping()->includedInOtherMap($listMapping) == 1;
 };
 
 RQuery::$commonFilters['src-dst']['xxx-is.partially.included.in.list'] = function (RuleRQueryContext $context, AddressRuleContainer $srcOrDst) {
-    $list = &$context->value;
-
-    if( !isset($context->cachedIP4Mapping) )
-    {
-        $listMapping = new IP4Map();
-
-        foreach( $list as $item )
-            $listMapping->addMap(IP4Map::mapFromText($item), FALSE);
-
-        $listMapping->sortAndRecalculate();
-
-        $context->cachedIP4Mapping = $listMapping;
-    }
-    else
-        $listMapping = $context->cachedIP4Mapping;
+    $f = RQuery::$commonFilters['src-dst']['xxx-get.list'];
+    $listMapping = $f($context);
 
     return $srcOrDst->getIP4Mapping()->includedInOtherMap($listMapping) == 2;
 };
 
 RQuery::$commonFilters['src-dst']['xxx-is.partially.or.fully.included.in.list'] = function (RuleRQueryContext $context, AddressRuleContainer $srcOrDst) {
-    $list = &$context->value;
+    $f = RQuery::$commonFilters['src-dst']['xxx-get.list'];
+    $listMapping = $f($context);
+
+    return $srcOrDst->getIP4Mapping()->includedInOtherMap($listMapping) > 0;
+};
+
+RQuery::$commonFilters['src-dst']['xxx-get.file'] = function (RuleRQueryContext $context) {
+    if( !isset($context->cachedList) )
+    {
+        $text = file_get_contents($context->value);
+
+        if( $text === FALSE )
+            derr("cannot open file '{$context->value}");
+
+        $lines = explode("\n", $text);
+        foreach( $lines as $line )
+        {
+            $line = trim($line);
+            if( strlen($line) == 0 )
+                continue;
+            $list[$line] = $line;
+        }
+        $context->cachedList = &$list;
+    }
+    else
+        $list = &$context->cachedList;
+
 
     /** @var IP4Map $lisMapping */
-
     if( !isset($context->cachedIP4Mapping) )
     {
         $listMapping = new IP4Map();
@@ -723,6 +743,27 @@ RQuery::$commonFilters['src-dst']['xxx-is.partially.or.fully.included.in.list'] 
     }
     else
         $listMapping = $context->cachedIP4Mapping;
+
+    return $listMapping;
+};
+
+RQuery::$commonFilters['src-dst']['xxx-is.fully.included.in.file'] = function (RuleRQueryContext $context, AddressRuleContainer $srcOrDst) {
+    $f = RQuery::$commonFilters['src-dst']['xxx-get.file'];
+    $listMapping = $f($context);
+
+    return $srcOrDst->getIP4Mapping()->includedInOtherMap($listMapping) == 1;
+};
+
+RQuery::$commonFilters['src-dst']['xxx-is.partially.included.in.file'] = function (RuleRQueryContext $context, AddressRuleContainer $srcOrDst) {
+    $f = RQuery::$commonFilters['src-dst']['xxx-get.file'];
+    $listMapping = $f($context);
+
+    return $srcOrDst->getIP4Mapping()->includedInOtherMap($listMapping) == 2;
+};
+
+RQuery::$commonFilters['src-dst']['xxx-is.partially.or.fully.included.in.file'] = function (RuleRQueryContext $context, AddressRuleContainer $srcOrDst) {
+    $f = RQuery::$commonFilters['src-dst']['xxx-get.file'];
+    $listMapping = $f($context);
 
     return $srcOrDst->getIP4Mapping()->includedInOtherMap($listMapping) > 0;
 };
@@ -939,6 +980,28 @@ RQuery::$defaultFilters['rule']['src']['operators']['is.partially.included.in.li
     },
     'arg' => TRUE,
     'argType' => 'commaSeparatedList'
+);
+
+RQuery::$defaultFilters['rule']['src']['operators']['is.fully.included.in.file'] = array(
+    'Function' => function (RuleRQueryContext $context) {
+        $f = RQuery::$commonFilters['src-dst']['xxx-is.fully.included.in.file'];
+        return $f($context, $context->object->source);
+    },
+    'arg' => TRUE
+);
+RQuery::$defaultFilters['rule']['src']['operators']['is.partially.or.fully.included.in.file'] = array(
+    'Function' => function (RuleRQueryContext $context) {
+        $f = RQuery::$commonFilters['src-dst']['xxx-is.partially.or.fully.included.in.file'];
+        return $f($context, $context->object->source);
+    },
+    'arg' => TRUE
+);
+RQuery::$defaultFilters['rule']['src']['operators']['is.partially.included.in.file'] = array(
+    'Function' => function (RuleRQueryContext $context) {
+        $f = RQuery::$commonFilters['src-dst']['xxx-is.partially.included.in.file'];
+        return $f($context, $context->object->source);
+    },
+    'arg' => TRUE
 );
 
 RQuery::$defaultFilters['rule']['dst']['operators']['included-in.full'] = array(
@@ -1212,6 +1275,27 @@ RQuery::$defaultFilters['rule']['dst']['operators']['is.partially.included.in.li
     'argType' => 'commaSeparatedList'
 );
 
+RQuery::$defaultFilters['rule']['dst']['operators']['is.fully.included.in.file'] = array(
+    'Function' => function (RuleRQueryContext $context) {
+        $f = RQuery::$commonFilters['src-dst']['xxx-is.fully.included.in.file'];
+        return $f($context, $context->object->destination);
+    },
+    'arg' => TRUE
+);
+RQuery::$defaultFilters['rule']['dst']['operators']['is.partially.or.fully.included.in.file'] = array(
+    'Function' => function (RuleRQueryContext $context) {
+        $f = RQuery::$commonFilters['src-dst']['xxx-is.partially.or.fully.included.in.file'];
+        return $f($context, $context->object->destination);
+    },
+    'arg' => TRUE
+);
+RQuery::$defaultFilters['rule']['dst']['operators']['is.partially.included.in.file'] = array(
+    'Function' => function (RuleRQueryContext $context) {
+        $f = RQuery::$commonFilters['src-dst']['xxx-is.partially.included.in.file'];
+        return $f($context, $context->object->destination);
+    },
+    'arg' => TRUE
+);
 
 //                                                //
 //                Tag Based filters              //
