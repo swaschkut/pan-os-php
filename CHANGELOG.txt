@@ -6,6 +6,7 @@ UTIL:
 BUGFIX:
 
 GENERAL:
+* general | dynamic content update to version 8775-8381
 
 
 2.1.21  (20231107)
