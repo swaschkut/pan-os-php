@@ -4222,6 +4222,31 @@ RuleCallContext::$supportedActions[] = array(
                 derr("cannot find vsys or device group named '{$location}'");
             $ruleStore = $sub->$variableName;
         }
+
+        $owner = $rule->owner->owner;
+        $found = false;
+        if( $pan->isPanorama() )
+        {
+            /** @var DeviceGroup $owner */
+            $childDGs = $owner->childDeviceGroups(TRUE);
+            foreach( $childDGs as $DG )
+            {
+                if( $DG->name() == $location )
+                    $found = true;
+            }
+        }
+
+        if( !$found )
+        {
+            //Todo: validation needed if specific objects used in rule are available:
+            #print "check needed\n";
+            //$addressStore = $owner->addressStore
+            //$serviceStore = $owner->serviceStore
+            //$tagStore = $owner->tagStore
+            //securityprofile/securityProfilegroup
+            //urlcategory
+        }
+
         if( $context->isAPI )
         {
             if( $ruleStore === $rule->owner )
