@@ -6,6 +6,7 @@ UTIL:
 BUGFIX:
 * type=service actions=move | bugfix to not error out if pre-defined service object service-http/-https must be merged with an existing object of same name
 * type=tag-merger | bugfix if dupalgorithm=samename
+* type=address actions=move | bugfix for tag object search
 
 GENERAL:
 * general | dynamic content update to version 8776-8390
