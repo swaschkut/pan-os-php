@@ -490,7 +490,13 @@ class Service
     public function protocol()
     {
         if( $this->isTmpSrv() )
+        {
+            if( $this->name() == 'service-http' )
+                return 'tcp';
+            if( $this->name() == 'service-https' )
+                return 'tcp';
             return 'tmp';
+        }
 
         else
             return $this->_protocol;
@@ -622,11 +628,18 @@ class Service
 
     public function sameValue(Service $otherObject)
     {
-        if( $this->isTmpSrv() && !$otherObject->isTmpSrv() )
-            return FALSE;
+        if( $otherObject->name() == "service-http" && $this->name() == "service-http" )
+        {}
+        elseif( $otherObject->name() == "service-https" && $this->name() == "service-https" )
+        {}
+        else
+        {
+            if( $this->isTmpSrv() && !$otherObject->isTmpSrv() )
+                return FALSE;
 
-        if( $otherObject->isTmpSrv() && !$this->isTmpSrv() )
-            return FALSE;
+            if( $otherObject->isTmpSrv() && !$this->isTmpSrv() )
+                return FALSE;
+        }
 
         if( $otherObject->_protocol !== $this->_protocol )
             return FALSE;
