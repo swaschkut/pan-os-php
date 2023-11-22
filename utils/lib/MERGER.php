@@ -3504,8 +3504,11 @@ class MERGER extends UTIL
                             //Todo: validate if this is correct; expectation is not same color swaschkut 20230525
                             if( !$obj->sameValue($pickedObject) ) //true if same color, false if different color
                             {
-                                $exit = true;
-                                $exitObject = $obj;
+                                if( $this->dupAlg !== 'samename' )
+                                {
+                                    $exit = true;
+                                    $exitObject = $obj;
+                                }
                             }
                         }
 
