@@ -7,6 +7,7 @@ BUGFIX:
 * type=service actions=move | bugfix to not error out if pre-defined service object service-http/-https must be merged with an existing object of same name
 * type=tag-merger | bugfix if dupalgorithm=samename
 * type=address actions=move | bugfix for tag object search
+* type=rule | different actions - if last object of src/dst/srv/urlcategory is removed, and if not force any is used, rule will be disabled
 
 GENERAL:
 * general | dynamic content update to version 8776-8390

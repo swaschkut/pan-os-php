@@ -103,8 +103,9 @@ class ServiceRuleContainer extends ObjRuleContainer
 
         if( $ret && $count == 1 && !$forceAny )
         {
-            derr("you are trying to remove last Object from a rule which will set it to ANY, please use forceAny=true for object: "
-                . $this->toString());
+            $this->owner->setDisabled(true);
+            #derr("you are trying to remove last Object from a rule which will set it to ANY, please use forceAny=true for object: "
+            #    . $this->toString());
         }
 
         if( $ret && $rewriteXml )
