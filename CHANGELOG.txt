@@ -8,6 +8,7 @@ BUGFIX:
 * type=tag-merger | bugfix if dupalgorithm=samename
 * type=address actions=move | bugfix for tag object search
 * type=rule | different actions - if last object of src/dst/srv/urlcategory is removed, and if not force any is used, rule will be disabled
+* type=device actions=display-shadowrule loadpanoramapushedconfig | extend validation as panoramapushedconfig check is not implemented
 
 GENERAL:
 * general | dynamic content update to version 8776-8390

@@ -1493,7 +1493,13 @@ DeviceCallContext::$supportedActions['display-shadowrule'] = array(
                         }
                         elseif( $classtype == "VirtualSystem" )
                         {
-                            $sub = $pan->findVirtualSystem( $ownerDG );
+                            if( $ownerDG === "panoramaPushedConfig" )
+                            {
+                                derr( "shadow Rule check on FW with panoramaPushedConfig is not implemented", null, FALSE );
+                            }
+                            else
+                                $sub = $pan->findVirtualSystem( $ownerDG );
+
                             $shadowedRuleObj = $sub->$ruletype->find( $shadow2 );
                             if( $shadowedRuleObj === null )
                             {

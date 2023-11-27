@@ -741,6 +741,7 @@ class PANConf
      */
     public function findVirtualSystem($name)
     {
+        //what about 'panoramaPushedConfig'
         foreach( $this->virtualSystems as $vsys )
         {
             if( $vsys->name() == $name )
