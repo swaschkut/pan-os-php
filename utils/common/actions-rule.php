@@ -774,9 +774,9 @@ RuleCallContext::$supportedActions[] = array(
 
 
             if( $context->isAPI )
-                $rule->to->API_removeZone($objectFind);
+                $rule->from->API_removeZone($objectFind);
             else
-                $rule->to->removeZone($objectFind);
+                $rule->from->removeZone($objectFind);
         }
 
     },
@@ -1024,7 +1024,7 @@ RuleCallContext::$supportedActions[] = array(
             }
             */
 
-            $objectFind = $rule->from->parentCentralStore->find($zone);
+            $objectFind = $rule->to->parentCentralStore->find($zone);
             if( $objectFind === null )
             {
                 mwarning("zone named '{$zone}' not found");
