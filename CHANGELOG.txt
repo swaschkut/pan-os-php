@@ -11,6 +11,7 @@ BUGFIX:
 * type=device actions=display-shadowrule loadpanoramapushedconfig | extend validation as panoramapushedconfig check is not implemented
 * type=rule actions=from-remove-from-file/to-remove-from-file | bugfix as wrong from/to zone are removed
 * class NAT | bugfix of none correct variable name $connector
+* type=service-merger | bugfix for exportcsv=file.html to add also deleted objects where an ancestor at upperlevel is available
 
 GENERAL:
 * general | dynamic content update to version 8776-8390
