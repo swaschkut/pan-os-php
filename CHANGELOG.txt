@@ -15,7 +15,7 @@ BUGFIX:
 * type=service-merger | bugfix for exportcsv=file.html to add also deleted objects where an ancestor at upperlevel is available
 
 GENERAL:
-* general | dynamic content update to version 8776-8390
+* update to Device App-ID version: 8785-8431
 
 
 2.1.21  (20231107)
