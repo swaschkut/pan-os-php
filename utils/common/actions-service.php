@@ -762,7 +762,9 @@ ServiceCallContext::$supportedActions[] = array(
 
         if( $conflictObject->isTmpSrv() && !$object->isTmpSrv() )
         {
-            derr("unsupported situation with a temporary object");
+            mwarning("unsupported situation with a temporary object", null, FALSE);
+            $string = "unsupported situation with a temporary object";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
             return;
         }
 

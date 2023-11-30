@@ -299,7 +299,7 @@ class UTIL
         $this->supportedArguments['shadow-nojson']= array('niceName' => 'shadow-nojson', 'shortHelp' => 'BETA command to display output on stdout in text format');
         $this->supportedArguments['shadow-displayxmlnode']= array('niceName' => 'shadow-displayxmlnode', 'shortHelp' => 'command to display XML node in addition to for actions=display');
         $this->supportedArguments['shadow-saseapiqa']= array('niceName' => 'shadow-saseapiqa', 'shortHelp' => 'command to use QA URLs for SASE API');
-
+        $this->supportedArguments['shadow-loadreduce']= array('niceName' => 'shadow-loadreduce', 'shortHelp' => 'during config load do NOT load dynamic-addressgroup information from address objects TAG based part');
     }
 
     public function utilInit()

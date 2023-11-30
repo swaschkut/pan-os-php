@@ -59,7 +59,8 @@ __pan-os-php_scripts()
 
 		arguments=('type=' 'in=' 'out=' 'actions=' 'filter=' 'location=' 'loadpanoramapushedconfig' 'loadplugin=' 'help'
 		 'listactions' 'listfilters' 'debugapi' 'apitimeout='
-		 'shadow-apikeyhidden' 'shadow-apikeynohidden' 'shadow-apikeynosave' 'shadow-disableoutputformatting' 'shadow-displaycurlrequest' 'shadow-enablexmlduplicatesdeletion'
+		 'shadow-apikeyhidden' 'shadow-apikeynohidden' 'shadow-apikeynosave' 'shadow-disableoutputformatting' 'shadow-displaycurlrequest'
+		 'shadow-enablexmlduplicatesdeletion'
 		 'shadow-ignoreinvalidaddressobjects' 'shadow-json' 'shadow-reducexml'
 		 'outputformatset='
 		 'stats' 'template=' 'version' )

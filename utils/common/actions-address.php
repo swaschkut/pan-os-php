@@ -1550,7 +1550,7 @@ AddressCallContext::$supportedActions[] = array(
             {
                 foreach( $object->tags->getAll() as $tag )
                 {
-                    if( $targetStore->find($tag->name(), null, true ) === null )
+                    if( $findSubSystem->tagStore->find($tag->name(), null, true ) === null )
                     {
                         $string = "this address object has a tag named '{$tag->name()} that does not exist in target location '{$targetLocation}'";
                         PH::ACTIONstatus( $context, "SKIPPED", $string );

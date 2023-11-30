@@ -66,10 +66,10 @@ RuleCallContext::$commonActionFunctions['calculate-zones'] = array(
                     $panorama = $system->owner;
 
                 if( $context->arguments['template'] == $context->actionRef['args']['template']['default'] )
-                    derr('with Panorama configs, you need to specify a template name');
+                    derr('with Panorama configs, you need to specify a template name', null, FALSE);
 
                 if( $context->arguments['virtualRouter'] == $context->actionRef['args']['virtualRouter']['default'] )
-                    derr('with Panorama configs, you need to specify virtualRouter argument. Available virtual routes are: ');
+                    derr('with Panorama configs, you need to specify virtualRouter argument. Available virtual routes are: ', null, FALSE);
 
                 $_tmp_explTemplateName = explode('@', $context->arguments['template']);
                 if( count($_tmp_explTemplateName) > 1 )
@@ -123,7 +123,7 @@ RuleCallContext::$commonActionFunctions['calculate-zones'] = array(
                 {
                     $template = $panorama->findTemplate($context->arguments['template']);
                     if( $template === null )
-                        derr("cannot find Template named '{$context->arguments['template']}'. Available template list:" . PH::list_to_string($panorama->templates));
+                        derr("cannot find Template named '{$context->arguments['template']}'. Available template list:" . PH::list_to_string($panorama->templates), null, FALSE);
                 }
 
                 if( $configIsOnLocalFirewall )
@@ -138,7 +138,7 @@ RuleCallContext::$commonActionFunctions['calculate-zones'] = array(
                     else
                         $tmpVar = $template->deviceConfiguration->network->virtualRouterStore->virtualRouters();
 
-                    derr("cannot find VirtualRouter named '{$context->arguments['virtualRouter']}' in Template '{$context->arguments['template']}'. Available VR list: " . PH::list_to_string($tmpVar));
+                    derr("cannot find VirtualRouter named '{$context->arguments['virtualRouter']}' in Template '{$context->arguments['template']}'. Available VR list: " . PH::list_to_string($tmpVar), null, FALSE);
                 }
 
                 if( (!$configIsOnLocalFirewall && count($template->deviceConfiguration->virtualSystems) == 1) || ($configIsOnLocalFirewall && count($firewall->virtualSystems) == 1) )
@@ -157,7 +157,7 @@ RuleCallContext::$commonActionFunctions['calculate-zones'] = array(
                     }
                     elseif( $context->arguments['vsys'] == '*autodetermine*' )
                     {
-                        derr("cannot autodetermine resolution context from Template '{$context->arguments['template']}' VR '{$context->arguments['virtualRouter']}'' , multiple VSYS are available: " . PH::list_to_string($vsysConcernedByVR) . ". Please provide choose a VSYS.");
+                        derr("cannot autodetermine resolution context from Template '{$context->arguments['template']}' VR '{$context->arguments['virtualRouter']}'' , multiple VSYS are available: " . PH::list_to_string($vsysConcernedByVR) . ". Please provide choose a VSYS.", null, FALSE);
                     }
                     else
                     {
@@ -166,7 +166,7 @@ RuleCallContext::$commonActionFunctions['calculate-zones'] = array(
                         else
                             $vsys = $template->deviceConfiguration->findVirtualSystem($context->arguments['vsys']);
                         if( $vsys === null )
-                            derr("cannot find VSYS '{$context->arguments['vsys']}' in Template '{$context->arguments['template']}'");
+                            derr("cannot find VSYS '{$context->arguments['vsys']}' in Template '{$context->arguments['template']}'", null, FALSE);
                         $system = $vsys;
                     }
                 }
@@ -179,7 +179,7 @@ RuleCallContext::$commonActionFunctions['calculate-zones'] = array(
             {
                 $virtualRouterToProcess = $system->owner->network->virtualRouterStore->findVirtualRouter($context->arguments['virtualRouter']);
                 if( $virtualRouterToProcess === null )
-                    derr("VirtualRouter named '{$context->arguments['virtualRouter']}' not found");
+                    derr("VirtualRouter named '{$context->arguments['virtualRouter']}' not found", null, FALSE);
             }
             else
             {
@@ -201,9 +201,9 @@ RuleCallContext::$commonActionFunctions['calculate-zones'] = array(
                 $string = "VSYS/DG '{$system->name()}' has interfaces attached to " . count($foundRouters) . " virtual routers";
                 PH::ACTIONlog($context, $string);
                 if( count($foundRouters) > 1 )
-                    derr("more than 1 suitable virtual routers found, please specify one fo the following: " . PH::list_to_string($foundRouters));
+                    derr("more than 1 suitable virtual routers found, please specify one fo the following: " . PH::list_to_string($foundRouters), null, FALSE);
                 if( count($foundRouters) == 0 )
-                    derr("no suitable VirtualRouter found, please force one or check your configuration");
+                    derr("no suitable VirtualRouter found, please force one or check your configuration", null, FALSE);
 
                 $virtualRouterToProcess = $foundRouters[0];
             }
@@ -421,7 +421,7 @@ RuleCallContext::$commonActionFunctions['calculate-zones'] = array(
 
                 if( $rule->isNatRule() && $fromOrTo == 'to' )
                 {
-                    derr($context->padding . ' NAT rules are not supported yet');
+                    derr($context->padding . ' NAT rules are not supported yet', null, FALSE);
                 }
 
                 if( $fromOrTo == 'from' )
@@ -496,7 +496,7 @@ RuleCallContext::$commonActionFunctions['zone-add'] = array(
 
         $objectFind = $zoneContainer->parentCentralStore->findOrCreate($context->arguments['zoneName']);
         if( $objectFind === null )
-            derr("zone named '{$context->arguments['zoneName']}' not found");
+            derr("zone named '{$context->arguments['zoneName']}' not found", null, FALSE);
 
         if( $context->isAPI )
             $zoneContainer->API_addZone($objectFind);
@@ -551,7 +551,7 @@ RuleCallContext::$commonActionFunctions['zone-replace'] = array(
 
         $zoneToReplace = $zoneContainer->parentCentralStore->find($zoneNameToReplace);
         if( $zoneToReplace === null )
-            derr("zone '{$zoneNameToReplace}' does not exist. If it's intended then please use a REGEXP instead\n");
+            derr("zone '{$zoneNameToReplace}' does not exist. If it's intended then please use a REGEXP instead\n", null, False);
 
         if( !$zoneContainer->hasZone($zoneToReplace) )
         {
@@ -564,7 +564,7 @@ RuleCallContext::$commonActionFunctions['zone-replace'] = array(
         if( $zoneForReplacement === null )
         {
             if( !$force )
-                derr("zone '{$zoneNameForReplacement}' does not exist. If it's intended then please use option force=TRUE to bypass this safeguard");
+                derr("zone '{$zoneNameForReplacement}' does not exist. If it's intended then please use option force=TRUE to bypass this safeguard", null, false);
             $zoneForReplacement = $zoneContainer->parentCentralStore->createTmp($zoneNameForReplacement);
         }
 
@@ -698,7 +698,7 @@ RuleCallContext::$supportedActions[] = array(
 
         $objectFind = $rule->from->parentCentralStore->find($context->arguments['zoneName']);
         if( $objectFind === null )
-            derr("zone named '{$context->arguments['zoneName']}' not found");
+            derr("zone named '{$context->arguments['zoneName']}' not found", null, FALSE);
 
         if( $context->isAPI )
             $rule->from->API_removeZone($objectFind);
@@ -774,9 +774,9 @@ RuleCallContext::$supportedActions[] = array(
 
 
             if( $context->isAPI )
-                $rule->to->API_removeZone($objectFind);
+                $rule->from->API_removeZone($objectFind);
             else
-                $rule->to->removeZone($objectFind);
+                $rule->from->removeZone($objectFind);
         }
 
     },
@@ -810,7 +810,7 @@ RuleCallContext::$supportedActions[] = array(
 
         $objectFind = $rule->from->parentCentralStore->find($context->arguments['zoneName']);
         if( $objectFind === null )
-            derr("zone named '{$context->arguments['zoneName']}' not found");
+            derr("zone named '{$context->arguments['zoneName']}' not found", null, FALSE);
 
         if( $context->isAPI )
             $rule->from->API_removeZone($objectFind, TRUE, TRUE);
@@ -957,7 +957,7 @@ RuleCallContext::$supportedActions[] = array(
 
         $objectFind = $rule->from->parentCentralStore->find($context->arguments['zoneName']);
         if( $objectFind === null )
-            derr("zone named '{$context->arguments['zoneName']}' not found");
+            derr("zone named '{$context->arguments['zoneName']}' not found", null, FALSE);
 
         if( $context->isAPI )
             $rule->to->API_removeZone($objectFind);
@@ -1024,7 +1024,7 @@ RuleCallContext::$supportedActions[] = array(
             }
             */
 
-            $objectFind = $rule->from->parentCentralStore->find($zone);
+            $objectFind = $rule->to->parentCentralStore->find($zone);
             if( $objectFind === null )
             {
                 mwarning("zone named '{$zone}' not found");
@@ -1073,7 +1073,7 @@ RuleCallContext::$supportedActions[] = array(
 
         $objectFind = $rule->from->parentCentralStore->find($context->arguments['zoneName']);
         if( $objectFind === null )
-            derr("zone named '{$context->arguments['zoneName']}' not found");
+            derr("zone named '{$context->arguments['zoneName']}' not found", null, FALSE);
 
         if( $context->isAPI )
             $rule->to->API_removeZone($objectFind, TRUE, TRUE);
@@ -1313,13 +1313,13 @@ RuleCallContext::$supportedActions[] = array(
 
         if( !isset($context->nestedQueries[$queryName]) )
         {
-            derr("cannot find query filter called '{$queryName}'");
+            derr("cannot find query filter called '{$queryName}'", null, FALSE);
         }
 
         $rQuery = new RQuery('address');
         $errorMessage = '';
         if( !$rQuery->parseFromString($context->nestedQueries[$queryName], $errorMessage) )
-            derr("error while parsing query: {$context->nestedQueries[$queryName]}");
+            derr("error while parsing query: {$context->nestedQueries[$queryName]}", null, FALSE);
 
 
         foreach( $rule->source->members() as $member )
@@ -1424,13 +1424,13 @@ RuleCallContext::$supportedActions[] = array(
 
         if( !isset($context->nestedQueries[$queryName]) )
         {
-            derr("cannot find query filter called '{$queryName}'");
+            derr("cannot find query filter called '{$queryName}'", null, FALSE);
         }
 
         $rQuery = new RQuery('address');
         $errorMessage = '';
         if( !$rQuery->parseFromString($context->nestedQueries[$queryName], $errorMessage) )
-            derr("error while parsing query: {$context->nestedQueries[$queryName]}\nError Message is: {$errorMessage}\n");
+            derr("error while parsing query: {$context->nestedQueries[$queryName]}\nError Message is: {$errorMessage}\n", null, FALSE);
 
 
         foreach( $rule->destination->members() as $member )
@@ -1483,13 +1483,13 @@ RuleCallContext::$supportedActions[] = array(
 
         if( !isset($context->nestedQueries[$queryName]) )
         {
-            derr("cannot find query filter called '{$queryName}'");
+            derr("cannot find query filter called '{$queryName}'", null, FALSE);
         }
 
         $rQuery = new RQuery('service');
         $errorMessage = '';
         if( !$rQuery->parseFromString($context->nestedQueries[$queryName], $errorMessage) )
-            derr("error while parsing query: {$context->nestedQueries[$queryName]}\nError Message is: {$errorMessage}\n");
+            derr("error while parsing query: {$context->nestedQueries[$queryName]}\nError Message is: {$errorMessage}\n", null, FALSE);
 
 
         foreach( $rule->services->members() as $member )
@@ -1669,7 +1669,7 @@ RuleCallContext::$supportedActions[] = array(
         }
         $objectFind = $rule->source->parentCentralStore->find($context->arguments['objName']);
         if( $objectFind === null )
-            derr("address-type object named '{$context->arguments['objName']}' not found");
+            derr("address-type object named '{$context->arguments['objName']}' not found", null, FALSE);
 
         if( $context->isAPI )
             $rule->destination->API_remove($objectFind, TRUE);
@@ -1765,7 +1765,7 @@ RuleCallContext::$supportedActions[] = array(
         $rule = $context->object;
         $objectFind = $rule->tags->parentCentralStore->find($context->arguments['tagName']);
         if( $objectFind === null )
-            derr("tag named '{$context->arguments['tagName']}' not found");
+            derr("tag named '{$context->arguments['tagName']}' not found", null, FALSE);
 
         if( $context->isAPI )
             $rule->tags->API_addTag($objectFind);
@@ -1810,7 +1810,7 @@ RuleCallContext::$supportedActions[] = array(
         $rule = $context->object;
         $objectFind = $rule->tags->parentCentralStore->find($context->arguments['tagName']);
         if( $objectFind === null )
-            derr("tag named '{$context->arguments['tagName']}' not found");
+            derr("tag named '{$context->arguments['tagName']}' not found", null, FALSE);
 
         if( $context->isAPI )
             $rule->tags->API_removeTag($objectFind);
@@ -1847,7 +1847,7 @@ RuleCallContext::$supportedActions[] = array(
         {
             $result = preg_match($pattern, $tag->name());
             if( $result === FALSE )
-                derr("'$pattern' is not a valid regex");
+                derr("'$pattern' is not a valid regex", null, FALSE);
             if( $result == 1 )
             {
                 $string = "removing tag {$tag->name()}... ";
@@ -1934,7 +1934,7 @@ RuleCallContext::$supportedActions[] = array(
         }
         $objectFind = $rule->services->parentCentralStore->find($context->arguments['svcName']);
         if( $objectFind === null )
-            derr("service named '{$context->arguments['svcName']}' not found");
+            derr("service named '{$context->arguments['svcName']}' not found", null, FALSE);
 
         if( $context->isAPI )
             $rule->services->API_add($objectFind);
@@ -1956,7 +1956,7 @@ RuleCallContext::$supportedActions[] = array(
         }
         $objectFind = $rule->services->parentCentralStore->find($context->arguments['svcName']);
         if( $objectFind === null )
-            derr("service named '{$context->arguments['svcName']}' not found");
+            derr("service named '{$context->arguments['svcName']}' not found", null, FALSE);
 
         if( $context->isAPI )
             $rule->services->API_remove($objectFind);
@@ -1978,7 +1978,7 @@ RuleCallContext::$supportedActions[] = array(
         }
         $objectFind = $rule->services->parentCentralStore->find($context->arguments['svcName']);
         if( $objectFind === null )
-            derr("service named '{$context->arguments['svcName']}' not found");
+            derr("service named '{$context->arguments['svcName']}' not found", null, FALSE);
 
         if( $context->isAPI )
             $rule->services->API_remove($objectFind, TRUE, TRUE);
@@ -2032,7 +2032,7 @@ RuleCallContext::$supportedActions[] = array(
 
         $objectFind = $rule->apps->parentCentralStore->find($appName);
         if( $objectFind === null )
-            derr("application named '{$appName}' not found");
+            derr("application named '{$appName}' not found", null, FALSE);
 
         $string = "adding application '{$appName}'... ";
         PH::ACTIONlog( $context, $string );
@@ -2057,7 +2057,7 @@ RuleCallContext::$supportedActions[] = array(
         }
         $objectFind = $rule->apps->parentCentralStore->findorCreate($context->arguments['appName']);
         if( $objectFind === null )
-            derr("application named '{$context->arguments['appName']}' not found");
+            derr("application named '{$context->arguments['appName']}' not found", null, FALSE);
 
         if( $context->isAPI )
             $rule->apps->API_addApp($objectFind);
@@ -2079,7 +2079,7 @@ RuleCallContext::$supportedActions[] = array(
         }
         $objectFind = $rule->apps->parentCentralStore->find($context->arguments['appName']);
         if( $objectFind === null )
-            derr("application named '{$context->arguments['appName']}' not found");
+            derr("application named '{$context->arguments['appName']}' not found", null, FALSE);
 
         if( $context->isAPI )
             $rule->apps->API_removeApp($objectFind);
@@ -2101,7 +2101,7 @@ RuleCallContext::$supportedActions[] = array(
         }
         $objectFind = $rule->apps->parentCentralStore->find($context->arguments['appName']);
         if( $objectFind === null )
-            derr("application named '{$context->arguments['appName']}' not found");
+            derr("application named '{$context->arguments['appName']}' not found", null, FALSE);
 
         if( $context->isAPI )
             $rule->apps->API_removeApp($objectFind, TRUE, TRUE);
@@ -3157,7 +3157,7 @@ RuleCallContext::$supportedActions[] = array(
             return;
         }
         if( !$context->isAPI )
-            derr('you cannot call this action without API mode');
+            derr('you cannot call this action without API mode', null, FALSE);
 
         if( $rule->setEnabled($context->arguments['trueOrFalse']) )
         {
@@ -3199,7 +3199,7 @@ RuleCallContext::$supportedActions[] = array(
             return;
         }
         if( !$context->isAPI )
-            derr('you cannot call this action without API mode');
+            derr('you cannot call this action without API mode', null, FALSE);
 
         if( $rule->setDisabled($context->arguments['trueOrFalse']) )
         {
@@ -3271,7 +3271,7 @@ RuleCallContext::$supportedActions[] = array(
         }
 
         if( !$context->isAPI )
-            derr('you cannot call this action without API mode');
+            derr('you cannot call this action without API mode', null, FALSE);
 
         if( $rule->setDsri($context->arguments['trueOrFalse']) )
         {
@@ -3366,7 +3366,7 @@ RuleCallContext::$supportedActions[] = array(
 
         $objectFind = $rule->source->parentCentralStore->find($context->arguments['objName']);
         if( $objectFind === null )
-            derr("address-type object named '{$context->arguments['objName']}' not found");
+            derr("address-type object named '{$context->arguments['objName']}' not found", null, FALSE);
 
         if( $context->isAPI )
             $rule->API_setDNAT( $objectFind, null, $dnattype  );
@@ -4164,7 +4164,7 @@ RuleCallContext::$supportedActions[] = array(
         if( strtolower($location) == 'shared' )
         {
             if( $pan->isFirewall() )
-                derr("Rules cannot be copied to SHARED location on a firewall, only in Panorama");
+                derr("Rules cannot be copied to SHARED location on a firewall, only in Panorama", null, FALSE);
 
             $ruleStore = $pan->$variableName;
         }
@@ -4172,7 +4172,7 @@ RuleCallContext::$supportedActions[] = array(
         {
             $sub = $pan->findSubSystemByName($location);
             if( $sub === null )
-                derr("cannot find vsys or device group named '{$location}'");
+                derr("cannot find vsys or device group named '{$location}'", null, FALSE);
             $ruleStore = $sub->$variableName;
         }
         if( $context->isAPI )
@@ -4211,7 +4211,7 @@ RuleCallContext::$supportedActions[] = array(
         if( strtolower($location) == 'shared' )
         {
             if( $pan->isFirewall() )
-                derr("Rules cannot be moved to SHARED location on a firewall, only in Panorama");
+                derr("Rules cannot be moved to SHARED location on a firewall, only in Panorama", null, FALSE);
 
             $ruleStore = $pan->$variableName;
         }
@@ -4219,9 +4219,34 @@ RuleCallContext::$supportedActions[] = array(
         {
             $sub = $pan->findSubSystemByName($location);
             if( $sub === null )
-                derr("cannot find vsys or device group named '{$location}'");
+                derr("cannot find vsys or device group named '{$location}'", null, FALSE);
             $ruleStore = $sub->$variableName;
         }
+
+        $owner = $rule->owner->owner;
+        $found = false;
+        if( $pan->isPanorama() )
+        {
+            /** @var DeviceGroup $owner */
+            $childDGs = $owner->childDeviceGroups(TRUE);
+            foreach( $childDGs as $DG )
+            {
+                if( $DG->name() == $location )
+                    $found = true;
+            }
+        }
+
+        if( !$found )
+        {
+            //Todo: validation needed if specific objects used in rule are available:
+            #print "check needed\n";
+            //$addressStore = $owner->addressStore
+            //$serviceStore = $owner->serviceStore
+            //$tagStore = $owner->tagStore
+            //securityprofile/securityProfilegroup
+            //urlcategory
+        }
+
         if( $context->isAPI )
         {
             if( $ruleStore === $rule->owner )
@@ -4810,13 +4835,13 @@ RuleCallContext::$supportedActions[] = array(
                 $listOfServicesQueryName = substr($context->arguments['restrictToListOfServices'], 1);
                 if( !isset($context->nestedQueries[$listOfServicesQueryName]) )
                 {
-                    derr("cannot find query filter called '$listOfServicesQueryName'");
+                    derr("cannot find query filter called '$listOfServicesQueryName'", null, FALSE);
                 }
 
                 $rQuery = new RQuery('service');
                 $errorMessage = '';
                 if( !$rQuery->parseFromString($context->nestedQueries[$listOfServicesQueryName], $errorMessage) )
-                    derr("error while parsing query: {$context->nestedQueries[$listOfServicesQueryName]}");
+                    derr("error while parsing query: {$context->nestedQueries[$listOfServicesQueryName]}", null, FALSE);
 
                 $services = array();
 
@@ -5047,7 +5072,7 @@ RuleCallContext::$supportedActions[] = Array(
             $text = file_get_contents( $context->arguments['file'] );
 
             if( $text === false )
-                derr("cannot open file '{$context->arguments['file']}");
+                derr("cannot open file '{$context->arguments['file']}", null, FALSE);
 
             $lines = explode("\n", $text);
             foreach( $lines as  $line)
@@ -5070,7 +5095,7 @@ RuleCallContext::$supportedActions[] = Array(
             $tmpUser = explode(",", $entry);
             if( count( $tmpUser ) !== 2 )
             {
-                derr( "file syntax: 'old-user-name,newusername'" );
+                derr( "file syntax: 'old-user-name,newusername'", null, FALSE);
             }
 
             $oldUserName = trim($tmpUser[0]);
@@ -5162,7 +5187,7 @@ RuleCallContext::$supportedActions[] = Array(
             {
                 $context->ldapbind = ldap_bind($context->ldapconn, $ldapUser, $ldapPassword);
                 if( !$context->ldapbind )
-                    derr( "LDAP connection not working" );
+                    derr( "LDAP connection not working", null, FALSE);
             }
             $context->first = false;
         }
@@ -5827,7 +5852,7 @@ RuleCallContext::$supportedActions[] = Array(
             }
         }
         else
-            derr( 'only supported in API mode' );
+            derr( 'only supported in API mode', null, FALSE);
     },
     'args' => Array( 'logHistory' => Array( 'type' => 'string', 'default' => 'last-15-minutes' ) ),
     'help' => 'returns TRUE if rule name matches the specified timestamp MM/DD/YYYY [american] / DD-MM-YYYY [european] / 21 September 2021 / -90 days',
@@ -5870,7 +5895,7 @@ RuleCallContext::$supportedActions[] = Array(
             }
         }
         else
-            derr( 'only supported in API mode' );
+            derr( 'only supported in API mode', null, FALSE);
     },
     'args' => Array( 'logHistory' => Array( 'type' => 'string', 'default' => 'last-15-minutes' ) ),
     'help' => 'returns TRUE if rule name matches the specified timestamp MM/DD/YYYY [american] / DD-MM-YYYY [european] / 21 September 2021 / -90 days',
@@ -5908,7 +5933,7 @@ RuleCallContext::$supportedActions[] = Array(
             }
         }
         else
-            derr( 'only supported in API mode' );
+            derr( 'only supported in API mode', null, FALSE);
     },
     'args' => Array( 'logHistory' => Array( 'type' => 'string', 'default' => 'last-15-minutes' ) ),
     'help' => 'returns TRUE if rule name matches the specified timestamp MM/DD/YYYY [american] / DD-MM-YYYY [european] / 21 September 2021 / -90 days',
@@ -5946,7 +5971,7 @@ RuleCallContext::$supportedActions[] = Array(
             }
         }
         else
-            derr( 'only supported in API mode' );
+            derr( 'only supported in API mode', null, FALSE);
     },
     'args' => Array( 'logHistory' => Array( 'type' => 'string', 'default' => 'last-15-minutes' ) ),
     'help' => 'returns TRUE if rule name matches the specified timestamp MM/DD/YYYY [american] / DD-MM-YYYY [european] / 21 September 2021 / -90 days',
@@ -6022,7 +6047,7 @@ RuleCallContext::$supportedActions[] = Array(
             }
         }
         else
-            derr( 'only supported in API mode' );
+            derr( 'only supported in API mode', null, FALSE);
     },
     'args' => Array( 'logHistory' => Array( 'type' => 'string', 'default' => 'last-15-minutes' ) ),
     'help' => 'returns TRUE if rule name matches the specified timestamp MM/DD/YYYY [american] / DD-MM-YYYY [european] / 21 September 2021 / -90 days',
@@ -6065,7 +6090,7 @@ RuleCallContext::$supportedActions[] = Array(
             }
         }
         else
-            derr( 'only supported in API mode' );
+            derr( 'only supported in API mode', null, FALSE);
     },
     'args' => Array( 'logHistory' => Array( 'type' => 'string', 'default' => 'last-15-minutes' ) ),
     'help' => 'returns TRUE if rule name matches the specified timestamp MM/DD/YYYY [american] / DD-MM-YYYY [european] / 21 September 2021 / -90 days',
@@ -6081,7 +6106,7 @@ RuleCallContext::$supportedActions[] = array(
         $rule = $context->object;
 
         if( !$context->isAPI )
-            derr('you cannot call this action without API mode');
+            derr('you cannot call this action without API mode', null, FALSE);
 
         if( $context->first )
         {
@@ -6090,7 +6115,7 @@ RuleCallContext::$supportedActions[] = array(
                 $text = file_get_contents($context->arguments['fileName']);
 
                 if( $text === FALSE )
-                    derr("cannot open file '{$context->arguments['fileName']}");
+                    derr("cannot open file '{$context->arguments['fileName']}", null, FALSE);
 
                 $lines = explode("\n", $text);
                 foreach( $lines as $line )

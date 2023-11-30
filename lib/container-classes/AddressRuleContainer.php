@@ -133,12 +133,15 @@ class AddressRuleContainer extends ObjRuleContainer
 
         if( $ret && $count == 1 && !$forceAny )
         {
+            $this->owner->setDisabled(true);
+            /*
             $string = "you are trying to remove last Object from a rule which will set it to ANY, please use forceAny=true for object: " . $this->toString();
             if( $context === null )
                 derr( $string );
 
             PH::ACTIONstatus( $context, 'skipped', $string);
             return false;
+            */
         }
 
         if( $ret && $rewriteXml )

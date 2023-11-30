@@ -470,7 +470,7 @@ class NatRule extends Rule
             $con = findConnectorOrDie($this);
 
             if( $con->isAPI() )
-                $connector->sendEditRequest($xpath, DH::dom_to_xml($this->dnatroot, -1, FALSE), TRUE);
+                $con->sendEditRequest($xpath, DH::dom_to_xml($this->dnatroot, -1, FALSE), TRUE);
 
             return TRUE;
         }

@@ -2465,7 +2465,7 @@ class MERGER extends UTIL
                     if( $object !== $tmp_service )
                     {
                         PH::print_stdout("    - group '{$object->name()}' DG: '" . $object->owner->owner->name() . "' merged with its ancestor at DG: '" . $tmp_service->owner->owner->name() . "', deleting: " . $object->_PANC_shortName());
-
+                        self::deletedObject($index, $tmp_service, $object);
                         PH::print_stdout("    - replacing '{$object->_PANC_shortName()}' ...");
                         if( $this->action === "merge" )
                         {
@@ -2546,7 +2546,7 @@ class MERGER extends UTIL
                                 else
                                     $tmp_ancestor_DGname = "shared";
                                 $text = "    - group '{$object->name()}' DG: '" . $object->owner->owner->name() . "' merged with its ancestor at DG: '" . $tmp_ancestor_DGname . "', deleting: " . $object->_PANC_shortName();
-                                self::deletedObject($index, $pickedObject, $object);
+                                self::deletedObject($index, $ancestor, $object);
                                 if( $this->action === "merge" )
                                 {
                                     $object->replaceMeGlobally($ancestor);
@@ -3110,6 +3110,7 @@ class MERGER extends UTIL
                                         }
 
                                     $text = "    - object '{$object->name()}' merged with its ancestor, deleting: ".$object->_PANC_shortName();
+                                    self::deletedObject($index, $ancestor, $object);
                                     if( $this->action === "merge" )
                                     {
                                         $object->replaceMeGlobally($ancestor);
@@ -3504,8 +3505,11 @@ class MERGER extends UTIL
                             //Todo: validate if this is correct; expectation is not same color swaschkut 20230525
                             if( !$obj->sameValue($pickedObject) ) //true if same color, false if different color
                             {
-                                $exit = true;
-                                $exitObject = $obj;
+                                if( $this->dupAlg !== 'samename' )
+                                {
+                                    $exit = true;
+                                    $exitObject = $obj;
+                                }
                             }
                         }
 

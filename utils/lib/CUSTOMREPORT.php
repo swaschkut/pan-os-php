@@ -13,7 +13,7 @@ class CUSTOMREPORT extends UTIL
         $this->supportedArguments['in'] = Array('niceName' => 'in', 'shortHelp' => 'input file ie: in=config.xml', 'argDesc' => '[filename]');
         $this->supportedArguments['debugapi'] = Array('niceName' => 'DebugAPI', 'shortHelp' => 'prints API calls when they happen');
         $this->supportedArguments['help'] = Array('niceName' => 'help', 'shortHelp' => 'this message');
-        $this->supportedArguments['report-file'] = Array('niceName' => 'report-file', 'shortHelp' => 'file which containers custom report information');
+        $this->supportedArguments['report-file'] = Array('niceName' => 'report-file', 'shortHelp' => 'file which contains custom report information');
         $this->supportedArguments['apitimeout'] = Array('niceName' => 'apiTimeout', 'shortHelp' => 'in case API takes too long time to anwer, increase this value (default=60)');
 
         $this->usageMsg = PH::boldText('USAGE: ')."php ".basename(__FILE__)." in=api://192.168.55.100 location=shared [Actions=display] ['Filter=(subtype eq pppoe)'] ...";

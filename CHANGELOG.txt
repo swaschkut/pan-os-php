@@ -1,6 +1,24 @@
 CHANGELOG
 
-2.1.21
+2.1.22
+UTIL:
+* type=rule actions=XYZ | improve error handling
+
+BUGFIX:
+* type=service actions=move | bugfix to not error out if pre-defined service object service-http/-https must be merged with an existing object of same name
+* type=tag-merger | bugfix if dupalgorithm=samename
+* type=address actions=move | bugfix for tag object search
+* type=rule | different actions - if last object of src/dst/srv/urlcategory is removed, and if not force any is used, rule will be disabled
+* type=device actions=display-shadowrule loadpanoramapushedconfig | extend validation as panoramapushedconfig check is not implemented
+* type=rule actions=from-remove-from-file/to-remove-from-file | bugfix as wrong from/to zone are removed
+* class NAT | bugfix of none correct variable name $connector
+* type=service-merger | bugfix for exportcsv=file.html to add also deleted objects where an ancestor at upperlevel is available
+
+GENERAL:
+* update to Device App-ID version: 8785-8431
+
+
+2.1.21  (20231107)
 UTIL:
 * type=certificate actions=exporttoexcel:FILE.html | improvement to display correct Template / Location if certificate is configured in Panorama Template vsys
 * type=XYZ-merger | extend with skipped reason for HTML spreadsheet
