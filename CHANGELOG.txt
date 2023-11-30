@@ -2,6 +2,7 @@ CHANGELOG
 
 2.1.22
 UTIL:
+* type=rule actions=XYZ | improve error handling
 
 BUGFIX:
 * type=service actions=move | bugfix to not error out if pre-defined service object service-http/-https must be merged with an existing object of same name
