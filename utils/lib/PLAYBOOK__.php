@@ -149,7 +149,11 @@ class PLAYBOOK__
                 $this->outputformatsetFile = PH::$args['outputformatset'];
 
                 if( $this->projectFolder !== null )
-                    $this->outputformatsetFile = $this->projectFolder."/".$this->outputformatsetFile;
+                {
+                    if( strpos($this->outputformatsetFile, $this->projectFolder) === FALSE )
+                        $this->outputformatsetFile = $this->projectFolder."/".$this->outputformatsetFile;
+                }
+
 
                 if( $this->outputformatsetFile !== null )
                     file_put_contents($this->outputformatsetFile, "" );

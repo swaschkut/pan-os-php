@@ -832,7 +832,11 @@ class UTIL
                 $this->outputformatsetFile = PH::$args['outputformatset'];
 
                 if( $this->projectFolder !== null )
-                    $this->outputformatsetFile = $this->projectFolder."/".$this->outputformatsetFile;
+                {
+                    if( strpos($this->outputformatsetFile, $this->projectFolder) === FALSE )
+                        $this->outputformatsetFile = $this->projectFolder."/".$this->outputformatsetFile;
+                }
+
             }
         }
 

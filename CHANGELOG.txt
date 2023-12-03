@@ -4,6 +4,7 @@ CHANGELOG
 UTIL:
 
 BUGFIX:
+* class UTIL/PLAYBOOK | bugfix for argument outputformatset in combination with argument projectfolder
 
 GENERAL:
 
