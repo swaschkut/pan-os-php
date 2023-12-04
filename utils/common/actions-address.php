@@ -3483,3 +3483,46 @@ AddressCallContext::$supportedActions['combine-addressgroups'] = array(
         'replace_groups' => array('type' => 'bool', 'default' => FALSE)
     )
 );
+
+AddressCallContext::$supportedActions['address-group-create-EDL-IP'] = array(
+    'name' => 'address-group-create-EDL-IP',
+    'MainFunction' => function (AddressCallContext $context) {
+        $object = $context->object;
+
+        $filename = $context->arguments['filename'];
+
+        if( !$object->isGroup() )
+        {
+            $string = "Address object is not of type ADDRESS-GROUP";
+            PH::ACTIONstatus( $context, 'skipped', $string);
+            return false;
+        }
+
+        $tmp_array = array();
+        $list_array = array();
+        if( $object->isGroup() )
+        {
+            $members = $object->expand(FALSE, $tmp_array, $object->owner->owner);
+
+            foreach( $members as $member )
+            {
+                /** @var $member Address */
+                if( $member->isType_ipNetmask() )
+                {
+                    $list_array[] = $member->value();
+                }
+            }
+        }
+        $file_content = "";
+        foreach( $list_array as $entry )
+        {
+            print $entry."\n";
+            $file_content .= $entry."\n";
+        }
+        if( !empty($file_content) )
+            file_put_contents($filename, $file_content, FILE_APPEND);
+    },
+    'args' => array(
+        'filename' => Array( 'type' => 'string', 'default' => '*nodefault*')
+    )
+);
