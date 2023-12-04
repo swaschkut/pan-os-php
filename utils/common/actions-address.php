@@ -18,6 +18,52 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+AddressCallContext::$commonActionFunctions['edl-create-list'] = array(
+    'function' => function (AddressCallContext $context, $type = 'ip-netmask')
+    {
+        $object = $context->object;
+
+        $filename = $context->arguments['filename'];
+
+        if( !$object->isGroup() )
+        {
+            $string = "Address object is not of type ADDRESS-GROUP";
+            PH::ACTIONstatus( $context, 'skipped', $string);
+            return false;
+        }
+
+        $tmp_array = array();
+        $list_array = array();
+        if( $object->isGroup() )
+        {
+            $members = $object->expand(FALSE, $tmp_array, $object->owner->owner);
+
+            foreach( $members as $member )
+            {
+                /** @var $member Address */
+                if( $type == 'ip-netmask' )
+                {
+                    if( $member->isType_ipNetmask() || $member->isType_ipRange() )
+                        $list_array[] = $member->value();
+                }
+                elseif( $type == 'fqdn' )
+                {
+                    if( $member->isType_FQDN() )
+                        $list_array[] = $member->value();
+                }
+            }
+        }
+        $file_content = "";
+        foreach( $list_array as $entry )
+        {
+            print $entry."\n";
+            $file_content .= $entry."\n";
+        }
+        if( !empty($file_content) )
+            file_put_contents($filename, $file_content, FILE_APPEND);
+    }
+);
+
 
 AddressCallContext::$supportedActions[] = array(
     'name' => 'delete',
@@ -3485,42 +3531,31 @@ AddressCallContext::$supportedActions['combine-addressgroups'] = array(
 );
 
 AddressCallContext::$supportedActions['address-group-create-EDL-IP'] = array(
-    'name' => 'address-group-create-EDL-IP',
-    'MainFunction' => function (AddressCallContext $context) {
-        $object = $context->object;
-
+    'name' => 'address-group-create-edl-ip',
+    'GlobalInitFunction' => function (AddressCallContext $context) {
         $filename = $context->arguments['filename'];
+        if (file_exists($filename))
+            unlink($filename);
+    },
+    'MainFunction' => function (AddressCallContext $context) {
+        $f = AddressCallContext::$commonActionFunctions['edl-create-list']['function'];
+        $f($context, 'ip-netmask');
+    },
+    'args' => array(
+        'filename' => Array( 'type' => 'string', 'default' => '*nodefault*')
+    )
+);
 
-        if( !$object->isGroup() )
-        {
-            $string = "Address object is not of type ADDRESS-GROUP";
-            PH::ACTIONstatus( $context, 'skipped', $string);
-            return false;
-        }
-
-        $tmp_array = array();
-        $list_array = array();
-        if( $object->isGroup() )
-        {
-            $members = $object->expand(FALSE, $tmp_array, $object->owner->owner);
-
-            foreach( $members as $member )
-            {
-                /** @var $member Address */
-                if( $member->isType_ipNetmask() )
-                {
-                    $list_array[] = $member->value();
-                }
-            }
-        }
-        $file_content = "";
-        foreach( $list_array as $entry )
-        {
-            print $entry."\n";
-            $file_content .= $entry."\n";
-        }
-        if( !empty($file_content) )
-            file_put_contents($filename, $file_content, FILE_APPEND);
+AddressCallContext::$supportedActions['address-group-create-EDL-FQDN'] = array(
+    'name' => 'address-group-create-edl-fqdn',
+    'GlobalInitFunction' => function (AddressCallContext $context) {
+        $filename = $context->arguments['filename'];
+        if (file_exists($filename))
+            unlink($filename);
+    },
+    'MainFunction' => function (AddressCallContext $context) {
+        $f = AddressCallContext::$commonActionFunctions['edl-create-list']['function'];
+        $f($context, 'fqdn');
     },
     'args' => array(
         'filename' => Array( 'type' => 'string', 'default' => '*nodefault*')
