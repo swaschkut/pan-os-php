@@ -7,6 +7,7 @@ UTIL:
 
 BUGFIX:
 * class UTIL/PLAYBOOK | bugfix for argument outputformatset in combination with argument projectfolder
+* type=vendor-migration vendor=huawei | bugfixes
 
 GENERAL:
 

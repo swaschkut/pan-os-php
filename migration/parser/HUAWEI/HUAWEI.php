@@ -27,7 +27,7 @@ require_once('HUAWEIservice.php');
 require_once('HUAWEIdomain.php');
 require_once('HUAWEI_securityrules.php');
 
-require_once("parser/CISCOISR/CISCOISRmisc.php");
+require_once("migration/parser/CISCOISR/CISCOISRmisc.php");
 
 
 class HUAWEI extends PARSER
