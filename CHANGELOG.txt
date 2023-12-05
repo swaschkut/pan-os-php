@@ -4,6 +4,7 @@ CHANGELOG
 UTIL:
 * type=address | introduce actions=address-group-create-EDL-IP:list.txt
 * type=address | introduce actions=address-group-create-EDL-FQDN:list.txt
+* class CONVERTER | extend validation for input argument
 
 BUGFIX:
 * class UTIL/PLAYBOOK | bugfix for argument outputformatset in combination with argument projectfolder

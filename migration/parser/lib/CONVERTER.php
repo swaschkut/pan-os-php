@@ -85,7 +85,6 @@ class CONVERTER extends UTIL
 
     public function utilStart()
     {
-        PH::print_stdout( "PAN-OS-PHP version: ".PH::frameworkVersion() );
         $this->initial();
         $this->main();
     }
@@ -504,8 +503,14 @@ class CONVERTER extends UTIL
         $this->log->info("start PARSER: " . $this->vendor . " | " . implode(", ", PH::$args));
 
         $this->xmlDoc = new DOMDocument();
-        if( !$this->xmlDoc->load($this->configInput['filename']) )
-            derr("error while reading xml config file");
+        if( $this->configInput['filename'] != null && file_exists($this->configInput['filename']) )
+        {
+            if( !$this->xmlDoc->load($this->configInput['filename']) )
+                derr("error while reading xml config file");
+        }
+        else
+            derr("FILE: ".$this->configInput['filename']." not found", null, false);
+
 
 
         $this->determineConfigType();
