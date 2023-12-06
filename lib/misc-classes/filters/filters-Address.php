@@ -327,6 +327,23 @@ RQuery::$defaultFilters['address']['object']['operators']['is.recursive.member.o
         'input' => 'input/panorama-8.0-merger.xml'
     )
 );
+RQuery::$defaultFilters['address']['object']['operators']['has.group.as.member'] = array(
+    'Function' => function (AddressRQueryContext $context) {
+
+
+        if( !$context->object->isGroup() )
+            return FALSE;
+
+        foreach( $context->object->members() as $objectMember )
+        {
+            if( $objectMember->isGroup() )
+                return TRUE;
+        }
+
+        return FALSE;
+    },
+    'arg' => FALSE
+);
 RQuery::$defaultFilters['address']['name']['operators']['eq'] = array(
     'Function' => function (AddressRQueryContext $context) {
         return $context->object->name() == $context->value;
