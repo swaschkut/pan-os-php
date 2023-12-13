@@ -308,6 +308,10 @@ class CallContext
                     $output .= htmlspecialchars($subValue->name());
             }
         }
+        elseif( is_object($value) )
+        {
+            $output = htmlspecialchars( $value->name() );
+        }
         else
             derr('TYPE: '.gettype($value).' unsupported', null, false);
 
