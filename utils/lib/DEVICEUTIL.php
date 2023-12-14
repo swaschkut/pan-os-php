@@ -141,6 +141,13 @@ class DEVICEUTIL extends UTIL
 
             $this->deviceTypes = array_unique($this->deviceTypes);
         }
+
+        if( isset(PH::$args['actions'] ) && $this->configType == 'panorama' )
+        {
+            if( strpos( PH::$args['actions'], "zpp-create-" ) !== False )
+                $this->deviceTypes = array("template");
+        }
+
         PH::print_stdout( $this->deviceTypes, false, "devicetype");
     }
     

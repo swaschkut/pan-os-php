@@ -6,6 +6,7 @@ UTIL:
 * type=address | introduce actions=address-group-create-EDL-FQDN:list.txt
 * class CONVERTER | extend validation for input argument
 * type=address/service | introduce 'filter=(object has.group.as.member)'
+* type=device actions=zpp-create-xyz | if running against panorama set devicetype=template per default
 
 BUGFIX:
 * class UTIL/PLAYBOOK | bugfix for argument outputformatset in combination with argument projectfolder
