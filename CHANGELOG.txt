@@ -13,6 +13,7 @@ BUGFIX:
 * class UTIL/PLAYBOOK | bugfix for argument outputformatset in combination with argument projectfolder
 * type=vendor-migration vendor=huawei | bugfixes
 * class CallContext | bugfix if function encloseFunction get object as input
+* type=XYZ outputformatset=file.txt | bugfix for Panorama template set command creation
 
 GENERAL:
 * class DeviceGroup/PanoramaConf/Sub introduce new variables for defaultSecurity check

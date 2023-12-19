@@ -21,6 +21,9 @@ class HTMLmerger__
 {
     private $projectfolder = null;
 
+    public $usageMsg;
+    public $supportedArguments;
+
     function __construct( $argv, $argc )
     {
         $tmp_ph = new PH($argv, $argc);

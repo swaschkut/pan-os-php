@@ -1037,6 +1037,12 @@ class DIFF extends UTIL
                     if( count($this->pan->getVirtualSystems()) > 1 )
                         $multiVSYS = TRUE;
                 }
+                elseif( $this->configType == 'panorama' )
+                {
+                    //check if xpath is template related
+                    if( strpos( $xpath, "template") !== FALSE )
+                        $multiVSYS = TRUE;
+                }
 
                 if( $this->debugAPI )
                 {
