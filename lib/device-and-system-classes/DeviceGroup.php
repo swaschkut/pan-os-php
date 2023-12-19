@@ -159,6 +159,8 @@ class DeviceGroup
 
     /** @var RuleStore */
     public $defaultSecurityRules = null;
+    public $defaultIntraZoneRuleSet = False;
+    public $defaultInterZoneRuleSet = False;
 
     /** @var RuleStore */
     public $networkPacketBrokerRules;

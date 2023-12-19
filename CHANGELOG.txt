@@ -14,6 +14,7 @@ BUGFIX:
 * class CallContext | bugfix if function encloseFunction get object as input
 
 GENERAL:
+* class DeviceGroup/PanoramaConf/Sub introduce new variables for defaultSecurity check
 
 
 2.1.22

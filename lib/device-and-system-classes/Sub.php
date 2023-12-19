@@ -22,6 +22,8 @@ class Sub
 {
     public $rulebaseroot;
     public $defaultSecurityRules;
+    public $defaultIntraZoneRuleSet = False;
+    public $defaultInterZoneRuleSet = False;
 
     private  $defaultSecurityRules_xml = "<default-security-rules>
                     <rules>
@@ -40,6 +42,7 @@ class Sub
 
     function load_defaultSecurityRule( )
     {
+
         $finalroot = FALSE;
         $tmproot = DH::findFirstElement('default-security-rules', $this->rulebaseroot);
         if( $tmproot !== FALSE )
@@ -47,10 +50,12 @@ class Sub
             $finalroot = DH::findFirstElement('rules', $tmproot);
             if( $finalroot !== FALSE )
             {
+                //Todo: only load if not already loaded earlier
                 $finalroot = $this->createPartialDefaultSecurityRule( $finalroot );
             }
         }
 
+        //Todo: check if any of the parentDG has already defaultSec set, if not create it
         if( $tmproot === FALSE )
         {
             //Pan

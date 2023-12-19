@@ -119,6 +119,8 @@ class PanoramaConf
 
     /** @var RuleStore */
     public $defaultSecurityRules;
+    public $defaultIntraZoneRuleSet = False;
+    public $defaultInterZoneRuleSet = False;
 
     /** @var RuleStore */
     public $networkPacketBrokerRules;
