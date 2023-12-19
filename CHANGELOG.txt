@@ -20,7 +20,7 @@ GENERAL:
 * class DeviceGroup/PanoramaConf/Sub introduce new variables for defaultSecurity check
 
 
-2.1.22
+2.1.22 (20231206)
 UTIL:
 * type=rule actions=XYZ | improve error handling
 
