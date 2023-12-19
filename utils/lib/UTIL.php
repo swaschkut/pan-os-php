@@ -2205,7 +2205,7 @@ class UTIL
 
             ####################################
             ####################################
-            $deleteArray = array( "rulebase", "address-group", "address", "service-group", "service", "profile-group", "profiles", "misc" );
+            $deleteArray = array( "rulebase", "address-group", "address", "service-group", "service", "profile-group", "profiles", "profiles-custom-url-category", "misc" );
             $tmp_string = "";
             foreach( $deleteArray as $item )
             {
@@ -2235,12 +2235,13 @@ class UTIL
 
             ####################################
             ####################################
-            $setArray = array( "address", "address-group", "service", "service-group", "profiles", "profile-group", "misc", "rulebase" );
+            $setArray = array( "address", "address-group", "service", "service-group", "profiles-custom-url-category","profiles", "profile-group", "misc", "rulebase" );
             $tmp_string = "";
             foreach( $setArray as $item )
             {
                 if( isset( $utilDiff->diff_set[$item] ) )
                 {
+
                     foreach( $utilDiff->diff_set[$item] as $key => $set )
                         $tmp_string .= $set."\n";
                 }

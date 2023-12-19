@@ -1180,7 +1180,12 @@ class DIFF extends UTIL
                 elseif( strpos( $entry, " profile-group " ) !== false )
                     $this->$type['profile-group'][] = $entry;
                 elseif( strpos( $entry, " profiles " ) !== false )
-                    $this->$type['profiles'][] = $entry;
+                {
+                    if( strpos( $entry, " profiles custom-url-category " ) !== false )
+                        $this->$type['profiles-custom-url-category'][] = $entry;
+                    else
+                        $this->$type['profiles'][] = $entry;
+                }
                 else
                     $this->$type['misc'][] = $entry;
             }

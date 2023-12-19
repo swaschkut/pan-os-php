@@ -14,6 +14,7 @@ BUGFIX:
 * type=vendor-migration vendor=huawei | bugfixes
 * class CallContext | bugfix if function encloseFunction get object as input
 * type=XYZ outputformatset=file.txt | bugfix for Panorama template set command creation
+* type=XYZ outputformatset=file.txt | bugfix for correct ordering, that profiles custom-url-category is always before profiles url-filtering
 
 GENERAL:
 * class DeviceGroup/PanoramaConf/Sub introduce new variables for defaultSecurity check
