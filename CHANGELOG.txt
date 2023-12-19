@@ -7,6 +7,7 @@ UTIL:
 * class CONVERTER | extend validation for input argument
 * type=address/service | introduce 'filter=(object has.group.as.member)'
 * type=device actions=zpp-create-xyz | if running against panorama set devicetype=template per default
+* type=XZY outputformatset=file.txt | change order first delete then set commands
 
 BUGFIX:
 * class UTIL/PLAYBOOK | bugfix for argument outputformatset in combination with argument projectfolder

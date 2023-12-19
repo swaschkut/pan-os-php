@@ -2203,6 +2203,38 @@ class UTIL
             PH::print_stdout();
             PH::print_stdout();
 
+            ####################################
+            ####################################
+            $deleteArray = array( "rulebase", "address-group", "address", "service-group", "service", "profile-group", "profiles", "misc" );
+            $tmp_string = "";
+            foreach( $deleteArray as $item )
+            {
+                if( isset( $utilDiff->diff_delete[$item] ) )
+                {
+                    foreach( $utilDiff->diff_delete[$item] as $key => $delete )
+                        $tmp_string .= $delete."\n";
+                }
+            }
+            ##################
+            if( PH::$shadow_json )
+            {
+                if( isset(PH::$JSON_OUT['setcommands']) )
+                    PH::$JSON_OUT['setcommands'] .= $tmp_string;
+                else
+                    PH::$JSON_OUT['setcommands'] = $tmp_string;
+            }
+            else
+            {
+                if( $this->outputformatsetFile !== null )
+                    file_put_contents($this->outputformatsetFile, $tmp_string, FILE_APPEND);
+                else
+                    PH::print_stdout($tmp_string);
+            }
+            ####################################
+            ####################################
+
+            ####################################
+            ####################################
             $setArray = array( "address", "address-group", "service", "service-group", "profiles", "profile-group", "misc", "rulebase" );
             $tmp_string = "";
             foreach( $setArray as $item )
@@ -2231,32 +2263,9 @@ class UTIL
                     PH::print_stdout( $tmp_string );
             }
 
+            ####################################
+            ####################################
 
-
-            $deleteArray = array( "rulebase", "address-group", "address", "service-group", "service", "profile-group", "profiles", "misc" );
-            $tmp_string = "";
-            foreach( $deleteArray as $item )
-            {
-                if( isset( $utilDiff->diff_delete[$item] ) )
-                {
-                    foreach( $utilDiff->diff_delete[$item] as $key => $delete )
-                        $tmp_string .= $delete."\n";
-                }
-            }
-            if( PH::$shadow_json )
-            {
-                if( isset(PH::$JSON_OUT['setcommands']) )
-                    PH::$JSON_OUT['setcommands'] .= $tmp_string;
-                else
-                    PH::$JSON_OUT['setcommands'] = $tmp_string;
-            }
-            else
-            {
-                if( $this->outputformatsetFile !== null )
-                    file_put_contents($this->outputformatsetFile, $tmp_string, FILE_APPEND);
-                else
-                    PH::print_stdout($tmp_string);
-            }
         }
     }
 
