@@ -539,7 +539,9 @@ class DH
         //for template related stuff, do not replace "config network"
         if( strpos( $fullpath, "template" ) === FALSE )
         {
-            $replace = "/config/devices/entry[@name='localhost.localdomain']";
+            $replace = "/config";
+            $fullpath = str_replace($replace, "", $fullpath);
+            $replace = "/devices/entry[@name='localhost.localdomain']";
             $fullpath = str_replace($replace, "", $fullpath);
         }
         else
