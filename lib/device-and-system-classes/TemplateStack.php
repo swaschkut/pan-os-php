@@ -23,6 +23,7 @@ class TemplateStack
     use ReferenceableObject;
     use PathableName;
     use PanSubHelperTrait;
+    use XmlConvertible;
 
     /** @var PanoramaConf */
     public $owner;
@@ -224,12 +225,17 @@ class TemplateStack
         $this->load_from_domxml($element);
     }
 
+    /*
     public static $templatestackxml = '<entry name="**Need a Name**">
                                         <user-group-source><master-device/></user-group-source>
                                         <settings/>
                                         <devices/>
 									</entry>';
+    */
 
+    public static $templatestackxml = '<entry name="**Need a Name**">
+                                        <devices/>
+									</entry>';
 
     public function addDevice( $serial, $vsys = "vsys1" )
     {

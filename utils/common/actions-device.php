@@ -598,6 +598,13 @@ DeviceCallContext::$supportedActions['TemplateStack-create'] = array(
     'MainFunction' => function (DeviceCallContext $context) {
     },
     'GlobalFinishFunction' => function (DeviceCallContext $context) {
+        if( get_class($context->object) !== "TemplateStack" )
+        {
+            $string = "devicetype=templatestack missing";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
         $templateName = $context->arguments['name'];
 
         $pan = $context->subSystem;
@@ -631,6 +638,12 @@ DeviceCallContext::$supportedActions['TemplateStack-create'] = array(
 DeviceCallContext::$supportedActions['TemplateStack-delete'] = array(
     'name' => 'templatestack-delete',
     'MainFunction' => function (DeviceCallContext $context) {
+        if( get_class($context->object) !== "TemplateStack" )
+        {
+            $string = "devicetype=templatestack missing";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
 
         $object = $context->object;
         $name = $object->name();
@@ -679,9 +692,15 @@ DeviceCallContext::$supportedActions['TemplateStack-delete'] = array(
     }
 );
 
-DeviceCallContext::$supportedActions['TemplateTemplateStack-clone '] = array(
+DeviceCallContext::$supportedActions['TemplateStack-clone '] = array(
     'name' => 'templatestack-clone',
     'MainFunction' => function (DeviceCallContext $context) {
+        if( get_class($context->object) !== "TemplateStack" )
+        {
+            $string = "devicetype=templatestack missing";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
 
         $object = $context->object;
         $name = $object->name();
@@ -719,6 +738,13 @@ DeviceCallContext::$supportedActions['TemplateStack-addSerial'] = array(
     'MainFunction' => function (DeviceCallContext $context) {
     },
     'GlobalFinishFunction' => function (DeviceCallContext $context) {
+        if( get_class($context->object) !== "TemplateStack" )
+        {
+            $string = "devicetype=templatestack missing";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
         $dgName = $context->arguments['name'];
         $serial = $context->arguments['serial'];
 
@@ -765,6 +791,13 @@ DeviceCallContext::$supportedActions['TemplateStack-removeSerial'] = array(
     'MainFunction' => function (DeviceCallContext $context) {
     },
     'GlobalFinishFunction' => function (DeviceCallContext $context) {
+        if( get_class($context->object) !== "TemplateStack" )
+        {
+            $string = "devicetype=templatestack missing";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
         $dgName = $context->arguments['name'];
         $serial = $context->arguments['serial'];
 
@@ -806,6 +839,12 @@ DeviceCallContext::$supportedActions['TemplateStack-removeSerial'] = array(
 DeviceCallContext::$supportedActions['VirtualSystem-delete'] = array(
     'name' => 'virtualsystem-delete',
     'MainFunction' => function (DeviceCallContext $context) {
+        if( get_class($context->object) !== "VirtualSystem" )
+        {
+            $string = "devicetype=virtualsystem missing";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
 
         $object = $context->object;
         $name = $object->name();
@@ -835,6 +874,12 @@ DeviceCallContext::$supportedActions['VirtualSystem-delete'] = array(
 DeviceCallContext::$supportedActions['SharedGateway-delete'] = array(
     'name' => 'sharedgateway-delete',
     'MainFunction' => function (DeviceCallContext $context) {
+        if( get_class($context->object) !== "SharedGateway" )
+        {
+            $string = "devicetype=sharedgateway missing";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
 
         $object = $context->object;
         $name = $object->name();
@@ -864,6 +909,12 @@ DeviceCallContext::$supportedActions['SharedGateway-delete'] = array(
 DeviceCallContext::$supportedActions['SharedGateway-migrate-to-vsys'] = array(
     'name' => 'sharedgateway-migrate-to-vsys',
     'MainFunction' => function (DeviceCallContext $context) {
+        if( get_class($context->object) !== "SharedGateway" )
+        {
+            $string = "devicetype=sharedgateway missing";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
 
         $object = $context->object;
         $name = $object->name();
@@ -905,6 +956,14 @@ DeviceCallContext::$supportedActions['ManagedDevice-create'] = array(
     'MainFunction' => function (DeviceCallContext $context) {
     },
     'GlobalFinishFunction' => function (DeviceCallContext $context) {
+
+        if( get_class($context->object) !== "ManagedDevice" )
+        {
+            $string = "devicetype=managedevice missing";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
         $serialName = $context->arguments['serial'];
 
         $pan = $context->subSystem->owner;
@@ -945,6 +1004,13 @@ DeviceCallContext::$supportedActions['ManagedDevice-delete'] = array(
     'MainFunction' => function (DeviceCallContext $context) {
     },
     'GlobalFinishFunction' => function (DeviceCallContext $context) {
+        if( get_class($context->object) !== "ManagedDevice" )
+        {
+            $string = "devicetype=managedevice missing";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
         $force = $context->arguments['force'];
 
         $object = $context->object;

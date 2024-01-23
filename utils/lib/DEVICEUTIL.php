@@ -104,7 +104,7 @@ class DEVICEUTIL extends UTIL
             }
 
                 
-            self::GlobalInitAction($this->pan);
+            self::GlobalInitAction($this->pan, $this->deviceTypes);
         }
     }
 
