@@ -51,7 +51,7 @@ class Sub
             if( $finalroot !== FALSE )
             {
                 //Todo: only load if not already loaded earlier
-                $finalroot = $this->createPartialDefaultSecurityRule( $finalroot );
+                #$finalroot = $this->createPartialDefaultSecurityRule( $finalroot );
             }
         }
 
@@ -59,9 +59,8 @@ class Sub
         if( $tmproot === FALSE )
         {
             //Pan
-            $finalroot = $this->createDefaultSecurityRule( );
+            #$finalroot = $this->createDefaultSecurityRule( );
         }
-
 
         return $finalroot;
     }

@@ -32,6 +32,9 @@ class TemplateStack
 
     protected $templateRoot = null;
 
+    /** @var DOMElement */
+    public $devicesRoot;
+
     public $xmlroot = null;
 
     public $FirewallsSerials = array();
@@ -83,10 +86,10 @@ class TemplateStack
             }
         }
 
-        $tmp = DH::findFirstElement('devices', $xml);
-        if( $tmp !== false )
+        $this->devicesRoot = DH::findFirstElement('devices', $xml);
+        if( $this->devicesRoot !== false )
         {
-            $this->FirewallsSerials = $this->owner->managedFirewallsStore->get_serial_from_xml($tmp, TRUE);
+            $this->FirewallsSerials = $this->owner->managedFirewallsStore->get_serial_from_xml($this->devicesRoot, TRUE);
             #$this->FirewallsSerials = $this->owner->managedFirewallsStore->get_serial_from_xml($tmp);
             foreach( $this->FirewallsSerials as $serial => $managedFirewall )
             {
@@ -204,6 +207,71 @@ class TemplateStack
         $str = "/config/devices/entry[@name='localhost.localdomain']/template-stack/entry[@name='" . $this->name . "']";
 
         return $str;
+    }
+
+    public function load_from_templatestackXml()
+    {
+        if( $this->owner === null )
+            derr('cannot be used if owner === null');
+
+        $fragment = $this->owner->xmlroot->ownerDocument->createDocumentFragment();
+
+        if( !$fragment->appendXML(self::$templatestackxml) )
+            derr('error occured while loading TEMPLATE-STACK template xml');
+
+        $element = $this->owner->templatestackroot->appendChild($fragment);
+
+        $this->load_from_domxml($element);
+    }
+
+    public static $templatestackxml = '<entry name="**Need a Name**">
+                                        <user-group-source><master-device/></user-group-source>
+                                        <settings/>
+                                        <devices/>
+									</entry>';
+
+
+    public function addDevice( $serial, $vsys = "vsys1" )
+    {
+        if( isset( $this->FirewallsSerials[$serial] ) && $vsys !== "vsys1" )
+        {
+            $this->FirewallsSerials[$serial]['vsyslist'][$vsys] = $vsys;
+        }
+        else
+        {
+            $vsyslist['vsys1'] = 'vsys1';
+            $this->FirewallsSerials[$serial] = array('serial' => $serial, 'vsyslist' => $vsyslist);
+        }
+        //XML manipulation missing
+        $newXmlNode = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, "<entry name='{$serial}'/>");
+        $devicenode = $this->devicesRoot->appendChild($newXmlNode);
+    }
+
+
+    public function removeDevice( $serial )
+    {
+        if( isset( $this->FirewallsSerials[$serial] ) )
+        {
+            unset( $this->FirewallsSerials[$serial] );
+            //missing XML manipulation
+
+            if( $this->devicesRoot !== FALSE )
+            {
+                foreach( $this->devicesRoot->childNodes as $device )
+                {
+                    if( $device->nodeType != 1 ) continue;
+                    $devname = DH::findAttribute('name', $device);
+
+                    if( $devname === $serial )
+                    {
+                        DH::removeChild( $this->devicesRoot, $device );
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return null;
     }
 
 }

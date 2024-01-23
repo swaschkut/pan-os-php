@@ -2323,6 +2323,60 @@ class PanoramaConf
 
 
     /**
+     * Create a blank templateStack. Return that templateStack object.
+     * @param string $name
+     * @return TemplateStack
+     **/
+    public function createTemplateStack($name)
+    {
+        $newTemplateStack = new TemplateStack($name, $this);
+        $newTemplateStack->load_from_templatestackXml();
+        $newTemplateStack->setName($name);
+
+        $this->templatestacks[] = $newTemplateStack;
+
+
+        if( $this->version >= 70 )
+        {
+            if( $this->version >= 80 )
+                $tempMetaDataNode = DH::findXPathSingleEntryOrDie('/config/readonly/max-internal-id', $this->xmlroot);
+            else
+            {
+                //not available for template in version >= 70 and < 80
+                #$dgMetaDataNode = DH::findXPathSingleEntryOrDie('/config/readonly/dg-meta-data/max-dg-id', $this->xmlroot);
+            }
+
+
+            $tempMaxID = $tempMetaDataNode->textContent;
+            $tempMaxID++;
+            DH::setDomNodeText($tempMetaDataNode, "{$tempMaxID}");
+
+            if( $this->version >= 80 )
+                $tempMetaDataNode = DH::findXPathSingleEntryOrDie('/config/readonly/devices/entry[@name="localhost.localdomain"]/template-stack', $this->xmlroot);
+            else
+            {
+                //not available for template in version >= 70 and < 80
+                #$dgMetaDataNode = DH::findXPathSingleEntryOrDie('/config/readonly/dg-meta-data/dg-info', $this->xmlroot);
+            }
+
+
+            if( $this->version >= 80 )
+                $newXmlNode = DH::importXmlStringOrDie($this->xmldoc, "<entry name=\"{$name}\"><id>{$tempMaxID}</id></entry>");
+            else
+            {
+                //not available for template in version >= 70 and < 80
+                #$newXmlNode = DH::importXmlStringOrDie($this->xmldoc, "<entry name=\"{$name}\"><dg-id>{$tempMaxID}</dg-id></entry>");
+            }
+
+
+            $tempMetaDataNode->appendChild($newXmlNode);
+        }
+
+
+        return $newTemplateStack;
+    }
+
+    /**
      * Remove a template.
      * @param TemplateStack $templateStack
      **/

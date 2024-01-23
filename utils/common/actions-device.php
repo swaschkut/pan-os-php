@@ -593,6 +593,216 @@ DeviceCallContext::$supportedActions['Template-clone '] = array(
     ),
 );
 
+DeviceCallContext::$supportedActions['TemplateStack-create'] = array(
+    'name' => 'templatestack-create',
+    'MainFunction' => function (DeviceCallContext $context) {
+    },
+    'GlobalFinishFunction' => function (DeviceCallContext $context) {
+        $templateName = $context->arguments['name'];
+
+        $pan = $context->subSystem;
+
+        if( !$pan->isPanorama() )
+            derr("only supported on Panorama config");
+
+
+        $tmp_template = $pan->findTemplateStack($templateName);
+        if( $tmp_template === null )
+        {
+            $string = "create TemplateStack: " . $templateName;
+            #PH::ACTIONlog($context, $string);
+
+            $dg = $pan->createTemplateStack($templateName);
+
+            if( $context->isAPI )
+                $dg->API_sync();
+        }
+        else
+        {
+            $string = "Template with name: " . $templateName . " already available!";
+            PH::ACTIONlog( $context, $string );
+        }
+    },
+    'args' => array(
+        'name' => array('type' => 'string', 'default' => 'false'),
+    ),
+);
+
+DeviceCallContext::$supportedActions['TemplateStack-delete'] = array(
+    'name' => 'templatestack-delete',
+    'MainFunction' => function (DeviceCallContext $context) {
+
+        $object = $context->object;
+        $name = $object->name();
+
+        $pan = $context->subSystem;
+        if( !$pan->isPanorama() )
+            derr( "only supported on Panorama config" );
+
+        if( get_class($object) == "TemplateStack" )
+        {
+            if( $object->countReferences() > 0 )
+            {
+                $string ="TemplateStack is used and can NOT be removed!";
+                PH::ACTIONlog( $context, $string );
+                return null;
+            }
+            /** @var Template $object */
+            //if template is used in Template-Stack -> skip
+            /*
+            $childDG = $object->_childDeviceGroups;
+            if( count($childDG) != 0 )
+            {
+                $string = "Template with name: '" . $name . "' is used in TemplateStack. Template can not removed";
+                PH::ACTIONstatus($context, "SKIPPED", $string);
+            }
+            else
+            {
+            */
+            $string ="     * delete TemplateStack: " . $name;
+            PH::ACTIONlog( $context, $string );
+
+
+            if( $context->isAPI )
+            {
+                $con = findConnectorOrDie($object);
+                $xpath = DH::elementToPanXPath($object->xmlroot);
+
+                $pan->removeTemplateStack($object);
+                $con->sendDeleteRequest($xpath);
+            }
+            else
+                $pan->removeTemplateStack($object);
+
+            //}
+        }
+    }
+);
+
+DeviceCallContext::$supportedActions['TemplateTemplateStack-clone '] = array(
+    'name' => 'templatestack-clone',
+    'MainFunction' => function (DeviceCallContext $context) {
+
+        $object = $context->object;
+        $name = $object->name();
+
+        $newName = $context->arguments['newname'];
+
+        $pan = $context->subSystem;
+        if( !$pan->isPanorama() )
+            derr( "only supported on Panorama config" );
+
+        if( get_class($object) == "TemplateStack" )
+        {
+            $string ="     * clone TemplateStack: " . $name." to: ".$newName;
+            PH::ACTIONlog( $context, $string );
+
+            $tmp = $pan->createTemplateStack($newName);
+            $test = $object->xmlroot->cloneNode();
+            $tmp->xmlroot = $test;
+            $tmp->setName( $newName );
+
+            if( $context->isAPI )
+            {
+                if( $context->isAPI )
+                    $tmp->API_sync();
+            }
+        }
+    },
+    'args' => array(
+        'newname' => array('type' => 'string', 'default' => 'false'),
+    ),
+);
+
+DeviceCallContext::$supportedActions['TemplateStack-addSerial'] = array(
+    'name' => 'templatestack-addserial',
+    'MainFunction' => function (DeviceCallContext $context) {
+    },
+    'GlobalFinishFunction' => function (DeviceCallContext $context) {
+        $dgName = $context->arguments['name'];
+        $serial = $context->arguments['serial'];
+
+        $pan = $context->subSystem;
+
+        if( !$pan->isPanorama() )
+            derr("only supported on Panorama config");
+
+        $tmp_dg = $pan->findTemplateStack($dgName);
+        if( $tmp_dg === null )
+        {
+            $string = "TemplateStack with name: " . $dgName . " not available!";
+            PH::ACTIONlog( $context, $string );
+        }
+        else
+        {
+            $string = "TemplateStack with name: " . $dgName . " got serial: ".$serial." added!";
+            PH::ACTIONlog( $context, $string );
+            if( $context->isAPI )
+            {
+                $con = findConnectorOrDie($tmp_dg);
+
+                #$xpath = DH::elementToPanXPath($object->xmlroot);
+
+                #$pan->removeDeviceGroup($object);
+                #$con->sendDeleteRequest($xpath);
+                $xpath = DH::elementToPanXPath($tmp_dg->xmlroot);
+                $xpath .= '/devices';
+                $con->sendSetRequest($xpath, "<entry name='{$serial}'/>");
+            }
+            else
+                $tmp_dg->addDevice( $serial );
+
+        }
+    },
+    'args' => array(
+        'name' => array('type' => 'string', 'default' => 'false'),
+        'serial' => array('type' => 'string', 'default' => 'null'),
+    ),
+);
+
+DeviceCallContext::$supportedActions['TemplateStack-removeSerial'] = array(
+    'name' => 'templatestack-removeserial',
+    'MainFunction' => function (DeviceCallContext $context) {
+    },
+    'GlobalFinishFunction' => function (DeviceCallContext $context) {
+        $dgName = $context->arguments['name'];
+        $serial = $context->arguments['serial'];
+
+        $pan = $context->subSystem;
+
+        if( !$pan->isPanorama() )
+            derr("only supported on Panorama config");
+
+        $tmp_dg = $pan->findTemplateStack($dgName);
+        if( $tmp_dg === null )
+        {
+            $string = "TemplateStack with name: " . $dgName . " not available!";
+            PH::ACTIONlog( $context, $string );
+        }
+        else
+        {
+            $string = "TemplateStack with name: " . $dgName . " got serial: ".$serial." removed!";
+            PH::ACTIONlog( $context, $string );
+            if( $context->isAPI )
+            {
+                $con = findConnectorOrDie($tmp_dg);
+
+                $xpath = DH::elementToPanXPath($tmp_dg->xmlroot);
+                $xpath .= '/devices';
+                $xpath .= "/entry[@name='{$serial}']";
+
+                $con->sendDeleteRequest($xpath);
+            }
+
+            $tmp_dg->removeDevice( $serial );
+        }
+    },
+    'args' => array(
+        'name' => array('type' => 'string', 'default' => 'false'),
+        'serial' => array('type' => 'string', 'default' => 'null'),
+    ),
+);
+
 DeviceCallContext::$supportedActions['VirtualSystem-delete'] = array(
     'name' => 'virtualsystem-delete',
     'MainFunction' => function (DeviceCallContext $context) {
