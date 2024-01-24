@@ -19,6 +19,7 @@ BUGFIX:
 
 GENERAL:
 * class DeviceGroup/PanoramaConf/Sub introduce new variables for defaultSecurity check
+* update to Device App-ID version: 8800-8513
 
 
 2.1.22 (20231206)
