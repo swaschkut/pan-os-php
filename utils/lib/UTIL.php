@@ -54,6 +54,7 @@ require_once(dirname(__FILE__)."/SOFTWAREREMOVE.php");
 require_once(dirname(__FILE__)."/TRAFFICLOG.php");
 require_once(dirname(__FILE__)."/SYSTEMLOG.php");
 require_once(dirname(__FILE__)."/GARPSEND.php");
+require_once(dirname(__FILE__)."/SESSIONBROWSER.php");
 
 require_once(dirname(__FILE__)."/CUSTOMREPORT.php");
 

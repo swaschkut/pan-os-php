@@ -989,6 +989,7 @@ class PH
         "software-remove",
         "traffic-log",
         "system-log",
+        "session-browser",
         "gratuitous-arp",
         "software-download",
         "software-preparation",
@@ -1133,6 +1134,9 @@ class PH
 
         elseif( $type == "system-log" )
             $util = new SYSTEMLOG($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
+
+        elseif( $type == "session-browser" )
+            $util = new SESSIONBROWSER($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
 
         elseif( $type == "custom-report" )
             $util = new CUSTOMREPORT($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);

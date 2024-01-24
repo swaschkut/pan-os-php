@@ -9,6 +9,7 @@ UTIL:
 * type=device actions=zpp-create-xyz | if running against panorama set devicetype=template per default
 * type=XZY outputformatset=file.txt | change order first delete then set commands
 * type=device actions=templatestack-create/templatestack-delete/templatestack-clone/templatestack-addserial/templatestack-removeserial | implement new actions
+* type=session-browser | introduce new UTIL
 
 BUGFIX:
 * class UTIL/PLAYBOOK | bugfix for argument outputformatset in combination with argument projectfolder
