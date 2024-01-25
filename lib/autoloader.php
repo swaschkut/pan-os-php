@@ -4,7 +4,7 @@
  * ISC License
  *
  * Copyright (c) 2014-2018, Palo Alto Networks Inc.
- * Copyright (c) 2019, Palo Alto Networks Inc.
+ * Copyright (c) 2019, Palo Alto Networks Inc.* Copyright (c) 2019-2023, Palo Alto Networks Inc.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
