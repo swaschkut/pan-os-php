@@ -2090,7 +2090,7 @@ class PanoramaConf
      * @param string $name
      * @return DeviceGroup
      **/
-    public function createDeviceGroup($name, $parentDGname = null )
+    public function createDeviceGroup($name, $parentDGname = null)
     {
         $newDG = new DeviceGroup($this);
         $newDG->load_from_templateXml();
@@ -2168,6 +2168,15 @@ class PanoramaConf
         }
 
         return $newDG;
+    }
+
+    public function API_syncDGparentEntry($name, $parentDGname)
+    {
+        $cmd = "<request><move-dg><entry name=\"".$name."\"><new-parent-dg>".$parentDGname."</new-parent-dg></entry></move-dg></request>";
+        $con = findConnectorOrDie($this);
+
+        if( $con->isAPI() )
+            $con->sendOpRequest($cmd);
     }
 
     /**

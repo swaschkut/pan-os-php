@@ -329,7 +329,11 @@ DeviceCallContext::$supportedActions['DeviceGroup-create'] = array(
                 $dg = $pan->createDeviceGroup($dgName, $parentDG);
 
                 if( $context->isAPI )
+                {
                     $dg->API_sync();
+                    $dg->owner->API_syncDGparentEntry($dg->name(), $parentDG);
+                }
+
             }
             else
             {
