@@ -10,6 +10,7 @@ UTIL:
 * type=XZY outputformatset=file.txt | change order first delete then set commands
 * type=device actions=templatestack-create/templatestack-delete/templatestack-clone/templatestack-addserial/templatestack-removeserial | implement new actions
 * type=session-browser | introduce new UTIL
+* type=ironskillet-update | extend to get maet-cns.yaml for panos
 
 BUGFIX:
 * class UTIL/PLAYBOOK | bugfix for argument outputformatset in combination with argument projectfolder

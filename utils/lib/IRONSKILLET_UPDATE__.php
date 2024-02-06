@@ -147,6 +147,10 @@ class IRONSKILLET_UPDATE__
         $download_array['101'] = "panos_v10.1/templates/panorama/snippets/.meta-cnc.yaml";
         $download_array['102'] = "panos_v10.2/templates/panorama/snippets/.meta-cnc.yaml";
         $download_array['110'] = "panos_v11.0/templates/panorama/snippets/.meta-cnc.yaml";
+        $download_array['fw100'] = "panos_v10.0/templates/panos/snippets/.meta-cnc.yaml";
+        $download_array['fw101'] = "panos_v10.1/templates/panos/snippets/.meta-cnc.yaml";
+        $download_array['fw102'] = "panos_v10.2/templates/panos/snippets/.meta-cnc.yaml";
+        $download_array['fw110'] = "panos_v11.0/templates/panos/snippets/.meta-cnc.yaml";
 
         //download all yaml files
         foreach( $download_array as $key => $version )
@@ -168,168 +172,171 @@ class IRONSKILLET_UPDATE__
             $origFile = file_get_contents( $this->url.$version, false, stream_context_create($arrContextOptions));
             file_put_contents( $this->ironskillet_pathString."/".$version, $origFile);
 
-            //now go through YAML file
-            $yamlcontent = file_get_contents( $this->ironskillet_pathString."/".$version);
-
-            //trigger exception in a "try" block
-            PH::enableExceptionSupport();
-            try
+            if( strpos( $key, "fw" ) === FALSE )
             {
-                $parsed = yaml_parse($yamlcontent);
+                //now go through YAML file
+                $yamlcontent = file_get_contents( $this->ironskillet_pathString."/".$version);
 
-                /*
-                $xml = new SimpleXMLElement('<root/>');
-                array_walk_recursive($parsed, array ($xml, 'addChild'));
-                $filename = $this->ironskillet_pathString."/".$path."/ironskillet_full_yaml.xml";
-                file_put_contents( $filename, $xml->asXML());
-                //print $xml->asXML();
-                */
-
-                $ironskillet_name_finding = array();
-                $ironskillet_name_finding[] = "profiles_spyware";
-                $ironskillet_name_finding[] = "profiles_virus";
-                $ironskillet_name_finding[] = "profiles_url_filtering";
-                $ironskillet_name_finding[] = "profiles_file_blocking";
-                $ironskillet_name_finding[] = "profiles_vulnerability";
-                $ironskillet_name_finding[] = "profiles_wildfire_analysis";
-                $ironskillet_name_finding[] = "profiles_custom_url_category";
-                $ironskillet_name_finding[] = "profile_group";
-                $ironskillet_name_finding[] = "log_settings_profiles";
-                $ironskillet_name_finding[] = "zone_protection_profile";
-
-                foreach( $ironskillet_name_finding as $profilename )
+                //trigger exception in a "try" block
+                PH::enableExceptionSupport();
+                try
                 {
+                    $parsed = yaml_parse($yamlcontent);
 
-                    PH::print_stdout( "check ironskillet: ".$profilename);
+                    /*
+                    $xml = new SimpleXMLElement('<root/>');
+                    array_walk_recursive($parsed, array ($xml, 'addChild'));
+                    $filename = $this->ironskillet_pathString."/".$path."/ironskillet_full_yaml.xml";
+                    file_put_contents( $filename, $xml->asXML());
+                    //print $xml->asXML();
+                    */
 
-                    $elementArray = $this->find_ironskillet_entry_basedonname($parsed['snippets'], $profilename);
-                    if( !empty( $elementArray ) )
+                    $ironskillet_name_finding = array();
+                    $ironskillet_name_finding[] = "profiles_spyware";
+                    $ironskillet_name_finding[] = "profiles_virus";
+                    $ironskillet_name_finding[] = "profiles_url_filtering";
+                    $ironskillet_name_finding[] = "profiles_file_blocking";
+                    $ironskillet_name_finding[] = "profiles_vulnerability";
+                    $ironskillet_name_finding[] = "profiles_wildfire_analysis";
+                    $ironskillet_name_finding[] = "profiles_custom_url_category";
+                    $ironskillet_name_finding[] = "profile_group";
+                    $ironskillet_name_finding[] = "log_settings_profiles";
+                    $ironskillet_name_finding[] = "zone_protection_profile";
+
+                    foreach( $ironskillet_name_finding as $profilename )
                     {
-                        $filename = $this->ironskillet_pathString . "/" . $path . "/" . $profilename . ".xml";
-                        if( !file_exists($filename) )
+
+                        PH::print_stdout( "check ironskillet: ".$profilename);
+
+                        $elementArray = $this->find_ironskillet_entry_basedonname($parsed['snippets'], $profilename);
+                        if( !empty( $elementArray ) )
                         {
-                            $xmlString = "<root>";
-                            foreach( $elementArray as $element )
-                            {
-                                if( isset($element['element']) )
-                                {
-                                    $xmlString .= $element['element'];
-                                }
-                            }
-                            $xmlString .= "</root>";
-
-                            $sinkholeIP = "sinkhole.paloaltonetworks.com";
-                            $xmlString = str_replace("{{ SINKHOLE_IPV4 }}", $sinkholeIP, $xmlString);
-                            $xmlString = str_replace("{{ SINKHOLE_IPV6 }}", "2600:5200::1", $xmlString);
-
+                            $filename = $this->ironskillet_pathString . "/" . $path . "/" . $profilename . ".xml";
                             if( !file_exists($filename) )
                             {
-                                PH::print_stdout( "new file: ".$filename );
-                                file_put_contents($filename, $xmlString);
-                            }
-                        }
-                        else
-                        {
-                            //read XML file
-                            $newdoc1 = new DOMDocument;
-                            $newdoc1->load($filename, XML_PARSE_BIG_LINES);
-
-                            /** @var DOMElement $rootNode1 */
-                            $rootNode1 = $newdoc1->firstChild;
-                            #DH::DEBUGprintDOMDocument( $rootNode1 );
-                            #print "------------\n";
-
-                            $changed = FALSE;
-                            foreach( $elementArray as $element )
-                            {
-                                if( isset($element['element']) )
+                                $xmlString = "<root>";
+                                foreach( $elementArray as $element )
                                 {
-                                    $xmlString = $element['element'];
-
-                                    $sinkholeIP = "sinkhole.paloaltonetworks.com";
-                                    $xmlString = str_replace("{{ SINKHOLE_IPV4 }}", $sinkholeIP, $xmlString);
-                                    $xmlString = str_replace("{{ SINKHOLE_IPV6 }}", "2600:5200::1", $xmlString);
-
-
-                                    /*
-                                    print "\n-----------------\n";
-                                    print $xmlString."\n";
-                                    print "\n-----------------\n";
-                                    */
-
-
-                                    $xmlString = "<root>" . $xmlString . "</root>";
-
-                                    //read new XML string
-                                    $newdoc2 = new DOMDocument;
-                                    $newdoc2->loadXML($xmlString, XML_PARSE_BIG_LINES);
-
-                                    /** @var DOMElement $rootNode2 */
-                                    $rootNode2 = $newdoc2->firstChild;
-                                    foreach( $rootNode2->childNodes as $entry )
+                                    if( isset($element['element']) )
                                     {
-                                        /** @var DOMElement $entry */
-                                        if( $entry->nodeType != XML_ELEMENT_NODE )
-                                            continue;
+                                        $xmlString .= $element['element'];
+                                    }
+                                }
+                                $xmlString .= "</root>";
 
-                                        #print "check entry: \n";
-                                        #DH::DEBUGprintDOMDocument( $entry );
+                                $sinkholeIP = "sinkhole.paloaltonetworks.com";
+                                $xmlString = str_replace("{{ SINKHOLE_IPV4 }}", $sinkholeIP, $xmlString);
+                                $xmlString = str_replace("{{ SINKHOLE_IPV6 }}", "2600:5200::1", $xmlString);
 
-                                        $name = DH::findAttribute("name", $entry);
-                                        #print "\n nodename: |".$name."|\n";
-                                        $existingNode = DH::findFirstElementByNameAttr("entry", $name, $rootNode1);
-                                        if( $existingNode == null || $existingNode == FALSE )
+                                if( !file_exists($filename) )
+                                {
+                                    PH::print_stdout( "new file: ".$filename );
+                                    file_put_contents($filename, $xmlString);
+                                }
+                            }
+                            else
+                            {
+                                //read XML file
+                                $newdoc1 = new DOMDocument;
+                                $newdoc1->load($filename, XML_PARSE_BIG_LINES);
+
+                                /** @var DOMElement $rootNode1 */
+                                $rootNode1 = $newdoc1->firstChild;
+                                #DH::DEBUGprintDOMDocument( $rootNode1 );
+                                #print "------------\n";
+
+                                $changed = FALSE;
+                                foreach( $elementArray as $element )
+                                {
+                                    if( isset($element['element']) )
+                                    {
+                                        $xmlString = $element['element'];
+
+                                        $sinkholeIP = "sinkhole.paloaltonetworks.com";
+                                        $xmlString = str_replace("{{ SINKHOLE_IPV4 }}", $sinkholeIP, $xmlString);
+                                        $xmlString = str_replace("{{ SINKHOLE_IPV6 }}", "2600:5200::1", $xmlString);
+
+
+                                        /*
+                                        print "\n-----------------\n";
+                                        print $xmlString."\n";
+                                        print "\n-----------------\n";
+                                        */
+
+
+                                        $xmlString = "<root>" . $xmlString . "</root>";
+
+                                        //read new XML string
+                                        $newdoc2 = new DOMDocument;
+                                        $newdoc2->loadXML($xmlString, XML_PARSE_BIG_LINES);
+
+                                        /** @var DOMElement $rootNode2 */
+                                        $rootNode2 = $newdoc2->firstChild;
+                                        foreach( $rootNode2->childNodes as $entry )
                                         {
-                                            PH::print_stdout($profilename . " new Node added - " . $name);
+                                            /** @var DOMElement $entry */
+                                            if( $entry->nodeType != XML_ELEMENT_NODE )
+                                                continue;
 
+                                            #print "check entry: \n";
+                                            #DH::DEBUGprintDOMDocument( $entry );
 
-                                            $entrynew = $newdoc1->importNode($entry, TRUE);
-
-                                            $rootNode1->appendChild($entrynew);
-                                            #DH::DEBUGprintDOMDocument($entrynew);
-                                            $changed = TRUE;
-                                        }
-                                        else
-                                        {
-                                            $string1 = $existingNode->textContent;
-                                            $string2 = $entry->textContent;
-                                            if( $string1 !== $string2 )
+                                            $name = DH::findAttribute("name", $entry);
+                                            #print "\n nodename: |".$name."|\n";
+                                            $existingNode = DH::findFirstElementByNameAttr("entry", $name, $rootNode1);
+                                            if( $existingNode == null || $existingNode == FALSE )
                                             {
-                                                PH::print_stdout($profilename . " Node changed - " . $name);
-                                                #DH::DEBUGprintDOMDocument($existingNode);
-                                                #print "\n------------\n";
-                                                #DH::DEBUGprintDOMDocument($entry);
-                                                #print "\n------------\n";
+                                                PH::print_stdout($profilename . " new Node added - " . $name);
+
 
                                                 $entrynew = $newdoc1->importNode($entry, TRUE);
-                                                $rootNode1->removeChild($existingNode);
+
                                                 $rootNode1->appendChild($entrynew);
                                                 #DH::DEBUGprintDOMDocument($entrynew);
                                                 $changed = TRUE;
+                                            }
+                                            else
+                                            {
+                                                $string1 = $existingNode->textContent;
+                                                $string2 = $entry->textContent;
+                                                if( $string1 !== $string2 )
+                                                {
+                                                    PH::print_stdout($profilename . " Node changed - " . $name);
+                                                    #DH::DEBUGprintDOMDocument($existingNode);
+                                                    #print "\n------------\n";
+                                                    #DH::DEBUGprintDOMDocument($entry);
+                                                    #print "\n------------\n";
+
+                                                    $entrynew = $newdoc1->importNode($entry, TRUE);
+                                                    $rootNode1->removeChild($existingNode);
+                                                    $rootNode1->appendChild($entrynew);
+                                                    #DH::DEBUGprintDOMDocument($entrynew);
+                                                    $changed = TRUE;
+                                                }
                                             }
                                         }
                                     }
                                 }
                             }
-                        }
 
-                        if( $changed )
-                        {
-                            file_put_contents($filename, $newdoc1->saveXML($rootNode1));
-                        }
-                        else
-                        {
-                            PH::print_stdout("nothing updated for : " . $profilename);
+                            if( $changed )
+                            {
+                                file_put_contents($filename, $newdoc1->saveXML($rootNode1));
+                            }
+                            else
+                            {
+                                PH::print_stdout("nothing updated for : " . $profilename);
+                            }
                         }
                     }
                 }
-            }
-            //catch exception
-            catch(Error $e)
-            {
-                PH::disableExceptionSupport();
-                PH::print_stdout( " ***** an error occured : " . $e->getMessage() );
-                PH::print_stdout();
+                    //catch exception
+                catch(Error $e)
+                {
+                    PH::disableExceptionSupport();
+                    PH::print_stdout( " ***** an error occured : " . $e->getMessage() );
+                    PH::print_stdout();
+                }
             }
         }
 
