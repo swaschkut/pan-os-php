@@ -8,29 +8,34 @@ MYSQL_PASSWORD: MYSQL_PASSWORD
 */
 
 
-$host = "localhost";
+$db_host = "localhost";
 $uname = "root";
-$password = "MYSQL_ROOT_PASSWORD";
-$db_name = "MYSQL_DATABASE";
+#$password = "MYSQL_ROOT_PASSWORD";
+#$db_name = "MYSQL_DATABASE";
 
+$db_root_pwd = getenv('MYSQL_ROOT_PASSWORD', true) ?: getenv('MYSQL_ROOT_PASSWORD');
+
+$db_host = getenv('MYSQL_HOST', true) ?: getenv('MYSQL_HOST');
+$db_name = getenv('MYSQL_DATABASE', true) ?: getenv('MYSQL_DATABASE');
+$db_user = getenv('MYSQL_USER', true) ?: getenv('MYSQL_USER');
+$db_pwd  = getenv('MYSQL_PASSWORD', true) ?: getenv('MYSQL_PASSWORD');
 
 // The MySQL service named in the docker-compose.yml.
-$host = 'db';
+#$db_host = 'db';
 #$host = "127.0.0.1";
 // Database use name
-$user = 'MYSQL_USER';
+#$db_user = 'MYSQL_USER';
 
 //database user password
-$pass = 'MYSQL_PASSWORD';
+#$db_pwd = 'MYSQL_PASSWORD';
 
 // check the MySQL connection status
 
-/*
-$conn = new mysqli($host, $user, $pass, $db_name);
+
+$conn = new mysqli($db_host, $db_user, $db_pwd, $db_name);
 if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
+    #die("Connection failed: " . $conn->connect_error);
 } else {
     #echo "Connected to MySQL server successfully!";
 }
 
-*/
