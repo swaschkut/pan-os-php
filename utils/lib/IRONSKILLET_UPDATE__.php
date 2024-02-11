@@ -172,6 +172,24 @@ class IRONSKILLET_UPDATE__
             $origFile = file_get_contents( $this->url.$version, false, stream_context_create($arrContextOptions));
             file_put_contents( $this->ironskillet_pathString."/".$version, $origFile);
 
+            $ironskillet_full = $version;
+            if( strpos( $version, "/panorama/" ) != False )
+                $ironskillet_full = str_replace( "snippets/.meta-cnc.yaml", "full/iron_skillet_panorama_full.xml", $version);
+            else
+                $ironskillet_full = str_replace( "snippets/.meta-cnc.yaml", "full/iron_skillet_panos_full.xml", $version);
+            $this->createIronSkilletSubFolder( $ironskillet_full);
+            $origFile = file_get_contents( $this->url.$ironskillet_full, false, stream_context_create($arrContextOptions));
+            file_put_contents( $this->ironskillet_pathString."/".$ironskillet_full, $origFile);
+
+            $ironskillet_setcommand = $version;
+            if( strpos( $version, "/panorama/" ) != False )
+                $ironskillet_setcommand = str_replace( "snippets/.meta-cnc.yaml", "set_commands/iron_skillet_panorama_full.conf", $version);
+            else
+                $ironskillet_setcommand = str_replace( "snippets/.meta-cnc.yaml", "set_commands/iron_skillet_panos_full.conf", $version);
+            $this->createIronSkilletSubFolder( $ironskillet_setcommand);
+            $origFile = file_get_contents( $this->url.$ironskillet_setcommand, false, stream_context_create($arrContextOptions));
+            file_put_contents( $this->ironskillet_pathString."/".$ironskillet_setcommand, $origFile);
+
             if( strpos( $key, "fw" ) === FALSE )
             {
                 //now go through YAML file
