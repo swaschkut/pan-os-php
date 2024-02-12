@@ -1,9 +1,10 @@
 <?php  
 session_start();
 $conn = null;
+$demo = true;
 include "../db_conn.php";
 
-if (isset($_POST['username']) && isset($_POST['password']) && isset($_POST['role'] ) && isset($_POST['fullname']) ) {
+if ( !$demo && isset($_POST['username']) && isset($_POST['password']) && isset($_POST['role'] ) && isset($_POST['fullname']) ) {
 
 	function test_input($data) {
 	  $data = trim($data);

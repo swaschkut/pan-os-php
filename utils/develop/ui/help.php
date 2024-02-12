@@ -1,7 +1,8 @@
 <?php
 session_start();
+$demo = true;
 include "test/db_conn.php";
-if( isset($_SESSION['folder']) && isset($_SESSION['id']) )
+if( !$demo && isset($_SESSION['folder']) && isset($_SESSION['id']) )
 {
     $panconfkeystoreFILE = $_SESSION['folder']."/.panconfkeystore";
     $projectFOLDER = $_SESSION['folder'];
