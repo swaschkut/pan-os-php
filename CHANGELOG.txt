@@ -11,6 +11,7 @@ UTIL:
 * type=device actions=templatestack-create/templatestack-delete/templatestack-clone/templatestack-addserial/templatestack-removeserial | implement new actions
 * type=session-browser | introduce new UTIL
 * type=ironskillet-update | extend to get maet-cns.yaml for panos
+* type=address 'actions=value-replace:$$netmask.32$$,$$netmask.blank32$$' | introduce additional variables
 
 BUGFIX:
 * class UTIL/PLAYBOOK | bugfix for argument outputformatset in combination with argument projectfolder

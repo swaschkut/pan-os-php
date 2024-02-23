@@ -2342,6 +2342,12 @@ AddressCallContext::$supportedActions[] = array(
         $regexValue = $context->arguments['search'];
         $valueToreplace = $context->arguments['replace'];
 
+        if( strpos($regexValue, '$$netmask.32$$') !== FALSE )
+            $regexValue = "/32";
+
+        if( strpos($valueToreplace, '$$netmask.blank32$$') !== FALSE )
+            $valueToreplace = "";
+
         if( strpos($regexValue, "*nodefault*") !== FALSE )
         {
             $string = "search value not set";
@@ -2404,7 +2410,9 @@ AddressCallContext::$supportedActions[] = array(
             'help' => '2.2.2.'
         )
     ),
-    'help' => 'search for a full or partial value and replace; example "actions=value-replace:1.1.1.,2.2.2." it is recommend to use additional filter: "filter=(value string.regex /^1.1.1./)"'
+    'help' => 'search for a full or partial value and replace; example "actions=value-replace:1.1.1.,2.2.2." it is recommend to use additional filter: "filter=(value string.regex /^1.1.1./)"
+                "actions=value-replace:$$netmask.32$$,$$netmask.blank32$$"
+    '
 );
 
 //starting with 7.0 PAN-OS support max. 2500 members per group, former 500
