@@ -2348,6 +2348,10 @@ AddressCallContext::$supportedActions[] = array(
         if( strpos($valueToreplace, '$$netmask.blank32$$') !== FALSE )
             $valueToreplace = "";
 
+        if( strpos($regexValue, '$$') !== FALSE or strpos($valueToreplace, '$$') !== FALSE )
+            derr( "this argument variable with '$$' is not supported", null, False );
+
+
         if( strpos($regexValue, "*nodefault*") !== FALSE )
         {
             $string = "search value not set";
