@@ -25,6 +25,7 @@ GENERAL:
 * class DeviceGroup/PanoramaConf/Sub introduce new variables for defaultSecurity check
 * update to Device App-ID version: 8800-8513
 * starting by 2024 all new changes are copyright by Sven Waschkut
+* class PH | change default behaviour - send API key not via URL, send API key via HEADER
 
 
 2.1.22 (20231206)
