@@ -1010,6 +1010,7 @@ class PanoramaConf
 
         #else{
             $sub = new Sub();
+            $sub->owner = $this;
             $sub->rulebaseroot = $postrulebase;
             $sub->defaultSecurityRules = $this->defaultSecurityRules;
             $tmpPost = $sub->load_defaultSecurityRule( );
