@@ -12,6 +12,7 @@ UTIL:
 * type=session-browser | introduce new UTIL
 * type=ironskillet-update | extend to get maet-cns.yaml for panos
 * type=address 'actions=value-replace:$$netmask.32$$,$$netmask.blank32$$' | introduce additional variables
+* type=rule actions=display-app-seen | improve error message if offline config is used
 
 BUGFIX:
 * class UTIL/PLAYBOOK | bugfix for argument outputformatset in combination with argument projectfolder

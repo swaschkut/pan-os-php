@@ -4092,6 +4092,9 @@ RuleCallContext::$supportedActions[] = array(
         /** @var SecurityRule $rule */
         $rule = $context->object;
 
+        if( !$context->isAPI )
+            derr("actions is only working in API mode", null, false);
+
         $rule_array = $rule->API_apps_seen();
 
         if( !empty($rule_array ) )
