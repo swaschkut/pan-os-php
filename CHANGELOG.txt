@@ -28,6 +28,7 @@ GENERAL:
 * starting by 2024 all new changes are copyright by Sven Waschkut
 * class PH | change default behaviour - send API key not via URL, send API key via HEADER
 * update data.js for help.html site
+* update util action filter
 
 
 2.1.22 (20231206)

@@ -472,7 +472,7 @@
                         "help": "2.2.2."
                     }
                 },
-                "help": "search for a full or partial value and replace; example \"actions=value-replace:1.1.1.,2.2.2.\" it is recommend to use additional filter: \"filter=(value string.regex \/^1.1.1.\/)\""
+                "help": "search for a full or partial value and replace; example \"actions=value-replace:1.1.1.,2.2.2.\" it is recommend to use additional filter: \"filter=(value string.regex \/^1.1.1.\/)\"\n                \"actions=value-replace:$$netmask.32$$,$$netmask.blank32$$\"\n    "
             },
             "value-set-ip-for-fqdn": {
                 "name": "value-set-ip-for-fqdn",
