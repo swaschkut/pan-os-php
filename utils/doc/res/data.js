@@ -2,6 +2,18 @@ var data = {
     "actions": {
         "rule": [
             {
+                "name": "action-Set",
+                "help": null,
+                "args": [
+                    {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "supported Security Rule actions: 'allow','deny','drop','reset-client','reset-server','reset-both'",
+                        "name": "action"
+                    }
+                ]
+            },
+            {
                 "name": "app-Add",
                 "help": null,
                 "args": [
@@ -35,6 +47,11 @@ var data = {
                 ]
             },
             {
+                "name": "app-postgres-fix",
+                "help": null,
+                "args": false
+            },
+            {
                 "name": "app-Remove",
                 "help": null,
                 "args": [
@@ -63,6 +80,11 @@ var data = {
             },
             {
                 "name": "app-Usage-clear",
+                "help": null,
+                "args": false
+            },
+            {
+                "name": "appid-toolbox-cleanup",
                 "help": null,
                 "args": false
             },
@@ -132,6 +154,17 @@ var data = {
                 ]
             },
             {
+                "name": "create-new-Rule-from-file-FastAPI",
+                "help": null,
+                "args": [
+                    {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "name": "fileName"
+                    }
+                ]
+            },
+            {
                 "name": "delete",
                 "help": null,
                 "args": false
@@ -143,7 +176,8 @@ var data = {
                     {
                         "type": "string",
                         "default": "*nodefault*",
-                        "name": "text"
+                        "help": "This string is used to compose a name. You can use the following aliases :\n  - $$current.name$$ : current name of the object\n",
+                        "name": "stringFormula"
                     },
                     {
                         "type": "bool",
@@ -170,7 +204,7 @@ var data = {
             },
             {
                 "name": "description-Replace-Character",
-                "help": "",
+                "help": "possible&nbspvariable&nbsp$$comma$$&nbspor&nbsp$$forwardslash$$&nbspor&nbsp$$colon$$&nbspor&nbsp$$pipe$$&nbspor&nbsp$$newline$$&nbspor&nbsp$$appRID#$$;&nbspexample&nbsp\"actions=description-Replace-Character:$$comma$$word1\"",
                 "args": [
                     {
                         "type": "string",
@@ -179,7 +213,7 @@ var data = {
                     },
                     {
                         "type": "string",
-                        "default": "*nodefault*",
+                        "default": "",
                         "name": "replace"
                     }
                 ]
@@ -217,13 +251,21 @@ var data = {
                         "choices": [
                             "ResolveAddressSummary",
                             "ResolveServiceSummary",
+                            "ResolveServiceAppDefaultSummary",
                             "ResolveApplicationSummary",
-                            "ResolveScheduleSummary"
+                            "ResolveScheduleSummary",
+                            "ApplicationSeen",
+                            "HitCount"
                         ],
-                        "help": "pipe(|) separated list of additional field to include in the report. The following is available:\n  - ResolveAddressSummary : fields with address objects will be resolved to IP addressed and summarized in a new column)\n  - ResolveServiceSummary : fields with service objects will be resolved to their value and summarized in a new column)\n  - ResolveApplicationSummary : fields with application objects will be resolved to their category and risk)\n  - ResolveScheduleSummary : fields with schedule objects will be resolved to their expire time)\n",
+                        "help": "pipe(|) separated list of additional field to include in the report. The following is available:\n  - ResolveAddressSummary : fields with address objects will be resolved to IP addressed and summarized in a new column)\n  - ResolveServiceSummary : fields with service objects will be resolved to their value and summarized in a new column)\n  - ResolveServiceAppDefaultSummary : fields with application objects will be resolved to their service default value and summarized in a new column)\n  - ResolveApplicationSummary : fields with application objects will be resolved to their category and risk)\n  - ResolveScheduleSummary : fields with schedule objects will be resolved to their expire time)\n  - ApplicationSeen : all App-ID seen on the Device SecurityRule will be listed\n  - HitCount : Rule - 'first-hit' - 'last-hit' - 'hit-count' - 'rule-creation' will be listed",
                         "name": "additionalFields"
                     }
                 ]
+            },
+            {
+                "name": "display-app-seen",
+                "help": null,
+                "args": false
             },
             {
                 "name": "DNat-set",
@@ -281,6 +323,17 @@ var data = {
                 ]
             },
             {
+                "name": "dst-Add-from-file",
+                "help": "adds&nbspall&nbspobjects&nbspto&nbspthe&nbsp'DESTINATION'&nbspfield&nbspof&nbspa&nbsprule,&nbspif&nbspthat&nbspfield&nbspwas&nbspset&nbspto&nbsp'ANY'&nbspit&nbspwill&nbspthen&nbspbe&nbspreplaced&nbspby&nbspthese&nbspobjects&nbspdefined&nbspin&nbspfile.",
+                "args": [
+                    {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "name": "file"
+                    }
+                ]
+            },
+            {
                 "name": "dst-Negate-Set",
                 "help": "manages&nbspDestination&nbspNegation&nbspenablement",
                 "args": [
@@ -320,8 +373,8 @@ var data = {
                     {
                         "type": "string",
                         "default": "*nodefault*",
-                        "help": "specify the query that will be used to filter the objects to be removed",
-                        "name": "filterName"
+                        "help": "specify the subquery that will be used to filter the objects to be removed: \"actions=dst-Remove-Objects-Matching-Filter:subquery1\" \"subquery1=!(value ip4.included-in 192.168.10.0\/24)\"",
+                        "name": "SubqueryFilterName"
                     }
                 ]
             },
@@ -368,10 +421,13 @@ var data = {
                         "choices": [
                             "ResolveAddressSummary",
                             "ResolveServiceSummary",
+                            "ResolveServiceAppDefaultSummary",
                             "ResolveApplicationSummary",
-                            "ResolveScheduleSummary"
+                            "ResolveScheduleSummary",
+                            "ApplicationSeen",
+                            "HitCount"
                         ],
-                        "help": "pipe(|) separated list of additional field to include in the report. The following is available:\n  - ResolveAddressSummary : fields with address objects will be resolved to IP addressed and summarized in a new column)\n  - ResolveServiceSummary : fields with service objects will be resolved to their value and summarized in a new column)\n  - ResolveApplicationSummary : fields with application objects will be resolved to their category and risk)\n  - ResolveScheduleSummary : fields with schedule objects will be resolved to their expire time)\n",
+                        "help": "pipe(|) separated list of additional field to include in the report. The following is available:\n  - ResolveAddressSummary : fields with address objects will be resolved to IP addressed and summarized in a new column\n  - ResolveServiceSummary : fields with service objects will be resolved to their value and summarized in a new column\n  - ResolveServiceAppDefaultSummary : fields with application objects will be resolved to their service default value and summarized in a new column\n  - ResolveApplicationSummary : fields with application objects will be resolved to their category and risk\n  - ResolveScheduleSummary : fields with schedule objects will be resolved to their expire time\n  - ApplicationSeen : all App-ID seen on the Device SecurityRule will be listed\n  - HitCount : Rule - 'first-hit' - 'last-hit' - 'hit-count' - 'rule-creation will be listed\n",
                         "name": "additionalFields"
                     }
                 ]
@@ -457,6 +513,17 @@ var data = {
                 ]
             },
             {
+                "name": "from-Remove-from-file",
+                "help": null,
+                "args": [
+                    {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "name": "fileName"
+                    }
+                ]
+            },
+            {
                 "name": "from-Replace",
                 "help": null,
                 "args": [
@@ -481,6 +548,22 @@ var data = {
                 "name": "from-Set-Any",
                 "help": null,
                 "args": false
+            },
+            {
+                "name": "group-tag-Remove",
+                "help": null,
+                "args": false
+            },
+            {
+                "name": "group-tag-Set",
+                "help": null,
+                "args": [
+                    {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "name": "Group-Tag"
+                    }
+                ]
             },
             {
                 "name": "hip-Set",
@@ -682,7 +765,7 @@ var data = {
                     {
                         "type": "string",
                         "default": "*nodefault*",
-                        "help": "This string is used to compose a name. You can use the following aliases :\n  - $$current.name$$ : current name of the object\n  - $$sequential.number$$ : sequential number - starting with 1\n",
+                        "help": "This string is used to compose a name. You can use the following aliases :\n  - $$current.name$$ : current name of the object\n  - $$sequential.number$$ : sequential number - starting with 1\n  - $$uuid$$ : rule uuid\n",
                         "name": "stringFormula"
                     },
                     {
@@ -704,7 +787,7 @@ var data = {
                     },
                     {
                         "type": "string",
-                        "default": "*nodefault*",
+                        "default": "",
                         "name": "replace"
                     }
                 ]
@@ -761,6 +844,16 @@ var data = {
                         "name": "arg2"
                     }
                 ]
+            },
+            {
+                "name": "rule-hit-count-clear",
+                "help": null,
+                "args": false
+            },
+            {
+                "name": "rule-hit-count-show",
+                "help": null,
+                "args": false
             },
             {
                 "name": "ruleType-Change",
@@ -939,6 +1032,17 @@ var data = {
                 "args": false
             },
             {
+                "name": "SNat-set-interface",
+                "help": null,
+                "args": [
+                    {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "name": "SNATInterface"
+                    }
+                ]
+            },
+            {
                 "name": "src-Add",
                 "help": "adds&nbspan&nbspobject&nbspin&nbspthe&nbsp'SOURCE'&nbspfield&nbspof&nbspa&nbsprule,&nbspif&nbspthat&nbspfield&nbspwas&nbspset&nbspto&nbsp'ANY'&nbspit&nbspwill&nbspthen&nbspbe&nbspreplaced&nbspby&nbspthis&nbspobject.",
                 "args": [
@@ -946,6 +1050,17 @@ var data = {
                         "type": "string",
                         "default": "*nodefault*",
                         "name": "objName"
+                    }
+                ]
+            },
+            {
+                "name": "src-Add-from-file",
+                "help": "adds&nbspall&nbspobjects&nbspto&nbspthe&nbsp'SOURCE'&nbspfield&nbspof&nbspa&nbsprule,&nbspif&nbspthat&nbspfield&nbspwas&nbspset&nbspto&nbsp'ANY'&nbspit&nbspwill&nbspthen&nbspbe&nbspreplaced&nbspby&nbspthese&nbspobjects&nbspdefined&nbspin&nbspfile.",
+                "args": [
+                    {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "name": "file"
                     }
                 ]
             },
@@ -994,8 +1109,8 @@ var data = {
                     {
                         "type": "string",
                         "default": "*nodefault*",
-                        "help": "specify the query that will be used to filter the objects to be removed",
-                        "name": "filterName"
+                        "help": "specify the subquery that will be used to filter the objects to be removed: \"actions=src-Remove-Objects-Matching-Filter:subquery1\" \"subquery1=!(value ip4.included-in 192.168.10.0\/24)\"",
+                        "name": "SubqueryFilterName"
                     }
                 ]
             },
@@ -1003,6 +1118,72 @@ var data = {
                 "name": "src-set-Any",
                 "help": null,
                 "args": false
+            },
+            {
+                "name": "stats-address-destination-FastAPI",
+                "help": "returns&nbspTRUE&nbspif&nbsprule&nbspname&nbspmatches&nbspthe&nbspspecified&nbsptimestamp&nbspMM\/DD\/YYYY&nbsp[american]&nbsp\/&nbspDD-MM-YYYY&nbsp[european]&nbsp\/&nbsp21&nbspSeptember&nbsp2021&nbsp\/&nbsp-90&nbspdays",
+                "args": [
+                    {
+                        "type": "string",
+                        "default": "last-15-minutes",
+                        "name": "logHistory"
+                    }
+                ]
+            },
+            {
+                "name": "stats-address-FastAPI",
+                "help": "returns&nbspTRUE&nbspif&nbsprule&nbspname&nbspmatches&nbspthe&nbspspecified&nbsptimestamp&nbspMM\/DD\/YYYY&nbsp[american]&nbsp\/&nbspDD-MM-YYYY&nbsp[european]&nbsp\/&nbsp21&nbspSeptember&nbsp2021&nbsp\/&nbsp-90&nbspdays",
+                "args": [
+                    {
+                        "type": "string",
+                        "default": "last-15-minutes",
+                        "name": "logHistory"
+                    }
+                ]
+            },
+            {
+                "name": "stats-address-source-FastAPI",
+                "help": "returns&nbspTRUE&nbspif&nbsprule&nbspname&nbspmatches&nbspthe&nbspspecified&nbsptimestamp&nbspMM\/DD\/YYYY&nbsp[american]&nbsp\/&nbspDD-MM-YYYY&nbsp[european]&nbsp\/&nbsp21&nbspSeptember&nbsp2021&nbsp\/&nbsp-90&nbspdays",
+                "args": [
+                    {
+                        "type": "string",
+                        "default": "last-15-minutes",
+                        "name": "logHistory"
+                    }
+                ]
+            },
+            {
+                "name": "stats-appid-FastAPI",
+                "help": "returns&nbspTRUE&nbspif&nbsprule&nbspname&nbspmatches&nbspthe&nbspspecified&nbsptimestamp&nbspMM\/DD\/YYYY&nbsp[american]&nbsp\/&nbspDD-MM-YYYY&nbsp[european]&nbsp\/&nbsp21&nbspSeptember&nbsp2021&nbsp\/&nbsp-90&nbspdays",
+                "args": [
+                    {
+                        "type": "string",
+                        "default": "last-15-minutes",
+                        "name": "logHistory"
+                    }
+                ]
+            },
+            {
+                "name": "stats-service-FastAPI",
+                "help": "returns&nbspTRUE&nbspif&nbsprule&nbspname&nbspmatches&nbspthe&nbspspecified&nbsptimestamp&nbspMM\/DD\/YYYY&nbsp[american]&nbsp\/&nbspDD-MM-YYYY&nbsp[european]&nbsp\/&nbsp21&nbspSeptember&nbsp2021&nbsp\/&nbsp-90&nbspdays",
+                "args": [
+                    {
+                        "type": "string",
+                        "default": "last-15-minutes",
+                        "name": "logHistory"
+                    }
+                ]
+            },
+            {
+                "name": "stats-traffic-FastAPI",
+                "help": "returns&nbspTRUE&nbspif&nbsprule&nbspname&nbspmatches&nbspthe&nbspspecified&nbsptimestamp&nbspMM\/DD\/YYYY&nbsp[american]&nbsp\/&nbspDD-MM-YYYY&nbsp[european]&nbsp\/&nbsp21&nbspSeptember&nbsp2021&nbsp\/&nbsp-90&nbspdays",
+                "args": [
+                    {
+                        "type": "string",
+                        "default": "last-15-minutes",
+                        "name": "logHistory"
+                    }
+                ]
             },
             {
                 "name": "tag-Add",
@@ -1188,6 +1369,17 @@ var data = {
                 ]
             },
             {
+                "name": "to-Remove-from-file",
+                "help": null,
+                "args": [
+                    {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "name": "fileName"
+                    }
+                ]
+            },
+            {
                 "name": "to-Replace",
                 "help": null,
                 "args": [
@@ -1278,6 +1470,33 @@ var data = {
                 ]
             },
             {
+                "name": "user-replace",
+                "help": null,
+                "args": [
+                    {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "name": "old-userName"
+                    },
+                    {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "name": "new-userName"
+                    }
+                ]
+            },
+            {
+                "name": "user-replace-from-file",
+                "help": "file&nbspsyntax:&nbsp'old-user-name,newusername'&nbsp;&nbspeach&nbsppair&nbspon&nbspa&nbspnewline!",
+                "args": [
+                    {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "name": "file"
+                    }
+                ]
+            },
+            {
                 "name": "user-set-any",
                 "help": null,
                 "args": false
@@ -1317,6 +1536,28 @@ var data = {
                 ]
             },
             {
+                "name": "address-group-create-edl-fqdn",
+                "help": null,
+                "args": [
+                    {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "name": "filename"
+                    }
+                ]
+            },
+            {
+                "name": "address-group-create-edl-ip",
+                "help": null,
+                "args": [
+                    {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "name": "filename"
+                    }
+                ]
+            },
+            {
                 "name": "AddToGroup",
                 "help": null,
                 "args": [
@@ -1330,6 +1571,77 @@ var data = {
                         "default": "*nodefault*",
                         "help": "please define a DeviceGroup name for Panorama config or vsys name for Firewall config.\n",
                         "name": "devicegroupname"
+                    }
+                ]
+            },
+            {
+                "name": "combine-addressgroups",
+                "help": null,
+                "args": [
+                    {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "name": "new_addressgroup_name"
+                    },
+                    {
+                        "type": "bool",
+                        "default": false,
+                        "name": "replace_groups"
+                    }
+                ]
+            },
+            {
+                "name": "create-address",
+                "help": null,
+                "args": [
+                    {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "name": "name"
+                    },
+                    {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "name": "value"
+                    },
+                    {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "tmp, ip-netmask, ip-range, fqdn, dynamic, ip-wildcard",
+                        "name": "type"
+                    }
+                ]
+            },
+            {
+                "name": "create-address-from-file",
+                "help": null,
+                "args": [
+                    {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "file syntax:   AddressObjectName,IP-Address,Address-group\n\nexample:\n    h-192.168.0.1,192.168.0.1\/32,private-network-AddressGroup\n    n-192.168.2.0m24,192.168.2.0\/24,private-network-AddressGroup\n",
+                        "name": "file"
+                    },
+                    {
+                        "type": "bool",
+                        "default": false,
+                        "name": "force-add-to-group"
+                    },
+                    {
+                        "type": "bool",
+                        "default": false,
+                        "name": "force-change-value"
+                    }
+                ]
+            },
+            {
+                "name": "create-addressgroup",
+                "help": null,
+                "args": [
+                    {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "name": "name"
                     }
                 ]
             },
@@ -1370,6 +1682,22 @@ var data = {
                 "name": "description-Delete",
                 "help": null,
                 "args": false
+            },
+            {
+                "name": "description-Replace-Character",
+                "help": "possible&nbspvariable&nbsp$$comma$$&nbspor&nbsp$$forwardslash$$&nbspor&nbsp$$colon$$&nbspor&nbsp$$pipe$$;&nbspexample&nbsp\"actions=description-Replace-Character:$$comma$$word1\"",
+                "args": [
+                    {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "name": "search"
+                    },
+                    {
+                        "type": "string",
+                        "default": "",
+                        "name": "replace"
+                    }
+                ]
             },
             {
                 "name": "display",
@@ -1430,6 +1758,16 @@ var data = {
                         "name": "mode"
                     }
                 ]
+            },
+            {
+                "name": "move-range2network",
+                "help": null,
+                "args": false
+            },
+            {
+                "name": "move-wildcard2network",
+                "help": null,
+                "args": false
             },
             {
                 "name": "name-addPrefix",
@@ -1622,9 +1960,59 @@ var data = {
                 ]
             },
             {
+                "name": "upload-address-2cloudmanager",
+                "help": null,
+                "args": [
+                    {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "name": "panorama_file"
+                    },
+                    {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "name": "dg_name"
+                    }
+                ]
+            },
+            {
+                "name": "upload-addressgroup-2cloudmanager",
+                "help": null,
+                "args": [
+                    {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "name": "panorama_file"
+                    },
+                    {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "name": "dg_name"
+                    }
+                ]
+            },
+            {
                 "name": "value-host-object-add-netmask-m32",
                 "help": null,
                 "args": false
+            },
+            {
+                "name": "value-replace",
+                "help": "search&nbspfor&nbspa&nbspfull&nbspor&nbsppartial&nbspvalue&nbspand&nbspreplace;&nbspexample&nbsp\"actions=value-replace:1.1.1.,2.2.2.\"&nbspit&nbspis&nbsprecommend&nbspto&nbspuse&nbspadditional&nbspfilter:&nbsp\"filter=(value&nbspstring.regex&nbsp\/^1.1.1.\/)\"<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp\"actions=value-replace:$$netmask.32$$,$$netmask.blank32$$\"<br>&nbsp&nbsp&nbsp&nbsp",
+                "args": [
+                    {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "1.1.1.",
+                        "name": "search"
+                    },
+                    {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "2.2.2.",
+                        "name": "replace"
+                    }
+                ]
             },
             {
                 "name": "value-set-ip-for-fqdn",
@@ -1655,6 +2043,43 @@ var data = {
                 ]
             },
             {
+                "name": "create-service",
+                "help": null,
+                "args": [
+                    {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "name": "name"
+                    },
+                    {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "name": "protocol"
+                    },
+                    {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "name": "port"
+                    },
+                    {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "name": "sport"
+                    }
+                ]
+            },
+            {
+                "name": "create-servicegroup",
+                "help": null,
+                "args": [
+                    {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "name": "name"
+                    }
+                ]
+            },
+            {
                 "name": "decommission",
                 "help": null,
                 "args": [
@@ -1676,18 +2101,14 @@ var data = {
                 "args": false
             },
             {
-                "name": "deleteForce",
-                "help": null,
-                "args": false
-            },
-            {
                 "name": "description-Append",
-                "help": null,
+                "help": "",
                 "args": [
                     {
                         "type": "string",
                         "default": "*nodefault*",
-                        "name": "text"
+                        "help": "This string is used to compose a name. You can use the following aliases :\n  - $$current.name$$ : current name of the object\n",
+                        "name": "stringFormula"
                     }
                 ]
             },
@@ -1721,9 +2142,11 @@ var data = {
                         "default": "*NONE*",
                         "choices": [
                             "WhereUsed",
-                            "UsedInLocation"
+                            "UsedInLocation",
+                            "ResolveSRV",
+                            "NestedMembers"
                         ],
-                        "help": "pipe(|) separated list of additional field to include in the report. The following is available:\n  - WhereUsed : list places where object is used (rules, groups ...)\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n",
+                        "help": "pipe(|) separated list of additional field to include in the report. The following is available:\n  - WhereUsed : list places where object is used (rules, groups ...)\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n  - NestedMembers: lists all members, even the ones that may be included in nested groups\n  - ResolveSRV\n",
                         "name": "additionalFields"
                     }
                 ]
@@ -1800,7 +2223,7 @@ var data = {
                     {
                         "type": "string",
                         "default": "*nodefault*",
-                        "help": "This string is used to compose a name. You can use the following aliases :\n  - $$current.name$$ : current name of the object\n  - $$destinationport$$ : destination Port\n  - $$protocol$$ : service protocol\n  - $$sourceport$$ : source Port\n  - $$value$$ : value of the object\n",
+                        "help": "This string is used to compose a name. You can use the following aliases :\n  - $$current.name$$ : current name of the object\n  - $$destinationport$$ : destination Port\n  - $$protocol$$ : service protocol\n  - $$sourceport$$ : source Port\n  - $$value$$ : value of the object\n  - $$timeout$$ : timeout value of the object\n",
                         "name": "stringFormula"
                     }
                 ]
@@ -1816,7 +2239,7 @@ var data = {
                     },
                     {
                         "type": "string",
-                        "default": "*nodefault*",
+                        "default": "",
                         "name": "replace"
                     }
                 ]
@@ -1859,6 +2282,11 @@ var data = {
                 ]
             },
             {
+                "name": "show-dstportmapping",
+                "help": null,
+                "args": false
+            },
+            {
                 "name": "sourceport-delete",
                 "help": null,
                 "args": false
@@ -1871,6 +2299,17 @@ var data = {
                         "type": "string",
                         "default": "*nodefault*",
                         "name": "sourceportValue"
+                    }
+                ]
+            },
+            {
+                "name": "split-large-service-groups",
+                "help": null,
+                "args": [
+                    {
+                        "type": "string",
+                        "default": "2490",
+                        "name": "largeGroupsCount"
                     }
                 ]
             },
@@ -1924,7 +2363,34 @@ var data = {
                 ]
             },
             {
+                "name": "timeout-halfclose-set",
+                "help": null,
+                "args": [
+                    {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "name": "timeoutValue"
+                    }
+                ]
+            },
+            {
+                "name": "timeout-inherit",
+                "help": null,
+                "args": false
+            },
+            {
                 "name": "timeout-set",
+                "help": null,
+                "args": [
+                    {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "name": "timeoutValue"
+                    }
+                ]
+            },
+            {
+                "name": "timeout-timewait-set",
                 "help": null,
                 "args": [
                     {
@@ -2114,6 +2580,17 @@ var data = {
                 "name": "name-toUpperCase",
                 "help": null,
                 "args": false
+            },
+            {
+                "name": "replace-With-Object",
+                "help": null,
+                "args": [
+                    {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "name": "objectName"
+                    }
+                ]
             }
         ],
         "zone": [
@@ -2267,6 +2744,17 @@ var data = {
                 ]
             },
             {
+                "name": "UserID-enable",
+                "help": null,
+                "args": [
+                    {
+                        "type": "bool",
+                        "default": "TRUE",
+                        "name": "enable"
+                    }
+                ]
+            },
+            {
                 "name": "zpp-Set",
                 "help": null,
                 "args": [
@@ -2294,6 +2782,35 @@ var data = {
                         "default": "all",
                         "help": "all \/ all-[action] \/ category",
                         "name": "filter"
+                    }
+                ]
+            },
+            {
+                "name": "custom-url-category-add-ending-token",
+                "help": null,
+                "args": [
+                    {
+                        "type": "string",
+                        "default": "\/",
+                        "help": "supported ending token: '.', '\/', '?', '&', '=', ';', '+', '*', '\/*' - please be aware for '\/*' please use '$$*'\n\n'actions=custom-url-category-add-ending-token:\/' is the default value, it can NOT be run directly\nplease use: 'actions=custom-url-category-add-ending-token' to avoid problems like: '**ERROR** unsupported Action:\"\"'",
+                        "name": "endingtoken"
+                    }
+                ]
+            },
+            {
+                "name": "custom-url-category-fix-leading-dot",
+                "help": null,
+                "args": false
+            },
+            {
+                "name": "custom-url-category-remove-ending-token",
+                "help": null,
+                "args": [
+                    {
+                        "type": "string",
+                        "default": "\/",
+                        "help": "supported ending token: '.', '\/', '?', '&', '=', ';', '+', '*', '\/*' - please be aware for '\/*' please use '$$*'\n\n'actions=custom-url-category-add-ending-token:\/' is the default value, it can NOT be run directly\nplease use: 'actions=custom-url-category-add-ending-token' to avoid problems like: '**ERROR** unsupported Action:\"\"'",
+                        "name": "endingtoken"
                     }
                 ]
             },
@@ -2397,6 +2914,22 @@ var data = {
                 "name": "name-toUpperCase",
                 "help": null,
                 "args": false
+            },
+            {
+                "name": "url-filtering-action-set",
+                "help": null,
+                "args": [
+                    {
+                        "type": "string",
+                        "default": "false",
+                        "name": "action"
+                    },
+                    {
+                        "type": "string",
+                        "default": "false",
+                        "name": "url-category"
+                    }
+                ]
             }
         ],
         "securityprofilegroup": [
@@ -2486,6 +3019,126 @@ var data = {
                 "args": false
             },
             {
+                "name": "cleanuprule-create-bp",
+                "help": null,
+                "args": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "help": "LogForwardingProfile name",
+                        "name": "logprof"
+                    }
+                ]
+            },
+            {
+                "name": "defaultsecurityrule-action-set",
+                "help": null,
+                "args": [
+                    {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "define which ruletype; 'intrazone'|'interzone'|'all' ",
+                        "name": "ruletype"
+                    },
+                    {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "define the action you like to set 'allow'|'deny'",
+                        "name": "action"
+                    }
+                ]
+            },
+            {
+                "name": "defaultsecurityRule-create-bp",
+                "help": null,
+                "args": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "help": "LogForwardingProfile name",
+                        "name": "logprof"
+                    }
+                ]
+            },
+            {
+                "name": "defaultsecurityrule-logend-enable",
+                "help": null,
+                "args": false
+            },
+            {
+                "name": "defaultsecurityrule-logsetting-set",
+                "help": null,
+                "args": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "help": "LogForwardingProfile name",
+                        "name": "logprof"
+                    },
+                    {
+                        "type": "bool",
+                        "default": "false",
+                        "help": "LogForwardingProfile overwrite",
+                        "name": "force"
+                    }
+                ]
+            },
+            {
+                "name": "defaultsecurityrule-logstart-disable",
+                "help": null,
+                "args": false
+            },
+            {
+                "name": "defaultsecurityrule-remove-override",
+                "help": null,
+                "args": false
+            },
+            {
+                "name": "defaultsecurityrule-securityprofile-remove",
+                "help": null,
+                "args": [
+                    {
+                        "type": "bool",
+                        "default": "false",
+                        "help": "per default, remove SecurityProfiles only if Rule action is NOT allow. force=true => remove always",
+                        "name": "force"
+                    }
+                ]
+            },
+            {
+                "name": "defaultsecurityrule-securityprofile-setAlert",
+                "help": null,
+                "args": false
+            },
+            {
+                "name": "defaultsecurityrule-securityprofilegroup-set",
+                "help": null,
+                "args": [
+                    {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "set SecurityProfileGroup to default SecurityRules, if the Rule is an allow rule",
+                        "name": "securityProfileGroup"
+                    }
+                ]
+            },
+            {
+                "name": "devicegroup-addserial",
+                "help": null,
+                "args": [
+                    {
+                        "type": "string",
+                        "default": "false",
+                        "name": "name"
+                    },
+                    {
+                        "type": "string",
+                        "default": "null",
+                        "name": "serial"
+                    }
+                ]
+            },
+            {
                 "name": "devicegroup-create",
                 "help": null,
                 "args": [
@@ -2507,6 +3160,22 @@ var data = {
                 "args": false
             },
             {
+                "name": "devicegroup-removeserial",
+                "help": null,
+                "args": [
+                    {
+                        "type": "string",
+                        "default": "false",
+                        "name": "name"
+                    },
+                    {
+                        "type": "string",
+                        "default": "null",
+                        "name": "serial"
+                    }
+                ]
+            },
+            {
                 "name": "display",
                 "help": null,
                 "args": false
@@ -2514,7 +3183,14 @@ var data = {
             {
                 "name": "display-shadowrule",
                 "help": null,
-                "args": false
+                "args": [
+                    {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "define an argument with filename to also store shadow rule to an excel\/html speardsheet file",
+                        "name": "exportToExcel"
+                    }
+                ]
             },
             {
                 "name": "displayReferences",
@@ -2568,6 +3244,36 @@ var data = {
                 ]
             },
             {
+                "name": "find-zone-from-ip",
+                "help": "This&nbspAction&nbspwill&nbspuse&nbsprouting&nbsptables&nbspto&nbspresolve&nbspzones.&nbspWhen&nbspthe&nbspprogram&nbspcannot&nbspfind&nbspall&nbspparameters&nbspby&nbspitself&nbsp(like&nbspvsys&nbspor&nbsptemplate&nbspname&nbspyou&nbspwill&nbsphave&nbspto&nbspmanually&nbspprovide&nbspthem.<br><br>Usage&nbspexamples:<br><br>&nbsp&nbsp&nbsp&nbsp-&nbspfind-zone-from-ip:8.8.8.8<br>&nbsp&nbsp&nbsp&nbsp-&nbspfind-zone-from-ip:8.8.8.8,vr1<br>&nbsp&nbsp&nbsp&nbsp-&nbspfind-zone-from-ip:8.8.8.8,vr3,api@0011C890C,vsys1<br>&nbsp&nbsp&nbsp&nbsp-&nbspfind-zone-from-ip:8.8.8.8,vr5,Datacenter_template<br>&nbsp&nbsp&nbsp&nbsp-&nbspfind-zone-from-ip:8.8.8.8,vr3,file@firewall.xml,vsys1<br>",
+                "args": [
+                    {
+                        "type": "string",
+                        "default": "*noDefault*",
+                        "help": "Please bring in an IP-Address, to find the corresponding Zone.",
+                        "name": "ip"
+                    },
+                    {
+                        "type": "string",
+                        "default": "*autodetermine*",
+                        "help": "Can optionally be provided if script cannot find which virtualRouter it should be using (ie: there are several VR in same VSYS)",
+                        "name": "virtualRouter"
+                    },
+                    {
+                        "type": "string",
+                        "default": "*notPanorama*",
+                        "help": "When you are using Panorama then 1 or more templates could apply to a DeviceGroup, in such a case you may want to specify which Template name to use.\nBeware that if the Template is overriden or if you are not using Templates then you will want load firewall config in lieu of specifying a template. \nFor this, give value 'api@XXXXX' where XXXXX is serial number of the Firewall device number you want to use to calculate zones.\nIf you don't want to use API but have firewall config file on your computer you can then specify file@\/folderXYZ\/config.xml.",
+                        "name": "template"
+                    },
+                    {
+                        "type": "string",
+                        "default": "*autodetermine*",
+                        "help": "specify vsys when script cannot autodetermine it or when you when to manually override",
+                        "name": "vsys"
+                    }
+                ]
+            },
+            {
                 "name": "geoIP-check",
                 "help": null,
                 "args": [
@@ -2580,7 +3286,58 @@ var data = {
                 ]
             },
             {
-                "name": "securityprofile-create-alert-only",
+                "name": "logforwardingprofile-create-bp",
+                "help": null,
+                "args": [
+                    {
+                        "type": "bool",
+                        "default": "false",
+                        "help": "if set to true; LogForwardingProfile is create at SHARED level; at least one DG must be available",
+                        "name": "shared"
+                    }
+                ]
+            },
+            {
+                "name": "manageddevice-create",
+                "help": null,
+                "args": [
+                    {
+                        "type": "string",
+                        "default": "false",
+                        "name": "serial"
+                    }
+                ]
+            },
+            {
+                "name": "manageddevice-delete",
+                "help": null,
+                "args": [
+                    {
+                        "type": "bool",
+                        "default": "false",
+                        "help": "decommission Manageddevice, also if used on Device-Group or Template-stack",
+                        "name": "force"
+                    }
+                ]
+            },
+            {
+                "name": "sharedgateway-delete",
+                "help": null,
+                "args": false
+            },
+            {
+                "name": "sharedgateway-migrate-to-vsys",
+                "help": null,
+                "args": [
+                    {
+                        "type": "string",
+                        "default": "false",
+                        "name": "name"
+                    }
+                ]
+            },
+            {
+                "name": "sp_spg-create-alert-only-bp",
                 "help": null,
                 "args": [
                     {
@@ -2590,6 +3347,50 @@ var data = {
                         "name": "shared"
                     }
                 ]
+            },
+            {
+                "name": "sp_spg-create-bp",
+                "help": null,
+                "args": [
+                    {
+                        "type": "bool",
+                        "default": "false",
+                        "help": "if set to true; securityProfiles are create at SHARED level; at least one DG must be available",
+                        "name": "shared"
+                    },
+                    {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "if set, only ironskillet SP called 'Outbound' are created with the name defined",
+                        "name": "sp-name"
+                    }
+                ]
+            },
+            {
+                "name": "system-admin-session",
+                "help": "This&nbspAction&nbspis&nbspdisplaying&nbspthe&nbspactual&nbsplogged&nbspin&nbspadmin&nbspsessions",
+                "args": [
+                    {
+                        "type": "string",
+                        "default": "display",
+                        "name": "action"
+                    },
+                    {
+                        "type": "string",
+                        "default": "8",
+                        "name": "idle-since-hours"
+                    }
+                ]
+            },
+            {
+                "name": "system-mgt-config_users",
+                "help": "This&nbspAction&nbspwill&nbspdisplay&nbspthe&nbspconfigured&nbspAdmin&nbspusers&nbspon&nbspthe&nbspDevice",
+                "args": false
+            },
+            {
+                "name": "system-restart",
+                "help": "This&nbspAction&nbspis&nbsprebooting&nbspthe&nbspDevice",
+                "args": false
             },
             {
                 "name": "template-add",
@@ -2606,11 +3407,127 @@ var data = {
                         "name": "position"
                     }
                 ]
+            },
+            {
+                "name": "template-clone",
+                "help": null,
+                "args": [
+                    {
+                        "type": "string",
+                        "default": "false",
+                        "name": "newname"
+                    }
+                ]
+            },
+            {
+                "name": "template-create",
+                "help": null,
+                "args": [
+                    {
+                        "type": "string",
+                        "default": "false",
+                        "name": "name"
+                    }
+                ]
+            },
+            {
+                "name": "template-delete",
+                "help": null,
+                "args": false
+            },
+            {
+                "name": "templatestack-addserial",
+                "help": null,
+                "args": [
+                    {
+                        "type": "string",
+                        "default": "false",
+                        "name": "name"
+                    },
+                    {
+                        "type": "string",
+                        "default": "null",
+                        "name": "serial"
+                    }
+                ]
+            },
+            {
+                "name": "templatestack-clone",
+                "help": null,
+                "args": [
+                    {
+                        "type": "string",
+                        "default": "false",
+                        "name": "newname"
+                    }
+                ]
+            },
+            {
+                "name": "templatestack-create",
+                "help": null,
+                "args": [
+                    {
+                        "type": "string",
+                        "default": "false",
+                        "name": "name"
+                    }
+                ]
+            },
+            {
+                "name": "templatestack-delete",
+                "help": null,
+                "args": false
+            },
+            {
+                "name": "templatestack-removeserial",
+                "help": null,
+                "args": [
+                    {
+                        "type": "string",
+                        "default": "false",
+                        "name": "name"
+                    },
+                    {
+                        "type": "string",
+                        "default": "null",
+                        "name": "serial"
+                    }
+                ]
+            },
+            {
+                "name": "virtualsystem-delete",
+                "help": null,
+                "args": false
+            },
+            {
+                "name": "xml-extract",
+                "help": null,
+                "args": false
+            },
+            {
+                "name": "zoneprotectionprofile-create-bp",
+                "help": null,
+                "args": false
+            },
+            {
+                "name": "zpp-create-alert-only-bp",
+                "help": null,
+                "args": false
+            },
+            {
+                "name": "zpp-create-bp",
+                "help": null,
+                "args": false
             }
         ],
         "interface": [
             {
                 "name": "display",
+                "help": null,
+                "args": false
+            },
+            {
+                "name": "displayreferences",
                 "help": null,
                 "args": false
             }
@@ -2620,6 +3537,28 @@ var data = {
                 "name": "display",
                 "help": null,
                 "args": false
+            },
+            {
+                "name": "exportToExcel",
+                "help": null,
+                "args": [
+                    {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "name": "filename"
+                    },
+                    {
+                        "type": "pipeSeparatedList",
+                        "subtype": "string",
+                        "default": "*NONE*",
+                        "choices": [
+                            "WhereUsed",
+                            "UsedInLocation"
+                        ],
+                        "help": "pipe(|) separated list of additional field to include in the report. The following is available:\n  - WhereUsed : list places where object is used (rules, groups ...)\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n",
+                        "name": "additionalFields"
+                    }
+                ]
             }
         ],
         "virtualwire": [
@@ -2775,6 +3714,11 @@ var data = {
                         "argument": "*required*"
                     },
                     {
+                        "name": "has.from.query",
+                        "help": "example: 'filter=(app has.from.query subquery1)' 'subquery1=(object is.application-group)'",
+                        "argument": "*required*"
+                    },
+                    {
                         "name": "has.missing.dependencies",
                         "help": null,
                         "argument": null
@@ -2792,6 +3736,11 @@ var data = {
                     {
                         "name": "has.regex",
                         "help": null,
+                        "argument": "*required*"
+                    },
+                    {
+                        "name": "has.seen.fast-api",
+                        "help": "example: 'filter=(app has.seen.fast-api unknown-tcp)'",
                         "argument": "*required*"
                     },
                     {
@@ -2821,6 +3770,11 @@ var data = {
                     },
                     {
                         "name": "risk.is",
+                        "help": null,
+                        "argument": "*required*"
+                    },
+                    {
+                        "name": "risk.recursive.is",
                         "help": null,
                         "argument": "*required*"
                     },
@@ -2875,6 +3829,37 @@ var data = {
                 ]
             },
             {
+                "name": "dnatdistribution",
+                "help": null,
+                "operators": [
+                    {
+                        "name": "is.ip-hash",
+                        "help": null,
+                        "argument": null
+                    },
+                    {
+                        "name": "is.ip-modulo",
+                        "help": null,
+                        "argument": null
+                    },
+                    {
+                        "name": "is.least-sessions",
+                        "help": null,
+                        "argument": null
+                    },
+                    {
+                        "name": "is.round-robin",
+                        "help": null,
+                        "argument": null
+                    },
+                    {
+                        "name": "is.source-ip-hash",
+                        "help": null,
+                        "argument": null
+                    }
+                ]
+            },
+            {
                 "name": "dnathost",
                 "help": null,
                 "operators": [
@@ -2912,6 +3897,38 @@ var data = {
                         "name": "includes.partial",
                         "help": null,
                         "argument": "*required*"
+                    }
+                ]
+            },
+            {
+                "name": "dnatport",
+                "help": null,
+                "operators": [
+                    {
+                        "name": "eq",
+                        "help": null,
+                        "argument": "*required*"
+                    },
+                    {
+                        "name": "is.set",
+                        "help": null,
+                        "argument": null
+                    }
+                ]
+            },
+            {
+                "name": "dnattype",
+                "help": null,
+                "operators": [
+                    {
+                        "name": "is.dynamic",
+                        "help": null,
+                        "argument": null
+                    },
+                    {
+                        "name": "is.static",
+                        "help": null,
+                        "argument": null
                     }
                 ]
             },
@@ -2985,6 +4002,11 @@ var data = {
                         "argument": null
                     },
                     {
+                        "name": "is.fully.included.in.file",
+                        "help": null,
+                        "argument": "*required*"
+                    },
+                    {
                         "name": "is.fully.included.in.list",
                         "help": null,
                         "argument": "*required*"
@@ -2995,7 +4017,17 @@ var data = {
                         "argument": null
                     },
                     {
+                        "name": "is.partially.included.in.file",
+                        "help": null,
+                        "argument": "*required*"
+                    },
+                    {
                         "name": "is.partially.included.in.list",
+                        "help": null,
+                        "argument": "*required*"
+                    },
+                    {
+                        "name": "is.partially.or.fully.included.in.file",
                         "help": null,
                         "argument": "*required*"
                     },
@@ -3060,6 +4092,38 @@ var data = {
                     {
                         "name": ">,<,=,!",
                         "help": null,
+                        "argument": "*required*"
+                    }
+                ]
+            },
+            {
+                "name": "group-tag",
+                "help": null,
+                "operators": [
+                    {
+                        "name": "is",
+                        "help": null,
+                        "argument": "*required*"
+                    },
+                    {
+                        "name": "is.regex",
+                        "help": null,
+                        "argument": "*required*"
+                    },
+                    {
+                        "name": "is.set",
+                        "help": null,
+                        "argument": null
+                    }
+                ]
+            },
+            {
+                "name": "hit-count.fast",
+                "help": null,
+                "operators": [
+                    {
+                        "name": ">,<,=,!",
+                        "help": "returns TRUE if rule name matches the specified hit count value",
                         "argument": "*required*"
                     }
                 ]
@@ -3154,6 +4218,17 @@ var data = {
                 ]
             },
             {
+                "name": "natruletype",
+                "help": null,
+                "operators": [
+                    {
+                        "name": "is",
+                        "help": "supported filter: 'ipv4', 'nat64', 'ptv6'",
+                        "argument": "*required*"
+                    }
+                ]
+            },
+            {
                 "name": "rule",
                 "help": null,
                 "operators": [
@@ -3224,11 +4299,6 @@ var data = {
                 "help": null,
                 "operators": [
                     {
-                        "name": "expire.in.days",
-                        "help": null,
-                        "argument": "*required*"
-                    },
-                    {
                         "name": "has.regex",
                         "help": null,
                         "argument": "*required*"
@@ -3247,6 +4317,17 @@ var data = {
                         "name": "is.set",
                         "help": null,
                         "argument": null
+                    }
+                ]
+            },
+            {
+                "name": "schedule.expire.in.days",
+                "help": null,
+                "operators": [
+                    {
+                        "name": ">,<,=,!",
+                        "help": null,
+                        "argument": "*required*"
                     }
                 ]
             },
@@ -3439,6 +4520,60 @@ var data = {
                         "name": "is.udp.only",
                         "help": null,
                         "argument": null
+                    },
+                    {
+                        "name": "no.app-default.ports",
+                        "help": null,
+                        "argument": null
+                    },
+                    {
+                        "name": "timeout.is.set",
+                        "help": null,
+                        "argument": null
+                    }
+                ]
+            },
+            {
+                "name": "service.object.count",
+                "help": null,
+                "operators": [
+                    {
+                        "name": ">,<,=,!",
+                        "help": null,
+                        "argument": "*required*"
+                    }
+                ]
+            },
+            {
+                "name": "service.port.count",
+                "help": null,
+                "operators": [
+                    {
+                        "name": ">,<,=,!",
+                        "help": null,
+                        "argument": "*required*"
+                    }
+                ]
+            },
+            {
+                "name": "service.port.tcp.count",
+                "help": null,
+                "operators": [
+                    {
+                        "name": ">,<,=,!",
+                        "help": null,
+                        "argument": "*required*"
+                    }
+                ]
+            },
+            {
+                "name": "service.port.udp.count",
+                "help": null,
+                "operators": [
+                    {
+                        "name": ">,<,=,!",
+                        "help": null,
+                        "argument": "*required*"
                     }
                 ]
             },
@@ -3492,6 +4627,22 @@ var data = {
                         "name": ">,<,=,!",
                         "help": null,
                         "argument": "*required*"
+                    }
+                ]
+            },
+            {
+                "name": "snatinterface",
+                "help": null,
+                "operators": [
+                    {
+                        "name": "has.regex",
+                        "help": null,
+                        "argument": "*required*"
+                    },
+                    {
+                        "name": "is.set",
+                        "help": null,
+                        "argument": null
                     }
                 ]
             },
@@ -3565,6 +4716,11 @@ var data = {
                         "argument": null
                     },
                     {
+                        "name": "is.fully.included.in.file",
+                        "help": null,
+                        "argument": "*required*"
+                    },
+                    {
                         "name": "is.fully.included.in.list",
                         "help": null,
                         "argument": "*required*"
@@ -3575,7 +4731,17 @@ var data = {
                         "argument": null
                     },
                     {
+                        "name": "is.partially.included.in.file",
+                        "help": null,
+                        "argument": "*required*"
+                    },
+                    {
                         "name": "is.partially.included.in.list",
+                        "help": null,
+                        "argument": "*required*"
+                    },
+                    {
+                        "name": "is.partially.or.fully.included.in.file",
                         "help": null,
                         "argument": "*required*"
                     },
@@ -3635,12 +4801,45 @@ var data = {
                 ]
             },
             {
+                "name": "timestamp-first-hit.fast",
+                "help": null,
+                "operators": [
+                    {
+                        "name": ">,<,=,!",
+                        "help": "returns TRUE if rule name matches the specified timestamp MM\/DD\/YYYY [american] \/ DD-MM-YYYY [european] \/ 21 September 2021 \/ -90 days",
+                        "argument": "*required*"
+                    }
+                ]
+            },
+            {
                 "name": "timestamp-last-hit.fast",
                 "help": null,
                 "operators": [
                     {
                         "name": ">,<,=,!",
-                        "help": "returns TRUE if rule name matches the specified timestamp MM\/DD\/YYYY [american] \/ DD-MM-YYYY [european] \/ 21 September 2021 \/ - 90 days",
+                        "help": "returns TRUE if rule name matches the specified timestamp MM\/DD\/YYYY [american] \/ DD-MM-YYYY [european] \/ 21 September 2021 \/ -90 days",
+                        "argument": "*required*"
+                    }
+                ]
+            },
+            {
+                "name": "timestamp-rule-creation.fast",
+                "help": null,
+                "operators": [
+                    {
+                        "name": ">,<,=,!",
+                        "help": "returns TRUE if rule name matches the specified timestamp MM\/DD\/YYYY [american] \/ DD-MM-YYYY [european] \/ 21 September 2021 \/ -90 days",
+                        "argument": "*required*"
+                    }
+                ]
+            },
+            {
+                "name": "timestamp-rule-modification.fast",
+                "help": null,
+                "operators": [
+                    {
+                        "name": ">,<,=,!",
+                        "help": "returns TRUE if rule name matches the specified timestamp MM\/DD\/YYYY [american] \/ DD-MM-YYYY [european] \/ 21 September 2021 \/ -90 days",
                         "argument": "*required*"
                     }
                 ]
@@ -3709,6 +4908,17 @@ var data = {
                 ]
             },
             {
+                "name": "url.category.count",
+                "help": null,
+                "operators": [
+                    {
+                        "name": ">,<,=,!",
+                        "help": null,
+                        "argument": "*required*"
+                    }
+                ]
+            },
+            {
                 "name": "user",
                 "help": null,
                 "operators": [
@@ -3759,6 +4969,17 @@ var data = {
                         "argument": "*required*"
                     }
                 ]
+            },
+            {
+                "name": "uuid",
+                "help": null,
+                "operators": [
+                    {
+                        "name": "eq",
+                        "help": "returns TRUE if rule uuid matches the one specified in argument",
+                        "argument": "*required*"
+                    }
+                ]
             }
         ],
         "address": [
@@ -3774,6 +4995,17 @@ var data = {
                     {
                         "name": "regex",
                         "help": null,
+                        "argument": "*required*"
+                    }
+                ]
+            },
+            {
+                "name": "ip.count",
+                "help": null,
+                "operators": [
+                    {
+                        "name": ">,<,=,!",
+                        "help": "returns TRUE if object IP value describe multiple IP addresses; e.g. ip-range: 10.0.0.0-10.0.0.255 will match \"ip.count > 200\"",
                         "argument": "*required*"
                     }
                 ]
@@ -3843,6 +5075,11 @@ var data = {
                         "name": "regex",
                         "help": "possible variables to bring in as argument: $$value$$ \/ $$ipv4$$ \/ $$ipv6$$ \/ $$value.no-netmask$$ \/ $$netmask$$ \/ $$netmask.blank32$$",
                         "argument": "*required*"
+                    },
+                    {
+                        "name": "same.as.region.predefined",
+                        "help": null,
+                        "argument": null
                     }
                 ]
             },
@@ -3861,6 +5098,11 @@ var data = {
                 "name": "object",
                 "help": null,
                 "operators": [
+                    {
+                        "name": "has.group.as.member",
+                        "help": null,
+                        "argument": null
+                    },
                     {
                         "name": "is.dynamic",
                         "help": null,
@@ -3971,6 +5213,43 @@ var data = {
                 ]
             },
             {
+                "name": "reflocationcount",
+                "help": null,
+                "operators": [
+                    {
+                        "name": ">,<,=,!",
+                        "help": null,
+                        "argument": "*required*"
+                    }
+                ]
+            },
+            {
+                "name": "reflocationtype",
+                "help": null,
+                "operators": [
+                    {
+                        "name": "is.devicegroup",
+                        "help": "returns TRUE if object locationtype is Template or TemplateStack",
+                        "argument": null
+                    },
+                    {
+                        "name": "is.only.devicegroup",
+                        "help": "returns TRUE if object locationtype is Template or TemplateStack",
+                        "argument": null
+                    },
+                    {
+                        "name": "is.only.template",
+                        "help": "returns TRUE if object locationtype is Template or TemplateStack",
+                        "argument": null
+                    },
+                    {
+                        "name": "is.template",
+                        "help": "returns TRUE if object locationtype is Template or TemplateStack",
+                        "argument": null
+                    }
+                ]
+            },
+            {
                 "name": "refobjectname",
                 "help": null,
                 "operators": [
@@ -4031,6 +5310,11 @@ var data = {
                         "name": "has.regex",
                         "help": null,
                         "argument": "*required*"
+                    },
+                    {
+                        "name": "is.set",
+                        "help": null,
+                        "argument": null
                     }
                 ]
             },
@@ -4075,12 +5359,22 @@ var data = {
                         "argument": "*required*"
                     },
                     {
+                        "name": "ip4.match.exact.from.file",
+                        "help": null,
+                        "argument": "*required*"
+                    },
+                    {
                         "name": "is.in.file",
                         "help": null,
                         "argument": "*required*"
                     },
                     {
                         "name": "is.included-in.name",
+                        "help": null,
+                        "argument": null
+                    },
+                    {
+                        "name": "netmask.blank32",
                         "help": null,
                         "argument": null
                     },
@@ -4177,7 +5471,7 @@ var data = {
                     },
                     {
                         "name": "regex",
-                        "help": null,
+                        "help": "possible variables to bring in as argument: $$current.name$$ \/ $$protocol$$ \/ $$destinationport$$ \/ $$soruceport$$ \/ $$timeout$$",
                         "argument": "*required*"
                     }
                 ]
@@ -4186,6 +5480,11 @@ var data = {
                 "name": "object",
                 "help": null,
                 "operators": [
+                    {
+                        "name": "has.group.as.member",
+                        "help": null,
+                        "argument": null
+                    },
                     {
                         "name": "has.srcport",
                         "help": null,
@@ -4244,6 +5543,39 @@ var data = {
                 ]
             },
             {
+                "name": "port.count",
+                "help": null,
+                "operators": [
+                    {
+                        "name": ">,<,=,!",
+                        "help": null,
+                        "argument": "*required*"
+                    }
+                ]
+            },
+            {
+                "name": "port.tcp.count",
+                "help": null,
+                "operators": [
+                    {
+                        "name": ">,<,=,!",
+                        "help": null,
+                        "argument": "*required*"
+                    }
+                ]
+            },
+            {
+                "name": "port.udp.count",
+                "help": null,
+                "operators": [
+                    {
+                        "name": ">,<,=,!",
+                        "help": null,
+                        "argument": "*required*"
+                    }
+                ]
+            },
+            {
                 "name": "refcount",
                 "help": null,
                 "operators": [
@@ -4265,6 +5597,17 @@ var data = {
                     },
                     {
                         "name": "is.only",
+                        "help": null,
+                        "argument": "*required*"
+                    }
+                ]
+            },
+            {
+                "name": "reflocationcount",
+                "help": null,
+                "operators": [
+                    {
+                        "name": ">,<,=,!",
                         "help": null,
                         "argument": "*required*"
                     }
@@ -4368,6 +5711,50 @@ var data = {
                         "name": "is.set",
                         "help": null,
                         "argument": null
+                    }
+                ]
+            },
+            {
+                "name": "timeout-halfclose",
+                "help": null,
+                "operators": [
+                    {
+                        "name": "is.set",
+                        "help": null,
+                        "argument": null
+                    }
+                ]
+            },
+            {
+                "name": "timeout-halfclose.value",
+                "help": null,
+                "operators": [
+                    {
+                        "name": ">,<,=,!",
+                        "help": null,
+                        "argument": "*required*"
+                    }
+                ]
+            },
+            {
+                "name": "timeout-timewait",
+                "help": null,
+                "operators": [
+                    {
+                        "name": "is.set",
+                        "help": null,
+                        "argument": null
+                    }
+                ]
+            },
+            {
+                "name": "timeout-timewait.value",
+                "help": null,
+                "operators": [
+                    {
+                        "name": ">,<,=,!",
+                        "help": null,
+                        "argument": "*required*"
                     }
                 ]
             },
@@ -4583,6 +5970,17 @@ var data = {
         ],
         "zone": [
             {
+                "name": "interface",
+                "help": null,
+                "operators": [
+                    {
+                        "name": "is.set",
+                        "help": null,
+                        "argument": null
+                    }
+                ]
+            },
+            {
                 "name": "location",
                 "help": null,
                 "operators": [
@@ -4719,11 +6117,49 @@ var data = {
                         "argument": "*required*"
                     }
                 ]
+            },
+            {
+                "name": "userid",
+                "help": null,
+                "operators": [
+                    {
+                        "name": "is.enabled",
+                        "help": null,
+                        "argument": null
+                    }
+                ]
+            },
+            {
+                "name": "zpp",
+                "help": null,
+                "operators": [
+                    {
+                        "name": "is",
+                        "help": "return true if Zone Protection Profile is the one specified in argument",
+                        "argument": "*required*"
+                    },
+                    {
+                        "name": "is.set",
+                        "help": null,
+                        "argument": null
+                    }
+                ]
             }
         ],
         "securityprofile": [
             {
                 "name": "alert",
+                "help": null,
+                "operators": [
+                    {
+                        "name": "has",
+                        "help": null,
+                        "argument": "*required*"
+                    }
+                ]
+            },
+            {
+                "name": "allow",
                 "help": null,
                 "operators": [
                     {
@@ -5073,6 +6509,11 @@ var data = {
                         "argument": null
                     },
                     {
+                        "name": "is",
+                        "help": null,
+                        "argument": "*required*"
+                    },
+                    {
                         "name": "url-profile.is",
                         "help": null,
                         "argument": "*required*"
@@ -5107,6 +6548,33 @@ var data = {
         ],
         "device": [
             {
+                "name": "devicegroup",
+                "help": null,
+                "operators": [
+                    {
+                        "name": "has.vsys",
+                        "help": null,
+                        "argument": "*required*"
+                    },
+                    {
+                        "name": "with-no-serial",
+                        "help": null,
+                        "argument": null
+                    }
+                ]
+            },
+            {
+                "name": "manageddevice",
+                "help": null,
+                "operators": [
+                    {
+                        "name": "with-no-dg",
+                        "help": null,
+                        "argument": null
+                    }
+                ]
+            },
+            {
                 "name": "name",
                 "help": null,
                 "operators": [
@@ -5116,9 +6584,30 @@ var data = {
                         "argument": "*required*"
                     },
                     {
+                        "name": "is.child.of",
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches \/ is child the one specified in argument",
+                        "argument": "*required*"
+                    },
+                    {
+                        "name": "is.in.file",
+                        "help": null,
+                        "argument": "*required*"
+                    },
+                    {
                         "name": "regex",
                         "help": null,
                         "argument": "*required*"
+                    }
+                ]
+            },
+            {
+                "name": "template",
+                "help": null,
+                "operators": [
+                    {
+                        "name": "has-multi-vsys",
+                        "help": null,
+                        "argument": null
                     }
                 ]
             },
@@ -5158,6 +6647,17 @@ var data = {
                         "argument": "*required*"
                     }
                 ]
+            },
+            {
+                "name": "protocol.bgp",
+                "help": null,
+                "operators": [
+                    {
+                        "name": "is.enabled",
+                        "help": null,
+                        "argument": null
+                    }
+                ]
             }
         ],
         "virtualwire": [
@@ -5174,6 +6674,17 @@ var data = {
             }
         ],
         "schedule": [
+            {
+                "name": "expire.in.days",
+                "help": null,
+                "operators": [
+                    {
+                        "name": ">,<,=,!",
+                        "help": null,
+                        "argument": "*required*"
+                    }
+                ]
+            },
             {
                 "name": "location",
                 "help": null,
