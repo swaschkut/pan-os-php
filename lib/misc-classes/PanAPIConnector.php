@@ -509,9 +509,10 @@ class PanAPIConnector
 
                 $apiKey = $res->textContent;
 
-                PH::print_stdout( " OK, key is $apiKey");
+                $printkey = substr($apiKey, 0, 12) . '...' . substr($apiKey, strlen($apiKey) - 12);
+                PH::print_stdout( " OK, key is $printkey");
                 PH::$JSON_TMP[$host]['status'] = "OK";
-                PH::$JSON_TMP[$host]['key'] = $apiKey;
+                PH::$JSON_TMP[$host]['key'] = $printkey;
                 PH::print_stdout();
 
             }

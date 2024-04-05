@@ -21,6 +21,7 @@ BUGFIX:
 * type=XYZ outputformatset=file.txt | bugfix for Panorama template set command creation
 * type=XYZ outputformatset=file.txt | bugfix for correct ordering, that profiles custom-url-category is always before profiles url-filtering
 * type=device actions=devicegroup-create | extend XML API functionality to update parentDG setting
+* class PanAPIConnector - do not print full APIkey during key request
 
 GENERAL:
 * class DeviceGroup/PanoramaConf/Sub introduce new variables for defaultSecurity check
