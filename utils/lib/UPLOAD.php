@@ -458,7 +458,7 @@ class UPLOAD extends UTIL
                     $newUserNode = DH::importXmlStringOrDie($this->xmlDoc, '<entry name="admin2"><phash>$1$bgnqjgob$HmenJzuuUAYmETzsMcdfJ/</phash><permissions><role-based><superuser>yes</superuser></role-based></permissions></entry>');
 
                     $checkAdmin2 = DH::findFirstElementByNameAttr( "entry", "admin2", $usersNode );
-                    if( $checkAdmin2 === null )
+                    if( $checkAdmin2 === null || $checkAdmin2 === false )
                     {
                         $usersNode->appendChild($newUserNode);
                         PH::print_stdout( " - Injected 'admin2' with 'admin' password");

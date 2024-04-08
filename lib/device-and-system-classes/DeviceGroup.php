@@ -888,18 +888,17 @@ class DeviceGroup
             $tmp = null;
         if( $postrulebase === FALSE )
         {
-            #$tmpPost = null;
-            $postrulebase = DH::findFirstElementOrCreate('post-rulebase', $xml);
+            $tmpPost = null;
+            #$postrulebase = DH::findFirstElementOrCreate('post-rulebase', $xml);
         }
-
-        #else{
+        else{
             $sub = new Sub();
             $sub->owner = $this;
             $sub->rulebaseroot = $postrulebase;
             $sub->defaultSecurityRules = $this->defaultSecurityRules;
             $tmpPost = $sub->load_defaultSecurityRule( );
-        #}
-        if( $tmpPost !== FALSE )
+        }
+        if( $tmpPost !== null && $tmpPost !== FALSE )
             $this->$var->load_from_domxml($tmp, $tmpPost);
 
         //network-packet-broker
