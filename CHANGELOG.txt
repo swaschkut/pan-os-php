@@ -1,6 +1,39 @@
 CHANGELOG
 
-2.1.22
+2.1.23
+UTIL:
+* type=address | introduce actions=address-group-create-EDL-IP:list.txt
+* type=address | introduce actions=address-group-create-EDL-FQDN:list.txt
+* class CONVERTER | extend validation for input argument
+* type=address/service | introduce 'filter=(object has.group.as.member)'
+* type=device actions=zpp-create-xyz | if running against panorama set devicetype=template per default
+* type=XZY outputformatset=file.txt | change order first delete then set commands
+* type=device actions=templatestack-create/templatestack-delete/templatestack-clone/templatestack-addserial/templatestack-removeserial | implement new actions
+* type=session-browser | introduce new UTIL
+* type=ironskillet-update | extend to get maet-cns.yaml for panos
+* type=address 'actions=value-replace:$$netmask.32$$,$$netmask.blank32$$' | introduce additional variables
+* type=rule actions=display-app-seen | improve error message if offline config is used
+* type=upload | bugfix for injectuseradmin2 - to correctly add admin2 user via out=api://
+
+BUGFIX:
+* class UTIL/PLAYBOOK | bugfix for argument outputformatset in combination with argument projectfolder
+* type=vendor-migration vendor=huawei | bugfixes
+* class CallContext | bugfix if function encloseFunction get object as input
+* type=XYZ outputformatset=file.txt | bugfix for Panorama template set command creation
+* type=XYZ outputformatset=file.txt | bugfix for correct ordering, that profiles custom-url-category is always before profiles url-filtering
+* type=device actions=devicegroup-create | extend XML API functionality to update parentDG setting
+* class PanAPIConnector - do not print full APIkey during key request
+
+GENERAL:
+* class DeviceGroup/PanoramaConf/Sub introduce new variables for defaultSecurity check
+* update to Device App-ID version: 8800-8513
+* starting by 2024 all new changes are copyright by Sven Waschkut
+* class PH | change default behaviour - send API key not via URL, send API key via HEADER
+* update data.js for help.html site
+* update util action filter
+
+
+2.1.22 (20231206)
 UTIL:
 * type=rule actions=XYZ | improve error handling
 

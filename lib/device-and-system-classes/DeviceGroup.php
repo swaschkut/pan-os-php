@@ -4,6 +4,7 @@
  *
  * Copyright (c) 2014-2018, Palo Alto Networks Inc.
  * Copyright (c) 2019, Palo Alto Networks Inc.
+ * Copyright (c) 2024, Sven Waschkut - pan-os-php@waschkut.net
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -159,6 +160,8 @@ class DeviceGroup
 
     /** @var RuleStore */
     public $defaultSecurityRules = null;
+    public $defaultIntraZoneRuleSet = False;
+    public $defaultInterZoneRuleSet = False;
 
     /** @var RuleStore */
     public $networkPacketBrokerRules;
@@ -891,6 +894,7 @@ class DeviceGroup
 
         #else{
             $sub = new Sub();
+            $sub->owner = $this;
             $sub->rulebaseroot = $postrulebase;
             $sub->defaultSecurityRules = $this->defaultSecurityRules;
             $tmpPost = $sub->load_defaultSecurityRule( );

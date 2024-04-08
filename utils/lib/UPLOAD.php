@@ -3,6 +3,7 @@
  * ISC License
  *
  * Copyright (c) 2019, Palo Alto Networks Inc.
+ * Copyright (c) 2024, Sven Waschkut - pan-os-php@waschkut.net
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -457,7 +458,7 @@ class UPLOAD extends UTIL
                     $newUserNode = DH::importXmlStringOrDie($this->xmlDoc, '<entry name="admin2"><phash>$1$bgnqjgob$HmenJzuuUAYmETzsMcdfJ/</phash><permissions><role-based><superuser>yes</superuser></role-based></permissions></entry>');
 
                     $checkAdmin2 = DH::findFirstElementByNameAttr( "entry", "admin2", $usersNode );
-                    if( $checkAdmin2 === false )
+                    if( $checkAdmin2 === null )
                     {
                         $usersNode->appendChild($newUserNode);
                         PH::print_stdout( " - Injected 'admin2' with 'admin' password");

@@ -4,6 +4,7 @@
  *
  * Copyright (c) 2014-2018, Palo Alto Networks Inc.
  * Copyright (c) 2019, Palo Alto Networks Inc.
+ * Copyright (c) 2024, Sven Waschkut - pan-os-php@waschkut.net
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -17,6 +18,52 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
+
+AddressCallContext::$commonActionFunctions['edl-create-list'] = array(
+    'function' => function (AddressCallContext $context, $type = 'ip-netmask')
+    {
+        $object = $context->object;
+
+        $filename = $context->arguments['filename'];
+
+        if( !$object->isGroup() )
+        {
+            $string = "Address object is not of type ADDRESS-GROUP";
+            PH::ACTIONstatus( $context, 'skipped', $string);
+            return false;
+        }
+
+        $tmp_array = array();
+        $list_array = array();
+        if( $object->isGroup() )
+        {
+            $members = $object->expand(FALSE, $tmp_array, $object->owner->owner);
+
+            foreach( $members as $member )
+            {
+                /** @var $member Address */
+                if( $type == 'ip-netmask' )
+                {
+                    if( $member->isType_ipNetmask() || $member->isType_ipRange() )
+                        $list_array[] = $member->value();
+                }
+                elseif( $type == 'fqdn' )
+                {
+                    if( $member->isType_FQDN() )
+                        $list_array[] = $member->value();
+                }
+            }
+        }
+        $file_content = "";
+        foreach( $list_array as $entry )
+        {
+            print $entry."\n";
+            $file_content .= $entry."\n";
+        }
+        if( !empty($file_content) )
+            file_put_contents($filename, $file_content, FILE_APPEND);
+    }
+);
 
 
 AddressCallContext::$supportedActions[] = array(
@@ -2295,6 +2342,16 @@ AddressCallContext::$supportedActions[] = array(
         $regexValue = $context->arguments['search'];
         $valueToreplace = $context->arguments['replace'];
 
+        if( strpos($regexValue, '$$netmask.32$$') !== FALSE )
+            $regexValue = "/32";
+
+        if( strpos($valueToreplace, '$$netmask.blank32$$') !== FALSE )
+            $valueToreplace = "";
+
+        if( strpos($regexValue, '$$') !== FALSE or strpos($valueToreplace, '$$') !== FALSE )
+            derr( "this argument variable with '$$' is not supported", null, False );
+
+
         if( strpos($regexValue, "*nodefault*") !== FALSE )
         {
             $string = "search value not set";
@@ -2357,7 +2414,9 @@ AddressCallContext::$supportedActions[] = array(
             'help' => '2.2.2.'
         )
     ),
-    'help' => 'search for a full or partial value and replace; example "actions=value-replace:1.1.1.,2.2.2." it is recommend to use additional filter: "filter=(value string.regex /^1.1.1./)"'
+    'help' => 'search for a full or partial value and replace; example "actions=value-replace:1.1.1.,2.2.2." it is recommend to use additional filter: "filter=(value string.regex /^1.1.1./)"
+                "actions=value-replace:$$netmask.32$$,$$netmask.blank32$$"
+    '
 );
 
 //starting with 7.0 PAN-OS support max. 2500 members per group, former 500
@@ -3481,5 +3540,37 @@ AddressCallContext::$supportedActions['combine-addressgroups'] = array(
     'args' => array(
         'new_addressgroup_name' => Array( 'type' => 'string', 'default' => '*nodefault*'),
         'replace_groups' => array('type' => 'bool', 'default' => FALSE)
+    )
+);
+
+AddressCallContext::$supportedActions['address-group-create-EDL-IP'] = array(
+    'name' => 'address-group-create-edl-ip',
+    'GlobalInitFunction' => function (AddressCallContext $context) {
+        $filename = $context->arguments['filename'];
+        if (file_exists($filename))
+            unlink($filename);
+    },
+    'MainFunction' => function (AddressCallContext $context) {
+        $f = AddressCallContext::$commonActionFunctions['edl-create-list']['function'];
+        $f($context, 'ip-netmask');
+    },
+    'args' => array(
+        'filename' => Array( 'type' => 'string', 'default' => '*nodefault*')
+    )
+);
+
+AddressCallContext::$supportedActions['address-group-create-EDL-FQDN'] = array(
+    'name' => 'address-group-create-edl-fqdn',
+    'GlobalInitFunction' => function (AddressCallContext $context) {
+        $filename = $context->arguments['filename'];
+        if (file_exists($filename))
+            unlink($filename);
+    },
+    'MainFunction' => function (AddressCallContext $context) {
+        $f = AddressCallContext::$commonActionFunctions['edl-create-list']['function'];
+        $f($context, 'fqdn');
+    },
+    'args' => array(
+        'filename' => Array( 'type' => 'string', 'default' => '*nodefault*')
     )
 );

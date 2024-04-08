@@ -27,6 +27,28 @@ var subjectObject =
                     }
                 }
             },
+            "address-group-create-edl-fqdn": {
+                "name": "address-group-create-edl-fqdn",
+                "GlobalInitFunction": {},
+                "MainFunction": {},
+                "args": {
+                    "filename": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                }
+            },
+            "address-group-create-edl-ip": {
+                "name": "address-group-create-edl-ip",
+                "GlobalInitFunction": {},
+                "MainFunction": {},
+                "args": {
+                    "filename": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                }
+            },
             "addtogroup": {
                 "name": "AddToGroup",
                 "MainFunction": {},
@@ -451,7 +473,7 @@ var subjectObject =
                         "help": "2.2.2."
                     }
                 },
-                "help": "search for a full or partial value and replace; example \"actions=value-replace:1.1.1.,2.2.2.\" it is recommend to use additional filter: \"filter=(value string.regex \/^1.1.1.\/)\""
+                "help": "search for a full or partial value and replace; example \"actions=value-replace:1.1.1.,2.2.2.\" it is recommend to use additional filter: \"filter=(value string.regex \/^1.1.1.\/)\"\n                \"actions=value-replace:$$netmask.32$$,$$netmask.blank32$$\"\n    "
             },
             "value-set-ip-for-fqdn": {
                 "name": "value-set-ip-for-fqdn",
@@ -732,6 +754,10 @@ var subjectObject =
                             "fString": "(%PROP% grp-in-grp-test-1)",
                             "input": "input\/panorama-8.0-merger.xml"
                         }
+                    },
+                    "has.group.as.member": {
+                        "Function": {},
+                        "arg": false
                     }
                 }
             },
@@ -1931,6 +1957,61 @@ var subjectObject =
                 "name": "template-delete",
                 "MainFunction": {}
             },
+            "templatestack-addserial": {
+                "name": "templatestack-addserial",
+                "MainFunction": {},
+                "GlobalFinishFunction": {},
+                "args": {
+                    "name": {
+                        "type": "string",
+                        "default": "false"
+                    },
+                    "serial": {
+                        "type": "string",
+                        "default": "null"
+                    }
+                }
+            },
+            "templatestack-clone": {
+                "name": "templatestack-clone",
+                "MainFunction": {},
+                "args": {
+                    "newname": {
+                        "type": "string",
+                        "default": "false"
+                    }
+                }
+            },
+            "templatestack-create": {
+                "name": "templatestack-create",
+                "MainFunction": {},
+                "GlobalFinishFunction": {},
+                "args": {
+                    "name": {
+                        "type": "string",
+                        "default": "false"
+                    }
+                }
+            },
+            "templatestack-delete": {
+                "name": "templatestack-delete",
+                "MainFunction": {}
+            },
+            "templatestack-removeserial": {
+                "name": "templatestack-removeserial",
+                "MainFunction": {},
+                "GlobalFinishFunction": {},
+                "args": {
+                    "name": {
+                        "type": "string",
+                        "default": "false"
+                    },
+                    "serial": {
+                        "type": "string",
+                        "default": "null"
+                    }
+                }
+            },
             "virtualsystem-delete": {
                 "name": "virtualsystem-delete",
                 "MainFunction": {}
@@ -2614,10 +2695,10 @@ var subjectObject =
                 "name": "dst-Remove-Objects-Matching-Filter",
                 "MainFunction": {},
                 "args": {
-                    "filterName": {
+                    "SubqueryFilterName": {
                         "type": "string",
                         "default": "*nodefault*",
-                        "help": "specify the query that will be used to filter the objects to be removed"
+                        "help": "specify the subquery that will be used to filter the objects to be removed: \"actions=dst-Remove-Objects-Matching-Filter:subquery1\" \"subquery1=!(value ip4.included-in 192.168.10.0\/24)\""
                     }
                 },
                 "help": "this action will go through all objects and see if they match the query you input and then remove them if it's the case."
@@ -3344,10 +3425,10 @@ var subjectObject =
                 "name": "src-Remove-Objects-Matching-Filter",
                 "MainFunction": {},
                 "args": {
-                    "filterName": {
+                    "SubqueryFilterName": {
                         "type": "string",
                         "default": "*nodefault*",
-                        "help": "specify the query that will be used to filter the objects to be removed"
+                        "help": "specify the subquery that will be used to filter the objects to be removed: \"actions=src-Remove-Objects-Matching-Filter:subquery1\" \"subquery1=!(value ip4.included-in 192.168.10.0\/24)\""
                     }
                 },
                 "help": "this action will go through all objects and see if they match the query you input and then remove them if it's the case."
@@ -6910,6 +6991,10 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
+                    "has.group.as.member": {
+                        "Function": {},
+                        "arg": false
+                    },
                     "overrides.upper.level": {
                         "Function": {},
                         "arg": false,
@@ -7254,6 +7339,11 @@ var subjectObject =
     },
     "servicegroup-merger": {
         "name": "servicegroup-merger",
+        "action": [],
+        "filter": []
+    },
+    "session-browser": {
+        "name": "session-browser",
         "action": [],
         "filter": []
     },

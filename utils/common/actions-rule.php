@@ -4,6 +4,7 @@
  *
  * Copyright (c) 2014-2018, Palo Alto Networks Inc.
  * Copyright (c) 2019, Palo Alto Networks Inc.
+ * Copyright (c) 2024, Sven Waschkut - pan-os-php@waschkut.net
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -4090,6 +4091,9 @@ RuleCallContext::$supportedActions[] = array(
 
         /** @var SecurityRule $rule */
         $rule = $context->object;
+
+        if( !$context->isAPI )
+            derr("actions is only working in API mode", null, false);
 
         $rule_array = $rule->API_apps_seen();
 

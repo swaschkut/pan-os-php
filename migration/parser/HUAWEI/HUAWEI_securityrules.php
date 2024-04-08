@@ -5,6 +5,7 @@
  *
  * Copyright (c) 2014-2018, Palo Alto Networks Inc.
  * Copyright (c) 2019, Palo Alto Networks Inc.
+ * Copyright (c) 2024, Sven Waschkut - pan-os-php@waschkut.net
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -37,6 +38,7 @@ trait HUAWEI_securityrules
 
         $test_array = array();
 
+
         foreach( $accessrule as $key => $accessrule_entry )
         {
             $rulestring = "";
@@ -47,22 +49,16 @@ trait HUAWEI_securityrules
             $rulearray = explode( "\n", $rulestring );
             $tmp_rule = null;
 
-            foreach( $rulearray as $ruleentry )
+            foreach( $rulearray as $key2 => $ruleentry )
             {
-                $linearray = explode( " ", trim( $ruleentry ) );
-                #$test_array[$linearray[0]] = $linearray[0];
-
-                #print_r( $linearray );
-
-                if( $linearray[0] == "rule" )
+                if( $key2 == 0 )
                 {
-                    $name = $linearray[2];
-                    $name_string = implode( " ", $linearray );
-                    $name_string = str_replace( "rule name ", "", $name_string );
+
+                    $name = str_replace( " rule name ", "", $ruleentry );
 
                     #print "NAME: ".$linearray[2]."\n";
 
-                    $name = "Rule " . $this->truncate_names($this->normalizeNames($name));
+                    $name = "Rule '" . $this->truncate_names($this->normalizeNames($name))."'";
                     $tmp_rule = $this->sub->securityRules->find($name);
                     if( $tmp_rule == null )
                     {
@@ -73,244 +69,250 @@ trait HUAWEI_securityrules
                     else
                     {
                         print_r( $rulearray );
-                        mwarning( "rule name already found" );
+                        mwarning( "rule name '".$name."' already found",null, false );
                     }
                 }
-                elseif( $linearray[0] == "disable" )
+                else
                 {
-                    //set rule to disable
-                    if( $print )
-                        print $padding . "- disable\n";
-                    $tmp_rule->setDisabled(TRUE);
-                }
-                elseif( $linearray[0] == "source-address" )
-                {
+                    $linearray = explode( " ", trim( $ruleentry ) );
+
+                    if( $linearray[0] == "disable" )
+                    {
+                        //set rule to disable
+                        if( $print )
+                            print $padding . "- disable\n";
+                        $tmp_rule->setDisabled(TRUE);
+                    }
+                    elseif( $linearray[0] == "source-address" )
+                    {
                     $this->rule_add_address(  $tmp_rule, $linearray, "source" );
-                }
-                elseif( $linearray[0] == "destination-address" )
-                {
+                    }
+                    elseif( $linearray[0] == "destination-address" )
+                    {
                     $this->rule_add_address(  $tmp_rule, $linearray, "destination" );
-                }
-                elseif( $linearray[0] == "action" )
-                {
-                    #print "ACTION: ".$linearray[1]."\n";
+                    }
+                    elseif( $linearray[0] == "action" )
+                    {
+                        #print "ACTION: ".$linearray[1]."\n";
                     $action = $linearray[1];
 
-                    if( $action == "permit" )
-                    {
-                        if( $print )
-                            print $padding . "- action: allow \n";
-                        $tmp_rule->setAction( "allow");
-                    }
-                    elseif( $action == "deny" )
-                    {
-                        if( $print )
-                            print $padding . "- action: " . $action . " \n";
-                        $tmp_rule->setAction($action);
-                    }
-                }
-                elseif( $linearray[0] == "policy" )
-                {
-
-                }
-                elseif( $linearray[0] == "session" )
-                {
-
-                }
-                elseif( $linearray[0] == "source-zone" )
-                {
-                    #print "SRC-Zone: ".$linearray[1]."\n";
-                    $from_zone = $linearray[1];
-                    $from_zone = $this->truncate_names($this->normalizeNames($from_zone));
-                    $tmp_zone = $this->template_vsys->zoneStore->find($from_zone);
-                    if( $tmp_zone != null )
-                    {
-                        if( $print )
-                            print $padding . "- from zone: " . $from_zone . "\n";
-                        $tmp_rule->from->addZone($tmp_zone);
-                    }
-                    else
-                    {
-                        if( $debug )
-                            print $padding . "X from zone: " . $from_zone . " not found\n";
-
-                        $tmp_zone = $this->template_vsys->zoneStore->find($from_zone);
-                        if( $tmp_zone == null )
+                        if( $action == "permit" )
                         {
                             if( $print )
-                                print "  - name: " . $from_zone . "\n";
-                            $tmp_zone = $this->template_vsys->zoneStore->newZone($from_zone, 'layer3');
+                                print $padding . "- action: allow \n";
+                            $tmp_rule->setAction( "allow");
                         }
-                        $tmp_rule->from->addZone($tmp_zone);
-                    }
-                }
-                elseif( $linearray[0] == "destination-zone" )
-                {
-                    #print "DST-Zone: ".$linearray[1]."\n";
-                    $from_zone = $linearray[1];
-                    $from_zone = $this->truncate_names($this->normalizeNames($from_zone));
-                    $tmp_zone = $this->template_vsys->zoneStore->find($from_zone);
-                    if( $tmp_zone != null )
-                    {
-                        if( $print )
-                            print $padding . "- to zone: " . $from_zone . "\n";
-                        $tmp_rule->to->addZone($tmp_zone);
-                    }
-                    else
-                    {
-                        if( $debug )
-                            print $padding . "X to zone: " . $from_zone . " not found\n";
-
-                        $tmp_zone = $this->template_vsys->zoneStore->find($from_zone);
-                        if( $tmp_zone == null )
+                        elseif( $action == "deny" )
                         {
                             if( $print )
-                                print "  - name: " . $from_zone . "\n";
-                            $tmp_zone = $this->template_vsys->zoneStore->newZone($from_zone, 'layer3');
+                                print $padding . "- action: " . $action . " \n";
+                            $tmp_rule->setAction($action);
                         }
-                        $tmp_rule->to->addZone($tmp_zone);
                     }
-                }
-                elseif( $linearray[0] == "service" )
-                {
-                    $dport = "";
-                    $protocol = "";
-
-                    if( $linearray[1] == "protocol" )
+                    elseif( $linearray[0] == "policy" )
                     {
-                        $protocol = $linearray[2];
 
-                        if( $protocol == "tcp" || $protocol == "udp" )
+                    }
+                    elseif( $linearray[0] == "session" )
+                    {
+
+                    }
+                    elseif( $linearray[0] == "source-zone" )
+                    {
+                        #print "SRC-Zone: ".$linearray[1]."\n";
+                    $from_zone = $linearray[1];
+                        $from_zone = $this->truncate_names($this->normalizeNames($from_zone));
+                        $tmp_zone = $this->template_vsys->zoneStore->find($from_zone);
+                        if( $tmp_zone != null )
                         {
-                            $dport = "";
-                            if( isset($linearray[3]) && $linearray[3] == "destination-port" )
-                                $dport = $this->findDport( $linearray, $dport, 4 );
-                            elseif( isset($linearray[3]) && $linearray[3] == "source-port" )
+                            if( $print )
+                                print $padding . "- from zone: " . $from_zone . "\n";
+                            $tmp_rule->from->addZone($tmp_zone);
+                        }
+                        else
+                        {
+                            if( $debug )
+                                print $padding . "X from zone: " . $from_zone . " not found\n";
+
+                            $tmp_zone = $this->template_vsys->zoneStore->find($from_zone);
+                            if( $tmp_zone == null )
                             {
-                                if( isset($linearray[7]) && $linearray[7] == "destination-port" )
-                                    $dport = $this->findDport( $linearray, $dport, 8 );
-
-                                if( isset($linearray[6]) && $linearray[6] == "destination-port" )
-                                    $dport = $this->findDport( $linearray, $dport, 7 );
+                                if( $print )
+                                    print "  - name: " . $from_zone . "\n";
+                                $tmp_zone = $this->template_vsys->zoneStore->newZone($from_zone, 'layer3');
                             }
+                            $tmp_rule->from->addZone($tmp_zone);
+                        }
+                    }
+                    elseif( $linearray[0] == "destination-zone" )
+                    {
+                        #print "DST-Zone: ".$linearray[1]."\n";
+                    $from_zone = $linearray[1];
+                        $from_zone = $this->truncate_names($this->normalizeNames($from_zone));
+                        $tmp_zone = $this->template_vsys->zoneStore->find($from_zone);
+                        if( $tmp_zone != null )
+                        {
+                            if( $print )
+                                print $padding . "- to zone: " . $from_zone . "\n";
+                            $tmp_rule->to->addZone($tmp_zone);
+                        }
+                        else
+                        {
+                            if( $debug )
+                                print $padding . "X to zone: " . $from_zone . " not found\n";
 
-                            else
-                                $dport = "0-65535";
+                            $tmp_zone = $this->template_vsys->zoneStore->find($from_zone);
+                            if( $tmp_zone == null )
+                            {
+                                if( $print )
+                                    print "  - name: " . $from_zone . "\n";
+                                $tmp_zone = $this->template_vsys->zoneStore->newZone($from_zone, 'layer3');
+                            }
+                            $tmp_rule->to->addZone($tmp_zone);
+                        }
+                    }
+                    elseif( $linearray[0] == "service" )
+                    {
+                    $dport = "";
+                        $protocol = "";
+
+                        if( $linearray[1] == "protocol" )
+                        {
+                            $protocol = $linearray[2];
 
                             if( $protocol == "tcp" || $protocol == "udp" )
-                                $name = $protocol . "_";
-                            else
-                                $name = $protocol;
-
-                            $name .= str_replace( ",", "_", $dport);
-                        }
-                        else
-                        {
-                            $name = "TMP_".$protocol;
-
-                            print "NAME: ".$name."\n";
-                            print_r( $linearray );
-
-                            if( isset($linearray[4]) && $linearray[3] == "icmp-type" )
                             {
-                                $name = "TMP_".$linearray[4];
+                                $dport = "";
+                                if( isset($linearray[3]) && $linearray[3] == "destination-port" )
+                                    $dport = $this->findDport( $linearray, $dport, 4 );
+                                elseif( isset($linearray[3]) && $linearray[3] == "source-port" )
+                                {
+                                    if( isset($linearray[7]) && $linearray[7] == "destination-port" )
+                                        $dport = $this->findDport( $linearray, $dport, 8 );
+
+                                    if( isset($linearray[6]) && $linearray[6] == "destination-port" )
+                                        $dport = $this->findDport( $linearray, $dport, 7 );
+                                }
+
+                                else
+                                    $dport = "0-65535";
+
+                                if( $protocol == "tcp" || $protocol == "udp" )
+                                    $name = $protocol . "_";
+                                else
+                                    $name = $protocol;
+
+                                $name .= str_replace( ",", "_", $dport);
+                            }
+                            else
+                            {
+                                $name = "TMP_".$protocol;
+
+                                print "NAME: ".$name."\n";
+                                print_r( $linearray );
+
+                                if( isset($linearray[4]) && $linearray[3] == "icmp-type" )
+                                {
+                                    $name = "TMP_".$linearray[4];
+                                }
                             }
                         }
-                    }
-                    else
-                    {
-                        $name = $linearray[1];
-                    }
-
-
-
-
-                    $name = $this->truncate_names($this->normalizeNames($name));
-                    $tmp_service = $this->sub->serviceStore->find($name);
-                    if( $tmp_service != null )
-                    {
-                        if( $print )
-                            print $padding_name . "- service add: " . $tmp_service->name() . "\n";
-
-                        $tmp_rule->services->add($tmp_service);
-                    }
-                    else
-                    {
-
-
-
-                        if( $dport == "" && $protocol == "" )
-                            $missing_default_service[ $name ] = $name;
                         else
                         {
-                            #print "DPORT: ".$dport."\n";
-                            #print "PROTO: ".$protocol."\n";
+                            $name = $linearray[1];
+                        }
 
+
+
+
+                        $name = $this->truncate_names($this->normalizeNames($name));
+                        $tmp_service = $this->sub->serviceStore->find($name);
+                        if( $tmp_service != null )
+                        {
                             if( $print )
-                                print $padding_name . "* name: '" . $name . "' protocol: '" . $protocol . "' port: '" . $dport . "'\n";
-                            $tmp_service = $this->sub->serviceStore->newService($name, $protocol, $dport);
+                                print $padding_name . "- service add: " . $tmp_service->name() . "\n";
 
                             $tmp_rule->services->add($tmp_service);
                         }
-                        if( $tmp_service == null )
+                        else
                         {
-                            #print_r( $linearray );
-                            print $padding_name . "X check service: " . $name . " | service created: TMP_" . $name . "\n";
 
-                            $name = $this->truncate_names($this->normalizeNames( "TMP_".$name ) );
-                            $tmp_service = $this->sub->serviceStore->find($name);
-                            if( $tmp_service == null )
+
+
+                            if( $dport == "" && $protocol == "" )
+                                $missing_default_service[ $name ] = $name;
+                            else
                             {
-                                $tmp_service = $this->sub->serviceStore->newService( $name, "tcp", "65000");
+                                #print "DPORT: ".$dport."\n";
+                                #print "PROTO: ".$protocol."\n";
+
+                                if( $print )
+                                    print $padding_name . "* name: '" . $name . "' protocol: '" . $protocol . "' port: '" . $dport . "'\n";
+                                $tmp_service = $this->sub->serviceStore->newService($name, $protocol, $dport);
+
                                 $tmp_rule->services->add($tmp_service);
                             }
-                            else
-                                $tmp_rule->services->add($tmp_service);
+                            if( $tmp_service == null )
+                            {
+                                #print_r( $linearray );
+                                print $padding_name . "X check service: " . $name . " | service created: TMP_" . $name . "\n";
 
-                            #$tmp_service->set_node_attribute('error', $name);
+                                $name = $this->truncate_names($this->normalizeNames( "TMP_".$name ) );
+                                $tmp_service = $this->sub->serviceStore->find($name);
+                                if( $tmp_service == null )
+                                {
+                                    $tmp_service = $this->sub->serviceStore->newService( $name, "tcp", "65000");
+                                    $tmp_rule->services->add($tmp_service);
+                                }
+                                else
+                                    $tmp_rule->services->add($tmp_service);
 
-                            #mwarning( "service: ".$name." not found", null, false );
+                                #$tmp_service->set_node_attribute('error', $name);
+
+                                #mwarning( "service: ".$name." not found", null, false );
+                            }
+
                         }
 
                     }
+                    elseif( $linearray[0] == "profile" )
+                    {
 
-                }
-                elseif( $linearray[0] == "profile" )
-                {
-
-                }
-                elseif( $linearray[0] == "description" )
-                {
-                    #print_r( $linearray );
+                    }
+                    elseif( $linearray[0] == "description" )
+                    {
+                        #print_r( $linearray );
 
                     $description = "";
 
-                    $i = 1;
-                    do
-                    {
-                        if( isset($linearray[$i]) )
+                        $i = 1;
+                        do
                         {
-                            $description .= $linearray[$i]." ";
-                        }
-                        $i++;
-                    } while( $i < count($linearray) + 1 );
+                            if( isset($linearray[$i]) )
+                            {
+                                $description .= $linearray[$i]." ";
+                            }
+                            $i++;
+                        } while( $i < count($linearray) + 1 );
 
-                    if( $print )
-                        print $padding . "- description: " . $description . "\n";
-                    $tmp_rule->setDescription($description);
-                }
-                elseif( $linearray[0] == "long-link" )
-                {
+                        if( $print )
+                            print $padding . "- description: " . $description . "\n";
+                        $tmp_rule->setDescription($description);
+                    }
+                    elseif( $linearray[0] == "long-link" )
+                    {
 
-                }
-                elseif( $linearray[0] == "application" )
-                {
+                    }
+                    elseif( $linearray[0] == "application" )
+                    {
 
-                }
-                elseif( $linearray[0] == "time-range" )
-                {
+                    }
+                    elseif( $linearray[0] == "time-range" )
+                    {
 
+                    }
                 }
+
             }
             print "----------------------\n";
 
@@ -373,14 +375,14 @@ trait HUAWEI_securityrules
                         $tmp_rule->urlCategories->add( $tmp_custom_url );
                     else
                     {
-                        mwarning( "clone rule first" );
+                        mwarning( "clone rule first",null, false );
                         $tmp_clone_rule = $tmp_rule->owner->cloneRule( $tmp_rule );
                         $tmp_clone_rule->destination->setAny();
                         $tmp_clone_rule->urlCategories->add( $tmp_custom_url );
                     }
                 }
                 else
-                    mwarning( "customer URL: ".$custom_url." not found" );
+                    mwarning( "customer URL: ".$custom_url." not found", null, false );
 
             }
         }

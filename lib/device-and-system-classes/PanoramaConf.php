@@ -4,6 +4,7 @@
  *
  * Copyright (c) 2014-2018, Palo Alto Networks Inc.
  * Copyright (c) 2019, Palo Alto Networks Inc.
+ * Copyright (c) 2024, Sven Waschkut - pan-os-php@waschkut.net
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -119,6 +120,8 @@ class PanoramaConf
 
     /** @var RuleStore */
     public $defaultSecurityRules;
+    public $defaultIntraZoneRuleSet = False;
+    public $defaultInterZoneRuleSet = False;
 
     /** @var RuleStore */
     public $networkPacketBrokerRules;
@@ -1007,6 +1010,7 @@ class PanoramaConf
 
         #else{
             $sub = new Sub();
+            $sub->owner = $this;
             $sub->rulebaseroot = $postrulebase;
             $sub->defaultSecurityRules = $this->defaultSecurityRules;
             $tmpPost = $sub->load_defaultSecurityRule( );
@@ -2087,7 +2091,7 @@ class PanoramaConf
      * @param string $name
      * @return DeviceGroup
      **/
-    public function createDeviceGroup($name, $parentDGname = null )
+    public function createDeviceGroup($name, $parentDGname = null)
     {
         $newDG = new DeviceGroup($this);
         $newDG->load_from_templateXml();
@@ -2165,6 +2169,15 @@ class PanoramaConf
         }
 
         return $newDG;
+    }
+
+    public function API_syncDGparentEntry($name, $parentDGname)
+    {
+        $cmd = "<request><move-dg><entry name=\"".$name."\"><new-parent-dg>".$parentDGname."</new-parent-dg></entry></move-dg></request>";
+        $con = findConnectorOrDie($this);
+
+        if( $con->isAPI() )
+            $con->sendOpRequest($cmd);
     }
 
     /**
@@ -2319,6 +2332,60 @@ class PanoramaConf
         //}
     }
 
+
+    /**
+     * Create a blank templateStack. Return that templateStack object.
+     * @param string $name
+     * @return TemplateStack
+     **/
+    public function createTemplateStack($name)
+    {
+        $newTemplateStack = new TemplateStack($name, $this);
+        $newTemplateStack->load_from_templatestackXml();
+        $newTemplateStack->setName($name);
+
+        $this->templatestacks[] = $newTemplateStack;
+
+
+        if( $this->version >= 70 )
+        {
+            if( $this->version >= 80 )
+                $tempMetaDataNode = DH::findXPathSingleEntryOrDie('/config/readonly/max-internal-id', $this->xmlroot);
+            else
+            {
+                //not available for template in version >= 70 and < 80
+                #$dgMetaDataNode = DH::findXPathSingleEntryOrDie('/config/readonly/dg-meta-data/max-dg-id', $this->xmlroot);
+            }
+
+
+            $tempMaxID = $tempMetaDataNode->textContent;
+            $tempMaxID++;
+            DH::setDomNodeText($tempMetaDataNode, "{$tempMaxID}");
+
+            if( $this->version >= 80 )
+                $tempMetaDataNode = DH::findXPathSingleEntryOrDie('/config/readonly/devices/entry[@name="localhost.localdomain"]/template-stack', $this->xmlroot);
+            else
+            {
+                //not available for template in version >= 70 and < 80
+                #$dgMetaDataNode = DH::findXPathSingleEntryOrDie('/config/readonly/dg-meta-data/dg-info', $this->xmlroot);
+            }
+
+
+            if( $this->version >= 80 )
+                $newXmlNode = DH::importXmlStringOrDie($this->xmldoc, "<entry name=\"{$name}\"><id>{$tempMaxID}</id></entry>");
+            else
+            {
+                //not available for template in version >= 70 and < 80
+                #$newXmlNode = DH::importXmlStringOrDie($this->xmldoc, "<entry name=\"{$name}\"><dg-id>{$tempMaxID}</dg-id></entry>");
+            }
+
+
+            $tempMetaDataNode->appendChild($newXmlNode);
+        }
+
+
+        return $newTemplateStack;
+    }
 
     /**
      * Remove a template.

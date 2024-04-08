@@ -835,10 +835,10 @@ function findConnectorOrDie($object)
         return $object->connector;
 
     if( !isset($object->owner) )
-        derr("cannot find API connector");
+        derr("cannot find API connector", null, false);
 
     if( $object->owner === null )
-        derr("cannot find API connector");
+        derr("cannot find API connector", null, false);
 
     return findConnectorOrDie($object->owner);
 }

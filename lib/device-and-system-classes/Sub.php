@@ -4,6 +4,7 @@
  *
  * Copyright (c) 2014-2018, Palo Alto Networks Inc.
  * Copyright (c) 2019, Palo Alto Networks Inc.
+ * Copyright (c) 2024, Sven Waschkut - pan-os-php@waschkut.net
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -20,8 +21,12 @@
 
 class Sub
 {
+    public $owner = null;
+
     public $rulebaseroot;
     public $defaultSecurityRules;
+    public $defaultIntraZoneRuleSet = False;
+    public $defaultInterZoneRuleSet = False;
 
     private  $defaultSecurityRules_xml = "<default-security-rules>
                     <rules>
@@ -40,6 +45,7 @@ class Sub
 
     function load_defaultSecurityRule( )
     {
+
         $finalroot = FALSE;
         $tmproot = DH::findFirstElement('default-security-rules', $this->rulebaseroot);
         if( $tmproot !== FALSE )
@@ -47,16 +53,37 @@ class Sub
             $finalroot = DH::findFirstElement('rules', $tmproot);
             if( $finalroot !== FALSE )
             {
-                $finalroot = $this->createPartialDefaultSecurityRule( $finalroot );
+                //Todo: only load if not already loaded earlier
+                if( $this->owner === null )
+                {
+
+                }
+                elseif( get_class($this->owner) == "PanoramaConf" )
+                    $finalroot = $this->createPartialDefaultSecurityRule( $finalroot );
+                elseif( get_class($this->owner) == "DeviceGroup" )
+                {
+                    //Todo: not working if empty
+                    //$finalroot = $this->createPartialDefaultSecurityRule( $finalroot );
+                }
+                elseif( get_class($this->owner) == "PANConf" )
+                {
+                    //Todo: swaschkut 20240320
+                    //is it possible to define default security rules at Firewall shared?
+                }
+                elseif( get_class($this->owner) == "VirtualSystem" )
+                {
+                    //Todo: not working if empty - need better validation
+                    //$finalroot = $this->createPartialDefaultSecurityRule( $finalroot );
+                }
             }
         }
 
+        //Todo: check if any of the parentDG has already defaultSec set, if not create it
         if( $tmproot === FALSE )
         {
-            //Pan
-            $finalroot = $this->createDefaultSecurityRule( );
+            if( $this->owner !== null && get_class($this->owner) == "PanoramaConf" )
+                $finalroot = $this->createDefaultSecurityRule( );
         }
-
 
         return $finalroot;
     }
@@ -80,6 +107,14 @@ class Sub
     function createPartialDefaultSecurityRule( $originalRuleNode )
     {
         $ownerDocument = $this->rulebaseroot->ownerDocument;
+
+        //todo: swaschkut 20240320
+        // this need to be improved, if originalRulenode is empty, there is no need to add it
+        if( get_class($this->owner) !== "PanoramaConf" )
+        {
+            if( $originalRuleNode->hasChildNodes() === FALSE )
+                return;
+        }
 
         $newdoc = new DOMDocument;
         $newdoc->loadXML( $this->defaultSecurityRules_xml, XML_PARSE_BIG_LINES);

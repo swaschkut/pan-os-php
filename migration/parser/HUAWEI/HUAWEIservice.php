@@ -5,6 +5,7 @@
  *
  * Copyright (c) 2014-2018, Palo Alto Networks Inc.
  * Copyright (c) 2019, Palo Alto Networks Inc.
+ * Copyright (c) 2024, Sven Waschkut - pan-os-php@waschkut.net
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -40,7 +41,11 @@ trait HUAWEIservice
             $tmp_servicegroup = null;
             $tmp_service = null;
 
+            //ip service-set
+
             $lines = explode( "\n", $service_entry );
+
+            print_r( $lines );
 
             $counter = count( $lines );
             #print "COUNTER: ".$counter."\n";
@@ -56,6 +61,7 @@ trait HUAWEIservice
                     //get name
                     $name = $line_arr[0];
                     $groupname = $name;
+                    #print "NAME5: ".$name."\n";
                 }
                 elseif( (strpos( $line, " description" ) !== false) && (strpos( $line, " description" ) == 0) )
                 {
@@ -99,7 +105,7 @@ trait HUAWEIservice
                      */
                     $service_set = FALSE;
 
-                    if( $line_arr[3] != "service-set" && $line_arr[4] != "service-set" )
+                    if( isset($line_arr[3]) && isset($line_arr[4]) && $line_arr[3] != "service-set" && $line_arr[4] != "service-set" )
                     {
                         if( isset($line_arr[4]) && $line_arr[3] == "protocol" )
                         {
@@ -123,30 +129,26 @@ trait HUAWEIservice
                             {
                                 $sport = "";
                                 print "SPORT\n";
+                                if( isset($line_arr[7]) && $line_arr[7] == 'to' )
+                                    $sport = $this->findDport( $line_arr, $dport, 6 );
+                                else
+                                    $sport = $line_arr[6];
                             }
 
                             //find dport
-                            if( $line_arr[9] == "destination-port" )
+                            if( isset($line_arr[7]) && $line_arr[7] == "destination-port" )
                             {
-                                $dport = $this->findDport( $line_arr, $dport, 10 );
-                                /*
-                                $i = 10;
-                                do
-                                {
-                                    if( isset($line_arr[$i]) )
-                                    {
-                                        if( $line_arr[$i] != "to" )
-                                        {
-                                            $dport .= $line_arr[$i];
-                                            if( ($i < count($line_arr) - 1) && $line_arr[$i + 1] != "to" )
-                                                $dport .= ",";
-                                        }
-                                        else
-                                            $dport .= "-";
-                                    }
-                                    $i++;
-                                } while( $i < count($line_arr) + 1 );
-                                */
+                                if( isset($line_arr[9]) && $line_arr[9] == 'to' )
+                                    $dport = $this->findDport( $line_arr, $dport, 8 );
+                                else
+                                    $dport = $line_arr[8];
+                            }
+                            elseif( isset($line_arr[9]) && $line_arr[9] == "destination-port" )
+                            {
+                                if( isset($line_arr[11]) && $line_arr[11] == 'to' )
+                                    $dport = $this->findDport( $line_arr, $dport, 10 );
+                                else
+                                    $dport = $line_arr[10];
                             }
                         }
                         else
@@ -185,6 +187,8 @@ trait HUAWEIservice
 
                     if( !$service_set )
                     {
+                        /*
+                         * //why?? 20231205 swaschkut
                         if( $counter != 2 )
                         {
                             if( $protocol == "tcp" || $protocol == "udp" )
@@ -195,7 +199,7 @@ trait HUAWEIservice
                             if( $sport != "" )
                                 $name .= $sport . "_";
                             $name .= str_replace( ",", "_", $dport);
-                        }
+                        }*/
 
                         /*
                         print "NAME: " . $name . "\n";
@@ -205,12 +209,16 @@ trait HUAWEIservice
                         print "DPORT: " . $dport . "\n";
                         */
 
+                        #print "NAME2: ".$name."\n";
                         $srv_array1['name'] = $name;
                         $srv_array1['protocol'] = $protocol;
                         $srv_array1['sport'] = $sport;
                         $srv_array1['dport'] = $dport;
                     }
-                    else{
+                    else
+                    {
+                        print "NAME3: ".$line_arr[4]."\n";
+
                         $srv_array1['name'] = $line_arr[4];
                         $srv_array1['service-set'] = 'service-set';
                     }
@@ -229,7 +237,7 @@ trait HUAWEIservice
             {
                 #$name = $srv_array[0]['name'];
 
-                    $name = $groupname;
+                $name = $groupname;
 
                 $name = $this->truncate_names($this->normalizeNames($name));
                 $tmp_servicegroup = $this->sub->serviceStore->find($name);

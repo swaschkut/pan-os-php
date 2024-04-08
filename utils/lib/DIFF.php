@@ -3,6 +3,7 @@
  * ISC License
  *
  * Copyright (c) 2019, Palo Alto Networks Inc.
+ * Copyright (c) 2024, Sven Waschkut - pan-os-php@waschkut.net
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -1037,6 +1038,12 @@ class DIFF extends UTIL
                     if( count($this->pan->getVirtualSystems()) > 1 )
                         $multiVSYS = TRUE;
                 }
+                elseif( $this->configType == 'panorama' )
+                {
+                    //check if xpath is template related
+                    if( strpos( $xpath, "template") !== FALSE )
+                        $multiVSYS = TRUE;
+                }
 
                 if( $this->debugAPI )
                 {
@@ -1174,7 +1181,12 @@ class DIFF extends UTIL
                 elseif( strpos( $entry, " profile-group " ) !== false )
                     $this->$type['profile-group'][] = $entry;
                 elseif( strpos( $entry, " profiles " ) !== false )
-                    $this->$type['profiles'][] = $entry;
+                {
+                    if( strpos( $entry, " profiles custom-url-category " ) !== false )
+                        $this->$type['profiles-custom-url-category'][] = $entry;
+                    else
+                        $this->$type['profiles'][] = $entry;
+                }
                 else
                     $this->$type['misc'][] = $entry;
             }

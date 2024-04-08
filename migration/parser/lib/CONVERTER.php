@@ -5,6 +5,7 @@
  *
  * Copyright (c) 2014-2018, Palo Alto Networks Inc.
  * Copyright (c) 2019, Palo Alto Networks Inc.
+ * Copyright (c) 2024, Sven Waschkut - pan-os-php@waschkut.net
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -85,7 +86,6 @@ class CONVERTER extends UTIL
 
     public function utilStart()
     {
-        PH::print_stdout( "PAN-OS-PHP version: ".PH::frameworkVersion() );
         $this->initial();
         $this->main();
     }
@@ -504,8 +504,14 @@ class CONVERTER extends UTIL
         $this->log->info("start PARSER: " . $this->vendor . " | " . implode(", ", PH::$args));
 
         $this->xmlDoc = new DOMDocument();
-        if( !$this->xmlDoc->load($this->configInput['filename']) )
-            derr("error while reading xml config file");
+        if( $this->configInput['filename'] != null && file_exists($this->configInput['filename']) )
+        {
+            if( !$this->xmlDoc->load($this->configInput['filename']) )
+                derr("error while reading xml config file");
+        }
+        else
+            derr("FILE: ".$this->configInput['filename']." not found", null, false);
+
 
 
         $this->determineConfigType();

@@ -5,6 +5,7 @@
  *
  * Copyright (c) 2014-2018, Palo Alto Networks Inc.
  * Copyright (c) 2019, Palo Alto Networks Inc.
+ * Copyright (c) 2024, Sven Waschkut - pan-os-php@waschkut.net
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -66,7 +67,6 @@ trait HUAWEIaddress
                     $needle1 = "ip address-set ";
                     $needle2 = " type ";
                     $name = $this->find_string_between($line, $needle1, $needle2);
-
                     $needle1 = " type ";
                     $type = $this->find_string_between($line, $needle1);
                     $type = $this->strip_hidden_chars($type);
@@ -160,7 +160,6 @@ trait HUAWEIaddress
             #exit;
 
 
-
             $name = $this->truncate_names($this->normalizeNames($name));
             $tmp_address = $this->sub->addressStore->find($name);
             if( $tmp_address == null )
@@ -213,7 +212,7 @@ trait HUAWEIaddress
                             $name = $this->truncate_names($this->normalizeNames($ip_obj));
                             $tmp_address = $this->sub->addressStore->find($name);
                             if( $tmp_address == null )
-                                mwarning( "addressgroup: '".$name. "' not found\n" );
+                                mwarning( "addressgroup: '".$name. "' not found\n", null, False );
                         }
 
                         if( $tmp_address != null )
@@ -229,7 +228,8 @@ trait HUAWEIaddress
                 {
                     if( isset( $ip_addresses[0] ) )
                     {
-                        $name = $this->truncate_names($this->normalizeNames($ip_addresses[0]));
+                        #$name = $this->truncate_names($this->normalizeNames($ip_addresses[0]));
+                        $name = $this->truncate_names($this->normalizeNames($name));
                         $tmp_address = $this->sub->addressStore->find($name);
 
                         if( $tmp_address == null )

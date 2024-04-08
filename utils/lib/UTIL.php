@@ -3,6 +3,7 @@
  * ISC License
  *
  * Copyright (c) 2019, Palo Alto Networks Inc.
+ * Copyright (c) 2024, Sven Waschkut - pan-os-php@waschkut.net
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -54,6 +55,7 @@ require_once(dirname(__FILE__)."/SOFTWAREREMOVE.php");
 require_once(dirname(__FILE__)."/TRAFFICLOG.php");
 require_once(dirname(__FILE__)."/SYSTEMLOG.php");
 require_once(dirname(__FILE__)."/GARPSEND.php");
+require_once(dirname(__FILE__)."/SESSIONBROWSER.php");
 
 require_once(dirname(__FILE__)."/CUSTOMREPORT.php");
 
@@ -832,7 +834,11 @@ class UTIL
                 $this->outputformatsetFile = PH::$args['outputformatset'];
 
                 if( $this->projectFolder !== null )
-                    $this->outputformatsetFile = $this->projectFolder."/".$this->outputformatsetFile;
+                {
+                    if( strpos($this->outputformatsetFile, $this->projectFolder) === FALSE )
+                        $this->outputformatsetFile = $this->projectFolder."/".$this->outputformatsetFile;
+                }
+
             }
         }
 
@@ -2199,12 +2205,45 @@ class UTIL
             PH::print_stdout();
             PH::print_stdout();
 
-            $setArray = array( "address", "address-group", "service", "service-group", "profiles", "profile-group", "misc", "rulebase" );
+            ####################################
+            ####################################
+            $deleteArray = array( "rulebase", "address-group", "address", "service-group", "service", "profile-group", "profiles", "profiles-custom-url-category", "misc" );
+            $tmp_string = "";
+            foreach( $deleteArray as $item )
+            {
+                if( isset( $utilDiff->diff_delete[$item] ) )
+                {
+                    foreach( $utilDiff->diff_delete[$item] as $key => $delete )
+                        $tmp_string .= $delete."\n";
+                }
+            }
+            ##################
+            if( PH::$shadow_json )
+            {
+                if( isset(PH::$JSON_OUT['setcommands']) )
+                    PH::$JSON_OUT['setcommands'] .= $tmp_string;
+                else
+                    PH::$JSON_OUT['setcommands'] = $tmp_string;
+            }
+            else
+            {
+                if( $this->outputformatsetFile !== null )
+                    file_put_contents($this->outputformatsetFile, $tmp_string, FILE_APPEND);
+                else
+                    PH::print_stdout($tmp_string);
+            }
+            ####################################
+            ####################################
+
+            ####################################
+            ####################################
+            $setArray = array( "address", "address-group", "service", "service-group", "profiles-custom-url-category","profiles", "profile-group", "misc", "rulebase" );
             $tmp_string = "";
             foreach( $setArray as $item )
             {
                 if( isset( $utilDiff->diff_set[$item] ) )
                 {
+
                     foreach( $utilDiff->diff_set[$item] as $key => $set )
                         $tmp_string .= $set."\n";
                 }
@@ -2227,32 +2266,9 @@ class UTIL
                     PH::print_stdout( $tmp_string );
             }
 
+            ####################################
+            ####################################
 
-
-            $deleteArray = array( "rulebase", "address-group", "address", "service-group", "service", "profile-group", "profiles", "misc" );
-            $tmp_string = "";
-            foreach( $deleteArray as $item )
-            {
-                if( isset( $utilDiff->diff_delete[$item] ) )
-                {
-                    foreach( $utilDiff->diff_delete[$item] as $key => $delete )
-                        $tmp_string .= $delete."\n";
-                }
-            }
-            if( PH::$shadow_json )
-            {
-                if( isset(PH::$JSON_OUT['setcommands']) )
-                    PH::$JSON_OUT['setcommands'] .= $tmp_string;
-                else
-                    PH::$JSON_OUT['setcommands'] = $tmp_string;
-            }
-            else
-            {
-                if( $this->outputformatsetFile !== null )
-                    file_put_contents($this->outputformatsetFile, $tmp_string, FILE_APPEND);
-                else
-                    PH::print_stdout($tmp_string);
-            }
         }
     }
 

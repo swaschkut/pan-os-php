@@ -5,6 +5,7 @@
  *
  * Copyright (c) 2014-2018, Palo Alto Networks Inc.
  * Copyright (c) 2019, Palo Alto Networks Inc.
+ * Copyright (c) 2024, Sven Waschkut - pan-os-php@waschkut.net
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -535,12 +536,28 @@ class DH
             PH::print_stdout( "orig_fullpath|".$orig_fullxpath."|");
 
         $fullpath = $orig_fullxpath;
-        $replace = "/config";
-        $fullpath = str_replace($replace, "", $fullpath);
-        $replace = "/devices/entry[@name='localhost.localdomain']";
-        $fullpath = str_replace($replace, "", $fullpath);
 
-        //Todo: 20230907 - if FW - no multivsys - remove it
+        //for template related stuff, do not replace "config network"
+        if( strpos( $fullpath, "template" ) === FALSE )
+        {
+            $replace = "/config";
+            $fullpath = str_replace($replace, "", $fullpath);
+            $replace = "/devices/entry[@name='localhost.localdomain']";
+            $fullpath = str_replace($replace, "", $fullpath);
+        }
+        else
+        {
+            $replace = "/config/devices/entry[@name='localhost.localdomain']/template";
+            if( strpos( $fullpath, $replace ) !== FALSE )
+                $fullpath = str_replace($replace, "/template", $fullpath);
+
+            $replace = "/config/devices/entry[@name='localhost.localdomain']";
+            if( strpos( $fullpath, $replace ) !== FALSE )
+                $fullpath = str_replace($replace, "/config", $fullpath);
+        }
+
+
+        //if FW - no multivsys - remove it
         if( !$multiVSYS )
         {
             $replace = "/vsys/entry[@name='vsys1']";

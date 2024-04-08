@@ -1,7 +1,8 @@
 <?php 
    session_start();
+   $demo = true;
    include "db_conn.php";
-   if (isset($_SESSION['username']) && isset($_SESSION['id'])) {   ?>
+   if (!$demo && isset($_SESSION['username']) && isset($_SESSION['id'])) {   ?>
 
 <!DOCTYPE html>
 <html>

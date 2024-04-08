@@ -5,6 +5,7 @@
  *
  * Copyright (c) 2014-2018, Palo Alto Networks Inc.
  * Copyright (c) 2019, Palo Alto Networks Inc.
+ * Copyright (c) 2024, Sven Waschkut - pan-os-php@waschkut.net
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -508,9 +509,10 @@ class PanAPIConnector
 
                 $apiKey = $res->textContent;
 
-                PH::print_stdout( " OK, key is $apiKey");
+                $printkey = substr($apiKey, 0, 12) . '...' . substr($apiKey, strlen($apiKey) - 12);
+                PH::print_stdout( " OK, key is $printkey");
                 PH::$JSON_TMP[$host]['status'] = "OK";
-                PH::$JSON_TMP[$host]['key'] = $apiKey;
+                PH::$JSON_TMP[$host]['key'] = $printkey;
                 PH::print_stdout();
 
             }
@@ -1536,6 +1538,114 @@ class PanAPIConnector
         $ret = array();
 
         foreach( $report->childNodes as $line )
+        {
+            if( $line->nodeType != XML_ELEMENT_NODE )
+                continue;
+
+            $newline = array();
+
+            foreach( $line->childNodes as $item )
+            {
+                if( $item->nodeType != XML_ELEMENT_NODE )
+                    continue;
+                /** @var DOMElement $item */
+
+                $newline[$item->nodeName] = $item->textContent;
+            }
+
+            $ret[] = $newline;
+        }
+
+        #print_r($ret);
+
+        return $ret;
+    }
+
+    /**
+     * @param $req
+     * @return array
+     */
+    public function &getSession($req)
+    {
+        $ret = $this->sendRequest($req);
+        #PH::print_stdout( DH::dom_to_xml($ret, 0, true, 4) );
+
+
+        $cursor = DH::findXPathSingleEntryOrDie('/response', $ret);
+        $cursor = DH::findFirstElement('result', $cursor);
+
+        if( $cursor === FALSE )
+        {
+            $cursor = DH::findFirstElement('log', DH::findXPathSingleEntryOrDie('/response', $ret));
+            if( $cursor === FALSE )
+                derr("unsupported API answer1");
+
+            $report = DH::findFirstElement('result', $cursor);
+            if( $report === FALSE )
+                derr("unsupported API answer2");
+        }
+
+        #DH::DEBUGprintDOMDocument($cursor);
+        /*
+        if( !isset($report) )
+        {
+
+            $cursor = DH::findFirstElement('job', $cursor);
+
+            if( $cursor === FALSE )
+                derr("unsupported API answer, no JOB ID found");
+
+            $jobid = $cursor->textContent;
+
+            while( TRUE )
+            {
+                sleep(1);
+                $query = '&type=log&action=get&job-id=' . $jobid;
+                $ret = $this->sendRequest($query);
+                //PH::print_stdout( DH::dom_to_xml($ret, 0, true, 5) );
+
+
+                $cursor = DH::findFirstElement('result', DH::findXPathSingleEntryOrDie('/response', $ret));
+
+                if( $cursor === FALSE )
+                    derr("unsupported API answer3", $ret);
+
+                $jobcur = DH::findFirstElement('job', $cursor);
+
+                if( $jobcur === FALSE )
+                    derr("unsupported API answer4", $ret);
+
+
+                $status = DH::findFirstElement('status', $jobcur);
+                if( $status == FALSE )
+                    derr("unsupported API answer5", $cursor);
+
+                if( $status->textContent != 'FIN' )
+                {
+                    sleep(9);
+                    continue;
+                }
+
+
+                $cursor = DH::findFirstElement('log', $cursor);
+                if( $cursor === FALSE )
+                    derr("unsupported API answer", $ret);
+
+
+                $cursor = DH::findFirstElement('logs', $cursor);
+                if( $cursor === FALSE )
+                    derr("unsupported API answer", $ret);
+
+                $report = $cursor;
+
+                break;
+            }
+        }
+        */
+
+        $ret = array();
+
+        foreach( $cursor->childNodes as $line )
         {
             if( $line->nodeType != XML_ELEMENT_NODE )
                 continue;

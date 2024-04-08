@@ -3,6 +3,7 @@
  * ISC License
  *
  * Copyright (c) 2019, Palo Alto Networks Inc.
+ * Copyright (c) 2024, Sven Waschkut - pan-os-php@waschkut.net
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -104,7 +105,7 @@ class DEVICEUTIL extends UTIL
             }
 
                 
-            self::GlobalInitAction($this->pan);
+            self::GlobalInitAction($this->pan, $this->deviceTypes);
         }
     }
 
@@ -141,6 +142,13 @@ class DEVICEUTIL extends UTIL
 
             $this->deviceTypes = array_unique($this->deviceTypes);
         }
+
+        if( isset(PH::$args['actions'] ) && $this->configType == 'panorama' )
+        {
+            if( strpos( PH::$args['actions'], "zpp-create-" ) !== False )
+                $this->deviceTypes = array("template");
+        }
+
         PH::print_stdout( $this->deviceTypes, false, "devicetype");
     }
     

@@ -5,6 +5,7 @@
  *
  * Copyright (c) 2014-2018, Palo Alto Networks Inc.
  * Copyright (c) 2019, Palo Alto Networks Inc.
+ * Copyright (c) 2024, Sven Waschkut - pan-os-php@waschkut.net
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -166,7 +167,7 @@ class PH
     public static $ignoreInvalidAddressObjects = FALSE;
 
     /** @var bool set to true if you want to send API key via HEADER - possible starting with PAN-OS 9.0 */
-    public static $sendAPIkeyviaHeader = FALSE;
+    public static $sendAPIkeyviaHeader = TRUE;
 
     public static $saveAPIkey = TRUE;
 
@@ -192,7 +193,7 @@ class PH
 
     private static $library_version_major = 2;
     private static $library_version_sub = 1;
-    private static $library_version_bugfix = 22;
+    private static $library_version_bugfix = 23;
 
     //BASIC AUTH PAN-OS 7.1
     public static $softwareupdate_key = "658d787f293e631196dac9fb29490f1cc1bb3827";
@@ -989,6 +990,7 @@ class PH
         "software-remove",
         "traffic-log",
         "system-log",
+        "session-browser",
         "gratuitous-arp",
         "software-download",
         "software-preparation",
@@ -1133,6 +1135,9 @@ class PH
 
         elseif( $type == "system-log" )
             $util = new SYSTEMLOG($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
+
+        elseif( $type == "session-browser" )
+            $util = new SESSIONBROWSER($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
 
         elseif( $type == "custom-report" )
             $util = new CUSTOMREPORT($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);

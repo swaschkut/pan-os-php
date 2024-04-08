@@ -179,7 +179,23 @@ RQuery::$defaultFilters['service']['object']['operators']['has.srcport'] = array
         'input' => 'input/panorama-8.0.xml'
     )
 );
+RQuery::$defaultFilters['service']['object']['operators']['has.group.as.member'] = array(
+    'Function' => function (ServiceRQueryContext $context) {
 
+
+        if( !$context->object->isGroup() )
+            return FALSE;
+
+        foreach( $context->object->members() as $objectMember )
+        {
+            if( $objectMember->isGroup() )
+                return TRUE;
+        }
+
+        return FALSE;
+    },
+    'arg' => FALSE
+);
 RQuery::$defaultFilters['service']['name']['operators']['eq'] = array(
     'Function' => function (ServiceRQueryContext $context) {
         return $context->object->name() == $context->value;
