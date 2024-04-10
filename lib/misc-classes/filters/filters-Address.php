@@ -611,7 +611,7 @@ RQuery::$defaultFilters['address']['tag']['operators']['is.set'] = array(
     'arg' => FALSE,
     'argObjectFinder' => "\$objectFind=null;\n\$objectFind=\$object->tags->parentCentralStore->find('!value!');",
     'ci' => array(
-        'fString' => '(%PROP% grp.shared-group1)',
+        'fString' => '(%PROP%)',
         'input' => 'input/panorama-8.0.xml'
     )
 );

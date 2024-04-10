@@ -113,8 +113,11 @@ foreach( $json_a as $type => $UTILtype )
         )
             continue;
 
-        if( $type == "rule" && ($actionName == 'position-move-to-bottom' ||
-            $actionName == 'position-move-to-top' )
+        if( $type == "rule" && ($actionName == 'position-move-to-bottom'
+                || $actionName == 'position-move-to-top'
+                || $actionName == 'display-app-seen'
+            )
+            || (strpos($actionName, '-FastAPI') !== FALSE)
         )
             continue;
 
@@ -219,9 +222,14 @@ foreach( $json_a as $type => $UTILtype )
             PH::print_stdout("******* SKIPPED for now *******");
             continue;
         }
+        elseif( $type == 'static-route' )
+        {
+            PH::print_stdout("******* SKIPPED for now *******");
+            continue;
+        }
         else
         {
-            derr('unsupported');
+            derr('unsupported type: '.$type);
         }
 
 

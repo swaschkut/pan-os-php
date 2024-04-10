@@ -10,6 +10,7 @@ GENERAL:
 * move docker workflow out of production
 * Class Sub - improvement of default-security-rules xml load
 * add new Docker files for further testing of underlaying php version 8.3 for all three container type pan-os-php/-api/-cli including ubuntu24.04 for pan-os-php
+* general adjustments for testing /validation scripts
 
 
 2.1.23 (20230408)

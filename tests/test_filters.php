@@ -76,8 +76,18 @@ $missing_filters = array();
 foreach( RQuery::$defaultFilters as $type => &$filtersByField )
 {
 
-    #if( $type != 'address' )
-    #    continue;
+    /*
+    $filterStart = false;
+    if( $type = 'static-route' )
+    {
+        #    continue;
+        $filterStart = true;
+    }
+
+    if(!$filterStart)
+        continue;
+    */
+
 
     $start = false;
     foreach( $filtersByField as $fieldName => &$filtersByOperator )
@@ -183,9 +193,14 @@ foreach( RQuery::$defaultFilters as $type => &$filtersByField )
                 PH::print_stdout( "******* SKIPPED for now *******" );
                 continue;
             }
+            elseif( $type == 'static-route' )
+            {
+                PH::print_stdout( "******* SKIPPED for now *******" );
+                continue;
+            }
             else
             {
-                derr('unsupported');
+                derr('unsupported type: '.$type);
             }
 
             $location = 'any';
