@@ -528,7 +528,7 @@ RQuery::$defaultFilters['address']['name']['operators']['same.as.region.predefin
     },
     'arg' => FALSE,
     'ci' => array(
-        'fString' => '(%PROP% new test 1)',
+        'fString' => '(%PROP%)',
         'input' => 'input/panorama-8.0.xml'
     )
 );
