@@ -4284,3 +4284,199 @@ DeviceCallContext::$supportedActions[] = array(
 
     },
 );
+
+DeviceCallContext::$supportedActions['authkey-set'] = array(
+    'name' => 'authkey-set',
+    'GlobalInitFunction' => function (DeviceCallContext $context) {
+        $context->first = true;
+    },
+    'MainFunction' => function (DeviceCallContext $context) {
+        $object = $context->object;
+        $classtype = get_class($object);
+
+        if( !$object->owner->isFirewall() )
+            derr("this device action is only working against Firewall device", null, false);
+
+        $authkey = $context->arguments['authkey'];
+        if( $authkey == '*nodefault*')
+            derr("authkey not set", null, false);
+
+        if( strpos($authkey, '$$colon$$') !== FALSE )
+            $authkey = str_replace('$$colon$$', ":", $authkey);
+
+        if( $context->first )
+        {
+            $apiArgs = array();
+            $apiArgs['type'] = 'op';
+            $apiArgs['cmd'] = '<request><authkey><set>'.$authkey.'</set></authkey></request>';
+
+            if( $context->isAPI )
+            {
+                $response = $context->connector->sendRequest($apiArgs);
+                $cursor = DH::findXPathSingleEntryOrDie('/response/msg', $response);
+
+                PH::print_stdout( $cursor->textContent);
+            }
+            else
+                derr( "only working in API mode" );
+
+
+            $context->first = FALSE;
+        }
+    },
+    'args' => array(
+        'authkey' => array('type' => 'string', 'default' => '*nodefault*')
+    ),
+    'help' => "This Action is displaying the actual logged in admin sessions"
+);
+
+DeviceCallContext::$supportedActions['authkey-display-default'] = array(
+    'name' => 'authkey-display-default',
+    'GlobalInitFunction' => function (DeviceCallContext $context) {
+        $context->first = true;
+    },
+    'MainFunction' => function (DeviceCallContext $context) {
+        $object = $context->object;
+
+        $classtype = get_class($object);
+
+        if( !$object->owner->isPanorama() )
+            derr("this device action is only working against Panorama device", null, false);
+
+        if( $context->first )
+        {
+            $apiArgs = array();
+            $apiArgs['type'] = 'op';
+            $apiArgs['cmd'] = '<request><authkey><list>default</list></authkey></request>';
+
+            if( $context->isAPI )
+            {
+                $response = $context->connector->sendRequest($apiArgs);
+                $cursor = DH::findXPathSingleEntryOrDie('/response/result/authkey', $response);
+
+                #DH::DEBUGprintDOMDocument($cursor);
+                #PH::print_stdout( $cursor->textContent);
+
+                $key = DH::findXPathSingleEntryOrDie('/entry[@name="default"]/key', $cursor);
+                $count = DH::findXPathSingleEntryOrDie('/entry[@name="default"]/count', $cursor);
+                #DH::DEBUGprintDOMDocument($key);
+                PH::print_stdout();
+                PH::print_stdout( "#########################################################");
+                PH::print_stdout( "AUTHKEY: '". $key->textContent."'");
+                PH::print_stdout("count: '".$count->textContent."'");
+            }
+            else
+                derr( "only working in API mode" );
+
+
+            $context->first = FALSE;
+        }
+    },
+    'help' => "This Action is displaying the default authkey available in the Panorama"
+);
+
+DeviceCallContext::$supportedActions['authkey-display-all'] = array(
+    'name' => 'authkey-display-all',
+    'GlobalInitFunction' => function (DeviceCallContext $context) {
+        $context->first = true;
+    },
+    'MainFunction' => function (DeviceCallContext $context) {
+        $object = $context->object;
+
+        $classtype = get_class($object);
+
+        if( !$object->owner->isPanorama() )
+            derr("this device action is only working against Panorama device", null, false);
+
+        if( $context->first )
+        {
+            $apiArgs = array();
+            $apiArgs['type'] = 'op';
+            $apiArgs['cmd'] = '<request><authkey><list>*</list></authkey></request>';
+
+            if( $context->isAPI )
+            {
+                $response = $context->connector->sendRequest($apiArgs);
+                $cursor = DH::findXPathSingleEntryOrDie('/response/result/authkey', $response);
+
+                foreach( $cursor->childNodes as $node )
+                {
+
+                    $name = DH::findAttribute("name", $node);
+                    $name2 = DH::findFirstElement("name", $node);
+                    $key = DH::findFirstElement("key", $node);
+                    $count = DH::findFirstElement("count", $node);
+                    $lifetime = DH::findFirstElement("lifetime", $node);
+
+                    PH::print_stdout( "#########################################################");
+                    #PH::print_stdout( "AUTHKEY: '". $key->textContent."'");
+                    PH::print_stdout( "NAME: '". $name2->textContent."'");
+                    PH::print_stdout( "LIFETIME: '". $lifetime->textContent."' [".strval(round(intval($lifetime->textContent)/60/60, 0))."h]");
+                    PH::print_stdout("COUNT: '".$count->textContent."'");
+
+                    $apiArgs = array();
+                    $apiArgs['type'] = 'op';
+                    $apiArgs['cmd'] = '<request><authkey><list>'.$name2->textContent.'</list></authkey></request>';
+
+                    $response = $context->connector->sendRequest($apiArgs);
+                    $cursor = DH::findXPathSingleEntryOrDie('/response/result/authkey', $response);
+
+                    $key = DH::findXPathSingleEntryOrDie('/entry[@name="'.$name2->textContent.'"]/key', $cursor);
+
+                    PH::print_stdout( "AUTHKEY: '". $key->textContent."'");
+                }
+
+            }
+            else
+                derr( "only working in API mode" );
+
+
+            $context->first = FALSE;
+        }
+    },
+    'help' => "This Action is displaying the default authkey available in the Panorama"
+);
+
+DeviceCallContext::$supportedActions['authkey-add'] = array(
+    'name' => 'authkey-add',
+    'GlobalInitFunction' => function (DeviceCallContext $context) {
+        $context->first = true;
+    },
+    'MainFunction' => function (DeviceCallContext $context) {
+        $object = $context->object;
+
+        $classtype = get_class($object);
+        $authkeyName = $context->arguments['authkey-name'];
+
+        if( !$object->owner->isPanorama() )
+            derr("this device action is only working against Panorama device", null, false);
+
+        if( $context->first )
+        {
+            $apiArgs = array();
+            $apiArgs['type'] = 'op';
+            #lifetime in minutes 1440 -> 1day
+            $apiArgs['cmd'] = '<request><authkey><add><name>'.$authkeyName.'</name><lifetime>1440</lifetime><count>100</count></add></authkey></request>';
+
+            if( $context->isAPI )
+            {
+                $response = $context->connector->sendRequest($apiArgs);
+                $cursor = DH::findXPathSingleEntryOrDie('/response', $response);
+
+                PH::print_stdout();
+                PH::print_stdout( "#########################################################");
+                DH::DEBUGprintDOMDocument($cursor);
+
+            }
+            else
+                derr( "only working in API mode" );
+
+
+            $context->first = FALSE;
+        }
+    },
+    'args' => array(
+        'authkey-name' => array('type' => 'string', 'default' => 'pan-os-php-authkey')
+    ),
+    'help' => "This Action is displaying the default authkey available in the Panorama"
+);

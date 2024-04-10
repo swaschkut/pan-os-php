@@ -2,6 +2,7 @@ CHANGELOG
 
 2.1.24
 UTIL:
+* type=device | new actions=authkey-display-all/authkey-display-default/authkey-set/authkey-add
 
 BUGFIX:
 
