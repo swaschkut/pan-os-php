@@ -20,7 +20,7 @@
  */
 
 require_once("lib/pan_php_framework.php");
-require_once ( "utils/lib/UTIL.php");
+require_once("utils/lib/UTIL.php");
 
 PH::print_stdout();
 PH::print_stdout("***********************************************");
