@@ -4,6 +4,7 @@ CHANGELOG
 UTIL:
 * type=device | new actions=authkey-display-all/authkey-display-default/authkey-set/authkey-add
 * class RuleCallContext | add additional information if specific Fieldname is not supported for ExportToExcel
+* type=threat | extend 'actions=display' with CVE information | new 'filter=(cve contains XYZ)'
 
 BUGFIX:
 
@@ -16,6 +17,7 @@ GENERAL:
 * develop script | prisma_access related scripts moved to new folder | add pa_auth/pa_cert.php
 * develop ironskillet scripts
 * class RuleCallContext | improvement for php >8.2
+* update to Device App-ID version: 8833-8682
 
 
 2.1.23 (20240408)
