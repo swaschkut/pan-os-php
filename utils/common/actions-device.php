@@ -4480,3 +4480,57 @@ DeviceCallContext::$supportedActions['authkey-add'] = array(
     ),
     'help' => "This Action is displaying the default authkey available in the Panorama"
 );
+
+DeviceCallContext::$supportedActions['telemetry-enable'] = array(
+    'name' => 'telemetry-enable',
+    'GlobalInitFunction' => function (DeviceCallContext $context) {
+        $context->first = true;
+    },
+    'MainFunction' => function (DeviceCallContext $context) {
+        $object = $context->object;
+
+        $telemetryEnable = $context->arguments['enable'];
+
+        if( $telemetryEnable != "yes" && $telemetryEnable != "no" )
+            derr( "enable value can only be 'yes' or 'no'", null, FALSE );
+
+        if ($object->owner->isPanorama())
+            derr("this device action is only working against Firewall device", null, false);
+
+        if ($context->first)
+        {
+            $xpath = "/config/devices/entry[@name='localhost.localdomain']/deviceconfig/system/device-telemetry";
+
+
+            $elementArray = array();
+            $elementArray[] = "<device-health-performance>".$telemetryEnable."</device-health-performance>";
+            $elementArray[] = "<product-usage>".$telemetryEnable."</product-usage>";
+            $elementArray[] = "<threat-prevention>".$telemetryEnable."</threat-prevention>";
+
+
+            if( $context->isAPI )
+            {
+                foreach( $elementArray as $element )
+                {
+                    $response = $context->connector->sendSetRequest($xpath, $element);
+                    $cursor = DH::findXPathSingleEntryOrDie('/response', $response);
+
+                    PH::print_stdout();
+                    PH::print_stdout( "#########################################################");
+                    DH::DEBUGprintDOMDocument($cursor);
+                }
+
+
+            }
+            else
+                derr( "only working in API mode" );
+
+
+            $context->first = FALSE;
+        }
+    },
+    'args' => array(
+        'enable' => array('type' => 'string', 'default' => 'no')
+    ),
+    'help' => "enable function: possible values: 'yes' or 'no'"
+);
