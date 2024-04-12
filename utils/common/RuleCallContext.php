@@ -803,7 +803,7 @@ class RuleCallContext extends CallContext
             else
                 return self::enclose( "" );
         }
-        return self::enclose("unsupported: '$fieldName'");
+        return self::enclose("unsupported fieldname: '$fieldName'");
 
     }
 
