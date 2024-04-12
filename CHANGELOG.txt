@@ -15,9 +15,10 @@ GENERAL:
 * main Docker files update for container of pan-os-php / pan-os-php-api / pan-os-php-cli - to use php version 8.3 and container pan-os-php ubuntu 24.04
 * develop script | prisma_access related scripts moved to new folder | add pa_auth/pa_cert.php
 * develop ironskillet scripts
+* class RuleCallContext | improvement for php >8.2
 
 
-2.1.23 (20230408)
+2.1.23 (20240408)
 UTIL:
 * type=address | introduce actions=address-group-create-EDL-IP:list.txt
 * type=address | introduce actions=address-group-create-EDL-FQDN:list.txt

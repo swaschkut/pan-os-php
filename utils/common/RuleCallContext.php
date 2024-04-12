@@ -31,6 +31,8 @@ class RuleCallContext extends CallContext
     public $cachedList;
 
     public $mergeArray;
+    public $newdoc;
+    public $rule;
 
     static public function prepareSupportedActions()
     {
