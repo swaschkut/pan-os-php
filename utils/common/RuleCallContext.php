@@ -271,8 +271,10 @@ class RuleCallContext extends CallContext
                     $output .= "";
             }
         }
+        elseif( is_numeric($value) )
+            $output = htmlspecialchars(strval($value));
         else
-            derr('unsupported');
+            derr('ExportToExcel enclose() - unsupported value of type: '.get_class($value));
 
         if( $nowrap )
             return '<td style="white-space: nowrap">' . $output . '</td>';
