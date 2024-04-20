@@ -20,6 +20,7 @@ GENERAL:
 * class RuleCallContext | improvement for php >8.2
 * update to Device App-ID version: 8833-8682
 * class AddressGroup/AddressStore | extend to create dynamic AddressGroup
+* class TagStore | introduce function all() - to be aling with rule/addressstore - to get programatically objects based on filter
 
 
 2.1.23 (20240408)

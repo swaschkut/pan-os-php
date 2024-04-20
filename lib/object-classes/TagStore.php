@@ -73,6 +73,58 @@ class TagStore extends ObjStore
     }
 
     /**
+     * Returns an Array with all Address , AddressGroups, TmpAddress objects in this store
+     * @param $withFilter string|null
+     * @param bool $sortByDependencies
+     * @return Address[]|AddressGroup[]
+     */
+    public function all($withFilter = null, $sortByDependencies = FALSE)
+    {
+        $query = null;
+
+        if( $withFilter !== null && $withFilter != '' )
+        {
+            $errMesg = '';
+            $query = new RQuery('tag');
+            if( $query->parseFromString($withFilter, $errMsg) === FALSE )
+            {
+                mwarning("error while parsing query: {$errMesg} - filter: {$withFilter}", null, FALSE);
+                return array();
+            }
+
+
+            $res = array();
+            foreach( $this->getAll() as $obj )
+            {
+                if( $query->matchSingleObject($obj) )
+                    $res[] = $obj;
+            }
+            return $res;
+        }
+
+        if( !$sortByDependencies )
+            return $this->getAll();
+
+        $result = array();
+
+        foreach( $this->getAll() as $object )
+            $result[] = $object;
+
+        /*
+        foreach( $this->_addressObjects as $object )
+            $result[] = $object;
+
+        foreach( $this->addressGroups(TRUE) as $object )
+            $result[] = $object;
+
+        foreach( $this->_regionObjects as $object )
+            $result[] = $object;
+        */
+
+        return $result;
+    }
+
+    /**
      * add a Tag to this store. Use at your own risk.
      * @param Tag $Obj
      * @param bool
