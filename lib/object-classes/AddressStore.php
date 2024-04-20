@@ -838,6 +838,31 @@ class AddressStore
         return $newObject;
     }
 
+
+    /**
+     * Creates a new Address Group named '$name' . Will exit with error if a group with that
+     * name already exists
+     * @param string $name
+     * @return AddressGroup
+     **/
+    public function newAddressGroupDynamic($name)
+    {
+        $found = $this->find($name, null, FALSE);
+        if( $found !== null )
+            derr("cannot create AddressGroup named '" . $name . "' as this name is already in use");
+
+        $newGroup = new AddressGroup($name, $this, TRUE, "dynamic");
+        $newGroup->setName($name);
+        $newGroup->setDynamic(TRUE );
+        $this->add($newGroup);
+
+        //Todo: swaschkut 20201109 - update readonly section
+        //add addressgroup - increase max-internal-id
+
+        return $newGroup;
+
+    }
+
     /**
      * Returns an Array with all AddressGroup in this store.
      * @return AddressGroup[]
