@@ -59,6 +59,27 @@ $connector = $pan->connector;
 
 ########################################################################################################################
 
+function DEBUGsaveDOMDocument( $node, $filename )
+{
+    if( $node != null )
+    {
+        $newdoc = new DOMDocument;
+        $node = $newdoc->importNode($node, true);
+        $newdoc->appendChild($node);
+
+        $lineReturn = TRUE;
+        $indentingXmlIncreament = 1;
+        $indentingXml = 0;
+        $xml = &DH::dom_to_xml($newdoc->documentElement, $indentingXml, $lineReturn, -1, $indentingXmlIncreament);
+
+        file_put_contents($filename, $xml);
+
+        #return $xml;
+        #print $newdoc->saveXML($newdoc->documentElement);
+    }
+
+}
+
 ###########
 #DISPLAY
 ###########
@@ -71,7 +92,8 @@ $output = $connector->sendOpRequest($query);
 #print(get_class($output));
 #var_dump($output);
 $res = DH::findFirstElement( "result", $output);
-DH::DEBUGprintDOMDocument($res);
+#DH::DEBUGprintDOMDocument($res);
+DEBUGsaveDOMDocument($res, "PANW_routing.xml");
 
 ###########
 
@@ -80,7 +102,8 @@ PH::print_stdout("QUERY: ".$query);
 $output = $connector->sendOpRequest($query);
 
 $res = DH::findFirstElement( "result", $output);
-DH::DEBUGprintDOMDocument($res);
+#DH::DEBUGprintDOMDocument($res);
+DEBUGsaveDOMDocument($res, "PANW_interface.xml");
 
 ###########
 
@@ -89,7 +112,8 @@ PH::print_stdout("QUERY: ".$query);
 $output = $connector->sendOpRequest($query);
 
 $res = DH::findFirstElement( "result", $output);
-DH::DEBUGprintDOMDocument($res);
+#DH::DEBUGprintDOMDocument($res);
+DEBUGsaveDOMDocument($res, "PANW_arp.xml");
 
 #########§##
 
@@ -98,7 +122,8 @@ PH::print_stdout("QUERY: ".$query);
 $output = $connector->sendOpRequest($query);
 
 $res = DH::findFirstElement( "result", $output);
-DH::DEBUGprintDOMDocument($res);
+#DH::DEBUGprintDOMDocument($res);
+DEBUGsaveDOMDocument($res, "PANW_mac.xml");
 
 ########################################################################################################################
 

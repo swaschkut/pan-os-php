@@ -32,6 +32,13 @@ class DeviceCallContext extends CallContext
     public $fields;
     public $ruleContext;
 
+    public $av_xmlString;
+    public $as_xmlString;
+    public $vp_xmlString;
+    public $url_xmlString;
+    public $fb_xmlString;
+    public $wf_xmlString;
+
     static public function prepareSupportedActions()
     {
         $tmpArgs = array();
