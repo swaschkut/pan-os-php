@@ -53,6 +53,7 @@ require_once(dirname(__FILE__)."/RUNSSH.php");
 
 require_once(dirname(__FILE__)."/SOFTWAREREMOVE.php");
 require_once(dirname(__FILE__)."/TRAFFICLOG.php");
+require_once(dirname(__FILE__)."/THREATLOG.php");
 require_once(dirname(__FILE__)."/SYSTEMLOG.php");
 require_once(dirname(__FILE__)."/GARPSEND.php");
 require_once(dirname(__FILE__)."/SESSIONBROWSER.php");
@@ -1008,7 +1009,8 @@ class UTIL
                     }
                 }
 
-                $sase_connector->loadSaseConfig($folder, $sub, $this->utilType);
+                //Todo: 20240326 swaschkut - do not always load full config
+                #$sase_connector->loadSaseConfig($folder, $sub, $this->utilType);
             }
         }
         else
