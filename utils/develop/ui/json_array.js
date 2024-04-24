@@ -615,7 +615,7 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "ci": {
-                            "fString": "(%PROP% new test 1)",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -934,7 +934,7 @@ var subjectObject =
                         "arg": false,
                         "argObjectFinder": "$objectFind=null;\n$objectFind=$object->tags->parentCentralStore->find('!value!');",
                         "ci": {
-                            "fString": "(%PROP% grp.shared-group1)",
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -1551,6 +1551,42 @@ var subjectObject =
                 "GlobalInitFunction": {},
                 "MainFunction": {}
             },
+            "authkey-add": {
+                "name": "authkey-add",
+                "GlobalInitFunction": {},
+                "MainFunction": {},
+                "args": {
+                    "authkey-name": {
+                        "type": "string",
+                        "default": "pan-os-php-authkey"
+                    }
+                },
+                "help": "This Action is displaying the default authkey available in the Panorama"
+            },
+            "authkey-display-all": {
+                "name": "authkey-display-all",
+                "GlobalInitFunction": {},
+                "MainFunction": {},
+                "help": "This Action is displaying the default authkey available in the Panorama"
+            },
+            "authkey-display-default": {
+                "name": "authkey-display-default",
+                "GlobalInitFunction": {},
+                "MainFunction": {},
+                "help": "This Action is displaying the default authkey available in the Panorama"
+            },
+            "authkey-set": {
+                "name": "authkey-set",
+                "GlobalInitFunction": {},
+                "MainFunction": {},
+                "args": {
+                    "authkey": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "This Action is displaying the actual logged in admin sessions"
+            },
             "cleanuprule-create-bp": {
                 "name": "cleanuprule-create-bp",
                 "GlobalInitFunction": {},
@@ -1917,6 +1953,18 @@ var subjectObject =
                 "GlobalInitFunction": {},
                 "MainFunction": {},
                 "help": "This Action is rebooting the Device"
+            },
+            "telemetry-enable": {
+                "name": "telemetry-enable",
+                "GlobalInitFunction": {},
+                "MainFunction": {},
+                "args": {
+                    "enable": {
+                        "type": "string",
+                        "default": "no"
+                    }
+                },
+                "help": "enable function: possible values: 'yes' or 'no'"
             },
             "template-add": {
                 "name": "template-add",
@@ -7889,6 +7937,18 @@ var subjectObject =
                     }
                 }
             },
+            "cve": {
+                "operators": {
+                    "contains": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% -)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
             "default-action": {
                 "operators": {
                     "eq": {
@@ -7908,6 +7968,14 @@ var subjectObject =
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% ftp)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "contains": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% -)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -7938,6 +8006,11 @@ var subjectObject =
                 }
             }
         }
+    },
+    "threat-log": {
+        "name": "threat-log",
+        "action": [],
+        "filter": []
     },
     "traffic-log": {
         "name": "traffic-log",

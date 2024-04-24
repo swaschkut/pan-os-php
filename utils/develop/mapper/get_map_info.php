@@ -36,6 +36,7 @@ $supportedArguments['in'] = Array('niceName' => 'in', 'shortHelp' => 'input file
 $supportedArguments['out'] = Array('niceName' => 'out', 'shortHelp' => 'output file to save config after changes. Only required when input is a file. ie: out=save-config.xml', 'argDesc' => '[filename]');
 $supportedArguments['debugapi'] = Array('niceName' => 'DebugAPI', 'shortHelp' => 'prints API calls when they happen');
 $supportedArguments['help'] = Array('niceName' => 'help', 'shortHelp' => 'this message');
+$supportedArguments['folder'] = Array('niceName' => 'folder', 'shortHelp' => 'folder information to store the files in');
 
 
 $usageMsg = PH::boldText("USAGE: ")."php ".basename(__FILE__)." in=inputfile.xml ".
@@ -56,7 +57,14 @@ $util->utilInit();
 $pan = $util->pan;
 $connector = $pan->connector;
 
-
+if( isset(PH::$args['folder']) )
+{
+    $folder = PH::$args['folder'];
+    if (!file_exists( $folder )  )
+        mkdir($folder, 0777, TRUE);
+}
+else
+    $folder = "";
 ########################################################################################################################
 
 function DEBUGsaveDOMDocument( $node, $filename )
@@ -93,7 +101,7 @@ $output = $connector->sendOpRequest($query);
 #var_dump($output);
 $res = DH::findFirstElement( "result", $output);
 #DH::DEBUGprintDOMDocument($res);
-DEBUGsaveDOMDocument($res, "PANW_routing.xml");
+DEBUGsaveDOMDocument($res, $folder."PANW_routing.xml");
 
 ###########
 
@@ -103,7 +111,7 @@ $output = $connector->sendOpRequest($query);
 
 $res = DH::findFirstElement( "result", $output);
 #DH::DEBUGprintDOMDocument($res);
-DEBUGsaveDOMDocument($res, "PANW_interface.xml");
+DEBUGsaveDOMDocument($res, $folder."PANW_interface.xml");
 
 ###########
 
@@ -113,7 +121,7 @@ $output = $connector->sendOpRequest($query);
 
 $res = DH::findFirstElement( "result", $output);
 #DH::DEBUGprintDOMDocument($res);
-DEBUGsaveDOMDocument($res, "PANW_arp.xml");
+DEBUGsaveDOMDocument($res, $folder."PANW_arp.xml");
 
 #########§##
 
@@ -123,7 +131,7 @@ $output = $connector->sendOpRequest($query);
 
 $res = DH::findFirstElement( "result", $output);
 #DH::DEBUGprintDOMDocument($res);
-DEBUGsaveDOMDocument($res, "PANW_mac.xml");
+DEBUGsaveDOMDocument($res, $folder."PANW_mac.xml");
 
 ########################################################################################################################
 

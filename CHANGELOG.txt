@@ -6,6 +6,7 @@ UTIL:
 * class RuleCallContext | add additional information if specific Fieldname is not supported for ExportToExcel
 * type=threat | extend 'actions=display' with CVE information | new 'filter=(cve contains XYZ)'
 * type=device | introduce 'actions=telemetry-enable:yes/no' - only for API against PAN-OS Firewall
+* type=threat-log | introduction
 
 BUGFIX:
 

@@ -989,6 +989,7 @@ class PH
         "util_get-action-filter",
         "software-remove",
         "traffic-log",
+        "threat-log",
         "system-log",
         "session-browser",
         "gratuitous-arp",
@@ -1132,6 +1133,9 @@ class PH
 
         elseif( $type == "traffic-log" )
             $util = new TRAFFICLOG($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
+
+        elseif( $type == "threat-log" )
+            $util = new THREATLOG($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
 
         elseif( $type == "system-log" )
             $util = new SYSTEMLOG($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
