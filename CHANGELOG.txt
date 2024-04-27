@@ -9,6 +9,7 @@ UTIL:
 * type=threat-log | introduction
 
 BUGFIX:
+* type=key-manager | bugfix for argument test=
 
 GENERAL:
 * move docker workflow out of production

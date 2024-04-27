@@ -287,7 +287,7 @@ class KEYMANGER extends UTIL
                 PH::print_stdout( " - requested to test Host/IP '{$checkHost}'");
                 PH::$JSON_TMP[$checkHost]['name'] = $checkHost;
 
-                if( $checkHost == "bpa-apikey" || $checkHost == "license-apikey" || $checkHost == "ldap-password" || $checkHost == "maxmind-licensekey" || $addHost == "gcp-mysql-password" )
+                if( $checkHost == "bpa-apikey" || $checkHost == "license-apikey" || $checkHost == "ldap-password" || $checkHost == "maxmind-licensekey" || $checkHost == "gcp-mysql-password" )
                 {
                     PH::$JSON_TMP[$checkHost]['status'] = "skipped can not be tested";
                 }
