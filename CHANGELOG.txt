@@ -7,6 +7,7 @@ UTIL:
 * type=threat | extend 'actions=display' with CVE information | new 'filter=(cve contains XYZ)'
 * type=device | introduce 'actions=telemetry-enable:yes/no' - only for API against PAN-OS Firewall
 * type=threat-log | introduction
+* type=key-manager | optimise to fit to new PAN-OS API key calculation
 
 BUGFIX:
 * type=key-manager | bugfix for argument test=
