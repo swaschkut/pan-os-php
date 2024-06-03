@@ -28,6 +28,7 @@ GENERAL:
 * iron-skillet | introduce parts for panos_v11.1
 * Device App-ID updated to version: 8842-8722
 * develop | Cisco ACI introduce get_epg.php
+* Device App-ID updated to version: 8854-8759
 
 
 2.1.23 (20240408)
