@@ -121,7 +121,7 @@ set plugins cisco monitoring-definition test-adrian aci-fabric test-Adrian
 set plugins cisco monitoring-definition test-adrian notify-group ACIlab
 */
 
-exit();
+
 ########################################################################################################################
 //validate if Cisco ACI plugin is installed
 
