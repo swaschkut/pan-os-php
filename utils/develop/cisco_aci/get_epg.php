@@ -129,8 +129,8 @@ $cmd = "<show><plugins><cisco><status></status></cisco></plugins></show>";
 $params['type'] = 'op';
 $params['cmd'] = &$cmd;
 
-#$response = $connector->sendRequest($params);
-$response = $connector->sendJobRequest($params);
+$response = $connector->sendRequest($params);
+#$response = $connector->sendJobRequest($params);
 $cursor = DH::findXPathSingleEntryOrDie('/response/result', $response);
 
 PH::print_stdout();
