@@ -82,7 +82,7 @@ if( !$util->apiMode )
 
 
 ########################################################################################################################
-
+/*
 //download plugin
 //&type=op
 //&cmd=<request><plugins><download><file>cisco-3.0.1</file></download></plugins></request>
@@ -110,6 +110,7 @@ $jobID = $connector->getJobID($response);
 $response = $connector->waitForJobFinished($jobID);
 $cursor = DH::findXPathSingleEntryOrDie('/response', $response);
 DH::DEBUGprintDOMDocument($cursor);
+*/
 
 /*
 set plugins cisco notify-group ACIlab device-group CiscoACI
