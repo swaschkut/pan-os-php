@@ -46,7 +46,7 @@ class APPIDTOOLBOX extends UTIL
         $this->supportedArguments['out'] = Array('niceName' => 'out', 'shortHelp' => 'output filename ie: out=[PATH]/save-config.xml', 'argDesc' => '[filename]');
         #$supportedArguments['debugapi'] = Array('niceName' => 'DebugAPI', 'shortHelp' => 'prints API calls when they happen');
         $this->supportedArguments['help'] = Array('niceName' => 'help', 'shortHelp' => 'this message');
-        $this->supportedArguments['phase'] = Array('niceName' => 'phase', 'shortHelp' => 'also possible with phase=[phase1|phase2|phase3|phase4|phase5]', 'argDesc' => '[rule-marker|report-generator|rule-cloner|rule-activation|rule-cleaner]');
+        $this->supportedArguments['phase'] = Array('niceName' => 'phase', 'shortHelp' => 'also possible with phase=[phase1|phase2|phase3|phase5|phase6]', 'argDesc' => '[rule-marker|report-generator|rule-cloner|rule-activation|rule-cleaner]');
 
 
 
@@ -56,7 +56,7 @@ class APPIDTOOLBOX extends UTIL
             "   php ".basename(__FILE__)." help          : more help messages\n" .
             "\n" .
             "more details are documented here:\n" .
-            "https://github.com/PaloAltoNetworks/pan-os-php/blob/main/appid-toolbox/doc/AppID%20Toolbox%20-%20PAN-OS-PHP.pdf \n" .
+            "https://github.com/swaschkut/pan-os-php/blob/main/appid-toolbox/doc/AppID%20Toolbox%20-%20PAN-OS-PHP.pdf \n" .
             "\n" .
             "   - phase=p1-marker     [phase=phase1] [phase=rule-marker] \n" .
             "   - phase=p2-generator  [phase=phase2] [phase=report-generator] \n" .
@@ -95,11 +95,13 @@ class APPIDTOOLBOX extends UTIL
             elseif( $phase == "rule-cloner" || $phase == "phase3" || $phase == "p3-cloner" )
                 $this->ruleCloner_Phase3_init();
             elseif( $phase == "phase4" || $phase == "p4" )
-                derr( "appid-toolboox phase4 - AppID Rules Review - manual task. \n\n - please check: \n\nhttps://github.com/PaloAltoNetworks/pan-os-php/blob/main/appid-toolbox/doc/AppID%20Toolbox%20-%20PAN-OS-PHP.pdf \n\n", null, False );
+                derr( "appid-toolboox phase4 - AppID Rules Review - manual task. \n\n - please check: \n\nhttps://github.com/swaschkut/pan-os-php/blob/main/appid-toolbox/doc/AppID%20Toolbox%20-%20PAN-OS-PHP.pdf \n\n", null, False );
             elseif( $phase == "rule-activation" || $phase == "phase5" || $phase == "p5-activation" )
                 $this->ruleActivation_Phase5_init();
             elseif( $phase == "rule-cleaner" || $phase == "phase6" || $phase == "p6-cleaner" )
                 $this->ruleCleaner_Phase6_init();
+            else
+                derr( "appid-toolboox phase: '".$phase."' not available. \n\n - please check: \n\nhttps://github.com/swaschkut/pan-os-php/blob/main/appid-toolbox/doc/AppID%20Toolbox%20-%20PAN-OS-PHP.pdf \n\n", null, False );
         }
         elseif( isset(PH::$args['help']) )
             $this->help(PH::$args);

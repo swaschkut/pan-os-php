@@ -8,6 +8,7 @@ UTIL:
 * type=device | introduce 'actions=telemetry-enable:yes/no' - only for API against PAN-OS Firewall
 * type=threat-log | introduction
 * type=key-manager | optimise to fit to new PAN-OS API key calculation
+* type=appid-toolbox - documentation correction
 
 BUGFIX:
 * type=key-manager | bugfix for argument test=
