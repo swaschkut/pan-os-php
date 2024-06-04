@@ -181,7 +181,7 @@ class NetworkPropertiesContainer
                 }
             }
 
-            $tmp2 = DH::findFirstElementOrCreate('gateway', $tmp);
+            $tmp2 = DH::findFirstElement('gateway', $tmp);
             if( $tmp2 !== FALSE )
             {
                 $this->ikeGatewayStore->load_from_domxml($tmp2);

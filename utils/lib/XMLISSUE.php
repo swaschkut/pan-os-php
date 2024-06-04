@@ -149,6 +149,7 @@ class XMLISSUE extends UTIL
         $countMissconfiguredServiceObjects = 0;
         $countServiceObjectsWithDoubleSpaces = 0;
         $countServiceObjectsWithNameappdefault = 0;
+        $fixedServiceObjectsWithSameTag = 0;
 
 
         $countEmptyAddressGroup = 0;
@@ -743,6 +744,45 @@ class XMLISSUE extends UTIL
                         PH::print_stdout( "    - service object '{$objectName}' from DG/VSYS {$locationName} has missing protocol configuration ... (*FIX_MANUALLY*)");
                         PH::print_stdout( "       - type 'Service' at XML line #{$node->getLineNo()}");
                         $countMissconfiguredServiceObjects++;
+                    }
+                }
+            }
+
+            //
+            //
+            //
+            PH::print_stdout( " - Scanning for service with multiple times same tag...");
+            foreach( $serviceObjects as $objectName => $nodes )
+            {
+                foreach( $nodes as $node )
+                {
+                    $tagNode = DH::findFirstElement('tag', $node);
+                    if( $tagNode !== FALSE )
+                    {
+                        $tagArray = array();
+                        #PH::print_stdout( "    - service object '{$objectName}' from DG/VSYS {$locationName} has missing protocol configuration ... (*FIX_MANUALLY*)");
+                        #PH::print_stdout( "       - type 'Service' at XML line #{$node->getLineNo()}");
+                        #$countMissconfiguredServiceObjects++;
+
+                        foreach( $tagNode->childNodes as $tagNodeMember )
+                        {
+                            /** @var DOMElement $tagNodeMember */
+                            if ($tagNodeMember->nodeType != XML_ELEMENT_NODE)
+                                continue;
+
+
+                            $tagName = $tagNodeMember->textContent;
+                            if( isset( $tagArray[$tagName] ) )
+                            {
+                                PH::print_stdout( "    - service object '{$objectName}' from DG/VSYS {$locationName} has duplicate TAG: ".$tagName." configured ... *FIXED*");
+                                $tagNodeMember->parentNode->removeChild($tagNodeMember);
+                                $fixedServiceObjectsWithSameTag++;
+                            }
+                            else
+                            {
+                                $tagArray[$tagName] = $tagName;
+                            }
+                        }
                     }
                 }
             }
@@ -1744,6 +1784,8 @@ class XMLISSUE extends UTIL
         PH::print_stdout( " - FIXED: duplicate service-group members: {$totalServiceGroupsFixed}");
         PH::print_stdout( " - FIXED: own address-group as subgroup member: {$totalAddressGroupsSubGroupFixed}");
         PH::print_stdout( " - FIXED: own dynamic address-group as tag member: {$totalDynamicAddressGroupsTagFixed}");
+
+        PH::print_stdout( " - FIXED: service objects with multiple times same tag: {$fixedServiceObjectsWithSameTag}");
 
         PH::print_stdout( " - FIXED: own service-group as subgroup members: {$totalServiceGroupsSubGroupFixed}");
 
