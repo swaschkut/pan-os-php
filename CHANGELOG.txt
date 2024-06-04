@@ -9,6 +9,7 @@ UTIL:
 * type=threat-log | introduction
 * type=key-manager | optimise to fit to new PAN-OS API key calculation
 * type=appid-toolbox - documentation correction
+* type=xml-issue - extend to find and fix service objects where multiple times same tag are configured
 
 BUGFIX:
 * type=key-manager | bugfix for argument test=
