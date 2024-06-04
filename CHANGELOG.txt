@@ -13,6 +13,7 @@ UTIL:
 
 BUGFIX:
 * type=key-manager | bugfix for argument test=
+* bugfix for PHP 8.3 - date_default_timezone_set behaviour error out in new PHP version, if timezoneid is not supported
 
 GENERAL:
 * move docker workflow out of production
