@@ -673,13 +673,11 @@ class PANConf
                     PH::enableExceptionSupport();
                     try
                     {
-                        $valide = date_default_timezone_set($timezone->textContent);
-                        if( !$valide )
-                            PH::print_stdout( "Timezone: $timezone->textContent is not support with this PHP version" );
+                        date_default_timezone_set($timezone->textContent);
                     }
                     catch(Exception $e)
                     {
-                        PH::print_stdout( "Timezone: $timezone->textContent is not support with this PHP version" );
+                        PH::print_stdout( " X Timezone: $timezone->textContent is not support with this PHP version. UTC is used." );
                         $this->timezone = "UTC";
                     }
                     PH::disableExceptionSupport();
