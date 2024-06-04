@@ -677,8 +677,29 @@ class PANConf
                     }
                     catch(Exception $e)
                     {
+                        $timezoneArray = explode( "/", $this->timezone );
                         PH::print_stdout( " X Timezone: $timezone->textContent is not support with this PHP version. UTC is used." );
                         $this->timezone = "UTC";
+
+                        static $regions = array(
+                            'Africa' => DateTimeZone::AFRICA,
+                            'America' => DateTimeZone::AMERICA,
+                            'Antarctica' => DateTimeZone::ANTARCTICA,
+                            'Arctic' => DateTimeZone::ARCTIC,
+                            'Asia' => DateTimeZone::ASIA,
+                            'Atlantic' => DateTimeZone::ATLANTIC,
+                            'Australia' => DateTimeZone::AUSTRALIA,
+                            'Europe' => DateTimeZone::EUROPE,
+                            'Indian' => DateTimeZone::INDIAN,
+                            'Pacific' => DateTimeZone::PACIFIC
+                        );
+
+                        //supported Timezone
+                        $tzlist = DateTimeZone::listIdentifiers($regions[$timezoneArray[0]]);
+                        foreach( $tzlist as $tz )
+                        {
+                            PH::print_stdout( "   * ".$tz );
+                        }
                     }
                     PH::disableExceptionSupport();
                 }
