@@ -33,6 +33,7 @@ GENERAL:
 * Device App-ID updated to version: 8842-8722
 * develop | Cisco ACI introduce get_epg.php
 * Device App-ID updated to version: 8854-8759
+* adding ubuntu docker validation scripts
 
 
 2.1.23 (20240408)
