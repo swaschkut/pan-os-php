@@ -678,7 +678,8 @@ class PANConf
                     catch(Exception $e)
                     {
                         $timezoneArray = explode( "/", $this->timezone );
-                        PH::print_stdout( " X Timezone: $timezone->textContent is not support with this PHP version. UTC is used." );
+                        PH::print_stdout( " X Timezone: $timezone->textContent is not supported with this PHP version. UTC is used." );
+                        PH::print_stdout("   - the timezone is IANA deprecated. Please change to a supported one:");
                         $this->timezone = "UTC";
 
                         static $regions = array(
@@ -696,10 +697,14 @@ class PANConf
 
                         //supported Timezone
                         $tzlist = DateTimeZone::listIdentifiers($regions[$timezoneArray[0]]);
+                        PH::print_stdout();
+                        PH::print_stdout("   -- available IANA timezones: ");
                         foreach( $tzlist as $tz )
                         {
                             PH::print_stdout( "   * ".$tz );
                         }
+                        PH::print_stdout("   --------------");
+                        PH::print_stdout();
                     }
                     PH::disableExceptionSupport();
                 }
