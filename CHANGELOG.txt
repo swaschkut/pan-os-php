@@ -15,6 +15,7 @@ UTIL:
 BUGFIX:
 * type=key-manager | bugfix for argument test=
 * bugfix for PHP 8.3 - date_default_timezone_set behaviour error out in new PHP version, if timezoneid is not supported
+* class RuleWithGroupTAG - bugfix for util: type=rule actions=grouptag-set:XYZ
 
 GENERAL:
 * move docker workflow out of production
@@ -211,7 +212,6 @@ BUGFIX:
 * type=XYZ outputformatset=setcommand.txt | bugfix to always have correct xPath availalble for set commands
 * bugfix - related to TAG objects where name include character '(' and/or ')' - final fix for tag-merger including method createTag()
 * bugfix for argument outputformatset - no multi-vsys device - remove vsys1 to fit set commands
-* class RuleWithGroupTAG - bugfix for util: type=rule actions=grouptag-set:XYZ
 
 GENERAL:
 * develop pan-os-php-api | per default enable shadow-json checkbox  - with shadow-nojson, output has a bug and filter are not working correctly - fixing later
