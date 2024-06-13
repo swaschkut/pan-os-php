@@ -6120,20 +6120,6 @@ Lego Mini figures 7100 appRID#14</description>
       <authentication>
        <rules/>
       </authentication>
-      <default-security-rules>
-       <rules>
-        <entry name="intrazone-default">
-         <action>allow</action>
-         <log-start>no</log-start>
-         <log-end>no</log-end>
-        </entry>
-        <entry name="interzone-default">
-         <action>deny</action>
-         <log-start>no</log-start>
-         <log-end>no</log-end>
-        </entry>
-       </rules>
-      </default-security-rules>
      </rulebase>
      <global-protect>
       <global-protect-gateway/>

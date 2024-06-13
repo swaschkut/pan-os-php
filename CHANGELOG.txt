@@ -36,6 +36,7 @@ GENERAL:
 * Device App-ID updated to version: 8854-8759
 * adding ubuntu docker validation scripts
 * Device App-ID updated to version: 8856-8770
+* appid-toolbox - extend testing scripts with better preparation
 
 
 2.1.23 (20240408)
