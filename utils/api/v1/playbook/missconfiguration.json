@@ -1,0 +1,63 @@
+{
+  "stagename": "missconfigured-",
+  "projectfolder": "missconfigured",
+  "command": [
+    {
+      "comment": "Find XML issues on the configuration file",
+      "type": "xml-issue"
+    },
+    {
+      "comment": "Find missconfigured address objects based on IPv4 name and value",
+      "type": "address",
+      "location": "location=any",
+      "actions": "actions=exporttoexcel:address-ipv4-missconfigured.html",
+      "shadow-ignoreInvalidAddressObjects": "shadow-ignoreInvalidAddressObjects",
+      "filter": "filter=(name regex /$$ipv4$$/ ) and !(value is.included-in.name)"
+    },
+    {
+      "comment": "Find missconfigured service objects based on TCP name and udp protocol",
+      "type": "service",
+      "location": "location=any",
+      "actions": "actions=exporttoexcel:service-TCP-missconfigured.html",
+      "shadow-ignoreInvalidAddressObjects": "shadow-ignoreInvalidAddressObjects",
+      "filter": "filter=((name regex /TCP/ ) or (name regex /tcp/) or (name regex /Tcp/)) and (object is.udp)"
+    },
+    {
+      "comment": "Find missconfigured service objects based on UDP name and tcp protocol",
+      "type": "service",
+      "location": "location=any",
+      "actions": "actions=exporttoexcel:service-UDP-missconfigured.html",
+      "shadow-ignoreInvalidAddressObjects": "shadow-ignoreInvalidAddressObjects",
+      "filter": "filter=((name regex /UDP/ ) or (name regex /udp/) or (name regex /Udp/)) and (object is.tcp)"
+    },
+    {
+      "comment": "Find duplicate address objects",
+      "type": "address-merger",
+      "location": "location=any",
+      "allowmergingwithupperlevel": "allowmergingwithupperlevel",
+      "exportcsv": "exportcsv=address-merger.html",
+      "shadow-ignoreInvalidAddressObjects": "shadow-ignoreInvalidAddressObjects"
+    },
+    {
+      "comment": "Find duplicate service objects",
+      "type": "service-merger",
+      "location": "location=any",
+      "allowmergingwithupperlevel": "allowmergingwithupperlevel",
+      "exportcsv": "exportcsv=service-merger.html",
+      "shadow-ignoreInvalidAddressObjects": "shadow-ignoreInvalidAddressObjects"
+    },
+    {
+      "comment": "Find duplicate security rules possible to be merged",
+      "type": "rule-merger",
+      "location": "location=any",
+
+      "exportcsv": "exportcsv=rule-merger.html",
+      "shadow-ignoreInvalidAddressObjects": "shadow-ignoreInvalidAddressObjects"
+    },
+    {
+      "comment": "merge all previously created html files into one Excel sheet",
+      "type": "html-merger"
+    }
+  ]
+}
+

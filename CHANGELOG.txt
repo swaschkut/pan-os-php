@@ -11,6 +11,7 @@ UTIL:
 * type=appid-toolbox - documentation correction
 * type=xml-issue - extend to find and fix service objects where multiple times same tag are configured
 * type=xml-issue | extend for autofix duplicate interface entries in all xpath ..../import/network/interface
+* type=playbook | introduce new JSON file: missconfiguration
 
 BUGFIX:
 * type=key-manager | bugfix for argument test=
