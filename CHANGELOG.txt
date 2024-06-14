@@ -17,6 +17,7 @@ BUGFIX:
 * type=key-manager | bugfix for argument test=
 * bugfix for PHP 8.3 - date_default_timezone_set behaviour error out in new PHP version, if timezoneid is not supported
 * class RuleWithGroupTAG - bugfix for util: type=rule actions=grouptag-set:XYZ
+* type=rule 'actions=copy:{DGname},pre' 'filter=(rule is.postrule)' | bugfix if copying rule from pre to post / post to pre
 
 GENERAL:
 * move docker workflow out of production
