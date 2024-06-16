@@ -22,6 +22,7 @@ class AntiSpywareProfile
     public $secprof_type;
 
     public $threatException = array();
+    public $rules = array();
 
     /**
      * you should not need this one for normal use
@@ -127,12 +128,14 @@ class AntiSpywareProfile
                         continue;
 
                     $tmp_array[$this->secprof_type][$this->name]['rules'][$vb_severity]['severity'] = array();
+                    $this->rules[$vb_severity]['severity'] = array();
                     foreach( $severity->childNodes as $member )
                     {
                         if( $member->nodeType != XML_ELEMENT_NODE )
                             continue;
 
                         $tmp_array[$this->secprof_type][$this->name]['rules'][$vb_severity]['severity'][$member->textContent] = $member->textContent;
+                        $this->rules[$vb_severity]['severity'][$member->textContent] = $member->textContent;
                     }
                 }
 
@@ -143,12 +146,14 @@ class AntiSpywareProfile
                         continue;
 
                     $tmp_array[$this->secprof_type][$this->name]['rules'][$vb_severity]['file-type'] = array();
+                    $this->rules[$vb_severity]['file-type'] = array();
                     foreach( $severity->childNodes as $member )
                     {
                         if( $member->nodeType != XML_ELEMENT_NODE )
                             continue;
 
                         $tmp_array[$this->secprof_type][$this->name]['rules'][$vb_severity]['file-type'][$member->textContent] = $member->textContent;
+                        $this->rules[$vb_severity]['file-type'][$member->textContent] = $member->textContent;
                     }
                 }
 
@@ -160,10 +165,17 @@ class AntiSpywareProfile
 
                     $tmp_action = DH::firstChildElement($action);
                     if( $tmp_action !== FALSE )
+                    {
                         $tmp_array[$this->secprof_type][$this->name]['rules'][$vb_severity]['action'] = $tmp_action->nodeName;
+                        $this->rules[$vb_severity]['action'] = $tmp_action->nodeName;
+                    }
 
                     if( $this->secprof_type == 'file-blocking' )
+                    {
                         $tmp_array[$this->secprof_type][$this->name]['rules'][$vb_severity]['action'] = $action->textContent;
+                        $this->rules[$vb_severity]['action'] = $action->textContent;
+                    }
+
                 }
 
                 $packet_capture = DH::findFirstElement('packet-capture', $tmp_entry1);
@@ -173,6 +185,7 @@ class AntiSpywareProfile
                         continue;
 
                     $tmp_array[$this->secprof_type][$this->name]['rules'][$vb_severity]['packet-capture'] = $packet_capture->textContent;
+                    $this->rules[$vb_severity]['packet-capture'] = $packet_capture->textContent;
                 }
 
                 $direction = DH::findFirstElement('direction', $tmp_entry1);
@@ -182,6 +195,7 @@ class AntiSpywareProfile
                         continue;
 
                     $tmp_array[$this->secprof_type][$this->name]['rules'][$vb_severity]['direction'] = $direction->textContent;
+                    $this->rules[$vb_severity]['direction'] = $direction->textContent;
                 }
 
                 $analysis = DH::findFirstElement('analysis', $tmp_entry1);
@@ -191,6 +205,7 @@ class AntiSpywareProfile
                         continue;
 
                     $tmp_array[$this->secprof_type][$this->name]['rules'][$vb_severity]['analysis'] = $analysis->textContent;
+                    $this->rules[$vb_severity]['analysis'] = $analysis->textContent;
                 }
             }
         }
@@ -234,8 +249,43 @@ class AntiSpywareProfile
         PH::$JSON_TMP['sub']['object'][$this->name()]['name'] = $this->name();
         PH::$JSON_TMP['sub']['object'][$this->name()]['type'] = get_class($this);
 
-        PH::print_stdout();
+        #PH::print_stdout();
         //Todo: continue for display out
+
+        if( !empty( $this->rules ) )
+        {
+            PH::print_stdout("        - rules:");
+
+            foreach ($this->rules as $rulename => $rule)
+            {
+                $string = "";
+                #PH::print_stdout("          * '".$rulename."':");
+                $string .= "          '".$rulename."':";
+
+                if( isset( $rule['severity'] ) )
+                {
+                    #PH::print_stdout("             severity: '".implode(",", $rule['severity'])."'");
+                    $string .= " - severity: '".implode(",", $rule['severity'])."'";
+                    PH::$JSON_TMP['sub']['object'][$this->name()]['rule'][$rulename]['severity'] = implode(",", $rule['severity']);
+                }
+
+                if( isset( $rule['action'] ) )
+                {
+                    #PH::print_stdout("             action: '".$rule['action']."'");
+                    $string .= " - action: '".$rule['action']."'";
+                    PH::$JSON_TMP['sub']['object'][$this->name()]['rule'][$rulename]['action'] = $rule['action'];
+                }
+
+                if( isset( $rule['packet-capture'] ) )
+                {
+                    #PH::print_stdout("             packet-capture: '".$rule['packet-capture']."'");
+                    $string .= " - packet-capture: '".$rule['packet-capture']."'";
+                    PH::$JSON_TMP['sub']['object'][$this->name()]['rule'][$rulename]['packet-capture'] = $rule['packet-capture'];
+                }
+                #print_r($rule);
+                PH::print_stdout( $string );
+            }
+        }
 
         if( !empty( $this->threatException ) )
         {
@@ -248,7 +298,7 @@ class AntiSpywareProfile
                 $string = "             '" . $threat['name'] . "'";
                 if( isset( $threat['action'] ) )
                 {
-                    $string .= "  - action : ".$threat['action'];
+                    $string .= "  - action : '".$threat['action']."'";
                     PH::$JSON_TMP['sub']['object'][$this->name()]['threat-exception'][$threatname]['action'] = $threat['action'];
                 }
 
