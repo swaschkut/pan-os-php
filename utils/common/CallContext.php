@@ -303,10 +303,12 @@ class CallContext
                 else
                     $first = FALSE;
 
-                if( is_string($subValue) )
+                if( is_string($subValue) || is_numeric($subValue) )
                     $output .= htmlspecialchars($subValue);
-                else
+                elseif( is_object($subValue) )
                     $output .= htmlspecialchars($subValue->name());
+                else
+                    $output .= "";
             }
         }
         elseif( is_object($value) )

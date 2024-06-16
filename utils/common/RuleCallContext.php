@@ -265,7 +265,7 @@ class RuleCallContext extends CallContext
                 else
                     $first = FALSE;
 
-                if( is_string($subValue) )
+                if( is_string($subValue) || is_numeric($subValue) )
                     $output .= htmlspecialchars($subValue);
                 elseif( is_object($subValue) )
                     $output .= htmlspecialchars($subValue->name());

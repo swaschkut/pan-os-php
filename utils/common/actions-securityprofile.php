@@ -460,7 +460,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
 
 
         #$headers = '<th>location</th><th>name</th><th>type</th><th>value</th><th>description</th><th>tags</th>';
-        $headers = '<th>ID</th><th>location</th><th>name</th><th>store</th><th>type</th><th>exception</th><th>members</th>';
+        $headers = '<th>ID</th><th>location</th><th>name</th><th>store</th><th>type</th><th>rules</th><th>exception</th><th>members</th>';
 
 
         if( $addWhereUsed )
@@ -509,6 +509,19 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 else
                     $lines .= $context->encloseFunction(get_class($object) );
 
+                if( !empty( $object->rules ) )
+                {
+                    $tmp_array = array();
+                    foreach( $object->rules as $rulename => $rule )
+                        $tmp_array[] = "'".$rulename."' | ". implode( ",", $rule['severity'] )." - ".$rule['action']." - ".$rule['packet-capture'];
+
+                    #$string = implode( "'<br />'", $tmp_array);
+                    #$lines .= $context->encloseFunction( $string );
+                    $lines .= $context->encloseFunction( $tmp_array );
+                }
+                else
+                    $lines .= $context->encloseFunction('');
+
                 #$lines .= $context->encloseFunction($object->value());
                 if( !empty( $object->threatException ) )
                 {
@@ -516,8 +529,9 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     foreach( $object->threatException as $threatname => $threat )
                         $tmp_array[] = $threatname;
 
-                    $string = implode( ",", $tmp_array);
-                    $lines .= $context->encloseFunction( $string );
+                    #$string = implode( ",", $tmp_array);
+                    #$lines .= $context->encloseFunction( $string );
+                    $lines .= $context->encloseFunction( $tmp_array );
                 }
                 else
                     $lines .= $context->encloseFunction('');

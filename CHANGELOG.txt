@@ -13,6 +13,7 @@ UTIL:
 * type=xml-issue | extend for autofix duplicate interface entries in all xpath ..../import/network/interface
 * type=playbook | introduce new JSON file: missconfiguration
 * type=securityprofile securityprofiletype=spyware actions=display - extend output with spyware rule information about severity, action and packet-caputre settings
+* type=securityprofile securityprofiletype=spyware actions=exporttoexcel:file.html | exstend with detail rules output
 
 BUGFIX:
 * type=key-manager | bugfix for argument test=
