@@ -677,32 +677,17 @@ class PANConf
                     }
                     catch(Exception $e)
                     {
-                        $timezoneArray = explode( "/", $this->timezone );
-                        PH::print_stdout( " X Timezone: $timezone->textContent is not supported with this PHP version. UTC is used." );
+                        $timezone_backward = PH::timezone_backward_migration( $this->timezone );
+                        $this->timezone = $timezone_backward;
+                        date_default_timezone_set($timezone_backward);
+
+                        PH::print_stdout("   --------------");
+                        PH::print_stdout( " X Timezone: $timezone->textContent is not supported with this PHP version. ".$this->timezone." is used." );
                         PH::print_stdout("   - the timezone is IANA deprecated. Please change to a supported one:");
-                        $this->timezone = "UTC";
 
-                        static $regions = array(
-                            'Africa' => DateTimeZone::AFRICA,
-                            'America' => DateTimeZone::AMERICA,
-                            'Antarctica' => DateTimeZone::ANTARCTICA,
-                            'Arctic' => DateTimeZone::ARCTIC,
-                            'Asia' => DateTimeZone::ASIA,
-                            'Atlantic' => DateTimeZone::ATLANTIC,
-                            'Australia' => DateTimeZone::AUSTRALIA,
-                            'Europe' => DateTimeZone::EUROPE,
-                            'Indian' => DateTimeZone::INDIAN,
-                            'Pacific' => DateTimeZone::PACIFIC
-                        );
 
-                        //supported Timezone
-                        $tzlist = DateTimeZone::listIdentifiers($regions[$timezoneArray[0]]);
                         PH::print_stdout();
-                        PH::print_stdout("   -- available IANA timezones: ");
-                        foreach( $tzlist as $tz )
-                        {
-                            PH::print_stdout( "   * ".$tz );
-                        }
+                        PH::print_stdout("   -- '".$this->timezone."'");
                         PH::print_stdout("   --------------");
                         PH::print_stdout();
                     }

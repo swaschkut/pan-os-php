@@ -1222,4 +1222,20 @@ class PH
 
         return $finding;
     }
+
+    public static function timezone_backward_migration( $timezoneID )
+    {
+        $timezone_backward = array();
+        $filename = dirname(__FILE__) . '/timezone/timezone_backward.json';
+
+        $json = file_get_contents($filename);
+
+        $timezone_backward = json_decode($json,true);
+        #print_r( $timezone_backward );
+
+        if( isset( $timezone_backward[$timezoneID] ) )
+            return $timezone_backward[$timezoneID];
+
+        return null;
+    }
 }
