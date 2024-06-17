@@ -129,11 +129,12 @@ These UTIL scripts can help to manipulate/improve PAN-OS config files or help au
 APP-ID ToolBox
 ---
 These script are available since 2016 and were the first automatic Palo Alto Networks APP-id migration tools.
-- pa_appidtoolbox-report-generator
-- pa_appidtoolbox-rule-activation
-- pa_appidtoolbox-rule-cleaner
-- pa_appidtoolbox-rule-cloner
-- pa_appidtoolbox-rule-marker
+- pan-os-php type=appid-toolbox phase=rule-marker
+- pan-os-php type=appid-toolbox phase=report-generator
+- pan-os-php type=appid-toolbox phase=rule-activation
+- pan-os-php type=appid-toolbox phase=rule-cleaner
+- pan-os-php type=appid-toolbox phase=rule-cloner
+
 
 UTIL scripts under Development
 ---

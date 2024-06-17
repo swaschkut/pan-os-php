@@ -58,10 +58,9 @@ with pd.ExcelWriter(excelfile) as writer:
             # Clean the break characters and replace them with ", "
             breakStrip = html_file.replace('<br />',', ')
             cleaned_file = pd.read_html(StringIO(breakStrip))
-            #html_file = pd.read_html(f'{srcFile}')
             shortname=file_str.strip(".html")
             # Create worksheets per HTML file within the Excel File
             print("Stripping text from "+str(shortname)+". Worksheet name is "+shortname)
             for df in cleaned_file:
-                print("Writing sheet "+shortname+" to workbook "+str(excelfile))
+                print("Writing sheet "+shortname+" to workbook "+str(excelfilename))
                 df.to_excel(writer, sheet_name=shortname)
