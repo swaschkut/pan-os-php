@@ -31,6 +31,8 @@ class RuleCallContext extends CallContext
     public $cachedList;
 
     public $mergeArray;
+    public $newdoc;
+    public $rule;
 
     static public function prepareSupportedActions()
     {
@@ -263,7 +265,7 @@ class RuleCallContext extends CallContext
                 else
                     $first = FALSE;
 
-                if( is_string($subValue) )
+                if( is_string($subValue) || is_numeric($subValue) )
                     $output .= htmlspecialchars($subValue);
                 elseif( is_object($subValue) )
                     $output .= htmlspecialchars($subValue->name());
@@ -271,8 +273,14 @@ class RuleCallContext extends CallContext
                     $output .= "";
             }
         }
+        elseif( is_numeric($value) )
+            $output = htmlspecialchars(strval($value));
         else
-            derr('unsupported');
+        {
+            var_dump($value);
+            derr('ExportToExcel enclose() - unsupported value of type: '.get_class($value));
+        }
+
 
         if( $nowrap )
             return '<td style="white-space: nowrap">' . $output . '</td>';
@@ -803,7 +811,7 @@ class RuleCallContext extends CallContext
             else
                 return self::enclose( "" );
         }
-        return self::enclose("unsupported: '$fieldName'");
+        return self::enclose("unsupported fieldname: '$fieldName'");
 
     }
 

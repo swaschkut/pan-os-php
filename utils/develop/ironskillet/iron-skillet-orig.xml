@@ -1,0 +1,1882 @@
+<?xml version="1.0"?>
+<config version="10.2.0" urldb="paloaltonetworks" detail-version="10.2.8">
+  <mgt-config>
+    <devices/>
+    <users>
+      <entry name="admin">
+        <phash>$5$ejluwres$ysEPTN9mmUX1qrynsyvO4hX1umrHqThcYov8fcJVvEB</phash>
+        <permissions>
+          <role-based>
+            <superuser>yes</superuser>
+          </role-based>
+        </permissions>
+      </entry>
+      <entry name="admin2">
+        <phash>$1$bgnqjgob$HmenJzuuUAYmETzsMcdfJ/</phash>
+        <permissions>
+          <role-based>
+            <superuser>yes</superuser>
+          </role-based>
+        </permissions>
+      </entry>
+    </users>
+    <password-complexity>
+      <enabled>yes</enabled>
+      <minimum-length>12</minimum-length>
+      <minimum-uppercase-letters>1</minimum-uppercase-letters>
+      <minimum-lowercase-letters>1</minimum-lowercase-letters>
+      <minimum-numeric-letters>1</minimum-numeric-letters>
+      <minimum-special-characters>1</minimum-special-characters>
+      <block-username-inclusion>yes</block-username-inclusion>
+      <password-history-count>24</password-history-count>
+      <new-password-differs-by-characters>3</new-password-differs-by-characters>
+    </password-complexity>
+  </mgt-config>
+  <shared>
+    <address/>
+    <address-group/>
+    <service/>
+    <service-group/>
+    <application/>
+    <application-filter/>
+    <application-group/>
+    <profiles>
+      <custom-url-category>
+        <entry name="Block">
+          <type>URL List</type>
+        </entry>
+        <entry name="Allow">
+          <type>URL List</type>
+        </entry>
+        <entry name="Custom-No-Decrypt">
+          <type>URL List</type>
+        </entry>
+      </custom-url-category>
+      <decryption>
+        <entry name="Recommended_Decryption_Profile">
+          <ssl-forward-proxy>
+            <block-expired-certificate>yes</block-expired-certificate>
+            <block-untrusted-issuer>yes</block-untrusted-issuer>
+            <block-unknown-cert>yes</block-unknown-cert>
+            <block-timeout-cert>yes</block-timeout-cert>
+            <block-unsupported-version>yes</block-unsupported-version>
+            <block-unsupported-cipher>yes</block-unsupported-cipher>
+          </ssl-forward-proxy>
+          <ssl-no-proxy>
+            <block-expired-certificate>yes</block-expired-certificate>
+            <block-untrusted-issuer>yes</block-untrusted-issuer>
+          </ssl-no-proxy>
+          <ssl-inbound-proxy>
+            <block-unsupported-version>no</block-unsupported-version>
+            <block-unsupported-cipher>no</block-unsupported-cipher>
+          </ssl-inbound-proxy>
+          <ssh-proxy>
+            <block-unsupported-version>yes</block-unsupported-version>
+            <block-unsupported-alg>yes</block-unsupported-alg>
+          </ssh-proxy>
+          <ssl-protocol-settings>
+            <min-version>tls1-2</min-version>
+            <max-version>tls1-3</max-version>
+            <keyxchg-algo-rsa>no</keyxchg-algo-rsa>
+            <enc-algo-3des>no</enc-algo-3des>
+            <enc-algo-rc4>no</enc-algo-rc4>
+            <auth-algo-sha1>no</auth-algo-sha1>
+          </ssl-protocol-settings>
+        </entry>
+      </decryption>
+      <virus>
+        <entry name="Alert-Only-AV">
+          <decoder>
+            <entry name="ftp">
+              <action>alert</action>
+              <wildfire-action>alert</wildfire-action>
+              <mlav-action>alert</mlav-action>
+            </entry>
+            <entry name="http">
+              <action>alert</action>
+              <wildfire-action>alert</wildfire-action>
+              <mlav-action>alert</mlav-action>
+            </entry>
+            <entry name="http2">
+              <action>alert</action>
+              <wildfire-action>alert</wildfire-action>
+              <mlav-action>alert</mlav-action>
+            </entry>
+            <entry name="imap">
+              <action>alert</action>
+              <wildfire-action>alert</wildfire-action>
+              <mlav-action>alert</mlav-action>
+            </entry>
+            <entry name="pop3">
+              <action>alert</action>
+              <wildfire-action>alert</wildfire-action>
+              <mlav-action>alert</mlav-action>
+            </entry>
+            <entry name="smb">
+              <action>alert</action>
+              <wildfire-action>alert</wildfire-action>
+              <mlav-action>alert</mlav-action>
+            </entry>
+            <entry name="smtp">
+              <action>alert</action>
+              <wildfire-action>alert</wildfire-action>
+              <mlav-action>alert</mlav-action>
+            </entry>
+          </decoder>
+          <mlav-engine-filebased-enabled>
+            <entry name="Windows Executables">
+              <mlav-policy-action>enable(alert-only)</mlav-policy-action>
+            </entry>
+            <entry name="PowerShell Script 1">
+              <mlav-policy-action>enable(alert-only)</mlav-policy-action>
+            </entry>
+            <entry name="PowerShell Script 2">
+              <mlav-policy-action>enable(alert-only)</mlav-policy-action>
+            </entry>
+            <entry name="Executable Linked Format">
+              <mlav-policy-action>enable(alert-only)</mlav-policy-action>
+            </entry>
+            <entry name="MSOffice">
+              <mlav-policy-action>enable(alert-only)</mlav-policy-action>
+            </entry>
+            <entry name="Shell">
+              <mlav-policy-action>enable(alert-only)</mlav-policy-action>
+            </entry>
+          </mlav-engine-filebased-enabled>
+        </entry>
+        <entry name="Outbound-AV">
+          <decoder>
+            <entry name="ftp">
+              <action>reset-both</action>
+              <wildfire-action>reset-both</wildfire-action>
+              <mlav-action>reset-both</mlav-action>
+            </entry>
+            <entry name="http">
+              <action>reset-both</action>
+              <wildfire-action>reset-both</wildfire-action>
+              <mlav-action>reset-both</mlav-action>
+            </entry>
+            <entry name="http2">
+              <action>reset-both</action>
+              <wildfire-action>reset-both</wildfire-action>
+              <mlav-action>reset-both</mlav-action>
+            </entry>
+            <entry name="imap">
+              <action>reset-both</action>
+              <wildfire-action>reset-both</wildfire-action>
+              <mlav-action>reset-both</mlav-action>
+            </entry>
+            <entry name="pop3">
+              <action>reset-both</action>
+              <wildfire-action>reset-both</wildfire-action>
+              <mlav-action>reset-both</mlav-action>
+            </entry>
+            <entry name="smb">
+              <action>reset-both</action>
+              <wildfire-action>reset-both</wildfire-action>
+              <mlav-action>reset-both</mlav-action>
+            </entry>
+            <entry name="smtp">
+              <action>reset-both</action>
+              <wildfire-action>reset-both</wildfire-action>
+              <mlav-action>reset-both</mlav-action>
+            </entry>
+          </decoder>
+          <mlav-engine-filebased-enabled>
+            <entry name="Windows Executables">
+              <mlav-policy-action>enable</mlav-policy-action>
+            </entry>
+            <entry name="PowerShell Script 1">
+              <mlav-policy-action>enable</mlav-policy-action>
+            </entry>
+            <entry name="PowerShell Script 2">
+              <mlav-policy-action>enable</mlav-policy-action>
+            </entry>
+            <entry name="Executable Linked Format">
+              <mlav-policy-action>enable</mlav-policy-action>
+            </entry>
+            <entry name="MSOffice">
+              <mlav-policy-action>enable</mlav-policy-action>
+            </entry>
+            <entry name="Shell">
+              <mlav-policy-action>enable</mlav-policy-action>
+            </entry>
+          </mlav-engine-filebased-enabled>
+        </entry>
+        <entry name="Inbound-AV">
+          <decoder>
+            <entry name="ftp">
+              <action>reset-both</action>
+              <wildfire-action>reset-both</wildfire-action>
+              <mlav-action>reset-both</mlav-action>
+            </entry>
+            <entry name="http">
+              <action>reset-both</action>
+              <wildfire-action>reset-both</wildfire-action>
+              <mlav-action>reset-both</mlav-action>
+            </entry>
+            <entry name="http2">
+              <action>reset-both</action>
+              <wildfire-action>reset-both</wildfire-action>
+              <mlav-action>reset-both</mlav-action>
+            </entry>
+            <entry name="imap">
+              <action>reset-both</action>
+              <wildfire-action>reset-both</wildfire-action>
+              <mlav-action>reset-both</mlav-action>
+            </entry>
+            <entry name="pop3">
+              <action>reset-both</action>
+              <wildfire-action>reset-both</wildfire-action>
+              <mlav-action>reset-both</mlav-action>
+            </entry>
+            <entry name="smb">
+              <action>reset-both</action>
+              <wildfire-action>reset-both</wildfire-action>
+              <mlav-action>reset-both</mlav-action>
+            </entry>
+            <entry name="smtp">
+              <action>reset-both</action>
+              <wildfire-action>reset-both</wildfire-action>
+              <mlav-action>reset-both</mlav-action>
+            </entry>
+          </decoder>
+          <mlav-engine-filebased-enabled>
+            <entry name="Windows Executables">
+              <mlav-policy-action>enable</mlav-policy-action>
+            </entry>
+            <entry name="PowerShell Script 1">
+              <mlav-policy-action>enable</mlav-policy-action>
+            </entry>
+            <entry name="PowerShell Script 2">
+              <mlav-policy-action>enable</mlav-policy-action>
+            </entry>
+            <entry name="Executable Linked Format">
+              <mlav-policy-action>enable</mlav-policy-action>
+            </entry>
+            <entry name="MSOffice">
+              <mlav-policy-action>enable</mlav-policy-action>
+            </entry>
+            <entry name="Shell">
+              <mlav-policy-action>enable</mlav-policy-action>
+            </entry>
+          </mlav-engine-filebased-enabled>
+        </entry>
+        <entry name="Internal-AV">
+          <decoder>
+            <entry name="ftp">
+              <action>reset-both</action>
+              <wildfire-action>reset-both</wildfire-action>
+              <mlav-action>reset-both</mlav-action>
+            </entry>
+            <entry name="http">
+              <action>reset-both</action>
+              <wildfire-action>reset-both</wildfire-action>
+              <mlav-action>reset-both</mlav-action>
+            </entry>
+            <entry name="http2">
+              <action>reset-both</action>
+              <wildfire-action>reset-both</wildfire-action>
+              <mlav-action>reset-both</mlav-action>
+            </entry>
+            <entry name="imap">
+              <action>reset-both</action>
+              <wildfire-action>reset-both</wildfire-action>
+              <mlav-action>reset-both</mlav-action>
+            </entry>
+            <entry name="pop3">
+              <action>reset-both</action>
+              <wildfire-action>reset-both</wildfire-action>
+              <mlav-action>reset-both</mlav-action>
+            </entry>
+            <entry name="smb">
+              <action>reset-both</action>
+              <wildfire-action>reset-both</wildfire-action>
+              <mlav-action>reset-both</mlav-action>
+            </entry>
+            <entry name="smtp">
+              <action>reset-both</action>
+              <wildfire-action>reset-both</wildfire-action>
+              <mlav-action>reset-both</mlav-action>
+            </entry>
+          </decoder>
+          <mlav-engine-filebased-enabled>
+            <entry name="Windows Executables">
+              <mlav-policy-action>enable</mlav-policy-action>
+            </entry>
+            <entry name="PowerShell Script 1">
+              <mlav-policy-action>enable</mlav-policy-action>
+            </entry>
+            <entry name="PowerShell Script 2">
+              <mlav-policy-action>enable</mlav-policy-action>
+            </entry>
+            <entry name="Executable Linked Format">
+              <mlav-policy-action>enable</mlav-policy-action>
+            </entry>
+            <entry name="MSOffice">
+              <mlav-policy-action>enable</mlav-policy-action>
+            </entry>
+            <entry name="Shell">
+              <mlav-policy-action>enable</mlav-policy-action>
+            </entry>
+          </mlav-engine-filebased-enabled>
+        </entry>
+      </virus>
+      <spyware>
+        <entry name="Outbound-AS">
+          <botnet-domains>
+            <lists>
+              <entry name="default-paloalto-dns">
+                <packet-capture>single-packet</packet-capture>
+              </entry>
+            </lists>
+            <dns-security-categories>
+              <entry name="pan-dns-sec-benign">
+                <log-level>default</log-level>
+                <action>default</action>
+                <packet-capture>disable</packet-capture>
+              </entry>
+              <entry name="pan-dns-sec-cc">
+                <log-level>default</log-level>
+                <action>sinkhole</action>
+                <packet-capture>single-packet</packet-capture>
+              </entry>
+              <entry name="pan-dns-sec-ddns">
+                <log-level>default</log-level>
+                <action>default</action>
+                <packet-capture>single-packet</packet-capture>
+              </entry>
+              <entry name="pan-dns-sec-grayware">
+                <log-level>default</log-level>
+                <action>sinkhole</action>
+                <packet-capture>single-packet</packet-capture>
+              </entry>
+              <entry name="pan-dns-sec-parked">
+                <log-level>default</log-level>
+                <action>default</action>
+                <packet-capture>disable</packet-capture>
+              </entry>
+              <entry name="pan-dns-sec-phishing">
+                <log-level>default</log-level>
+                <action>sinkhole</action>
+                <packet-capture>single-packet</packet-capture>
+              </entry>
+              <entry name="pan-dns-sec-proxy">
+                <log-level>default</log-level>
+                <action>sinkhole</action>
+                <packet-capture>single-packet</packet-capture>
+              </entry>
+              <entry name="pan-dns-sec-malware">
+                <log-level>default</log-level>
+                <action>sinkhole</action>
+                <packet-capture>single-packet</packet-capture>
+              </entry>
+              <entry name="pan-dns-sec-recent">
+                <log-level>default</log-level>
+                <action>default</action>
+                <packet-capture>single-packet</packet-capture>
+              </entry>
+            </dns-security-categories>
+          </botnet-domains>
+          <rules>
+            <entry name="Block-Critical-High-Medium">
+              <action>
+                <reset-both/>
+              </action>
+              <severity>
+                <member>critical</member>
+                <member>high</member>
+                <member>medium</member>
+              </severity>
+              <threat-name>any</threat-name>
+              <category>any</category>
+              <packet-capture>single-packet</packet-capture>
+            </entry>
+            <entry name="Default-Low-Info">
+              <action>
+                <default/>
+              </action>
+              <severity>
+                <member>low</member>
+                <member>informational</member>
+              </severity>
+              <threat-name>any</threat-name>
+              <category>any</category>
+              <packet-capture>disable</packet-capture>
+            </entry>
+          </rules>
+          <cloud-inline-analysis>yes</cloud-inline-analysis>
+          <mica-engine-spyware-enabled>
+            <entry name="HTTP Command and Control detector">
+              <inline-policy-action>reset-both</inline-policy-action>
+            </entry>
+            <entry name="HTTP2 Command and Control detector">
+              <inline-policy-action>reset-both</inline-policy-action>
+            </entry>
+            <entry name="SSL Command and Control detector">
+              <inline-policy-action>reset-both</inline-policy-action>
+            </entry>
+            <entry name="Unknown-TCP Command and Control detector">
+              <inline-policy-action>reset-both</inline-policy-action>
+            </entry>
+            <entry name="Unknown-UDP Command and Control detector">
+              <inline-policy-action>reset-both</inline-policy-action>
+            </entry>
+          </mica-engine-spyware-enabled>
+        </entry>
+        <entry name="Inbound-AS">
+          <botnet-domains>
+            <lists>
+              <entry name="default-paloalto-dns">
+                <packet-capture>single-packet</packet-capture>
+              </entry>
+            </lists>
+            <dns-security-categories>
+              <entry name="pan-dns-sec-benign">
+                <log-level>default</log-level>
+                <action>default</action>
+                <packet-capture>disable</packet-capture>
+              </entry>
+              <entry name="pan-dns-sec-cc">
+                <log-level>default</log-level>
+                <action>sinkhole</action>
+                <packet-capture>single-packet</packet-capture>
+              </entry>
+              <entry name="pan-dns-sec-ddns">
+                <log-level>default</log-level>
+                <action>default</action>
+                <packet-capture>single-packet</packet-capture>
+              </entry>
+              <entry name="pan-dns-sec-grayware">
+                <log-level>default</log-level>
+                <action>sinkhole</action>
+                <packet-capture>single-packet</packet-capture>
+              </entry>
+              <entry name="pan-dns-sec-parked">
+                <log-level>default</log-level>
+                <action>default</action>
+                <packet-capture>disable</packet-capture>
+              </entry>
+              <entry name="pan-dns-sec-phishing">
+                <log-level>default</log-level>
+                <action>sinkhole</action>
+                <packet-capture>single-packet</packet-capture>
+              </entry>
+              <entry name="pan-dns-sec-proxy">
+                <log-level>default</log-level>
+                <action>sinkhole</action>
+                <packet-capture>single-packet</packet-capture>
+              </entry>
+              <entry name="pan-dns-sec-malware">
+                <log-level>default</log-level>
+                <action>sinkhole</action>
+                <packet-capture>single-packet</packet-capture>
+              </entry>
+              <entry name="pan-dns-sec-recent">
+                <log-level>default</log-level>
+                <action>default</action>
+                <packet-capture>single-packet</packet-capture>
+              </entry>
+            </dns-security-categories>
+          </botnet-domains>
+          <rules>
+            <entry name="Block-Critical-High-Medium">
+              <action>
+                <reset-both/>
+              </action>
+              <severity>
+                <member>high</member>
+                <member>critical</member>
+                <member>medium</member>
+              </severity>
+              <threat-name>any</threat-name>
+              <category>any</category>
+              <packet-capture>single-packet</packet-capture>
+            </entry>
+            <entry name="Default-Low-Info">
+              <action>
+                <default/>
+              </action>
+              <severity>
+                <member>low</member>
+                <member>informational</member>
+              </severity>
+              <threat-name>any</threat-name>
+              <category>any</category>
+              <packet-capture>disable</packet-capture>
+            </entry>
+          </rules>
+          <cloud-inline-analysis>yes</cloud-inline-analysis>
+          <mica-engine-spyware-enabled>
+            <entry name="HTTP Command and Control detector">
+              <inline-policy-action>reset-both</inline-policy-action>
+            </entry>
+            <entry name="HTTP2 Command and Control detector">
+              <inline-policy-action>reset-both</inline-policy-action>
+            </entry>
+            <entry name="SSL Command and Control detector">
+              <inline-policy-action>reset-both</inline-policy-action>
+            </entry>
+            <entry name="Unknown-TCP Command and Control detector">
+              <inline-policy-action>reset-both</inline-policy-action>
+            </entry>
+            <entry name="Unknown-UDP Command and Control detector">
+              <inline-policy-action>reset-both</inline-policy-action>
+            </entry>
+          </mica-engine-spyware-enabled>
+        </entry>
+        <entry name="Internal-AS">
+          <botnet-domains>
+            <lists>
+              <entry name="default-paloalto-dns">
+                <packet-capture>single-packet</packet-capture>
+              </entry>
+            </lists>
+            <dns-security-categories>
+              <entry name="pan-dns-sec-benign">
+                <log-level>default</log-level>
+                <action>default</action>
+                <packet-capture>disable</packet-capture>
+              </entry>
+              <entry name="pan-dns-sec-cc">
+                <log-level>default</log-level>
+                <action>sinkhole</action>
+                <packet-capture>single-packet</packet-capture>
+              </entry>
+              <entry name="pan-dns-sec-ddns">
+                <log-level>default</log-level>
+                <action>default</action>
+                <packet-capture>single-packet</packet-capture>
+              </entry>
+              <entry name="pan-dns-sec-grayware">
+                <log-level>default</log-level>
+                <action>sinkhole</action>
+                <packet-capture>single-packet</packet-capture>
+              </entry>
+              <entry name="pan-dns-sec-parked">
+                <log-level>default</log-level>
+                <action>default</action>
+                <packet-capture>disable</packet-capture>
+              </entry>
+              <entry name="pan-dns-sec-phishing">
+                <log-level>default</log-level>
+                <action>sinkhole</action>
+                <packet-capture>single-packet</packet-capture>
+              </entry>
+              <entry name="pan-dns-sec-proxy">
+                <log-level>default</log-level>
+                <action>sinkhole</action>
+                <packet-capture>single-packet</packet-capture>
+              </entry>
+              <entry name="pan-dns-sec-malware">
+                <log-level>default</log-level>
+                <action>sinkhole</action>
+                <packet-capture>single-packet</packet-capture>
+              </entry>
+              <entry name="pan-dns-sec-recent">
+                <log-level>default</log-level>
+                <action>default</action>
+                <packet-capture>single-packet</packet-capture>
+              </entry>
+            </dns-security-categories>
+          </botnet-domains>
+          <rules>
+            <entry name="Block-Critical-High">
+              <action>
+                <reset-both/>
+              </action>
+              <severity>
+                <member>high</member>
+                <member>critical</member>
+              </severity>
+              <threat-name>any</threat-name>
+              <category>any</category>
+              <packet-capture>single-packet</packet-capture>
+            </entry>
+            <entry name="Default-Medium-Low-Info">
+              <action>
+                <default/>
+              </action>
+              <severity>
+                <member>low</member>
+                <member>informational</member>
+                <member>medium</member>
+              </severity>
+              <threat-name>any</threat-name>
+              <category>any</category>
+              <packet-capture>disable</packet-capture>
+            </entry>
+          </rules>
+          <cloud-inline-analysis>yes</cloud-inline-analysis>
+          <mica-engine-spyware-enabled>
+            <entry name="HTTP Command and Control detector">
+              <inline-policy-action>reset-both</inline-policy-action>
+            </entry>
+            <entry name="HTTP2 Command and Control detector">
+              <inline-policy-action>reset-both</inline-policy-action>
+            </entry>
+            <entry name="SSL Command and Control detector">
+              <inline-policy-action>reset-both</inline-policy-action>
+            </entry>
+            <entry name="Unknown-TCP Command and Control detector">
+              <inline-policy-action>reset-both</inline-policy-action>
+            </entry>
+            <entry name="Unknown-UDP Command and Control detector">
+              <inline-policy-action>reset-both</inline-policy-action>
+            </entry>
+          </mica-engine-spyware-enabled>
+        </entry>
+        <entry name="Alert-Only-AS">
+          <botnet-domains>
+            <lists>
+              <entry name="default-paloalto-dns">
+                <packet-capture>disable</packet-capture>
+                <action>
+                  <alert/>
+                </action>
+              </entry>
+            </lists>
+            <dns-security-categories>
+              <entry name="pan-dns-sec-benign">
+                <log-level>default</log-level>
+                <action>allow</action>
+                <packet-capture>disable</packet-capture>
+              </entry>
+              <entry name="pan-dns-sec-cc">
+                <log-level>default</log-level>
+                <action>allow</action>
+                <packet-capture>single-packet</packet-capture>
+              </entry>
+              <entry name="pan-dns-sec-ddns">
+                <log-level>default</log-level>
+                <action>allow</action>
+                <packet-capture>single-packet</packet-capture>
+              </entry>
+              <entry name="pan-dns-sec-grayware">
+                <log-level>default</log-level>
+                <action>allow</action>
+                <packet-capture>single-packet</packet-capture>
+              </entry>
+              <entry name="pan-dns-sec-parked">
+                <log-level>default</log-level>
+                <action>allow</action>
+                <packet-capture>single-packet</packet-capture>
+              </entry>
+              <entry name="pan-dns-sec-phishing">
+                <log-level>default</log-level>
+                <action>allow</action>
+                <packet-capture>single-packet</packet-capture>
+              </entry>
+              <entry name="pan-dns-sec-proxy">
+                <log-level>default</log-level>
+                <action>allow</action>
+                <packet-capture>single-packet</packet-capture>
+              </entry>
+              <entry name="pan-dns-sec-malware">
+                <log-level>default</log-level>
+                <action>allow</action>
+                <packet-capture>single-packet</packet-capture>
+              </entry>
+              <entry name="pan-dns-sec-recent">
+                <log-level>default</log-level>
+                <action>allow</action>
+                <packet-capture>single-packet</packet-capture>
+              </entry>
+            </dns-security-categories>
+          </botnet-domains>
+          <rules>
+            <entry name="Alert-All">
+              <action>
+                <alert/>
+              </action>
+              <severity>
+                <member>any</member>
+              </severity>
+              <threat-name>any</threat-name>
+              <category>any</category>
+              <packet-capture>disable</packet-capture>
+            </entry>
+          </rules>
+          <cloud-inline-analysis>yes</cloud-inline-analysis>
+          <mica-engine-spyware-enabled>
+            <entry name="HTTP Command and Control detector">
+              <inline-policy-action>alert</inline-policy-action>
+            </entry>
+            <entry name="HTTP2 Command and Control detector">
+              <inline-policy-action>alert</inline-policy-action>
+            </entry>
+            <entry name="SSL Command and Control detector">
+              <inline-policy-action>alert</inline-policy-action>
+            </entry>
+            <entry name="Unknown-TCP Command and Control detector">
+              <inline-policy-action>alert</inline-policy-action>
+            </entry>
+            <entry name="Unknown-UDP Command and Control detector">
+              <inline-policy-action>alert</inline-policy-action>
+            </entry>
+          </mica-engine-spyware-enabled>
+        </entry>
+      </spyware>
+      <vulnerability>
+        <entry name="Outbound-VP">
+          <rules>
+            <entry name="Block-Critical-High-Medium">
+              <action>
+                <reset-both/>
+              </action>
+              <vendor-id>
+                <member>any</member>
+              </vendor-id>
+              <severity>
+                <member>critical</member>
+                <member>high</member>
+                <member>medium</member>
+              </severity>
+              <cve>
+                <member>any</member>
+              </cve>
+              <threat-name>any</threat-name>
+              <host>any</host>
+              <category>any</category>
+              <packet-capture>single-packet</packet-capture>
+            </entry>
+            <entry name="Default-Low-Info">
+              <action>
+                <default/>
+              </action>
+              <vendor-id>
+                <member>any</member>
+              </vendor-id>
+              <severity>
+                <member>low</member>
+                <member>informational</member>
+              </severity>
+              <cve>
+                <member>any</member>
+              </cve>
+              <threat-name>any</threat-name>
+              <host>any</host>
+              <category>any</category>
+              <packet-capture>disable</packet-capture>
+            </entry>
+          </rules>
+        </entry>
+        <entry name="Inbound-VP">
+          <rules>
+            <entry name="Block-Critical-High-Medium">
+              <action>
+                <reset-both/>
+              </action>
+              <vendor-id>
+                <member>any</member>
+              </vendor-id>
+              <severity>
+                <member>critical</member>
+                <member>high</member>
+                <member>medium</member>
+              </severity>
+              <cve>
+                <member>any</member>
+              </cve>
+              <threat-name>any</threat-name>
+              <host>any</host>
+              <category>any</category>
+              <packet-capture>single-packet</packet-capture>
+            </entry>
+            <entry name="Default-Low-Info">
+              <action>
+                <default/>
+              </action>
+              <vendor-id>
+                <member>any</member>
+              </vendor-id>
+              <severity>
+                <member>low</member>
+                <member>informational</member>
+              </severity>
+              <cve>
+                <member>any</member>
+              </cve>
+              <threat-name>any</threat-name>
+              <host>any</host>
+              <category>any</category>
+              <packet-capture>disable</packet-capture>
+            </entry>
+          </rules>
+        </entry>
+        <entry name="Internal-VP">
+          <rules>
+            <entry name="Block-Critical-High">
+              <action>
+                <reset-both/>
+              </action>
+              <vendor-id>
+                <member>any</member>
+              </vendor-id>
+              <severity>
+                <member>critical</member>
+                <member>high</member>
+              </severity>
+              <cve>
+                <member>any</member>
+              </cve>
+              <threat-name>any</threat-name>
+              <host>any</host>
+              <category>any</category>
+              <packet-capture>single-packet</packet-capture>
+            </entry>
+            <entry name="Default-Medium-Low-Info">
+              <action>
+                <default/>
+              </action>
+              <vendor-id>
+                <member>any</member>
+              </vendor-id>
+              <severity>
+                <member>low</member>
+                <member>informational</member>
+                <member>medium</member>
+              </severity>
+              <cve>
+                <member>any</member>
+              </cve>
+              <threat-name>any</threat-name>
+              <host>any</host>
+              <category>any</category>
+              <packet-capture>disable</packet-capture>
+            </entry>
+          </rules>
+        </entry>
+        <entry name="Alert-Only-VP">
+          <rules>
+            <entry name="Alert-All">
+              <action>
+                <alert/>
+              </action>
+              <vendor-id>
+                <member>any</member>
+              </vendor-id>
+              <severity>
+                <member>any</member>
+              </severity>
+              <cve>
+                <member>any</member>
+              </cve>
+              <threat-name>any</threat-name>
+              <host>any</host>
+              <category>any</category>
+              <packet-capture>disable</packet-capture>
+            </entry>
+          </rules>
+        </entry>
+      </vulnerability>
+      <file-blocking>
+        <entry name="Outbound-FB">
+          <rules>
+            <entry name="Alert-All">
+              <application>
+                <member>any</member>
+              </application>
+              <file-type>
+                <member>any</member>
+              </file-type>
+              <direction>both</direction>
+              <action>alert</action>
+            </entry>
+            <entry name="Block">
+              <application>
+                <member>any</member>
+              </application>
+              <file-type>
+                <member>7z</member>
+                <member>bat</member>
+                <member>chm</member>
+                <member>class</member>
+                <member>cpl</member>
+                <member>dll</member>
+                <member>hlp</member>
+                <member>hta</member>
+                <member>jar</member>
+                <member>ocx</member>
+                <member>pif</member>
+                <member>scr</member>
+                <member>torrent</member>
+                <member>vbe</member>
+                <member>wsf</member>
+              </file-type>
+              <direction>both</direction>
+              <action>block</action>
+            </entry>
+          </rules>
+        </entry>
+        <entry name="Inbound-FB">
+          <rules>
+            <entry name="Alert-All">
+              <application>
+                <member>any</member>
+              </application>
+              <file-type>
+                <member>any</member>
+              </file-type>
+              <direction>both</direction>
+              <action>alert</action>
+            </entry>
+            <entry name="Block">
+              <application>
+                <member>any</member>
+              </application>
+              <file-type>
+                <member>7z</member>
+                <member>bat</member>
+                <member>chm</member>
+                <member>class</member>
+                <member>cpl</member>
+                <member>dll</member>
+                <member>hlp</member>
+                <member>hta</member>
+                <member>jar</member>
+                <member>ocx</member>
+                <member>pif</member>
+                <member>scr</member>
+                <member>torrent</member>
+                <member>vbe</member>
+                <member>wsf</member>
+              </file-type>
+              <direction>both</direction>
+              <action>block</action>
+            </entry>
+          </rules>
+        </entry>
+        <entry name="Internal-FB">
+          <rules>
+            <entry name="Alert-All">
+              <application>
+                <member>any</member>
+              </application>
+              <file-type>
+                <member>any</member>
+              </file-type>
+              <direction>both</direction>
+              <action>alert</action>
+            </entry>
+            <entry name="Block">
+              <application>
+                <member>any</member>
+              </application>
+              <file-type>
+                <member>7z</member>
+                <member>bat</member>
+                <member>chm</member>
+                <member>class</member>
+                <member>cpl</member>
+                <member>hlp</member>
+                <member>hta</member>
+                <member>jar</member>
+                <member>ocx</member>
+                <member>pif</member>
+                <member>scr</member>
+                <member>torrent</member>
+                <member>vbe</member>
+                <member>wsf</member>
+              </file-type>
+              <direction>both</direction>
+              <action>block</action>
+            </entry>
+          </rules>
+        </entry>
+        <entry name="Alert-Only-FB">
+          <rules>
+            <entry name="Alert-Only">
+              <application>
+                <member>any</member>
+              </application>
+              <file-type>
+                <member>any</member>
+              </file-type>
+              <direction>both</direction>
+              <action>alert</action>
+            </entry>
+          </rules>
+        </entry>
+      </file-blocking>
+      <url-filtering>
+        <entry name="Outbound-URL">
+          <credential-enforcement>
+            <mode>
+              <ip-user/>
+            </mode>
+            <log-severity>high</log-severity>
+            <block>
+              <member>Block</member>
+              <member>Allow</member>
+              <member>abortion</member>
+              <member>abused-drugs</member>
+              <member>adult</member>
+              <member>alcohol-and-tobacco</member>
+              <member>auctions</member>
+              <member>business-and-economy</member>
+              <member>command-and-control</member>
+              <member>computer-and-internet-info</member>
+              <member>content-delivery-networks</member>
+              <member>copyright-infringement</member>
+              <member>cryptocurrency</member>
+              <member>dating</member>
+              <member>dynamic-dns</member>
+              <member>educational-institutions</member>
+              <member>encrypted-dns</member>
+              <member>entertainment-and-arts</member>
+              <member>extremism</member>
+              <member>financial-services</member>
+              <member>gambling</member>
+              <member>games</member>
+              <member>government</member>
+              <member>grayware</member>
+              <member>hacking</member>
+              <member>health-and-medicine</member>
+              <member>high-risk</member>
+              <member>home-and-garden</member>
+              <member>hunting-and-fishing</member>
+              <member>insufficient-content</member>
+              <member>internet-communications-and-telephony</member>
+              <member>internet-portals</member>
+              <member>job-search</member>
+              <member>legal</member>
+              <member>low-risk</member>
+              <member>malware</member>
+              <member>medium-risk</member>
+              <member>military</member>
+              <member>motor-vehicles</member>
+              <member>music</member>
+              <member>newly-registered-domain</member>
+              <member>news</member>
+              <member>not-resolved</member>
+              <member>nudity</member>
+              <member>online-storage-and-backup</member>
+              <member>parked</member>
+              <member>peer-to-peer</member>
+              <member>personal-sites-and-blogs</member>
+              <member>philosophy-and-political-advocacy</member>
+              <member>phishing</member>
+              <member>private-ip-addresses</member>
+              <member>proxy-avoidance-and-anonymizers</member>
+              <member>questionable</member>
+              <member>ransomware</member>
+              <member>real-estate</member>
+              <member>recreation-and-hobbies</member>
+              <member>reference-and-research</member>
+              <member>religion</member>
+              <member>search-engines</member>
+              <member>sex-education</member>
+              <member>shareware-and-freeware</member>
+              <member>shopping</member>
+              <member>social-networking</member>
+              <member>society</member>
+              <member>sports</member>
+              <member>stock-advice-and-tools</member>
+              <member>streaming-media</member>
+              <member>swimsuits-and-intimate-apparel</member>
+              <member>training-and-tools</member>
+              <member>translation</member>
+              <member>travel</member>
+              <member>unknown</member>
+              <member>weapons</member>
+              <member>web-advertisements</member>
+              <member>web-based-email</member>
+              <member>web-hosting</member>
+            </block>
+            <alert>
+              <member>real-time-detection</member>
+            </alert>
+          </credential-enforcement>
+          <log-http-hdr-user-agent>yes</log-http-hdr-user-agent>
+          <log-http-hdr-referer>yes</log-http-hdr-referer>
+          <log-http-hdr-xff>yes</log-http-hdr-xff>
+          <local-inline-cat>yes</local-inline-cat>
+          <cloud-inline-cat>yes</cloud-inline-cat>
+          <alert>
+            <member>Allow</member>
+            <member>abortion</member>
+            <member>abused-drugs</member>
+            <member>adult</member>
+            <member>alcohol-and-tobacco</member>
+            <member>auctions</member>
+            <member>business-and-economy</member>
+            <member>computer-and-internet-info</member>
+            <member>content-delivery-networks</member>
+            <member>copyright-infringement</member>
+            <member>cryptocurrency</member>
+            <member>dating</member>
+            <member>dynamic-dns</member>
+            <member>educational-institutions</member>
+            <member>encrypted-dns</member>
+            <member>entertainment-and-arts</member>
+            <member>extremism</member>
+            <member>financial-services</member>
+            <member>gambling</member>
+            <member>games</member>
+            <member>government</member>
+            <member>hacking</member>
+            <member>health-and-medicine</member>
+            <member>high-risk</member>
+            <member>home-and-garden</member>
+            <member>hunting-and-fishing</member>
+            <member>insufficient-content</member>
+            <member>internet-communications-and-telephony</member>
+            <member>internet-portals</member>
+            <member>job-search</member>
+            <member>legal</member>
+            <member>low-risk</member>
+            <member>medium-risk</member>
+            <member>military</member>
+            <member>motor-vehicles</member>
+            <member>music</member>
+            <member>newly-registered-domain</member>
+            <member>news</member>
+            <member>not-resolved</member>
+            <member>nudity</member>
+            <member>online-storage-and-backup</member>
+            <member>parked</member>
+            <member>peer-to-peer</member>
+            <member>personal-sites-and-blogs</member>
+            <member>philosophy-and-political-advocacy</member>
+            <member>private-ip-addresses</member>
+            <member>proxy-avoidance-and-anonymizers</member>
+            <member>questionable</member>
+            <member>real-estate</member>
+            <member>recreation-and-hobbies</member>
+            <member>reference-and-research</member>
+            <member>religion</member>
+            <member>search-engines</member>
+            <member>sex-education</member>
+            <member>shareware-and-freeware</member>
+            <member>shopping</member>
+            <member>social-networking</member>
+            <member>society</member>
+            <member>sports</member>
+            <member>stock-advice-and-tools</member>
+            <member>streaming-media</member>
+            <member>swimsuits-and-intimate-apparel</member>
+            <member>training-and-tools</member>
+            <member>translation</member>
+            <member>travel</member>
+            <member>unknown</member>
+            <member>weapons</member>
+            <member>web-advertisements</member>
+            <member>web-based-email</member>
+            <member>web-hosting</member>
+            <member>real-time-detection</member>
+          </alert>
+          <block>
+            <member>Block</member>
+            <member>command-and-control</member>
+            <member>grayware</member>
+            <member>malware</member>
+            <member>phishing</member>
+            <member>ransomware</member>
+          </block>
+        </entry>
+        <entry name="Alert-Only-URL">
+          <credential-enforcement>
+            <mode>
+              <ip-user/>
+            </mode>
+            <log-severity>medium</log-severity>
+            <alert>
+              <member>Block</member>
+              <member>Allow</member>
+              <member>abortion</member>
+              <member>abused-drugs</member>
+              <member>adult</member>
+              <member>alcohol-and-tobacco</member>
+              <member>auctions</member>
+              <member>business-and-economy</member>
+              <member>command-and-control</member>
+              <member>computer-and-internet-info</member>
+              <member>content-delivery-networks</member>
+              <member>copyright-infringement</member>
+              <member>cryptocurrency</member>
+              <member>dating</member>
+              <member>dynamic-dns</member>
+              <member>educational-institutions</member>
+              <member>encrypted-dns</member>
+              <member>entertainment-and-arts</member>
+              <member>extremism</member>
+              <member>financial-services</member>
+              <member>gambling</member>
+              <member>games</member>
+              <member>government</member>
+              <member>grayware</member>
+              <member>hacking</member>
+              <member>health-and-medicine</member>
+              <member>high-risk</member>
+              <member>home-and-garden</member>
+              <member>hunting-and-fishing</member>
+              <member>insufficient-content</member>
+              <member>internet-communications-and-telephony</member>
+              <member>internet-portals</member>
+              <member>job-search</member>
+              <member>legal</member>
+              <member>low-risk</member>
+              <member>malware</member>
+              <member>medium-risk</member>
+              <member>military</member>
+              <member>motor-vehicles</member>
+              <member>music</member>
+              <member>newly-registered-domain</member>
+              <member>news</member>
+              <member>not-resolved</member>
+              <member>nudity</member>
+              <member>online-storage-and-backup</member>
+              <member>parked</member>
+              <member>peer-to-peer</member>
+              <member>personal-sites-and-blogs</member>
+              <member>philosophy-and-political-advocacy</member>
+              <member>phishing</member>
+              <member>private-ip-addresses</member>
+              <member>proxy-avoidance-and-anonymizers</member>
+              <member>questionable</member>
+              <member>ransomware</member>
+              <member>real-estate</member>
+              <member>recreation-and-hobbies</member>
+              <member>reference-and-research</member>
+              <member>religion</member>
+              <member>search-engines</member>
+              <member>sex-education</member>
+              <member>shareware-and-freeware</member>
+              <member>shopping</member>
+              <member>social-networking</member>
+              <member>society</member>
+              <member>sports</member>
+              <member>stock-advice-and-tools</member>
+              <member>streaming-media</member>
+              <member>swimsuits-and-intimate-apparel</member>
+              <member>training-and-tools</member>
+              <member>translation</member>
+              <member>travel</member>
+              <member>unknown</member>
+              <member>weapons</member>
+              <member>web-advertisements</member>
+              <member>web-based-email</member>
+              <member>web-hosting</member>
+              <member>real-time-detection</member>
+            </alert>
+          </credential-enforcement>
+          <alert>
+            <member>Block</member>
+            <member>Allow</member>
+            <member>abortion</member>
+            <member>abused-drugs</member>
+            <member>adult</member>
+            <member>alcohol-and-tobacco</member>
+            <member>auctions</member>
+            <member>business-and-economy</member>
+            <member>command-and-control</member>
+            <member>computer-and-internet-info</member>
+            <member>content-delivery-networks</member>
+            <member>copyright-infringement</member>
+            <member>cryptocurrency</member>
+            <member>dating</member>
+            <member>dynamic-dns</member>
+            <member>educational-institutions</member>
+            <member>encrypted-dns</member>
+            <member>entertainment-and-arts</member>
+            <member>extremism</member>
+            <member>financial-services</member>
+            <member>gambling</member>
+            <member>games</member>
+            <member>government</member>
+            <member>grayware</member>
+            <member>hacking</member>
+            <member>health-and-medicine</member>
+            <member>high-risk</member>
+            <member>home-and-garden</member>
+            <member>hunting-and-fishing</member>
+            <member>insufficient-content</member>
+            <member>internet-communications-and-telephony</member>
+            <member>internet-portals</member>
+            <member>job-search</member>
+            <member>legal</member>
+            <member>low-risk</member>
+            <member>malware</member>
+            <member>medium-risk</member>
+            <member>military</member>
+            <member>motor-vehicles</member>
+            <member>music</member>
+            <member>newly-registered-domain</member>
+            <member>news</member>
+            <member>not-resolved</member>
+            <member>nudity</member>
+            <member>online-storage-and-backup</member>
+            <member>parked</member>
+            <member>peer-to-peer</member>
+            <member>personal-sites-and-blogs</member>
+            <member>philosophy-and-political-advocacy</member>
+            <member>phishing</member>
+            <member>private-ip-addresses</member>
+            <member>proxy-avoidance-and-anonymizers</member>
+            <member>questionable</member>
+            <member>ransomware</member>
+            <member>real-estate</member>
+            <member>recreation-and-hobbies</member>
+            <member>reference-and-research</member>
+            <member>religion</member>
+            <member>search-engines</member>
+            <member>sex-education</member>
+            <member>shareware-and-freeware</member>
+            <member>shopping</member>
+            <member>social-networking</member>
+            <member>society</member>
+            <member>sports</member>
+            <member>stock-advice-and-tools</member>
+            <member>streaming-media</member>
+            <member>swimsuits-and-intimate-apparel</member>
+            <member>training-and-tools</member>
+            <member>translation</member>
+            <member>travel</member>
+            <member>unknown</member>
+            <member>weapons</member>
+            <member>web-advertisements</member>
+            <member>web-based-email</member>
+            <member>web-hosting</member>
+            <member>real-time-detection</member>
+          </alert>
+          <log-http-hdr-user-agent>yes</log-http-hdr-user-agent>
+          <log-http-hdr-referer>yes</log-http-hdr-referer>
+          <log-http-hdr-xff>yes</log-http-hdr-xff>
+          <local-inline-cat>yes</local-inline-cat>
+          <cloud-inline-cat>yes</cloud-inline-cat>
+        </entry>
+      </url-filtering>
+      <wildfire-analysis>
+        <entry name="Outbound-WF">
+          <rules>
+            <entry name="Forward-All">
+              <application>
+                <member>any</member>
+              </application>
+              <file-type>
+                <member>any</member>
+              </file-type>
+              <direction>both</direction>
+              <analysis>public-cloud</analysis>
+            </entry>
+          </rules>
+        </entry>
+        <entry name="Inbound-WF">
+          <rules>
+            <entry name="Forward-All">
+              <application>
+                <member>any</member>
+              </application>
+              <file-type>
+                <member>any</member>
+              </file-type>
+              <direction>both</direction>
+              <analysis>public-cloud</analysis>
+            </entry>
+          </rules>
+        </entry>
+        <entry name="Internal-WF">
+          <rules>
+            <entry name="Forward-All">
+              <application>
+                <member>any</member>
+              </application>
+              <file-type>
+                <member>any</member>
+              </file-type>
+              <direction>both</direction>
+              <analysis>public-cloud</analysis>
+            </entry>
+          </rules>
+        </entry>
+        <entry name="Alert-Only-WF">
+          <rules>
+            <entry name="Forward-All">
+              <application>
+                <member>any</member>
+              </application>
+              <file-type>
+                <member>any</member>
+              </file-type>
+              <direction>both</direction>
+              <analysis>public-cloud</analysis>
+            </entry>
+          </rules>
+        </entry>
+      </wildfire-analysis>
+    </profiles>
+    <profile-group>
+      <entry name="Outbound">
+        <virus>
+          <member>Outbound-AV</member>
+        </virus>
+        <spyware>
+          <member>Outbound-AS</member>
+        </spyware>
+        <vulnerability>
+          <member>Outbound-VP</member>
+        </vulnerability>
+        <url-filtering>
+          <member>Outbound-URL</member>
+        </url-filtering>
+        <file-blocking>
+          <member>Outbound-FB</member>
+        </file-blocking>
+        <wildfire-analysis>
+          <member>Outbound-WF</member>
+        </wildfire-analysis>
+      </entry>
+      <entry name="Inbound">
+        <virus>
+          <member>Inbound-AV</member>
+        </virus>
+        <spyware>
+          <member>Inbound-AS</member>
+        </spyware>
+        <vulnerability>
+          <member>Inbound-VP</member>
+        </vulnerability>
+        <file-blocking>
+          <member>Inbound-FB</member>
+        </file-blocking>
+        <wildfire-analysis>
+          <member>Inbound-WF</member>
+        </wildfire-analysis>
+      </entry>
+      <entry name="Internal">
+        <virus>
+          <member>Internal-AV</member>
+        </virus>
+        <spyware>
+          <member>Internal-AS</member>
+        </spyware>
+        <vulnerability>
+          <member>Internal-VP</member>
+        </vulnerability>
+        <file-blocking>
+          <member>Internal-FB</member>
+        </file-blocking>
+        <wildfire-analysis>
+          <member>Internal-WF</member>
+        </wildfire-analysis>
+      </entry>
+      <entry name="Alert-Only">
+        <virus>
+          <member>Alert-Only-AV</member>
+        </virus>
+        <spyware>
+          <member>Alert-Only-AS</member>
+        </spyware>
+        <vulnerability>
+          <member>Alert-Only-VP</member>
+        </vulnerability>
+        <url-filtering>
+          <member>Alert-Only-URL</member>
+        </url-filtering>
+        <file-blocking>
+          <member>Alert-Only-FB</member>
+        </file-blocking>
+        <wildfire-analysis>
+          <member>Alert-Only-WF</member>
+        </wildfire-analysis>
+      </entry>
+      <entry name="default">
+        <virus>
+          <member>Outbound-AV</member>
+        </virus>
+        <spyware>
+          <member>Outbound-AS</member>
+        </spyware>
+        <vulnerability>
+          <member>Outbound-VP</member>
+        </vulnerability>
+        <url-filtering>
+          <member>Outbound-URL</member>
+        </url-filtering>
+        <file-blocking>
+          <member>Outbound-FB</member>
+        </file-blocking>
+        <wildfire-analysis>
+          <member>Outbound-WF</member>
+        </wildfire-analysis>
+      </entry>
+    </profile-group>
+    <tag>
+      <entry name="Outbound">
+        <comments>Outbound to the Internet</comments>
+      </entry>
+      <entry name="Inbound">
+        <comments>Inbound from the Internet</comments>
+      </entry>
+      <entry name="Internal">
+        <comments>Internal to Internal</comments>
+      </entry>
+      <entry name="iron-skillet-version">
+        <comments>version 0.0.1 for 10.2: version of this IronSkillet template file</comments>
+      </entry>
+    </tag>
+    <log-settings>
+      <profiles>
+        <entry name="default">
+          <match-list>
+            <entry name="Traffic_Log_Forwarding">
+              <log-type>traffic</log-type>
+              <filter>All Logs</filter>
+              <send-to-panorama>yes</send-to-panorama>
+            </entry>
+            <entry name="Threat_Log_Forwarding">
+              <log-type>threat</log-type>
+              <filter>All Logs</filter>
+              <send-to-panorama>yes</send-to-panorama>
+            </entry>
+            <entry name="Wildfire_Log_Forwarding">
+              <log-type>wildfire</log-type>
+              <filter>All Logs</filter>
+              <send-to-panorama>yes</send-to-panorama>
+            </entry>
+            <entry name="URL_Log_Forwarding">
+              <log-type>url</log-type>
+              <filter>All Logs</filter>
+              <send-to-panorama>yes</send-to-panorama>
+            </entry>
+            <entry name="Data_Log_Forwarding">
+              <log-type>data</log-type>
+              <filter>All Logs</filter>
+              <send-to-panorama>yes</send-to-panorama>
+            </entry>
+            <entry name="Tunnel_Log_Forwarding">
+              <log-type>tunnel</log-type>
+              <filter>All Logs</filter>
+              <send-to-panorama>yes</send-to-panorama>
+            </entry>
+            <entry name="Auth_Log_Forwarding">
+              <log-type>auth</log-type>
+              <filter>All Logs</filter>
+              <send-to-panorama>yes</send-to-panorama>
+            </entry>
+          </match-list>
+        </entry>
+      </profiles>
+    </log-settings>
+    <post-rulebase>
+      <default-security-rules>
+        <rules>
+          <entry name="intrazone-default" uuid="001cab61-b74c-4557-826d-816f8ac94633">
+            <action>allow</action>
+            <log-start>no</log-start>
+            <log-end>yes</log-end>
+            <profile-setting>
+              <group>
+                <member>Inbound</member>
+              </group>
+            </profile-setting>
+            <log-setting>default</log-setting>
+          </entry>
+          <entry name="interzone-default" uuid="944b3574-28b7-4404-bdda-2724dd703f12">
+            <action>drop</action>
+            <log-start>no</log-start>
+            <log-end>yes</log-end>
+            <log-setting>default</log-setting>
+          </entry>
+        </rules>
+      </default-security-rules>
+    </post-rulebase>
+    <pre-rulebase>
+      <security>
+        <rules>
+          <entry name="Outbound Block Rule" uuid="8ccf93dd-6df3-4440-8369-91532f605923">
+            <description>Block outbound sessions with destination address matching one of the Palo Alto Networks external dynamic lists for high risk and known malicious IP addresses.</description>
+            <target>
+              <negate>no</negate>
+            </target>
+            <to>
+              <member>any</member>
+            </to>
+            <from>
+              <member>any</member>
+            </from>
+            <source>
+              <member>any</member>
+            </source>
+            <destination>
+              <member>panw-highrisk-ip-list</member>
+              <member>panw-known-ip-list</member>
+              <member>panw-bulletproof-ip-list</member>
+            </destination>
+            <source-user>
+              <member>any</member>
+            </source-user>
+            <category>
+              <member>any</member>
+            </category>
+            <application>
+              <member>any</member>
+            </application>
+            <service>
+              <member>any</member>
+            </service>
+            <action>deny</action>
+            <log-setting>default</log-setting>
+            <tag>
+              <member>Outbound</member>
+            </tag>
+          </entry>
+          <entry name="Inbound Block Rule" uuid="c30f6c43-578a-48f0-af12-8a7dc48cea0c">
+            <description>Block inbound sessions with source address matching one of the Palo Alto Networks external dynamic lists for high risk and known malicious IP addresses.</description>
+            <target>
+              <negate>no</negate>
+            </target>
+            <to>
+              <member>any</member>
+            </to>
+            <from>
+              <member>any</member>
+            </from>
+            <source>
+              <member>panw-highrisk-ip-list</member>
+              <member>panw-known-ip-list</member>
+              <member>panw-bulletproof-ip-list</member>
+            </source>
+            <destination>
+              <member>any</member>
+            </destination>
+            <source-user>
+              <member>any</member>
+            </source-user>
+            <category>
+              <member>any</member>
+            </category>
+            <application>
+              <member>any</member>
+            </application>
+            <service>
+              <member>any</member>
+            </service>
+            <action>deny</action>
+            <log-setting>default</log-setting>
+            <tag>
+              <member>Inbound</member>
+            </tag>
+          </entry>
+        </rules>
+      </security>
+      <decryption>
+        <rules>
+          <entry name="NO-Decrypt URL Categories" uuid="8f764310-2492-47ca-8766-85de28e3356e">
+            <target>
+              <negate>no</negate>
+            </target>
+            <category>
+              <member>financial-services</member>
+              <member>government</member>
+              <member>health-and-medicine</member>
+              <member>Custom-No-Decrypt</member>
+            </category>
+            <service>
+              <member>any</member>
+            </service>
+            <type>
+              <ssl-forward-proxy/>
+            </type>
+            <from>
+              <member>any</member>
+            </from>
+            <to>
+              <member>any</member>
+            </to>
+            <source>
+              <member>any</member>
+            </source>
+            <destination>
+              <member>any</member>
+            </destination>
+            <source-user>
+              <member>any</member>
+            </source-user>
+            <profile>Recommended_Decryption_Profile</profile>
+            <action>no-decrypt</action>
+            <disabled>yes</disabled>
+            <description>This rule does not do Decryption. This rule is validating SSL Protocol Communications.</description>
+          </entry>
+        </rules>
+      </decryption>
+    </pre-rulebase>
+  </shared>
+  <devices>
+    <entry name="localhost.localdomain">
+      <deviceconfig>
+        <system>
+          <ip-address>192.168.10.154</ip-address>
+          <netmask>255.255.255.0</netmask>
+          <update-server>updates.paloaltonetworks.com</update-server>
+          <update-schedule>
+            <threats>
+              <recurring>
+                <every-30-mins>
+                  <at>2</at>
+                  <action>download-and-install</action>
+                </every-30-mins>
+                <threshold>48</threshold>
+              </recurring>
+            </threats>
+            <anti-virus>
+              <recurring>
+                <hourly>
+                  <at>4</at>
+                  <action>download-and-install</action>
+                </hourly>
+              </recurring>
+            </anti-virus>
+            <wildfire>
+              <recurring>
+                <every-min>
+                  <action>download-and-install</action>
+                </every-min>
+              </recurring>
+            </wildfire>
+          </update-schedule>
+          <timezone>UTC</timezone>
+          <service>
+            <disable-telnet>yes</disable-telnet>
+            <disable-http>yes</disable-http>
+          </service>
+          <hostname>Panorama</hostname>
+          <server-verification>yes</server-verification>
+          <default-gateway>192.168.10.1</default-gateway>
+          <dns-setting>
+            <servers>
+              <primary>8.8.8.8</primary>
+            </servers>
+          </dns-setting>
+          <device-telemetry>
+            <device-health-performance>yes</device-health-performance>
+            <product-usage>yes</product-usage>
+            <threat-prevention>yes</threat-prevention>
+            <region>Americas</region>
+          </device-telemetry>
+          <dlsrvr>
+            <interface>mgmt</interface>
+          </dlsrvr>
+          <login-banner>You have accessed a protected system.Log off immediately if you are not an authorized user.</login-banner>
+          <snmp-setting>
+            <access-setting>
+              <version>
+                <v3/>
+              </version>
+            </access-setting>
+          </snmp-setting>
+          <config-bundle-export-schedule>
+            <entry name="Recommended_Config_Export">
+              <protocol>
+                <scp>
+                  <username>testuser</username>
+                  <password>-AQ==zPJb3ngM1sGjXlfX2+Qk6rbdv1I=ucInIpBmFcnkQK7zF4VO1w==</password>
+                </scp>
+              </protocol>
+              <start-time>02:00</start-time>
+              <enable>yes</enable>
+            </entry>
+          </config-bundle-export-schedule>
+        </system>
+        <setting>
+          <management>
+            <storage-partition>
+              <internal/>
+            </storage-partition>
+            <hostname-type-in-syslog>FQDN</hostname-type-in-syslog>
+            <enable-reporting-on-groups>yes</enable-reporting-on-groups>
+            <share-unused-objects-with-devices>no</share-unused-objects-with-devices>
+            <max-rows-in-csv-export>1048576</max-rows-in-csv-export>
+            <admin-lockout>
+              <failed-attempts>5</failed-attempts>
+              <lockout-time>30</lockout-time>
+            </admin-lockout>
+            <idle-timeout>10</idle-timeout>
+            <auto-acquire-commit-lock>yes</auto-acquire-commit-lock>
+            <api>
+              <key>
+                <lifetime>0</lifetime>
+              </key>
+            </api>
+          </management>
+        </setting>
+      </deviceconfig>
+      <template/>
+      <device-group/>
+      <template-stack/>
+    </entry>
+  </devices>
+  <readonly>
+    <max-internal-id>0</max-internal-id>
+    <devices>
+      <entry name="localhost.localdomain">
+        <template/>
+        <device-group/>
+      </entry>
+    </devices>
+    <shared/>
+  </readonly>
+  <panorama>
+    <log-settings>
+      <email>
+        <entry name="Sample_Email_Profile">
+          <server>
+            <entry name="Sample_Email_Profile">
+              <display-name>Panorama</display-name>
+              <protocol>SMTP</protocol>
+            </entry>
+          </server>
+        </entry>
+      </email>
+      <system>
+        <match-list>
+          <entry name="Critical_System_Log_Email">
+            <send-email>
+              <member>Sample_Email_Profile</member>
+            </send-email>
+            <filter>(severity eq critical)</filter>
+          </entry>
+          <entry name="System_Log_Forwarding">
+            <send-syslog>
+              <member>Sample_Syslog_Profile</member>
+            </send-syslog>
+            <filter>All Logs</filter>
+          </entry>
+        </match-list>
+      </system>
+      <syslog>
+        <entry name="Sample_Syslog_Profile">
+          <server>
+            <entry name="Sample_Syslog">
+              <transport>UDP</transport>
+              <port>514</port>
+              <format>BSD</format>
+              <facility>LOG_USER</facility>
+            </entry>
+          </server>
+        </entry>
+      </syslog>
+      <config>
+        <match-list>
+          <entry name="Configuration_Log_Forwarding">
+            <send-syslog>
+              <member>Sample_Syslog_Profile</member>
+            </send-syslog>
+            <filter>All Logs</filter>
+          </entry>
+        </match-list>
+      </config>
+      <userid>
+        <match-list>
+          <entry name="User-ID_Log_Forwarding">
+            <send-syslog>
+              <member>Sample_Syslog_Profile</member>
+            </send-syslog>
+            <filter>All Logs</filter>
+          </entry>
+        </match-list>
+      </userid>
+    </log-settings>
+  </panorama>
+</config>

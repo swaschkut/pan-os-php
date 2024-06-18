@@ -43,13 +43,14 @@ ThreatCallContext::$supportedActions[] = array(
 
         PH::print_stdout( $context->padding . "* " . get_class($threat) . " '{$threat->name()}' " );
 
-        PH::print_stdout( "          - Threatname: '{$threat->threatname()}'  category: '{$threat->category()}' severity: '{$threat->severity()}'  default-action: '{$threat->defaultAction()}'" );
+        PH::print_stdout( "          - Threatname: '{$threat->threatname()}'  category: '{$threat->category()}' severity: '{$threat->severity()}'  default-action: '{$threat->defaultAction()}' cve: '".implode(",", $threat->cve())."'" );
 
         PH::$JSON_TMP['sub']['object'][$threat->name()]['name'] = $threat->name();
         PH::$JSON_TMP['sub']['object'][$threat->name()]['type'] = get_class($threat);
         PH::$JSON_TMP['sub']['object'][$threat->name()]['category'] = $threat->category();
         PH::$JSON_TMP['sub']['object'][$threat->name()]['severity'] = $threat->severity();
         PH::$JSON_TMP['sub']['object'][$threat->name()]['default-action'] = $threat->defaultAction();
+        PH::$JSON_TMP['sub']['object'][$threat->name()]['cve'] = $threat->cve();
 
         if( $threat->type() == "vulnerability" )
             $context->counter_vulnerability++;

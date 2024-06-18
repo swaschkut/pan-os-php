@@ -1,6 +1,52 @@
 CHANGELOG
 
-2.1.23
+2.1.24
+UTIL:
+* type=device | new actions=authkey-display-all/authkey-display-default/authkey-set/authkey-add
+* class RuleCallContext | add additional information if specific Fieldname is not supported for ExportToExcel
+* type=threat | extend 'actions=display' with CVE information | new 'filter=(cve contains XYZ)'
+* type=device | introduce 'actions=telemetry-enable:yes/no' - only for API against PAN-OS Firewall
+* type=threat-log | introduction
+* type=key-manager | optimise to fit to new PAN-OS API key calculation
+* type=appid-toolbox - documentation correction
+* type=xml-issue - extend to find and fix service objects where multiple times same tag are configured
+* type=xml-issue | extend for autofix duplicate interface entries in all xpath ..../import/network/interface
+* type=playbook | introduce new JSON file: missconfiguration
+* type=securityprofile securityprofiletype=spyware actions=display - extend output with spyware rule information about severity, action and packet-caputre settings
+* type=securityprofile securityprofiletype=spyware actions=exporttoexcel:file.html | exstend with detail rules output
+* type=securityprofile securityprofiletype=spyware actions=display | extend with additional profile config settings
+
+BUGFIX:
+* type=key-manager | bugfix for argument test=
+* bugfix for PHP 8.3 - date_default_timezone_set behaviour error out in new PHP version, if timezoneid is not supported
+* class RuleWithGroupTAG - bugfix for util: type=rule actions=grouptag-set:XYZ
+* type=rule 'actions=copy:{DGname},pre' 'filter=(rule is.postrule)' | bugfix if copying rule from pre to post / post to pre
+
+GENERAL:
+* move docker workflow out of production
+* Class Sub - improvement of default-security-rules xml load
+* add new Docker files for further testing of underlaying php version 8.3 for all three container type pan-os-php/-api/-cli including ubuntu24.04 for pan-os-php
+* general adjustments for testing /validation scripts
+* main Docker files update for container of pan-os-php / pan-os-php-api / pan-os-php-cli - to use php version 8.3 and container pan-os-php ubuntu 24.04
+* develop script | prisma_access related scripts moved to new folder | add pa_auth/pa_cert.php
+* develop ironskillet scripts
+* class RuleCallContext | improvement for php >8.2
+* update to Device App-ID version: 8833-8682
+* class AddressGroup/AddressStore | extend to create dynamic AddressGroup
+* class TagStore | introduce function all() - to be aling with rule/addressstore - to get programatically objects based on filter
+* iron-skillet | introduce parts for panos_v11.1
+* Device App-ID updated to version: 8842-8722
+* develop | Cisco ACI introduce get_epg.php
+* Device App-ID updated to version: 8854-8759
+* adding ubuntu docker validation scripts
+* Device App-ID updated to version: 8856-8770
+* appid-toolbox - extend testing scripts with better preparation
+* timezone related improvements for PHP8.3 on PANOS and Panorama config file
+* optimise HTMLExcelMerger.py Python script - Excel tab again ordered by name
+* github link update
+
+
+2.1.23 (20240408)
 UTIL:
 * type=address | introduce actions=address-group-create-EDL-IP:list.txt
 * type=address | introduce actions=address-group-create-EDL-FQDN:list.txt

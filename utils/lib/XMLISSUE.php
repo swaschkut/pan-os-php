@@ -149,6 +149,7 @@ class XMLISSUE extends UTIL
         $countMissconfiguredServiceObjects = 0;
         $countServiceObjectsWithDoubleSpaces = 0;
         $countServiceObjectsWithNameappdefault = 0;
+        $fixedServiceObjectsWithSameTag = 0;
 
 
         $countEmptyAddressGroup = 0;
@@ -161,6 +162,8 @@ class XMLISSUE extends UTIL
         $fixedReadOnlyAddressGroupobjects=0;
         $fixedReadOnlyTemplateobjects=0;
         $fixedReadOnlyTemplateStackobjects=0;
+
+        $fixedImportNetworkInterfaceWithSameInterface = 0;
 
         $totalApplicationGroupsFixed = 0;
         $totalCustomUrlCategoryFixed = 0;
@@ -743,6 +746,45 @@ class XMLISSUE extends UTIL
                         PH::print_stdout( "    - service object '{$objectName}' from DG/VSYS {$locationName} has missing protocol configuration ... (*FIX_MANUALLY*)");
                         PH::print_stdout( "       - type 'Service' at XML line #{$node->getLineNo()}");
                         $countMissconfiguredServiceObjects++;
+                    }
+                }
+            }
+
+            //
+            //
+            //
+            PH::print_stdout( " - Scanning for service with multiple times same tag...");
+            foreach( $serviceObjects as $objectName => $nodes )
+            {
+                foreach( $nodes as $node )
+                {
+                    $tagNode = DH::findFirstElement('tag', $node);
+                    if( $tagNode !== FALSE )
+                    {
+                        $tagArray = array();
+                        #PH::print_stdout( "    - service object '{$objectName}' from DG/VSYS {$locationName} has missing protocol configuration ... (*FIX_MANUALLY*)");
+                        #PH::print_stdout( "       - type 'Service' at XML line #{$node->getLineNo()}");
+                        #$countMissconfiguredServiceObjects++;
+
+                        foreach( $tagNode->childNodes as $tagNodeMember )
+                        {
+                            /** @var DOMElement $tagNodeMember */
+                            if ($tagNodeMember->nodeType != XML_ELEMENT_NODE)
+                                continue;
+
+
+                            $tagName = $tagNodeMember->textContent;
+                            if( isset( $tagArray[$tagName] ) )
+                            {
+                                PH::print_stdout( "    - service object '{$objectName}' from DG/VSYS {$locationName} has duplicate TAG: ".$tagName." configured ... *FIXED*");
+                                $tagNodeMember->parentNode->removeChild($tagNodeMember);
+                                $fixedServiceObjectsWithSameTag++;
+                            }
+                            else
+                            {
+                                $tagArray[$tagName] = $tagName;
+                            }
+                        }
                     }
                 }
             }
@@ -1562,6 +1604,9 @@ class XMLISSUE extends UTIL
             PH::print_stdout( "** ** ** ** ** ** **");
         }
 
+
+        PH::print_stdout( "");
+        PH::print_stdout( "#####     #####     #####     #####     #####     #####     #####     #####     #####     #####     #####");
 ///
 ///
 ///
@@ -1733,9 +1778,53 @@ class XMLISSUE extends UTIL
         }
 
 
-        ////////////////////////////////////////////////////////////
+        PH::print_stdout( "");
+        PH::print_stdout( "#####     #####     #####     #####     #####     #####     #####     #####     #####     #####     #####");
 
+        ////////////////////////////////////////////////////////////
+        ///scanning for all import/network/interfaces
+
+        PH::print_stdout( " - Scanning for import/network/interface for duplicate entries ...");
+
+        $nodeList = $this->xmlDoc->getElementsByTagName("import");
+        $nodeArray = iterator_to_array($nodeList);
+
+        foreach( $nodeArray as $item )
+        {
+            $network = DH::findFirstElement("network", $item);
+            if( $network !== FALSE )
+            {
+                $interfaces = DH::findFirstElement("interface", $network);
+
+                if( $interfaces !== FALSE )
+                {
+                    $interfaceArray = array();
+                    foreach( $interfaces->childNodes as $interface )
+                    {
+                        /** @var DOMElement $interface */
+                        if( $interface->nodeType != XML_ELEMENT_NODE )
+                            continue;
+
+                        $interfaceName = $interface->textContent;
+                        if( isset($interfaceArray[$interfaceName]) )
+                        {
+                            $xpath = $interface->getNodePath();
+                            //remove node
+                            PH::print_stdout( "    - remove interface: '<member>".$interfaceName."</member>' from xPath: '".$xpath."' as it is a duplicate entry ... *FIXED*");
+                            $interface->parentNode->removeChild($interface);
+                            $fixedImportNetworkInterfaceWithSameInterface++;
+                        }
+                        else
+                            $interfaceArray[$interfaceName] = $interfaceName;
+                    }
+                }
+            }
+        }
+        ////////////////////////////////////////////////////////////
+        PH::print_stdout( "");
+        PH::print_stdout( "#####     #####     #####     #####     #####     #####     #####     #####     #####     #####     #####");
         PH::print_stdout();
+
         PH::print_stdout( "Summary:" );
         PH::print_stdout( " - FIXED: duplicate address objects: {$fixedDuplicateAddressObjects}");
         PH::print_stdout( " - FIXED: duplicate service objects: {$fixedDuplicateServiceObjects}");
@@ -1745,9 +1834,11 @@ class XMLISSUE extends UTIL
         PH::print_stdout( " - FIXED: own address-group as subgroup member: {$totalAddressGroupsSubGroupFixed}");
         PH::print_stdout( " - FIXED: own dynamic address-group as tag member: {$totalDynamicAddressGroupsTagFixed}");
 
-        PH::print_stdout( " - FIXED: own service-group as subgroup members: {$totalServiceGroupsSubGroupFixed}");
+        PH::print_stdout( "\n - FIXED: service objects with multiple times same tag: {$fixedServiceObjectsWithSameTag}");
 
-        PH::print_stdout( " - FIXED: duplicate application-group members: {$totalApplicationGroupsFixed}");
+        PH::print_stdout( "\n - FIXED: own service-group as subgroup members: {$totalServiceGroupsSubGroupFixed}");
+
+        PH::print_stdout( "\n - FIXED: duplicate application-group members: {$totalApplicationGroupsFixed}");
         PH::print_stdout( " - FIXED: duplicate custom-url-category members: {$totalCustomUrlCategoryFixed}");
 
         PH::print_stdout( "\n - FIXED: SecRule with duplicate from members: {$fixedSecRuleFromObjects}");
@@ -1760,9 +1851,12 @@ class XMLISSUE extends UTIL
         PH::print_stdout( " - FIXED: SecRule with duplicate tag members: {$fixedSecRuleTagObjects}");
 
         PH::print_stdout( "\n - FIXED: ReadOnly duplicate AddressGroup : {$fixedReadOnlyAddressGroupobjects}");
-        PH::print_stdout( "\n - FIXED: ReadOnly duplicate DeviceGroup : {$fixedReadOnlyDeviceGroupobjects}");
-        PH::print_stdout( "\n - FIXED: ReadOnly duplicate Template : {$fixedReadOnlyTemplateobjects}");
+        PH::print_stdout( " - FIXED: ReadOnly duplicate DeviceGroup : {$fixedReadOnlyDeviceGroupobjects}");
+        PH::print_stdout( " - FIXED: ReadOnly duplicate Template : {$fixedReadOnlyTemplateobjects}");
         PH::print_stdout( " - FIXED: ReadOnly duplicate TemplateStack : {$fixedReadOnlyTemplateStackobjects}");
+
+        PH::print_stdout( "\n - FIXED: import/network/interface : {$fixedImportNetworkInterfaceWithSameInterface}");
+
 
         PH::print_stdout( "\n\nIssues that could not be fixed (look in logs for FIX_MANUALLY keyword):");
 

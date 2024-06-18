@@ -103,8 +103,8 @@ trait RuleWithGroupTag
             if( $this->grouptag === null )
                 return FALSE;
 
-            if( is_object($this->grouptag) )
-                $this->grouptag->removeReference($this);
+            #if( is_object($this->grouptag) )
+            #    $this->grouptag->removeReference($this);
 
             $this->grouptag = null;
         }
@@ -115,8 +115,8 @@ trait RuleWithGroupTag
             if( is_object( $this->grouptag ) && $this->grouptag->name() == $newGroupTag )
                 return FALSE;
 
-            if( is_object($this->grouptag) )
-                $this->grouptag->removeReference($this);
+            #if( is_object($this->grouptag) )
+            #    $this->grouptag->removeReference($this);
 
             $f = $this->owner->owner->tagStore->findOrCreate($newGroupTag, $this);
             if( $f != null )
@@ -143,9 +143,11 @@ trait RuleWithGroupTag
             $xpath = $this->getXPath() . '/group-tag';
             $con = findConnectorOrDie($this);
 
-            if( !is_object( $this->grouptag )  )
+            //Todo: 20240606 swaschkut validation needed
+            if( !is_object( $newGroupTag )  )
                 if( $con->isAPI() )
-                    $con->sendDeleteRequest($xpath);
+                    #$con->sendDeleteRequest($xpath);
+                    $con->sendSetRequest($this->getXPath(), '<group-tag>' . htmlspecialchars($newGroupTag) . '</group-tag>');
             else
                 if( $con->isAPI() )
                     $con->sendSetRequest($this->getXPath(), '<group-tag>' . htmlspecialchars($this->grouptag->name()) . '</group-tag>');

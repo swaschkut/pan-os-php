@@ -193,7 +193,7 @@ class PH
 
     private static $library_version_major = 2;
     private static $library_version_sub = 1;
-    private static $library_version_bugfix = 23;
+    private static $library_version_bugfix = 24;
 
     //BASIC AUTH PAN-OS 7.1
     public static $softwareupdate_key = "658d787f293e631196dac9fb29490f1cc1bb3827";
@@ -989,6 +989,7 @@ class PH
         "util_get-action-filter",
         "software-remove",
         "traffic-log",
+        "threat-log",
         "system-log",
         "session-browser",
         "gratuitous-arp",
@@ -1133,6 +1134,9 @@ class PH
         elseif( $type == "traffic-log" )
             $util = new TRAFFICLOG($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
 
+        elseif( $type == "threat-log" )
+            $util = new THREATLOG($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
+
         elseif( $type == "system-log" )
             $util = new SYSTEMLOG($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
 
@@ -1217,5 +1221,21 @@ class PH
         $finding = substr($line, $pos1 + $needle_length, $pos2 - ($pos1 + $needle_length));
 
         return $finding;
+    }
+
+    public static function timezone_backward_migration( $timezoneID )
+    {
+        $timezone_backward = array();
+        $filename = dirname(__FILE__) . '/timezone/timezone_backward.json';
+
+        $json = file_get_contents($filename);
+
+        $timezone_backward = json_decode($json,true);
+        #print_r( $timezone_backward );
+
+        if( isset( $timezone_backward[$timezoneID] ) )
+            return $timezone_backward[$timezoneID];
+
+        return null;
     }
 }

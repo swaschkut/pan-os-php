@@ -48,8 +48,6 @@ $util->utilInit();
 ##########################################
 ##########################################
 
-
-
 #$util->load_config();
 #$util->location_filter();
 
@@ -59,68 +57,68 @@ $connector = $pan->connector;
 
 ########################################################################################################################
 
-###########
-#DISPLAY
-###########
-
-//Todo: check if this is needed before:
-//https://pan.dev/access/api/prisma-access-config/post-sse-config-v-1-enable/
-
-$accessToken =  $connector->getAccessToken();
-$folder = "Service Connections";
-
-//https://pan.dev/access/api/prisma-access-config/get-sse-config-v-1-shared-infrastructure-settings/
-$type = "shared-infrastructure-settings";
-$jsonArray = $connector->getResource( $accessToken, $type, $folder );
-
-print_r($jsonArray);
-
 /*
-//respones
-//Todo: 20240326 check what is needed for first setup
-Array
-(
-    [folder] => Service Connections
-    [infra_bgp_as] => 65534
-    [infrastructure_subnet] => 10.212.251.0/24
-    [tunnel_monitor_ip_address] => 10.212.251.254
-    [captive_portal_redirect_ip_address] => 10.212.251.254
-    [loopback_ips] => Array
-        (
-            [0] => 10.212.251.3
-        )
+<request><tech-support><dump/></tech-support></request>
+*/
 
-    [egress_ip_notification_url] => Array
-        (
-            [msg] => Array
-                (
-                    [@status] => success
-                    [@code] => 19
-                    [result] => Array
-                        (
-                            [total-count] => 1
-                            [url] =>
-                        )
+if(  $util->pan->isPanorama() )
+{
+    $firewallSerials = $connector->panorama_getConnectedFirewallsSerials();
 
-                )
+    $panoramaMGMTip = $connector->info_mgmtip;
 
-        )
+    foreach( $firewallSerials as $fw )
+    {
+        $argv = array();
+        $argc = array();
+        PH::$args = array();
+        PH::$argv = array();
 
-    [api_key] => ABCDE..........
-)
+        $argv[0] = "test";
+        //must be fixed value from above $panoramaMGMTip, if not ->refreshSystemInfos later on is updating to FW MGMT IP
+        $argv[] = "in=api://".$fw['serial']."@".$panoramaMGMTip."/merged-config";
 
- */
-//////////////////////////////
+        PH::print_stdout( "--------------------------------------------------------------------------------" );
 
+        try
+        {
+            #PH::resetCliArgs( $argv );
+            $util2 = new UTIL("custom", $argv, $argc, __FILE__);
+            $util2->useException();
+            $util2->utilInit();
+            
+        }
+        catch(Exception $e)
+        {
+            PH::print_stdout("          ***** API Error occured : ".$e->getMessage() );
 
-/////////////////////////////
+            $array[ $fw['serial'] ][ "error" ]['name'] = "error";
+            $array[ $fw['serial'] ][ "error" ]['ip'] = "connection";
 
+            PH::print_stdout();
+            PH::print_stdout( $fw['serial'].",error,connection" );
+            PH::print_stdout( "--------------------------------------------------------------------------------" );
+        }
+    }
+}
+elseif( $util->pan->isFirewall() )
+{
+    #$mgmt
+    #ssh_connector($fw);
+    $query = '<request><tech-support><dump/></tech-support></request>';
+    $output = $connector->sendOpRequest($query);
 
-
+    print $output->textContent;
+}
 
 ########################################################################################################################
 
 
+
+
+
+
+$util->save_our_work();
 
 PH::print_stdout();
 PH::print_stdout("************* END OF SCRIPT " . basename(__FILE__) . " ************" );

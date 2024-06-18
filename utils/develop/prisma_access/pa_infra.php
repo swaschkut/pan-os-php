@@ -20,7 +20,7 @@
  */
 
 require_once("lib/pan_php_framework.php");
-require_once ( "utils/lib/UTIL.php");
+require_once("utils/lib/UTIL.php");
 
 PH::print_stdout();
 PH::print_stdout("***********************************************");
@@ -63,99 +63,60 @@ $connector = $pan->connector;
 #DISPLAY
 ###########
 
+//Todo: check if this is needed before:
+//https://pan.dev/access/api/prisma-access-config/post-sse-config-v-1-enable/
 
 $accessToken =  $connector->getAccessToken();
 $folder = "Service Connections";
 
+//https://pan.dev/access/api/prisma-access-config/get-sse-config-v-1-shared-infrastructure-settings/
+$type = "shared-infrastructure-settings";
+$jsonArray = $connector->getResource( $accessToken, $type, $folder );
 
-$type = "bgp-routing";
-$SNjsonArray = $connector->getResource( $accessToken, $type, $folder );
-#print_r($SNjsonArray);
+print_r($jsonArray);
+
 /*
+//respones
+//Todo: 20240326 check what is needed for first setup
 Array
 (
     [folder] => Service Connections
-    [outbound_routes_for_services] => Array
+    [infra_bgp_as] => 65534
+    [infrastructure_subnet] => 10.212.251.0/24
+    [tunnel_monitor_ip_address] => 10.212.251.254
+    [captive_portal_redirect_ip_address] => 10.212.251.254
+    [loopback_ips] => Array
         (
+            [0] => 10.212.251.3
         )
 
-    [accept_route_over_SC] =>
+    [egress_ip_notification_url] => Array
+        (
+            [msg] => Array
+                (
+                    [@status] => success
+                    [@code] => 19
+                    [result] => Array
+                        (
+                            [total-count] => 1
+                            [url] =>
+                        )
+
+                )
+
+        )
+
+    [api_key] => ABCDE..........
 )
+
  */
-
-$type = "service-connections";
-$SNjsonArray = $connector->getResource( $accessToken, $type, $folder );
-
-$type = "ipsec-tunnels";
-$IPsecTunneljsonArray = $connector->getResource( $accessToken, $type, $folder );
-
-$type = "ipsec-crypto-profiles";
-$IPsecCryptojsonArray = $connector->getResource( $accessToken, $type, $folder );
-
-$type = "ike-gateways";
-$IKEgw_jsonArray = $connector->getResource( $accessToken, $type, $folder );
-
-$type = "ike-crypto-profiles";
-$IKECryptojsonArray = $connector->getResource( $accessToken, $type, $folder );
-
 //////////////////////////////
 
-function getSASEarrayName($array, $name)
-{
-    foreach($array['data'] as $entry)
-    {
-        if( $entry['name'] == $name )
-            return $entry;
-    }
 
-    return array();
-}
-
-//////////////////////////////
-
-print( "#########################################\n");
-print( "## SERVICE CONNECTION ##\n" );
-print_r($SNjsonArray['data']);
-
-foreach( $SNjsonArray['data'] as $SNentry )
-{
-    $IPsecTunnel_Name = $SNentry['ipsec_tunnel'];
-    #print $IPsecTunnel_Name."\n";
-
-    $SN_IPsec_Tunnel = getSASEarrayName($IPsecTunneljsonArray, $IPsecTunnel_Name);
-    print( "#########################################\n");
-    print( "## IPSEC TUNNEL ##\n" );
-    print_r($SN_IPsec_Tunnel);
+/////////////////////////////
 
 
-    $SN_IPsecCrypto_profile_name = $SN_IPsec_Tunnel['auto_key']['ipsec_crypto_profile'];
-    #print $SN_IPsecCrypto_profile_name."\n";
-    $SN_IPsecCrypto_profile = getSASEarrayName($IPsecCryptojsonArray, $SN_IPsecCrypto_profile_name);
-    print( "#########################################\n");
-    print( "## IPSEC CRYPTO PROFIL ##\n" );
-    print_r($SN_IPsecCrypto_profile);
 
-
-    $SN_IKE_gateway_name = $SN_IPsec_Tunnel['auto_key']['ike_gateway']['0']['name'];
-    #print $SN_IKE_gateway_name."\n";
-    $SN_IKE_gateway = getSASEarrayName($IKEgw_jsonArray, $SN_IKE_gateway_name);
-    print( "#########################################\n");
-    print( "## IKE GATEWAY ##\n" );
-    print_r($SN_IKE_gateway);
-
-
-    $SN_IKECrypto_profile_name = $SN_IKE_gateway['protocol']['ikev1']['ike_crypto_profile'];
-    #print $SN_IKECrypto_profile_name."\n";
-    $SN_IKE_Crypto_Profile = getSASEarrayName($IKECryptojsonArray, $SN_IKECrypto_profile_name);
-    print( "#########################################\n");
-    print( "## IKE CRYPTO PROFIL ##\n" );
-    print_r($SN_IKE_Crypto_Profile);
-
-
-}
-
-
-//Todo: 20240326 swaschkut: get log date for SN tunnel
 
 ########################################################################################################################
 

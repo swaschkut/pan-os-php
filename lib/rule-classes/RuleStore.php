@@ -620,6 +620,11 @@ class RuleStore
         $xpath = $this->getXPath($rule);
         $element = $nr->getXmlText_inline();
 
+        if( $inPostRuleBase )
+            $xpath = str_replace( "pre-rulebase", "post-rulebase", $xpath );
+        else
+            $xpath = str_replace( "post-rulebase", "pre-rulebase", $xpath );
+
         $con->sendSetRequest($xpath, $element);
 
         return $nr;

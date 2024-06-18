@@ -4092,20 +4092,28 @@ RuleCallContext::$supportedActions[] = array(
         /** @var SecurityRule $rule */
         $rule = $context->object;
 
-        if( !$context->isAPI )
-            derr("actions is only working in API mode", null, false);
-
-        $rule_array = $rule->API_apps_seen();
-
-        if( !empty($rule_array ) )
+        if( $context->isAPI )
         {
-            PH::print_stdout("apps: ".implode(", ", array_keys( $rule_array['apps-seen'])) );
+            $rule_array = $rule->API_apps_seen();
 
-            PH::print_stdout("apps-seen-count: ".$rule_array['apps-seen-count']);
-            PH::print_stdout( "apps allowed count: ". $rule_array['apps-allowed-count'] );
-            PH::print_stdout( "days_no_new_app_count: ". $rule_array['days-no-new-app-count'] );
-            PH::print_stdout( "last_app_seen_since_count: ". $rule_array['last-app-seen-since-count'] );
+            if( !empty($rule_array ) )
+            {
+                PH::print_stdout("apps: ".implode(", ", array_keys( $rule_array['apps-seen'])) );
+
+                PH::print_stdout("apps-seen-count: ".$rule_array['apps-seen-count']);
+                PH::print_stdout( "apps allowed count: ". $rule_array['apps-allowed-count'] );
+                PH::print_stdout( "days_no_new_app_count: ". $rule_array['days-no-new-app-count'] );
+                PH::print_stdout( "last_app_seen_since_count: ". $rule_array['last-app-seen-since-count'] );
+            }
         }
+        else
+        {
+            mwarning("actions is only working in API mode", null, false);
+            exit();
+        }
+
+
+
 
     }
 );
@@ -5856,7 +5864,7 @@ RuleCallContext::$supportedActions[] = Array(
             }
         }
         else
-            derr( 'only supported in API mode', null, FALSE);
+            mwarning( 'only supported in API mode', null, FALSE);
     },
     'args' => Array( 'logHistory' => Array( 'type' => 'string', 'default' => 'last-15-minutes' ) ),
     'help' => 'returns TRUE if rule name matches the specified timestamp MM/DD/YYYY [american] / DD-MM-YYYY [european] / 21 September 2021 / -90 days',
@@ -5899,7 +5907,7 @@ RuleCallContext::$supportedActions[] = Array(
             }
         }
         else
-            derr( 'only supported in API mode', null, FALSE);
+            mwarning( 'only supported in API mode', null, FALSE);
     },
     'args' => Array( 'logHistory' => Array( 'type' => 'string', 'default' => 'last-15-minutes' ) ),
     'help' => 'returns TRUE if rule name matches the specified timestamp MM/DD/YYYY [american] / DD-MM-YYYY [european] / 21 September 2021 / -90 days',
@@ -5937,7 +5945,7 @@ RuleCallContext::$supportedActions[] = Array(
             }
         }
         else
-            derr( 'only supported in API mode', null, FALSE);
+            mwarning( 'only supported in API mode', null, FALSE);
     },
     'args' => Array( 'logHistory' => Array( 'type' => 'string', 'default' => 'last-15-minutes' ) ),
     'help' => 'returns TRUE if rule name matches the specified timestamp MM/DD/YYYY [american] / DD-MM-YYYY [european] / 21 September 2021 / -90 days',
@@ -5975,7 +5983,7 @@ RuleCallContext::$supportedActions[] = Array(
             }
         }
         else
-            derr( 'only supported in API mode', null, FALSE);
+            mwarning( 'only supported in API mode', null, FALSE);
     },
     'args' => Array( 'logHistory' => Array( 'type' => 'string', 'default' => 'last-15-minutes' ) ),
     'help' => 'returns TRUE if rule name matches the specified timestamp MM/DD/YYYY [american] / DD-MM-YYYY [european] / 21 September 2021 / -90 days',
@@ -6051,7 +6059,7 @@ RuleCallContext::$supportedActions[] = Array(
             }
         }
         else
-            derr( 'only supported in API mode', null, FALSE);
+            mwarning( 'only supported in API mode', null, FALSE);
     },
     'args' => Array( 'logHistory' => Array( 'type' => 'string', 'default' => 'last-15-minutes' ) ),
     'help' => 'returns TRUE if rule name matches the specified timestamp MM/DD/YYYY [american] / DD-MM-YYYY [european] / 21 September 2021 / -90 days',
@@ -6094,7 +6102,7 @@ RuleCallContext::$supportedActions[] = Array(
             }
         }
         else
-            derr( 'only supported in API mode', null, FALSE);
+            mwarning( 'only supported in API mode', null, FALSE);
     },
     'args' => Array( 'logHistory' => Array( 'type' => 'string', 'default' => 'last-15-minutes' ) ),
     'help' => 'returns TRUE if rule name matches the specified timestamp MM/DD/YYYY [american] / DD-MM-YYYY [european] / 21 September 2021 / -90 days',
@@ -6109,61 +6117,57 @@ RuleCallContext::$supportedActions[] = array(
     'MainFunction' => function (RuleCallContext $context) {
         $rule = $context->object;
 
-        if( !$context->isAPI )
-            derr('you cannot call this action without API mode', null, FALSE);
-
-        if( $context->first )
+        if( $context->isAPI )
         {
-            if( !isset($context->cachedList) )
+            if ($context->first)
             {
-                $text = file_get_contents($context->arguments['fileName']);
+                if (!isset($context->cachedList)) {
+                    $text = file_get_contents($context->arguments['fileName']);
 
-                if( $text === FALSE )
-                    derr("cannot open file '{$context->arguments['fileName']}", null, FALSE);
+                    if ($text === FALSE)
+                        derr("cannot open file '{$context->arguments['fileName']}", null, FALSE);
 
-                $lines = explode("\n", $text);
-                foreach( $lines as $line )
-                {
-                    $line = trim($line);
-                    if( strlen($line) == 0 )
-                        continue;
-                    $list[$line] = TRUE;
-                }
-
-                $context->cachedList = &$list;
-            }
-            else
-                $list = &$context->cachedList;
-            foreach( $list as $rulename => $truefalse )
-            {
-                $tmpRule = $rule->owner->find( $rulename );
-                if( $tmpRule == null )
-                {
-                    $tmpRule = $rule->owner->newSecurityRule( $rulename );
-
-                    $string = "QUEUED for bundled API call";
-                    PH::ACTIONlog( $context, $string );
-
-                    $newdoc = new DOMDocument;
-                    $node = $newdoc->importNode($tmpRule->xmlroot, true);
-                    $newdoc->appendChild($node);
-
-                    $string = "";
-                    foreach( $newdoc->documentElement->childNodes as $childnode )
-                    {
-                        $lineReturn = false;
-                        $indentingXmlIncreament = 1;
-                        $indentingXml = 0;
-                        $xml = &DH::dom_to_xml($childnode, $indentingXml, $lineReturn, -1, $indentingXmlIncreament);
-                        #print $xml;
-                        $string .= $xml;
+                    $lines = explode("\n", $text);
+                    foreach ($lines as $line) {
+                        $line = trim($line);
+                        if (strlen($line) == 0)
+                            continue;
+                        $list[$line] = TRUE;
                     }
 
+                    $context->cachedList = &$list;
+                } else
+                    $list = &$context->cachedList;
+                foreach ($list as $rulename => $truefalse) {
+                    $tmpRule = $rule->owner->find($rulename);
+                    if ($tmpRule == null) {
+                        $tmpRule = $rule->owner->newSecurityRule($rulename);
 
-                    $context->addRuleToMergedApiChange2($tmpRule, $string);
+                        $string = "QUEUED for bundled API call";
+                        PH::ACTIONlog($context, $string);
+
+                        $newdoc = new DOMDocument;
+                        $node = $newdoc->importNode($tmpRule->xmlroot, true);
+                        $newdoc->appendChild($node);
+
+                        $string = "";
+                        foreach ($newdoc->documentElement->childNodes as $childnode) {
+                            $lineReturn = false;
+                            $indentingXmlIncreament = 1;
+                            $indentingXml = 0;
+                            $xml = &DH::dom_to_xml($childnode, $indentingXml, $lineReturn, -1, $indentingXmlIncreament);
+                            #print $xml;
+                            $string .= $xml;
+                        }
+
+
+                        $context->addRuleToMergedApiChange2($tmpRule, $string);
+                    }
                 }
             }
         }
+        else
+            mwarning( 'only supported in API mode', null, FALSE);
     },
     'GlobalFinishFunction' => function (RuleCallContext $context) {
         $context->doBundled_API_Call();

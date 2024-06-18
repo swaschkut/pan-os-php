@@ -12,7 +12,16 @@ RQuery::$defaultFilters['threat']['name']['operators']['eq'] = array(
         'input' => 'input/panorama-8.0.xml'
     )
 );
-
+RQuery::$defaultFilters['threat']['name']['operators']['contains'] = array(
+    'Function' => function (ThreatRQueryContext $context) {
+        return strpos($context->object->name(), $context->value) !== FALSE;
+    },
+    'arg' => TRUE,
+    'ci' => array(
+        'fString' => '(%PROP% -)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
 RQuery::$defaultFilters['threat']['threatname']['operators']['eq'] = array(
     'Function' => function (ThreatRQueryContext $context) {
         return $context->object->threatname() == $context->value;
@@ -56,6 +65,20 @@ RQuery::$defaultFilters['threat']['category']['operators']['eq'] = array(
     'arg' => TRUE,
     'ci' => array(
         'fString' => '(%PROP% ftp)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+
+RQuery::$defaultFilters['threat']['cve']['operators']['contains'] = array(
+    'Function' => function (ThreatRQueryContext $context) {
+
+        $string = implode(",", $context->object->cve());
+
+        return strpos($string, $context->value) !== FALSE;
+    },
+    'arg' => TRUE,
+    'ci' => array(
+        'fString' => '(%PROP% -)',
         'input' => 'input/panorama-8.0.xml'
     )
 );

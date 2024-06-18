@@ -32,7 +32,7 @@ echo "START \"install PAN-OS-PHP on CENTOS\"" \
 && echo "" \
 && rm -rf pan-os-php \
 && echo "INSTALLATION via GIT" \
-&& GIT_SSL_NO_VERIFY=true git clone https://github.com/PaloAltoNetworks/pan-os-php.git \
+&& GIT_SSL_NO_VERIFY=true git clone https://github.com/swaschkut/pan-os-php.git \
 && echo "" \
 && echo "\"set path variables\""
 

@@ -22,20 +22,20 @@ https://ip_address_of_ UTM:4444/api/
 
 
 //copy all these information into one file
-network/host
-network/dns_host
-network/dns_group
-network/group
-network/range
-network/network
-network/interface_network
+objects/network/host
+objects/network/dns_host
+objects/network/dns_group
+objects/network/group
+objects/network/range
+objects/network/network
+objects/network/interface_network
 
-service/group
-service/tcp
-service/udp
-service/tcpudp
+objects/service/group
+objects/service/tcp
+objects/service/udp
+objects/service/tcpudp
 
-packetfilter/packetfilter
+objects/packetfilter/packetfilter
 
 
 

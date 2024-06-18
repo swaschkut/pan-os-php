@@ -31,6 +31,7 @@ class Threat
     public $threatname = null;
     public $category = null;
     public $severity = null;
+    private $cve = array();
     public $engine_version = null;
     public $default_action = 'allow';
 
@@ -122,6 +123,19 @@ class Threat
             $this->default_action = $tmp->textContent;
         }
 
+        $tmp = DH::findFirstElement('cve', $threatx);
+        if( $tmp !== FALSE )
+        {
+            $this->cve = array();
+
+            foreach( $tmp->childNodes as $node ) {
+                /** @var DOMElement $node */
+                if ($node->nodeType != XML_ELEMENT_NODE) continue;
+
+                $this->cve[] = $node->textContent;
+            }
+        }
+
     }
 
     public function type()
@@ -152,6 +166,11 @@ class Threat
     public function category()
     {
         return $this->category;
+    }
+
+    public function cve()
+    {
+        return $this->cve;
     }
 }
 

@@ -193,8 +193,7 @@ class KEYMANGER extends UTIL
 
                     PanAPIConnector::$savedConnectors[] = new PanAPIConnector($addHost, PH::$args['apikey']);
                 }
-
-                PanAPIConnector::saveConnectorsToUserHome();
+                PanAPIConnector::saveConnectorsToUserHome($debugAPI);
             }
             else
             {
@@ -287,7 +286,7 @@ class KEYMANGER extends UTIL
                 PH::print_stdout( " - requested to test Host/IP '{$checkHost}'");
                 PH::$JSON_TMP[$checkHost]['name'] = $checkHost;
 
-                if( $checkHost == "bpa-apikey" || $checkHost == "license-apikey" || $checkHost == "ldap-password" || $checkHost == "maxmind-licensekey" || $addHost == "gcp-mysql-password" )
+                if( $checkHost == "bpa-apikey" || $checkHost == "license-apikey" || $checkHost == "ldap-password" || $checkHost == "maxmind-licensekey" || $checkHost == "gcp-mysql-password" )
                 {
                     PH::$JSON_TMP[$checkHost]['status'] = "skipped can not be tested";
                 }
@@ -326,7 +325,7 @@ class KEYMANGER extends UTIL
         }
 
         $keyCount = count(PanAPIConnector::$savedConnectors);
-        $string = "Listing available keys:";
+        $string = "Listing available keys: '[".$keyCount."]'";
         PH::print_stdout( $string );
         PH::$JSON_TMP = array();
         PH::$JSON_TMP['header'] = $string;
@@ -337,6 +336,9 @@ class KEYMANGER extends UTIL
             $connectorList[$connector->apihost] = $connector;
         }
         ksort($connectorList);
+
+        if( $debugAPI )
+            print_r($connectorList);
 
         foreach( $connectorList as $connector )
         {

@@ -160,7 +160,7 @@ The following "RESTAPI" routes are available:
 Docker build
 ============
 
-There are Dockerfiles available with OS: Ubuntu20/22 and CentOS 7
+There are Dockerfiles available with OS: Ubuntu20/22/24 and CentOS 7
 
 For a quick start please use [WIKI docker](https://github.com/PaloAltoNetworks/pan-os-php/wiki/docker)
 

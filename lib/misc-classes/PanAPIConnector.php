@@ -304,7 +304,7 @@ class PanAPIConnector
 
         self::$keyStoreInitialized = TRUE;
 
-        $file = self::findFileConnectorsUserHome();
+        $file = self::findFileConnectorsUserHome( $debug );
 
         if( $debug )
             PH::print_stdout( " - FILE: ".$file );
@@ -319,7 +319,14 @@ class PanAPIConnector
 
                 $parts = explode(':', $line);
                 if( count($parts) != 2 )
-                    continue;
+                {
+                    //OLD:
+                    #continue;
+
+                    #20240515 with new PAN-OS API key algorithm, this needs to be fixed
+                    $tmp_parts1 = $parts[1].":".$parts[2];
+                    $parts[1] = $tmp_parts1;
+                }
 
                 $host = explode('%', $parts[0]);
 
@@ -331,9 +338,14 @@ class PanAPIConnector
                     self::$savedConnectors[] = new PanAPIConnector($host[0], $parts[1]);
             }
         }
+        else
+        {
+            if($debug)
+                mwarning("config key file does  not exist",null, false);
+        }
     }
 
-    static public function saveConnectorsToUserHome()
+    static public function saveConnectorsToUserHome($debug = false)
     {
         $content = '';
         foreach( self::$savedConnectors as $conn )
@@ -349,7 +361,7 @@ class PanAPIConnector
         file_put_contents($file, $content);
     }
 
-    static public function findFileConnectorsUserHome()
+    static public function findFileConnectorsUserHome( $debug = false)
     {
         if( strtoupper(substr(PHP_OS, 0, 3)) === 'WIN' )
         {
@@ -361,7 +373,9 @@ class PanAPIConnector
                 $file = getenv('HOMEPATH') . "\\" . self::$keyStoreFileName;
         }
         elseif( !empty( getenv('HOME') ) )
+        {
             $file = getenv('HOME') . '/' . self::$keyStoreFileName;
+        }
         else
         {
             //optimise this for API usage
