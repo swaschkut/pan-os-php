@@ -242,14 +242,32 @@ class AntiSpywareProfile
         $tmp_rule = DH::findFirstElement('mica-engine-spyware-enabled', $xml);
         if( $tmp_rule !== FALSE )
         {
-            //Todo: 20240617 continue
+            /*
+               <mica-engine-spyware-enabled>
+                 <entry name="HTTP Command and Control detector">
+                    <inline-policy-action>alert</inline-policy-action>
+                 </entry>
+            */
+            $this->additional['mica-engine-spyware-enabled'] = array();
+            foreach( $tmp_rule->childNodes as $tmp_entry1 )
+            {
+                if ($tmp_entry1->nodeType != XML_ELEMENT_NODE)
+                    continue;
+
+                $name = DH::findAttribute("name", $tmp_entry1);
+                $this->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action'] = DH::findFirstElement("inline-policy-action", $tmp_entry1)->textContent;
+            }
         }
 
         $tmp_rule = DH::findFirstElement('botnet-domains', $xml);
         if( $tmp_rule !== FALSE )
         {
-            //Todo: 20240617 continue
-
+            /*
+                 <sinkhole>
+                    <ipv4-address>sinkhole.paloaltonetworks.com</ipv4-address>
+                    <ipv6-address>2600:5200::1</ipv6-address>
+                 </sinkhole>
+             */
             $tmp_sinkhole = DH::findFirstElement('sinkhole', $tmp_rule);
             if( $tmp_sinkhole !== FALSE )
             {
@@ -269,7 +287,16 @@ class AntiSpywareProfile
                     if( $tmp_entry1->nodeType != XML_ELEMENT_NODE )
                         continue;
 
-                    //Todo:
+                    /*
+                     <lists>
+                        <entry name="default-paloalto-dns">
+                           <action>
+                              <alert/>
+                           </action>
+                           <packet-capture>disable</packet-capture>
+                        </entry>
+                     */
+
                     $name = DH::findAttribute("name", $tmp_entry1);
                     $action_element = DH::findFirstElement("action", $tmp_entry1);
                     $this->additional['lists'][$name]['action'] = $action_element->firstElementChild->nodeName;
@@ -280,27 +307,28 @@ class AntiSpywareProfile
             $tmp_dns_security_categories = DH::findFirstElement('dns-security-categories', $tmp_rule);
             if( $tmp_dns_security_categories !== FALSE )
             {
+                $this->additional['dns-security-categories'] = array();
+                foreach( $tmp_dns_security_categories->childNodes as $tmp_entry1 )
+                {
+                    if ($tmp_entry1->nodeType != XML_ELEMENT_NODE)
+                        continue;
 
+                    /*
+                    <dns-security-categories>
+                        <entry name="pan-dns-sec-adtracking">
+                           <log-level>default</log-level>
+                           <action>default</action>
+                           <packet-capture>disable</packet-capture>
+                        </entry>
+                    */
+
+                    $name = DH::findAttribute("name", $tmp_entry1);
+                    $this->additional['dns-security-categories'][$name]['log-level'] = DH::findFirstElement("log-level", $tmp_entry1)->textContent;
+                    $this->additional['dns-security-categories'][$name]['action'] = DH::findFirstElement("action", $tmp_entry1)->textContent;
+                    $this->additional['dns-security-categories'][$name]['packet-capture'] = DH::findFirstElement("packet-capture", $tmp_entry1)->textContent;
+                }
             }
-
-            /*
-             * <botnet-domains>
-         <sinkhole>
-            <ipv4-address>sinkhole.paloaltonetworks.com</ipv4-address>
-            <ipv6-address>2600:5200::1</ipv6-address>
-         </sinkhole>
-         <lists>
-            <entry name="default-paloalto-dns">
-               <action>
-                  <alert/>
-               </action>
-               <packet-capture>disable</packet-capture>
-            </entry>
-         </lists>
-         <dns-security-categories>
-             */
         }
-        #print_r( $tmp_array );
 
         return TRUE;
     }
@@ -370,7 +398,13 @@ class AntiSpywareProfile
 
         if( !empty( $this->additional ) )
         {
-            print_r( $this->additional );
+            PH::print_stdout("        - botnet-domain:" );
+
+            foreach( $this->additional as $type => $threat )
+            {
+                PH::print_stdout("          * ".$type.":" );
+                print_r($this->additional);
+            }
         }
 
         #PH::print_stdout();
