@@ -38,7 +38,7 @@ echo "START \"install script for MACOS\"" \
 && echo "extract everything to /tools and rename it to pan-os-php" \
 && echo "" \
 && echo "INSTALLATION via GIT" \
-&& GIT_SSL_NO_VERIFY=true git clone https://github.com/PaloAltoNetworks/pan-os-php.git \
+&& GIT_SSL_NO_VERIFY=true git clone https://github.com/swaschkut/pan-os-php.git \
 && echo "" \
 && chmod -R 777 ${FOLDER_PATH} \
 && echo "" \

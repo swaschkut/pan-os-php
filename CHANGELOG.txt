@@ -42,6 +42,7 @@ GENERAL:
 * appid-toolbox - extend testing scripts with better preparation
 * timezone related improvements for PHP8.3 on PANOS and Panorama config file
 * optimise HTMLExcelMerger.py Python script - Excel tab again ordered by name
+* github link update
 
 
 2.1.23 (20240408)
