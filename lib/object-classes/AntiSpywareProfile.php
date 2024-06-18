@@ -406,7 +406,32 @@ class AntiSpywareProfile
                 foreach( $this->additional['botnet-domain'] as $type => $threat )
                 {
                     PH::print_stdout("          * ".$type.":" );
-                    print_r($this->additional[$type]);
+                    if( $type == "lists" )
+                    {
+                        #print_r($this->additional['botnet-domain'][$type]);
+                        foreach( $this->additional['botnet-domain']['lists'] as $name => $value )
+                        {
+                            PH::print_stdout("            - ".$name." -  action: ".$value['action'] ." -  packet-capture: ".$value['packet-capture'] );
+                        }
+                    }
+                    elseif( $type == "sinkhole" )
+                    {
+                        foreach( $this->additional['botnet-domain'][$type] as $name => $value )
+                        {
+                            PH::print_stdout("            - ".$name.": ".$value );
+                        }
+                    }
+                    elseif( $type == "dns-security-categories" )
+                    {
+                        foreach( $this->additional['botnet-domain'][$type] as $name => $value )
+                        {
+                            PH::print_stdout("            - '".PH::bold($name)."'" );
+                            foreach( $value as $type2 => $value2 )
+                            {
+                                PH::print_stdout("                - ".$type2.": ".$value2 );
+                            }
+                        }
+                    }
                 }
             }
 
@@ -414,10 +439,8 @@ class AntiSpywareProfile
             {
                 PH::print_stdout("        - mica-engine-spyware-enabled:");
 
-                foreach ($this->additional['mica-engine-spyware-enabled'] as $type => $threat) {
-                    PH::print_stdout("          * " . $type . ":");
-                    print_r($this->additional['mica-engine-spyware-enabled'][$type]);
-                }
+                foreach ($this->additional['mica-engine-spyware-enabled'] as $name => $threat)
+                    PH::print_stdout("          * " . $name . " - inline-policy-action :" . $this->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action']);
             }
         }
 
