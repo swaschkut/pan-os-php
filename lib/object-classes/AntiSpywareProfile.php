@@ -425,7 +425,7 @@ class AntiSpywareProfile
                     {
                         foreach( $this->additional['botnet-domain'][$type] as $name => $value )
                         {
-                            PH::print_stdout("            - '".PH::bold($name)."'" );
+                            PH::print_stdout("            - '".PH::boldText($name)."'" );
                             foreach( $value as $type2 => $value2 )
                             {
                                 PH::print_stdout("                - ".$type2.": ".$value2 );
