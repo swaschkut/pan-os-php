@@ -1,6 +1,14 @@
 CHANGELOG
 
-2.1.24
+2.1.25
+UTIL:
+
+BUGFIX:
+
+GENERAL:
+
+
+2.1.24 (20240618)
 UTIL:
 * type=device | new actions=authkey-display-all/authkey-display-default/authkey-set/authkey-add
 * class RuleCallContext | add additional information if specific Fieldname is not supported for ExportToExcel
