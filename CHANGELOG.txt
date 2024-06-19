@@ -2,8 +2,10 @@ CHANGELOG
 
 2.1.25
 UTIL:
+* type=securityprofile securityprofiletype=vulnerability | extend with more profile information
 
 BUGFIX:
+* type=securityprofile securityprofiletype=spyware actions=display | correct usage of PH::boldText()
 
 GENERAL:
 

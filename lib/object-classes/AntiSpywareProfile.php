@@ -329,6 +329,19 @@ class AntiSpywareProfile
                     $this->additional['botnet-domain']['dns-security-categories'][$name]['packet-capture'] = DH::findFirstElement("packet-capture", $tmp_entry1)->textContent;
                 }
             }
+
+            $tmp_whitelists = DH::findFirstElement('whitelist', $tmp_rule);
+            if( $tmp_whitelists !== FALSE )
+            {
+                $this->additional['botnet-domain']['whitelist'] = array();
+                foreach ($tmp_whitelists->childNodes as $tmp_entry1) {
+                    if ($tmp_entry1->nodeType != XML_ELEMENT_NODE)
+                        continue;
+
+                    $name = DH::findAttribute("name", $tmp_entry1);
+                    $this->additional['botnet-domain']['whitelist'][$name] = $tmp_entry1->textContent;
+                }
+            }
         }
 
         return TRUE;
@@ -425,11 +438,21 @@ class AntiSpywareProfile
                     {
                         foreach( $this->additional['botnet-domain'][$type] as $name => $value )
                         {
-                            PH::print_stdout("            - '".PH::boldText($name)."'" );
-                            foreach( $value as $type2 => $value2 )
-                            {
-                                PH::print_stdout("                - ".$type2.": ".$value2 );
-                            }
+                            $string = "";
+                            $string .= "            - '".PH::boldText($name)."'";
+
+                            $string .= " - log-level: '".$value['log-level']."'";
+                            $string .= " - action: '".$value['action']."'";
+                            $string .= " - packet-capture: '".$value['packet-caputure']."'";
+
+                            PH::print_stdout($string );
+                        }
+                    }
+                    elseif( $type == "whitelist" )
+                    {
+                        foreach( $this->additional['botnet-domain'][$type] as $name => $value )
+                        {
+                            PH::print_stdout("            - ".$name.": ".$value );
                         }
                     }
                 }
