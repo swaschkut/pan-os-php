@@ -6,6 +6,7 @@ UTIL:
 
 BUGFIX:
 * type=securityprofile securityprofiletype=spyware actions=display | correct usage of PH::boldText()
+* type=rule actions=copy:{DGname} - bugfix to use numeric value for finding of new rulename
 
 GENERAL:
 
