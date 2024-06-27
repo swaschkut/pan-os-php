@@ -871,10 +871,21 @@ class RULEMERGER extends UTIL
 
 
         if( !isset(PH::$args['method']) )
+        {
+            PH::print_stdout();
+            PH::print_stdout(PH::boldText("Supported methods:"));
+            PH::print_stdout( implode(", ", array_keys($this->supportedMethods) ) );
             $this->display_error_usage_exit(' no method was provided');
+        }
         $this->UTIL_method = strtolower(PH::$args['method']);
         if( !isset($this->supportedMethods[$this->UTIL_method]) )
+        {
+            PH::print_stdout();
+            PH::print_stdout(PH::boldText("Supported methods:"));
+            PH::print_stdout( implode(", ", array_keys($this->supportedMethods) ) );
             $this->display_error_usage_exit("unsupported method '" . PH::$args['method'] . "' provided");
+        }
+
         $this->UTIL_method = $this->supportedMethods[$this->UTIL_method];
 
 
