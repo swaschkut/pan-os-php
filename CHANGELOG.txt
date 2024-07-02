@@ -8,6 +8,7 @@ BUGFIX:
 * type=securityprofile securityprofiletype=spyware actions=display | correct usage of PH::boldText()
 * class THREATlog - bugfix if empty query
 * type=rule actions=copy:{DGname} - bugfix to use numeric value for finding of new rulename
+* type=migration vendor=sophos | bugfix for service objects
 
 GENERAL:
 
