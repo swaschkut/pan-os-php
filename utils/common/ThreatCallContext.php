@@ -28,6 +28,9 @@ class ThreatCallContext extends CallContext
     public static $commonActionFunctions = array();
     public static $supportedActions = array();
 
+    public $counter_spyware;
+    public $counter_vulnerability;
+
     static public function prepareSupportedActions()
     {
         $tmpArgs = array();
