@@ -443,7 +443,7 @@ class AntiSpywareProfile
 
                             $string .= " - log-level: '".$value['log-level']."'";
                             $string .= " - action: '".$value['action']."'";
-                            $string .= " - packet-capture: '".$value['packet-caputure']."'";
+                            $string .= " - packet-capture: '".$value['packet-capture']."'";
 
                             PH::print_stdout($string );
                         }
