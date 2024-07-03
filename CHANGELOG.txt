@@ -11,6 +11,7 @@ BUGFIX:
 * type=rule actions=copy:{DGname} - bugfix to use numeric value for finding of new rulename
 * type=migration vendor=sophos | bugfix for service objects
 * type=securityprofile securityprofiletype=spyware | bugfix for typo in packet-capture
+* type=spyware | bugfix for reading XML information
 
 GENERAL:
 

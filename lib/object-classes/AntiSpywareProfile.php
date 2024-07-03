@@ -233,8 +233,11 @@ class AntiSpywareProfile
                         continue;
 
                     $tmp_action = DH::firstChildElement($action);
-                    $tmp_array[$this->secprof_type][$this->name]['threat-exception'][$tmp_name]['action'] = $tmp_action->nodeName;
-                    $this->threatException[$tmp_name]['action'] = $tmp_action->nodeName;
+                    if( $tmp_action !== FALSE )
+                    {
+                        $tmp_array[$this->secprof_type][$this->name]['threat-exception'][$tmp_name]['action'] = $tmp_action->nodeName;
+                        $this->threatException[$tmp_name]['action'] = $tmp_action->nodeName;
+                    }
                 }
             }
         }
@@ -255,7 +258,9 @@ class AntiSpywareProfile
                     continue;
 
                 $name = DH::findAttribute("name", $tmp_entry1);
-                $this->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action'] = DH::findFirstElement("inline-policy-action", $tmp_entry1)->textContent;
+                $tmp_inline_policy_action = DH::findFirstElement("inline-policy-action", $tmp_entry1);
+                if( $tmp_inline_policy_action !== FALSE )
+                    $this->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action'] = $tmp_inline_policy_action->textContent;
             }
         }
 
@@ -274,9 +279,11 @@ class AntiSpywareProfile
             {
                 $this->additional['botnet-domain']['sinkhole'] = array();
                 $tmp_sinkhole_ipv4 = DH::findFirstElement('ipv4-address', $tmp_sinkhole);
-                $this->additional['botnet-domain']['sinkhole']['ipv4-address'] = $tmp_sinkhole_ipv4->textContent;
+                if( $tmp_sinkhole_ipv4 !== FALSE )
+                    $this->additional['botnet-domain']['sinkhole']['ipv4-address'] = $tmp_sinkhole_ipv4->textContent;
                 $tmp_sinkhole_ipv6 = DH::findFirstElement('ipv6-address', $tmp_sinkhole);
-                $this->additional['botnet-domain']['sinkhole']['ipv6-address'] = $tmp_sinkhole_ipv6->textContent;
+                if( $tmp_sinkhole_ipv6 !== FALSE )
+                    $this->additional['botnet-domain']['sinkhole']['ipv6-address'] = $tmp_sinkhole_ipv6->textContent;
             }
 
             $tmp_lists = DH::findFirstElement('lists', $tmp_rule);
@@ -300,8 +307,11 @@ class AntiSpywareProfile
 
                     $name = DH::findAttribute("name", $tmp_entry1);
                     $action_element = DH::findFirstElement("action", $tmp_entry1);
-                    $this->additional['botnet-domain']['lists'][$name]['action'] = $action_element->firstElementChild->nodeName;
-                    $this->additional['botnet-domain']['lists'][$name]['packet-capture'] = DH::findFirstElement("packet-capture", $tmp_entry1)->textContent;
+                    if( $action_element !== FALSE )
+                        $this->additional['botnet-domain']['lists'][$name]['action'] = $action_element->firstElementChild->nodeName;
+                    $tmp_packet_capture = DH::findFirstElement("packet-capture", $tmp_entry1);
+                    if( $tmp_packet_capture !== FALSE )
+                        $this->additional['botnet-domain']['lists'][$name]['packet-capture'] = $tmp_packet_capture->textContent;
                 }
             }
 
@@ -324,9 +334,15 @@ class AntiSpywareProfile
                     */
 
                     $name = DH::findAttribute("name", $tmp_entry1);
-                    $this->additional['botnet-domain']['dns-security-categories'][$name]['log-level'] = DH::findFirstElement("log-level", $tmp_entry1)->textContent;
-                    $this->additional['botnet-domain']['dns-security-categories'][$name]['action'] = DH::findFirstElement("action", $tmp_entry1)->textContent;
-                    $this->additional['botnet-domain']['dns-security-categories'][$name]['packet-capture'] = DH::findFirstElement("packet-capture", $tmp_entry1)->textContent;
+                    $tmp_log_level = DH::findFirstElement("log-level", $tmp_entry1);
+                    if( $tmp_log_level !== FALSE )
+                        $this->additional['botnet-domain']['dns-security-categories'][$name]['log-level'] = $tmp_log_level->textContent;
+                    $tmp_action = DH::findFirstElement("action", $tmp_entry1);
+                    if( $tmp_action !== FALSE )
+                        $this->additional['botnet-domain']['dns-security-categories'][$name]['action'] = $tmp_action->textContent;
+                    $tmp_packet_capture = DH::findFirstElement("packet-capture", $tmp_entry1);
+                    if( $tmp_packet_capture !== FALSE )
+                        $this->additional['botnet-domain']['dns-security-categories'][$name]['packet-capture'] = $tmp_packet_capture->textContent;
                 }
             }
 
@@ -334,7 +350,8 @@ class AntiSpywareProfile
             if( $tmp_whitelists !== FALSE )
             {
                 $this->additional['botnet-domain']['whitelist'] = array();
-                foreach ($tmp_whitelists->childNodes as $tmp_entry1) {
+                foreach ($tmp_whitelists->childNodes as $tmp_entry1)
+                {
                     if ($tmp_entry1->nodeType != XML_ELEMENT_NODE)
                         continue;
 
