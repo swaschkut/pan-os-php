@@ -16,6 +16,7 @@ BUGFIX:
 * bugfix | timezone related parts to PHP 8.3
 
 GENERAL:
+* app-id update to version 8866-8815
 
 
 2.1.24 (20240618)
