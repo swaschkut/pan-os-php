@@ -189,6 +189,14 @@ class AntiSpywareProfile
                     $this->rules[$vb_severity]['packet-capture'] = $packet_capture->textContent;
                 }
 
+                $category = DH::findFirstElement('category', $tmp_entry1);
+                if( $category !== FALSE )
+                {
+                    #PH::print_stdout("             packet-capture: '".$rule['packet-capture']."'");
+                    $tmp_array[$this->secprof_type][$this->name]['rules'][$vb_severity]['category'] = $category->textContent;
+                    $this->rules[$vb_severity]['category'] = $category->textContent;
+                }
+
                 $direction = DH::findFirstElement('direction', $tmp_entry1);
                 if( $direction !== FALSE )
                 {
@@ -402,6 +410,13 @@ class AntiSpywareProfile
                     #PH::print_stdout("             packet-capture: '".$rule['packet-capture']."'");
                     $string .= " - packet-capture: '".$rule['packet-capture']."'";
                     PH::$JSON_TMP['sub']['object'][$this->name()]['rule'][$rulename]['packet-capture'] = $rule['packet-capture'];
+                }
+
+                if( isset( $rule['category'] ) )
+                {
+                    #PH::print_stdout("             packet-capture: '".$rule['packet-capture']."'");
+                    $string .= " - category: '".$rule['category']."'";
+                    PH::$JSON_TMP['sub']['object'][$this->name()]['rule'][$rulename]['category'] = $rule['category'];
                 }
                 #print_r($rule);
                 PH::print_stdout( $string );

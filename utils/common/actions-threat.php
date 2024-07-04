@@ -55,10 +55,12 @@ ThreatCallContext::$supportedActions[] = array(
         PH::$JSON_TMP['sub']['object'][$threat->name()]['name'] = $threat->name();
         PH::$JSON_TMP['sub']['object'][$threat->name()]['type'] = get_class($threat);
         PH::$JSON_TMP['sub']['object'][$threat->name()]['category'] = $threat->category();
+        PH::$JSON_TMP['sub']['object'][$threat->name()]['host'] = $threat->category();
         PH::$JSON_TMP['sub']['object'][$threat->name()]['severity'] = $threat->severity();
         PH::$JSON_TMP['sub']['object'][$threat->name()]['default-action'] = $threat->defaultAction();
         PH::$JSON_TMP['sub']['object'][$threat->name()]['cve'] = $threat->cve();
         PH::$JSON_TMP['sub']['object'][$threat->name()]['min_engine_version'] = $threat->min_engine_version;
+        PH::$JSON_TMP['sub']['object'][$threat->name()]['max_engine_version'] = $threat->max_engine_version;
 
         if( $threat->type() == "vulnerability" )
             $context->counter_vulnerability++;

@@ -8,6 +8,7 @@ UTIL:
 * type=threat | introduction of 'filter=(type is.vulnerability) | (type is.spyware) | (object is.disabled)'
 * type=rule actions=exporttoexcel:file.html | introduce grouptag column
 * type=rule | introduce 'filter=(secprof group.is.undefined)'
+* type=securityprofile | extend information for securityprofiletype=spyware/virus/vulnerability
 
 BUGFIX:
 * type=securityprofile securityprofiletype=spyware actions=display | correct usage of PH::boldText()
