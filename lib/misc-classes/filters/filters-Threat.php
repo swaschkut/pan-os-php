@@ -82,11 +82,51 @@ RQuery::$defaultFilters['threat']['cve']['operators']['contains'] = array(
         'input' => 'input/panorama-8.0.xml'
     )
 );
-RQuery::$defaultFilters['threat']['engine-version']['operators']['>,<,=,!'] = array(
-    'eval' => "\$object->engine_version !operator! !value!",
+RQuery::$defaultFilters['threat']['min-engine-version']['operators']['>,<,=,!'] = array(
+    'eval' => "!empty(\$object->min_engine_version) && \$object->min_engine_version !operator! !value!",
     'arg' => TRUE,
     'ci' => array(
         'fString' => '(%PROP% 1)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['threat']['max-engine-version']['operators']['>,<,=,!'] = array(
+    'eval' => "!empty(\$object->max_engine_version) && \$object->max_engine_version !operator! !value!",
+    'arg' => TRUE,
+    'ci' => array(
+        'fString' => '(%PROP% 1)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+
+RQuery::$defaultFilters['threat']['type']['operators']['is.vulnerability'] = array(
+    'Function' => function (ThreatRQueryContext $context) {
+        return $context->object->type() == "vulnerability";
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP% ftp)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['threat']['type']['operators']['is.spyware'] = array(
+    'Function' => function (ThreatRQueryContext $context) {
+        return $context->object->type() == "spyware";
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP% ftp)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+
+RQuery::$defaultFilters['threat']['object']['operators']['is.disabled'] = array(
+    'Function' => function (ThreatRQueryContext $context) {
+        return $context->object->disabled == TRUE;
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP% ftp)',
         'input' => 'input/panorama-8.0.xml'
     )
 );

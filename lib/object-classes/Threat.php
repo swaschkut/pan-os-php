@@ -32,8 +32,10 @@ class Threat
     public $category = null;
     public $severity = null;
     private $cve = array();
-    public $engine_version = null;
+    public $min_engine_version = null;
+    public $max_engine_version = null;
     public $default_action = 'allow';
+    public $disabled = false;
 
     /** @var ThreatStore|null */
     public $owner;
@@ -48,6 +50,13 @@ class Threat
 
     public function load_from_domxml( $threatx )
     {
+        $tmp = DH::findFirstElement('disable', $threatx);
+        if( $tmp !== FALSE )
+        {
+            if( $tmp->textContent == "yes" )
+                $this->disabled = true;
+        }
+
         $tmp = DH::findFirstElement('threatname', $threatx);
         if( $tmp !== FALSE )
             $this->threatname = $tmp->textContent;
@@ -111,7 +120,17 @@ class Threat
             #<engine-version min="8.0"/>
             $engine = DH::findAttribute( 'min', $tmp );
             $tmp_engine_array = explode(".", $engine);
-            $this->engine_version = $tmp_engine_array[0];
+            if( count($tmp_engine_array) < 3 && $tmp_engine_array[0] > 1 )
+                $this->min_engine_version = $tmp_engine_array[0].$tmp_engine_array[1];
+            else
+                $this->min_engine_version = $tmp_engine_array[0];
+
+            $engine = DH::findAttribute( 'max', $tmp );
+            $tmp_engine_array = explode(".", $engine);
+            if( count($tmp_engine_array) < 3 && $tmp_engine_array[0] > 1 )
+                $this->max_engine_version = $tmp_engine_array[0].$tmp_engine_array[1];
+            else
+                $this->max_engine_version = $tmp_engine_array[0];
         }
 
 

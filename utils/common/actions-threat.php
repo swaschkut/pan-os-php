@@ -43,7 +43,14 @@ ThreatCallContext::$supportedActions[] = array(
 
         PH::print_stdout( $context->padding . "* " . get_class($threat) . " '{$threat->name()}' " );
 
-        PH::print_stdout( "          - Threatname: '{$threat->threatname()}'  category: '{$threat->category()}' severity: '{$threat->severity()}'  default-action: '{$threat->defaultAction()}' cve: '".implode(",", $threat->cve())."' engine-version: '".$threat->engine_version."'" );
+        $tmp_min_engine_version = "";
+        $tmp_max_engine_version = "";
+        if( !empty($threat->min_engine_version) )
+            $tmp_min_engine_version =  " min-engine-version: '".$threat->min_engine_version."'";
+        if( !empty($threat->max_engine_version) )
+            $tmp_max_engine_version =  " max-engine-version: '".$threat->max_engine_version."'";
+
+        PH::print_stdout( "          - Threatname: '{$threat->threatname()}'  category: '{$threat->category()}' severity: '{$threat->severity()}'  default-action: '{$threat->defaultAction()}' cve: '".implode(",", $threat->cve())."' ".$tmp_min_engine_version.$tmp_max_engine_version );
 
         PH::$JSON_TMP['sub']['object'][$threat->name()]['name'] = $threat->name();
         PH::$JSON_TMP['sub']['object'][$threat->name()]['type'] = get_class($threat);
@@ -51,7 +58,7 @@ ThreatCallContext::$supportedActions[] = array(
         PH::$JSON_TMP['sub']['object'][$threat->name()]['severity'] = $threat->severity();
         PH::$JSON_TMP['sub']['object'][$threat->name()]['default-action'] = $threat->defaultAction();
         PH::$JSON_TMP['sub']['object'][$threat->name()]['cve'] = $threat->cve();
-        PH::$JSON_TMP['sub']['object'][$threat->name()]['engine_version'] = $threat->engine_version;
+        PH::$JSON_TMP['sub']['object'][$threat->name()]['min_engine_version'] = $threat->min_engine_version;
 
         if( $threat->type() == "vulnerability" )
             $context->counter_vulnerability++;
@@ -183,4 +190,15 @@ ThreatCallContext::$supportedActions[] = array(
                     "  - WhereUsed : list places where object is used (rules, groups ...)\n" .
                     "  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n")
     )
+);
+
+ThreatCallContext::$supportedActions[] = array(
+    'name' => 'display-xml',
+    'MainFunction' => function (ThreatCallContext $context)
+    {
+        $threat = $context->object;
+
+        DH::DEBUGprintDOMDocument($threat->xmlroot);
+
+    }
 );

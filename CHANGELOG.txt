@@ -4,7 +4,8 @@ CHANGELOG
 UTIL:
 * type=securityprofile securityprofiletype=vulnerability | extend with more profile information
 * type=rule-merger | extend help information if argument method= is not set
-* type=threat | introduce 'filter=(engine-version <>!= VALUE)'
+* type=threat | introduce 'filter=(min-engine-version <>!= VALUE)'
+* type=threat | introduction of 'filter=(max-engine-version <>=! VALUE)'
 
 BUGFIX:
 * type=securityprofile securityprofiletype=spyware actions=display | correct usage of PH::boldText()
@@ -16,7 +17,7 @@ BUGFIX:
 * bugfix | timezone related parts to PHP 8.3
 
 GENERAL:
-* app-id update to version 8866-8815
+* app-id update to version 8867-8824
 
 
 2.1.24 (20240618)
