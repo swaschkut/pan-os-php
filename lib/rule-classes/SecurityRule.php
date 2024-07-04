@@ -63,6 +63,7 @@ class SecurityRule extends RuleWithUserID
     /** @var null|string[]|DOMElement */
     public $secprofroot = null;
     protected $secprofgroup = null;
+    public $secprofgroupUndefined = null;
     protected $secprofgroup_obj = null;
 
     protected $secprofProfiles = array();
@@ -453,6 +454,7 @@ class SecurityRule extends RuleWithUserID
             if( $firstE !== FALSE )
             {
                 $this->secproftype = 'group';
+                $this->secprofgroupUndefined = true;
 
                 //Todo findOrCreate can NOT be used because of default object not created
                 #$tmp_group =  $this->owner->owner->securityProfileGroupStore->findorCreate( $firstE->textContent );
@@ -470,6 +472,8 @@ class SecurityRule extends RuleWithUserID
                     $this->secprofgroup = $firstE->textContent;
                 }
             }
+            else
+                $this->secprofgroupUndefined = false;
         }
         elseif( $profilesRoot !== FALSE )
         {
