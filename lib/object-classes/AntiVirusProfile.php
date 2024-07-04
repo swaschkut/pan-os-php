@@ -23,15 +23,17 @@ class AntiVirusProfile
 
     public $ftp = array();
     public $http = array();
+    public $http2 = array();
     public $imap = array();
     public $pop3 = array();
     public $smb = array();
     public $smtp = array();
 
     public $threatException = array();
+    public $additional = array();
 
 
-    public $tmp_virus_prof_array = array('http', 'smtp', 'imap', 'pop3', 'ftp', 'smb');
+    public $tmp_virus_prof_array = array('http', 'http2','smtp', 'imap', 'pop3', 'ftp', 'smb');
 
 
     /**
@@ -139,7 +141,8 @@ class AntiVirusProfile
                 if( $action !== FALSE )
                 {
                     #$tmp_array['virus'][$this->name][$appName]['action'] = $action->textContent;
-                    #$this->$appName['action'] = $action->textContent;
+                    #$this->additional[$appName]['action'] = $action->textContent;
+                    $this->$appName['action'] = $action->textContent;
                 }
                 else
                 {
@@ -152,15 +155,22 @@ class AntiVirusProfile
                 if( $action_wildfire !== FALSE )
                 {
                     #$tmp_array['virus'][$this->name][$appName]['wildfire-action'] = $action_wildfire->textContent;
-                    #$this->$appName['wildfire-action'] = $action_wildfire->textContent;
+                    #$this->additional[$appName]['wildfire-action'] = $action_wildfire->textContent;
+                    $this->$appName['wildfire-action'] = $action_wildfire->textContent;
                 }
                 else
                 {
                     #$this->$appName['wildfire-action'] = " -- NOT SET -- ";
                     //Todo: if not, set default???
                 }
-
-
+                //mlav-action
+                $action_mlav_action = DH::findFirstElement('mlav-action', $tmp_entry);
+                if( $action_mlav_action !== FALSE )
+                {
+                    #$tmp_array['virus'][$this->name][$appName]['wildfire-action'] = $action_wildfire->textContent;
+                    #$this->additional[$appName]['wildfire-action'] = $action_wildfire->textContent;
+                    $this->$appName['mlav-action'] = $action_mlav_action->textContent;
+                }
             }
 
             #print_r( $tmp_array );
@@ -219,6 +229,12 @@ class AntiVirusProfile
             {
                 PH::print_stdout(  "          - wildfire-action: '" . $this->$type['wildfire-action'] . "'" );
                 PH::$JSON_TMP['sub']['object'][$this->name()]['decoder'][$type]['wildfire-action'] = $this->$type['wildfire-action'];
+            }
+
+            if( isset( $this->$type['mlav-action'] ) )
+            {
+                PH::print_stdout(  "          - mlav-action: '" . $this->$type['mlav-action'] . "'" );
+                PH::$JSON_TMP['sub']['object'][$this->name()]['decoder'][$type]['mlav-action'] = $this->$type['mlav-action'];
             }
         }
 
