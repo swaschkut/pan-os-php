@@ -107,7 +107,13 @@ class Threat
 
         $tmp = DH::findFirstElement('engine-version', $threatx);
         if( $tmp !== FALSE )
-            $this->engine_version = $tmp->textContent;
+        {
+            #<engine-version min="8.0"/>
+            $engine = DH::findAttribute( 'min', $tmp );
+            $tmp_engine_array = explode(".", $engine);
+            $this->engine_version = $tmp_engine_array[0];
+        }
+
 
         $tmp = DH::findFirstElement('default-action', $threatx);
         if( $tmp !== FALSE )

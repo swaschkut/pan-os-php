@@ -82,5 +82,12 @@ RQuery::$defaultFilters['threat']['cve']['operators']['contains'] = array(
         'input' => 'input/panorama-8.0.xml'
     )
 );
-
+RQuery::$defaultFilters['threat']['engine-version']['operators']['>,<,=,!'] = array(
+    'eval' => "\$object->engine_version !operator! !value!",
+    'arg' => TRUE,
+    'ci' => array(
+        'fString' => '(%PROP% 1)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
 // </editor-fold>

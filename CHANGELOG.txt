@@ -4,6 +4,7 @@ CHANGELOG
 UTIL:
 * type=securityprofile securityprofiletype=vulnerability | extend with more profile information
 * type=rule-merger | extend help information if argument method= is not set
+* type=threat | introduce 'filter=(engine-version <>!= VALUE)'
 
 BUGFIX:
 * type=securityprofile securityprofiletype=spyware actions=display | correct usage of PH::boldText()
@@ -12,6 +13,7 @@ BUGFIX:
 * type=migration vendor=sophos | bugfix for service objects
 * type=securityprofile securityprofiletype=spyware | bugfix for typo in packet-capture
 * type=spyware | bugfix for reading XML information
+* bugfix | timezone related parts to PHP 8.3
 
 GENERAL:
 
