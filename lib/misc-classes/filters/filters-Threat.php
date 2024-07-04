@@ -99,6 +99,15 @@ RQuery::$defaultFilters['threat']['max-engine-version']['operators']['>,<,=,!'] 
     )
 );
 
+RQuery::$defaultFilters['threat']['max-engine-version']['operators']['is.empty'] = array(
+    'eval' => "empty(\$object->max_engine_version)",
+    'arg' => false,
+    'ci' => array(
+        'fString' => '(%PROP% 1)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+
 RQuery::$defaultFilters['threat']['type']['operators']['is.vulnerability'] = array(
     'Function' => function (ThreatRQueryContext $context) {
         return $context->object->type() == "vulnerability";

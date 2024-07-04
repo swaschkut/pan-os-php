@@ -4,8 +4,9 @@ CHANGELOG
 UTIL:
 * type=securityprofile securityprofiletype=vulnerability | extend with more profile information
 * type=rule-merger | extend help information if argument method= is not set
-* type=threat | introduce 'filter=(min-engine-version <>!= VALUE)'
-* type=threat | introduction of 'filter=(max-engine-version <>=! VALUE)'
+* type=threat | introduce 'filter=(min-engine-version <>!= VALUE) | (max-engine-version <>=! VALUE) | (max-engine-version is.empty)'
+* type=threat | introduction of 'filter=(type is.vulnerability) | (type is.spyware) | (object is.disabled)'
+* type=rule actions=exporttoexcel:file.html | introduce grouptag column
 
 BUGFIX:
 * type=securityprofile securityprofiletype=spyware actions=display | correct usage of PH::boldText()

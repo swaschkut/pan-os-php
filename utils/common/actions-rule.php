@@ -4581,6 +4581,7 @@ RuleCallContext::$supportedActions[] = array(
             'nat_rule_type' => 'nat_rule_type',
             'name' => 'name',
             'tag' => 'tags',
+            'grouptag' => 'grouptags',
             'from' => 'from',
             'to' => 'to',
             'src_negated' => 'source_negated',
