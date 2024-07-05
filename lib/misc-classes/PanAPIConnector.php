@@ -232,7 +232,11 @@ class PanAPIConnector
 
             $threat_version = DH::findFirstElement('threat-version', $res);
             if( $threat_version === FALSE )
-                derr("cannot find <threat-version>:\n" . DH::dom_to_xml($this->show_system_info_raw, 0, TRUE, 4));
+            {
+                PH::print_stdout("model: ".$model);
+                mwarning("cannot find <threat-version>:\n" . DH::dom_to_xml($this->show_system_info_raw, 0, TRUE, 4));
+            }
+
             $this->info_threat_version = $threat_version->textContent;
         }
 
