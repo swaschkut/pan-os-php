@@ -220,7 +220,7 @@ class PanAPIConnector
             derr("cannot find <wildfire-version>:\n" . DH::dom_to_xml($this->show_system_info_raw, 0, TRUE, 4));
         $this->info_wildfire_version = $wildfire_version->textContent;
 
-        if( $model == 'panorama' || $model == 'm-100' || $model == 'm-500' || $model == 'm-200' || $model == 'm-600' )
+        if( $model == 'panorama' || $model == 'm-100' || $model == 'm-500' || $model == 'm-200' || $model == 'm-300' || $model == 'm-600' || $model == 'm-700' )
         {
             $this->info_deviceType = 'panorama';
 
@@ -233,7 +233,6 @@ class PanAPIConnector
             $threat_version = DH::findFirstElement('threat-version', $res);
             if( $threat_version === FALSE )
             {
-                PH::print_stdout("model: ".$model);
                 mwarning("cannot find <threat-version>:\n" . DH::dom_to_xml($this->show_system_info_raw, 0, TRUE, 4));
             }
 
