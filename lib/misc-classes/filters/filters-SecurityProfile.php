@@ -522,4 +522,136 @@ RQuery::$defaultFilters['securityprofile']['exception']['operators']['is.set'] =
         'input' => 'input/panorama-8.0.xml'
     )
 );
+
+RQuery::$defaultFilters['securityprofile']['action']['operators']['eq'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        $object = $context->object;
+        $value = $context->value;
+
+        #if( $object->secprof_type == 'virus' || $object->secprof_type == 'spyware' || $object->secprof_type == 'vulnerability' )
+        if( $object->secprof_type == 'spyware' || $object->secprof_type == 'vulnerability' )
+        {
+            if( !empty( $object->rules ) )
+            {
+                foreach( $object->rules as $rulename => $rule )
+                {
+                    if( $rule['action'] == $value )
+                        return TRUE;
+                }
+            }
+        }
+
+        return FALSE;
+
+    },
+    'arg' => TRUE,
+    'ci' => array(
+        'fString' => '(%PROP% reset-both )',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+
+RQuery::$defaultFilters['securityprofile']['packet-capture']['operators']['eq'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        $object = $context->object;
+        $value = $context->value;
+
+        #if( $object->secprof_type == 'virus' || $object->secprof_type == 'spyware' || $object->secprof_type == 'vulnerability' )
+        if( $object->secprof_type == 'spyware' || $object->secprof_type == 'vulnerability' )
+        {
+            if( !empty( $object->rules ) )
+            {
+                foreach( $object->rules as $rulename => $rule )
+                {
+                    if( $rule['packet-capture'] == $value )
+                        return TRUE;
+                }
+            }
+        }
+        return FALSE;
+    },
+    'arg' => TRUE,
+    'ci' => array(
+        'fString' => '(%PROP% single-packet )',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+
+RQuery::$defaultFilters['securityprofile']['severity']['operators']['eq'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        $object = $context->object;
+        $value = $context->value;
+
+        #if( $object->secprof_type == 'virus' || $object->secprof_type == 'spyware' || $object->secprof_type == 'vulnerability' )
+        if( $object->secprof_type == 'spyware' || $object->secprof_type == 'vulnerability' )
+        {
+            if( !empty( $object->rules ) )
+            {
+                foreach( $object->rules as $rulename => $rule )
+                {
+                    if( in_array( $value, $rule['severity']) )
+                        return TRUE;
+                }
+            }
+        }
+        return FALSE;
+    },
+    'arg' => TRUE,
+    'ci' => array(
+        'fString' => '(%PROP% critical )',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+
+RQuery::$defaultFilters['securityprofile']['category']['operators']['eq'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        $object = $context->object;
+        $value = $context->value;
+
+        #if( $object->secprof_type == 'virus' || $object->secprof_type == 'spyware' || $object->secprof_type == 'vulnerability' )
+        if( $object->secprof_type == 'spyware' || $object->secprof_type == 'vulnerability' )
+        {
+            if( !empty( $object->rules ) )
+            {
+                foreach( $object->rules as $rulename => $rule )
+                {
+                    if( $rule['category'] == $value )
+                        return TRUE;
+                }
+            }
+        }
+        return FALSE;
+    },
+    'arg' => TRUE,
+    'ci' => array(
+        'fString' => '(%PROP% brute-force )',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+
+RQuery::$defaultFilters['securityprofile']['host']['operators']['eq'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        $object = $context->object;
+        $value = $context->value;
+
+        #if( $object->secprof_type == 'virus' || $object->secprof_type == 'spyware' || $object->secprof_type == 'vulnerability' )
+        if( $object->secprof_type == 'spyware' || $object->secprof_type == 'vulnerability' )
+        {
+            if( !empty( $object->rules ) )
+            {
+                foreach( $object->rules as $rulename => $rule )
+                {
+                    if( $rule['host'] == $value )
+                        return TRUE;
+                }
+            }
+        }
+        return FALSE;
+    },
+    'arg' => TRUE,
+    'ci' => array(
+        'fString' => '(%PROP% client )',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
 // </editor-fold>

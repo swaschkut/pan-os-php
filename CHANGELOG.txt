@@ -9,6 +9,7 @@ UTIL:
 * type=rule actions=exporttoexcel:file.html | introduce grouptag column
 * type=rule | introduce 'filter=(secprof group.is.undefined)'
 * type=securityprofile | extend information for securityprofiletype=spyware/virus/vulnerability
+* type=securityprofile securityprofiletype=spyware/vulnerability |  'filter=(severity eq critical) and (action eq reset-both) and (packet-capture eq single-packet)'
 
 BUGFIX:
 * type=securityprofile securityprofiletype=spyware actions=display | correct usage of PH::boldText()
