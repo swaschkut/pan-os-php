@@ -25,6 +25,8 @@ class AntiSpywareProfile
     public $rules = array();
     public $additional = array();
 
+    public $cloud_inline_analysis_enabled = false;
+
     /**
      * you should not need this one for normal use
      * @param string $name
@@ -247,6 +249,19 @@ class AntiSpywareProfile
                         $this->threatException[$tmp_name]['action'] = $tmp_action->nodeName;
                     }
                 }
+
+                $exemptIP = DH::findFirstElement('exempt-ip', $tmp_entry1);
+                $this->threatException[$tmp_name]['exempt-ip'] = array();
+                if( $exemptIP !== FALSE )
+                {
+                    foreach( $exemptIP->childNodes as $tmp_entry2 )
+                    {
+                        if ($tmp_entry2->nodeType != XML_ELEMENT_NODE)
+                            continue;
+
+                        $this->threatException[$tmp_name]['exempt-ip'][] = DH::findAttribute("name", $tmp_entry2);
+                    }
+                }
             }
         }
 
@@ -271,7 +286,13 @@ class AntiSpywareProfile
                     $this->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action'] = $tmp_inline_policy_action->textContent;
             }
         }
-
+        //<cloud-inline-analysis>yes</cloud-inline-analysis>
+        $tmp_rule = DH::findFirstElement('cloud-inline-analysis', $xml);
+        if( $tmp_rule !== FALSE )
+        {
+            if( $tmp_rule->textContent == "yes")
+                $this->cloud_inline_analysis_enabled = true;
+        }
         $tmp_rule = DH::findFirstElement('botnet-domains', $xml);
         if( $tmp_rule !== FALSE )
         {
@@ -437,7 +458,11 @@ class AntiSpywareProfile
                     $string .= "  - action : '".$threat['action']."'";
                     PH::$JSON_TMP['sub']['object'][$this->name()]['threat-exception'][$threatname]['action'] = $threat['action'];
                 }
-
+                if( isset( $threat['exempt-ip'] ) )
+                {
+                    $string .= "  - exempt-ip: ".implode( ",", $threat['exempt-ip'] );
+                    PH::$JSON_TMP['sub']['object'][$this->name()]['threat-exception'][$threatname]['exempt-ip'] = $threat['exempt-ip'];
+                }
                 PH::print_stdout(  $string );
             }
         }
@@ -492,7 +517,10 @@ class AntiSpywareProfile
 
             if( !empty( $this->additional['mica-engine-spyware-enabled'] ) )
             {
-                PH::print_stdout("        - mica-engine-spyware-enabled:");
+                $enabled = "[no]";
+                if( $this->cloud_inline_analysis_enabled )
+                    $enabled = "[yes]";
+                PH::print_stdout("        - mica-engine-spyware-enabled: ". $enabled);
 
                 foreach ($this->additional['mica-engine-spyware-enabled'] as $name => $threat)
                     PH::print_stdout("          * " . $name . " - inline-policy-action :" . $this->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action']);

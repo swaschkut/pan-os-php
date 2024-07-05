@@ -654,4 +654,52 @@ RQuery::$defaultFilters['securityprofile']['host']['operators']['eq'] = array(
         'input' => 'input/panorama-8.0.xml'
     )
 );
+
+RQuery::$defaultFilters['securityprofile']['excempt-ip.count']['operators']['>,<,=,!'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var VulnerabilityProfile $object */
+        $object = $context->object;
+        $value = $context->value;
+        $operator = $context->operator;
+
+        if( $operator == '=' )
+            $operator = '==';
+
+        foreach( $object->threatException as $exception )
+        {
+            if( isset($exception['exempt-ip']) )
+            {
+                $operator_string = count($exception['exempt-ip'])." ".$operator." ".$value;
+                if( eval("return $operator_string;" ) )
+                    return true;
+                else
+                    return false;
+            }
+        }
+    },
+    'arg' => TRUE,
+    'ci' => array(
+        'fString' => '(%PROP% rulestore )',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+
+RQuery::$defaultFilters['securityprofile']['cloud-inline-analysis']['operators']['is.enabled'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var VulnerabilityProfile|AntiSpywareProfile $object */
+        $object = $context->object;
+
+        if( $object->secprof_type == 'spyware' || $object->secprof_type == 'vulnerability' )
+        {
+            if( $object->cloud_inline_analysis_enabled )
+                return TRUE;
+        }
+        return FALSE;
+    },
+    'arg' => false,
+    'ci' => array(
+        'fString' => '(%PROP% client )',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
 // </editor-fold>

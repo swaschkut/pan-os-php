@@ -10,6 +10,7 @@ UTIL:
 * type=rule | introduce 'filter=(secprof group.is.undefined)'
 * type=securityprofile | extend information for securityprofiletype=spyware/virus/vulnerability
 * type=securityprofile securityprofiletype=spyware/vulnerability |  'filter=(severity eq critical) and (action eq reset-both) and (packet-capture eq single-packet)'
+* type=securityprofile | introduce 'filter=(excempt-ip.count <>!= 0)'    '(cloud-inline-analysis is.enabled)'
 
 BUGFIX:
 * type=securityprofile securityprofiletype=spyware actions=display | correct usage of PH::boldText()
