@@ -4,6 +4,7 @@ CHANGELOG
 UTIL:
 
 BUGFIX:
+* class PanAPIConnector - add Panorama model m-300 / m-700
 
 GENERAL:
 
