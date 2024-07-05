@@ -499,7 +499,7 @@ class RuleStore
      * @param integer|string $startCount
      * @return string
      */
-    public function findAvailableName($base, $suffix = '', $startCount = '', $nested = TRUE)
+    public function findAvailableName($base, $suffix = '', $startCount = 0, $nested = TRUE)
     {
         //Todo based on PAN-OS rule name was extended
         if( $this->owner->version >= 81 )
@@ -528,8 +528,6 @@ class RuleStore
             if( $this->isRuleNameAvailable($newname, $nested) )
                 return $newname;
 
-            if( $startCount == '' )
-                $startCount = 0;
 
             $inc++;
         }
@@ -584,7 +582,7 @@ class RuleStore
                 derr('this rule name is not available: ' . $newName);
         }
         else
-            $newName = $this->findAvailableName($rule->name(), '', '', $nested);
+            $newName = $this->findAvailableName($rule->name(), '', 0, $nested);
 
         if( $inPostRuleBase === null )
             $inPostRuleBase = $rule->isPostRule();

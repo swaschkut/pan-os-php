@@ -348,6 +348,9 @@ class RuleCallContext extends CallContext
         if( $fieldName == 'tags' )
             return self::enclose($rule->tags->getAll(), $wrap);
 
+        if( $fieldName == 'grouptags' )
+            return self::enclose($rule->grouptag->getAll(), $wrap);
+
         if( $fieldName == 'rule_type' )
             return self::enclose($rule->ruleNature(), $wrap);
 

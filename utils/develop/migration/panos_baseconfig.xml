@@ -207,7 +207,7 @@
                             </recurring>
                         </threats>
                     </update-schedule>
-                    <timezone>US/Central</timezone>
+                    <timezone>America/Chicago</timezone>
                     <service>
                         <disable-telnet>yes</disable-telnet>
                         <disable-http>yes</disable-http>

@@ -2296,6 +2296,23 @@ RQuery::$defaultFilters['rule']['secprof']['operators']['group.is'] = array(
         'input' => 'input/panorama-8.0.xml'
     )
 );
+RQuery::$defaultFilters['rule']['secprof']['operators']['group.is.undefined'] = array(
+    'Function' => function (RuleRQueryContext $context) {
+        $rule = $context->object;
+        if( !$rule->isSecurityRule() && !$rule->isDefaultSecurityRule() )
+            return FALSE;
+
+        if( $rule->secprofgroupUndefined === null )
+            return FALSE;
+
+        return !$rule->secprofgroupUndefined;
+    },
+    'arg' => false,
+    'ci' => array(
+        'fString' => '(%PROP% secgroup-production)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
 RQuery::$defaultFilters['rule']['secprof']['operators']['av-profile.is'] = array(
     'Function' => function (RuleRQueryContext $context) {
         $rule = $context->object;

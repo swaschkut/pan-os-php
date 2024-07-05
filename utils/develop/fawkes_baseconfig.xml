@@ -23,7 +23,7 @@
           <ip-address>192.168.1.1</ip-address>
           <netmask>255.255.255.0</netmask>
           <update-server>pansupport.paloaltonetworks.com</update-server>
-          <timezone>US/Pacific</timezone>
+          <timezone>America/Chicago</timezone>
           <service>
             <disable-telnet>yes</disable-telnet>
             <disable-http>yes</disable-http>

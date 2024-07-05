@@ -754,7 +754,7 @@ class AddressStore
     public function newAddress($name, $type, $value, $description = '')
     {
         $found = $this->find($name, null, FALSE);
-        if( $found !== null && !$found->isType_TMP() )
+        if( $found !== null && !$found->isGroup() && !$found->isType_TMP() )
             derr("cannot create Address named '" . $name . "' as this name is already in use");
 
         $newObject = new Address($name, $this, TRUE);

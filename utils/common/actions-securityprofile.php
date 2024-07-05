@@ -406,6 +406,14 @@ SecurityProfileCallContext::$supportedActions['display'] = array(
     },
 );
 
+SecurityProfileCallContext::$supportedActions['display-xml'] = array(
+    'name' => 'display-xml',
+    'MainFunction' => function (SecurityProfileCallContext $context) {
+        $object = $context->object;
+
+        DH::DEBUGprintDOMDocument($object->xmlroot);
+    },
+);
 
 SecurityProfileCallContext::$supportedActions['action-set'] = array(
     'name' => 'action-set',

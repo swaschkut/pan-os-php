@@ -25,6 +25,8 @@ class SecurityProfileStore extends ObjStore
     /** @var null|SecurityProfileStore */
     public $parentCentralStore = null;
 
+    public $threatRuleStore = array();
+
     public static $childn = 'SecurityProfile';
 
     private $secprof_array = array('virus', 'spyware', 'vulnerability', 'file-blocking', 'wildfire-analysis', 'url-filtering', 'custom-url-category', 'predefined-url', 'data-filtering');

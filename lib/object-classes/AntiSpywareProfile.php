@@ -25,6 +25,8 @@ class AntiSpywareProfile
     public $rules = array();
     public $additional = array();
 
+    public $cloud_inline_analysis_enabled = false;
+
     /**
      * you should not need this one for normal use
      * @param string $name
@@ -189,6 +191,14 @@ class AntiSpywareProfile
                     $this->rules[$vb_severity]['packet-capture'] = $packet_capture->textContent;
                 }
 
+                $category = DH::findFirstElement('category', $tmp_entry1);
+                if( $category !== FALSE )
+                {
+                    #PH::print_stdout("             packet-capture: '".$rule['packet-capture']."'");
+                    $tmp_array[$this->secprof_type][$this->name]['rules'][$vb_severity]['category'] = $category->textContent;
+                    $this->rules[$vb_severity]['category'] = $category->textContent;
+                }
+
                 $direction = DH::findFirstElement('direction', $tmp_entry1);
                 if( $direction !== FALSE )
                 {
@@ -233,8 +243,24 @@ class AntiSpywareProfile
                         continue;
 
                     $tmp_action = DH::firstChildElement($action);
-                    $tmp_array[$this->secprof_type][$this->name]['threat-exception'][$tmp_name]['action'] = $tmp_action->nodeName;
-                    $this->threatException[$tmp_name]['action'] = $tmp_action->nodeName;
+                    if( $tmp_action !== FALSE )
+                    {
+                        $tmp_array[$this->secprof_type][$this->name]['threat-exception'][$tmp_name]['action'] = $tmp_action->nodeName;
+                        $this->threatException[$tmp_name]['action'] = $tmp_action->nodeName;
+                    }
+                }
+
+                $exemptIP = DH::findFirstElement('exempt-ip', $tmp_entry1);
+                $this->threatException[$tmp_name]['exempt-ip'] = array();
+                if( $exemptIP !== FALSE )
+                {
+                    foreach( $exemptIP->childNodes as $tmp_entry2 )
+                    {
+                        if ($tmp_entry2->nodeType != XML_ELEMENT_NODE)
+                            continue;
+
+                        $this->threatException[$tmp_name]['exempt-ip'][] = DH::findAttribute("name", $tmp_entry2);
+                    }
                 }
             }
         }
@@ -255,10 +281,18 @@ class AntiSpywareProfile
                     continue;
 
                 $name = DH::findAttribute("name", $tmp_entry1);
-                $this->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action'] = DH::findFirstElement("inline-policy-action", $tmp_entry1)->textContent;
+                $tmp_inline_policy_action = DH::findFirstElement("inline-policy-action", $tmp_entry1);
+                if( $tmp_inline_policy_action !== FALSE )
+                    $this->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action'] = $tmp_inline_policy_action->textContent;
             }
         }
-
+        //<cloud-inline-analysis>yes</cloud-inline-analysis>
+        $tmp_rule = DH::findFirstElement('cloud-inline-analysis', $xml);
+        if( $tmp_rule !== FALSE )
+        {
+            if( $tmp_rule->textContent == "yes")
+                $this->cloud_inline_analysis_enabled = true;
+        }
         $tmp_rule = DH::findFirstElement('botnet-domains', $xml);
         if( $tmp_rule !== FALSE )
         {
@@ -274,9 +308,11 @@ class AntiSpywareProfile
             {
                 $this->additional['botnet-domain']['sinkhole'] = array();
                 $tmp_sinkhole_ipv4 = DH::findFirstElement('ipv4-address', $tmp_sinkhole);
-                $this->additional['botnet-domain']['sinkhole']['ipv4-address'] = $tmp_sinkhole_ipv4->textContent;
+                if( $tmp_sinkhole_ipv4 !== FALSE )
+                    $this->additional['botnet-domain']['sinkhole']['ipv4-address'] = $tmp_sinkhole_ipv4->textContent;
                 $tmp_sinkhole_ipv6 = DH::findFirstElement('ipv6-address', $tmp_sinkhole);
-                $this->additional['botnet-domain']['sinkhole']['ipv6-address'] = $tmp_sinkhole_ipv6->textContent;
+                if( $tmp_sinkhole_ipv6 !== FALSE )
+                    $this->additional['botnet-domain']['sinkhole']['ipv6-address'] = $tmp_sinkhole_ipv6->textContent;
             }
 
             $tmp_lists = DH::findFirstElement('lists', $tmp_rule);
@@ -300,8 +336,11 @@ class AntiSpywareProfile
 
                     $name = DH::findAttribute("name", $tmp_entry1);
                     $action_element = DH::findFirstElement("action", $tmp_entry1);
-                    $this->additional['botnet-domain']['lists'][$name]['action'] = $action_element->firstElementChild->nodeName;
-                    $this->additional['botnet-domain']['lists'][$name]['packet-capture'] = DH::findFirstElement("packet-capture", $tmp_entry1)->textContent;
+                    if( $action_element !== FALSE )
+                        $this->additional['botnet-domain']['lists'][$name]['action'] = $action_element->firstElementChild->nodeName;
+                    $tmp_packet_capture = DH::findFirstElement("packet-capture", $tmp_entry1);
+                    if( $tmp_packet_capture !== FALSE )
+                        $this->additional['botnet-domain']['lists'][$name]['packet-capture'] = $tmp_packet_capture->textContent;
                 }
             }
 
@@ -324,9 +363,29 @@ class AntiSpywareProfile
                     */
 
                     $name = DH::findAttribute("name", $tmp_entry1);
-                    $this->additional['botnet-domain']['dns-security-categories'][$name]['log-level'] = DH::findFirstElement("log-level", $tmp_entry1)->textContent;
-                    $this->additional['botnet-domain']['dns-security-categories'][$name]['action'] = DH::findFirstElement("action", $tmp_entry1)->textContent;
-                    $this->additional['botnet-domain']['dns-security-categories'][$name]['packet-capture'] = DH::findFirstElement("packet-capture", $tmp_entry1)->textContent;
+                    $tmp_log_level = DH::findFirstElement("log-level", $tmp_entry1);
+                    if( $tmp_log_level !== FALSE )
+                        $this->additional['botnet-domain']['dns-security-categories'][$name]['log-level'] = $tmp_log_level->textContent;
+                    $tmp_action = DH::findFirstElement("action", $tmp_entry1);
+                    if( $tmp_action !== FALSE )
+                        $this->additional['botnet-domain']['dns-security-categories'][$name]['action'] = $tmp_action->textContent;
+                    $tmp_packet_capture = DH::findFirstElement("packet-capture", $tmp_entry1);
+                    if( $tmp_packet_capture !== FALSE )
+                        $this->additional['botnet-domain']['dns-security-categories'][$name]['packet-capture'] = $tmp_packet_capture->textContent;
+                }
+            }
+
+            $tmp_whitelists = DH::findFirstElement('whitelist', $tmp_rule);
+            if( $tmp_whitelists !== FALSE )
+            {
+                $this->additional['botnet-domain']['whitelist'] = array();
+                foreach ($tmp_whitelists->childNodes as $tmp_entry1)
+                {
+                    if ($tmp_entry1->nodeType != XML_ELEMENT_NODE)
+                        continue;
+
+                    $name = DH::findAttribute("name", $tmp_entry1);
+                    $this->additional['botnet-domain']['whitelist'][$name] = $tmp_entry1->textContent;
                 }
             }
         }
@@ -373,6 +432,13 @@ class AntiSpywareProfile
                     $string .= " - packet-capture: '".$rule['packet-capture']."'";
                     PH::$JSON_TMP['sub']['object'][$this->name()]['rule'][$rulename]['packet-capture'] = $rule['packet-capture'];
                 }
+
+                if( isset( $rule['category'] ) )
+                {
+                    #PH::print_stdout("             packet-capture: '".$rule['packet-capture']."'");
+                    $string .= " - category: '".$rule['category']."'";
+                    PH::$JSON_TMP['sub']['object'][$this->name()]['rule'][$rulename]['category'] = $rule['category'];
+                }
                 #print_r($rule);
                 PH::print_stdout( $string );
             }
@@ -392,7 +458,11 @@ class AntiSpywareProfile
                     $string .= "  - action : '".$threat['action']."'";
                     PH::$JSON_TMP['sub']['object'][$this->name()]['threat-exception'][$threatname]['action'] = $threat['action'];
                 }
-
+                if( isset( $threat['exempt-ip'] ) )
+                {
+                    $string .= "  - exempt-ip: ".implode( ",", $threat['exempt-ip'] );
+                    PH::$JSON_TMP['sub']['object'][$this->name()]['threat-exception'][$threatname]['exempt-ip'] = $threat['exempt-ip'];
+                }
                 PH::print_stdout(  $string );
             }
         }
@@ -425,11 +495,21 @@ class AntiSpywareProfile
                     {
                         foreach( $this->additional['botnet-domain'][$type] as $name => $value )
                         {
-                            PH::print_stdout("            - '".PH::bold($name)."'" );
-                            foreach( $value as $type2 => $value2 )
-                            {
-                                PH::print_stdout("                - ".$type2.": ".$value2 );
-                            }
+                            $string = "";
+                            $string .= "            - '".PH::boldText($name)."'";
+
+                            $string .= " - log-level: '".$value['log-level']."'";
+                            $string .= " - action: '".$value['action']."'";
+                            $string .= " - packet-capture: '".$value['packet-capture']."'";
+
+                            PH::print_stdout($string );
+                        }
+                    }
+                    elseif( $type == "whitelist" )
+                    {
+                        foreach( $this->additional['botnet-domain'][$type] as $name => $value )
+                        {
+                            PH::print_stdout("            - ".$name.": ".$value );
                         }
                     }
                 }
@@ -437,7 +517,10 @@ class AntiSpywareProfile
 
             if( !empty( $this->additional['mica-engine-spyware-enabled'] ) )
             {
-                PH::print_stdout("        - mica-engine-spyware-enabled:");
+                $enabled = "[no]";
+                if( $this->cloud_inline_analysis_enabled )
+                    $enabled = "[yes]";
+                PH::print_stdout("        - mica-engine-spyware-enabled: ". $enabled);
 
                 foreach ($this->additional['mica-engine-spyware-enabled'] as $name => $threat)
                     PH::print_stdout("          * " . $name . " - inline-policy-action :" . $this->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action']);

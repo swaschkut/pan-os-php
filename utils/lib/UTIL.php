@@ -2154,9 +2154,31 @@ class UTIL
                 $timezone = DH::findFirstElement('timezone', $systemroot);
                 if( $timezone )
                 {
-                    $this->pan->timezone = $timezone->textContent;
-                    date_default_timezone_set( $timezone->textContent );
-                    PH::print_stdout( " - PAN-OS Device timezone: ".$this->pan->timezone ." is used. actual time: ".date('Y/m/d H:i:s') );
+
+                    PH::enableExceptionSupport();
+                    try
+                    {
+                        $this->pan->timezone = $timezone->textContent;
+                        date_default_timezone_set( $timezone->textContent );
+                        PH::print_stdout( " - PAN-OS Device timezone: ".$this->pan->timezone ." is used. actual time: ".date('Y/m/d H:i:s') );
+                    }
+                    catch(Exception $e)
+                    {
+                        $timezone_backward = PH::timezone_backward_migration( $this->timezone );
+                        $this->pan->timezone = $timezone_backward;
+                        date_default_timezone_set($timezone_backward);
+
+                        PH::print_stdout("   --------------");
+                        PH::print_stdout( " X Timezone: $timezone->textContent is not supported with this PHP version. ".$this->timezone." is used." );
+                        PH::print_stdout("   - the timezone is IANA deprecated. Please change to a supported one:");
+
+
+                        PH::print_stdout();
+                        PH::print_stdout("   -- '".$this->timezone."'");
+                        PH::print_stdout("   --------------");
+                        PH::print_stdout();
+                    }
+                    PH::disableExceptionSupport();
                 }
             }
         }

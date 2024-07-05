@@ -20,7 +20,7 @@ trait SOPHOSservice
         print "name: " . $srv_name . " - value: " . $srv_value . " - prot: " . $srv_protocol[1] . "\n";
 
         $tmp_service = $this->sub->serviceStore->find($srv_name . $name_extension);
-        if( $tmp_service !== FALSE )
+        if( $tmp_service == FALSE or $tmp_service == null )
         {
             print "create service - name: " . $srv_name . " - value: " . $srv_value . " - prot: " . $srv_protocol[1] . "\n";
             $tmp_service = $this->sub->serviceStore->newService($srv_name . $name_extension, $srv_protocol[1], $srv_value);
@@ -74,11 +74,15 @@ trait SOPHOSservice
                 $tmp_service_udp = $this->create_service($srv_name, $srv_policy['value'], array('1' => "udp"), $srv_policy['comment'], "_udp");
 
                 $tmp_service_group = $this->sub->serviceStore->find($srv_name);
-                if( $tmp_service_group !== FALSE )
+                if( $tmp_service_group == FALSE or $tmp_service_group == null )
                 {
                     $tmp_service_group = $this->sub->serviceStore->newServiceGroup($srv_name);
-                    $tmp_service_group->addMember($tmp_service_tcp);
-                    $tmp_service_group->addMember($tmp_service_udp);
+                    if( is_object($tmp_service_tcp) )
+                        $tmp_service_group->addMember($tmp_service_tcp);
+                    else
+                        mwarning( "not an object can not be added" );
+                    if( is_object($tmp_service_udp) )
+                        $tmp_service_group->addMember($tmp_service_udp);
                 }
             }
             else
@@ -100,7 +104,7 @@ trait SOPHOSservice
             if( $policy['_type'] == 'service/group,' )
             {
                 $tmp_service_group = $this->sub->serviceStore->find($srv_name);
-                if( $tmp_service_group !== FALSE )
+                if( $tmp_service_group == FALSE or $tmp_service_group == null)
                 {
                     $tmp_service_group = $this->sub->serviceStore->newServiceGroup($srv_name);
                 }

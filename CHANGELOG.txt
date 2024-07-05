@@ -1,6 +1,31 @@
 CHANGELOG
 
-2.1.24
+2.1.25
+UTIL:
+* type=securityprofile securityprofiletype=vulnerability | extend with more profile information
+* type=rule-merger | extend help information if argument method= is not set
+* type=threat | introduce 'filter=(min-engine-version <>!= VALUE) | (max-engine-version <>=! VALUE) | (max-engine-version is.empty)'
+* type=threat | introduction of 'filter=(type is.vulnerability) | (type is.spyware) | (object is.disabled)'
+* type=rule actions=exporttoexcel:file.html | introduce grouptag column
+* type=rule | introduce 'filter=(secprof group.is.undefined)'
+* type=securityprofile | extend information for securityprofiletype=spyware/virus/vulnerability
+* type=securityprofile securityprofiletype=spyware/vulnerability |  'filter=(severity eq critical) and (action eq reset-both) and (packet-capture eq single-packet)'
+* type=securityprofile | introduce 'filter=(excempt-ip.count <>!= 0)'    '(cloud-inline-analysis is.enabled)'
+
+BUGFIX:
+* type=securityprofile securityprofiletype=spyware actions=display | correct usage of PH::boldText()
+* class THREATlog - bugfix if empty query
+* type=rule actions=copy:{DGname} - bugfix to use numeric value for finding of new rulename
+* type=migration vendor=sophos | bugfix for service objects
+* type=securityprofile securityprofiletype=spyware | bugfix for typo in packet-capture
+* type=spyware | bugfix for reading XML information
+* bugfix | timezone related parts to PHP 8.3
+
+GENERAL:
+* app-id update to version 8867-8824
+
+
+2.1.24 (20240618)
 UTIL:
 * type=device | new actions=authkey-display-all/authkey-display-default/authkey-set/authkey-add
 * class RuleCallContext | add additional information if specific Fieldname is not supported for ExportToExcel
