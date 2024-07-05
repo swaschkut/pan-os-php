@@ -1,6 +1,14 @@
 CHANGELOG
 
-2.1.25
+2.1.26
+UTIL:
+
+BUGFIX:
+
+GENERAL:
+
+
+2.1.25 (20240705)
 UTIL:
 * type=securityprofile securityprofiletype=vulnerability | extend with more profile information
 * type=rule-merger | extend help information if argument method= is not set
