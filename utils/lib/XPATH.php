@@ -231,6 +231,7 @@ class XPATH extends UTIL
         }
         else
         {
+            /*
             if( $this->pan->connector !==  null )
             {
                 $this->pan->connector->refreshSystemInfos();
@@ -294,11 +295,12 @@ class XPATH extends UTIL
             }
             else
             {
+            */
                 if( $displayAttributeName )
                     $this->getXpathDisplay( $xpath, "", true, $action);
                 else
                     $this->getXpathDisplay( $xpath, "", false, $action);
-            }
+            //}
         }
 
         if( $action == "remove" || strpos( $action, 'set-text:' ) !== FALSE || strpos( $action, 'manipulate:' ) !== FALSE )

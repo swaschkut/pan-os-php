@@ -220,7 +220,7 @@ class PanAPIConnector
             derr("cannot find <wildfire-version>:\n" . DH::dom_to_xml($this->show_system_info_raw, 0, TRUE, 4));
         $this->info_wildfire_version = $wildfire_version->textContent;
 
-        if( $model == 'panorama' || $model == 'm-100' || $model == 'm-500' || $model == 'm-200' || $model == 'm-300' || $model == 'm-600' || $model == 'm-700' )
+        if( $model == 'panorama' || str_starts_with($model, "m-") || $model == 'm-100' || $model == 'm-500' || $model == 'm-200' || $model == 'm-300' || $model == 'm-600' || $model == 'm-700' )
         {
             $this->info_deviceType = 'panorama';
 

@@ -4,6 +4,8 @@ CHANGELOG
 UTIL:
 
 BUGFIX:
+* type=xpath "filter-xpath=XYZ" in=api://{MGMT-IP} | bugfix for API mode to display correct filtered xpath
+* class PanAPIConnector | bugfix to support Panorama Hardware like m-300/m-700
 
 GENERAL:
 
