@@ -214,49 +214,29 @@ watchguard_getAddress( $v, $xml_Address );
 $xml_Service = DH::findFirstElementOrCreate('service-list', $XMLroot );
 watchguard_getService( $v, $xml_Service );
 
-$xml_Policy = DH::findFirstElementOrCreate('policy-list', $XMLroot );
-watchguard_getPolicy( $v, $xml_Policy );
+#policy-list is not of interest
+#$xml_Policy = DH::findFirstElementOrCreate('policy-list', $XMLroot );
+
+#read alist first into array
+$alias_array = array();
+$xml_alias = DH::findFirstElementOrCreate('alias-list', $XMLroot );
+watchguard_alias($v, $xml_alias, $alias_array);
+
+#print_r( $alias_array );
+
+#read nat first into array
+$nat_array = array();
+$xml_alias = DH::findFirstElementOrCreate('nat-list', $XMLroot );
+watchguard_nat($v, $xml_alias, $nat_array);
+
+#print_r( $nat_array );
+
+$xml_Policy = DH::findFirstElementOrCreate('abs-policy-list', $XMLroot );
+watchguard_getPolicy( $v, $xml_Policy, $alias_array, $nat_array );
 
 
 #######################################################
-//FIND OBJECTS
 
-
-/*Todo: are these objects also needed?
-*
- * $xml = DH::findFirstElementOrCreate('fpc4:Root', $xml );
-$xml = DH::findFirstElementOrCreate('fpc4:fpc4:Enterprise', $xml );
- */
-
-/*
-$xml = DH::findFirstElementOrCreate('fpc4:Root', $xml);
-$xml = DH::findFirstElementOrCreate('fpc4:Arrays', $xml);
-$xml = DH::findFirstElementOrCreate('fpc4:Array', $xml);
-
-foreach ($xml->childNodes as $appx)
-{
-    if ($appx->nodeType != XML_ELEMENT_NODE) continue;
-
-
-
-
-}
-
-
-print "\n\n\n";
-print "MISSING addressObjects:\n";
-print_r($addressMissingObjects);
-
-print "MISSING serviceObjects:\n";
-print_r($serviceMissingObjects);
-
-print "MISSING usrObjects:\n";
-print_r($userMissingObjects);
-
-print "MISSING policyGroup Objects:\n";
-print_r($policyGroupMissingObjects);
-
-*/
 
 
 
@@ -347,6 +327,7 @@ function watchguard_getAddress($v, $xml)
         $address_array['address'] = array();
         $address_array['domain'] = array();
         $address_array['ip-network-addr'] = array();
+        $address_array['range'] = array();
 
         $xml_addr_group_member = DH::findFirstElement('addr-group-member', $node);
         if( $xml_addr_group_member == False )
@@ -363,6 +344,11 @@ function watchguard_getAddress($v, $xml)
             $xml_host_ip_addr = DH::findFirstElement('host-ip-addr', $member);
             $xml_domain = DH::findFirstElement('domain', $member);
             $xml_ip_network_addr = DH::findFirstElement('ip-network-addr', $member);
+            $xml_start_ip_addr = DH::findFirstElement('start-ip-addr', $member);
+            /*
+                <start-ip-addr>10.3.100.1</start-ip-addr>
+                <end-ip-addr>10.3.100.254</end-ip-addr>
+             */
             if ($xml_host_ip_addr != False)
             {
                 print "  * " . $xml_host_ip_addr->textContent . "\n";
@@ -377,6 +363,13 @@ function watchguard_getAddress($v, $xml)
             {
                 $xml_ip_mask = DH::findFirstElement('ip-mask', $member);
                 $address_array['ip-network-addr'][$xml_ip_network_addr->textContent] = $xml_ip_mask->textContent;
+            }
+            elseif ($xml_start_ip_addr != False)
+            {
+                #<end-ip-addr>10.3.100.254</end-ip-addr>
+                $xml_end_ip_addr = DH::findFirstElement('end-ip-addr', $member);
+                $string = $xml_start_ip_addr->textContent."-".$xml_end_ip_addr->textContent;
+                $address_array['range'][$string] = $string;
             }
             else
             {
@@ -435,6 +428,19 @@ function watchguard_getAddress($v, $xml)
                     }
 
                     $new_address = $v->addressStore->newAddress( $name->textContent, "fqdn", $address);
+                    $new_address->setDescription($description);
+                }
+
+            }
+        }
+        elseif( count( $address_array['range'] ) > 0 )
+        {
+            if( count( $address_array['range'] ) == 1 )
+            {
+                foreach( $address_array['range'] as $address => $address )
+                {
+                    $description = "";
+                    $new_address = $v->addressStore->newAddress( $name->textContent, "ip-range", $address);
                     $new_address->setDescription($description);
                 }
 
@@ -663,72 +669,237 @@ function watchguard_getService($v, $xml)
     }
 }
 
-function watchguard_getPolicy($v, $xml)
+function add_from_alias_list( $v, $alias_array, $alias )
 {
-    /** @var PANConf $v */
+
+    if( isset($alias_array[$alias]) )
+    {
+        foreach( $alias_array[$alias] as $array )
+        {
+            if( isset( $array['address'] ) )
+                $search = $array['address'];
+            elseif( isset( $array['alias'] ) )
+                $search = $array['alias'];
+
+            $object = $v->addressStore->find($search);
+            if( $object == null )
+            {
+                $object = add_from_alias_list( $v, $alias_array, $search );
+            }
+
+            return $object;
+        }
+    }
+
+    return null;
+}
+function add_zone_from_alias_list( $v, $alias_array, $alias )
+{
+    if( isset($alias_array[$alias]) )
+    {
+        foreach( $alias_array[$alias] as $array )
+        {
+            if(isset($array['interface']))
+            {
+                $zone_obj = $v->zoneStore->find($array['interface']);
+                if( $zone_obj !== null )
+                    return $zone_obj;
+            }
+            elseif( isset($array['alias']) )
+            {
+                if( isset($alias_array[$array['alias']][0]['interface']) )
+                {
+                    $search = $alias_array[$array['alias']][0]['interface'];
+                    $zone_obj = $v->zoneStore->find($search);
+                    if( $zone_obj !== null )
+                        return $zone_obj;
+                }
+            }
+        }
+    }
+
+    #if(strpos($alias, "Medlinq_Remote.in") !== False)
+    #    exit();
+
+    return null;
+}
+function watchguard_getPolicy($v, $xml, $alias_array, $nat_array)
+{
+    $not_found = array();
+
+    /** @var VirtualSystem $v */
     #DH::DEBUGprintDOMDocument($xml);
     foreach ($xml->childNodes as $node)
     {
         if ($node->nodeType != XML_ELEMENT_NODE) continue;
 
+        $type = DH::findFirstElement('type', $node);
+        $name = DH::findFirstElement('name', $node);
+
+        if( $type->textContent != "Firewall" )
+            continue;
+        if( strpos( $name->textContent, "Firebox") !== False )
+            continue;
+
         PH::print_stdout();
         PH::print_stdout("--------------------------");
 
-        $name = DH::findFirstElement('name', $node);
+        #DH::DEBUGprintDOMDocument($node);
+
         $rule_name = $name->textContent;
         print "name: '".$rule_name."'\n";
+
         /** @var SecurityRule $new_secRule */
         $new_secRule = $v->securityRules->newSecurityRule($rule_name);
 
         $description = DH::findFirstElement('description', $node);
         print "description: '".$description->textContent."'\n";
+        $new_secRule->setDescription($description->textContent);
 
         $service = DH::findFirstElement('service', $node);
-        print "service: '".$service->textContent."'\n";
+
+        $service_obj = $v->serviceStore->find($service->textContent);
+        if($service_obj != False && $service_obj->name() !== "Any" && $service->textContent !== "Any")
+        {
+            print "service: '".$service->textContent."'\n";
+            $new_secRule->services->add($service_obj);
+        }
+        elseif($service->textContent !== "Any")
+            derr("service obj not found");
+
         ################
         $from = DH::findFirstElement('from-alias-list', $node);
-        $from_array = array();
+        #DH::DEBUGprintDOMDocument($from);
         foreach ($from->childNodes as $from_alias)
         {
             if ($from_alias->nodeType != XML_ELEMENT_NODE) continue;
-            $from_array[] = $from_alias->textContent;
+
             //Todo: validation if alias is already available in addressStore
-            $object = $v->addressStore->find($from_alias->textContent);
-            if( $object == null )
+            #print "alias to search: '".$from_alias->textContent."'\n";
+
+            $object_from_add = add_from_alias_list($v, $alias_array, $from_alias->textContent);
+            if( $object_from_add !== null && $object_from_add->name() !== "Any" )
             {
-                derr( "object: ".$from_alias->textContent." not found" );
+                PH::print_stdout("add src address obj: ".$object_from_add->name());
+                $new_secRule->source->addObject($object_from_add);
+            }
+            elseif( $object_from_add->name() !== "Any" )
+            #else
+            {
+                mwarning( "object: ".$from_alias->textContent." not found" );
+                $not_found[$rule_name]['from'][] = $from_alias->textContent;
+                #derr( "object: '".$from_alias->textContent."' not found" );
+            }
+
+            ################
+
+            $zone_from_add = add_zone_from_alias_list($v, $alias_array, $from_alias->textContent);
+            if( $zone_from_add !== null && $zone_from_add->name() != "Any")
+            {
+                PH::print_stdout("add from zone: ".$zone_from_add->name());
+                $new_secRule->from->addZone($zone_from_add);
             }
         }
-        print_r($from_array);
+
         ################
         $to = DH::findFirstElement('to-alias-list', $node);
-        $to_array = array();
         foreach ($to->childNodes as $to_alias)
         {
             if ($to_alias->nodeType != XML_ELEMENT_NODE) continue;
-            $to_array[] = $to_alias->textContent;
+
             //Todo: validation if alias is already available in addressStore
-            $object = $v->addressStore->find($to_alias->textContent);
-            if( $object == null )
+            #print "alias to search: '".$to_alias->textContent."'\n";
+
+            $object_to_add = add_from_alias_list($v, $alias_array, $to_alias->textContent);
+            if( $object_to_add !== null && $object_to_add->name() !== "Any" )
             {
-                derr( "object: ".$to_alias->textContent." not found" );
+                PH::print_stdout("add dst address obj: ".$object_to_add->name());
+                $new_secRule->destination->addObject($object_to_add);
+            }
+            elseif( $object_to_add->name() !== "Any" )
+            #else
+            {
+                mwarning( "object: ".$to_alias->textContent." not found" );
+                $not_found[$rule_name]['to'][] = $to_alias->textContent;
+                #derr( "object: '".$to_alias->textContent."' not found" );
+            }
+
+            #################
+
+            $zone_to_add = add_zone_from_alias_list($v, $alias_array, $to_alias->textContent);
+            if( $zone_to_add !== null && $zone_to_add->name() != "Any")
+            {
+                PH::print_stdout("add to zone: ".$zone_to_add->name());
+                $new_secRule->to->addZone($zone_to_add);
             }
         }
-        print_r($to_array);
+
 
         $schedule = DH::findFirstElement('schedule', $node);
-        print "schedule: '".$schedule->textContent."'\n";
-        if( $schedule->textContent != "Always On" && $schedule->textContent != "" )
+        if( $schedule != FALSE )
         {
-            mwarning( "find schedule object", null, False );
+            print "schedule: '".$schedule->textContent."'\n";
+            if( $schedule->textContent != "Always On" && $schedule->textContent != "" )
+            {
+                mwarning( "find schedule object", null, False );
+            }
         }
+
         $enable = DH::findFirstElement('enable', $node);
-        #print "enable: '".$enable->textContent."'\n";
-        if( $enable->textContent == 0 )
+        if( $enable != FALSE )
         {
-            PH::print_stdout(" - Rule is disabled");
-            $new_secRule->setDisabled(true);
+            #print "enable: '".$enable->textContent."'\n";
+            if( $enable->textContent == 0 )
+            {
+                PH::print_stdout(" - Rule is disabled");
+                $new_secRule->setDisabled(true);
+            }
         }
+
+
+        $policy_nat = DH::findFirstElement('policy-nat', $node);
+        if( $policy_nat != FALSE )
+        {
+            if( $policy_nat->textContent != "" )
+            {
+                //create NAT Rule:
+                /** @var VirtualSystem $v */
+                $new_natRule = $v->natRules->newNatRule($new_secRule->name());
+
+                foreach ($new_secRule->from->getAll() as $obj)
+                    $new_natRule->from->addZone($obj);
+                foreach ($new_secRule->source->getAll() as $obj)
+                    $new_natRule->source->addObject($obj);
+
+                foreach ($new_secRule->to->getAll() as $obj)
+                {
+                    $new_secRule->to->removeZone($obj, true, true);
+
+                    $new_natRule->to->addZone($obj);
+                }
+                $dmz_zone = $v->zoneStore->find("DMZ");
+                if($dmz_zone == null)
+                    $dmz_zone = $v->zoneStore->newZone("DMZ", "layer3");
+                $new_secRule->to->addZone($dmz_zone);
+
+                foreach ($new_secRule->destination->getAll() as $obj)
+                    $new_natRule->destination->addObject($obj);
+
+                foreach ($new_secRule->services->getAll() as $obj)
+                    $new_natRule->setService($obj);
+
+                //get information for $policy_nat->textContent in NAT_array
+                //add NAT_array['add-name'] as destination-nat to $new_natRule
+                if( isset($nat_array[$policy_nat->textContent]) )
+                {
+                    $dnat_obj = $v->addressStore->find($nat_array[$policy_nat->textContent]['addr_name']);
+                    $new_natRule->setDNAT($dnat_obj);
+
+                }
+            }
+        }
+
+
         #DH::DEBUGprintDOMDocument($node);
         /*
         <policy>
@@ -775,6 +946,153 @@ function watchguard_getPolicy($v, $xml)
          <tor-block-enabled>1</tor-block-enabled>
         </policy>
          */
+    }
+
+    if( !empty( $not_found ) )
+    {
+        print_r($not_found);
+        mwarning( "the above rules does have from/to parts which are not available" );
+    }
+
+}
+
+function watchguard_alias($v, $xml, &$alias_array)
+{
+    /** @var VirtualSystem $v */
+    #DH::DEBUGprintDOMDocument($xml);
+    foreach ($xml->childNodes as $node)
+    {
+        if ($node->nodeType != XML_ELEMENT_NODE) continue;
+
+
+        #DH::DEBUGprintDOMDocument($node);
+        /*
+        <alias>
+         <name>Any</name>
+         <description>All traffic</description>
+         <property>4</property>
+         <alias-member-list>
+          <alias-member>
+           <type>1</type>
+           <user>Any</user>
+           <address>Any</address>
+           <interface>Any</interface>
+          </alias-member>
+         </alias-member-list>
+        </alias>
+         */
+
+        $name_xml = DH::findFirstElement('name', $node);
+        $name = $name_xml->textContent;
+        $alias_member_list = DH::findFirstElement('alias-member-list', $node);
+        foreach ($alias_member_list->childNodes as $node2)
+        {
+            if ($node2->nodeType != XML_ELEMENT_NODE)
+                continue;
+
+            $tmp_array = array();
+
+            $address_xml = DH::findFirstElement('address', $node2);
+            if( $address_xml == False )
+            {
+                $address_xml = DH::findFirstElement('alias-name', $node2);
+                $address = $address_xml->textContent;
+                $tmp_array['alias'] = $address;
+            }
+            else
+            {
+                $address = $address_xml->textContent;
+                print "alias: ".$name." value: ".$address."\n";
+                $tmp_array['address'] = $address;
+            }
+
+
+            $interface_xml = DH::findFirstElement('interface', $node2);
+            if( $interface_xml !== False )
+            {
+                #DH::DEBUGprintDOMDocument($interface_xml);
+                #&& $interface_xml->textContent !== ""
+                $tmp_array['interface'] = $interface_xml->textContent;
+                print "alias: ".$name." interface: ".$interface_xml->textContent."\n";
+                //check if zone is already available if not create
+                $zone_obj = $v->zoneStore->find($interface_xml->textContent);
+                if( $zone_obj ==  null  )
+                {
+                    $zone_obj = $v->zoneStore->newZone($interface_xml->textContent,"layer3");
+                }
+            }
+
+            $alias_array[$name][] = $tmp_array;
+            #exit();
+        }
+    }
+}
+
+function watchguard_nat($v, $xml, &$nat_array)
+{
+    /** @var VirtualSystem $v */
+    #DH::DEBUGprintDOMDocument($xml);
+    foreach ($xml->childNodes as $node)
+    {
+        if ($node->nodeType != XML_ELEMENT_NODE) continue;
+
+
+        #DH::DEBUGprintDOMDocument($node);
+        /*
+         <nat-list>
+            <nat>
+               <name>BAS</name>
+                   <property>0</property>
+                   <type>7</type>
+                   <algorithm>0</algorithm>
+                   <proxy-arp>0</proxy-arp>
+                   <nat-item>
+                    <member>
+                     <addr-type>4</addr-type>
+                     <port>0</port>
+                     <ext-addr-name>BAS.1.snat</ext-addr-name>
+                     <interface>Any-External</interface>
+                     <addr-name>BAS.2.snat</addr-name>
+                    </member>
+                   </nat-item>
+            </nat>
+         */
+
+        $name_xml = DH::findFirstElement('name', $node);
+        $name = $name_xml->textContent;
+        $nat_item = DH::findFirstElement('nat-item', $node);
+        if( $nat_item != false )
+            foreach ($nat_item->childNodes as $node2)
+            {
+                if ($node2->nodeType != XML_ELEMENT_NODE)continue;
+
+                $ext_addr_name_XML = DH::findFirstElement('ext-addr-name', $node2);
+                if( $ext_addr_name_XML != false )
+                {
+                    $ext_addr_name = $ext_addr_name_XML->textContent;
+                    $nat_array[$name]['ext_addr_name'] = $ext_addr_name;
+                }
+
+                $interface_XML = DH::findFirstElement('interface', $node2);
+                if( $interface_XML !== False )
+                {
+                    $interface = $interface_XML->textContent;
+                    $nat_array[$name]['interface'] = $interface;
+                }
+
+
+                $addr_name_XML = DH::findFirstElement('addr-name', $node2);
+                if( $addr_name_XML !== False )
+                {
+                    $addr_name = $addr_name_XML->textContent;
+                    $nat_array[$name]['addr_name'] = $addr_name;
+                }
+
+
+
+
+
+            }
 
     }
 }

@@ -9,6 +9,7 @@ BUGFIX:
 * type=rule actions=clone | bugfix to avoid adding "0" as last character if user added suffix can be used
 
 GENERAL:
+* develop watchguard migration - address/service objects - alias - abs-policy - nat
 
 
 2.1.25 (20240705)
