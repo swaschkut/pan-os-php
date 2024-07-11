@@ -4578,6 +4578,7 @@ RuleCallContext::$supportedActions[] = array(
             'location' => 'location',
             'rulebase' => 'rulebase',
             'rule_type' => 'rule_type',
+            'sec_rule_type' => 'sec_rule_type',
             'nat_rule_type' => 'nat_rule_type',
             'name' => 'name',
             'tag' => 'tags',
@@ -4676,6 +4677,7 @@ RuleCallContext::$supportedActions[] = array(
                         (($fieldName == 'schedule_resolved_sum' ) && !$addResolvedScheduleSummary) ||
                         (($fieldName == 'application_seen') && (!$addAppSeenSummary || !$context->isAPI) ) ||
                         (($fieldName == 'first-hit' || $fieldName == 'last-hit' || $fieldName == 'hit-count' || $fieldName == 'rule-creation') && (!$addHitCountSummary || !$context->isAPI) ) ||
+                        (($fieldName == 'sec_rule_type' )  && get_class($rule) !== "SecRule") ||
                         (($fieldName == 'nat_rule_type' || $fieldName == 'snat_type' || $fieldName == 'snat_address' ||
                                 $fieldName == 'snat_address_resovled_sum' || $fieldName == "dnat_type" || $fieldName == 'dnat_host' ||
                                 $fieldName == 'dnat_host_resovled_sum' || $fieldName == 'dnat_port' || $fieldName == 'dnat_distribution' ||

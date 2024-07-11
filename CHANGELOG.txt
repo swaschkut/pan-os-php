@@ -2,6 +2,7 @@ CHANGELOG
 
 2.1.26
 UTIL:
+* type=rule ruletype=security actions=exporttoexcel:file.html - extend securityRule with type of universal/intrazone/interzone
 
 BUGFIX:
 * type=xpath "filter-xpath=XYZ" in=api://{MGMT-IP} | bugfix for API mode to display correct filtered xpath

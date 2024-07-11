@@ -354,6 +354,9 @@ class RuleCallContext extends CallContext
         if( $fieldName == 'rule_type' )
             return self::enclose($rule->ruleNature(), $wrap);
 
+        if( $fieldName == 'sec_rule_type' )
+            return self::enclose($rule->type(), $wrap);
+
         if( $fieldName == 'nat_rule_type' )
             return self::enclose($rule->getNatRuleType(), $wrap);
 
