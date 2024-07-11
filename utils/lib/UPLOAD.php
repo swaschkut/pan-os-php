@@ -323,7 +323,19 @@ class UPLOAD extends UTIL
                     isset(PH::$args['preservemgmtsystem']) )
                 {
                     PH::print_stdout( " - Option 'preserveXXXXX was used, we will first download the running config of target device...");
-                    $runningConfig = $this->configOutput['connector']->getRunningConfig();
+
+                    if( !file_exists( $this->configOutput['filename'] ) )
+                    {
+                        derr( "argument preserverXXX - can only be used against an existing file defined in 'out=FILE.xml'" );
+                    }
+                    else
+                    {
+                        $runningConfig = new DOMDocument();
+                        PH::print_stdout( " - Reading XML file from disk... ".$this->configInput['filename'] );
+                        if( !$runningConfig->load($this->configInput['filename'], XML_PARSE_BIG_LINES) )
+                            derr("error while reading xml config file");
+                    }
+
 
 
                     $xpathQrunning = new DOMXPath($runningConfig);
