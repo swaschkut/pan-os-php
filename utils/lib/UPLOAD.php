@@ -318,6 +318,126 @@ class UPLOAD extends UTIL
             }
             else
             {
+                if( isset(PH::$args['preservemgmtconfig']) ||
+                    isset(PH::$args['preservemgmtusers']) ||
+                    isset(PH::$args['preservemgmtsystem']) )
+                {
+                    PH::print_stdout( " - Option 'preserveXXXXX was used, we will first download the running config of target device...");
+                    $runningConfig = $this->configOutput['connector']->getRunningConfig();
+
+
+                    $xpathQrunning = new DOMXPath($runningConfig);
+                    $xpathQlocal = new DOMXPath($this->xmlDoc);
+
+                    $xpathQueryList = array();
+
+                    if( isset(PH::$args['preservemgmtconfig']) ||
+                        isset(PH::$args['preservemgmtusers']) )
+                    {
+                        $xpathQueryList[] = '/config/mgt-config/users';
+                    }
+
+                    if( isset(PH::$args['preservemgmtconfig']) ||
+                        isset(PH::$args['preservemgmtsystem']) )
+                    {
+                        $xpathQueryList[] = '/config/devices/entry/deviceconfig/system';
+                    }
+
+
+                    if( isset(PH::$args['preservemgmtconfig']) )
+                    {
+                        $xpathQueryList[] = '/config/mgt-config';
+                        $xpathQueryList[] = "/config/devices/entry[@name='localhost.localdomain']/deviceconfig";
+                        $xpathQueryList[] = '/config/shared/authentication-profile';
+                        $xpathQueryList[] = '/config/shared/authentication-sequence';
+                        $xpathQueryList[] = '/config/shared/certificate';
+                        $xpathQueryList[] = '/config/shared/log-settings';
+                        $xpathQueryList[] = '/config/shared/local-user-database';
+                        $xpathQueryList[] = '/config/shared/admin-role';
+                    }
+
+                    foreach( $xpathQueryList as $xpathQuery )
+                    {
+                        $xpathResults = $xpathQrunning->query($xpathQuery);
+                        if( $xpathResults->length > 1 )
+                        {
+                            //var_dump($xpathResults);
+                            derr('more than one one results found for xpath query: ' . $xpathQuery);
+                        }
+                        if( $xpathResults->length == 0 )
+                            $runningNodeFound = FALSE;
+                        else
+                            $runningNodeFound = TRUE;
+
+                        $xpathResultsLocal = $xpathQlocal->query($xpathQuery);
+                        if( $xpathResultsLocal->length > 1 )
+                        {
+                            //var_dump($xpathResultsLocal);
+                            derr('none or more than one one results found for xpath query: ' . $xpathQuery);
+                        }
+                        if( $xpathResultsLocal->length == 0 )
+                            $localNodeFound = FALSE;
+                        else
+                            $localNodeFound = TRUE;
+
+                        if( $localNodeFound == FALSE && $runningNodeFound == FALSE )
+                        {
+                            continue;
+                        }
+
+                        if( $localNodeFound && $runningNodeFound )
+                        {
+                            $localParentNode = $xpathResultsLocal->item(0)->parentNode;
+                            $localParentNode->removeChild($xpathResultsLocal->item(0));
+                            $newNode = $this->xmlDoc->importNode($xpathResults->item(0), TRUE);
+                            $localParentNode->appendChild($newNode);
+                            continue;
+                        }
+
+                        if( $localNodeFound == FALSE && $runningNodeFound )
+                        {
+                            $newXpath = explode('/', $xpathQuery);
+                            if( count($newXpath) < 2 )
+                                derr('unsupported, debug xpath query: ' . $xpathQuery);
+
+                            unset($newXpath[count($newXpath) - 1]);
+                            $newXpath = implode('/', $newXpath);
+
+                            $xpathResultsLocal = $xpathQlocal->query($newXpath);
+                            if( $xpathResultsLocal->length != 1 )
+                            {
+                                derr('unsupported, debug xpath query: ' . $newXpath);
+                            }
+
+                            $newNode = $this->xmlDoc->importNode($xpathResults->item(0), TRUE);
+                            $localParentNode = $xpathResultsLocal->item(0);
+                            $localParentNode->appendChild($newNode);
+
+
+                            continue;
+                        }
+
+                        //derr('unsupported');
+                    }
+
+                }
+
+                if( isset(PH::$args['injectuseradmin2']) )
+                {
+                    $usersNode = DH::findXPathSingleEntryOrDie('/config/mgt-config/users', $this->xmlDoc);
+                    $newUserNode = DH::importXmlStringOrDie($this->xmlDoc, '<entry name="admin2"><phash>$1$bgnqjgob$HmenJzuuUAYmETzsMcdfJ/</phash><permissions><role-based><superuser>yes</superuser></role-based></permissions></entry>');
+
+                    $checkAdmin2 = DH::findFirstElementByNameAttr( "entry", "admin2", $usersNode );
+                    if( $checkAdmin2 === null || $checkAdmin2 === false )
+                    {
+                        $usersNode->appendChild($newUserNode);
+                        PH::print_stdout( " - Injected 'admin2' with 'admin' password");
+                    }
+                    else
+                        PH::print_stdout( " - Injected 'admin2' skipped - already available");
+
+                }
+
                 PH::print_stdout( " - Now saving configuration to ");
                 PH::print_stdout( " - {$this->configOutput['filename']}... ");
                 $this->xmlDoc->save($this->configOutput['filename']);
