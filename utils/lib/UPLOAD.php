@@ -28,7 +28,16 @@ class UPLOAD extends UTIL
 
     public function utilStart()
     {
-        $this->usageMsg = PH::boldText("USAGE: ") . "php " . basename(__FILE__) . " in=api://[MGMT-IP-Address] ";
+        $this->usageMsg = PH::boldText("USAGE: ") . "php " . basename(__FILE__) . " in=api://[MGMT-IP-Address]\n".
+            "JSON file structure:\n".
+            "{
+                \"preserve-xpath\": [
+                \"/config/devices/entry[@name='localhost.localdomain']/deviceconfig/system/ip-address\",
+                \"/config/devices/entry[@name='localhost.localdomain']/deviceconfig/system/hostname\",
+                \"/config/devices/entry[@name='localhost.localdomain']/deviceconfig/high-availability\"
+            ]
+            }\n";
+
 
 
         $this->prepareSupportedArgumentsArray();
@@ -320,7 +329,8 @@ class UPLOAD extends UTIL
             {
                 if( isset(PH::$args['preservemgmtconfig']) ||
                     isset(PH::$args['preservemgmtusers']) ||
-                    isset(PH::$args['preservemgmtsystem']) )
+                    isset(PH::$args['preservemgmtsystem']) ||
+                    isset(PH::$args['preserve-xpath-jsonfile']) )
                 {
                     PH::print_stdout( " - Option 'preserveXXXXX was used, we will first download the running config of target device...");
 
@@ -331,8 +341,8 @@ class UPLOAD extends UTIL
                     else
                     {
                         $runningConfig = new DOMDocument();
-                        PH::print_stdout( " - Reading XML file from disk... ".$this->configInput['filename'] );
-                        if( !$runningConfig->load($this->configInput['filename'], XML_PARSE_BIG_LINES) )
+                        PH::print_stdout( " - Reading XML file from disk... ".$this->configOutput['filename'] );
+                        if( !$runningConfig->load($this->configOutput['filename'], XML_PARSE_BIG_LINES) )
                             derr("error while reading xml config file");
                     }
 
@@ -366,6 +376,24 @@ class UPLOAD extends UTIL
                         $xpathQueryList[] = '/config/shared/log-settings';
                         $xpathQueryList[] = '/config/shared/local-user-database';
                         $xpathQueryList[] = '/config/shared/admin-role';
+                    }
+
+                    if( isset(PH::$args['preserve-xpath-jsonfile']) )
+                    {
+                        $json = file_get_contents(PH::$args['preserve-xpath-jsonfile']);
+
+                        // Check if the file was read successfully
+                        if ($json === false) {
+                            die('Error reading the JSON file');
+                        }
+                        // Decode the JSON file
+                        $json_data = json_decode($json, true);
+
+                        //load JSON file to array
+                        foreach( $json_data['preserve-xpath'] as $entry )
+                        {
+                            $xpathQueryList[] = $entry;
+                        }
                     }
 
                     foreach( $xpathQueryList as $xpathQuery )
@@ -412,7 +440,16 @@ class UPLOAD extends UTIL
                             if( count($newXpath) < 2 )
                                 derr('unsupported, debug xpath query: ' . $xpathQuery);
 
-                            unset($newXpath[count($newXpath) - 1]);
+
+                            #this is needed if xpath is containing e.g. entry[@name='ethernet1/19']
+                            if( is_numeric( $newXpath[count($newXpath) - 1][0] ) )
+                            {
+                                unset($newXpath[count($newXpath) - 1]);
+                                unset($newXpath[count($newXpath) - 1]);
+                            }
+                            else
+                                unset($newXpath[count($newXpath) - 1]);
+
                             $newXpath = implode('/', $newXpath);
 
                             $xpathResultsLocal = $xpathQlocal->query($newXpath);
@@ -670,6 +707,7 @@ class UPLOAD extends UTIL
         $this->supportedArguments['preservemgmtconfig'] = array('niceName' => 'preserveMgmtConfig', 'shortHelp' => "tries to preserve most of management settings like IP address, admins and passwords etc. note it's not a smart feature and may break your config a bit and requires manual fix in GUI before you can actually commit");
         $this->supportedArguments['preservemgmtusers'] = array('niceName' => 'preserveMgmtUsers', 'shortHelp' => "preserve administrators so they are not overwritten and you don't loose access after a commit");
         $this->supportedArguments['preservemgmtsystem'] = array('niceName' => 'preserveMgmtSystem', 'shortHelp' => 'preserves what is in /config/devices/entry/deviceconfig/system');
+        $this->supportedArguments['preserve-xpath-jsonfile'] = array('niceName' => 'preserve-Xpath-jsonfile', 'shortHelp' => 'preserves all Xpath what is in define JSON file');
         $this->supportedArguments['injectuseradmin2'] = array('niceName' => 'injectUserAdmin2', 'shortHelp' => 'adds user "admin2" with password "admin" in administrators');
         $this->supportedArguments['extrafiltersout'] = array('niceName' => 'extraFiltersOut', 'shortHelp' => 'list of xpath separated by | character that will be stripped from the XML before going to output');
     }
