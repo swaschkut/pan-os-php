@@ -31,17 +31,21 @@ class DIFF extends UTIL
     public $deleted = array();
     public $empty = array();
 
-    public $failStatus_diff = false;
+    public $failStatus_diff = FALSE;
 
     public $ruleorderCHECK = TRUE;
-    public $avoidDisplayWhitspaceDiffCertificate = false;
+    public $avoidDisplayWhitspaceDiffCertificate = FALSE;
 
     public $additionalruleOrderCHECK = FALSE;
     public $additionalRuleOrderpreXpath = array();
     public $additionalRuleOrderpostXpath = array();
-    public $failStatus_additionalruleorder = false;
+    public $failStatus_additionalruleorder = FALSE;
 
-    public $outputFormatSet;
+    public $outputFormatSet = FALSE;
+    public $outputformatsetFile = null;
+
+    public $displayXpathOnly = FALSE;
+    public $displayXpathAndXMLNode = FALSE;
 
     //needed for CLI input of argument filter=...$$name$$...
     public $replace = "";
@@ -104,23 +108,12 @@ class DIFF extends UTIL
 
         if( $this->outputFormatSet )
         {
-            PH::print_stdout();
-            PH::print_stdout();
-            foreach( $this->diff_set as $set )
-                PH::print_stdout( $set );
+            PH::print_stdout(" * script was called with argument 'outputformatset' - please wait for calculation");
 
-            $deleteArray = array( "rulebase", "address-group", "address", "service-group", "service", "misc" );
-
-            foreach( $deleteArray as $item )
-            {
-                if( isset( $this->diff_delete[$item] ) )
-                    foreach( $this->diff_delete[$item] as $key => $delete )
-                        PH::print_stdout( $delete );
-            }
+            $this->display_outputformatset();
         }
-
-        
     }
+
 
     public function main()
     {
@@ -129,11 +122,40 @@ class DIFF extends UTIL
         else
             $this->debugAPI = FALSE;
 
-        if( isset(PH::$args['outputFormatSet']) )
+        if( isset(PH::$args['projectfolder']) )
+        {
+            $this->projectFolder = PH::$args['projectfolder'];
+            if (!file_exists($this->projectFolder)) {
+                mkdir($this->projectFolder, 0777, true);
+            }
+        }
+
+        if( isset(PH::$args['outputformatset']) )
+        {
             $this->outputFormatSet = TRUE;
-        else
-            $this->outputFormatSet = FALSE;
-        //$this->outputFormatSet = TRUE;
+
+            if( !is_bool(PH::$args['outputformatset']) )
+            {
+                $this->outputformatsetFile = PH::$args['outputformatset'];
+
+                if( $this->projectFolder !== null )
+                {
+                    if( strpos($this->outputformatsetFile, $this->projectFolder) === FALSE )
+                        $this->outputformatsetFile = $this->projectFolder."/".$this->outputformatsetFile;
+                }
+            }
+        }
+
+
+        if( isset(PH::$args['display-xpath-only']) )
+        {
+            $this->displayXpathOnly = TRUE;
+        }
+
+        if( isset(PH::$args['display-xpath-and-xmlnode']) )
+        {
+            $this->displayXpathAndXMLNode = TRUE;
+        }
 
         if( isset(PH::$args['noruleordercheck']) )
             $this->ruleorderCHECK = FALSe;
@@ -1032,6 +1054,15 @@ class DIFF extends UTIL
         {
             if( $this->outputFormatSet )
             {
+                if( $this->displayXpathOnly || $this->displayXpathAndXMLNode )
+                    if( !empty( trim($text) ) )
+                    {
+                        PH::print_stdout("\nXPATH: $xpath");
+                        if( $this->displayXpathAndXMLNode )
+                            PH::print_stdout("$text");
+                    }
+
+
                 $multiVSYS = FALSE;
                 if( $this->configType == 'panos' )
                 {
@@ -1050,41 +1081,7 @@ class DIFF extends UTIL
                     //intermediate, remove it later on
                     PH::print_stdout("\nXPATH: $xpath");
                     /////////////
-                    //PH::print_stdout("\nTEXT: $text");
                 }
-
-                /*
-                foreach( $edit as $element )
-                {
-                    if( $element === null )
-                        continue;
-
-                    $array = array();
-
-                    if( $this->debugAPI )
-                    {
-                        PH::print_stdout( "EDIT");
-                        //intermediate, remove it later on
-
-                        $doc2 = new DOMDocument();
-                        $node = $doc2->importNode($element, true);
-                        $doc2->appendChild($node);
-                        PH::print_stdout( $doc2->saveXML( $doc2->documentElement) );
-                        PH::print_stdout( "");
-
-                    }
-
-                    DH::elementToPanSetCommand( 'edit', $element, $array );
-
-
-                    foreach( $array as $entry )
-                    {
-                        if( !in_array( $entry, $this->diff_set ) )
-                            $this->diff_edit[] = $entry;
-                    }
-
-                }
-                */
 
                 foreach( $plus as $element )
                 {
@@ -1155,7 +1152,8 @@ class DIFF extends UTIL
                 if( !empty( trim($text) ) )
                 {
                     PH::print_stdout("\nXPATH: $xpath");
-                    PH::print_stdout("$text");
+                    if( !$this->displayXpathOnly )
+                        PH::print_stdout("$text");
                 }
             }
         }
@@ -1928,6 +1926,84 @@ class DIFF extends UTIL
             $parent->removeChild( $node );
             if( !DH::hasChild($parent) )
                 $this->deleteNodeReverseAlsoParent($parent);
+        }
+    }
+
+    public function display_outputformatset()
+    {
+        PH::print_stdout();
+        PH::print_stdout();
+
+        ####################################
+        ####################################
+        $deleteArray = array( "rulebase", "address-group", "address", "service-group", "service", "profile-group", "profiles", "profiles-custom-url-category", "misc" );
+        $tmp_string = "";
+        foreach( $deleteArray as $item )
+        {
+            if( isset( $this->diff_delete[$item] ) )
+            {
+                foreach( $this->diff_delete[$item] as $key => $delete )
+                    $tmp_string .= $delete."\n";
+            }
+        }
+        ##################
+        if( PH::$shadow_json )
+        {
+            if( isset(PH::$JSON_OUT['setcommands']) )
+                PH::$JSON_OUT['setcommands'] .= $tmp_string;
+            else
+                PH::$JSON_OUT['setcommands'] = $tmp_string;
+        }
+        else
+        {
+            if( $this->outputformatsetFile !== null )
+            {
+                //output only once, see below for SET, here it would be for DELETE
+                #PH::print_stdout( " * set commands are stored in FILE: ".$this->outputformatsetFile);
+                file_put_contents($this->outputformatsetFile, $tmp_string, FILE_APPEND);
+            }
+
+            else
+            {
+                PH::print_stdout($tmp_string);
+            }
+
+        }
+        ####################################
+        ####################################
+
+        ####################################
+        ####################################
+        $setArray = array( "address", "address-group", "service", "service-group", "profiles-custom-url-category","profiles", "profile-group", "misc", "rulebase" );
+        $tmp_string = "";
+        foreach( $setArray as $item )
+        {
+            if( isset( $this->diff_set[$item] ) )
+            {
+
+                foreach( $this->diff_set[$item] as $key => $set )
+                    $tmp_string .= $set."\n";
+            }
+        }
+        if( PH::$shadow_json )
+        {
+            if( isset(PH::$JSON_OUT['setcommands']) )
+                PH::$JSON_OUT['setcommands'] .= $tmp_string;
+            else
+                PH::$JSON_OUT['setcommands'] = $tmp_string;
+        }
+        else
+        {
+            if( $this->outputformatsetFile !== null )
+            {
+                PH::print_stdout( " * set commands are stored in FILE: ".$this->outputformatsetFile);
+                file_put_contents($this->outputformatsetFile, $tmp_string, FILE_APPEND);
+            }
+            else
+            {
+                PH::print_stdout( $tmp_string );
+            }
+
         }
     }
 }

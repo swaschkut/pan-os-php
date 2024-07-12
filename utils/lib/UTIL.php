@@ -2214,6 +2214,7 @@ class UTIL
             PH::print_stdout(" * script was called with argument 'outputformatset' - please wait for calculation");
             $utilDiff = new DIFF( "custom", array(), array(), "" );
             $utilDiff->outputFormatSet = TRUE;
+            $utilDiff->outputformatsetFile = $this->outputformatsetFile;
 
             if( $this->debugAPI )
                 $utilDiff->debugAPI = TRUE;
@@ -2226,73 +2227,7 @@ class UTIL
 
             $utilDiff->runDiff( $this->origXmlDoc, $doc2 );
 
-            PH::print_stdout();
-            PH::print_stdout();
-
-            ####################################
-            ####################################
-            $deleteArray = array( "rulebase", "address-group", "address", "service-group", "service", "profile-group", "profiles", "profiles-custom-url-category", "misc" );
-            $tmp_string = "";
-            foreach( $deleteArray as $item )
-            {
-                if( isset( $utilDiff->diff_delete[$item] ) )
-                {
-                    foreach( $utilDiff->diff_delete[$item] as $key => $delete )
-                        $tmp_string .= $delete."\n";
-                }
-            }
-            ##################
-            if( PH::$shadow_json )
-            {
-                if( isset(PH::$JSON_OUT['setcommands']) )
-                    PH::$JSON_OUT['setcommands'] .= $tmp_string;
-                else
-                    PH::$JSON_OUT['setcommands'] = $tmp_string;
-            }
-            else
-            {
-                if( $this->outputformatsetFile !== null )
-                    file_put_contents($this->outputformatsetFile, $tmp_string, FILE_APPEND);
-                else
-                    PH::print_stdout($tmp_string);
-            }
-            ####################################
-            ####################################
-
-            ####################################
-            ####################################
-            $setArray = array( "address", "address-group", "service", "service-group", "profiles-custom-url-category","profiles", "profile-group", "misc", "rulebase" );
-            $tmp_string = "";
-            foreach( $setArray as $item )
-            {
-                if( isset( $utilDiff->diff_set[$item] ) )
-                {
-
-                    foreach( $utilDiff->diff_set[$item] as $key => $set )
-                        $tmp_string .= $set."\n";
-                }
-            }
-            if( PH::$shadow_json )
-            {
-                if( isset(PH::$JSON_OUT['setcommands']) )
-                    PH::$JSON_OUT['setcommands'] .= $tmp_string;
-                else
-                    PH::$JSON_OUT['setcommands'] = $tmp_string;
-            }
-            else
-            {
-                if( $this->outputformatsetFile !== null )
-                {
-                    PH::print_stdout( " * set commands are stored in FILE: ".$this->outputformatsetFile);
-                    file_put_contents($this->outputformatsetFile, $tmp_string, FILE_APPEND);
-                }
-                else
-                    PH::print_stdout( $tmp_string );
-            }
-
-            ####################################
-            ####################################
-
+            $utilDiff->display_outputformatset();
         }
     }
 
