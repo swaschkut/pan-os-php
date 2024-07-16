@@ -1459,6 +1459,131 @@ AddressCallContext::$supportedActions[] = array(
     'args' => array('suffix' => array('type' => 'string', 'default' => '*nodefault*')
     ),
 );
+AddressCallContext::$supportedActions['name-touppercase'] = array(
+    'name' => 'name-toUpperCase',
+    'MainFunction' => function (AddressCallContext $context) {
+        $object = $context->object;
+        #$newName = $context->arguments['prefix'].$object->name();
+        $newName = mb_strtoupper($object->name(), 'UTF8');
+
+        if( $object->isTmpAddr() )
+        {
+            $string = "not applicable to TMP objects";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
+        $string = "new name will be '{$newName}'";
+        PH::ACTIONlog( $context, $string );
+
+        $rootObject = PH::findRootObjectOrDie($object->owner->owner);
+
+        if( $newName === $object->name() )
+        {
+            $string = "object is already uppercase";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
+        if( $rootObject->isPanorama() && $object->owner->find($newName, null, FALSE) !== null ||
+            $rootObject->isFirewall() && $object->owner->find($newName, null, TRUE) !== null )
+        {
+            $string = "an object with same name already exists";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            #use existing uppercase TAG and replace old lowercase where used with this existing uppercase TAG
+            return;
+        }
+        if( $context->isAPI )
+            $object->API_setName($newName);
+        else
+
+            $object->setName($newName);
+    }
+);
+AddressCallContext::$supportedActions['name-tolowercase'] = array(
+    'name' => 'name-toLowerCase',
+    'MainFunction' => function (AddressCallContext $context) {
+        $object = $context->object;
+        #$newName = $context->arguments['prefix'].$object->name();
+        $newName = mb_strtolower($object->name(), 'UTF8');
+
+        if( $object->isTmpAddr() )
+        {
+            $string = "not applicable to TMP objects";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
+        $string = "new name will be '{$newName}'";
+        PH::ACTIONlog( $context, $string );
+
+        $rootObject = PH::findRootObjectOrDie($object->owner->owner);
+
+        if( $newName === $object->name() )
+        {
+            $string = "object is already lowercase";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
+        if( $rootObject->isPanorama() && $object->owner->find($newName, null, FALSE) !== null ||
+            $rootObject->isFirewall() && $object->owner->find($newName, null, TRUE) !== null )
+        {
+            $string = "an object with same name already exists";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            #use existing lowercase TAG and replace old uppercase where used with this
+            return;
+        }
+        if( $context->isAPI )
+            $object->API_setName($newName);
+        else
+
+            $object->setName($newName);
+    }
+);
+AddressCallContext::$supportedActions['name-toucwords'] = array(
+    'name' => 'name-toUCWords',
+    'MainFunction' => function (AddressCallContext $context) {
+        /** @var Address $object */
+        $object = $context->object;
+        #$newName = $context->arguments['prefix'].$object->name();
+        $newName = mb_strtolower($object->name(), 'UTF8');
+        $newName = ucwords($newName);
+
+        if( $object->isTmpAddr() )
+        {
+            $string = "not applicable to TMP objects";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
+        $string = "new name will be '{$newName}'";
+        PH::ACTIONlog( $context, $string );
+
+        $rootObject = PH::findRootObjectOrDie($object->owner->owner);
+
+        if( $newName === $object->name() )
+        {
+            $string = "object is already UCword";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
+        if( $rootObject->isPanorama() && $object->owner->find($newName, null, FALSE) !== null ||
+            $rootObject->isFirewall() && $object->owner->find($newName, null, TRUE) !== null )
+        {
+            $string = "an object with same name already exists";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            #use existing lowercase TAG and replace old uppercase where used with this
+            return;
+        }
+        if( $context->isAPI )
+            $object->API_setName($newName);
+        else
+
+            $object->setName($newName);
+    }
+);
 
 AddressCallContext::$supportedActions[] = array(
     'name' => 'move',
