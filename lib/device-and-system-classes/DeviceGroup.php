@@ -110,6 +110,8 @@ class DeviceGroup
     /** @var ScheduleStore */
     public $scheduleStore = null;
 
+    /** @var EDLStore */
+    public $EDLStore = null;
 
     public static $templatexml = '<entry name="**Need a Name**"><address></address><post-rulebase><security><rules></rules></security><nat><rules></rules></nat></post-rulebase>
 									<pre-rulebase><security><rules></rules></security><nat><rules></rules></nat></pre-rulebase>
@@ -280,6 +282,9 @@ class DeviceGroup
 
         $this->scheduleStore = new ScheduleStore($this);
         $this->scheduleStore->setName('scheduleStore');
+
+        $this->EDLStore = new EDLStore($this);
+        $this->EDLStore->setName('EDLStore');
 
         $this->securityRules = new RuleStore($this, 'SecurityRule', TRUE);
         $this->natRules = new RuleStore($this, 'NatRule', TRUE);
@@ -619,6 +624,13 @@ class DeviceGroup
             $this->scheduleStore->load_from_domxml($tmp);
         // End of address groups extraction
 
+        //
+        // Extract EDL objects
+        //
+        $tmp = DH::findFirstElement('external-list', $xml);
+        if( $tmp !== FALSE )
+            $this->EDLStore->load_from_domxml($tmp);
+        // End of EDL extraction
 
         if( $debugLoadTime )
             PH::print_DEBUG_loadtime("pre-/post-rulebase");
@@ -1006,6 +1018,7 @@ class DeviceGroup
         $this->serviceStore->nestedPointOfView();
         $this->tagStore->nestedPointOfView();
         $this->scheduleStore->nestedPointOfView();
+        $this->EDLStore->nestedPointOfView();
         $this->appStore->nestedPointOfView();
 
     }

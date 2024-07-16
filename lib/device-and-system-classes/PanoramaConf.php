@@ -204,6 +204,9 @@ class PanoramaConf
     /** @var ScheduleStore */
     public $scheduleStore = null;
 
+    /** @var EDLStore */
+    public $EDLStore = null;
+
     /** @var ZoneStore */
     public $zoneStore = null;
 
@@ -336,6 +339,9 @@ class PanoramaConf
 
         $this->scheduleStore = new ScheduleStore($this);
         $this->scheduleStore->setName('scheduleStore');
+
+        $this->EDLStore = new EDLStore($this);
+        $this->EDLStore->setName('EDLStore');
 
         $this->securityRules = new RuleStore($this, 'SecurityRule', TRUE);
         $this->natRules = new RuleStore($this, 'NatRule', TRUE);
@@ -740,6 +746,14 @@ class PanoramaConf
         if( $tmp !== FALSE )
             $this->scheduleStore->load_from_domxml($tmp);
         // End of address groups extraction
+
+        //
+        // Extract EDL objects
+        //
+        $tmp = DH::findFirstElement('external-list', $xml);
+        if( $tmp !== FALSE )
+            $this->EDLStore->load_from_domxml($tmp);
+        // End of EDL extraction
 
         //
         // Extracting policies
@@ -1253,6 +1267,8 @@ class PanoramaConf
 
                         $storeType = array(
                             'addressStore', 'serviceStore', 'tagStore', 'scheduleStore', 'appStore',
+
+                            'EDLStore',
 
                             'securityProfileGroupStore',
 

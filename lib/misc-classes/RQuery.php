@@ -98,6 +98,8 @@ class RQuery
             $this->contextObject = new SecurityProfileGroupRQueryContext($this);
         elseif( $this->objectType == 'schedule' )
             $this->contextObject = new ScheduleRQueryContext($this);
+        elseif( $this->objectType == 'edl' )
+            $this->contextObject = new EDLRQueryContext($this);
         elseif( $this->objectType == 'application' )
             $this->contextObject = new ApplicationRQueryContext($this);
         elseif( $this->objectType == 'device' )
@@ -701,6 +703,7 @@ require_once 'filters/filters-VirtualWire.php';
 require_once 'filters/filters-SecurityProfile.php';
 require_once 'filters/filters-SecurityProfileGroup.php';
 require_once 'filters/filters-Schedule.php';
+require_once 'filters/filters-EDL.php';
 require_once 'filters/filters-Device.php';
 require_once 'filters/filters-DHCP.php';
 require_once 'filters/filters-Certificate.php';

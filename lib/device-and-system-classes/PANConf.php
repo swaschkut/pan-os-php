@@ -165,6 +165,9 @@ class PANConf
     /** @var ScheduleStore */
     public $scheduleStore = null;
 
+    /** @var EDLStore */
+    public $EDLStore = null;
+
     /** @var CertificateStore */
     public $certificateStore = null;
 
@@ -250,6 +253,9 @@ class PANConf
 
         $this->scheduleStore = new ScheduleStore($this);
         $this->scheduleStore->setName('scheduleStore');
+
+        $this->EDLStore = new EDLStore($this);
+        $this->EDLStore->setName('EDLStore');
 
         $this->certificateStore = new CertificateStore($this);
         $this->certificateStore->setName('certificateStore');

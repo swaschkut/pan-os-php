@@ -963,7 +963,7 @@ class PH
 
     public static $supportedUTILTypes = array(
         "stats",
-        "address", "service", "tag", "schedule", "application", "threat",
+        "address", "service", "tag", "schedule", "application", "threat", "edl",
         "rule",
         "device", "securityprofile", "securityprofilegroup",
         "zone",  "interface", "virtualwire", "routing", "dhcp", "certificate", "static-route",
@@ -1188,6 +1188,7 @@ class PH
             || $type == 'service'
             || $type == 'tag'
             || $type == 'schedule'
+            || $type == 'edl'
             || $type == 'securityprofilegroup'
             || $type == 'application'
             || $type == 'threat'

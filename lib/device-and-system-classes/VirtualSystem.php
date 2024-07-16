@@ -106,6 +106,9 @@ class VirtualSystem
     /** @var ScheduleStore */
     public $scheduleStore = null;
 
+    /** @var EDLStore */
+    public $EDLStore = null;
+
     /** @var string */
     public $name;
 
@@ -299,6 +302,9 @@ class VirtualSystem
         $this->scheduleStore = new ScheduleStore($this);
         $this->scheduleStore->setName('scheduleStore');
 
+        $this->EDLStore = new EDLStore($this);
+        $this->EDLStore->setName('EDLStore');
+
         $this->securityRules = new RuleStore($this, 'SecurityRule');
         $this->securityRules->name = 'Security';
 
@@ -352,6 +358,8 @@ class VirtualSystem
 
         $storeType = array(
             'addressStore', 'serviceStore', 'tagStore', 'scheduleStore', 'appStore',
+
+            'EDLStore',
 
             'securityProfileGroupStore',
 
@@ -693,7 +701,7 @@ class VirtualSystem
             $tmp = DH::findFirstElement('profile-group', $xml);
             if( $tmp !== FALSE )
                 $this->securityProfileGroupStore->load_securityprofile_groups_from_domxml($tmp);
-            // End of address groups extraction
+            // End of SecurityProfile groups extraction
 
 
             //
@@ -702,7 +710,16 @@ class VirtualSystem
             $tmp = DH::findFirstElement('schedule', $xml);
             if( $tmp !== FALSE )
                 $this->scheduleStore->load_from_domxml($tmp);
-            // End of address groups extraction
+            // End of schedule extraction
+
+
+            //
+            // Extract EDL objects
+            //
+            $tmp = DH::findFirstElement('external-list', $xml);
+            if( $tmp !== FALSE )
+                $this->EDLStore->load_from_domxml($tmp);
+            // End of EDL extraction
 
         }
 

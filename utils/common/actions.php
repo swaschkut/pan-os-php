@@ -78,6 +78,10 @@ require_once("ScheduleCallContext.php");
 require_once "actions-schedule.php";
 ScheduleCallContext::prepareSupportedActions();
 
+require_once("EDLCallContext.php");
+require_once "actions-edl.php";
+EDLCallContext::prepareSupportedActions();
+
 require_once("ApplicationCallContext.php");
 require_once "actions-application.php";
 ApplicationCallContext::prepareSupportedActions();

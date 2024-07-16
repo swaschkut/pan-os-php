@@ -413,6 +413,8 @@ class UTIL
             $tmp_array = &SecurityProfileGroupCallContext::$supportedActions;
         elseif( $this->utilType == 'schedule' )
             $tmp_array = &ScheduleCallContext::$supportedActions;
+        elseif( $this->utilType == 'edl' )
+            $tmp_array = &EDLCallContext::$supportedActions;
         elseif( $this->utilType == 'application' )
             $tmp_array = &ApplicationCallContext::$supportedActions;
         elseif( $this->utilType == 'threat' )
@@ -534,6 +536,8 @@ class UTIL
                 SecurityProfileGroupCallContext::prepareSupportedActions();
             elseif( $this->utilType == 'schedule' )
                 ScheduleCallContext::prepareSupportedActions();
+            elseif( $this->utilType == 'edl' )
+                EDLCallContext::prepareSupportedActions();
             elseif( $this->utilType == 'application' )
                 ApplicationCallContext::prepareSupportedActions();
             elseif( $this->utilType == 'threat' )
@@ -1198,6 +1202,8 @@ class UTIL
                 $context = new SecurityProfileGroupCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'schedule' )
                 $context = new ScheduleCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+            elseif( $this->utilType == 'edl' )
+                $context = new EDLCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'application' )
                 $context = new ApplicationCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'threat' )
@@ -1602,6 +1608,8 @@ class UTIL
                         $this->objectsToProcess[] = array('store' => $this->pan->securityProfileGroupStore, 'objects' => $this->pan->securityProfileGroupStore->getAll());
                     elseif( $this->utilType == 'schedule' )
                         $this->objectsToProcess[] = array('store' => $this->pan->scheduleStore, 'objects' => $this->pan->scheduleStore->getall());
+                    elseif( $this->utilType == 'edl' )
+                        $this->objectsToProcess[] = array('store' => $this->pan->EDLStore, 'objects' => $this->pan->EDLStore->getall());
                     elseif( $this->utilType == 'application' )
                         $this->objectsToProcess[] = array('store' => $this->pan->appStore, 'objects' => $this->pan->appStore->apps());
                     elseif( $this->utilType == 'threat' )
@@ -1624,6 +1632,8 @@ class UTIL
                             $this->objectsToProcess[] = array('store' => $sub->securityProfileGroupStore, 'objects' => $sub->securityProfileGroupStore->resultingObjectSet());
                         elseif( $this->utilType == 'schedule' )
                             $this->objectsToProcess[] = array('store' => $sub->scheduleStore, 'objects' => $sub->scheduleStore->resultingObjectSet());
+                        elseif( $this->utilType == 'edl' )
+                            $this->objectsToProcess[] = array('store' => $sub->EDLStore, 'objects' => $sub->EDLStore->resultingObjectSet());
                         elseif( $this->utilType == 'application' )
                             $this->objectsToProcess[] = array('store' => $sub->appStore, 'objects' => $sub->appStore->resultingObjectSet());
 
@@ -1642,6 +1652,8 @@ class UTIL
                             $this->objectsToProcess[] = array('store' => $sub->securityProfileGroupStore, 'objects' => $sub->securityProfileGroupStore->getAll());
                         elseif( $this->utilType == 'schedule' )
                             $this->objectsToProcess[] = array('store' => $sub->scheduleStore, 'objects' => $sub->scheduleStore->getall());
+                        elseif( $this->utilType == 'edl' )
+                            $this->objectsToProcess[] = array('store' => $sub->EDLStore, 'objects' => $sub->EDLStore->getall());
                         elseif( $this->utilType == 'application' )
                             $this->objectsToProcess[] = array('store' => $sub->appStore, 'objects' => $sub->appStore->apps());
 
@@ -1665,6 +1677,8 @@ class UTIL
                             $this->objectsToProcess[] = array('store' => $sub->securityProfileGroupStore, 'objects' => $sub->securityProfileGroupStore->getAll());
                         elseif( $this->utilType == 'schedule' )
                             $this->objectsToProcess[] = array('store' => $sub->scheduleStore, 'objects' => $sub->scheduleStore->getall());
+                        elseif( $this->utilType == 'edl' )
+                            $this->objectsToProcess[] = array('store' => $sub->EDLStore, 'objects' => $sub->EDLStore->getall());
                         elseif( $this->utilType == 'application' )
                             $this->objectsToProcess[] = array('store' => $sub->appStore, 'objects' => $sub->appStore->apps());
 
@@ -1689,6 +1703,8 @@ class UTIL
                         $this->objectsToProcess[] = array('store' => $this->pan->securityProfileGroupStore, 'objects' => $this->pan->securityProfileGroupStore->getAll());
                     elseif( $this->utilType == 'schedule' )
                         $this->objectsToProcess[] = array('store' => $this->pan->scheduleStore, 'objects' => $this->pan->scheduleStore->getall());
+                    elseif( $this->utilType == 'edl' )
+                        $this->objectsToProcess[] = array('store' => $this->pan->EDLStore, 'objects' => $this->pan->EDLStore->getall());
                     elseif( $this->utilType == 'application' )
                         $this->objectsToProcess[] = array('store' => $this->pan->appStore, 'objects' => $this->pan->appStore->apps());
                     elseif( $this->utilType == 'threat' )
@@ -1741,6 +1757,8 @@ class UTIL
                             $this->objectsToProcess[] = array('store' => $sub->securityProfileGroupStore, 'objects' => $sub->securityProfileGroupStore->getAll());
                         elseif( $this->utilType == 'schedule' )
                             $this->objectsToProcess[] = array('store' => $sub->scheduleStore, 'objects' => $sub->scheduleStore->getall());
+                        elseif( $this->utilType == 'edl' )
+                            $this->objectsToProcess[] = array('store' => $sub->EDLStore, 'objects' => $sub->EDLStore->getall());
                         elseif( $this->utilType == 'application' )
                             $this->objectsToProcess[] = array('store' => $sub->appStore, 'objects' => $sub->appStore->apps());
                         
