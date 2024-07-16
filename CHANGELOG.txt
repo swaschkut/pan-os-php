@@ -5,6 +5,7 @@ UTIL:
 * type=rule ruletype=security actions=exporttoexcel:file.html - extend securityRule with type of universal/intrazone/interzone
 * type=upload in={FILE} out={FILE} | exend to support preserveXYZ arguments
 * type=upload | introduce argument 'preserve-xpath-jsonfile=FILE.json - to define which xpath need to be keeped from out=
+* type=address/server | introduction of 'actions=name-toUpperCase/name-toLowerCase/name-toUCWords'
 
 BUGFIX:
 * type=xpath "filter-xpath=XYZ" in=api://{MGMT-IP} | bugfix for API mode to display correct filtered xpath
