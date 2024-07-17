@@ -7,6 +7,7 @@ UTIL:
 * type=upload | introduce argument 'preserve-xpath-jsonfile=FILE.json - to define which xpath need to be keeped from out=
 * type=edl | introduction of new object type
 * type=address/server | introduction of 'actions=name-toUpperCase/name-toLowerCase/name-toUCWords'
+* type=edl actions=exporttoexcel:file.html - implement new action
 
 BUGFIX:
 * type=xpath "filter-xpath=XYZ" in=api://{MGMT-IP} | bugfix for API mode to display correct filtered xpath

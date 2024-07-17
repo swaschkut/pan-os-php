@@ -459,6 +459,22 @@ RQuery::$defaultFilters['edl']['type']['operators']['is.imsi'] = array(
     },
     'arg' => false,
 );
+RQuery::$defaultFilters['edl']['type']['operators']['is.predefined-ip'] = array(
+    'Function' => function (EDLRQueryContext $context) {
+        $object = $context->object;
+
+        return $object->type() == 'predefined-ip';
+    },
+    'arg' => false,
+);
+RQuery::$defaultFilters['edl']['type']['operators']['is.predefined-url'] = array(
+    'Function' => function (EDLRQueryContext $context) {
+        $object = $context->object;
+
+        return $object->type() == 'predefined-url';
+    },
+    'arg' => false,
+);
 
 RQuery::$defaultFilters['edl']['url']['operators']['regex'] = array(
     'Function' => function (EDLRQueryContext $context) {

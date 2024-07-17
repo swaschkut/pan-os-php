@@ -21,7 +21,7 @@
 
 class EDLCallContext extends CallContext
 {
-    /** @var  EDL */
+    /** @var EDL $object*/
     public $object;
 
 

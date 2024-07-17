@@ -126,16 +126,21 @@ class EDL
         $tmp_type_node = DH::findFirstElement('type', $xml);
         $tmp_type = DH::firstChildElement($tmp_type_node);
         $this->type = $tmp_type->nodeName;
-        $supportedType = array( 'ip', 'domain', 'url', 'imei', 'imsi' );
+        $supportedType = array( 'ip', 'domain', 'url', 'imei', 'imsi', 'predefined-ip', 'predefined-url' );
         //todo: supported type: ip/domain/url/imei/imsi
 
 
         $tmp_recurring_node = DH::findFirstElement('recurring', $tmp_type);
-        $tmp_recurring = DH::firstChildElement($tmp_recurring_node);
-        $this->recurring = $tmp_recurring->nodeName;
+        if( $tmp_recurring_node != False )
+        {
+            $tmp_recurring = DH::firstChildElement($tmp_recurring_node);
+            $this->recurring = $tmp_recurring->nodeName;
+        }
 
         $tmp_url_node = DH::findFirstElement('url', $tmp_type);
-        $this->url = $tmp_url_node->textContent;
+        if( $tmp_url_node != False )
+            $this->url = $tmp_url_node->textContent;
+
             /*
             +<entry name="EDL_waschkut_IP">
             + <type>
@@ -254,6 +259,11 @@ class EDL
     public function url()
     {
         return $this->url;
+    }
+
+    public function recurring()
+    {
+        return $this->recurring;
     }
 }
 

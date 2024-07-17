@@ -377,7 +377,11 @@ EDLCallContext::$supportedActions['display'] = array(
         PH::$JSON_TMP['sub']['object'][$object->name()]['name'] = $object->name();
         PH::$JSON_TMP['sub']['object'][$object->name()]['type'] = get_class($object);
 
-        $string = "type: ".$object->type." | recurring: ".$object->recurring. " | url: ".$object->url;
+        if( $object->recurring == null )
+            $tmp_recurring = "---";
+        else
+            $tmp_recurring = $object->recurring;
+        $string = "type: ".$object->type." | recurring: ".$tmp_recurring. " | url: ".$object->url;
         PH::print_stdout( "       - ".$string );
 
 
@@ -385,41 +389,117 @@ EDLCallContext::$supportedActions['display'] = array(
 );
 
 
-/*
 EDLCallContext::$supportedActions[] = array(
-    'name' => 'replaceWithObject',
+    'name' => 'exportToExcel',
     'MainFunction' => function (EDLCallContext $context) {
         $object = $context->object;
-        $objectRefs = $object->getReferences();
+        $context->objectList[] = $object;
+    },
+    'GlobalInitFunction' => function (EDLCallContext $context) {
+        $context->objectList = array();
+    },
+    'GlobalFinishFunction' => function (EDLCallContext $context) {
+        $args = &$context->arguments;
+        $filename = $args['filename'];
 
-        $foundObject = $object->owner->find($context->arguments['objectName']);
+        if( isset( $_SERVER['REQUEST_METHOD'] ) )
+            $filename = "project/html/".$filename;
 
-        if( $foundObject === null )
-            derr("cannot find an object named '{$context->arguments['objectName']}'");
+        $lines = '';
 
-        /** @var SecurityRule $objectRef */
-/*      foreach( $objectRefs as $objectRef )
+
+        $addWhereUsed = FALSE;
+        $addUsedInLocation = FALSE;
+
+        $optionalFields = &$context->arguments['additionalFields'];
+
+        if( isset($optionalFields['WhereUsed']) )
+            $addWhereUsed = TRUE;
+
+        if( isset($optionalFields['UsedInLocation']) )
+            $addUsedInLocation = TRUE;
+
+
+        $headers = '<th>ID</th><th>location</th><th>name</th><th>type</th><th>recurring</th><th>url</th>';
+
+        if( $addWhereUsed )
+            $headers .= '<th>where used</th>';
+        if( $addUsedInLocation )
+            $headers .= '<th>location used</th>';
+
+        $count = 0;
+        if( isset($context->objectList) )
         {
-            $tmp_class = get_class($objectRef);
-
-            if( $tmp_class == "SecurityRule" )
+            foreach( $context->objectList as $object )
             {
-                $string = "replacing in {$objectRef->toString()}";
-                PH::ACTIONlog( $context, $string );
+                $count++;
 
-                if( $context->isAPI )
-                    $objectRef->API_setSchedule($foundObject);
+                /** @var Tag $object */
+                if( $count % 2 == 1 )
+                    $lines .= "<tr>\n";
                 else
-                    $objectRef->setSchedule($foundObject);
-            }
-            else
-            {
-                $string = "CLASS: " . $tmp_class . " is not supported";
-                PH::ACTIONstatus( $context, "SKIPPED", $string );
+                    $lines .= "<tr bgcolor=\"#DDDDDD\">";
+
+                $lines .= $context->encloseFunction( (string)$count );
+
+                $lines .= $context->encloseFunction(PH::getLocationString($object));
+
+                $lines .= $context->encloseFunction($object->name());
+
+                $lines .= $context->encloseFunction($object->type());
+
+                $lines .= $context->encloseFunction($object->recurring());
+
+                $lines .= $context->encloseFunction($object->url());
+
+
+                if( $addWhereUsed )
+                {
+                    $refTextArray = array();
+                    foreach( $object->getReferences() as $ref )
+                        $refTextArray[] = $ref->_PANC_shortName();
+
+                    $lines .= $context->encloseFunction($refTextArray);
+                }
+                if( $addUsedInLocation )
+                {
+                    $refTextArray = array();
+                    foreach( $object->getReferences() as $ref )
+                    {
+                        $location = PH::getLocationString($object->owner);
+                        $refTextArray[$location] = $location;
+                    }
+
+                    $lines .= $context->encloseFunction($refTextArray);
+                }
+
+                $lines .= "</tr>\n";
             }
         }
-    },
-    'args' => array('objectName' => array('type' => 'string', 'default' => '*nodefault*')),
-);
-*/
 
+        $content = file_get_contents(dirname(__FILE__) . '/html/export-template.html');
+        $content = str_replace('%TableHeaders%', $headers, $content);
+
+        $content = str_replace('%lines%', $lines, $content);
+
+        $jscontent = file_get_contents(dirname(__FILE__) . '/html/jquery.min.js');
+        $jscontent .= "\n";
+        $jscontent .= file_get_contents(dirname(__FILE__) . '/html/jquery.stickytableheaders.min.js');
+        $jscontent .= "\n\$('table').stickyTableHeaders();\n";
+
+        $content = str_replace('%JSCONTENT%', $jscontent, $content);
+
+        file_put_contents($filename, $content);
+    },
+    'args' => array('filename' => array('type' => 'string', 'default' => '*nodefault*'),
+        'additionalFields' =>
+            array('type' => 'pipeSeparatedList',
+                'subtype' => 'string',
+                'default' => '*NONE*',
+                'choices' => array('WhereUsed', 'UsedInLocation'),
+                'help' =>
+                    "pipe(|) separated list of additional field to include in the report. The following is available:\n" .
+                    "  - WhereUsed : list places where object is used (rules, groups ...)\n" .
+                    "  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n")
+    )
+);
