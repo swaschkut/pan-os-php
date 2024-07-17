@@ -1,17 +1,20 @@
-- EDL object implementation
 
 - spyware / vulnerability =>
 => actions=display with all possible values
 => actions=exporttoexcel
 => filter= check what is needed, severity / action / aso.
 
+-> split spyware/vulnerability profiles and create own Class threat-rules
+-> add these threat-rule as member to spyware/vulnerability profile
+
 
 - Ironskillet / BP - extend to configure day one config via API
+
 
 - optimisation:
 => template HA/device / local FW config import
 => rule-merger - panorama based on serial - upper/lower DG
 => partial usage of - address/address-group/service/service-group/application-group/application-container
 => display threat-log
-=> type=rule threat-log-hit.count ==0
+=> type=rule threat-log-hit.count == 0
 
