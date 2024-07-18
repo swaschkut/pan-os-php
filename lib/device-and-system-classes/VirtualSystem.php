@@ -50,6 +50,9 @@ class VirtualSystem
     /** @var SecurityProfileStore */
     public $AntiVirusProfileStore = null;
 
+    /** @var ThreatPolicyStore */
+    public $ThreatPolicyStore = null;
+
     /** @var SecurityProfileStore */
     public $VulnerabilityProfileStore = null;
 
@@ -244,6 +247,9 @@ class VirtualSystem
         $this->AntiVirusProfileStore = new SecurityProfileStore($this, "AntiVirusProfile");
         $this->AntiVirusProfileStore->name = 'AntiVirus';
 
+
+        $this->ThreatPolicyStore = new ThreatPolicyStore($this, "ThreatPolicy");
+        $this->ThreatPolicyStore->name = 'ThreatPolicy';
 
         $this->VulnerabilityProfileStore = new SecurityProfileStore($this, "VulnerabilityProfile");
         $this->VulnerabilityProfileStore->name = 'Vulnerability';

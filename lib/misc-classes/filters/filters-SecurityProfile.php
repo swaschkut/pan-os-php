@@ -525,17 +525,18 @@ RQuery::$defaultFilters['securityprofile']['exception']['operators']['is.set'] =
 
 RQuery::$defaultFilters['securityprofile']['action']['operators']['eq'] = array(
     'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var ThreatPolicySpyware|ThreatPolicyVulnerability $object */
         $object = $context->object;
         $value = $context->value;
 
         #if( $object->secprof_type == 'virus' || $object->secprof_type == 'spyware' || $object->secprof_type == 'vulnerability' )
         if( $object->secprof_type == 'spyware' || $object->secprof_type == 'vulnerability' )
         {
-            if( !empty( $object->rules ) )
+            if( !empty( $object->rules_obj ) )
             {
-                foreach( $object->rules as $rulename => $rule )
+                foreach( $object->rules_obj as $rulename => $rule )
                 {
-                    if( $rule['action'] == $value )
+                    if( $rule->action == $value )
                         return TRUE;
                 }
             }
@@ -559,11 +560,11 @@ RQuery::$defaultFilters['securityprofile']['packet-capture']['operators']['eq'] 
         #if( $object->secprof_type == 'virus' || $object->secprof_type == 'spyware' || $object->secprof_type == 'vulnerability' )
         if( $object->secprof_type == 'spyware' || $object->secprof_type == 'vulnerability' )
         {
-            if( !empty( $object->rules ) )
+            if( !empty( $object->rules_obj ) )
             {
-                foreach( $object->rules as $rulename => $rule )
+                foreach( $object->rules_obj as $rulename => $rule )
                 {
-                    if( $rule['packet-capture'] == $value )
+                    if( $rule->packetCapture == $value )
                         return TRUE;
                 }
             }
@@ -585,11 +586,11 @@ RQuery::$defaultFilters['securityprofile']['severity']['operators']['eq'] = arra
         #if( $object->secprof_type == 'virus' || $object->secprof_type == 'spyware' || $object->secprof_type == 'vulnerability' )
         if( $object->secprof_type == 'spyware' || $object->secprof_type == 'vulnerability' )
         {
-            if( !empty( $object->rules ) )
+            if( !empty( $object->rules_obj ) )
             {
-                foreach( $object->rules as $rulename => $rule )
+                foreach( $object->rules_obj as $rulename => $rule )
                 {
-                    if( in_array( $value, $rule['severity']) )
+                    if( in_array( $value, $rule->severity) )
                         return TRUE;
                 }
             }
@@ -611,11 +612,11 @@ RQuery::$defaultFilters['securityprofile']['category']['operators']['eq'] = arra
         #if( $object->secprof_type == 'virus' || $object->secprof_type == 'spyware' || $object->secprof_type == 'vulnerability' )
         if( $object->secprof_type == 'spyware' || $object->secprof_type == 'vulnerability' )
         {
-            if( !empty( $object->rules ) )
+            if( !empty( $object->rules_obj ) )
             {
-                foreach( $object->rules as $rulename => $rule )
+                foreach( $object->rules_obj as $rulename => $rule )
                 {
-                    if( $rule['category'] == $value )
+                    if( $rule->category == $value )
                         return TRUE;
                 }
             }
@@ -637,11 +638,11 @@ RQuery::$defaultFilters['securityprofile']['host']['operators']['eq'] = array(
         #if( $object->secprof_type == 'virus' || $object->secprof_type == 'spyware' || $object->secprof_type == 'vulnerability' )
         if( $object->secprof_type == 'spyware' || $object->secprof_type == 'vulnerability' )
         {
-            if( !empty( $object->rules ) )
+            if( !empty( $object->rules_obj ) )
             {
-                foreach( $object->rules as $rulename => $rule )
+                foreach( $object->rules_obj as $rulename => $rule )
                 {
-                    if( $rule['host'] == $value )
+                    if( $rule->host == $value )
                         return TRUE;
                 }
             }
@@ -701,5 +702,40 @@ RQuery::$defaultFilters['securityprofile']['cloud-inline-analysis']['operators']
         'fString' => '(%PROP% client )',
         'input' => 'input/panorama-8.0.xml'
     )
+);
+
+RQuery::$defaultFilters['securityprofile']['threat-rule']['operators']['has.from.query'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        if( $context->object->secprof_type !== 'spyware' && $context->object->secprof_type !== 'vulnerability' )
+            return FALSE;
+
+        if( count($context->object->rules_obj) == 0 )
+            return FALSE;
+
+        if( $context->value === null || !isset($context->nestedQueries[$context->value]) )
+            derr("cannot find nested query called '{$context->value}'");
+
+        $errorMessage = '';
+
+        if( !isset($context->cachedSubRQuery) )
+        {
+            $rQuery = new RQuery('threat-rule');
+            if( $rQuery->parseFromString($context->nestedQueries[$context->value], $errorMessage) === FALSE )
+                derr('nested query execution error : ' . $errorMessage);
+            $context->cachedSubRQuery = $rQuery;
+        }
+        else
+            $rQuery = $context->cachedSubRQuery;
+
+        foreach( $context->object->rules_obj as $member )
+        {
+            if( $rQuery->matchSingleObject(array('object' => $member, 'nestedQueries' => &$context->nestedQueries)) )
+                return TRUE;
+        }
+
+        return FALSE;
+    },
+    'arg' => TRUE,
+    'help' => 'example: \'filter=(threat-rule has.from.query subquery1)\' \'subquery1=(action eq alert)\'',
 );
 // </editor-fold>

@@ -22,7 +22,7 @@ class AntiSpywareProfile
     public $secprof_type;
 
     public $threatException = array();
-    public $rules = array();
+    public $rules_obj = array();
     public $additional = array();
 
     public $cloud_inline_analysis_enabled = false;
@@ -99,125 +99,24 @@ class AntiSpywareProfile
         if( $this->name === FALSE )
             derr("Spyware SecurityProfile name not found\n");
 
-        #PH::print_stdout( "\nsecprofURL TMP: object named '".$this->name."' found" );
-
-        #$this->owner->_SecurityProfiles[$this->secprof_type][$this->name] = $this;
-        #$this->owner->_all[$this->secprof_type][$this->name] = $this;
-        #$this->owner->o[] = $this;
-
-
-        //predefined URL category
-        //$tmp_array[$this->secprof_type][$typeName]['allow']['URL category'] = all predefined URL category
-
 
         $tmp_rule = DH::findFirstElement('rules', $xml);
         if( $tmp_rule !== FALSE )
         {
-            #$tmp_array[$this->secprof_type][$this->secprof_type][$this->name]['rules'] = array();
-            $tmp_array[$this->secprof_type][$this->name]['rules'] = array();
             foreach( $tmp_rule->childNodes as $tmp_entry1 )
             {
                 if( $tmp_entry1->nodeType != XML_ELEMENT_NODE )
                     continue;
 
-                $vb_severity = DH::findAttribute('name', $tmp_entry1);
-                if( $vb_severity === FALSE )
+                $rule_name = DH::findAttribute('name', $tmp_entry1);
+                if( $rule_name === FALSE )
                     derr("VB severity name not found\n");
 
-                $severity = DH::findFirstElement('severity', $tmp_entry1);
-                if( $severity !== FALSE )
-                {
-                    if( $severity->nodeType != XML_ELEMENT_NODE )
-                        continue;
+                $threadPolicy_obj = new ThreatPolicySpyware( $rule_name, $this );
+                $threadPolicy_obj->spywarepolicy_load_from_domxml( $tmp_entry1 );
+                $this->rules_obj[] = $threadPolicy_obj;
 
-                    $tmp_array[$this->secprof_type][$this->name]['rules'][$vb_severity]['severity'] = array();
-                    $this->rules[$vb_severity]['severity'] = array();
-                    foreach( $severity->childNodes as $member )
-                    {
-                        if( $member->nodeType != XML_ELEMENT_NODE )
-                            continue;
-
-                        $tmp_array[$this->secprof_type][$this->name]['rules'][$vb_severity]['severity'][$member->textContent] = $member->textContent;
-                        $this->rules[$vb_severity]['severity'][$member->textContent] = $member->textContent;
-                    }
-                }
-
-                $severity = DH::findFirstElement('file-type', $tmp_entry1);
-                if( $severity !== FALSE )
-                {
-                    if( $severity->nodeType != XML_ELEMENT_NODE )
-                        continue;
-
-                    $tmp_array[$this->secprof_type][$this->name]['rules'][$vb_severity]['file-type'] = array();
-                    $this->rules[$vb_severity]['file-type'] = array();
-                    foreach( $severity->childNodes as $member )
-                    {
-                        if( $member->nodeType != XML_ELEMENT_NODE )
-                            continue;
-
-                        $tmp_array[$this->secprof_type][$this->name]['rules'][$vb_severity]['file-type'][$member->textContent] = $member->textContent;
-                        $this->rules[$vb_severity]['file-type'][$member->textContent] = $member->textContent;
-                    }
-                }
-
-                $action = DH::findFirstElement('action', $tmp_entry1);
-                if( $action !== FALSE )
-                {
-                    if( $action->nodeType != XML_ELEMENT_NODE )
-                        continue;
-
-                    $tmp_action = DH::firstChildElement($action);
-                    if( $tmp_action !== FALSE )
-                    {
-                        $tmp_array[$this->secprof_type][$this->name]['rules'][$vb_severity]['action'] = $tmp_action->nodeName;
-                        $this->rules[$vb_severity]['action'] = $tmp_action->nodeName;
-                    }
-
-                    if( $this->secprof_type == 'file-blocking' )
-                    {
-                        $tmp_array[$this->secprof_type][$this->name]['rules'][$vb_severity]['action'] = $action->textContent;
-                        $this->rules[$vb_severity]['action'] = $action->textContent;
-                    }
-
-                }
-
-                $packet_capture = DH::findFirstElement('packet-capture', $tmp_entry1);
-                if( $packet_capture !== FALSE )
-                {
-                    if( $packet_capture->nodeType != XML_ELEMENT_NODE )
-                        continue;
-
-                    $tmp_array[$this->secprof_type][$this->name]['rules'][$vb_severity]['packet-capture'] = $packet_capture->textContent;
-                    $this->rules[$vb_severity]['packet-capture'] = $packet_capture->textContent;
-                }
-
-                $category = DH::findFirstElement('category', $tmp_entry1);
-                if( $category !== FALSE )
-                {
-                    #PH::print_stdout("             packet-capture: '".$rule['packet-capture']."'");
-                    $tmp_array[$this->secprof_type][$this->name]['rules'][$vb_severity]['category'] = $category->textContent;
-                    $this->rules[$vb_severity]['category'] = $category->textContent;
-                }
-
-                $direction = DH::findFirstElement('direction', $tmp_entry1);
-                if( $direction !== FALSE )
-                {
-                    if( $direction->nodeType != XML_ELEMENT_NODE )
-                        continue;
-
-                    $tmp_array[$this->secprof_type][$this->name]['rules'][$vb_severity]['direction'] = $direction->textContent;
-                    $this->rules[$vb_severity]['direction'] = $direction->textContent;
-                }
-
-                $analysis = DH::findFirstElement('analysis', $tmp_entry1);
-                if( $analysis !== FALSE )
-                {
-                    if( $analysis->nodeType != XML_ELEMENT_NODE )
-                        continue;
-
-                    $tmp_array[$this->secprof_type][$this->name]['rules'][$vb_severity]['analysis'] = $analysis->textContent;
-                    $this->rules[$vb_severity]['analysis'] = $analysis->textContent;
-                }
+                $this->owner->owner->ThreatPolicyStore->add($threadPolicy_obj);
             }
         }
 
@@ -402,46 +301,11 @@ class AntiSpywareProfile
         #PH::print_stdout();
         //Todo: continue for display out
 
-        if( !empty( $this->rules ) )
+        if( !empty( $this->rules_obj ) )
         {
             PH::print_stdout("        - rules:");
-
-            foreach ($this->rules as $rulename => $rule)
-            {
-                $string = "";
-                #PH::print_stdout("          * '".$rulename."':");
-                $string .= "          '".$rulename."':";
-
-                if( isset( $rule['severity'] ) )
-                {
-                    #PH::print_stdout("             severity: '".implode(",", $rule['severity'])."'");
-                    $string .= " - severity: '".implode(",", $rule['severity'])."'";
-                    PH::$JSON_TMP['sub']['object'][$this->name()]['rule'][$rulename]['severity'] = implode(",", $rule['severity']);
-                }
-
-                if( isset( $rule['action'] ) )
-                {
-                    #PH::print_stdout("             action: '".$rule['action']."'");
-                    $string .= " - action: '".$rule['action']."'";
-                    PH::$JSON_TMP['sub']['object'][$this->name()]['rule'][$rulename]['action'] = $rule['action'];
-                }
-
-                if( isset( $rule['packet-capture'] ) )
-                {
-                    #PH::print_stdout("             packet-capture: '".$rule['packet-capture']."'");
-                    $string .= " - packet-capture: '".$rule['packet-capture']."'";
-                    PH::$JSON_TMP['sub']['object'][$this->name()]['rule'][$rulename]['packet-capture'] = $rule['packet-capture'];
-                }
-
-                if( isset( $rule['category'] ) )
-                {
-                    #PH::print_stdout("             packet-capture: '".$rule['packet-capture']."'");
-                    $string .= " - category: '".$rule['category']."'";
-                    PH::$JSON_TMP['sub']['object'][$this->name()]['rule'][$rulename]['category'] = $rule['category'];
-                }
-                #print_r($rule);
-                PH::print_stdout( $string );
-            }
+            foreach ($this->rules_obj as $rulename => $rule)
+                $rule->display();
         }
 
         if( !empty( $this->threatException ) )

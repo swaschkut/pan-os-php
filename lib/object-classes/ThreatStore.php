@@ -11,7 +11,7 @@ class ThreatStore extends ObjStore
 
     public $predefinedStore_threat_version = null;
 
-    public static $childn = 'App';
+    public static $childn = 'Threat';
 
     /** @var null|ThreatStore */
     public static $predefinedStore = null;

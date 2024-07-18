@@ -116,6 +116,8 @@ class RQuery
             $this->contextObject = new CertificateRQueryContext($this);
         elseif( $this->objectType == 'static-route' )
             $this->contextObject = new StaticRouteRQueryContext($this);
+        elseif( $this->objectType == 'threat-rule' )
+            $this->contextObject = new ThreatRuleRQueryContext($this);
         else
             derr("unsupported object type '$objectType'");
 
@@ -708,5 +710,6 @@ require_once 'filters/filters-Device.php';
 require_once 'filters/filters-DHCP.php';
 require_once 'filters/filters-Certificate.php';
 require_once 'filters/filters-Static-Route.php';
+require_once 'filters/filters-ThreatRule.php';
 
 
