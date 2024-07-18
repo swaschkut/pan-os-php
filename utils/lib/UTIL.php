@@ -419,6 +419,8 @@ class UTIL
             $tmp_array = &ApplicationCallContext::$supportedActions;
         elseif( $this->utilType == 'threat' )
             $tmp_array = &ThreatCallContext::$supportedActions;
+        elseif( $this->utilType == 'threat-rule' )
+            $tmp_array = &ThreatRuleCallContext::$supportedActions;
 
         elseif( $this->utilType == 'device' )
             $tmp_array = &DeviceCallContext::$supportedActions;
@@ -542,6 +544,8 @@ class UTIL
                 ApplicationCallContext::prepareSupportedActions();
             elseif( $this->utilType == 'threat' )
                 ThreatCallContext::prepareSupportedActions();
+            elseif( $this->utilType == 'threat-rule' )
+                ThreatRuleCallContext::prepareSupportedActions();
             elseif( $this->utilType == 'device' )
                 DeviceCallContext::prepareSupportedActions();
             elseif( $this->utilType == 'certificate' )
@@ -1208,6 +1212,8 @@ class UTIL
                 $context = new ApplicationCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'threat' )
                 $context = new ThreatCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+            elseif( $this->utilType == 'threat-rule' )
+                $context = new ThreatRuleCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
 
             elseif( $this->utilType == 'device' )
                 $context = new DeviceCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
@@ -1614,6 +1620,8 @@ class UTIL
                         $this->objectsToProcess[] = array('store' => $this->pan->appStore, 'objects' => $this->pan->appStore->apps());
                     elseif( $this->utilType == 'threat' )
                         $this->objectsToProcess[] = array('store' => $this->pan->threatStore, 'objects' => $this->pan->threatStore->getAll());
+                    elseif( $this->utilType == 'threat-rule' )
+                        $this->objectsToProcess[] = array('store' => $this->pan->ThreatPolicyStore, 'objects' => $this->pan->ThreatPolicyStore->getAll());
 
                     $locationFound = TRUE;
                     self::GlobalInitAction($this->pan);
@@ -1636,6 +1644,8 @@ class UTIL
                             $this->objectsToProcess[] = array('store' => $sub->EDLStore, 'objects' => $sub->EDLStore->resultingObjectSet());
                         elseif( $this->utilType == 'application' )
                             $this->objectsToProcess[] = array('store' => $sub->appStore, 'objects' => $sub->appStore->resultingObjectSet());
+                        elseif( $this->utilType == 'threat-rule' )
+                            $this->objectsToProcess[] = array('store' => $sub->ThreatPolicyStore, 'objects' => $sub->ThreatPolicyStore->resultingObjectSet());
 
                         $locationFound = TRUE;
                         self::GlobalInitAction($sub);
@@ -1656,7 +1666,8 @@ class UTIL
                             $this->objectsToProcess[] = array('store' => $sub->EDLStore, 'objects' => $sub->EDLStore->getall());
                         elseif( $this->utilType == 'application' )
                             $this->objectsToProcess[] = array('store' => $sub->appStore, 'objects' => $sub->appStore->apps());
-
+                        elseif( $this->utilType == 'threat-rule' )
+                            $this->objectsToProcess[] = array('store' => $sub->ThreatPolicyStore, 'objects' => $sub->ThreatPolicyStore->getall());
 
                         $locationFound = TRUE;
                         self::GlobalInitAction($sub);
@@ -1681,6 +1692,8 @@ class UTIL
                             $this->objectsToProcess[] = array('store' => $sub->EDLStore, 'objects' => $sub->EDLStore->getall());
                         elseif( $this->utilType == 'application' )
                             $this->objectsToProcess[] = array('store' => $sub->appStore, 'objects' => $sub->appStore->apps());
+                        elseif( $this->utilType == 'threat-rule' )
+                            $this->objectsToProcess[] = array('store' => $sub->ThreatPolicyStore, 'objects' => $sub->ThreatPolicyStore->getall());
 
                         $locationFound = TRUE;
                         self::GlobalInitAction($this->pan);
@@ -1709,6 +1722,8 @@ class UTIL
                         $this->objectsToProcess[] = array('store' => $this->pan->appStore, 'objects' => $this->pan->appStore->apps());
                     elseif( $this->utilType == 'threat' )
                         $this->objectsToProcess[] = array('store' => $this->pan->threatStore, 'objects' => $this->pan->threatStore->getAll());
+                    elseif( $this->utilType == 'threat-rule' )
+                        $this->objectsToProcess[] = array('store' => $this->pan->ThreatPolicyStore, 'objects' => $this->pan->ThreatPolicyStore->getall());
 
                     $locationFound = TRUE;
                     self::GlobalInitAction($this->pan);
@@ -1719,6 +1734,8 @@ class UTIL
                         $this->objectsToProcess[] = array('store' => $this->pan->appStore, 'objects' => $this->pan->appStore->apps());
                     elseif( $this->utilType == 'threat' )
                         $this->objectsToProcess[] = array('store' => $this->pan->threatStore, 'objects' => $this->pan->threatStore->getAll());
+                    elseif( $this->utilType == 'threat-rule' )
+                        $this->objectsToProcess[] = array('store' => $this->pan->ThreatPolicyStore, 'objects' => $this->pan->ThreatPolicyStore->getall());
 
                     $locationFound = TRUE;
                     self::GlobalInitAction($this->pan);
@@ -1761,6 +1778,8 @@ class UTIL
                             $this->objectsToProcess[] = array('store' => $sub->EDLStore, 'objects' => $sub->EDLStore->getall());
                         elseif( $this->utilType == 'application' )
                             $this->objectsToProcess[] = array('store' => $sub->appStore, 'objects' => $sub->appStore->apps());
+                        elseif( $this->utilType == 'threat-rule' )
+                            $this->objectsToProcess[] = array('store' => $sub->ThreatPolicyStore, 'objects' => $sub->ThreatPolicyStore->getall());
                         
                         $locationFound = TRUE;
                         $this->GlobalInitAction($sub);

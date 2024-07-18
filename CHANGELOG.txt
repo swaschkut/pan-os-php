@@ -10,6 +10,7 @@ UTIL:
 * type=edl actions=exporttoexcel:file.html - implement new action
 * type=securityprofile/securityprofilegroup actions=exporttoexcel:file.html,totaluse - add additional column
 * type=securityprofile securityprofiletype=spyware/vulnerability | 'filter=(threat-rule has.from.query subquery1)' 'subquery1=(action eq alert)'
+* type=threat-rule | introduction of new utility
 
 BUGFIX:
 * type=xpath "filter-xpath=XYZ" in=api://{MGMT-IP} | bugfix for API mode to display correct filtered xpath
