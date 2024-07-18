@@ -115,7 +115,8 @@ class AntiSpywareProfile
                 $threadPolicy_obj = new ThreatPolicySpyware( $rule_name, $this );
                 $threadPolicy_obj->spywarepolicy_load_from_domxml( $tmp_entry1 );
                 $this->rules_obj[] = $threadPolicy_obj;
-
+                $threadPolicy_obj->addReference( $this );
+                
                 $this->owner->owner->ThreatPolicyStore->add($threadPolicy_obj);
             }
         }
