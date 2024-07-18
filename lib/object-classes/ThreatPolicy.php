@@ -115,6 +115,9 @@ class ThreatPolicy
         }
     }
 
+
+
+
     public function type()
     {
         return $this->type;
@@ -140,15 +143,37 @@ class ThreatPolicy
         return $this->default_action;
     }
 
+    public function action()
+    {
+        return $this->action;
+    }
     public function category()
     {
         return $this->category;
     }
 
-    public function cve()
+    public function fileType()
     {
-        return $this->cve;
+        return $this->fileType;
     }
+
+    public function packetCapture()
+    {
+        return $this->packetCapture;
+    }
+    public function host()
+    {
+        return $this->host;
+    }
+    public function direction()
+    {
+        return $this->direction;
+    }
+    public function analysis()
+    {
+        return $this->analysis;
+    }
+
 
     public function display()
     {
@@ -157,39 +182,33 @@ class ThreatPolicy
 
         if( isset( $this->severity ) )
         {
-            #PH::print_stdout("             severity: '".implode(",", $rule['severity'])."'");
-            $string .= " - severity: '".implode(",", $this->severity)."'";
-            PH::$JSON_TMP['sub']['object'][$this->owner->name()]['rule'][$this->name()]['severity'] = implode(",", $this->severity);
+            $string .= " - severity: '".implode(",", $this->severity())."'";
+            PH::$JSON_TMP['sub']['object'][$this->owner->name()]['rule'][$this->name()]['severity'] = implode(",", $this->severity());
         }
 
         if( $this->action !== null )
         {
-            #PH::print_stdout("             action: '".$rule['action']."'");
-            $string .= " - action: '".$this->action."'";
-            PH::$JSON_TMP['sub']['object'][$this->owner->name()]['rule'][$this->name()]['action'] = $this->action;
+            $string .= " - action: '".$this->action()."'";
+            PH::$JSON_TMP['sub']['object'][$this->owner->name()]['rule'][$this->name()]['action'] = $this->action();
         }
 
         if( $this->packetCapture !== null )
         {
-            #PH::print_stdout("             packet-capture: '".$rule['packet-capture']."'");
-            $string .= " - packet-capture: '".$this->packetCapture."'";
-            PH::$JSON_TMP['sub']['object'][$this->owner->name()]['rule'][$this->name()]['packet-capture'] = $this->packetCapture;
+            $string .= " - packet-capture: '".$this->packetCapture()."'";
+            PH::$JSON_TMP['sub']['object'][$this->owner->name()]['rule'][$this->name()]['packet-capture'] = $this->packetCapture();
         }
 
         if( $this->category !== null )
         {
-            #PH::print_stdout("             packet-capture: '".$rule['packet-capture']."'");
-            $string .= " - category: '".$this->category."'";
-            PH::$JSON_TMP['sub']['object'][$this->owner->name()]['rule'][$this->name()]['category'] = $this->category;
+            $string .= " - category: '".$this->category()."'";
+            PH::$JSON_TMP['sub']['object'][$this->owner->name()]['rule'][$this->name()]['category'] = $this->category();
         }
 
         if( $this->host !== null )
         {
-            #PH::print_stdout("             packet-capture: '".$rule['packet-capture']."'");
-            $string .= " - host: '".$this->host."'";
-            PH::$JSON_TMP['sub']['object'][$this->owner->name()]['rule'][$this->name()]['host'] = $this->host;
+            $string .= " - host: '".$this->host()."'";
+            PH::$JSON_TMP['sub']['object'][$this->owner->name()]['rule'][$this->name()]['host'] = $this->host();
         }
-        #print_r($rule);
         PH::print_stdout( $string );
     }
 }

@@ -17,6 +17,7 @@ BUGFIX:
 * class PanAPIConnector - add Panorama model m-300 / m-700
 * type=rule actions=clone | bugfix to avoid adding "0" as last character if user added suffix can be used
 * type=diff | bugfix to get argument "outputformatset=FILE.txt" into working mode
+* type=threat-rule actions=exporttoexcel:file.html - correction
 
 GENERAL:
 * develop watchguard migration - address/service objects - alias - abs-policy - nat
