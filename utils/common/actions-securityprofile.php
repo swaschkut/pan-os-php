@@ -455,8 +455,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
 
         $addWhereUsed = FALSE;
         $addUsedInLocation = FALSE;
-        $addResolveGroupIPCoverage = FALSE;
-        $addNestedMembers = FALSE;
+        $addTotalUse = FALSE;
 
         $optionalFields = &$context->arguments['additionalFields'];
 
@@ -465,6 +464,9 @@ SecurityProfileCallContext::$supportedActions[] = array(
 
         if( isset($optionalFields['UsedInLocation']) )
             $addUsedInLocation = TRUE;
+
+        if( isset($optionalFields['TotalUse']) )
+            $addTotalUse = TRUE;
 
 
         #$headers = '<th>location</th><th>name</th><th>type</th><th>value</th><th>description</th><th>tags</th>';
@@ -475,6 +477,8 @@ SecurityProfileCallContext::$supportedActions[] = array(
             $headers .= '<th>where used</th>';
         if( $addUsedInLocation )
             $headers .= '<th>location used</th>';
+        if( $addUsedInLocation )
+            $headers .= '<th>total use</th>';
 
 
         $lines = '';
@@ -580,6 +584,15 @@ SecurityProfileCallContext::$supportedActions[] = array(
 
                     $lines .= $context->encloseFunction($refTextArray);
                 }
+                if( $addTotalUse)
+                {
+                    $refCount = $object->countReferences();
+                    if( $refCount == 0 )
+                        $refCount = "---";
+                    else
+                        $refCount = (string)$refCount ;
+                    $lines .= $context->encloseFunction( $refCount );
+                }
 
                 $lines .= "</tr>\n";
 
@@ -608,11 +621,12 @@ SecurityProfileCallContext::$supportedActions[] = array(
             array('type' => 'pipeSeparatedList',
                 'subtype' => 'string',
                 'default' => '*NONE*',
-                'choices' => array('WhereUsed', 'UsedInLocation'),
+                'choices' => array('WhereUsed', 'UsedInLocation', 'TotalUse'),
                 'help' =>
                     "pipe(|) separated list of additional fields (ie: Arg1|Arg2|Arg3...) to include in the report. The following is available:\n" .
                     "  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n" .
-                    "  - WhereUsed : list places where object is used (rules, groups ...)\n"
+                    "  - WhereUsed : list places where object is used (rules, groups ...)\n" .
+                    "  - TotalUse : list a counter how often this object is used\n"
             )
     )
 

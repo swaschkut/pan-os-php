@@ -95,7 +95,10 @@ class DIFF extends UTIL
     ]
 }\n".
             "\n".
-            "  - php " . basename(__FILE__) . " file1=diff.xml \"filter=/config/devices/entry[@name='localhost.localdomain']/device-group/entry[@name='$\$name$$']/pre-rules\" name1=testDG name2=testDG1"
+            "  - php " . basename(__FILE__) . " file1=diff.xml \"filter=/config/devices/entry[@name='localhost.localdomain']/device-group/entry[@name='$\$name$$']/pre-rules\" name1=testDG name2=testDG1\n" .
+            "\n".
+            ""
+        //display-xpath-only
         ;
 
         #$this->prepareSupportedArgumentsArray();

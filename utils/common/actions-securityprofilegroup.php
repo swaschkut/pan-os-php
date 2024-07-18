@@ -232,6 +232,7 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
 
         $addWhereUsed = FALSE;
         $addUsedInLocation = FALSE;
+        $addTotalUse = FALSE;
 
         $optionalFields = &$context->arguments['additionalFields'];
 
@@ -241,6 +242,8 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
         if( isset($optionalFields['UsedInLocation']) )
             $addUsedInLocation = TRUE;
 
+        if( isset($optionalFields['TotalUse']) )
+            $addTotalUse = TRUE;
 
         $headers = '<th>ID</th><th>location</th><th>name</th><th>used in location</th><th>location use</th><th>total use</th><th>Antivirus</th><th>Anti-Spyware</th><th>Vulnerability</th><th>URL Filtering</th><th>File Blocking</th><th>Data Filtering</th><th>WildFire Analysis</th>';
 
@@ -248,6 +251,8 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
             $headers .= '<th>where used</th>';
         if( $addUsedInLocation )
             $headers .= '<th>location used</th>';
+        if( $addUsedInLocation )
+            $headers .= '<th>total use</th>';
 
         $count = 0;
         if( isset($context->objectList) )
@@ -338,6 +343,15 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
 
                     $lines .= $context->encloseFunction($refTextArray);
                 }
+                if( $addTotalUse)
+                {
+                    $refCount = $object->countReferences();
+                    if( $refCount == 0 )
+                        $refCount = "---";
+                    else
+                        $refCount = (string)$refCount ;
+                    $lines .= $context->encloseFunction( $refCount );
+                }
 
                 $lines .= "</tr>\n";
             }
@@ -362,10 +376,12 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
             array('type' => 'pipeSeparatedList',
                 'subtype' => 'string',
                 'default' => '*NONE*',
-                'choices' => array('WhereUsed', 'UsedInLocation'),
+                'choices' => array('WhereUsed', 'UsedInLocation', 'TotalUse'),
                 'help' =>
                     "pipe(|) separated list of additional field to include in the report. The following is available:\n" .
+                    "  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n" .
                     "  - WhereUsed : list places where object is used (rules, groups ...)\n" .
-                    "  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n")
+                    "  - TotalUse : list a counter how often this object is used\n"
+            )
     )
 );
