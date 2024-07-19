@@ -245,7 +245,7 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
         if( isset($optionalFields['TotalUse']) )
             $addTotalUse = TRUE;
 
-        $headers = '<th>ID</th><th>location</th><th>name</th><th>used in location</th><th>location use</th><th>total use</th><th>Antivirus</th><th>Anti-Spyware</th><th>Vulnerability</th><th>URL Filtering</th><th>File Blocking</th><th>Data Filtering</th><th>WildFire Analysis</th>';
+        $headers = '<th>ID</th><th>location</th><th>name</th><th>Antivirus</th><th>Anti-Spyware</th><th>Vulnerability</th><th>URL Filtering</th><th>File Blocking</th><th>Data Filtering</th><th>WildFire Analysis</th>';
 
         if( $addWhereUsed )
             $headers .= '<th>where used</th>';
@@ -273,40 +273,6 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
 
                 $lines .= $context->encloseFunction($object->name());
 
-                
-                $counter_array = array();
-                $refLoc = $object->getReferencesLocation($counter_array);
-                if( count( $refLoc ) == 0 )
-                {
-                    $refLoc = "---";
-                    $lines .= $context->encloseFunction($refLoc);
-                }
-                else
-                {
-                    $lines .= $context->encloseFunction($refLoc);
-                }
-
-                if( count( $counter_array ) == 0 )
-                {
-                    $refLoc = "---";
-                    $lines .= $context->encloseFunction($refLoc);
-                }
-                else
-                {
-                    $tmparray = array();
-                    foreach( $refLoc as $key => $loc )
-                        $tmparray[$key] = (string)$counter_array[$key];
-                    $counter_array = $tmparray;
-
-                    $lines .= $context->encloseFunction($counter_array);
-                }
-
-                $refCount = $object->countReferences();
-                if( $refCount == 0 )
-                    $refCount = "---";
-                else
-                    $refCount = (string)$refCount ;
-                $lines .= $context->encloseFunction( $refCount );
 
                 //private $secprof_array = array('virus', 'spyware', 'vulnerability', 'file-blocking', 'wildfire-analysis', 'url-filtering', 'data-filtering');
 

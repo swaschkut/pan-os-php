@@ -1,6 +1,6 @@
 <?php
 
-// <editor-fold desc=" ***** SecProf filters *****" defaultstate="collapsed" >
+// <editor-fold desc=" ***** Threat-Rule filters *****" defaultstate="collapsed" >
 RQuery::$defaultFilters['threat-rule']['refcount']['operators']['>,<,=,!'] = array(
     'eval' => '$object->countReferences() !operator! !value!',
     'arg' => TRUE,
@@ -423,6 +423,9 @@ RQuery::$defaultFilters['threat-rule']['severity']['operators']['eq'] = array(
         $object = $context->object;
         $value = $context->value;
 
+        if( $value == "any" )
+            return TRUE;
+
         if( in_array( $value, $object->severity) )
             return TRUE;
 
@@ -440,6 +443,9 @@ RQuery::$defaultFilters['threat-rule']['category']['operators']['eq'] = array(
         $object = $context->object;
         $value = $context->value;
 
+        if( $value == "any" )
+            return TRUE;
+
         if( $object->category == $value )
             return TRUE;
 
@@ -456,6 +462,29 @@ RQuery::$defaultFilters['threat-rule']['host']['operators']['eq'] = array(
     'Function' => function (ThreatRuleRQueryContext $context) {
         $object = $context->object;
         $value = $context->value;
+
+        if( $value == "any" )
+            return TRUE;
+
+        if( $object->host == $value )
+            return TRUE;
+
+        return FALSE;
+    },
+    'arg' => TRUE,
+    'ci' => array(
+        'fString' => '(%PROP% client )',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+
+RQuery::$defaultFilters['threat-rule']['threatname']['operators']['eq'] = array(
+    'Function' => function (ThreatRuleRQueryContext $context) {
+        $object = $context->object;
+        $value = $context->value;
+
+        if( $value == "any" )
+            return TRUE;
 
         if( $object->host == $value )
             return TRUE;

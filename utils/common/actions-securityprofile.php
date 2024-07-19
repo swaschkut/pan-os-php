@@ -477,7 +477,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
             $headers .= '<th>where used</th>';
         if( $addUsedInLocation )
             $headers .= '<th>location used</th>';
-        if( $addUsedInLocation )
+        if( $addTotalUse )
             $headers .= '<th>total use</th>';
 
 

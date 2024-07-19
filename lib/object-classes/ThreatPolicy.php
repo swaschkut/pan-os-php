@@ -41,6 +41,8 @@ class ThreatPolicy
     public $direction = null;
     public $analysis = null;
 
+    //Todo:
+    //add CVE / VEndorID for Vulnerability Profilte
     public function __construct($name, $owner)
     {
         $this->owner = $owner;
