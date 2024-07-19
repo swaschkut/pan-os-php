@@ -546,6 +546,7 @@ RQuery::$defaultFilters['securityprofile']['action']['operators']['eq'] = array(
 
     },
     'arg' => TRUE,
+    'deprecated' => 'this filter "action eq XYZ" is deprecated, you should use "filter=(threat-rule has.from.query subquery1) subquery1=(action eq XYZ)" instead!',
     'ci' => array(
         'fString' => '(%PROP% reset-both )',
         'input' => 'input/panorama-8.0.xml'
@@ -572,6 +573,7 @@ RQuery::$defaultFilters['securityprofile']['packet-capture']['operators']['eq'] 
         return FALSE;
     },
     'arg' => TRUE,
+    'deprecated' => 'this filter "packet-capture eq XYZ" is deprecated, you should use "filter=(threat-rule has.from.query subquery1) subquery1=(packet-capture eq XYZ)" instead!',
     'ci' => array(
         'fString' => '(%PROP% single-packet )',
         'input' => 'input/panorama-8.0.xml'
@@ -598,6 +600,7 @@ RQuery::$defaultFilters['securityprofile']['severity']['operators']['eq'] = arra
         return FALSE;
     },
     'arg' => TRUE,
+    'deprecated' => 'this filter "severity eq XYZ" is deprecated, you should use "filter=(threat-rule has.from.query subquery1) subquery1=(severity eq XYZ)" instead!',
     'ci' => array(
         'fString' => '(%PROP% critical )',
         'input' => 'input/panorama-8.0.xml'
@@ -626,6 +629,7 @@ RQuery::$defaultFilters['securityprofile']['category']['operators']['eq'] = arra
     'arg' => TRUE,
     'ci' => array(
         'fString' => '(%PROP% brute-force )',
+        'deprecated' => 'this filter "category eq XYZ" is deprecated, you should use "filter=(threat-rule has.from.query subquery1) subquery1=(category eq XYZ)" instead!',
         'input' => 'input/panorama-8.0.xml'
     )
 );
@@ -650,6 +654,7 @@ RQuery::$defaultFilters['securityprofile']['host']['operators']['eq'] = array(
         return FALSE;
     },
     'arg' => TRUE,
+    'deprecated' => 'this filter "host eq XYZ" is deprecated, you should use "filter=(threat-rule has.from.query subquery1) subquery1=(host eq XYZ)" instead!',
     'ci' => array(
         'fString' => '(%PROP% client )',
         'input' => 'input/panorama-8.0.xml'

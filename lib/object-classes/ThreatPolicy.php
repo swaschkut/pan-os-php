@@ -34,6 +34,7 @@ class ThreatPolicy
     public $fileType = array();
     public $action = null;
 
+    public $threatname = null;
     public $packetCapture = null;
     public $category = null;
     public $host = null;
@@ -113,6 +114,12 @@ class ThreatPolicy
         {
             $this->analysis = $tmp->textContent;
         }
+
+        $tmp = DH::findFirstElement('threat-name', $tmp_entry1);
+        if( $tmp !== FALSE )
+        {
+            $this->threatname = $tmp->textContent;
+        }
     }
 
 
@@ -186,25 +193,31 @@ class ThreatPolicy
             PH::$JSON_TMP['sub']['object'][$this->owner->name()]['rule'][$this->name()]['severity'] = implode(",", $this->severity());
         }
 
-        if( $this->action !== null )
+        if( $this->threatname() !== null )
+        {
+            $string .= " - threat-name: '".$this->threatname()."'";
+            PH::$JSON_TMP['sub']['object'][$this->owner->name()]['rule'][$this->name()]['threat-name'] = $this->threatname();
+        }
+
+        if( $this->action() !== null )
         {
             $string .= " - action: '".$this->action()."'";
             PH::$JSON_TMP['sub']['object'][$this->owner->name()]['rule'][$this->name()]['action'] = $this->action();
         }
 
-        if( $this->packetCapture !== null )
+        if( $this->packetCapture() !== null )
         {
             $string .= " - packet-capture: '".$this->packetCapture()."'";
             PH::$JSON_TMP['sub']['object'][$this->owner->name()]['rule'][$this->name()]['packet-capture'] = $this->packetCapture();
         }
 
-        if( $this->category !== null )
+        if( $this->category() !== null )
         {
             $string .= " - category: '".$this->category()."'";
             PH::$JSON_TMP['sub']['object'][$this->owner->name()]['rule'][$this->name()]['category'] = $this->category();
         }
 
-        if( $this->host !== null )
+        if( $this->host() !== null )
         {
             $string .= " - host: '".$this->host()."'";
             PH::$JSON_TMP['sub']['object'][$this->owner->name()]['rule'][$this->name()]['host'] = $this->host();

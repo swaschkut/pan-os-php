@@ -304,7 +304,7 @@ class AntiSpywareProfile
 
         if( !empty( $this->rules_obj ) )
         {
-            PH::print_stdout("        - rules:");
+            PH::print_stdout("        - threat-rules:");
             foreach ($this->rules_obj as $rulename => $rule)
                 $rule->display();
         }
@@ -336,6 +336,8 @@ class AntiSpywareProfile
         {
             if( !empty( $this->additional['botnet-domain'] ) )
             {
+                PH::print_stdout("----------------------------------------");
+                PH::print_stdout();
                 PH::print_stdout("        - botnet-domain:" );
 
                 foreach( $this->additional['botnet-domain'] as $type => $threat )
@@ -382,6 +384,8 @@ class AntiSpywareProfile
 
             if( !empty( $this->additional['mica-engine-spyware-enabled'] ) )
             {
+                PH::print_stdout("----------------------------------------");
+                PH::print_stdout();
                 $enabled = "[no]";
                 if( $this->cloud_inline_analysis_enabled )
                     $enabled = "[yes]";
