@@ -521,14 +521,15 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 else
                     $lines .= $context->encloseFunction(get_class($object) );
 
-                if( !empty( $object->rules ) )
+                if( !empty( $object->rules_obj ) )
                 {
                     $tmp_array = array();
-                    foreach( $object->rules as $rulename => $rule )
-                        $tmp_array[] = "'".$rulename."' | ". implode( ",", $rule['severity'] )." - ".$rule['action']." - ".$rule['packet-capture'];
+                    foreach( $object->rules_obj as $rulename => $rule )
+                    {
+                        $tmp_array[] = "'".$rule->name()."' | severity:'". implode( ",", $rule->severity )."' - action:'".$rule->action()."' - packetCapture:'".$rule->packetCapture()."' - category:'".$rule->category()."' - host:'".$rule->host()."'";
+                    }
 
-                    #$string = implode( "'<br />'", $tmp_array);
-                    #$lines .= $context->encloseFunction( $string );
+
                     $lines .= $context->encloseFunction( $tmp_array );
                 }
                 else

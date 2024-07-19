@@ -72,7 +72,7 @@ ThreatRuleCallContext::$supportedActions[] = array(
             $addUsedInLocation = TRUE;
 
 
-        $headers = '<th>ID</th><th>location</th><th>type</th><th>name</th><th>severity</th><th>threatname</th><th>action</th><th>packet-capture</th><th>category</th><th>host</th>';
+        $headers = '<th>ID</th><th>location</th><th>type</th><th>used in profile</th><th>name</th><th>severity</th><th>threatname</th><th>action</th><th>packet-capture</th><th>category</th><th>host</th>';
 
         if( $addWhereUsed )
             $headers .= '<th>where used</th>';
@@ -98,6 +98,11 @@ ThreatRuleCallContext::$supportedActions[] = array(
 
                 $lines .= $context->encloseFunction(get_class($object));
 
+                $refTextArray = array();
+                foreach( $object->getReferences() as $ref )
+                    $refTextArray[] = $ref->name();
+                $lines .= $context->encloseFunction($refTextArray);
+
                 $lines .= $context->encloseFunction($object->name());
 
                 $lines .= $context->encloseFunction($object->severity());
@@ -110,7 +115,7 @@ ThreatRuleCallContext::$supportedActions[] = array(
 
                 $lines .= $context->encloseFunction($object->category());
 
-                $lines .= $context->encloseFunction($object->category());
+                $lines .= $context->encloseFunction($object->host());
 
                 if( $addWhereUsed )
                 {

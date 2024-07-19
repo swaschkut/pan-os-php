@@ -418,7 +418,7 @@ RQuery::$defaultFilters['threat-rule']['packet-capture']['operators']['eq'] = ar
     )
 );
 
-RQuery::$defaultFilters['threat-rule']['severity']['operators']['eq'] = array(
+RQuery::$defaultFilters['threat-rule']['severity']['operators']['has'] = array(
     'Function' => function (ThreatRuleRQueryContext $context) {
         $object = $context->object;
         $value = $context->value;
@@ -438,7 +438,23 @@ RQuery::$defaultFilters['threat-rule']['severity']['operators']['eq'] = array(
     )
 );
 
-RQuery::$defaultFilters['threat-rule']['category']['operators']['eq'] = array(
+RQuery::$defaultFilters['threat-rule']['severity']['operators']['is.any'] = array(
+    'Function' => function (ThreatRuleRQueryContext $context) {
+        $object = $context->object;
+
+        if( in_array( "any", $object->severity) )
+            return TRUE;
+
+        return FALSE;
+    },
+    'arg' => false,
+    'ci' => array(
+        'fString' => '(%PROP% critical )',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+
+RQuery::$defaultFilters['threat-rule']['category']['operators']['has'] = array(
     'Function' => function (ThreatRuleRQueryContext $context) {
         $object = $context->object;
         $value = $context->value;
@@ -452,6 +468,22 @@ RQuery::$defaultFilters['threat-rule']['category']['operators']['eq'] = array(
         return FALSE;
     },
     'arg' => TRUE,
+    'ci' => array(
+        'fString' => '(%PROP% brute-force )',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+
+RQuery::$defaultFilters['threat-rule']['category']['operators']['is.any'] = array(
+    'Function' => function (ThreatRuleRQueryContext $context) {
+        $object = $context->object;
+
+        if( $object->category == "any" )
+            return TRUE;
+
+        return FALSE;
+    },
+    'arg' => false,
     'ci' => array(
         'fString' => '(%PROP% brute-force )',
         'input' => 'input/panorama-8.0.xml'
