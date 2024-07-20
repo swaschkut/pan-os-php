@@ -41,26 +41,7 @@ ThreatCallContext::$supportedActions[] = array(
     'MainFunction' => function (ThreatCallContext $context) {
         $threat = $context->object;
 
-        PH::print_stdout( $context->padding . "* " . get_class($threat) . " '{$threat->name()}' " );
-
-        $tmp_min_engine_version = "";
-        $tmp_max_engine_version = "";
-        if( !empty($threat->min_engine_version) )
-            $tmp_min_engine_version =  " min-engine-version: '".$threat->min_engine_version."'";
-        if( !empty($threat->max_engine_version) )
-            $tmp_max_engine_version =  " max-engine-version: '".$threat->max_engine_version."'";
-
-        PH::print_stdout( "          - Threatname: '{$threat->threatname()}'  category: '{$threat->category()}' severity: '{$threat->severity()}'  default-action: '{$threat->defaultAction()}' cve: '".implode(",", $threat->cve())."' ".$tmp_min_engine_version.$tmp_max_engine_version );
-
-        PH::$JSON_TMP['sub']['object'][$threat->name()]['name'] = $threat->name();
-        PH::$JSON_TMP['sub']['object'][$threat->name()]['type'] = get_class($threat);
-        PH::$JSON_TMP['sub']['object'][$threat->name()]['category'] = $threat->category();
-        PH::$JSON_TMP['sub']['object'][$threat->name()]['host'] = $threat->category();
-        PH::$JSON_TMP['sub']['object'][$threat->name()]['severity'] = $threat->severity();
-        PH::$JSON_TMP['sub']['object'][$threat->name()]['default-action'] = $threat->defaultAction();
-        PH::$JSON_TMP['sub']['object'][$threat->name()]['cve'] = $threat->cve();
-        PH::$JSON_TMP['sub']['object'][$threat->name()]['min_engine_version'] = $threat->min_engine_version;
-        PH::$JSON_TMP['sub']['object'][$threat->name()]['max_engine_version'] = $threat->max_engine_version;
+        $threat->display($context->padding);
 
         if( $threat->type() == "vulnerability" )
             $context->counter_vulnerability++;

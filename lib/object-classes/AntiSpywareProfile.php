@@ -136,6 +136,16 @@ class AntiSpywareProfile
 
                 $this->threatException[$tmp_name]['name'] = $tmp_name;
 
+
+                if( get_class($this->owner->owner) == "DeviceGroup" )
+                    $threatStore = $this->owner->owner->owner->threatStore;
+                else
+                    $threatStore = $this->owner->owner->threatStore;
+
+                $threat_obj = $threatStore->find($tmp_name);
+                $threat_obj->addReference($this);
+
+
                 $action = DH::findFirstElement('action', $tmp_entry1);
                 if( $action !== FALSE )
                 {

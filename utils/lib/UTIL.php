@@ -864,7 +864,17 @@ class UTIL
     public function inDebugapiArgument()
     {
         if( !isset(PH::$args['in']) )
-            $this->display_error_usage_exit('"in" is missing from arguments');
+        {
+            PH::print_stdout($this->utilType);
+            if( $this->utilType == "threat" || $this->utilType == "application" )
+            {
+                PH::$args['location'] = "shared";
+                PH::$args['in'] = dirname(__FILE__)."/../../migration/parser/panos_baseconfig.xml";
+            }
+            else
+                $this->display_error_usage_exit('"in" is missing from arguments');
+        }
+
         $this->configInput = PH::$args['in'];
         if( !is_string($this->configInput) || strlen($this->configInput) < 1 )
             $this->display_error_usage_exit('"in" argument is not a valid string');
