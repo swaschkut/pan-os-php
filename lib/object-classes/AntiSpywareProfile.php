@@ -285,7 +285,9 @@ class AntiSpywareProfile
                         continue;
 
                     $name = DH::findAttribute("name", $tmp_entry1);
-                    $this->additional['botnet-domain']['whitelist'][$name] = $tmp_entry1->textContent;
+                    $tmp_whitelists_description = DH::findFirstElement('description', $tmp_entry1);
+                    $this->additional['botnet-domain']['whitelist'][$name]['name'] = $name;
+                    $this->additional['botnet-domain']['whitelist'][$name]['description'] = $tmp_whitelists_description->textContent;
                 }
             }
         }
@@ -304,14 +306,14 @@ class AntiSpywareProfile
 
         if( !empty( $this->rules_obj ) )
         {
-            PH::print_stdout("        - threat-rules:");
+            PH::print_stdout("        - Signature Policies:");
             foreach ($this->rules_obj as $rulename => $rule)
                 $rule->display();
         }
 
         if( !empty( $this->threatException ) )
         {
-            PH::print_stdout("        - threat-exception:" );
+            PH::print_stdout("        - Signature Exceptions:" );
 
             foreach( $this->threatException as $threatname => $threat )
             {
@@ -336,9 +338,8 @@ class AntiSpywareProfile
         {
             if( !empty( $this->additional['botnet-domain'] ) )
             {
-                PH::print_stdout("----------------------------------------");
-                PH::print_stdout();
-                PH::print_stdout("        - botnet-domain:" );
+                PH::print_stdout("        ----------------------------------------");
+                PH::print_stdout("        - DNS Policies:" );
 
                 foreach( $this->additional['botnet-domain'] as $type => $threat )
                 {
@@ -376,7 +377,7 @@ class AntiSpywareProfile
                     {
                         foreach( $this->additional['botnet-domain'][$type] as $name => $value )
                         {
-                            PH::print_stdout("            - ".$name.": ".$value );
+                            PH::print_stdout("            - '".$value['name']."' | description:'".$value['description']."'" );
                         }
                     }
                 }
@@ -384,8 +385,7 @@ class AntiSpywareProfile
 
             if( !empty( $this->additional['mica-engine-spyware-enabled'] ) )
             {
-                PH::print_stdout("----------------------------------------");
-                PH::print_stdout();
+                PH::print_stdout("        ----------------------------------------");
                 $enabled = "[no]";
                 if( $this->cloud_inline_analysis_enabled )
                     $enabled = "[yes]";

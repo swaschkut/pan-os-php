@@ -469,8 +469,9 @@ SecurityProfileCallContext::$supportedActions[] = array(
             $addTotalUse = TRUE;
 
 
-        #$headers = '<th>location</th><th>name</th><th>type</th><th>value</th><th>description</th><th>tags</th>';
-        $headers = '<th>ID</th><th>location</th><th>name</th><th>store</th><th>type</th><th>rules</th><th>exception</th><th>members</th>';
+
+        $headers = '<th>ID</th><th>location</th><th>name</th><th>store</th><th>type</th><th>rules</th><th>exception</th><th>DNS lists</th><th>DNS sinkhole</th><th>DNS security</th><th>DNS whitelist</th><th>mica-engine</th><th>URL members</th>';
+        //$headers = '<th>ID</th><th>location</th><th>name</th><th>store</th><th>type</th><th>rules</th><th>exception</th><th>URL members</th>';
 
 
         if( $addWhereUsed )
@@ -540,7 +541,14 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 {
                     $tmp_array = array();
                     foreach( $object->threatException as $threatname => $threat )
-                        $tmp_array[] = $threatname;
+                    {
+                        $string = $threat['name'];
+                        if( isset( $threat['action'] ) )
+                            $string .= " | ".$threat['action'];
+                        if( isset( $threat['exempt-ip'] ) and count($threat['exempt-ip']) > 0 )
+                            $string .= " | ".implode( ",", $threat['exempt-ip'] );
+                        $tmp_array[] = $string;
+                    }
 
                     #$string = implode( ",", $tmp_array);
                     #$lines .= $context->encloseFunction( $string );
@@ -548,6 +556,83 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 }
                 else
                     $lines .= $context->encloseFunction('');
+
+                $string_dns_list = array();
+                $string_dns_sinkhole = array();
+                $string_dns_security = array();
+                $string_dns_whitelist = array();
+                $string_mica_engine = array();
+                if( !empty( $object->additional ) )
+                {
+                    if( !empty( $object->additional['botnet-domain'] ) )
+                    {
+                        foreach( $object->additional['botnet-domain'] as $type => $threat )
+                        {
+                            if( $type == "lists" )
+                            {
+                                foreach( $object->additional['botnet-domain']['lists'] as $name => $value )
+                                    $string_dns_list[] = $name." -  action: ".$value['action'] ." -  packet-capture: ".$value['packet-capture'];
+                            }
+                            elseif( $type == "sinkhole" )
+                            {
+                                foreach( $object->additional['botnet-domain'][$type] as $name => $value )
+                                    $string_dns_sinkhole[] = $name.": ".$value;
+                            }
+                            elseif( $type == "dns-security-categories" )
+                            {
+                                foreach( $object->additional['botnet-domain'][$type] as $name => $value )
+                                {
+                                    $string = "";
+                                    $string .= $name;
+
+                                    $string .= " - log-level: '".$value['log-level']."'";
+                                    $string .= " - action: '".$value['action']."'";
+                                    $string .= " - packet-capture: '".$value['packet-capture']."'";
+                                    $string_dns_security[] = $string;
+                                }
+                            }
+                            elseif( $type == "whitelist" )
+                            {
+                                foreach( $object->additional['botnet-domain'][$type] as $name => $value )
+                                    $string_dns_whitelist[] = $value['name']."' | description:'".$value['description'];
+                            }
+
+                        }
+                    }
+
+                    if( !empty( $object->additional['mica-engine-spyware-enabled'] ) )
+                    {
+                        $enabled = "[no]";
+                        if( $object->cloud_inline_analysis_enabled )
+                            $enabled = "[yes]";
+                        $string_mica_engine[] = "mica-engine-spyware-enabled: ". $enabled;
+
+                        foreach ($object->additional['mica-engine-spyware-enabled'] as $name => $threat)
+                            $string_mica_engine[] = $name . " - inline-policy-action :" . $object->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action'];
+                    }
+
+                    if( !empty( $object->additional['mica-engine-vulnerability-enabled'] ) )
+                    {
+                        $enabled = "[no]";
+                        if( $this->cloud_inline_analysis_enabled )
+                            $enabled = "[yes]";
+                        $string_mica_engine[] = "mica-engine-vulnerability-enabled: ". $enabled;
+
+                        foreach ($this->additional['mica-engine-vulnerability-enabled'] as $name => $threat)
+                            $string_mica_engine[] = $name . " - inline-policy-action :" . $this->additional['mica-engine-vulnerability-enabled'][$name]['inline-policy-action'];
+                    }
+                }
+
+                //<th>DNS lists</th>
+                $lines .= $context->encloseFunction($string_dns_list);
+                //<th>DNS sinkhole</th>
+                $lines .= $context->encloseFunction($string_dns_sinkhole);
+                //<th>DNS security</th>
+                $lines .= $context->encloseFunction($string_dns_security);
+                //<th>DNS whitelist</th>
+                $lines .= $context->encloseFunction($string_dns_whitelist);
+
+                $lines .= $context->encloseFunction($string_mica_engine);
 
                 if( get_class($object) == "customURLProfile" )
                 {
