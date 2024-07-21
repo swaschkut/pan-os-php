@@ -198,6 +198,21 @@ foreach( RQuery::$defaultFilters as $type => &$filtersByField )
                 PH::print_stdout( "******* SKIPPED for now *******" );
                 continue;
             }
+            elseif( $type == 'edl' )
+            {
+                PH::print_stdout("******* SKIPPED for now *******");
+                continue;
+            }
+            elseif( $type == 'threat-log' )
+            {
+                PH::print_stdout("******* SKIPPED for now *******");
+                continue;
+            }
+            elseif( $type == 'threat-rule' )
+            {
+                PH::print_stdout("******* SKIPPED for now *******");
+                continue;
+            }
             else
             {
                 derr('unsupported type: '.$type);
