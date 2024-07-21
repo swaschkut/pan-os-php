@@ -1963,7 +1963,7 @@ AddressCallContext::$supportedActions[] = array(
         {
             $resolvMap = $object->getIP4Mapping();
             $string = "{$resolvMap->count()} entries";
-            PH::ACTIONlog( $context, $string );
+            #PH::ACTIONlog( $context, $string );
 
 
             foreach( $resolvMap->getMapArray() as &$resolvRecord )
@@ -1976,8 +1976,8 @@ AddressCallContext::$supportedActions[] = array(
             $string = "unresolved: {$unresolvedCount} entries";
             if( $unresolvedCount > 0 )
             {
-                PH::print_stdout();
-                PH::ACTIONlog( $context, $string );
+                #PH::print_stdout();
+                #PH::ACTIONlog( $context, $string );
 
                 foreach($resolvMap->unresolved as &$resolvRecord)
                 {
