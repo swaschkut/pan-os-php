@@ -16,6 +16,7 @@ UTIL:
 * type=threat/application | improvement if argument 'in=' and/or 'location=shared' is not set
 * type=threat | new 'filter=!(object is.unused)' in combination with 'actions=displayreferences' - to display threat exceptions from AS/VB profiles
 * type=threat | new 'filter=(object has.exception)'
+* type=threat | extend actions=displayreferences and actions=exporttoexcel - with refobject exemption-ip information
 
 BUGFIX:
 * type=xpath "filter-xpath=XYZ" in=api://{MGMT-IP} | bugfix for API mode to display correct filtered xpath

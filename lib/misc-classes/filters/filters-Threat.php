@@ -176,15 +176,14 @@ RQuery::$defaultFilters['threat']['refobject.ip_exemption.count']['operators']['
             /** @var AntiSpywareProfile|VulnerabilityProfile $reference*/
             if( isset($reference->threatException) )
             {
-                foreach($reference->threatException as $exception)
+                foreach($reference->threatException as $threatName => $threatException)
                 {
-                    if( isset($exception['exempt-ip'][$object->name()] ) )
-                        $ip_exception_counter += 1;
+                    if( $threatName == $object->name() )
+                        $ip_exception_counter += count($threatException['exempt-ip']);
                 }
             }
-
         }
-        #return $ip_exception_counter > 0;
+
         $operator = $context->operator;
         if( $operator == '=' )
             $operator = '==';
