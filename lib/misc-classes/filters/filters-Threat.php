@@ -153,4 +153,16 @@ RQuery::$defaultFilters['threat']['object']['operators']['is.unused'] = array(
         'input' => 'input/panorama-8.0.xml'
     )
 );
+RQuery::$defaultFilters['threat']['object']['operators']['has.excemption'] = array(
+    'Function' => function (ThreatRQueryContext $context) {
+        $object = $context->object;
+
+        return $object->countReferences() > 0;
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
 // </editor-fold>

@@ -15,6 +15,7 @@ UTIL:
 * type=securityprofile securityprofiletype=spyware,vulnerability actions=exporttoexcel:file.html - extend with more information
 * type=threat/application | improvement if argument 'in=' and/or 'location=shared' is not set
 * type=threat | new 'filter=!(object is.unused)' in combination with 'actions=displayreferences' - to display threat exceptions from AS/VB profiles
+* type=threat | new 'filter=(object has.excemption)'
 
 BUGFIX:
 * type=xpath "filter-xpath=XYZ" in=api://{MGMT-IP} | bugfix for API mode to display correct filtered xpath
