@@ -110,6 +110,9 @@ class PANConf
     /** @var SecurityProfileStore */
     public $AntiVirusProfileStore = null;
 
+    /** @var ThreatPolicyStore */
+    public $ThreatPolicyStore = null;
+
     /** @var SecurityProfileStore */
     public $VulnerabilityProfileStore = null;
 

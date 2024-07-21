@@ -153,13 +153,49 @@ RQuery::$defaultFilters['threat']['object']['operators']['is.unused'] = array(
         'input' => 'input/panorama-8.0.xml'
     )
 );
-RQuery::$defaultFilters['threat']['object']['operators']['has.excemption'] = array(
+RQuery::$defaultFilters['threat']['object']['operators']['has.exception'] = array(
     'Function' => function (ThreatRQueryContext $context) {
         $object = $context->object;
 
         return $object->countReferences() > 0;
     },
     'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['threat']['refobject.ip_exemption.count']['operators']['>,<,=,!'] = array(
+    'Function' => function (ThreatRQueryContext $context) {
+        $object = $context->object;
+        $counter = $context->value;
+
+        $ip_exception_counter = 0;
+        foreach($object->refrules as $reference)
+        {
+            /** @var AntiSpywareProfile|VulnerabilityProfile $reference*/
+            if( isset($reference->threatException) )
+            {
+                foreach($reference->threatException as $exception)
+                {
+                    if( isset($exception['exempt-ip'][$object->name()] ) )
+                        $ip_exception_counter += 1;
+                }
+            }
+
+        }
+        #return $ip_exception_counter > 0;
+        $operator = $context->operator;
+        if( $operator == '=' )
+            $operator = '==';
+
+        $operator_string = $ip_exception_counter." ".$operator." ".$counter;
+        if( eval("return $operator_string;" ) )
+            return TRUE;
+
+        return false;
+    },
+    'arg' => true,
     'ci' => array(
         'fString' => '(%PROP%)',
         'input' => 'input/panorama-8.0.xml'
