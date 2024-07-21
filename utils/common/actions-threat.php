@@ -119,7 +119,7 @@ ThreatCallContext::$supportedActions[] = array(
         if( $addUsedInLocation )
         {
             $headers .= '<th>location used</th>';
-            $headers .= '<th>excemption IP</th>';
+            $headers .= '<th>exemption IP</th>';
         }
 
 

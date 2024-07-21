@@ -158,7 +158,8 @@ class AntiSpywareProfile
                     {
                         $tmp_array[$this->secprof_type][$this->name]['threat-exception'][$tmp_name]['action'] = $tmp_action->nodeName;
                         $this->threatException[$tmp_name]['action'] = $tmp_action->nodeName;
-                        $this->threatException[$tmp_name]['default-action'] = $threat_obj->defaultAction();
+                        if($threat_obj !== null)
+                            $this->threatException[$tmp_name]['default-action'] = $threat_obj->defaultAction();
                     }
                 }
 
