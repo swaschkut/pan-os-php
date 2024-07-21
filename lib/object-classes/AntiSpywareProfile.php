@@ -143,7 +143,8 @@ class AntiSpywareProfile
                     $threatStore = $this->owner->owner->threatStore;
 
                 $threat_obj = $threatStore->find($tmp_name);
-                $threat_obj->addReference($this);
+                if($threat_obj !== null)
+                    $threat_obj->addReference($this);
 
 
                 $action = DH::findFirstElement('action', $tmp_entry1);
@@ -157,6 +158,7 @@ class AntiSpywareProfile
                     {
                         $tmp_array[$this->secprof_type][$this->name]['threat-exception'][$tmp_name]['action'] = $tmp_action->nodeName;
                         $this->threatException[$tmp_name]['action'] = $tmp_action->nodeName;
+                        $this->threatException[$tmp_name]['default-action'] = $threat_obj->defaultAction();
                     }
                 }
 
@@ -334,6 +336,11 @@ class AntiSpywareProfile
                 {
                     $string .= "  - action : '".$threat['action']."'";
                     PH::$JSON_TMP['sub']['object'][$this->name()]['threat-exception'][$threatname]['action'] = $threat['action'];
+                }
+                if( isset( $threat['default-action'] ) )
+                {
+                    $string .= "  - default-action : '".$threat['default-action']."'";
+                    PH::$JSON_TMP['sub']['object'][$this->name()]['threat-exception'][$threatname]['default-action'] = $threat['default-action'];
                 }
                 if( isset( $threat['exempt-ip'] ) )
                 {

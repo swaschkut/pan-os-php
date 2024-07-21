@@ -545,6 +545,8 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         $string = $threat['name'];
                         if( isset( $threat['action'] ) )
                             $string .= " | ".$threat['action'];
+                        if( isset( $threat['default-action'] ) )
+                            $string .= " [default:".$threat['default-action']."]";
                         if( isset( $threat['exempt-ip'] ) and count($threat['exempt-ip']) > 0 )
                             $string .= " | ".implode( ",", $threat['exempt-ip'] );
                         $tmp_array[] = $string;
