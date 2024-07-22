@@ -29,6 +29,7 @@ BUGFIX:
 * bugfix for actions-securityprofile to move away from $this
 * bugfix class AntiSpyware/VulnerabilityProfile - fix issue for custom spyware/vulnerability object
 * type=threat-rule | bugfix for FW config
+* type=playbook | bugfix if in=api://
 
 GENERAL:
 * develop watchguard migration - address/service objects - alias - abs-policy - nat

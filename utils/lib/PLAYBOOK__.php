@@ -392,7 +392,7 @@ class PLAYBOOK__
             PH::print_stdout();
         }
 
-        if( $finaloutput != null && $finaloutput !== "/dev/null" )
+        if( $finaloutput != null && $finaloutput !== "/dev/null" && !$this->isAPI )
         {
             //now save the latest out= from the foreach loop "$out" into "$output" file;
             PH::print_stdout("FINAL script task: the processed PAN-OS configuration are copy to file: ".$output);
