@@ -838,7 +838,72 @@ RQuery::$defaultFilters['securityprofile']['dns-list.packet-capture']['operators
     ),
     'help' => "'securityprofiletype=spyware' e.g. 'filter=(dns-list.packet-capture has disable)' possible values: disable/single-packet/extended-capture"
 );
-//$this->additional['botnet-domain']['lists'][$name]['packet-capture']
+
+RQuery::$defaultFilters['securityprofile']['dns-security.action']['operators']['has'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var AntiSpywareProfile $object */
+        $object = $context->object;
+        $value = $context->value;
+
+        if( $object->secprof_type != 'spyware' )
+            return null;
+
+        $tmp_value_array = array( 'default','allow','block','sinkhole');
+
+        if( !in_array($value, $tmp_value_array) )
+            derr("filter-value: '".$value."' is not a valid value for dns-list.action filter");
+
+        if( isset($object->additional['botnet-domain']) && isset($object->additional['botnet-domain']['lists']) )
+        {
+            foreach( $object->additional['botnet-domain']['dns-security-categories'] as $name)
+            {
+                if( $name['action'] == $value )
+                    return TRUE;
+            }
+        }
+
+        return FALSE;
+    },
+    'arg' => true,
+    'ci' => array(
+        'fString' => '(%PROP% client )',
+        'input' => 'input/panorama-8.0.xml'
+    ),
+    'help' => "'securityprofiletype=spyware' e.g. 'filter=(dns-security.action has sinkhole)' possible values: default/allow/block/sinkhole"
+);
+RQuery::$defaultFilters['securityprofile']['dns-security.packet-capture']['operators']['has'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var AntiSpywareProfile $object */
+        $object = $context->object;
+        $value = $context->value;
+
+        if( $object->secprof_type != 'spyware' )
+            return null;
+
+        $tmp_value_array = array( 'disable','single-packet','extended-capture');
+
+        if( !in_array($value, $tmp_value_array) )
+            derr("filter-value: '".$value."' is not a valid value for dns-list.packet-capture filter");
+
+        if( isset($object->additional['botnet-domain']) && isset($object->additional['botnet-domain']['lists']) )
+        {
+            foreach( $object->additional['botnet-domain']['dns-security-categories'] as $name)
+            {
+                if( $name['packet-capture'] == $value )
+                    return TRUE;
+            }
+        }
+
+        return FALSE;
+    },
+    'arg' => true,
+    'ci' => array(
+        'fString' => '(%PROP% client )',
+        'input' => 'input/panorama-8.0.xml'
+    ),
+    'help' => "'securityprofiletype=spyware' e.g. 'filter=(dns-security.packet-capture has disable)' possible values: disable/single-packet/extended-capture"
+);
+
 
 RQuery::$defaultFilters['securityprofile']['threat-rule']['operators']['has.from.query'] = array(
     'Function' => function (SecurityProfileRQueryContext $context) {

@@ -18,6 +18,8 @@ UTIL:
 * type=threat | new 'filter=(object has.exception)'
 * type=threat | extend actions=displayreferences and actions=exporttoexcel - with refobject exemption-ip information
 * type=securityprofile securityprofiletype=spyware | new 'filter=(cloud-inline-analysis.action has XYZ)' / (dns-list.action has XYZ) / (dns-list.packet-capture has XYZ)
+* type=securityprofile securityprofiletype=spyware | new 'filter=(dns-security.action has XYZ)' / (dns-security.action has XYZ)
+
 BUGFIX:
 * type=xpath "filter-xpath=XYZ" in=api://{MGMT-IP} | bugfix for API mode to display correct filtered xpath
 * class PanAPIConnector - add Panorama model m-300 / m-700
