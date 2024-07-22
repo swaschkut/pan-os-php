@@ -661,7 +661,7 @@ RQuery::$defaultFilters['securityprofile']['host']['operators']['eq'] = array(
     )
 );
 
-RQuery::$defaultFilters['securityprofile']['excempt-ip.count']['operators']['>,<,=,!'] = array(
+RQuery::$defaultFilters['securityprofile']['exempt-ip.count']['operators']['>,<,=,!'] = array(
     'Function' => function (SecurityProfileRQueryContext $context) {
         /** @var VulnerabilityProfile $object */
         $object = $context->object;
