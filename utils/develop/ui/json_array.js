@@ -6261,10 +6261,12 @@ var subjectObject =
                     "eq": {
                         "Function": {},
                         "arg": true,
+                        "deprecated": "this filter \"action eq XYZ\" is deprecated, you should use \"filter=(threat-rule has.from.query subquery1) subquery1=(action eq XYZ)\" instead!",
                         "ci": {
                             "fString": "(%PROP% reset-both )",
                             "input": "input\/panorama-8.0.xml"
-                        }
+                        },
+                        "help": "'securityprofiletype=spyware,vulnerability'"
                     }
                 }
             },
@@ -6276,7 +6278,8 @@ var subjectObject =
                         "ci": {
                             "fString": "(%PROP% securityrule )",
                             "input": "input\/panorama-8.0.xml"
-                        }
+                        },
+                        "help": "'securityprofiletype=url'"
                     }
                 }
             },
@@ -6288,7 +6291,8 @@ var subjectObject =
                         "ci": {
                             "fString": "(%PROP% securityrule )",
                             "input": "input\/panorama-8.0.xml"
-                        }
+                        },
+                        "help": "'securityprofiletype=url'"
                     }
                 }
             },
@@ -6300,7 +6304,8 @@ var subjectObject =
                         "ci": {
                             "fString": "(%PROP% securityrule )",
                             "input": "input\/panorama-8.0.xml"
-                        }
+                        },
+                        "help": "'securityprofiletype=url'"
                     }
                 }
             },
@@ -6311,8 +6316,10 @@ var subjectObject =
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% brute-force )",
+                            "deprecated": "this filter \"category eq XYZ\" is deprecated, you should use \"filter=(threat-rule has.from.query subquery1) subquery1=(category eq XYZ)\" instead!",
                             "input": "input\/panorama-8.0.xml"
-                        }
+                        },
+                        "help": "'securityprofiletype=spyware,vulnerability'"
                     }
                 }
             },
@@ -6324,7 +6331,21 @@ var subjectObject =
                         "ci": {
                             "fString": "(%PROP% client )",
                             "input": "input\/panorama-8.0.xml"
-                        }
+                        },
+                        "help": "'securityprofiletype=spyware,vulnerability'"
+                    }
+                }
+            },
+            "cloud-inline-analysis.action": {
+                "operators": {
+                    "has": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% client )",
+                            "input": "input\/panorama-8.0.xml"
+                        },
+                        "help": "'securityprofiletype=spyware,vulnerability'"
                     }
                 }
             },
@@ -6336,19 +6357,60 @@ var subjectObject =
                         "ci": {
                             "fString": "(%PROP% securityrule )",
                             "input": "input\/panorama-8.0.xml"
-                        }
+                        },
+                        "help": "'securityprofiletype=url'"
                     }
                 }
             },
-            "excempt-ip.count": {
+            "dns-list.action": {
                 "operators": {
-                    ">,<,=,!": {
+                    "has": {
                         "Function": {},
                         "arg": true,
                         "ci": {
-                            "fString": "(%PROP% rulestore )",
+                            "fString": "(%PROP% client )",
                             "input": "input\/panorama-8.0.xml"
-                        }
+                        },
+                        "help": "'securityprofiletype=spyware' e.g. 'filter=(dns-list.action has sinkhole)' possible values: alert\/allow\/block\/sinkhole"
+                    }
+                }
+            },
+            "dns-list.packet-capture": {
+                "operators": {
+                    "has": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% client )",
+                            "input": "input\/panorama-8.0.xml"
+                        },
+                        "help": "'securityprofiletype=spyware' e.g. 'filter=(dns-list.packet-capture has disable)' possible values: disable\/single-packet\/extended-capture"
+                    }
+                }
+            },
+            "dns-security.action": {
+                "operators": {
+                    "has": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% client )",
+                            "input": "input\/panorama-8.0.xml"
+                        },
+                        "help": "'securityprofiletype=spyware' e.g. 'filter=(dns-security.action has sinkhole)' possible values: default\/allow\/block\/sinkhole"
+                    }
+                }
+            },
+            "dns-security.packet-capture": {
+                "operators": {
+                    "has": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% client )",
+                            "input": "input\/panorama-8.0.xml"
+                        },
+                        "help": "'securityprofiletype=spyware' e.g. 'filter=(dns-security.packet-capture has disable)' possible values: disable\/single-packet\/extended-capture"
                     }
                 }
             },
@@ -6360,14 +6422,29 @@ var subjectObject =
                         "ci": {
                             "fString": "(%PROP% securityrule )",
                             "input": "input\/panorama-8.0.xml"
-                        }
+                        },
+                        "help": "'securityprofiletype=spyware,vulnerability'"
                     },
                     "is.set": {
                         "Function": {},
                         "ci": {
                             "fString": "(%PROP% securityrule )",
                             "input": "input\/panorama-8.0.xml"
-                        }
+                        },
+                        "help": "'securityprofiletype=spyware,vulnerability'"
+                    }
+                }
+            },
+            "exempt-ip.count": {
+                "operators": {
+                    ">,<,=,!": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% rulestore )",
+                            "input": "input\/panorama-8.0.xml"
+                        },
+                        "help": "'securityprofiletype=spyware,vulnerability'"
                     }
                 }
             },
@@ -6376,10 +6453,12 @@ var subjectObject =
                     "eq": {
                         "Function": {},
                         "arg": true,
+                        "deprecated": "this filter \"host eq XYZ\" is deprecated, you should use \"filter=(threat-rule has.from.query subquery1) subquery1=(host eq XYZ)\" instead!",
                         "ci": {
                             "fString": "(%PROP% client )",
                             "input": "input\/panorama-8.0.xml"
-                        }
+                        },
+                        "help": "'securityprofiletype=spyware,vulnerability'"
                     }
                 }
             },
@@ -6489,7 +6568,8 @@ var subjectObject =
                         "ci": {
                             "fString": "(%PROP% securityrule )",
                             "input": "input\/panorama-8.0.xml"
-                        }
+                        },
+                        "help": "'securityprofiletype=url'"
                     }
                 }
             },
@@ -6498,10 +6578,12 @@ var subjectObject =
                     "eq": {
                         "Function": {},
                         "arg": true,
+                        "deprecated": "this filter \"packet-capture eq XYZ\" is deprecated, you should use \"filter=(threat-rule has.from.query subquery1) subquery1=(packet-capture eq XYZ)\" instead!",
                         "ci": {
                             "fString": "(%PROP% single-packet )",
                             "input": "input\/panorama-8.0.xml"
-                        }
+                        },
+                        "help": "'securityprofiletype=spyware,vulnerability'"
                     }
                 }
             },
@@ -6566,10 +6648,12 @@ var subjectObject =
                     "eq": {
                         "Function": {},
                         "arg": true,
+                        "deprecated": "this filter \"severity eq XYZ\" is deprecated, you should use \"filter=(threat-rule has.from.query subquery1) subquery1=(severity eq XYZ)\" instead!",
                         "ci": {
                             "fString": "(%PROP% critical )",
                             "input": "input\/panorama-8.0.xml"
-                        }
+                        },
+                        "help": "'securityprofiletype=spyware,vulnerability'"
                     }
                 }
             },
@@ -6578,7 +6662,7 @@ var subjectObject =
                     "has.from.query": {
                         "Function": {},
                         "arg": true,
-                        "help": "example: 'filter=(threat-rule has.from.query subquery1)' 'subquery1=(action eq alert)'"
+                        "help": "'securityprofiletype=spyware,vulnerability' example: 'filter=(threat-rule has.from.query subquery1)' 'subquery1=(action eq alert)'"
                     }
                 }
             }
@@ -8468,6 +8552,34 @@ var subjectObject =
                             "fString": "(%PROP% ftp)",
                             "input": "input\/panorama-8.0.xml"
                         }
+                    },
+                    "is.unused": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "has.exception": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "refobject.ip_exemption.count": {
+                "operators": {
+                    ">,<,=,!": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
                     }
                 }
             },
@@ -8582,12 +8694,28 @@ var subjectObject =
                             "fString": "(%PROP% brute-force )",
                             "input": "input\/panorama-8.0.xml"
                         }
+                    },
+                    "is.any": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP% brute-force )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
                     }
                 }
             },
             "host": {
                 "operators": {
                     "eq": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% client )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.any": {
                         "Function": {},
                         "arg": true,
                         "ci": {
@@ -8765,11 +8893,39 @@ var subjectObject =
             },
             "severity": {
                 "operators": {
-                    "eq": {
+                    "has": {
                         "Function": {},
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% critical )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.any": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP% critical )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "threatname": {
+                "operators": {
+                    "eq": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% client )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.any": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP% client )",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
