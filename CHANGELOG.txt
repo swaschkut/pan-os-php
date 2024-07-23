@@ -33,6 +33,7 @@ BUGFIX:
 * type=threat-rule | bugfix for FW config
 * type=playbook | bugfix if in=api://
 * type=appid-toolbox phase=phase1 | bugfix rule description maxlength change for PAN-OS > 71 to 1023
+* type=securityprofile securityprofiletype=spyware 'filter=(cloud-inline-analysis.action has XYZ)' | bugfix to get this working
 
 GENERAL:
 * develop watchguard migration - address/service objects - alias - abs-policy - nat

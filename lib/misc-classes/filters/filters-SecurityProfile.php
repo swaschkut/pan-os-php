@@ -764,6 +764,15 @@ RQuery::$defaultFilters['securityprofile']['cloud-inline-analysis.action']['oper
             }
         }
 
+        if( isset($object->additional['mica-engine-spyware-enabled']) )
+        {
+            foreach( $object->additional['mica-engine-spyware-enabled'] as $name)
+            {
+                if( $name['inline-policy-action'] == $value )
+                    return TRUE;
+            }
+        }
+
         return FALSE;
     },
     'arg' => true,
