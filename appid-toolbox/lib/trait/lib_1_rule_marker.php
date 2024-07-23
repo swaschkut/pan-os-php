@@ -124,8 +124,13 @@ trait lib_1_rule_marker
             PH::print_stdout("    * applying tag to rule description... ");
 
             $newDescription = $rule->description() . ' ' . $newTagName;
-            if( strlen($newDescription) > 253 )
-                derr('description is too long, please review and edit');
+            if( $rule->owner->owner->version < 71 )
+                if( strlen($newDescription) > 253 )
+                    derr('description is too long, please review and edit');
+            else
+                if( strlen($newDescription) > 1023 )
+                    derr('description is too long, please review and edit');
+
             $ridTagLibrary->addRuleToTag($rule, $newTagName);
             $rule->setDescription($newDescription);
 

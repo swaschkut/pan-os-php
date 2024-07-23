@@ -32,6 +32,7 @@ BUGFIX:
 * bugfix class AntiSpyware/VulnerabilityProfile - fix issue for custom spyware/vulnerability object
 * type=threat-rule | bugfix for FW config
 * type=playbook | bugfix if in=api://
+* type=appid-toolbox phase=phase1 | bugfix rule description maxlength change for PAN-OS > 71 to 1023
 
 GENERAL:
 * develop watchguard migration - address/service objects - alias - abs-policy - nat
