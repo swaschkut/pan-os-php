@@ -47,7 +47,8 @@ class APPIDTOOLBOX extends UTIL
         #$supportedArguments['debugapi'] = Array('niceName' => 'DebugAPI', 'shortHelp' => 'prints API calls when they happen');
         $this->supportedArguments['help'] = Array('niceName' => 'help', 'shortHelp' => 'this message');
         $this->supportedArguments['phase'] = Array('niceName' => 'phase', 'shortHelp' => 'also possible with phase=[phase1|phase2|phase3|phase5|phase6]', 'argDesc' => '[rule-marker|report-generator|rule-cloner|rule-activation|rule-cleaner]');
-
+        $this->supportedArguments['location'] = array('niceName' => 'Location', 'shortHelp' => 'there is a need to limit your query to a VSYS/DG. ie: location=vsys1 or location={DGname}', 'argDesc' => 'sub1');
+        #$this->supportedArguments['filter'] = array('niceName' => 'Filter', 'shortHelp' => "filters objects based on a query. ie: 'filter=((from has external) or (source has privateNet1) and (to has external))'", 'argDesc' => '(field operator [value])');
 
 
         $this->usageMsg = PH::boldText('USAGE: ')."php ".basename(__FILE__)." phase=";

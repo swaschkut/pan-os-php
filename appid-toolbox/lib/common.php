@@ -771,6 +771,32 @@ class AppIDToolbox_common
         return $return;
     }
 
+    static function createRQuery( $objectsFilter, &$objectFilterRQuery)
+    {
+        //
+        // create a RQuery if a filter was provided
+        //
+        /**
+         * @var RQuery $objectFilterRQuery
+         */
+
+        if( $objectsFilter !== null )
+        {
+            $objectFilterRQuery = new RQuery("rule");
+
+            $res = $objectFilterRQuery->parseFromString($objectsFilter, $errorMessage);
+            if( $res === FALSE )
+            {
+                fwrite(STDERR, "\n\n**ERROR** Rule filter parser: " . $errorMessage . "\n\n");
+                exit(1);
+            }
+
+            PH::print_stdout( " - filter after sanitization : " . $objectFilterRQuery->sanitizedString() );
+            PH::print_stdout( array( $objectFilterRQuery->sanitizedString() ), false, "filter");
+        }
+        // --------------------
+    }
+
 }
 
 

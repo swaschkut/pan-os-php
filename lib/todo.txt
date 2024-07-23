@@ -1,15 +1,8 @@
 
-- spyware / vulnerability =>
-=> actions=display with all possible values
-=> actions=exporttoexcel
-=> filter= check what is needed, severity / action / aso.
-
--> split spyware/vulnerability profiles and create own Class threat-rules
--> add these threat-rule as member to spyware/vulnerability profile
-
-
 - Ironskillet / BP - extend to configure day one config via API
 
+- type=securityprofile 'filter=(object is.bestpractice)'
+- type=securityprofile actions=exporttoexcel:file.html,checkBestPractice
 
 - optimisation:
 => template HA/device / local FW config import
@@ -17,4 +10,11 @@
 => partial usage of - address/address-group/service/service-group/application-group/application-container
 => display threat-log
 => type=rule threat-log-hit.count == 0
+
+
+appid-toolbox:
+- location= argument help not available / if location= is not used, load config display available DG/ vsys
+- p1 with rule filter
+- p2 rule filter
+- p5 rule activation - what about rule renaming and clear of rule hit count? in the past rule rename cleared hit.count, nowadays not
 

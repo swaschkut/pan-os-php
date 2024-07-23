@@ -5789,10 +5789,32 @@ RuleCallContext::$supportedActions[] = array(
         //delete cloned rules
         if( strpos( $object->name(), "-app" ) && $object->isDisabled() )
         {
+            $string = "delete disabled Rule: '{$object->name()}'";
+            PH::ACTIONlog( $context, $string );
             if( $context->isAPI )
                 $object->owner->API_remove($object);
             else
                 $object->owner->remove($object);
+
+            return;
+        }
+
+        ########################################################################
+        //remove tag from rule
+        foreach( $object->tags->tags() as $tag )
+        {
+            $matching = preg_match("/appid#/", $tag->name());
+            if( $matching === FALSE )
+                derr("regular expression error on '{$context->value}'");
+            if( $matching === 1 )
+            {
+                $string = "remove TAG: '{$tag->name()}' from Rule";
+                PH::ACTIONlog( $context, $string );
+                if( $context->isAPI )
+                    $object->tags->API_removeTag($tag);
+                else
+                    $object->tags->removeTag($tag);
+            }
         }
 
         ########################################################################
@@ -5800,21 +5822,16 @@ RuleCallContext::$supportedActions[] = array(
         $description = $object->description();
         $newDescription = preg_replace('/ appRID#[0-9]+/', "", $description);
 
-
-        if( $description == $newDescription )
+        if( $description != $newDescription )
         {
-            $string = "new and old description are the same" ;
-            PH::ACTIONstatus( $context, "SKIPPED", $string );
-            return;
+            $string = "new description will be '{$newDescription}'";
+            PH::ACTIONlog($context, $string);
+
+            if ($context->isAPI)
+                $object->API_setDescription($newDescription);
+            else
+                $object->setDescription($newDescription);
         }
-
-        $string = "new description will be '{$newDescription}'";
-        PH::ACTIONlog( $context, $string );
-
-        if( $context->isAPI )
-            $object->API_setDescription($newDescription);
-        else
-            $object->setDescription($newDescription);
     }
 );
 
