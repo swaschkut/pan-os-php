@@ -37,6 +37,7 @@ GENERAL:
 * develop watchguard migration - address/service objects - alias - abs-policy - nat
 * udpate Device App-ID to version: 8872-8848
 * introduce new CLASSES ThreatPolicy/ThreatPolicySpyware/ThreatPolicyStore/ThreatPolicyVulnerability
+* update docker file
 
 
 2.1.25 (20240705)
