@@ -782,6 +782,48 @@ RQuery::$defaultFilters['securityprofile']['cloud-inline-analysis.action']['oper
     ),
     'help' => "'securityprofiletype=spyware,vulnerability'"
 );
+RQuery::$defaultFilters['securityprofile']['cloud-inline-analysis']['operators']['is.best-practise'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var VulnerabilityProfile|AntiSpywareProfile $object */
+        $object = $context->object;
+        $value = $context->value;
+        $bestpractise = FALSE;
+
+        if( $object->secprof_type != 'spyware' and $object->secprof_type != 'vulnerability' )
+            return null;
+
+        if( $object->cloud_inline_analysis_enabled )
+        {
+            if( isset($object->additional['mica-engine-vulnerability-enabled']) )
+            {
+
+                foreach( $object->additional['mica-engine-vulnerability-enabled'] as $name)
+                {
+                    if( $name['inline-policy-action'] == "reset-both" )
+                        $bestpractise = TRUE;
+                    else
+                        return FALSE;
+                }
+            }
+
+            if( isset($object->additional['mica-engine-spyware-enabled']) )
+            {
+                foreach( $object->additional['mica-engine-spyware-enabled'] as $name)
+                {
+                    if( $name['inline-policy-action'] == $value )
+                        $bestpractise = TRUE;
+                    else
+                        return FALSE;
+                }
+            }
+        }
+
+
+        return $bestpractise;
+    },
+    'arg' => false,
+    'help' => "'securityprofiletype=spyware,vulnerability'"
+);
 
 RQuery::$defaultFilters['securityprofile']['dns-list.action']['operators']['has'] = array(
     'Function' => function (SecurityProfileRQueryContext $context) {
@@ -814,6 +856,31 @@ RQuery::$defaultFilters['securityprofile']['dns-list.action']['operators']['has'
         'input' => 'input/panorama-8.0.xml'
     ),
     'help' => "'securityprofiletype=spyware' e.g. 'filter=(dns-list.action has sinkhole)' possible values: alert/allow/block/sinkhole"
+);
+RQuery::$defaultFilters['securityprofile']['dns-list']['operators']['is.best-practise'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var AntiSpywareProfile $object */
+        $object = $context->object;
+
+        if( $object->secprof_type != 'spyware' )
+            return null;
+
+        if( isset($object->additional['botnet-domain']) && isset($object->additional['botnet-domain']['lists']) )
+        {
+            foreach( $object->additional['botnet-domain']['lists'] as $name => $array)
+            {
+                if( $name == "default-paloalto-dns" )
+                {
+                    if( $array['action'] == "sinkhole" )
+                        return TRUE;
+                }
+            }
+        }
+
+        return FALSE;
+    },
+    'arg' => false,
+    'help' => "'securityprofiletype=spyware' e.g. 'filter=(dns-list is.best-practise)'"
 );
 RQuery::$defaultFilters['securityprofile']['dns-list.packet-capture']['operators']['has'] = array(
     'Function' => function (SecurityProfileRQueryContext $context) {
@@ -862,7 +929,7 @@ RQuery::$defaultFilters['securityprofile']['dns-security.action']['operators']['
         if( !in_array($value, $tmp_value_array) )
             derr("filter-value: '".$value."' is not a valid value for dns-list.action filter");
 
-        if( isset($object->additional['botnet-domain']) && isset($object->additional['botnet-domain']['lists']) )
+        if( isset($object->additional['botnet-domain']) && isset($object->additional['botnet-domain']['dns-security-categories']) )
         {
             foreach( $object->additional['botnet-domain']['dns-security-categories'] as $name)
             {
@@ -894,7 +961,7 @@ RQuery::$defaultFilters['securityprofile']['dns-security.packet-capture']['opera
         if( !in_array($value, $tmp_value_array) )
             derr("filter-value: '".$value."' is not a valid value for dns-list.packet-capture filter");
 
-        if( isset($object->additional['botnet-domain']) && isset($object->additional['botnet-domain']['lists']) )
+        if( isset($object->additional['botnet-domain']) && isset($object->additional['botnet-domain']['dns-security-categories']) )
         {
             foreach( $object->additional['botnet-domain']['dns-security-categories'] as $name)
             {

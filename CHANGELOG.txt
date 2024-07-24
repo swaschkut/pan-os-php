@@ -21,6 +21,7 @@ UTIL:
 * type=securityprofile securityprofiletype=spyware | new 'filter=(dns-security.action has XYZ)' / (dns-security.action has XYZ)
 * type=appid-toolbox phase=phase1 | introduce 'filter=( {ALL AVAILALBE type=rule listfilters} )'
 * type=dns-rule | introduction
+* type=securityprofile securityprofiletype=spyware | new 'filter=(cloud-inline-analysis is.best-practise)' / (dns-list is.best-practise)
 
 BUGFIX:
 * type=xpath "filter-xpath=XYZ" in=api://{MGMT-IP} | bugfix for API mode to display correct filtered xpath

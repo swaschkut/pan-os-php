@@ -92,10 +92,10 @@ class DNSPolicy
         return $this->packetCapture;
     }
 
-    public function display()
+    public function display($padding)
     {
         $string = "";
-        $string .= "          '".$this->name()."':";
+        $string .= $padding."          '".$this->name()."':";
 
         if( isset( $this->logLevel ) )
         {

@@ -285,7 +285,8 @@ class AntiSpywareProfile
 
                     $this->owner->owner->DNSPolicyStore->add($dnsPolicy_obj);
 
-                    //todo:
+                    $this->additional['botnet-domain']['dns-security-categories'][] = $dnsPolicy_obj;
+                    /*
                     $tmp_log_level = DH::findFirstElement("log-level", $tmp_entry1);
                     if( $tmp_log_level !== FALSE )
                         $this->additional['botnet-domain']['dns-security-categories'][$name]['log-level'] = $tmp_log_level->textContent;
@@ -295,6 +296,7 @@ class AntiSpywareProfile
                     $tmp_packet_capture = DH::findFirstElement("packet-capture", $tmp_entry1);
                     if( $tmp_packet_capture !== FALSE )
                         $this->additional['botnet-domain']['dns-security-categories'][$name]['packet-capture'] = $tmp_packet_capture->textContent;
+                    */
                 }
             }
 
@@ -391,14 +393,8 @@ class AntiSpywareProfile
                     {
                         foreach( $this->additional['botnet-domain'][$type] as $name => $value )
                         {
-                            $string = "";
-                            $string .= "            - '".PH::boldText($name)."'";
-
-                            $string .= " - log-level: '".$value['log-level']."'";
-                            $string .= " - action: '".$value['action']."'";
-                            $string .= " - packet-capture: '".$value['packet-capture']."'";
-
-                            PH::print_stdout($string );
+                            $padding = "    ";
+                            $value->display( $padding);
                         }
                     }
                     elseif( $type == "whitelist" )
