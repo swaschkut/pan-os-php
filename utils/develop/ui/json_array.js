@@ -2307,46 +2307,6 @@ var subjectObject =
                     }
                 }
             },
-            "category": {
-                "operators": {
-                    "eq": {
-                        "Function": {},
-                        "arg": true,
-                        "ci": {
-                            "fString": "(%PROP% brute-force )",
-                            "input": "input\/panorama-8.0.xml"
-                        }
-                    },
-                    "is.any": {
-                        "Function": {},
-                        "arg": false,
-                        "ci": {
-                            "fString": "(%PROP% brute-force )",
-                            "input": "input\/panorama-8.0.xml"
-                        }
-                    }
-                }
-            },
-            "host": {
-                "operators": {
-                    "eq": {
-                        "Function": {},
-                        "arg": true,
-                        "ci": {
-                            "fString": "(%PROP% client )",
-                            "input": "input\/panorama-8.0.xml"
-                        }
-                    },
-                    "is.any": {
-                        "Function": {},
-                        "arg": true,
-                        "ci": {
-                            "fString": "(%PROP% client )",
-                            "input": "input\/panorama-8.0.xml"
-                        }
-                    }
-                }
-            },
             "location": {
                 "operators": {
                     "is": {
@@ -2380,6 +2340,18 @@ var subjectObject =
                         "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches \/ is parent the one specified in argument",
                         "ci": {
                             "fString": "(%PROP%  Datacenter-Firewalls)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "log-level": {
+                "operators": {
+                    "eq": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% default )",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -2508,46 +2480,6 @@ var subjectObject =
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% securityrule )",
-                            "input": "input\/panorama-8.0.xml"
-                        }
-                    }
-                }
-            },
-            "severity": {
-                "operators": {
-                    "has": {
-                        "Function": {},
-                        "arg": true,
-                        "ci": {
-                            "fString": "(%PROP% critical )",
-                            "input": "input\/panorama-8.0.xml"
-                        }
-                    },
-                    "is.any": {
-                        "Function": {},
-                        "arg": false,
-                        "ci": {
-                            "fString": "(%PROP% critical )",
-                            "input": "input\/panorama-8.0.xml"
-                        }
-                    }
-                }
-            },
-            "threatname": {
-                "operators": {
-                    "eq": {
-                        "Function": {},
-                        "arg": true,
-                        "ci": {
-                            "fString": "(%PROP% client )",
-                            "input": "input\/panorama-8.0.xml"
-                        }
-                    },
-                    "is.any": {
-                        "Function": {},
-                        "arg": false,
-                        "ci": {
-                            "fString": "(%PROP% client )",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -6632,6 +6564,11 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         },
                         "help": "'securityprofiletype=spyware,vulnerability'"
+                    },
+                    "is.best-practise": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=spyware,vulnerability'"
                     }
                 }
             },
@@ -6661,6 +6598,15 @@ var subjectObject =
                     }
                 }
             },
+            "dns-list": {
+                "operators": {
+                    "is.best-practise": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=spyware' e.g. 'filter=(dns-list is.best-practise)'"
+                    }
+                }
+            },
             "dns-list.action": {
                 "operators": {
                     "has": {
@@ -6684,6 +6630,15 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         },
                         "help": "'securityprofiletype=spyware' e.g. 'filter=(dns-list.packet-capture has disable)' possible values: disable\/single-packet\/extended-capture"
+                    }
+                }
+            },
+            "dns-rule": {
+                "operators": {
+                    "has.from.query": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "'securityprofiletype=spyware' example: 'filter=(dns-rule has.from.query subquery1)' 'subquery1=(action eq alert)'"
                     }
                 }
             },
