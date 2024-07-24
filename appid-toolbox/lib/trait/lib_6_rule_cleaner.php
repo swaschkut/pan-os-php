@@ -242,7 +242,7 @@ trait lib_6_rule_cleaner
                 PH::print_stdout(" - SKIPPED#3 : original rule not found, cleaning appRID now ");
                 $countSkipped3_OriginalRuleNotFound++;
                 PH::print_stdout(" - cleaning tagRID ");
-                RuleIDTagLibrary::cleanRuleDescription($appidRule);
+                RuleIDTagLibrary::cleanRuleDescription($appidRule, $configInput['type']);
                 PH::print_stdout(" - cleaning activationTag ");
                 TH::cleanActivatedTag($appidRule);
                 continue;
@@ -260,7 +260,7 @@ trait lib_6_rule_cleaner
                 }
 
                 PH::print_stdout(" - cleaning tagRID ");
-                RuleIDTagLibrary::cleanRuleDescription($legacyRule);
+                RuleIDTagLibrary::cleanRuleDescription($legacyRule, $configInput['type']);
                 continue;
             }
 
@@ -269,7 +269,7 @@ trait lib_6_rule_cleaner
                 PH::print_stdout(" - SKIPPED#4 : appID rule not found ");
                 $countSkipped4_ClonedRuleNotFound++;
                 PH::print_stdout(" - cleaning tagRID ");
-                RuleIDTagLibrary::cleanRuleDescription($legacyRule);
+                RuleIDTagLibrary::cleanRuleDescription($legacyRule, $configInput['type']);
                 PH::print_stdout(" - cleaning activationTag ");
                 TH::cleanActivatedTag($legacyRule);
 
@@ -300,7 +300,7 @@ trait lib_6_rule_cleaner
                     $appidRule->owner->remove($appidRule);
                 }
                 PH::print_stdout(" - cleaning tagRID ");
-                RuleIDTagLibrary::cleanRuleDescription($legacyRule);
+                RuleIDTagLibrary::cleanRuleDescription($legacyRule, $configInput['type']);
                 continue;
             }
 
@@ -357,7 +357,7 @@ trait lib_6_rule_cleaner
             TH::cleanClonedTag($appidRule);
 
             PH::print_stdout(" - removeing appRID# from description ");
-            RuleIDTagLibrary::cleanRuleDescription($appidRule);
+            RuleIDTagLibrary::cleanRuleDescription($appidRule, $configInput['type']);
 
 
             $countCleaned++;

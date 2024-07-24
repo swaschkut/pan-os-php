@@ -458,13 +458,13 @@ class RuleIDTagLibrary
         return count($this->_tagsToObjects);
     }
 
-    static public function cleanRuleDescription(SecurityRule $rule, $offline = true)
+    static public function cleanRuleDescription(SecurityRule $rule, $configInputType)
     {
         $desc = preg_replace('/appRID#[0-9]+/', '', $rule->description());
-        if( $offline )
-            $rule->setDescription($desc);
-        else
+        if( $configInputType == "api" )
             $rule->API_setDescription($desc);
+        else
+            $rule->setDescription($desc);
     }
 
 }

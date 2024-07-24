@@ -36,10 +36,11 @@ BUGFIX:
 * type=appid-toolbox phase=phase1 | bugfix rule description maxlength change for PAN-OS > 71 to 1023
 * type=securityprofile securityprofiletype=spyware 'filter=(cloud-inline-analysis.action has XYZ)' | bugfix to get this working
 * class RQueryContext | add variable $cachedIP4Mapping - aligne with PHP8.3 - do get rid of deprecated message
+* type=appid-toolbox phase=phase6 | bugfix for API usage compare to offline file
 
 GENERAL:
 * develop watchguard migration - address/service objects - alias - abs-policy - nat
-* udpate Device App-ID to version: 8872-8848
+* udpate Device App-ID to version: 8873-885
 * introduce new CLASSES ThreatPolicy/ThreatPolicySpyware/ThreatPolicyStore/ThreatPolicyVulnerability
 * update docker file
 
