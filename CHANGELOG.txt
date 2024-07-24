@@ -39,6 +39,7 @@ BUGFIX:
 * type=securityprofile securityprofiletype=spyware 'filter=(cloud-inline-analysis.action has XYZ)' | bugfix to get this working
 * class RQueryContext | add variable $cachedIP4Mapping - aligne with PHP8.3 - do get rid of deprecated message
 * type=appid-toolbox phase=phase6 | bugfix for API usage compare to offline file
+* type=securityprofile actions=exporttoexcel:file.html | bugfix for dns-rule
 
 GENERAL:
 * develop watchguard migration - address/service objects - alias - abs-policy - nat

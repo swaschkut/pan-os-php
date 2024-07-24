@@ -468,10 +468,31 @@ SecurityProfileCallContext::$supportedActions[] = array(
         if( isset($optionalFields['TotalUse']) )
             $addTotalUse = TRUE;
 
+        if( isset($optionalFields['BestPractice']) )
+            $bestPractice = TRUE;
 
 
-        $headers = '<th>ID</th><th>location</th><th>name</th><th>store</th><th>type</th><th>rules</th><th>exception</th><th>DNS lists</th><th>DNS sinkhole</th><th>DNS security</th><th>DNS whitelist</th><th>mica-engine</th><th>URL members</th>';
-        //$headers = '<th>ID</th><th>location</th><th>name</th><th>store</th><th>type</th><th>rules</th><th>exception</th><th>URL members</th>';
+        $headers = '<th>ID</th><th>location</th><th>name</th><th>store</th><th>type</th><th>rules</th>';
+        if( $bestPractice )
+            $headers .= '<th>BP</th>';
+
+        $headers .= '<th>exception</th>';
+        if( $bestPractice )
+            $headers .= '<th>BP</th>';
+
+        $headers .= '<th>DNS lists</th>';
+        if( $bestPractice )
+            $headers .= '<th>BP</th>';
+
+        $headers .= '<th>DNS sinkhole</th><th>DNS security</th>';
+        if( $bestPractice )
+            $headers .= '<th>BP</th>';
+
+        $headers .= '<th>DNS whitelist</th><th>mica-engine</th>';
+        if( $bestPractice )
+            $headers .= '<th>BP</th>';
+
+        $headers .= '<th>URL members</th>';
 
 
         if( $addWhereUsed )
@@ -536,6 +557,11 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 else
                     $lines .= $context->encloseFunction('');
 
+                if( $bestPractice )
+                {
+                    $lines .= $context->encloseFunction('BP');
+                }
+
                 #$lines .= $context->encloseFunction($object->value());
                 if( !empty( $object->threatException ) )
                 {
@@ -558,6 +584,10 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 }
                 else
                     $lines .= $context->encloseFunction('');
+                if( $bestPractice )
+                {
+                    $lines .= $context->encloseFunction('BP');
+                }
 
                 $string_dns_list = array();
                 $string_dns_sinkhole = array();
@@ -582,14 +612,19 @@ SecurityProfileCallContext::$supportedActions[] = array(
                             }
                             elseif( $type == "dns-security-categories" )
                             {
-                                foreach( $object->additional['botnet-domain'][$type] as $name => $value )
+                                $tmp_array = array();
+                                foreach( $object->rules_obj as $rulename => $rule )
+                                {
+                                    $tmp_array[] = "'".$rule->name()."' | severity:'". implode( ",", $rule->severity )."' - action:'".$rule->action()."' - packetCapture:'".$rule->packetCapture()."' - category:'".$rule->category()."' - host:'".$rule->host()."'";
+                                }
+                                foreach( $object->additional['botnet-domain'][$type] as $name => $rule )
                                 {
                                     $string = "";
-                                    $string .= $name;
+                                    $string .= $rule->name();
 
-                                    $string .= " - log-level: '".$value['log-level']."'";
-                                    $string .= " - action: '".$value['action']."'";
-                                    $string .= " - packet-capture: '".$value['packet-capture']."'";
+                                    $string .= " - log-level: '".$rule->logLevel()."'";
+                                    $string .= " - action: '".$rule->action."'";
+                                    $string .= " - packet-capture: '".$rule->packetCapture()."'";
                                     $string_dns_security[] = $string;
                                 }
                             }
@@ -627,14 +662,26 @@ SecurityProfileCallContext::$supportedActions[] = array(
 
                 //<th>DNS lists</th>
                 $lines .= $context->encloseFunction($string_dns_list);
+                if( $bestPractice )
+                {
+                    $lines .= $context->encloseFunction('BP');
+                }
                 //<th>DNS sinkhole</th>
                 $lines .= $context->encloseFunction($string_dns_sinkhole);
                 //<th>DNS security</th>
                 $lines .= $context->encloseFunction($string_dns_security);
+                if( $bestPractice )
+                {
+                    $lines .= $context->encloseFunction('BP');
+                }
                 //<th>DNS whitelist</th>
                 $lines .= $context->encloseFunction($string_dns_whitelist);
 
                 $lines .= $context->encloseFunction($string_mica_engine);
+                if( $bestPractice )
+                {
+                    $lines .= $context->encloseFunction('BP');
+                }
 
                 if( get_class($object) == "customURLProfile" )
                 {
@@ -709,12 +756,13 @@ SecurityProfileCallContext::$supportedActions[] = array(
             array('type' => 'pipeSeparatedList',
                 'subtype' => 'string',
                 'default' => '*NONE*',
-                'choices' => array('WhereUsed', 'UsedInLocation', 'TotalUse'),
+                'choices' => array('WhereUsed', 'UsedInLocation', 'TotalUse', 'BestPractice'),
                 'help' =>
                     "pipe(|) separated list of additional fields (ie: Arg1|Arg2|Arg3...) to include in the report. The following is available:\n" .
                     "  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n" .
                     "  - WhereUsed : list places where object is used (rules, groups ...)\n" .
-                    "  - TotalUse : list a counter how often this object is used\n"
+                    "  - TotalUse : list a counter how often this object is used\n" .
+                    "  - BestPractice : show if BestPractice is configured\n"
             )
     )
 
