@@ -6565,7 +6565,7 @@ var subjectObject =
                         },
                         "help": "'securityprofiletype=spyware,vulnerability'"
                     },
-                    "is.best-practise": {
+                    "is.best-practice": {
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=spyware,vulnerability'"
@@ -6600,10 +6600,10 @@ var subjectObject =
             },
             "dns-list": {
                 "operators": {
-                    "is.best-practise": {
+                    "is.best-practice": {
                         "Function": {},
                         "arg": false,
-                        "help": "'securityprofiletype=spyware' e.g. 'filter=(dns-list is.best-practise)'"
+                        "help": "'securityprofiletype=spyware' e.g. 'filter=(dns-list is.best-practice)'"
                     }
                 }
             },

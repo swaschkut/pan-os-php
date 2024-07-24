@@ -782,7 +782,7 @@ RQuery::$defaultFilters['securityprofile']['cloud-inline-analysis.action']['oper
     ),
     'help' => "'securityprofiletype=spyware,vulnerability'"
 );
-RQuery::$defaultFilters['securityprofile']['cloud-inline-analysis']['operators']['is.best-practise'] = array(
+RQuery::$defaultFilters['securityprofile']['cloud-inline-analysis']['operators']['is.best-practice'] = array(
     'Function' => function (SecurityProfileRQueryContext $context) {
         /** @var VulnerabilityProfile|AntiSpywareProfile $object */
         $object = $context->object;
@@ -857,7 +857,7 @@ RQuery::$defaultFilters['securityprofile']['dns-list.action']['operators']['has'
     ),
     'help' => "'securityprofiletype=spyware' e.g. 'filter=(dns-list.action has sinkhole)' possible values: alert/allow/block/sinkhole"
 );
-RQuery::$defaultFilters['securityprofile']['dns-list']['operators']['is.best-practise'] = array(
+RQuery::$defaultFilters['securityprofile']['dns-list']['operators']['is.best-practice'] = array(
     'Function' => function (SecurityProfileRQueryContext $context) {
         /** @var AntiSpywareProfile $object */
         $object = $context->object;
@@ -880,7 +880,7 @@ RQuery::$defaultFilters['securityprofile']['dns-list']['operators']['is.best-pra
         return FALSE;
     },
     'arg' => false,
-    'help' => "'securityprofiletype=spyware' e.g. 'filter=(dns-list is.best-practise)'"
+    'help' => "'securityprofiletype=spyware' e.g. 'filter=(dns-list is.best-practice)'"
 );
 RQuery::$defaultFilters['securityprofile']['dns-list.packet-capture']['operators']['has'] = array(
     'Function' => function (SecurityProfileRQueryContext $context) {
