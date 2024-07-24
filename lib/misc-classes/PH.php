@@ -963,7 +963,7 @@ class PH
 
     public static $supportedUTILTypes = array(
         "stats",
-        "address", "service", "tag", "schedule", "application", "threat", "edl", "threat-rule",
+        "address", "service", "tag", "schedule", "application", "threat", "edl", "threat-rule", "dns-rule",
         "rule",
         "device", "securityprofile", "securityprofilegroup",
         "zone",  "interface", "virtualwire", "routing", "dhcp", "certificate", "static-route",
@@ -1193,6 +1193,7 @@ class PH
             || $type == 'application'
             || $type == 'threat'
             || $type == 'threat-rule'
+            || $type == 'dns-rule'
         )
             $util = new UTIL($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
 

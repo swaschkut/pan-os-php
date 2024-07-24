@@ -118,6 +118,8 @@ class RQuery
             $this->contextObject = new StaticRouteRQueryContext($this);
         elseif( $this->objectType == 'threat-rule' )
             $this->contextObject = new ThreatRuleRQueryContext($this);
+        elseif( $this->objectType == 'dns-rule' )
+            $this->contextObject = new DNSRuleRQueryContext($this);
         else
             derr("unsupported object type '$objectType'");
 
@@ -711,5 +713,6 @@ require_once 'filters/filters-DHCP.php';
 require_once 'filters/filters-Certificate.php';
 require_once 'filters/filters-Static-Route.php';
 require_once 'filters/filters-ThreatRule.php';
+require_once 'filters/filters-DNSRule.php';
 
 

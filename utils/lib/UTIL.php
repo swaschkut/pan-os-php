@@ -421,6 +421,8 @@ class UTIL
             $tmp_array = &ThreatCallContext::$supportedActions;
         elseif( $this->utilType == 'threat-rule' )
             $tmp_array = &ThreatRuleCallContext::$supportedActions;
+        elseif( $this->utilType == 'dns-rule' )
+            $tmp_array = &DNSRuleCallContext::$supportedActions;
 
         elseif( $this->utilType == 'device' )
             $tmp_array = &DeviceCallContext::$supportedActions;
@@ -546,6 +548,8 @@ class UTIL
                 ThreatCallContext::prepareSupportedActions();
             elseif( $this->utilType == 'threat-rule' )
                 ThreatRuleCallContext::prepareSupportedActions();
+            elseif( $this->utilType == 'dns-rule' )
+                DNSRuleCallContext::prepareSupportedActions();
             elseif( $this->utilType == 'device' )
                 DeviceCallContext::prepareSupportedActions();
             elseif( $this->utilType == 'certificate' )
@@ -865,7 +869,6 @@ class UTIL
     {
         if( !isset(PH::$args['in']) )
         {
-            PH::print_stdout($this->utilType);
             if( $this->utilType == "threat" || $this->utilType == "application" )
             {
                 PH::$args['location'] = "shared";
@@ -1224,6 +1227,8 @@ class UTIL
                 $context = new ThreatCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'threat-rule' )
                 $context = new ThreatRuleCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+            elseif( $this->utilType == 'dns-rule' )
+                $context = new DNSRuleCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
 
             elseif( $this->utilType == 'device' )
                 $context = new DeviceCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
@@ -1632,6 +1637,8 @@ class UTIL
                         $this->objectsToProcess[] = array('store' => $this->pan->threatStore, 'objects' => $this->pan->threatStore->getAll());
                     elseif( $this->utilType == 'threat-rule' )
                         $this->objectsToProcess[] = array('store' => $this->pan->ThreatPolicyStore, 'objects' => $this->pan->ThreatPolicyStore->getAll());
+                    elseif( $this->utilType == 'dns-rule' )
+                        $this->objectsToProcess[] = array('store' => $this->pan->DNSPolicyStore, 'objects' => $this->pan->DNSPolicyStore->getAll());
 
                     $locationFound = TRUE;
                     self::GlobalInitAction($this->pan);
@@ -1656,6 +1663,8 @@ class UTIL
                             $this->objectsToProcess[] = array('store' => $sub->appStore, 'objects' => $sub->appStore->resultingObjectSet());
                         elseif( $this->utilType == 'threat-rule' )
                             $this->objectsToProcess[] = array('store' => $sub->ThreatPolicyStore, 'objects' => $sub->ThreatPolicyStore->resultingObjectSet());
+                        elseif( $this->utilType == 'dns-rule' )
+                            $this->objectsToProcess[] = array('store' => $sub->DNSPolicyStore, 'objects' => $sub->DNSPolicyStore->resultingObjectSet());
 
                         $locationFound = TRUE;
                         self::GlobalInitAction($sub);
@@ -1678,6 +1687,8 @@ class UTIL
                             $this->objectsToProcess[] = array('store' => $sub->appStore, 'objects' => $sub->appStore->apps());
                         elseif( $this->utilType == 'threat-rule' )
                             $this->objectsToProcess[] = array('store' => $sub->ThreatPolicyStore, 'objects' => $sub->ThreatPolicyStore->getall());
+                        elseif( $this->utilType == 'dns-rule' )
+                            $this->objectsToProcess[] = array('store' => $sub->DNSPolicyStore, 'objects' => $sub->DNSPolicyStore->getall());
 
                         $locationFound = TRUE;
                         self::GlobalInitAction($sub);
@@ -1704,6 +1715,8 @@ class UTIL
                             $this->objectsToProcess[] = array('store' => $sub->appStore, 'objects' => $sub->appStore->apps());
                         elseif( $this->utilType == 'threat-rule' )
                             $this->objectsToProcess[] = array('store' => $sub->ThreatPolicyStore, 'objects' => $sub->ThreatPolicyStore->getall());
+                        elseif( $this->utilType == 'dns-rule' )
+                            $this->objectsToProcess[] = array('store' => $sub->DNSPolicyStore, 'objects' => $sub->DNSPolicyStore->getall());
 
                         $locationFound = TRUE;
                         self::GlobalInitAction($this->pan);
@@ -1734,6 +1747,8 @@ class UTIL
                         $this->objectsToProcess[] = array('store' => $this->pan->threatStore, 'objects' => $this->pan->threatStore->getAll());
                     elseif( $this->utilType == 'threat-rule' )
                         $this->objectsToProcess[] = array('store' => $this->pan->ThreatPolicyStore, 'objects' => $this->pan->ThreatPolicyStore->getall());
+                    elseif( $this->utilType == 'dns-rule' )
+                        $this->objectsToProcess[] = array('store' => $this->pan->DNSPolicyStore, 'objects' => $this->pan->DNSPolicyStore->getall());
 
                     $locationFound = TRUE;
                     self::GlobalInitAction($this->pan);
@@ -1746,6 +1761,8 @@ class UTIL
                         $this->objectsToProcess[] = array('store' => $this->pan->threatStore, 'objects' => $this->pan->threatStore->getAll());
                     elseif( $this->utilType == 'threat-rule' )
                         $this->objectsToProcess[] = array('store' => $this->pan->ThreatPolicyStore, 'objects' => $this->pan->ThreatPolicyStore->getall());
+                    elseif( $this->utilType == 'dns-rule' )
+                        $this->objectsToProcess[] = array('store' => $this->pan->DNSPolicyStore, 'objects' => $this->pan->DNSPolicyStore->getall());
 
                     $locationFound = TRUE;
                     self::GlobalInitAction($this->pan);
@@ -1790,7 +1807,9 @@ class UTIL
                             $this->objectsToProcess[] = array('store' => $sub->appStore, 'objects' => $sub->appStore->apps());
                         elseif( $this->utilType == 'threat-rule' )
                             $this->objectsToProcess[] = array('store' => $sub->ThreatPolicyStore, 'objects' => $sub->ThreatPolicyStore->getall());
-                        
+                        elseif( $this->utilType == 'dns-rule' )
+                            $this->objectsToProcess[] = array('store' => $sub->DNSPolicyStore, 'objects' => $sub->DNSPolicyStore->getall());
+
                         $locationFound = TRUE;
                         $this->GlobalInitAction($sub);
                     }

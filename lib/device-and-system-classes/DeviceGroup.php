@@ -57,6 +57,9 @@ class DeviceGroup
     /** @var ThreatPolicyStore */
     public $ThreatPolicyStore = null;
 
+    /** @var DNSPolicyStore */
+    public $DNSPolicyStore = null;
+
     /** @var SecurityProfileStore */
     public $VulnerabilityProfileStore = null;
 
@@ -231,6 +234,9 @@ class DeviceGroup
 
         $this->ThreatPolicyStore = new ThreatPolicyStore($this, "ThreatPolicy");
         $this->ThreatPolicyStore->name = 'ThreatPolicy';
+
+        $this->DNSPolicyStore = new DNSPolicyStore($this, "DNSPolicy");
+        $this->DNSPolicyStore->name = 'DNSPolicy';
 
         $this->VulnerabilityProfileStore = new SecurityProfileStore($this, "VulnerabilityProfile");
         $this->VulnerabilityProfileStore->name = 'Vulnerability';

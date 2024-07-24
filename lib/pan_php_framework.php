@@ -173,6 +173,7 @@ require_once $basedir . '/misc-classes/EDLRQueryContext.php';
 
 require_once $basedir . '/misc-classes/ThreatRQueryContext.php';
 require_once $basedir . '/misc-classes/ThreatRuleRQueryContext.php';
+require_once $basedir . '/misc-classes/DNSRuleRQueryContext.php';
 
 require_once $basedir . '/misc-classes/InterfaceRQueryContext.php';
 require_once $basedir . '/misc-classes/RoutingRQueryContext.php';
@@ -253,6 +254,8 @@ require_once $basedir . '/object-classes/ThreatPolicyStore.php';
 require_once $basedir . '/object-classes/ThreatPolicy.php';
 require_once $basedir . '/object-classes/ThreatPolicySpyware.php';
 require_once $basedir . '/object-classes/ThreatPolicyVulnerability.php';
+require_once $basedir . '/object-classes/DNSPolicyStore.php';
+require_once $basedir . '/object-classes/DNSPolicy.php';
 require_once $basedir . '/object-classes/VulnerabilityProfile.php';
 require_once $basedir . '/object-classes/AntiSpywareProfile.php';
 require_once $basedir . '/object-classes/FileBlockingProfile.php';

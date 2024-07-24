@@ -950,4 +950,41 @@ RQuery::$defaultFilters['securityprofile']['threat-rule']['operators']['has.from
     'arg' => TRUE,
     'help' => "'securityprofiletype=spyware,vulnerability' example: 'filter=(threat-rule has.from.query subquery1)' 'subquery1=(action eq alert)'",
 );
+
+RQuery::$defaultFilters['securityprofile']['dns-rule']['operators']['has.from.query'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        $object = $context->object;
+
+        if( $object->secprof_type != 'spyware' )
+            return null;
+
+        if( count($object->dns_rules_obj) == 0 )
+            return FALSE;
+
+        if( $context->value === null || !isset($context->nestedQueries[$context->value]) )
+            derr("cannot find nested query called '{$context->value}'");
+
+        $errorMessage = '';
+
+        if( !isset($context->cachedSubRQuery) )
+        {
+            $rQuery = new RQuery('dns-rule');
+            if( $rQuery->parseFromString($context->nestedQueries[$context->value], $errorMessage) === FALSE )
+                derr('nested query execution error : ' . $errorMessage);
+            $context->cachedSubRQuery = $rQuery;
+        }
+        else
+            $rQuery = $context->cachedSubRQuery;
+
+        foreach( $context->object->dns_rules_obj as $member )
+        {
+            if( $rQuery->matchSingleObject(array('object' => $member, 'nestedQueries' => &$context->nestedQueries)) )
+                return TRUE;
+        }
+
+        return FALSE;
+    },
+    'arg' => TRUE,
+    'help' => "'securityprofiletype=spyware' example: 'filter=(dns-rule has.from.query subquery1)' 'subquery1=(action eq alert)'",
+);
 // </editor-fold>

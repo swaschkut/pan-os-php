@@ -52,6 +52,8 @@ class ThreatPolicy
 
     public function load_from_domxml( $tmp_entry1 )
     {
+        $this->xmlroot = $tmp_entry1;
+
         $tmp = DH::findFirstElement('severity', $tmp_entry1);
         if( $tmp !== FALSE )
         {

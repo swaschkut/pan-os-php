@@ -23,6 +23,7 @@ class AntiSpywareProfile
 
     public $threatException = array();
     public $rules_obj = array();
+    public $dns_rules_obj = array();
     public $additional = array();
 
     public $cloud_inline_analysis_enabled = false;
@@ -276,6 +277,15 @@ class AntiSpywareProfile
                     */
 
                     $name = DH::findAttribute("name", $tmp_entry1);
+
+                    $dnsPolicy_obj = new DNSPolicy( $name, $this );
+                    $dnsPolicy_obj->load_from_domxml( $tmp_entry1 );
+                    $this->dns_rules_obj[] = $dnsPolicy_obj;
+                    $dnsPolicy_obj->addReference( $this );
+
+                    $this->owner->owner->DNSPolicyStore->add($dnsPolicy_obj);
+
+                    //todo:
                     $tmp_log_level = DH::findFirstElement("log-level", $tmp_entry1);
                     if( $tmp_log_level !== FALSE )
                         $this->additional['botnet-domain']['dns-security-categories'][$name]['log-level'] = $tmp_log_level->textContent;

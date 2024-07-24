@@ -94,6 +94,10 @@ require_once("ThreatRuleCallContext.php");
 require_once "actions-threatrule.php";
 ThreatRuleCallContext::prepareSupportedActions();
 
+require_once("DNSRuleCallContext.php");
+require_once "actions-dnsrule.php";
+DNSRuleCallContext::prepareSupportedActions();
+
 require_once("DeviceCallContext.php");
 require_once "actions-device.php";
 DeviceCallContext::prepareSupportedActions();

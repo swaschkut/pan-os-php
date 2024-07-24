@@ -208,7 +208,8 @@ class DIFF extends UTIL
             $origDoc1 = new DOMDocument();
             $origDoc1->load($file1, XML_PARSE_BIG_LINES);
 
-            $pattern = "/(.*)[0-9]{5}name[0-9]{5}(.*)/i";
+            #print PH::$args['filter']."\n";
+            $pattern = "/(.*)[0-9]{4,5}name[0-9]{4,5}(.*)/i";
             $matches = null;
             if( isset(PH::$args['filter']) and preg_match( $pattern, PH::$args['filter'], $matches  ) )
             {
