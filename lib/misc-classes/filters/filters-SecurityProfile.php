@@ -786,7 +786,6 @@ RQuery::$defaultFilters['securityprofile']['cloud-inline-analysis']['operators']
     'Function' => function (SecurityProfileRQueryContext $context) {
         /** @var VulnerabilityProfile|AntiSpywareProfile $object */
         $object = $context->object;
-        $value = $context->value;
         $bestpractise = FALSE;
 
         if( $object->secprof_type != 'spyware' and $object->secprof_type != 'vulnerability' )
@@ -810,7 +809,7 @@ RQuery::$defaultFilters['securityprofile']['cloud-inline-analysis']['operators']
             {
                 foreach( $object->additional['mica-engine-spyware-enabled'] as $name)
                 {
-                    if( $name['inline-policy-action'] == $value )
+                    if( $name['inline-policy-action'] == "reset-both" )
                         $bestpractise = TRUE;
                     else
                         return FALSE;

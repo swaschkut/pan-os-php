@@ -40,6 +40,7 @@ BUGFIX:
 * class RQueryContext | add variable $cachedIP4Mapping - aligne with PHP8.3 - do get rid of deprecated message
 * type=appid-toolbox phase=phase6 | bugfix for API usage compare to offline file
 * type=securityprofile actions=exporttoexcel:file.html | bugfix for dns-rule
+* type=securityprofile 'filter=(cloud-inline-analysis is.best-practice)' - bugfix for securityprofiletype=spyware
 
 GENERAL:
 * develop watchguard migration - address/service objects - alias - abs-policy - nat

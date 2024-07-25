@@ -664,6 +664,17 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         foreach ($object->additional['mica-engine-vulnerability-enabled'] as $name => $threat)
                             $string_mica_engine[] = $name . " - inline-policy-action :" . $object->additional['mica-engine-vulnerability-enabled'][$name]['inline-policy-action'];
                     }
+
+                    if( !empty( $object->additional['mica-engine-vulnerability-enabled'] ) )
+                    {
+                        $enabled = "[no]";
+                        if( $object->cloud_inline_analysis_enabled )
+                            $enabled = "[yes]";
+                        $string_mica_engine[] = "mica-engine-vulnerability-enabled: ". $enabled;
+
+                        foreach ($object->additional['mica-engine-vulnerability-enabled'] as $name => $threat)
+                            $string_mica_engine[] = $name . " - inline-policy-action :" . $object->additional['mica-engine-vulnerability-enabled'][$name]['inline-policy-action'];
+                    }
                 }
 
                 //<th>DNS lists</th>
