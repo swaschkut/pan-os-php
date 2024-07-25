@@ -833,7 +833,7 @@ RQuery::$defaultFilters['securityprofile']['cloud-inline-analysis']['operators']
             {
                 foreach( $object->additional['mlav-engine-filebased-enabled'] as $name)
                 {
-                    if( strpos($name['mlav-policy-action'], "enable" ) !== FALSE )
+                    if( $name['mlav-policy-action'] == "enable" )
                         $bestpractise = TRUE;
                     else
                         return FALSE;
@@ -847,6 +847,90 @@ RQuery::$defaultFilters['securityprofile']['cloud-inline-analysis']['operators']
     'help' => "'securityprofiletype=spyware,vulnerability'"
 );
 
+RQuery::$defaultFilters['securityprofile']['av.action']['operators']['is.best-practice'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var VulnerabilityProfile|AntiSpywareProfile $object */
+        $object = $context->object;
+        $bestpractise = FALSE;
+
+        if( $object->secprof_type != 'virus' )
+            return null;
+
+        if( isset($object->tmp_virus_prof_array) )
+        {
+            foreach( $object->tmp_virus_prof_array as $key => $type )
+            {
+                if( isset( $object->$type['action'] ) )
+                {
+                    if( $object->$type['action'] == "reset-both" )
+                        $bestpractise = TRUE;
+                    else
+                        return False;
+                }
+            }
+        }
+
+        return $bestpractise;
+    },
+    'arg' => false,
+    'help' => "'securityprofiletype=virus'"
+);
+RQuery::$defaultFilters['securityprofile']['av.wildfire-action']['operators']['is.best-practice'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var VulnerabilityProfile|AntiSpywareProfile $object */
+        $object = $context->object;
+        $bestpractise = FALSE;
+
+        if( $object->secprof_type != 'virus' )
+            return null;
+
+        if( isset($object->tmp_virus_prof_array) )
+        {
+            foreach( $object->tmp_virus_prof_array as $key => $type )
+            {
+                if( isset( $this->$type['wildfire-action'] ) )
+                {
+                    if( $object->$type['wildfire-action'] == "reset-both" )
+                        $bestpractise = TRUE;
+                    else
+                        return False;
+                }
+            }
+        }
+
+        return $bestpractise;
+    },
+    'arg' => false,
+    'help' => "'securityprofiletype=virus'"
+);
+RQuery::$defaultFilters['securityprofile']['av.mlav-action']['operators']['is.best-practice'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var VulnerabilityProfile|AntiSpywareProfile $object */
+        $object = $context->object;
+        $bestpractise = FALSE;
+
+        if( $object->secprof_type != 'virus' )
+            return null;
+
+        if( isset($object->tmp_virus_prof_array) )
+        {
+            foreach( $object->tmp_virus_prof_array as $key => $type )
+            {
+                if( isset( $this->$type['mlav-action'] ) )
+                {
+                    if( $object->$type['mlav-action'] == "reset-both" )
+                        $bestpractise = FALSE;
+                    else
+                        return False;
+                }
+            }
+        }
+
+        return $bestpractise;
+    },
+    'arg' => false,
+    'help' => "'securityprofiletype=virus'"
+);
 RQuery::$defaultFilters['securityprofile']['dns-list.action']['operators']['has'] = array(
     'Function' => function (SecurityProfileRQueryContext $context) {
         /** @var AntiSpywareProfile $object */
