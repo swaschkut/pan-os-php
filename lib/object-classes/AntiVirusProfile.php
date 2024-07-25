@@ -204,6 +204,44 @@ class AntiVirusProfile
             }
         }
 
+        $tmp_rule = DH::findFirstElement('mlav-engine-filebased-enabled', $xml);
+        if( $tmp_rule !== FALSE )
+        {
+            /*
+                <mlav-engine-filebased-enabled>
+                  <entry name="Windows Executables">
+                   <mlav-policy-action>enable(alert-only)</mlav-policy-action>
+                  </entry>
+                  <entry name="PowerShell Script 1">
+                   <mlav-policy-action>enable(alert-only)</mlav-policy-action>
+                  </entry>
+                  <entry name="PowerShell Script 2">
+                   <mlav-policy-action>enable(alert-only)</mlav-policy-action>
+                  </entry>
+                  <entry name="Executable Linked Format">
+                   <mlav-policy-action>enable(alert-only)</mlav-policy-action>
+                  </entry>
+                  <entry name="MSOffice">
+                   <mlav-policy-action>enable(alert-only)</mlav-policy-action>
+                  </entry>
+                  <entry name="Shell">
+                   <mlav-policy-action>enable(alert-only)</mlav-policy-action>
+                  </entry>
+                 </mlav-engine-filebased-enabled>
+            */
+            $this->additional['mlav-engine-filebased-enabled'] = array();
+            foreach( $tmp_rule->childNodes as $tmp_entry1 )
+            {
+                if ($tmp_entry1->nodeType != XML_ELEMENT_NODE)
+                    continue;
+
+                $name = DH::findAttribute("name", $tmp_entry1);
+                $tmp_inline_policy_action = DH::findFirstElement("inline-policy-action", $tmp_entry1);
+                if( $tmp_inline_policy_action !== FALSE )
+                    $this->additional['mlav-engine-filebased-enabled'][$name]['inline-policy-action'] = $tmp_inline_policy_action->textContent;
+            }
+        }
+
         return TRUE;
     }
 
@@ -256,6 +294,18 @@ class AntiVirusProfile
                 }
 
                 PH::print_stdout(  $string );
+            }
+        }
+
+        if( empty( $this->additional['mlav-engine-filebased-enabled'] ) )
+        {
+            if( !empty( $this->additional['mlav-engine-filebased-enabled'] ) )
+            {
+                PH::print_stdout("        ----------------------------------------");
+                PH::print_stdout("        - mlav-engine-filebased-enabled: ");
+
+                foreach ($this->additional['mlav-engine-filebased-enabled'] as $name => $threat)
+                    PH::print_stdout("          * " . $name . " - inline-policy-action :" . $this->additional['mlav-engine-filebased-enabled'][$name]['inline-policy-action']);
             }
         }
     }
