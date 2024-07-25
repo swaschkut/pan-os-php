@@ -1,5 +1,16 @@
 <?php
 
+//Todo: swaschkut 20240725
+/*
+/*
+ii) For AV Actions tab 3 BP settings
+a) Signature Action = reset-both for all decoders
+b) Wildfire Signature Action = reset-both for all decoders
+c) Wildfire Inline ML Signature Action = reset-both for all decoders
+** want to break into 3 components because some customers may want to ignore one or more of these
+ */
+
+
 // <editor-fold desc=" ***** SecProf filters *****" defaultstate="collapsed" >
 RQuery::$defaultFilters['securityprofile']['refcount']['operators']['>,<,=,!'] = array(
     'eval' => '$object->countReferences() !operator! !value!',
@@ -815,8 +826,20 @@ RQuery::$defaultFilters['securityprofile']['cloud-inline-analysis']['operators']
                         return FALSE;
                 }
             }
-        }
 
+            //AV iii) Wildfire Inline ML Tab
+            //- all models must be set to 'enable (inherit per-protocol actions)'
+            if( isset($object->additional['mlav-engine-filebased-enabled']) )
+            {
+                foreach( $object->additional['mlav-engine-filebased-enabled'] as $name)
+                {
+                    if( strpos($name['mlav-policy-action'], "enable" ) !== FALSE )
+                        $bestpractise = TRUE;
+                    else
+                        return FALSE;
+                }
+            }
+        }
 
         return $bestpractise;
     },

@@ -42,6 +42,7 @@ BUGFIX:
 * type=appid-toolbox phase=phase6 | bugfix for API usage compare to offline file
 * type=securityprofile actions=exporttoexcel:file.html | bugfix for dns-rule
 * type=securityprofile 'filter=(cloud-inline-analysis is.best-practice)' - bugfix for securityprofiletype=spyware
+* type=securityprofile securityprofiletype=virus 'filter=(cloud-inline-analysis is.best-practice)' | get this working for virus profiles
 
 GENERAL:
 * develop watchguard migration - address/service objects - alias - abs-policy - nat
