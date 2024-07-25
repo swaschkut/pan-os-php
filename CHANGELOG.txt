@@ -22,6 +22,7 @@ UTIL:
 * type=appid-toolbox phase=phase1 | introduce 'filter=( {ALL AVAILALBE type=rule listfilters} )'
 * type=dns-rule | introduction
 * type=securityprofile securityprofiletype=spyware | new 'filter=(cloud-inline-analysis is.best-practice)' / (dns-list is.best-practice)
+* type=securityprofile securityprofiletype=virus | extend actions=display / exporttoexcel with mlav-policy-action information
 
 BUGFIX:
 * type=xpath "filter-xpath=XYZ" in=api://{MGMT-IP} | bugfix for API mode to display correct filtered xpath

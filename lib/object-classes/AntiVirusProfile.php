@@ -236,9 +236,9 @@ class AntiVirusProfile
                     continue;
 
                 $name = DH::findAttribute("name", $tmp_entry1);
-                $tmp_inline_policy_action = DH::findFirstElement("inline-policy-action", $tmp_entry1);
+                $tmp_inline_policy_action = DH::findFirstElement("mlav-policy-action", $tmp_entry1);
                 if( $tmp_inline_policy_action !== FALSE )
-                    $this->additional['mlav-engine-filebased-enabled'][$name]['inline-policy-action'] = $tmp_inline_policy_action->textContent;
+                    $this->additional['mlav-engine-filebased-enabled'][$name]['mlav-policy-action'] = $tmp_inline_policy_action->textContent;
             }
         }
 
@@ -297,7 +297,7 @@ class AntiVirusProfile
             }
         }
 
-        if( empty( $this->additional['mlav-engine-filebased-enabled'] ) )
+        if( !empty( $this->additional['mlav-engine-filebased-enabled'] ) )
         {
             if( !empty( $this->additional['mlav-engine-filebased-enabled'] ) )
             {
@@ -305,7 +305,7 @@ class AntiVirusProfile
                 PH::print_stdout("        - mlav-engine-filebased-enabled: ");
 
                 foreach ($this->additional['mlav-engine-filebased-enabled'] as $name => $threat)
-                    PH::print_stdout("          * " . $name . " - inline-policy-action :" . $this->additional['mlav-engine-filebased-enabled'][$name]['inline-policy-action']);
+                    PH::print_stdout("          * " . $name . " - mlav-policy-action :" . $this->additional['mlav-engine-filebased-enabled'][$name]['mlav-policy-action']);
             }
         }
     }

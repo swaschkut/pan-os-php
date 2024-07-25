@@ -665,15 +665,15 @@ SecurityProfileCallContext::$supportedActions[] = array(
                             $string_mica_engine[] = $name . " - inline-policy-action :" . $object->additional['mica-engine-vulnerability-enabled'][$name]['inline-policy-action'];
                     }
 
-                    if( !empty( $object->additional['mica-engine-vulnerability-enabled'] ) )
+                    if( !empty( $object->additional['mlav-engine-filebased-enabled'] ) )
                     {
                         $enabled = "[no]";
                         if( $object->cloud_inline_analysis_enabled )
                             $enabled = "[yes]";
-                        $string_mica_engine[] = "mica-engine-vulnerability-enabled: ". $enabled;
+                        $string_mica_engine[] = "mlav-engine-filebased-enabled: ". $enabled;
 
-                        foreach ($object->additional['mica-engine-vulnerability-enabled'] as $name => $threat)
-                            $string_mica_engine[] = $name . " - inline-policy-action :" . $object->additional['mica-engine-vulnerability-enabled'][$name]['inline-policy-action'];
+                        foreach ($object->additional['mlav-engine-filebased-enabled'] as $name => $threat)
+                            $string_mica_engine[] = $name . " - mlav-policy-action :" . $object->additional['mlav-engine-filebased-enabled'][$name]['mlav-policy-action'];
                     }
                 }
 
