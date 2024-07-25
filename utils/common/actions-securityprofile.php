@@ -456,6 +456,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
         $addWhereUsed = FALSE;
         $addUsedInLocation = FALSE;
         $addTotalUse = FALSE;
+        $bestPractice = FALSE;
 
         $optionalFields = &$context->arguments['additionalFields'];
 
@@ -559,7 +560,12 @@ SecurityProfileCallContext::$supportedActions[] = array(
 
                 if( $bestPractice )
                 {
-                    $lines .= $context->encloseFunction('BP');
+                    if( get_class($object) == "AntiSpywareProfile" || get_class($object) == "VulnerabilityProfile" )
+                    {
+                        $lines .= $context->encloseFunction('BP');
+                    }
+                    else
+                        $lines .= $context->encloseFunction('');
                 }
 
                 #$lines .= $context->encloseFunction($object->value());
@@ -586,7 +592,12 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     $lines .= $context->encloseFunction('');
                 if( $bestPractice )
                 {
-                    $lines .= $context->encloseFunction('BP');
+                    if( get_class($object) == "AntiSpywareProfile" || get_class($object) == "VulnerabilityProfile" )
+                    {
+                        $lines .= $context->encloseFunction('BP');
+                    }
+                    else
+                        $lines .= $context->encloseFunction('---');
                 }
 
                 $string_dns_list = array();
@@ -612,11 +623,6 @@ SecurityProfileCallContext::$supportedActions[] = array(
                             }
                             elseif( $type == "dns-security-categories" )
                             {
-                                $tmp_array = array();
-                                foreach( $object->rules_obj as $rulename => $rule )
-                                {
-                                    $tmp_array[] = "'".$rule->name()."' | severity:'". implode( ",", $rule->severity )."' - action:'".$rule->action()."' - packetCapture:'".$rule->packetCapture()."' - category:'".$rule->category()."' - host:'".$rule->host()."'";
-                                }
                                 foreach( $object->additional['botnet-domain'][$type] as $name => $rule )
                                 {
                                     $string = "";
@@ -664,7 +670,12 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 $lines .= $context->encloseFunction($string_dns_list);
                 if( $bestPractice )
                 {
-                    $lines .= $context->encloseFunction('BP');
+                    if( get_class($object) == "AntiSpywareProfile" )
+                    {
+                        $lines .= $context->encloseFunction('BP');
+                    }
+                    else
+                        $lines .= $context->encloseFunction('---');
                 }
                 //<th>DNS sinkhole</th>
                 $lines .= $context->encloseFunction($string_dns_sinkhole);
@@ -672,7 +683,12 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 $lines .= $context->encloseFunction($string_dns_security);
                 if( $bestPractice )
                 {
-                    $lines .= $context->encloseFunction('BP');
+                    if( get_class($object) == "AntiSpywareProfile" )
+                    {
+                        $lines .= $context->encloseFunction('BP');
+                    }
+                    else
+                        $lines .= $context->encloseFunction('---');
                 }
                 //<th>DNS whitelist</th>
                 $lines .= $context->encloseFunction($string_dns_whitelist);
@@ -680,7 +696,12 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 $lines .= $context->encloseFunction($string_mica_engine);
                 if( $bestPractice )
                 {
-                    $lines .= $context->encloseFunction('BP');
+                    if( get_class($object) == "AntiSpywareProfile" || get_class($object) == "VulnerabilityProfile" )
+                    {
+                        $lines .= $context->encloseFunction('BP');
+                    }
+                    else
+                        $lines .= $context->encloseFunction('---');
                 }
 
                 if( get_class($object) == "customURLProfile" )
