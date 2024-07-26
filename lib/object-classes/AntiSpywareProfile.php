@@ -312,7 +312,8 @@ class AntiSpywareProfile
                     $name = DH::findAttribute("name", $tmp_entry1);
                     $tmp_whitelists_description = DH::findFirstElement('description', $tmp_entry1);
                     $this->additional['botnet-domain']['whitelist'][$name]['name'] = $name;
-                    $this->additional['botnet-domain']['whitelist'][$name]['description'] = $tmp_whitelists_description->textContent;
+                    if( $tmp_whitelists_description !== FALSE )
+                        $this->additional['botnet-domain']['whitelist'][$name]['description'] = $tmp_whitelists_description->textContent;
                 }
             }
         }
