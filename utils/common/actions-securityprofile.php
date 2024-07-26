@@ -637,7 +637,12 @@ SecurityProfileCallContext::$supportedActions[] = array(
                             elseif( $type == "whitelist" )
                             {
                                 foreach( $object->additional['botnet-domain'][$type] as $name => $value )
-                                    $string_dns_whitelist[] = $value['name']."' | description:'".$value['description'];
+                                {
+                                    $string = $value['name'];
+                                    if( isset($value['description']) )
+                                        $string .= "' | description:'".$value['description'];
+                                    $string_dns_whitelist[] = $string;
+                                }
                             }
 
                         }

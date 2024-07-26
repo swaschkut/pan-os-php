@@ -46,6 +46,7 @@ BUGFIX:
 * type=securityprofile securityprofiletype=virus 'filter=(cloud-inline-analysis is.best-practice)' | get this working for virus profiles
 * type=gratuitous-arp | bugfix ignore interface if DHCP-client is  configured
 * type=securityprofile securityprofiletype=virus | bugfix for all best-practice filters
+* type=securityprofile actions=exporttoexcel:file.html | fix for Anti-Spyware dns_whitelist description
 
 GENERAL:
 * develop watchguard migration - address/service objects - alias - abs-policy - nat
