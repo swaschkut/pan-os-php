@@ -43,6 +43,7 @@ BUGFIX:
 * type=securityprofile actions=exporttoexcel:file.html | bugfix for dns-rule
 * type=securityprofile 'filter=(cloud-inline-analysis is.best-practice)' - bugfix for securityprofiletype=spyware
 * type=securityprofile securityprofiletype=virus 'filter=(cloud-inline-analysis is.best-practice)' | get this working for virus profiles
+* type=gratuitous-arp | bugfix ignore interface if DHCP-client is  configured
 
 GENERAL:
 * develop watchguard migration - address/service objects - alias - abs-policy - nat
