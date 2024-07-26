@@ -888,7 +888,7 @@ RQuery::$defaultFilters['securityprofile']['av.wildfire-action']['operators']['i
         {
             foreach( $object->tmp_virus_prof_array as $key => $type )
             {
-                if( isset( $this->$type['wildfire-action'] ) )
+                if( isset( $object->$type['wildfire-action'] ) )
                 {
                     if( $object->$type['wildfire-action'] == "reset-both" )
                         $bestpractise = TRUE;
@@ -916,7 +916,7 @@ RQuery::$defaultFilters['securityprofile']['av.mlav-action']['operators']['is.be
         {
             foreach( $object->tmp_virus_prof_array as $key => $type )
             {
-                if( isset( $this->$type['mlav-action'] ) )
+                if( isset( $object->$type['mlav-action'] ) )
                 {
                     if( $object->$type['mlav-action'] == "reset-both" )
                         $bestpractise = FALSE;
