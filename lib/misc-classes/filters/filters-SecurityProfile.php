@@ -799,10 +799,10 @@ RQuery::$defaultFilters['securityprofile']['cloud-inline-analysis']['operators']
         $object = $context->object;
         $bestpractise = FALSE;
 
-        if( $object->secprof_type != 'spyware' and $object->secprof_type != 'vulnerability' )
+        if( $object->secprof_type != 'spyware' and $object->secprof_type != 'vulnerability' and $object->secprof_type != 'virus' )
             return null;
 
-        if( $object->cloud_inline_analysis_enabled )
+        if( isset($object->cloud_inline_analysis_enabled) && $object->cloud_inline_analysis_enabled )
         {
             if( isset($object->additional['mica-engine-vulnerability-enabled']) )
             {
@@ -826,18 +826,18 @@ RQuery::$defaultFilters['securityprofile']['cloud-inline-analysis']['operators']
                         return FALSE;
                 }
             }
+        }
 
-            //AV iii) Wildfire Inline ML Tab
-            //- all models must be set to 'enable (inherit per-protocol actions)'
-            if( isset($object->additional['mlav-engine-filebased-enabled']) )
+        //AV iii) Wildfire Inline ML Tab
+        //- all models must be set to 'enable (inherit per-protocol actions)'
+        if( isset($object->additional['mlav-engine-filebased-enabled']) )
+        {
+            foreach( $object->additional['mlav-engine-filebased-enabled'] as $name)
             {
-                foreach( $object->additional['mlav-engine-filebased-enabled'] as $name)
-                {
-                    if( $name['mlav-policy-action'] == "enable" )
-                        $bestpractise = TRUE;
-                    else
-                        return FALSE;
-                }
+                if( $name['mlav-policy-action'] == "enable" )
+                    $bestpractise = TRUE;
+                else
+                    return FALSE;
             }
         }
 
@@ -860,7 +860,14 @@ RQuery::$defaultFilters['securityprofile']['av.action']['operators']['is.best-pr
         {
             foreach( $object->tmp_virus_prof_array as $key => $type )
             {
-                if( isset( $object->$type['action'] ) )
+                if( $type == "ftp" || $type == "http" || $type == "http2" || $type == "smb" )
+                {
+                    if( $object->$type['action'] == "reset-both" || $object->$type['action'] == "default" )
+                        $bestpractise = TRUE;
+                    else
+                        return False;
+                }
+                else
                 {
                     if( $object->$type['action'] == "reset-both" )
                         $bestpractise = TRUE;
@@ -888,7 +895,14 @@ RQuery::$defaultFilters['securityprofile']['av.wildfire-action']['operators']['i
         {
             foreach( $object->tmp_virus_prof_array as $key => $type )
             {
-                if( isset( $object->$type['wildfire-action'] ) )
+                if( $type == "ftp" || $type == "http" || $type == "http2" || $type == "smb" )
+                {
+                    if( $object->$type['wildfire-action'] == "reset-both" || $object->$type['wildfire-action'] == "default" )
+                        $bestpractise = TRUE;
+                    else
+                        return False;
+                }
+                else
                 {
                     if( $object->$type['wildfire-action'] == "reset-both" )
                         $bestpractise = TRUE;
@@ -918,10 +932,20 @@ RQuery::$defaultFilters['securityprofile']['av.mlav-action']['operators']['is.be
             {
                 if( isset( $object->$type['mlav-action'] ) )
                 {
-                    if( $object->$type['mlav-action'] == "reset-both" )
-                        $bestpractise = FALSE;
+                    if( $type == "ftp" || $type == "http" || $type == "http2" || $type == "smb" )
+                    {
+                        if( $object->$type['mlav-action'] == "reset-both" || $object->$type['mlav-action'] == "default" )
+                            $bestpractise = TRUE;
+                        else
+                            return False;
+                    }
                     else
-                        return False;
+                    {
+                        if( $object->$type['mlav-action'] == "reset-both" )
+                            $bestpractise = TRUE;
+                        else
+                            return False;
+                    }
                 }
             }
         }
