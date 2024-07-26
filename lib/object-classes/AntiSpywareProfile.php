@@ -402,7 +402,10 @@ class AntiSpywareProfile
                     {
                         foreach( $this->additional['botnet-domain'][$type] as $name => $value )
                         {
-                            PH::print_stdout("            - '".$value['name']."' | description:'".$value['description']."'" );
+                            $string = "            - '".$value['name']."'";
+                            if(isset($value['description']))
+                                $string .= "| description:'".$value['description']."'";
+                            PH::print_stdout( $string );
                         }
                     }
                 }
