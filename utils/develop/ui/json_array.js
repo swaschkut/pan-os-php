@@ -6413,9 +6413,10 @@ var subjectObject =
                         "choices": [
                             "WhereUsed",
                             "UsedInLocation",
-                            "TotalUse"
+                            "TotalUse",
+                            "BestPractice"
                         ],
-                        "help": "pipe(|) separated list of additional fields (ie: Arg1|Arg2|Arg3...) to include in the report. The following is available:\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n  - WhereUsed : list places where object is used (rules, groups ...)\n  - TotalUse : list a counter how often this object is used\n"
+                        "help": "pipe(|) separated list of additional fields (ie: Arg1|Arg2|Arg3...) to include in the report. The following is available:\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n  - WhereUsed : list places where object is used (rules, groups ...)\n  - TotalUse : list a counter how often this object is used\n  - BestPractice : show if BestPractice is configured\n"
                     }
                 }
             },
@@ -6524,6 +6525,33 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         },
                         "help": "'securityprofiletype=url'"
+                    }
+                }
+            },
+            "av.action": {
+                "operators": {
+                    "is.best-practice": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=virus'"
+                    }
+                }
+            },
+            "av.mlav-action": {
+                "operators": {
+                    "is.best-practice": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=virus'"
+                    }
+                }
+            },
+            "av.wildfire-action": {
+                "operators": {
+                    "is.best-practice": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=virus'"
                     }
                 }
             },
