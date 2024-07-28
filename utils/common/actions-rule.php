@@ -2981,6 +2981,17 @@ RuleCallContext::$supportedActions[] = array(
 
         $newName = $context->arguments['stringFormula'];
 
+        if( strpos($newName, '$$comma$$') !== FALSE )
+            $newName = str_replace('$$comma$$', ",", $newName);
+        if( strpos($newName, '$$forwardslash$$') !== FALSE )
+            $newName = str_replace('$$forwardslash$$', "/", $newName);
+        if( strpos($newName, '$$colon$$') !== FALSE )
+            $newName = str_replace('$$colon$$', ":", $newName);
+        if( strpos($newName, '$$pipe$$') !== FALSE )
+            $newName = str_replace('$$pipe$$', "|", $newName);
+        if( strpos($newName, '$$newline$$') !== FALSE )
+            $newName = str_replace('$$newline$$', "\n", $newName);
+
         if( strpos($newName, '$$current.name$$') !== FALSE )
         {
             $textToAppend .= str_replace('$$current.name$$', $rule->name(), $newName);
@@ -3016,7 +3027,9 @@ RuleCallContext::$supportedActions[] = array(
             'default' => '*nodefault*',
             'help' =>
                 "This string is used to compose a name. You can use the following aliases :\n" .
-                "  - \$\$current.name\$\$ : current name of the object\n"),
+                "  - \$\$current.name\$\$ : current name of the object\n" .
+                "  - \$\$comma\$\$ or \$\$forwardslash\$\$ or \$\$colon\$\$ or \$\$pipe\$\$ or \$\$newline\$\$ ; example 'actions=description-append:\$\$comma\$\$word1'"
+        ),
         'newline' => array('type' => 'bool', 'default' => 'no'))
 );
 
@@ -3030,6 +3043,17 @@ RuleCallContext::$supportedActions[] = array(
         $textToPrepend = $context->rawArguments['text'];
         if( $context->arguments['newline'] == 'yes' )
             $textToPrepend .= "\n";
+
+        if( strpos($textToPrepend, '$$comma$$') !== FALSE )
+            $textToPrepend = str_replace('$$comma$$', ",", $textToPrepend);
+        if( strpos($textToPrepend, '$$forwardslash$$') !== FALSE )
+            $textToPrepend = str_replace('$$forwardslash$$', "/", $textToPrepend);
+        if( strpos($textToPrepend, '$$colon$$') !== FALSE )
+            $textToPrepend = str_replace('$$colon$$', ":", $textToPrepend);
+        if( strpos($textToPrepend, '$$pipe$$') !== FALSE )
+            $textToPrepend = str_replace('$$pipe$$', "|", $textToPrepend);
+        if( strpos($textToPrepend, '$$newline$$') !== FALSE )
+            $textToPrepend = str_replace('$$newline$$', "\n", $textToPrepend);
 
         if( $context->object->owner->owner->version < 71 )
             $max_length = 253;
@@ -3051,7 +3075,17 @@ RuleCallContext::$supportedActions[] = array(
         else
             $rule->setDescription($textToPrepend . $description);
     },
-    'args' => array('text' => array('type' => 'string', 'default' => '*nodefault*'), 'newline' => array('type' => 'bool', 'default' => 'no'))
+    'args' => array(
+        'text' => array(
+            'type' => 'string',
+            'default' => '*nodefault*',
+            'help' =>
+                "This string is used to compose a name. You can use the following aliases :\n" .
+                "  - \$\$comma\$\$ or \$\$forwardslash\$\$ or \$\$colon\$\$ or \$\$pipe\$\$ or \$\$newline\$\$ ; example 'actions=description-prepend:\$\$comma\$\$word1'"
+        ),
+        'newline' => array('type' => 'bool', 'default' => 'no')
+
+    )
 );
 
 RuleCallContext::$supportedActions[] = array(
@@ -3112,7 +3146,7 @@ RuleCallContext::$supportedActions[] = array(
 
         $string = "new description will be '{$newDescription}'";
         PH::ACTIONlog( $context, $string );
-        
+
         if( $context->isAPI )
             $object->API_setDescription($newDescription);
         else
@@ -3472,7 +3506,7 @@ RuleCallContext::$supportedActions[] = array(
 
         $string = "new name will be '{$newName}'" ;
         PH::ACTIONlog( $context, $string );
-        
+
         if( $context->isAPI )
         {
             $rule->API_setName($newName);
