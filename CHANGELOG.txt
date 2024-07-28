@@ -48,6 +48,7 @@ BUGFIX:
 * type=gratuitous-arp | bugfix ignore interface if DHCP-client is  configured
 * type=securityprofile securityprofiletype=virus | bugfix for all best-practice filters
 * type=securityprofile actions=exporttoexcel:file.html | fix for Anti-Spyware dns_whitelist description
+* type=edl | bugfix to load objects from shared correctly
 
 GENERAL:
 * develop watchguard migration - address/service objects - alias - abs-policy - nat
