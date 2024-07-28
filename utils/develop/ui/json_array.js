@@ -3112,7 +3112,7 @@ var subjectObject =
                     "stringFormula": {
                         "type": "string",
                         "default": "*nodefault*",
-                        "help": "This string is used to compose a name. You can use the following aliases :\n  - $$current.name$$ : current name of the object\n"
+                        "help": "This string is used to compose a name. You can use the following aliases :\n  - $$current.name$$ : current name of the object\n  - $$comma$$ or $$forwardslash$$ or $$colon$$ or $$pipe$$ or $$newline$$ ; example 'actions=description-append:$$comma$$word1'"
                     },
                     "newline": {
                         "type": "bool",
@@ -3126,7 +3126,8 @@ var subjectObject =
                 "args": {
                     "text": {
                         "type": "string",
-                        "default": "*nodefault*"
+                        "default": "*nodefault*",
+                        "help": "This string is used to compose a name. You can use the following aliases :\n  - $$comma$$ or $$forwardslash$$ or $$colon$$ or $$pipe$$ or $$newline$$ ; example 'actions=description-prepend:$$comma$$word1'"
                     },
                     "newline": {
                         "type": "bool",
@@ -6485,6 +6486,10 @@ var subjectObject =
                         "default": "false"
                     }
                 }
+            },
+            "virus.best-practice-set": {
+                "name": "virus.best-practice-set",
+                "MainFunction": {}
             }
         },
         "filter": {

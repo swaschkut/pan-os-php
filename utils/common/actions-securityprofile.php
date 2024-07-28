@@ -990,3 +990,60 @@ SecurityProfileCallContext::$supportedActions['url-filtering-action-set'] = arra
         'url-category' => array('type' => 'string', 'default' => 'false'),
     ),
 );
+SecurityProfileCallContext::$supportedActions['virus.best-practice-set'] = array(
+    'name' => 'virus.best-practice-set',
+    'MainFunction' => function (SecurityProfileCallContext $context) {
+        $object = $context->object;
+
+        if( get_class( $object) !== "AntiVirusProfile")
+            return null;
+
+        //Todo:
+        //set XML to the correct value
+        foreach($object->tmp_virus_prof_array as $decoder )
+        {
+            if( $decoder == "http" || $decoder == "https" || $decoder == "ftp" || $decoder == "smb" )
+            {
+                if( $object->$decoder['action'] != "default" && $object->$decoder['action'] != "reset-both"  )
+                {
+                    $object->$decoder['action'] = "reset-both";
+                    //set XML
+                }
+
+                if( $object->$decoder['wildfire-action'] != "default" && $object->$decoder['wildfire-action'] != "reset-both"  )
+                {
+                    $object->$decoder['wildfire-action'] = "reset-both";
+                }
+
+                if( $object->$decoder['mlav-action'] != "default" && $object->$decoder['mlav-action'] != "reset-both"  )
+                {
+                    $object->$decoder['mlav-action'] = "reset-both";
+                }
+            }
+            else
+            {
+                if( $object->$decoder['action'] != "reset-both"  )
+                {
+                    $object->$decoder['action'] = "reset-both";
+                }
+
+                if( $object->$decoder['wildfire-action'] != "reset-both"  )
+                {
+                    $object->$decoder['wildfire-action'] = "reset-both";
+                }
+
+                if( $object->$decoder['mlav-action'] != "reset-both"  )
+                {
+                    $object->$decoder['mlav-action'] = "reset-both";
+                }
+            }
+        }
+
+        if( $context->isAPI )
+        {
+            derr( "API mode is not supported yet" );
+            $object->API_sync();
+        }
+
+    },
+);
