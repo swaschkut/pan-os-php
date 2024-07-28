@@ -762,7 +762,7 @@ class PanoramaConf
         //
         // Extract EDL objects
         //
-        $tmp = DH::findFirstElement('external-list', $xml);
+        $tmp = DH::findFirstElement('external-list', $this->sharedroot);
         if( $tmp !== FALSE )
             $this->EDLStore->load_from_domxml($tmp);
         // End of EDL extraction
