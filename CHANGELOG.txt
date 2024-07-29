@@ -49,6 +49,7 @@ BUGFIX:
 * type=securityprofile securityprofiletype=virus | bugfix for all best-practice filters
 * type=securityprofile actions=exporttoexcel:file.html | fix for Anti-Spyware dns_whitelist description
 * type=edl | bugfix to load objects from shared correctly
+* type=securityprofile securityprofiletype=spyware actions=exporttoexcel:file.html | bugfix if no packet-capture is defined
 
 GENERAL:
 * develop watchguard migration - address/service objects - alias - abs-policy - nat

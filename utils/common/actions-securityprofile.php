@@ -614,7 +614,13 @@ SecurityProfileCallContext::$supportedActions[] = array(
                             if( $type == "lists" )
                             {
                                 foreach( $object->additional['botnet-domain']['lists'] as $name => $value )
-                                    $string_dns_list[] = $name." -  action: ".$value['action'] ." -  packet-capture: ".$value['packet-capture'];
+                                {
+                                    $string = $name." -  action: ".$value['action'];
+                                    if( isset($value['packet-capture']) )
+                                        $string .= " -  packet-capture: ".$value['packet-capture'];
+                                    $string_dns_list[] =  $string;
+                                }
+
                             }
                             elseif( $type == "sinkhole" )
                             {
