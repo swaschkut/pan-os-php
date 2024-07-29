@@ -862,17 +862,21 @@ RQuery::$defaultFilters['securityprofile']['av.action']['operators']['is.best-pr
             {
                 if( $type == "ftp" || $type == "http" || $type == "http2" || $type == "smb" )
                 {
-                    if( $object->$type['action'] == "reset-both" || $object->$type['action'] == "default" )
+                    if( !isset($object->$type['action']) )
+                        $bestpractise = TRUE;
+                    elseif( $object->$type['action'] == "reset-both" || $object->$type['action'] == "default" )
                         $bestpractise = TRUE;
                     else
                         return False;
                 }
                 else
                 {
-                    if( $object->$type['action'] == "reset-both" )
+                    if( !isset($object->$type['action']) )
+                        $bestpractise = FALSE;
+                    elseif( $object->$type['action'] == "reset-both" )
                         $bestpractise = TRUE;
                     else
-                        return False;
+                        return FALSE;
                 }
             }
         }
@@ -897,14 +901,18 @@ RQuery::$defaultFilters['securityprofile']['av.wildfire-action']['operators']['i
             {
                 if( $type == "ftp" || $type == "http" || $type == "http2" || $type == "smb" )
                 {
-                    if( $object->$type['wildfire-action'] == "reset-both" || $object->$type['wildfire-action'] == "default" )
+                    if( !isset($object->$type['wildfire-action']) )
+                        $bestpractise = TRUE;
+                    elseif( $object->$type['wildfire-action'] == "reset-both" || $object->$type['wildfire-action'] == "default" )
                         $bestpractise = TRUE;
                     else
                         return False;
                 }
                 else
                 {
-                    if( $object->$type['wildfire-action'] == "reset-both" )
+                    if( !isset($object->$type['wildfire-action']) )
+                        $bestpractise = FALSE;
+                    elseif( $object->$type['wildfire-action'] == "reset-both" )
                         $bestpractise = TRUE;
                     else
                         return False;
@@ -934,14 +942,18 @@ RQuery::$defaultFilters['securityprofile']['av.mlav-action']['operators']['is.be
                 {
                     if( $type == "ftp" || $type == "http" || $type == "http2" || $type == "smb" )
                     {
-                        if( $object->$type['mlav-action'] == "reset-both" || $object->$type['mlav-action'] == "default" )
+                        if( !isset($object->$type['mlav-action']) )
+                            $bestpractise = TRUE;
+                        elseif( $object->$type['mlav-action'] == "reset-both" || $object->$type['mlav-action'] == "default" )
                             $bestpractise = TRUE;
                         else
                             return False;
                     }
                     else
                     {
-                        if( $object->$type['mlav-action'] == "reset-both" )
+                        if( !isset($object->$type['mlav-action']) )
+                            $bestpractise = FALSE;
+                        elseif( $object->$type['mlav-action'] == "reset-both" )
                             $bestpractise = TRUE;
                         else
                             return False;
@@ -973,7 +985,7 @@ RQuery::$defaultFilters['securityprofile']['dns-list.action']['operators']['has'
         {
             foreach( $object->additional['botnet-domain']['lists'] as $name)
             {
-                if( $name['action'] == $value )
+                if( isset($name['action']) && $name['action'] == $value )
                     return TRUE;
             }
         }
@@ -1001,7 +1013,7 @@ RQuery::$defaultFilters['securityprofile']['dns-list']['operators']['is.best-pra
             {
                 if( $name == "default-paloalto-dns" )
                 {
-                    if( $array['action'] == "sinkhole" )
+                    if( isset($name['action']) && $array['action'] == "sinkhole" )
                         return TRUE;
                 }
             }
@@ -1030,7 +1042,7 @@ RQuery::$defaultFilters['securityprofile']['dns-list.packet-capture']['operators
         {
             foreach( $object->additional['botnet-domain']['lists'] as $name)
             {
-                if( $name['packet-capture'] == $value )
+                if( isset($name['packet-capture']) && $name['packet-capture'] == $value )
                     return TRUE;
             }
         }
@@ -1063,7 +1075,7 @@ RQuery::$defaultFilters['securityprofile']['dns-security.action']['operators']['
         {
             foreach( $object->additional['botnet-domain']['dns-security-categories'] as $name)
             {
-                if( $name['action'] == $value )
+                if( isset($name['action']) && $name['action'] == $value )
                     return TRUE;
             }
         }
@@ -1095,7 +1107,7 @@ RQuery::$defaultFilters['securityprofile']['dns-security.packet-capture']['opera
         {
             foreach( $object->additional['botnet-domain']['dns-security-categories'] as $name)
             {
-                if( $name['packet-capture'] == $value )
+                if( isset($name['packet-capture']) && $name['packet-capture'] == $value )
                     return TRUE;
             }
         }
