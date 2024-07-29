@@ -134,46 +134,37 @@ class AntiVirusProfile
                 if( $appName === FALSE )
                     derr("Virus SecurityProfile decoder name not found\n");
 
-
-                #$tmp_array['virus'][$this->name][$appName] = array();
-
                 $action = DH::findFirstElement('action', $tmp_entry);
                 if( $action !== FALSE )
                 {
-                    #$tmp_array['virus'][$this->name][$appName]['action'] = $action->textContent;
-                    #$this->additional[$appName]['action'] = $action->textContent;
                     $this->$appName['action'] = $action->textContent;
                 }
                 else
                 {
-                    #$this->$appName['action'] = " -- NOT SET -- ";
-                    //Todo: if not, set default???
+                    $this->$appName['action'] = "----";
                 }
 
 
                 $action_wildfire = DH::findFirstElement('wildfire-action', $tmp_entry);
                 if( $action_wildfire !== FALSE )
                 {
-                    #$tmp_array['virus'][$this->name][$appName]['wildfire-action'] = $action_wildfire->textContent;
-                    #$this->additional[$appName]['wildfire-action'] = $action_wildfire->textContent;
                     $this->$appName['wildfire-action'] = $action_wildfire->textContent;
                 }
                 else
                 {
-                    #$this->$appName['wildfire-action'] = " -- NOT SET -- ";
-                    //Todo: if not, set default???
+                    $this->$appName['wildfire-action'] = "----";
                 }
-                //mlav-action
+
                 $action_mlav_action = DH::findFirstElement('mlav-action', $tmp_entry);
                 if( $action_mlav_action !== FALSE )
                 {
-                    #$tmp_array['virus'][$this->name][$appName]['wildfire-action'] = $action_wildfire->textContent;
-                    #$this->additional[$appName]['wildfire-action'] = $action_wildfire->textContent;
                     $this->$appName['mlav-action'] = $action_mlav_action->textContent;
                 }
+                else
+                {
+                    $this->$appName['mlav-action'] = "----";
+                }
             }
-
-            #print_r( $tmp_array );
         }
 
         $tmp_threat_exception = DH::findFirstElement('threat-exception', $xml);
@@ -207,28 +198,6 @@ class AntiVirusProfile
         $tmp_rule = DH::findFirstElement('mlav-engine-filebased-enabled', $xml);
         if( $tmp_rule !== FALSE )
         {
-            /*
-                <mlav-engine-filebased-enabled>
-                  <entry name="Windows Executables">
-                   <mlav-policy-action>enable(alert-only)</mlav-policy-action>
-                  </entry>
-                  <entry name="PowerShell Script 1">
-                   <mlav-policy-action>enable(alert-only)</mlav-policy-action>
-                  </entry>
-                  <entry name="PowerShell Script 2">
-                   <mlav-policy-action>enable(alert-only)</mlav-policy-action>
-                  </entry>
-                  <entry name="Executable Linked Format">
-                   <mlav-policy-action>enable(alert-only)</mlav-policy-action>
-                  </entry>
-                  <entry name="MSOffice">
-                   <mlav-policy-action>enable(alert-only)</mlav-policy-action>
-                  </entry>
-                  <entry name="Shell">
-                   <mlav-policy-action>enable(alert-only)</mlav-policy-action>
-                  </entry>
-                 </mlav-engine-filebased-enabled>
-            */
             $this->additional['mlav-engine-filebased-enabled'] = array();
             foreach( $tmp_rule->childNodes as $tmp_entry1 )
             {

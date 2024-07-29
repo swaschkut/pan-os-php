@@ -51,6 +51,7 @@ BUGFIX:
 * type=edl | bugfix to load objects from shared correctly
 * type=securityprofile securityprofiletype=spyware actions=exporttoexcel:file.html | bugfix if no packet-capture is defined
 * type=securityprofile | bugfix (av.action is.best-practice) and (av.wildfire-action is.best-practice) and (av.mlav-action is.best-practice)
+* type=securityprofile securityprofiletype=virus | introdcue pre-defined setting for action/wildfire-action/mlav-action if not set => "----"
 
 GENERAL:
 * develop watchguard migration - address/service objects - alias - abs-policy - nat

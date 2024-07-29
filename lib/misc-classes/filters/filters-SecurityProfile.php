@@ -862,18 +862,14 @@ RQuery::$defaultFilters['securityprofile']['av.action']['operators']['is.best-pr
             {
                 if( $type == "ftp" || $type == "http" || $type == "http2" || $type == "smb" )
                 {
-                    if( !isset($object->$type['action']) )
-                        $bestpractise = TRUE;
-                    elseif( $object->$type['action'] == "reset-both" || $object->$type['action'] == "default" )
+                    if( $object->$type['action'] == "reset-both" || $object->$type['action'] == "default" )
                         $bestpractise = TRUE;
                     else
                         return False;
                 }
                 else
                 {
-                    if( !isset($object->$type['action']) )
-                        $bestpractise = FALSE;
-                    elseif( $object->$type['action'] == "reset-both" )
+                    if( $object->$type['action'] == "reset-both" )
                         $bestpractise = TRUE;
                     else
                         return FALSE;
@@ -901,18 +897,14 @@ RQuery::$defaultFilters['securityprofile']['av.wildfire-action']['operators']['i
             {
                 if( $type == "ftp" || $type == "http" || $type == "http2" || $type == "smb" )
                 {
-                    if( !isset($object->$type['wildfire-action']) )
-                        $bestpractise = TRUE;
-                    elseif( $object->$type['wildfire-action'] == "reset-both" || $object->$type['wildfire-action'] == "default" )
+                    if( $object->$type['wildfire-action'] == "reset-both" || $object->$type['wildfire-action'] == "default" )
                         $bestpractise = TRUE;
                     else
                         return False;
                 }
                 else
                 {
-                    if( !isset($object->$type['wildfire-action']) )
-                        $bestpractise = FALSE;
-                    elseif( $object->$type['wildfire-action'] == "reset-both" )
+                    if( $object->$type['wildfire-action'] == "reset-both" )
                         $bestpractise = TRUE;
                     else
                         return False;
@@ -942,18 +934,14 @@ RQuery::$defaultFilters['securityprofile']['av.mlav-action']['operators']['is.be
                 {
                     if( $type == "ftp" || $type == "http" || $type == "http2" || $type == "smb" )
                     {
-                        if( !isset($object->$type['mlav-action']) )
-                            $bestpractise = TRUE;
-                        elseif( $object->$type['mlav-action'] == "reset-both" || $object->$type['mlav-action'] == "default" )
+                        if( $object->$type['mlav-action'] == "reset-both" || $object->$type['mlav-action'] == "default" )
                             $bestpractise = TRUE;
                         else
                             return False;
                     }
                     else
                     {
-                        if( !isset($object->$type['mlav-action']) )
-                            $bestpractise = FALSE;
-                        elseif( $object->$type['mlav-action'] == "reset-both" )
+                        if( $object->$type['mlav-action'] == "reset-both" )
                             $bestpractise = TRUE;
                         else
                             return False;
