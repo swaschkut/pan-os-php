@@ -2,12 +2,6 @@
 # Designed to work with autoreporter.sh - ensure this file exists in the same directory as autoreporter.sh when run
 # This script is intended to scan the output directories of autoreporter.sh and combine the HTML files into a single Excel workbook
 # with multiple tabs for ease of reading.
-try:
-    from bs4 import BeautifulSoup
-    import xlsxwriter
-except:
-    print("python import failure: 'os, re' NOT found")
-    exit()
 
 try:
     import os, re
@@ -19,6 +13,13 @@ try:
     import pandas as pd
 except ImportError:
     print("python import failure: 'pandas' NOT found")
+    exit()
+
+try:
+    from bs4 import BeautifulSoup
+    import xlsxwriter
+except:
+    print("python import failure: 'bs4' NOT found")
     exit()
 
 try:
