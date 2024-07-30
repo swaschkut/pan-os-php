@@ -25,6 +25,7 @@ UTIL:
 * type=securityprofile securityprofiletype=virus | extend actions=display / exporttoexcel with mlav-policy-action information
 * type=securityprofile securityprofiletype=virus | new 'filter=(av.action is.best-practice) / (av.wildfire-action is.best-practice) / (av.mlav-action is.best-practice)'
 * type=rule | actions=description-append/-prepend | extend with variables $$comma$$ or $$forwardslash$$ or $$colon$$ or $$pipe$$ or $$newline$$ in argument
+* type=rule actions=description-Replace-Character | introduce variabel $$space$$
 
 BUGFIX:
 * type=xpath "filter-xpath=XYZ" in=api://{MGMT-IP} | bugfix for API mode to display correct filtered xpath

@@ -2991,6 +2991,8 @@ RuleCallContext::$supportedActions[] = array(
             $newName = str_replace('$$pipe$$', "|", $newName);
         if( strpos($newName, '$$newline$$') !== FALSE )
             $newName = str_replace('$$newline$$', "\n", $newName);
+        if( strpos($newName, '$$space$$') !== FALSE )
+            $newName = str_replace('$$space$$', " ", $newName);
 
         if( strpos($newName, '$$current.name$$') !== FALSE )
         {
@@ -3028,7 +3030,7 @@ RuleCallContext::$supportedActions[] = array(
             'help' =>
                 "This string is used to compose a name. You can use the following aliases :\n" .
                 "  - \$\$current.name\$\$ : current name of the object\n" .
-                "  - \$\$comma\$\$ or \$\$forwardslash\$\$ or \$\$colon\$\$ or \$\$pipe\$\$ or \$\$newline\$\$ ; example 'actions=description-append:\$\$comma\$\$word1'"
+                "  - \$\$comma\$\$ or \$\$forwardslash\$\$ or \$\$colon\$\$ or \$\$pipe\$\$ or \$\$newline\$\$ or \$\$space\$\$ ; example 'actions=description-append:\$\$comma\$\$word1'"
         ),
         'newline' => array('type' => 'bool', 'default' => 'no'))
 );
@@ -3054,6 +3056,8 @@ RuleCallContext::$supportedActions[] = array(
             $textToPrepend = str_replace('$$pipe$$', "|", $textToPrepend);
         if( strpos($textToPrepend, '$$newline$$') !== FALSE )
             $textToPrepend = str_replace('$$newline$$', "\n", $textToPrepend);
+        if( strpos($textToPrepend, '$$space$$') !== FALSE )
+            $textToPrepend = str_replace('$$space$$', " ", $textToPrepend);
 
         if( $context->object->owner->owner->version < 71 )
             $max_length = 253;
@@ -3081,7 +3085,7 @@ RuleCallContext::$supportedActions[] = array(
             'default' => '*nodefault*',
             'help' =>
                 "This string is used to compose a name. You can use the following aliases :\n" .
-                "  - \$\$comma\$\$ or \$\$forwardslash\$\$ or \$\$colon\$\$ or \$\$pipe\$\$ or \$\$newline\$\$ ; example 'actions=description-prepend:\$\$comma\$\$word1'"
+                "  - \$\$comma\$\$ or \$\$forwardslash\$\$ or \$\$colon\$\$ or \$\$pipe\$\$ or \$\$newline\$\$ or \$\$space\$\$ ; example 'actions=description-prepend:\$\$comma\$\$word1'"
         ),
         'newline' => array('type' => 'bool', 'default' => 'no')
 
@@ -3107,6 +3111,8 @@ RuleCallContext::$supportedActions[] = array(
             $characterToreplace = str_replace('$$pipe$$', "|", $characterToreplace);
         if( strpos($characterToreplace, '$$newline$$') !== FALSE )
             $characterToreplace = str_replace('$$newline$$', "\n", $characterToreplace);
+        if( strpos($characterToreplace, '$$space$$') !== FALSE )
+            $characterToreplace = str_replace('$$space$$', " ", $characterToreplace);
         if( strpos($characterToreplace, '$$appRID#$$') !== FALSE )
         {
             $characterToreplace = str_replace('$$appRID#$$', "appRID#[0-9]+", $characterToreplace);
@@ -3125,6 +3131,8 @@ RuleCallContext::$supportedActions[] = array(
             $characterForreplace = str_replace('$$pipe$$', "|", $characterForreplace);
         if( strpos($characterForreplace, '$$newline$$') !== FALSE )
             $characterForreplace = str_replace('$$newline$$', "\n", $characterForreplace);
+        if( strpos($characterForreplace, '$$space$$') !== FALSE )
+            $characterForreplace = str_replace('$$space$$', " ", $characterForreplace);
 
         $description = $object->description();
 
@@ -3158,7 +3166,7 @@ RuleCallContext::$supportedActions[] = array(
         'search' => array('type' => 'string', 'default' => '*nodefault*'),
         'replace' => array('type' => 'string', 'default' => '')
     ),
-    'help' => 'possible variable $$comma$$ or $$forwardslash$$ or $$colon$$ or $$pipe$$ or $$newline$$ or $$appRID#$$; example "actions=description-Replace-Character:$$comma$$word1"'
+    'help' => 'possible variable $$comma$$ or $$forwardslash$$ or $$colon$$ or $$pipe$$ or $$newline$$ or $$space$$ or $$appRID#$$; example "actions=description-Replace-Character:$$comma$$word1"'
 );
 
 //                                                   //

@@ -446,10 +446,11 @@ RQuery::$defaultFilters['address']['name']['operators']['regex'] = array(
 
         if( strlen($value) == 0 )
             return FALSE;
-        if( strpos($value, '//') !== FALSE )
-            return FALSE;
+        #if( strpos($value, '//') !== FALSE )
+        #    return FALSE;
 
-        if( !$object->isGroup() && !$object->isRegion() && $object->isType_TMP() )
+        #if( !$object->isGroup() && !$object->isRegion() && $object->isType_TMP() )
+        if( $object->isType_TMP() )
             return FALSE;
 
         $matching = preg_match($value, $object->name());

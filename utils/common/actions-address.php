@@ -2236,6 +2236,8 @@ AddressCallContext::$supportedActions[] = array(
             $characterToreplace = str_replace('$$colon$$', ":", $characterToreplace);
         if( strpos($characterToreplace, '$$pipe$$') !== FALSE )
             $characterToreplace = str_replace('$$pipe$$', "|", $characterToreplace);
+        if( strpos($characterToreplace, '$$space$$') !== FALSE )
+            $characterToreplace = str_replace('$$space$$', " ", $characterToreplace);
 
         $characterForreplace = $context->arguments['replace'];
         if( strpos($characterForreplace, '$$comma$$') !== FALSE )
@@ -2246,6 +2248,8 @@ AddressCallContext::$supportedActions[] = array(
             $characterForreplace = str_replace('$$colon$$', ":", $characterForreplace);
         if( strpos($characterForreplace, '$$pipe$$') !== FALSE )
             $characterForreplace = str_replace('$$pipe$$', "|", $characterForreplace);
+        if( strpos($characterForreplace, '$$space$$') !== FALSE )
+            $characterForreplace = str_replace('$$space$$', " ", $characterForreplace);
 
         $description = $object->description();
 
@@ -2274,7 +2278,7 @@ AddressCallContext::$supportedActions[] = array(
         'search' => array('type' => 'string', 'default' => '*nodefault*'),
         'replace' => array('type' => 'string', 'default' => '')
     ),
-    'help' => 'possible variable $$comma$$ or $$forwardslash$$ or $$colon$$ or $$pipe$$; example "actions=description-Replace-Character:$$comma$$word1"'
+    'help' => 'possible variable $$comma$$ or $$forwardslash$$ or $$colon$$ or $$pipe$$  or $$pipe$$; example "actions=description-Replace-Character:$$comma$$word1"'
 );
 AddressCallContext::$supportedActions[] = array(
     'name' => 'value-host-object-add-netmask-m32',
