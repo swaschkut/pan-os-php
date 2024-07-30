@@ -108,10 +108,11 @@ trait SOPHOSservice
                 {
                     $tmp_service_group = $this->sub->serviceStore->newServiceGroup($srv_name);
                 }
+                PH::print_stdout("Group found: '".$tmp_service_group->name()."'");
 
                 $tmp_found = FALSE;
                 $src_array = explode(",", $policy['members']);
-                print "- set group members: ";
+                print "\n- set group members: ";
                 foreach( $src_array as $members )
                 {
                     #print "src_ref:".$source."\n";
