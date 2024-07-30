@@ -109,7 +109,13 @@ trait SOPHOSservice
                     $tmp_service_group = $this->sub->serviceStore->newServiceGroup($srv_name);
                 }
                 PH::print_stdout();
-                PH::print_stdout("Group found: '".$tmp_service_group->name()."'");
+                PH::print_stdout("object found: '".$tmp_service_group->name()."'");
+                /** @var ServiceGroup $tmp_service_group */
+                if( !$tmp_service_group->isGroup() )
+                {
+                    PH::print_stdout("object is NOT a Group - full part skipped - Service with same name available, please rename");
+                    continue;
+                }
 
                 $tmp_found = FALSE;
                 $src_array = explode(",", $policy['members']);
