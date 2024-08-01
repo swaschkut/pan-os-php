@@ -555,6 +555,24 @@ SecurityProfileCallContext::$supportedActions[] = array(
 
                     $lines .= $context->encloseFunction( $tmp_array );
                 }
+                elseif( !empty( $object->tmp_virus_prof_array ) )
+                {
+                    $array = array();
+                    foreach( $object->tmp_virus_prof_array as $key => $type )
+                    {
+                        $string = $type;
+                        if( isset( $object->$type['action'] ) )
+                            $string .= "          - action:          '" . $object->$type['action'] . "'";
+
+                        if( isset( $object->$type['wildfire-action'] ) )
+                            $string .=  "          - wildfire-action: '" . $object->$type['wildfire-action'] . "'";
+
+                        if( isset( $object->$type['mlav-action'] ) )
+                            $string .= "          - mlav-action: '" . $object->$type['mlav-action'] . "'";
+                        $array[] = $string;
+                    }
+                    $lines .= $context->encloseFunction($array);
+                }
                 else
                     $lines .= $context->encloseFunction('');
 
