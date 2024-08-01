@@ -4237,7 +4237,7 @@ DeviceCallContext::$supportedActions['system-admin-session'] = array(
         'action' => array('type' => 'string', 'default' => 'display'),
         'idle-since-hours' => array('type' => 'string', 'default' => '8')
     ),
-    'help' => "This Action is displaying the actual logged in admin sessions"
+    'help' => "This Action is displaying the actual logged in admin sessions | possible action 'display' 'delete'"
 );
 
 DeviceCallContext::$supportedActions[] = array(
