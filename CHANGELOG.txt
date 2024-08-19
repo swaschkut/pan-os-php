@@ -1,6 +1,14 @@
 CHANGELOG
 
-2.1.26
+2.1.27
+UTIL:
+
+BUGFIX:
+
+GENERAL:
+
+
+2.1.26 (20240819)
 UTIL:
 * type=rule ruletype=security actions=exporttoexcel:file.html - extend securityRule with type of universal/intrazone/interzone
 * type=upload in={FILE} out={FILE} | exend to support preserveXYZ arguments
