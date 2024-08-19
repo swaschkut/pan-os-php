@@ -60,6 +60,7 @@ GENERAL:
 * update Device App-ID to version: 8873-885
 * introduce new CLASSES ThreatPolicy/ThreatPolicySpyware/ThreatPolicyStore/ThreatPolicyVulnerability
 * update docker file
+* class CallContext | change error out behaviour if actions are missing additional argument - no backtrace print
 
 
 2.1.25 (20240705)
