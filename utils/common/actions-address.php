@@ -1083,6 +1083,39 @@ AddressCallContext::$supportedActions[] = array(
 );
 
 AddressCallContext::$supportedActions[] = array(
+    'name' => 'replaceByMembers',
+    'MainFunction' => function (AddressCallContext $context) {
+        $object = $context->object;
+
+        if( !$object->isGroup() )
+        {
+            $string = "it's not a group";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
+        if( $object->owner === null )
+        {
+            $string = "object was previously removed";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
+        $object->replaceByMembers($context, FALSE, $context->isAPI);
+    },
+    'args' => array(
+        'keepgroupname' => array(
+            'type' => 'string',
+            'default' => '*nodefault*',
+            'choices' => array('tag', 'description'),
+            'help' =>
+                "- replaceByMembersAndDelete:tag -> create Tag with name from AddressGroup name and add to the object\n" .
+                "- replaceByMembersAndDelete:description -> create Tag with name from AddressGroup name and add to the object\n"
+        )
+    )
+);
+
+AddressCallContext::$supportedActions[] = array(
     'name' => 'name-Rename',
     'MainFunction' => function (AddressCallContext $context) {
         $object = $context->object;

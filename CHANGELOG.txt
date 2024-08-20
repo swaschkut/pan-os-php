@@ -2,6 +2,7 @@ CHANGELOG
 
 2.1.27
 UTIL:
+* type=address | introduce actions=replaceByMebmers:{tag/description} | to be flexible to keep addressgroup
 
 BUGFIX:
 
