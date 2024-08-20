@@ -7,6 +7,19 @@ maintainable and allowing complex scenarios like rule merging, unused object tra
 conversion of checkpoint exclusion groups, massive rule editing, AppID conversion … . 
 It will work seamlessly on PAN-OS local xml config file or PAN-OS API.
 
+Support Me
+----------
+
+Do you like PAN-OS-PHP? Are you looking forward to the **new features**?
+
+
+<a href="https://buymeacoffee.com/panosphp">US Dollar<img src="bmc_gq.png" alt="PayPal or credit/debit card" width="254" height="248"></a>
+
+
+<a href="https://pan-os-php.sumupstore.com/products">EUR</a>
+
+Thank you!
+
 INSTALLATION
 ============
 
