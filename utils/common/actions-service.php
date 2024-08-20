@@ -899,6 +899,22 @@ ServiceCallContext::$supportedActions[] = array(
 );
 
 ServiceCallContext::$supportedActions[] = array(
+    'name' => 'replaceByMembers',
+    'MainFunction' => function (ServiceCallContext $context) {
+        $object = $context->object;
+
+        if( !$object->isGroup() )
+        {
+            $string = "this is not a group";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
+        $object->replaceByMembers($context, FALSE, $context->isAPI);
+    },
+);
+
+ServiceCallContext::$supportedActions[] = array(
     'name' => 'name-addPrefix',
     'MainFunction' => function (ServiceCallContext $context) {
         $object = $context->object;
