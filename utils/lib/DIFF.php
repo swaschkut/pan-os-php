@@ -209,13 +209,18 @@ class DIFF extends UTIL
             $origDoc1->load($file1, XML_PARSE_BIG_LINES);
 
             #print PH::$args['filter']."\n";
-            $pattern = "/(.*)[0-9]{4,5}name[0-9]{4,5}(.*)/i";
+            $pattern = "/(.*)\dname\d(.*)/i";
             $matches = null;
             if( isset(PH::$args['filter']) and preg_match( $pattern, PH::$args['filter'], $matches  ) )
             {
+                #print "pattern: ".$pattern."\n";
                 $substring = str_replace( $matches[1], "", PH::$args['filter'] );
+                #print "substring1: ".$substring."\n";
                 $substring = str_replace( $matches[2], "", $substring );
+                #print "substring2: ".$substring."\n";
                 $pid = explode( "name", $substring );
+                #print "pid: \n";
+                #print_r($pid);
                 $this->replace = $pid[0];
 
 
@@ -230,14 +235,13 @@ class DIFF extends UTIL
                 $name1 = PH::$args['name1'];
                 if( isset( $name1 ) )
                 {
-                    #print "name1: ".$name1."\n";
                     $xpath1 = str_replace( $this->replace."name".$this->replace, $name1, $xpath );
                     $doc1Root = DH::findXPathSingleEntry($xpath1, $doc1);
 
                     if( $doc1Root )
                         DH::makeElementAsRoot( $doc1Root, $doc1 );
                     else
-                        $this->display_error_usage_exit('"filter" argument is not a valid xPATH');
+                        $this->display_error_usage_exit('"filter" argument is not a valid xPATH or not available | xpath1: "'.$xpath1.'"');
                 }
                 else
                     $this->display_error_usage_exit('"name1" is missing from arguments');
@@ -245,11 +249,13 @@ class DIFF extends UTIL
                 $name2 = PH::$args['name2'];
                 if( isset($name2) )
                 {
-                    #print "name2: ".$name2."\n";
                     $xpath2 = str_replace( $this->replace."name".$this->replace, $name2, $xpath );
                     $doc2Root = DH::findXPathSingleEntry($xpath2, $doc2);
 
-                    DH::makeElementAsRoot( $doc2Root, $doc2 );
+                    if( $doc2Root )
+                        DH::makeElementAsRoot( $doc2Root, $doc2 );
+                    else
+                        $this->display_error_usage_exit('"filter" argument is not a valid xPATH or not available | xpath2: "'.$xpath2.'"');
                 }
                 else
                      $this->display_error_usage_exit('"name2" is missing from arguments');
