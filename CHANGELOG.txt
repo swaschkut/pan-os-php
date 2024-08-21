@@ -2,11 +2,12 @@ CHANGELOG
 
 2.1.27
 UTIL:
-* type=address | introduce actions=replaceByMebmers:{tag/description} | to be flexible to keep addressgroup
-* type=service | introduce actions=replaceByMebmers | to be flexible to keep servicegroup
+* type=address | introduce actions=replaceByMembers:{tag/description} | to be flexible to keep addressgroup
+* type=service | introduce actions=replaceByMembers | to be flexible to keep servicegroup
 * type=interface | introduce actions=exporttoexcel:interface.html
 * type=diff | change of default-behavour for FILTER variable | due too bash pid you need to use now {{name}}
 * type=diff | extend argument filter with name1 / name2 for API mode
+* type=address | extend actions=name-rename:$$tag$$ - to possible rename address object to first attached tag object name
 
 BUGFIX:
 * type=diff file1=diff.xml "filter=/config/devices/entry[@name='localhost.localdomain']/device-group/entry[@name='{{name}}']/pre-rulebase" name1=DG1 name2=DG2 | correction of pregmatch

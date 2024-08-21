@@ -263,10 +263,6 @@ class DIFF extends UTIL
             $origDoc1 = new DOMDocument();
             $origDoc1->load($file1, XML_PARSE_BIG_LINES);
 
-            #print PH::$args['filter']."\n";
-            $pattern = "/(.*)\d+\.?\d*name\d+\.?\d*(.*)/";
-            $pattern = "/(.*)[0-9]+name[0-9]+(.*)/";
-
             $pattern = "/(.*)\{\{name\}\}(.*)/";
 
             $matches = null;
@@ -284,7 +280,6 @@ class DIFF extends UTIL
 
                 $filterArgument = PH::$args['filter'];
                 $xpath = $filterArgument;
-                #print "filter: ".$filterArgument."\n";
 
                 $name1 = PH::$args['name1'];
                 if( isset( $name1 ) )

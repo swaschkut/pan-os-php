@@ -1217,7 +1217,18 @@ AddressCallContext::$supportedActions[] = array(
 
             $newName = str_replace('$$reverse-dns$$', $reverseDns, $newName);
         }
+        if( strpos($newName, '$$tag$$') !== FALSE )
+        {
+            $tmp_tags = $object->tags->getAll();
+            if( count($tmp_tags) > 0 )
+            {
+                $firstTag = reset($tmp_tags);
+                $newName = str_replace('$$tag$$', $firstTag->name(), $newName);
+            }
+            else
+                $newName = str_replace('$$tag$$', "", $newName);
 
+        }
 
         if( $object->name() == $newName )
         {
@@ -1266,7 +1277,8 @@ AddressCallContext::$supportedActions[] = array(
             "  - \$\$netmask.blank32\$\$ : netmask or nothing if 32\n" .
             "  - \$\$reverse-dns\$\$ : value truncated of netmask if any\n" .
             "  - \$\$value\$\$ : value of the object\n" .
-            "  - \$\$value.no-netmask\$\$ : value truncated of netmask if any\n")
+            "  - \$\$value.no-netmask\$\$ : value truncated of netmask if any\n" .
+            "  - \$\$tag\$\$ : name of first tag object - if no tag attached '' blank\n")
     ),
     'help' => ''
 );
