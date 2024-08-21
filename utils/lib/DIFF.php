@@ -181,13 +181,65 @@ class DIFF extends UTIL
                     $connector->setShowApiCalls(TRUE);
                 PH::print_stdout( " - Downloading config from API... ");
 
-                PH::print_stdout( "Opening ORIGINAL 'RunningConfig' XML file... ");
-                $doc1 = $connector->getRunningConfig();
+                /////////////////////////////////////////
+                /// //duplicate code, see below
+                $pattern = "/(.*)\{\{name\}\}(.*)/";
 
+                $matches = null;
+                if( isset(PH::$args['filter']) and preg_match( $pattern, PH::$args['filter'], $matches  ) )
+                {
+                    PH::print_stdout( "Opening COMPARE 'CandidateConfig' XML file... ");
+                    $doc1 = $connector->getCandidateConfig();
 
-                PH::print_stdout( "Opening COMPARE 'Candidate' XML file... ");
-                $doc2 = $connector->getCandidateConfig();
+                    $substring = str_replace( $matches[1], "", PH::$args['filter'] );
+                    $substring = str_replace( $matches[2], "", $substring );
+                    $pid = explode( "name", $substring );
+                    $this->replace1 = $pid[0];
+                    $this->replace2 = $pid[1];
 
+                    //specific for API mode
+                    #$doc2 = $connector->getCandidateConfig();
+                    $doc2 = new DOMDocument();
+                    $doc2->loadXML($doc1->saveXML(), XML_PARSE_BIG_LINES);
+
+                    $filterArgument = PH::$args['filter'];
+                    $xpath = $filterArgument;
+
+                    $name1 = PH::$args['name1'];
+                    if( isset( $name1 ) )
+                    {
+                        $xpath1 = str_replace( $this->replace1."name".$this->replace2, $name1, $xpath );
+                        $doc1Root = DH::findXPathSingleEntry($xpath1, $doc1);
+                        if( $doc1Root )
+                            DH::makeElementAsRoot( $doc1Root, $doc1 );
+                        else
+                            derr('"filter" argument is not a valid xPATH or not available | xpath1: "'.$xpath1.'"', null, FALSE);
+                    }
+                    else
+                        $this->display_error_usage_exit('"name1" is missing from arguments');
+
+                    $name2 = PH::$args['name2'];
+                    if( isset($name2) )
+                    {
+                        $xpath2 = str_replace( $this->replace1."name".$this->replace2, $name2, $xpath );
+                        $doc2Root = DH::findXPathSingleEntry($xpath2, $doc2);
+                        if( $doc2Root )
+                            DH::makeElementAsRoot( $doc2Root, $doc2 );
+                        else
+                            derr('"filter" argument is not a valid xPATH or not available | xpath2: "'.$xpath2.'"', null, FALSE);
+                    }
+                    else
+                        $this->display_error_usage_exit('"name2" is missing from arguments');
+                }
+                /////////////////////////////////////////
+                else
+                {
+                    PH::print_stdout( "Opening ORIGINAL 'RunningConfig' XML file... ");
+                    $doc1 = $connector->getRunningConfig();
+
+                    PH::print_stdout( "Opening COMPARE 'Candidate' XML file... ");
+                    $doc2 = $connector->getCandidateConfig();
+                }
             }
             else
                 false('only API is supported', null, false);
@@ -220,19 +272,11 @@ class DIFF extends UTIL
             $matches = null;
             if( isset(PH::$args['filter']) and preg_match( $pattern, PH::$args['filter'], $matches  ) )
             {
-                #print "pattern: ".$pattern."\n";
-                #print "matches: \n";
-                #print_r($matches);
                 $substring = str_replace( $matches[1], "", PH::$args['filter'] );
-                #print "substring1: ".$substring."\n";
                 $substring = str_replace( $matches[2], "", $substring );
-                #print "substring2: ".$substring."\n";
                 $pid = explode( "name", $substring );
-                #print "pid: \n";
-                #print_r($pid);
                 $this->replace1 = $pid[0];
                 $this->replace2 = $pid[1];
-
 
                 $doc2 = new DOMDocument();
                 if( $doc2->load($file1, XML_PARSE_BIG_LINES) === FALSE )
@@ -251,17 +295,7 @@ class DIFF extends UTIL
                     if( $doc1Root )
                         DH::makeElementAsRoot( $doc1Root, $doc1 );
                     else
-                    {
-                        /*
-                        $array = explode( "/", $xpath1 );
-                        $last = end($array);
-                        $newDoc = new DOMDocument();
-                        $newDoc->loadXML("<".$last."/>");
-
-                        $doc2 = DH::findFirstElement($last, $newDoc);
-                        */
                         $this->display_error_usage_exit('"filter" argument is not a valid xPATH or not available | xpath1: "'.$xpath1.'"');
-                    }
                 }
                 else
                     $this->display_error_usage_exit('"name1" is missing from arguments');
@@ -275,17 +309,7 @@ class DIFF extends UTIL
                     if( $doc2Root )
                         DH::makeElementAsRoot( $doc2Root, $doc2 );
                     else
-                    {
-                        /*
-                        $array = explode( "/", $xpath2 );
-                        $last = end($array);
-                        $newDoc = new DOMDocument();
-                        $newDoc->loadXML("<".$last."/>");
-
-                        $doc2 = DH::findFirstElement($last, $newDoc);
-                        */
                         $this->display_error_usage_exit('"filter" argument is not a valid xPATH or not available | xpath2: "'.$xpath2.'"');
-                    }
                 }
                 else
                      $this->display_error_usage_exit('"name2" is missing from arguments');
@@ -311,7 +335,7 @@ class DIFF extends UTIL
             }
         }
 
-        if( isset(PH::$args['filter']) and strpos( PH::$args['filter'], $this->replace."name".$this->replace ) === FALSE )
+        if( isset(PH::$args['filter']) and strpos( PH::$args['filter'], $this->replace1."name".$this->replace2 ) === FALSE )
         {
             if( file_exists( PH::$args['filter'] ) )
             {
