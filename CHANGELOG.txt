@@ -8,7 +8,7 @@ UTIL:
 * type=diff | change of default-behavour for FILTER variable | due too bash pid you need to use now {{name}}
 * type=diff | extend argument filter with name1 / name2 for API mode
 * type=address | extend actions=name-rename:$$tag$$ - to possible rename address object to first attached tag object name
-* type=securityprofile/securityprofilegroup | 'filter=(refstore is.only XYZ)'
+* type=securityprofile | 'filter=(refstore is.only XYZ)'
 
 BUGFIX:
 * type=diff file1=diff.xml "filter=/config/devices/entry[@name='localhost.localdomain']/device-group/entry[@name='{{name}}']/pre-rulebase" name1=DG1 name2=DG2 | correction of pregmatch

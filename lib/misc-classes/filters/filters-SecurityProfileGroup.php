@@ -352,29 +352,6 @@ RQuery::$defaultFilters['securityprofilegroup']['refstore']['operators']['is'] =
         'input' => 'input/panorama-8.0.xml'
     )
 );
-RQuery::$defaultFilters['securityprofilegroup']['refstore']['operators']['is.only'] = array(
-    'Function' => function (SecurityprofilegroupRQueryContext $context) {
-        $value = $context->value;
-        $value = strtolower($value);
-
-        $context->object->ReferencesStoreValidation($value);
-
-        $refstore = $context->object->getReferencesStore();
-        $return = FALSE;
-        if( array_key_exists($value, $refstore) )
-            $return = TRUE;
-
-        if( count($refstore) == 1 && $return )
-            return TRUE;
-        else
-            return FALSE;
-    },
-    'arg' => TRUE,
-    'ci' => array(
-        'fString' => '(%PROP% rulestore )',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
 RQuery::$defaultFilters['securityprofilegroup']['reftype']['operators']['is'] = array(
     'Function' => function (SecurityprofilegroupRQueryContext $context) {
         $value = $context->value;
