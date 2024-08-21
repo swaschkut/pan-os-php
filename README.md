@@ -14,11 +14,17 @@ Do you like PAN-OS-PHP? Are you looking forward to the **new features**?
 
 ============
 
-<a href="https://buymeacoffee.com/panosphp" target="_blank">US Dollar<img src="https://github.com/swaschkut/pan-os-php/blob/develop_2-1-X/bmc_qr-2.png" alt="PayPal or credit/debit card" width="254" height="248"></a>
+<a href="https://buymeacoffee.com/panosphp" target="_blank">
+US Dollar</br>
+<img src="https://github.com/swaschkut/pan-os-php/blob/develop_2-1-X/bmc_qr-2.png" alt="PayPal or credit/debit card" width="254" height="248">
+</a>
 
 ============
 
-<a href="https://pan-os-php.sumupstore.com/products" target="_blank">EUR<img src="https://github.com/swaschkut/pan-os-php/blob/develop_2-1-X/sumup.jpeg" alt="PayPal or credit/debit card" width="254" height="248"></a>
+<a href="https://pan-os-php.sumupstore.com/products" target="_blank">
+EUR</br>
+<img src="https://github.com/swaschkut/pan-os-php/blob/develop_2-1-X/sumup.jpeg" alt="PayPal or credit/debit card" width="254" height="248">
+</a>
 
 ============
 
