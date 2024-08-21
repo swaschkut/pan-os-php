@@ -4,7 +4,7 @@
 /**
  * @property $_ip4Map IP4Map cached ip start and end value for fast optimization
  */
-class AntiSpywareProfile
+class AntiSpywareProfile extends SecurityProfile2
 {
     use ReferenceableObject;
     use PathableName;
@@ -427,6 +427,25 @@ class AntiSpywareProfile
         #PH::print_stdout();
     }
 
+    public function spyware_dnslist_best_practice()
+    {
+        if( $this->secprof_type != 'spyware' )
+            return null;
+
+        if( isset($this->additional['botnet-domain']) && isset($this->additional['botnet-domain']['lists']) )
+        {
+            foreach( $this->additional['botnet-domain']['lists'] as $name => $array)
+            {
+                if( $name == "default-paloalto-dns" )
+                {
+                    if( isset($name['action']) && $array['action'] == "sinkhole" )
+                        return TRUE;
+                }
+            }
+        }
+
+        return FALSE;
+    }
 
     static $templatexml = '<entry name="**temporarynamechangeme**"></entry>';
 

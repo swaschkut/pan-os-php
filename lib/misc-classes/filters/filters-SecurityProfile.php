@@ -822,6 +822,12 @@ RQuery::$defaultFilters['securityprofile']['cloud-inline-analysis']['operators']
     'Function' => function (SecurityProfileRQueryContext $context) {
         /** @var VulnerabilityProfile|AntiSpywareProfile $object */
         $object = $context->object;
+
+        if( $object->secprof_type != 'spyware' and $object->secprof_type != 'vulnerability' and $object->secprof_type != 'virus' )
+            return null;
+
+        return $object->cloud_inline_analysis_best_practice();
+        /*
         $bestpractise = FALSE;
 
         if( $object->secprof_type != 'spyware' and $object->secprof_type != 'vulnerability' and $object->secprof_type != 'virus' )
@@ -867,6 +873,7 @@ RQuery::$defaultFilters['securityprofile']['cloud-inline-analysis']['operators']
         }
 
         return $bestpractise;
+        */
     },
     'arg' => false,
     'help' => "'securityprofiletype=spyware,vulnerability'"
@@ -876,6 +883,13 @@ RQuery::$defaultFilters['securityprofile']['av.action']['operators']['is.best-pr
     'Function' => function (SecurityProfileRQueryContext $context) {
         /** @var VulnerabilityProfile|AntiSpywareProfile $object */
         $object = $context->object;
+
+        if( $object->secprof_type != 'virus' )
+            return null;
+
+        return $object->av_action_best_practice();
+
+        /*
         $bestpractise = FALSE;
 
         if( $object->secprof_type != 'virus' )
@@ -903,6 +917,7 @@ RQuery::$defaultFilters['securityprofile']['av.action']['operators']['is.best-pr
         }
 
         return $bestpractise;
+        */
     },
     'arg' => false,
     'help' => "'securityprofiletype=virus'"
@@ -911,6 +926,12 @@ RQuery::$defaultFilters['securityprofile']['av.wildfire-action']['operators']['i
     'Function' => function (SecurityProfileRQueryContext $context) {
         /** @var VulnerabilityProfile|AntiSpywareProfile $object */
         $object = $context->object;
+
+        if( $object->secprof_type != 'virus' )
+            return null;
+
+        return $object->av_wildfireaction_best_practice();
+        /*
         $bestpractise = FALSE;
 
         if( $object->secprof_type != 'virus' )
@@ -938,6 +959,7 @@ RQuery::$defaultFilters['securityprofile']['av.wildfire-action']['operators']['i
         }
 
         return $bestpractise;
+        */
     },
     'arg' => false,
     'help' => "'securityprofiletype=virus'"
@@ -946,6 +968,12 @@ RQuery::$defaultFilters['securityprofile']['av.mlav-action']['operators']['is.be
     'Function' => function (SecurityProfileRQueryContext $context) {
         /** @var VulnerabilityProfile|AntiSpywareProfile $object */
         $object = $context->object;
+
+        if( $object->secprof_type != 'virus' )
+            return null;
+
+        return $object->av_mlavaction_best_practice();
+        /*
         $bestpractise = FALSE;
 
         if( $object->secprof_type != 'virus' )
@@ -976,6 +1004,7 @@ RQuery::$defaultFilters['securityprofile']['av.mlav-action']['operators']['is.be
         }
 
         return $bestpractise;
+        */
     },
     'arg' => false,
     'help' => "'securityprofiletype=virus'"
@@ -1020,6 +1049,11 @@ RQuery::$defaultFilters['securityprofile']['dns-list']['operators']['is.best-pra
         if( $object->secprof_type != 'spyware' )
             return null;
 
+        return $object->spyware_dnslist_best_practice();
+        /*
+        if( $object->secprof_type != 'spyware' )
+            return null;
+
         if( isset($object->additional['botnet-domain']) && isset($object->additional['botnet-domain']['lists']) )
         {
             foreach( $object->additional['botnet-domain']['lists'] as $name => $array)
@@ -1033,6 +1067,7 @@ RQuery::$defaultFilters['securityprofile']['dns-list']['operators']['is.best-pra
         }
 
         return FALSE;
+        */
     },
     'arg' => false,
     'help' => "'securityprofiletype=spyware' e.g. 'filter=(dns-list is.best-practice)'"

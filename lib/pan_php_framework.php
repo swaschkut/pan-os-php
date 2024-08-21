@@ -247,6 +247,7 @@ require_once $basedir . '/object-classes/SecurityProfileStore.php';
 require_once $basedir . '/object-classes/SecurityProfileGroupStore.php';
 require_once $basedir . '/object-classes/SecurityProfileGroup.php';
 require_once $basedir . '/object-classes/SecurityProfile.php';
+require_once $basedir . '/object-classes/SecurityProfile2.php';
 require_once $basedir . '/object-classes/URLProfile.php';
 require_once $basedir . '/object-classes/AntiVirusProfile.php';
 

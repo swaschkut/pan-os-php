@@ -4,7 +4,7 @@
 /**
  * @property $_ip4Map IP4Map cached ip start and end value for fast optimization
  */
-class AntiVirusProfile
+class AntiVirusProfile extends SecurityProfile2
 {
     use ReferenceableObject;
     use PathableName;
@@ -279,6 +279,101 @@ class AntiVirusProfile
         }
     }
 
+    public function av_action_best_practice()
+    {
+        $bestpractise = FALSE;
+
+        if( $this->secprof_type != 'virus' )
+            return null;
+
+        if( isset($this->tmp_virus_prof_array) )
+        {
+            foreach( $this->tmp_virus_prof_array as $key => $type )
+            {
+                if( $type == "ftp" || $type == "http" || $type == "http2" || $type == "smb" )
+                {
+                    if( $this->$type['action'] == "reset-both" || $this->$type['action'] == "default" )
+                        $bestpractise = TRUE;
+                    else
+                        return False;
+                }
+                else
+                {
+                    if( $this->$type['action'] == "reset-both" )
+                        $bestpractise = TRUE;
+                    else
+                        return FALSE;
+                }
+            }
+        }
+
+        return $bestpractise;
+    }
+
+    public function av_wildfireaction_best_practice()
+    {
+        $bestpractise = FALSE;
+
+        if( $this->secprof_type != 'virus' )
+            return null;
+
+        if( isset($this->tmp_virus_prof_array) )
+        {
+            foreach( $this->tmp_virus_prof_array as $key => $type )
+            {
+                if( $type == "ftp" || $type == "http" || $type == "http2" || $type == "smb" )
+                {
+                    if( $this->$type['wildfire-action'] == "reset-both" || $this->$type['wildfire-action'] == "default" )
+                        $bestpractise = TRUE;
+                    else
+                        return False;
+                }
+                else
+                {
+                    if( $this->$type['wildfire-action'] == "reset-both" )
+                        $bestpractise = TRUE;
+                    else
+                        return False;
+                }
+            }
+        }
+
+        return $bestpractise;
+    }
+
+    public function av_mlavaction_best_practice()
+    {
+        $bestpractise = FALSE;
+
+        if( $this->secprof_type != 'virus' )
+            return null;
+
+        if( isset($this->tmp_virus_prof_array) )
+        {
+            foreach( $this->tmp_virus_prof_array as $key => $type )
+            {
+                if( isset( $this->$type['mlav-action'] ) )
+                {
+                    if( $type == "ftp" || $type == "http" || $type == "http2" || $type == "smb" )
+                    {
+                        if( $this->$type['mlav-action'] == "reset-both" || $this->$type['mlav-action'] == "default" )
+                            $bestpractise = TRUE;
+                        else
+                            return False;
+                    }
+                    else
+                    {
+                        if( $this->$type['mlav-action'] == "reset-both" )
+                            $bestpractise = TRUE;
+                        else
+                            return False;
+                    }
+                }
+            }
+        }
+
+        return $bestpractise;
+    }
 
     static $templatexml = '<entry name="**temporarynamechangeme**"></entry>';
 
