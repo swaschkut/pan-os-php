@@ -225,15 +225,19 @@ class DeviceGroupRuleAppUsage
     public function getRuleUpdateTimestamp($ruleName, $SrcDst = false)
     {
         if( $SrcDst )
+        {
             if( isset($this->logsSrcDst[$ruleName]) )
             {
                 return $this->logsSrcDst[$ruleName]['timestamp'];
             }
+        }
         else
+        {
             if( isset($this->logs[$ruleName]) )
             {
                 return $this->logs[$ruleName]['timestamp'];
             }
+        }
 
         return null;
     }
@@ -242,11 +246,15 @@ class DeviceGroupRuleAppUsage
     public function resetRulesStats($ruleName, $SrcDst = false)
     {
         if( $SrcDst )
+        {
             if( isset($this->logsSrcDst[$ruleName]) )
                 unset($this->logsSrcDst[$ruleName]);
+        }
         else
+        {
             if( isset($this->logs[$ruleName]) )
                 unset($this->logs[$ruleName]);
+        }
     }
 
 
@@ -276,8 +284,10 @@ class DeviceGroupRuleAppUsage
         $apps = & $this->logs[$ruleName]['apps'];
 
         foreach($apps as $app )
+        {
             if(  ! array_search($app['name'], $ignoreApps) )
                 return true;
+        }
 
         return false;
 
@@ -286,17 +296,22 @@ class DeviceGroupRuleAppUsage
     public function createRuleStats($ruleName, $SrcDst = false)
     {
         if( $SrcDst )
+        {
             if( !isset($this->logsSrcDst[$ruleName]) )
             {
                 $record = Array( 'ips' => Array(), 'timestamp' => time() );
                 $this->logsSrcDst[$ruleName] = &$record;
             }
+        }
         else
+        {
             if( !isset($this->logs[$ruleName]) )
             {
                 $record = Array( 'apps' => Array(), 'timestamp' => time() );
                 $this->logs[$ruleName] = &$record;
+                print_r($this->logs[$ruleName]);
             }
+        }
     }
 
     public function updateRuleUpdateTimestamp($ruleName, $SrcDst = false)
