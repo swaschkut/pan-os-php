@@ -309,7 +309,6 @@ class DeviceGroupRuleAppUsage
             {
                 $record = Array( 'apps' => Array(), 'timestamp' => time() );
                 $this->logs[$ruleName] = &$record;
-                print_r($this->logs[$ruleName]);
             }
         }
     }
