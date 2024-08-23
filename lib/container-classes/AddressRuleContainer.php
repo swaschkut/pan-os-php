@@ -240,6 +240,19 @@ class AddressRuleContainer extends ObjRuleContainer
         return parent::has($object, $caseSensitive);
     }
 
+    /**
+     * return true/false based if object is EDL or not
+     * @return bool
+     */
+    public function hasEDL()
+    {
+        foreach( $this->o as $member)
+        {
+            if( get_class($member) == "EDL" )
+                return TRUE;
+        }
+        return FALSE;
+    }
 
     /**
      * return an array with all objects
