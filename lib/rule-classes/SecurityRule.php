@@ -63,7 +63,6 @@ class SecurityRule extends RuleWithUserID
     /** @var null|string[]|DOMElement */
     public $secprofroot = null;
     protected $secprofgroup = null;
-    public $secprofgroupUndefined = null;
     protected $secprofgroup_obj = null;
 
     protected $secprofProfiles = array();

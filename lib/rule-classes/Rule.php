@@ -33,6 +33,8 @@ class Rule
     protected $name = 'temporaryname';
     protected $disabled = FALSE;
 
+    public $secprofgroupUndefined = null;
+
     /**
      * @var ZoneRuleContainer
      */
