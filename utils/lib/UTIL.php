@@ -303,6 +303,7 @@ class UTIL
         $this->supportedArguments['shadow-displayxmlnode']= array('niceName' => 'shadow-displayxmlnode', 'shortHelp' => 'command to display XML node in addition to for actions=display');
         $this->supportedArguments['shadow-saseapiqa']= array('niceName' => 'shadow-saseapiqa', 'shortHelp' => 'command to use QA URLs for SASE API');
         $this->supportedArguments['shadow-loadreduce']= array('niceName' => 'shadow-loadreduce', 'shortHelp' => 'during config load do NOT load dynamic-addressgroup information from address objects TAG based part');
+        $this->supportedArguments['shadow-loaddghierarchy']= array('niceName' => 'shadow-loaddghierarchy', 'shortHelp' => 'load for location=DG the full hierarchy');
     }
 
     public function utilInit()
@@ -1726,7 +1727,7 @@ class UTIL
             }
             else
             {
-                if( $this->configType == 'panorama' && ($location == 'shared' || $location == 'any') )
+                if( $this->configType == 'panorama' && ($location == 'shared' || $location == 'any') || PH::$shadow_loaddghierarchy )
                 {
                     if( $this->utilType == 'address' )
                         $this->objectsToProcess[] = array('store' => $this->pan->addressStore, 'objects' => $this->pan->addressStore->all(null, TRUE));
@@ -1787,8 +1788,15 @@ class UTIL
 
                 foreach( $subGroups as $sub )
                 {
+                    $parentDGS = array();
+                    if( PH::$shadow_loaddghierarchy )
+                    {
+                        $DG_object = $this->pan->findDeviceGroup($location);
+                        $parentDGS = $DG_object->parentDeviceGroups();
+                    }
+
                     #if( ($location == 'any' || $location == 'all' || $location == $sub->name()) && !isset($ruleStoresToProcess[$sub->name() . '%pre']) )
-                    if( ($location == 'any' || $location == $sub->name()) && !isset($ruleStoresToProcess[$sub->name() . '%pre']) )
+                    if( ($location == 'any' || $location == $sub->name()) && !isset($ruleStoresToProcess[$sub->name() . '%pre']) || isset( $parentDGS[$sub->name()] ) )
                     {
                         if( $this->utilType == 'address' )
                             $this->objectsToProcess[] = array('store' => $sub->addressStore, 'objects' => $sub->addressStore->all(null, TRUE));

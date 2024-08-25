@@ -11,6 +11,7 @@ UTIL:
 * type=securityprofile | 'filter=(refstore is.only XYZ)'
 * type=appid-toolbox | extend testing scripts
 * type=rule | new 'filter=(src/dst has.edl)'
+* type=rule location={{DGNAME}} | introduce argument 'shadow-loaddghierarchy' to get full rule hierarchy from shared pre/parentDG pre-rule to childDG post-rule and shared post-rule
 
 BUGFIX:
 * type=diff file1=diff.xml "filter=/config/devices/entry[@name='localhost.localdomain']/device-group/entry[@name='{{name}}']/pre-rulebase" name1=DG1 name2=DG2 | correction of pregmatch

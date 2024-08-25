@@ -140,6 +140,14 @@ class PH
                     $argc--;
                 continue;
             }
+            elseif( $arg == 'shadow-loaddghierarchy' )
+            {
+                PH::$shadow_loaddghierarchy = TRUE;
+                unset(PH::$argv[$argIndex]);
+                if( !isset( $_SERVER['REQUEST_METHOD'] ) )
+                    $argc--;
+                continue;
+            }
         }
         unset($argIndex);
         unset($arg);
@@ -182,6 +190,7 @@ class PH
     public static $shadow_displayxmlnode = FALSE;
 
     public static $shadow_loadreduce = FALSE;
+    public static $shadow_loaddghierarchy = FALSE;
 
     public static $JSON_OUT = array();
     public static $JSON_TMP = array();
