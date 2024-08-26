@@ -40,7 +40,12 @@ class RULEUTIL extends UTIL
         $this->GlobalFinishAction();
 
         PH::print_stdout();
-        PH::print_stdout( " **** PROCESSED $this->totalObjectsProcessed objects over {$this->totalObjectsOfSelectedStores} available ****" );
+
+        if( PH::$shadow_loaddghierarchy )
+            $counter = $this->totalObjectsOfSelectedStores/2;
+        else
+            $counter = $this->totalObjectsOfSelectedStores;
+        PH::print_stdout( " **** PROCESSED $this->totalObjectsProcessed objects over {$counter} available ****" );
         PH::print_stdout();
         PH::print_stdout();
 
