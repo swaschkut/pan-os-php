@@ -438,8 +438,11 @@ class AntiSpywareProfile extends SecurityProfile2
             {
                 if( $name == "default-paloalto-dns" )
                 {
-                    if( isset($name['action']) && $array['action'] == "sinkhole" )
-                        return TRUE;
+                    if( isset($array['action']) )
+                    {
+                        if ( $array['action'] == "sinkhole" )
+                            return TRUE;
+                    }
                 }
             }
         }
@@ -448,6 +451,100 @@ class AntiSpywareProfile extends SecurityProfile2
     }
 
     static $templatexml = '<entry name="**temporarynamechangeme**"></entry>';
+
+    static $templatexml_100 = '<entry name="**temporarynamechangeme**">
+   <botnet-domains>
+      <lists>
+         <entry name="EDL_domain_list">
+            <action>
+               <allow/>
+            </action>
+            <packet-capture>disable</packet-capture>
+         </entry>
+         <entry name="EDL_waschkut">
+            <action>
+               <allow/>
+            </action>
+            <packet-capture>disable</packet-capture>
+         </entry>
+         <entry name="default-paloalto-dns">
+            <action>
+               <sinkhole/>
+            </action>
+            <packet-capture>disable</packet-capture>
+         </entry>
+      </lists>
+      <dns-security-categories>
+         <entry name="pan-dns-sec-adtracking">
+            <log-level>default</log-level>
+            <action>default</action>
+            <packet-capture>disable</packet-capture>
+         </entry>
+         <entry name="pan-dns-sec-cc">
+            <log-level>default</log-level>
+            <action>default</action>
+            <packet-capture>disable</packet-capture>
+         </entry>
+         <entry name="pan-dns-sec-ddns">
+            <log-level>default</log-level>
+            <action>default</action>
+            <packet-capture>disable</packet-capture>
+         </entry>
+         <entry name="pan-dns-sec-grayware">
+            <log-level>default</log-level>
+            <action>default</action>
+            <packet-capture>disable</packet-capture>
+         </entry>
+         <entry name="pan-dns-sec-malware">
+            <log-level>default</log-level>
+            <action>default</action>
+            <packet-capture>disable</packet-capture>
+         </entry>
+         <entry name="pan-dns-sec-parked">
+            <log-level>default</log-level>
+            <action>default</action>
+            <packet-capture>disable</packet-capture>
+         </entry>
+         <entry name="pan-dns-sec-phishing">
+            <log-level>default</log-level>
+            <action>default</action>
+            <packet-capture>disable</packet-capture>
+         </entry>
+         <entry name="pan-dns-sec-proxy">
+            <log-level>default</log-level>
+            <action>default</action>
+            <packet-capture>disable</packet-capture>
+         </entry>
+         <entry name="pan-dns-sec-recent">
+            <log-level>default</log-level>
+            <action>default</action>
+            <packet-capture>disable</packet-capture>
+         </entry>
+      </dns-security-categories>
+      <sinkhole>
+         <ipv4-address>pan-sinkhole-default-ip</ipv4-address>
+         <ipv6-address>::1</ipv6-address>
+      </sinkhole>
+   </botnet-domains>
+   <mica-engine-spyware-enabled>
+      <entry name="HTTP Command and Control detector">
+         <inline-policy-action>alert</inline-policy-action>
+      </entry>
+      <entry name="HTTP2 Command and Control detector">
+         <inline-policy-action>alert</inline-policy-action>
+      </entry>
+      <entry name="SSL Command and Control detector">
+         <inline-policy-action>alert</inline-policy-action>
+      </entry>
+      <entry name="Unknown-TCP Command and Control detector">
+         <inline-policy-action>alert</inline-policy-action>
+      </entry>
+      <entry name="Unknown-UDP Command and Control detector">
+         <inline-policy-action>alert</inline-policy-action>
+      </entry>
+   </mica-engine-spyware-enabled>
+</entry>
+';
 
 }
 

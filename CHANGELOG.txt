@@ -22,6 +22,7 @@ UTIL:
 BUGFIX:
 * type=diff file1=diff.xml "filter=/config/devices/entry[@name='localhost.localdomain']/device-group/entry[@name='{{name}}']/pre-rulebase" name1=DG1 name2=DG2 | correction of pregmatch
 * type=edl | improvement to add rule references for src/dst
+* type=securityprofile   securityprofiletype=spyware 'filter=(dns-list is.best-practice)' | bugfix
 
 GENERAL:
 
