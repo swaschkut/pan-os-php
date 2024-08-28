@@ -1190,7 +1190,56 @@ RuleCallContext::$supportedActions[] = array(
 
 //                                                    //
 //                Source/Dest Based Actions           //
+//
 //                                                    //
+RuleCallContext::$supportedActions[] = array(
+    'name' => 'src-calculate-by-zones',
+    'section' => 'address',
+    'MainFunction' => function (RuleCallContext $context) {
+        $rule = $context->object;
+        if( $rule->isDefaultSecurityRule() )
+        {
+            $string = "DefaultSecurityRule - action not supported";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+        if( ($rule->isPbfRule() && $rule->isZoneBased()) || ($rule->isDoSRule() && $rule->isZoneBasedFrom()) )
+        {
+            $string = "FROM is Zone based, not supported yet.";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
+        $rule->addressCalculationByZones('src', $context->arguments['mode'], $context->arguments['virtualRouter'], $context->arguments['template'], $context->arguments['vsys'], $context->isAPI);
+
+    },
+    'args' => & RuleCallContext::$commonActionFunctions['calculate-zones']['args'],
+    'help' => & RuleCallContext::$commonActionFunctions['calculate-zones']['help']
+);
+RuleCallContext::$supportedActions[] = array(
+    'name' => 'dst-calculate-by-zones',
+    'section' => 'address',
+    'MainFunction' => function (RuleCallContext $context) {
+        $rule = $context->object;
+        if( $rule->isDefaultSecurityRule() )
+        {
+            $string = "DefaultSecurityRule - action not supported";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+        if( ($rule->isPbfRule() && $rule->isZoneBased()) || ($rule->isDoSRule() && $rule->isZoneBasedFrom()) )
+        {
+            $string = "FROM is Zone based, not supported yet.";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
+        $rule->addressCalculationByZones('dst', $context->arguments['mode'], $context->arguments['virtualRouter'], $context->arguments['template'], $context->arguments['vsys'], $context->isAPI);
+
+    },
+    'args' => & RuleCallContext::$commonActionFunctions['calculate-zones']['args'],
+    'help' => & RuleCallContext::$commonActionFunctions['calculate-zones']['help']
+);
 RuleCallContext::$supportedActions[] = array(
     'name' => 'src-Add',
     'section' => 'address',
