@@ -9,12 +9,6 @@ $array = array();
 #$array['optional'] = array();
 
 $tmp_array = array();
-$tmp_array['value'] = "Europe/Berlin";
-$tmp_array['enable'] = 1;
-$tmp_array['xpath'] = "/config/devices/entry[@name='localhost.localdomain']/deviceconfig/system/timezone";
-$tmp_array['replace'] = "FULL-XML-NODE";
-$tmp_array['comment'] = "Time zone e.g. 'Europe/Berlin'";
-$array["{{custom-TIMEZONE}}"] = $tmp_array;
 
 $tmp_array['value'] = "You have accessed a protected system. Log off immediately if you are not an authorized user.";
 $tmp_array['enable'] = 1;
@@ -23,6 +17,23 @@ $tmp_array['replace'] = "FULL-XML-NODE";
 $tmp_array['comment'] = "Standard text";
 $array["{{custom-LOGIN-BANNER}}"] = $tmp_array;
 
+
+$tmp_array['value'] = "Europe/Berlin";
+$tmp_array['enable'] = 1;
+$tmp_array['xpath'] = "/config/devices/entry[@name='localhost.localdomain']/deviceconfig/system/timezone";
+$tmp_array['replace'] = "FULL-XML-NODE";
+$tmp_array['comment'] = "Time zone e.g. 'Europe/Berlin'";
+$array["{{custom-TIMEZONE}}"] = $tmp_array;
+
+
+$tmp_array['value'] = "no";
+$tmp_array['enable'] = 1;
+$tmp_array['xpath'] = "/config/devices/entry[@name='localhost.localdomain']/deviceconfig/setting/management/auto-acquire-commit-lock";
+$tmp_array['replace'] = "FULL-XML-NODE";
+$tmp_array['comment'] = "auto commit lock";
+$array["{{custom-COMMIT-LOCK}}"] = $tmp_array;
+
+
 $tmp_array['value'] = 10;
 $tmp_array['enable'] = 1;
 $tmp_array['xpath'] = "/config/devices/entry[@name='localhost.localdomain']/deviceconfig/system/management/idle-timeout";
@@ -30,14 +41,215 @@ $tmp_array['replace'] = "FULL-XML-NODE";
 $tmp_array['comment'] = "Session Idle-Timeout for Admins in minutes (Best Practice = 10 / Default = 60)";
 $array["{{custom-IDLE-TIMEOUT}}"] = $tmp_array;
 
-/*
+
 $tmp_array['value'] = 0;
 $tmp_array['enable'] = 1;
 $tmp_array['xpath'] = "/config/devices/entry[@name='localhost.localdomain']/deviceconfig/system/management/api/key/lifetime";
 $tmp_array['replace'] = "{{API_KEY_LIFETIME}}";
-$tmp_array['comment'] = "API-Key Lifetime in minutes (Default = 0, never)";
+$tmp_array['comment'] = "API-Key Lifetime in minutes (Default = 0, never); SVA-default=0; IronSkillet=525600 (365days/1year)";
 $array[] = $tmp_array;
 
+/*
+//create cert in termplate shared
+$tmp_array['value'] = 1;
+$tmp_array['enable'] = 1;
+$tmp_array['xpath'] = "/config/devices/entry[@name='localhost.localdomain']/deviceconfig/system/management/idle-timeout";
+$tmp_array['replace'] = "FULL-XML-NODE";
+$tmp_array['comment'] = "API KEY Cert - needed with PAN-OS 11.1.x";
+$array["{{custom-API-KEY-CERT}}"] = $tmp_array;
+*/
+
+$tmp_array['value'] = 5;
+$tmp_array['enable'] = 1;
+$tmp_array['xpath'] = "/config/devices/entry[@name='localhost.localdomain']/deviceconfig/system/management/admin-lockout/failed-attempts";
+$tmp_array['replace'] = "FULL-XML-NODE";
+$tmp_array['comment'] = "User failed login attempts";
+$array["{{custom-USER-FAILED-ATTEMPTS}}"] = $tmp_array;
+
+$tmp_array['value'] = 10;
+$tmp_array['enable'] = 1;
+$tmp_array['xpath'] = "/config/devices/entry[@name='localhost.localdomain']/deviceconfig/system/management/admin-lockout/lockout-time";
+$tmp_array['replace'] = "FULL-XML-NODE";
+$tmp_array['comment'] = "lockout time after User failed login attempts";
+$array["{{custom-USER-FAILED-ATTEMPTS}}"] = $tmp_array;
+
+
+$tmp_array['value'] = "no";
+$tmp_array['enable'] = 1;
+$tmp_array['xpath'] = "/config/devices/entry[@name='localhost.localdomain']/deviceconfig/system/management/rule-require-tag";
+$tmp_array['replace'] = "FULL-XML-NODE";
+$tmp_array['comment'] = "Require Tag on Policies";
+$array["{{custom-POLICY-REQUIRE-TAG}}"] = $tmp_array;
+
+$tmp_array['value'] = "no";
+$tmp_array['enable'] = 1;
+$tmp_array['xpath'] = "/config/devices/entry[@name='localhost.localdomain']/deviceconfig/system/management/rule-require-description";
+$tmp_array['replace'] = "FULL-XML-NODE";
+$tmp_array['comment'] = "Require description on Policies";
+$array["{{custom-POLICY-REQUIRE-DESCRIPTION}}"] = $tmp_array;
+
+
+$tmp_array['value'] = "no";
+$tmp_array['enable'] = 1;
+$tmp_array['xpath'] = "/config/devices/entry[@name='localhost.localdomain']/deviceconfig/system/management/rule-require-audit-comment";
+$tmp_array['replace'] = "FULL-XML-NODE";
+$tmp_array['comment'] = "Require audit comment on Policies";
+$array["{{custom-POLICY-REQUIRE-AUDIT-COMMENT}}"] = $tmp_array;
+
+
+$tmp_array['value'] = "yes";
+$tmp_array['enable'] = 1;
+$tmp_array['xpath'] = "/config/devices/entry[@name='localhost.localdomain']/deviceconfig/system/management/wildcard-topdown-match-mode";
+$tmp_array['replace'] = "FULL-XML-NODE";
+$tmp_array['comment'] = "Require audit comment on Policies";
+$array["{{custom-POLICY-WILDCARD-MATCH-MODE}}"] = $tmp_array;
+
+
+$tmp_array['value'] = "yes";
+$tmp_array['enable'] = 1;
+$tmp_array['xpath'] = "/config/devices/entry[@name='localhost.localdomain']/deviceconfig/system/management/rule-hit-count";
+$tmp_array['replace'] = "FULL-XML-NODE";
+$tmp_array['comment'] = "Require audit comment on Policies";
+$array["{{custom-RULE-HIT-COUNT}}"] = $tmp_array;
+
+$tmp_array['value'] = "yes";
+$tmp_array['enable'] = 1;
+$tmp_array['xpath'] = "/config/devices/entry[@name='localhost.localdomain']/deviceconfig/system/management/appusage-policy";
+$tmp_array['replace'] = "FULL-XML-NODE";
+$tmp_array['comment'] = "Require audit comment on Policies";
+$array["{{custom-APPUSAGE-POLICY}}"] = $tmp_array;
+
+$tmp_array['value'] = 1048576;
+$tmp_array['enable'] = 1;
+$tmp_array['xpath'] = "/config/devices/entry[@name='localhost.localdomain']/deviceconfig/system/management/max-rows-in-csv-export";
+$tmp_array['replace'] = "FULL-XML-NODE";
+$tmp_array['comment'] = "Require audit comment on Policies";
+$array["{{custom-MAX-ROWS-CSV-EXPORT}}"] = $tmp_array;
+
+$tmp_array['value'] = "yes";
+$tmp_array['enable'] = 1;
+$tmp_array['xpath'] = "/config/devices/entry[@name='localhost.localdomain']/deviceconfig/system/management/log-revert-operations";
+$tmp_array['replace'] = "FULL-XML-NODE";
+$tmp_array['comment'] = "Enable Configuration Logs for Revert Operations";
+$array["{{custom-LOG-REVERT-OPERATIONS}}"] = $tmp_array;
+
+
+$tmp_array['value'] = "yes";
+$tmp_array['enable'] = 1;
+$tmp_array['xpath'] = "/config/devices/entry[@name='localhost.localdomain']/deviceconfig/system/management/enable-log-high-dp-load";
+$tmp_array['replace'] = "FULL-XML-NODE";
+$tmp_array['comment'] = "Enable Configuration Logs on high DP load";
+$array["{{custom-LOG-HIGH-DP-LOAD}}"] = $tmp_array;
+
+$tmp_array['value'] = "yes";
+$tmp_array['enable'] = 0;
+$tmp_array['xpath'] = "/config/devices/entry[@name='localhost.localdomain']/deviceconfig/system/management/audit-tracking/op-commands";
+$tmp_array['replace'] = "FULL-XML-NODE";
+$tmp_array['comment'] = "Enable audit log for op-commands, but only possible via syslog";
+$array["{{custom-AUDIT-TRACKING-OP-COMMANDS}}"] = $tmp_array;
+
+$tmp_array['value'] = "yes";
+$tmp_array['enable'] = 0;
+$tmp_array['xpath'] = "/config/devices/entry[@name='localhost.localdomain']/deviceconfig/system/management/audit-tracking/ui-actions";
+$tmp_array['replace'] = "FULL-XML-NODE";
+$tmp_array['comment'] = "Enable audit log for ui-actions, but only possible via syslog";
+$array["{{custom-AUDIT-TRACKING-UI-ACTIONS}}"] = $tmp_array;
+
+
+$tmp_array['value'] = "1.2.3.4";
+$tmp_array['enable'] = 1;
+$tmp_array['xpath'] = "/config/devices/entry[@name='localhost.localdomain']/deviceconfig/system/panorama/local-panroama/panorama-server";
+$tmp_array['replace'] = "FULL-XML-NODE";
+$tmp_array['comment'] = "Panorama Server IP 1";
+$array["{{custom-PANORAMA-SERVER-1}}"] = $tmp_array;
+
+$tmp_array['value'] = "5.6.7.8";
+$tmp_array['enable'] = 0;
+$tmp_array['xpath'] = "/config/devices/entry[@name='localhost.localdomain']/deviceconfig/system/panorama/local-panroama/panorama-server-2";
+$tmp_array['replace'] = "FULL-XML-NODE";
+$tmp_array['comment'] = "Panorama Server IP 2";
+$array["{{custom-PANORAMA-SERVER-2}}"] = $tmp_array;
+
+
+
+$tmp_array['value'] = "no";
+$tmp_array['enable'] = 1;
+$tmp_array['xpath'] = "/config/devices/entry[@name='localhost.localdomain']/deviceconfig/system/management/disable-commit-recovery";
+$tmp_array['replace'] = "FULL-XML-NODE";
+$tmp_array['comment'] = "disable commit recocvery if Panorama is not reachable";
+$array["{{custom-COMMIT-RECOVERY-DISABLE}}"] = $tmp_array;
+
+$tmp_array['value'] = 3;
+$tmp_array['enable'] = 1;
+$tmp_array['xpath'] = "/config/devices/entry[@name='localhost.localdomain']/deviceconfig/system/management/commit-recovery-retry";
+$tmp_array['replace'] = "FULL-XML-NODE";
+$tmp_array['comment'] = "FW commit recovery retry if Panorama is not reachable";
+$array["{{custom-COMMIT-RECOVERY-RETRY}}"] = $tmp_array;
+
+$tmp_array['value'] = 5;
+$tmp_array['enable'] = 1;
+$tmp_array['xpath'] = "/config/devices/entry[@name='localhost.localdomain']/deviceconfig/system/management/commit-recovery-timeout";
+$tmp_array['replace'] = "FULL-XML-NODE";
+$tmp_array['comment'] = "FW commit recovery timeout if Panorama is not reachable";
+$array["{{custom-COMMIT-RECOVERY-TIMEOUT}}"] = $tmp_array;
+
+$tmp_array['value'] = "yes";
+$tmp_array['enable'] = 1;
+$tmp_array['xpath'] = "/config/devices/entry[@name='localhost.localdomain']/deviceconfig/system/management/device-monitoring/enable";
+$tmp_array['replace'] = "FULL-XML-NODE";
+$tmp_array['comment'] = "Send Device monitoring information to Panorama";
+$array["{{custom-DEVICE-MONITORING}}"] = $tmp_array;
+
+
+
+$tmp_array['value'] = "no";
+$tmp_array['enable'] = 1;
+$tmp_array['xpath'] = "/config/devices/entry[@name='localhost.localdomain']/deviceconfig/system/motd-and-banner/motd-enable";
+$tmp_array['replace'] = "FULL-XML-NODE";
+$tmp_array['comment'] = "Disable Banner";
+$array["{{custom-MOTD-BANNER}}"] = $tmp_array;
+
+
+$tmp_array['value'] = "no";
+$tmp_array['enable'] = 1;
+$tmp_array['xpath'] = "/config/mgt-config/password-complexity";
+$tmp_array['replace'] = "FULL-XML-NODE";
+$tmp_array['comment'] = "set Password-Complexity";
+$array["{{custom-PASSWORD-COMPLEXITY}}"] = $tmp_array;
+
+
+$tmp_array['value'] = "no";
+$tmp_array['enable'] = 1;
+$tmp_array['xpath'] = "/config/deviceconfig/system/snmp-setting";
+$tmp_array['replace'] = "FULL-XML-NODE";
+$tmp_array['comment'] = "set SNMPv3";
+$array["{{custom-PASSWORD-COMPLEXITY}}"] = $tmp_array;
+
+
+
+
+$tmp_array['value'] = "updates.paloaltonetworks.com";
+$tmp_array['enable'] = 1;
+$tmp_array['xpath'] = "/config/deviceconfig/system/update-server";
+$tmp_array['replace'] = "{{UPDATE-SERVER}}";
+$tmp_array['comment'] = "set Update Server";
+$array["{{custom-UPDATE-SERVER}}"] = $tmp_array;
+
+
+
+$tmp_array['value'] = "192.168.10.100";
+$tmp_array['enable'] = 1;
+$tmp_array['xpath'] = "/config/devices/entry[@name='localhost.localdomain']/deviceconfig/system/dns-setting/servers/primary";
+$tmp_array['replace'] = "{{DNS_1}}";
+$tmp_array['comment'] = "Primary DNS";
+$array[] = $tmp_array;
+
+$tmp_array['value'] = "192.168.10.200";
+$tmp_array['enable'] = 1;
+$tmp_array['xpath'] = "/config/devices/entry[@name='localhost.localdomain']/deviceconfig/system/dns-setting/servers/secondary";
+$tmp_array['replace'] = "{{DNS_2}}";
+$tmp_array['comment'] = "Secondary DNS";
+$array[] = $tmp_array;
 
 $tmp_array['value'] = "192.168.10.100";
 $tmp_array['enable'] = 1;
@@ -50,11 +262,26 @@ $tmp_array['value'] = "192.168.10.200";
 $tmp_array['enable'] = 1;
 $tmp_array['xpath'] = "/config/devices/entry[@name='localhost.localdomain']/deviceconfig/system/ntp-servers/secondary-ntp-server/ntp-server-address";
 $tmp_array['replace'] = "{{NTP_2}}";
-$tmp_array['comment'] = "Primary NTP";
+$tmp_array['comment'] = "Secondary NTP";
 $array[] = $tmp_array;
-*/
+
+$tmp_array['value'] = "yes";
+$tmp_array['enable'] = 1;
+$tmp_array['xpath'] = "/config/deviceconfig/system/device-telemetry";
+$tmp_array['replace'] = "FULL-XML-NODE";
+$tmp_array['comment'] = "Telemetry settings";
+$array[] = $tmp_array;
 
 
+$tmp_array['value'] = "yes";
+$tmp_array['enable'] = 1;
+$tmp_array['xpath'] = "/config/deviceconfig/settings/ctd";
+$tmp_array['replace'] = "FULL-XML-NODE";
+$tmp_array['comment'] = "CTD settings";
+$array[] = $tmp_array;
+
+
+//set template BP-Device_v1.0 vsys vsys1 setting ssl-decrypt allow-forward-decrypted-content yes
 
 #foreach( $array as $entry )
 #{
