@@ -208,6 +208,23 @@ revision-history
 //alias-list -> is using interface-list -> could be migrate to Zone???
 //policy-list -> is using alias-list
 
+
+///profile/interface-list/interface/if-item-list/item/physical-if/if-dev-name
+$xml_interface_list = DH::findFirstElementOrCreate('interface-list', $XMLroot );
+watchguard_getInterface($pan, $v, $xml_interface_list);
+
+
+$xml_system_parameters = DH::findFirstElementOrCreate('system-parameters', $XMLroot );
+$xml_route = DH::findFirstElementOrCreate('route', $xml_system_parameters );
+watchguard_getRoute($pan, $xml_route);
+
+
+// <abs-ipsec-action-list>
+$xml_abs_ipsec_action_list = DH::findFirstElementOrCreate('abs-ipsec-action-list', $XMLroot );
+watchguard_getIPsecAction($pan, $xml_abs_ipsec_action_list);
+exit();
+
+
 $xml_Address = DH::findFirstElementOrCreate('address-group-list', $XMLroot );
 watchguard_getAddress( $v, $xml_Address );
 
@@ -1094,6 +1111,352 @@ function watchguard_nat($v, $xml, &$nat_array)
 
             }
 
+    }
+}
+
+function watchguard_getRoute($pan, $xml)
+{
+    /** @var PANConf $pan */
+    #DH::DEBUGprintDOMDocument($xml);
+
+    /** @var VirtualRouter $v_router */
+    $vr_name = "default";
+
+    $tmp_vr = $pan->network->virtualRouterStore->findVirtualRouter($vr_name);
+    if( $tmp_vr === null )
+    {
+        $tmp_vr = $pan->network->virtualRouterStore->newVirtualRouter($vr_name);
+    }
+
+    foreach ($xml->childNodes as $node)
+    {
+        if ($node->nodeType != XML_ELEMENT_NODE) continue;
+
+        #DH::DEBUGprintDOMDocument($node);
+
+        /*
+        <route-entry>
+         <dest-address>172.30.4.0</dest-address>
+         <mask>255.255.252.0</mask>
+         <gateway-ip>10.254.1.42</gateway-ip>
+         <port-type>-1</port-type>
+         <distance>1</distance>
+         <metric>1</metric>
+         <card-id>0</card-id>
+        </route-entry>
+         */
+
+
+        $xml_interface = "";
+
+        $xml_mask = DH::findFirstElement('mask', $node);
+        $mask = $xml_mask->textContent;
+        $cidr_mask = CIDR::netmask2cidr($mask);
+        // to CIDR
+
+
+        $xml_gateway_ip = DH::findFirstElement('gateway-ip', $node);
+        $ip_gateway = $xml_gateway_ip->textContent;
+
+
+        $tmp_interface = $pan->network->getAllInterfaces();
+        $errMesg = '';
+        $query = new RQuery('interface');
+        if( $query->parseFromString("ipv4 includes ".$ip_gateway, $errMsg) === FALSE )
+            derr("error while parsing query: {$errMesg}");
+
+        $res = array();
+        foreach( $tmp_interface as $interface )
+        {
+            $queryContext['object'] = $interface;
+            if( $query->matchSingleObject($queryContext) )
+                $res[] = $interface;
+        }
+        if( count($res) == 1 )
+        {
+            $xml_interface = "<interface>" . $res[0]->name() . "</interface>";
+            $tmp_vr->attachedInterfaces->addInterface($res[0]);
+        }
+
+
+
+        $xml_metric = DH::findFirstElement('metric', $node);
+        $metric = $xml_metric->textContent;
+
+        $xml_dest_address = DH::findFirstElement('dest-address', $node);
+        $route_network = $xml_dest_address->textContent;
+
+        $routename = $route_network."m".$cidr_mask;
+
+        #if( $ip_version == "v4" )
+        $xmlString = "<entry name=\"" . $routename . "\"><nexthop><ip-address>" . $ip_gateway . "</ip-address></nexthop><metric>" . $metric . "</metric>" . $xml_interface . "<destination>" . $route_network."/".$cidr_mask . "</destination></entry>";
+        #elseif( $ip_version == "v6" )
+        #    $xmlString = "<entry name=\"" . $routename . "\"><nexthop><ipv6-address>" . $ip_gateway . "</ipv6-address></nexthop><metric>" . $metric . "</metric>" . $xml_interface . "<destination>" . $route_network . "</destination></entry>";
+
+        $newRoute = new StaticRoute('***tmp**', $tmp_vr);
+        $tmpRoute = $newRoute->create_staticroute_from_xml($xmlString);
+
+
+        $tmp_vr->addstaticRoute($tmpRoute);
+    }
+}
+
+function watchguard_getInterface($pan, $v, $xml)
+{
+    /** @var PANConf $pan */
+
+    /** @var VirtualSystem $v */
+    #DH::DEBUGprintDOMDocument($xml);
+
+    /** @var VirtualRouter $v_router */
+    $vr_name = "default";
+    /*
+    $tmp_vr = $pan->network->virtualRouterStore->findVirtualRouter($vr_name);
+    if ($tmp_vr === null) {
+        $tmp_vr = $pan->network->virtualRouterStore->newVirtualRouter($vr_name);
+    }
+    */
+
+    foreach ($xml->childNodes as $node)
+    {
+        if ($node->nodeType != XML_ELEMENT_NODE) continue;
+
+        #DH::DEBUGprintDOMDocument($node);
+
+        $xml_name = DH::findFirstElement('name', $node);
+        $name = $xml_name->textContent;
+
+        if( strpos( $name, "Optional" ) !== FALSE )
+        {
+            continue;
+        }
+
+        $xml_if_item_list = DH::findFirstElement('if-item-list', $node);
+
+        if( $xml_if_item_list !== FALSE )
+        {
+            $xml_item = DH::findFirstElement('item', $xml_if_item_list);
+            $xml_item_type = DH::findFirstElement('item-type', $xml_item);
+
+            $xml_physical_if = DH::findFirstElement('physical-if', $xml_item);
+            if( $xml_physical_if !== FALSE )
+            {
+                $xml_if_dev_name = DH::findFirstElement('if-dev-name', $xml_physical_if);
+                $if_dev_name = $xml_if_dev_name->textContent;
+                #PH::print_stdout();
+                #PH::print_stdout("NAME: ".$name);
+                #PH::print_stdout( $if_dev_name );
+                #DH::DEBUGprintDOMDocument($node);
+
+                /*
+                 * <physical-if>
+                    <if-num>15</if-num>
+                    <if-dev-name>eth15</if-dev-name>
+                    <enabled>1</enabled>
+                    <if-property>1</if-property>
+                    <ip-node-type>IP4_ONLY</ip-node-type>
+                    <ip>10.254.1.41</ip>
+                    <netmask>255.255.255.252</netmask>
+                    <swap-if>
+                     <has-hardware-port>1</has-hardware-port>
+                     <module-type>0</module-type>
+                    </swap-if>
+
+                 */
+
+                $xml_ip = DH::findFirstElement('ip', $xml_physical_if);
+                $ip = $xml_ip->textContent;
+                $xml_netmask = DH::findFirstElement('netmask', $xml_physical_if);
+                $netmask = $xml_netmask->textContent;
+                $cidr_netmask = CIDR::netmask2cidr($netmask);
+
+
+                $int_number = str_replace("eth", "", $if_dev_name);
+
+                $tmp_interface = $pan->network->ethernetIfStore->newEthernetIf("ethernet1/".$int_number+1);
+
+                $tmp_interface->addIPv4Address( $ip."/".$cidr_netmask );
+
+                //add ip address to interface
+
+                $v->importedInterfaces->addInterface($tmp_interface);
+
+                $tmp_zone = $v->zoneStore->newZone( $name, 'layer3' );
+                $tmp_zone->attachedInterfaces->addInterface($tmp_interface);
+
+                //default-gateway
+                $xml_default_gateway = DH::findFirstElement('default-gateway', $xml_physical_if);
+                if( $xml_default_gateway !== false )
+                {
+                    $vr_name = "default";
+                    $tmp_vr = $pan->network->virtualRouterStore->findVirtualRouter($vr_name);
+                    if( $tmp_vr === null )
+                    {
+                        $tmp_vr = $pan->network->virtualRouterStore->newVirtualRouter($vr_name);
+                    }
+
+                    $routename = "default_".str_replace("/", "_", $tmp_interface->name());
+                    $default_gateway = $xml_default_gateway->textContent;
+                    $ip_gateway = $default_gateway;
+                    $route_network = "0.0.0.0";
+                    $cidr_mask = 0;
+                    $metric = "1";
+
+                    $xml_interface = "<interface>" . $tmp_interface->name() . "</interface>";
+
+                    $xmlString = "<entry name=\"" . $routename . "\"><nexthop><ip-address>" . $ip_gateway . "</ip-address></nexthop><metric>" . $metric . "</metric>" . $xml_interface . "<destination>" . $route_network."/".$cidr_mask . "</destination></entry>";
+                    #elseif( $ip_version == "v6" )
+                    #    $xmlString = "<entry name=\"" . $routename . "\"><nexthop><ipv6-address>" . $ip_gateway . "</ipv6-address></nexthop><metric>" . $metric . "</metric>" . $xml_interface . "<destination>" . $route_network . "</destination></entry>";
+
+                    $newRoute = new StaticRoute('***tmp**', $tmp_vr);
+                    $tmpRoute = $newRoute->create_staticroute_from_xml($xmlString);
+
+
+                    $tmp_vr->addstaticRoute($tmpRoute);
+
+                    $tmp_vr->attachedInterfaces->addInterface($tmp_interface);
+                }
+            }
+        }
+    }
+
+
+    function watchguard_getIPsecAction($pan, $xml)
+    {
+        /** @var PANConf $pan */
+
+        /** @var VirtualSystem $v */
+        #DH::DEBUGprintDOMDocument($xml);
+
+        /** @var VirtualRouter $v_router */
+        $vr_name = "default";
+
+        foreach ($xml->childNodes as $node)
+        {
+            if ($node->nodeType != XML_ELEMENT_NODE) continue;
+
+            #DH::DEBUGprintDOMDocument($node);
+
+            $xml_name = DH::findFirstElement('name', $node);
+            $name = $xml_name->textContent;
+
+            PH::print_stdout("NAME: ".$name);
+            /*
+             * <abs-ipsec-action>
+                 <name>Klinikum_Peine</name>
+                 <description/>
+                 <property>0</property>
+                 <enabled>1</enabled>
+                 <ike-policy>Klinikum Peine</ike-policy>
+                 <ipsec-action>Klinikum_Peine</ipsec-action>
+                 <local-remote-pair-list>
+                  <local-remote-pair>
+                   <local-addr>
+                    <type>Host IP</type>
+                    <value>10.10.1.79</value>
+                   </local-addr>
+                   <direction>bi-directional</direction>
+                   <remote-addr>
+                    <type>Host Range</type>
+                    <value>10.195.197.1-10.195.198.254</value>
+                   </remote-addr>
+                   <one-to-one-nat-enabled>false</one-to-one-nat-enabled>
+                   <dnat-enabled>false</dnat-enabled>
+                   <dnat-src-ip>0.0.0.0</dnat-src-ip>
+                   <nat-action/>
+                  </local-remote-pair>
+                  <local-remote-pair>
+                   <local-addr>
+                    <type>Host IP</type>
+                    <value>10.10.2.28</value>
+                   </local-addr>
+                   <direction>bi-directional</direction>
+                   <remote-addr>
+                    <type>Host Range</type>
+                    <value>10.195.197.1-10.195.198.254</value>
+                   </remote-addr>
+                   <one-to-one-nat-enabled>false</one-to-one-nat-enabled>
+                   <dnat-enabled>false</dnat-enabled>
+                   <dnat-src-ip>0.0.0.0</dnat-src-ip>
+                   <nat-action/>
+                  </local-remote-pair>
+                  <local-remote-pair>
+                   <local-addr>
+                    <type>Host IP</type>
+                    <value>10.10.2.36</value>
+                   </local-addr>
+                   <direction>bi-directional</direction>
+                   <remote-addr>
+                    <type>Host Range</type>
+                    <value>10.195.197.1-10.195.198.254</value>
+                   </remote-addr>
+                   <one-to-one-nat-enabled>false</one-to-one-nat-enabled>
+                   <dnat-enabled>false</dnat-enabled>
+                   <dnat-src-ip>0.0.0.0</dnat-src-ip>
+                   <nat-action/>
+                  </local-remote-pair>
+                  <local-remote-pair>
+                   <local-addr>
+                    <type>Host Range</type>
+                    <value>10.10.2.113-10.10.2.114</value>
+                   </local-addr>
+                   <direction>bi-directional</direction>
+                   <remote-addr>
+                    <type>Host Range</type>
+                    <value>10.195.197.1-10.195.198.254</value>
+                   </remote-addr>
+                   <one-to-one-nat-enabled>false</one-to-one-nat-enabled>
+                   <dnat-enabled>false</dnat-enabled>
+                   <dnat-src-ip>0.0.0.0</dnat-src-ip>
+                   <nat-action/>
+                  </local-remote-pair>
+                 </local-remote-pair-list>
+                 <allow-all-traffic>0</allow-all-traffic>
+                </abs-ipsec-action>
+             */
+
+            //local-remote-pair-list>
+            $xml_local_remote_pair_list = DH::findFirstElement('local-remote-pair-list', $node);
+
+            $remote_addr_array = array();
+            foreach ($xml_local_remote_pair_list->childNodes as $node2) {
+                if ($node2->nodeType != XML_ELEMENT_NODE) continue;
+
+                #DH::DEBUGprintDOMDocument($node2);
+                /*
+                 *<local-remote-pair>
+                   <local-addr>
+                    <type>Host Range</type>
+                    <value>10.10.2.113-10.10.2.114</value>
+                   </local-addr>
+                   <direction>bi-directional</direction>
+                   <remote-addr>
+                    <type>Host Range</type>
+                    <value>10.195.197.1-10.195.198.254</value>
+                   </remote-addr>
+                   <one-to-one-nat-enabled>false</one-to-one-nat-enabled>
+                   <dnat-enabled>false</dnat-enabled>
+                   <dnat-src-ip>0.0.0.0</dnat-src-ip>
+                   <nat-action/>
+                  </local-remote-pair>
+                 */
+
+                $xml_local_addr = DH::findFirstElement('local-addr', $node2);
+                $xml_local_addr_value = DH::findFirstElement('value', $xml_local_addr);
+                #PH::print_stdout("  * local-addr-value: ". $xml_local_addr_value->textContent);
+
+
+                $xml_remote_addr = DH::findFirstElement('remote-addr', $node2);
+                $xml_remote_addr_value = DH::findFirstElement('value', $xml_remote_addr);
+                #PH::print_stdout("  * remote-addr-value: ". $xml_remote_addr_value->textContent);
+
+                $route_name = str_replace("/", "m", $xml_remote_addr_value->textContent)."_".$name;
+                $route_name = substr($route_name, 0, 31);
+                PH::print_stdout("  * ROUTE NAME: ".$route_name);
+                $remote_addr_array[$route_name] = $xml_remote_addr_value->textContent;
+            }
+            print_r($remote_addr_array);
+        }
     }
 }
 ##################################################################

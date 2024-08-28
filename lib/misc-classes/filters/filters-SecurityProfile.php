@@ -827,53 +827,6 @@ RQuery::$defaultFilters['securityprofile']['cloud-inline-analysis']['operators']
             return null;
 
         return $object->cloud_inline_analysis_best_practice();
-        /*
-        $bestpractise = FALSE;
-
-        if( $object->secprof_type != 'spyware' and $object->secprof_type != 'vulnerability' and $object->secprof_type != 'virus' )
-            return null;
-
-        if( isset($object->cloud_inline_analysis_enabled) && $object->cloud_inline_analysis_enabled )
-        {
-            if( isset($object->additional['mica-engine-vulnerability-enabled']) )
-            {
-
-                foreach( $object->additional['mica-engine-vulnerability-enabled'] as $name)
-                {
-                    if( $name['inline-policy-action'] == "reset-both" )
-                        $bestpractise = TRUE;
-                    else
-                        return FALSE;
-                }
-            }
-
-            if( isset($object->additional['mica-engine-spyware-enabled']) )
-            {
-                foreach( $object->additional['mica-engine-spyware-enabled'] as $name)
-                {
-                    if( $name['inline-policy-action'] == "reset-both" )
-                        $bestpractise = TRUE;
-                    else
-                        return FALSE;
-                }
-            }
-        }
-
-        //AV iii) Wildfire Inline ML Tab
-        //- all models must be set to 'enable (inherit per-protocol actions)'
-        if( isset($object->additional['mlav-engine-filebased-enabled']) )
-        {
-            foreach( $object->additional['mlav-engine-filebased-enabled'] as $name)
-            {
-                if( $name['mlav-policy-action'] == "enable" )
-                    $bestpractise = TRUE;
-                else
-                    return FALSE;
-            }
-        }
-
-        return $bestpractise;
-        */
     },
     'arg' => false,
     'help' => "'securityprofiletype=spyware,vulnerability'"
@@ -889,35 +842,6 @@ RQuery::$defaultFilters['securityprofile']['av.action']['operators']['is.best-pr
 
         return $object->av_action_best_practice();
 
-        /*
-        $bestpractise = FALSE;
-
-        if( $object->secprof_type != 'virus' )
-            return null;
-
-        if( isset($object->tmp_virus_prof_array) )
-        {
-            foreach( $object->tmp_virus_prof_array as $key => $type )
-            {
-                if( $type == "ftp" || $type == "http" || $type == "http2" || $type == "smb" )
-                {
-                    if( $object->$type['action'] == "reset-both" || $object->$type['action'] == "default" )
-                        $bestpractise = TRUE;
-                    else
-                        return False;
-                }
-                else
-                {
-                    if( $object->$type['action'] == "reset-both" )
-                        $bestpractise = TRUE;
-                    else
-                        return FALSE;
-                }
-            }
-        }
-
-        return $bestpractise;
-        */
     },
     'arg' => false,
     'help' => "'securityprofiletype=virus'"
@@ -931,35 +855,6 @@ RQuery::$defaultFilters['securityprofile']['av.wildfire-action']['operators']['i
             return null;
 
         return $object->av_wildfireaction_best_practice();
-        /*
-        $bestpractise = FALSE;
-
-        if( $object->secprof_type != 'virus' )
-            return null;
-
-        if( isset($object->tmp_virus_prof_array) )
-        {
-            foreach( $object->tmp_virus_prof_array as $key => $type )
-            {
-                if( $type == "ftp" || $type == "http" || $type == "http2" || $type == "smb" )
-                {
-                    if( $object->$type['wildfire-action'] == "reset-both" || $object->$type['wildfire-action'] == "default" )
-                        $bestpractise = TRUE;
-                    else
-                        return False;
-                }
-                else
-                {
-                    if( $object->$type['wildfire-action'] == "reset-both" )
-                        $bestpractise = TRUE;
-                    else
-                        return False;
-                }
-            }
-        }
-
-        return $bestpractise;
-        */
     },
     'arg' => false,
     'help' => "'securityprofiletype=virus'"
@@ -973,38 +868,6 @@ RQuery::$defaultFilters['securityprofile']['av.mlav-action']['operators']['is.be
             return null;
 
         return $object->av_mlavaction_best_practice();
-        /*
-        $bestpractise = FALSE;
-
-        if( $object->secprof_type != 'virus' )
-            return null;
-
-        if( isset($object->tmp_virus_prof_array) )
-        {
-            foreach( $object->tmp_virus_prof_array as $key => $type )
-            {
-                if( isset( $object->$type['mlav-action'] ) )
-                {
-                    if( $type == "ftp" || $type == "http" || $type == "http2" || $type == "smb" )
-                    {
-                        if( $object->$type['mlav-action'] == "reset-both" || $object->$type['mlav-action'] == "default" )
-                            $bestpractise = TRUE;
-                        else
-                            return False;
-                    }
-                    else
-                    {
-                        if( $object->$type['mlav-action'] == "reset-both" )
-                            $bestpractise = TRUE;
-                        else
-                            return False;
-                    }
-                }
-            }
-        }
-
-        return $bestpractise;
-        */
     },
     'arg' => false,
     'help' => "'securityprofiletype=virus'"
@@ -1050,24 +913,6 @@ RQuery::$defaultFilters['securityprofile']['dns-list']['operators']['is.best-pra
             return null;
 
         return $object->spyware_dnslist_best_practice();
-        /*
-        if( $object->secprof_type != 'spyware' )
-            return null;
-
-        if( isset($object->additional['botnet-domain']) && isset($object->additional['botnet-domain']['lists']) )
-        {
-            foreach( $object->additional['botnet-domain']['lists'] as $name => $array)
-            {
-                if( $name == "default-paloalto-dns" )
-                {
-                    if( isset($name['action']) && $array['action'] == "sinkhole" )
-                        return TRUE;
-                }
-            }
-        }
-
-        return FALSE;
-        */
     },
     'arg' => false,
     'help' => "'securityprofiletype=spyware' e.g. 'filter=(dns-list is.best-practice)'"

@@ -377,5 +377,69 @@ class AntiVirusProfile extends SecurityProfile2
 
     static $templatexml = '<entry name="**temporarynamechangeme**"></entry>';
 
+    static $templatexml_100 = '<entry name="**temporarynamechangeme**">
+   <decoder>
+      <entry name="ftp">
+         <action>default</action>
+         <wildfire-action>default</wildfire-action>
+         <mlav-action>default</mlav-action>
+      </entry>
+      <entry name="http">
+         <action>default</action>
+         <wildfire-action>default</wildfire-action>
+         <mlav-action>default</mlav-action>
+      </entry>
+      <entry name="http2">
+         <action>default</action>
+         <wildfire-action>default</wildfire-action>
+         <mlav-action>default</mlav-action>
+      </entry>
+      <entry name="imap">
+         <action>default</action>
+         <wildfire-action>default</wildfire-action>
+         <mlav-action>default</mlav-action>
+      </entry>
+      <entry name="pop3">
+         <action>default</action>
+         <wildfire-action>default</wildfire-action>
+         <mlav-action>default</mlav-action>
+      </entry>
+      <entry name="smb">
+         <action>default</action>
+         <wildfire-action>default</wildfire-action>
+         <mlav-action>default</mlav-action>
+      </entry>
+      <entry name="smtp">
+         <action>default</action>
+         <wildfire-action>default</wildfire-action>
+         <mlav-action>default</mlav-action>
+      </entry>
+   </decoder>
+   <mlav-engine-filebased-enabled>
+      <entry name="Windows Executables">
+         <mlav-policy-action>disable</mlav-policy-action>
+      </entry>
+      <entry name="PowerShell Script 1">
+         <mlav-policy-action>disable</mlav-policy-action>
+      </entry>
+      <entry name="PowerShell Script 2">
+         <mlav-policy-action>disable</mlav-policy-action>
+      </entry>
+      <entry name="Executable Linked Format">
+         <mlav-policy-action>disable</mlav-policy-action>
+      </entry>
+      <entry name="MSOffice">
+         <mlav-policy-action>disable</mlav-policy-action>
+      </entry>
+      <entry name="Shell">
+         <mlav-policy-action>disable</mlav-policy-action>
+      </entry>
+      <entry name="OOXML">
+         <mlav-policy-action>disable</mlav-policy-action>
+      </entry>
+   </mlav-engine-filebased-enabled>
+</entry>
+';
+
 }
 

@@ -14,10 +14,15 @@ UTIL:
 * type=rule location={{DGNAME}} | introduce argument 'shadow-loaddghierarchy' to get full rule hierarchy from shared pre/parentDG pre-rule to childDG post-rule and shared post-rule
 * type=rule-merger | introduce argument 'shadow-loaddghierarchy' to find all possible rules to be merged in the full stack
 * type=vendor-migration vendor=sophos | adjustment to use framework PH::print_stdout
+* class Rule | introduce addressCalculationByZones
+* type=rule | new actions=src-caluclate-by-zones/dst-calculate-by-zones
+* type=interface | introduce 'filter=(ipv4 includes 1.1.1.1/28)' | brought in for internal usage on watchguard migration
+* develop migration watchguard | extend with interface/routing to calculate src/dst based on from/to zones
 
 BUGFIX:
 * type=diff file1=diff.xml "filter=/config/devices/entry[@name='localhost.localdomain']/device-group/entry[@name='{{name}}']/pre-rulebase" name1=DG1 name2=DG2 | correction of pregmatch
 * type=edl | improvement to add rule references for src/dst
+* type=securityprofile   securityprofiletype=spyware 'filter=(dns-list is.best-practice)' | bugfix
 
 GENERAL:
 
