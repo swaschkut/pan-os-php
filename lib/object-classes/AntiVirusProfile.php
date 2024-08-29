@@ -290,19 +290,19 @@ class AntiVirusProfile extends SecurityProfile2
         {
             foreach( $this->tmp_virus_prof_array as $key => $type )
             {
-                if( $type == "ftp" || $type == "http" || $type == "http2" || $type == "smb" )
+                if( isset($this->$type['action']) )
                 {
-                    if( $this->$type['action'] == "reset-both" || $this->$type['action'] == "default" )
-                        $bestpractise = TRUE;
-                    else
-                        return False;
-                }
-                else
-                {
-                    if( $this->$type['action'] == "reset-both" )
-                        $bestpractise = TRUE;
-                    else
-                        return FALSE;
+                    if ($type == "ftp" || $type == "http" || $type == "http2" || $type == "smb") {
+                        if ($this->$type['action'] == "reset-both" || $this->$type['action'] == "default")
+                            $bestpractise = TRUE;
+                        else
+                            return False;
+                    } else {
+                        if ($this->$type['action'] == "reset-both")
+                            $bestpractise = TRUE;
+                        else
+                            return FALSE;
+                    }
                 }
             }
         }
@@ -321,19 +321,22 @@ class AntiVirusProfile extends SecurityProfile2
         {
             foreach( $this->tmp_virus_prof_array as $key => $type )
             {
-                if( $type == "ftp" || $type == "http" || $type == "http2" || $type == "smb" )
+                if( isset( $this->$type['wildfire-action'] ) )
                 {
-                    if( $this->$type['wildfire-action'] == "reset-both" || $this->$type['wildfire-action'] == "default" )
-                        $bestpractise = TRUE;
+                    if( $type == "ftp" || $type == "http" || $type == "http2" || $type == "smb" )
+                    {
+                        if( $this->$type['wildfire-action'] == "reset-both" || $this->$type['wildfire-action'] == "default" )
+                            $bestpractise = TRUE;
+                        else
+                            return False;
+                    }
                     else
-                        return False;
-                }
-                else
-                {
-                    if( $this->$type['wildfire-action'] == "reset-both" )
-                        $bestpractise = TRUE;
-                    else
-                        return False;
+                    {
+                        if( $this->$type['wildfire-action'] == "reset-both" )
+                            $bestpractise = TRUE;
+                        else
+                            return False;
+                    }
                 }
             }
         }
