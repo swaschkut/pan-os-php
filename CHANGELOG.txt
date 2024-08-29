@@ -19,6 +19,7 @@ UTIL:
 * type=interface | introduce 'filter=(ipv4 includes 1.1.1.1/28)' | brought in for internal usage on watchguard migration
 * develop migration watchguard | extend with interface/routing to calculate src/dst based on from/to zones
 * class AntiVirusProfile | optimisation for different methods used by filter
+* develop watchguard migration | import IPsec related remote-addr as static route into v-router
 
 BUGFIX:
 * type=diff file1=diff.xml "filter=/config/devices/entry[@name='localhost.localdomain']/device-group/entry[@name='{{name}}']/pre-rulebase" name1=DG1 name2=DG2 | correction of pregmatch

@@ -221,8 +221,8 @@ watchguard_getRoute($pan, $xml_route);
 
 // <abs-ipsec-action-list>
 $xml_abs_ipsec_action_list = DH::findFirstElementOrCreate('abs-ipsec-action-list', $XMLroot );
-watchguard_getIPsecAction($pan, $xml_abs_ipsec_action_list);
-exit();
+watchguard_getIPsecAction($pan, $v, $xml_abs_ipsec_action_list);
+#exit();
 
 
 $xml_Address = DH::findFirstElementOrCreate('address-group-list', $XMLroot );
@@ -1321,9 +1321,13 @@ function watchguard_getInterface($pan, $v, $xml)
     }
 
 
-    function watchguard_getIPsecAction($pan, $xml)
+    function watchguard_getIPsecAction($pan, $v, $xml)
     {
         /** @var PANConf $pan */
+        $tmp_interface = $pan->network->tunnelIfStore->newTunnelIf("tunnel.1");
+        $v->importedInterfaces->addInterface($tmp_interface);
+
+
 
         /** @var VirtualSystem $v */
         #DH::DEBUGprintDOMDocument($xml);
@@ -1340,7 +1344,7 @@ function watchguard_getInterface($pan, $v, $xml)
             $xml_name = DH::findFirstElement('name', $node);
             $name = $xml_name->textContent;
 
-            PH::print_stdout("NAME: ".$name);
+            #PH::print_stdout("NAME: ".$name);
             /*
              * <abs-ipsec-action>
                  <name>Klinikum_Peine</name>
@@ -1419,7 +1423,8 @@ function watchguard_getInterface($pan, $v, $xml)
             $xml_local_remote_pair_list = DH::findFirstElement('local-remote-pair-list', $node);
 
             $remote_addr_array = array();
-            foreach ($xml_local_remote_pair_list->childNodes as $node2) {
+            foreach ($xml_local_remote_pair_list->childNodes as $node2)
+            {
                 if ($node2->nodeType != XML_ELEMENT_NODE) continue;
 
                 #DH::DEBUGprintDOMDocument($node2);
@@ -1450,12 +1455,57 @@ function watchguard_getInterface($pan, $v, $xml)
                 $xml_remote_addr_value = DH::findFirstElement('value', $xml_remote_addr);
                 #PH::print_stdout("  * remote-addr-value: ". $xml_remote_addr_value->textContent);
 
-                $route_name = str_replace("/", "m", $xml_remote_addr_value->textContent)."_".$name;
+                $destination = $xml_remote_addr_value->textContent;
+                if( strpos($destination, "/") === FALSE )
+                    $destination = $destination."/32";
+
+                $route_name = str_replace("/", "m", $destination)."_".$name;
                 $route_name = substr($route_name, 0, 31);
-                PH::print_stdout("  * ROUTE NAME: ".$route_name);
-                $remote_addr_array[$route_name] = $xml_remote_addr_value->textContent;
+
+                $remote_addr_array[$route_name] = $destination;
             }
-            print_r($remote_addr_array);
+
+            #print_r($remote_addr_array);
+
+
+            foreach( $remote_addr_array as $name => $destination )
+            {
+
+                if( strpos($destination, "-") === FALSE )
+                {
+                    $vr_name = "default";
+                    $tmp_vr = $pan->network->virtualRouterStore->findVirtualRouter($vr_name);
+                    if ($tmp_vr === null) {
+                        $tmp_vr = $pan->network->virtualRouterStore->newVirtualRouter($vr_name);
+                    }
+
+
+                    $routename = $name;
+
+                    $ip_gateway = "10.10.10.10";
+                    $metric = "1";
+
+                    $xml_interface = "";
+                    $xml_interface = "<interface>tunnel.1</interface>";
+                    $xml_next_hope = "<nexthop><ip-address>" . $ip_gateway . "</ip-address></nexthop>";
+                    $xml_next_hope = "";
+
+                    $xmlString = "<entry name=\"" . $routename . "\">".$xml_next_hope."<metric>" . $metric . "</metric>" . $xml_interface . "<destination>" . $destination . "</destination></entry>";
+
+                    $newRoute = new StaticRoute('***tmp**', $tmp_vr);
+                    $tmpRoute = $newRoute->create_staticroute_from_xml($xmlString);
+
+
+                    $tmp_vr->addstaticRoute($tmpRoute);
+
+                    $tmp_vr->attachedInterfaces->addInterface($tmp_interface);
+                }
+                else
+                {
+                    PH::print_stdout("Static Route can not be installed | ".$name." - ".$destination);
+                }
+            }
+
         }
     }
 }
