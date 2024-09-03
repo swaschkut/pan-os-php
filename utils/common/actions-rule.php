@@ -4165,7 +4165,8 @@ RuleCallContext::$supportedActions[] = array(
             'subtype' => 'string',
             'default' => '*NONE*',
             'choices' => array('ResolveAddressSummary', 'ResolveServiceSummary', 'ResolveServiceAppDefaultSummary','ResolveApplicationSummary', 'ResolveScheduleSummary', 'ApplicationSeen', 'HitCount'),
-            'help' => "pipe(|) separated list of additional field to include in the report. The following is available:\n" .
+            'help' => "example: 'actions=display:HitCount|ApplicationSeen'\n" .
+                "pipe(|) separated list of additional field to include in the report. The following is available:\n" .
                 "  - ResolveAddressSummary : fields with address objects will be resolved to IP addressed and summarized in a new column)\n" .
                 "  - ResolveServiceSummary : fields with service objects will be resolved to their value and summarized in a new column)\n"  .
                 "  - ResolveServiceAppDefaultSummary : fields with application objects will be resolved to their service default value and summarized in a new column)\n"  .
@@ -4838,7 +4839,8 @@ RuleCallContext::$supportedActions[] = array(
                 'subtype' => 'string',
                 'default' => '*NONE*',
                 'choices' => array('ResolveAddressSummary', 'ResolveServiceSummary', 'ResolveServiceAppDefaultSummary', 'ResolveApplicationSummary', 'ResolveScheduleSummary', 'ApplicationSeen', 'HitCount'),
-                'help' => "pipe(|) separated list of additional field to include in the report. The following is available:\n" .
+                'help' => "example: 'actions=exporttoexcel:file.html,HitCount|ApplicationSeen'\n" .
+                    "pipe(|) separated list of additional field to include in the report. The following is available:\n" .
                     "  - ResolveAddressSummary : fields with address objects will be resolved to IP addressed and summarized in a new column\n" .
                     "  - ResolveServiceSummary : fields with service objects will be resolved to their value and summarized in a new column\n"  .
                     "  - ResolveServiceAppDefaultSummary : fields with application objects will be resolved to their service default value and summarized in a new column\n"  .
