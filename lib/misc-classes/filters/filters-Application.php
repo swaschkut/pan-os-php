@@ -523,4 +523,46 @@ RQuery::$defaultFilters['application']['decoder']['operators']['is.set'] = array
         'input' => 'input/panorama-8.0.xml'
     )
 );
+
+RQuery::$defaultFilters['application']['ip-protocol']['operators']['is.set'] = array(
+    'Function' => function (ApplicationRQueryContext $context) {
+        $app = $context->object;
+
+        if( $app->isContainer() )
+            return null;
+
+        if( $app->proto !== null )
+            return TRUE;
+
+        return FALSE;
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP% evasive) ',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['application']['ip-protocol']['operators']['eq'] = array(
+    'Function' => function (ApplicationRQueryContext $context) {
+        $app = $context->object;
+
+        if( $app->isContainer() )
+            return null;
+
+        if( $app->proto !== null )
+        {
+            if( $app->proto == $context->value )
+                return TRUE;
+        }
+
+
+        return FALSE;
+    },
+    'arg' => TRUE,
+    'ci' => array(
+        'fString' => '(%PROP% evasive) ',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+//$this->proto
 // </editor-fold>

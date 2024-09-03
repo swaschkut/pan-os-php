@@ -50,7 +50,7 @@
       "comment": "Find duplicate security rules possible to be merged",
       "type": "rule-merger",
       "location": "location=any",
-
+      "shadow-loaddghierarchy": "shadow-loaddghierarchy",
       "exportcsv": "exportcsv=rule-merger.html",
       "shadow-ignoreInvalidAddressObjects": "shadow-ignoreInvalidAddressObjects"
     },

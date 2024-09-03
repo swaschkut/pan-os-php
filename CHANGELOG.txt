@@ -22,6 +22,7 @@ UTIL:
 * develop watchguard migration | import IPsec related remote-addr as static route into v-router
 * type=interface | introduce 'filter=(name regex /XYZ/)'
 * type=rule | actions=display/exporttoexcel - extend description
+* type=application | introduce 'filter=(ip-protocol is.set) or (ip-protocol eq 2)'
 
 BUGFIX:
 * type=diff file1=diff.xml "filter=/config/devices/entry[@name='localhost.localdomain']/device-group/entry[@name='{{name}}']/pre-rulebase" name1=DG1 name2=DG2 | correction of pregmatch
