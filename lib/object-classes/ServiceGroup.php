@@ -38,6 +38,8 @@ class ServiceGroup
 
     public $ancestor;
 
+    public $childancestor;
+
     public function __construct($name, $owner = null, $fromTemplateXml = FALSE)
     {
         $this->owner = $owner;

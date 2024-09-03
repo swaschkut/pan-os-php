@@ -28,6 +28,7 @@ BUGFIX:
 * type=securityprofile   securityprofiletype=spyware 'filter=(dns-list is.best-practice)' | bugfix
 
 GENERAL:
+* class ServiceGroup | introduce variable $childancestor
 
 
 2.1.26 (20240819)
