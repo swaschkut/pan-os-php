@@ -487,6 +487,10 @@ class Zone
         return $str;
     }
 
+    public static function getZoneTypes()
+    {
+        return self::$ZoneTypes;
+    }
 
     static protected $templatexml = '<entry name="**temporarynamechangemeL3**"><network><layer3></layer3></network></entry>';
     static protected $templatexmlvw = '<entry name="**temporarynamechangemeVW**"><network><virtual-wire></virtual-wire></network></entry>';

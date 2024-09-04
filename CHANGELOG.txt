@@ -24,6 +24,7 @@ UTIL:
 * type=rule | actions=display/exporttoexcel - extend description
 * type=application | introduce 'filter=(ip-protocol is.set) or (ip-protocol eq 2)'
 * type=static-route | extend object with metric and DISCARD
+* type=zone | introduce 'filter=(type is XYZ)'
 
 BUGFIX:
 * type=diff file1=diff.xml "filter=/config/devices/entry[@name='localhost.localdomain']/device-group/entry[@name='{{name}}']/pre-rulebase" name1=DG1 name2=DG2 | correction of pregmatch
