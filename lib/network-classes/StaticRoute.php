@@ -286,11 +286,6 @@ class StaticRoute
         $text .= " - DEST: " . str_pad($this->destination(), 20);
         $tmpArray[$this->name()]['destination'] = $this->destination();
 
-        if( $this->metric() !== null )
-        {
-            $text .= " - metric: " . str_pad($this->metric(), 20);
-            $tmpArray[$this->name()]['metric'] = $this->metric();
-        }
 
         if( $this->nexthopIP() !== null )
         {
@@ -312,6 +307,12 @@ class StaticRoute
             $tmpArray[$this->name()]['nexthopvr'] = $this->nexthopVR();
         }
 
+        if( $this->metric() !== null )
+        {
+            $text .= " - metric: " . str_pad($this->metric(), 20);
+            $tmpArray[$this->name()]['metric'] = $this->metric();
+        }
+        
         if( $this->nexthopType() == "discard" )
         {
             $text .= "  - DISCARD ";
