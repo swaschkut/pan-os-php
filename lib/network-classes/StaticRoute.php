@@ -39,6 +39,8 @@ class StaticRoute
 
     protected $_nexthopIP = null;
 
+    protected $_metric = null;
+
     /** @var null|string */
     protected $_nexthopVR = null;
 
@@ -113,9 +115,21 @@ class StaticRoute
             $tmp_interface->addReference($this);
         }
 
+        $metricNode = DH::findFirstElement('metric', $xml);
+        if( $metricNode !== FALSE )
+        {
+            $this->_metric = $metricNode->textContent;
+        }
+
         $fhNode = DH::findFirstElement('nexthop', $xml);
         if( $fhNode !== FALSE )
         {
+            $fhTypeNode = DH::findFirstElement('discard', $fhNode);
+            if( $fhTypeNode !== FALSE )
+            {
+                $this->_nexthopType = 'discard';
+            }
+
             $fhTypeNode = DH::findFirstElement('ip-address', $fhNode);
             if( $fhTypeNode !== FALSE )
             {
@@ -226,6 +240,10 @@ class StaticRoute
         return $this->_interface;
     }
 
+    public function metric()
+    {
+        return $this->_metric;
+    }
 
     /**
      * @return string   'none','ip-address'
@@ -268,6 +286,12 @@ class StaticRoute
         $text .= " - DEST: " . str_pad($this->destination(), 20);
         $tmpArray[$this->name()]['destination'] = $this->destination();
 
+        if( $this->metric() !== null )
+        {
+            $text .= " - metric: " . str_pad($this->metric(), 20);
+            $tmpArray[$this->name()]['metric'] = $this->metric();
+        }
+
         if( $this->nexthopIP() !== null )
         {
             $text .= " - NEXTHOP: " . str_pad($this->nexthopIP(), 20);
@@ -288,6 +312,11 @@ class StaticRoute
             $tmpArray[$this->name()]['nexthopvr'] = $this->nexthopVR();
         }
 
+        if( $this->nexthopType() == "discard" )
+        {
+            $text .= "  - DISCARD ";
+            $tmpArray[$this->name()]['nexthop'] = "discard";
+        }
 
         if( $includingName )
             PH::$JSON_TMP['sub']['object'][$virtualRouter->name()]['staticroute'] = $tmpArray;
