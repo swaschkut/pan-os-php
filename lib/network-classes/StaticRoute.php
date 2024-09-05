@@ -295,30 +295,32 @@ class StaticRoute
         else
             $text .= str_pad( " ", 30 );
 
-        if( $this->nexthopInterface() != null )
-        {
-            $text .= "\n           - NEXT INTERFACE: " . str_pad($this->nexthopInterface()->toString(), 20);
-            $tmpArray[$this->name()]['nexthopinterface'] = $this->nexthopInterface()->name();
-        }
-
         if( $this->nexthopVR() != null )
         {
             $text .= "  - NEXT VR: " . str_pad($this->nexthopVR(), 20);
             $tmpArray[$this->name()]['nexthopvr'] = $this->nexthopVR();
         }
+        else
+            $text .= str_pad( " ", 20 );
 
         if( $this->metric() !== null )
         {
             $text .= " - metric: " . str_pad($this->metric(), 20);
             $tmpArray[$this->name()]['metric'] = $this->metric();
         }
-        
+
         if( $this->nexthopType() == "discard" )
         {
             $text .= "  - DISCARD ";
             $tmpArray[$this->name()]['nexthop'] = "discard";
         }
 
+        if( $this->nexthopInterface() != null )
+        {
+            $text .= "\n           - NEXT INTERFACE: " . str_pad($this->nexthopInterface()->toString(), 20);
+            $tmpArray[$this->name()]['nexthopinterface'] = $this->nexthopInterface()->name();
+        }
+        
         if( $includingName )
             PH::$JSON_TMP['sub']['object'][$virtualRouter->name()]['staticroute'] = $tmpArray;
         else
