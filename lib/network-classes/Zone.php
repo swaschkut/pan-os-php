@@ -145,6 +145,15 @@ class Zone
         return $this->type;
     }
 
+    public function getExternalVsys()
+    {
+        if( $this->type() == "external" )
+        {
+            return reset($this->externalVsys );
+        }
+
+        return null;
+    }
 
     public function load_from_domxml(DOMElement $xml)
     {
@@ -323,6 +332,30 @@ class Zone
         }
         else
             $c->sendEditRequest($xpath, DH::dom_to_xml($this->xmlroot, -1, FALSE));
+
+        return TRUE;
+    }
+
+    /**
+     * @param string $newZPP
+     * @return bool
+     */
+    public function setExternalVsys($vsys)
+    {
+        /** @var VirtualSystem $vsys */
+        if( is_object($vsys) )
+            $vsys_name = $vsys->name();
+        else
+            $vsys_name = $vsys;
+
+
+        $valueRoot = DH::findFirstElement('network', $this->xmlroot);
+        $externalRoot = DH::findFirstElementOrCreate('external', $valueRoot);
+        $externalMemberRoot = DH::findFirstElementOrCreate('member', $externalRoot);
+        $externalMemberRoot->textContent = $vsys_name;
+
+        $this->externalVsys = array();
+        $this->externalVsys[$vsys_name] = $vsys_name;
 
         return TRUE;
     }
