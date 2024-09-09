@@ -26,6 +26,7 @@ UTIL:
 * type=static-route | extend object with metric and DISCARD
 * type=zone | introduce 'filter=(type is XYZ)'
 * class Zone - introduce new methods to get/set zone objects of type 'external'
+* develop - shared_gateway.php | migrate sg to vsys and create missing SecurityPolicy; change existing zones of type external to newly created vsys
 
 BUGFIX:
 * type=diff file1=diff.xml "filter=/config/devices/entry[@name='localhost.localdomain']/device-group/entry[@name='{{name}}']/pre-rulebase" name1=DG1 name2=DG2 | correction of pregmatch

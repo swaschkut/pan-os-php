@@ -80,13 +80,16 @@ PH::print_stdout();
  * *
  */
 
-PH::print_stdout( "display ShardGateways");
+PH::print_stdout( "migrate Shared-Gateways to vsys");
 
-$vsys_number = 11;
+$vsys_number = 10;
 foreach( $pan->getSharedGateways() as $key => $sharedGateway)
 {
-    print "NAME: ".$sharedGateway->name()."\n";
+    $vsys_number++;
 
+    PH::print_stdout(" - Shared-Gateway NAME: ".$sharedGateway->name());
+
+    PH::print_stdout( " - create vsys: ".$vsys_number);
     $vsys = $pan->createVirtualSystem($vsys_number);
 
     $clone = $sharedGateway->xmlroot->cloneNode(true);
@@ -94,14 +97,71 @@ foreach( $pan->getSharedGateways() as $key => $sharedGateway)
     $name = DH::findAttribute('name', $clone);
     $clone->setAttribute("name", "vsys".$vsys_number);
 
-    $vsys->xmlroot->parentNode->appendChild($clone);
-    $vsys->xmlroot->parentNode->removeChild($vsys->xmlroot);
+
+    DH::clearDomNodeChilds($vsys->xmlroot);
 
 
-    $sharedGateway->owner->xmlroot->removeChild($sharedGateway->xmlroot);
+    PH::print_stdout( " - clone Shared-Gateways config into VSYS: 'vsys".$vsys_number."'");
+    DH::copyChildElementsToNewParentNode($clone, $vsys->xmlroot);
+    $vsys->load_from_domxml($vsys->xmlroot);
+
+    PH::print_stdout( " - delete Shared-Gateway: ".$sharedGateway->name());
+    $pan->removeSharedGateway( $sharedGateway );
+
+
+
+    ############################
+    #$new_vsys = $pan->findVirtualSystem("vsys".$vsys_number);
+
+    PH::print_stdout();
+    PH::print_stdout( " - create missing SecurityRules in 'vsys".$vsys_number."'");
+    $zones = $vsys->zoneStore->getAll();
+    foreach( $zones as $zone1 )
+    {
+        foreach( $zones as $zone2 )
+        {
+            if( $zone1->name() == $zone2->name() )
+                continue;
+
+            #if( $zone1->name() == "Internet" || $zone2->name() == "Internet" )
+            #{
+                $rule_name = $zone1->name()."-".$zone2->name();
+                PH::print_stdout("  - create new Rule: ".$rule_name);
+                $tmp_rule = $vsys->securityRules->newSecurityRule( $rule_name );
+
+                $tmp_rule->to->addZone($zone1);
+                $tmp_rule->from->addZone($zone2);
+            #}
+        }
+    }
+    PH::print_stdout();
+    ############################
+    //find all zones in complete config file, of type external where member is shared-gateway name
+    //- replace this shared-gateway name with new vsys name
+
+    foreach( $pan->getVirtualSystems() as $key => $virtualSystem)
+    {
+        /** @var VirtualSystem $virtualSystem */
+
+        $zones = $virtualSystem->zoneStore->getAll();
+        foreach( $zones as $zone1 )
+        {
+            $externalVsys = $zone1->getExternalVsys();
+            if ( $externalVsys !== null && $externalVsys == $sharedGateway->name() )
+            {
+                PH::print_stdout( " - for zone:: ".$zone1->name()." - owner: ".$zone1->owner->owner->name()." set new external vsys: '".$vsys->name()."'");
+                $zone1->setExternalVsys($vsys);
+            }
+        }
+    }
+
+    PH::print_stdout();
+
+    ############################
 
     $vsys_number++;
 }
+
 
 $util->save_our_work();
 PH::print_stdout();
