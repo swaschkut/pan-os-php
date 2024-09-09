@@ -93,12 +93,16 @@ elseif ($util->configType == 'panorama')
     $v = $pan->findDeviceGroup($util->objectsLocation[0]);
     if ($v == null)
         $v = $pan->createDeviceGroup($util->objectsLocation[0]);
+
+    derr( "Panorama config file is not yet supported" );
 }
 elseif ($util->configType == 'fawkes')
 {
     $v = $pan->findContainer($util->objectsLocation[0]);
     if ($v == null)
         $v = $pan->createContainer($util->objectsLocation[0]);
+
+    derr( "Strata cloud manager config file is not yet supported" );
 }
 
 
@@ -322,7 +326,7 @@ function watchguard_getAddress($v, $xml)
     foreach( $xml->childNodes as $node) {
         if ($node->nodeType != XML_ELEMENT_NODE) continue;
 
-        DH::DEBUGprintDOMDocument($node);
+        #DH::DEBUGprintDOMDocument($node);
         /*
         <address-group>
          <name>xphone-Server.2.snat</name>
@@ -686,31 +690,56 @@ function watchguard_getService($v, $xml)
     }
 }
 
-function add_from_alias_list( $v, $alias_array, $alias )
+function add_from_alias_list( $v, $alias_array, $alias, $address_container )
 {
-
+    //rework - return is always only one object, what if multiple objects are used
     if( isset($alias_array[$alias]) )
     {
-        foreach( $alias_array[$alias] as $array )
+        /** @var AddressGroup $tmp_addressgroup */
+        $tmp_addressgroup = $v->addressStore->find( $alias );
+        if( $tmp_addressgroup == null )
+            $tmp_addressgroup = $v->addressStore->newAddressGroup($alias);
+
+        $subMethod = False;
+
+        foreach( $alias_array[$alias] as $key => $array )
         {
             if( isset( $array['address'] ) )
                 $search = $array['address'];
             elseif( isset( $array['alias'] ) )
                 $search = $array['alias'];
 
+            #print "search: ".$search."\n";
             $object = $v->addressStore->find($search);
             if( $object == null )
             {
-                $object = add_from_alias_list( $v, $alias_array, $search );
+                $subMethod = TRUE;
+                add_from_alias_list( $v, $alias_array, $search, $address_container );
             }
+            else
+            {
 
-            return $object;
+                #$address_container->addObject($object);
+                if( !$tmp_addressgroup->has($object) )
+                {
+                    #print "add object: ".$object->name()."\n";
+                    $tmp_addressgroup->addMember($object);
+                }
+
+            }
+        }
+
+        if( !$subMethod )
+            $address_container->addObject($tmp_addressgroup);
+        else
+        {
+            $v->addressStore->remove($tmp_addressgroup);
         }
     }
 
     return null;
 }
-function add_zone_from_alias_list( $v, $alias_array, $alias )
+function add_zone_from_alias_list( $v, $alias_array, $alias, $zone_container )
 {
     if( isset($alias_array[$alias]) )
     {
@@ -720,7 +749,11 @@ function add_zone_from_alias_list( $v, $alias_array, $alias )
             {
                 $zone_obj = $v->zoneStore->find($array['interface']);
                 if( $zone_obj !== null )
-                    return $zone_obj;
+                {
+                    $zone_container->addZone($zone_obj);
+                    #return $zone_obj;
+                }
+
             }
             elseif( isset($array['alias']) )
             {
@@ -729,7 +762,10 @@ function add_zone_from_alias_list( $v, $alias_array, $alias )
                     $search = $alias_array[$array['alias']][0]['interface'];
                     $zone_obj = $v->zoneStore->find($search);
                     if( $zone_obj !== null )
-                        return $zone_obj;
+                    {
+                        $zone_container->addZone($zone_obj);
+                        #return $zone_obj;
+                    }
                 }
             }
         }
@@ -738,7 +774,7 @@ function add_zone_from_alias_list( $v, $alias_array, $alias )
     #if(strpos($alias, "Medlinq_Remote.in") !== False)
     #    exit();
 
-    return null;
+    #return null;
 }
 function watchguard_getPolicy($v, $xml, $alias_array, $nat_array)
 {
@@ -794,28 +830,38 @@ function watchguard_getPolicy($v, $xml, $alias_array, $nat_array)
             //Todo: validation if alias is already available in addressStore
             #print "alias to search: '".$from_alias->textContent."'\n";
 
-            $object_from_add = add_from_alias_list($v, $alias_array, $from_alias->textContent);
-            if( $object_from_add !== null && $object_from_add->name() !== "Any" )
+            add_from_alias_list($v, $alias_array, $from_alias->textContent, $new_secRule->source);
+            /*
+            $object_from_add_array = add_from_alias_list($v, $alias_array, $from_alias->textContent);
+            foreach( $object_from_add_array as $object_from_add )
             {
-                PH::print_stdout("add src address obj: ".$object_from_add->name());
-                $new_secRule->source->addObject($object_from_add);
-            }
-            elseif( $object_from_add->name() !== "Any" )
-            #else
-            {
-                mwarning( "object: ".$from_alias->textContent." not found" );
-                $not_found[$rule_name]['from'][] = $from_alias->textContent;
-                #derr( "object: '".$from_alias->textContent."' not found" );
-            }
+            */
+            /*
+                if( $object_from_add !== null && $object_from_add->name() !== "Any" )
+                {
+                    PH::print_stdout("add src address obj: ".$object_from_add->name());
+                    $new_secRule->source->addObject($object_from_add);
+                }
+                elseif( $object_from_add->name() !== "Any" )
+                #else
+                {
+                    mwarning( "object: ".$from_alias->textContent." not found" );
+                    $not_found[$rule_name]['from'][] = $from_alias->textContent;
+                    #derr( "object: '".$from_alias->textContent."' not found" );
+                }
+            */
+            //}
 
             ################
 
-            $zone_from_add = add_zone_from_alias_list($v, $alias_array, $from_alias->textContent);
+            add_zone_from_alias_list($v, $alias_array, $from_alias->textContent, $new_secRule->from);
+            /*
             if( $zone_from_add !== null && $zone_from_add->name() != "Any")
             {
                 PH::print_stdout("add from zone: ".$zone_from_add->name());
                 $new_secRule->from->addZone($zone_from_add);
             }
+            */
         }
 
         ################
@@ -827,28 +873,34 @@ function watchguard_getPolicy($v, $xml, $alias_array, $nat_array)
             //Todo: validation if alias is already available in addressStore
             #print "alias to search: '".$to_alias->textContent."'\n";
 
-            $object_to_add = add_from_alias_list($v, $alias_array, $to_alias->textContent);
-            if( $object_to_add !== null && $object_to_add->name() !== "Any" )
+            add_from_alias_list($v, $alias_array, $to_alias->textContent, $new_secRule->destination);
+            /*
+            $object_to_add_array = add_from_alias_list($v, $alias_array, $to_alias->textContent);
+            foreach( $object_to_add_array as $object_to_add )
             {
-                PH::print_stdout("add dst address obj: ".$object_to_add->name());
-                $new_secRule->destination->addObject($object_to_add);
-            }
-            elseif( $object_to_add->name() !== "Any" )
-            #else
-            {
-                mwarning( "object: ".$to_alias->textContent." not found" );
-                $not_found[$rule_name]['to'][] = $to_alias->textContent;
-                #derr( "object: '".$to_alias->textContent."' not found" );
-            }
-
+            */
+            /*
+                if ($object_to_add !== null && $object_to_add->name() !== "Any") {
+                    PH::print_stdout("add dst address obj: " . $object_to_add->name());
+                    $new_secRule->destination->addObject($object_to_add);
+                } elseif ($object_to_add->name() !== "Any") #else
+                {
+                    mwarning("object: " . $to_alias->textContent . " not found");
+                    $not_found[$rule_name]['to'][] = $to_alias->textContent;
+                    #derr( "object: '".$to_alias->textContent."' not found" );
+                }
+            */
+            //}
             #################
 
-            $zone_to_add = add_zone_from_alias_list($v, $alias_array, $to_alias->textContent);
+            add_zone_from_alias_list($v, $alias_array, $to_alias->textContent, $new_secRule->to);
+            /*
             if( $zone_to_add !== null && $zone_to_add->name() != "Any")
             {
                 PH::print_stdout("add to zone: ".$zone_to_add->name());
                 $new_secRule->to->addZone($zone_to_add);
             }
+            */
         }
 
 
@@ -1001,6 +1053,27 @@ function watchguard_alias($v, $xml, &$alias_array)
 
         $name_xml = DH::findFirstElement('name', $node);
         $name = $name_xml->textContent;
+
+
+        $property_xml = DH::findFirstElement('property', $node);
+        $property = $property_xml->textContent;
+
+
+        //Todo:
+        //create addressgroup
+        /*
+        $tmp_addressgroup = null;
+        if( $name !== "Any" )
+        {
+            $tmp_addressgroup = $v->addressStore->find($name);
+            if( $tmp_addressgroup === null )
+                $tmp_addressgroup = $v->addressStore->newAddressGroup($name);
+            else
+                $tmp_addressgroup = null;
+        }
+        */
+
+
         $alias_member_list = DH::findFirstElement('alias-member-list', $node);
         foreach ($alias_member_list->childNodes as $node2)
         {
@@ -1015,12 +1088,44 @@ function watchguard_alias($v, $xml, &$alias_array)
                 $address_xml = DH::findFirstElement('alias-name', $node2);
                 $address = $address_xml->textContent;
                 $tmp_array['alias'] = $address;
+
+
+                /*
+                $tmp_address = $v->addressStore->find($address);
+                if( $tmp_addressgroup !== null && $tmp_address !== null )
+                    $tmp_addressgroup->addMember($tmp_address);
+                elseif( $tmp_address !== null )
+                    mwarning( "address not found" );
+                */
             }
             else
             {
                 $address = $address_xml->textContent;
                 print "alias: ".$name." value: ".$address."\n";
                 $tmp_array['address'] = $address;
+
+
+                $tmp_addressgroup = $v->addressStore->find($name);
+                if( $address !== "Any" )
+                {
+                    $tmp_address = $v->addressStore->find($address);
+                    if( $tmp_address === null || $tmp_address === false )
+                    {
+                        $tmp_addressgroup->addMember($tmp_address);
+                    }
+
+                }
+                /*
+                else
+                {
+                    $tmp_address = $v->addressStore->find($name);
+                    if( $tmp_address === null || $tmp_address === false )
+                        $tmp_address = $v->addressStore->newAddress($name, "ip-netmask", "0.0.0.0/0");
+                }
+
+                if( $tmp_addressgroup !== null )
+                    $tmp_addressgroup->addMember($tmp_address);
+                */
             }
 
 
@@ -1323,26 +1428,45 @@ function watchguard_getInterface($pan, $v, $xml)
 
     function watchguard_getIPsecAction($pan, $v, $xml)
     {
-        /** @var PANConf $pan */
-        $tmp_interface = $pan->network->tunnelIfStore->newTunnelIf("tunnel.1");
-        $v->importedInterfaces->addInterface($tmp_interface);
-
-
-
         /** @var VirtualSystem $v */
         #DH::DEBUGprintDOMDocument($xml);
-
         /** @var VirtualRouter $v_router */
         $vr_name = "default";
+        $tmp_vr = $pan->network->virtualRouterStore->findVirtualRouter($vr_name);
+        if ($tmp_vr === null) {
+            $tmp_vr = $pan->network->virtualRouterStore->newVirtualRouter($vr_name);
+        }
 
+        $tunnel_counter = 1;
         foreach ($xml->childNodes as $node)
         {
             if ($node->nodeType != XML_ELEMENT_NODE) continue;
+
+
+            /** @var PANConf $pan */
+            $tmp_interface_name = "tunnel.".$tunnel_counter;
+            $tmp_interface = $pan->network->tunnelIfStore->newTunnelIf($tmp_interface_name);
+            $tunnel_counter++;
+            $v->importedInterfaces->addInterface($tmp_interface);
 
             #DH::DEBUGprintDOMDocument($node);
 
             $xml_name = DH::findFirstElement('name', $node);
             $name = $xml_name->textContent;
+
+            PH::print_stdout("search for Zone: ".$name);
+            $tmp_zone = $v->zoneStore->find($name);
+            if( $tmp_zone !== null )
+            {
+                $tmp_zone->attachedInterfaces->addInterface($tmp_interface);
+            }
+            else
+            {
+                PH::print_stdout("Zone: ".$name." not found - create it and attach");
+                $tmp_zone = $v->zoneStore->newZone($name, "layer3");
+                $tmp_zone->attachedInterfaces->addInterface($tmp_interface);
+            }
+
 
             #PH::print_stdout("NAME: ".$name);
             /*
@@ -1473,20 +1597,13 @@ function watchguard_getInterface($pan, $v, $xml)
 
                 if( strpos($destination, "-") === FALSE )
                 {
-                    $vr_name = "default";
-                    $tmp_vr = $pan->network->virtualRouterStore->findVirtualRouter($vr_name);
-                    if ($tmp_vr === null) {
-                        $tmp_vr = $pan->network->virtualRouterStore->newVirtualRouter($vr_name);
-                    }
-
-
                     $routename = $name;
 
                     $ip_gateway = "10.10.10.10";
                     $metric = "1";
 
                     $xml_interface = "";
-                    $xml_interface = "<interface>tunnel.1</interface>";
+                    $xml_interface = "<interface>".$tmp_interface_name."</interface>";
                     $xml_next_hope = "<nexthop><ip-address>" . $ip_gateway . "</ip-address></nexthop>";
                     $xml_next_hope = "";
 
