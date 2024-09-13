@@ -2355,7 +2355,8 @@ DeviceCallContext::$supportedActions['sp_spg-create-BP'] = array(
                 if( isset($context->arguments['sp-name']) && $context->arguments['sp-name'] !== "*nodefault*" )
                     $nameArray = array("Outbound");
                 else
-                    $nameArray = array("Alert-Only", "Outbound", "Inbound", "Internal", "Exception");
+                    #$nameArray = array("Alert-Only", "Outbound", "Inbound", "Internal", "Exception");
+                    $nameArray = array("Alert-Only", "Outbound", "Inbound", "Internal");
 
 
                 foreach( $nameArray as $name)
