@@ -68,6 +68,9 @@ class UPLOAD extends UTIL
 
     public function main()
     {
+        #$this->xmlDoc->formatOutput = true;
+        #$this->xmlDoc->preserveWhiteSpace = false;
+
         if( isset(PH::$args['loadafterupload']) )
             $this->loadConfigAfterUpload = TRUE;
 
@@ -190,7 +193,7 @@ class UPLOAD extends UTIL
         {
             if( isset($toXpath) )
             {
-                mwarning( "this is BETA code - please carefull handling", null, FALSE );
+                mwarning( "this is BETA code - please handle carefully", null, FALSE );
                 sleep(5);
                 #derr("toXpath options was used, it's incompatible with a file output. Make a feature request !!!  ;)");
 
@@ -301,11 +304,40 @@ class UPLOAD extends UTIL
                     $node = $util2->xmlDoc->importNode($xpath, TRUE);
                     #PH::print_stdout("       append");
 
+                    if( $variable == "import" || $variable == "zone" )
+                    {
+                        mwarning("import into Panorama DeviceGroup but XMLnode 'import'/'zone' found", null, FALSE);
+                        continue;
+                    }
+
                     $mainNode = DH::findFirstElement($variable, $newDG->xmlroot);
                     if( $mainNode !== false )
                         $newDG->xmlroot->removeChild($mainNode);
 
-                    $newDG->xmlroot->appendChild($node);
+
+                    if( $variable == "rulebase" )
+                    {
+                        DH::DEBUGprintDOMDocument($node);
+                        mwarning("import into Panorama DeviceGroup but XMLnode 'rulebase' found. renamed to 'pre-rulebase'", null, FALSE);
+
+                        $mainNode = DH::findFirstElement("pre-rulebase", $newDG->xmlroot);
+                        if( $mainNode !== false )
+                            $newDG->xmlroot->removeChild($mainNode);
+                        $mainNode = DH::findFirstElementOrCreate("pre-rulebase", $newDG->xmlroot);
+
+                        foreach( $node->childNodes as $childNode )
+                        {
+                            if( $childNode->nodeType != XML_ELEMENT_NODE )
+                                continue;
+
+                            DH::DEBUGprintDOMDocument($childNode);
+                            $node2 = $util2->xmlDoc->importNode($childNode, TRUE);
+
+                            $mainNode->appendChild($node2);
+                        }
+                    }
+                    else
+                        $newDG->xmlroot->appendChild($node);
                 }
 
 
@@ -341,6 +373,7 @@ class UPLOAD extends UTIL
                     else
                     {
                         $runningConfig = new DOMDocument();
+                        $runningConfig->formatOutput = TRUE;
                         PH::print_stdout( " - Reading XML file from disk... ".$this->configOutput['filename'] );
                         if( !$runningConfig->load($this->configOutput['filename'], XML_PARSE_BIG_LINES) )
                             derr("error while reading xml config file");

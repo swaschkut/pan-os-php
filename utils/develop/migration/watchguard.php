@@ -1109,9 +1109,10 @@ function watchguard_alias($v, $xml, &$alias_array)
                 if( $address !== "Any" )
                 {
                     $tmp_address = $v->addressStore->find($address);
-                    if( $tmp_address === null || $tmp_address === false )
+                    if( $tmp_address !== null && $tmp_address !== false )
                     {
-                        $tmp_addressgroup->addMember($tmp_address);
+                        if( $tmp_addressgroup !== null && $tmp_addressgroup->isGroup() )
+                            $tmp_addressgroup->addMember($tmp_address);
                     }
 
                 }
@@ -1123,7 +1124,7 @@ function watchguard_alias($v, $xml, &$alias_array)
                         $tmp_address = $v->addressStore->newAddress($name, "ip-netmask", "0.0.0.0/0");
                 }
 
-                if( $tmp_addressgroup !== null )
+                if( $tmp_addressgroup !== null && !$tmp_addressgroup->isGroup() )
                     $tmp_addressgroup->addMember($tmp_address);
                 */
             }
