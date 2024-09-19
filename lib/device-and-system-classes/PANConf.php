@@ -1160,6 +1160,16 @@ class PANConf
         $DGremove = DH::findFirstElementByNameAttrOrDie('entry', $VSYSname, $dgNode);
         $dgNode->removeChild( $DGremove );
 
+
+        //remove XMLnode "shared-gateway" if no XML childNodes are available
+        if( !DH::hasChild($dgNode) )
+        {
+            $xPath2 = "/config/devices/entry[@name='localhost.localdomain']/network";
+            $dgNode2 = DH::findXPathSingleEntryOrDie($xPath2, $this->xmlroot);
+
+            $dgNode2->removeChild( $dgNode );
+        }
+
         unset($this->sharedGateways[ $VSYSname ]);
     }
 

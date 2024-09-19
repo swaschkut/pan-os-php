@@ -182,6 +182,8 @@ class VirtualSystem
     /** @var VirtualRouterContainer */
     public $importedVirtualRouter;
 
+    public $importedVisibleVsys;
+
     /** @var DeviceGroup $parentDeviceGroup in case it load as part of Panorama */
     public $parentDeviceGroup = null;
 
@@ -209,6 +211,8 @@ class VirtualSystem
 
             $this->importedInterfaces = new InterfaceContainer($this, $owner->owner->network);
             $this->importedVirtualRouter = new VirtualRouterContainer($this, $owner->owner->network);
+
+            $this->importedVisibleVsys = array();
         }
         else
         {
@@ -216,6 +220,8 @@ class VirtualSystem
 
             $this->importedInterfaces = new InterfaceContainer($this, $owner->network);
             $this->importedVirtualRouter = new VirtualRouterContainer($this, $owner->network);
+
+            $this->importedVisibleVsys = array();
         }
 
 
@@ -429,6 +435,19 @@ class VirtualSystem
             {
                 if( $this->importedVirtualRouter !== null )
                     $this->importedVirtualRouter->load_from_domxml($tmp);
+            }
+
+            $tmp = DH::findFirstElement('visible-vsys', $importroot);
+            if( $tmp !== FALSE )
+            {
+                foreach( $tmp->childNodes as $child )
+                {
+                    if( $child->nodeType != XML_ELEMENT_NODE )
+                        continue;
+
+                    $this->importedVisibleVsys[$child->textContent] =   $child->textContent;
+                }
+
             }
 
         }
@@ -1131,6 +1150,21 @@ class VirtualSystem
         return TRUE;
     }
 
+    public function setVisibleVsys( $newVisibleVsys )
+    {
+        if( !isset( $this->importedVisibleVsys[$newVisibleVsys] ) )
+        {
+            $importroot = DH::findFirstElement('import', $this->xmlroot);
+            if( $importroot !== FALSE ) {
+                $visibleVsysnode = DH::findFirstElementOrCreate('visible-vsys', $importroot);
+
+                //create new DomNode
+                //add new Domnode
+                $tmp = DH::createElement($visibleVsysnode, "member");
+                $tmp->textContent = $newVisibleVsys;
+            }
+        }
+    }
 
     static public $templateXml = '<entry name="temporarynamechangemeplease"><address/><address-group/><service/><service-group/><rulebase></rulebase></entry>';
 
