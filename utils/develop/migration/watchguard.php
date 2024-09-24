@@ -690,8 +690,12 @@ function watchguard_getService($v, $xml)
     }
 }
 
-function add_from_alias_list( $v, $alias_array, $alias, $address_container )
+function add_from_alias_list( $v, $alias_array, $alias, $address_container, $subMethod = false )
 {
+    global $util;
+
+    /** @var AddressRuleContainer $address_container */
+
     //rework - return is always only one object, what if multiple objects are used
     if( isset($alias_array[$alias]) )
     {
@@ -700,7 +704,7 @@ function add_from_alias_list( $v, $alias_array, $alias, $address_container )
         if( $tmp_addressgroup == null )
             $tmp_addressgroup = $v->addressStore->newAddressGroup($alias);
 
-        $subMethod = False;
+        #$subMethod = False;
 
         foreach( $alias_array[$alias] as $key => $array )
         {
@@ -709,31 +713,52 @@ function add_from_alias_list( $v, $alias_array, $alias, $address_container )
             elseif( isset( $array['alias'] ) )
                 $search = $array['alias'];
 
-            #print "search: ".$search."\n";
+            if( $util->debugAPI )
+                print "search: ".$search."\n";
+
             $object = $v->addressStore->find($search);
             if( $object == null )
             {
+                if( $util->debugAPI )
+                    print "object not found: ".$search."\n";
+
                 $subMethod = TRUE;
                 add_from_alias_list( $v, $alias_array, $search, $address_container );
             }
             else
             {
-
-                #$address_container->addObject($object);
                 if( !$tmp_addressgroup->has($object) )
                 {
-                    #print "add object: ".$object->name()."\n";
+                    if( $util->debugAPI )
+                        print "add object to group: ".$object->name()."\n";
                     $tmp_addressgroup->addMember($object);
                 }
 
+                //validation needed if object is already part of rule, e.g. recursive part of group
+                print "validate if object: ".$object->name()." is already part of address Container\n";
+                $object_available = $address_container->hasObjectRecursive( $object );
+                if( !$object_available )
+                {
+                    print "object not available\n";
+                    $address_container->addObject($object);
+                    print "add object to rule: ".$object->name()."\n";
+                }
+                else
+                {
+                    print "object available\n";
+                }
             }
         }
 
         if( !$subMethod )
+        {
+            print "add group to rule: ".$tmp_addressgroup->name()."\n";
             $address_container->addObject($tmp_addressgroup);
+        }
         else
         {
-            $v->addressStore->remove($tmp_addressgroup);
+            #print "remove group from address store: ".$tmp_addressgroup->name()."\n";
+            #$v->addressStore->remove($tmp_addressgroup);
         }
     }
 
@@ -741,6 +766,11 @@ function add_from_alias_list( $v, $alias_array, $alias, $address_container )
 }
 function add_zone_from_alias_list( $v, $alias_array, $alias, $zone_container )
 {
+    global $util;
+
+    if( $util->debugAPI )
+        print "search zone: ".$alias."\n";
+
     if( isset($alias_array[$alias]) )
     {
         foreach( $alias_array[$alias] as $array )
@@ -778,6 +808,8 @@ function add_zone_from_alias_list( $v, $alias_array, $alias, $zone_container )
 }
 function watchguard_getPolicy($v, $xml, $alias_array, $nat_array)
 {
+    global $util;
+
     $not_found = array();
 
     /** @var VirtualSystem $v */
@@ -828,7 +860,8 @@ function watchguard_getPolicy($v, $xml, $alias_array, $nat_array)
             if ($from_alias->nodeType != XML_ELEMENT_NODE) continue;
 
             //Todo: validation if alias is already available in addressStore
-            #print "alias to search: '".$from_alias->textContent."'\n";
+            if( $util->debugAPI )
+                print "alias to search: '".$from_alias->textContent."'\n";
 
             add_from_alias_list($v, $alias_array, $from_alias->textContent, $new_secRule->source);
             /*
@@ -1015,6 +1048,12 @@ function watchguard_getPolicy($v, $xml, $alias_array, $nat_array)
          <tor-block-enabled>1</tor-block-enabled>
         </policy>
          */
+
+        if( $util->debugAPI )
+        {
+            if( $rule_name == "FTP" )
+                derr("stop migration");
+        }
     }
 
     if( !empty( $not_found ) )
@@ -1022,7 +1061,6 @@ function watchguard_getPolicy($v, $xml, $alias_array, $nat_array)
         print_r($not_found);
         mwarning( "the above rules does have from/to parts which are not available" );
     }
-
 }
 
 function watchguard_alias($v, $xml, &$alias_array)
