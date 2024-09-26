@@ -82,7 +82,8 @@ PH::print_stdout();
 
 PH::print_stdout( "migrate Shared-Gateways to vsys");
 
-$vsys_number = 10;
+//Todo: new vsysID can not be on a higher ID as supported on HW/virtuell device
+$vsys_number = 8;
 foreach( $pan->getSharedGateways() as $key => $sharedGateway)
 {
     $vsys_number++;
@@ -114,6 +115,7 @@ foreach( $pan->getSharedGateways() as $key => $sharedGateway)
     #$new_vsys = $pan->findVirtualSystem("vsys".$vsys_number);
 
     PH::print_stdout();
+    PH::print_stdout("--------------------");
     PH::print_stdout( " - create missing SecurityRules in 'vsys".$vsys_number."'");
     $zones = $vsys->zoneStore->getAll();
     foreach( $zones as $zone1 )
@@ -149,8 +151,14 @@ foreach( $pan->getSharedGateways() as $key => $sharedGateway)
             $externalVsys = $zone1->getExternalVsys();
             if ( $externalVsys !== null && $externalVsys == $sharedGateway->name() )
             {
-                PH::print_stdout( " - for zone:: ".$zone1->name()." - owner: ".$zone1->owner->owner->name()." set new external vsys: '".$vsys->name()."'");
+                PH::print_stdout("--------------------");
+                PH::print_stdout( " - for zone: ".$zone1->name()." - owner: ".$zone1->owner->owner->name()." set new external vsys: '".$vsys->name()."'");
                 $zone1->setExternalVsys($vsys);
+
+                PH::print_stdout( " - for VSYS: ".$virtualSystem->name()." set new visible vsys: '".$vsys->name()."'");
+                $virtualSystem->setVisibleVsys($vsys->name());
+                PH::print_stdout( " - for VSYS: ".$vsys->name()." set new visible vsys: '".$virtualSystem->name()."'");
+                $vsys->setVisibleVsys($virtualSystem->name());
             }
         }
     }

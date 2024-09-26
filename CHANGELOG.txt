@@ -28,6 +28,7 @@ UTIL:
 * class Zone - introduce new methods to get/set zone objects of type 'external'
 * develop - shared_gateway.php | migrate sg to vsys and create missing SecurityPolicy; change existing zones of type external to newly created vsys
 * type=device actions=zpp-create-alert-only-bp:TRUE/FALSE | introcude new argument for this actions to validate if already another ZPP is available
+* develop - shared_gateway.php | extend sg migration to vsys with visible-vsys XML information
 
 BUGFIX:
 * type=diff file1=diff.xml "filter=/config/devices/entry[@name='localhost.localdomain']/device-group/entry[@name='{{name}}']/pre-rulebase" name1=DG1 name2=DG2 | correction of pregmatch
