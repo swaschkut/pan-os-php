@@ -1024,8 +1024,12 @@ SecurityProfileCallContext::$supportedActions['virus.best-practice-set'] = array
 
         //Todo:
         //set XML to the correct value
+        #$tmp_decoder = DH::findFirstElement('decoder', $object->xmlroot);
         foreach($object->tmp_virus_prof_array as $decoder )
         {
+            #$xmlNode = DH::findFirstElementByNameAttr("entry", $decoder, $tmp_decoder);
+            #DH::DEBUGprintDOMDocument($xmlNode);
+
             if( $decoder == "http" || $decoder == "https" || $decoder == "ftp" || $decoder == "smb" )
             {
                 if( $object->$decoder['action'] != "default" && $object->$decoder['action'] != "reset-both"  )

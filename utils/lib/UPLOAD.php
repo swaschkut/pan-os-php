@@ -304,9 +304,9 @@ class UPLOAD extends UTIL
                     $node = $util2->xmlDoc->importNode($xpath, TRUE);
                     #PH::print_stdout("       append");
 
-                    if( $variable == "import" || $variable == "zone" )
+                    if( $variable == "import" || $variable == "zone" || $variable == "display-name" || $variable == "server-profile" || $variable == "dns-proxy" )
                     {
-                        mwarning("import into Panorama DeviceGroup but XMLnode 'import'/'zone' found", null, FALSE);
+                        mwarning("import into Panorama DeviceGroup but XMLnode '".$variable."' found", null, FALSE);
                         continue;
                     }
 
@@ -537,10 +537,34 @@ class UPLOAD extends UTIL
                 if( isset($toXpath) )
                 {
                     $stringToSend = '';
+                    $rule_stringToSend = '';
                     foreach( $foundInputXpathList as $xpath )
                     {
-                        $stringToSend .= DH::dom_to_xml($xpath, -1, FALSE);
+                        if( strpos( $toXpath, "/device-group/entry[" ) != false )
+                        {
+                            $tmpArray = explode( "/", DH::elementToPanXPath($xpath) );
+                            $variable = end($tmpArray);
+
+                            if( $variable == "import" || $variable == "zone" || $variable == "display-name" || $variable == "server-profile" || $variable == "dns-proxy" )
+                            {
+                                mwarning("import into Panorama DeviceGroup but XMLnode '".$variable."' found", null, FALSE);
+                                continue;
+                            }
+
+                            if( $variable == "rulebase" )
+                            {
+                                $tmp_stringToSend = DH::dom_to_xml($xpath, -1, FALSE);
+
+                                $rule_stringToSend = str_replace("rulebase", "pre-rulebase", $tmp_stringToSend);
+                            }
+                            else
+                                $stringToSend .= DH::dom_to_xml($xpath, -1, FALSE);
+                        }
+                        else
+                            $stringToSend .= DH::dom_to_xml($xpath, -1, FALSE);
                     }
+
+                    $stringToSend .= $rule_stringToSend;
                 }
                 else
                     $stringToSend = DH::dom_to_xml(DH::firstChildElement($this->xmlDoc), -1, FALSE);
