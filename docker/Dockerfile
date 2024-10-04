@@ -11,6 +11,9 @@ RUN DEBIAN_FRONTEND=noninteractive apt update --fix-missing \
     tzdata \
     git \
     bash-completion \
+    vim \
+    inetutils-ping \
+    inetutils-traceroute \
     php$php_var \
     php$php_var-curl \
     php$php_var-dom \

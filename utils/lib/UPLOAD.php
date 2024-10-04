@@ -304,7 +304,7 @@ class UPLOAD extends UTIL
                     $node = $util2->xmlDoc->importNode($xpath, TRUE);
                     #PH::print_stdout("       append");
 
-                    if( $variable == "import" || $variable == "zone" || $variable == "display-name" || $variable == "server-profile" || $variable == "dns-proxy" )
+                    if( $variable == "import" || $variable == "zone" || $variable == "display-name" || $variable == "server-profile" || $variable == "dns-proxy" || $variable == "botnet" )
                     {
                         mwarning("import into Panorama DeviceGroup but XMLnode '".$variable."' found", null, FALSE);
                         continue;
@@ -545,7 +545,7 @@ class UPLOAD extends UTIL
                             $tmpArray = explode( "/", DH::elementToPanXPath($xpath) );
                             $variable = end($tmpArray);
 
-                            if( $variable == "import" || $variable == "zone" || $variable == "display-name" || $variable == "server-profile" || $variable == "dns-proxy" )
+                            if( $variable == "import" || $variable == "zone" || $variable == "display-name" || $variable == "server-profile" || $variable == "dns-proxy" || $variable == "botnet" )
                             {
                                 mwarning("import into Panorama DeviceGroup but XMLnode '".$variable."' found", null, FALSE);
                                 continue;
