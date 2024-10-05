@@ -598,6 +598,45 @@ DeviceCallContext::$supportedActions['Template-clone '] = array(
     ),
 );
 
+DeviceCallContext::$supportedActions['Template-create-vsys'] = array(
+    'name' => 'template-create-vsys',
+    'MainFunction' => function (DeviceCallContext $context)
+    {
+    },
+    'GlobalFinishFunction' => function (DeviceCallContext $context)
+    {
+        $templateName = $context->arguments['name'];
+        $vsysName = $context->arguments['vsys-name'];
+
+        $pan = $context->subSystem;
+        if( !$pan->isPanorama() )
+            derr("only supported on Panorama config");
+
+
+        $tmp_template = $pan->findTemplate($templateName);
+        if( $tmp_template === null )
+        {
+            $string = "create Template: " . $templateName;
+            PH::ACTIONlog($context, $string);
+
+            $tmp_template = $pan->createTemplate($templateName);
+
+            if( $context->isAPI )
+                $tmp_template->API_sync();
+        }
+
+        $tmp_template->createVsys($vsysName);
+
+        if( $context->isAPI )
+            $tmp_template->API_sync();
+
+    },
+    'args' => array(
+        'name' => array('type' => 'string', 'default' => 'false'),
+        'vsys-name' => array('type' => 'string', 'default' => 'false'),
+    ),
+);
+
 DeviceCallContext::$supportedActions['TemplateStack-create'] = array(
     'name' => 'templatestack-create',
     'MainFunction' => function (DeviceCallContext $context) {
