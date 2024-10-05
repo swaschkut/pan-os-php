@@ -30,6 +30,7 @@ UTIL:
 * type=device actions=zpp-create-alert-only-bp:TRUE/FALSE | introcude new argument for this actions to validate if already another ZPP is available
 * develop - shared_gateway.php | extend sg migration to vsys with visible-vsys XML information
 * type=device | introduce actions=template-create-vsys:TEMPLATE_name,VSYS-NAME
+* type=upload | extend validation for API and offline mode - if fromxpath is from NGFW and toxpath is to Panorama DeviceGroup or Template
 
 BUGFIX:
 * type=diff file1=diff.xml "filter=/config/devices/entry[@name='localhost.localdomain']/device-group/entry[@name='{{name}}']/pre-rulebase" name1=DG1 name2=DG2 | correction of pregmatch

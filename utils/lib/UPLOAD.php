@@ -71,6 +71,31 @@ class UPLOAD extends UTIL
         #$this->xmlDoc->formatOutput = true;
         #$this->xmlDoc->preserveWhiteSpace = false;
 
+        $configPartOfTemplate = array();
+        #Todo: swaschkut 20241004 - validate
+        $configPartOfTemplate[] = "reports";
+        $configPartOfTemplate[] = "report-group";
+        $configPartOfTemplate[] = "display-name";
+        $configPartOfTemplate[] = "botnet";
+
+        $configPartOfTemplate[] = "import";
+        $configPartOfTemplate[] = "zone";
+        $configPartOfTemplate[] = "server-profile";
+        $configPartOfTemplate[] = "dns-proxy";
+        $configPartOfTemplate[] = "admin-role";
+        $configPartOfTemplate[] = "certificate";
+        $configPartOfTemplate[] = "certificate-profile";
+        $configPartOfTemplate[] = "ssl-tls-service-profile";
+        $configPartOfTemplate[] = "authentication-profile";
+        $configPartOfTemplate[] = "alg-override";
+        $configPartOfTemplate[] = "local-user-database";
+        $configPartOfTemplate[] = "redistribution-agent";
+        $configPartOfTemplate[] = "group-mapping";
+        $configPartOfTemplate[] = "global-protect";
+        $configPartOfTemplate[] = "authentication-sequence";
+        $configPartOfTemplate[] = "redistribution-collector";
+        $configPartOfTemplate[] = "ts-agent";
+
         if( isset(PH::$args['loadafterupload']) )
             $this->loadConfigAfterUpload = TRUE;
 
@@ -282,6 +307,18 @@ class UPLOAD extends UTIL
 
                     #mwarning( "Panorama used, but readonly section is not yet supported for update" );
                 }
+                elseif( strpos( $toXpath, "/template/entry[" ) != false )
+                {
+                    //Todo: validate if Template is already there, if not create it
+
+                    //import of multiple parts must be possible into template
+                    //- ...../config/devices/entry[@name='localhost.localdomain']/network
+                    //- ...../config/devices/entry[@name='localhost.localdomain']/vsys/entry[@name='vsys10']
+                }
+                elseif( strpos( $toXpath, "/template-stack/entry[" ) != false )
+                {
+                    //Todo: validate if template-stack is already available
+                }
 
                 if( $foundOutputXpathList->length != 1 )
                     #derr("toXpath returned too many results");
@@ -304,40 +341,99 @@ class UPLOAD extends UTIL
                     $node = $util2->xmlDoc->importNode($xpath, TRUE);
                     #PH::print_stdout("       append");
 
-                    if( $variable == "import" || $variable == "zone" || $variable == "display-name" || $variable == "server-profile" || $variable == "dns-proxy" || $variable == "botnet" )
+                    if( strpos( $toXpath, "/device-group/entry[" ) != false )
                     {
-                        mwarning("import into Panorama DeviceGroup but XMLnode '".$variable."' found", null, FALSE);
-                        continue;
-                    }
-
-                    $mainNode = DH::findFirstElement($variable, $newDG->xmlroot);
-                    if( $mainNode !== false )
-                        $newDG->xmlroot->removeChild($mainNode);
-
-
-                    if( $variable == "rulebase" )
-                    {
-                        DH::DEBUGprintDOMDocument($node);
-                        mwarning("import into Panorama DeviceGroup but XMLnode 'rulebase' found. renamed to 'pre-rulebase'", null, FALSE);
-
-                        $mainNode = DH::findFirstElement("pre-rulebase", $newDG->xmlroot);
-                        if( $mainNode !== false )
-                            $newDG->xmlroot->removeChild($mainNode);
-                        $mainNode = DH::findFirstElementOrCreate("pre-rulebase", $newDG->xmlroot);
-
-                        foreach( $node->childNodes as $childNode )
-                        {
-                            if( $childNode->nodeType != XML_ELEMENT_NODE )
-                                continue;
-
-                            DH::DEBUGprintDOMDocument($childNode);
-                            $node2 = $util2->xmlDoc->importNode($childNode, TRUE);
-
-                            $mainNode->appendChild($node2);
+                        //Todo: swaschkut 20241005 check also how to reduce duplicate code, see below for API import
+                        if (in_array($variable, $configPartOfTemplate)) {
+                            mwarning("import into Panorama DeviceGroup not possible - XMLnode '" . $variable . "' found. Template relevant", null, FALSE);
+                            continue;
                         }
+
+                        $mainNode = DH::findFirstElement($variable, $newDG->xmlroot);
+                        if ($mainNode !== false)
+                            $newDG->xmlroot->removeChild($mainNode);
+
+
+                        if ($variable == "rulebase") {
+                            DH::DEBUGprintDOMDocument($node);
+                            mwarning("import into Panorama DeviceGroup but XMLnode 'rulebase' found. renamed to 'pre-rulebase'", null, FALSE);
+
+                            $mainNode = DH::findFirstElement("pre-rulebase", $newDG->xmlroot);
+                            if ($mainNode !== false)
+                                $newDG->xmlroot->removeChild($mainNode);
+                            $mainNode = DH::findFirstElementOrCreate("pre-rulebase", $newDG->xmlroot);
+
+                            foreach ($node->childNodes as $childNode) {
+                                if ($childNode->nodeType != XML_ELEMENT_NODE)
+                                    continue;
+
+                                if ($childNode->nodeName != "default-security-rules") {
+                                    DH::DEBUGprintDOMDocument($childNode);
+                                    $node2 = $util2->xmlDoc->importNode($childNode, TRUE);
+
+                                    $mainNode->appendChild($node2);
+                                } else {
+                                    $mainPostNode = DH::findFirstElement("post-rulebase", $newDG->xmlroot);
+                                    if ($mainPostNode !== false)
+                                        $newDG->xmlroot->removeChild($mainPostNode);
+                                    $mainPostNode = DH::findFirstElementOrCreate("post-rulebase", $newDG->xmlroot);
+                                    $mainPostNode->appendChild($node2);
+                                }
+
+                            }
+                        }
+                        else
+                            $newDG->xmlroot->appendChild($node);
+                    }
+                    elseif( strpos( $toXpath, "/template/entry[" ) != false )
+                    {
+                        //Todo: not defined if I like to import into Panorama Template
+                        //Todo: check also how to reduce duplicate code, see below for API import
+
+
+                        if( strpos( $toXpath, "config/devices/entry[@name='localhost.localdomain']/network" ) != false )
+                        {
+
+                        }
+                        elseif( strpos( $toXpath, "/global-protect/" ) != false )
+                        {
+
+                        }
+                        elseif( !in_array($variable, $configPartOfTemplate))
+                        {
+                            mwarning("import into Panorama Template not possible - XMLnode '" . $variable . "' found. DeviceGroup relevant", null, FALSE);
+                            continue;
+                        }
+                        elseif( $variable == "botnet" || $variable == "alg-override" || $variable == "reports" || $variable == "report-group" || $variable == "display-name" )
+                        {
+                            mwarning("import into Panorama Template not possible - XMLnode '" . $variable . "' found. where to import???", null, FALSE);
+                            continue;
+                        }
+
+                        //Todo:
+                        //different cases for offline import:
+                        //find full xpath after template name: ../template/entry[@name='PA-5410_CC']/....
+
+                        // find/create TO xpath: e.g. "../config/devices/entry[@name='localhost.localdomain']/network"
+                        // import all child
+
+                        // ..../template/entry[@name='PA-5410_CC']/..
+                        //   ../config/shared
+                        // import all child
+
+                        //  ..../template/entry[@name='PA-5410_CC']/...
+                        //   ../config/devices/entry[@name='localhost.localdomain']/vsys/entry[@name='vsys10']
+                        // import all child
+
+                    }
+                    elseif( strpos( $toXpath, "/template-stack/entry[" ) != false )
+                    {
+                        //Todo: not defined if I like to import into Panorama Template-Stack// needed
                     }
                     else
-                        $newDG->xmlroot->appendChild($node);
+                    {
+                        //Todo: not defined if I like to import into NGFW
+                    }
                 }
 
 
@@ -538,6 +634,7 @@ class UPLOAD extends UTIL
                 {
                     $stringToSend = '';
                     $rule_stringToSend = '';
+                    $postrule_stringToSend = '';
                     foreach( $foundInputXpathList as $xpath )
                     {
                         if( strpos( $toXpath, "/device-group/entry[" ) != false )
@@ -545,26 +642,66 @@ class UPLOAD extends UTIL
                             $tmpArray = explode( "/", DH::elementToPanXPath($xpath) );
                             $variable = end($tmpArray);
 
-                            if( $variable == "import" || $variable == "zone" || $variable == "display-name" || $variable == "server-profile" || $variable == "dns-proxy" || $variable == "botnet" )
+                            if( in_array($variable, $configPartOfTemplate) )
                             {
-                                mwarning("import into Panorama DeviceGroup but XMLnode '".$variable."' found", null, FALSE);
+                                mwarning("import into Panorama DeviceGroup not possible - XMLnode '".$variable."' found. Template relevant", null, FALSE);
                                 continue;
                             }
 
                             if( $variable == "rulebase" )
                             {
-                                $tmp_stringToSend = DH::dom_to_xml($xpath, -1, FALSE);
+                                $XMLnode_default_security = DH::findFirstElement("default-security-rules", $xpath);
+                                if( $XMLnode_default_security !== null && $XMLnode_default_security !== FALSE )
+                                {
+                                    $tmppost_stringToSend = DH::dom_to_xml($XMLnode_default_security, -1, FALSE);
+                                    $postrule_stringToSend = "<post-rulebase>".$tmppost_stringToSend."</post-rulebase>";
 
+                                    $xpath->removeChild($XMLnode_default_security);
+                                }
+
+                                $tmp_stringToSend = DH::dom_to_xml($xpath, -1, FALSE);
                                 $rule_stringToSend = str_replace("rulebase", "pre-rulebase", $tmp_stringToSend);
+
                             }
                             else
                                 $stringToSend .= DH::dom_to_xml($xpath, -1, FALSE);
+                        }
+                        elseif( strpos( $toXpath, "/template/entry[" ) != false )
+                        {
+                            $tmpArray = explode("/", DH::elementToPanXPath($xpath));
+                            $variable = end($tmpArray);
+
+                            if( strpos( $toXpath, "config/devices/entry[@name='localhost.localdomain']/network" ) != false )
+                            {
+
+                            }
+                            elseif( strpos( $toXpath, "/global-protect/" ) != false )
+                            {
+
+                            }
+                            elseif( !in_array($variable, $configPartOfTemplate))
+                            {
+                                mwarning("import into Panorama Template not possible - XMLnode '" . $variable . "' found. DeviceGroup relevant", null, FALSE);
+                                continue;
+                            }
+                            elseif( $variable == "botnet" || $variable == "alg-override" || $variable == "reports" || $variable == "report-group" || $variable == "display-name" )
+                            {
+                                mwarning("import into Panorama Template not possible - XMLnode '" . $variable . "' found. where to import???", null, FALSE);
+                                continue;
+                            }
+
+                            $stringToSend .= DH::dom_to_xml($xpath, -1, FALSE);
+                        }
+                        elseif( strpos( $toXpath, "/template-stack/entry[" ) != false )
+                        {
+                            $stringToSend .= DH::dom_to_xml($xpath, -1, FALSE);
                         }
                         else
                             $stringToSend .= DH::dom_to_xml($xpath, -1, FALSE);
                     }
 
                     $stringToSend .= $rule_stringToSend;
+                    $stringToSend .= $postrule_stringToSend;
                 }
                 else
                     $stringToSend = DH::dom_to_xml(DH::firstChildElement($this->xmlDoc), -1, FALSE);
