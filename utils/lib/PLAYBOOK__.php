@@ -367,11 +367,46 @@ class PLAYBOOK__
             }
 
             if( !in_array( $script, $in_exclude ) )
-                $arguments[] = "in=".$in;
+            {
+                $IN_inarray = false;
+                foreach($arguments as $entry)
+                {
+                    if (strpos($entry, 'in=') !== false) {
+                        $IN_inarray = true;
+                    }
+                }
+                if( !$IN_inarray )
+                    $arguments[] = "in=".$in;
+            }
+
 
             if( !in_array( $script, $out_exclude ) && !$this->isAPI )
-                $arguments[] = "out=".$out;
+            {
+                $OUT_inarray = false;
+                $IN_API_inarray = false;
+                foreach($arguments as $entry)
+                {
+                    if (strpos($entry, 'out=') !== false) {
+                        $OUT_inarray = true;
+                    }
+                    if (strpos($entry, 'in=api://') !== false) {
+                        $IN_API_inarray = true;
+                    }
+                }
+                if( !$OUT_inarray && !$IN_API_inarray )
+                    $arguments[] = "out=".$out;
+            }
 
+            //validate if arguments include "sleep"
+            $SLEEP_inarray = false;
+            foreach($arguments as $key => $entry)
+            {
+                if (strpos($entry, 'sleep') !== false)
+                {
+                    $SLEEP_inarray = true;
+                    unset( $arguments[$key] );
+                }
+            }
 
             PH::resetCliArgs( $arguments);
 
@@ -390,6 +425,9 @@ class PLAYBOOK__
             PH::print_stdout();
             PH::print_stdout( "############################################################################");
             PH::print_stdout();
+
+            if( $SLEEP_inarray )
+                sleep(5);
         }
 
         if( $finaloutput != null && $finaloutput !== "/dev/null" && !$this->isAPI )
