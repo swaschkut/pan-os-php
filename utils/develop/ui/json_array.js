@@ -2048,6 +2048,21 @@ var subjectObject =
                     }
                 }
             },
+            "template-create-vsys": {
+                "name": "template-create-vsys",
+                "MainFunction": {},
+                "GlobalFinishFunction": {},
+                "args": {
+                    "name": {
+                        "type": "string",
+                        "default": "false"
+                    },
+                    "vsys-name": {
+                        "type": "string",
+                        "default": "false"
+                    }
+                }
+            },
             "template-delete": {
                 "name": "template-delete",
                 "MainFunction": {}
@@ -2125,7 +2140,14 @@ var subjectObject =
             "zpp-create-alert-only-bp": {
                 "name": "zpp-create-alert-only-bp",
                 "GlobalInitFunction": {},
-                "MainFunction": {}
+                "MainFunction": {},
+                "args": {
+                    "zpp-availability-validation": {
+                        "type": "bool",
+                        "default": "false",
+                        "help": "if set to true; the script validate if already another ZPP is available, if available no creation of ZPP"
+                    }
+                }
             },
             "zpp-create-bp": {
                 "name": "zpp-create-bp",
