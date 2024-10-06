@@ -1214,6 +1214,32 @@ SecurityProfileCallContext::$supportedActions['spyware.best-practice-set'] = arr
                 $object->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action'] = "reset-both";
             }
         }
+        else
+        {
+            $xmlString = '   <mica-engine-spyware-enabled>
+  <entry name="HTTP Command and Control detector">
+     <inline-policy-action>alert</inline-policy-action>
+  </entry>
+  <entry name="HTTP2 Command and Control detector">
+     <inline-policy-action>alert</inline-policy-action>
+  </entry>
+  <entry name="SSL Command and Control detector">
+     <inline-policy-action>alert</inline-policy-action>
+  </entry>
+  <entry name="Unknown-TCP Command and Control detector">
+     <inline-policy-action>alert</inline-policy-action>
+  </entry>
+  <entry name="Unknown-UDP Command and Control detector">
+     <inline-policy-action>alert</inline-policy-action>
+  </entry>
+</mica-engine-spyware-enabled>';
+
+            if( $this->owner->owner->version >= 102 )
+            {
+                $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $xmlString);
+                $object->xmlroot->appendChild($xmlElement);
+            }
+        }
 
         if( $context->isAPI )
         {
