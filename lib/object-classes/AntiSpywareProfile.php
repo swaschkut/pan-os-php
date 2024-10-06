@@ -259,6 +259,65 @@ class AntiSpywareProfile extends SecurityProfile2
             }
 
             $tmp_dns_security_categories = DH::findFirstElement('dns-security-categories', $tmp_rule);
+            if( $tmp_dns_security_categories === FALSE )
+            {
+                $xmlstring = '<dns-security-categories>
+<entry name="pan-dns-sec-adtracking">
+  <log-level>default</log-level>
+  <action>default</action>
+  <packet-capture>disable</packet-capture>
+</entry>
+<entry name="pan-dns-sec-cc">
+  <log-level>default</log-level>
+  <action>default</action>
+  <packet-capture>disable</packet-capture>
+</entry>
+<entry name="pan-dns-sec-ddns">
+  <log-level>default</log-level>
+  <action>default</action>
+  <packet-capture>disable</packet-capture>
+</entry>
+<entry name="pan-dns-sec-grayware">
+  <log-level>default</log-level>
+  <action>default</action>
+  <packet-capture>disable</packet-capture>
+</entry>
+<entry name="pan-dns-sec-malware">
+  <log-level>default</log-level>
+  <action>default</action>
+  <packet-capture>disable</packet-capture>
+</entry>
+<entry name="pan-dns-sec-parked">
+  <log-level>default</log-level>
+  <action>default</action>
+  <packet-capture>disable</packet-capture>
+</entry>
+<entry name="pan-dns-sec-phishing">
+  <log-level>default</log-level>
+  <action>default</action>
+  <packet-capture>disable</packet-capture>
+</entry>
+<entry name="pan-dns-sec-proxy">
+  <log-level>default</log-level>
+  <action>default</action>
+  <packet-capture>disable</packet-capture>
+</entry>
+<entry name="pan-dns-sec-recent">
+  <log-level>default</log-level>
+  <action>default</action>
+  <packet-capture>disable</packet-capture>
+</entry>
+</dns-security-categories>';
+
+                if( $this->owner->owner->version >= 100 )
+                {
+                    $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $xmlstring);
+                    $tmp_rule->appendChild($xmlElement);
+
+                    $tmp_dns_security_categories = DH::findFirstElement('dns-security-categories', $tmp_rule);
+                }
+            }
+
             if( $tmp_dns_security_categories !== FALSE )
             {
                 $this->additional['botnet-domain']['dns-security-categories'] = array();
@@ -455,18 +514,6 @@ class AntiSpywareProfile extends SecurityProfile2
     static $templatexml_100 = '<entry name="**temporarynamechangeme**">
    <botnet-domains>
       <lists>
-         <entry name="EDL_domain_list">
-            <action>
-               <allow/>
-            </action>
-            <packet-capture>disable</packet-capture>
-         </entry>
-         <entry name="EDL_waschkut">
-            <action>
-               <allow/>
-            </action>
-            <packet-capture>disable</packet-capture>
-         </entry>
          <entry name="default-paloalto-dns">
             <action>
                <sinkhole/>
