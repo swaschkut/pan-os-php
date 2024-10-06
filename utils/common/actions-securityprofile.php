@@ -1218,19 +1218,19 @@ SecurityProfileCallContext::$supportedActions['spyware.best-practice-set'] = arr
         {
             $xmlString = '   <mica-engine-spyware-enabled>
   <entry name="HTTP Command and Control detector">
-     <inline-policy-action>alert</inline-policy-action>
+     <inline-policy-action>reset-both</inline-policy-action>
   </entry>
   <entry name="HTTP2 Command and Control detector">
-     <inline-policy-action>alert</inline-policy-action>
+     <inline-policy-action>reset-both</inline-policy-action>
   </entry>
   <entry name="SSL Command and Control detector">
-     <inline-policy-action>alert</inline-policy-action>
+     <inline-policy-action>reset-both</inline-policy-action>
   </entry>
   <entry name="Unknown-TCP Command and Control detector">
-     <inline-policy-action>alert</inline-policy-action>
+     <inline-policy-action>reset-both</inline-policy-action>
   </entry>
   <entry name="Unknown-UDP Command and Control detector">
-     <inline-policy-action>alert</inline-policy-action>
+     <inline-policy-action>reset-both</inline-policy-action>
   </entry>
 </mica-engine-spyware-enabled>';
 
@@ -1238,6 +1238,9 @@ SecurityProfileCallContext::$supportedActions['spyware.best-practice-set'] = arr
             {
                 $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $xmlString);
                 $object->xmlroot->appendChild($xmlElement);
+
+                $tmp_mlav_engine = DH::findFirstElementOrCreate('cloud-inline-analysis', $object->xmlroot);
+                $tmp_mlav_engine->textContent = "yes";
             }
         }
 
@@ -1285,6 +1288,35 @@ SecurityProfileCallContext::$supportedActions['spyware.alert-only-set'] = array(
 
             if( !$action_other_then_allow_alert )
             {
+                $tmp_mlav_engine = DH::findFirstElementOrCreate('cloud-inline-analysis', $object->xmlroot);
+                $tmp_mlav_engine->textContent = "yes";
+            }
+        }
+        else
+        {
+            $xmlString = '   <mica-engine-spyware-enabled>
+  <entry name="HTTP Command and Control detector">
+     <inline-policy-action>alert</inline-policy-action>
+  </entry>
+  <entry name="HTTP2 Command and Control detector">
+     <inline-policy-action>alert</inline-policy-action>
+  </entry>
+  <entry name="SSL Command and Control detector">
+     <inline-policy-action>alert</inline-policy-action>
+  </entry>
+  <entry name="Unknown-TCP Command and Control detector">
+     <inline-policy-action>alert</inline-policy-action>
+  </entry>
+  <entry name="Unknown-UDP Command and Control detector">
+     <inline-policy-action>alert</inline-policy-action>
+  </entry>
+</mica-engine-spyware-enabled>';
+
+            if( $this->owner->owner->version >= 102 )
+            {
+                $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $xmlString);
+                $object->xmlroot->appendChild($xmlElement);
+
                 $tmp_mlav_engine = DH::findFirstElementOrCreate('cloud-inline-analysis', $object->xmlroot);
                 $tmp_mlav_engine->textContent = "yes";
             }
