@@ -35,6 +35,8 @@ class AntiVirusProfile extends SecurityProfile2
 
     public $tmp_virus_prof_array = array('http', 'http2','smtp', 'imap', 'pop3', 'ftp', 'smb');
 
+    public $tmp_virus_prof_mica_array = array('Windows Executables', 'PowerShell Script 1', 'PowerShell Script 2', 'Executable Linked Format', 'MSOffice', 'Shell', 'OOXML', 'MachO');
+
 
     /**
      * you should not need this one for normal use
@@ -124,6 +126,7 @@ class AntiVirusProfile extends SecurityProfile2
         {
             $tmp_array = array();
 
+            $tmp_decoder_https_found = false;
             foreach( $tmp_decoder->childNodes as $tmp_entry )
             {
                 if( $tmp_entry->nodeType != XML_ELEMENT_NODE )
@@ -131,6 +134,8 @@ class AntiVirusProfile extends SecurityProfile2
 
 
                 $appName = DH::findAttribute('name', $tmp_entry);
+                if( $appName == "http2" )
+                    $tmp_decoder_https_found = true;
                 if( $appName === FALSE )
                     derr("Virus SecurityProfile decoder name not found\n");
 
@@ -164,6 +169,22 @@ class AntiVirusProfile extends SecurityProfile2
                 {
                     $this->$appName['mlav-action'] = "----";
                 }
+            }
+
+            $https2_xml_string = '<entry name="http2">
+  <action>allow</action>
+  <wildfire-action>allow</wildfire-action>
+  <mlav-action>allow</mlav-action>
+</entry>';
+
+            if( !$tmp_decoder_https_found )
+            {
+                $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $https2_xml_string);
+                $tmp_decoder->appendChild($xmlElement);
+
+                $this->http2['action'] = "allow";
+                $this->$appName['wildfire-action'] = "allow";
+                $this->$appName['mlav-action'] = "allow";
             }
         }
 
@@ -199,16 +220,86 @@ class AntiVirusProfile extends SecurityProfile2
         if( $tmp_rule !== FALSE )
         {
             $this->additional['mlav-engine-filebased-enabled'] = array();
+            $tmp_mica_OOXML_found = false;
+            $tmp_mica_MachO_found = false;
             foreach( $tmp_rule->childNodes as $tmp_entry1 )
             {
                 if ($tmp_entry1->nodeType != XML_ELEMENT_NODE)
                     continue;
 
                 $name = DH::findAttribute("name", $tmp_entry1);
+                if( $appName == "OOXML" )
+                    $tmp_mica_OOXML_found = TRUE;
+                elseif( $appName == "MachO" )
+                    $tmp_mica_MachO_found = TRUE;
+
                 $tmp_inline_policy_action = DH::findFirstElement("mlav-policy-action", $tmp_entry1);
                 if( $tmp_inline_policy_action !== FALSE )
                     $this->additional['mlav-engine-filebased-enabled'][$name]['mlav-policy-action'] = $tmp_inline_policy_action->textContent;
             }
+
+            $OOXML_xmlstring = '<entry name="OOXML">
+    <mlav-policy-action>disable</mlav-policy-action>
+  </entry>';
+            $MachO_xmlstring = '<entry name="MachO">
+    <mlav-policy-action>disable</mlav-policy-action>
+  </entry>';
+
+            if( !$tmp_mica_OOXML_found )
+            {
+                $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $OOXML_xmlstring);
+                $tmp_rule->appendChild($xmlElement);
+
+                $this->additional['mlav-engine-filebased-enabled']['OOXML']['mlav-policy-action'] = "disable";
+            }
+            if( !$tmp_mica_MachO_found )
+            {
+                $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $MachO_xmlstring);
+                $tmp_rule->appendChild($xmlElement);
+
+                $this->additional['mlav-engine-filebased-enabled']['MachO']['mlav-policy-action'] = "disable";
+            }
+        }
+        else
+        {
+            $xmlstring = '<mlav-engine-filebased-enabled>
+  <entry name="Windows Executables">
+    <mlav-policy-action>disable</mlav-policy-action>
+  </entry>
+  <entry name="PowerShell Script 1">
+    <mlav-policy-action>disable</mlav-policy-action>
+  </entry>
+  <entry name="PowerShell Script 2">
+    <mlav-policy-action>disable</mlav-policy-action>
+  </entry>
+  <entry name="Executable Linked Format">
+    <mlav-policy-action>disable</mlav-policy-action>
+  </entry>
+  <entry name="MSOffice">
+    <mlav-policy-action>disable</mlav-policy-action>
+  </entry>
+  <entry name="Shell">
+    <mlav-policy-action>disable</mlav-policy-action>
+  </entry>
+  <entry name="OOXML">
+    <mlav-policy-action>disable</mlav-policy-action>
+  </entry>
+  <entry name="MachO">
+    <mlav-policy-action>disable</mlav-policy-action>
+  </entry>
+</mlav-engine-filebased-enabled>';
+
+            $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $xmlstring);
+            $xml->appendChild($xmlElement);
+
+            $this->additional['mlav-engine-filebased-enabled']['Windows Executables']['mlav-policy-action'] = "disable";
+            $this->additional['mlav-engine-filebased-enabled']['PowerShell Script 1']['mlav-policy-action'] = "disable";
+            $this->additional['mlav-engine-filebased-enabled']['PowerShell Script 2']['mlav-policy-action'] = "disable";
+            $this->additional['mlav-engine-filebased-enabled']['Executable Linked Format']['mlav-policy-action'] = "disable";
+            $this->additional['mlav-engine-filebased-enabled']['MSOffice']['mlav-policy-action'] = "disable";
+            $this->additional['mlav-engine-filebased-enabled']['Shell']['mlav-policy-action'] = "disable";
+            $this->additional['mlav-engine-filebased-enabled']['OOXML']['mlav-policy-action'] = "disable";
+            $this->additional['mlav-engine-filebased-enabled']['MachO']['mlav-policy-action'] = "disable";
         }
 
         return TRUE;
@@ -438,6 +529,9 @@ class AntiVirusProfile extends SecurityProfile2
          <mlav-policy-action>disable</mlav-policy-action>
       </entry>
       <entry name="OOXML">
+         <mlav-policy-action>disable</mlav-policy-action>
+      </entry>
+      <entry name="MachO">
          <mlav-policy-action>disable</mlav-policy-action>
       </entry>
    </mlav-engine-filebased-enabled>
