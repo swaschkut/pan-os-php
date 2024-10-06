@@ -1101,6 +1101,95 @@ SecurityProfileCallContext::$supportedActions['virus.best-practice-set'] = array
 
     },
 );
+SecurityProfileCallContext::$supportedActions['virus.alert-only-set'] = array(
+    'name' => 'virus.alert-only-set',
+    'MainFunction' => function (SecurityProfileCallContext $context) {
+        $object = $context->object;
+
+        if( get_class( $object) !== "AntiVirusProfile")
+            return null;
+
+        $tmp_decoder = DH::findFirstElement('decoder', $object->xmlroot);
+        foreach($object->tmp_virus_prof_array as $decoder )
+        {
+            $xmlNode = DH::findFirstElementByNameAttr("entry", $decoder, $tmp_decoder);
+
+            if( $decoder == "http" || $decoder == "https" || $decoder == "ftp" || $decoder == "smb" )
+            {
+                if( $object->$decoder['action'] == "allow" )
+                {
+                    $object->$decoder['action'] = "alert";
+                    $action_xmlNode = DH::findFirstElement("action", $xmlNode);
+                    $action_xmlNode->textContent = "alert";
+                }
+
+                if( $object->$decoder['wildfire-action'] == "allow" )
+                {
+                    $object->$decoder['wildfire-action'] = "alert";
+                    $action_xmlNode = DH::findFirstElement("wildfire-action", $xmlNode);
+                    $action_xmlNode->textContent = "alert";
+                }
+
+                if( $object->$decoder['mlav-action'] == "allow" )
+                {
+                    $object->$decoder['mlav-action'] = "alert";
+                    $action_xmlNode = DH::findFirstElement("mlav-action", $xmlNode);
+                    $action_xmlNode->textContent = "alert";
+                }
+            }
+            else
+            {
+                if( $object->$decoder['action'] == "allow"  )
+                {
+                    $object->$decoder['action'] = "alert";
+                    $action_xmlNode = DH::findFirstElement("action", $xmlNode);
+                    $action_xmlNode->textContent = "alert";
+                }
+
+                if( $object->$decoder['wildfire-action'] == "allow"  )
+                {
+                    $object->$decoder['wildfire-action'] = "alert";
+                    $action_xmlNode = DH::findFirstElement("wildfire-action", $xmlNode);
+                    $action_xmlNode->textContent = "alert";
+                }
+
+                if( $object->$decoder['mlav-action'] == "allow"  )
+                {
+                    $object->$decoder['mlav-action'] = "alert";
+                    $action_xmlNode = DH::findFirstElement("mlav-action", $xmlNode);
+                    $action_xmlNode->textContent = "alert";
+                }
+            }
+        }
+
+        $tmp_mlav_engine = DH::findFirstElement('mlav-engine-filebased-enabled', $object->xmlroot);
+        if( $tmp_mlav_engine !== False )
+        {
+            foreach ($tmp_mlav_engine->childNodes as $mlav_engine_entry)
+            {
+                if( $mlav_engine_entry->nodeType != XML_ELEMENT_NODE )
+                    continue;
+
+                $name = DH::findAttribute( "name", $mlav_engine_entry);
+
+                $action_xmlNode = DH::findFirstElement("mlav-policy-action", $mlav_engine_entry);
+                if( $action_xmlNode->textContent == "disable" )
+                {
+                    $action_xmlNode->textContent = "enable(alert-only)";
+                    $object->additional['mlav-engine-filebased-enabled'][$name]['mlav-policy-action'] = "enable(alert-only)";
+                }
+            }
+        }
+
+
+        if( $context->isAPI )
+        {
+            derr( "API mode is not supported yet" );
+            $object->API_sync();
+        }
+
+    },
+);
 SecurityProfileCallContext::$supportedActions['spyware.best-practice-set'] = array(
     'name' => 'spyware.best-practice-set',
     'MainFunction' => function (SecurityProfileCallContext $context) {
@@ -1123,6 +1212,55 @@ SecurityProfileCallContext::$supportedActions['spyware.best-practice-set'] = arr
                 $action_xmlNode->textContent = "reset-both";
 
                 $object->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action'] = "reset-both";
+            }
+        }
+
+        if( $context->isAPI )
+        {
+            derr( "API mode is not supported yet" );
+            $object->API_sync();
+        }
+    },
+);
+SecurityProfileCallContext::$supportedActions['spyware.alert-only-set'] = array(
+    'name' => 'spyware.alert-only-set',
+    'MainFunction' => function (SecurityProfileCallContext $context) {
+        $object = $context->object;
+
+        if (get_class($object) !== "AntiSpywareProfile")
+            return null;
+
+        $tmp_mlav_engine = DH::findFirstElementOrCreate('mica-engine-spyware-enabled', $object->xmlroot);
+        if( $tmp_mlav_engine !== False )
+        {
+            $action_other_then_allow_alert = false;
+            foreach ($tmp_mlav_engine->childNodes as $mlav_engine_entry)
+            {
+                if( $mlav_engine_entry->nodeType != XML_ELEMENT_NODE )
+                    continue;
+
+                $name = DH::findAttribute( "name", $mlav_engine_entry);
+
+                $action_xmlNode = DH::findFirstElement("inline-policy-action", $mlav_engine_entry);
+
+                if( $action_xmlNode->textContent == "allow" )
+                {
+                    $action_xmlNode->textContent = "alert";
+                    $object->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action'] = "alert";
+                }
+                elseif( $action_xmlNode->textContent == "alert" )
+                {
+                }
+                else
+                {
+                    $action_other_then_allow_alert = true;
+                }
+            }
+
+            if( !$action_other_then_allow_alert )
+            {
+                $tmp_mlav_engine = DH::findFirstElementOrCreate('cloud-inline-analysis', $object->xmlroot);
+                $tmp_mlav_engine->textContent = "yes";
             }
         }
 
@@ -1173,6 +1311,72 @@ SecurityProfileCallContext::$supportedActions['vulnerability.best-practice-set']
                 $action_xmlNode->textContent = "reset-both";
 
                 $object->additional['mica-engine-vulnerability-enabled'][$name]['inline-policy-action'] = "reset-both";
+            }
+        }
+
+        if( $context->isAPI )
+        {
+            derr( "API mode is not supported yet" );
+            $object->API_sync();
+        }
+    },
+);
+SecurityProfileCallContext::$supportedActions['vulnerability.alert-only-set'] = array(
+    'name' => 'vulnerability.alert-only-set',
+    'MainFunction' => function (SecurityProfileCallContext $context) {
+        $object = $context->object;
+
+        if (get_class($object) !== "VulnerabilityProfile")
+            return null;
+
+
+
+        $tmp_mlav_engine = DH::findFirstElementOrCreate('mica-engine-vulnerability-enabled', $object->xmlroot);
+        if( $tmp_mlav_engine !== False )
+        {
+            if( !$tmp_mlav_engine->hasChildNodes() )
+            {
+                $xmlString1 = '<entry name="SQL Injection">
+  <inline-policy-action>alert</inline-policy-action>
+</entry>';
+                $xmlString2 = '<entry name="Command Injection">
+  <inline-policy-action>alert</inline-policy-action>
+</entry>';
+                $xmlElement = DH::importXmlStringOrDie($object->xmlroot->ownerDocument, $xmlString1);
+                $tmp_mlav_engine->appendChild($xmlElement);
+
+                $xmlElement = DH::importXmlStringOrDie($object->xmlroot->ownerDocument, $xmlString2);
+                $tmp_mlav_engine->appendChild($xmlElement);
+            }
+
+            $action_other_then_allow_alert = false;
+            foreach ($tmp_mlav_engine->childNodes as $mlav_engine_entry)
+            {
+                if( $mlav_engine_entry->nodeType != XML_ELEMENT_NODE )
+                    continue;
+
+                $name = DH::findAttribute( "name", $mlav_engine_entry);
+
+                $action_xmlNode = DH::findFirstElementOrCreate("inline-policy-action", $mlav_engine_entry);
+                if( $action_xmlNode->textContent == "allow" )
+                {
+                    $action_xmlNode->textContent = "alert";
+                    $object->additional['mica-engine-vulnerability-enabled'][$name]['inline-policy-action'] = "alert";
+                }
+                elseif( $action_xmlNode->textContent == "alert" )
+                {
+
+                }
+                else
+                {
+                    $action_other_then_allow_alert = true;
+                }
+            }
+
+            if( !$action_other_then_allow_alert )
+            {
+                $tmp_mlav_engine = DH::findFirstElementOrCreate('cloud-inline-analysis', $object->xmlroot);
+                $tmp_mlav_engine->textContent = "yes";
             }
         }
 
