@@ -40,6 +40,7 @@ UTIL:
 * type=securityprofile actions=virus.best-practice-set | improve to adjust XMLnode
 * type=securityprofile securityprofiletype=virus actions=virus.best-practice-set | extend with mica engine
 * type=securityprofile securityprofiletype=spyware | introduce actions=spyware.best-practice-set
+* type=securityprofile securityprofiletype=vulnerability | introduce actions=vulnerability.best-practice-set
 
 BUGFIX:
 * type=diff file1=diff.xml "filter=/config/devices/entry[@name='localhost.localdomain']/device-group/entry[@name='{{name}}']/pre-rulebase" name1=DG1 name2=DG2 | correction of pregmatch

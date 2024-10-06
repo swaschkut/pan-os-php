@@ -1133,3 +1133,53 @@ SecurityProfileCallContext::$supportedActions['spyware.best-practice-set'] = arr
         }
     },
 );
+SecurityProfileCallContext::$supportedActions['vulnerability.best-practice-set'] = array(
+    'name' => 'vulnerability.best-practice-set',
+    'MainFunction' => function (SecurityProfileCallContext $context) {
+        $object = $context->object;
+
+        if (get_class($object) !== "VulnerabilityProfile")
+            return null;
+
+        $tmp_mlav_engine = DH::findFirstElementOrCreate('cloud-inline-analysis', $object->xmlroot);
+        $tmp_mlav_engine->textContent = "yes";
+
+        $tmp_mlav_engine = DH::findFirstElementOrCreate('mica-engine-vulnerability-enabled', $object->xmlroot);
+        if( $tmp_mlav_engine !== False )
+        {
+            if( !$tmp_mlav_engine->hasChildNodes() )
+            {
+                $xmlString1 = '<entry name="SQL Injection">
+  <inline-policy-action>reset-both</inline-policy-action>
+</entry>';
+                $xmlString2 = '<entry name="Command Injection">
+  <inline-policy-action>reset-both</inline-policy-action>
+</entry>';
+                $xmlElement = DH::importXmlStringOrDie($object->xmlroot->ownerDocument, $xmlString1);
+                $tmp_mlav_engine->appendChild($xmlElement);
+
+                $xmlElement = DH::importXmlStringOrDie($object->xmlroot->ownerDocument, $xmlString2);
+                $tmp_mlav_engine->appendChild($xmlElement);
+            }
+
+            foreach ($tmp_mlav_engine->childNodes as $mlav_engine_entry)
+            {
+                if( $mlav_engine_entry->nodeType != XML_ELEMENT_NODE )
+                    continue;
+
+                $name = DH::findAttribute( "name", $mlav_engine_entry);
+
+                $action_xmlNode = DH::findFirstElementOrCreate("inline-policy-action", $mlav_engine_entry);
+                $action_xmlNode->textContent = "reset-both";
+
+                $object->additional['mica-engine-vulnerability-enabled'][$name]['inline-policy-action'] = "reset-both";
+            }
+        }
+
+        if( $context->isAPI )
+        {
+            derr( "API mode is not supported yet" );
+            $object->API_sync();
+        }
+    },
+);
