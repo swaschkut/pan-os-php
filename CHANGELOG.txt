@@ -42,6 +42,7 @@ UTIL:
 * type=securityprofile securityprofiletype=spyware | introduce actions=spyware.best-practice-set
 * type=securityprofile securityprofiletype=vulnerability | introduce actions=vulnerability.best-practice-set
 * type=securityprofile securityprofiletype=virus/spyware/vulnerability | introduce actions=virus.alert-only-set/spyware.alert-only-set/vulnerability.alert-only-set
+* type=securityprofile | introduce actions=url.alert-only-set
 
 BUGFIX:
 * type=diff file1=diff.xml "filter=/config/devices/entry[@name='localhost.localdomain']/device-group/entry[@name='{{name}}']/pre-rulebase" name1=DG1 name2=DG2 | correction of pregmatch

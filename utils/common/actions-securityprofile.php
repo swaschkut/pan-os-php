@@ -422,6 +422,9 @@ SecurityProfileCallContext::$supportedActions['action-set'] = array(
         $action = $context->action;
         $filter = $context->filter;
 
+        if (get_class($object) !== "URLProfile")
+            return null;
+
         //Todo:
         //how to set new action
 
@@ -1437,6 +1440,47 @@ SecurityProfileCallContext::$supportedActions['vulnerability.alert-only-set'] = 
                 $tmp_mlav_engine->textContent = "yes";
             }
         }
+
+        if( $context->isAPI )
+        {
+            derr( "API mode is not supported yet" );
+            $object->API_sync();
+        }
+    },
+);
+SecurityProfileCallContext::$supportedActions['url.alert-only-set'] = array(
+    'name' => 'url.alert-only-set',
+    'MainFunction' => function (SecurityProfileCallContext $context) {
+        $object = $context->object;
+
+        if (get_class($object) !== "URLProfile")
+            return null;
+
+        $allow_xmlnode = DH::findFirstElement("allow", $object->xmlroot);
+        $alert_xmlnode = DH::findFirstElement("alert", $object->xmlroot);
+        if( $allow_xmlnode !== False )
+        {
+            foreach( $allow_xmlnode->childNodes as $allow_node )
+            {
+                if( $allow_node->nodeType != XML_ELEMENT_NODE )
+                    continue;
+
+                $alert_xmlnode->appendChild($allow_node);
+            }
+        }
+
+        foreach( $object->allow as $allow )
+        {
+            $object->alert[] = $allow;
+        }
+        $object->allow = array();
+
+        //                    <local-inline-cat>yes</local-inline-cat>
+        $xmlnode = DH::findFirstElement("local-inline-cat", $object->xmlroot);
+        $xmlnode->textContent = "yes";
+        //                    <cloud-inline-cat>yes</cloud-inline-cat>
+        $xmlnode = DH::findFirstElement("cloud-inline-cat", $object->xmlroot);
+        $xmlnode->textContent = "yes";
 
         if( $context->isAPI )
         {
