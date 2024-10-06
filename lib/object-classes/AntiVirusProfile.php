@@ -312,16 +312,21 @@ class AntiVirusProfile extends SecurityProfile2
 
             if( $this->owner->owner->version >= 111 )
                 $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $xmlstring_111);
-            else
+            elseif( $this->owner->owner->version >= 100 )
                 $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $xmlstring);
-            $xml->appendChild($xmlElement);
 
-            $this->additional['mlav-engine-filebased-enabled']['Windows Executables']['mlav-policy-action'] = "disable";
-            $this->additional['mlav-engine-filebased-enabled']['PowerShell Script 1']['mlav-policy-action'] = "disable";
-            $this->additional['mlav-engine-filebased-enabled']['PowerShell Script 2']['mlav-policy-action'] = "disable";
-            $this->additional['mlav-engine-filebased-enabled']['Executable Linked Format']['mlav-policy-action'] = "disable";
-            $this->additional['mlav-engine-filebased-enabled']['MSOffice']['mlav-policy-action'] = "disable";
-            $this->additional['mlav-engine-filebased-enabled']['Shell']['mlav-policy-action'] = "disable";
+            if( $this->owner->owner->version >= 100 )
+                $xml->appendChild($xmlElement);
+
+            if( $this->owner->owner->version >= 100 )
+            {
+                $this->additional['mlav-engine-filebased-enabled']['Windows Executables']['mlav-policy-action'] = "disable";
+                $this->additional['mlav-engine-filebased-enabled']['PowerShell Script 1']['mlav-policy-action'] = "disable";
+                $this->additional['mlav-engine-filebased-enabled']['PowerShell Script 2']['mlav-policy-action'] = "disable";
+                $this->additional['mlav-engine-filebased-enabled']['Executable Linked Format']['mlav-policy-action'] = "disable";
+                $this->additional['mlav-engine-filebased-enabled']['MSOffice']['mlav-policy-action'] = "disable";
+                $this->additional['mlav-engine-filebased-enabled']['Shell']['mlav-policy-action'] = "disable";
+            }
             if( $this->owner->owner->version >= 111 )
             {
                 $this->additional['mlav-engine-filebased-enabled']['OOXML']['mlav-policy-action'] = "disable";
