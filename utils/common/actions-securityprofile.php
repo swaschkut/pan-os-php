@@ -1022,8 +1022,6 @@ SecurityProfileCallContext::$supportedActions['virus.best-practice-set'] = array
         if( get_class( $object) !== "AntiVirusProfile")
             return null;
 
-        //Todo:
-        //set XML to the correct value
         $tmp_decoder = DH::findFirstElement('decoder', $object->xmlroot);
         foreach($object->tmp_virus_prof_array as $decoder )
         {
@@ -1077,10 +1075,10 @@ SecurityProfileCallContext::$supportedActions['virus.best-practice-set'] = array
             }
         }
 
-        $tmp_mlav_eninge = DH::findFirstElement('mlav-engine-filebased-enabled', $object->xmlroot);
-        if( $tmp_mlav_eninge !== False )
+        $tmp_mlav_engine = DH::findFirstElement('mlav-engine-filebased-enabled', $object->xmlroot);
+        if( $tmp_mlav_engine !== False )
         {
-            foreach ($tmp_mlav_eninge->childNodes as $mlav_engine_entry)
+            foreach ($tmp_mlav_engine->childNodes as $mlav_engine_entry)
             {
                 if( $mlav_engine_entry->nodeType != XML_ELEMENT_NODE )
                     continue;
@@ -1101,5 +1099,37 @@ SecurityProfileCallContext::$supportedActions['virus.best-practice-set'] = array
             $object->API_sync();
         }
 
+    },
+);
+SecurityProfileCallContext::$supportedActions['spyware.best-practice-set'] = array(
+    'name' => 'spyware.best-practice-set',
+    'MainFunction' => function (SecurityProfileCallContext $context) {
+        $object = $context->object;
+
+        if (get_class($object) !== "AntiSpywareProfile")
+            return null;
+
+        $tmp_mlav_engine = DH::findFirstElement('mica-engine-spyware-enabled', $object->xmlroot);
+        if( $tmp_mlav_engine !== False )
+        {
+            foreach ($tmp_mlav_engine->childNodes as $mlav_engine_entry)
+            {
+                if( $mlav_engine_entry->nodeType != XML_ELEMENT_NODE )
+                    continue;
+
+                $name = DH::findAttribute( "name", $mlav_engine_entry);
+
+                $action_xmlNode = DH::findFirstElement("inline-policy-action", $mlav_engine_entry);
+                $action_xmlNode->textContent = "reset-both";
+
+                $object->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action'] = "reset-both";
+            }
+        }
+
+        if( $context->isAPI )
+        {
+            derr( "API mode is not supported yet" );
+            $object->API_sync();
+        }
     },
 );
