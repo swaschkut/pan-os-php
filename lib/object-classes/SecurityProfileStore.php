@@ -105,22 +105,39 @@ class SecurityProfileStore extends ObjStore
     public $predefinedStore_appid_version = null;
 
     /** @var null|SecurityProfileStore */
-    public static $predefinedStore = null;
+    public static $predefinedURLStore = null;
+    public static $predefinedVirusStore = null;
 
     /**
      * @return SecurityProfileStore|null
      */
-    public static function getPredefinedStore()
+    public static function getURLPredefinedStore()
     {
-        if( self::$predefinedStore !== null )
-            return self::$predefinedStore;
+        if( self::$predefinedURLStore !== null )
+            return self::$predefinedURLStore;
 
 
-        self::$predefinedStore = new SecurityProfileStore(null, "PredefinedSecurityProfileURL");
-        self::$predefinedStore->setName('predefined URL');
-        self::$predefinedStore->load_from_predefinedfile();
+        self::$predefinedURLStore = new SecurityProfileStore(null, "PredefinedSecurityProfileURL");
+        self::$predefinedURLStore->setName('predefined URL');
+        self::$predefinedURLStore->load_url_categories_from_predefinedfile();
 
-        return self::$predefinedStore;
+        return self::$predefinedURLStore;
+    }
+
+    /**
+     * @return SecurityProfileStore|null
+     */
+    public static function getVirusPredefinedStore()
+    {
+        if( self::$predefinedVirusStore !== null )
+            return self::$predefinedVirusStore;
+
+
+        self::$predefinedVirusStore = new SecurityProfileStore(null, "PredefinedSecurityProfileVirus");
+        self::$predefinedVirusStore->setName('predefined Virus');
+        self::$predefinedVirusStore->load_virus_categories_from_predefinedfile();
+
+        return self::$predefinedVirusStore;
     }
 
 
@@ -171,7 +188,7 @@ class SecurityProfileStore extends ObjStore
         }
     }
 
-    public function load_from_predefinedfile($filename = null)
+    public function load_url_categories_from_predefinedfile($filename = null)
     {
         if( $filename === null )
         {
@@ -181,8 +198,24 @@ class SecurityProfileStore extends ObjStore
         $xmlDoc = new DOMDocument();
         $xmlDoc->load($filename, XML_PARSE_BIG_LINES);
 
-        $cursor = DH::findXPathSingleEntryOrDie('/predefined/pan-url-categories', $xmlDoc);
 
+        $cursor = DH::findXPathSingleEntryOrDie('/predefined/pan-url-categories', $xmlDoc);
+        $this->load_predefined_url_categories_from_domxml($cursor);
+
+    }
+
+    public function load_virus_categories_from_predefinedfile($filename = null)
+    {
+        if( $filename === null )
+        {
+            $filename = dirname(__FILE__) . '/predefined.xml';
+        }
+
+        $xmlDoc = new DOMDocument();
+        $xmlDoc->load($filename, XML_PARSE_BIG_LINES);
+
+
+        $cursor = DH::findXPathSingleEntryOrDie('/predefined/pan-url-categories', $xmlDoc);
         $this->load_predefined_url_categories_from_domxml($cursor);
 
     }
@@ -522,7 +555,44 @@ class SecurityProfileStore extends ObjStore
         sort($this->o);
     }
 
+    public function newPredefinedSecurityProfileVirus($name)
+    {
+        $rule = new PredefinedSecurityProfileURL($this);
 
+        #$xmlElement = DH::importXmlStringOrDie($this->owner->xmlroot->ownerDocument, PredefinedSecurityProfileURL::$templatexml);
+        #$rule->load_from_domxml($xmlElement);
+
+        $rule->owner = null;
+        $rule->setName($name);
+
+        #$this->addSecurityProfile($rule);
+
+        return $rule;
+    }
+    public function load_predefined_virus_categories_from_domxml(DOMElement $xml)
+    {
+        foreach( $xml->childNodes as $appx )
+        {
+            if( $appx->nodeType != XML_ELEMENT_NODE )
+                continue;
+
+
+            $nodeName1 = $appx->nodeName;
+            if( $nodeName1 == "hidden-entries" )
+                continue;
+
+            $appName = DH::findAttribute('name', $appx);
+            if( $appName === FALSE )
+                derr("Predefined URL category name not found\n");
+
+            $app = $this->newPredefinedSecurityProfileURL($appName);
+            #$app->type = 'predefined';
+
+            $this->add($app);
+        }
+
+        sort($this->o);
+    }
 
     /**
      * @param SecurityProfile| URLProfile | AntiSpywareProfile | AntiVirusProfile | VulnerabilityProfile | FileBlockingProfile | WildfireProfile | customURLProfile $tag

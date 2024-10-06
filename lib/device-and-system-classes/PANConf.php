@@ -209,7 +209,7 @@ class PANConf
 
         $this->threatStore = ThreatStore::getPredefinedStore( $this );
 
-        $this->urlStore = SecurityProfileStore::getPredefinedStore();
+        $this->urlStore = SecurityProfileStore::getURLPredefinedStore();
 
         $this->serviceStore = new ServiceStore($this);
         $this->serviceStore->name = 'services';

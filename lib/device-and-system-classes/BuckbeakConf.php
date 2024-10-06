@@ -135,7 +135,7 @@ class BuckbeakConf
 
         $this->threatStore = ThreatStore::getPredefinedStore( $this );
 
-        $this->urlStore = SecurityProfileStore::getPredefinedStore();
+        $this->urlStore = SecurityProfileStore::getURLPredefinedStore();
 
         $this->_fakeNetworkProperties = new NetworkPropertiesContainer($this);
 

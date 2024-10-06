@@ -33,6 +33,7 @@ UTIL:
 * type=upload | extend validation for API and offline mode - if fromxpath is from NGFW and toxpath is to Panorama DeviceGroup or Template
 * type=upload | argument injectuseradmin2 - extend with admin2 user
 * type=playbook | improvement to handle argument in= and out= if defined in JSON file
+* different  device classes - rename to URLPredefinedStore
 
 BUGFIX:
 * type=diff file1=diff.xml "filter=/config/devices/entry[@name='localhost.localdomain']/device-group/entry[@name='{{name}}']/pre-rulebase" name1=DG1 name2=DG2 | correction of pregmatch
