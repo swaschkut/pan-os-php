@@ -1077,6 +1077,24 @@ SecurityProfileCallContext::$supportedActions['virus.best-practice-set'] = array
             }
         }
 
+        $tmp_mlav_eninge = DH::findFirstElement('mlav-engine-filebased-enabled', $object->xmlroot);
+        if( $tmp_mlav_eninge !== False )
+        {
+            foreach ($tmp_mlav_eninge->childNodes as $mlav_engine_entry)
+            {
+                if( $mlav_engine_entry->nodeType != XML_ELEMENT_NODE )
+                    continue;
+
+                $name = DH::findAttribute( "name", $mlav_engine_entry);
+
+                $action_xmlNode = DH::findFirstElement("mlav-policy-action", $mlav_engine_entry);
+                $action_xmlNode->textContent = "enable";
+
+                $object->additional['mlav-engine-filebased-enabled'][$name]['mlav-policy-action'] = "enable";
+            }
+        }
+
+
         if( $context->isAPI )
         {
             derr( "API mode is not supported yet" );
