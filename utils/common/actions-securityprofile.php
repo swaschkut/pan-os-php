@@ -1476,10 +1476,10 @@ SecurityProfileCallContext::$supportedActions['url.alert-only-set'] = array(
         $object->allow = array();
 
         //                    <local-inline-cat>yes</local-inline-cat>
-        $xmlnode = DH::findFirstElement("local-inline-cat", $object->xmlroot);
+        $xmlnode = DH::findFirstElementOrCreate("local-inline-cat", $object->xmlroot);
         $xmlnode->textContent = "yes";
         //                    <cloud-inline-cat>yes</cloud-inline-cat>
-        $xmlnode = DH::findFirstElement("cloud-inline-cat", $object->xmlroot);
+        $xmlnode = DH::findFirstElementOrCreate("cloud-inline-cat", $object->xmlroot);
         $xmlnode->textContent = "yes";
 
         if( $context->isAPI )
