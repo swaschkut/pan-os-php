@@ -45,6 +45,7 @@ GENERAL:
 * class ServiceGroup | introduce variable $childancestor
 * update Device App-ID version: 8892-8959
 * docker file | include ping traceroute vim
+* update Device App-ID version: 8900-8988
 
 
 2.1.26 (20240819)
