@@ -228,9 +228,9 @@ class AntiVirusProfile extends SecurityProfile2
                     continue;
 
                 $name = DH::findAttribute("name", $tmp_entry1);
-                if( $appName == "OOXML" )
+                if( $name == "OOXML" )
                     $tmp_mica_OOXML_found = TRUE;
-                elseif( $appName == "MachO" )
+                elseif( $name == "MachO" )
                     $tmp_mica_MachO_found = TRUE;
 
                 $tmp_inline_policy_action = DH::findFirstElement("mlav-policy-action", $tmp_entry1);
@@ -245,25 +245,19 @@ class AntiVirusProfile extends SecurityProfile2
     <mlav-policy-action>disable</mlav-policy-action>
   </entry>';
 
-            if( !$tmp_mica_OOXML_found )
+            if( !$tmp_mica_OOXML_found && $this->owner->owner->version >= 111)
             {
-                if( $this->owner->owner->version >= 111 )
-                {
-                    $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $OOXML_xmlstring);
-                    $tmp_rule->appendChild($xmlElement);
+                $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $OOXML_xmlstring);
+                $tmp_rule->appendChild($xmlElement);
 
-                    $this->additional['mlav-engine-filebased-enabled']['OOXML']['mlav-policy-action'] = "disable";
-                }
+                $this->additional['mlav-engine-filebased-enabled']['OOXML']['mlav-policy-action'] = "disable";
             }
-            if( !$tmp_mica_MachO_found )
+            if( !$tmp_mica_MachO_found && $this->owner->owner->version >= 111 )
             {
-                if( $this->owner->owner->version >= 111 )
-                {
-                    $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $MachO_xmlstring);
-                    $tmp_rule->appendChild($xmlElement);
+                $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $MachO_xmlstring);
+                $tmp_rule->appendChild($xmlElement);
 
-                    $this->additional['mlav-engine-filebased-enabled']['MachO']['mlav-policy-action'] = "disable";
-                }
+                $this->additional['mlav-engine-filebased-enabled']['MachO']['mlav-policy-action'] = "disable";
             }
         }
         else
