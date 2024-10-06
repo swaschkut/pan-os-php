@@ -245,19 +245,25 @@ class AntiVirusProfile extends SecurityProfile2
     <mlav-policy-action>disable</mlav-policy-action>
   </entry>';
 
-            if( !$tmp_mica_OOXML_found && $this->owner->owner->version >= 111 )
+            if( !$tmp_mica_OOXML_found )
             {
-                $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $OOXML_xmlstring);
-                $tmp_rule->appendChild($xmlElement);
+                if( $this->owner->owner->version >= 111 )
+                {
+                    $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $OOXML_xmlstring);
+                    $tmp_rule->appendChild($xmlElement);
 
-                $this->additional['mlav-engine-filebased-enabled']['OOXML']['mlav-policy-action'] = "disable";
+                    $this->additional['mlav-engine-filebased-enabled']['OOXML']['mlav-policy-action'] = "disable";
+                }
             }
-            if( !$tmp_mica_MachO_found && $this->owner->owner->version >= 111 )
+            if( !$tmp_mica_MachO_found )
             {
-                $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $MachO_xmlstring);
-                $tmp_rule->appendChild($xmlElement);
+                if( $this->owner->owner->version >= 111 )
+                {
+                    $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $MachO_xmlstring);
+                    $tmp_rule->appendChild($xmlElement);
 
-                $this->additional['mlav-engine-filebased-enabled']['MachO']['mlav-policy-action'] = "disable";
+                    $this->additional['mlav-engine-filebased-enabled']['MachO']['mlav-policy-action'] = "disable";
+                }
             }
         }
         else

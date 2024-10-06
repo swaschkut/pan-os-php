@@ -37,6 +37,7 @@ UTIL:
 * class AntiVirusProfile - extend if decoder http2 / mica OOXML/MachO is missing
 * class AntiVirusProfile | fix improvements
 * class AntiSpyware | extend for PAN-OS >=10.0.0 and add XMLnode <dns-security-categories> if not available
+* type=securityprofile actions=virus.best-practice-set | improve to adjust XMLnode
 
 BUGFIX:
 * type=diff file1=diff.xml "filter=/config/devices/entry[@name='localhost.localdomain']/device-group/entry[@name='{{name}}']/pre-rulebase" name1=DG1 name2=DG2 | correction of pregmatch

@@ -1024,28 +1024,32 @@ SecurityProfileCallContext::$supportedActions['virus.best-practice-set'] = array
 
         //Todo:
         //set XML to the correct value
-        #$tmp_decoder = DH::findFirstElement('decoder', $object->xmlroot);
+        $tmp_decoder = DH::findFirstElement('decoder', $object->xmlroot);
         foreach($object->tmp_virus_prof_array as $decoder )
         {
-            #$xmlNode = DH::findFirstElementByNameAttr("entry", $decoder, $tmp_decoder);
-            #DH::DEBUGprintDOMDocument($xmlNode);
+            $xmlNode = DH::findFirstElementByNameAttr("entry", $decoder, $tmp_decoder);
 
             if( $decoder == "http" || $decoder == "https" || $decoder == "ftp" || $decoder == "smb" )
             {
                 if( $object->$decoder['action'] != "default" && $object->$decoder['action'] != "reset-both"  )
                 {
                     $object->$decoder['action'] = "reset-both";
-                    //set XML
+                    $action_xmlNode = DH::findFirstElement("action", $xmlNode);
+                    $action_xmlNode->textContent = "reset-both";
                 }
 
                 if( $object->$decoder['wildfire-action'] != "default" && $object->$decoder['wildfire-action'] != "reset-both"  )
                 {
                     $object->$decoder['wildfire-action'] = "reset-both";
+                    $action_xmlNode = DH::findFirstElement("wildfire-action", $xmlNode);
+                    $action_xmlNode->textContent = "reset-both";
                 }
 
                 if( $object->$decoder['mlav-action'] != "default" && $object->$decoder['mlav-action'] != "reset-both"  )
                 {
                     $object->$decoder['mlav-action'] = "reset-both";
+                    $action_xmlNode = DH::findFirstElement("mlav-action", $xmlNode);
+                    $action_xmlNode->textContent = "reset-both";
                 }
             }
             else
@@ -1053,16 +1057,22 @@ SecurityProfileCallContext::$supportedActions['virus.best-practice-set'] = array
                 if( $object->$decoder['action'] != "reset-both"  )
                 {
                     $object->$decoder['action'] = "reset-both";
+                    $action_xmlNode = DH::findFirstElement("action", $xmlNode);
+                    $action_xmlNode->textContent = "reset-both";
                 }
 
                 if( $object->$decoder['wildfire-action'] != "reset-both"  )
                 {
                     $object->$decoder['wildfire-action'] = "reset-both";
+                    $action_xmlNode = DH::findFirstElement("wildfire-action", $xmlNode);
+                    $action_xmlNode->textContent = "reset-both";
                 }
 
                 if( $object->$decoder['mlav-action'] != "reset-both"  )
                 {
                     $object->$decoder['mlav-action'] = "reset-both";
+                    $action_xmlNode = DH::findFirstElement("mlav-action", $xmlNode);
+                    $action_xmlNode->textContent = "reset-both";
                 }
             }
         }
