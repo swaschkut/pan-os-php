@@ -183,8 +183,8 @@ class AntiVirusProfile extends SecurityProfile2
                 $tmp_decoder->appendChild($xmlElement);
 
                 $this->http2['action'] = "allow";
-                $this->$appName['wildfire-action'] = "allow";
-                $this->$appName['mlav-action'] = "allow";
+                $this->http2['wildfire-action'] = "allow";
+                $this->http2['mlav-action'] = "allow";
             }
         }
 
