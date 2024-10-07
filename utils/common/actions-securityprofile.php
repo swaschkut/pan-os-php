@@ -1475,12 +1475,14 @@ SecurityProfileCallContext::$supportedActions['url.alert-only-set'] = array(
         }
         $object->allow = array();
 
-        //                    <local-inline-cat>yes</local-inline-cat>
-        $xmlnode = DH::findFirstElementOrCreate("local-inline-cat", $object->xmlroot);
-        $xmlnode->textContent = "yes";
-        //                    <cloud-inline-cat>yes</cloud-inline-cat>
-        $xmlnode = DH::findFirstElementOrCreate("cloud-inline-cat", $object->xmlroot);
-        $xmlnode->textContent = "yes";
+        if( $context->object->owner->owner->version >= 102 )
+        {
+            $xmlnode = DH::findFirstElementOrCreate("local-inline-cat", $object->xmlroot);
+            $xmlnode->textContent = "yes";
+
+            $xmlnode = DH::findFirstElementOrCreate("cloud-inline-cat", $object->xmlroot);
+            $xmlnode->textContent = "yes";
+        }
 
         if( $context->isAPI )
         {
