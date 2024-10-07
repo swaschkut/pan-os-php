@@ -1204,6 +1204,9 @@ SecurityProfileCallContext::$supportedActions['spyware.best-practice-set'] = arr
         $tmp_mlav_engine = DH::findFirstElement('mica-engine-spyware-enabled', $object->xmlroot);
         if( $tmp_mlav_engine !== False )
         {
+            $tmp_mlav_engine = DH::findFirstElementOrCreate('cloud-inline-analysis', $object->xmlroot);
+            $tmp_mlav_engine->textContent = "yes";
+
             foreach ($tmp_mlav_engine->childNodes as $mlav_engine_entry)
             {
                 if( $mlav_engine_entry->nodeType != XML_ELEMENT_NODE )
@@ -1457,7 +1460,7 @@ SecurityProfileCallContext::$supportedActions['url.alert-only-set'] = array(
             return null;
 
         $allow_xmlnode = DH::findFirstElement("allow", $object->xmlroot);
-        $alert_xmlnode = DH::findFirstElement("alert", $object->xmlroot);
+        $alert_xmlnode = DH::findFirstElementOrCreate("alert", $object->xmlroot);
         if( $allow_xmlnode !== False )
         {
             foreach( $allow_xmlnode->childNodes as $allow_node )
@@ -1465,13 +1468,24 @@ SecurityProfileCallContext::$supportedActions['url.alert-only-set'] = array(
                 if( $allow_node->nodeType != XML_ELEMENT_NODE )
                     continue;
 
-                $alert_xmlnode->appendChild($allow_node);
+                $clone_node = $allow_node->cloneNode(true);
+                $alert_xmlnode->appendChild($clone_node);
+                $allow_xmlnode->removeChild($allow_node);
+                $tmp_name = $allow_node->textContent;
+
+                $key = array_search ($tmp_name, $object->allow);
+                unset($object->allow[$key]);
             }
+            $object->xmlroot->removeChild($allow_xmlnode);
         }
 
         foreach( $object->allow as $allow )
         {
             $object->alert[] = $allow;
+
+            $xmlString = '<member>'.$allow.'</member>';
+            $xmlElement = DH::importXmlStringOrDie($object->xmlroot->ownerDocument, $xmlString);
+            $alert_xmlnode->appendChild($xmlElement);
         }
         $object->allow = array();
 

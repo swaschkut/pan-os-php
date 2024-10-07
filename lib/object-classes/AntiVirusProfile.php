@@ -236,6 +236,12 @@ class AntiVirusProfile extends SecurityProfile2
                 $tmp_inline_policy_action = DH::findFirstElement("mlav-policy-action", $tmp_entry1);
                 if( $tmp_inline_policy_action !== FALSE )
                     $this->additional['mlav-engine-filebased-enabled'][$name]['mlav-policy-action'] = $tmp_inline_policy_action->textContent;
+                else
+                {
+                    $tmp_inline_policy_action = DH::findFirstElementOrCreate("mlav-policy-action", $tmp_entry1);
+                    $tmp_inline_policy_action->textContent = "disable";
+                    $this->additional['mlav-engine-filebased-enabled'][$name]['mlav-policy-action'] = "disable";
+                }
             }
 
             $OOXML_xmlstring = '<entry name="OOXML">
