@@ -1098,7 +1098,7 @@ SecurityProfileCallContext::$supportedActions['virus.best-practice-set'] = array
 
         if( $context->isAPI )
         {
-            derr( "API mode is not supported yet" );
+            #derr( "API mode is not supported yet" );
             $object->API_sync();
         }
 
@@ -1187,7 +1187,7 @@ SecurityProfileCallContext::$supportedActions['virus.alert-only-set'] = array(
 
         if( $context->isAPI )
         {
-            derr( "API mode is not supported yet" );
+            #derr( "API mode is not supported yet" );
             $object->API_sync();
         }
 
@@ -1249,7 +1249,7 @@ SecurityProfileCallContext::$supportedActions['spyware.best-practice-set'] = arr
 
         if( $context->isAPI )
         {
-            derr( "API mode is not supported yet" );
+            #derr( "API mode is not supported yet" );
             $object->API_sync();
         }
     },
@@ -1327,7 +1327,7 @@ SecurityProfileCallContext::$supportedActions['spyware.alert-only-set'] = array(
 
         if( $context->isAPI )
         {
-            derr( "API mode is not supported yet" );
+           # derr( "API mode is not supported yet" );
             $object->API_sync();
         }
     },
@@ -1377,7 +1377,7 @@ SecurityProfileCallContext::$supportedActions['vulnerability.best-practice-set']
 
         if( $context->isAPI )
         {
-            derr( "API mode is not supported yet" );
+            #derr( "API mode is not supported yet" );
             $object->API_sync();
         }
     },
@@ -1443,7 +1443,7 @@ SecurityProfileCallContext::$supportedActions['vulnerability.alert-only-set'] = 
 
         if( $context->isAPI )
         {
-            derr( "API mode is not supported yet" );
+            #derr( "API mode is not supported yet" );
             $object->API_sync();
         }
     },
@@ -1486,7 +1486,7 @@ SecurityProfileCallContext::$supportedActions['url.alert-only-set'] = array(
 
         if( $context->isAPI )
         {
-            derr( "API mode is not supported yet" );
+            #derr( "API mode is not supported yet" );
             $object->API_sync();
         }
     },
