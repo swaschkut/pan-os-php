@@ -217,6 +217,12 @@ class AntiVirusProfile extends SecurityProfile2
         }
 
         $tmp_rule = DH::findFirstElement('mlav-engine-filebased-enabled', $xml);
+        if( !$tmp_rule->hasChildNodes() )
+        {
+            $xml->removeChild($tmp_rule);
+            $tmp_rule = DH::findFirstElement('mlav-engine-filebased-enabled', $xml);
+        }
+
         if( $tmp_rule !== FALSE )
         {
             $this->additional['mlav-engine-filebased-enabled'] = array();

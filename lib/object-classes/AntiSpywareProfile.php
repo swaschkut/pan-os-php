@@ -180,6 +180,11 @@ class AntiSpywareProfile extends SecurityProfile2
         }
 
         $tmp_rule = DH::findFirstElement('mica-engine-spyware-enabled', $xml);
+        if( !$tmp_rule->hasChildNodes() )
+        {
+            $xml->removeChild($tmp_rule);
+            $tmp_rule = DH::findFirstElement('mlav-engine-spyware-enabled', $xml);
+        }
         if( $tmp_rule !== FALSE )
         {
             /*
@@ -200,6 +205,11 @@ class AntiSpywareProfile extends SecurityProfile2
                     $this->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action'] = $tmp_inline_policy_action->textContent;
             }
         }
+        else
+        {
+            //add default XML node
+        }
+
         //<cloud-inline-analysis>yes</cloud-inline-analysis>
         $tmp_rule = DH::findFirstElement('cloud-inline-analysis', $xml);
         if( $tmp_rule !== FALSE )
