@@ -1204,8 +1204,8 @@ SecurityProfileCallContext::$supportedActions['spyware.best-practice-set'] = arr
         $tmp_mlav_engine = DH::findFirstElement('mica-engine-spyware-enabled', $object->xmlroot);
         if( $tmp_mlav_engine !== False )
         {
-            $tmp_mlav_engine = DH::findFirstElementOrCreate('cloud-inline-analysis', $object->xmlroot);
-            $tmp_mlav_engine->textContent = "yes";
+            $tmp_mlav_engine_enable = DH::findFirstElementOrCreate('cloud-inline-analysis', $object->xmlroot);
+            $tmp_mlav_engine_enable->textContent = "yes";
 
             foreach ($tmp_mlav_engine->childNodes as $mlav_engine_entry)
             {
