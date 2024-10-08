@@ -180,7 +180,7 @@ class AntiSpywareProfile extends SecurityProfile2
         }
 
         $tmp_rule = DH::findFirstElement('mica-engine-spyware-enabled', $xml);
-        if( !$tmp_rule->hasChildNodes() )
+        if( $tmp_rule !== FALSE && !$tmp_rule->hasChildNodes() )
         {
             $xml->removeChild($tmp_rule);
             $tmp_rule = DH::findFirstElement('mlav-engine-spyware-enabled', $xml);
