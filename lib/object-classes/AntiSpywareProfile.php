@@ -187,27 +187,88 @@ class AntiSpywareProfile extends SecurityProfile2
         }
         if( $tmp_rule !== FALSE )
         {
-            /*
-               <mica-engine-spyware-enabled>
-                 <entry name="HTTP Command and Control detector">
-                    <inline-policy-action>alert</inline-policy-action>
-                 </entry>
-            */
             $this->additional['mica-engine-spyware-enabled'] = array();
+            $tmp_mica_Unknown_TCP_found = false;
+            $tmp_mica_Unknown_UDP_found = false;
             foreach( $tmp_rule->childNodes as $tmp_entry1 )
             {
                 if ($tmp_entry1->nodeType != XML_ELEMENT_NODE)
                     continue;
 
                 $name = DH::findAttribute("name", $tmp_entry1);
+                if( $name == "Unknown-TCP Command and Control detector" )
+                    $tmp_mica_Unknown_TCP_found = TRUE;
+                elseif( $name == "Unknown-UDP Command and Control detector" )
+                    $tmp_mica_Unknown_UDP_found = TRUE;
+
                 $tmp_inline_policy_action = DH::findFirstElement("inline-policy-action", $tmp_entry1);
                 if( $tmp_inline_policy_action !== FALSE )
                     $this->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action'] = $tmp_inline_policy_action->textContent;
+                else
+                {
+                    $tmp_inline_policy_action = DH::findFirstElementOrCreate("inline-policy-action", $tmp_entry1);
+                    $tmp_inline_policy_action->textContent = "disable";
+                    $this->additional['mlav-engine-spyware-enabled'][$name]['inline-policy-action'] = "disable";
+                }
+            }
+
+            $Unkown_TCP_xmlstring = '<entry name="Unknown-TCP Command and Control detector">
+  <inline-policy-action>alert</inline-policy-action>
+</entry>';
+            $Unkown_UDP_xmlstring = '<entry name="Unknown-UDP Command and Control detector">
+  <inline-policy-action>alert</inline-policy-action>
+</entry>';
+            if( !$tmp_mica_Unknown_TCP_found && $this->owner->owner->version >= 111)
+            {
+                $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $Unkown_TCP_xmlstring);
+                $tmp_rule->appendChild($xmlElement);
+
+                $this->additional['mlav-engine-spyware-enabled']['Unknown-TCP Command and Control detector']['inline-policy-action'] = "disable";
+            }
+            if( !$tmp_mica_Unknown_UDP_found && $this->owner->owner->version >= 111 )
+            {
+                $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $Unkown_UDP_xmlstring);
+                $tmp_rule->appendChild($xmlElement);
+
+                $this->additional['mlav-engine-spyware-enabled']['Unknown-UDP Command and Control detector']['inline-policy-action'] = "disable";
             }
         }
         else
         {
-            //add default XML node
+            $xmlstring_110 = '<mlav-engine-spyware-enabled>
+  <entry name="HTTP Command and Control detector">
+    <inline-policy-action>alert</inline-policy-action>
+  </entry>
+  <entry name="HTTP2 Command and Control detector">
+    <inline-policy-action>alert</inline-policy-action>
+  </entry>
+  <entry name="SSL Command and Control detector">
+    <inline-policy-action>alert</inline-policy-action>
+  </entry>
+  <entry name="Unknown-TCP Command and Control detector">
+    <inline-policy-action>alert</inline-policy-action>
+  </entry>
+  <entry name="Unknown-UDP Command and Control detector">
+    <inline-policy-action>alert</inline-policy-action>
+  </entry>
+</mlav-engine-spyware-enabled>';
+
+            if( $this->owner->owner->version >= 110 )
+            {
+                $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $xmlstring_110);
+                $xml->appendChild($xmlElement);
+            }
+
+
+            if( $this->owner->owner->version >= 110 )
+            {
+                $this->additional['mlav-engine-spyware-enabled']['HTTP Command and Control detector']['inline-policy-action'] = "disable";
+                $this->additional['mlav-engine-spyware-enabled']['HTTP2 Command and Control detector']['inline-policy-action'] = "disable";
+                $this->additional['mlav-engine-spyware-enabled']['SSL Command and Control detector']['inline-policy-action'] = "disable";
+
+                $this->additional['mlav-engine-spyware-enabled']['Unknown-TCP Command and Control detector']['inline-policy-action'] = "disable";
+                $this->additional['mlav-engine-spyware-enabled']['Unknown-UDP Command and Control detector']['inline-policy-action'] = "disable";
+            }
         }
 
         //<cloud-inline-analysis>yes</cloud-inline-analysis>

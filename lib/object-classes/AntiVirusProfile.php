@@ -251,11 +251,11 @@ class AntiVirusProfile extends SecurityProfile2
             }
 
             $OOXML_xmlstring = '<entry name="OOXML">
-    <mlav-policy-action>disable</mlav-policy-action>
-  </entry>';
+  <mlav-policy-action>disable</mlav-policy-action>
+</entry>';
             $MachO_xmlstring = '<entry name="MachO">
-    <mlav-policy-action>disable</mlav-policy-action>
-  </entry>';
+  <mlav-policy-action>disable</mlav-policy-action>
+</entry>';
 
             if( !$tmp_mica_OOXML_found && $this->owner->owner->version >= 111)
             {
