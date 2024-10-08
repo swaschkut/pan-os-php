@@ -1098,7 +1098,6 @@ SecurityProfileCallContext::$supportedActions['virus.best-practice-set'] = array
 
         if( $context->isAPI )
         {
-            #derr( "API mode is not supported yet" );
             $object->API_sync();
         }
 
@@ -1187,7 +1186,6 @@ SecurityProfileCallContext::$supportedActions['virus.alert-only-set'] = array(
 
         if( $context->isAPI )
         {
-            #derr( "API mode is not supported yet" );
             $object->API_sync();
         }
 
@@ -1247,12 +1245,19 @@ SecurityProfileCallContext::$supportedActions['spyware.best-practice-set'] = arr
 
                 $tmp_mlav_engine = DH::findFirstElementOrCreate('cloud-inline-analysis', $object->xmlroot);
                 $tmp_mlav_engine->textContent = "yes";
+                $object->cloud_inline_analysis_enabled = true;
+
+                $object->additional['mlav-engine-spyware-enabled']['HTTP Command and Control detector']['inline-policy-action'] = "reset-both";
+                $object->additional['mlav-engine-spyware-enabled']['HTTP2 Command and Control detector']['inline-policy-action'] = "reset-both";
+                $object->additional['mlav-engine-spyware-enabled']['SSL Command and Control detector']['inline-policy-action'] = "reset-both";
+
+                $object->additional['mlav-engine-spyware-enabled']['Unknown-TCP Command and Control detector']['inline-policy-action'] = "reset-both";
+                $object->additional['mlav-engine-spyware-enabled']['Unknown-UDP Command and Control detector']['inline-policy-action'] = "reset-both";
             }
         }
 
         if( $context->isAPI )
         {
-            #derr( "API mode is not supported yet" );
             $object->API_sync();
         }
     },
@@ -1296,6 +1301,7 @@ SecurityProfileCallContext::$supportedActions['spyware.alert-only-set'] = array(
             {
                 $tmp_mlav_engine = DH::findFirstElementOrCreate('cloud-inline-analysis', $object->xmlroot);
                 $tmp_mlav_engine->textContent = "yes";
+                $object->cloud_inline_analysis_enabled = true;
             }
         }
         else
@@ -1325,6 +1331,14 @@ SecurityProfileCallContext::$supportedActions['spyware.alert-only-set'] = array(
 
                 $tmp_mlav_engine = DH::findFirstElementOrCreate('cloud-inline-analysis', $object->xmlroot);
                 $tmp_mlav_engine->textContent = "yes";
+                $object->cloud_inline_analysis_enabled = true;
+
+                $object->additional['mlav-engine-spyware-enabled']['HTTP Command and Control detector']['inline-policy-action'] = "alert";
+                $object->additional['mlav-engine-spyware-enabled']['HTTP2 Command and Control detector']['inline-policy-action'] = "alert";
+                $object->additional['mlav-engine-spyware-enabled']['SSL Command and Control detector']['inline-policy-action'] = "alert";
+
+                $object->additional['mlav-engine-spyware-enabled']['Unknown-TCP Command and Control detector']['inline-policy-action'] = "alert";
+                $object->additional['mlav-engine-spyware-enabled']['Unknown-UDP Command and Control detector']['inline-policy-action'] = "alert";
             }
         }
 
@@ -1380,7 +1394,6 @@ SecurityProfileCallContext::$supportedActions['vulnerability.best-practice-set']
 
         if( $context->isAPI )
         {
-            #derr( "API mode is not supported yet" );
             $object->API_sync();
         }
     },
@@ -1446,7 +1459,6 @@ SecurityProfileCallContext::$supportedActions['vulnerability.alert-only-set'] = 
 
         if( $context->isAPI )
         {
-            #derr( "API mode is not supported yet" );
             $object->API_sync();
         }
     },
@@ -1489,6 +1501,7 @@ SecurityProfileCallContext::$supportedActions['url.alert-only-set'] = array(
         }
         $object->allow = array();
 
+        //Todo: missing stuff credential-enforcement // but framework class must be extended
         if( $context->object->owner->owner->version >= 102 )
         {
             $xmlnode = DH::findFirstElementOrCreate("local-inline-cat", $object->xmlroot);
@@ -1500,7 +1513,6 @@ SecurityProfileCallContext::$supportedActions['url.alert-only-set'] = array(
 
         if( $context->isAPI )
         {
-            #derr( "API mode is not supported yet" );
             $object->API_sync();
         }
     },
