@@ -1265,6 +1265,7 @@ SecurityProfileCallContext::$supportedActions['spyware.best-practice-set'] = arr
 SecurityProfileCallContext::$supportedActions['spyware.alert-only-set'] = array(
     'name' => 'spyware.alert-only-set',
     'MainFunction' => function (SecurityProfileCallContext $context) {
+        /** @var AntiSpywareProfile $object */
         $object = $context->object;
 
         if (get_class($object) !== "AntiSpywareProfile")
@@ -1342,6 +1343,88 @@ SecurityProfileCallContext::$supportedActions['spyware.alert-only-set'] = array(
             }
         }
 
+        foreach( $object->rules_obj as $rule )
+        {
+            /** @var ThreatPolicy $rule */
+            if( $rule->action() == "allow" )
+            {
+                $rule->action = "alert";
+
+                //move this to threatPolicyvulnerability create method "setAction($name)"
+                $tmp = DH::findFirstElement("action", $rule->xmlroot);
+                if( $tmp !== FALSE )
+                {
+                    $tmp_action = DH::firstChildElement($tmp);
+                    if( $tmp_action !== FALSE )
+                    {
+                        $tmp->removeChild($tmp_action);
+
+                        $xmlString = '<alert/>';
+                        $xmlElement = DH::importXmlStringOrDie($rule->xmlroot->ownerDocument, $xmlString);
+                        $tmp->appendChild($xmlElement);
+                    }
+                }
+            }
+        }
+
+        foreach( $object->dns_rules_obj as $rule )
+        {
+            /** @var DNSPolicy $rule */
+            if( $rule->action() == "allow" )
+            {
+                $rule->action = "alert";
+
+                //move this to DNSPolicy create method "setAction($name)"
+                $tmp = DH::findFirstElement("action", $rule->xmlroot);
+                $tmp->textContent = "alert";
+            }
+            elseif( $rule->action() == "default" )
+            {
+                if( $rule->name() == "pan-dns-sec-adtracking"
+                    || $rule->name() == "pan-dns-sec-ddns"
+                    || $rule->name() == "pan-dns-sec-parked"
+                    || $rule->name() == "pan-dns-sec-recent"
+                )
+                {
+                    $tmp = DH::findFirstElement("action", $rule->xmlroot);
+                    $tmp->textContent = "alert";
+                }
+            }
+        }
+
+        $tmp_rule = DH::findFirstElement('botnet-domains', $object->xmlroot);
+        if( $tmp_rule !== FALSE )
+        {
+            $tmp_lists = DH::findFirstElement('lists', $tmp_rule);
+            if ($tmp_lists !== FALSE)
+            {
+                foreach ($tmp_lists->childNodes as $tmp_entry1)
+                {
+                    if ($tmp_entry1->nodeType != XML_ELEMENT_NODE)
+                        continue;
+
+                    $name = DH::findAttribute("name", $tmp_entry1);
+                    if( $object->additional['botnet-domain']['lists'][$name]['action'] == "allow" )
+                    {
+                        $tmp = DH::findFirstElement("action", $tmp_entry1);
+                        if ($tmp !== FALSE)
+                        {
+                            $tmp_action = DH::firstChildElement($tmp);
+                            if ($tmp_action !== FALSE) {
+                                $tmp->removeChild($tmp_action);
+
+                                $xmlString = '<alert/>';
+                                $xmlElement = DH::importXmlStringOrDie($rule->xmlroot->ownerDocument, $xmlString);
+                                $tmp->appendChild($xmlElement);
+
+                                $object->additional['botnet-domain']['lists'][$name]['action'] = "alert";
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         if( $context->isAPI )
         {
            # derr( "API mode is not supported yet" );
@@ -1390,6 +1473,35 @@ SecurityProfileCallContext::$supportedActions['vulnerability.best-practice-set']
 
                 $object->additional['mica-engine-vulnerability-enabled'][$name]['inline-policy-action'] = "reset-both";
             }
+        }
+
+        foreach( $object->rules_obj as $rule )
+        {
+            /** @var ThreatPolicy $rule */
+
+            //todo: validate severity
+            //reset-both only for high/critical/medium
+            /*
+            if( $rule->action() == "allow" )
+            {
+                $rule->action = "alert";
+
+                //move this to threatPolicyvulnerability create method "setAction($name)"
+                $tmp = DH::findFirstElement("action", $rule->xmlroot);
+                if( $tmp !== FALSE )
+                {
+                    $tmp_action = DH::firstChildElement($tmp);
+                    if( $tmp_action !== FALSE )
+                    {
+                        $tmp->removeChild($tmp_action);
+
+                        $xmlString = '<alert/>';
+                        $xmlElement = DH::importXmlStringOrDie($rule->xmlroot->ownerDocument, $xmlString);
+                        $tmp->appendChild($xmlElement);
+                    }
+                }
+            }
+            */
         }
 
         if( $context->isAPI )
@@ -1454,6 +1566,31 @@ SecurityProfileCallContext::$supportedActions['vulnerability.alert-only-set'] = 
             {
                 $tmp_mlav_engine = DH::findFirstElementOrCreate('cloud-inline-analysis', $object->xmlroot);
                 $tmp_mlav_engine->textContent = "yes";
+            }
+        }
+
+
+        foreach( $object->rules_obj as $rule )
+        {
+            /** @var ThreatPolicy $rule */
+            if( $rule->action() == "allow" )
+            {
+                $rule->action = "alert";
+
+                //move this to threatPolicyvulnerability create method "setAction($name)"
+                $tmp = DH::findFirstElement("action", $rule->xmlroot);
+                if( $tmp !== FALSE )
+                {
+                    $tmp_action = DH::firstChildElement($tmp);
+                    if( $tmp_action !== FALSE )
+                    {
+                        $tmp->removeChild($tmp_action);
+
+                        $xmlString = '<alert/>';
+                        $xmlElement = DH::importXmlStringOrDie($rule->xmlroot->ownerDocument, $xmlString);
+                        $tmp->appendChild($xmlElement);
+                    }
+                }
             }
         }
 

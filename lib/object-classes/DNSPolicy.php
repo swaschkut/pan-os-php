@@ -92,7 +92,7 @@ class DNSPolicy
         return $this->packetCapture;
     }
 
-    public function display($padding)
+    public function display($padding="")
     {
         $string = "";
         $string .= $padding."          '".$this->name()."':";
