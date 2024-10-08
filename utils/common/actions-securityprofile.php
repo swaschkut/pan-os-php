@@ -1256,6 +1256,89 @@ SecurityProfileCallContext::$supportedActions['spyware.best-practice-set'] = arr
             }
         }
 
+        foreach( $object->rules_obj as $rule )
+        {
+            /** @var ThreatPolicy $rule */
+            if( in_array("high", $rule->severity()) || in_array("critical", $rule->severity()) || in_array("medium", $rule->severity()) )
+            {
+                if( !in_array("low", $rule->severity()) && !in_array("informational", $rule->severity()) )
+                {
+                    if( $rule->category() != "brute-force" && $rule->category() != "app-id-change")
+                    {
+                        $rule->action = "reset-both";
+
+                        //move this to threatPolicyvulnerability create method "setAction($name)"
+                        $tmp = DH::findFirstElement("action", $rule->xmlroot);
+                        if( $tmp !== FALSE )
+                        {
+                            $tmp_action = DH::firstChildElement($tmp);
+                            if( $tmp_action !== FALSE )
+                            {
+                                $tmp->removeChild($tmp_action);
+
+                                $xmlString = '<reset-both/>';
+                                $xmlElement = DH::importXmlStringOrDie($rule->xmlroot->ownerDocument, $xmlString);
+                                $tmp->appendChild($xmlElement);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        foreach( $object->dns_rules_obj as $rule )
+        {
+            /** @var DNSPolicy $rule */
+            if( $rule->name() == "pan-dns-sec-adtracking"
+                || $rule->name() == "pan-dns-sec-ddns"
+                || $rule->name() == "pan-dns-sec-parked"
+                || $rule->name() == "pan-dns-sec-recent"
+            )
+            {
+                $tmp = DH::findFirstElement("action", $rule->xmlroot);
+                $tmp->textContent = "alert";
+            }
+            else
+            {
+                $tmp = DH::findFirstElement("action", $rule->xmlroot);
+                $tmp->textContent = "sinkhole";
+            }
+        }
+
+        $tmp_rule = DH::findFirstElement('botnet-domains', $object->xmlroot);
+        if( $tmp_rule !== FALSE )
+        {
+            $tmp_lists = DH::findFirstElement('lists', $tmp_rule);
+            if ($tmp_lists !== FALSE)
+            {
+                foreach ($tmp_lists->childNodes as $tmp_entry1)
+                {
+                    if ($tmp_entry1->nodeType != XML_ELEMENT_NODE)
+                        continue;
+
+                    $name = DH::findAttribute("name", $tmp_entry1);
+                    #if( $object->additional['botnet-domain']['lists'][$name]['action'] == "allow" )
+                    if( $name == "default-paloalto-dns" )
+                    {
+                        $tmp = DH::findFirstElement("action", $tmp_entry1);
+                        if ($tmp !== FALSE)
+                        {
+                            $tmp_action = DH::firstChildElement($tmp);
+                            if ($tmp_action !== FALSE) {
+                                $tmp->removeChild($tmp_action);
+
+                                $xmlString = '<sinkhole/>';
+                                $xmlElement = DH::importXmlStringOrDie($rule->xmlroot->ownerDocument, $xmlString);
+                                $tmp->appendChild($xmlElement);
+
+                                $object->additional['botnet-domain']['lists'][$name]['action'] = "sinkhole";
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         if( $context->isAPI )
         {
             $object->API_sync();
@@ -1478,30 +1561,28 @@ SecurityProfileCallContext::$supportedActions['vulnerability.best-practice-set']
         foreach( $object->rules_obj as $rule )
         {
             /** @var ThreatPolicy $rule */
-
-            //todo: validate severity
-            //reset-both only for high/critical/medium
-            /*
-            if( $rule->action() == "allow" )
+            if( in_array("high", $rule->severity()) || in_array("critical", $rule->severity()) || in_array("medium", $rule->severity()) )
             {
-                $rule->action = "alert";
-
-                //move this to threatPolicyvulnerability create method "setAction($name)"
-                $tmp = DH::findFirstElement("action", $rule->xmlroot);
-                if( $tmp !== FALSE )
+                if( !in_array("low", $rule->severity()) && !in_array("informational", $rule->severity()) )
                 {
-                    $tmp_action = DH::firstChildElement($tmp);
-                    if( $tmp_action !== FALSE )
-                    {
-                        $tmp->removeChild($tmp_action);
+                    $rule->action = "reset-both";
 
-                        $xmlString = '<alert/>';
-                        $xmlElement = DH::importXmlStringOrDie($rule->xmlroot->ownerDocument, $xmlString);
-                        $tmp->appendChild($xmlElement);
+                    //move this to threatPolicyvulnerability create method "setAction($name)"
+                    $tmp = DH::findFirstElement("action", $rule->xmlroot);
+                    if( $tmp !== FALSE )
+                    {
+                        $tmp_action = DH::firstChildElement($tmp);
+                        if( $tmp_action !== FALSE )
+                        {
+                            $tmp->removeChild($tmp_action);
+
+                            $xmlString = '<reset-both/>';
+                            $xmlElement = DH::importXmlStringOrDie($rule->xmlroot->ownerDocument, $xmlString);
+                            $tmp->appendChild($xmlElement);
+                        }
                     }
                 }
             }
-            */
         }
 
         if( $context->isAPI )
