@@ -6650,6 +6650,28 @@ var subjectObject =
                 "name": "name-toUpperCase",
                 "MainFunction": {}
             },
+            "spyware.alert-only-set": {
+                "name": "spyware.alert-only-set",
+                "MainFunction": {},
+                "args": {
+                    "has-DNS-license": {
+                        "type": "bool",
+                        "default": true,
+                        "help": "define correct AS Profile setting if License is available"
+                    }
+                }
+            },
+            "spyware.best-practice-set": {
+                "name": "spyware.best-practice-set",
+                "MainFunction": {},
+                "args": {
+                    "has-DNS-license": {
+                        "type": "bool",
+                        "default": true,
+                        "help": "define correct AS Profile setting if License is available"
+                    }
+                }
+            },
             "url-filtering-action-set": {
                 "name": "url-filtering-action-set",
                 "MainFunction": {},
@@ -6664,8 +6686,24 @@ var subjectObject =
                     }
                 }
             },
+            "url.alert-only-set": {
+                "name": "url.alert-only-set",
+                "MainFunction": {}
+            },
+            "virus.alert-only-set": {
+                "name": "virus.alert-only-set",
+                "MainFunction": {}
+            },
             "virus.best-practice-set": {
                 "name": "virus.best-practice-set",
+                "MainFunction": {}
+            },
+            "vulnerability.alert-only-set": {
+                "name": "vulnerability.alert-only-set",
+                "MainFunction": {}
+            },
+            "vulnerability.best-practice-set": {
+                "name": "vulnerability.best-practice-set",
                 "MainFunction": {}
             }
         },
