@@ -490,6 +490,9 @@ class UTIL
                             PH::$JSON_TMP['arg'][$action['name']]['arguments'][$count]['choices'] = $arg['choices'];
                         }
 
+                        if( isset($arg['help']) )
+                            $output .= "\n: ".$arg['help'];
+
                         $count++;
                         $first = FALSE;
                     }
