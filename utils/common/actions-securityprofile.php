@@ -1286,8 +1286,12 @@ SecurityProfileCallContext::$supportedActions['spyware.best-practice-set'] = arr
             }
         }
 
+        $hasDNSlicense = $context->arguments['has-DNS-license'];
         foreach( $object->dns_rules_obj as $rule )
         {
+            $tmp_action = DH::findFirstElement("action", $rule->xmlroot);
+            $tmp_packet_capture = DH::findFirstElement("packet-capture", $rule->xmlroot);
+            $tmp_log_level = DH::findFirstElement("log-level", $rule->xmlroot);
             /** @var DNSPolicy $rule */
             if( $rule->name() == "pan-dns-sec-adtracking"
                 || $rule->name() == "pan-dns-sec-ddns"
@@ -1295,13 +1299,31 @@ SecurityProfileCallContext::$supportedActions['spyware.best-practice-set'] = arr
                 || $rule->name() == "pan-dns-sec-recent"
             )
             {
-                $tmp = DH::findFirstElement("action", $rule->xmlroot);
-                $tmp->textContent = "alert";
+                if( $hasDNSlicense )
+                {
+                    $tmp_action->textContent = "alert";
+                    $tmp_packet_capture->textContent = "disable";
+                }
+                else
+                {
+                    $tmp_action->textContent = "allow";
+                    $tmp_packet_capture->textContent = "disable";
+                    $tmp_log_level->textContent = "none";
+                }
             }
             else
             {
-                $tmp = DH::findFirstElement("action", $rule->xmlroot);
-                $tmp->textContent = "sinkhole";
+                if( $hasDNSlicense )
+                {
+                    $tmp_action->textContent = "sinkhole";
+                    $tmp_packet_capture->textContent = "disable";
+                }
+                else
+                {
+                    $tmp_action->textContent = "allow";
+                    $tmp_packet_capture->textContent = "disable";
+                    $tmp_log_level->textContent = "none";
+                }
             }
         }
 
@@ -1317,7 +1339,6 @@ SecurityProfileCallContext::$supportedActions['spyware.best-practice-set'] = arr
                         continue;
 
                     $name = DH::findAttribute("name", $tmp_entry1);
-                    #if( $object->additional['botnet-domain']['lists'][$name]['action'] == "allow" )
                     if( $name == "default-paloalto-dns" )
                     {
                         $tmp = DH::findFirstElement("action", $tmp_entry1);
@@ -1327,12 +1348,24 @@ SecurityProfileCallContext::$supportedActions['spyware.best-practice-set'] = arr
                             if ($tmp_action !== FALSE) {
                                 $tmp->removeChild($tmp_action);
 
-                                $xmlString = '<sinkhole/>';
+                                if( $hasDNSlicense )
+                                    $tmp_actionString = "sinkhole";
+                                else
+                                    $tmp_actionString = "allow";
+                                $xmlString = '<'.$tmp_actionString.'/>';
                                 $xmlElement = DH::importXmlStringOrDie($rule->xmlroot->ownerDocument, $xmlString);
                                 $tmp->appendChild($xmlElement);
 
-                                $object->additional['botnet-domain']['lists'][$name]['action'] = "sinkhole";
+                                $object->additional['botnet-domain']['lists'][$name]['action'] = $tmp_actionString;
                             }
+                        }
+                        $tmp = DH::findFirstElement("packet-capture", $tmp_entry1);
+                        if ($tmp !== FALSE)
+                        {
+                            if( $hasDNSlicense )
+                                $tmp->textContent = "";
+                            else
+                                $tmp->textContent = "disable";
                         }
                     }
                 }
@@ -1344,6 +1377,11 @@ SecurityProfileCallContext::$supportedActions['spyware.best-practice-set'] = arr
             $object->API_sync();
         }
     },
+    'args' => array('has-DNS-license' =>
+        array('type' => 'bool', 'default' => true,
+            'help' => "define correct AS Profile setting if License is available"
+        )
+    )
 );
 SecurityProfileCallContext::$supportedActions['spyware.alert-only-set'] = array(
     'name' => 'spyware.alert-only-set',
@@ -1450,16 +1488,29 @@ SecurityProfileCallContext::$supportedActions['spyware.alert-only-set'] = array(
             }
         }
 
+        $hasDNSlicense = $context->arguments['has-DNS-license'];
         foreach( $object->dns_rules_obj as $rule )
         {
+            $tmp_action = DH::findFirstElement("action", $rule->xmlroot);
+            $tmp_packet_capture = DH::findFirstElement("packet-capture", $rule->xmlroot);
+            $tmp_log_level = DH::findFirstElement("log-level", $rule->xmlroot);
             /** @var DNSPolicy $rule */
             if( $rule->action() == "allow" )
             {
                 $rule->action = "alert";
 
                 //move this to DNSPolicy create method "setAction($name)"
-                $tmp = DH::findFirstElement("action", $rule->xmlroot);
-                $tmp->textContent = "alert";
+                if( $hasDNSlicense )
+                {
+                    $tmp_action->textContent = "alert";
+                    $tmp_packet_capture->textContent = "disable";
+                }
+                else
+                {
+                    $tmp_action->textContent = "allow";
+                    $tmp_packet_capture->textContent = "disable";
+                    $tmp_log_level->textContent = "none";
+                }
             }
             elseif( $rule->action() == "default" )
             {
@@ -1469,8 +1520,17 @@ SecurityProfileCallContext::$supportedActions['spyware.alert-only-set'] = array(
                     || $rule->name() == "pan-dns-sec-recent"
                 )
                 {
-                    $tmp = DH::findFirstElement("action", $rule->xmlroot);
-                    $tmp->textContent = "alert";
+                    if( $hasDNSlicense )
+                    {
+                        $tmp_action->textContent = "alert";
+                        $tmp_packet_capture->textContent = "disable";
+                    }
+                    else
+                    {
+                        $tmp_action->textContent = "allow";
+                        $tmp_packet_capture->textContent = "disable";
+                        $tmp_log_level->textContent = "none";
+                    }
                 }
             }
         }
@@ -1496,12 +1556,25 @@ SecurityProfileCallContext::$supportedActions['spyware.alert-only-set'] = array(
                             if ($tmp_action !== FALSE) {
                                 $tmp->removeChild($tmp_action);
 
-                                $xmlString = '<alert/>';
+                                if( $hasDNSlicense )
+                                    $tmp_actionString = "alert";
+                                else
+                                    $tmp_actionString = "allow";
+
+                                $xmlString = '<'.$tmp_actionString.'/>';
                                 $xmlElement = DH::importXmlStringOrDie($rule->xmlroot->ownerDocument, $xmlString);
                                 $tmp->appendChild($xmlElement);
 
-                                $object->additional['botnet-domain']['lists'][$name]['action'] = "alert";
+                                $object->additional['botnet-domain']['lists'][$name]['action'] = $tmp_actionString;
                             }
+                        }
+                        $tmp = DH::findFirstElement("packet-capture", $tmp_entry1);
+                        if ($tmp !== FALSE)
+                        {
+                            if( $hasDNSlicense )
+                                $tmp->textContent = "";
+                            else
+                                $tmp->textContent = "disable";
                         }
                     }
                 }
@@ -1510,10 +1583,14 @@ SecurityProfileCallContext::$supportedActions['spyware.alert-only-set'] = array(
 
         if( $context->isAPI )
         {
-           # derr( "API mode is not supported yet" );
             $object->API_sync();
         }
     },
+    'args' => array('has-DNS-license' =>
+        array('type' => 'bool', 'default' => true,
+            'help' => "define correct AS Profile setting if License is available"
+        )
+    )
 );
 SecurityProfileCallContext::$supportedActions['vulnerability.best-practice-set'] = array(
     'name' => 'vulnerability.best-practice-set',
