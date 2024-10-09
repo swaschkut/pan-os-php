@@ -1379,7 +1379,7 @@ SecurityProfileCallContext::$supportedActions['spyware.best-practice-set'] = arr
     },
     'args' => array('has-DNS-license' =>
         array('type' => 'bool', 'default' => true,
-            'help' => "define correct AS Profile setting if License is available"
+            'help' => "[has-DNS-license] 'spyware.best-practice-set:FALSE' - define correct AS Profile setting if License is NOT available"
         )
     )
 );
@@ -1587,8 +1587,8 @@ SecurityProfileCallContext::$supportedActions['spyware.alert-only-set'] = array(
         }
     },
     'args' => array('has-DNS-license' =>
-        array('type' => 'bool', 'default' => true,
-            'help' => "define correct AS Profile setting if License is available"
+        array('type' => 'bool', 'default' => 'true',
+            'help' => "[has-DNS-license] 'spyware.alert-only-set:FALSE' - define correct AS Profile setting if License is NOT available"
         )
     )
 );
