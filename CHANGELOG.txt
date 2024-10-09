@@ -46,6 +46,7 @@ UTIL:
 * type=securityprofile securityprofiletype=spyware/vulnerability actions=spyware/vulnerability.alert-only-set | improve to also set policy rules and default-action to alert if needed
 * type=securityprofile securityprofiletype=spyware/vulnerability actions=spyware/vulnerability.best-practice-set | improve to also set policy rules and default-action to reset-both if needed
 * type=securityprofile actions=spyware.alert-only-set/spyware.best-practice-set:{hasDNSLicense} | introduce additional argument if DNSLicense is available - to adjust correct dns-categories settings
+* class NatRule - extend with "persistent-dynamic-ip-and-port"
 
 BUGFIX:
 * type=diff file1=diff.xml "filter=/config/devices/entry[@name='localhost.localdomain']/device-group/entry[@name='{{name}}']/pre-rulebase" name1=DG1 name2=DG2 | correction of pregmatch
