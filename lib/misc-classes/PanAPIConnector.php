@@ -507,23 +507,25 @@ class PanAPIConnector
                 PH::print_stdout( " * Now generating an API key from '$host'..." );
                 $con = new PanAPIConnector($host, '', 'panos', null, $port);
 
-                //OLD
-                $url = "type=keygen&user=" . urlencode($user) . "&password=" . urlencode($password);
-                //NEW
-                /*
-                $url = "type=keygen";
-                $parameters['url'] = $url;
-                $parameters['user'] = urlencode($user);
-                $parameters['password'] = urlencode($password);
-                $parameters['apikeyrequest'] = TRUE;
-                */
+
+                if (!PH::$sendAPIkeyviaHeader)
+                    $url = "type=keygen&user=" . urlencode($user) . "&password=" . urlencode($password);
+                else
+                {
+                    $url = "type=keygen";
+                    $parameters['url'] = $url;
+                    $parameters['user'] = urlencode($user);
+                    $parameters['password'] = urlencode($password);
+                    $parameters['apikeyrequest'] = TRUE;
+                }
 
                 if( $debugAPI )
                     $con->setShowApiCalls( $debugAPI );
-                //OLD
-                $res = $con->sendRequest($url);
-                //NEW
-                #$res = $con->sendRequest($parameters);
+
+                if (!PH::$sendAPIkeyviaHeader)
+                    $res = $con->sendRequest($url);
+                else
+                    $res = $con->sendRequest($parameters);
 
                 $res = DH::findFirstElement('response', $res);
                 if( $res === FALSE )
@@ -1174,7 +1176,7 @@ class PanAPIConnector
             $finalUrl .= '&' . $parameters;
         elseif( $apikeyrequest )
         {
-            $finalUrl .= '&' . $parameters['url'];
+            $finalUrl .= '?' . $parameters['url'];
             unset($parameters['url']);
             unset($parameters['apikeyrequest']);
         }
@@ -1207,6 +1209,13 @@ class PanAPIConnector
                     //Todo: possible improvements for API security with PAN-OS 9.0 [20181030]
                     curl_setopt($this->_curl_handle, CURLOPT_HTTPHEADER, array('X-PAN-KEY: ' . $this->apikey));
                 }
+            }
+            else
+            {
+                curl_setopt($this->_curl_handle, CURLOPT_FOLLOWLOCATION, TRUE);
+                curl_setopt($this->_curl_handle, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
+                curl_setopt($this->_curl_handle, CURLOPT_CUSTOMREQUEST, 'POST');
+                curl_setopt($this->_curl_handle, CURLOPT_HTTPHEADER, array('Content-Type: application/x-www-form-urlencoded'));
             }
             $properParams = http_build_query($parameters);
             curl_setopt($this->_curl_handle, CURLOPT_POSTFIELDS, $properParams);
@@ -1253,6 +1262,7 @@ class PanAPIConnector
                 }
 
                 PH::print_stdout("API call through POST: \"" . $finalUrl . $paramURl . "\"");
+                PH::print_stdout("RAW HTTP URL: \"" . $finalUrl . "\"");
                 PH::print_stdout( "RAW HTTP POST Content: {$properParams}" );
             }
             else
