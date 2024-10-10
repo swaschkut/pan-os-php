@@ -183,7 +183,7 @@ class AntiSpywareProfile extends SecurityProfile2
         if( $tmp_rule !== FALSE && !$tmp_rule->hasChildNodes() )
         {
             $xml->removeChild($tmp_rule);
-            $tmp_rule = DH::findFirstElement('mlav-engine-spyware-enabled', $xml);
+            $tmp_rule = DH::findFirstElement('mica-engine-spyware-enabled', $xml);
         }
         if( $tmp_rule !== FALSE )
         {
@@ -208,7 +208,7 @@ class AntiSpywareProfile extends SecurityProfile2
                 {
                     $tmp_inline_policy_action = DH::findFirstElementOrCreate("inline-policy-action", $tmp_entry1);
                     $tmp_inline_policy_action->textContent = "disable";
-                    $this->additional['mlav-engine-spyware-enabled'][$name]['inline-policy-action'] = "disable";
+                    $this->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action'] = "disable";
                 }
             }
 
@@ -223,19 +223,19 @@ class AntiSpywareProfile extends SecurityProfile2
                 $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $Unkown_TCP_xmlstring);
                 $tmp_rule->appendChild($xmlElement);
 
-                $this->additional['mlav-engine-spyware-enabled']['Unknown-TCP Command and Control detector']['inline-policy-action'] = "disable";
+                $this->additional['mica-engine-spyware-enabled']['Unknown-TCP Command and Control detector']['inline-policy-action'] = "disable";
             }
             if( !$tmp_mica_Unknown_UDP_found && $this->owner->owner->version >= 111 )
             {
                 $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $Unkown_UDP_xmlstring);
                 $tmp_rule->appendChild($xmlElement);
 
-                $this->additional['mlav-engine-spyware-enabled']['Unknown-UDP Command and Control detector']['inline-policy-action'] = "disable";
+                $this->additional['mica-engine-spyware-enabled']['Unknown-UDP Command and Control detector']['inline-policy-action'] = "disable";
             }
         }
         else
         {
-            $xmlstring_110 = '<mlav-engine-spyware-enabled>
+            $xmlstring_110 = '<mica-engine-spyware-enabled>
   <entry name="HTTP Command and Control detector">
     <inline-policy-action>alert</inline-policy-action>
   </entry>
@@ -251,7 +251,7 @@ class AntiSpywareProfile extends SecurityProfile2
   <entry name="Unknown-UDP Command and Control detector">
     <inline-policy-action>alert</inline-policy-action>
   </entry>
-</mlav-engine-spyware-enabled>';
+</mica-engine-spyware-enabled>';
 
             if( $this->owner->owner->version >= 110 )
             {
@@ -262,12 +262,12 @@ class AntiSpywareProfile extends SecurityProfile2
 
             if( $this->owner->owner->version >= 110 )
             {
-                $this->additional['mlav-engine-spyware-enabled']['HTTP Command and Control detector']['inline-policy-action'] = "disable";
-                $this->additional['mlav-engine-spyware-enabled']['HTTP2 Command and Control detector']['inline-policy-action'] = "disable";
-                $this->additional['mlav-engine-spyware-enabled']['SSL Command and Control detector']['inline-policy-action'] = "disable";
+                $this->additional['mica-engine-spyware-enabled']['HTTP Command and Control detector']['inline-policy-action'] = "disable";
+                $this->additional['mica-engine-spyware-enabled']['HTTP2 Command and Control detector']['inline-policy-action'] = "disable";
+                $this->additional['mica-engine-spyware-enabled']['SSL Command and Control detector']['inline-policy-action'] = "disable";
 
-                $this->additional['mlav-engine-spyware-enabled']['Unknown-TCP Command and Control detector']['inline-policy-action'] = "disable";
-                $this->additional['mlav-engine-spyware-enabled']['Unknown-UDP Command and Control detector']['inline-policy-action'] = "disable";
+                $this->additional['mica-engine-spyware-enabled']['Unknown-TCP Command and Control detector']['inline-policy-action'] = "disable";
+                $this->additional['mica-engine-spyware-enabled']['Unknown-UDP Command and Control detector']['inline-policy-action'] = "disable";
             }
         }
 

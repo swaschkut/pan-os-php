@@ -56,6 +56,7 @@ BUGFIX:
 * develop watchguard migration | improve to cover also multiple objects in rules
 * type=vendormigration vendor=ciscoasa | bugfix for call RULEMERGER()
 * type=address 'filter=(name regex /XYZ/)' | bugfix for isType_TMP validation to avoid check against RegionObject
+* bugfix for type=securityprofile | to set correct XMLnode
 
 GENERAL:
 * class ServiceGroup | introduce variable $childancestor

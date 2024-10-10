@@ -1238,21 +1238,21 @@ SecurityProfileCallContext::$supportedActions['spyware.best-practice-set'] = arr
   </entry>
 </mica-engine-spyware-enabled>';
 
-            if( $this->owner->owner->version >= 102 )
+            if( $object->owner->owner->version >= 102 )
             {
-                $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $xmlString);
+                $xmlElement = DH::importXmlStringOrDie($object->xmlroot->ownerDocument, $xmlString);
                 $object->xmlroot->appendChild($xmlElement);
 
                 $tmp_mlav_engine = DH::findFirstElementOrCreate('cloud-inline-analysis', $object->xmlroot);
                 $tmp_mlav_engine->textContent = "yes";
                 $object->cloud_inline_analysis_enabled = true;
 
-                $object->additional['mlav-engine-spyware-enabled']['HTTP Command and Control detector']['inline-policy-action'] = "reset-both";
-                $object->additional['mlav-engine-spyware-enabled']['HTTP2 Command and Control detector']['inline-policy-action'] = "reset-both";
-                $object->additional['mlav-engine-spyware-enabled']['SSL Command and Control detector']['inline-policy-action'] = "reset-both";
+                $object->additional['mica-engine-spyware-enabled']['HTTP Command and Control detector']['inline-policy-action'] = "reset-both";
+                $object->additional['mica-engine-spyware-enabled']['HTTP2 Command and Control detector']['inline-policy-action'] = "reset-both";
+                $object->additional['mica-engine-spyware-enabled']['SSL Command and Control detector']['inline-policy-action'] = "reset-both";
 
-                $object->additional['mlav-engine-spyware-enabled']['Unknown-TCP Command and Control detector']['inline-policy-action'] = "reset-both";
-                $object->additional['mlav-engine-spyware-enabled']['Unknown-UDP Command and Control detector']['inline-policy-action'] = "reset-both";
+                $object->additional['mica-engine-spyware-enabled']['Unknown-TCP Command and Control detector']['inline-policy-action'] = "reset-both";
+                $object->additional['mica-engine-spyware-enabled']['Unknown-UDP Command and Control detector']['inline-policy-action'] = "reset-both";
             }
         }
 
@@ -1459,12 +1459,12 @@ SecurityProfileCallContext::$supportedActions['spyware.alert-only-set'] = array(
                 $tmp_mlav_engine->textContent = "yes";
                 $object->cloud_inline_analysis_enabled = true;
 
-                $object->additional['mlav-engine-spyware-enabled']['HTTP Command and Control detector']['inline-policy-action'] = "alert";
-                $object->additional['mlav-engine-spyware-enabled']['HTTP2 Command and Control detector']['inline-policy-action'] = "alert";
-                $object->additional['mlav-engine-spyware-enabled']['SSL Command and Control detector']['inline-policy-action'] = "alert";
+                $object->additional['mica-engine-spyware-enabled']['HTTP Command and Control detector']['inline-policy-action'] = "alert";
+                $object->additional['mica-engine-spyware-enabled']['HTTP2 Command and Control detector']['inline-policy-action'] = "alert";
+                $object->additional['mica-engine-spyware-enabled']['SSL Command and Control detector']['inline-policy-action'] = "alert";
 
-                $object->additional['mlav-engine-spyware-enabled']['Unknown-TCP Command and Control detector']['inline-policy-action'] = "alert";
-                $object->additional['mlav-engine-spyware-enabled']['Unknown-UDP Command and Control detector']['inline-policy-action'] = "alert";
+                $object->additional['mica-engine-spyware-enabled']['Unknown-TCP Command and Control detector']['inline-policy-action'] = "alert";
+                $object->additional['mica-engine-spyware-enabled']['Unknown-UDP Command and Control detector']['inline-policy-action'] = "alert";
             }
         }
 
