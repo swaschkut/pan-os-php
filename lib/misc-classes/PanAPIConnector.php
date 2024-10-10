@@ -507,10 +507,19 @@ class PanAPIConnector
                 PH::print_stdout( " * Now generating an API key from '$host'..." );
                 $con = new PanAPIConnector($host, '', 'panos', null, $port);
 
-                $url = "type=keygen&user=" . urlencode($user) . "&password=" . urlencode($password);
+                //OLD
+                //$url = "type=keygen&user=" . urlencode($user) . "&password=" . urlencode($password);
+                $url = "type=keygen";
+                $parameters['url'] = $url;
+                $parameters['user'] = urlencode($user);
+                $parameters['password'] = urlencode($password);
+                $parameters['apikeyrequest'] = TRUE;
+
                 if( $debugAPI )
                     $con->setShowApiCalls( $debugAPI );
-                $res = $con->sendRequest($url);
+                //OLD
+                #$res = $con->sendRequest($url);
+                $res = $con->sendRequest($parameters);
 
                 $res = DH::findFirstElement('response', $res);
                 if( $res === FALSE )
@@ -1098,9 +1107,15 @@ class PanAPIConnector
     public function sendRequest(&$parameters, $checkResultTag = FALSE, &$filecontent = null, $filename = '', $moreOptions = array())
     {
         $sendThroughPost = FALSE;
+        $apikeyrequest = FALSE;
 
         if( is_array($parameters) )
+        {
             $sendThroughPost = TRUE;
+            if( isset( $parameters['apikeyrequest']) )
+                $apikeyrequest = TRUE;
+
+        }
 
 
         $this->_createOrRenewCurl();
@@ -1151,8 +1166,14 @@ class PanAPIConnector
             }
         }
 
-        if( !$sendThroughPost )
+        if( !$sendThroughPost && !$apikeyrequest )
             $finalUrl .= '&' . $parameters;
+        elseif( $apikeyrequest )
+        {
+            $finalUrl .= '&' . $parameters['url'];
+            unset($parameters['url']);
+            unset($parameters['apikeyrequest']);
+        }
 
 
         curl_setopt($this->_curl_handle, CURLOPT_URL, $finalUrl);
@@ -1171,18 +1192,18 @@ class PanAPIConnector
 
         if( $sendThroughPost )
         {
-            if( isset($this->serial) && $this->serial !== null )
+            if( !$apikeyrequest )
             {
-                $parameters['target'] = $this->serial;
+                if (isset($this->serial) && $this->serial !== null) {
+                    $parameters['target'] = $this->serial;
+                }
+                if (!PH::$sendAPIkeyviaHeader)
+                    $parameters['key'] = $this->apikey;
+                else {
+                    //Todo: possible improvements for API security with PAN-OS 9.0 [20181030]
+                    curl_setopt($this->_curl_handle, CURLOPT_HTTPHEADER, array('X-PAN-KEY: ' . $this->apikey));
+                }
             }
-            if( !PH::$sendAPIkeyviaHeader )
-                $parameters['key'] = $this->apikey;
-            else
-            {
-                //Todo: possible improvements for API security with PAN-OS 9.0 [20181030]
-                curl_setopt($this->_curl_handle, CURLOPT_HTTPHEADER, array('X-PAN-KEY: ' . $this->apikey));
-            }
-
             $properParams = http_build_query($parameters);
             curl_setopt($this->_curl_handle, CURLOPT_POSTFIELDS, $properParams);
         }

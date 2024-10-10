@@ -49,6 +49,7 @@ UTIL:
 * class NatRule - extend with "persistent-dynamic-ip-and-port"
 * type=securityprofle actions=spyware/vulnerability.best-practice-set | set packet-capture to single-packet
 * type=gratuitous-arp | improve validation
+* class PanAPIConnector | improve API key request to use POST
 
 BUGFIX:
 * type=diff file1=diff.xml "filter=/config/devices/entry[@name='localhost.localdomain']/device-group/entry[@name='{{name}}']/pre-rulebase" name1=DG1 name2=DG2 | correction of pregmatch
