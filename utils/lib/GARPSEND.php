@@ -363,6 +363,8 @@ class GARPSEND extends UTIL
                     if( cidr::cidr_match($dstIP, $network, $netmask) )
                         $this->commands[$dstIP . $intName] = "test arp gratuitous ip " . $dstIP . " interface " . $intName;
                 }
+                elseif( $key == $dstIP )
+                    $this->commands[$dstIP . $intName] = "test arp gratuitous ip " . $dstIP . " interface " . $intName;
             }
         }
     }
