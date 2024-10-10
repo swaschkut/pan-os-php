@@ -1527,7 +1527,7 @@ SecurityProfileCallContext::$supportedActions['spyware.alert-only-set'] = array(
                     if( $hasDNSlicense )
                     {
                         $tmp_action->textContent = "alert";
-                        $tmp_packet_capture->textContent = "disable";
+                        $tmp_packet_capture->textContent = "single-packet";
                     }
                     else
                     {
