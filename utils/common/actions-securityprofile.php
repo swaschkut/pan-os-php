@@ -1281,6 +1281,10 @@ SecurityProfileCallContext::$supportedActions['spyware.best-practice-set'] = arr
                                 $tmp->appendChild($xmlElement);
                             }
                         }
+
+                        $tmp_packet_capture = DH::findFirstElementOrCreate("packet-capture", $rule->xmlroot);
+                        $tmp_packet_capture->textContent = "single-packet";
+                        $rule->packetCapture = "single-packet";
                     }
                 }
             }
@@ -1316,7 +1320,7 @@ SecurityProfileCallContext::$supportedActions['spyware.best-practice-set'] = arr
                 if( $hasDNSlicense )
                 {
                     $tmp_action->textContent = "sinkhole";
-                    $tmp_packet_capture->textContent = "disable";
+                    $tmp_packet_capture->textContent = "single-packet";
                 }
                 else
                 {
@@ -1363,7 +1367,7 @@ SecurityProfileCallContext::$supportedActions['spyware.best-practice-set'] = arr
                         if ($tmp !== FALSE)
                         {
                             if( $hasDNSlicense )
-                                $tmp->textContent = "";
+                                $tmp->textContent = "single-packet";
                             else
                                 $tmp->textContent = "disable";
                         }
@@ -1658,6 +1662,10 @@ SecurityProfileCallContext::$supportedActions['vulnerability.best-practice-set']
                             $tmp->appendChild($xmlElement);
                         }
                     }
+
+                    $tmp_packet_capture = DH::findFirstElementOrCreate("packet-capture", $rule->xmlroot);
+                    $tmp_packet_capture->textContent = "single-packet";
+                    $rule->packetCapture = "single-packet";
                 }
             }
         }
