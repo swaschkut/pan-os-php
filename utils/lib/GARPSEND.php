@@ -30,6 +30,7 @@ class GARPSEND extends UTIL
     public $user = "";
     public $password = "";
 
+    public $IParray = array();
 
     public function utilStart()
     {
@@ -330,26 +331,38 @@ class GARPSEND extends UTIL
             {
                 $IP_network = explode("/", $key);
                 $value = $IP_network[0];
+                $found = TRUE;
                 if( !isset($IP_network[1]) )
                 {
                     //more validation if object is used
                     /** @var VirtualSystem $vsys */
                     $object = $vsys->addressStore->find($key);
 
-                    if( $object->isType_FQDN() || $object->isType_ipWildcard() )
-                        continue;
+                    if( $object !== null )
+                    {
+                        if ($object->isType_FQDN() || $object->isType_ipWildcard() )
+                            continue;
 
-                    $value = $object->getNetworkValue();
-                    $netmask = $object->getNetworkMask();
+                        $value = $object->getNetworkValue();
+                        $netmask = $object->getNetworkMask();
+                    }
+                    else
+                    {
+                        $found = false;
+                    }
                 }
                 else
                 {
                     $netmask = $IP_network[1];
                 }
-                $network = cidr::cidr2network($value, $netmask);
 
-                if( cidr::cidr_match($dstIP, $network, $netmask) )
-                    $this->commands[$dstIP . $intName] = "test arp gratuitous ip " . $dstIP . " interface " . $intName;
+                if( $found && $value != "" && $netmask  != "")
+                {
+                    $network = cidr::cidr2network($value, $netmask);
+
+                    if( cidr::cidr_match($dstIP, $network, $netmask) )
+                        $this->commands[$dstIP . $intName] = "test arp gratuitous ip " . $dstIP . " interface " . $intName;
+                }
             }
         }
     }
