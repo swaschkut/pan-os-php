@@ -508,18 +508,22 @@ class PanAPIConnector
                 $con = new PanAPIConnector($host, '', 'panos', null, $port);
 
                 //OLD
-                //$url = "type=keygen&user=" . urlencode($user) . "&password=" . urlencode($password);
+                $url = "type=keygen&user=" . urlencode($user) . "&password=" . urlencode($password);
+                //NEW
+                /*
                 $url = "type=keygen";
                 $parameters['url'] = $url;
                 $parameters['user'] = urlencode($user);
                 $parameters['password'] = urlencode($password);
                 $parameters['apikeyrequest'] = TRUE;
+                */
 
                 if( $debugAPI )
                     $con->setShowApiCalls( $debugAPI );
                 //OLD
-                #$res = $con->sendRequest($url);
-                $res = $con->sendRequest($parameters);
+                $res = $con->sendRequest($url);
+                //NEW
+                #$res = $con->sendRequest($parameters);
 
                 $res = DH::findFirstElement('response', $res);
                 if( $res === FALSE )
