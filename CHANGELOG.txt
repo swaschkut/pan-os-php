@@ -1,6 +1,14 @@
 CHANGELOG
 
-2.1.27
+2.1.28
+UTIL:
+
+BUGFIX:
+
+GENERAL:
+
+
+2.1.27 (20241011)
 UTIL:
 * type=address | introduce actions=replaceByMembers:{tag/description} | to be flexible to keep addressgroup
 * type=service | introduce actions=replaceByMembers | to be flexible to keep servicegroup
