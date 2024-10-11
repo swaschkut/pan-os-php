@@ -43,3 +43,4 @@
 ## [Sophos](vendors/sophos.md)
 ## [Huawei](vendors/huawei.md)
 ## [Pfsense](vendors/pfsense.md) (only partial)
+## [Watchguard](vendors/pfsense.md) (only partial)

@@ -145,6 +145,15 @@ class Zone
         return $this->type;
     }
 
+    public function getExternalVsys()
+    {
+        if( $this->type() == "external" )
+        {
+            return reset($this->externalVsys );
+        }
+
+        return null;
+    }
 
     public function load_from_domxml(DOMElement $xml)
     {
@@ -331,6 +340,30 @@ class Zone
      * @param string $newZPP
      * @return bool
      */
+    public function setExternalVsys($vsys)
+    {
+        /** @var VirtualSystem $vsys */
+        if( is_object($vsys) )
+            $vsys_name = $vsys->name();
+        else
+            $vsys_name = $vsys;
+
+
+        $valueRoot = DH::findFirstElement('network', $this->xmlroot);
+        $externalRoot = DH::findFirstElementOrCreate('external', $valueRoot);
+        $externalMemberRoot = DH::findFirstElementOrCreate('member', $externalRoot);
+        $externalMemberRoot->textContent = $vsys_name;
+
+        $this->externalVsys = array();
+        $this->externalVsys[$vsys_name] = $vsys_name;
+
+        return TRUE;
+    }
+
+    /**
+     * @param string $newZPP
+     * @return bool
+     */
     public function useridEnable( $bool)
     {
         if( $bool )
@@ -487,6 +520,10 @@ class Zone
         return $str;
     }
 
+    public static function getZoneTypes()
+    {
+        return self::$ZoneTypes;
+    }
 
     static protected $templatexml = '<entry name="**temporarynamechangemeL3**"><network><layer3></layer3></network></entry>';
     static protected $templatexmlvw = '<entry name="**temporarynamechangemeVW**"><network><virtual-wire></virtual-wire></network></entry>';

@@ -38,6 +38,8 @@ class ServiceGroup
 
     public $ancestor;
 
+    public $childancestor;
+
     public function __construct($name, $owner = null, $fromTemplateXml = FALSE)
     {
         $this->owner = $owner;
@@ -988,6 +990,95 @@ class ServiceGroup
         }
     }
 
+    public function replaceByMembers($context, $delete = FALSE, $isAPI = FALSE, $rewriteXml = TRUE, $forceAny = FALSE)
+    {
+        if( !$this->isGroup() )
+        {
+            $string = "it's not a group";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
+
+        $thisRefs = $this->getReferences();
+
+        $clearForAction = TRUE;
+        foreach( $thisRefs as $thisRef )
+        {
+            $class = get_class($thisRef);
+            if( $class != 'ServiceRuleContainer' && $class != 'ServiceGroup' )
+            {
+                $clearForAction = FALSE;
+                $string = "because its used in unsupported class $class";
+                PH::ACTIONstatus( $context, "SKIPPED", $string );
+                return;
+            }
+        }
+        if( $clearForAction )
+        {
+            foreach( $thisRefs as $thisRef )
+            {
+                $class = get_class($thisRef);
+                if( $class == 'ServiceRuleContainer' )
+                {
+                    /** @var ServiceRuleContainer $thisRef */
+
+                    $string = "    - in Reference: {$thisRef->toString()}";
+                    PH::ACTIONlog( $context, $string );
+
+                    foreach( $this->members() as $thisMember )
+                    {
+                        $string = "      - adding {$thisMember->name()}";
+                        PH::ACTIONlog( $context, $string );
+
+                        if( $isAPI )
+                            $thisRef->API_add($thisMember, $rewriteXml);
+                        else
+                            $thisRef->add($thisMember, $rewriteXml);
+                    }
+                    if( $isAPI )
+                        $thisRef->API_remove($this, $rewriteXml, $forceAny);
+                    else
+                        $thisRef->remove($this, $rewriteXml, $forceAny);
+                }
+                elseif( $class == 'ServiceGroup' )
+                {
+                    /** @var ServiceGroup $thisRef */
+
+                    $string = "    - in Reference: {$thisRef->toString()}";
+                    PH::ACTIONlog( $context, $string );
+
+                    foreach( $this->members() as $thisMember )
+                    {
+                        $string = "      - adding {$thisMember->name()}";
+                        PH::ACTIONlog( $context, $string );
+
+                        if( $isAPI )
+                            $thisRef->API_addMember($thisMember);
+                        else
+                            $thisRef->addMember($thisMember, $rewriteXml);
+                    }
+                    if( $isAPI )
+                        $thisRef->API_removeMember($this);
+                    else
+                        $thisRef->removeMember($this, $rewriteXml);
+                }
+                else
+                {
+                    derr('unsupported class');
+                }
+
+            }
+
+            if( $delete )
+            {
+                if( $isAPI )
+                    $this->owner->API_remove($this, TRUE);
+                else
+                    $this->owner->remove($this, TRUE);
+            }
+        }
+    }
 
     static protected $templatexml = '<entry name="**temporarynamechangeme**"><members></members></entry>';
     static protected $templatexmlroot = null;

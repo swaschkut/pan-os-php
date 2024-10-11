@@ -303,6 +303,7 @@ class UTIL
         $this->supportedArguments['shadow-displayxmlnode']= array('niceName' => 'shadow-displayxmlnode', 'shortHelp' => 'command to display XML node in addition to for actions=display');
         $this->supportedArguments['shadow-saseapiqa']= array('niceName' => 'shadow-saseapiqa', 'shortHelp' => 'command to use QA URLs for SASE API');
         $this->supportedArguments['shadow-loadreduce']= array('niceName' => 'shadow-loadreduce', 'shortHelp' => 'during config load do NOT load dynamic-addressgroup information from address objects TAG based part');
+        $this->supportedArguments['shadow-loaddghierarchy']= array('niceName' => 'shadow-loaddghierarchy', 'shortHelp' => 'load for location=DG the full hierarchy');
     }
 
     public function utilInit()
@@ -413,10 +414,16 @@ class UTIL
             $tmp_array = &SecurityProfileGroupCallContext::$supportedActions;
         elseif( $this->utilType == 'schedule' )
             $tmp_array = &ScheduleCallContext::$supportedActions;
+        elseif( $this->utilType == 'edl' )
+            $tmp_array = &EDLCallContext::$supportedActions;
         elseif( $this->utilType == 'application' )
             $tmp_array = &ApplicationCallContext::$supportedActions;
         elseif( $this->utilType == 'threat' )
             $tmp_array = &ThreatCallContext::$supportedActions;
+        elseif( $this->utilType == 'threat-rule' )
+            $tmp_array = &ThreatRuleCallContext::$supportedActions;
+        elseif( $this->utilType == 'dns-rule' )
+            $tmp_array = &DNSRuleCallContext::$supportedActions;
 
         elseif( $this->utilType == 'device' )
             $tmp_array = &DeviceCallContext::$supportedActions;
@@ -483,6 +490,9 @@ class UTIL
                             PH::$JSON_TMP['arg'][$action['name']]['arguments'][$count]['choices'] = $arg['choices'];
                         }
 
+                        if( isset($arg['help']) )
+                            $output .= "\n: ".$arg['help'];
+
                         $count++;
                         $first = FALSE;
                     }
@@ -534,10 +544,16 @@ class UTIL
                 SecurityProfileGroupCallContext::prepareSupportedActions();
             elseif( $this->utilType == 'schedule' )
                 ScheduleCallContext::prepareSupportedActions();
+            elseif( $this->utilType == 'edl' )
+                EDLCallContext::prepareSupportedActions();
             elseif( $this->utilType == 'application' )
                 ApplicationCallContext::prepareSupportedActions();
             elseif( $this->utilType == 'threat' )
                 ThreatCallContext::prepareSupportedActions();
+            elseif( $this->utilType == 'threat-rule' )
+                ThreatRuleCallContext::prepareSupportedActions();
+            elseif( $this->utilType == 'dns-rule' )
+                DNSRuleCallContext::prepareSupportedActions();
             elseif( $this->utilType == 'device' )
                 DeviceCallContext::prepareSupportedActions();
             elseif( $this->utilType == 'certificate' )
@@ -856,7 +872,16 @@ class UTIL
     public function inDebugapiArgument()
     {
         if( !isset(PH::$args['in']) )
-            $this->display_error_usage_exit('"in" is missing from arguments');
+        {
+            if( $this->utilType == "threat" || $this->utilType == "application" )
+            {
+                PH::$args['location'] = "shared";
+                PH::$args['in'] = dirname(__FILE__)."/../../migration/parser/panos_baseconfig.xml";
+            }
+            else
+                $this->display_error_usage_exit('"in" is missing from arguments');
+        }
+
         $this->configInput = PH::$args['in'];
         if( !is_string($this->configInput) || strlen($this->configInput) < 1 )
             $this->display_error_usage_exit('"in" argument is not a valid string');
@@ -1198,10 +1223,16 @@ class UTIL
                 $context = new SecurityProfileGroupCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'schedule' )
                 $context = new ScheduleCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+            elseif( $this->utilType == 'edl' )
+                $context = new EDLCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'application' )
                 $context = new ApplicationCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'threat' )
                 $context = new ThreatCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+            elseif( $this->utilType == 'threat-rule' )
+                $context = new ThreatRuleCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+            elseif( $this->utilType == 'dns-rule' )
+                $context = new DNSRuleCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
 
             elseif( $this->utilType == 'device' )
                 $context = new DeviceCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
@@ -1602,10 +1633,16 @@ class UTIL
                         $this->objectsToProcess[] = array('store' => $this->pan->securityProfileGroupStore, 'objects' => $this->pan->securityProfileGroupStore->getAll());
                     elseif( $this->utilType == 'schedule' )
                         $this->objectsToProcess[] = array('store' => $this->pan->scheduleStore, 'objects' => $this->pan->scheduleStore->getall());
+                    elseif( $this->utilType == 'edl' )
+                        $this->objectsToProcess[] = array('store' => $this->pan->EDLStore, 'objects' => $this->pan->EDLStore->getall());
                     elseif( $this->utilType == 'application' )
                         $this->objectsToProcess[] = array('store' => $this->pan->appStore, 'objects' => $this->pan->appStore->apps());
                     elseif( $this->utilType == 'threat' )
                         $this->objectsToProcess[] = array('store' => $this->pan->threatStore, 'objects' => $this->pan->threatStore->getAll());
+                    elseif( $this->utilType == 'threat-rule' )
+                        $this->objectsToProcess[] = array('store' => $this->pan->ThreatPolicyStore, 'objects' => $this->pan->ThreatPolicyStore->getAll());
+                    elseif( $this->utilType == 'dns-rule' )
+                        $this->objectsToProcess[] = array('store' => $this->pan->DNSPolicyStore, 'objects' => $this->pan->DNSPolicyStore->getAll());
 
                     $locationFound = TRUE;
                     self::GlobalInitAction($this->pan);
@@ -1624,8 +1661,14 @@ class UTIL
                             $this->objectsToProcess[] = array('store' => $sub->securityProfileGroupStore, 'objects' => $sub->securityProfileGroupStore->resultingObjectSet());
                         elseif( $this->utilType == 'schedule' )
                             $this->objectsToProcess[] = array('store' => $sub->scheduleStore, 'objects' => $sub->scheduleStore->resultingObjectSet());
+                        elseif( $this->utilType == 'edl' )
+                            $this->objectsToProcess[] = array('store' => $sub->EDLStore, 'objects' => $sub->EDLStore->resultingObjectSet());
                         elseif( $this->utilType == 'application' )
                             $this->objectsToProcess[] = array('store' => $sub->appStore, 'objects' => $sub->appStore->resultingObjectSet());
+                        elseif( $this->utilType == 'threat-rule' )
+                            $this->objectsToProcess[] = array('store' => $sub->ThreatPolicyStore, 'objects' => $sub->ThreatPolicyStore->resultingObjectSet());
+                        elseif( $this->utilType == 'dns-rule' )
+                            $this->objectsToProcess[] = array('store' => $sub->DNSPolicyStore, 'objects' => $sub->DNSPolicyStore->resultingObjectSet());
 
                         $locationFound = TRUE;
                         self::GlobalInitAction($sub);
@@ -1642,9 +1685,14 @@ class UTIL
                             $this->objectsToProcess[] = array('store' => $sub->securityProfileGroupStore, 'objects' => $sub->securityProfileGroupStore->getAll());
                         elseif( $this->utilType == 'schedule' )
                             $this->objectsToProcess[] = array('store' => $sub->scheduleStore, 'objects' => $sub->scheduleStore->getall());
+                        elseif( $this->utilType == 'edl' )
+                            $this->objectsToProcess[] = array('store' => $sub->EDLStore, 'objects' => $sub->EDLStore->getall());
                         elseif( $this->utilType == 'application' )
                             $this->objectsToProcess[] = array('store' => $sub->appStore, 'objects' => $sub->appStore->apps());
-
+                        elseif( $this->utilType == 'threat-rule' )
+                            $this->objectsToProcess[] = array('store' => $sub->ThreatPolicyStore, 'objects' => $sub->ThreatPolicyStore->getall());
+                        elseif( $this->utilType == 'dns-rule' )
+                            $this->objectsToProcess[] = array('store' => $sub->DNSPolicyStore, 'objects' => $sub->DNSPolicyStore->getall());
 
                         $locationFound = TRUE;
                         self::GlobalInitAction($sub);
@@ -1665,8 +1713,14 @@ class UTIL
                             $this->objectsToProcess[] = array('store' => $sub->securityProfileGroupStore, 'objects' => $sub->securityProfileGroupStore->getAll());
                         elseif( $this->utilType == 'schedule' )
                             $this->objectsToProcess[] = array('store' => $sub->scheduleStore, 'objects' => $sub->scheduleStore->getall());
+                        elseif( $this->utilType == 'edl' )
+                            $this->objectsToProcess[] = array('store' => $sub->EDLStore, 'objects' => $sub->EDLStore->getall());
                         elseif( $this->utilType == 'application' )
                             $this->objectsToProcess[] = array('store' => $sub->appStore, 'objects' => $sub->appStore->apps());
+                        elseif( $this->utilType == 'threat-rule' )
+                            $this->objectsToProcess[] = array('store' => $sub->ThreatPolicyStore, 'objects' => $sub->ThreatPolicyStore->getall());
+                        elseif( $this->utilType == 'dns-rule' )
+                            $this->objectsToProcess[] = array('store' => $sub->DNSPolicyStore, 'objects' => $sub->DNSPolicyStore->getall());
 
                         $locationFound = TRUE;
                         self::GlobalInitAction($this->pan);
@@ -1676,7 +1730,7 @@ class UTIL
             }
             else
             {
-                if( $this->configType == 'panorama' && ($location == 'shared' || $location == 'any') )
+                if( $this->configType == 'panorama' && ($location == 'shared' || $location == 'any') || PH::$shadow_loaddghierarchy )
                 {
                     if( $this->utilType == 'address' )
                         $this->objectsToProcess[] = array('store' => $this->pan->addressStore, 'objects' => $this->pan->addressStore->all(null, TRUE));
@@ -1689,10 +1743,16 @@ class UTIL
                         $this->objectsToProcess[] = array('store' => $this->pan->securityProfileGroupStore, 'objects' => $this->pan->securityProfileGroupStore->getAll());
                     elseif( $this->utilType == 'schedule' )
                         $this->objectsToProcess[] = array('store' => $this->pan->scheduleStore, 'objects' => $this->pan->scheduleStore->getall());
+                    elseif( $this->utilType == 'edl' )
+                        $this->objectsToProcess[] = array('store' => $this->pan->EDLStore, 'objects' => $this->pan->EDLStore->getall());
                     elseif( $this->utilType == 'application' )
                         $this->objectsToProcess[] = array('store' => $this->pan->appStore, 'objects' => $this->pan->appStore->apps());
                     elseif( $this->utilType == 'threat' )
                         $this->objectsToProcess[] = array('store' => $this->pan->threatStore, 'objects' => $this->pan->threatStore->getAll());
+                    elseif( $this->utilType == 'threat-rule' )
+                        $this->objectsToProcess[] = array('store' => $this->pan->ThreatPolicyStore, 'objects' => $this->pan->ThreatPolicyStore->getall());
+                    elseif( $this->utilType == 'dns-rule' )
+                        $this->objectsToProcess[] = array('store' => $this->pan->DNSPolicyStore, 'objects' => $this->pan->DNSPolicyStore->getall());
 
                     $locationFound = TRUE;
                     self::GlobalInitAction($this->pan);
@@ -1703,6 +1763,10 @@ class UTIL
                         $this->objectsToProcess[] = array('store' => $this->pan->appStore, 'objects' => $this->pan->appStore->apps());
                     elseif( $this->utilType == 'threat' )
                         $this->objectsToProcess[] = array('store' => $this->pan->threatStore, 'objects' => $this->pan->threatStore->getAll());
+                    elseif( $this->utilType == 'threat-rule' )
+                        $this->objectsToProcess[] = array('store' => $this->pan->ThreatPolicyStore, 'objects' => $this->pan->ThreatPolicyStore->getall());
+                    elseif( $this->utilType == 'dns-rule' )
+                        $this->objectsToProcess[] = array('store' => $this->pan->DNSPolicyStore, 'objects' => $this->pan->DNSPolicyStore->getall());
 
                     $locationFound = TRUE;
                     self::GlobalInitAction($this->pan);
@@ -1727,8 +1791,15 @@ class UTIL
 
                 foreach( $subGroups as $sub )
                 {
+                    $parentDGS = array();
+                    if( PH::$shadow_loaddghierarchy )
+                    {
+                        $DG_object = $this->pan->findDeviceGroup($location);
+                        $parentDGS = $DG_object->parentDeviceGroups();
+                    }
+
                     #if( ($location == 'any' || $location == 'all' || $location == $sub->name()) && !isset($ruleStoresToProcess[$sub->name() . '%pre']) )
-                    if( ($location == 'any' || $location == $sub->name()) && !isset($ruleStoresToProcess[$sub->name() . '%pre']) )
+                    if( ($location == 'any' || $location == $sub->name()) && !isset($ruleStoresToProcess[$sub->name() . '%pre']) || isset( $parentDGS[$sub->name()] ) )
                     {
                         if( $this->utilType == 'address' )
                             $this->objectsToProcess[] = array('store' => $sub->addressStore, 'objects' => $sub->addressStore->all(null, TRUE));
@@ -1741,9 +1812,15 @@ class UTIL
                             $this->objectsToProcess[] = array('store' => $sub->securityProfileGroupStore, 'objects' => $sub->securityProfileGroupStore->getAll());
                         elseif( $this->utilType == 'schedule' )
                             $this->objectsToProcess[] = array('store' => $sub->scheduleStore, 'objects' => $sub->scheduleStore->getall());
+                        elseif( $this->utilType == 'edl' )
+                            $this->objectsToProcess[] = array('store' => $sub->EDLStore, 'objects' => $sub->EDLStore->getall());
                         elseif( $this->utilType == 'application' )
                             $this->objectsToProcess[] = array('store' => $sub->appStore, 'objects' => $sub->appStore->apps());
-                        
+                        elseif( $this->utilType == 'threat-rule' )
+                            $this->objectsToProcess[] = array('store' => $sub->ThreatPolicyStore, 'objects' => $sub->ThreatPolicyStore->getall());
+                        elseif( $this->utilType == 'dns-rule' )
+                            $this->objectsToProcess[] = array('store' => $sub->DNSPolicyStore, 'objects' => $sub->DNSPolicyStore->getall());
+
                         $locationFound = TRUE;
                         $this->GlobalInitAction($sub);
                     }
@@ -2214,6 +2291,7 @@ class UTIL
             PH::print_stdout(" * script was called with argument 'outputformatset' - please wait for calculation");
             $utilDiff = new DIFF( "custom", array(), array(), "" );
             $utilDiff->outputFormatSet = TRUE;
+            $utilDiff->outputformatsetFile = $this->outputformatsetFile;
 
             if( $this->debugAPI )
                 $utilDiff->debugAPI = TRUE;
@@ -2226,73 +2304,7 @@ class UTIL
 
             $utilDiff->runDiff( $this->origXmlDoc, $doc2 );
 
-            PH::print_stdout();
-            PH::print_stdout();
-
-            ####################################
-            ####################################
-            $deleteArray = array( "rulebase", "address-group", "address", "service-group", "service", "profile-group", "profiles", "profiles-custom-url-category", "misc" );
-            $tmp_string = "";
-            foreach( $deleteArray as $item )
-            {
-                if( isset( $utilDiff->diff_delete[$item] ) )
-                {
-                    foreach( $utilDiff->diff_delete[$item] as $key => $delete )
-                        $tmp_string .= $delete."\n";
-                }
-            }
-            ##################
-            if( PH::$shadow_json )
-            {
-                if( isset(PH::$JSON_OUT['setcommands']) )
-                    PH::$JSON_OUT['setcommands'] .= $tmp_string;
-                else
-                    PH::$JSON_OUT['setcommands'] = $tmp_string;
-            }
-            else
-            {
-                if( $this->outputformatsetFile !== null )
-                    file_put_contents($this->outputformatsetFile, $tmp_string, FILE_APPEND);
-                else
-                    PH::print_stdout($tmp_string);
-            }
-            ####################################
-            ####################################
-
-            ####################################
-            ####################################
-            $setArray = array( "address", "address-group", "service", "service-group", "profiles-custom-url-category","profiles", "profile-group", "misc", "rulebase" );
-            $tmp_string = "";
-            foreach( $setArray as $item )
-            {
-                if( isset( $utilDiff->diff_set[$item] ) )
-                {
-
-                    foreach( $utilDiff->diff_set[$item] as $key => $set )
-                        $tmp_string .= $set."\n";
-                }
-            }
-            if( PH::$shadow_json )
-            {
-                if( isset(PH::$JSON_OUT['setcommands']) )
-                    PH::$JSON_OUT['setcommands'] .= $tmp_string;
-                else
-                    PH::$JSON_OUT['setcommands'] = $tmp_string;
-            }
-            else
-            {
-                if( $this->outputformatsetFile !== null )
-                {
-                    PH::print_stdout( " * set commands are stored in FILE: ".$this->outputformatsetFile);
-                    file_put_contents($this->outputformatsetFile, $tmp_string, FILE_APPEND);
-                }
-                else
-                    PH::print_stdout( $tmp_string );
-            }
-
-            ####################################
-            ####################################
-
+            $utilDiff->display_outputformatset();
         }
     }
 

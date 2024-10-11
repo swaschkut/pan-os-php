@@ -28,7 +28,16 @@ class UPLOAD extends UTIL
 
     public function utilStart()
     {
-        $this->usageMsg = PH::boldText("USAGE: ") . "php " . basename(__FILE__) . " in=api://[MGMT-IP-Address] ";
+        $this->usageMsg = PH::boldText("USAGE: ") . "php " . basename(__FILE__) . " in=api://[MGMT-IP-Address]\n".
+            "JSON file structure:\n".
+            "{
+                \"preserve-xpath\": [
+                \"/config/devices/entry[@name='localhost.localdomain']/deviceconfig/system/ip-address\",
+                \"/config/devices/entry[@name='localhost.localdomain']/deviceconfig/system/hostname\",
+                \"/config/devices/entry[@name='localhost.localdomain']/deviceconfig/high-availability\"
+            ]
+            }\n";
+
 
 
         $this->prepareSupportedArgumentsArray();
@@ -59,6 +68,34 @@ class UPLOAD extends UTIL
 
     public function main()
     {
+        #$this->xmlDoc->formatOutput = true;
+        #$this->xmlDoc->preserveWhiteSpace = false;
+
+        $configPartOfTemplate = array();
+        #Todo: swaschkut 20241004 - validate
+        $configPartOfTemplate[] = "reports";
+        $configPartOfTemplate[] = "report-group";
+        $configPartOfTemplate[] = "display-name";
+        $configPartOfTemplate[] = "botnet";
+
+        $configPartOfTemplate[] = "import";
+        $configPartOfTemplate[] = "zone";
+        $configPartOfTemplate[] = "server-profile";
+        $configPartOfTemplate[] = "dns-proxy";
+        $configPartOfTemplate[] = "admin-role";
+        $configPartOfTemplate[] = "certificate";
+        $configPartOfTemplate[] = "certificate-profile";
+        $configPartOfTemplate[] = "ssl-tls-service-profile";
+        $configPartOfTemplate[] = "authentication-profile";
+        $configPartOfTemplate[] = "alg-override";
+        $configPartOfTemplate[] = "local-user-database";
+        $configPartOfTemplate[] = "redistribution-agent";
+        $configPartOfTemplate[] = "group-mapping";
+        $configPartOfTemplate[] = "global-protect";
+        $configPartOfTemplate[] = "authentication-sequence";
+        $configPartOfTemplate[] = "redistribution-collector";
+        $configPartOfTemplate[] = "ts-agent";
+
         if( isset(PH::$args['loadafterupload']) )
             $this->loadConfigAfterUpload = TRUE;
 
@@ -181,7 +218,7 @@ class UPLOAD extends UTIL
         {
             if( isset($toXpath) )
             {
-                mwarning( "this is BETA code - please carefull handling", null, FALSE );
+                mwarning( "this is BETA code - please handle carefully", null, FALSE );
                 sleep(5);
                 #derr("toXpath options was used, it's incompatible with a file output. Make a feature request !!!  ;)");
 
@@ -270,6 +307,18 @@ class UPLOAD extends UTIL
 
                     #mwarning( "Panorama used, but readonly section is not yet supported for update" );
                 }
+                elseif( strpos( $toXpath, "/template/entry[" ) != false )
+                {
+                    //Todo: validate if Template is already there, if not create it
+
+                    //import of multiple parts must be possible into template
+                    //- ...../config/devices/entry[@name='localhost.localdomain']/network
+                    //- ...../config/devices/entry[@name='localhost.localdomain']/vsys/entry[@name='vsys10']
+                }
+                elseif( strpos( $toXpath, "/template-stack/entry[" ) != false )
+                {
+                    //Todo: validate if template-stack is already available
+                }
 
                 if( $foundOutputXpathList->length != 1 )
                     #derr("toXpath returned too many results");
@@ -292,11 +341,99 @@ class UPLOAD extends UTIL
                     $node = $util2->xmlDoc->importNode($xpath, TRUE);
                     #PH::print_stdout("       append");
 
-                    $mainNode = DH::findFirstElement($variable, $newDG->xmlroot);
-                    if( $mainNode !== false )
-                        $newDG->xmlroot->removeChild($mainNode);
+                    if( strpos( $toXpath, "/device-group/entry[" ) != false )
+                    {
+                        //Todo: swaschkut 20241005 check also how to reduce duplicate code, see below for API import
+                        if (in_array($variable, $configPartOfTemplate)) {
+                            mwarning("import into Panorama DeviceGroup not possible - XMLnode '" . $variable . "' found. Template relevant", null, FALSE);
+                            continue;
+                        }
 
-                    $newDG->xmlroot->appendChild($node);
+                        $mainNode = DH::findFirstElement($variable, $newDG->xmlroot);
+                        if ($mainNode !== false)
+                            $newDG->xmlroot->removeChild($mainNode);
+
+
+                        if ($variable == "rulebase") {
+                            DH::DEBUGprintDOMDocument($node);
+                            mwarning("import into Panorama DeviceGroup but XMLnode 'rulebase' found. renamed to 'pre-rulebase'", null, FALSE);
+
+                            $mainNode = DH::findFirstElement("pre-rulebase", $newDG->xmlroot);
+                            if ($mainNode !== false)
+                                $newDG->xmlroot->removeChild($mainNode);
+                            $mainNode = DH::findFirstElementOrCreate("pre-rulebase", $newDG->xmlroot);
+
+                            foreach ($node->childNodes as $childNode) {
+                                if ($childNode->nodeType != XML_ELEMENT_NODE)
+                                    continue;
+
+                                if ($childNode->nodeName != "default-security-rules") {
+                                    DH::DEBUGprintDOMDocument($childNode);
+                                    $node2 = $util2->xmlDoc->importNode($childNode, TRUE);
+
+                                    $mainNode->appendChild($node2);
+                                } else {
+                                    $mainPostNode = DH::findFirstElement("post-rulebase", $newDG->xmlroot);
+                                    if ($mainPostNode !== false)
+                                        $newDG->xmlroot->removeChild($mainPostNode);
+                                    $mainPostNode = DH::findFirstElementOrCreate("post-rulebase", $newDG->xmlroot);
+                                    $mainPostNode->appendChild($node2);
+                                }
+
+                            }
+                        }
+                        else
+                            $newDG->xmlroot->appendChild($node);
+                    }
+                    elseif( strpos( $toXpath, "/template/entry[" ) != false )
+                    {
+                        //Todo: not defined if I like to import into Panorama Template
+                        //Todo: check also how to reduce duplicate code, see below for API import
+
+
+                        if( strpos( $toXpath, "config/devices/entry[@name='localhost.localdomain']/network" ) != false )
+                        {
+
+                        }
+                        elseif( strpos( $toXpath, "/global-protect/" ) != false )
+                        {
+
+                        }
+                        elseif( !in_array($variable, $configPartOfTemplate))
+                        {
+                            mwarning("import into Panorama Template not possible - XMLnode '" . $variable . "' found. DeviceGroup relevant", null, FALSE);
+                            continue;
+                        }
+                        elseif( $variable == "botnet" || $variable == "alg-override" || $variable == "reports" || $variable == "report-group" || $variable == "display-name" )
+                        {
+                            mwarning("import into Panorama Template not possible - XMLnode '" . $variable . "' found. where to import???", null, FALSE);
+                            continue;
+                        }
+
+                        //Todo:
+                        //different cases for offline import:
+                        //find full xpath after template name: ../template/entry[@name='PA-5410_CC']/....
+
+                        // find/create TO xpath: e.g. "../config/devices/entry[@name='localhost.localdomain']/network"
+                        // import all child
+
+                        // ..../template/entry[@name='PA-5410_CC']/..
+                        //   ../config/shared
+                        // import all child
+
+                        //  ..../template/entry[@name='PA-5410_CC']/...
+                        //   ../config/devices/entry[@name='localhost.localdomain']/vsys/entry[@name='vsys10']
+                        // import all child
+
+                    }
+                    elseif( strpos( $toXpath, "/template-stack/entry[" ) != false )
+                    {
+                        //Todo: not defined if I like to import into Panorama Template-Stack// needed
+                    }
+                    else
+                    {
+                        //Todo: not defined if I like to import into NGFW
+                    }
                 }
 
 
@@ -318,6 +455,167 @@ class UPLOAD extends UTIL
             }
             else
             {
+                if( isset(PH::$args['preservemgmtconfig']) ||
+                    isset(PH::$args['preservemgmtusers']) ||
+                    isset(PH::$args['preservemgmtsystem']) ||
+                    isset(PH::$args['preserve-xpath-jsonfile']) )
+                {
+                    PH::print_stdout( " - Option 'preserveXXXXX was used, we will first download the running config of target device...");
+
+                    if( !file_exists( $this->configOutput['filename'] ) )
+                    {
+                        derr( "argument preserverXXX - can only be used against an existing file defined in 'out=FILE.xml'" );
+                    }
+                    else
+                    {
+                        $runningConfig = new DOMDocument();
+                        $runningConfig->formatOutput = TRUE;
+                        PH::print_stdout( " - Reading XML file from disk... ".$this->configOutput['filename'] );
+                        if( !$runningConfig->load($this->configOutput['filename'], XML_PARSE_BIG_LINES) )
+                            derr("error while reading xml config file");
+                    }
+
+
+
+                    $xpathQrunning = new DOMXPath($runningConfig);
+                    $xpathQlocal = new DOMXPath($this->xmlDoc);
+
+                    $xpathQueryList = array();
+
+                    if( isset(PH::$args['preservemgmtconfig']) ||
+                        isset(PH::$args['preservemgmtusers']) )
+                    {
+                        $xpathQueryList[] = '/config/mgt-config/users';
+                    }
+
+                    if( isset(PH::$args['preservemgmtconfig']) ||
+                        isset(PH::$args['preservemgmtsystem']) )
+                    {
+                        $xpathQueryList[] = '/config/devices/entry/deviceconfig/system';
+                    }
+
+
+                    if( isset(PH::$args['preservemgmtconfig']) )
+                    {
+                        $xpathQueryList[] = '/config/mgt-config';
+                        $xpathQueryList[] = "/config/devices/entry[@name='localhost.localdomain']/deviceconfig";
+                        $xpathQueryList[] = '/config/shared/authentication-profile';
+                        $xpathQueryList[] = '/config/shared/authentication-sequence';
+                        $xpathQueryList[] = '/config/shared/certificate';
+                        $xpathQueryList[] = '/config/shared/log-settings';
+                        $xpathQueryList[] = '/config/shared/local-user-database';
+                        $xpathQueryList[] = '/config/shared/admin-role';
+                    }
+
+                    if( isset(PH::$args['preserve-xpath-jsonfile']) )
+                    {
+                        $json = file_get_contents(PH::$args['preserve-xpath-jsonfile']);
+
+                        // Check if the file was read successfully
+                        if ($json === false) {
+                            die('Error reading the JSON file');
+                        }
+                        // Decode the JSON file
+                        $json_data = json_decode($json, true);
+
+                        //load JSON file to array
+                        foreach( $json_data['preserve-xpath'] as $entry )
+                        {
+                            $xpathQueryList[] = $entry;
+                        }
+                    }
+
+                    foreach( $xpathQueryList as $xpathQuery )
+                    {
+                        $xpathResults = $xpathQrunning->query($xpathQuery);
+                        if( $xpathResults->length > 1 )
+                        {
+                            //var_dump($xpathResults);
+                            derr('more than one one results found for xpath query: ' . $xpathQuery);
+                        }
+                        if( $xpathResults->length == 0 )
+                            $runningNodeFound = FALSE;
+                        else
+                            $runningNodeFound = TRUE;
+
+                        $xpathResultsLocal = $xpathQlocal->query($xpathQuery);
+                        if( $xpathResultsLocal->length > 1 )
+                        {
+                            //var_dump($xpathResultsLocal);
+                            derr('none or more than one one results found for xpath query: ' . $xpathQuery);
+                        }
+                        if( $xpathResultsLocal->length == 0 )
+                            $localNodeFound = FALSE;
+                        else
+                            $localNodeFound = TRUE;
+
+                        if( $localNodeFound == FALSE && $runningNodeFound == FALSE )
+                        {
+                            continue;
+                        }
+
+                        if( $localNodeFound && $runningNodeFound )
+                        {
+                            $localParentNode = $xpathResultsLocal->item(0)->parentNode;
+                            $localParentNode->removeChild($xpathResultsLocal->item(0));
+                            $newNode = $this->xmlDoc->importNode($xpathResults->item(0), TRUE);
+                            $localParentNode->appendChild($newNode);
+                            continue;
+                        }
+
+                        if( $localNodeFound == FALSE && $runningNodeFound )
+                        {
+                            $newXpath = explode('/', $xpathQuery);
+                            if( count($newXpath) < 2 )
+                                derr('unsupported, debug xpath query: ' . $xpathQuery);
+
+
+                            #this is needed if xpath is containing e.g. entry[@name='ethernet1/19']
+                            if( is_numeric( $newXpath[count($newXpath) - 1][0] ) )
+                            {
+                                unset($newXpath[count($newXpath) - 1]);
+                                unset($newXpath[count($newXpath) - 1]);
+                            }
+                            else
+                                unset($newXpath[count($newXpath) - 1]);
+
+                            $newXpath = implode('/', $newXpath);
+
+                            $xpathResultsLocal = $xpathQlocal->query($newXpath);
+                            if( $xpathResultsLocal->length != 1 )
+                            {
+                                derr('unsupported, debug xpath query: ' . $newXpath);
+                            }
+
+                            $newNode = $this->xmlDoc->importNode($xpathResults->item(0), TRUE);
+                            $localParentNode = $xpathResultsLocal->item(0);
+                            $localParentNode->appendChild($newNode);
+
+
+                            continue;
+                        }
+
+                        //derr('unsupported');
+                    }
+
+                }
+
+                if( isset(PH::$args['injectuseradmin2']) )
+                {
+                    $usersNode = DH::findXPathSingleEntryOrDie('/config/mgt-config/users', $this->xmlDoc);
+                    $newUserNode = DH::importXmlStringOrDie($this->xmlDoc, '<entry name="admin2"><phash>$1$bgnqjgob$HmenJzuuUAYmETzsMcdfJ/</phash><permissions><role-based><superuser>yes</superuser></role-based></permissions></entry>');
+
+                    $checkAdmin2 = DH::findFirstElementByNameAttr( "entry", "admin2", $usersNode );
+                    if( $checkAdmin2 === null || $checkAdmin2 === false )
+                    {
+                        $usersNode->appendChild($newUserNode);
+                        PH::print_stdout( " - Injected 'admin2' with 'admin' password");
+                    }
+                    else
+                        PH::print_stdout( " - Injected 'admin2' skipped - already available");
+
+                }
+
                 PH::print_stdout( " - Now saving configuration to ");
                 PH::print_stdout( " - {$this->configOutput['filename']}... ");
                 $this->xmlDoc->save($this->configOutput['filename']);
@@ -335,10 +633,75 @@ class UPLOAD extends UTIL
                 if( isset($toXpath) )
                 {
                     $stringToSend = '';
+                    $rule_stringToSend = '';
+                    $postrule_stringToSend = '';
                     foreach( $foundInputXpathList as $xpath )
                     {
-                        $stringToSend .= DH::dom_to_xml($xpath, -1, FALSE);
+                        if( strpos( $toXpath, "/device-group/entry[" ) != false )
+                        {
+                            $tmpArray = explode( "/", DH::elementToPanXPath($xpath) );
+                            $variable = end($tmpArray);
+
+                            if( in_array($variable, $configPartOfTemplate) )
+                            {
+                                mwarning("import into Panorama DeviceGroup not possible - XMLnode '".$variable."' found. Template relevant", null, FALSE);
+                                continue;
+                            }
+
+                            if( $variable == "rulebase" )
+                            {
+                                $XMLnode_default_security = DH::findFirstElement("default-security-rules", $xpath);
+                                if( $XMLnode_default_security !== null && $XMLnode_default_security !== FALSE )
+                                {
+                                    $tmppost_stringToSend = DH::dom_to_xml($XMLnode_default_security, -1, FALSE);
+                                    $postrule_stringToSend = "<post-rulebase>".$tmppost_stringToSend."</post-rulebase>";
+
+                                    $xpath->removeChild($XMLnode_default_security);
+                                }
+
+                                $tmp_stringToSend = DH::dom_to_xml($xpath, -1, FALSE);
+                                $rule_stringToSend = str_replace("rulebase", "pre-rulebase", $tmp_stringToSend);
+
+                            }
+                            else
+                                $stringToSend .= DH::dom_to_xml($xpath, -1, FALSE);
+                        }
+                        elseif( strpos( $toXpath, "/template/entry[" ) != false )
+                        {
+                            $tmpArray = explode("/", DH::elementToPanXPath($xpath));
+                            $variable = end($tmpArray);
+
+                            if( strpos( $toXpath, "config/devices/entry[@name='localhost.localdomain']/network" ) != false )
+                            {
+
+                            }
+                            elseif( strpos( $toXpath, "/global-protect/" ) != false )
+                            {
+
+                            }
+                            elseif( !in_array($variable, $configPartOfTemplate))
+                            {
+                                mwarning("import into Panorama Template not possible - XMLnode '" . $variable . "' found. DeviceGroup relevant", null, FALSE);
+                                continue;
+                            }
+                            elseif( $variable == "botnet" || $variable == "alg-override" || $variable == "reports" || $variable == "report-group" || $variable == "display-name" )
+                            {
+                                mwarning("import into Panorama Template not possible - XMLnode '" . $variable . "' found. where to import???", null, FALSE);
+                                continue;
+                            }
+
+                            $stringToSend .= DH::dom_to_xml($xpath, -1, FALSE);
+                        }
+                        elseif( strpos( $toXpath, "/template-stack/entry[" ) != false )
+                        {
+                            $stringToSend .= DH::dom_to_xml($xpath, -1, FALSE);
+                        }
+                        else
+                            $stringToSend .= DH::dom_to_xml($xpath, -1, FALSE);
                     }
+
+                    $stringToSend .= $rule_stringToSend;
+                    $stringToSend .= $postrule_stringToSend;
                 }
                 else
                     $stringToSend = DH::dom_to_xml(DH::firstChildElement($this->xmlDoc), -1, FALSE);
@@ -466,6 +829,18 @@ class UPLOAD extends UTIL
                     else
                         PH::print_stdout( " - Injected 'admin2' skipped - already available");
 
+                    ##########################################
+                    $usersNode = DH::findXPathSingleEntryOrDie('/config/mgt-config/users', $this->xmlDoc);
+                    $newUserNode = DH::importXmlStringOrDie($this->xmlDoc, '<entry name="admin3"><phash>$5$bedagqyb$E9k/oF22IMhkJ.88NU6BCX8Dws2l6wYkvZyWHSs1eK4</phash><permissions><role-based><superuser>yes</superuser></role-based></permissions></entry>');
+
+                    $checkAdmin2 = DH::findFirstElementByNameAttr( "entry", "admin3", $usersNode );
+                    if( $checkAdmin2 === null || $checkAdmin2 === false )
+                    {
+                        $usersNode->appendChild($newUserNode);
+                        PH::print_stdout( " - Injected 'admin3' with 'Admin123.Admin' password");
+                    }
+                    else
+                        PH::print_stdout( " - Injected 'admin3' skipped - already available");
                 }
 
                 if( $this->debugAPI )
@@ -538,6 +913,7 @@ class UPLOAD extends UTIL
         $this->supportedArguments['preservemgmtconfig'] = array('niceName' => 'preserveMgmtConfig', 'shortHelp' => "tries to preserve most of management settings like IP address, admins and passwords etc. note it's not a smart feature and may break your config a bit and requires manual fix in GUI before you can actually commit");
         $this->supportedArguments['preservemgmtusers'] = array('niceName' => 'preserveMgmtUsers', 'shortHelp' => "preserve administrators so they are not overwritten and you don't loose access after a commit");
         $this->supportedArguments['preservemgmtsystem'] = array('niceName' => 'preserveMgmtSystem', 'shortHelp' => 'preserves what is in /config/devices/entry/deviceconfig/system');
+        $this->supportedArguments['preserve-xpath-jsonfile'] = array('niceName' => 'preserve-Xpath-jsonfile', 'shortHelp' => 'preserves all Xpath what is in define JSON file');
         $this->supportedArguments['injectuseradmin2'] = array('niceName' => 'injectUserAdmin2', 'shortHelp' => 'adds user "admin2" with password "admin" in administrators');
         $this->supportedArguments['extrafiltersout'] = array('niceName' => 'extraFiltersOut', 'shortHelp' => 'list of xpath separated by | character that will be stripped from the XML before going to output');
     }

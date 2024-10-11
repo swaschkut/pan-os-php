@@ -1512,7 +1512,7 @@ class CONVERTER extends UTIL
 
     function rule_merging( $sub, $configInput, $stopMergingIfDenySeen = true, $mergeAdjacentOnly = false, $mergeDenyRules = false, $additionalMatch = "", $method_array = array() )
     {
-        $rulemerger = new RULEMERGER("custom", array(), "fake-migration-parser");
+        $rulemerger = new RULEMERGER("custom", array(), array(),"fake-migration-parser");
 
 
         $rulemerger->UTIL_additionalMatch = $additionalMatch;

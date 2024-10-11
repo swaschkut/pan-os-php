@@ -91,6 +91,12 @@ class THREATLOG extends UTIL
             $query = '';
         }
 
+        if( isset(PH::$args['actions']) )
+        {
+            $actions = PH::$args['actions'];
+        }
+        else
+            $actions =  null;
 ########################################################################################################################
 
         $inputConnector->refreshSystemInfos();
@@ -117,10 +123,34 @@ class THREATLOG extends UTIL
         {
             foreach( $output as $log )
             {
-                PH::print_stdout(  " - ".http_build_query($log,'',' | ') );
-                PH::print_stdout();
+                if( $actions == null )
+                {
+                    PH::print_stdout(  " - ".http_build_query($log,'',' | ') );
+                    PH::print_stdout();
 
-                PH::$JSON_OUT['threat-log'][] = $log;
+                    PH::$JSON_OUT['threat-log'][] = $log;
+                }
+                else
+                {
+                    if( $actions == "display-threatname" )
+                    {
+                        if( isset($log['threat_name']) )
+                        {
+                            $tmp_log = $log['threat_name'];
+
+                            $ruleID = $log['rule_uuid'];
+                            PH::print_stdout(  " - threat_name: '".$tmp_log."' | rule-ID: '".$ruleID."'" );
+                            $posTO = strrpos($tmp_log," To ");
+                            $missingAPPID = substr($tmp_log, $posTO + 4);
+                            if( $missingAPPID !== null )
+                                PH::print_stdout( "    x missing APP-ID: '".$missingAPPID."'");
+                            PH::print_stdout();
+
+                            PH::$JSON_OUT['threat-log'][] = array( 'rule_uuid' => $ruleID, 'threat_name' => $tmp_log );
+                        }
+                    }
+                }
+
             }
         }
         else

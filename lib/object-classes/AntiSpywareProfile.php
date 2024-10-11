@@ -4,7 +4,7 @@
 /**
  * @property $_ip4Map IP4Map cached ip start and end value for fast optimization
  */
-class AntiSpywareProfile
+class AntiSpywareProfile extends SecurityProfile2
 {
     use ReferenceableObject;
     use PathableName;
@@ -22,7 +22,8 @@ class AntiSpywareProfile
     public $secprof_type;
 
     public $threatException = array();
-    public $rules = array();
+    public $rules_obj = array();
+    public $dns_rules_obj = array();
     public $additional = array();
 
     public $cloud_inline_analysis_enabled = false;
@@ -99,125 +100,25 @@ class AntiSpywareProfile
         if( $this->name === FALSE )
             derr("Spyware SecurityProfile name not found\n");
 
-        #PH::print_stdout( "\nsecprofURL TMP: object named '".$this->name."' found" );
-
-        #$this->owner->_SecurityProfiles[$this->secprof_type][$this->name] = $this;
-        #$this->owner->_all[$this->secprof_type][$this->name] = $this;
-        #$this->owner->o[] = $this;
-
-
-        //predefined URL category
-        //$tmp_array[$this->secprof_type][$typeName]['allow']['URL category'] = all predefined URL category
-
 
         $tmp_rule = DH::findFirstElement('rules', $xml);
         if( $tmp_rule !== FALSE )
         {
-            #$tmp_array[$this->secprof_type][$this->secprof_type][$this->name]['rules'] = array();
-            $tmp_array[$this->secprof_type][$this->name]['rules'] = array();
             foreach( $tmp_rule->childNodes as $tmp_entry1 )
             {
                 if( $tmp_entry1->nodeType != XML_ELEMENT_NODE )
                     continue;
 
-                $vb_severity = DH::findAttribute('name', $tmp_entry1);
-                if( $vb_severity === FALSE )
+                $rule_name = DH::findAttribute('name', $tmp_entry1);
+                if( $rule_name === FALSE )
                     derr("VB severity name not found\n");
 
-                $severity = DH::findFirstElement('severity', $tmp_entry1);
-                if( $severity !== FALSE )
-                {
-                    if( $severity->nodeType != XML_ELEMENT_NODE )
-                        continue;
-
-                    $tmp_array[$this->secprof_type][$this->name]['rules'][$vb_severity]['severity'] = array();
-                    $this->rules[$vb_severity]['severity'] = array();
-                    foreach( $severity->childNodes as $member )
-                    {
-                        if( $member->nodeType != XML_ELEMENT_NODE )
-                            continue;
-
-                        $tmp_array[$this->secprof_type][$this->name]['rules'][$vb_severity]['severity'][$member->textContent] = $member->textContent;
-                        $this->rules[$vb_severity]['severity'][$member->textContent] = $member->textContent;
-                    }
-                }
-
-                $severity = DH::findFirstElement('file-type', $tmp_entry1);
-                if( $severity !== FALSE )
-                {
-                    if( $severity->nodeType != XML_ELEMENT_NODE )
-                        continue;
-
-                    $tmp_array[$this->secprof_type][$this->name]['rules'][$vb_severity]['file-type'] = array();
-                    $this->rules[$vb_severity]['file-type'] = array();
-                    foreach( $severity->childNodes as $member )
-                    {
-                        if( $member->nodeType != XML_ELEMENT_NODE )
-                            continue;
-
-                        $tmp_array[$this->secprof_type][$this->name]['rules'][$vb_severity]['file-type'][$member->textContent] = $member->textContent;
-                        $this->rules[$vb_severity]['file-type'][$member->textContent] = $member->textContent;
-                    }
-                }
-
-                $action = DH::findFirstElement('action', $tmp_entry1);
-                if( $action !== FALSE )
-                {
-                    if( $action->nodeType != XML_ELEMENT_NODE )
-                        continue;
-
-                    $tmp_action = DH::firstChildElement($action);
-                    if( $tmp_action !== FALSE )
-                    {
-                        $tmp_array[$this->secprof_type][$this->name]['rules'][$vb_severity]['action'] = $tmp_action->nodeName;
-                        $this->rules[$vb_severity]['action'] = $tmp_action->nodeName;
-                    }
-
-                    if( $this->secprof_type == 'file-blocking' )
-                    {
-                        $tmp_array[$this->secprof_type][$this->name]['rules'][$vb_severity]['action'] = $action->textContent;
-                        $this->rules[$vb_severity]['action'] = $action->textContent;
-                    }
-
-                }
-
-                $packet_capture = DH::findFirstElement('packet-capture', $tmp_entry1);
-                if( $packet_capture !== FALSE )
-                {
-                    if( $packet_capture->nodeType != XML_ELEMENT_NODE )
-                        continue;
-
-                    $tmp_array[$this->secprof_type][$this->name]['rules'][$vb_severity]['packet-capture'] = $packet_capture->textContent;
-                    $this->rules[$vb_severity]['packet-capture'] = $packet_capture->textContent;
-                }
-
-                $category = DH::findFirstElement('category', $tmp_entry1);
-                if( $category !== FALSE )
-                {
-                    #PH::print_stdout("             packet-capture: '".$rule['packet-capture']."'");
-                    $tmp_array[$this->secprof_type][$this->name]['rules'][$vb_severity]['category'] = $category->textContent;
-                    $this->rules[$vb_severity]['category'] = $category->textContent;
-                }
-
-                $direction = DH::findFirstElement('direction', $tmp_entry1);
-                if( $direction !== FALSE )
-                {
-                    if( $direction->nodeType != XML_ELEMENT_NODE )
-                        continue;
-
-                    $tmp_array[$this->secprof_type][$this->name]['rules'][$vb_severity]['direction'] = $direction->textContent;
-                    $this->rules[$vb_severity]['direction'] = $direction->textContent;
-                }
-
-                $analysis = DH::findFirstElement('analysis', $tmp_entry1);
-                if( $analysis !== FALSE )
-                {
-                    if( $analysis->nodeType != XML_ELEMENT_NODE )
-                        continue;
-
-                    $tmp_array[$this->secprof_type][$this->name]['rules'][$vb_severity]['analysis'] = $analysis->textContent;
-                    $this->rules[$vb_severity]['analysis'] = $analysis->textContent;
-                }
+                $threadPolicy_obj = new ThreatPolicySpyware( $rule_name, $this );
+                $threadPolicy_obj->spywarepolicy_load_from_domxml( $tmp_entry1 );
+                $this->rules_obj[] = $threadPolicy_obj;
+                $threadPolicy_obj->addReference( $this );
+                
+                $this->owner->owner->ThreatPolicyStore->add($threadPolicy_obj);
             }
         }
 
@@ -236,6 +137,17 @@ class AntiSpywareProfile
 
                 $this->threatException[$tmp_name]['name'] = $tmp_name;
 
+
+                if( get_class($this->owner->owner) == "DeviceGroup" )
+                    $threatStore = $this->owner->owner->owner->threatStore;
+                else
+                    $threatStore = $this->owner->owner->threatStore;
+
+                $threat_obj = $threatStore->find($tmp_name);
+                if($threat_obj !== null)
+                    $threat_obj->addReference($this);
+
+
                 $action = DH::findFirstElement('action', $tmp_entry1);
                 if( $action !== FALSE )
                 {
@@ -247,6 +159,8 @@ class AntiSpywareProfile
                     {
                         $tmp_array[$this->secprof_type][$this->name]['threat-exception'][$tmp_name]['action'] = $tmp_action->nodeName;
                         $this->threatException[$tmp_name]['action'] = $tmp_action->nodeName;
+                        if($threat_obj !== null)
+                            $this->threatException[$tmp_name]['default-action'] = $threat_obj->defaultAction();
                     }
                 }
 
@@ -266,26 +180,97 @@ class AntiSpywareProfile
         }
 
         $tmp_rule = DH::findFirstElement('mica-engine-spyware-enabled', $xml);
+        if( $tmp_rule !== FALSE && !$tmp_rule->hasChildNodes() )
+        {
+            $xml->removeChild($tmp_rule);
+            $tmp_rule = DH::findFirstElement('mica-engine-spyware-enabled', $xml);
+        }
         if( $tmp_rule !== FALSE )
         {
-            /*
-               <mica-engine-spyware-enabled>
-                 <entry name="HTTP Command and Control detector">
-                    <inline-policy-action>alert</inline-policy-action>
-                 </entry>
-            */
             $this->additional['mica-engine-spyware-enabled'] = array();
+            $tmp_mica_Unknown_TCP_found = false;
+            $tmp_mica_Unknown_UDP_found = false;
             foreach( $tmp_rule->childNodes as $tmp_entry1 )
             {
                 if ($tmp_entry1->nodeType != XML_ELEMENT_NODE)
                     continue;
 
                 $name = DH::findAttribute("name", $tmp_entry1);
+                if( $name == "Unknown-TCP Command and Control detector" )
+                    $tmp_mica_Unknown_TCP_found = TRUE;
+                elseif( $name == "Unknown-UDP Command and Control detector" )
+                    $tmp_mica_Unknown_UDP_found = TRUE;
+
                 $tmp_inline_policy_action = DH::findFirstElement("inline-policy-action", $tmp_entry1);
                 if( $tmp_inline_policy_action !== FALSE )
                     $this->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action'] = $tmp_inline_policy_action->textContent;
+                else
+                {
+                    $tmp_inline_policy_action = DH::findFirstElementOrCreate("inline-policy-action", $tmp_entry1);
+                    $tmp_inline_policy_action->textContent = "disable";
+                    $this->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action'] = "disable";
+                }
+            }
+
+            $Unkown_TCP_xmlstring = '<entry name="Unknown-TCP Command and Control detector">
+  <inline-policy-action>alert</inline-policy-action>
+</entry>';
+            $Unkown_UDP_xmlstring = '<entry name="Unknown-UDP Command and Control detector">
+  <inline-policy-action>alert</inline-policy-action>
+</entry>';
+            if( !$tmp_mica_Unknown_TCP_found && $this->owner->owner->version >= 111)
+            {
+                $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $Unkown_TCP_xmlstring);
+                $tmp_rule->appendChild($xmlElement);
+
+                $this->additional['mica-engine-spyware-enabled']['Unknown-TCP Command and Control detector']['inline-policy-action'] = "disable";
+            }
+            if( !$tmp_mica_Unknown_UDP_found && $this->owner->owner->version >= 111 )
+            {
+                $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $Unkown_UDP_xmlstring);
+                $tmp_rule->appendChild($xmlElement);
+
+                $this->additional['mica-engine-spyware-enabled']['Unknown-UDP Command and Control detector']['inline-policy-action'] = "disable";
             }
         }
+        else
+        {
+            $xmlstring_110 = '<mica-engine-spyware-enabled>
+  <entry name="HTTP Command and Control detector">
+    <inline-policy-action>alert</inline-policy-action>
+  </entry>
+  <entry name="HTTP2 Command and Control detector">
+    <inline-policy-action>alert</inline-policy-action>
+  </entry>
+  <entry name="SSL Command and Control detector">
+    <inline-policy-action>alert</inline-policy-action>
+  </entry>
+  <entry name="Unknown-TCP Command and Control detector">
+    <inline-policy-action>alert</inline-policy-action>
+  </entry>
+  <entry name="Unknown-UDP Command and Control detector">
+    <inline-policy-action>alert</inline-policy-action>
+  </entry>
+</mica-engine-spyware-enabled>';
+
+            if( $this->owner->owner->version >= 110 )
+            {
+                $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $xmlstring_110);
+                $xml->appendChild($xmlElement);
+            }
+
+
+            if( $this->owner->owner->version >= 110 )
+            {
+                $this->additional['mica-engine-spyware-enabled']['HTTP Command and Control detector']['inline-policy-action'] = "disable";
+                $this->additional['mica-engine-spyware-enabled']['HTTP2 Command and Control detector']['inline-policy-action'] = "disable";
+                $this->additional['mica-engine-spyware-enabled']['SSL Command and Control detector']['inline-policy-action'] = "disable";
+
+                $this->additional['mica-engine-spyware-enabled']['Unknown-TCP Command and Control detector']['inline-policy-action'] = "disable";
+                $this->additional['mica-engine-spyware-enabled']['Unknown-UDP Command and Control detector']['inline-policy-action'] = "disable";
+            }
+        }
+
         //<cloud-inline-analysis>yes</cloud-inline-analysis>
         $tmp_rule = DH::findFirstElement('cloud-inline-analysis', $xml);
         if( $tmp_rule !== FALSE )
@@ -345,6 +330,65 @@ class AntiSpywareProfile
             }
 
             $tmp_dns_security_categories = DH::findFirstElement('dns-security-categories', $tmp_rule);
+            if( $tmp_dns_security_categories === FALSE )
+            {
+                $xmlstring = '<dns-security-categories>
+<entry name="pan-dns-sec-adtracking">
+  <log-level>default</log-level>
+  <action>default</action>
+  <packet-capture>disable</packet-capture>
+</entry>
+<entry name="pan-dns-sec-cc">
+  <log-level>default</log-level>
+  <action>default</action>
+  <packet-capture>disable</packet-capture>
+</entry>
+<entry name="pan-dns-sec-ddns">
+  <log-level>default</log-level>
+  <action>default</action>
+  <packet-capture>disable</packet-capture>
+</entry>
+<entry name="pan-dns-sec-grayware">
+  <log-level>default</log-level>
+  <action>default</action>
+  <packet-capture>disable</packet-capture>
+</entry>
+<entry name="pan-dns-sec-malware">
+  <log-level>default</log-level>
+  <action>default</action>
+  <packet-capture>disable</packet-capture>
+</entry>
+<entry name="pan-dns-sec-parked">
+  <log-level>default</log-level>
+  <action>default</action>
+  <packet-capture>disable</packet-capture>
+</entry>
+<entry name="pan-dns-sec-phishing">
+  <log-level>default</log-level>
+  <action>default</action>
+  <packet-capture>disable</packet-capture>
+</entry>
+<entry name="pan-dns-sec-proxy">
+  <log-level>default</log-level>
+  <action>default</action>
+  <packet-capture>disable</packet-capture>
+</entry>
+<entry name="pan-dns-sec-recent">
+  <log-level>default</log-level>
+  <action>default</action>
+  <packet-capture>disable</packet-capture>
+</entry>
+</dns-security-categories>';
+
+                if( $this->owner->owner->version >= 100 )
+                {
+                    $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $xmlstring);
+                    $tmp_rule->appendChild($xmlElement);
+
+                    $tmp_dns_security_categories = DH::findFirstElement('dns-security-categories', $tmp_rule);
+                }
+            }
+
             if( $tmp_dns_security_categories !== FALSE )
             {
                 $this->additional['botnet-domain']['dns-security-categories'] = array();
@@ -363,6 +407,16 @@ class AntiSpywareProfile
                     */
 
                     $name = DH::findAttribute("name", $tmp_entry1);
+
+                    $dnsPolicy_obj = new DNSPolicy( $name, $this );
+                    $dnsPolicy_obj->load_from_domxml( $tmp_entry1 );
+                    $this->dns_rules_obj[] = $dnsPolicy_obj;
+                    $dnsPolicy_obj->addReference( $this );
+
+                    $this->owner->owner->DNSPolicyStore->add($dnsPolicy_obj);
+
+                    $this->additional['botnet-domain']['dns-security-categories'][] = $dnsPolicy_obj;
+                    /*
                     $tmp_log_level = DH::findFirstElement("log-level", $tmp_entry1);
                     if( $tmp_log_level !== FALSE )
                         $this->additional['botnet-domain']['dns-security-categories'][$name]['log-level'] = $tmp_log_level->textContent;
@@ -372,6 +426,7 @@ class AntiSpywareProfile
                     $tmp_packet_capture = DH::findFirstElement("packet-capture", $tmp_entry1);
                     if( $tmp_packet_capture !== FALSE )
                         $this->additional['botnet-domain']['dns-security-categories'][$name]['packet-capture'] = $tmp_packet_capture->textContent;
+                    */
                 }
             }
 
@@ -385,7 +440,10 @@ class AntiSpywareProfile
                         continue;
 
                     $name = DH::findAttribute("name", $tmp_entry1);
-                    $this->additional['botnet-domain']['whitelist'][$name] = $tmp_entry1->textContent;
+                    $tmp_whitelists_description = DH::findFirstElement('description', $tmp_entry1);
+                    $this->additional['botnet-domain']['whitelist'][$name]['name'] = $name;
+                    if( $tmp_whitelists_description !== FALSE )
+                        $this->additional['botnet-domain']['whitelist'][$name]['description'] = $tmp_whitelists_description->textContent;
                 }
             }
         }
@@ -402,51 +460,16 @@ class AntiSpywareProfile
         #PH::print_stdout();
         //Todo: continue for display out
 
-        if( !empty( $this->rules ) )
+        if( !empty( $this->rules_obj ) )
         {
-            PH::print_stdout("        - rules:");
-
-            foreach ($this->rules as $rulename => $rule)
-            {
-                $string = "";
-                #PH::print_stdout("          * '".$rulename."':");
-                $string .= "          '".$rulename."':";
-
-                if( isset( $rule['severity'] ) )
-                {
-                    #PH::print_stdout("             severity: '".implode(",", $rule['severity'])."'");
-                    $string .= " - severity: '".implode(",", $rule['severity'])."'";
-                    PH::$JSON_TMP['sub']['object'][$this->name()]['rule'][$rulename]['severity'] = implode(",", $rule['severity']);
-                }
-
-                if( isset( $rule['action'] ) )
-                {
-                    #PH::print_stdout("             action: '".$rule['action']."'");
-                    $string .= " - action: '".$rule['action']."'";
-                    PH::$JSON_TMP['sub']['object'][$this->name()]['rule'][$rulename]['action'] = $rule['action'];
-                }
-
-                if( isset( $rule['packet-capture'] ) )
-                {
-                    #PH::print_stdout("             packet-capture: '".$rule['packet-capture']."'");
-                    $string .= " - packet-capture: '".$rule['packet-capture']."'";
-                    PH::$JSON_TMP['sub']['object'][$this->name()]['rule'][$rulename]['packet-capture'] = $rule['packet-capture'];
-                }
-
-                if( isset( $rule['category'] ) )
-                {
-                    #PH::print_stdout("             packet-capture: '".$rule['packet-capture']."'");
-                    $string .= " - category: '".$rule['category']."'";
-                    PH::$JSON_TMP['sub']['object'][$this->name()]['rule'][$rulename]['category'] = $rule['category'];
-                }
-                #print_r($rule);
-                PH::print_stdout( $string );
-            }
+            PH::print_stdout("        - Signature Policies:");
+            foreach ($this->rules_obj as $rulename => $rule)
+                $rule->display();
         }
 
         if( !empty( $this->threatException ) )
         {
-            PH::print_stdout("        - threat-exception:" );
+            PH::print_stdout("        - Signature Exceptions:" );
 
             foreach( $this->threatException as $threatname => $threat )
             {
@@ -457,6 +480,11 @@ class AntiSpywareProfile
                 {
                     $string .= "  - action : '".$threat['action']."'";
                     PH::$JSON_TMP['sub']['object'][$this->name()]['threat-exception'][$threatname]['action'] = $threat['action'];
+                }
+                if( isset( $threat['default-action'] ) )
+                {
+                    $string .= "  - default-action : '".$threat['default-action']."'";
+                    PH::$JSON_TMP['sub']['object'][$this->name()]['threat-exception'][$threatname]['default-action'] = $threat['default-action'];
                 }
                 if( isset( $threat['exempt-ip'] ) )
                 {
@@ -471,7 +499,8 @@ class AntiSpywareProfile
         {
             if( !empty( $this->additional['botnet-domain'] ) )
             {
-                PH::print_stdout("        - botnet-domain:" );
+                PH::print_stdout("        ----------------------------------------");
+                PH::print_stdout("        - DNS Policies:" );
 
                 foreach( $this->additional['botnet-domain'] as $type => $threat )
                 {
@@ -495,21 +524,18 @@ class AntiSpywareProfile
                     {
                         foreach( $this->additional['botnet-domain'][$type] as $name => $value )
                         {
-                            $string = "";
-                            $string .= "            - '".PH::boldText($name)."'";
-
-                            $string .= " - log-level: '".$value['log-level']."'";
-                            $string .= " - action: '".$value['action']."'";
-                            $string .= " - packet-capture: '".$value['packet-capture']."'";
-
-                            PH::print_stdout($string );
+                            $padding = "    ";
+                            $value->display( $padding);
                         }
                     }
                     elseif( $type == "whitelist" )
                     {
                         foreach( $this->additional['botnet-domain'][$type] as $name => $value )
                         {
-                            PH::print_stdout("            - ".$name.": ".$value );
+                            $string = "            - '".$value['name']."'";
+                            if(isset($value['description']))
+                                $string .= "| description:'".$value['description']."'";
+                            PH::print_stdout( $string );
                         }
                     }
                 }
@@ -517,6 +543,7 @@ class AntiSpywareProfile
 
             if( !empty( $this->additional['mica-engine-spyware-enabled'] ) )
             {
+                PH::print_stdout("        ----------------------------------------");
                 $enabled = "[no]";
                 if( $this->cloud_inline_analysis_enabled )
                     $enabled = "[yes]";
@@ -530,8 +557,112 @@ class AntiSpywareProfile
         #PH::print_stdout();
     }
 
+    public function spyware_dnslist_best_practice()
+    {
+        if( $this->secprof_type != 'spyware' )
+            return null;
+
+        if( isset($this->additional['botnet-domain']) && isset($this->additional['botnet-domain']['lists']) )
+        {
+            foreach( $this->additional['botnet-domain']['lists'] as $name => $array)
+            {
+                if( $name == "default-paloalto-dns" )
+                {
+                    if( isset($array['action']) )
+                    {
+                        if ( $array['action'] == "sinkhole" )
+                            return TRUE;
+                    }
+                }
+            }
+        }
+
+        return FALSE;
+    }
 
     static $templatexml = '<entry name="**temporarynamechangeme**"></entry>';
+
+    static $templatexml_100 = '<entry name="**temporarynamechangeme**">
+   <botnet-domains>
+      <lists>
+         <entry name="default-paloalto-dns">
+            <action>
+               <sinkhole/>
+            </action>
+            <packet-capture>disable</packet-capture>
+         </entry>
+      </lists>
+      <dns-security-categories>
+         <entry name="pan-dns-sec-adtracking">
+            <log-level>default</log-level>
+            <action>default</action>
+            <packet-capture>disable</packet-capture>
+         </entry>
+         <entry name="pan-dns-sec-cc">
+            <log-level>default</log-level>
+            <action>default</action>
+            <packet-capture>disable</packet-capture>
+         </entry>
+         <entry name="pan-dns-sec-ddns">
+            <log-level>default</log-level>
+            <action>default</action>
+            <packet-capture>disable</packet-capture>
+         </entry>
+         <entry name="pan-dns-sec-grayware">
+            <log-level>default</log-level>
+            <action>default</action>
+            <packet-capture>disable</packet-capture>
+         </entry>
+         <entry name="pan-dns-sec-malware">
+            <log-level>default</log-level>
+            <action>default</action>
+            <packet-capture>disable</packet-capture>
+         </entry>
+         <entry name="pan-dns-sec-parked">
+            <log-level>default</log-level>
+            <action>default</action>
+            <packet-capture>disable</packet-capture>
+         </entry>
+         <entry name="pan-dns-sec-phishing">
+            <log-level>default</log-level>
+            <action>default</action>
+            <packet-capture>disable</packet-capture>
+         </entry>
+         <entry name="pan-dns-sec-proxy">
+            <log-level>default</log-level>
+            <action>default</action>
+            <packet-capture>disable</packet-capture>
+         </entry>
+         <entry name="pan-dns-sec-recent">
+            <log-level>default</log-level>
+            <action>default</action>
+            <packet-capture>disable</packet-capture>
+         </entry>
+      </dns-security-categories>
+      <sinkhole>
+         <ipv4-address>pan-sinkhole-default-ip</ipv4-address>
+         <ipv6-address>::1</ipv6-address>
+      </sinkhole>
+   </botnet-domains>
+   <mica-engine-spyware-enabled>
+      <entry name="HTTP Command and Control detector">
+         <inline-policy-action>alert</inline-policy-action>
+      </entry>
+      <entry name="HTTP2 Command and Control detector">
+         <inline-policy-action>alert</inline-policy-action>
+      </entry>
+      <entry name="SSL Command and Control detector">
+         <inline-policy-action>alert</inline-policy-action>
+      </entry>
+      <entry name="Unknown-TCP Command and Control detector">
+         <inline-policy-action>alert</inline-policy-action>
+      </entry>
+      <entry name="Unknown-UDP Command and Control detector">
+         <inline-policy-action>alert</inline-policy-action>
+      </entry>
+   </mica-engine-spyware-enabled>
+</entry>
+';
 
 }
 

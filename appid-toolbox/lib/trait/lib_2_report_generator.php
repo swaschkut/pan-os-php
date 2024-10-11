@@ -335,7 +335,7 @@ trait lib_2_report_generator
             PH::print_stdout();
 
             #######################################################
-            //enalbe if fully published
+            //enable if fully published
             $srcOrDst = false;
             if( $srcOrDst )
             {

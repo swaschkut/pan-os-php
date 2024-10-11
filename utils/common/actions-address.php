@@ -1083,6 +1083,39 @@ AddressCallContext::$supportedActions[] = array(
 );
 
 AddressCallContext::$supportedActions[] = array(
+    'name' => 'replaceByMembers',
+    'MainFunction' => function (AddressCallContext $context) {
+        $object = $context->object;
+
+        if( !$object->isGroup() )
+        {
+            $string = "it's not a group";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
+        if( $object->owner === null )
+        {
+            $string = "object was previously removed";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
+        $object->replaceByMembers($context, FALSE, $context->isAPI);
+    },
+    'args' => array(
+        'keepgroupname' => array(
+            'type' => 'string',
+            'default' => '*nodefault*',
+            'choices' => array('tag', 'description'),
+            'help' =>
+                "- replaceByMembersAndDelete:tag -> create Tag with name from AddressGroup name and add to the object\n" .
+                "- replaceByMembersAndDelete:description -> create Tag with name from AddressGroup name and add to the object\n"
+        )
+    )
+);
+
+AddressCallContext::$supportedActions[] = array(
     'name' => 'name-Rename',
     'MainFunction' => function (AddressCallContext $context) {
         $object = $context->object;
@@ -1184,7 +1217,18 @@ AddressCallContext::$supportedActions[] = array(
 
             $newName = str_replace('$$reverse-dns$$', $reverseDns, $newName);
         }
+        if( strpos($newName, '$$tag$$') !== FALSE )
+        {
+            $tmp_tags = $object->tags->getAll();
+            if( count($tmp_tags) > 0 )
+            {
+                $firstTag = reset($tmp_tags);
+                $newName = str_replace('$$tag$$', $firstTag->name(), $newName);
+            }
+            else
+                $newName = str_replace('$$tag$$', "", $newName);
 
+        }
 
         if( $object->name() == $newName )
         {
@@ -1233,7 +1277,8 @@ AddressCallContext::$supportedActions[] = array(
             "  - \$\$netmask.blank32\$\$ : netmask or nothing if 32\n" .
             "  - \$\$reverse-dns\$\$ : value truncated of netmask if any\n" .
             "  - \$\$value\$\$ : value of the object\n" .
-            "  - \$\$value.no-netmask\$\$ : value truncated of netmask if any\n")
+            "  - \$\$value.no-netmask\$\$ : value truncated of netmask if any\n" .
+            "  - \$\$tag\$\$ : name of first tag object - if no tag attached '' blank\n")
     ),
     'help' => ''
 );
@@ -1458,6 +1503,131 @@ AddressCallContext::$supportedActions[] = array(
     },
     'args' => array('suffix' => array('type' => 'string', 'default' => '*nodefault*')
     ),
+);
+AddressCallContext::$supportedActions['name-touppercase'] = array(
+    'name' => 'name-toUpperCase',
+    'MainFunction' => function (AddressCallContext $context) {
+        $object = $context->object;
+        #$newName = $context->arguments['prefix'].$object->name();
+        $newName = mb_strtoupper($object->name(), 'UTF8');
+
+        if( $object->isTmpAddr() )
+        {
+            $string = "not applicable to TMP objects";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
+        $string = "new name will be '{$newName}'";
+        PH::ACTIONlog( $context, $string );
+
+        $rootObject = PH::findRootObjectOrDie($object->owner->owner);
+
+        if( $newName === $object->name() )
+        {
+            $string = "object is already uppercase";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
+        if( $rootObject->isPanorama() && $object->owner->find($newName, null, FALSE) !== null ||
+            $rootObject->isFirewall() && $object->owner->find($newName, null, TRUE) !== null )
+        {
+            $string = "an object with same name already exists";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            #use existing uppercase TAG and replace old lowercase where used with this existing uppercase TAG
+            return;
+        }
+        if( $context->isAPI )
+            $object->API_setName($newName);
+        else
+
+            $object->setName($newName);
+    }
+);
+AddressCallContext::$supportedActions['name-tolowercase'] = array(
+    'name' => 'name-toLowerCase',
+    'MainFunction' => function (AddressCallContext $context) {
+        $object = $context->object;
+        #$newName = $context->arguments['prefix'].$object->name();
+        $newName = mb_strtolower($object->name(), 'UTF8');
+
+        if( $object->isTmpAddr() )
+        {
+            $string = "not applicable to TMP objects";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
+        $string = "new name will be '{$newName}'";
+        PH::ACTIONlog( $context, $string );
+
+        $rootObject = PH::findRootObjectOrDie($object->owner->owner);
+
+        if( $newName === $object->name() )
+        {
+            $string = "object is already lowercase";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
+        if( $rootObject->isPanorama() && $object->owner->find($newName, null, FALSE) !== null ||
+            $rootObject->isFirewall() && $object->owner->find($newName, null, TRUE) !== null )
+        {
+            $string = "an object with same name already exists";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            #use existing lowercase TAG and replace old uppercase where used with this
+            return;
+        }
+        if( $context->isAPI )
+            $object->API_setName($newName);
+        else
+
+            $object->setName($newName);
+    }
+);
+AddressCallContext::$supportedActions['name-toucwords'] = array(
+    'name' => 'name-toUCWords',
+    'MainFunction' => function (AddressCallContext $context) {
+        /** @var Address $object */
+        $object = $context->object;
+        #$newName = $context->arguments['prefix'].$object->name();
+        $newName = mb_strtolower($object->name(), 'UTF8');
+        $newName = ucwords($newName);
+
+        if( $object->isTmpAddr() )
+        {
+            $string = "not applicable to TMP objects";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
+        $string = "new name will be '{$newName}'";
+        PH::ACTIONlog( $context, $string );
+
+        $rootObject = PH::findRootObjectOrDie($object->owner->owner);
+
+        if( $newName === $object->name() )
+        {
+            $string = "object is already UCword";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
+        if( $rootObject->isPanorama() && $object->owner->find($newName, null, FALSE) !== null ||
+            $rootObject->isFirewall() && $object->owner->find($newName, null, TRUE) !== null )
+        {
+            $string = "an object with same name already exists";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            #use existing lowercase TAG and replace old uppercase where used with this
+            return;
+        }
+        if( $context->isAPI )
+            $object->API_setName($newName);
+        else
+
+            $object->setName($newName);
+    }
 );
 
 AddressCallContext::$supportedActions[] = array(
@@ -1838,7 +2008,7 @@ AddressCallContext::$supportedActions[] = array(
         {
             $resolvMap = $object->getIP4Mapping();
             $string = "{$resolvMap->count()} entries";
-            PH::ACTIONlog( $context, $string );
+            #PH::ACTIONlog( $context, $string );
 
 
             foreach( $resolvMap->getMapArray() as &$resolvRecord )
@@ -1851,8 +2021,8 @@ AddressCallContext::$supportedActions[] = array(
             $string = "unresolved: {$unresolvedCount} entries";
             if( $unresolvedCount > 0 )
             {
-                PH::print_stdout();
-                PH::ACTIONlog( $context, $string );
+                #PH::print_stdout();
+                #PH::ACTIONlog( $context, $string );
 
                 foreach($resolvMap->unresolved as &$resolvRecord)
                 {
@@ -2111,6 +2281,8 @@ AddressCallContext::$supportedActions[] = array(
             $characterToreplace = str_replace('$$colon$$', ":", $characterToreplace);
         if( strpos($characterToreplace, '$$pipe$$') !== FALSE )
             $characterToreplace = str_replace('$$pipe$$', "|", $characterToreplace);
+        if( strpos($characterToreplace, '$$space$$') !== FALSE )
+            $characterToreplace = str_replace('$$space$$', " ", $characterToreplace);
 
         $characterForreplace = $context->arguments['replace'];
         if( strpos($characterForreplace, '$$comma$$') !== FALSE )
@@ -2121,6 +2293,8 @@ AddressCallContext::$supportedActions[] = array(
             $characterForreplace = str_replace('$$colon$$', ":", $characterForreplace);
         if( strpos($characterForreplace, '$$pipe$$') !== FALSE )
             $characterForreplace = str_replace('$$pipe$$', "|", $characterForreplace);
+        if( strpos($characterForreplace, '$$space$$') !== FALSE )
+            $characterForreplace = str_replace('$$space$$', " ", $characterForreplace);
 
         $description = $object->description();
 
@@ -2149,7 +2323,7 @@ AddressCallContext::$supportedActions[] = array(
         'search' => array('type' => 'string', 'default' => '*nodefault*'),
         'replace' => array('type' => 'string', 'default' => '')
     ),
-    'help' => 'possible variable $$comma$$ or $$forwardslash$$ or $$colon$$ or $$pipe$$; example "actions=description-Replace-Character:$$comma$$word1"'
+    'help' => 'possible variable $$comma$$ or $$forwardslash$$ or $$colon$$ or $$pipe$$  or $$pipe$$; example "actions=description-Replace-Character:$$comma$$word1"'
 );
 AddressCallContext::$supportedActions[] = array(
     'name' => 'value-host-object-add-netmask-m32',

@@ -340,7 +340,6 @@ RQuery::$defaultFilters['securityprofilegroup']['refstore']['operators']['is'] =
         $context->object->ReferencesStoreValidation($value);
 
         $refstore = $context->object->getReferencesStore();
-
         if( array_key_exists($value, $refstore) )
             return TRUE;
 

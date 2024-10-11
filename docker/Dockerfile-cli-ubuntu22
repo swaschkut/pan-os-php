@@ -6,9 +6,9 @@ ARG user_var="root"
 
 SHELL ["/bin/bash", "-c"]
 
-RUN DEBIAN_FRONTEND=noninteractive apt-get update --fix-missing
-RUN DEBIAN_FRONTEND=noninteractive apt update --fix-missing
-RUN DEBIAN_FRONTEND=noninteractive apt install -y --fix-missing \
+
+RUN DEBIAN_FRONTEND=noninteractive apt update --fix-missing \
+  && DEBIAN_FRONTEND=noninteractive apt install -y --fix-missing \
     tzdata \
     git \
     bash-completion \
@@ -20,6 +20,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt install -y --fix-missing \
     php$php_var-yaml \
     python3 \
     python3-pandas \
+    python3-bs4 \
     python3-xlsxwriter \
     python3-netaddr \
     python3-requests \

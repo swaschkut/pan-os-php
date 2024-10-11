@@ -197,6 +197,30 @@ class Threat
     {
         return $this->cve;
     }
+
+    public function display($padding = "")
+    {
+        PH::print_stdout( $padding . "* " . get_class($this) . " '{$this->name()}' " );
+
+        $tmp_min_engine_version = "";
+        $tmp_max_engine_version = "";
+        if( !empty($this->min_engine_version) )
+            $tmp_min_engine_version =  " min-engine-version: '".$this->min_engine_version."'";
+        if( !empty($this->max_engine_version) )
+            $tmp_max_engine_version =  " max-engine-version: '".$this->max_engine_version."'";
+
+        PH::print_stdout( "          - Threatname: '{$this->threatname()}'  category: '{$this->category()}' severity: '{$this->severity()}'  default-action: '{$this->defaultAction()}' cve: '".implode(",", $this->cve())."' ".$tmp_min_engine_version.$tmp_max_engine_version );
+
+        PH::$JSON_TMP['sub']['object'][$this->name()]['name'] = $this->name();
+        PH::$JSON_TMP['sub']['object'][$this->name()]['type'] = get_class($this);
+        PH::$JSON_TMP['sub']['object'][$this->name()]['category'] = $this->category();
+        PH::$JSON_TMP['sub']['object'][$this->name()]['host'] = $this->category();
+        PH::$JSON_TMP['sub']['object'][$this->name()]['severity'] = $this->severity();
+        PH::$JSON_TMP['sub']['object'][$this->name()]['default-action'] = $this->defaultAction();
+        PH::$JSON_TMP['sub']['object'][$this->name()]['cve'] = $this->cve();
+        PH::$JSON_TMP['sub']['object'][$this->name()]['min_engine_version'] = $this->min_engine_version;
+        PH::$JSON_TMP['sub']['object'][$this->name()]['max_engine_version'] = $this->max_engine_version;
+    }
 }
 
 

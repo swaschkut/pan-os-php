@@ -170,7 +170,7 @@ class ObjStore
 
         for( $i = 0; $i < $c; $i++ )
         {
-            PH::print_stdout( $indent . $this->o[$k[$i]]->name );
+            PH::print_stdout( $indent . $this->o[$k[$i]]->name() );
         }
     }
 

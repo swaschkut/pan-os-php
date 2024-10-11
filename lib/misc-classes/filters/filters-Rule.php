@@ -778,6 +778,13 @@ RQuery::$defaultFilters['rule']['src']['operators']['has'] = array(
     'argObjectFinder' => "\$objectFind=null;\n\$objectFind=\$object->source->parentCentralStore->find('!value!');"
 
 );
+RQuery::$defaultFilters['rule']['src']['operators']['has.edl'] = array(
+    'eval' => function ($object, &$nestedQueries, $value) {
+        /** @var Rule|SecurityRule|NatRule|DecryptionRule|AppOverrideRule|CaptivePortalRule|AuthenticationRule|PbfRule|QoSRule|DoSRule $object */
+        return $object->source->hasEDL() === TRUE;
+    },
+    'arg' => FALSE
+);
 RQuery::$defaultFilters['rule']['src']['operators']['has.only'] = array(
     'eval' => function ($object, &$nestedQueries, $value) {
         /** @var Rule|SecurityRule|NatRule|DecryptionRule|AppOverrideRule|CaptivePortalRule|AuthenticationRule|PbfRule|QoSRule|DoSRule $object */
@@ -818,6 +825,13 @@ RQuery::$defaultFilters['rule']['dst']['operators']['has'] = array(
     'arg' => TRUE,
     'argObjectFinder' => "\$objectFind=null;\n\$objectFind=\$object->destination->parentCentralStore->find('!value!');"
 
+);
+RQuery::$defaultFilters['rule']['dst']['operators']['has.edl'] = array(
+    'eval' => function ($object, &$nestedQueries, $value) {
+        /** @var Rule|SecurityRule|NatRule|DecryptionRule|AppOverrideRule|CaptivePortalRule|AuthenticationRule|PbfRule|QoSRule|DoSRule $object */
+        return $object->destination->hasEDL() === TRUE;
+    },
+    'arg' => FALSE
 );
 RQuery::$defaultFilters['rule']['dst']['operators']['has.only'] = array(
     'eval' => function ($object, &$nestedQueries, $value) {
@@ -2309,7 +2323,7 @@ RQuery::$defaultFilters['rule']['secprof']['operators']['group.is.undefined'] = 
     },
     'arg' => false,
     'ci' => array(
-        'fString' => '(%PROP% secgroup-production)',
+        'fString' => '(%PROP%)',
         'input' => 'input/panorama-8.0.xml'
     )
 );

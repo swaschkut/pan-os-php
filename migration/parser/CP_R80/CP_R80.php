@@ -184,7 +184,7 @@ class CP_R80 extends PARSER
             {
                 print " - '".PH::boldText( $package['packageName'] )."'\n";
             }
-            derr( "this CP R80 configuration contain multiple Policy Packages, which is not yet supported." );
+            mwarning( "this CP R80 configuration contain multiple Policy Packages, which is not yet supported. only first is used" );
         }
 
 

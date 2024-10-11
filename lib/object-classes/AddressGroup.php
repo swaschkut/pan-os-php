@@ -1341,6 +1341,167 @@ class AddressGroup
         }
     }
 
+    public function replaceByMembers($context, $delete = FALSE, $isAPI = FALSE, $rewriteXml = TRUE, $forceAny = FALSE)
+    {
+        if( !$this->isGroup() )
+        {
+            $string = "it's not a group";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
+        if( $this->isDynamic() )
+        {
+            $string = "group is dynamic";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
+        if( $this->owner === null )
+        {
+            $string = "object was previously removed";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
+        $keepgroupname = $context->arguments['keepgroupname'];
+
+        $objectRefs = $this->getReferences();
+        $clearForAction = TRUE;
+        foreach( $objectRefs as $objectRef )
+        {
+            $class = get_class($objectRef);
+            if( $class != 'AddressRuleContainer' && $class != 'AddressGroup' )
+            {
+                $clearForAction = FALSE;
+                $string = "it's used in unsupported class $class";
+                PH::ACTIONstatus( $context, "SKIPPED", $string );
+                return;
+            }
+        }
+        if( $clearForAction )
+        {
+            foreach( $objectRefs as $objectRef )
+            {
+                $class = get_class($objectRef);
+                /** @var AddressRuleContainer|AddressGroup $objectRef */
+
+                if( $objectRef->owner === null )
+                {
+                    $string = "because object already removed ({$objectRef->toString()})";
+                    PH::ACTIONstatus( $context, "SKIPPED", $string );
+                    continue;
+                }
+
+                $string = "  - adding members in {$objectRef->toString()}";
+                PH::ACTIONlog( $context, $string );
+
+                if( $class == 'AddressRuleContainer' )
+                {
+                    /** @var AddressRuleContainer $objectRef */
+                    foreach( $this->members() as $objectMember )
+                    {
+                        if( $isAPI )
+                            $objectRef->API_add($objectMember);
+                        else
+                            $objectRef->addObject($objectMember);
+
+                        $string = "     -> {$objectMember->toString()}";
+                        PH::ACTIONlog( $context, $string );
+                    }
+                    if( $isAPI )
+                        $objectRef->API_remove($this, $forceAny);
+                    else
+                        $objectRef->remove($this, $rewriteXml, $forceAny);
+                }
+                elseif( $class == 'AddressGroup' )
+                {
+                    /** @var AddressGroup $objectRef */
+                    foreach( $this->members() as $objectMember )
+                    {
+                        if( $isAPI )
+                            $objectRef->API_addMember($objectMember);
+                        else
+                            $objectRef->addMember($objectMember);
+                        $string = "     -> {$objectMember->toString()}";
+                        PH::ACTIONlog( $context, $string );
+                    }
+                    if( $isAPI )
+                        $objectRef->API_removeMember($this);
+                    else
+                        $objectRef->removeMember($this, $rewriteXml);
+                }
+                else
+                {
+                    derr('unsupported class');
+                }
+
+            }
+
+            if( $keepgroupname !== "*nodefault*" )
+            {
+                foreach( $this->members() as $objectMember )
+                {
+                    if( $keepgroupname === "tag" )
+                    {
+                        //search for tag name like $this->name()
+                        //if not available create it
+
+                        if( $context->isAPI )
+                        {
+                            $objectFind = $objectMember->tags->parentCentralStore->find($this->name());
+                            if( $objectFind === null )
+                                $objectFind = $objectMember->tags->parentCentralStore->API_createTag($this->name());
+                        }
+                        else
+                            $objectFind = $objectMember->tags->parentCentralStore->findOrCreate($this->name());
+
+                        if( $context->isAPI )
+                            $objectMember->tags->API_addTag($objectFind);
+                        else
+                            $objectMember->tags->addTag($objectFind);
+                    }
+                    elseif( $keepgroupname === "description" )
+                    {
+                        $description = $objectMember->description();
+                        $textToAppend = " |".$this->name();
+                        if( $context->object->owner->owner->version < 71 )
+                            $max_length = 253;
+                        else
+                            $max_length = 1020;
+
+                        if( strlen($description) + strlen($textToAppend) > $max_length )
+                        {
+                            $string = "resulting description is too long";
+                            PH::ACTIONstatus( $context, "SKIPPED", $string );
+                            return;
+                        }
+
+                        $text = $context->padding . " - new description will be: '{$description}{$textToAppend}' ... ";
+
+                        if( $context->isAPI )
+                            $objectMember->API_setDescription($description . $textToAppend);
+                        else
+                            $objectMember->setDescription($description . $textToAppend);
+                        $text .= "OK";
+                        PH::ACTIONlog( $context, $text );
+                    }
+
+
+                    $string = "     -> {$objectMember->toString()}";
+                    PH::ACTIONlog( $context, $string );
+                }
+            }
+
+            if( $delete)
+            {
+                if( $isAPI )
+                    $this->owner->API_remove($this, TRUE);
+                else
+                    $this->owner->remove($this, TRUE);
+            }
+        }
+    }
     /**
      * @return string ie: 'ip-netmask' 'ip-range'
      */

@@ -98,6 +98,8 @@ class RQuery
             $this->contextObject = new SecurityProfileGroupRQueryContext($this);
         elseif( $this->objectType == 'schedule' )
             $this->contextObject = new ScheduleRQueryContext($this);
+        elseif( $this->objectType == 'edl' )
+            $this->contextObject = new EDLRQueryContext($this);
         elseif( $this->objectType == 'application' )
             $this->contextObject = new ApplicationRQueryContext($this);
         elseif( $this->objectType == 'device' )
@@ -114,6 +116,10 @@ class RQuery
             $this->contextObject = new CertificateRQueryContext($this);
         elseif( $this->objectType == 'static-route' )
             $this->contextObject = new StaticRouteRQueryContext($this);
+        elseif( $this->objectType == 'threat-rule' )
+            $this->contextObject = new ThreatRuleRQueryContext($this);
+        elseif( $this->objectType == 'dns-rule' )
+            $this->contextObject = new DNSRuleRQueryContext($this);
         else
             derr("unsupported object type '$objectType'");
 
@@ -701,9 +707,12 @@ require_once 'filters/filters-VirtualWire.php';
 require_once 'filters/filters-SecurityProfile.php';
 require_once 'filters/filters-SecurityProfileGroup.php';
 require_once 'filters/filters-Schedule.php';
+require_once 'filters/filters-EDL.php';
 require_once 'filters/filters-Device.php';
 require_once 'filters/filters-DHCP.php';
 require_once 'filters/filters-Certificate.php';
 require_once 'filters/filters-Static-Route.php';
+require_once 'filters/filters-ThreatRule.php';
+require_once 'filters/filters-DNSRule.php';
 
 

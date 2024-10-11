@@ -169,8 +169,11 @@ require_once $basedir . '/misc-classes/ServiceRQueryContext.php';
 require_once $basedir . '/misc-classes/TagRQueryContext.php';
 require_once $basedir . '/misc-classes/ZoneRQueryContext.php';
 require_once $basedir . '/misc-classes/ScheduleRQueryContext.php';
+require_once $basedir . '/misc-classes/EDLRQueryContext.php';
 
 require_once $basedir . '/misc-classes/ThreatRQueryContext.php';
+require_once $basedir . '/misc-classes/ThreatRuleRQueryContext.php';
+require_once $basedir . '/misc-classes/DNSRuleRQueryContext.php';
 
 require_once $basedir . '/misc-classes/InterfaceRQueryContext.php';
 require_once $basedir . '/misc-classes/RoutingRQueryContext.php';
@@ -237,12 +240,23 @@ require_once $basedir . '/object-classes/ThreatSpyware.php';
 require_once $basedir . '/object-classes/ScheduleStore.php';
 require_once $basedir . '/object-classes/Schedule.php';
 
+require_once $basedir . '/object-classes/EDLStore.php';
+require_once $basedir . '/object-classes/EDL.php';
+
 require_once $basedir . '/object-classes/SecurityProfileStore.php';
 require_once $basedir . '/object-classes/SecurityProfileGroupStore.php';
 require_once $basedir . '/object-classes/SecurityProfileGroup.php';
 require_once $basedir . '/object-classes/SecurityProfile.php';
+require_once $basedir . '/object-classes/SecurityProfile2.php';
 require_once $basedir . '/object-classes/URLProfile.php';
 require_once $basedir . '/object-classes/AntiVirusProfile.php';
+
+require_once $basedir . '/object-classes/ThreatPolicyStore.php';
+require_once $basedir . '/object-classes/ThreatPolicy.php';
+require_once $basedir . '/object-classes/ThreatPolicySpyware.php';
+require_once $basedir . '/object-classes/ThreatPolicyVulnerability.php';
+require_once $basedir . '/object-classes/DNSPolicyStore.php';
+require_once $basedir . '/object-classes/DNSPolicy.php';
 require_once $basedir . '/object-classes/VulnerabilityProfile.php';
 require_once $basedir . '/object-classes/AntiSpywareProfile.php';
 require_once $basedir . '/object-classes/FileBlockingProfile.php';

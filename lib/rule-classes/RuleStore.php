@@ -515,19 +515,25 @@ class RuleStore
 
         while( TRUE )
         {
-
-            $incl = strlen(strval($inc));
-
-            if( $basePlusSuffixL + $incl > $maxl )
+            if( $inc == 0 )
             {
-                $newname = substr($base, 0, $basel - $suffixl - $incl) . $suffix . $inc;
+                if( $basePlusSuffixL > $maxl )
+                    $newname = substr($base, 0, $basel - $suffixl) . $suffix;
+                else
+                    $newname = $base . $suffix;
             }
             else
-                $newname = $base . $suffix . $inc;
+            {
+                $incl = strlen(strval($inc));
+
+                if( $basePlusSuffixL + $incl > $maxl )
+                    $newname = substr($base, 0, $basel - $suffixl - $incl) . $suffix . $inc;
+                else
+                    $newname = $base . $suffix . $inc;
+            }
 
             if( $this->isRuleNameAvailable($newname, $nested) )
                 return $newname;
-
 
             $inc++;
         }

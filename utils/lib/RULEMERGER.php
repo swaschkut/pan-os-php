@@ -191,10 +191,70 @@ class RULEMERGER extends UTIL
 
             if( $this->pan->isPanorama() || ( ($this->pan->isFawkes() || $this->pan->isBuckbeak()) && $sub->isContainer()) )
             {
-                if( $this->panoramaPreRuleSelected )
-                    $this->UTIL_rulesToProcess = $store->preRules();
+                if( PH::$shadow_loaddghierarchy )
+                {
+                    //pre-rulebase SHARED
+                    if( $this->configType == 'panorama' && ( $sub->name() == 'shared' || $sub->name() == 'any' ) )
+                    {
+                        $array = $this->pan->securityRules->rules("rule is.prerule");
+                        $this->UTIL_rulesToProcess = array_merge($this->UTIL_rulesToProcess, $array);
+                    }
+
+
+                    if( $this->configType == 'panorama' )
+                        $subGroups = $this->pan->getDeviceGroups();
+                    elseif( $this->configType == 'fawkes' )
+                    {
+                        $subGroups = $this->pan->getContainers();
+                        $subGroups2 = $this->pan->getDeviceClouds();
+
+                        $subGroups = array_merge( $subGroups, $subGroups2 );
+
+                        $subGroups2 = $this->pan->getDeviceOnPrems();
+                        $subGroups = array_merge( $subGroups, $subGroups2 );
+
+                        $subGroups2 = $this->pan->getSnippets();
+                        $subGroups = array_merge( $subGroups, $subGroups2 );
+                    }
+
+                    //pre-rulebase
+                    foreach( $subGroups as $sub2 )
+                    {
+                        $DG_object = $this->pan->findDeviceGroup($sub->name());
+                        $parentDGS = $DG_object->parentDeviceGroups();
+
+                        if( $sub->name() == 'any' || $sub->name() == $sub2->name() || isset( $parentDGS[$sub2->name()] ) )
+                        {
+                            $array = $sub2->securityRules->rules("rule is.prerule");
+                            $this->UTIL_rulesToProcess = array_merge($this->UTIL_rulesToProcess, $array);
+                        }
+                    }
+
+                    //post-rulebase
+                    krsort($subGroups);
+                    foreach( $subGroups as $sub2 )
+                    {
+                        $DG_object = $this->pan->findDeviceGroup($sub->name());
+                        $parentDGS = $DG_object->parentDeviceGroups();
+
+                        if ($sub->name() == 'any' || $sub->name() == $sub2->name() || isset($parentDGS[$sub2->name()]))
+                        {
+                            $array = $sub2->securityRules->rules("rule is.postrule");
+                            $this->UTIL_rulesToProcess = array_merge($this->UTIL_rulesToProcess, $array);
+                        }
+                    }
+
+                    //post-rulebase SHARED
+                    $array = $this->pan->securityRules->rules("rule is.postrule");
+                    $this->UTIL_rulesToProcess = array_merge($this->UTIL_rulesToProcess, $array);
+                }
                 else
-                    $this->UTIL_rulesToProcess = $store->postRules();
+                {
+                    if( $this->panoramaPreRuleSelected )
+                        $this->UTIL_rulesToProcess = $store->preRules();
+                    else
+                        $this->UTIL_rulesToProcess = $store->postRules();
+                }
             }
             else
                 $this->UTIL_rulesToProcess = $store->rules();
@@ -616,7 +676,7 @@ class RULEMERGER extends UTIL
 
             if( count($matchingHashTable) == 1 )
             {
-                PH::print_stdout( "- no match for rule #$loopCount '{$rule->name()}''");
+                PH::print_stdout( "- no match for rule #$loopCount '{$rule->name()}'");
                 continue;
             }
 
@@ -838,15 +898,17 @@ class RULEMERGER extends UTIL
     {
         if( $this->pan->isPanorama() )
         {
-            if( !isset(PH::$args[strtolower('panoramaPreRules')]) && !isset(PH::$args[strtolower('panoramaPostRules')]) )
-                $this->display_error_usage_exit("Panorama was detected but no Pre or Post rules were selected, use CLI argument 'panoramaPreRules' or 'panoramaPostRules'");
+            if( !PH::$shadow_loaddghierarchy )
+            {
+                if( !isset(PH::$args[strtolower('panoramaPreRules')]) && !isset(PH::$args[strtolower('panoramaPostRules')]) )
+                    $this->display_error_usage_exit("Panorama was detected but no Pre or Post rules were selected, use CLI argument 'panoramaPreRules' or 'panoramaPostRules'");
 
-            if( isset(PH::$args[strtolower('panoramaPreRules')]) && isset(PH::$args[strtolower('panoramaPostRules')]) )
-                $this->display_error_usage_exit("both panoramaPreRules and panoramaPostRules were selected, please choose one of them");
+                if( isset(PH::$args[strtolower('panoramaPreRules')]) && isset(PH::$args[strtolower('panoramaPostRules')]) )
+                    $this->display_error_usage_exit("both panoramaPreRules and panoramaPostRules were selected, please choose one of them");
 
-            if( isset(PH::$args[strtolower('panoramaPostRules')]) )
-                $this->panoramaPreRuleSelected = FALSE;
-
+                if( isset(PH::$args[strtolower('panoramaPostRules')]) )
+                    $this->panoramaPreRuleSelected = FALSE;
+            }
         }
         elseif( ($this->pan->isFawkes() || $this->pan->isBuckbeak()) )
         {
@@ -858,14 +920,17 @@ class RULEMERGER extends UTIL
 
             if( $sub->isContainer() )
             {
-                if( !isset(PH::$args[strtolower('panoramaPreRules')]) && !isset(PH::$args[strtolower('panoramaPostRules')]) )
-                    $this->display_error_usage_exit("Fawkes Container was detected but no Pre or Post rules were selected, use CLI argument 'panoramaPreRules' or 'panoramaPostRules'");
+                if( !PH::$shadow_loaddghierarchy )
+                {
+                    if (!isset(PH::$args[strtolower('panoramaPreRules')]) && !isset(PH::$args[strtolower('panoramaPostRules')]))
+                        $this->display_error_usage_exit("Fawkes Container was detected but no Pre or Post rules were selected, use CLI argument 'panoramaPreRules' or 'panoramaPostRules'");
 
-                if( isset(PH::$args[strtolower('panoramaPreRules')]) && isset(PH::$args[strtolower('panoramaPostRules')]) )
-                    $this->display_error_usage_exit("both panoramaPreRules and panoramaPostRules were selected, please choose one of them");
+                    if (isset(PH::$args[strtolower('panoramaPreRules')]) && isset(PH::$args[strtolower('panoramaPostRules')]))
+                        $this->display_error_usage_exit("both panoramaPreRules and panoramaPostRules were selected, please choose one of them");
 
-                if( isset(PH::$args[strtolower('panoramaPostRules')]) )
-                    $this->panoramaPreRuleSelected = FALSE;
+                    if (isset(PH::$args[strtolower('panoramaPostRules')]))
+                        $this->panoramaPreRuleSelected = FALSE;
+                }
             }
         }
 

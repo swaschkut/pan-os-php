@@ -21,14 +21,14 @@ trait SOPHOSaddress
                 $addr_value = str_replace(',', "", $policy['address']);
                 $addr_comment = str_replace(',', "", $policy['comment']);
                 //[_type] => network/host,
-                print "name: " . $addr_name . " - value: " . $addr_value . "\n";
+                PH::print_stdout( "name: " . $addr_name . " - value: " . $addr_value );
 
                 if( $addr_value !== "" )
                 {
                     $tmp_address = $this->sub->addressStore->find($addr_name);
                     if( $tmp_address == null )
                     {
-                        print "create address - name: " . $addr_name . " - value: " . $addr_value . "\n";
+                        PH::print_stdout( "create address - name: " . $addr_name . " - value: " . $addr_value );
                         $tmp_address = $this->sub->addressStore->newAddress($addr_name, 'ip-netmask', $addr_value);
                         $tmp_address->setDescription($addr_comment);
                     }
@@ -41,13 +41,13 @@ trait SOPHOSaddress
                 $addr_value = str_replace(',', "", $policy['hostname']);
                 $addr_comment = str_replace(',', "", $policy['comment']);
                 //[_type] => network/host,
-                print "name: " . $addr_name . " - value: " . $addr_value . "\n";
+                PH::print_stdout( "name: " . $addr_name . " - value: " . $addr_value );
 
                 $tmp_address = $this->sub->addressStore->find($addr_name);
                 if( $tmp_address == null )
                 {
                     #print $tmp_address->name()."\n";
-                    print "create address fqdn - name: " . $addr_name . " - value: " . $addr_value . "\n";
+                    PH::print_stdout( "create address fqdn - name: " . $addr_name . " - value: " . $addr_value );
                     $tmp_address = $this->sub->addressStore->newAddress($addr_name, 'fqdn', $addr_value);
                     $tmp_address->setDescription($addr_comment);
                 }
@@ -69,11 +69,11 @@ trait SOPHOSaddress
 
                 if( $addr_from !== "" && $addr_to !== "" )
                 {
-                    print "name: " . $addr_name . " - value: " . $addr_from . "-" . $addr_to . "\n";
+                    PH::print_stdout( "name: " . $addr_name . " - value: " . $addr_from . "-" . $addr_to );
                     $tmp_address = $this->sub->addressStore->find($addr_name);
                     if( $tmp_address == null )
                     {
-                        print "create address ip-range - name: " . $addr_name . " - value: " . $addr_from . "-" . $addr_to . "\n";
+                        PH::print_stdout( "create address ip-range - name: " . $addr_name . " - value: " . $addr_from . "-" . $addr_to );
                         $tmp_address = $this->sub->addressStore->newAddress($addr_name, 'ip-range', $addr_from . "-" . $addr_to);
                         $tmp_address->setDescription($addr_comment);
                     }
@@ -91,7 +91,7 @@ trait SOPHOSaddress
                 //[_type] => network/host,
                 if( $policy['address6'] !== "," )
                 {
-                    print "name: " . $addr_name . " - value: " . $addr_value . "\n";
+                    PH::print_stdout( "name: " . $addr_name . " - value: " . $addr_value );
                     $tmp_address = $this->sub->addressStore->find($addr_name . "IPv4");
                 }
                 else
@@ -102,7 +102,7 @@ trait SOPHOSaddress
                 {
                     $dummy = "n_";
                     $dummy = "";
-                    print "create network - name: " . $dummy . $addr_name . " - value: " . $addr_value . "\n";
+                    PH::print_stdout( "create network - name: " . $dummy . $addr_name . " - value: " . $addr_value );
                     if( $policy['address6'] !== "," )
                     {
                         $tmp_address = $this->sub->addressStore->newAddress($dummy . $addr_name . "_IPv4", 'ip-netmask', $addr_value . "/" . $addr_netmask);
@@ -158,7 +158,7 @@ trait SOPHOSaddress
             }
             else
             {
-                print "|" . $policy['_type'] . "|\n";
+                PH::print_stdout( "|" . $policy['_type'] . "|");
                 print_r($policy);
             }
 
@@ -194,7 +194,7 @@ trait SOPHOSaddress
                 }
 
 
-                print "- set address group members: ";
+                PH::print_stdout( "- set address group members: ");
                 foreach( $src_array as $members )
                 {
                     #print "src_ref:".$source."\n";
@@ -205,7 +205,7 @@ trait SOPHOSaddress
                         {
                             //search object in addressstore
                             $tmp_name = str_replace(',', "", $master_service['name']);
-                            print "\nFOUND address: " . $tmp_name . " - " . $members . "\n";
+                            PH::print_stdout( "\nFOUND address: " . $tmp_name . " - " . $members );
 
                             $tmp_service = $this->sub->addressStore->find($tmp_name);
                             // add to rule source
@@ -221,7 +221,7 @@ trait SOPHOSaddress
                                     mwarning("addressobject: " . $tmp_name . " not found.");
                             }
 
-                            print "$tmp_name";
+                            PH::print_stdout( $tmp_name );
                             $tmp_found = TRUE;
                             break;
                         }

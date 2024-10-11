@@ -30,6 +30,7 @@ class GARPSEND extends UTIL
     public $user = "";
     public $password = "";
 
+    public $IParray = array();
 
     public function utilStart()
     {
@@ -155,7 +156,6 @@ class GARPSEND extends UTIL
             /** @var EthernetInterface $int */
             $name = $int->name();
 
-            #print "CLASS: ".get_class( $int )."\n";
             if( get_class($int) !== "EthernetInterface" )
                 continue;
 
@@ -164,6 +164,7 @@ class GARPSEND extends UTIL
             else
                 $ips = array();
 
+            //todo get IP-Address for interface where DHcP is used
             foreach( $ips as $key => $ip )
             {
                 $intIP = explode("/", $ip);
@@ -181,6 +182,8 @@ class GARPSEND extends UTIL
                     $intIP = $object->getNetworkValue();
                 }
 
+                #print "IP: ".$intIP."\n";
+
                 if( filter_var($intIP, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) )
                     continue;
 
@@ -188,6 +191,7 @@ class GARPSEND extends UTIL
                 {
                     $this->interfaceIP[$name] = $intIP;
                 }
+
                 $this->ipRangeInt[$ip] = $name;
 
                 $this->commands[$intIP . $name] = "test arp gratuitous ip " . $intIP . " interface " . $name;
@@ -245,11 +249,15 @@ class GARPSEND extends UTIL
                 $ip = DH::findFirstElement("ip", $entry);
                 $interface = DH::findFirstElement("interface", $entry);
 
-                $intIP = $this->interfaceIP[$interface->textContent];
-                $intIP = explode("/", $intIP);
-                $intIP = $intIP[0];
+                if( isset($this->interfaceIP[$interface->textContent]) )
+                {
+                    $intIP = $this->interfaceIP[$interface->textContent];
+                    $intIP = explode("/", $intIP);
+                    $intIP = $intIP[0];
 
-                $this->commands[] = "ping source " . $intIP . " count 2 host " . $ip->textContent;
+                    $this->commands[] = "ping source " . $intIP . " count 2 host " . $ip->textContent;
+                }
+
             }
         }
         else
@@ -323,25 +331,39 @@ class GARPSEND extends UTIL
             {
                 $IP_network = explode("/", $key);
                 $value = $IP_network[0];
+                $found = TRUE;
                 if( !isset($IP_network[1]) )
                 {
                     //more validation if object is used
                     /** @var VirtualSystem $vsys */
                     $object = $vsys->addressStore->find($key);
 
-                    if( $object->isType_FQDN() || $object->isType_ipWildcard() )
-                        continue;
+                    if( $object !== null )
+                    {
+                        if ($object->isType_FQDN() || $object->isType_ipWildcard() )
+                            continue;
 
-                    $value = $object->getNetworkValue();
-                    $netmask = $object->getNetworkMask();
+                        $value = $object->getNetworkValue();
+                        $netmask = $object->getNetworkMask();
+                    }
+                    else
+                    {
+                        $found = false;
+                    }
                 }
                 else
                 {
                     $netmask = $IP_network[1];
                 }
-                $network = cidr::cidr2network($value, $netmask);
 
-                if( cidr::cidr_match($dstIP, $network, $netmask) )
+                if( $found && $value != "" && $netmask  != "")
+                {
+                    $network = cidr::cidr2network($value, $netmask);
+
+                    if( cidr::cidr_match($dstIP, $network, $netmask) )
+                        $this->commands[$dstIP . $intName] = "test arp gratuitous ip " . $dstIP . " interface " . $intName;
+                }
+                elseif( $key == $dstIP )
                     $this->commands[$dstIP . $intName] = "test arp gratuitous ip " . $dstIP . " interface " . $intName;
             }
         }

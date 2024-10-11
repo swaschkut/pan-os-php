@@ -179,7 +179,7 @@ var subjectObject =
                         "default": ""
                     }
                 },
-                "help": "possible variable $$comma$$ or $$forwardslash$$ or $$colon$$ or $$pipe$$; example \"actions=description-Replace-Character:$$comma$$word1\""
+                "help": "possible variable $$comma$$ or $$forwardslash$$ or $$colon$$ or $$pipe$$  or $$pipe$$; example \"actions=description-Replace-Character:$$comma$$word1\""
             },
             "display": {
                 "name": "display",
@@ -291,7 +291,7 @@ var subjectObject =
                     "stringFormula": {
                         "type": "string",
                         "default": "*nodefault*",
-                        "help": "This string is used to compose a name. You can use the following aliases :\n  - $$current.name$$ : current name of the object\n  - $$netmask$$ : netmask\n  - $$netmask.blank32$$ : netmask or nothing if 32\n  - $$reverse-dns$$ : value truncated of netmask if any\n  - $$value$$ : value of the object\n  - $$value.no-netmask$$ : value truncated of netmask if any\n"
+                        "help": "This string is used to compose a name. You can use the following aliases :\n  - $$current.name$$ : current name of the object\n  - $$netmask$$ : netmask\n  - $$netmask.blank32$$ : netmask or nothing if 32\n  - $$reverse-dns$$ : value truncated of netmask if any\n  - $$value$$ : value of the object\n  - $$value.no-netmask$$ : value truncated of netmask if any\n  - $$tag$$ : name of first tag object - if no tag attached '' blank\n"
                     }
                 },
                 "help": ""
@@ -310,6 +310,18 @@ var subjectObject =
                     }
                 },
                 "help": ""
+            },
+            "name-tolowercase": {
+                "name": "name-toLowerCase",
+                "MainFunction": {}
+            },
+            "name-toucwords": {
+                "name": "name-toUCWords",
+                "MainFunction": {}
+            },
+            "name-touppercase": {
+                "name": "name-toUpperCase",
+                "MainFunction": {}
             },
             "removewhereused": {
                 "name": "removeWhereUsed",
@@ -333,6 +345,21 @@ var subjectObject =
             "replace-object-by-ip": {
                 "name": "replace-Object-by-IP",
                 "MainFunction": {}
+            },
+            "replacebymembers": {
+                "name": "replaceByMembers",
+                "MainFunction": {},
+                "args": {
+                    "keepgroupname": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "choices": [
+                            "tag",
+                            "description"
+                        ],
+                        "help": "- replaceByMembersAndDelete:tag -> create Tag with name from AddressGroup name and add to the object\n- replaceByMembersAndDelete:description -> create Tag with name from AddressGroup name and add to the object\n"
+                    }
+                }
             },
             "replacebymembersanddelete": {
                 "name": "replaceByMembersAndDelete",
@@ -1119,6 +1146,26 @@ var subjectObject =
                     "is.set": {
                         "Function": {},
                         "arg": false,
+                        "ci": {
+                            "fString": "(%PROP% evasive) ",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "ip-protocol": {
+                "operators": {
+                    "is.set": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP% evasive) ",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "eq": {
+                        "Function": {},
+                        "arg": true,
                         "ci": {
                             "fString": "(%PROP% evasive) ",
                             "input": "input\/panorama-8.0.xml"
@@ -1940,7 +1987,7 @@ var subjectObject =
                         "default": "8"
                     }
                 },
-                "help": "This Action is displaying the actual logged in admin sessions"
+                "help": "This Action is displaying the actual logged in admin sessions | possible action 'display' 'delete'"
             },
             "system-mgt-config_users": {
                 "name": "system-mgt-config_users",
@@ -1996,6 +2043,21 @@ var subjectObject =
                 "GlobalFinishFunction": {},
                 "args": {
                     "name": {
+                        "type": "string",
+                        "default": "false"
+                    }
+                }
+            },
+            "template-create-vsys": {
+                "name": "template-create-vsys",
+                "MainFunction": {},
+                "GlobalFinishFunction": {},
+                "args": {
+                    "name": {
+                        "type": "string",
+                        "default": "false"
+                    },
+                    "vsys-name": {
                         "type": "string",
                         "default": "false"
                     }
@@ -2078,7 +2140,14 @@ var subjectObject =
             "zpp-create-alert-only-bp": {
                 "name": "zpp-create-alert-only-bp",
                 "GlobalInitFunction": {},
-                "MainFunction": {}
+                "MainFunction": {},
+                "args": {
+                    "zpp-availability-validation": {
+                        "type": "bool",
+                        "default": "false",
+                        "help": "if set to true; the script validate if already another ZPP is available, if available no creation of ZPP"
+                    }
+                }
             },
             "zpp-create-bp": {
                 "name": "zpp-create-bp",
@@ -2244,10 +2313,552 @@ var subjectObject =
         "action": [],
         "filter": []
     },
+    "dns-rule": {
+        "name": "dns-rule",
+        "action": {
+            "display": {
+                "name": "display",
+                "MainFunction": {}
+            },
+            "display-xml": {
+                "name": "display-xml",
+                "MainFunction": {}
+            },
+            "displayreferences": {
+                "name": "displayReferences",
+                "MainFunction": {}
+            },
+            "exporttoexcel": {
+                "name": "exportToExcel",
+                "MainFunction": {},
+                "GlobalInitFunction": {},
+                "GlobalFinishFunction": {},
+                "args": {
+                    "filename": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "additionalFields": {
+                        "type": "pipeSeparatedList",
+                        "subtype": "string",
+                        "default": "*NONE*",
+                        "choices": [
+                            "WhereUsed",
+                            "UsedInLocation"
+                        ],
+                        "help": "pipe(|) separated list of additional field to include in the report. The following is available:\n  - WhereUsed : list places where object is used (rules, groups ...)\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n"
+                    }
+                }
+            }
+        },
+        "filter": {
+            "action": {
+                "operators": {
+                    "eq": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% reset-both )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "location": {
+                "operators": {
+                    "is": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% shared )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "regex": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% \/shared\/)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.child.of": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches \/ is child the one specified in argument",
+                        "ci": {
+                            "fString": "(%PROP%  Datacenter-Firewalls)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.parent.of": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches \/ is parent the one specified in argument",
+                        "ci": {
+                            "fString": "(%PROP%  Datacenter-Firewalls)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "log-level": {
+                "operators": {
+                    "eq": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% default )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "name": {
+                "operators": {
+                    "is.in.file": {
+                        "Function": {},
+                        "arg": true
+                    },
+                    "eq": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% grp.shared-group1)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "eq.nocase": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% grp.shared-group1)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "contains": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% grp)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "regex": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% \/-group\/)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "object": {
+                "operators": {
+                    "is.unused": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.tmp": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "packet-capture": {
+                "operators": {
+                    "eq": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% single-packet )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "refcount": {
+                "operators": {
+                    ">,<,=,!": {
+                        "eval": "$object->countReferences() !operator! !value!",
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% 1)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "reflocation": {
+                "operators": {
+                    "is": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% shared )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.only": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% shared )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "refstore": {
+                "operators": {
+                    "is": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% rulestore )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "reftype": {
+                "operators": {
+                    "is": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% securityrule )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            }
+        }
+    },
     "download-predefined": {
         "name": "download-predefined",
         "action": [],
         "filter": []
+    },
+    "edl": {
+        "name": "edl",
+        "action": {
+            "delete": {
+                "name": "delete",
+                "MainFunction": {}
+            },
+            "deleteforce": {
+                "name": "deleteForce",
+                "MainFunction": {}
+            },
+            "display": {
+                "name": "display",
+                "MainFunction": {}
+            },
+            "displayreferences": {
+                "name": "displayReferences",
+                "MainFunction": {}
+            },
+            "exporttoexcel": {
+                "name": "exportToExcel",
+                "MainFunction": {},
+                "GlobalInitFunction": {},
+                "GlobalFinishFunction": {},
+                "args": {
+                    "filename": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "additionalFields": {
+                        "type": "pipeSeparatedList",
+                        "subtype": "string",
+                        "default": "*NONE*",
+                        "choices": [
+                            "WhereUsed",
+                            "UsedInLocation"
+                        ],
+                        "help": "pipe(|) separated list of additional field to include in the report. The following is available:\n  - WhereUsed : list places where object is used (rules, groups ...)\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n"
+                    }
+                }
+            },
+            "name-addprefix": {
+                "name": "name-addPrefix",
+                "MainFunction": {},
+                "args": {
+                    "prefix": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                }
+            },
+            "name-addsuffix": {
+                "name": "name-addSuffix",
+                "MainFunction": {},
+                "args": {
+                    "suffix": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                }
+            },
+            "name-removeprefix": {
+                "name": "name-removePrefix",
+                "MainFunction": {},
+                "args": {
+                    "prefix": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                }
+            },
+            "name-removesuffix": {
+                "name": "name-removeSuffix",
+                "MainFunction": {},
+                "args": {
+                    "suffix": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                }
+            },
+            "name-tolowercase": {
+                "name": "name-toLowerCase",
+                "MainFunction": {}
+            },
+            "name-toucwords": {
+                "name": "name-toUCWords",
+                "MainFunction": {}
+            },
+            "name-touppercase": {
+                "name": "name-toUpperCase",
+                "MainFunction": {}
+            }
+        },
+        "filter": {
+            "expire.in.days": {
+                "operators": {
+                    ">,<,=,!": {
+                        "Function": {},
+                        "arg": true
+                    }
+                }
+            },
+            "location": {
+                "operators": {
+                    "is": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% shared )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "regex": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% \/shared\/)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.child.of": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches \/ is child the one specified in argument",
+                        "ci": {
+                            "fString": "(%PROP%  Datacenter-Firewalls)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.parent.of": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches \/ is parent the one specified in argument",
+                        "ci": {
+                            "fString": "(%PROP%  Datacenter-Firewalls)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "name": {
+                "operators": {
+                    "is.in.file": {
+                        "Function": {},
+                        "arg": true
+                    },
+                    "eq": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% grp.shared-group1)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "eq.nocase": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% grp.shared-group1)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "contains": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% grp)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "regex": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% \/-group\/)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "object": {
+                "operators": {
+                    "is.unused": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.expired": {
+                        "Function": {},
+                        "arg": false
+                    },
+                    "expire.in.days": {
+                        "Function": {},
+                        "arg": true
+                    },
+                    "is.tmp": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "refcount": {
+                "operators": {
+                    ">,<,=,!": {
+                        "eval": "$object->countReferences() !operator! !value!",
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% 1)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "reflocation": {
+                "operators": {
+                    "is": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% shared )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.only": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% shared )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "refstore": {
+                "operators": {
+                    "is": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% rulestore )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "reftype": {
+                "operators": {
+                    "is": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% securityrule )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "type": {
+                "operators": {
+                    "is.ip": {
+                        "Function": {},
+                        "arg": false
+                    },
+                    "is.url": {
+                        "Function": {},
+                        "arg": false
+                    },
+                    "is.domain": {
+                        "Function": {},
+                        "arg": false
+                    },
+                    "is.imei": {
+                        "Function": {},
+                        "arg": false
+                    },
+                    "is.imsi": {
+                        "Function": {},
+                        "arg": false
+                    },
+                    "is.predefined-ip": {
+                        "Function": {},
+                        "arg": false
+                    },
+                    "is.predefined-url": {
+                        "Function": {},
+                        "arg": false
+                    }
+                }
+            },
+            "url": {
+                "operators": {
+                    "regex": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% \/-group\/)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            }
+        }
     },
     "gcp": {
         "name": "gcp",
@@ -2274,9 +2885,45 @@ var subjectObject =
             "displayreferences": {
                 "name": "displayreferences",
                 "MainFunction": {}
+            },
+            "exporttoexcel": {
+                "name": "exportToExcel",
+                "MainFunction": {},
+                "GlobalInitFunction": {},
+                "GlobalFinishFunction": {},
+                "args": {
+                    "filename": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "additionalFields": {
+                        "type": "pipeSeparatedList",
+                        "subtype": "string",
+                        "default": "*NONE*",
+                        "choices": [
+                            "WhereUsed",
+                            "UsedInLocation",
+                            "ResolveIP",
+                            "NestedMembers"
+                        ],
+                        "help": "pipe(|) separated list of additional fields (ie: Arg1|Arg2|Arg3...) to include in the report. The following is available:\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n  - WhereUsed : list places where object is used (rules, groups ...)\n"
+                    }
+                }
             }
         },
         "filter": {
+            "ipv4": {
+                "operators": {
+                    "includes": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% ethernet1\/1)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
             "name": {
                 "operators": {
                     "eq": {
@@ -2284,6 +2931,14 @@ var subjectObject =
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% ethernet1\/1)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "regex": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% \/tcp\/)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -2558,7 +3213,7 @@ var subjectObject =
                     "stringFormula": {
                         "type": "string",
                         "default": "*nodefault*",
-                        "help": "This string is used to compose a name. You can use the following aliases :\n  - $$current.name$$ : current name of the object\n"
+                        "help": "This string is used to compose a name. You can use the following aliases :\n  - $$current.name$$ : current name of the object\n  - $$comma$$ or $$forwardslash$$ or $$colon$$ or $$pipe$$ or $$newline$$ or $$space$$ ; example 'actions=description-append:$$comma$$word1'"
                     },
                     "newline": {
                         "type": "bool",
@@ -2572,7 +3227,8 @@ var subjectObject =
                 "args": {
                     "text": {
                         "type": "string",
-                        "default": "*nodefault*"
+                        "default": "*nodefault*",
+                        "help": "This string is used to compose a name. You can use the following aliases :\n  - $$comma$$ or $$forwardslash$$ or $$colon$$ or $$pipe$$ or $$newline$$ or $$space$$ ; example 'actions=description-prepend:$$comma$$word1'"
                     },
                     "newline": {
                         "type": "bool",
@@ -2593,7 +3249,7 @@ var subjectObject =
                         "default": ""
                     }
                 },
-                "help": "possible variable $$comma$$ or $$forwardslash$$ or $$colon$$ or $$pipe$$ or $$newline$$ or $$appRID#$$; example \"actions=description-Replace-Character:$$comma$$word1\""
+                "help": "possible variable $$comma$$ or $$forwardslash$$ or $$colon$$ or $$pipe$$ or $$newline$$ or $$space$$ or $$appRID#$$; example \"actions=description-Replace-Character:$$comma$$word1\""
             },
             "disabled-set": {
                 "name": "disabled-Set",
@@ -2633,7 +3289,7 @@ var subjectObject =
                             "ApplicationSeen",
                             "HitCount"
                         ],
-                        "help": "pipe(|) separated list of additional field to include in the report. The following is available:\n  - ResolveAddressSummary : fields with address objects will be resolved to IP addressed and summarized in a new column)\n  - ResolveServiceSummary : fields with service objects will be resolved to their value and summarized in a new column)\n  - ResolveServiceAppDefaultSummary : fields with application objects will be resolved to their service default value and summarized in a new column)\n  - ResolveApplicationSummary : fields with application objects will be resolved to their category and risk)\n  - ResolveScheduleSummary : fields with schedule objects will be resolved to their expire time)\n  - ApplicationSeen : all App-ID seen on the Device SecurityRule will be listed\n  - HitCount : Rule - 'first-hit' - 'last-hit' - 'hit-count' - 'rule-creation' will be listed"
+                        "help": "example: 'actions=display:HitCount|ApplicationSeen'\npipe(|) separated list of additional field to include in the report. The following is available:\n  - ResolveAddressSummary : fields with address objects will be resolved to IP addressed and summarized in a new column)\n  - ResolveServiceSummary : fields with service objects will be resolved to their value and summarized in a new column)\n  - ResolveServiceAppDefaultSummary : fields with application objects will be resolved to their service default value and summarized in a new column)\n  - ResolveApplicationSummary : fields with application objects will be resolved to their category and risk)\n  - ResolveScheduleSummary : fields with schedule objects will be resolved to their expire time)\n  - ApplicationSeen : all App-ID seen on the Device SecurityRule will be listed\n  - HitCount : Rule - 'first-hit' - 'last-hit' - 'hit-count' - 'rule-creation' will be listed"
                     }
                 }
             },
@@ -2704,6 +3360,40 @@ var subjectObject =
                     }
                 },
                 "help": "adds all objects to the 'DESTINATION' field of a rule, if that field was set to 'ANY' it will then be replaced by these objects defined in file."
+            },
+            "dst-calculate-by-zones": {
+                "name": "dst-calculate-by-zones",
+                "section": "address",
+                "MainFunction": {},
+                "args": {
+                    "mode": {
+                        "type": "string",
+                        "default": "append",
+                        "choices": [
+                            "replace",
+                            "append",
+                            "show",
+                            "unneeded-tag-add"
+                        ],
+                        "help": "Will determine what to do with resolved zones : show them, replace them in the rule , only append them (removes none but adds missing ones) or tag-add for unneeded zones"
+                    },
+                    "virtualRouter": {
+                        "type": "string",
+                        "default": "*autodetermine*",
+                        "help": "Can optionally be provided if script cannot find which virtualRouter it should be using (ie: there are several VR in same VSYS)"
+                    },
+                    "template": {
+                        "type": "string",
+                        "default": "*notPanorama*",
+                        "help": "When you are using Panorama then 1 or more templates could apply to a DeviceGroup, in such a case you may want to specify which Template name to use.\nBeware that if the Template is overriden or if you are not using Templates then you will want load firewall config in lieu of specifying a template. \nFor this, give value 'api@XXXXX' where XXXXX is serial number of the Firewall device number you want to use to calculate zones.\nIf you don't want to use API but have firewall config file on your computer you can then specify file@\/folderXYZ\/config.xml."
+                    },
+                    "vsys": {
+                        "type": "string",
+                        "default": "*autodetermine*",
+                        "help": "specify vsys when script cannot autodetermine it or when you when to manually override"
+                    }
+                },
+                "help": "This Action will use routing tables to resolve zones. When the program cannot find all parameters by itself (like vsys or template name you will have ti manually provide them.\n\nUsage examples:\n\n    - xxx-calculate-zones\n    - xxx-calculate-zones:replace\n    - xxx-calculate-zones:append,vr1\n    - xxx-calculate-zones:replace,vr3,api@0011C890C,vsys1\n    - xxx-calculate-zones:show,vr5,Datacenter_template\n    - xxx-calculate-zones:replace,vr3,file@firewall.xml,vsys1\n"
             },
             "dst-negate-set": {
                 "name": "dst-Negate-Set",
@@ -2800,7 +3490,7 @@ var subjectObject =
                             "ApplicationSeen",
                             "HitCount"
                         ],
-                        "help": "pipe(|) separated list of additional field to include in the report. The following is available:\n  - ResolveAddressSummary : fields with address objects will be resolved to IP addressed and summarized in a new column\n  - ResolveServiceSummary : fields with service objects will be resolved to their value and summarized in a new column\n  - ResolveServiceAppDefaultSummary : fields with application objects will be resolved to their service default value and summarized in a new column\n  - ResolveApplicationSummary : fields with application objects will be resolved to their category and risk\n  - ResolveScheduleSummary : fields with schedule objects will be resolved to their expire time\n  - ApplicationSeen : all App-ID seen on the Device SecurityRule will be listed\n  - HitCount : Rule - 'first-hit' - 'last-hit' - 'hit-count' - 'rule-creation will be listed\n"
+                        "help": "example: 'actions=exporttoexcel:file.html,HitCount|ApplicationSeen'\npipe(|) separated list of additional field to include in the report. The following is available:\n  - ResolveAddressSummary : fields with address objects will be resolved to IP addressed and summarized in a new column\n  - ResolveServiceSummary : fields with service objects will be resolved to their value and summarized in a new column\n  - ResolveServiceAppDefaultSummary : fields with application objects will be resolved to their service default value and summarized in a new column\n  - ResolveApplicationSummary : fields with application objects will be resolved to their category and risk\n  - ResolveScheduleSummary : fields with schedule objects will be resolved to their expire time\n  - ApplicationSeen : all App-ID seen on the Device SecurityRule will be listed\n  - HitCount : Rule - 'first-hit' - 'last-hit' - 'hit-count' - 'rule-creation will be listed\n"
                     }
                 }
             },
@@ -3428,6 +4118,40 @@ var subjectObject =
                     }
                 },
                 "help": "adds all objects to the 'SOURCE' field of a rule, if that field was set to 'ANY' it will then be replaced by these objects defined in file."
+            },
+            "src-calculate-by-zones": {
+                "name": "src-calculate-by-zones",
+                "section": "address",
+                "MainFunction": {},
+                "args": {
+                    "mode": {
+                        "type": "string",
+                        "default": "append",
+                        "choices": [
+                            "replace",
+                            "append",
+                            "show",
+                            "unneeded-tag-add"
+                        ],
+                        "help": "Will determine what to do with resolved zones : show them, replace them in the rule , only append them (removes none but adds missing ones) or tag-add for unneeded zones"
+                    },
+                    "virtualRouter": {
+                        "type": "string",
+                        "default": "*autodetermine*",
+                        "help": "Can optionally be provided if script cannot find which virtualRouter it should be using (ie: there are several VR in same VSYS)"
+                    },
+                    "template": {
+                        "type": "string",
+                        "default": "*notPanorama*",
+                        "help": "When you are using Panorama then 1 or more templates could apply to a DeviceGroup, in such a case you may want to specify which Template name to use.\nBeware that if the Template is overriden or if you are not using Templates then you will want load firewall config in lieu of specifying a template. \nFor this, give value 'api@XXXXX' where XXXXX is serial number of the Firewall device number you want to use to calculate zones.\nIf you don't want to use API but have firewall config file on your computer you can then specify file@\/folderXYZ\/config.xml."
+                    },
+                    "vsys": {
+                        "type": "string",
+                        "default": "*autodetermine*",
+                        "help": "specify vsys when script cannot autodetermine it or when you when to manually override"
+                    }
+                },
+                "help": "This Action will use routing tables to resolve zones. When the program cannot find all parameters by itself (like vsys or template name you will have ti manually provide them.\n\nUsage examples:\n\n    - xxx-calculate-zones\n    - xxx-calculate-zones:replace\n    - xxx-calculate-zones:append,vr1\n    - xxx-calculate-zones:replace,vr3,api@0011C890C,vsys1\n    - xxx-calculate-zones:show,vr5,Datacenter_template\n    - xxx-calculate-zones:replace,vr3,file@firewall.xml,vsys1\n"
             },
             "src-dst-swap": {
                 "name": "src-dst-swap",
@@ -4201,6 +4925,10 @@ var subjectObject =
                         "arg": true,
                         "argObjectFinder": "$objectFind=null;\n$objectFind=$object->destination->parentCentralStore->find('!value!');"
                     },
+                    "has.edl": {
+                        "eval": {},
+                        "arg": false
+                    },
                     "has.only": {
                         "eval": {},
                         "arg": true,
@@ -4753,6 +5481,14 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
+                    "group.is.undefined": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
                     "av-profile.is": {
                         "Function": {},
                         "arg": true,
@@ -5122,6 +5858,10 @@ var subjectObject =
                         "eval": {},
                         "arg": true,
                         "argObjectFinder": "$objectFind=null;\n$objectFind=$object->source->parentCentralStore->find('!value!');"
+                    },
+                    "has.edl": {
+                        "eval": {},
+                        "arg": false
                     },
                     "has.only": {
                         "eval": {},
@@ -5826,6 +6566,10 @@ var subjectObject =
                 "name": "display",
                 "MainFunction": {}
             },
+            "display-xml": {
+                "name": "display-xml",
+                "MainFunction": {}
+            },
             "displayreferences": {
                 "name": "displayReferences",
                 "MainFunction": {}
@@ -5846,9 +6590,11 @@ var subjectObject =
                         "default": "*NONE*",
                         "choices": [
                             "WhereUsed",
-                            "UsedInLocation"
+                            "UsedInLocation",
+                            "TotalUse",
+                            "BestPractice"
                         ],
-                        "help": "pipe(|) separated list of additional fields (ie: Arg1|Arg2|Arg3...) to include in the report. The following is available:\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n  - WhereUsed : list places where object is used (rules, groups ...)\n"
+                        "help": "pipe(|) separated list of additional fields (ie: Arg1|Arg2|Arg3...) to include in the report. The following is available:\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n  - WhereUsed : list places where object is used (rules, groups ...)\n  - TotalUse : list a counter how often this object is used\n  - BestPractice : show if BestPractice is configured\n"
                     }
                 }
             },
@@ -5904,6 +6650,28 @@ var subjectObject =
                 "name": "name-toUpperCase",
                 "MainFunction": {}
             },
+            "spyware.alert-only-set": {
+                "name": "spyware.alert-only-set",
+                "MainFunction": {},
+                "args": {
+                    "has-DNS-license": {
+                        "type": "bool",
+                        "default": true,
+                        "help": "define correct AS Profile setting if License is available"
+                    }
+                }
+            },
+            "spyware.best-practice-set": {
+                "name": "spyware.best-practice-set",
+                "MainFunction": {},
+                "args": {
+                    "has-DNS-license": {
+                        "type": "bool",
+                        "default": true,
+                        "help": "define correct AS Profile setting if License is available"
+                    }
+                }
+            },
             "url-filtering-action-set": {
                 "name": "url-filtering-action-set",
                 "MainFunction": {},
@@ -5917,9 +6685,43 @@ var subjectObject =
                         "default": "false"
                     }
                 }
+            },
+            "url.alert-only-set": {
+                "name": "url.alert-only-set",
+                "MainFunction": {}
+            },
+            "virus.alert-only-set": {
+                "name": "virus.alert-only-set",
+                "MainFunction": {}
+            },
+            "virus.best-practice-set": {
+                "name": "virus.best-practice-set",
+                "MainFunction": {}
+            },
+            "vulnerability.alert-only-set": {
+                "name": "vulnerability.alert-only-set",
+                "MainFunction": {}
+            },
+            "vulnerability.best-practice-set": {
+                "name": "vulnerability.best-practice-set",
+                "MainFunction": {}
             }
         },
         "filter": {
+            "action": {
+                "operators": {
+                    "eq": {
+                        "Function": {},
+                        "arg": true,
+                        "deprecated": "this filter \"action eq XYZ\" is deprecated, you should use \"filter=(threat-rule has.from.query subquery1) subquery1=(action eq XYZ)\" instead!",
+                        "ci": {
+                            "fString": "(%PROP% reset-both )",
+                            "input": "input\/panorama-8.0.xml"
+                        },
+                        "help": "'securityprofiletype=spyware,vulnerability'"
+                    }
+                }
+            },
             "alert": {
                 "operators": {
                     "has": {
@@ -5928,7 +6730,8 @@ var subjectObject =
                         "ci": {
                             "fString": "(%PROP% securityrule )",
                             "input": "input\/panorama-8.0.xml"
-                        }
+                        },
+                        "help": "'securityprofiletype=url'"
                     }
                 }
             },
@@ -5940,7 +6743,35 @@ var subjectObject =
                         "ci": {
                             "fString": "(%PROP% securityrule )",
                             "input": "input\/panorama-8.0.xml"
-                        }
+                        },
+                        "help": "'securityprofiletype=url'"
+                    }
+                }
+            },
+            "av.action": {
+                "operators": {
+                    "is.best-practice": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=virus'"
+                    }
+                }
+            },
+            "av.mlav-action": {
+                "operators": {
+                    "is.best-practice": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=virus'"
+                    }
+                }
+            },
+            "av.wildfire-action": {
+                "operators": {
+                    "is.best-practice": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=virus'"
                     }
                 }
             },
@@ -5952,7 +6783,53 @@ var subjectObject =
                         "ci": {
                             "fString": "(%PROP% securityrule )",
                             "input": "input\/panorama-8.0.xml"
-                        }
+                        },
+                        "help": "'securityprofiletype=url'"
+                    }
+                }
+            },
+            "category": {
+                "operators": {
+                    "eq": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% brute-force )",
+                            "deprecated": "this filter \"category eq XYZ\" is deprecated, you should use \"filter=(threat-rule has.from.query subquery1) subquery1=(category eq XYZ)\" instead!",
+                            "input": "input\/panorama-8.0.xml"
+                        },
+                        "help": "'securityprofiletype=spyware,vulnerability'"
+                    }
+                }
+            },
+            "cloud-inline-analysis": {
+                "operators": {
+                    "is.enabled": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP% client )",
+                            "input": "input\/panorama-8.0.xml"
+                        },
+                        "help": "'securityprofiletype=spyware,vulnerability'"
+                    },
+                    "is.best-practice": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=spyware,vulnerability'"
+                    }
+                }
+            },
+            "cloud-inline-analysis.action": {
+                "operators": {
+                    "has": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% client )",
+                            "input": "input\/panorama-8.0.xml"
+                        },
+                        "help": "'securityprofiletype=spyware,vulnerability'"
                     }
                 }
             },
@@ -5964,7 +6841,78 @@ var subjectObject =
                         "ci": {
                             "fString": "(%PROP% securityrule )",
                             "input": "input\/panorama-8.0.xml"
-                        }
+                        },
+                        "help": "'securityprofiletype=url'"
+                    }
+                }
+            },
+            "dns-list": {
+                "operators": {
+                    "is.best-practice": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=spyware' e.g. 'filter=(dns-list is.best-practice)'"
+                    }
+                }
+            },
+            "dns-list.action": {
+                "operators": {
+                    "has": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% client )",
+                            "input": "input\/panorama-8.0.xml"
+                        },
+                        "help": "'securityprofiletype=spyware' e.g. 'filter=(dns-list.action has sinkhole)' possible values: alert\/allow\/block\/sinkhole"
+                    }
+                }
+            },
+            "dns-list.packet-capture": {
+                "operators": {
+                    "has": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% client )",
+                            "input": "input\/panorama-8.0.xml"
+                        },
+                        "help": "'securityprofiletype=spyware' e.g. 'filter=(dns-list.packet-capture has disable)' possible values: disable\/single-packet\/extended-capture"
+                    }
+                }
+            },
+            "dns-rule": {
+                "operators": {
+                    "has.from.query": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "'securityprofiletype=spyware' example: 'filter=(dns-rule has.from.query subquery1)' 'subquery1=(action eq alert)'"
+                    }
+                }
+            },
+            "dns-security.action": {
+                "operators": {
+                    "has": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% client )",
+                            "input": "input\/panorama-8.0.xml"
+                        },
+                        "help": "'securityprofiletype=spyware' e.g. 'filter=(dns-security.action has sinkhole)' possible values: default\/allow\/block\/sinkhole"
+                    }
+                }
+            },
+            "dns-security.packet-capture": {
+                "operators": {
+                    "has": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% client )",
+                            "input": "input\/panorama-8.0.xml"
+                        },
+                        "help": "'securityprofiletype=spyware' e.g. 'filter=(dns-security.packet-capture has disable)' possible values: disable\/single-packet\/extended-capture"
                     }
                 }
             },
@@ -5976,14 +6924,43 @@ var subjectObject =
                         "ci": {
                             "fString": "(%PROP% securityrule )",
                             "input": "input\/panorama-8.0.xml"
-                        }
+                        },
+                        "help": "'securityprofiletype=spyware,vulnerability'"
                     },
                     "is.set": {
                         "Function": {},
                         "ci": {
                             "fString": "(%PROP% securityrule )",
                             "input": "input\/panorama-8.0.xml"
-                        }
+                        },
+                        "help": "'securityprofiletype=spyware,vulnerability'"
+                    }
+                }
+            },
+            "exempt-ip.count": {
+                "operators": {
+                    ">,<,=,!": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% rulestore )",
+                            "input": "input\/panorama-8.0.xml"
+                        },
+                        "help": "'securityprofiletype=spyware,vulnerability'"
+                    }
+                }
+            },
+            "host": {
+                "operators": {
+                    "eq": {
+                        "Function": {},
+                        "arg": true,
+                        "deprecated": "this filter \"host eq XYZ\" is deprecated, you should use \"filter=(threat-rule has.from.query subquery1) subquery1=(host eq XYZ)\" instead!",
+                        "ci": {
+                            "fString": "(%PROP% client )",
+                            "input": "input\/panorama-8.0.xml"
+                        },
+                        "help": "'securityprofiletype=spyware,vulnerability'"
                     }
                 }
             },
@@ -6093,7 +7070,22 @@ var subjectObject =
                         "ci": {
                             "fString": "(%PROP% securityrule )",
                             "input": "input\/panorama-8.0.xml"
-                        }
+                        },
+                        "help": "'securityprofiletype=url'"
+                    }
+                }
+            },
+            "packet-capture": {
+                "operators": {
+                    "eq": {
+                        "Function": {},
+                        "arg": true,
+                        "deprecated": "this filter \"packet-capture eq XYZ\" is deprecated, you should use \"filter=(threat-rule has.from.query subquery1) subquery1=(packet-capture eq XYZ)\" instead!",
+                        "ci": {
+                            "fString": "(%PROP% single-packet )",
+                            "input": "input\/panorama-8.0.xml"
+                        },
+                        "help": "'securityprofiletype=spyware,vulnerability'"
                     }
                 }
             },
@@ -6138,6 +7130,14 @@ var subjectObject =
                             "fString": "(%PROP% rulestore )",
                             "input": "input\/panorama-8.0.xml"
                         }
+                    },
+                    "is.only": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% rulestore )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
                     }
                 }
             },
@@ -6150,6 +7150,29 @@ var subjectObject =
                             "fString": "(%PROP% securityrule )",
                             "input": "input\/panorama-8.0.xml"
                         }
+                    }
+                }
+            },
+            "severity": {
+                "operators": {
+                    "eq": {
+                        "Function": {},
+                        "arg": true,
+                        "deprecated": "this filter \"severity eq XYZ\" is deprecated, you should use \"filter=(threat-rule has.from.query subquery1) subquery1=(severity eq XYZ)\" instead!",
+                        "ci": {
+                            "fString": "(%PROP% critical )",
+                            "input": "input\/panorama-8.0.xml"
+                        },
+                        "help": "'securityprofiletype=spyware,vulnerability'"
+                    }
+                }
+            },
+            "threat-rule": {
+                "operators": {
+                    "has.from.query": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "'securityprofiletype=spyware,vulnerability' example: 'filter=(threat-rule has.from.query subquery1)' 'subquery1=(action eq alert)'"
                     }
                 }
             }
@@ -6182,9 +7205,10 @@ var subjectObject =
                         "default": "*NONE*",
                         "choices": [
                             "WhereUsed",
-                            "UsedInLocation"
+                            "UsedInLocation",
+                            "TotalUse"
                         ],
-                        "help": "pipe(|) separated list of additional field to include in the report. The following is available:\n  - WhereUsed : list places where object is used (rules, groups ...)\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n"
+                        "help": "pipe(|) separated list of additional field to include in the report. The following is available:\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n  - WhereUsed : list places where object is used (rules, groups ...)\n  - TotalUse : list a counter how often this object is used\n"
                     }
                 }
             },
@@ -6712,6 +7736,18 @@ var subjectObject =
                 },
                 "help": ""
             },
+            "name-tolowercase": {
+                "name": "name-toLowerCase",
+                "MainFunction": {}
+            },
+            "name-toucwords": {
+                "name": "name-toUCWords",
+                "MainFunction": {}
+            },
+            "name-touppercase": {
+                "name": "name-toUpperCase",
+                "MainFunction": {}
+            },
             "removewhereused": {
                 "name": "removeWhereUsed",
                 "MainFunction": {},
@@ -6726,6 +7762,10 @@ var subjectObject =
                         ]
                     }
                 }
+            },
+            "replacebymembers": {
+                "name": "replaceByMembers",
+                "MainFunction": {}
             },
             "replacebymembersanddelete": {
                 "name": "replaceByMembersAndDelete",
@@ -7897,6 +8937,10 @@ var subjectObject =
                 "MainFunction": {},
                 "GlobalFinishFunction": {}
             },
+            "display-xml": {
+                "name": "display-xml",
+                "MainFunction": {}
+            },
             "displayreferences": {
                 "name": "displayReferences",
                 "MainFunction": {}
@@ -7961,6 +9005,38 @@ var subjectObject =
                     }
                 }
             },
+            "max-engine-version": {
+                "operators": {
+                    ">,<,=,!": {
+                        "eval": "!empty($object->max_engine_version) && $object->max_engine_version !operator! !value!",
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% 1)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.empty": {
+                        "eval": "empty($object->max_engine_version)",
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP% 1)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "min-engine-version": {
+                "operators": {
+                    ">,<,=,!": {
+                        "eval": "!empty($object->min_engine_version) && $object->min_engine_version !operator! !value!",
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% 1)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
             "name": {
                 "operators": {
                     "eq": {
@@ -7976,6 +9052,46 @@ var subjectObject =
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% -)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "object": {
+                "operators": {
+                    "is.disabled": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP% ftp)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.unused": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "has.exception": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "refobject.ip_exemption.count": {
+                "operators": {
+                    ">,<,=,!": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -8004,6 +9120,26 @@ var subjectObject =
                         }
                     }
                 }
+            },
+            "type": {
+                "operators": {
+                    "is.vulnerability": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP% ftp)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.spyware": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP% ftp)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
             }
         }
     },
@@ -8011,6 +9147,305 @@ var subjectObject =
         "name": "threat-log",
         "action": [],
         "filter": []
+    },
+    "threat-rule": {
+        "name": "threat-rule",
+        "action": {
+            "display": {
+                "name": "display",
+                "MainFunction": {}
+            },
+            "display-xml": {
+                "name": "display-xml",
+                "MainFunction": {}
+            },
+            "displayreferences": {
+                "name": "displayReferences",
+                "MainFunction": {}
+            },
+            "exporttoexcel": {
+                "name": "exportToExcel",
+                "MainFunction": {},
+                "GlobalInitFunction": {},
+                "GlobalFinishFunction": {},
+                "args": {
+                    "filename": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "additionalFields": {
+                        "type": "pipeSeparatedList",
+                        "subtype": "string",
+                        "default": "*NONE*",
+                        "choices": [
+                            "WhereUsed",
+                            "UsedInLocation"
+                        ],
+                        "help": "pipe(|) separated list of additional field to include in the report. The following is available:\n  - WhereUsed : list places where object is used (rules, groups ...)\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n"
+                    }
+                }
+            }
+        },
+        "filter": {
+            "action": {
+                "operators": {
+                    "eq": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% reset-both )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "category": {
+                "operators": {
+                    "eq": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% brute-force )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.any": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP% brute-force )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "host": {
+                "operators": {
+                    "eq": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% client )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.any": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% client )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "location": {
+                "operators": {
+                    "is": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% shared )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "regex": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% \/shared\/)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.child.of": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches \/ is child the one specified in argument",
+                        "ci": {
+                            "fString": "(%PROP%  Datacenter-Firewalls)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.parent.of": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches \/ is parent the one specified in argument",
+                        "ci": {
+                            "fString": "(%PROP%  Datacenter-Firewalls)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "name": {
+                "operators": {
+                    "is.in.file": {
+                        "Function": {},
+                        "arg": true
+                    },
+                    "eq": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% grp.shared-group1)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "eq.nocase": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% grp.shared-group1)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "contains": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% grp)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "regex": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% \/-group\/)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "object": {
+                "operators": {
+                    "is.unused": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.tmp": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "packet-capture": {
+                "operators": {
+                    "eq": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% single-packet )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "refcount": {
+                "operators": {
+                    ">,<,=,!": {
+                        "eval": "$object->countReferences() !operator! !value!",
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% 1)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "reflocation": {
+                "operators": {
+                    "is": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% shared )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.only": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% shared )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "refstore": {
+                "operators": {
+                    "is": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% rulestore )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "reftype": {
+                "operators": {
+                    "is": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% securityrule )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "severity": {
+                "operators": {
+                    "has": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% critical )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.any": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP% critical )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "threatname": {
+                "operators": {
+                    "eq": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% client )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.any": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP% client )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            }
+        }
     },
     "traffic-log": {
         "name": "traffic-log",
@@ -8420,6 +9855,14 @@ var subjectObject =
                             "fString": "(%PROP% securityrule )",
                             "input": "input\/panorama-8.0.xml"
                         }
+                    }
+                }
+            },
+            "type": {
+                "operators": {
+                    "is": {
+                        "Function": {},
+                        "arg": true
                     }
                 }
             },

@@ -1,5 +1,16 @@
 <?php
 
+//Todo: swaschkut 20240725
+/*
+/*
+ii) For AV Actions tab 3 BP settings
+a) Signature Action = reset-both for all decoders
+b) Wildfire Signature Action = reset-both for all decoders
+c) Wildfire Inline ML Signature Action = reset-both for all decoders
+** want to break into 3 components because some customers may want to ignore one or more of these
+ */
+
+
 // <editor-fold desc=" ***** SecProf filters *****" defaultstate="collapsed" >
 RQuery::$defaultFilters['securityprofile']['refcount']['operators']['>,<,=,!'] = array(
     'eval' => '$object->countReferences() !operator! !value!',
@@ -359,6 +370,31 @@ RQuery::$defaultFilters['securityprofile']['refstore']['operators']['is'] = arra
         'input' => 'input/panorama-8.0.xml'
     )
 );
+RQuery::$defaultFilters['securityprofile']['refstore']['operators']['is.only'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        $value = $context->value;
+        $value = strtolower($value);
+
+        $context->object->ReferencesStoreValidation($value);
+
+        $refstore = $context->object->getReferencesStore();
+
+        $return = FALSE;
+        if( array_key_exists($value, $refstore) )
+            $return = TRUE;
+
+        if( count($refstore) == 1 && $return )
+            return TRUE;
+        else
+            return FALSE;
+
+    },
+    'arg' => TRUE,
+    'ci' => array(
+        'fString' => '(%PROP% rulestore )',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
 RQuery::$defaultFilters['securityprofile']['reftype']['operators']['is'] = array(
     'Function' => function (SecurityProfileRQueryContext $context) {
         $value = $context->value;
@@ -387,17 +423,21 @@ RQuery::$defaultFilters['securityprofile']['alert']['operators']['has'] = array(
         $value = $context->value;
         $value = strtolower($value);
 
+        if( !$object->secprof_type == 'url-filtering'  )
+            return null;
+
         if( array_key_exists($value, $object->alert) )
             return TRUE;
 
-        return null;
+        return FALSE;
 
     },
     'arg' => TRUE,
     'ci' => array(
         'fString' => '(%PROP% securityrule )',
         'input' => 'input/panorama-8.0.xml'
-    )
+    ),
+    'help' => "'securityprofiletype=url'"
 );
 
 RQuery::$defaultFilters['securityprofile']['block']['operators']['has'] = array(
@@ -405,6 +445,9 @@ RQuery::$defaultFilters['securityprofile']['block']['operators']['has'] = array(
         $object = $context->object;
         $value = $context->value;
         $value = strtolower($value);
+
+        if( !$object->secprof_type == 'url-filtering'  )
+            return null;
 
         if( array_key_exists($value, $object->block) )
             return TRUE;
@@ -416,7 +459,8 @@ RQuery::$defaultFilters['securityprofile']['block']['operators']['has'] = array(
     'ci' => array(
         'fString' => '(%PROP% securityrule )',
         'input' => 'input/panorama-8.0.xml'
-    )
+    ),
+    'help' => "'securityprofiletype=url'"
 );
 
 RQuery::$defaultFilters['securityprofile']['allow']['operators']['has'] = array(
@@ -424,6 +468,9 @@ RQuery::$defaultFilters['securityprofile']['allow']['operators']['has'] = array(
         $object = $context->object;
         $value = $context->value;
         $value = strtolower($value);
+
+        if( !$object->secprof_type == 'url-filtering'  )
+            return null;
 
         if( array_key_exists($value, $object->allow) )
             return TRUE;
@@ -435,7 +482,8 @@ RQuery::$defaultFilters['securityprofile']['allow']['operators']['has'] = array(
     'ci' => array(
         'fString' => '(%PROP% securityrule )',
         'input' => 'input/panorama-8.0.xml'
-    )
+    ),
+    'help' => "'securityprofiletype=url'"
 );
 
 RQuery::$defaultFilters['securityprofile']['continue']['operators']['has'] = array(
@@ -443,6 +491,9 @@ RQuery::$defaultFilters['securityprofile']['continue']['operators']['has'] = arr
         $object = $context->object;
         $value = $context->value;
         $value = strtolower($value);
+
+        if( !$object->secprof_type == 'url-filtering'  )
+            return null;
 
         if( array_key_exists($value, $object->continue) )
             return TRUE;
@@ -454,7 +505,8 @@ RQuery::$defaultFilters['securityprofile']['continue']['operators']['has'] = arr
     'ci' => array(
         'fString' => '(%PROP% securityrule )',
         'input' => 'input/panorama-8.0.xml'
-    )
+    ),
+    'help' => "'securityprofiletype=url'"
 );
 
 RQuery::$defaultFilters['securityprofile']['override']['operators']['has'] = array(
@@ -462,6 +514,9 @@ RQuery::$defaultFilters['securityprofile']['override']['operators']['has'] = arr
         $object = $context->object;
         $value = $context->value;
         $value = strtolower($value);
+
+        if( !$object->secprof_type == 'url-filtering'  )
+            return null;
 
         if( array_key_exists($value, $object->override) )
             return TRUE;
@@ -473,7 +528,8 @@ RQuery::$defaultFilters['securityprofile']['override']['operators']['has'] = arr
     'ci' => array(
         'fString' => '(%PROP% securityrule )',
         'input' => 'input/panorama-8.0.xml'
-    )
+    ),
+    'help' => "'securityprofiletype=url'"
 );
 
 RQuery::$defaultFilters['securityprofile']['exception']['operators']['has'] = array(
@@ -481,15 +537,15 @@ RQuery::$defaultFilters['securityprofile']['exception']['operators']['has'] = ar
         $object = $context->object;
         $value = $context->value;
 
-        if( $object->secprof_type == 'virus' || $object->secprof_type == 'spyware' || $object->secprof_type == 'vulnerability' )
+        if( $object->secprof_type != 'virus' and $object->secprof_type != 'spyware' and $object->secprof_type != 'vulnerability' )
+            return null;
+
+        if( !empty( $object->threatException ) )
         {
-            if( !empty( $object->threatException ) )
+            foreach( $object->threatException as $threatname => $threat )
             {
-                foreach( $object->threatException as $threatname => $threat )
-                {
-                    if( $threatname == $value )
-                        return TRUE;
-                }
+                if( $threatname == $value )
+                    return TRUE;
             }
         }
 
@@ -500,7 +556,8 @@ RQuery::$defaultFilters['securityprofile']['exception']['operators']['has'] = ar
     'ci' => array(
         'fString' => '(%PROP% securityrule )',
         'input' => 'input/panorama-8.0.xml'
-    )
+    ),
+    'help' => "'securityprofiletype=spyware,vulnerability'"
 );
 
 
@@ -508,11 +565,11 @@ RQuery::$defaultFilters['securityprofile']['exception']['operators']['is.set'] =
     'Function' => function (SecurityProfileRQueryContext $context) {
         $object = $context->object;
 
-        if( $object->secprof_type == 'virus' || $object->secprof_type == 'spyware' || $object->secprof_type == 'vulnerability' )
-        {
-            if( !empty( $object->threatException ) )
-                return TRUE;
-        }
+        if( $object->secprof_type != 'virus' and $object->secprof_type != 'spyware' and $object->secprof_type != 'vulnerability' )
+            return null;
+
+        if( !empty( $object->threatException ) )
+            return TRUE;
 
         return FALSE;
 
@@ -520,24 +577,26 @@ RQuery::$defaultFilters['securityprofile']['exception']['operators']['is.set'] =
     'ci' => array(
         'fString' => '(%PROP% securityrule )',
         'input' => 'input/panorama-8.0.xml'
-    )
+    ),
+    'help' => "'securityprofiletype=spyware,vulnerability'"
 );
 
 RQuery::$defaultFilters['securityprofile']['action']['operators']['eq'] = array(
     'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var ThreatPolicySpyware|ThreatPolicyVulnerability $object */
         $object = $context->object;
         $value = $context->value;
 
-        #if( $object->secprof_type == 'virus' || $object->secprof_type == 'spyware' || $object->secprof_type == 'vulnerability' )
-        if( $object->secprof_type == 'spyware' || $object->secprof_type == 'vulnerability' )
+        #if( $object->secprof_type != 'virus' and $object->secprof_type != 'spyware' and $object->secprof_type != 'vulnerability' )
+        if( $object->secprof_type != 'spyware' and $object->secprof_type != 'vulnerability' )
+            return null;
+
+        if( !empty( $object->rules_obj ) )
         {
-            if( !empty( $object->rules ) )
+            foreach( $object->rules_obj as $rulename => $rule )
             {
-                foreach( $object->rules as $rulename => $rule )
-                {
-                    if( $rule['action'] == $value )
-                        return TRUE;
-                }
+                if( $rule->action == $value )
+                    return TRUE;
             }
         }
 
@@ -545,10 +604,12 @@ RQuery::$defaultFilters['securityprofile']['action']['operators']['eq'] = array(
 
     },
     'arg' => TRUE,
+    'deprecated' => 'this filter "action eq XYZ" is deprecated, you should use "filter=(threat-rule has.from.query subquery1) subquery1=(action eq XYZ)" instead!',
     'ci' => array(
         'fString' => '(%PROP% reset-both )',
         'input' => 'input/panorama-8.0.xml'
-    )
+    ),
+    'help' => "'securityprofiletype=spyware,vulnerability'"
 );
 
 RQuery::$defaultFilters['securityprofile']['packet-capture']['operators']['eq'] = array(
@@ -557,24 +618,27 @@ RQuery::$defaultFilters['securityprofile']['packet-capture']['operators']['eq'] 
         $value = $context->value;
 
         #if( $object->secprof_type == 'virus' || $object->secprof_type == 'spyware' || $object->secprof_type == 'vulnerability' )
-        if( $object->secprof_type == 'spyware' || $object->secprof_type == 'vulnerability' )
+        if( $object->secprof_type != 'spyware' and $object->secprof_type != 'vulnerability' )
+            return null;
+
+        if( !empty( $object->rules_obj ) )
         {
-            if( !empty( $object->rules ) )
+            foreach( $object->rules_obj as $rulename => $rule )
             {
-                foreach( $object->rules as $rulename => $rule )
-                {
-                    if( $rule['packet-capture'] == $value )
-                        return TRUE;
-                }
+                if( $rule->packetCapture == $value )
+                    return TRUE;
             }
         }
+
         return FALSE;
     },
     'arg' => TRUE,
+    'deprecated' => 'this filter "packet-capture eq XYZ" is deprecated, you should use "filter=(threat-rule has.from.query subquery1) subquery1=(packet-capture eq XYZ)" instead!',
     'ci' => array(
         'fString' => '(%PROP% single-packet )',
         'input' => 'input/panorama-8.0.xml'
-    )
+    ),
+    'help' => "'securityprofiletype=spyware,vulnerability'"
 );
 
 RQuery::$defaultFilters['securityprofile']['severity']['operators']['eq'] = array(
@@ -583,24 +647,27 @@ RQuery::$defaultFilters['securityprofile']['severity']['operators']['eq'] = arra
         $value = $context->value;
 
         #if( $object->secprof_type == 'virus' || $object->secprof_type == 'spyware' || $object->secprof_type == 'vulnerability' )
-        if( $object->secprof_type == 'spyware' || $object->secprof_type == 'vulnerability' )
+        if( $object->secprof_type != 'spyware' and $object->secprof_type != 'vulnerability' )
+            return null;
+
+        if( !empty( $object->rules_obj ) )
         {
-            if( !empty( $object->rules ) )
+            foreach( $object->rules_obj as $rulename => $rule )
             {
-                foreach( $object->rules as $rulename => $rule )
-                {
-                    if( in_array( $value, $rule['severity']) )
-                        return TRUE;
-                }
+                if( in_array( $value, $rule->severity) )
+                    return TRUE;
             }
         }
+
         return FALSE;
     },
     'arg' => TRUE,
+    'deprecated' => 'this filter "severity eq XYZ" is deprecated, you should use "filter=(threat-rule has.from.query subquery1) subquery1=(severity eq XYZ)" instead!',
     'ci' => array(
         'fString' => '(%PROP% critical )',
         'input' => 'input/panorama-8.0.xml'
-    )
+    ),
+    'help' => "'securityprofiletype=spyware,vulnerability'"
 );
 
 RQuery::$defaultFilters['securityprofile']['category']['operators']['eq'] = array(
@@ -609,24 +676,27 @@ RQuery::$defaultFilters['securityprofile']['category']['operators']['eq'] = arra
         $value = $context->value;
 
         #if( $object->secprof_type == 'virus' || $object->secprof_type == 'spyware' || $object->secprof_type == 'vulnerability' )
-        if( $object->secprof_type == 'spyware' || $object->secprof_type == 'vulnerability' )
+        if( $object->secprof_type != 'spyware' and $object->secprof_type != 'vulnerability' )
+            return null;
+
+        if( !empty( $object->rules_obj ) )
         {
-            if( !empty( $object->rules ) )
+            foreach( $object->rules_obj as $rulename => $rule )
             {
-                foreach( $object->rules as $rulename => $rule )
-                {
-                    if( $rule['category'] == $value )
-                        return TRUE;
-                }
+                if( $rule->category == $value )
+                    return TRUE;
             }
         }
+
         return FALSE;
     },
     'arg' => TRUE,
     'ci' => array(
         'fString' => '(%PROP% brute-force )',
+        'deprecated' => 'this filter "category eq XYZ" is deprecated, you should use "filter=(threat-rule has.from.query subquery1) subquery1=(category eq XYZ)" instead!',
         'input' => 'input/panorama-8.0.xml'
-    )
+    ),
+    'help' => "'securityprofiletype=spyware,vulnerability'"
 );
 
 RQuery::$defaultFilters['securityprofile']['host']['operators']['eq'] = array(
@@ -635,27 +705,30 @@ RQuery::$defaultFilters['securityprofile']['host']['operators']['eq'] = array(
         $value = $context->value;
 
         #if( $object->secprof_type == 'virus' || $object->secprof_type == 'spyware' || $object->secprof_type == 'vulnerability' )
-        if( $object->secprof_type == 'spyware' || $object->secprof_type == 'vulnerability' )
+        if( $object->secprof_type != 'spyware' and $object->secprof_type != 'vulnerability' )
+            return null;
+
+        if( !empty( $object->rules_obj ) )
         {
-            if( !empty( $object->rules ) )
+            foreach( $object->rules_obj as $rulename => $rule )
             {
-                foreach( $object->rules as $rulename => $rule )
-                {
-                    if( $rule['host'] == $value )
-                        return TRUE;
-                }
+                if( $rule->host == $value )
+                    return TRUE;
             }
         }
+
         return FALSE;
     },
     'arg' => TRUE,
+    'deprecated' => 'this filter "host eq XYZ" is deprecated, you should use "filter=(threat-rule has.from.query subquery1) subquery1=(host eq XYZ)" instead!',
     'ci' => array(
         'fString' => '(%PROP% client )',
         'input' => 'input/panorama-8.0.xml'
-    )
+    ),
+    'help' => "'securityprofiletype=spyware,vulnerability'"
 );
 
-RQuery::$defaultFilters['securityprofile']['excempt-ip.count']['operators']['>,<,=,!'] = array(
+RQuery::$defaultFilters['securityprofile']['exempt-ip.count']['operators']['>,<,=,!'] = array(
     'Function' => function (SecurityProfileRQueryContext $context) {
         /** @var VulnerabilityProfile $object */
         $object = $context->object;
@@ -665,23 +738,27 @@ RQuery::$defaultFilters['securityprofile']['excempt-ip.count']['operators']['>,<
         if( $operator == '=' )
             $operator = '==';
 
-        foreach( $object->threatException as $exception )
-        {
-            if( isset($exception['exempt-ip']) )
-            {
-                $operator_string = count($exception['exempt-ip'])." ".$operator." ".$value;
-                if( eval("return $operator_string;" ) )
+        if( $object->secprof_type != 'spyware' and $object->secprof_type != 'vulnerability' )
+            return null;
+
+        foreach ($object->threatException as $exception) {
+            if (isset($exception['exempt-ip'])) {
+                $operator_string = count($exception['exempt-ip']) . " " . $operator . " " . $value;
+                if (eval("return $operator_string;"))
                     return true;
                 else
                     return false;
             }
         }
+
+        return FALSE;
     },
     'arg' => TRUE,
     'ci' => array(
         'fString' => '(%PROP% rulestore )',
         'input' => 'input/panorama-8.0.xml'
-    )
+    ),
+    'help' => "'securityprofiletype=spyware,vulnerability'"
 );
 
 RQuery::$defaultFilters['securityprofile']['cloud-inline-analysis']['operators']['is.enabled'] = array(
@@ -689,17 +766,327 @@ RQuery::$defaultFilters['securityprofile']['cloud-inline-analysis']['operators']
         /** @var VulnerabilityProfile|AntiSpywareProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type == 'spyware' || $object->secprof_type == 'vulnerability' )
-        {
-            if( $object->cloud_inline_analysis_enabled )
-                return TRUE;
-        }
+        if( $object->secprof_type != 'spyware' and $object->secprof_type != 'vulnerability' )
+            return null;
+
+        if( $object->cloud_inline_analysis_enabled )
+            return TRUE;
+
         return FALSE;
     },
     'arg' => false,
     'ci' => array(
         'fString' => '(%PROP% client )',
         'input' => 'input/panorama-8.0.xml'
-    )
+    ),
+    'help' => "'securityprofiletype=spyware,vulnerability'"
+);
+
+RQuery::$defaultFilters['securityprofile']['cloud-inline-analysis.action']['operators']['has'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var VulnerabilityProfile|AntiSpywareProfile $object */
+        $object = $context->object;
+        $value = $context->value;
+
+        if( $object->secprof_type != 'spyware' and $object->secprof_type != 'vulnerability' )
+            return null;
+
+        if( isset($object->additional['mica-engine-vulnerability-enabled']) )
+        {
+            foreach( $object->additional['mica-engine-vulnerability-enabled'] as $name)
+            {
+                if( $name['inline-policy-action'] == $value )
+                    return TRUE;
+            }
+        }
+
+        if( isset($object->additional['mica-engine-spyware-enabled']) )
+        {
+            foreach( $object->additional['mica-engine-spyware-enabled'] as $name)
+            {
+                if( $name['inline-policy-action'] == $value )
+                    return TRUE;
+            }
+        }
+
+        return FALSE;
+    },
+    'arg' => true,
+    'ci' => array(
+        'fString' => '(%PROP% client )',
+        'input' => 'input/panorama-8.0.xml'
+    ),
+    'help' => "'securityprofiletype=spyware,vulnerability'"
+);
+RQuery::$defaultFilters['securityprofile']['cloud-inline-analysis']['operators']['is.best-practice'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var VulnerabilityProfile|AntiSpywareProfile $object */
+        $object = $context->object;
+
+        if( $object->secprof_type != 'spyware' and $object->secprof_type != 'vulnerability' and $object->secprof_type != 'virus' )
+            return null;
+
+        return $object->cloud_inline_analysis_best_practice();
+    },
+    'arg' => false,
+    'help' => "'securityprofiletype=spyware,vulnerability'"
+);
+
+RQuery::$defaultFilters['securityprofile']['av.action']['operators']['is.best-practice'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var VulnerabilityProfile|AntiSpywareProfile $object */
+        $object = $context->object;
+
+        if( $object->secprof_type != 'virus' )
+            return null;
+
+        return $object->av_action_best_practice();
+
+    },
+    'arg' => false,
+    'help' => "'securityprofiletype=virus'"
+);
+RQuery::$defaultFilters['securityprofile']['av.wildfire-action']['operators']['is.best-practice'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var VulnerabilityProfile|AntiSpywareProfile $object */
+        $object = $context->object;
+
+        if( $object->secprof_type != 'virus' )
+            return null;
+
+        return $object->av_wildfireaction_best_practice();
+    },
+    'arg' => false,
+    'help' => "'securityprofiletype=virus'"
+);
+RQuery::$defaultFilters['securityprofile']['av.mlav-action']['operators']['is.best-practice'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var VulnerabilityProfile|AntiSpywareProfile $object */
+        $object = $context->object;
+
+        if( $object->secprof_type != 'virus' )
+            return null;
+
+        return $object->av_mlavaction_best_practice();
+    },
+    'arg' => false,
+    'help' => "'securityprofiletype=virus'"
+);
+RQuery::$defaultFilters['securityprofile']['dns-list.action']['operators']['has'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var AntiSpywareProfile $object */
+        $object = $context->object;
+        $value = $context->value;
+
+        if( $object->secprof_type != 'spyware' )
+            return null;
+
+        $tmp_value_array = array( 'alert','allow','block','sinkhole');
+
+        if( !in_array($value, $tmp_value_array) )
+            derr("filter-value: '".$value."' is not a valid value for dns-list.action filter");
+
+        if( isset($object->additional['botnet-domain']) && isset($object->additional['botnet-domain']['lists']) )
+        {
+            foreach( $object->additional['botnet-domain']['lists'] as $name)
+            {
+                if( isset($name['action']) && $name['action'] == $value )
+                    return TRUE;
+            }
+        }
+
+        return FALSE;
+    },
+    'arg' => true,
+    'ci' => array(
+        'fString' => '(%PROP% client )',
+        'input' => 'input/panorama-8.0.xml'
+    ),
+    'help' => "'securityprofiletype=spyware' e.g. 'filter=(dns-list.action has sinkhole)' possible values: alert/allow/block/sinkhole"
+);
+RQuery::$defaultFilters['securityprofile']['dns-list']['operators']['is.best-practice'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var AntiSpywareProfile $object */
+        $object = $context->object;
+
+        if( $object->secprof_type != 'spyware' )
+            return null;
+
+        return $object->spyware_dnslist_best_practice();
+    },
+    'arg' => false,
+    'help' => "'securityprofiletype=spyware' e.g. 'filter=(dns-list is.best-practice)'"
+);
+RQuery::$defaultFilters['securityprofile']['dns-list.packet-capture']['operators']['has'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var AntiSpywareProfile $object */
+        $object = $context->object;
+        $value = $context->value;
+
+        if( $object->secprof_type != 'spyware' )
+            return null;
+
+        $tmp_value_array = array( 'disable','single-packet','extended-capture');
+
+        if( !in_array($value, $tmp_value_array) )
+            derr("filter-value: '".$value."' is not a valid value for dns-list.packet-capture filter");
+
+        if( isset($object->additional['botnet-domain']) && isset($object->additional['botnet-domain']['lists']) )
+        {
+            foreach( $object->additional['botnet-domain']['lists'] as $name)
+            {
+                if( isset($name['packet-capture']) && $name['packet-capture'] == $value )
+                    return TRUE;
+            }
+        }
+
+        return FALSE;
+    },
+    'arg' => true,
+    'ci' => array(
+        'fString' => '(%PROP% client )',
+        'input' => 'input/panorama-8.0.xml'
+    ),
+    'help' => "'securityprofiletype=spyware' e.g. 'filter=(dns-list.packet-capture has disable)' possible values: disable/single-packet/extended-capture"
+);
+
+RQuery::$defaultFilters['securityprofile']['dns-security.action']['operators']['has'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var AntiSpywareProfile $object */
+        $object = $context->object;
+        $value = $context->value;
+
+        if( $object->secprof_type != 'spyware' )
+            return null;
+
+        $tmp_value_array = array( 'default','allow','block','sinkhole');
+
+        if( !in_array($value, $tmp_value_array) )
+            derr("filter-value: '".$value."' is not a valid value for dns-list.action filter");
+
+        if( isset($object->additional['botnet-domain']) && isset($object->additional['botnet-domain']['dns-security-categories']) )
+        {
+            foreach( $object->additional['botnet-domain']['dns-security-categories'] as $name)
+            {
+                if( isset($name['action']) && $name['action'] == $value )
+                    return TRUE;
+            }
+        }
+
+        return FALSE;
+    },
+    'arg' => true,
+    'ci' => array(
+        'fString' => '(%PROP% client )',
+        'input' => 'input/panorama-8.0.xml'
+    ),
+    'help' => "'securityprofiletype=spyware' e.g. 'filter=(dns-security.action has sinkhole)' possible values: default/allow/block/sinkhole"
+);
+RQuery::$defaultFilters['securityprofile']['dns-security.packet-capture']['operators']['has'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var AntiSpywareProfile $object */
+        $object = $context->object;
+        $value = $context->value;
+
+        if( $object->secprof_type != 'spyware' )
+            return null;
+
+        $tmp_value_array = array( 'disable','single-packet','extended-capture');
+
+        if( !in_array($value, $tmp_value_array) )
+            derr("filter-value: '".$value."' is not a valid value for dns-list.packet-capture filter");
+
+        if( isset($object->additional['botnet-domain']) && isset($object->additional['botnet-domain']['dns-security-categories']) )
+        {
+            foreach( $object->additional['botnet-domain']['dns-security-categories'] as $name)
+            {
+                if( isset($name['packet-capture']) && $name['packet-capture'] == $value )
+                    return TRUE;
+            }
+        }
+
+        return FALSE;
+    },
+    'arg' => true,
+    'ci' => array(
+        'fString' => '(%PROP% client )',
+        'input' => 'input/panorama-8.0.xml'
+    ),
+    'help' => "'securityprofiletype=spyware' e.g. 'filter=(dns-security.packet-capture has disable)' possible values: disable/single-packet/extended-capture"
+);
+
+
+RQuery::$defaultFilters['securityprofile']['threat-rule']['operators']['has.from.query'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        $object = $context->object;
+
+        if( $object->secprof_type != 'spyware' and $object->secprof_type != 'vulnerability' )
+            return null;
+
+        if( count($object->rules_obj) == 0 )
+            return FALSE;
+
+        if( $context->value === null || !isset($context->nestedQueries[$context->value]) )
+            derr("cannot find nested query called '{$context->value}'");
+
+        $errorMessage = '';
+
+        if( !isset($context->cachedSubRQuery) )
+        {
+            $rQuery = new RQuery('threat-rule');
+            if( $rQuery->parseFromString($context->nestedQueries[$context->value], $errorMessage) === FALSE )
+                derr('nested query execution error : ' . $errorMessage);
+            $context->cachedSubRQuery = $rQuery;
+        }
+        else
+            $rQuery = $context->cachedSubRQuery;
+
+        foreach( $context->object->rules_obj as $member )
+        {
+            if( $rQuery->matchSingleObject(array('object' => $member, 'nestedQueries' => &$context->nestedQueries)) )
+                return TRUE;
+        }
+
+        return FALSE;
+    },
+    'arg' => TRUE,
+    'help' => "'securityprofiletype=spyware,vulnerability' example: 'filter=(threat-rule has.from.query subquery1)' 'subquery1=(action eq alert)'",
+);
+
+RQuery::$defaultFilters['securityprofile']['dns-rule']['operators']['has.from.query'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        $object = $context->object;
+
+        if( $object->secprof_type != 'spyware' )
+            return null;
+
+        if( count($object->dns_rules_obj) == 0 )
+            return FALSE;
+
+        if( $context->value === null || !isset($context->nestedQueries[$context->value]) )
+            derr("cannot find nested query called '{$context->value}'");
+
+        $errorMessage = '';
+
+        if( !isset($context->cachedSubRQuery) )
+        {
+            $rQuery = new RQuery('dns-rule');
+            if( $rQuery->parseFromString($context->nestedQueries[$context->value], $errorMessage) === FALSE )
+                derr('nested query execution error : ' . $errorMessage);
+            $context->cachedSubRQuery = $rQuery;
+        }
+        else
+            $rQuery = $context->cachedSubRQuery;
+
+        foreach( $context->object->dns_rules_obj as $member )
+        {
+            if( $rQuery->matchSingleObject(array('object' => $member, 'nestedQueries' => &$context->nestedQueries)) )
+                return TRUE;
+        }
+
+        return FALSE;
+    },
+    'arg' => TRUE,
+    'help' => "'securityprofiletype=spyware' example: 'filter=(dns-rule has.from.query subquery1)' 'subquery1=(action eq alert)'",
 );
 // </editor-fold>

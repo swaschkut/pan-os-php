@@ -240,6 +240,19 @@ class AddressRuleContainer extends ObjRuleContainer
         return parent::has($object, $caseSensitive);
     }
 
+    /**
+     * return true/false based if object is EDL or not
+     * @return bool
+     */
+    public function hasEDL()
+    {
+        foreach( $this->o as $member)
+        {
+            if( get_class($member) == "EDL" )
+                return TRUE;
+        }
+        return FALSE;
+    }
 
     /**
      * return an array with all objects
@@ -288,7 +301,9 @@ class AddressRuleContainer extends ObjRuleContainer
                 derr('this container has members with empty name!', $node);
             }
 
-            $f = $this->parentCentralStore->findOrCreate($content, $this);
+            $f = $this->owner->owner->owner->EDLStore->find($content, $this);
+            if( $f === null )
+                $f = $this->parentCentralStore->findOrCreate($content, $this);
             $this->o[] = $f;
             $i++;
         }
@@ -341,6 +356,9 @@ class AddressRuleContainer extends ObjRuleContainer
 
         foreach( $this->o as $o )
         {
+            if( get_class($o) === "EDL" )
+                continue;
+
             if( $o->isRegion() )
                 continue;
 
@@ -389,6 +407,9 @@ class AddressRuleContainer extends ObjRuleContainer
 
         foreach( $this->o as $o )
         {
+            if( get_class($o) === "EDL" )
+                continue;
+
             if( $o->isRegion() )
                 continue;
 
@@ -619,6 +640,8 @@ class AddressRuleContainer extends ObjRuleContainer
 
         foreach( $this->o as $member )
         {
+            if( get_class($member) === "EDL" )
+                continue;
             if( $member->isTmpAddr() && !$member->nameIsValidRuleIPEntry() )
             {
                 $mapObject->unresolved[$member->name()] = $member;

@@ -220,7 +220,7 @@ class PanAPIConnector
             derr("cannot find <wildfire-version>:\n" . DH::dom_to_xml($this->show_system_info_raw, 0, TRUE, 4));
         $this->info_wildfire_version = $wildfire_version->textContent;
 
-        if( $model == 'panorama' || $model == 'm-100' || $model == 'm-500' || $model == 'm-200' || $model == 'm-600' )
+        if( $model == 'panorama' || str_starts_with($model, "m-") || $model == 'm-100' || $model == 'm-500' || $model == 'm-200' || $model == 'm-300' || $model == 'm-600' || $model == 'm-700' )
         {
             $this->info_deviceType = 'panorama';
 
@@ -232,7 +232,10 @@ class PanAPIConnector
 
             $threat_version = DH::findFirstElement('threat-version', $res);
             if( $threat_version === FALSE )
-                derr("cannot find <threat-version>:\n" . DH::dom_to_xml($this->show_system_info_raw, 0, TRUE, 4));
+            {
+                mwarning("cannot find <threat-version>:\n" . DH::dom_to_xml($this->show_system_info_raw, 0, TRUE, 4));
+            }
+
             $this->info_threat_version = $threat_version->textContent;
         }
 
@@ -504,10 +507,25 @@ class PanAPIConnector
                 PH::print_stdout( " * Now generating an API key from '$host'..." );
                 $con = new PanAPIConnector($host, '', 'panos', null, $port);
 
-                $url = "type=keygen&user=" . urlencode($user) . "&password=" . urlencode($password);
+
+                if (!PH::$sendAPIkeyviaHeader)
+                    $url = "type=keygen&user=" . urlencode($user) . "&password=" . urlencode($password);
+                else
+                {
+                    $url = "type=keygen";
+                    $parameters['url'] = $url;
+                    $parameters['user'] = urlencode($user);
+                    $parameters['password'] = urlencode($password);
+                    $parameters['apikeyrequest'] = TRUE;
+                }
+
                 if( $debugAPI )
                     $con->setShowApiCalls( $debugAPI );
-                $res = $con->sendRequest($url);
+
+                if (!PH::$sendAPIkeyviaHeader)
+                    $res = $con->sendRequest($url);
+                else
+                    $res = $con->sendRequest($parameters);
 
                 $res = DH::findFirstElement('response', $res);
                 if( $res === FALSE )
@@ -1095,9 +1113,15 @@ class PanAPIConnector
     public function sendRequest(&$parameters, $checkResultTag = FALSE, &$filecontent = null, $filename = '', $moreOptions = array())
     {
         $sendThroughPost = FALSE;
+        $apikeyrequest = FALSE;
 
         if( is_array($parameters) )
+        {
             $sendThroughPost = TRUE;
+            if( isset( $parameters['apikeyrequest']) )
+                $apikeyrequest = TRUE;
+
+        }
 
 
         $this->_createOrRenewCurl();
@@ -1148,8 +1172,14 @@ class PanAPIConnector
             }
         }
 
-        if( !$sendThroughPost )
+        if( !$sendThroughPost && !$apikeyrequest )
             $finalUrl .= '&' . $parameters;
+        elseif( $apikeyrequest )
+        {
+            $finalUrl .= '?' . $parameters['url'];
+            unset($parameters['url']);
+            unset($parameters['apikeyrequest']);
+        }
 
 
         curl_setopt($this->_curl_handle, CURLOPT_URL, $finalUrl);
@@ -1168,18 +1198,25 @@ class PanAPIConnector
 
         if( $sendThroughPost )
         {
-            if( isset($this->serial) && $this->serial !== null )
+            if( !$apikeyrequest )
             {
-                $parameters['target'] = $this->serial;
+                if (isset($this->serial) && $this->serial !== null) {
+                    $parameters['target'] = $this->serial;
+                }
+                if (!PH::$sendAPIkeyviaHeader)
+                    $parameters['key'] = $this->apikey;
+                else {
+                    //Todo: possible improvements for API security with PAN-OS 9.0 [20181030]
+                    curl_setopt($this->_curl_handle, CURLOPT_HTTPHEADER, array('X-PAN-KEY: ' . $this->apikey));
+                }
             }
-            if( !PH::$sendAPIkeyviaHeader )
-                $parameters['key'] = $this->apikey;
             else
             {
-                //Todo: possible improvements for API security with PAN-OS 9.0 [20181030]
-                curl_setopt($this->_curl_handle, CURLOPT_HTTPHEADER, array('X-PAN-KEY: ' . $this->apikey));
+                curl_setopt($this->_curl_handle, CURLOPT_FOLLOWLOCATION, TRUE);
+                curl_setopt($this->_curl_handle, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
+                curl_setopt($this->_curl_handle, CURLOPT_CUSTOMREQUEST, 'POST');
+                curl_setopt($this->_curl_handle, CURLOPT_HTTPHEADER, array('Content-Type: application/x-www-form-urlencoded'));
             }
-
             $properParams = http_build_query($parameters);
             curl_setopt($this->_curl_handle, CURLOPT_POSTFIELDS, $properParams);
         }
@@ -1225,6 +1262,7 @@ class PanAPIConnector
                 }
 
                 PH::print_stdout("API call through POST: \"" . $finalUrl . $paramURl . "\"");
+                PH::print_stdout("RAW HTTP URL: \"" . $finalUrl . "\"");
                 PH::print_stdout( "RAW HTTP POST Content: {$properParams}" );
             }
             else

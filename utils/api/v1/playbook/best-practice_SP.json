@@ -1,0 +1,47 @@
+{
+  "stagename": "working-files/bestpractice-",
+  "header-comment": "",
+  "footer-comment": "",
+  "command": [
+    {
+      "type": "securityprofile",
+      "securityprofiletype": "securityprofiletype=spyware",
+      "filter": "filter=(threat-rule has.from.query subquery1) and (threat-rule has.from.query subquery2) and (threat-rule has.from.query subquery3) and (threat-rule has.from.query subquery4) and (threat-rule has.from.query subquery5) and ((dns-rule has.from.query subquery6) and (dns-rule has.from.query subquery7) and (dns-rule has.from.query subquery8)) and (((exception is.set) and (exempt-ip.count > 0)) or !(exception is.set)) and (cloud-inline-analysis is.best-practice) and (dns-list is.best-practice)",
+      "subquery1": "subquery1=((action eq reset-both) and ((severity has critical) and (category is.any)))",
+      "subquery2": "subquery2=((action eq reset-both) and ((severity has high) and (category is.any)))",
+      "subquery3": "subquery3=((action eq reset-both) and ((severity has medium) and (category is.any)))",
+      "subquery4": "subquery4=((action eq default) and ((severity has low) and (category is.any)))",
+      "subquery5": "subquery5=((action eq default) and ((severity has informational) and (category is.any)))",
+	    "subquery6": "subquery6=((action eq sinkhole) and (name eq pan-dns-sec-cc))", 
+	    "subquery7": "subquery7=((action eq sinkhole) and (name eq pan-dns-sec-malware))",
+	    "subquery8": "subquery8=((action eq sinkhole) and (name eq pan-dns-sec-phishing))", 
+      "actions": "actions=exportToExcel:AS-BestPractice.html,UsedInLocation|WhereUsed",
+      "location": "location=any"
+    },
+    {
+      "type": "securityprofile",
+      "securityprofiletype": "securityprofiletype=vulnerability",
+      "filter": "filter=(threat-rule has.from.query subquery1) and (threat-rule has.from.query subquery2) and (threat-rule has.from.query subquery3) and (threat-rule has.from.query subquery4) and (threat-rule has.from.query subquery5) and (((exception is.set) and (exempt-ip.count > 0)) or !(exception is.set)) and (cloud-inline-analysis is.best-practice)",
+      "subquery1": "subquery1=((action eq reset-both) and ((severity has critical) and (category is.any)))",
+      "subquery2": "subquery2=((action eq reset-both) and ((severity has high) and (category is.any)))",
+      "subquery3": "subquery3=((action eq reset-both) and ((severity has medium) and (category is.any)))",
+      "subquery4": "subquery4=((action eq default) and ((severity has low) and (category is.any)))",
+      "subquery5": "subquery5=((action eq default) and ((severity has informational) and (category is.any)))",
+      "actions": "actions=exportToExcel:VP-BestPractice.html,UsedInLocation|WhereUsed",
+      "location": "location=any"
+    },
+    {
+      "type": "securityprofile",
+      "securityprofiletype": "securityprofiletype=virus",
+      "filter": "filter=(av.action is.best-practice) and (av.wildfire-action is.best-practice) and (av.mlav-action is.best-practice) and (cloud-inline-analysis is.best-practice)",
+      "actions": "actions=exportToExcel:AV-BestPractice.html,UsedInLocation|WhereUsed",
+      "location": "location=any"
+    },
+    {
+      "comment": "merge all previously created html files into one Excel sheet",
+      "type": "html-merger",
+      "adddefaulthtml": "adddefaulthtml",
+      "exportCSV": "exportCSV=best-practice.xlsx"
+    }    
+  ]
+}

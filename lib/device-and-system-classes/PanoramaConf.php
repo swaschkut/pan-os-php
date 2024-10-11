@@ -147,6 +147,12 @@ class PanoramaConf
     /** @var SecurityProfileStore */
     public $AntiVirusProfileStore = null;
 
+    /** @var ThreatPolicyStore */
+    public $ThreatPolicyStore = null;
+
+    /** @var DNSPolicyStore */
+    public $DNSPolicyStore = null;
+
     /** @var SecurityProfileStore */
     public $VulnerabilityProfileStore = null;
 
@@ -203,6 +209,9 @@ class PanoramaConf
 
     /** @var ScheduleStore */
     public $scheduleStore = null;
+
+    /** @var EDLStore */
+    public $EDLStore = null;
 
     /** @var ZoneStore */
     public $zoneStore = null;
@@ -261,7 +270,7 @@ class PanoramaConf
 
         $this->threatStore = ThreatStore::getPredefinedStore( $this );
 
-        $this->urlStore = SecurityProfileStore::getPredefinedStore();
+        $this->urlStore = SecurityProfileStore::getURLPredefinedStore();
 
         $this->serviceStore = new ServiceStore($this);
         $this->serviceStore->name = 'services';
@@ -279,6 +288,12 @@ class PanoramaConf
         $this->AntiVirusProfileStore = new SecurityProfileStore($this, "AntiVirusProfile");
         $this->AntiVirusProfileStore->name = 'AntiVirus';
 
+
+        $this->ThreatPolicyStore = new ThreatPolicyStore($this, "ThreatPolicy");
+        $this->ThreatPolicyStore->name = 'ThreatPolicy';
+
+        $this->DNSPolicyStore = new DNSPolicyStore($this, "DNSPolicy");
+        $this->DNSPolicyStore->name = 'DNSPolicy';
 
         $this->VulnerabilityProfileStore = new SecurityProfileStore($this, "VulnerabilityProfile");
         $this->VulnerabilityProfileStore->name = 'Vulnerability';
@@ -336,6 +351,9 @@ class PanoramaConf
 
         $this->scheduleStore = new ScheduleStore($this);
         $this->scheduleStore->setName('scheduleStore');
+
+        $this->EDLStore = new EDLStore($this);
+        $this->EDLStore->setName('EDLStore');
 
         $this->securityRules = new RuleStore($this, 'SecurityRule', TRUE);
         $this->natRules = new RuleStore($this, 'NatRule', TRUE);
@@ -740,6 +758,14 @@ class PanoramaConf
         if( $tmp !== FALSE )
             $this->scheduleStore->load_from_domxml($tmp);
         // End of address groups extraction
+
+        //
+        // Extract EDL objects
+        //
+        $tmp = DH::findFirstElement('external-list', $this->sharedroot);
+        if( $tmp !== FALSE )
+            $this->EDLStore->load_from_domxml($tmp);
+        // End of EDL extraction
 
         //
         // Extracting policies
@@ -1253,6 +1279,8 @@ class PanoramaConf
 
                         $storeType = array(
                             'addressStore', 'serviceStore', 'tagStore', 'scheduleStore', 'appStore',
+
+                            'EDLStore',
 
                             'securityProfileGroupStore',
 

@@ -25,7 +25,31 @@ ThreatCallContext::$supportedActions['displayreferences'] = array(
     'MainFunction' => function (ThreatCallContext $context) {
         $object = $context->object;
 
-        $object->display_references(7);
+        #$object->display_references(7);
+
+        $strpad = str_pad('', 7);
+        PH::print_stdout( $strpad . "* Displaying referencers for " . $object->toString() );
+        $ip_exception_counter = 0;
+        foreach( $object->refrules as $o )
+        {
+            PH::print_stdout( $strpad . '  - ' . $o->toString() );
+
+            /** @var AntiSpywareProfile|VulnerabilityProfile $reference*/
+            if( isset($o->threatException) )
+            {
+                foreach($o->threatException as $threatName => $threatException)
+                {
+                    if( $threatName == $object->name() )
+                    {
+                        asort($threatException['exempt-ip']);
+                        if( count($threatException['exempt-ip']) > 0)
+                            PH::print_stdout($strpad . '     - ' . "excemption-IP count: ".count($threatException['exempt-ip'])." | '".implode(',',$threatException['exempt-ip'])."'");
+                        else
+                            PH::print_stdout($strpad . '     - ' . "excemption-IP count: 0" );
+                    }
+                }
+            }
+        }
     },
 );
 
@@ -41,26 +65,7 @@ ThreatCallContext::$supportedActions[] = array(
     'MainFunction' => function (ThreatCallContext $context) {
         $threat = $context->object;
 
-        PH::print_stdout( $context->padding . "* " . get_class($threat) . " '{$threat->name()}' " );
-
-        $tmp_min_engine_version = "";
-        $tmp_max_engine_version = "";
-        if( !empty($threat->min_engine_version) )
-            $tmp_min_engine_version =  " min-engine-version: '".$threat->min_engine_version."'";
-        if( !empty($threat->max_engine_version) )
-            $tmp_max_engine_version =  " max-engine-version: '".$threat->max_engine_version."'";
-
-        PH::print_stdout( "          - Threatname: '{$threat->threatname()}'  category: '{$threat->category()}' severity: '{$threat->severity()}'  default-action: '{$threat->defaultAction()}' cve: '".implode(",", $threat->cve())."' ".$tmp_min_engine_version.$tmp_max_engine_version );
-
-        PH::$JSON_TMP['sub']['object'][$threat->name()]['name'] = $threat->name();
-        PH::$JSON_TMP['sub']['object'][$threat->name()]['type'] = get_class($threat);
-        PH::$JSON_TMP['sub']['object'][$threat->name()]['category'] = $threat->category();
-        PH::$JSON_TMP['sub']['object'][$threat->name()]['host'] = $threat->category();
-        PH::$JSON_TMP['sub']['object'][$threat->name()]['severity'] = $threat->severity();
-        PH::$JSON_TMP['sub']['object'][$threat->name()]['default-action'] = $threat->defaultAction();
-        PH::$JSON_TMP['sub']['object'][$threat->name()]['cve'] = $threat->cve();
-        PH::$JSON_TMP['sub']['object'][$threat->name()]['min_engine_version'] = $threat->min_engine_version;
-        PH::$JSON_TMP['sub']['object'][$threat->name()]['max_engine_version'] = $threat->max_engine_version;
+        $threat->display($context->padding);
 
         if( $threat->type() == "vulnerability" )
             $context->counter_vulnerability++;
@@ -112,7 +117,11 @@ ThreatCallContext::$supportedActions[] = array(
         if( $addWhereUsed )
             $headers .= '<th>where used</th>';
         if( $addUsedInLocation )
+        {
             $headers .= '<th>location used</th>';
+            $headers .= '<th>exemption IP</th>';
+        }
+
 
         $count = 0;
         if( isset($context->objectList) )
@@ -154,13 +163,32 @@ ThreatCallContext::$supportedActions[] = array(
                 if( $addUsedInLocation )
                 {
                     $refTextArray = array();
+                    $refExcemptionArray = array();
                     foreach( $object->getReferences() as $ref )
                     {
                         $location = PH::getLocationString($object->owner);
                         $refTextArray[$location] = $location;
+
+                        /** @var AntiSpywareProfile|VulnerabilityProfile $reference*/
+                        if( isset($ref->threatException) )
+                        {
+                            foreach($ref->threatException as $threatName => $threatException)
+                            {
+                                if( $threatName == $object->name() )
+                                {
+                                    asort($threatException['exempt-ip']);
+                                    if( count($threatException['exempt-ip']) > 0)
+                                        $refExcemptionArray[] = "count: ".count($threatException['exempt-ip'])." | '".implode(',',$threatException['exempt-ip'])."'";
+                                    else
+                                        $refExcemptionArray[] = "count: 0";
+                                }
+                            }
+                        }
                     }
 
                     $lines .= $context->encloseFunction($refTextArray);
+
+                    $lines .= $context->encloseFunction($refExcemptionArray);
                 }
 
                 $lines .= "</tr>\n";

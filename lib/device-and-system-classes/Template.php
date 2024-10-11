@@ -143,6 +143,17 @@ class Template
         $this->load_from_domxml($element);
     }
 
+    public function createVsys( $vsysName )
+    {
+        #<config><devices><entry name="localhost.localdomain"><vsys><entry name="vsys3">
+        $config_node = DH::findFirstElementOrCreate('config', $this->xmlroot);
+        $devices_node = DH::findFirstElementOrCreate('devices', $config_node);
+        $entry_node = DH::findFirstElementByNameAttrOrCreate("entry","localhost.localdomain", $devices_node, $this->xmlroot->ownerDocument);
+        $vsys_node = DH::findFirstElementOrCreate('vsys', $entry_node);
+        $vsysName_node = DH::findFirstElementByNameAttrOrCreate("entry", $vsysName, $vsys_node, $this->xmlroot->ownerDocument);
+
+    }
+
     public static $templatexml = '<entry name="**Need a Name**">
                                         <settings><default-vsys>vsys1</default-vsys></settings>
                                         <config><devices>

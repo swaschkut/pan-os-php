@@ -1,6 +1,136 @@
 CHANGELOG
 
-2.1.25
+2.1.27
+UTIL:
+* type=address | introduce actions=replaceByMembers:{tag/description} | to be flexible to keep addressgroup
+* type=service | introduce actions=replaceByMembers | to be flexible to keep servicegroup
+* type=interface | introduce actions=exporttoexcel:interface.html
+* type=diff | change of default-behavour for FILTER variable | due too bash pid you need to use now {{name}}
+* type=diff | extend argument filter with name1 / name2 for API mode
+* type=address | extend actions=name-rename:$$tag$$ - to possible rename address object to first attached tag object name
+* type=securityprofile | 'filter=(refstore is.only XYZ)'
+* type=appid-toolbox | extend testing scripts
+* type=rule | new 'filter=(src/dst has.edl)'
+* type=rule location={{DGNAME}} | introduce argument 'shadow-loaddghierarchy' to get full rule hierarchy from shared pre/parentDG pre-rule to childDG post-rule and shared post-rule
+* type=rule-merger | introduce argument 'shadow-loaddghierarchy' to find all possible rules to be merged in the full stack
+* type=vendor-migration vendor=sophos | adjustment to use framework PH::print_stdout
+* class Rule | introduce addressCalculationByZones
+* type=rule | new actions=src-caluclate-by-zones/dst-calculate-by-zones
+* type=interface | introduce 'filter=(ipv4 includes 1.1.1.1/28)' | brought in for internal usage on watchguard migration
+* develop migration watchguard | extend with interface/routing to calculate src/dst based on from/to zones
+* class AntiVirusProfile | optimisation for different methods used by filter
+* develop watchguard migration | import IPsec related remote-addr as static route into v-router
+* type=interface | introduce 'filter=(name regex /XYZ/)'
+* type=rule | actions=display/exporttoexcel - extend description
+* type=application | introduce 'filter=(ip-protocol is.set) or (ip-protocol eq 2)'
+* type=static-route | extend object with metric and DISCARD
+* type=zone | introduce 'filter=(type is XYZ)'
+* class Zone - introduce new methods to get/set zone objects of type 'external'
+* develop - shared_gateway.php | migrate sg to vsys and create missing SecurityPolicy; change existing zones of type external to newly created vsys
+* type=device actions=zpp-create-alert-only-bp:TRUE/FALSE | introcude new argument for this actions to validate if already another ZPP is available
+* develop - shared_gateway.php | extend sg migration to vsys with visible-vsys XML information
+* type=device | introduce actions=template-create-vsys:TEMPLATE_name,VSYS-NAME
+* type=upload | extend validation for API and offline mode - if fromxpath is from NGFW and toxpath is to Panorama DeviceGroup or Template
+* type=upload | argument injectuseradmin2 - extend with admin2 user
+* type=playbook | improvement to handle argument in= and out= if defined in JSON file
+* different  device classes - rename to URLPredefinedStore
+* class AntiVirusProfile - extend if decoder http2 / mica OOXML/MachO is missing
+* class AntiVirusProfile | fix improvements
+* class AntiSpyware | extend for PAN-OS >=10.0.0 and add XMLnode <dns-security-categories> if not available
+* type=securityprofile actions=virus.best-practice-set | improve to adjust XMLnode
+* type=securityprofile securityprofiletype=virus actions=virus.best-practice-set | extend with mica engine
+* type=securityprofile securityprofiletype=spyware | introduce actions=spyware.best-practice-set
+* type=securityprofile securityprofiletype=vulnerability | introduce actions=vulnerability.best-practice-set
+* type=securityprofile securityprofiletype=virus/spyware/vulnerability | introduce actions=virus.alert-only-set/spyware.alert-only-set/vulnerability.alert-only-set
+* type=securityprofile | introduce actions=url.alert-only-set
+* type=securityprofile securityprofiletype=spyware/vulnerability actions=spyware/vulnerability.alert-only-set | improve to also set policy rules and default-action to alert if needed
+* type=securityprofile securityprofiletype=spyware/vulnerability actions=spyware/vulnerability.best-practice-set | improve to also set policy rules and default-action to reset-both if needed
+* type=securityprofile actions=spyware.alert-only-set/spyware.best-practice-set:{hasDNSLicense} | introduce additional argument if DNSLicense is available - to adjust correct dns-categories settings
+* class NatRule - extend with "persistent-dynamic-ip-and-port"
+* type=securityprofle actions=spyware/vulnerability.best-practice-set | set packet-capture to single-packet
+* type=gratuitous-arp | improve validation
+* class PanAPIConnector | improve API key request to use POST
+
+BUGFIX:
+* type=diff file1=diff.xml "filter=/config/devices/entry[@name='localhost.localdomain']/device-group/entry[@name='{{name}}']/pre-rulebase" name1=DG1 name2=DG2 | correction of pregmatch
+* type=edl | improvement to add rule references for src/dst
+* type=securityprofile   securityprofiletype=spyware 'filter=(dns-list is.best-practice)' | bugfix
+* develop watchguard migration | improve to cover also multiple objects in rules
+* type=vendormigration vendor=ciscoasa | bugfix for call RULEMERGER()
+* type=address 'filter=(name regex /XYZ/)' | bugfix for isType_TMP validation to avoid check against RegionObject
+* bugfix for type=securityprofile | to set correct XMLnode
+
+GENERAL:
+* class ServiceGroup | introduce variable $childancestor
+* update Device App-ID version: 8892-8959
+* docker file | include ping traceroute vim
+* update Device App-ID version: 8902-9003
+
+
+2.1.26 (20240819)
+UTIL:
+* type=rule ruletype=security actions=exporttoexcel:file.html - extend securityRule with type of universal/intrazone/interzone
+* type=upload in={FILE} out={FILE} | exend to support preserveXYZ arguments
+* type=upload | introduce argument 'preserve-xpath-jsonfile=FILE.json - to define which xpath need to be keeped from out=
+* type=edl | introduction of new object type
+* type=address/server | introduction of 'actions=name-toUpperCase/name-toLowerCase/name-toUCWords'
+* type=edl actions=exporttoexcel:file.html - implement new action
+* type=securityprofile/securityprofilegroup actions=exporttoexcel:file.html,totaluse - add additional column
+* type=securityprofile securityprofiletype=spyware/vulnerability | 'filter=(threat-rule has.from.query subquery1)' 'subquery1=(action eq alert)'
+* type=threat-rule | introduction of new utility
+* type=threat-rule | 'filter=(action eq XYZ)/(category eq XYZ)/(category is.any)/(host eq XYZ)/(host is.any)/(packet-capture eq XYZ)/(severity has XYZ)/(severity is.any)/(threatname eq XYZ)/(threatname is.any)'
+* type=securityprofile securityprofiletype=spyware,vulnerability actions=exporttoexcel:file.html - extend with more information
+* type=threat/application | improvement if argument 'in=' and/or 'location=shared' is not set
+* type=threat | new 'filter=!(object is.unused)' in combination with 'actions=displayreferences' - to display threat exceptions from AS/VB profiles
+* type=threat | new 'filter=(object has.exception)'
+* type=threat | extend actions=displayreferences and actions=exporttoexcel - with refobject exemption-ip information
+* type=securityprofile securityprofiletype=spyware | new 'filter=(cloud-inline-analysis.action has XYZ)' / (dns-list.action has XYZ) / (dns-list.packet-capture has XYZ)
+* type=securityprofile securityprofiletype=spyware | new 'filter=(dns-security.action has XYZ)' / (dns-security.action has XYZ)
+* type=appid-toolbox phase=phase1 | introduce 'filter=( {ALL AVAILALBE type=rule listfilters} )'
+* type=dns-rule | introduction
+* type=securityprofile securityprofiletype=spyware | new 'filter=(cloud-inline-analysis is.best-practice)' / (dns-list is.best-practice)
+* type=securityprofile securityprofiletype=virus | extend actions=display / exporttoexcel with mlav-policy-action information
+* type=securityprofile securityprofiletype=virus | new 'filter=(av.action is.best-practice) / (av.wildfire-action is.best-practice) / (av.mlav-action is.best-practice)'
+* type=rule | actions=description-append/-prepend | extend with variables $$comma$$ or $$forwardslash$$ or $$colon$$ or $$pipe$$ or $$newline$$ in argument
+* type=rule actions=description-Replace-Character | introduce variabel $$space$$
+* type=securityprofile securityprofiletype=virus actions=exporttoexcel:file.html | extend av profile action information
+
+BUGFIX:
+* type=xpath "filter-xpath=XYZ" in=api://{MGMT-IP} | bugfix for API mode to display correct filtered xpath
+* class PanAPIConnector - add Panorama model m-300 / m-700
+* type=rule actions=clone | bugfix to avoid adding "0" as last character if user added suffix can be used
+* type=diff | bugfix to get argument "outputformatset=FILE.txt" into working mode
+* type=threat-rule actions=exporttoexcel:file.html - correction
+* type=securityprofile securityprofileltype=spyware,vulnerabilty = fix reference if null | add default-action
+* Class PANConf | fix to define ThreatPolicyStore
+* bugfix for actions-securityprofile to move away from $this
+* bugfix class AntiSpyware/VulnerabilityProfile - fix issue for custom spyware/vulnerability object
+* type=threat-rule | bugfix for FW config
+* type=playbook | bugfix if in=api://
+* type=appid-toolbox phase=phase1 | bugfix rule description maxlength change for PAN-OS > 71 to 1023
+* type=securityprofile securityprofiletype=spyware 'filter=(cloud-inline-analysis.action has XYZ)' | bugfix to get this working
+* class RQueryContext | add variable $cachedIP4Mapping - aligne with PHP8.3 - do get rid of deprecated message
+* type=appid-toolbox phase=phase6 | bugfix for API usage compare to offline file
+* type=securityprofile actions=exporttoexcel:file.html | bugfix for dns-rule
+* type=securityprofile 'filter=(cloud-inline-analysis is.best-practice)' - bugfix for securityprofiletype=spyware
+* type=securityprofile securityprofiletype=virus 'filter=(cloud-inline-analysis is.best-practice)' | get this working for virus profiles
+* type=gratuitous-arp | bugfix ignore interface if DHCP-client is  configured
+* type=securityprofile securityprofiletype=virus | bugfix for all best-practice filters
+* type=securityprofile actions=exporttoexcel:file.html | fix for Anti-Spyware dns_whitelist description
+* type=edl | bugfix to load objects from shared correctly
+* type=securityprofile securityprofiletype=spyware actions=exporttoexcel:file.html | bugfix if no packet-capture is defined
+* type=securityprofile | bugfix (av.action is.best-practice) and (av.wildfire-action is.best-practice) and (av.mlav-action is.best-practice)
+* type=securityprofile securityprofiletype=virus | introdcue pre-defined setting for action/wildfire-action/mlav-action if not set => "----"
+
+GENERAL:
+* develop watchguard migration - address/service objects - alias - abs-policy - nat
+* update Device App-ID to version: 8873-885
+* introduce new CLASSES ThreatPolicy/ThreatPolicySpyware/ThreatPolicyStore/ThreatPolicyVulnerability
+* update docker file
+* class CallContext | change error out behaviour if actions are missing additional argument - no backtrace print
+
+
+2.1.25 (20240705)
 UTIL:
 * type=securityprofile securityprofiletype=vulnerability | extend with more profile information
 * type=rule-merger | extend help information if argument method= is not set

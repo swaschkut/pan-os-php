@@ -598,6 +598,45 @@ DeviceCallContext::$supportedActions['Template-clone '] = array(
     ),
 );
 
+DeviceCallContext::$supportedActions['Template-create-vsys'] = array(
+    'name' => 'template-create-vsys',
+    'MainFunction' => function (DeviceCallContext $context)
+    {
+    },
+    'GlobalFinishFunction' => function (DeviceCallContext $context)
+    {
+        $templateName = $context->arguments['name'];
+        $vsysName = $context->arguments['vsys-name'];
+
+        $pan = $context->subSystem;
+        if( !$pan->isPanorama() )
+            derr("only supported on Panorama config");
+
+
+        $tmp_template = $pan->findTemplate($templateName);
+        if( $tmp_template === null )
+        {
+            $string = "create Template: " . $templateName;
+            PH::ACTIONlog($context, $string);
+
+            $tmp_template = $pan->createTemplate($templateName);
+
+            if( $context->isAPI )
+                $tmp_template->API_sync();
+        }
+
+        $tmp_template->createVsys($vsysName);
+
+        if( $context->isAPI )
+            $tmp_template->API_sync();
+
+    },
+    'args' => array(
+        'name' => array('type' => 'string', 'default' => 'false'),
+        'vsys-name' => array('type' => 'string', 'default' => 'false'),
+    ),
+);
+
 DeviceCallContext::$supportedActions['TemplateStack-create'] = array(
     'name' => 'templatestack-create',
     'MainFunction' => function (DeviceCallContext $context) {
@@ -2355,7 +2394,8 @@ DeviceCallContext::$supportedActions['sp_spg-create-BP'] = array(
                 if( isset($context->arguments['sp-name']) && $context->arguments['sp-name'] !== "*nodefault*" )
                     $nameArray = array("Outbound");
                 else
-                    $nameArray = array("Alert-Only", "Outbound", "Inbound", "Internal", "Exception");
+                    #$nameArray = array("Alert-Only", "Outbound", "Inbound", "Internal", "Exception");
+                    $nameArray = array("Alert-Only", "Outbound", "Inbound", "Internal");
 
 
                 foreach( $nameArray as $name)
@@ -2558,7 +2598,7 @@ DeviceCallContext::$supportedActions['LogForwardingProfile-create-BP'] = array(
 );
 
 DeviceCallContext::$commonActionFunctions['zpp-create'] = array(
-    'function' => function (DeviceCallContext $context, $entryProfileName) {
+    'function' => function (DeviceCallContext $context, $entryProfileName, $validateZPPavailable = false) {
         $object = $context->object;
         $classtype = get_class($object);
 
@@ -2578,73 +2618,93 @@ DeviceCallContext::$commonActionFunctions['zpp-create'] = array(
                 $sub = $object;
 
                 $sharedStore = $sub;
-                if( $classtype == "Template" )
-                {
-                    $xmlRoot = $sharedStore->deviceConfiguration->network->xmlroot;
-                    if( $xmlRoot === null )
-                    {
-                        $xmlRoot = DH::findFirstElementOrCreate('devices', $sharedStore->deviceConfiguration->xmlroot);
 
-                        #$xmlRoot = DH::findFirstElementByNameAttrOrCreate( 'entry', 'localhost.localdomain', $xmlRoot, $sharedStore->deviceConfiguration->xmlroot->ownerDocument);
-                        $xmlRoot = DH::findFirstElementOrCreate('entry', $xmlRoot);
-                        $xmlRoot->setAttribute( "name", 'localhost.localdomain' );
-                        $xmlRoot = DH::findFirstElementOrCreate('network', $xmlRoot);
-                    }
-                }
-                elseif( $classtype == "VirtualSystem" )
-                {
-                    $xmlRoot = $sharedStore->owner->network->xmlroot;
-                    if( $xmlRoot === null )
-                    {
-                        $xmlRoot = DH::findFirstElementOrCreate('devices', $sharedStore->owner->xmlroot);
-
-                        #$xmlRoot = DH::findFirstElementByNameAttrOrCreate( 'entry', 'localhost.localdomain', $xmlRoot, $sharedStore->owner->xmlroot->ownerDocument);
-                        $xmlRoot = DH::findFirstElementOrCreate('entry', $xmlRoot);
-                        $xmlRoot->setAttribute( "name", 'localhost.localdomain' );
-                        $xmlRoot = DH::findFirstElementOrCreate('network', $xmlRoot);
-                    }
-                }
-
-
-                $ownerDocument = $sub->xmlroot->ownerDocument;
-
-                $newdoc = new DOMDocument;
-                $newdoc->loadXML( $zpp_bp_xmlstring, XML_PARSE_BIG_LINES);
-                $node = $newdoc->importNode($newdoc->firstChild, TRUE);
-                $node = DH::findFirstElementByNameAttr( "entry", $entryProfileName, $node );
-                if( $node === false || $node === null )
-                    derr( "there is an error with the Iron-Skillet update - Profile: ".$entryProfileName." does not exist", null, false );
-                $node = $ownerDocument->importNode($node, TRUE);
-
-
-                $networkProfiles = DH::findFirstElementOrCreate('profiles', $xmlRoot);
-                $zppXMLroot = DH::findFirstElementOrCreate('zone-protection-profile', $networkProfiles);
-
-                $entryDefault = DH::findFirstElementByNameAttr( 'entry', $entryProfileName, $zppXMLroot );
-
-
-                if( $entryDefault === null )
-                {
-                    $zppXMLroot->appendChild( $node );
-
-                    if( $context->isAPI )
-                    {
-                        $entryDefault_xmlroot = DH::findFirstElementByNameAttr( 'entry', $entryProfileName, $zppXMLroot );
-
-                        $xpath = DH::elementToPanXPath($zppXMLroot);
-                        $con = findConnectorOrDie($object);
-
-                        $getXmlText_inline = DH::dom_to_xml($entryDefault_xmlroot, -1, FALSE);
-                        $con->sendSetRequest($xpath, $getXmlText_inline);
-                    }
-                }
-
+                $allZones = array();
+                if( $classtype == "VirtualSystem" )
+                    $allZones = $sharedStore->zoneStore->zones();
                 else
                 {
-                    $string = "ZoneProtectionProfile '".$entryProfileName."' already available. BestPractise ZoneProtectionProfile '".$entryProfileName."' not created";
-                    PH::ACTIONstatus( $context, "SKIPPED", $string );
+                    /** @var Template $sharedStore */
+
+                    $allVsys = $sharedStore->deviceConfiguration->getVirtualSystems();
+                    foreach($allVsys as $vsys)
+                    {
+                        $vsys_Zones = $vsys->zoneStore->zones();
+                        $allZones = array_merge($vsys_Zones, $allZones);
+                    }
+                }
+                if( $validateZPPavailable )
+                {
+                    $create = FALSE;
+                    foreach( $allZones as $zoneOBJ)
+                    {
+                        if( $zoneOBJ->zoneProtectionProfile == null)
+                            $create = TRUE;
+                    }
+                }
+                else
+                {
+                    $create = TRUE;
                 }
 
+                if( $create) {
+                    if ($classtype == "Template") {
+                        $xmlRoot = $sharedStore->deviceConfiguration->network->xmlroot;
+                        if ($xmlRoot === null) {
+                            $xmlRoot = DH::findFirstElementOrCreate('devices', $sharedStore->deviceConfiguration->xmlroot);
+
+                            #$xmlRoot = DH::findFirstElementByNameAttrOrCreate( 'entry', 'localhost.localdomain', $xmlRoot, $sharedStore->deviceConfiguration->xmlroot->ownerDocument);
+                            $xmlRoot = DH::findFirstElementOrCreate('entry', $xmlRoot);
+                            $xmlRoot->setAttribute("name", 'localhost.localdomain');
+                            $xmlRoot = DH::findFirstElementOrCreate('network', $xmlRoot);
+                        }
+                    } elseif ($classtype == "VirtualSystem") {
+                        $xmlRoot = $sharedStore->owner->network->xmlroot;
+                        if ($xmlRoot === null) {
+                            $xmlRoot = DH::findFirstElementOrCreate('devices', $sharedStore->owner->xmlroot);
+
+                            #$xmlRoot = DH::findFirstElementByNameAttrOrCreate( 'entry', 'localhost.localdomain', $xmlRoot, $sharedStore->owner->xmlroot->ownerDocument);
+                            $xmlRoot = DH::findFirstElementOrCreate('entry', $xmlRoot);
+                            $xmlRoot->setAttribute("name", 'localhost.localdomain');
+                            $xmlRoot = DH::findFirstElementOrCreate('network', $xmlRoot);
+                        }
+                    }
+
+
+                    $ownerDocument = $sub->xmlroot->ownerDocument;
+
+                    $newdoc = new DOMDocument;
+                    $newdoc->loadXML($zpp_bp_xmlstring, XML_PARSE_BIG_LINES);
+                    $node = $newdoc->importNode($newdoc->firstChild, TRUE);
+                    $node = DH::findFirstElementByNameAttr("entry", $entryProfileName, $node);
+                    if ($node === false || $node === null)
+                        derr("there is an error with the Iron-Skillet update - Profile: " . $entryProfileName . " does not exist", null, false);
+                    $node = $ownerDocument->importNode($node, TRUE);
+
+
+                    $networkProfiles = DH::findFirstElementOrCreate('profiles', $xmlRoot);
+                    $zppXMLroot = DH::findFirstElementOrCreate('zone-protection-profile', $networkProfiles);
+
+                    $entryDefault = DH::findFirstElementByNameAttr('entry', $entryProfileName, $zppXMLroot);
+
+
+                    if ($entryDefault === null) {
+                        $zppXMLroot->appendChild($node);
+
+                        if ($context->isAPI) {
+                            $entryDefault_xmlroot = DH::findFirstElementByNameAttr('entry', $entryProfileName, $zppXMLroot);
+
+                            $xpath = DH::elementToPanXPath($zppXMLroot);
+                            $con = findConnectorOrDie($object);
+
+                            $getXmlText_inline = DH::dom_to_xml($entryDefault_xmlroot, -1, FALSE);
+                            $con->sendSetRequest($xpath, $getXmlText_inline);
+                        }
+                    } else {
+                        $string = "ZoneProtectionProfile '" . $entryProfileName . "' already available. BestPractise ZoneProtectionProfile '" . $entryProfileName . "' not created";
+                        PH::ACTIONstatus($context, "SKIPPED", $string);
+                    }
+                }
 
                 //create for all VSYS and all templates
                 #$context->first = false;
@@ -2685,8 +2745,14 @@ DeviceCallContext::$supportedActions['ZPP-create-alert-only-BP'] = array(
     'MainFunction' => function (DeviceCallContext $context)
     {
         $f = DeviceCallContext::$commonActionFunctions['zpp-create']['function'];
-        $f($context, 'Alert_Only_Zone_Protection');
-    }
+        $f($context, 'Alert_Only_Zone_Protection', $context->arguments['zpp-availability-validation']);
+    },
+    'args' => array(
+        'zpp-availability-validation' => array('type' => 'bool', 'default' => 'false',
+            'help' => "if set to true; the script validate if already another ZPP is available, if available no creation of ZPP"
+        )
+    )
+
 );
 
 
@@ -4237,7 +4303,7 @@ DeviceCallContext::$supportedActions['system-admin-session'] = array(
         'action' => array('type' => 'string', 'default' => 'display'),
         'idle-since-hours' => array('type' => 'string', 'default' => '8')
     ),
-    'help' => "This Action is displaying the actual logged in admin sessions"
+    'help' => "This Action is displaying the actual logged in admin sessions | possible action 'display' 'delete'"
 );
 
 DeviceCallContext::$supportedActions[] = array(

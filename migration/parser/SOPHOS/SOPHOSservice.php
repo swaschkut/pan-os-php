@@ -17,12 +17,12 @@ trait SOPHOSservice
                 $srv_protocol[1] = "udp";
         }
 
-        print "name: " . $srv_name . " - value: " . $srv_value . " - prot: " . $srv_protocol[1] . "\n";
+        PH::print_stdout( "name: " . $srv_name . " - value: " . $srv_value . " - prot: " . $srv_protocol[1] );
 
         $tmp_service = $this->sub->serviceStore->find($srv_name . $name_extension);
         if( $tmp_service == FALSE or $tmp_service == null )
         {
-            print "create service - name: " . $srv_name . " - value: " . $srv_value . " - prot: " . $srv_protocol[1] . "\n";
+            PH::print_stdout( "create service - name: " . $srv_name . " - value: " . $srv_value . " - prot: " . $srv_protocol[1]);
             $tmp_service = $this->sub->serviceStore->newService($srv_name . $name_extension, $srv_protocol[1], $srv_value);
             $tmp_service->setDescription($srv_comment);
         }
@@ -87,7 +87,7 @@ trait SOPHOSservice
             }
             else
             {
-                print "|" . $policy['_type'] . "|\n";
+                PH::print_stdout( "|" . $policy['_type'] . "|");
                 print_r($policy);
             }
         }
@@ -108,10 +108,18 @@ trait SOPHOSservice
                 {
                     $tmp_service_group = $this->sub->serviceStore->newServiceGroup($srv_name);
                 }
+                PH::print_stdout();
+                PH::print_stdout("object found: '".$tmp_service_group->name()."'");
+                /** @var ServiceGroup $tmp_service_group */
+                if( !$tmp_service_group->isGroup() )
+                {
+                    PH::print_stdout("object is NOT a Group - full part skipped - Service with same name available, please rename");
+                    continue;
+                }
 
                 $tmp_found = FALSE;
                 $src_array = explode(",", $policy['members']);
-                print "- set group members: ";
+                PH::print_stdout( "\n- set group members:");
                 foreach( $src_array as $members )
                 {
                     #print "src_ref:".$source."\n";
@@ -122,7 +130,7 @@ trait SOPHOSservice
                         {
                             //search object in addressstore
                             $tmp_name = str_replace(',', "", $master_service['name']);
-                            print "FOUND service: " . $tmp_name . " - " . $members . "\n";
+                            PH::print_stdout( "FOUND service: " . $tmp_name . " - " . $members );
 
                             $tmp_service = $this->sub->serviceStore->find($tmp_name);
                             // add to rule source
@@ -131,7 +139,7 @@ trait SOPHOSservice
                             else
                                 derr("serviceobject: " . $tmp_name . " not found.");
 
-                            print "$tmp_name";
+                            PH::print_stdout( $tmp_name );
                             $tmp_found = TRUE;
                             break;
                         }
@@ -147,7 +155,7 @@ trait SOPHOSservice
                     }
                     if( !$tmp_found )
                     {
-                        mwarning("   - network object not found:" . $source . "\n");
+                        mwarning("   - service object not found:" . $members . "\n");
                     }
                 }
             }

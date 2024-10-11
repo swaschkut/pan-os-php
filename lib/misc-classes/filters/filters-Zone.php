@@ -486,4 +486,23 @@ RQuery::$defaultFilters['zone']['interface']['operators']['is.set'] = array(
     },
     'arg' => FALSE
 );
+
+RQuery::$defaultFilters['zone']['type']['operators']['is'] = array(
+    'Function' => function (ZoneRQueryContext $context) {
+        $object = $context->object;
+
+
+        if( !in_array( $context->value, $object->getZoneTypes() ) )
+        {
+            derr( "Zone type filter not supported: '".$context->value."' | please pick a supported one: '".implode( ", ", $object->getZoneTypes() ), null, FALSE );
+        }
+
+
+        if( $object->type == $context->value )
+            return TRUE;
+
+        return null;
+    },
+    'arg' => TRUE
+);
 // </editor-fold>

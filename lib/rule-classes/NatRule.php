@@ -218,7 +218,11 @@ class NatRule extends Rule
                 $this->snattype = $firstE->nodeName;
 
                 // Do we support this type of NAT ?
-                if( $this->snattype != "static-ip" && $this->snattype != "dynamic-ip-and-port" && $this->snattype != "dynamic-ip" )
+                if( $this->snattype != "static-ip"
+                    && $this->snattype != "dynamic-ip-and-port"
+                    && $this->snattype != "dynamic-ip"
+                    && $this->snattype != "persistent-dynamic-ip-and-port"
+                )
                     derr("SNAT type '" . $this->snattype . "' for rule '" . $this->name . "' is not supported, EXIT\n");
 
                 //PH::print_stdout( "Determined NAT type ".$tcur['name'] );
@@ -274,7 +278,7 @@ class NatRule extends Rule
 
                     }
                 }
-                else if( $this->snattype == "dynamic-ip-and-port" )
+                else if( $this->snattype == "dynamic-ip-and-port" || $this->snattype == "persistent-dynamic-ip-and-port" )
                 {
                     // Is it <translated-address> type ?
                     $subtype = DH::findFirstElement('translated-address', $firstE);

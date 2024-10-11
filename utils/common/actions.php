@@ -78,6 +78,10 @@ require_once("ScheduleCallContext.php");
 require_once "actions-schedule.php";
 ScheduleCallContext::prepareSupportedActions();
 
+require_once("EDLCallContext.php");
+require_once "actions-edl.php";
+EDLCallContext::prepareSupportedActions();
+
 require_once("ApplicationCallContext.php");
 require_once "actions-application.php";
 ApplicationCallContext::prepareSupportedActions();
@@ -85,6 +89,14 @@ ApplicationCallContext::prepareSupportedActions();
 require_once("ThreatCallContext.php");
 require_once "actions-threat.php";
 ThreatCallContext::prepareSupportedActions();
+
+require_once("ThreatRuleCallContext.php");
+require_once "actions-threatrule.php";
+ThreatRuleCallContext::prepareSupportedActions();
+
+require_once("DNSRuleCallContext.php");
+require_once "actions-dnsrule.php";
+DNSRuleCallContext::prepareSupportedActions();
 
 require_once("DeviceCallContext.php");
 require_once "actions-device.php";

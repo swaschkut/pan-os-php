@@ -6,26 +6,33 @@
 try:
     import os, re
 except ImportError:
-	print("python import failure: 'os, re' NOT found")
-	exit()
+    print("python import failure: 'os, re' NOT found")
+    exit()
 
 try:
     import pandas as pd
 except ImportError:
-	print("python import failure: 'pandas' NOT found")
-	exit()
+    print("python import failure: 'pandas' NOT found")
+    exit()
+
+try:
+    from bs4 import BeautifulSoup
+    import xlsxwriter
+except:
+    print("python import failure: 'bs4' NOT found")
+    exit()
 
 try:
     import sys
 except ImportError:
-	print("python import failure: 'sys' NOT found")
-	exit()
+    print("python import failure: 'sys' NOT found")
+    exit()
 
 try:
     from io import StringIO
 except ImportError:
-	print("python import failure: 'StringIO' from io NOT found")
-	exit()
+    print("python import failure: 'StringIO' from io NOT found")
+    exit()
 
 def sorted_directory_listing_with_os_scandir(directory):
     with os.scandir(directory) as entries:
@@ -35,32 +42,60 @@ def sorted_directory_listing_with_os_scandir(directory):
 
 filepath = sys.argv[1]
 if filepath.endswith('/'):
-	filepath = filepath
+    filepath = filepath
 else:
-	filepath = sys.argv[1]+'/'
+    filepath = sys.argv[1]+'/'
 
 excelfilename = sys.argv[2]
 
 cwd = os.path.dirname(filepath)
 
-print("Found directory "+cwd)
-excelfile = pd.ExcelWriter(f'{cwd}/{excelfilename}', engine='xlsxwriter')
-print("Creating excel file "+str(excelfile)+" in directory "+cwd)
-excelfile
-with pd.ExcelWriter(excelfile) as writer:
-    for file_str in sorted_directory_listing_with_os_scandir(cwd):
-        if file_str.endswith('.html'):
-            print("Found HTML file "+file_str+" in directory "+cwd)
-            srcFile = cwd+"/"+file_str
-            # Read HTML Files
-            with open(srcFile, 'r') as src:
-                html_file = src.read()
-            # Clean the break characters and replace them with ", "
-            breakStrip = html_file.replace('<br />',', ')
-            cleaned_file = pd.read_html(StringIO(breakStrip))
-            shortname=file_str.strip(".html")
-            # Create worksheets per HTML file within the Excel File
-            print("Stripping text from "+str(shortname)+". Worksheet name is "+shortname)
-            for df in cleaned_file:
-                print("Writing sheet "+shortname+" to workbook "+str(excelfilename))
-                df.to_excel(writer, sheet_name=shortname)
+#cwd = "./"
+
+#print("Found directory "+cwd)
+
+elements = []
+
+for file_str in sorted_directory_listing_with_os_scandir(cwd):
+    if file_str.endswith('.html'):
+        print("Found HTML file "+file_str+" in directory "+cwd)
+        srcFile = cwd+"/"+file_str
+        # Read HTML Files
+        print(srcFile)
+        html_file = None
+        with open(srcFile, 'r') as src:
+            html_file = src.read()
+            print(f"File read complete for file: {srcFile}")
+        # Clean the break characters and replace them with ", "
+        ##bs4 for html parsing
+        soup = BeautifulSoup(html_file, features='lxml')
+        ## Extract Tables
+        table = soup.find('table')
+        table_found = "Not Found"
+        if table and len(table):
+            table_found = "Found"
+        print(f"Table status: {table_found}")
+
+        header = []
+        rows = []
+        for i, row in enumerate(table.find_all('tr')):
+            if i == 0:
+                header = [el.text.strip() for el in row.find_all('th')]
+            else:
+                rows.append([el.text.strip() for el in row.find_all('td')])
+        cache = {}
+        cache["header"] = header
+        cache["rows"] = rows
+        cache["file_str"] = file_str
+        elements.append(cache)
+
+workbook = xlsxwriter.Workbook(filepath+excelfilename)
+for element in elements:
+    file_str = element.get("file_str")
+    worksheet = workbook.add_worksheet(file_str.replace(".html", ''))
+    worksheet.write_row(0, 0, element.get("header"))
+    for i, row in enumerate(element.get("rows")):
+        worksheet.write_row(i+1, 0, row)
+    print(f"Table written into Excel with name: {file_str}")
+workbook.close()
+#print(filepath+excelfilename)

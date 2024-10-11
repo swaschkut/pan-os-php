@@ -6,12 +6,14 @@ ARG user_var="root"
 
 SHELL ["/bin/bash", "-c"]
 
-RUN DEBIAN_FRONTEND=noninteractive apt-get update --fix-missing
-RUN DEBIAN_FRONTEND=noninteractive apt update --fix-missing
-RUN DEBIAN_FRONTEND=noninteractive apt install -y --fix-missing \
+RUN DEBIAN_FRONTEND=noninteractive apt update --fix-missing \
+  && DEBIAN_FRONTEND=noninteractive apt-get install -y --fix-missing \
     tzdata \
     git \
     bash-completion \
+    vim \
+    inetutils-ping \
+    inetutils-traceroute \
     php$php_var \
     php$php_var-curl \
     php$php_var-dom \
@@ -20,6 +22,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt install -y --fix-missing \
     php$php_var-yaml \
     python3 \
     python3-pandas \
+    python3-bs4 \
     python3-xlsxwriter \
     python3-netaddr \
     python3-requests \
@@ -38,17 +41,14 @@ COPY migration ./migration
 
 
 # PHP library of pan-os-php
-RUN echo 'include_path = "/usr/share/php:/tools/pan-os-php"' >> /etc/php/$php_var/cli/php.ini
-RUN chmod -R 777 /tools/pan-os-php
+RUN echo 'include_path = "/usr/share/php:/tools/pan-os-php"' >> /etc/php/$php_var/cli/php.ini \
+  && chmod -R 777 /tools/pan-os-php
 
 # UTIL alias for pan-os-php
-RUN cat /tools/pan-os-php/utils/alias.sh >> /$user_var/.bashrc
-RUN cat /tools/pan-os-php/utils/bash_autocompletion/enable_bash.txt >> /$user_var/.bashrc
-
-
-RUN ln -s /tools/pan-os-php/utils/bash_autocompletion/pan-os-php.sh /usr/share/bash-completion/completions/pan-os-php
-
-RUN git config --global user.email=test@test.com user.name=test
+RUN cat /tools/pan-os-php/utils/alias.sh >> /$user_var/.bashrc \
+  && cat /tools/pan-os-php/utils/bash_autocompletion/enable_bash.txt >> /$user_var/.bashrc \
+  && ln -s /tools/pan-os-php/utils/bash_autocompletion/pan-os-php.sh /usr/share/bash-completion/completions/pan-os-php \
+  && git config --global user.email=test@test.com user.name=test
 
 # Entrypoint script
 WORKDIR /scripts

@@ -140,6 +140,14 @@ class PH
                     $argc--;
                 continue;
             }
+            elseif( $arg == 'shadow-loaddghierarchy' )
+            {
+                PH::$shadow_loaddghierarchy = TRUE;
+                unset(PH::$argv[$argIndex]);
+                if( !isset( $_SERVER['REQUEST_METHOD'] ) )
+                    $argc--;
+                continue;
+            }
         }
         unset($argIndex);
         unset($arg);
@@ -182,6 +190,7 @@ class PH
     public static $shadow_displayxmlnode = FALSE;
 
     public static $shadow_loadreduce = FALSE;
+    public static $shadow_loaddghierarchy = FALSE;
 
     public static $JSON_OUT = array();
     public static $JSON_TMP = array();
@@ -193,7 +202,7 @@ class PH
 
     private static $library_version_major = 2;
     private static $library_version_sub = 1;
-    private static $library_version_bugfix = 25;
+    private static $library_version_bugfix = 27;
 
     //BASIC AUTH PAN-OS 7.1
     public static $softwareupdate_key = "658d787f293e631196dac9fb29490f1cc1bb3827";
@@ -963,7 +972,7 @@ class PH
 
     public static $supportedUTILTypes = array(
         "stats",
-        "address", "service", "tag", "schedule", "application", "threat",
+        "address", "service", "tag", "schedule", "application", "threat", "edl", "threat-rule", "dns-rule",
         "rule",
         "device", "securityprofile", "securityprofilegroup",
         "zone",  "interface", "virtualwire", "routing", "dhcp", "certificate", "static-route",
@@ -1188,9 +1197,12 @@ class PH
             || $type == 'service'
             || $type == 'tag'
             || $type == 'schedule'
+            || $type == 'edl'
             || $type == 'securityprofilegroup'
             || $type == 'application'
             || $type == 'threat'
+            || $type == 'threat-rule'
+            || $type == 'dns-rule'
         )
             $util = new UTIL($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
 

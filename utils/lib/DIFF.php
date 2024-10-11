@@ -31,20 +31,27 @@ class DIFF extends UTIL
     public $deleted = array();
     public $empty = array();
 
-    public $failStatus_diff = false;
+    public $failStatus_diff = FALSE;
 
     public $ruleorderCHECK = TRUE;
-    public $avoidDisplayWhitspaceDiffCertificate = false;
+    public $avoidDisplayWhitspaceDiffCertificate = FALSE;
 
     public $additionalruleOrderCHECK = FALSE;
     public $additionalRuleOrderpreXpath = array();
     public $additionalRuleOrderpostXpath = array();
-    public $failStatus_additionalruleorder = false;
+    public $failStatus_additionalruleorder = FALSE;
 
-    public $outputFormatSet;
+    public $outputFormatSet = FALSE;
+    public $outputformatsetFile = null;
+
+    public $displayXpathOnly = FALSE;
+    public $displayXpathAndXMLNode = FALSE;
 
     //needed for CLI input of argument filter=...$$name$$...
     public $replace = "";
+
+    public $replace1 = "";
+    public $replace2 = "";
 
     public function utilStart()
     {
@@ -91,7 +98,10 @@ class DIFF extends UTIL
     ]
 }\n".
             "\n".
-            "  - php " . basename(__FILE__) . " file1=diff.xml \"filter=/config/devices/entry[@name='localhost.localdomain']/device-group/entry[@name='$\$name$$']/pre-rules\" name1=testDG name2=testDG1"
+            "  - php " . basename(__FILE__) . " file1=diff.xml \"filter=/config/devices/entry[@name='localhost.localdomain']/device-group/entry[@name='{{name}}']/pre-rulebase\" name1=testDG name2=testDG1\n" .
+            "\n".
+            ""
+        //display-xpath-only
         ;
 
         #$this->prepareSupportedArgumentsArray();
@@ -104,23 +114,12 @@ class DIFF extends UTIL
 
         if( $this->outputFormatSet )
         {
-            PH::print_stdout();
-            PH::print_stdout();
-            foreach( $this->diff_set as $set )
-                PH::print_stdout( $set );
+            PH::print_stdout(" * script was called with argument 'outputformatset' - please wait for calculation");
 
-            $deleteArray = array( "rulebase", "address-group", "address", "service-group", "service", "misc" );
-
-            foreach( $deleteArray as $item )
-            {
-                if( isset( $this->diff_delete[$item] ) )
-                    foreach( $this->diff_delete[$item] as $key => $delete )
-                        PH::print_stdout( $delete );
-            }
+            $this->display_outputformatset();
         }
-
-        
     }
+
 
     public function main()
     {
@@ -129,11 +128,40 @@ class DIFF extends UTIL
         else
             $this->debugAPI = FALSE;
 
-        if( isset(PH::$args['outputFormatSet']) )
+        if( isset(PH::$args['projectfolder']) )
+        {
+            $this->projectFolder = PH::$args['projectfolder'];
+            if (!file_exists($this->projectFolder)) {
+                mkdir($this->projectFolder, 0777, true);
+            }
+        }
+
+        if( isset(PH::$args['outputformatset']) )
+        {
             $this->outputFormatSet = TRUE;
-        else
-            $this->outputFormatSet = FALSE;
-        //$this->outputFormatSet = TRUE;
+
+            if( !is_bool(PH::$args['outputformatset']) )
+            {
+                $this->outputformatsetFile = PH::$args['outputformatset'];
+
+                if( $this->projectFolder !== null )
+                {
+                    if( strpos($this->outputformatsetFile, $this->projectFolder) === FALSE )
+                        $this->outputformatsetFile = $this->projectFolder."/".$this->outputformatsetFile;
+                }
+            }
+        }
+
+
+        if( isset(PH::$args['display-xpath-only']) )
+        {
+            $this->displayXpathOnly = TRUE;
+        }
+
+        if( isset(PH::$args['display-xpath-and-xmlnode']) )
+        {
+            $this->displayXpathAndXMLNode = TRUE;
+        }
 
         if( isset(PH::$args['noruleordercheck']) )
             $this->ruleorderCHECK = FALSe;
@@ -153,13 +181,65 @@ class DIFF extends UTIL
                     $connector->setShowApiCalls(TRUE);
                 PH::print_stdout( " - Downloading config from API... ");
 
-                PH::print_stdout( "Opening ORIGINAL 'RunningConfig' XML file... ");
-                $doc1 = $connector->getRunningConfig();
+                /////////////////////////////////////////
+                /// //duplicate code, see below
+                $pattern = "/(.*)\{\{name\}\}(.*)/";
 
+                $matches = null;
+                if( isset(PH::$args['filter']) and preg_match( $pattern, PH::$args['filter'], $matches  ) )
+                {
+                    PH::print_stdout( "Opening COMPARE 'CandidateConfig' XML file... ");
+                    $doc1 = $connector->getCandidateConfig();
 
-                PH::print_stdout( "Opening COMPARE 'Candidate' XML file... ");
-                $doc2 = $connector->getCandidateConfig();
+                    $substring = str_replace( $matches[1], "", PH::$args['filter'] );
+                    $substring = str_replace( $matches[2], "", $substring );
+                    $pid = explode( "name", $substring );
+                    $this->replace1 = $pid[0];
+                    $this->replace2 = $pid[1];
 
+                    //specific for API mode
+                    #$doc2 = $connector->getCandidateConfig();
+                    $doc2 = new DOMDocument();
+                    $doc2->loadXML($doc1->saveXML(), XML_PARSE_BIG_LINES);
+
+                    $filterArgument = PH::$args['filter'];
+                    $xpath = $filterArgument;
+
+                    $name1 = PH::$args['name1'];
+                    if( isset( $name1 ) )
+                    {
+                        $xpath1 = str_replace( $this->replace1."name".$this->replace2, $name1, $xpath );
+                        $doc1Root = DH::findXPathSingleEntry($xpath1, $doc1);
+                        if( $doc1Root )
+                            DH::makeElementAsRoot( $doc1Root, $doc1 );
+                        else
+                            derr('"filter" argument is not a valid xPATH or not available | xpath1: "'.$xpath1.'"', null, FALSE);
+                    }
+                    else
+                        $this->display_error_usage_exit('"name1" is missing from arguments');
+
+                    $name2 = PH::$args['name2'];
+                    if( isset($name2) )
+                    {
+                        $xpath2 = str_replace( $this->replace1."name".$this->replace2, $name2, $xpath );
+                        $doc2Root = DH::findXPathSingleEntry($xpath2, $doc2);
+                        if( $doc2Root )
+                            DH::makeElementAsRoot( $doc2Root, $doc2 );
+                        else
+                            derr('"filter" argument is not a valid xPATH or not available | xpath2: "'.$xpath2.'"', null, FALSE);
+                    }
+                    else
+                        $this->display_error_usage_exit('"name2" is missing from arguments');
+                }
+                /////////////////////////////////////////
+                else
+                {
+                    PH::print_stdout( "Opening ORIGINAL 'RunningConfig' XML file... ");
+                    $doc1 = $connector->getRunningConfig();
+
+                    PH::print_stdout( "Opening COMPARE 'Candidate' XML file... ");
+                    $doc2 = $connector->getCandidateConfig();
+                }
             }
             else
                 false('only API is supported', null, false);
@@ -183,15 +263,16 @@ class DIFF extends UTIL
             $origDoc1 = new DOMDocument();
             $origDoc1->load($file1, XML_PARSE_BIG_LINES);
 
-            $pattern = "/(.*)[0-9]{5}name[0-9]{5}(.*)/i";
+            $pattern = "/(.*)\{\{name\}\}(.*)/";
+
             $matches = null;
             if( isset(PH::$args['filter']) and preg_match( $pattern, PH::$args['filter'], $matches  ) )
             {
                 $substring = str_replace( $matches[1], "", PH::$args['filter'] );
                 $substring = str_replace( $matches[2], "", $substring );
                 $pid = explode( "name", $substring );
-                $this->replace = $pid[0];
-
+                $this->replace1 = $pid[0];
+                $this->replace2 = $pid[1];
 
                 $doc2 = new DOMDocument();
                 if( $doc2->load($file1, XML_PARSE_BIG_LINES) === FALSE )
@@ -199,19 +280,17 @@ class DIFF extends UTIL
 
                 $filterArgument = PH::$args['filter'];
                 $xpath = $filterArgument;
-                #print "filter: ".$filterArgument."\n";
 
                 $name1 = PH::$args['name1'];
                 if( isset( $name1 ) )
                 {
-                    #print "name1: ".$name1."\n";
-                    $xpath1 = str_replace( $this->replace."name".$this->replace, $name1, $xpath );
+                    $xpath1 = str_replace( $this->replace1."name".$this->replace2, $name1, $xpath );
                     $doc1Root = DH::findXPathSingleEntry($xpath1, $doc1);
 
                     if( $doc1Root )
                         DH::makeElementAsRoot( $doc1Root, $doc1 );
                     else
-                        $this->display_error_usage_exit('"filter" argument is not a valid xPATH');
+                        $this->display_error_usage_exit('"filter" argument is not a valid xPATH or not available | xpath1: "'.$xpath1.'"');
                 }
                 else
                     $this->display_error_usage_exit('"name1" is missing from arguments');
@@ -219,11 +298,13 @@ class DIFF extends UTIL
                 $name2 = PH::$args['name2'];
                 if( isset($name2) )
                 {
-                    #print "name2: ".$name2."\n";
-                    $xpath2 = str_replace( $this->replace."name".$this->replace, $name2, $xpath );
+                    $xpath2 = str_replace( $this->replace1."name".$this->replace2, $name2, $xpath );
                     $doc2Root = DH::findXPathSingleEntry($xpath2, $doc2);
 
-                    DH::makeElementAsRoot( $doc2Root, $doc2 );
+                    if( $doc2Root )
+                        DH::makeElementAsRoot( $doc2Root, $doc2 );
+                    else
+                        $this->display_error_usage_exit('"filter" argument is not a valid xPATH or not available | xpath2: "'.$xpath2.'"');
                 }
                 else
                      $this->display_error_usage_exit('"name2" is missing from arguments');
@@ -249,7 +330,7 @@ class DIFF extends UTIL
             }
         }
 
-        if( isset(PH::$args['filter']) and strpos( PH::$args['filter'], $this->replace."name".$this->replace ) === FALSE )
+        if( isset(PH::$args['filter']) and strpos( PH::$args['filter'], $this->replace1."name".$this->replace2 ) === FALSE )
         {
             if( file_exists( PH::$args['filter'] ) )
             {
@@ -1032,6 +1113,15 @@ class DIFF extends UTIL
         {
             if( $this->outputFormatSet )
             {
+                if( $this->displayXpathOnly || $this->displayXpathAndXMLNode )
+                    if( !empty( trim($text) ) )
+                    {
+                        PH::print_stdout("\nXPATH: $xpath");
+                        if( $this->displayXpathAndXMLNode )
+                            PH::print_stdout("$text");
+                    }
+
+
                 $multiVSYS = FALSE;
                 if( $this->configType == 'panos' )
                 {
@@ -1050,41 +1140,7 @@ class DIFF extends UTIL
                     //intermediate, remove it later on
                     PH::print_stdout("\nXPATH: $xpath");
                     /////////////
-                    //PH::print_stdout("\nTEXT: $text");
                 }
-
-                /*
-                foreach( $edit as $element )
-                {
-                    if( $element === null )
-                        continue;
-
-                    $array = array();
-
-                    if( $this->debugAPI )
-                    {
-                        PH::print_stdout( "EDIT");
-                        //intermediate, remove it later on
-
-                        $doc2 = new DOMDocument();
-                        $node = $doc2->importNode($element, true);
-                        $doc2->appendChild($node);
-                        PH::print_stdout( $doc2->saveXML( $doc2->documentElement) );
-                        PH::print_stdout( "");
-
-                    }
-
-                    DH::elementToPanSetCommand( 'edit', $element, $array );
-
-
-                    foreach( $array as $entry )
-                    {
-                        if( !in_array( $entry, $this->diff_set ) )
-                            $this->diff_edit[] = $entry;
-                    }
-
-                }
-                */
 
                 foreach( $plus as $element )
                 {
@@ -1155,7 +1211,8 @@ class DIFF extends UTIL
                 if( !empty( trim($text) ) )
                 {
                     PH::print_stdout("\nXPATH: $xpath");
-                    PH::print_stdout("$text");
+                    if( !$this->displayXpathOnly )
+                        PH::print_stdout("$text");
                 }
             }
         }
@@ -1928,6 +1985,84 @@ class DIFF extends UTIL
             $parent->removeChild( $node );
             if( !DH::hasChild($parent) )
                 $this->deleteNodeReverseAlsoParent($parent);
+        }
+    }
+
+    public function display_outputformatset()
+    {
+        PH::print_stdout();
+        PH::print_stdout();
+
+        ####################################
+        ####################################
+        $deleteArray = array( "rulebase", "address-group", "address", "service-group", "service", "profile-group", "profiles", "profiles-custom-url-category", "misc" );
+        $tmp_string = "";
+        foreach( $deleteArray as $item )
+        {
+            if( isset( $this->diff_delete[$item] ) )
+            {
+                foreach( $this->diff_delete[$item] as $key => $delete )
+                    $tmp_string .= $delete."\n";
+            }
+        }
+        ##################
+        if( PH::$shadow_json )
+        {
+            if( isset(PH::$JSON_OUT['setcommands']) )
+                PH::$JSON_OUT['setcommands'] .= $tmp_string;
+            else
+                PH::$JSON_OUT['setcommands'] = $tmp_string;
+        }
+        else
+        {
+            if( $this->outputformatsetFile !== null )
+            {
+                //output only once, see below for SET, here it would be for DELETE
+                #PH::print_stdout( " * set commands are stored in FILE: ".$this->outputformatsetFile);
+                file_put_contents($this->outputformatsetFile, $tmp_string, FILE_APPEND);
+            }
+
+            else
+            {
+                PH::print_stdout($tmp_string);
+            }
+
+        }
+        ####################################
+        ####################################
+
+        ####################################
+        ####################################
+        $setArray = array( "address", "address-group", "service", "service-group", "profiles-custom-url-category","profiles", "profile-group", "misc", "rulebase" );
+        $tmp_string = "";
+        foreach( $setArray as $item )
+        {
+            if( isset( $this->diff_set[$item] ) )
+            {
+
+                foreach( $this->diff_set[$item] as $key => $set )
+                    $tmp_string .= $set."\n";
+            }
+        }
+        if( PH::$shadow_json )
+        {
+            if( isset(PH::$JSON_OUT['setcommands']) )
+                PH::$JSON_OUT['setcommands'] .= $tmp_string;
+            else
+                PH::$JSON_OUT['setcommands'] = $tmp_string;
+        }
+        else
+        {
+            if( $this->outputformatsetFile !== null )
+            {
+                PH::print_stdout( " * set commands are stored in FILE: ".$this->outputformatsetFile);
+                file_put_contents($this->outputformatsetFile, $tmp_string, FILE_APPEND);
+            }
+            else
+            {
+                PH::print_stdout( $tmp_string );
+            }
+
         }
     }
 }

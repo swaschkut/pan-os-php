@@ -20,6 +20,8 @@ class RQueryContext
 
     public $cachedList;
 
+    public $cachedIP4Mapping;
+
     function __construct(RQuery $r, $value = null, $nestedQueries = null)
     {
         $this->rQueryObject = $r;

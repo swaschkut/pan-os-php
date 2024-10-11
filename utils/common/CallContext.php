@@ -166,7 +166,7 @@ class CallContext
             $this->rawArguments[$argName] = $argValue;
 
             if( (!isset($properties['default']) || $properties['default'] == '*nodefault*') && ($argValue === null || strlen($argValue)) == 0 )
-                derr("action '{$this->actionRef['name']}' argument#{$count} '{$argName}' requires a value, it has no default one");
+                derr("action '{$this->actionRef['name']}' argument#{$count} '{$argName}' requires a value, it has no default one", null, FALSE);
 
             if( $argValue !== null && strlen($argValue) > 0 )
             {

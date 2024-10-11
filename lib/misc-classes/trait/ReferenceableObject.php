@@ -390,10 +390,11 @@ trait ReferenceableObject
             if( isset($cur->owner->owner) && $cur->owner->owner !== null )
             {
                 $class = get_class($cur->owner->owner);
+                if( $class == "DeviceGroup" )
+                    $class = get_class($cur->owner);
                 $class = strtolower($class);
                 $store_array[$class] = $class;
             }
-
         }
         return $store_array;
     }
@@ -407,6 +408,8 @@ trait ReferenceableObject
         $store_array['addressstore'] = FALSE;
         $store_array['servicestore'] = FALSE;
         $store_array['rulestore'] = FALSE;
+        $store_array['securityprofilegroupstore'] = FALSE;
+
 
         if( !array_key_exists($value, $store_array) )
         {

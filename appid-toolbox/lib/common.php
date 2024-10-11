@@ -225,15 +225,19 @@ class DeviceGroupRuleAppUsage
     public function getRuleUpdateTimestamp($ruleName, $SrcDst = false)
     {
         if( $SrcDst )
+        {
             if( isset($this->logsSrcDst[$ruleName]) )
             {
                 return $this->logsSrcDst[$ruleName]['timestamp'];
             }
+        }
         else
+        {
             if( isset($this->logs[$ruleName]) )
             {
                 return $this->logs[$ruleName]['timestamp'];
             }
+        }
 
         return null;
     }
@@ -242,11 +246,15 @@ class DeviceGroupRuleAppUsage
     public function resetRulesStats($ruleName, $SrcDst = false)
     {
         if( $SrcDst )
+        {
             if( isset($this->logsSrcDst[$ruleName]) )
                 unset($this->logsSrcDst[$ruleName]);
+        }
         else
+        {
             if( isset($this->logs[$ruleName]) )
                 unset($this->logs[$ruleName]);
+        }
     }
 
 
@@ -276,8 +284,10 @@ class DeviceGroupRuleAppUsage
         $apps = & $this->logs[$ruleName]['apps'];
 
         foreach($apps as $app )
+        {
             if(  ! array_search($app['name'], $ignoreApps) )
                 return true;
+        }
 
         return false;
 
@@ -286,17 +296,21 @@ class DeviceGroupRuleAppUsage
     public function createRuleStats($ruleName, $SrcDst = false)
     {
         if( $SrcDst )
+        {
             if( !isset($this->logsSrcDst[$ruleName]) )
             {
                 $record = Array( 'ips' => Array(), 'timestamp' => time() );
                 $this->logsSrcDst[$ruleName] = &$record;
             }
+        }
         else
+        {
             if( !isset($this->logs[$ruleName]) )
             {
                 $record = Array( 'apps' => Array(), 'timestamp' => time() );
                 $this->logs[$ruleName] = &$record;
             }
+        }
     }
 
     public function updateRuleUpdateTimestamp($ruleName, $SrcDst = false)
@@ -458,13 +472,13 @@ class RuleIDTagLibrary
         return count($this->_tagsToObjects);
     }
 
-    static public function cleanRuleDescription(SecurityRule $rule, $offline = true)
+    static public function cleanRuleDescription(SecurityRule $rule, $configInputType)
     {
         $desc = preg_replace('/appRID#[0-9]+/', '', $rule->description());
-        if( $offline )
-            $rule->setDescription($desc);
-        else
+        if( $configInputType == "api" )
             $rule->API_setDescription($desc);
+        else
+            $rule->setDescription($desc);
     }
 
 }
@@ -769,6 +783,32 @@ class AppIDToolbox_common
         $return['inputConnector'] = $inputConnector;
 
         return $return;
+    }
+
+    static function createRQuery( $objectsFilter, &$objectFilterRQuery)
+    {
+        //
+        // create a RQuery if a filter was provided
+        //
+        /**
+         * @var RQuery $objectFilterRQuery
+         */
+
+        if( $objectsFilter !== null )
+        {
+            $objectFilterRQuery = new RQuery("rule");
+
+            $res = $objectFilterRQuery->parseFromString($objectsFilter, $errorMessage);
+            if( $res === FALSE )
+            {
+                fwrite(STDERR, "\n\n**ERROR** Rule filter parser: " . $errorMessage . "\n\n");
+                exit(1);
+            }
+
+            PH::print_stdout( " - filter after sanitization : " . $objectFilterRQuery->sanitizedString() );
+            PH::print_stdout( array( $objectFilterRQuery->sanitizedString() ), false, "filter");
+        }
+        // --------------------
     }
 
 }

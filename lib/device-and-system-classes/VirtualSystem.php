@@ -50,6 +50,12 @@ class VirtualSystem
     /** @var SecurityProfileStore */
     public $AntiVirusProfileStore = null;
 
+    /** @var ThreatPolicyStore */
+    public $ThreatPolicyStore = null;
+
+    /** @var DNSPolicyStore */
+    public $DNSPolicyStore = null;
+
     /** @var SecurityProfileStore */
     public $VulnerabilityProfileStore = null;
 
@@ -105,6 +111,9 @@ class VirtualSystem
 
     /** @var ScheduleStore */
     public $scheduleStore = null;
+
+    /** @var EDLStore */
+    public $EDLStore = null;
 
     /** @var string */
     public $name;
@@ -173,6 +182,8 @@ class VirtualSystem
     /** @var VirtualRouterContainer */
     public $importedVirtualRouter;
 
+    public $importedVisibleVsys;
+
     /** @var DeviceGroup $parentDeviceGroup in case it load as part of Panorama */
     public $parentDeviceGroup = null;
 
@@ -200,6 +211,8 @@ class VirtualSystem
 
             $this->importedInterfaces = new InterfaceContainer($this, $owner->owner->network);
             $this->importedVirtualRouter = new VirtualRouterContainer($this, $owner->owner->network);
+
+            $this->importedVisibleVsys = array();
         }
         else
         {
@@ -207,6 +220,8 @@ class VirtualSystem
 
             $this->importedInterfaces = new InterfaceContainer($this, $owner->network);
             $this->importedVirtualRouter = new VirtualRouterContainer($this, $owner->network);
+
+            $this->importedVisibleVsys = array();
         }
 
 
@@ -241,6 +256,12 @@ class VirtualSystem
         $this->AntiVirusProfileStore = new SecurityProfileStore($this, "AntiVirusProfile");
         $this->AntiVirusProfileStore->name = 'AntiVirus';
 
+
+        $this->ThreatPolicyStore = new ThreatPolicyStore($this, "ThreatPolicy");
+        $this->ThreatPolicyStore->name = 'ThreatPolicy';
+
+        $this->DNSPolicyStore = new DNSPolicyStore($this, "DNSPolicy");
+        $this->DNSPolicyStore->name = 'DNSPolicy';
 
         $this->VulnerabilityProfileStore = new SecurityProfileStore($this, "VulnerabilityProfile");
         $this->VulnerabilityProfileStore->name = 'Vulnerability';
@@ -299,6 +320,9 @@ class VirtualSystem
         $this->scheduleStore = new ScheduleStore($this);
         $this->scheduleStore->setName('scheduleStore');
 
+        $this->EDLStore = new EDLStore($this);
+        $this->EDLStore->setName('EDLStore');
+
         $this->securityRules = new RuleStore($this, 'SecurityRule');
         $this->securityRules->name = 'Security';
 
@@ -352,6 +376,8 @@ class VirtualSystem
 
         $storeType = array(
             'addressStore', 'serviceStore', 'tagStore', 'scheduleStore', 'appStore',
+
+            'EDLStore',
 
             'securityProfileGroupStore',
 
@@ -409,6 +435,19 @@ class VirtualSystem
             {
                 if( $this->importedVirtualRouter !== null )
                     $this->importedVirtualRouter->load_from_domxml($tmp);
+            }
+
+            $tmp = DH::findFirstElement('visible-vsys', $importroot);
+            if( $tmp !== FALSE )
+            {
+                foreach( $tmp->childNodes as $child )
+                {
+                    if( $child->nodeType != XML_ELEMENT_NODE )
+                        continue;
+
+                    $this->importedVisibleVsys[$child->textContent] =   $child->textContent;
+                }
+
             }
 
         }
@@ -693,7 +732,7 @@ class VirtualSystem
             $tmp = DH::findFirstElement('profile-group', $xml);
             if( $tmp !== FALSE )
                 $this->securityProfileGroupStore->load_securityprofile_groups_from_domxml($tmp);
-            // End of address groups extraction
+            // End of SecurityProfile groups extraction
 
 
             //
@@ -702,7 +741,16 @@ class VirtualSystem
             $tmp = DH::findFirstElement('schedule', $xml);
             if( $tmp !== FALSE )
                 $this->scheduleStore->load_from_domxml($tmp);
-            // End of address groups extraction
+            // End of schedule extraction
+
+
+            //
+            // Extract EDL objects
+            //
+            $tmp = DH::findFirstElement('external-list', $xml);
+            if( $tmp !== FALSE )
+                $this->EDLStore->load_from_domxml($tmp);
+            // End of EDL extraction
 
         }
 
@@ -1102,6 +1150,21 @@ class VirtualSystem
         return TRUE;
     }
 
+    public function setVisibleVsys( $newVisibleVsys )
+    {
+        if( !isset( $this->importedVisibleVsys[$newVisibleVsys] ) )
+        {
+            $importroot = DH::findFirstElement('import', $this->xmlroot);
+            if( $importroot !== FALSE ) {
+                $visibleVsysnode = DH::findFirstElementOrCreate('visible-vsys', $importroot);
+
+                //create new DomNode
+                //add new Domnode
+                $tmp = DH::createElement($visibleVsysnode, "member");
+                $tmp->textContent = $newVisibleVsys;
+            }
+        }
+    }
 
     static public $templateXml = '<entry name="temporarynamechangemeplease"><address/><address-group/><service/><service-group/><rulebase></rulebase></entry>';
 

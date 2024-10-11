@@ -43,7 +43,7 @@ trait lib_1_rule_marker
         if( isset(PH::$args['help']) )
             $this->display_usage_and_exit_p1();
 
-        $supportedOptions = array('phase', 'in', 'out', 'help', 'location', 'debugapi');
+        $supportedOptions = array('phase', 'in', 'out', 'help', 'location', 'debugapi', 'filter');
         $supportedOptions = array_flip($supportedOptions);
 
         foreach( PH::$args as $arg => $argvalue )
@@ -59,6 +59,18 @@ trait lib_1_rule_marker
         {
             $debugAPI = TRUE;
         }
+
+        //
+        // Rule filter provided in CLI ?
+        //
+        if( isset(PH::$args['filter']) )
+        {
+            $this->objectsFilter = PH::$args['filter'];
+            if( !is_string($this->objectsFilter) || strlen($this->objectsFilter) < 1 )
+                $this->display_error_usage_exit('"filter" argument is not a valid string');
+        }
+
+        AppIDToolbox_common::createRQuery($this->objectsFilter, $this->objectFilterRQuery);
 
         $return = AppIDToolbox_common::location();
         $configInput = $return['configInput'];
@@ -104,6 +116,13 @@ trait lib_1_rule_marker
 
         foreach( $rules as $rule )
         {
+            if( $this->objectFilterRQuery !== null )
+            {
+                $queryResult = $this->objectFilterRQuery->matchSingleObject(array('object' => $rule, 'nestedQueries' => &$this->nestedQueries));
+                if( !$queryResult )
+                    continue;
+            }
+
             PH::print_stdout();
             PH::print_stdout(" - rule '{$rule->name()}'");
 
@@ -124,8 +143,13 @@ trait lib_1_rule_marker
             PH::print_stdout("    * applying tag to rule description... ");
 
             $newDescription = $rule->description() . ' ' . $newTagName;
-            if( strlen($newDescription) > 253 )
-                derr('description is too long, please review and edit');
+            if( $rule->owner->owner->version < 71 )
+                if( strlen($newDescription) > 253 )
+                    derr('description is too long, please review and edit');
+            else
+                if( strlen($newDescription) > 1023 )
+                    derr('description is too long, please review and edit');
+
             $ridTagLibrary->addRuleToTag($rule, $newTagName);
             $rule->setDescription($newDescription);
 

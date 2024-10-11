@@ -1190,7 +1190,56 @@ RuleCallContext::$supportedActions[] = array(
 
 //                                                    //
 //                Source/Dest Based Actions           //
+//
 //                                                    //
+RuleCallContext::$supportedActions[] = array(
+    'name' => 'src-calculate-by-zones',
+    'section' => 'address',
+    'MainFunction' => function (RuleCallContext $context) {
+        $rule = $context->object;
+        if( $rule->isDefaultSecurityRule() )
+        {
+            $string = "DefaultSecurityRule - action not supported";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+        if( ($rule->isPbfRule() && $rule->isZoneBased()) || ($rule->isDoSRule() && $rule->isZoneBasedFrom()) )
+        {
+            $string = "FROM is Zone based, not supported yet.";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
+        $rule->addressCalculationByZones('src', $context->arguments['mode'], $context->arguments['virtualRouter'], $context->arguments['template'], $context->arguments['vsys'], $context->isAPI);
+
+    },
+    'args' => & RuleCallContext::$commonActionFunctions['calculate-zones']['args'],
+    'help' => & RuleCallContext::$commonActionFunctions['calculate-zones']['help']
+);
+RuleCallContext::$supportedActions[] = array(
+    'name' => 'dst-calculate-by-zones',
+    'section' => 'address',
+    'MainFunction' => function (RuleCallContext $context) {
+        $rule = $context->object;
+        if( $rule->isDefaultSecurityRule() )
+        {
+            $string = "DefaultSecurityRule - action not supported";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+        if( ($rule->isPbfRule() && $rule->isZoneBased()) || ($rule->isDoSRule() && $rule->isZoneBasedFrom()) )
+        {
+            $string = "FROM is Zone based, not supported yet.";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
+        $rule->addressCalculationByZones('dst', $context->arguments['mode'], $context->arguments['virtualRouter'], $context->arguments['template'], $context->arguments['vsys'], $context->isAPI);
+
+    },
+    'args' => & RuleCallContext::$commonActionFunctions['calculate-zones']['args'],
+    'help' => & RuleCallContext::$commonActionFunctions['calculate-zones']['help']
+);
 RuleCallContext::$supportedActions[] = array(
     'name' => 'src-Add',
     'section' => 'address',
@@ -2981,6 +3030,19 @@ RuleCallContext::$supportedActions[] = array(
 
         $newName = $context->arguments['stringFormula'];
 
+        if( strpos($newName, '$$comma$$') !== FALSE )
+            $newName = str_replace('$$comma$$', ",", $newName);
+        if( strpos($newName, '$$forwardslash$$') !== FALSE )
+            $newName = str_replace('$$forwardslash$$', "/", $newName);
+        if( strpos($newName, '$$colon$$') !== FALSE )
+            $newName = str_replace('$$colon$$', ":", $newName);
+        if( strpos($newName, '$$pipe$$') !== FALSE )
+            $newName = str_replace('$$pipe$$', "|", $newName);
+        if( strpos($newName, '$$newline$$') !== FALSE )
+            $newName = str_replace('$$newline$$', "\n", $newName);
+        if( strpos($newName, '$$space$$') !== FALSE )
+            $newName = str_replace('$$space$$', " ", $newName);
+
         if( strpos($newName, '$$current.name$$') !== FALSE )
         {
             $textToAppend .= str_replace('$$current.name$$', $rule->name(), $newName);
@@ -3016,7 +3078,9 @@ RuleCallContext::$supportedActions[] = array(
             'default' => '*nodefault*',
             'help' =>
                 "This string is used to compose a name. You can use the following aliases :\n" .
-                "  - \$\$current.name\$\$ : current name of the object\n"),
+                "  - \$\$current.name\$\$ : current name of the object\n" .
+                "  - \$\$comma\$\$ or \$\$forwardslash\$\$ or \$\$colon\$\$ or \$\$pipe\$\$ or \$\$newline\$\$ or \$\$space\$\$ ; example 'actions=description-append:\$\$comma\$\$word1'"
+        ),
         'newline' => array('type' => 'bool', 'default' => 'no'))
 );
 
@@ -3030,6 +3094,19 @@ RuleCallContext::$supportedActions[] = array(
         $textToPrepend = $context->rawArguments['text'];
         if( $context->arguments['newline'] == 'yes' )
             $textToPrepend .= "\n";
+
+        if( strpos($textToPrepend, '$$comma$$') !== FALSE )
+            $textToPrepend = str_replace('$$comma$$', ",", $textToPrepend);
+        if( strpos($textToPrepend, '$$forwardslash$$') !== FALSE )
+            $textToPrepend = str_replace('$$forwardslash$$', "/", $textToPrepend);
+        if( strpos($textToPrepend, '$$colon$$') !== FALSE )
+            $textToPrepend = str_replace('$$colon$$', ":", $textToPrepend);
+        if( strpos($textToPrepend, '$$pipe$$') !== FALSE )
+            $textToPrepend = str_replace('$$pipe$$', "|", $textToPrepend);
+        if( strpos($textToPrepend, '$$newline$$') !== FALSE )
+            $textToPrepend = str_replace('$$newline$$', "\n", $textToPrepend);
+        if( strpos($textToPrepend, '$$space$$') !== FALSE )
+            $textToPrepend = str_replace('$$space$$', " ", $textToPrepend);
 
         if( $context->object->owner->owner->version < 71 )
             $max_length = 253;
@@ -3051,7 +3128,17 @@ RuleCallContext::$supportedActions[] = array(
         else
             $rule->setDescription($textToPrepend . $description);
     },
-    'args' => array('text' => array('type' => 'string', 'default' => '*nodefault*'), 'newline' => array('type' => 'bool', 'default' => 'no'))
+    'args' => array(
+        'text' => array(
+            'type' => 'string',
+            'default' => '*nodefault*',
+            'help' =>
+                "This string is used to compose a name. You can use the following aliases :\n" .
+                "  - \$\$comma\$\$ or \$\$forwardslash\$\$ or \$\$colon\$\$ or \$\$pipe\$\$ or \$\$newline\$\$ or \$\$space\$\$ ; example 'actions=description-prepend:\$\$comma\$\$word1'"
+        ),
+        'newline' => array('type' => 'bool', 'default' => 'no')
+
+    )
 );
 
 RuleCallContext::$supportedActions[] = array(
@@ -3073,6 +3160,8 @@ RuleCallContext::$supportedActions[] = array(
             $characterToreplace = str_replace('$$pipe$$', "|", $characterToreplace);
         if( strpos($characterToreplace, '$$newline$$') !== FALSE )
             $characterToreplace = str_replace('$$newline$$', "\n", $characterToreplace);
+        if( strpos($characterToreplace, '$$space$$') !== FALSE )
+            $characterToreplace = str_replace('$$space$$', " ", $characterToreplace);
         if( strpos($characterToreplace, '$$appRID#$$') !== FALSE )
         {
             $characterToreplace = str_replace('$$appRID#$$', "appRID#[0-9]+", $characterToreplace);
@@ -3091,6 +3180,8 @@ RuleCallContext::$supportedActions[] = array(
             $characterForreplace = str_replace('$$pipe$$', "|", $characterForreplace);
         if( strpos($characterForreplace, '$$newline$$') !== FALSE )
             $characterForreplace = str_replace('$$newline$$', "\n", $characterForreplace);
+        if( strpos($characterForreplace, '$$space$$') !== FALSE )
+            $characterForreplace = str_replace('$$space$$', " ", $characterForreplace);
 
         $description = $object->description();
 
@@ -3112,7 +3203,7 @@ RuleCallContext::$supportedActions[] = array(
 
         $string = "new description will be '{$newDescription}'";
         PH::ACTIONlog( $context, $string );
-        
+
         if( $context->isAPI )
             $object->API_setDescription($newDescription);
         else
@@ -3124,7 +3215,7 @@ RuleCallContext::$supportedActions[] = array(
         'search' => array('type' => 'string', 'default' => '*nodefault*'),
         'replace' => array('type' => 'string', 'default' => '')
     ),
-    'help' => 'possible variable $$comma$$ or $$forwardslash$$ or $$colon$$ or $$pipe$$ or $$newline$$ or $$appRID#$$; example "actions=description-Replace-Character:$$comma$$word1"'
+    'help' => 'possible variable $$comma$$ or $$forwardslash$$ or $$colon$$ or $$pipe$$ or $$newline$$ or $$space$$ or $$appRID#$$; example "actions=description-Replace-Character:$$comma$$word1"'
 );
 
 //                                                   //
@@ -3472,7 +3563,7 @@ RuleCallContext::$supportedActions[] = array(
 
         $string = "new name will be '{$newName}'" ;
         PH::ACTIONlog( $context, $string );
-        
+
         if( $context->isAPI )
         {
             $rule->API_setName($newName);
@@ -4074,7 +4165,8 @@ RuleCallContext::$supportedActions[] = array(
             'subtype' => 'string',
             'default' => '*NONE*',
             'choices' => array('ResolveAddressSummary', 'ResolveServiceSummary', 'ResolveServiceAppDefaultSummary','ResolveApplicationSummary', 'ResolveScheduleSummary', 'ApplicationSeen', 'HitCount'),
-            'help' => "pipe(|) separated list of additional field to include in the report. The following is available:\n" .
+            'help' => "example: 'actions=display:HitCount|ApplicationSeen'\n" .
+                "pipe(|) separated list of additional field to include in the report. The following is available:\n" .
                 "  - ResolveAddressSummary : fields with address objects will be resolved to IP addressed and summarized in a new column)\n" .
                 "  - ResolveServiceSummary : fields with service objects will be resolved to their value and summarized in a new column)\n"  .
                 "  - ResolveServiceAppDefaultSummary : fields with application objects will be resolved to their service default value and summarized in a new column)\n"  .
@@ -4578,6 +4670,7 @@ RuleCallContext::$supportedActions[] = array(
             'location' => 'location',
             'rulebase' => 'rulebase',
             'rule_type' => 'rule_type',
+            'sec_rule_type' => 'sec_rule_type',
             'nat_rule_type' => 'nat_rule_type',
             'name' => 'name',
             'tag' => 'tags',
@@ -4676,6 +4769,7 @@ RuleCallContext::$supportedActions[] = array(
                         (($fieldName == 'schedule_resolved_sum' ) && !$addResolvedScheduleSummary) ||
                         (($fieldName == 'application_seen') && (!$addAppSeenSummary || !$context->isAPI) ) ||
                         (($fieldName == 'first-hit' || $fieldName == 'last-hit' || $fieldName == 'hit-count' || $fieldName == 'rule-creation') && (!$addHitCountSummary || !$context->isAPI) ) ||
+                        (($fieldName == 'sec_rule_type' )  && get_class($rule) !== "SecurityRule") ||
                         (($fieldName == 'nat_rule_type' || $fieldName == 'snat_type' || $fieldName == 'snat_address' ||
                                 $fieldName == 'snat_address_resovled_sum' || $fieldName == "dnat_type" || $fieldName == 'dnat_host' ||
                                 $fieldName == 'dnat_host_resovled_sum' || $fieldName == 'dnat_port' || $fieldName == 'dnat_distribution' ||
@@ -4745,7 +4839,8 @@ RuleCallContext::$supportedActions[] = array(
                 'subtype' => 'string',
                 'default' => '*NONE*',
                 'choices' => array('ResolveAddressSummary', 'ResolveServiceSummary', 'ResolveServiceAppDefaultSummary', 'ResolveApplicationSummary', 'ResolveScheduleSummary', 'ApplicationSeen', 'HitCount'),
-                'help' => "pipe(|) separated list of additional field to include in the report. The following is available:\n" .
+                'help' => "example: 'actions=exporttoexcel:file.html,HitCount|ApplicationSeen'\n" .
+                    "pipe(|) separated list of additional field to include in the report. The following is available:\n" .
                     "  - ResolveAddressSummary : fields with address objects will be resolved to IP addressed and summarized in a new column\n" .
                     "  - ResolveServiceSummary : fields with service objects will be resolved to their value and summarized in a new column\n"  .
                     "  - ResolveServiceAppDefaultSummary : fields with application objects will be resolved to their service default value and summarized in a new column\n"  .
@@ -5787,10 +5882,32 @@ RuleCallContext::$supportedActions[] = array(
         //delete cloned rules
         if( strpos( $object->name(), "-app" ) && $object->isDisabled() )
         {
+            $string = "delete disabled Rule: '{$object->name()}'";
+            PH::ACTIONlog( $context, $string );
             if( $context->isAPI )
                 $object->owner->API_remove($object);
             else
                 $object->owner->remove($object);
+
+            return;
+        }
+
+        ########################################################################
+        //remove tag from rule
+        foreach( $object->tags->tags() as $tag )
+        {
+            $matching = preg_match("/appid#/", $tag->name());
+            if( $matching === FALSE )
+                derr("regular expression error on '{$context->value}'");
+            if( $matching === 1 )
+            {
+                $string = "remove TAG: '{$tag->name()}' from Rule";
+                PH::ACTIONlog( $context, $string );
+                if( $context->isAPI )
+                    $object->tags->API_removeTag($tag);
+                else
+                    $object->tags->removeTag($tag);
+            }
         }
 
         ########################################################################
@@ -5798,21 +5915,16 @@ RuleCallContext::$supportedActions[] = array(
         $description = $object->description();
         $newDescription = preg_replace('/ appRID#[0-9]+/', "", $description);
 
-
-        if( $description == $newDescription )
+        if( $description != $newDescription )
         {
-            $string = "new and old description are the same" ;
-            PH::ACTIONstatus( $context, "SKIPPED", $string );
-            return;
+            $string = "new description will be '{$newDescription}'";
+            PH::ACTIONlog($context, $string);
+
+            if ($context->isAPI)
+                $object->API_setDescription($newDescription);
+            else
+                $object->setDescription($newDescription);
         }
-
-        $string = "new description will be '{$newDescription}'";
-        PH::ACTIONlog( $context, $string );
-
-        if( $context->isAPI )
-            $object->API_setDescription($newDescription);
-        else
-            $object->setDescription($newDescription);
     }
 );
 

@@ -6,13 +6,10 @@ ARG user_var="root"
 
 SHELL ["/bin/bash", "-c"]
 
-RUN DEBIAN_FRONTEND=noninteractive apt-get update --fix-missing
-RUN DEBIAN_FRONTEND=noninteractive apt update --fix-missing
-
-RUN DEBIAN_FRONTEND=noninteractive apt -y install software-properties-common ca-certificates lsb-release apt-transport-https
-RUN DEBIAN_FRONTEND=noninteractive add-apt-repository ppa:ondrej/php
-
-RUN DEBIAN_FRONTEND=noninteractive apt install -y \
+RUN DEBIAN_FRONTEND=noninteractive apt update --fix-missing \
+  && DEBIAN_FRONTEND=noninteractive apt -y install software-properties-common ca-certificates lsb-release apt-transport-https \
+  && DEBIAN_FRONTEND=noninteractive add-apt-repository ppa:ondrej/php \
+  && DEBIAN_FRONTEND=noninteractive apt install -y \
     tzdata \
     git \
     bash-completion \
@@ -24,6 +21,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt install -y \
     php$php_var-yaml \
     python3 \
     python3-pandas \
+    python3-bs4 \
     python3-xlsxwriter \
     python3-netaddr \
     python3-requests \

@@ -21,12 +21,12 @@ trait SOPHOSrule
                     $name_length = 63;
                     if( strlen($policy['name']) > $name_length )
                     {
-                        print "\n\nrule name must cut to length " . $name_length . "| new rule name: '" . substr($policy['name'], 0, $name_length - 1) . "'\n";
+                        PH::print_stdout( "\n\nrule name must cut to length " . $name_length . "| new rule name: '" . substr($policy['name'], 0, $name_length - 1) . "'" );
                         $rule_name = substr($policy['name'], 0, $name_length - 1);
                     }
                     else
                     {
-                        print "\nname: " . $policy['name'] . "\n";
+                        PH::print_stdout( "\nname: " . $policy['name'] );
                         $rule_name = str_replace(',', "", $policy['name']);
                     }
                     $rule_name = str_replace('(', "", $rule_name);
@@ -41,13 +41,13 @@ trait SOPHOSrule
 
 
                     $tmp_rule = $this->sub->securityRules->newSecurityRule($rule_name);
-                    print PH::boldText("generate new Rule:" . $rule_name . "\n");
+                    PH::print_stdout( PH::boldText("generate new Rule:" . $rule_name) );
 
 
                     if( strpos($policy['comment'], ",") !== 0 )
                     {
                         //set rule comment
-                        print "- set comment: " . $policy['comment'] . "\n";
+                        PH::print_stdout( "- set comment: " . $policy['comment'] );
                         $rule_comment = str_replace(',', "", $policy['comment']);
                         $rule_comment = str_replace('(', "", $rule_comment);
                         $rule_comment = str_replace(')', "", $rule_comment);
@@ -57,14 +57,14 @@ trait SOPHOSrule
                     if( strpos($policy['action'], "accept") !== FALSE )
                     {
                         //set rule action => allow
-                        print "- set action: " . $policy['action'] . "\n";
+                        PH::print_stdout( "- set action: " . $policy['action'] );
                         $rule_action = str_replace(',', "", $policy['action']);
                         $tmp_rule->setAction('allow');
                     }
                     else
                     {
                         //set rule action => deny
-                        print "- set action: " . $policy['action'] . "\n";
+                        PH::print_stdout( "- set action: " . $policy['action'] );
                         $tmp_rule->setAction('deny');
                     }
 
@@ -74,7 +74,7 @@ trait SOPHOSrule
 
                     $tmp_found = FALSE;
                     $src_array = explode(",", $policy['sources']);
-                    print "- set sources: ";
+                    PH::print_stdout( "- set sources: " );
                     foreach( $src_array as $source )
                     {
                         #print "src_ref:".$source."\n";
@@ -89,7 +89,7 @@ trait SOPHOSrule
                                 $tmp_address = $this->sub->addressStore->findOrCreate($tmp_name);
                                 // add to rule source
                                 $tmp_rule->source->addObject($tmp_address);
-                                print "$tmp_name";
+                                PH::print_stdout( $tmp_name );
                                 $tmp_found = TRUE;
                                 break;
                             }
@@ -109,14 +109,14 @@ trait SOPHOSrule
                             if( strpos($source, "Any") === FALSE )
                                 mwarning("   - network object not found:" . $source . "\n");
                             else
-                                print "ANY\n";
+                                PH::print_stdout( "ANY" );
                         }
                     }
                     #print "\n";
 
                     $tmp_found = FALSE;
                     $dst_array = explode(",", $policy['destinations']);
-                    print "- set destinations: ";
+                    PH::print_stdout( "- set destinations: " );
                     foreach( $dst_array as $destination )
                     {
                         #print "dst_ref:".$destination."\n";
@@ -131,7 +131,7 @@ trait SOPHOSrule
                                 $tmp_address = $this->sub->addressStore->findOrCreate($tmp_name);
                                 // add to rule destination
                                 $tmp_rule->destination->addObject($tmp_address);
-                                print "$tmp_name";
+                                PH::print_stdout( $tmp_name );
                                 $tmp_found = TRUE;
                                 break;
                             }
@@ -150,14 +150,14 @@ trait SOPHOSrule
                             if( strpos($destination, "Any") === FALSE )
                                 mwarning("   - network object not found:" . $destination . "\n");
                             else
-                                print "ANY\n";
+                                PH::print_stdout( "ANY" );
                         }
                     }
-                    print "\n";
+                    PH::print_stdout( );
 
                     $tmp_found = FALSE;
                     $srv_array = explode(",", $policy['services']);
-                    print "- set services: ";
+                    PH::print_stdout( "- set services: " );
                     foreach( $srv_array as $service )
                     {
                         #print "srv_ref:".$service."\n";
@@ -172,7 +172,7 @@ trait SOPHOSrule
                                 $tmp_service = $this->sub->serviceStore->findOrCreate($tmp_name);
                                 // add to rule service
                                 $tmp_rule->services->add($tmp_service);
-                                print "$tmp_name ";
+                                PH::print_stdout( $tmp_name );
                                 $tmp_found = TRUE;
                                 break;
                             }
@@ -192,7 +192,7 @@ trait SOPHOSrule
                             if( strpos($service, "Any") === FALSE )
                                 mwarning("   - service object not found:" . $service . "\n");
                             else
-                                print "ANY";
+                                PH::print_stdout( "ANY");
                         }
                     }
                     print "\n";
@@ -205,7 +205,7 @@ trait SOPHOSrule
                     {
                         $tmp_tag = $this->sub->tagStore->findOrCreate($tag);
                         $tmp_rule->tags->addTag($tmp_tag);
-                        print "- set tag: " . $tag;
+                        PH::print_stdout( "- set tag: " . $tag );
 
                     }
                     print "\n";
@@ -213,7 +213,7 @@ trait SOPHOSrule
                     if( $policy['status'] == 'false,' )
                     {
                         $tmp_rule->setDisabled(TRUE);
-                        print "set rule to disable\n";
+                        PH::print_stdout( "set rule to disable" );
                     }
                 }
             }

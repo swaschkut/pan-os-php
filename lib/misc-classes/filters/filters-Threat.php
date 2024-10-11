@@ -139,4 +139,65 @@ RQuery::$defaultFilters['threat']['object']['operators']['is.disabled'] = array(
         'input' => 'input/panorama-8.0.xml'
     )
 );
+
+RQuery::$defaultFilters['threat']['object']['operators']['is.unused'] = array(
+    'Function' => function (ThreatRQueryContext $context) {
+        $object = $context->object;
+
+        #return $object->objectIsUnused();
+        return $object->countReferences() == 0;
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['threat']['object']['operators']['has.exception'] = array(
+    'Function' => function (ThreatRQueryContext $context) {
+        $object = $context->object;
+
+        return $object->countReferences() > 0;
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['threat']['refobject.ip_exemption.count']['operators']['>,<,=,!'] = array(
+    'Function' => function (ThreatRQueryContext $context) {
+        $object = $context->object;
+        $counter = $context->value;
+
+        $ip_exception_counter = 0;
+        foreach($object->refrules as $reference)
+        {
+            /** @var AntiSpywareProfile|VulnerabilityProfile $reference*/
+            if( isset($reference->threatException) )
+            {
+                foreach($reference->threatException as $threatName => $threatException)
+                {
+                    if( $threatName == $object->name() )
+                        $ip_exception_counter += count($threatException['exempt-ip']);
+                }
+            }
+        }
+
+        $operator = $context->operator;
+        if( $operator == '=' )
+            $operator = '==';
+
+        $operator_string = $ip_exception_counter." ".$operator." ".$counter;
+        if( eval("return $operator_string;" ) )
+            return TRUE;
+
+        return false;
+    },
+    'arg' => true,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
 // </editor-fold>

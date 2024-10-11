@@ -26,7 +26,7 @@ class Schedule
     use PathableName;
     use XmlConvertible;
 
-    /** @var TagStore|null */
+    /** @var ScheduleStore|null */
     public $owner = null;
 
     protected $recurring_type = null;

@@ -110,6 +110,12 @@ class PANConf
     /** @var SecurityProfileStore */
     public $AntiVirusProfileStore = null;
 
+    /** @var ThreatPolicyStore */
+    public $ThreatPolicyStore = null;
+
+    /** @var DNSPolicyStore */
+    public $DNSPolicyStore = null;
+
     /** @var SecurityProfileStore */
     public $VulnerabilityProfileStore = null;
 
@@ -165,6 +171,9 @@ class PANConf
     /** @var ScheduleStore */
     public $scheduleStore = null;
 
+    /** @var EDLStore */
+    public $EDLStore = null;
+
     /** @var CertificateStore */
     public $certificateStore = null;
 
@@ -200,7 +209,7 @@ class PANConf
 
         $this->threatStore = ThreatStore::getPredefinedStore( $this );
 
-        $this->urlStore = SecurityProfileStore::getPredefinedStore();
+        $this->urlStore = SecurityProfileStore::getURLPredefinedStore();
 
         $this->serviceStore = new ServiceStore($this);
         $this->serviceStore->name = 'services';
@@ -218,6 +227,12 @@ class PANConf
         $this->AntiVirusProfileStore = new SecurityProfileStore($this, "AntiVirusProfile");
         $this->AntiVirusProfileStore->name = 'AntiVirus';
 
+
+        $this->ThreatPolicyStore = new ThreatPolicyStore($this, "ThreatPolicy");
+        $this->ThreatPolicyStore->name = 'ThreatPolicy';
+
+        $this->DNSPolicyStore = new DNSPolicyStore($this, "DNSPolicy");
+        $this->DNSPolicyStore->name = 'DNSPolicy';
 
         $this->VulnerabilityProfileStore = new SecurityProfileStore($this, "VulnerabilityProfile");
         $this->VulnerabilityProfileStore->name = 'Vulnerability';
@@ -250,6 +265,9 @@ class PANConf
 
         $this->scheduleStore = new ScheduleStore($this);
         $this->scheduleStore->setName('scheduleStore');
+
+        $this->EDLStore = new EDLStore($this);
+        $this->EDLStore->setName('EDLStore');
 
         $this->certificateStore = new CertificateStore($this);
         $this->certificateStore->setName('certificateStore');
@@ -1141,6 +1159,16 @@ class PANConf
 
         $DGremove = DH::findFirstElementByNameAttrOrDie('entry', $VSYSname, $dgNode);
         $dgNode->removeChild( $DGremove );
+
+
+        //remove XMLnode "shared-gateway" if no XML childNodes are available
+        if( !DH::hasChild($dgNode) )
+        {
+            $xPath2 = "/config/devices/entry[@name='localhost.localdomain']/network";
+            $dgNode2 = DH::findXPathSingleEntryOrDie($xPath2, $this->xmlroot);
+
+            $dgNode2->removeChild( $dgNode );
+        }
 
         unset($this->sharedGateways[ $VSYSname ]);
     }

@@ -42,7 +42,10 @@ class SSH_CONNECTOR__ extends UTIL
             "  password=PW\n".
             "  timeout=10\n".
             "  nohiddenpw\n".
-            "  debug\n";
+            "  debug\n".
+            "  setcommand-maxlinecount=20\n".
+            "  setcommand-file=FILE.txt\n".
+            "";
 
 
         PH::processCliArgs();

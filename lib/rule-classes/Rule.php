@@ -33,6 +33,8 @@ class Rule
     protected $name = 'temporaryname';
     protected $disabled = FALSE;
 
+    public $secprofgroupUndefined = null;
+
     /**
      * @var ZoneRuleContainer
      */
@@ -1370,6 +1372,481 @@ class Rule
             $resolvedZones = &$addressContainer->calculateZonesFromIP4Mapping($ipMapping['ipv4'], $addrContainerIsNegated);
         else
             $resolvedZones = &$addressContainer->calculateZonesFromIP4Mapping($ipMapping['ipv4']);
+
+        if( count($resolvedZones) == 0 )
+        {
+            PH::print_stdout( $padding . " - WARNING : no zone resolved (FQDN? IPv6?)" );
+            return;
+        }
+
+
+        $plus = array();
+        foreach( $zoneContainer->zones() as $zone )
+            $plus[$zone->name()] = $zone->name();
+
+        $minus = array();
+        $common = array();
+
+        foreach( $resolvedZones as $zoneName => $zone )
+        {
+            if( isset($plus[$zoneName]) )
+            {
+                unset($plus[$zoneName]);
+                $common[] = $zoneName;
+                continue;
+            }
+            $minus[] = $zoneName;
+        }
+
+        if( count($common) > 0 )
+            PH::print_stdout( $padding . " - untouched zones: " . PH::list_to_string($common) . "" );
+        if( count($minus) > 0 )
+            PH::print_stdout( $padding . " - missing zones: " . PH::list_to_string($minus) . "" );
+        if( count($plus) > 0 )
+            PH::print_stdout( $padding . " - unneeded zones: " . PH::list_to_string($plus) . "" );
+
+        if( $mode == 'replace' )
+        {
+            PH::print_stdout( $padding . " - REPLACE MODE, syncing with (" . count($resolvedZones) . ") resolved zones.");
+            if( $addressContainer->isAny() )
+                PH::print_stdout( $padding . " *** IGNORED because value is 'ANY' ***" );
+            elseif( count($resolvedZones) == 0 )
+                PH::print_stdout( $padding . " *** IGNORED because no zone was resolved ***" );
+            elseif( count($minus) == 0 && count($plus) == 0 )
+            {
+                PH::print_stdout( $padding . " *** IGNORED because there is no diff ***" );
+            }
+            else
+            {
+                PH::print_stdout();
+
+                if( $this->isNatRule() && $fromOrTo == 'to' )
+                {
+                    if( count($common) > 0 )
+                    {
+                        foreach( $minus as $zoneToAdd )
+                        {
+                            $newRuleName = $this->owner->findAvailableName($this->name());
+                            $newRule = $this->owner->cloneRule($this, $newRuleName);
+                            $newRule->to->setAny();
+                            $newRule->to->addZone($zoneStore->findOrCreate($zoneToAdd));
+                            PH::print_stdout( $padding . " - cloned NAT rule with name '{$newRuleName}' and TO zone='{$zoneToAdd}'" );
+                            if( $isAPI )
+                            {
+                                $newRule->API_sync();
+                                $newRule->owner->API_moveRuleAfter($newRule, $this);
+                            }
+                            else
+                                $newRule->owner->moveRuleAfter($newRule, $this);
+                        }
+                        return;
+                    }
+
+                    $first = TRUE;
+                    foreach( $minus as $zoneToAdd )
+                    {
+                        if( $first )
+                        {
+                            $this->to->setAny();
+                            $this->to->addZone($zoneStore->findOrCreate($zoneToAdd));
+                            PH::print_stdout( $padding . " - changed original NAT 'TO' zone='{$zoneToAdd}'" );
+                            if( $isAPI )
+                                $this->to->API_sync();
+                            $first = FALSE;
+                            continue;
+                        }
+                        $newRuleName = $this->owner->findAvailableName($this->name());
+                        $newRule = $this->owner->cloneRule($this, $newRuleName);
+                        $newRule->to->setAny();
+                        $newRule->to->addZone($zoneStore->findOrCreate($zoneToAdd));
+                        PH::print_stdout( $padding . " - cloned NAT rule with name '{$newRuleName}' and TO zone='{$zoneToAdd}'" );
+                        if( $isAPI )
+                        {
+                            $newRule->API_sync();
+                            $newRule->owner->API_moveRuleAfter($newRule, $this);
+                        }
+                        else
+                            $newRule->owner->moveRuleAfter($newRule, $this);
+                    }
+
+                    return;
+                }
+
+                $zoneContainer->setAny();
+                foreach( $resolvedZones as $zone )
+                    $zoneContainer->addZone($zoneStore->findOrCreate($zone));
+                if( $isAPI )
+                    $zoneContainer->API_sync();
+            }
+        }
+        elseif( $mode == 'append' )
+        {
+            PH::print_stdout( $padding . " - APPEND MODE: adding missing (" . count($minus) . ") zones only.");
+
+            if( $addressContainer->isAny() )
+            {
+                if( $this->isNatRule() && $fromOrTo == 'to' )
+                {
+                    foreach( $zoneStore->getAll() as $zone )
+                        $allZones[] = $zone->name();
+
+                    //swaschkut 20220316 - for migration parser
+                    $this->setDisabled( TRUE );
+                    //self::zoneCalculationNatClone( $allZones, $zoneStore, $padding, $isAPI );
+                }
+                else
+                    PH::print_stdout( " *** IGNORED because value is 'ANY' ***" );
+            }
+            elseif( count($minus) == 0 )
+                PH::print_stdout( " *** IGNORED because no missing zones were found ***" );
+            else
+            {
+                PH::print_stdout();
+
+                if( $this->isNatRule() && $fromOrTo == 'to' )
+                {
+                    self::zoneCalculationNatClone( $minus, $zoneStore, $padding, $isAPI );
+
+                    return;
+                }
+
+                foreach( $minus as $zone )
+                {
+                    $zoneContainer->addZone($zoneStore->findOrCreate($zone));
+                }
+
+                if( $isAPI )
+                    $zoneContainer->API_sync();
+            }
+        }
+        elseif( $mode == 'unneeded-tag-add' )
+        {
+            PH::print_stdout( $padding . " - UNNEEDED-TAG-ADD MODE: adding rule tag for unneeded zones.");
+
+            if( $addressContainer->isAny() )
+                PH::print_stdout( " *** IGNORED because value is 'ANY' ***" );
+            elseif( count($plus) == 0 )
+                PH::print_stdout( " *** IGNORED because no unneeded zones were found ***" );
+            else
+            {
+                PH::print_stdout();
+
+                if( $this->isNatRule() && $fromOrTo == 'to' )
+                {
+                    derr($padding . ' NAT rules are not supported yet');
+                }
+
+                if( $fromOrTo == 'from' )
+                    $tag_add = 'unneeded-from-zone';
+                elseif( $fromOrTo == 'to' )
+                    $tag_add = 'unneeded-to-zone';
+
+                $objectFind = $this->tags->parentCentralStore->findOrCreate($tag_add);
+                $this->tags->addTag($objectFind);
+
+                if( $isAPI )
+                    $zoneContainer->API_sync();
+            }
+        }
+    }
+
+    function addressCalculationByZones($srcOrDst, $mode = "append", $virtualRouter = "*autodetermine*", $template_name = "*notPanorama*", $vsys_name = "*notPanorama*", $isAPI = FALSE )
+    {
+        //DEFAULT settings:
+        $mode_default = "append";
+        $virtualRouter_default = "*autodetermine*";
+        $template_default = "*notPanorama*";
+        $vsys_default = "*notPanorama*";
+
+
+        $padding = '     ';
+        $cachedIPmapping = array();
+
+
+        ////////////////////////
+        /// plain starting calculation
+
+        $addrContainerIsNegated = FALSE;
+
+        $zoneContainer = null;
+        $addressContainer = null;
+
+        if( $srcOrDst == 'src' )
+        {
+            $zoneContainer = $this->from;
+            $addressContainer = $this->source;
+            if( $this->isSecurityRule() && $this->sourceIsNegated() )
+                $addrContainerIsNegated = TRUE;
+        }
+        elseif( $srcOrDst == 'dst' )
+        {
+            $zoneContainer = $this->to;
+            $addressContainer = $this->destination;
+            if( $this->isSecurityRule() && $this->destinationIsNegated() )
+                $addrContainerIsNegated = TRUE;
+        }
+        else
+            derr('unsupported');
+
+        //Workaround
+        $zoneContainer->findParentCentralStore('zoneStore');
+        $zoneStore = $zoneContainer->parentCentralStore;
+
+
+        $system = $this->owner->owner;
+
+        /** @var VirtualRouter $virtualRouterToProcess */
+        $virtualRouterToProcess = null;
+
+        if( !isset($cachedIPmapping) )
+            $cachedIPmapping = array();
+
+        $serial = spl_object_hash($this->owner);
+        $configIsOnLocalFirewall = FALSE;
+
+        if( !isset($cachedIPmapping[$serial]) )
+        {
+            if( $system->isDeviceGroup() || $system->isPanorama() )
+            {
+                $firewall = null;
+                $panorama = $system;
+                if( $system->isDeviceGroup() )
+                    $panorama = $system->owner;
+
+                if( $template_name == $template_default )
+                    derr('with Panorama configs, you need to specify a template name');
+
+                if( $virtualRouter == $virtualRouter_default )
+                    derr('with Panorama configs, you need to specify virtualRouter argument. Available virtual routes are: ');
+
+                $_tmp_explTemplateName = explode('@', $template_name);
+                if( count($_tmp_explTemplateName) > 1 )
+                {
+                    $firewall = new PANConf();
+                    $configIsOnLocalFirewall = TRUE;
+                    $doc = null;
+
+                    if( strtolower($_tmp_explTemplateName[0]) == 'api' )
+                    {
+                        $panoramaConnector = findConnector($system);
+                        $connector = new PanAPIConnector($panoramaConnector->apihost, $panoramaConnector->apikey, 'panos-via-panorama', $_tmp_explTemplateName[1]);
+                        $connector->setShowApiCalls( $panoramaConnector->showApiCalls );
+
+                        $firewall->connector = $connector;
+                        $doc = $connector->getMergedConfig();
+                        $firewall->load_from_domxml($doc);
+
+                        //This is to get full routing table incl. dynamic routing for zone-calculation
+                        $cmd = "<show><routing><route><virtual-router>".$virtualRouter."</virtual-router></route></routing></show>";
+                        $res = $connector->sendOpRequest($cmd, TRUE);
+
+                        $res = DH::findFirstElement( "result", $res);
+                        $entries = $res->getElementsByTagName('entry');
+
+                        /** @var VirtualRouter $vr */
+                        $tmp_vr = $firewall->network->virtualRouterStore->findVirtualRouter( $virtualRouter );
+
+                        foreach( $entries as $key => $child )
+                        {
+                            $destination = DH::findFirstElement( "destination", $child)->textContent;
+                            $nexthop = DH::findFirstElement( "nexthop", $child)->textContent;
+                            $metric = DH::findFirstElement( "metric", $child)->textContent;
+                            $interface = DH::findFirstElement( "interface", $child)->textContent;
+                            $routeTable = DH::findFirstElement( "route-table", $child)->textContent;
+                            $flags = DH::findFirstElement( "flags", $child)->textContent;
+
+                            //skip e.g. multicast
+                            if( $routeTable != "unicast" )
+                                continue;
+
+                            //skip Host route - nexthop == 0.0.0.0 / no interface
+                            if( strpos( $flags, "H" ) !== FALSE )
+                                continue;
+
+                            $routename = "RouteAPI_" . $key;
+
+                            $newRoute = new StaticRoute('***tmp**', $tmp_vr);
+                            $tmpRoute = $newRoute->create_staticroute_from_variables( $routename, $destination, $nexthop, $metric, $interface );
+
+                            $tmp_vr->addstaticRoute($tmpRoute);
+                        }
+
+                        unset($connector);
+                    }
+                    elseif( strtolower($_tmp_explTemplateName[0]) == 'file' )
+                    {
+                        $filename = $_tmp_explTemplateName[1];
+                        if( !file_exists($filename) )
+                            derr("cannot read firewall configuration file '{$filename}''");
+                        $doc = new DOMDocument();
+                        if( !$doc->load($filename, XML_PARSE_BIG_LINES) )
+                            derr("invalive xml file" . libxml_get_last_error()->message);
+                        unset($filename);
+                    }
+                    else
+                        derr("unsupported method: {$_tmp_explTemplateName[0]}@");
+
+
+                    // delete rules to avoid loading all the config
+                    $deletedNodesCount = DH::removeChildrenElementsMatchingXPath("/config/devices/entry/vsys/entry/rulebase/*", $doc);
+                    if( $deletedNodesCount === FALSE )
+                        derr("xpath issue");
+                    $deletedNodesCount = DH::removeChildrenElementsMatchingXPath("/config/shared/rulebase/*", $doc);
+                    if( $deletedNodesCount === FALSE )
+                        derr("xpath issue");
+
+                    //PH::print_stdout( "\n\n deleted $deletedNodesCount nodes " );
+
+                    $firewall->load_from_domxml($doc);
+
+                    unset($deletedNodesCount);
+                    unset($doc);
+                }
+
+
+                /** @var Template $template */
+                if( !$configIsOnLocalFirewall )
+                {
+                    $template = $panorama->findTemplate($template_name);
+                    if( $template === null )
+                        derr("cannot find Template named '{$template_name}'. Available template list:" . PH::list_to_string($panorama->templates));
+                }
+
+                if( $configIsOnLocalFirewall )
+                    $virtualRouterToProcess = $firewall->network->virtualRouterStore->findVirtualRouter($virtualRouter);
+                else
+                    $virtualRouterToProcess = $template->deviceConfiguration->network->virtualRouterStore->findVirtualRouter($virtualRouter);
+
+                if( $virtualRouterToProcess === null )
+                {
+                    if( $configIsOnLocalFirewall )
+                        $tmpVar = $firewall->network->virtualRouterStore->virtualRouters();
+                    else
+                        $tmpVar = $template->deviceConfiguration->network->virtualRouterStore->virtualRouters();
+
+                    derr("cannot find VirtualRouter named '{$virtualRouter}' in Template '{$template_name}'. Available VR list: " . PH::list_to_string($tmpVar));
+                }
+
+                if( (!$configIsOnLocalFirewall && count($template->deviceConfiguration->virtualSystems) == 1) || ($configIsOnLocalFirewall && count($firewall->virtualSystems) == 1) )
+                {
+                    if( $configIsOnLocalFirewall )
+                        $system = $firewall->virtualSystems[0];
+                    else
+                        $system = $template->deviceConfiguration->virtualSystems[0];
+                }
+                else
+                {
+                    $vsysConcernedByVR = $virtualRouterToProcess->findConcernedVsys();
+                    if( count($vsysConcernedByVR) == 1 )
+                    {
+                        $system = array_pop($vsysConcernedByVR);
+                    }
+                    elseif( $vsys_name == '*autodetermine*' )
+                    {
+                        derr("cannot autodetermine resolution context from Template '{$template}' VR '{$virtualRouter}'' , multiple VSYS are available: " . PH::list_to_string($vsysConcernedByVR) . ". Please provide choose a VSYS.");
+                    }
+                    else
+                    {
+                        if( $configIsOnLocalFirewall )
+                            $vsys = $firewall->findVirtualSystem($vsys_name);
+                        else
+                            $vsys = $template->deviceConfiguration->findVirtualSystem($vsys_name);
+                        if( $vsys === null )
+                            derr("cannot find VSYS '{$vsys_name}' in Template '{$template_name}'");
+                        $system = $vsys;
+                    }
+                }
+
+                //derr(DH::dom_to_xml($template->deviceConfiguration->xmlroot));
+                //$tmpVar = $system->importedInterfaces->interfaces();
+                //derr(count($tmpVar)." ".PH::list_to_string($tmpVar));
+            }
+            else if( $virtualRouter != '*autodetermine*' )
+            {
+                $virtualRouterToProcess = $system->owner->network->virtualRouterStore->findVirtualRouter($virtualRouter);
+                if( $virtualRouterToProcess === null )
+                    derr("VirtualRouter named '{$virtualRouter}' not found");
+            }
+            else
+            {
+                $vRouters = $system->owner->network->virtualRouterStore->virtualRouters();
+                $foundRouters = array();
+
+                foreach( $vRouters as $router )
+                {
+                    foreach( $router->attachedInterfaces->interfaces() as $if )
+                    {
+                        if( $system->importedInterfaces->hasInterfaceNamed($if->name()) )
+                        {
+                            $foundRouters[] = $router;
+                            break;
+                        }
+                    }
+                }
+
+                PH::print_stdout( $padding . " - VSYS/DG '{$system->name()}' has interfaces attached to " . count($foundRouters) . " virtual routers" );
+                if( count($foundRouters) > 1 )
+                    derr("more than 1 suitable virtual routers found, please specify one of the following: " . PH::list_to_string($foundRouters));
+                if( count($foundRouters) == 0 )
+                    derr("no suitable VirtualRouter found, please force one or check your configuration");
+
+                $virtualRouterToProcess = $foundRouters[0];
+            }
+            $cachedIPmapping[$serial] = $virtualRouterToProcess->getIPtoZoneRouteMapping($system);
+        }
+
+
+        $ipMapping = &$cachedIPmapping[$serial];
+
+        if( $zoneContainer->isAny() )
+        {
+            PH::print_stdout( $padding . " - SKIPPED : zone container is ANY()" );
+            return;
+        }
+
+        if( $addressContainer->isAny() && $this->isSecurityRule() )
+        {
+            PH::print_stdout( $padding . " - CONTINUE : address container is ANY()" );
+            #return;
+        }
+        else
+        {
+            PH::print_stdout( $padding . " - SKIPPED : address container is NOT ANY()" );
+            return;
+        }
+
+
+        foreach( $zoneContainer->zones() as $zone )
+        {
+            print "zone: ".$zone->name()."\n";
+            foreach( $ipMapping['ipv4'] as $ipMap )
+            {
+                #print_r($ipMap);
+                if( isset($ipMap['zone']) )
+                {
+                    #print "validate zone: ".$ipMap['zone']."\n";
+                    if( $zone->name() == $ipMap['zone'] )
+                    {
+                        $tmp_adddress = $this->owner->owner->addressStore->findOrCreate($ipMap['network']);
+                        $addressContainer->addObject( $tmp_adddress );
+                    }
+                }
+            }
+        }
+
+        return;
+
+        //Todo: calculate address from zon
+        if( $this->isSecurityRule() )
+        {
+            $resolvedZones = &$addressContainer->calculateZonesFromIP4Mapping($ipMapping['ipv4'], $addrContainerIsNegated);
+            #print_r($ipMapping);
+        }
+        else
+        {
+            $resolvedZones = &$addressContainer->calculateZonesFromIP4Mapping($ipMapping['ipv4']);
+        }
+
 
         if( count($resolvedZones) == 0 )
         {
