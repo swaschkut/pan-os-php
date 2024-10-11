@@ -1,0 +1,159 @@
+{
+  "header-comment": "create backup folder; put your Panorama and NGFW exported config into this backup folder with name: 'PANORAMA_running-config.xml', same with NGFW config with name: 'NGFW_running-config.xml'",
+  "footer-comment": "this script is migrating vsys2/vsys3/vsys4 over to separate Panorama Device-Group and one single Template - no locale Device config is migrated over - like admin accounts",
+  "command": [
+    {
+      "type": "address",
+      "comment": "LAB upload",
+      "in": "in=backup/PANORAMA_running-config.xml",
+      "out": "out=panorama.xml"
+    },
+    {
+      "type": "address",
+      "comment": "LAB upload",
+      "in": "in=backup/NGFW_running-config.xml",
+      "out": "out=ngfw.xml"
+    },
+    {
+      "type": "upload",
+      "comment": "LAB upload",
+      "in": "in=panorama.xml",
+      "out": "out=api://192.168.10.155",
+      "injectuseradmin2": "injectuseradmin2",
+      "loadafterupload": "loadafterupload"
+    },
+    {
+      "type": "upload",
+      "comment": "NGFW shared to DG SHARED",
+      "in": "in=ngfw.xml",
+      "out": "out=api://192.168.10.155",
+      "fromxpath": "fromxpath=/config/shared/*",
+      "toxpath": "toxpath=/config/devices/entry/device-group/entry[@name='NGFW_shared']",
+      "sleep": "sleep=5"
+    },
+    {
+      "type": "device",
+      "comment": "create DG",
+      "in": "in=api://192.168.10.155",
+      "actions": "actions=devicegroup-create:NGFW_vsys2,NGFW_shared"
+    },
+    {
+      "type": "device",
+      "comment": "create DG",
+      "in": "in=api://192.168.10.155",
+      "actions": "actions=devicegroup-create:NGFW_vsys3,NGFW_shared"
+    },
+    {
+      "type": "device",
+      "comment": "create DG",
+      "in": "in=api://192.168.10.155",
+      "actions": "actions=devicegroup-create:NGFW_vsys4,NGFW_shared"
+    },
+    {
+      "type": "upload",
+      "comment": "vsys2 to DG vsys2",
+      "in": "in=ngfw.xml",
+      "out": "out=api://192.168.10.155",
+      "fromxpath": "fromxpath=/config/devices/entry[@name='localhost.localdomain']/vsys/entry[@name='vsys2']/*",
+      "toxpath": "toxpath=/config/devices/entry/device-group/entry[@name='NGFW_vsys2']"
+    },
+    {
+      "type": "upload",
+      "comment": "vsys3 to DG vsys3",
+      "in": "in=ngfw.xml",
+      "out": "out=api://192.168.10.155",
+      "fromxpath": "fromxpath=/config/devices/entry[@name='localhost.localdomain']/vsys/entry[@name='vsys3']/*",
+      "toxpath": "toxpath=/config/devices/entry/device-group/entry[@name='NGFW_vsys3']"
+    },
+    {
+      "type": "upload",
+      "comment": "vsys4 to DG vsys4",
+      "in": "in=ngfw.xml",
+      "out": "out=api://192.168.10.155",
+      "fromxpath": "fromxpath=/config/devices/entry[@name='localhost.localdomain']/vsys/entry[@name='vsys4']/*",
+      "toxpath": "toxpath=/config/devices/entry/device-group/entry[@name='NGFW_vsys4']"
+    },
+    {
+      "type": "upload",
+      "comment": "Template - network",
+      "in": "in=ngfw.xml",
+      "out": "out=api://192.168.10.155",
+      "fromxpath": "fromxpath=/config/devices/entry[@name='localhost.localdomain']/network/*",
+      "toxpath": "toxpath=/config/devices/entry[@name='localhost.localdomain']/template/entry[@name='NGFW_template']/config/devices/entry[@name='localhost.localdomain']/network"
+    },
+    {
+      "type": "upload",
+      "comment": "Template - NGFW shared",
+      "in": "in=ngfw.xml",
+      "out": "out=api://192.168.10.155",
+      "fromxpath": "fromxpath=/config/shared/*",
+      "toxpath": "toxpath=/config/devices/entry[@name='localhost.localdomain']/template/entry[@name='NGFW_template']/config/shared"
+    },
+    {
+      "type": "device",
+      "comment": "create Template vsys12",
+      "in": "in=api://192.168.10.155",
+      "actions": "actions=template-create-vsys:NGFW_template,vsys2"
+    },
+    {
+      "type": "device",
+      "comment": "create Template vsys3",
+      "in": "in=api://192.168.10.155",
+      "actions": "actions=template-create-vsys:NGFW_template,vsys3"
+    },
+    {
+      "type": "device",
+      "comment": "create Template vsys4",
+      "in": "in=api://192.168.10.155",
+      "actions": "actions=template-create-vsys:NGFW_template,vsys4"
+    },
+    {
+      "type": "upload",
+      "comment": "Template - NGFW shared",
+      "in": "in=ngfw.xml",
+      "out": "out=api://192.168.10.155",
+      "fromxpath": "fromxpath=/config/shared/*",
+      "toxpath": "toxpath=/config/devices/entry[@name='localhost.localdomain']/template/entry[@name='NGFW_template']/config/shared"
+    },
+    {
+      "type": "upload",
+      "comment": "Template - NGFW vsys2",
+      "in": "in=ngfw.xml",
+      "out": "out=api://192.168.10.155",
+      "fromxpath": "fromxpath=/config/devices/entry[@name='localhost.localdomain']/vsys/entry[@name='vsys2']/*",
+      "toxpath": "toxpath=/config/devices/entry[@name='localhost.localdomain']/template/entry[@name='NGFW_template']/config/devices/entry[@name='localhost.localdomain']/vsys/entry[@name='vsys2']"
+    },
+    {
+      "type": "upload",
+      "comment": "Template - NGFW vsys3",
+      "in": "in=ngfw.xml",
+      "out": "out=api://192.168.10.155",
+      "fromxpath": "fromxpath=/config/devices/entry[@name='localhost.localdomain']/vsys/entry[@name='vsys3']/*",
+      "toxpath": "toxpath=/config/devices/entry[@name='localhost.localdomain']/template/entry[@name='NGFW_template']/config/devices/entry[@name='localhost.localdomain']/vsys/entry[@name='vsys3']"
+    },
+    {
+      "type": "upload",
+      "comment": "Template - NGFW vsys4",
+      "in": "in=ngfw.xml",
+      "out": "out=api://192.168.10.155",
+      "fromxpath": "fromxpath=/config/devices/entry[@name='localhost.localdomain']/vsys/entry[@name='vsys4']/*",
+      "toxpath": "toxpath=/config/devices/entry[@name='localhost.localdomain']/template/entry[@name='NGFW_template']/config/devices/entry[@name='localhost.localdomain']/vsys/entry[@name='vsys4']"
+    },
+    {
+      "type": "upload",
+      "comment": "Template - NGFW GP network",
+      "in": "in=backup/NGFW_running-config.xml",
+      "out": "out=api://192.168.10.155",
+      "fromxpath": "fromxpath=/config/devices/entry[@name='localhost.localdomain']/network/tunnel/global-protect-gateway/*",
+      "toxpath": "toxpath=/config/devices/entry[@name='localhost.localdomain']/template/entry[@name='NGFW_template']/config/devices/entry[@name='localhost.localdomain']/network/tunnel/global-protect-gateway"
+    },
+    {
+      "type": "upload",
+      "comment": "Template - NGFW GP vsys",
+      "in": "in=backup/NGFW_running-config.xml",
+      "out": "out=api://192.168.10.155",
+      "fromxpath": "fromxpath=/config/devices/entry[@name='localhost.localdomain']/vsys/entry[@name='vsys3']/global-protect/global-protect-gateway/*",
+      "toxpath": "toxpath=/config/devices/entry[@name='localhost.localdomain']/template/entry[@name='NGFW_template']/config/devices/entry[@name='localhost.localdomain']/vsys/entry[@name='vsys3']/global-protect/global-protect-gateway"
+    }
+  ]
+}
