@@ -50,7 +50,8 @@ else
 
 if( isset(PH::$args['upload']) )
 {
-    $cli = "php ../utils/upload-config.php in=input/panorama-8.0.xml out=api://{$api_ip_address} loadAfterUpload injectUserAdmin2  2>&1";
+    $path = dirname(__FILE__)."/../";
+    $cli = "php ".$path."utils/upload-config.php in=".$path."input/panorama-8.0.xml out=api://{$api_ip_address} loadAfterUpload injectUserAdmin2  2>&1";
     PH::print_stdout( " * Executing CLI: {$cli}" );
 
     $output = array();
@@ -195,8 +196,8 @@ foreach( RQuery::$defaultFilters as $type => &$filtersByField )
             $output = '/dev/null';
             $ruletype = 'any';
 
-
-            $cli = "php $util in=api://{$api_ip_address} location={$location} actions=display 'filter={$filterString}'";
+            $path = dirname(__FILE__)."/../";
+            $cli = "php ".$path.$util." in=api://{$api_ip_address} location={$location} actions=display 'filter={$filterString}'";
 
             if( $type == 'rule' )
                 $cli .= " ruletype={$ruletype}";

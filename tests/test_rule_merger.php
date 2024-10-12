@@ -123,7 +123,8 @@ foreach( $test_merger as $merger )
                 $location = 'any';
                 $output = '/dev/null';
 
-                $cli = "php $util in={$ci['input']} out={$output} location={$location} exportcsv={$prepostkey}-{$upperlevelkey}-{$methodkey}.html";
+                $path = dirname(__FILE__)."/";
+                $cli = "php ".$path.$util." in=".$path.$ci['input']." out={$output} location={$location} exportcsv={$prepostkey}-{$upperlevelkey}-{$methodkey}.html";
 
                 $cli .= " {$allowmergingwithupperlevel}";
 
