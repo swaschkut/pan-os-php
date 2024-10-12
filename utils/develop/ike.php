@@ -140,6 +140,7 @@ if( isset(PH::$args['folder']) )
 if( isset(PH::$args['template']) )
 {
     $template = PH::$args['template'];
+    //location
 }
 
 ################
@@ -251,6 +252,10 @@ else
     {
         PH::print_stdout( " - No 'location' provided so using default ='shared'");
         $objectslocation = 'shared';
+        if( isset(PH::$args['template']) )
+        {
+            $objectslocation = 'any';
+        }
     }
     elseif( $configType == 'pushed_panorama' )
     {

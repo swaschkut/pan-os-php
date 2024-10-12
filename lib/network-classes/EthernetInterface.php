@@ -126,27 +126,38 @@ class EthernetInterface
                         continue;
 
                     $tmpIP = $l3ipNode->getAttribute('name');
-                    $this->l3ipv4Addresses[] = $tmpIP;
+                    #$this->l3ipv4Addresses[] = $tmpIP;
 
                     //Todo - reference adding is missing, search object name if no IP
-                    /*
-                    if( strpos($tmpIP, "/") === FALSE )
+                    $pan_object = $this->owner->owner;
+                    if( isset( $pan_object->owner ) )
                     {
-                        $tmp_vsys = $this->owner->owner->network->findVsysInterfaceOwner($this->name());
-                        if( is_object($tmp_vsys) )
+                        //Panorama Template
+                        if( get_class($pan_object->owner) == "Template" )
                         {
-                            $object = $tmp_vsys->addressStore->find($tmpIP);
-                            #$object = $tmp_vsys->addressStore->findOrCreate($ip);
+                            $template_object = $pan_object->owner;
+                            $panorama_object = $template_object->owner;
+                            $shared_object = $panorama_object->addressStore->find($tmpIP);
+                            if( $shared_object != null )
+                            {
+                                $shared_object->addReference($this);
+                                $this->l3ipv4Addresses[] = $shared_object->value();
+                            }
+                            else
+                                $this->l3ipv4Addresses[] = $tmpIP;
                         }
-                        else
-                            derr("vsys for interface: " . $this->name() . " not found. \n", $this);
-
-                        if( is_object($object) )
-                            $object->addReference($this);
-                        else
-                            derr("objectname: " . $tmpIP . " not found. Can not be added to interface.\n", $this);
                     }
-                    */
+                    else
+                    {
+                        //NGFW
+                        if( strpos( $tmpIP, "/" ) !== False )
+                            $this->l3ipv4Addresses[] = $tmpIP;
+                        else
+                        {
+                            //object
+                            $this->l3ipv4Addresses[] = $tmpIP;
+                        }
+                    }
                 }
             }
 
@@ -163,26 +174,34 @@ class EthernetInterface
                             continue;
 
                         $tmpIP = $l3ipNode->getAttribute('name');
-                        $this->l3ipv6Addresses[] = $tmpIP;
+                        #$this->l3ipv6Addresses[] = $tmpIP;
 
                         //Todo - reference adding is missing, search object name if no IP
-                        /*if( strpos($tmpIP, "/") === FALSE )
+                        $pan_object = $this->owner->owner;
+                        if( isset( $pan_object->owner ) )
                         {
-                            $tmp_vsys = $this->owner->owner->network->findVsysInterfaceOwner($this->name());
-                            if( is_object($tmp_vsys) )
+                            //Panorama Template
+                            if( get_class($pan_object->owner) == "Template" )
                             {
-                                $object = $tmp_vsys->addressStore->find($tmpIP);
-                                #$object = $tmp_vsys->addressStore->findOrCreate($ip);
+                                $template_object = $pan_object->owner;
+                                $panorama_object = $template_object->owner;
+                                $shared_object = $panorama_object->addressStore->find($tmpIP);
+                                if( $shared_object != null )
+                                {
+                                    print "add reference: ".$shared_object->name()."\n";
+                                    $shared_object->addReference($this);
+                                    $this->l3ipv6Addresses[] = $shared_object->value();
+                                }
+                                else
+                                    $this->l3ipv6Addresses[] = $tmpIP;
                             }
-                            else
-                                derr("vsys for interface: " . $this->name() . " not found. \n", $this);
-
-                            if( is_object($object) )
-                                $object->addReference($this);
-                            else
-                                derr("objectname: " . $tmpIP . " not found. Can not be added to interface.\n", $this);
                         }
-                        */
+                        else
+                        {
+                            //NGFW
+                            $this->l3ipv4Addresses[] = $tmpIP;
+                        }
+
                     }
                 }
             }

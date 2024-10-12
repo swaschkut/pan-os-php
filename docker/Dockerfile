@@ -2,9 +2,11 @@ ARG IMAGE=ubuntu:24.04
 FROM ${IMAGE}
 
 ARG php_var="8.3"
-ARG user_var="root"
+ARG user_var="ubuntu"
 
 SHELL ["/bin/bash", "-c"]
+
+#RUN useradd -u 8877 nonroot
 
 RUN DEBIAN_FRONTEND=noninteractive apt update --fix-missing \
   && DEBIAN_FRONTEND=noninteractive apt-get install -y --fix-missing \
@@ -44,11 +46,13 @@ COPY migration ./migration
 RUN echo 'include_path = "/usr/share/php:/tools/pan-os-php"' >> /etc/php/$php_var/cli/php.ini \
   && chmod -R 777 /tools/pan-os-php
 
-# UTIL alias for pan-os-php
-RUN cat /tools/pan-os-php/utils/alias.sh >> /$user_var/.bashrc \
-  && cat /tools/pan-os-php/utils/bash_autocompletion/enable_bash.txt >> /$user_var/.bashrc \
-  && ln -s /tools/pan-os-php/utils/bash_autocompletion/pan-os-php.sh /usr/share/bash-completion/completions/pan-os-php \
+RUN ln -s /tools/pan-os-php/utils/bash_autocompletion/pan-os-php.sh /usr/share/bash-completion/completions/pan-os-php \
   && git config --global user.email=test@test.com user.name=test
+
+USER ubuntu
+# UTIL alias for pan-os-php
+RUN cat /tools/pan-os-php/utils/alias.sh >> /home/$user_var/.bashrc \
+  && cat /tools/pan-os-php/utils/bash_autocompletion/enable_bash.txt >> /home/$user_var/.bashrc
 
 # Entrypoint script
 WORKDIR /scripts
@@ -57,5 +61,6 @@ COPY docker/entrypoint.sh .
 # Working dir for the app
 VOLUME /share
 WORKDIR /share
+
 
 ENTRYPOINT [ "/bin/bash", "/scripts/entrypoint.sh" ]

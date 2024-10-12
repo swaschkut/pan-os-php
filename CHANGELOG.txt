@@ -6,6 +6,8 @@ UTIL:
 BUGFIX:
 
 GENERAL:
+* improve different network classes for IPv6 | improve for Panroama Template object usage in network classes
+* Docker file, move to nonroot user: "ubuntu" - more valdiation needed for develop script
 
 
 2.1.27 (20241011)

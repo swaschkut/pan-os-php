@@ -762,27 +762,27 @@ class VirtualSystem
             foreach( $this->importedInterfaces->interfaces() as $interface )
             {
                 if( $interface->isEthernetType() && $interface->type() == "layer3" )
-                    $interfaces = $interface->getLayer3IPv4Addresses();
+                {
+                    $interfacesv4 = $interface->getLayer3IPv4Addresses();
+                    $interfacesv6 = $interface->getLayer3IPv6Addresses();
+                    $interfaces = array_merge($interfacesv4, $interfacesv6);
+                }
                 elseif( $interface->isVlanType() || $interface->isLoopbackType() || $interface->isTunnelType() )
-                    $interfaces = $interface->getIPv4Addresses();
+                {
+                    $interfacesv4 = $interface->getIPv4Addresses();
+                    $interfacesv6 = $interface->getIPv6Addresses();
+                    $interfaces = array_merge($interfacesv4, $interfacesv6);
+                }
+
                 else
                     $interfaces = array();
 
 
                 foreach( $interfaces as $layer3IPv4Address )
                 {
-                    if( substr_count($layer3IPv4Address, '.') != 3 )
-                    {
-                        $object = $this->addressStore->find($layer3IPv4Address);
-                        if( is_object($object) )
-                            $object->addReference($interface);
-                        else
-                        {
-                            //Todo: fix needed too many warnings - if address object is coming from other address store
-                            #mwarning("interface configured objectname: " . $layer3IPv4Address . " not found.\n", $interface);
-                        }
-
-                    }
+                    $findobject = $this->addressStore->find($layer3IPv4Address);
+                    if( is_object($findobject) )
+                        $findobject->addReference($interface);
                 }
             }
         }

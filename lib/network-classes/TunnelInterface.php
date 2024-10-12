@@ -27,6 +27,7 @@ class TunnelInterface
     use ReferenceableObject;
 
     protected $_ipv4Addresses = array();
+    protected $_ipv6Addresses = array();
 
     /** @var string */
     public $type = 'tunnel';
@@ -61,8 +62,37 @@ class TunnelInterface
                 if( $l3ipNode->nodeType != XML_ELEMENT_NODE )
                     continue;
 
-                //Todo: check if this is for IPv4 and IPv6
-                $this->_ipv4Addresses[] = $l3ipNode->getAttribute('name');
+                $ip_string = $l3ipNode->getAttribute('name');
+                if( !empty($ip_string) )
+                {
+                    if( strpos( $ip_string, "/" ) !== False )
+                        $this->_ipv4Addresses[] = $ip_string;
+                    else
+                    {
+                        //object
+                        $this->_ipv4Addresses[] = $ip_string;
+                    }
+                }
+            }
+        }
+
+        $ipv6Node = DH::findFirstElement('ipv6', $xml);
+        if( $ipv6Node !== FALSE )
+        {
+            $ipNode = DH::findFirstElement('address', $ipv6Node);
+            foreach( $ipNode->childNodes as $l3ipNode )
+            {
+                if( $l3ipNode->nodeType != XML_ELEMENT_NODE )
+                    continue;
+
+                $ip_string = $l3ipNode->getAttribute('name');
+                if(!empty($ip_string))
+                {
+                    if(filter_var($ip_string, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6))
+                        $this->_ipv6Addresses[] = $ip_string;
+                    else
+                        $this->_ipv6Addresses[] = $ip_string;
+                }
             }
         }
     }
@@ -78,6 +108,11 @@ class TunnelInterface
     public function getIPv4Addresses()
     {
         return $this->_ipv4Addresses;
+    }
+
+    public function getIPv6Addresses()
+    {
+        return $this->_ipv6Addresses;
     }
 
     /**

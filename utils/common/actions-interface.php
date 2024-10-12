@@ -66,11 +66,27 @@ InterfaceCallContext::$supportedActions['display'] = Array(
                     $text .= $ip_address . ",";
                     PH::$JSON_TMP['sub']['object'][$object->name()][$object->type]['ipaddress'][] = $ip_address;
                 }
-
                 else
                 {
                     #$object = $sub->addressStore->find( $ip_address );
                     #PH::print_stdout( $ip_address." ({$object->value()}) ,");
+                    $text .= $ip_address . ",";
+                    PH::$JSON_TMP['sub']['object'][$object->name()][$object->type]['ipaddress'][] = $ip_address;
+                }
+            }
+            foreach( $object->getLayer3IPv6Addresses() as $ip_address )
+            {
+                if( strpos( $ip_address, ":" ) !== false )
+                {
+                    $text .= $ip_address . ",";
+                    PH::$JSON_TMP['sub']['object'][$object->name()][$object->type]['ipaddress'][] = $ip_address;
+                }
+                else
+                {
+                    #$object = $sub->addressStore->find( $ip_address );
+                    #PH::print_stdout( $ip_address." ({$object->value()}) ,");
+                    $text .= $ip_address . ",";
+                    PH::$JSON_TMP['sub']['object'][$object->name()][$object->type]['ipaddress'][] = $ip_address;
                 }
             }
         }
@@ -84,11 +100,27 @@ InterfaceCallContext::$supportedActions['display'] = Array(
                     $text .= $ip_address . ",";
                     PH::$JSON_TMP['sub']['object'][$object->name()][$object->type]['ipaddress'][] = $ip_address;
                 }
-
                 else
                 {
                     #$object = $sub->addressStore->find( $ip_address );
                     #PH::print_stdout($text); $ip_address." ({$object->value()}) ,");
+                    $text .= $ip_address . ",";
+                    PH::$JSON_TMP['sub']['object'][$object->name()][$object->type]['ipaddress'][] = $ip_address;
+                }
+            }
+            foreach( $object->getIPv6Addresses() as $ip_address )
+            {
+                if( strpos( $ip_address, ":" ) !== false )
+                {
+                    $text .= $ip_address . ",";
+                    PH::$JSON_TMP['sub']['object'][$object->name()][$object->type]['ipaddress'][] = $ip_address;
+                }
+                else
+                {
+                    #$object = $sub->addressStore->find( $ip_address );
+                    #PH::print_stdout($text); $ip_address." ({$object->value()}) ,");
+                    $text .= $ip_address . ",";
+                    PH::$JSON_TMP['sub']['object'][$object->name()][$object->type]['ipaddress'][] = $ip_address;
                 }
             }
         }
@@ -217,9 +249,15 @@ InterfaceCallContext::$supportedActions['exportToExcel'] = array(
 
                     //IP-addresses
                     if( $object->type == "layer3" )
+                    {
                         $lines .= $context->encloseFunction($object->getLayer3IPv4Addresses());
+                        $lines .= $context->encloseFunction($object->getLayer3IPv6Addresses());
+                    }
                     elseif( $object->type == "tunnel" || $object->type == "loopback" || $object->type == "vlan"  )
+                    {
                         $lines .= $context->encloseFunction($object->getIPv4Addresses());
+                        $lines .= $context->encloseFunction($object->getIPv6Addresses());
+                    }
                     else
                         $lines .= $context->encloseFunction("----");
                 }

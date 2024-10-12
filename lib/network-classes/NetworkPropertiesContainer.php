@@ -198,6 +198,11 @@ class NetworkPropertiesContainer
             if( $tmp1 !== FALSE )
                 $this->greTunnelStore->load_from_domxml($tmp1);
         }
+
+        //todo: these are specification for NGFW; Panorama template is already done
+        //todo: check again static Route information if objects are used to set references
+
+        //todo: check interfaces if objects are used
     }
 
 
