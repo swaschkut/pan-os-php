@@ -13,6 +13,7 @@ ARG user_var="ubuntu"
 
 SHELL ["/bin/bash", "-c"]
 
+
 RUN DEBIAN_FRONTEND=noninteractive apt update --fix-missing \
   && DEBIAN_FRONTEND=noninteractive apt-get install -y --fix-missing \
     tzdata \
@@ -54,7 +55,7 @@ RUN echo 'include_path = "/usr/share/php:/tools/pan-os-php"' >> /etc/php/$php_va
 RUN ln -s /tools/pan-os-php/utils/bash_autocompletion/pan-os-php.sh /usr/share/bash-completion/completions/pan-os-php \
   && git config --global user.email=test@test.com user.name=test
 
-USER ubuntu
+USER $user_var
 # UTIL alias for pan-os-php
 RUN cat /tools/pan-os-php/utils/alias.sh >> /home/$user_var/.bashrc \
   && cat /tools/pan-os-php/utils/bash_autocompletion/enable_bash.txt >> /home/$user_var/.bashrc

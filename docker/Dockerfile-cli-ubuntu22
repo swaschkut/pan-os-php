@@ -2,16 +2,20 @@ ARG IMAGE=ubuntu:22.04
 FROM ${IMAGE}
 
 ARG php_var="8.1"
-ARG user_var="root"
+ARG user_var="ubuntu"
 
 SHELL ["/bin/bash", "-c"]
 
+RUN useradd -ms /bin/bash $user_var
 
 RUN DEBIAN_FRONTEND=noninteractive apt update --fix-missing \
   && DEBIAN_FRONTEND=noninteractive apt install -y --fix-missing \
     tzdata \
     git \
     bash-completion \
+    vim \
+    inetutils-ping \
+    inetutils-traceroute \
     php$php_var \
     php$php_var-curl \
     php$php_var-dom \
@@ -39,17 +43,17 @@ COPY migration ./migration
 
 
 # PHP library of pan-os-php
-RUN echo 'include_path = "/usr/share/php:/tools/pan-os-php"' >> /etc/php/$php_var/cli/php.ini
-RUN chmod -R 777 /tools/pan-os-php
+RUN echo 'include_path = "/usr/share/php:/tools/pan-os-php"' >> /etc/php/$php_var/cli/php.ini \
+  && chmod -R 777 /tools/pan-os-php
+
+RUN ln -s /tools/pan-os-php/utils/bash_autocompletion/pan-os-php.sh /usr/share/bash-completion/completions/pan-os-php \
+  && git config --global user.email=test@test.com user.name=test
+
+USER $user_var
 
 # UTIL alias for pan-os-php
-RUN cat /tools/pan-os-php/utils/alias.sh >> /$user_var/.bashrc
-RUN cat /tools/pan-os-php/utils/bash_autocompletion/enable_bash.txt >> /$user_var/.bashrc
-
-
-RUN ln -s /tools/pan-os-php/utils/bash_autocompletion/pan-os-php.sh /usr/share/bash-completion/completions/pan-os-php
-
-RUN git config --global user.email=test@test.com user.name=test
+RUN cat /tools/pan-os-php/utils/alias.sh >> /home/$user_var/.bashrc \
+  && cat /tools/pan-os-php/utils/bash_autocompletion/enable_bash.txt >> /home/$user_var/.bashrc
 
 # Entrypoint script
 WORKDIR /scripts
@@ -58,5 +62,6 @@ COPY docker/entrypoint.sh .
 # Working dir for the app
 VOLUME /share
 WORKDIR /share
+
 
 ENTRYPOINT [ "/bin/bash", "/scripts/entrypoint.sh" ]
