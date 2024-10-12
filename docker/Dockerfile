@@ -13,8 +13,6 @@ ARG user_var="ubuntu"
 
 SHELL ["/bin/bash", "-c"]
 
-#RUN useradd -u 8877 nonroot
-
 RUN DEBIAN_FRONTEND=noninteractive apt update --fix-missing \
   && DEBIAN_FRONTEND=noninteractive apt-get install -y --fix-missing \
     tzdata \
