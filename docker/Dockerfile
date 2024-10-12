@@ -1,6 +1,13 @@
 ARG IMAGE=ubuntu:24.04
 FROM ${IMAGE}
 
+#apt-cache search python3-mpmath
+#apt-get install python3-mpmath
+#python3-mpmath is already the newest version (1.2.1-3).
+#Python 3.12.3
+#unaffected version mpmath 1.3.0-1
+#https://launchpad.net/ubuntu/+source/mpmath
+
 ARG php_var="8.3"
 ARG user_var="ubuntu"
 
