@@ -119,13 +119,13 @@ class TSF__
         if( $this->actions == "extract-merged-config" )
         {
             $ext_folder = "saved-configs";
-            $ext_filename_array[] = "merged-running-config.xml";
+            $ext_filename_array[] = ".merged-running-config.xml";
         }
         elseif( $this->actions == "extract-running-and-merged-config" )
         {
             $ext_folder = "saved-configs";
             $ext_filename_array[] = "running-config.xml";
-            $ext_filename_array[] = "merged-running-config.xml";
+            $ext_filename_array[] = ".merged-running-config.xml";
         }
 
         $cliArray = array();
