@@ -36,7 +36,11 @@ class TSF__
 
         if( isset(PH::$args['help']) )
         {
-            $help_string = PH::boldText('USAGE: ')."php ".basename(__FILE__)." projectfolder=[DIRECTORY]";
+            $help_string = PH::boldText('USAGE: ')."php ".basename(__FILE__)." projectfolder=[DIRECTORY] [actions=extract-running-config] \n".
+                "[actions=extract-candidate-config]\n".
+                "[actions=extract-merged-config]\n".
+                "[actions=extract-running-and-merged-config]\n".
+                "";
 
             PH::print_stdout( $help_string );
 
@@ -62,17 +66,22 @@ class TSF__
         {
             $actionsArray = explode( ",", $this->actions );
             if( count($actionsArray) > 1 )
-                derr( "type=TSF actions= | is supporting only one argument: 'actions=extract-running-config' or 'actions=extract-candicate-config'" );
+                derr( "type=TSF actions= | is supporting only one argument: 'actions=extract-running-config' or 'actions=extract-candicate-config' or 'actions=extract-merged-config' or 'actions=extract-running-and-merged-config'" );
 
             if( $actionsArray[0] === "extract-running-config")
                 $this->actions = 'extract-running-config';
-            elseif( $actionsArray[0] === "extract-candidate-config");
+            elseif( $actionsArray[0] === "extract-candidate-config")
                 $this->actions = 'extract-candidate-config';
+            elseif( $actionsArray[0] === "extract-merged--config")
+                $this->actions = 'extract-merged-config';
+            elseif( $actionsArray[0] === "extract-running-and-merged-config")
+                $this->actions = 'extract-running-and-merged-config';
         }
 
         $this->supportedArguments = Array();
         $this->supportedArguments['in'] = Array('niceName' => 'in', 'shortHelp' => 'specifiy the TechSupportFile', 'argDesc' => 'in=[TSF.tgz]');
         $this->supportedArguments['projectfolder'] = Array('niceName' => 'projectFolder', 'shortHelp' => 'define the projectfolder', 'argDesc' => 'projectfolder=[DIRECTORY]');
+        $this->supportedArguments['actions'] = array('niceName' => 'Actions', 'shortHelp' => 'actions=extract-running-config/extract-candidate-config/extract-merged-config/extract-running-and-merged-config');
         $this->supportedArguments['help'] = array('niceName' => 'help', 'shortHelp' => 'this message');
 
         $this->usageMsg = PH::boldText('USAGE: ')."php ".basename(__FILE__)." in=TSF.tgz projectfolder=[DIRECTORY]";
@@ -94,27 +103,41 @@ class TSF__
         $filename = end($filenameArray);
 
         $output = array();
+        $ext_filename_array = array();
         $retValue = 0;
 
         if( $this->actions == "extract-running-config" )
         {
             $ext_folder = "saved-configs";
-            $ext_filename = "running-config.xml";
+            $ext_filename_array[] = "running-config.xml";
         }
         elseif( $this->actions == "extract-candidate-config" )
         {
             $ext_folder = "devices/localhost.localdomain";
-            $ext_filename = "last-candidatecfg.xml";
+            $ext_filename_array[] = "last-candidatecfg.xml";
+        }
+        if( $this->actions == "extract-merged-config" )
+        {
+            $ext_folder = "saved-configs";
+            $ext_filename_array[] = "merged-running-config.xml";
+        }
+        elseif( $this->actions == "extract-running-and-merged-config" )
+        {
+            $ext_folder = "saved-configs";
+            $ext_filename_array[] = "running-config.xml";
+            $ext_filename_array[] = "merged-running-config.xml";
         }
 
         $cliArray = array();
         $cliArray[] = "cp ".$filename_path." ".$this->projectfolder."panosphp-".$filename;
 
         $cliArray[] = "tar -xf ".$this->projectfolder."panosphp-".$filename." --directory ./".$this->projectfolder." ./opt/pancfg/mgmt/".$ext_folder;
-        $cliArray[] = "cp ".$this->projectfolder."opt/pancfg/mgmt/".$ext_folder."/".$ext_filename." ".$this->projectfolder.$ext_filename;
+        foreach( $ext_filename_array as $ext_filename )
+            $cliArray[] = "cp ".$this->projectfolder."opt/pancfg/mgmt/".$ext_folder."/".$ext_filename." ".$this->projectfolder.$ext_filename;
 
         $cliArray[] = "tar -xf ".$this->projectfolder."panosphp-".$filename." --directory ./".$this->projectfolder." ./tmp/cli/";
         $cliArray[] = "cp ".$this->projectfolder."tmp/cli/techsupport_*.txt ".$this->projectfolder."techsupport.txt";
+        $cliArray[] = "cp -r ".$this->projectfolder."tmp/cli/logs ".$this->projectfolder;
 
         $cliArray[] = "rm -rf ".$this->projectfolder."opt";
         $cliArray[] = "rm -rf ".$this->projectfolder."tmp";
@@ -142,7 +165,7 @@ class TSF__
         }
 
         PH::print_stdout();
-        PH::print_stdout( $ext_filename." from TSF succesfully extracted to projectfolder" );
+        PH::print_stdout( implode(', ',$ext_filename_array)." from TSF succesfully extracted to projectfolder" );
 
     }
 
