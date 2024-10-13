@@ -350,6 +350,7 @@ class PLAYBOOK__
             }
             elseif( $key > 0 )
             {
+                $in = $output;
                 if( $output == "/dev/null" )
                     $in = $input;
                 elseif( !in_array( $script, $in_exclude ) && !$this->isAPI )

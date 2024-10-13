@@ -2,6 +2,7 @@ CHANGELOG
 
 2.1.28
 UTIL:
+* type=playbook | improve reading in= argument from the above utility output=
 
 BUGFIX:
 
