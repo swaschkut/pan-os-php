@@ -34,6 +34,9 @@ class RuleCallContext extends CallContext
     public $newdoc;
     public $rule;
 
+    public $lines;
+    public $count;
+
     static public function prepareSupportedActions()
     {
         $tmpArgs = array();

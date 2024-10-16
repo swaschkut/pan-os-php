@@ -4211,6 +4211,120 @@ RuleCallContext::$supportedActions[] = array(
 );
 
 RuleCallContext::$supportedActions[] = array(
+    'name' => 'display-app-id-change',
+    'GlobalInitFunction' => function (RuleCallContext $context)
+    {
+        $req = '<type><threat>'.
+            '<sortby>repeatcnt</sortby>'.
+            '<group-by>rule_uuid</group-by>'.
+            '<aggregate-by><member>rule</member><member>threatid</member></aggregate-by>'.
+            '<values><member>repeatcnt</member></values></threat></type>'.
+            '<period>last-7-days</period><topn>100</topn><topm>25</topm><caption>app-id-change</caption>'.
+            '<query>(category-of-threatid eq app-id-change)</query>';
+
+
+        $apiArgs = Array();
+        $apiArgs['type'] = 'report';
+        $apiArgs['reporttype'] = 'dynamic';
+        $apiArgs['reportname'] = 'custom-dynamic-report';
+        $apiArgs['async'] = 'yes';
+        $apiArgs['cmd'] = $req;
+
+        $context->lines = "";
+        $context->count = 0;
+
+        if( $context->isAPI )
+            $context->cachedList = $context->connector->getReport($apiArgs);
+
+    },
+    'MainFunction' => function (RuleCallContext $context)
+    {
+        /** @var SecurityRule $rule */
+        $rule = $context->object;
+
+        if( $context->isAPI )
+        {
+            if( !empty($context->cachedList ) )
+            {
+                foreach( $context->cachedList as $appidInfo )
+                {
+                    if( $rule->uuid() == $appidInfo['rule-uuid'] )
+                    {
+                        $ruleAppAny = $rule->apps->isAny();
+
+                        $explode = explode(" To ", $appidInfo['threatid']);
+
+                        $context->count++;
+
+                        /** @var Tag $object */
+                        if ($context->count % 2 == 1)
+                            $context->lines .= "<tr>\n";
+                        else
+                            $context->lines .= "<tr bgcolor=\"#DDDDDD\">";
+
+                        $context->lines .= $context->encloseFunction((string)$context->count);
+
+                        $context->lines .= $context->encloseFunction($appidInfo['rule']);
+                        $context->lines .= $context->encloseFunction($appidInfo['threatid']);
+
+                        if (!$ruleAppAny)
+                        {
+                            $app_string = "";
+                            $array_count = 1;
+                            foreach ($rule->apps->apps() as $key => $app)
+                            {
+                                $array_count++;
+                                $app_string .= $app->name();
+                                if ($array_count < count($rule->apps->apps()))
+                                    $app_string .= ",";
+                            }
+                            $context->lines .= $context->encloseFunction($app_string);
+
+                            $context->lines .= $context->encloseFunction($explode[1]);
+                        }
+                        else
+                        {
+                            $context->lines .= $context->encloseFunction("any");
+                            $context->lines .= $context->encloseFunction("");
+                        }
+
+                        $context->lines .= "</tr>\n";
+                    }
+                }
+            }
+        }
+        else
+        {
+            mwarning("actions is only working in API mode", null, false);
+            exit();
+        }
+    },
+    'GlobalFinishFunction' => function (RuleCallContext $context)
+    {
+        $filename = "app-id-change.html";
+
+
+        $headers = '<th>ID</th><th>Rule</th><th>threatid</th><th>actual Rule set to APP-ID</th><th>APP-ID to add</th>';
+
+
+
+        $content = file_get_contents(dirname(__FILE__) . '/../common/html/export-template.html');
+        $content = str_replace('%TableHeaders%', $headers, $content);
+
+        $content = str_replace('%lines%', $context->lines, $content);
+
+        $jscontent = file_get_contents(dirname(__FILE__) . '/../common/html/jquery.min.js');
+        $jscontent .= "\n";
+        $jscontent .= file_get_contents(dirname(__FILE__) . '/../common/html/jquery.stickytableheaders.min.js');
+        $jscontent .= "\n\$('table').stickyTableHeaders();\n";
+
+        $content = str_replace('%JSCONTENT%', $jscontent, $content);
+
+        file_put_contents($filename, $content);
+    }
+);
+
+RuleCallContext::$supportedActions[] = array(
     'name' => 'invertPreAndPost',
     'MainFunction' => function (RuleCallContext $context) {
         if( $context->object->isDefaultSecurityRule() )
