@@ -4265,7 +4265,9 @@ RuleCallContext::$supportedActions[] = array(
                         $context->lines .= $context->encloseFunction((string)$context->count);
 
                         $context->lines .= $context->encloseFunction($appidInfo['rule']);
+
                         $context->lines .= $context->encloseFunction($appidInfo['threatid']);
+                        PH::print_stdout("ThreatInfo: ".$appidInfo['threatid'] );
 
                         if (!$ruleAppAny)
                         {
@@ -4279,13 +4281,17 @@ RuleCallContext::$supportedActions[] = array(
                                     $app_string .= ",";
                             }
                             $context->lines .= $context->encloseFunction($app_string);
+                            PH::print_stdout("actual set APP-IDs: '".$app_string."'" );
 
                             $context->lines .= $context->encloseFunction($explode[1]);
+                            PH::print_stdout("APP-ID to add: '".$explode[1]."'" );
                         }
                         else
                         {
                             $context->lines .= $context->encloseFunction("any");
+                            PH::print_stdout("actual set APP-IDs: 'any'" );
                             $context->lines .= $context->encloseFunction("");
+                            PH::print_stdout("APP-ID to add: ''" );
                         }
 
                         $context->lines .= "</tr>\n";
