@@ -4250,6 +4250,7 @@ RuleCallContext::$supportedActions[] = array(
                 {
                     if( $rule->uuid() == $appidInfo['rule_uuid'] )
                     {
+                        $padding = "       ";
                         $ruleAppAny = $rule->apps->isAny();
 
                         $explode = explode(" To ", $appidInfo['threatid']);
@@ -4267,7 +4268,7 @@ RuleCallContext::$supportedActions[] = array(
                         $context->lines .= $context->encloseFunction($appidInfo['rule']);
 
                         $context->lines .= $context->encloseFunction($appidInfo['threatid']);
-                        PH::print_stdout("ThreatInfo: ".$appidInfo['threatid'] );
+                        PH::print_stdout($padding."ThreatInfo: ".$appidInfo['threatid'] );
 
                         if (!$ruleAppAny)
                         {
@@ -4281,17 +4282,17 @@ RuleCallContext::$supportedActions[] = array(
                                     $app_string .= ",";
                             }
                             $context->lines .= $context->encloseFunction($app_string);
-                            PH::print_stdout("actual set APP-IDs: '".$app_string."'" );
+                            PH::print_stdout($padding."actual set APP-IDs: '".$app_string."'" );
 
                             $context->lines .= $context->encloseFunction($explode[1]);
-                            PH::print_stdout("APP-ID to add: '".$explode[1]."'" );
+                            PH::print_stdout($padding."APP-ID to add: '".$explode[1]."'" );
                         }
                         else
                         {
                             $context->lines .= $context->encloseFunction("any");
-                            PH::print_stdout("actual set APP-IDs: 'any'" );
+                            PH::print_stdout($padding."actual set APP-IDs: 'any'" );
                             $context->lines .= $context->encloseFunction("");
-                            PH::print_stdout("APP-ID to add: ''" );
+                            PH::print_stdout($padding."APP-ID to add: ''" );
                         }
 
                         $context->lines .= "</tr>\n";
