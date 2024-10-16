@@ -117,7 +117,41 @@ $apiArgs['cmd'] = $req;
 
 $ret = $connector->getReport($apiArgs);
 
+#print_r($ret);
+
+/*
+Array
+(
+    [0] => Array
+        (
+            [rule_uuid] => 4b5fa950-d29a-4743-ae64-51d06555c175
+            [rule] => client-vpn to inet
+            [threatid] => Modified From ssl web-browsing To ms-teams
+            [tid] => 547661
+            [repeatcnt] => 404
+        )
+    [1] => Array
+        (
+            [rule_uuid] => 4b5fa950-d29a-4743-ae64-51d06555c175
+            [rule] => client-vpn to inet
+            [threatid] => New From ssl web-browsing To coveo
+            [tid] => 547830
+            [repeatcnt] => 22
+        )
+    [2] => Array
+        (
+            [rule_uuid] => 4dde418f-93be-437c-8949-590ee3031f05
+            [rule] => dmz dmz
+            [threatid] => Modified From ssl web-browsing To ms-teams
+            [tid] => 547661
+            [repeatcnt] => 2
+        )
+)
+ */
 ########################################################################################################################
+//go through each report entry
+//get rule app-id information, check if any -> do nothing
+//if rule app-id is not any -> display which app-id must be added
 
 PH::print_stdout();
 PH::print_stdout("-------------------------");

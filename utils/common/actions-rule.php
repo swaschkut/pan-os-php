@@ -4248,7 +4248,7 @@ RuleCallContext::$supportedActions[] = array(
             {
                 foreach( $context->cachedList as $appidInfo )
                 {
-                    if( $rule->uuid() == $appidInfo['rule-uuid'] )
+                    if( $rule->uuid() == $appidInfo['rule_uuid'] )
                     {
                         $ruleAppAny = $rule->apps->isAny();
 
