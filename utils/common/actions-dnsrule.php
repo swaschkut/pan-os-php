@@ -36,8 +36,13 @@ DNSRuleCallContext::$supportedActions[] = array(
     'MainFunction' => function (DNSRuleCallContext $context) {
         $threat = $context->object;
 
-        PH::print_stdout( $context->padding . "* " . get_class($threat) . " '{$threat->name()}' " );
+        $adv_string = "";
+        if( $threat->advanced )
+            $adv_string .= "'ADVANCED'";
+
+        PH::print_stdout( $context->padding . "* " . get_class($threat) . " '{$threat->name()}' ".$adv_string );
         PH::print_stdout( "          - use in AS Profile: ".$threat->owner->name() );
+
         $threat->display();
     }
 );

@@ -34,11 +34,12 @@ class DNSPolicy
     public $action = null;
     public $packetCapture = null;
 
-    public function __construct($name, $owner)
+    public function __construct($name, $owner, $advanced = false)
     {
         $this->owner = $owner;
         $this->name = $name;
         $this->xmlroot = null;
+        $this->advanced = $advanced;
     }
 
     public function load_from_domxml( $tmp_entry1 )

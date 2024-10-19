@@ -416,17 +416,63 @@ class AntiSpywareProfile extends SecurityProfile2
                     $this->owner->owner->DNSPolicyStore->add($dnsPolicy_obj);
 
                     $this->additional['botnet-domain']['dns-security-categories'][] = $dnsPolicy_obj;
+                }
+            }
+
+            $tmp_advanced_dns_security_categories = DH::findFirstElement('advanced-dns-security-categories', $tmp_rule);
+            if( $tmp_advanced_dns_security_categories === FALSE )
+            {
+                $xmlstring = '<advanced-dns-security-categories>
+<entry name="pan-adns-sec-dnsmisconfig">
+  <log-level>default</log-level>
+  <action>default</action>
+</entry>
+<entry name="pan-adns-sec-hijacking">
+  <log-level>default</log-level>
+  <action>default</action>
+</entry>
+</advanced-dns-security-categories>';
+
+                if( $this->owner->owner->version >= 112 )
+                {
+                    $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $xmlstring);
+                    $tmp_rule->appendChild($xmlElement);
+
+                    $tmp_advanced_dns_security_categories = DH::findFirstElement('advanced-dns-security-categories', $tmp_rule);
+                }
+            }
+
+            if( $tmp_advanced_dns_security_categories !== FALSE )
+            {
+                $this->additional['botnet-domain']['advanced-dns-security-categories'] = array();
+                foreach( $tmp_advanced_dns_security_categories->childNodes as $tmp_entry1 )
+                {
+                    if ($tmp_entry1->nodeType != XML_ELEMENT_NODE)
+                        continue;
+
                     /*
-                    $tmp_log_level = DH::findFirstElement("log-level", $tmp_entry1);
-                    if( $tmp_log_level !== FALSE )
-                        $this->additional['botnet-domain']['dns-security-categories'][$name]['log-level'] = $tmp_log_level->textContent;
-                    $tmp_action = DH::findFirstElement("action", $tmp_entry1);
-                    if( $tmp_action !== FALSE )
-                        $this->additional['botnet-domain']['dns-security-categories'][$name]['action'] = $tmp_action->textContent;
-                    $tmp_packet_capture = DH::findFirstElement("packet-capture", $tmp_entry1);
-                    if( $tmp_packet_capture !== FALSE )
-                        $this->additional['botnet-domain']['dns-security-categories'][$name]['packet-capture'] = $tmp_packet_capture->textContent;
+                    <advanced-dns-security-categories>
+                        <entry name="pan-adns-sec-dnsmisconfig">
+                          <log-level>medium</log-level>
+                          <action>block</action>
+                        </entry>
+                        <entry name="pan-adns-sec-hijacking">
+                          <log-level>medium</log-level>
+                          <action>block</action>
+                        </entry>
+                      </advanced-dns-security-categories>
                     */
+
+                    $name = DH::findAttribute("name", $tmp_entry1);
+
+                    $dnsPolicy_obj = new DNSPolicy( $name, $this, TRUE );
+                    $dnsPolicy_obj->load_from_domxml( $tmp_entry1 );
+                    $this->dns_rules_obj[] = $dnsPolicy_obj;
+                    $dnsPolicy_obj->addReference( $this );
+
+                    $this->owner->owner->DNSPolicyStore->add($dnsPolicy_obj);
+
+                    $this->additional['botnet-domain']['advanced-dns-security-categories'][] = $dnsPolicy_obj;
                 }
             }
 

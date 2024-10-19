@@ -6,6 +6,7 @@ UTIL:
 * type=tsf | extend argument help with actions= information - extend actions=extract-running-and-merged-config
 * type=rule | introduce 'actions=display-app-id-change'
 * type=device | actions=sp_spg-create-bp - improvement for PAN-OS 11.2 - also for URL artificial-intelligence,marijuana, scanning-activity
+* class AntiSpyware | extend with advanced-dns-security-categories for PAN-OS 11.2
 
 BUGFIX:
 
