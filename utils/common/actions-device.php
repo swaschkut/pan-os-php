@@ -2128,7 +2128,7 @@ DeviceCallContext::$commonActionFunctions['sp_spg-create'] = array(
             $context->as_xmlString = file_get_contents( $pathString."/panos_v9.1/templates/panorama/snippets/profiles_spyware.xml");
             $context->url_xmlString = file_get_contents( $pathString."/panos_v9.1/templates/panorama/snippets/profiles_url_filtering.xml");
         }
-        elseif( $context->object->owner->version >= 100 )
+        elseif( $context->object->owner->version >= 100 and $context->object->owner->version < 112 )
         {
             $context->av_xmlString = file_get_contents( $pathString."/panos_v".$panVersion."/templates/panorama/snippets/profiles_virus.xml");
             $context->as_xmlString = file_get_contents( $pathString."/panos_v".$panVersion."/templates/panorama/snippets/profiles_spyware.xml");
@@ -2136,6 +2136,15 @@ DeviceCallContext::$commonActionFunctions['sp_spg-create'] = array(
             $context->url_xmlString = file_get_contents( $pathString."/panos_v".$panVersion."/templates/panorama/snippets/profiles_url_filtering.xml");
             $context->fb_xmlString = file_get_contents( $pathString."/panos_v".$panVersion."/templates/panorama/snippets/profiles_file_blocking.xml");
             $context->wf_xmlString = file_get_contents( $pathString."/panos_v".$panVersion."/templates/panorama/snippets/profiles_wildfire_analysis.xml");
+        }
+        elseif( $context->object->owner->version >= 112 )
+        {
+            $context->av_xmlString = file_get_contents( $pathString."/panos_v11.1/templates/panorama/snippets/profiles_virus.xml");
+            $context->as_xmlString = file_get_contents( $pathString."/panos_v11.1/templates/panorama/snippets/profiles_spyware.xml");
+            $context->vp_xmlString = file_get_contents( $pathString."/panos_v11.1/templates/panorama/snippets/profiles_vulnerability.xml");
+            $context->url_xmlString = file_get_contents( $pathString."/panos_v11.1/templates/panorama/snippets/profiles_url_filtering.xml");
+            $context->fb_xmlString = file_get_contents( $pathString."/panos_v11.1/templates/panorama/snippets/profiles_file_blocking.xml");
+            $context->wf_xmlString = file_get_contents( $pathString."/panos_v11.1/templates/panorama/snippets/profiles_wildfire_analysis.xml");
         }
     },
     'function_panVersion' => function (DeviceCallContext $context) {

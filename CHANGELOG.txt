@@ -5,6 +5,7 @@ UTIL:
 * type=playbook | improve reading in= argument from the above utility output=
 * type=tsf | extend argument help with actions= information - extend actions=extract-running-and-merged-config
 * type=rule | introduce 'actions=display-app-id-change'
+* type=device | actions=sp_spg-create-bp - improvement for PAN-OS 11.2 - also for URL artificial-intelligence,marijuana, scanning-activity
 
 BUGFIX:
 

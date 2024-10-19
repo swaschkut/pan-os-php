@@ -2040,6 +2040,7 @@
                   <member>abused-drugs</member>
                   <member>adult</member>
                   <member>alcohol-and-tobacco</member>
+                  <member>artificial-intelligence</member>
                   <member>auctions</member>
                   <member>business-and-economy</member>
                   <member>command-and-control</member>
@@ -2069,6 +2070,7 @@
                   <member>job-search</member>
                   <member>legal</member>
                   <member>low-risk</member>
+                  <member>marijuana</member>
                   <member>malware</member>
                   <member>medium-risk</member>
                   <member>military</member>
@@ -2093,6 +2095,7 @@
                   <member>recreation-and-hobbies</member>
                   <member>reference-and-research</member>
                   <member>religion</member>
+                  <member>scanning-activity</member>
                   <member>search-engines</member>
                   <member>sex-education</member>
                   <member>shareware-and-freeware</member>
@@ -2211,6 +2214,7 @@
                   <member>abused-drugs</member>
                   <member>adult</member>
                   <member>alcohol-and-tobacco</member>
+                  <member>artificial-intelligence</member>
                   <member>auctions</member>
                   <member>business-and-economy</member>
                   <member>command-and-control</member>
@@ -2240,6 +2244,7 @@
                   <member>job-search</member>
                   <member>legal</member>
                   <member>low-risk</member>
+                  <member>marijuana</member>
                   <member>malware</member>
                   <member>medium-risk</member>
                   <member>military</member>
@@ -2264,6 +2269,7 @@
                   <member>recreation-and-hobbies</member>
                   <member>reference-and-research</member>
                   <member>religion</member>
+                  <member>scanning-activity</member>
                   <member>search-engines</member>
                   <member>sex-education</member>
                   <member>shareware-and-freeware</member>
