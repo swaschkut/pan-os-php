@@ -4310,6 +4310,9 @@ RuleCallContext::$supportedActions[] = array(
     {
         $filename = "app-id-change.html";
 
+        if( isset( $_SERVER['REQUEST_METHOD'] ) )
+            $filename = "project/html/".$filename;
+
 
         $headers = '<th>ID</th><th>Rule</th><th>threatid</th><th>actual Rule set to APP-ID</th><th>APP-ID to add</th>';
 
