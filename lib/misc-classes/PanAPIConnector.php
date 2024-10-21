@@ -1255,11 +1255,12 @@ class PanAPIConnector
 
             if( $sendThroughPost )
             {
-                $paramURl = '?';
+                if( strpos( $finalUrl, "?" ) === FALSE )
+                    $paramURl = '?';
+                else
+                    $paramURl = '';
                 foreach( $parameters as $paramIndex => &$param )
-                {
                     $paramURl .= '&' . $paramIndex . '=' . str_replace('#', '%23', $param);
-                }
 
                 PH::print_stdout("API call through POST: \"" . $finalUrl . $paramURl . "\"");
                 PH::print_stdout("RAW HTTP URL: \"" . $finalUrl . "\"");
