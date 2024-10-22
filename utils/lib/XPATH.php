@@ -204,9 +204,9 @@ class XPATH extends UTIL
                             PH::print_stdout("     |" . $item['xpath'] . "|");
 
                         if( $displayXMLnode )
-                            $this->getXpathDisplay( $item['xpath'], "", false, $action);
+                            $this->getXpathDisplay( $item['xpath'], "test", false, $action);
                         if( $displayAttributeName )
-                            $this->getXpathDisplay( $item['xpath'], "", true, $action);
+                            $this->getXpathDisplay( $item['xpath'], "test", true, $action);
                     }
                 }
             }
@@ -228,9 +228,9 @@ class XPATH extends UTIL
                         PH::print_stdout( "   * line: ".$miscEntry['line'] );
 
                     if( $displayXMLnode )
-                        $this->getXpathDisplay( $xpath, "", false, $action);
+                        $this->getXpathDisplay( $xpath, "test", false, $action);
                     if( $displayAttributeName )
-                        $this->getXpathDisplay( $xpath, "", true, $action);
+                        $this->getXpathDisplay( $xpath, "test", true, $action);
 
                     if( $displayAPIcommand )
                     {
@@ -311,9 +311,9 @@ class XPATH extends UTIL
             {
             */
                 if( $displayAttributeName )
-                    $this->getXpathDisplay( $xpath, "", true, $action);
+                    $this->getXpathDisplay( $xpath, "test", true, $action);
                 else
-                    $this->getXpathDisplay( $xpath, "", false, $action);
+                    $this->getXpathDisplay( $xpath, "test", false, $action);
             //}
         }
 
