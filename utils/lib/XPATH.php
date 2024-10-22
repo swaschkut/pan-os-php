@@ -59,16 +59,20 @@ class XPATH extends UTIL
         $fullxpath = false;
         $xpath = null;
         $displayXMLnode = false;
+        $displayAPIcommand = false;
         $displayXMLlineno = false;
         $displayAttributeName = false;
         $action = "display";
 
         if( isset( PH::$args['actions'] ) )
         {
-            $supportedActions = array( 'display', 'remove', 'set-text', 'manipulate' );
+            //Todo: 20241022: swaschkut / no clue what I planned to do there
+            $supportedActions = array( 'display', 'remove', 'set-text', 'manipulate', 'display-api-command' );
             $action = PH::$args['actions'];
 
-            if( !in_array( $action, $supportedActions ) && strpos( $action, 'set-text:' ) === FALSE && strpos( $action, 'manipulate:' ) === FALSE )
+            if( !in_array( $action, $supportedActions )
+                && strpos( $action, 'set-text:' ) === FALSE && strpos( $action, 'manipulate:' ) === FALSE
+            )
                     derr( "action: ". $action. " not supported", null, false );
 
             if( strpos( $action, 'manipulate:' ) !== FALSE )
@@ -107,6 +111,9 @@ class XPATH extends UTIL
 
         if( isset( PH::$args['display-xmlnode'] ) )
             $displayXMLnode = true;
+
+        if( isset( PH::$args['display-api-command'] ) )
+            $displayAPIcommand = true;
 
         if( isset( PH::$args['display-xmllineno'] ) )
             $displayXMLlineno = true;
@@ -224,6 +231,13 @@ class XPATH extends UTIL
                         $this->getXpathDisplay( $xpath, "", false, $action);
                     if( $displayAttributeName )
                         $this->getXpathDisplay( $xpath, "", true, $action);
+
+                    if( $displayAPIcommand )
+                    {
+                        print "JSON: ";
+
+                        print_r(PH::$JSON_TMP);
+                    }
                 }
             }
 
