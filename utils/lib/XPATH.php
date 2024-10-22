@@ -33,6 +33,7 @@ class XPATH extends UTIL
             "        \"[display-xmlnode]\"\n".
             "        \"[display-xmllineno]\"\n".
             "        \"[display-attributename]\"\n".
+            "        \"[display-api-command]\"\n".
             "php ".basename(__FILE__)." help          : more help messages\n";
 
         $this->add_supported_arguments();
@@ -113,7 +114,11 @@ class XPATH extends UTIL
             $displayXMLnode = true;
 
         if( isset( PH::$args['display-api-command'] ) )
+        {
+            $displayXMLnode = true;
             $displayAPIcommand = true;
+        }
+
 
         if( isset( PH::$args['display-xmllineno'] ) )
             $displayXMLlineno = true;
@@ -234,9 +239,31 @@ class XPATH extends UTIL
 
                     if( $displayAPIcommand )
                     {
-                        print "JSON: ";
+                        $splitXPATH = explode( "/", PH::$JSON_TMP["test"]["xpath"] );
+                        array_pop($splitXPATH);
+                        $newXpath = "";
+                        foreach( $splitXPATH as $entry )
+                        {
+                            $newXpath .= "/".$entry;
+                        }
+                        $newXpath = str_replace("//", "/", $newXpath);
+                        $newValue = str_replace("\n", "", PH::$JSON_TMP["test"]["value"]);
 
-                        print_r(PH::$JSON_TMP);
+                        if( $this->pan->connector !==  null )
+                        {
+                            $FIREWALL_IP = $this->pan->connector->apihost;
+                            $APIkey = $this->pan->connector->apikey;
+                        }
+                        else
+                        {
+                            $FIREWALL_IP = "{FW-MGMT-IP}\n";
+                            $APIkey = "{API-KEY}\n";
+                        }
+
+
+                        PH::print_stdout("----------------");
+                        PH::print_stdout( "https://".$FIREWALL_IP."/api/?"."key=".$APIkey."\n&type=config&action=set&xpath=".$newXpath."\n&element=".$newValue );
+                        PH::print_stdout("----------------");
                     }
                 }
             }

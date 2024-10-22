@@ -34,6 +34,8 @@ class DNSPolicy
     public $action = null;
     public $packetCapture = null;
 
+    public $advanced = null;
+
     public function __construct($name, $owner, $advanced = false)
     {
         $this->owner = $owner;
