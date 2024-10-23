@@ -14,6 +14,7 @@ BUGFIX:
 GENERAL:
 * improve different network classes for IPv6 | improve for Panroama Template object usage in network classes
 * Docker file, move to nonroot user: "ubuntu" - more valdiation needed for develop script
+* introduction of class LogicalRouter/LogicalRouterContainer/LogicalRouterStore
 
 
 2.1.27 (20241011)
