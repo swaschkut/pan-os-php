@@ -10,6 +10,7 @@ UTIL:
 * type=xpath | introduce argument 'display-api-command'
 
 BUGFIX:
+* online method | bugfix for in=api:// | if your password does have special characters like @/! aso.l
 
 GENERAL:
 * improve different network classes for IPv6 | improve for Panroama Template object usage in network classes

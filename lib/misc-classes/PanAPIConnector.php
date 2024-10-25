@@ -1218,6 +1218,7 @@ class PanAPIConnector
                 curl_setopt($this->_curl_handle, CURLOPT_HTTPHEADER, array('Content-Type: application/x-www-form-urlencoded'));
             }
             $properParams = http_build_query($parameters);
+            $properParams = urldecode($properParams);
             curl_setopt($this->_curl_handle, CURLOPT_POSTFIELDS, $properParams);
         }
 
