@@ -80,18 +80,21 @@ class TunnelInterface
         if( $ipv6Node !== FALSE )
         {
             $ipNode = DH::findFirstElement('address', $ipv6Node);
-            foreach( $ipNode->childNodes as $l3ipNode )
+            if( $ipNode !== FALSE )
             {
-                if( $l3ipNode->nodeType != XML_ELEMENT_NODE )
-                    continue;
-
-                $ip_string = $l3ipNode->getAttribute('name');
-                if(!empty($ip_string))
+                foreach( $ipNode->childNodes as $l3ipNode )
                 {
-                    if(filter_var($ip_string, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6))
-                        $this->_ipv6Addresses[] = $ip_string;
-                    else
-                        $this->_ipv6Addresses[] = $ip_string;
+                    if( $l3ipNode->nodeType != XML_ELEMENT_NODE )
+                        continue;
+
+                    $ip_string = $l3ipNode->getAttribute('name');
+                    if(!empty($ip_string))
+                    {
+                        if(filter_var($ip_string, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6))
+                            $this->_ipv6Addresses[] = $ip_string;
+                        else
+                            $this->_ipv6Addresses[] = $ip_string;
+                    }
                 }
             }
         }

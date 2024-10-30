@@ -143,7 +143,7 @@
       "comment": "merge all previously created html files into one Excel sheet",
       "type": "html-merger",
       "adddefaulthtml": "adddefaulthtml",
-      "exportCSV": "exportCSV=visability_assessment.xlsx"
+      "exportCSV": "exportCSV=visibility_assessment.xlsx"
     }    
   ]
 }
