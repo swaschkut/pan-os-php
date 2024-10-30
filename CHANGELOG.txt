@@ -16,6 +16,7 @@ GENERAL:
 * improve different network classes for IPv6 | improve for Panroama Template object usage in network classes
 * Docker file, move to nonroot user: "ubuntu" - more valdiation needed for develop script
 * introduction of class LogicalRouter/LogicalRouterContainer/LogicalRouterStore
+* update to Device App-ID version: 8909-9044
 
 
 2.1.27 (20241011)
