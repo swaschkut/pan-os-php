@@ -1548,7 +1548,7 @@ class PanAPIConnector
             while( TRUE )
             {
                 sleep(1);
-                $query = '&type=log&action=get&job-id=' . $jobid;
+                $query = 'type=log&action=get&job-id=' . $jobid;
                 $ret = $this->sendRequest($query);
                 //PH::print_stdout( DH::dom_to_xml($ret, 0, true, 5) );
 

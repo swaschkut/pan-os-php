@@ -96,7 +96,7 @@ class THREATLOG extends UTIL
             $actions = PH::$args['actions'];
         }
         else
-            $actions =  null;
+            $actions =  "display";
 ########################################################################################################################
 
         $inputConnector->refreshSystemInfos();
@@ -123,7 +123,7 @@ class THREATLOG extends UTIL
         {
             foreach( $output as $log )
             {
-                if( $actions == null )
+                if( $actions === "display" )
                 {
                     PH::print_stdout(  " - ".http_build_query($log,'',' | ') );
                     PH::print_stdout();

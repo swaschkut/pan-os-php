@@ -100,7 +100,8 @@ class TRAFFICLOG extends UTIL
         $apiArgs = Array();
         $apiArgs['type'] = 'log';
         $apiArgs['log-type'] = 'traffic';
-        $apiArgs['query'] = $query;
+        if( !empty($query) )
+            $apiArgs['query'] = $query;
 
 
         $output = $inputConnector->getLog($apiArgs);
