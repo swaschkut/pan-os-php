@@ -4877,7 +4877,8 @@ RuleCallContext::$supportedActions[] = array(
 
                 foreach( $fields as $fieldName => $fieldID )
                 {
-                        if( ((
+                        if(
+                        ((
                             $fieldName == 'src_resolved_sum' || $fieldName == 'src_resolved_sumOLD' || $fieldName == 'src_resolved_value' ||
                             $fieldName == 'src_resolved_nested_name' || $fieldName == 'src_resolved_nested_value' || $fieldName == 'src_resolved_nested_location' ||
                             $fieldName == 'dst_resolved_sum' || $fieldName == 'dst_resolved_sumOLD' || $fieldName == 'dst_resolved_value' ||
@@ -4887,21 +4888,26 @@ RuleCallContext::$supportedActions[] = array(
                             && !$addResolvedAddressSummary) ||
                         (($fieldName == 'service_resolved_sum' ||
                                 $fieldName == 'service_resolved_nested_name' || $fieldName == 'service_resolved_nested_value' || $fieldName == 'service_resolved_nested_location' ||
-                                $fieldName == 'service_count' || $fieldName == 'service_count_tcp' || $fieldName == 'service_count_udp') && !$addResolvedServiceSummary) ||
+                                $fieldName == 'service_count' || $fieldName == 'service_count_tcp' || $fieldName == 'service_count_udp')
+                            && !$addResolvedServiceSummary) ||
                         (($fieldName == 'service_appdefault_resolved_sum') && !$addResolvedServiceAppDefaultSummary) ||
                         (($fieldName == 'application_resolved_sum') && !$addResolvedApplicationSummary) ||
                         (($fieldName == 'schedule_resolved_sum' ) && !$addResolvedScheduleSummary) ||
                         (($fieldName == 'application_seen') && (!$addAppSeenSummary || !$context->isAPI) ) ||
-                        (($fieldName == 'first-hit' || $fieldName == 'last-hit' || $fieldName == 'hit-count' || $fieldName == 'rule-creation') && (!$addHitCountSummary || !$context->isAPI) ) ||
-                        (($fieldName == 'sec_rule_type' )  && get_class($rule) !== "SecurityRule") ||
+                        (($fieldName == 'first-hit' || $fieldName == 'last-hit' || $fieldName == 'hit-count' || $fieldName == 'rule-creation')
+                            && (!$addHitCountSummary || !$context->isAPI) ) ||
+                        (($fieldName == 'sec_rule_type' )
+                            && get_class($rule) !== "SecurityRule") ||
                         (($fieldName == 'nat_rule_type' || $fieldName == 'snat_type' || $fieldName == 'snat_address' ||
                                 $fieldName == 'snat_address_resovled_sum' || $fieldName == "dnat_type" || $fieldName == 'dnat_host' ||
                                 $fieldName == 'dnat_host_resovled_sum' || $fieldName == 'dnat_port' || $fieldName == 'dnat_distribution' ||
-                                $fieldName == "dst_interface" || $fieldName == "snat_interface" )  && get_class($rule) !== "NatRule")
+                                $fieldName == "dst_interface" || $fieldName == "snat_interface" )
+                            && get_class($rule) !== "NatRule")
                     )
                         continue;
                     $rule_hitcount_array = array();
-                    if(($fieldName == 'first-hit' || $fieldName == 'last-hit' || $fieldName == 'hit-count' || $fieldName == 'rule-creation') && $addHitCountSummary && $context->isAPI )
+                    if(($fieldName == 'first-hit' || $fieldName == 'last-hit' || $fieldName == 'hit-count' || $fieldName == 'rule-creation')
+                        && $addHitCountSummary && $context->isAPI )
                         $rule_hitcount_array = $rule->API_showRuleHitCount( false, false );
                     $lines .= $context->ruleFieldHtmlExport($rule, $fieldID, TRUE, $rule_hitcount_array);
                 }
@@ -4926,16 +4932,21 @@ RuleCallContext::$supportedActions[] = array(
                     && !$addResolvedAddressSummary) ||
                 (($fieldName == 'service_resolved_sum' ||
                         $fieldName == 'service_resolved_nested_name' || $fieldName == 'service_resolved_nested_value' || $fieldName == 'service_resolved_nested_location' ||
-                        $fieldName == 'service_count' || $fieldName == 'service_count_tcp' || $fieldName == 'service_count_udp') && !$addResolvedServiceSummary) ||
+                        $fieldName == 'service_count' || $fieldName == 'service_count_tcp' || $fieldName == 'service_count_udp')
+                    && !$addResolvedServiceSummary) ||
                 (($fieldName == 'service_appdefault_resolved_sum') && !$addResolvedServiceAppDefaultSummary) ||
                 (($fieldName == 'application_resolved_sum') && !$addResolvedApplicationSummary) ||
                 (($fieldName == 'schedule_resolved_sum') && !$addResolvedScheduleSummary) ||
                 (($fieldName == 'application_seen') && (!$addAppSeenSummary || !$context->isAPI) ) ||
-                (($fieldName == 'first-hit' || $fieldName == 'last-hit' || $fieldName == 'hit-count' || $fieldName == 'rule-creation' ) && (!$addHitCountSummary || !$context->isAPI) ) ||
+                (($fieldName == 'first-hit' || $fieldName == 'last-hit' || $fieldName == 'hit-count' || $fieldName == 'rule-creation' )
+                    && (!$addHitCountSummary || !$context->isAPI) ) ||
+                (($fieldName == 'sec_rule_type' )
+                    && get_class($rule) !== "SecurityRule") ||
                 (($fieldName == 'nat_rule_type' || $fieldName == 'snat_type' || $fieldName == 'snat_address' ||
                         $fieldName == 'snat_address_resovled_sum' || $fieldName == "dnat_type" || $fieldName == 'dnat_host' ||
                         $fieldName == 'dnat_host_resovled_sum' || $fieldName == 'dnat_port' || $fieldName == 'dnat_distribution'  ||
-                        $fieldName == "dst_interface" || $fieldName == "snat_interface" )  && $rule !== null && get_class($rule) !== "NatRule")
+                        $fieldName == "dst_interface" || $fieldName == "snat_interface" )  && $rule !== null
+                    && get_class($rule) !== "NatRule")
             )
                 continue;
             $tableHeaders .= "<th>{$fieldName}</th>\n";
