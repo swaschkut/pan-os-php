@@ -97,6 +97,7 @@ class THREATLOG extends UTIL
         }
         else
             $actions =  "display";
+
 ########################################################################################################################
 
         $inputConnector->refreshSystemInfos();
