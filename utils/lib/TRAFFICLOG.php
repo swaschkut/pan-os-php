@@ -151,6 +151,7 @@ class TRAFFICLOG extends UTIL
 
             if( $actions == "exporttoexcel" )
             {
+                //Todo: 20241103 swaschkut not all response lines does have all headers, fix it
                 $this->exportToExcel_Table_Headers($lines, $headers, $filename);
             }
         }
