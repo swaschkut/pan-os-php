@@ -522,6 +522,12 @@ class DH
      */
     static public function elementToPanSetCommand( $type, $element, $xpath, &$array, $multiVSYS, $debug = false )
     {
+        if( $debug )
+            if( $multiVSYS === TRUE )
+                PH::print_stdout("multivsys enabled");
+            elseif( $multiVSYS === FALSE )
+                PH::print_stdout("no Multivsys");
+
         if( $type !== "set" && $type !== "delete" )
             return;
 
@@ -558,8 +564,10 @@ class DH
 
 
         //if FW - no multivsys - remove it
-        if( !$multiVSYS )
+        if( $multiVSYS === False )
         {
+            if($debug)
+                PH::print_stdout("remove vsys1 - line 564");
             $replace = "/vsys/entry[@name='vsys1']";
             $fullpath = str_replace($replace, "", $fullpath);
         }

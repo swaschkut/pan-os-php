@@ -2293,6 +2293,8 @@ class UTIL
             $utilDiff->outputFormatSet = TRUE;
             $utilDiff->outputformatsetFile = $this->outputformatsetFile;
 
+            $utilDiff->configType = $this->configType;
+
             if( $this->debugAPI )
                 $utilDiff->debugAPI = TRUE;
 
