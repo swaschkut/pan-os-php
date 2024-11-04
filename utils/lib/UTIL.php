@@ -2292,6 +2292,7 @@ class UTIL
             $utilDiff = new DIFF( "custom", array(), array(), "" );
             $utilDiff->outputFormatSet = TRUE;
             $utilDiff->outputformatsetFile = $this->outputformatsetFile;
+            $utilDiff->pan = $this->pan;
 
             $utilDiff->configType = $this->configType;
 
