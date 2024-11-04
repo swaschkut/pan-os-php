@@ -179,6 +179,8 @@ class PANConf
 
     public $_public_cloud_server = null;
 
+    public $_advance_routing_enabled = false;
+
     public $_auditComment = false;
 
     public $panorama = null;
@@ -353,6 +355,77 @@ class PANConf
 
 
         $this->deviceconfigroot = DH::findFirstElement('deviceconfig', $this->localhostroot);
+
+
+        //
+        // Extract setting related configs
+        //
+        if( $this->deviceconfigroot !== FALSE )
+        {
+            $settingroot = DH::findFirstElement('setting', $this->deviceconfigroot);
+            if( $settingroot !== FALSE )
+            {
+                $tmp1 = DH::findFirstElement('wildfire', $settingroot);
+                if( $tmp1 !== FALSE )
+                {
+                    $tmp2 = DH::findFirstElement('public-cloud-server', $tmp1);
+                    if( $tmp2 )
+                    {
+                        $this->_public_cloud_server = $tmp1->textContent;
+                    }
+                }
+
+                $managementroot = DH::findFirstElement('management', $settingroot);
+                if( $managementroot !== FALSE )
+                {
+                    $auditComment = DH::findFirstElement('rule-require-audit-comment', $managementroot);
+                    if( $auditComment != FALSE )
+                        if( $auditComment->textContent === "yes" )
+                            $this->_auditComment = TRUE;
+                }
+
+                $advanceRoutingroot = DH::findFirstElement('advance-routing', $settingroot);
+                if( $advanceRoutingroot !== FALSE )
+                {
+                    if( $advanceRoutingroot->textContent === "yes" )
+                        $this->_advance_routing_enabled = TRUE;
+                }
+            }
+
+            $systemroot = DH::findFirstElement('system', $this->deviceconfigroot);
+            if( $systemroot !== FALSE )
+            {
+                $timezone = DH::findFirstElement('timezone', $systemroot);
+                if( $timezone )
+                {
+                    $this->timezone = $timezone->textContent;
+
+                    PH::enableExceptionSupport();
+                    try
+                    {
+                        date_default_timezone_set($timezone->textContent);
+                    }
+                    catch(Exception $e)
+                    {
+                        $timezone_backward = PH::timezone_backward_migration( $this->timezone );
+                        $this->timezone = $timezone_backward;
+                        date_default_timezone_set($timezone_backward);
+
+                        PH::print_stdout("   --------------");
+                        PH::print_stdout( " X Timezone: $timezone->textContent is not supported with this PHP version. ".$this->timezone." is used." );
+                        PH::print_stdout("   - the timezone is IANA deprecated. Please change to a supported one:");
+
+
+                        PH::print_stdout();
+                        PH::print_stdout("   -- '".$this->timezone."'");
+                        PH::print_stdout("   --------------");
+                        PH::print_stdout();
+                    }
+                    PH::disableExceptionSupport();
+                }
+            }
+        }
+        //
 
 
         // Now listing and extracting all DeviceConfig configurations
@@ -651,69 +724,6 @@ class PANConf
             }
         }
 
-
-        //
-        // Extract setting related configs
-        //
-        if( $this->deviceconfigroot !== FALSE )
-        {
-            $settingroot = DH::findFirstElement('setting', $this->deviceconfigroot);
-            if( $settingroot !== FALSE )
-            {
-                $tmp1 = DH::findFirstElement('wildfire', $settingroot);
-                if( $tmp1 !== FALSE )
-                {
-                    $tmp2 = DH::findFirstElement('public-cloud-server', $tmp1);
-                    if( $tmp2 )
-                    {
-                        $this->_public_cloud_server = $tmp1->textContent;
-                    }
-                }
-
-                $managementroot = DH::findFirstElement('management', $settingroot);
-                if( $managementroot !== FALSE )
-                {
-                    $auditComment = DH::findFirstElement('rule-require-audit-comment', $managementroot);
-                    if( $auditComment != FALSE )
-                        if( $auditComment->textContent === "yes" )
-                            $this->_auditComment = TRUE;
-                }
-            }
-
-            $systemroot = DH::findFirstElement('system', $this->deviceconfigroot);
-            if( $systemroot !== FALSE )
-            {
-                $timezone = DH::findFirstElement('timezone', $systemroot);
-                if( $timezone )
-                {
-                    $this->timezone = $timezone->textContent;
-
-                    PH::enableExceptionSupport();
-                    try
-                    {
-                        date_default_timezone_set($timezone->textContent);
-                    }
-                    catch(Exception $e)
-                    {
-                        $timezone_backward = PH::timezone_backward_migration( $this->timezone );
-                        $this->timezone = $timezone_backward;
-                        date_default_timezone_set($timezone_backward);
-
-                        PH::print_stdout("   --------------");
-                        PH::print_stdout( " X Timezone: $timezone->textContent is not supported with this PHP version. ".$this->timezone." is used." );
-                        PH::print_stdout("   - the timezone is IANA deprecated. Please change to a supported one:");
-
-
-                        PH::print_stdout();
-                        PH::print_stdout("   -- '".$this->timezone."'");
-                        PH::print_stdout("   --------------");
-                        PH::print_stdout();
-                    }
-                    PH::disableExceptionSupport();
-                }
-            }
-        }
-        //
 
 
         //

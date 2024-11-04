@@ -38,6 +38,8 @@ class LogicalRouter
 
     protected $xmlroot_protocol = false;
 
+    protected $xmlroot_vrf = false;
+
     protected $fastMemToIndex;
     protected $fastNameToIndex;
 
@@ -64,85 +66,77 @@ class LogicalRouter
         if( $this->name === FALSE )
             derr("logical-router name not found\n");
 
-        $this->xmlroot_protocol = DH::findFirstElement('protocol', $xml);
-
-        if(  $this->xmlroot_protocol !== False )
+        $this->xmlroot_vrf = DH::findFirstElement('vrf', $xml);
+        if(  $this->xmlroot_vrf !== False )
         {
-            foreach( $this->xmlroot_protocol->childNodes as $node )
+            $entry_default = DH::findFirstElementByNameAttr( "entry", "default", $this->xmlroot_vrf);
+
+            $node = FALSE;
+            $tmp_routing_table = DH::findFirstElement('routing-table', $entry_default);
+            if( $tmp_routing_table !== FALSE )
             {
-                if( $node->nodeType != XML_ELEMENT_NODE )
-                    continue;
-
-                $tmpProtocolName = $node->nodeName;
-                $this->routingProtocols[$tmpProtocolName] = array();
-
-                $protocolEnabled = DH::findFirstElement("enable", $node);
-                if( $protocolEnabled !== FALSE )
-                    $this->routingProtocols[$tmpProtocolName]['enabled'] = $protocolEnabled->textContent;
-            }
-        }
-
-        $node = DH::findFirstElementOrCreate('interface', $xml);
-
-        $this->attachedInterfaces->load_from_domxml($node);
-
-        $node = FALSE;
-        $tmp_routing_table = DH::findFirstElement('routing-table', $xml);
-        if( $tmp_routing_table !== FALSE )
-        {
-            $tmp_ip = DH::findFirstElement('ip', $tmp_routing_table);
-            if( $tmp_ip !== FALSE )
-            {
-                $tmp_static_route = DH::findFirstElement('static-route', $tmp_ip);
-                if( $tmp_static_route !== FALSE )
-                    $node = DH::findXPath('/entry', $tmp_static_route);
-
-                if( $node !== FALSE )
+                $tmp_ip = DH::findFirstElement('ip', $tmp_routing_table);
+                if( $tmp_ip !== FALSE )
                 {
-                    for( $i = 0; $i < $node->length; $i++ )
+                    $tmp_static_route = DH::findFirstElement('static-route', $tmp_ip);
+                    if( $tmp_static_route !== FALSE )
+                        $node = DH::findXPath('/entry', $tmp_static_route);
+
+                    if( $node !== FALSE )
                     {
-                        $newRoute = new StaticRoute('***tmp**', $this);
-                        $newRoute->load_from_xml($node->item($i));
-                        $this->_staticRoutes[] = $newRoute;
+                        for( $i = 0; $i < $node->length; $i++ )
+                        {
+                            $newRoute = new StaticRoute('***tmp**', $this);
+                            $newRoute->load_from_xml($node->item($i));
+                            $this->_staticRoutes[] = $newRoute;
 
-                        $ser = spl_object_hash($newRoute);
+                            $ser = spl_object_hash($newRoute);
 
-                        $this->fastMemToIndex[$ser] = $newRoute;
-                        $this->fastNameToIndex[$newRoute->name()] = $newRoute;
+                            $this->fastMemToIndex[$ser] = $newRoute;
+                            $this->fastNameToIndex[$newRoute->name()] = $newRoute;
+                        }
+                    }
+                }
+
+                $tmp_ipv6 = DH::findFirstElement('ipv6', $tmp_routing_table);
+                if( $tmp_ipv6 !== FALSE )
+                {
+                    $tmp_static_route = DH::findFirstElement('static-route', $tmp_ipv6);
+                    if( $tmp_static_route !== FALSE )
+                        $node = DH::findXPath('/entry', $tmp_static_route);
+
+                    if( $node !== FALSE )
+                    {
+                        for( $i = 0; $i < $node->length; $i++ )
+                        {
+                            $newRoute = new StaticRoute('***tmp**', $this);
+                            $newRoute->load_from_xml($node->item($i));
+                            $this->_staticRoutes[] = $newRoute;
+                        }
                     }
                 }
             }
 
-            $tmp_ipv6 = DH::findFirstElement('ipv6', $tmp_routing_table);
-            if( $tmp_ipv6 !== FALSE )
-            {
-                $tmp_static_route = DH::findFirstElement('static-route', $tmp_ipv6);
-                if( $tmp_static_route !== FALSE )
-                    $node = DH::findXPath('/entry', $tmp_static_route);
+            $node = DH::findFirstElementOrCreate('interface', $entry_default);
 
+            $this->attachedInterfaces->load_from_domxml($node);
+
+
+            $tmp_routing_protocolls = array("multicast", "ecmp", "bgp", "ospfv3", "rip", "ospf" );
+            foreach( $tmp_routing_protocolls as $protocoll )
+            {
+                $node = DH::findFirstElement( $protocoll, $entry_default);
                 if( $node !== FALSE )
                 {
-                    for( $i = 0; $i < $node->length; $i++ )
-                    {
-                        $newRoute = new StaticRoute('***tmp**', $this);
-                        $newRoute->load_from_xml($node->item($i));
-                        $this->_staticRoutes[] = $newRoute;
-                    }
+                    $tmpProtocolName = $node->nodeName;
+                    $this->routingProtocols[$tmpProtocolName] = array();
+
+                    $protocolEnabled = DH::findFirstElement("enable", $node);
+                    if( $protocolEnabled !== FALSE )
+                        $this->routingProtocols[$tmpProtocolName]['enabled'] = $protocolEnabled->textContent;
                 }
             }
         }
-
-        /*
-        if( $node !== false )
-        {
-            for( $i=0; $i < $node->length; $i++ )
-            {
-                $newRoute = new StaticRoute('***tmp**', $this);
-                $newRoute->load_from_xml($node->item($i));
-                $this->_staticRoutes[] = $newRoute;
-            }
-        }
-        */
     }
 
     /**

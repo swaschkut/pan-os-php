@@ -26,6 +26,9 @@ class NetworkPropertiesContainer
     /** @var VirtualRouterStore */
     public $virtualRouterStore;
 
+    /** @var LogicalRouterStore */
+    public $logicalRouterStore;
+
     /** @var IkeCryptoProfileStore */
     public $ikeCryptoProfileStore;
 
@@ -72,6 +75,7 @@ class NetworkPropertiesContainer
         $this->greTunnelStore = new GreTunnelStore('GreTunnels', $owner);
         $this->tmpInterfaceStore = new TmpInterfaceStore('TmpIfaces', $owner);
         $this->virtualRouterStore = new VirtualRouterStore('', $owner);
+        $this->logicalRouterStore = new LogicalRouterStore('', $owner);
         $this->ikeCryptoProfileStore = new IkeCryptoProfileStore('IkeCryptoProfiles', $owner);
         $this->ipsecCryptoProfileStore = new IPSecCryptoProfileStore('IPSecCryptoProfiles', $owner);
         $this->ikeGatewayStore = new IKEGatewayStore('IkeGateways', $owner);
@@ -122,9 +126,18 @@ class NetworkPropertiesContainer
         }
 
 
-        $tmp = DH::findFirstElement('virtual-router', $this->xmlroot);
-        if( $tmp !== FALSE )
-            $this->virtualRouterStore->load_from_domxml($tmp);
+        if( $this->owner->_advance_routing_enabled )
+        {
+            $tmp = DH::findFirstElement('logical-router', $this->xmlroot);
+            if( $tmp !== FALSE )
+                $this->logicalRouterStore->load_from_domxml($tmp);
+        }
+        else
+        {
+            $tmp = DH::findFirstElement('virtual-router', $this->xmlroot);
+            if( $tmp !== FALSE )
+                $this->virtualRouterStore->load_from_domxml($tmp);
+        }
 
         $tmp = DH::findFirstElement('virtual-wire', $this->xmlroot);
         if( $tmp !== FALSE )
