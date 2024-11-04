@@ -1238,7 +1238,7 @@ SecurityProfileCallContext::$supportedActions['spyware.best-practice-set'] = arr
   </entry>
 </mica-engine-spyware-enabled>';
 
-            if( $object->owner->owner->version >= 102 )
+            if( $object->owner->owner->version > 102 )
             {
                 $xmlElement = DH::importXmlStringOrDie($object->xmlroot->ownerDocument, $xmlString);
                 $object->xmlroot->appendChild($xmlElement);
@@ -1305,7 +1305,7 @@ SecurityProfileCallContext::$supportedActions['spyware.best-practice-set'] = arr
             {
                 if( $hasDNSlicense )
                 {
-                    $tmp_action->textContent = "alert";
+                    $tmp_action->textContent = "allow";
                     $tmp_packet_capture->textContent = "disable";
                 }
                 else
@@ -1450,7 +1450,7 @@ SecurityProfileCallContext::$supportedActions['spyware.alert-only-set'] = array(
   </entry>
 </mica-engine-spyware-enabled>';
 
-            if( $this->owner->owner->version >= 102 )
+            if( $this->owner->owner->version > 102 )
             {
                 $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $xmlString);
                 $object->xmlroot->appendChild($xmlElement);
@@ -1501,12 +1501,12 @@ SecurityProfileCallContext::$supportedActions['spyware.alert-only-set'] = array(
             /** @var DNSPolicy $rule */
             if( $rule->action() == "allow" )
             {
-                $rule->action = "alert";
+                $rule->action = "allow";
 
                 //move this to DNSPolicy create method "setAction($name)"
                 if( $hasDNSlicense )
                 {
-                    $tmp_action->textContent = "alert";
+                    $tmp_action->textContent = "allow";
                     $tmp_packet_capture->textContent = "disable";
                 }
                 else
@@ -1526,8 +1526,8 @@ SecurityProfileCallContext::$supportedActions['spyware.alert-only-set'] = array(
                 {
                     if( $hasDNSlicense )
                     {
-                        $tmp_action->textContent = "alert";
-                        $tmp_packet_capture->textContent = "single-packet";
+                        $tmp_action->textContent = "allow";
+                        $tmp_packet_capture->textContent = "disable";
                     }
                     else
                     {

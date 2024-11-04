@@ -4940,7 +4940,7 @@ RuleCallContext::$supportedActions[] = array(
                 (($fieldName == 'application_seen') && (!$addAppSeenSummary || !$context->isAPI) ) ||
                 (($fieldName == 'first-hit' || $fieldName == 'last-hit' || $fieldName == 'hit-count' || $fieldName == 'rule-creation' )
                     && (!$addHitCountSummary || !$context->isAPI) ) ||
-                (($fieldName == 'sec_rule_type' )
+                (($fieldName == 'sec_rule_type' ) && $rule !== null
                     && get_class($rule) !== "SecurityRule") ||
                 (($fieldName == 'nat_rule_type' || $fieldName == 'snat_type' || $fieldName == 'snat_address' ||
                         $fieldName == 'snat_address_resovled_sum' || $fieldName == "dnat_type" || $fieldName == 'dnat_host' ||

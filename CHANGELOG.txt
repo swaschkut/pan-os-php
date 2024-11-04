@@ -13,6 +13,7 @@ BUGFIX:
 * online method | bugfix for in=api:// | if your password does have special characters like @/! aso.l
 * type=rule ruletype=nat | actions=exporttoexcel - bugfix to display correct column for NAT rules
 * type=diff | or all utilities with outputformatset | bugfix to display correct vsys for template/multi-vsys firewall
+* type=securityprofile securityprofiletype=spyware actions=spyware.bestpractice-set | fix to set it to allow
 
 GENERAL:
 * improve different network classes for IPv6 | improve for Panroama Template object usage in network classes
