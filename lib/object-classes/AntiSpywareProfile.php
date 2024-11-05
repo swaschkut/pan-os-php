@@ -218,14 +218,14 @@ class AntiSpywareProfile extends SecurityProfile2
             $Unkown_UDP_xmlstring = '<entry name="Unknown-UDP Command and Control detector">
   <inline-policy-action>alert</inline-policy-action>
 </entry>';
-            if( !$tmp_mica_Unknown_TCP_found && $this->owner->owner->version >= 111)
+            if( !$tmp_mica_Unknown_TCP_found && $this->owner->owner->version >= 102)
             {
                 $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $Unkown_TCP_xmlstring);
                 $tmp_rule->appendChild($xmlElement);
 
                 $this->additional['mica-engine-spyware-enabled']['Unknown-TCP Command and Control detector']['inline-policy-action'] = "disable";
             }
-            if( !$tmp_mica_Unknown_UDP_found && $this->owner->owner->version >= 111 )
+            if( !$tmp_mica_Unknown_UDP_found && $this->owner->owner->version >= 102 )
             {
                 $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $Unkown_UDP_xmlstring);
                 $tmp_rule->appendChild($xmlElement);
@@ -235,7 +235,7 @@ class AntiSpywareProfile extends SecurityProfile2
         }
         else
         {
-            $xmlstring_110 = '<mica-engine-spyware-enabled>
+            $xmlstring_102 = '<mica-engine-spyware-enabled>
   <entry name="HTTP Command and Control detector">
     <inline-policy-action>alert</inline-policy-action>
   </entry>
@@ -253,14 +253,14 @@ class AntiSpywareProfile extends SecurityProfile2
   </entry>
 </mica-engine-spyware-enabled>';
 
-            if( $this->owner->owner->version >= 110 )
+            if( $this->owner->owner->version >= 102 )
             {
-                $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $xmlstring_110);
+                $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $xmlstring_102);
                 $xml->appendChild($xmlElement);
             }
 
 
-            if( $this->owner->owner->version >= 110 )
+            if( $this->owner->owner->version >= 102 )
             {
                 $this->additional['mica-engine-spyware-enabled']['HTTP Command and Control detector']['inline-policy-action'] = "disable";
                 $this->additional['mica-engine-spyware-enabled']['HTTP2 Command and Control detector']['inline-policy-action'] = "disable";
