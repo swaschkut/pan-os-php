@@ -9,6 +9,7 @@ UTIL:
 * class AntiSpyware | extend with advanced-dns-security-categories for PAN-OS 11.2
 * type=xpath | introduce argument 'display-api-command'
 * UTIL | introduction of LogicalRouter in different Classes and utilities | main usage type=routing / =static-route
+* type=securityprofile/securityprofilegroup | extend 'actions=exporttoexcel:file.html,Totaluse' with a column to display the count of usage in disabled rules
 
 BUGFIX:
 * online method | bugfix for in=api:// | if your password does have special characters like @/! aso.l

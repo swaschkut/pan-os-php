@@ -465,6 +465,18 @@ class SecurityProfileGroup
         return TRUE;
     }
 
+    public function countDisabledRefRule()
+    {
+        $counter = 0;
+        foreach( $this->refrules as $refrule )
+        {
+            /** @var Rule $refrule */
+            if( $refrule->isDisabled() )
+                $counter++;
+        }
+        return $counter;
+    }
+
     /*
     public function rewriteSecProfXML()
     {

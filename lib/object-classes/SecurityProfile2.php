@@ -53,5 +53,29 @@ class SecurityProfile2
         return $bestpractise;
     }
 
+    public function countDisabledRefRule()
+    {
+        $counter = 0;
+        foreach( $this->refrules as $refrule )
+        {
+            if( get_class($refrule) == "SecurityRule" )
+            {
+                /** @var Rule $refrule */
+                if( $refrule->isDisabled() )
+                    $counter++;
+            }
+            elseif( get_class($refrule) == "SecurityProfileGroup" )
+            {
+                foreach( $refrule->refrules as $refrule2 )
+                {
+                    /** @var Rule $refrule2 */
+                    if( $refrule2->isDisabled() )
+                        $counter++;
+                }
+            }
+        }
+        return $counter;
+    }
+
 }
 

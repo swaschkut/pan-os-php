@@ -459,6 +459,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
         $addWhereUsed = FALSE;
         $addUsedInLocation = FALSE;
         $addTotalUse = FALSE;
+        $addCountDisabledRules = FALSE;
         $bestPractice = FALSE;
 
         $optionalFields = &$context->arguments['additionalFields'];
@@ -470,7 +471,10 @@ SecurityProfileCallContext::$supportedActions[] = array(
             $addUsedInLocation = TRUE;
 
         if( isset($optionalFields['TotalUse']) )
+        {
             $addTotalUse = TRUE;
+            $addCountDisabledRules = TRUE;
+        }
 
         if( isset($optionalFields['BestPractice']) )
             $bestPractice = TRUE;
@@ -505,6 +509,8 @@ SecurityProfileCallContext::$supportedActions[] = array(
             $headers .= '<th>location used</th>';
         if( $addTotalUse )
             $headers .= '<th>total use</th>';
+        if( $addCountDisabledRules )
+            $headers .= '<th>count disabled Rules</th>';
 
 
         $lines = '';
@@ -783,6 +789,15 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 if( $addTotalUse)
                 {
                     $refCount = $object->countReferences();
+                    if( $refCount == 0 )
+                        $refCount = "---";
+                    else
+                        $refCount = (string)$refCount ;
+                    $lines .= $context->encloseFunction( $refCount );
+                }
+                if( $addCountDisabledRules)
+                {
+                    $refCount = $object->countDisabledRefRule();
                     if( $refCount == 0 )
                         $refCount = "---";
                     else
@@ -1238,7 +1253,7 @@ SecurityProfileCallContext::$supportedActions['spyware.best-practice-set'] = arr
   </entry>
 </mica-engine-spyware-enabled>';
 
-            if( $object->owner->owner->version > 102 )
+            if( $object->owner->owner->version >= 102 )
             {
                 $xmlElement = DH::importXmlStringOrDie($object->xmlroot->ownerDocument, $xmlString);
                 $object->xmlroot->appendChild($xmlElement);
@@ -1450,7 +1465,7 @@ SecurityProfileCallContext::$supportedActions['spyware.alert-only-set'] = array(
   </entry>
 </mica-engine-spyware-enabled>';
 
-            if( $this->owner->owner->version > 102 )
+            if( $this->owner->owner->version >= 102 )
             {
                 $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $xmlString);
                 $object->xmlroot->appendChild($xmlElement);
@@ -1604,10 +1619,22 @@ SecurityProfileCallContext::$supportedActions['vulnerability.best-practice-set']
         if (get_class($object) !== "VulnerabilityProfile")
             return null;
 
-        $tmp_mlav_engine = DH::findFirstElementOrCreate('cloud-inline-analysis', $object->xmlroot);
-        $tmp_mlav_engine->textContent = "yes";
+        $tmp_mlav_engine = DH::findFirstElement('cloud-inline-analysis', $object->xmlroot);
+        if( $this->owner->owner->version >= 110 )
+        {
+            if( $tmp_mlav_engine === False )
+                $tmp_mlav_engine = DH::findFirstElementOrCreate('cloud-inline-analysis', $object->xmlroot);
 
-        $tmp_mlav_engine = DH::findFirstElementOrCreate('mica-engine-vulnerability-enabled', $object->xmlroot);
+            $tmp_mlav_engine->textContent = "yes";
+        }
+
+
+        $tmp_mlav_engine = DH::findFirstElement('mica-engine-vulnerability-enabled', $object->xmlroot);
+        if( $this->owner->owner->version >= 110 )
+        {
+            if ($tmp_mlav_engine === False)
+                $tmp_mlav_engine = DH::findFirstElementOrCreate('mica-engine-vulnerability-enabled', $object->xmlroot);
+        }
         if( $tmp_mlav_engine !== False )
         {
             if( !$tmp_mlav_engine->hasChildNodes() )

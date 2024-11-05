@@ -232,6 +232,7 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
 
         $addWhereUsed = FALSE;
         $addUsedInLocation = FALSE;
+        $addCountDisabledRules = FALSE;
         $addTotalUse = FALSE;
 
         $optionalFields = &$context->arguments['additionalFields'];
@@ -243,7 +244,11 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
             $addUsedInLocation = TRUE;
 
         if( isset($optionalFields['TotalUse']) )
+        {
             $addTotalUse = TRUE;
+            $addCountDisabledRules = TRUE;
+        }
+
 
         $headers = '<th>ID</th><th>location</th><th>name</th><th>Antivirus</th><th>Anti-Spyware</th><th>Vulnerability</th><th>URL Filtering</th><th>File Blocking</th><th>Data Filtering</th><th>WildFire Analysis</th>';
 
@@ -253,6 +258,8 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
             $headers .= '<th>location used</th>';
         if( $addTotalUse )
             $headers .= '<th>total use</th>';
+        if( $addCountDisabledRules )
+            $headers .= '<th>count disabled Rules</th>';
 
         $count = 0;
         if( isset($context->objectList) )
@@ -312,6 +319,15 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
                 if( $addTotalUse)
                 {
                     $refCount = $object->countReferences();
+                    if( $refCount == 0 )
+                        $refCount = "---";
+                    else
+                        $refCount = (string)$refCount ;
+                    $lines .= $context->encloseFunction( $refCount );
+                }
+                if( $addCountDisabledRules)
+                {
+                    $refCount = $object->countDisabledRefRule();
                     if( $refCount == 0 )
                         $refCount = "---";
                     else
