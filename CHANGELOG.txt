@@ -17,6 +17,7 @@ BUGFIX:
 * type=diff | or all utilities with outputformatset | bugfix to display correct vsys for template/multi-vsys firewall
 * type=securityprofile securityprofiletype=spyware actions=spyware.bestpractice-set | fix to set it to allow
 * class UTIL | bugfix for argument outputformatset
+* type=securityprofile securityprofiletype=vulnerability | bugfix to add mica-engine-vulnerability-enabled only on PANOS version >=11.0
 
 GENERAL:
 * improve different network classes for IPv6 | improve for Panroama Template object usage in network classes

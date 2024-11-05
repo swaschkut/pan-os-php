@@ -1411,7 +1411,7 @@ SecurityProfileCallContext::$supportedActions['spyware.alert-only-set'] = array(
         if (get_class($object) !== "AntiSpywareProfile")
             return null;
 
-        $tmp_mlav_engine = DH::findFirstElementOrCreate('mica-engine-spyware-enabled', $object->xmlroot);
+        $tmp_mlav_engine = DH::findFirstElement('mica-engine-spyware-enabled', $object->xmlroot);
         if( $tmp_mlav_engine !== False )
         {
             $action_other_then_allow_alert = false;
@@ -1713,7 +1713,12 @@ SecurityProfileCallContext::$supportedActions['vulnerability.alert-only-set'] = 
 
 
 
-        $tmp_mlav_engine = DH::findFirstElementOrCreate('mica-engine-vulnerability-enabled', $object->xmlroot);
+        $tmp_mlav_engine = DH::findFirstElement('mica-engine-vulnerability-enabled', $object->xmlroot);
+        if( $this->owner->owner->version >= 110 )
+        {
+            if ($tmp_mlav_engine === False)
+                $tmp_mlav_engine = DH::findFirstElementOrCreate('mica-engine-vulnerability-enabled', $object->xmlroot);
+        }
         if( $tmp_mlav_engine !== False )
         {
             if( !$tmp_mlav_engine->hasChildNodes() )
