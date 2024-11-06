@@ -18,6 +18,7 @@ BUGFIX:
 * type=securityprofile securityprofiletype=spyware actions=spyware.bestpractice-set | fix to set it to allow
 * class UTIL | bugfix for argument outputformatset
 * type=securityprofile securityprofiletype=vulnerability | bugfix to add mica-engine-vulnerability-enabled only on PANOS version >=11.0
+* type=XYZ | argument outputformat=setcommand.txt | bugfix to load origXML at the beginning
 
 GENERAL:
 * improve different network classes for IPv6 | improve for Panroama Template object usage in network classes

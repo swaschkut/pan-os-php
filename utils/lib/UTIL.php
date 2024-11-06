@@ -845,6 +845,7 @@ class UTIL
         if( isset(PH::$args['outputformatset']) )
         {
             $this->outputformatset = TRUE;
+            $this->origXmlDoc = new DOMDocument();
 
             if( !is_bool(PH::$args['outputformatset']) )
             {
@@ -949,6 +950,8 @@ class UTIL
             if( !$this->xmlDoc->load($this->configInput['filename'], XML_PARSE_BIG_LINES) )
                 derr("error while reading xml config file");
 
+            if( $this->outputformatset )
+                $this->origXmlDoc->load($this->configInput['filename'], XML_PARSE_BIG_LINES);
         }
         elseif( $this->configInput['type'] == 'api' )
         {
@@ -965,15 +968,35 @@ class UTIL
 
 
             if( !isset($this->configInput['filename']) || $this->configInput['filename'] == '' || $this->configInput['filename'] == 'candidate-config' )
+            {
                 $this->xmlDoc = $this->configInput['connector']->getCandidateConfig( $this->apiTimeoutValue );
+                if( $this->outputformatset )
+                    $this->origXmlDoc = $this->configInput['connector']->getCandidateConfig( $this->apiTimeoutValue );
+            }
             elseif( $this->configInput['filename'] == 'running-config' )
+            {
                 $this->xmlDoc = $this->configInput['connector']->getRunningConfig();
+                if( $this->outputformatset )
+                    $this->origXmlDoc = $this->configInput['connector']->getRunningConfig();
+            }
             elseif( $this->configInput['filename'] == 'merged-config' || $this->configInput['filename'] == 'merged' )
+            {
                 $this->xmlDoc = $this->configInput['connector']->getMergedConfig();
+                if( $this->outputformatset )
+                    $this->origXmlDoc = $this->configInput['connector']->getMergedConfig();
+            }
             elseif( $this->configInput['filename'] == 'panorama-pushed-config' || $this->configInput['filename'] == 'panorama-pushed' )
+            {
                 $this->xmlDoc = $this->configInput['connector']->getPanoramaPushedConfig();
+                if( $this->outputformatset )
+                    $this->origXmlDoc = $this->configInput['connector']->getPanoramaPushedConfig();
+            }
             else
+            {
                 $this->xmlDoc = $this->configInput['connector']->getSavedConfig($this->configInput['filename']);
+                if( $this->outputformatset )
+                    $this->origXmlDoc = $this->configInput['connector']->getSavedConfig($this->configInput['filename']);
+            }
         }
         elseif( $this->configInput['type'] == 'sase-api')
         {
@@ -1004,6 +1027,9 @@ class UTIL
             PH::print_stdout( " - Reading XML file from disk... ".$fawkes_filename );
             if( !$this->xmlDoc->load($fawkes_filename, XML_PARSE_BIG_LINES) )
                 derr("error while reading xml config file");
+
+            if( $this->outputformatset )
+                $this->origXmlDoc->load($fawkes_filename, XML_PARSE_BIG_LINES);
 
             PH::print_stdout( " - Loading configuration through PAN-OS-PHP library... " );
 
@@ -1328,14 +1354,6 @@ class UTIL
         if( $this->configInput['type'] !== "sase-api" )
             $this->pan->load_from_domxml($this->xmlDoc, $this->debugLoadTime);
 
-        if( isset(PH::$args['outputformatset']) )
-        {
-            $this->outputformatset = TRUE;
-
-            $this->origXmlDoc = new DOMDocument();
-            $node = $this->origXmlDoc->importNode($this->pan->xmlroot, true);
-            $this->origXmlDoc->appendChild($node);
-        }
 
         $this->loadEnd();
 
