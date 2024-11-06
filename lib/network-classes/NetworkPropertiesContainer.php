@@ -92,37 +92,40 @@ class NetworkPropertiesContainer
         $this->xmlroot = $xml;
 
 
-        $xmlInterface = DH::findFirstElementOrCreate('interface', $this->xmlroot);
-        $tmp = DH::findFirstElement('ethernet', $xmlInterface);
-        if( $tmp !== FALSE )
-            $this->ethernetIfStore->load_from_domxml($tmp);
-
-        $tmp = DH::findFirstElement('aggregate-ethernet', $xmlInterface);
-        if( $tmp !== FALSE )
-            $this->aggregateEthernetIfStore->load_from_domxml($tmp);
-
-        $tmp = DH::findFirstElement('loopback', $xmlInterface);
-        if( $tmp !== FALSE )
+        $xmlInterface = DH::findFirstElement('interface', $this->xmlroot);
+        if( $xmlInterface !== FALSE )
         {
-            $tmp = DH::findFirstElement('units', $tmp);
+            $tmp = DH::findFirstElement('ethernet', $xmlInterface);
             if( $tmp !== FALSE )
-                $this->loopbackIfStore->load_from_domxml($tmp);
-        }
+                $this->ethernetIfStore->load_from_domxml($tmp);
 
-        $tmp = DH::findFirstElement('vlan', $xmlInterface);
-        if( $tmp !== FALSE )
-        {
-            $tmp = DH::findFirstElement('units', $tmp);
+            $tmp = DH::findFirstElement('aggregate-ethernet', $xmlInterface);
             if( $tmp !== FALSE )
-                $this->vlanIfStore->load_from_domxml($tmp);
-        }
+                $this->aggregateEthernetIfStore->load_from_domxml($tmp);
 
-        $tmp = DH::findFirstElement('tunnel', $xmlInterface);
-        if( $tmp !== FALSE )
-        {
-            $tmp = DH::findFirstElement('units', $tmp);
+            $tmp = DH::findFirstElement('loopback', $xmlInterface);
             if( $tmp !== FALSE )
-                $this->tunnelIfStore->load_from_domxml($tmp);
+            {
+                $tmp = DH::findFirstElement('units', $tmp);
+                if( $tmp !== FALSE )
+                    $this->loopbackIfStore->load_from_domxml($tmp);
+            }
+
+            $tmp = DH::findFirstElement('vlan', $xmlInterface);
+            if( $tmp !== FALSE )
+            {
+                $tmp = DH::findFirstElement('units', $tmp);
+                if( $tmp !== FALSE )
+                    $this->vlanIfStore->load_from_domxml($tmp);
+            }
+
+            $tmp = DH::findFirstElement('tunnel', $xmlInterface);
+            if( $tmp !== FALSE )
+            {
+                $tmp = DH::findFirstElement('units', $tmp);
+                if( $tmp !== FALSE )
+                    $this->tunnelIfStore->load_from_domxml($tmp);
+            }
         }
 
 
