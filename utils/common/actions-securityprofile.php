@@ -587,12 +587,24 @@ SecurityProfileCallContext::$supportedActions[] = array(
 
                 if( $bestPractice )
                 {
-                    if( get_class($object) == "AntiSpywareProfile" || get_class($object) == "VulnerabilityProfile" )
+
+                    if( get_class($object) == "AntiVirusProfile" )
                     {
-                        $lines .= $context->encloseFunction('BP');
+                        if( $object->av_action_best_practice() && $object->av_wildfireaction_best_practice() && $object->av_mlavaction_best_practice() )
+                            $lines .= $context->encloseFunction('BP AV action set');
+                        else
+                            $lines .= $context->encloseFunction('NO BP');
+                    }
+                    elseif( get_class($object) == "AntiSpywareProfile" )
+                    {
+                        $lines .= $context->encloseFunction('BP_AS_rule_dummy');
+                    }
+                    elseif( get_class($object) == "VulnerabilityProfile" )
+                    {
+                        $lines .= $context->encloseFunction('BP_VB_rule_dummy');
                     }
                     else
-                        $lines .= $context->encloseFunction('');
+                        $lines .= $context->encloseFunction('---');
                 }
 
                 #$lines .= $context->encloseFunction($object->value());
@@ -619,10 +631,16 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     $lines .= $context->encloseFunction('');
                 if( $bestPractice )
                 {
-                    if( get_class($object) == "AntiSpywareProfile" || get_class($object) == "VulnerabilityProfile" )
+                    if( get_class($object) == "AntiSpywareProfile" )
                     {
-                        $lines .= $context->encloseFunction('BP');
+                        $lines .= $context->encloseFunction('BP_AS_exception_dummy');
                     }
+                    elseif( get_class($object) == "VulnerabilityProfile" )
+                    {
+                        $lines .= $context->encloseFunction('BP_VB_exception_dummy');
+                    }
+                    elseif( get_class($object) == "AntiVirusProfile" )
+                        $lines .= $context->encloseFunction('---');
                     else
                         $lines .= $context->encloseFunction('---');
                 }
@@ -718,8 +736,16 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 {
                     if( get_class($object) == "AntiSpywareProfile" )
                     {
-                        $lines .= $context->encloseFunction('BP');
+                        if( $object->spyware_dnslist_best_practice() )
+                            $lines .= $context->encloseFunction('BP AS dns_list set');
+                        else
+                            $lines .= $context->encloseFunction('NO BP');
                     }
+
+                    elseif( get_class($object) == "VulnerabilityProfile" )
+                        $lines .= $context->encloseFunction('---');
+                    elseif( get_class($object) == "AntiVirusProfile" )
+                        $lines .= $context->encloseFunction('---');
                     else
                         $lines .= $context->encloseFunction('---');
                 }
@@ -731,8 +757,12 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 {
                     if( get_class($object) == "AntiSpywareProfile" )
                     {
-                        $lines .= $context->encloseFunction('BP');
+                        $lines .= $context->encloseFunction('BP_AS_DNS_security_dummy');
                     }
+                    elseif( get_class($object) == "VulnerabilityProfile" )
+                        $lines .= $context->encloseFunction('---');
+                    elseif( get_class($object) == "AntiVirusProfile" )
+                        $lines .= $context->encloseFunction('---');
                     else
                         $lines .= $context->encloseFunction('---');
                 }
@@ -742,9 +772,12 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 $lines .= $context->encloseFunction($string_mica_engine);
                 if( $bestPractice )
                 {
-                    if( get_class($object) == "AntiSpywareProfile" || get_class($object) == "VulnerabilityProfile" )
+                    if( get_class($object) == "AntiSpywareProfile" || get_class($object) == "VulnerabilityProfile" || get_class($object) == "AntiVirusProfile" )
                     {
-                        $lines .= $context->encloseFunction('BP');
+                        if( $object->cloud_inline_analysis_best_practice() )
+                            $lines .= $context->encloseFunction('BP mica_engine set');
+                        else
+                            $lines .= $context->encloseFunction('NO BP');
                     }
                     else
                         $lines .= $context->encloseFunction('---');
