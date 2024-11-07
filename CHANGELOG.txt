@@ -12,6 +12,7 @@ UTIL:
 * type=securityprofile/securityprofilegroup | extend 'actions=exporttoexcel:file.html,Totaluse' with a column to display the count of usage in disabled rules
 * type=device actions=find-zone-from-ip:{IPADDRESS} | extend for NGFW to get this working with logical Router
 * type=securityprofile 'actions=exporttoexcel:sp_bp.html,bestpractice' securityprofiletype=spyware,vulnerability,virus | extend with more real BP checkes, mark also dummy entries
+* type=securityprofile | new 'filters=(av.actions/av.mica-engine/as.mica-engine/as.rules/vb.mice-engine/vb.rules is.best-practice)'
 
 BUGFIX:
 * online method | bugfix for in=api:// | if your password does have special characters like @/! aso.l
