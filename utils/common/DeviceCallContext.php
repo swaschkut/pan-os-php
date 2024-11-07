@@ -39,6 +39,8 @@ class DeviceCallContext extends CallContext
     public $fb_xmlString;
     public $wf_xmlString;
 
+    public $cachedIPmapping;
+
     static public function prepareSupportedActions()
     {
         $tmpArgs = array();

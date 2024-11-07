@@ -44,7 +44,7 @@ class LogicalRouterStore extends ObjStore
     /**
      * @return LogicalRouter[]
      */
-    public function logicalRouters()
+    public function virtualRouters()
     {
         return $this->o;
     }
@@ -53,7 +53,7 @@ class LogicalRouterStore extends ObjStore
      * @param $vrName string
      * @return null|LogicalRouter
      */
-    public function findLogicalRouter($vrName)
+    public function findVirtualRouter($vrName)
     {
         return $this->findByName($vrName);
     }
@@ -65,7 +65,7 @@ class LogicalRouterStore extends ObjStore
      */
     public function newLogicalRouter($name)
     {
-        foreach( $this->logicalRouters() as $vr )
+        foreach( $this->virtualRouters() as $vr )
         {
             if( $vr->name() == $name )
                 derr("LogicalRouter: " . $name . " already available\n");

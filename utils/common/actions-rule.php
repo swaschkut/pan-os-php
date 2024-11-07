@@ -48,7 +48,14 @@ RuleCallContext::$commonActionFunctions['calculate-zones'] = array(
         $mode = $context->arguments['mode'];
         $system = $rule->owner->owner;
 
-        /** @var VirtualRouter $virtualRouterToProcess */
+        $RouterStore = "virtualRouterStore";
+        if( get_class($system) == "VirtualSystem" && isset($system->owner) && get_class($system->owner) == "PANConf" )
+        {
+            if( $system->owner->_advance_routing_enabled )
+                $RouterStore = "logicalRouterStore";
+        }
+
+        /** @var VirtualRouter|LogicalRouter $virtualRouterToProcess */
         $virtualRouterToProcess = null;
 
         if( !isset($context->cachedIPmapping) )
@@ -128,16 +135,16 @@ RuleCallContext::$commonActionFunctions['calculate-zones'] = array(
                 }
 
                 if( $configIsOnLocalFirewall )
-                    $virtualRouterToProcess = $firewall->network->virtualRouterStore->findVirtualRouter($context->arguments['virtualRouter']);
+                    $virtualRouterToProcess = $firewall->network->$RouterStore->findVirtualRouter($context->arguments['virtualRouter']);
                 else
-                    $virtualRouterToProcess = $template->deviceConfiguration->network->virtualRouterStore->findVirtualRouter($context->arguments['virtualRouter']);
+                    $virtualRouterToProcess = $template->deviceConfiguration->network->$RouterStore->findVirtualRouter($context->arguments['virtualRouter']);
 
                 if( $virtualRouterToProcess === null )
                 {
                     if( $configIsOnLocalFirewall )
-                        $tmpVar = $firewall->network->virtualRouterStore->virtualRouters();
+                        $tmpVar = $firewall->network->$RouterStore->virtualRouters();
                     else
-                        $tmpVar = $template->deviceConfiguration->network->virtualRouterStore->virtualRouters();
+                        $tmpVar = $template->deviceConfiguration->network->$RouterStore->virtualRouters();
 
                     derr("cannot find VirtualRouter named '{$context->arguments['virtualRouter']}' in Template '{$context->arguments['template']}'. Available VR list: " . PH::list_to_string($tmpVar), null, FALSE);
                 }
@@ -178,13 +185,13 @@ RuleCallContext::$commonActionFunctions['calculate-zones'] = array(
             }
             else if( $context->arguments['virtualRouter'] != '*autodetermine*' )
             {
-                $virtualRouterToProcess = $system->owner->network->virtualRouterStore->findVirtualRouter($context->arguments['virtualRouter']);
+                $virtualRouterToProcess = $system->owner->network->$RouterStore->findVirtualRouter($context->arguments['virtualRouter']);
                 if( $virtualRouterToProcess === null )
                     derr("VirtualRouter named '{$context->arguments['virtualRouter']}' not found", null, FALSE);
             }
             else
             {
-                $vRouters = $system->owner->network->virtualRouterStore->virtualRouters();
+                $vRouters = $system->owner->network->$RouterStore->virtualRouters();
                 $foundRouters = array();
 
                 foreach( $vRouters as $router )

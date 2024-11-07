@@ -10,6 +10,7 @@ UTIL:
 * type=xpath | introduce argument 'display-api-command'
 * UTIL | introduction of LogicalRouter in different Classes and utilities | main usage type=routing / =static-route
 * type=securityprofile/securityprofilegroup | extend 'actions=exporttoexcel:file.html,Totaluse' with a column to display the count of usage in disabled rules
+* type=device actions=find-zone-from-ip:{IPADDRESS} | extend for NGFW to get this working with logical Router
 
 BUGFIX:
 * online method | bugfix for in=api:// | if your password does have special characters like @/! aso.l

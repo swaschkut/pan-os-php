@@ -3796,10 +3796,14 @@ DeviceCallContext::$supportedActions['find-zone-from-ip'] = array(
         $addressContainer = new AddressRuleContainer( null );
         $addressContainer->addObject( $ip );
 
+        $RouterStore = "virtualRouterStore";
+        if( get_class($system) == "VirtualSystem" && isset($system->owner) && get_class($system->owner) == "PANConf" )
+        {
+            if( $system->owner->_advance_routing_enabled )
+                $RouterStore = "logicalRouterStore";
+        }
 
-
-
-        /** @var VirtualRouter $virtualRouterToProcess */
+        /** @var VirtualRouter|LogicalRouter $virtualRouterToProcess */
         $virtualRouterToProcess = null;
 
         if( !isset($context->cachedIPmapping) )
@@ -3880,16 +3884,16 @@ DeviceCallContext::$supportedActions['find-zone-from-ip'] = array(
                 }
 
                 if( $configIsOnLocalFirewall )
-                    $virtualRouterToProcess = $firewall->network->virtualRouterStore->findVirtualRouter($context->arguments['virtualRouter']);
+                    $virtualRouterToProcess = $firewall->network->$RouterStore->findVirtualRouter($context->arguments['virtualRouter']);
                 else
-                    $virtualRouterToProcess = $template->deviceConfiguration->network->virtualRouterStore->findVirtualRouter($context->arguments['virtualRouter']);
+                    $virtualRouterToProcess = $template->deviceConfiguration->network->$RouterStore->findVirtualRouter($context->arguments['virtualRouter']);
 
                 if( $virtualRouterToProcess === null )
                 {
                     if( $configIsOnLocalFirewall )
-                        $tmpVar = $firewall->network->virtualRouterStore->virtualRouters();
+                        $tmpVar = $firewall->network->$RouterStore->virtualRouters();
                     else
-                        $tmpVar = $template->deviceConfiguration->network->virtualRouterStore->virtualRouters();
+                        $tmpVar = $template->deviceConfiguration->network->$RouterStore->virtualRouters();
 
                     derr("cannot find VirtualRouter named '{$context->arguments['virtualRouter']}' in Template '{$context->arguments['template']}'. Available VR list: " . PH::list_to_string($tmpVar), null, false);
                 }
@@ -3930,7 +3934,7 @@ DeviceCallContext::$supportedActions['find-zone-from-ip'] = array(
             }
             else if( $context->arguments['virtualRouter'] != '*autodetermine*' )
             {
-                $virtualRouterToProcess = $system->owner->network->virtualRouterStore->findVirtualRouter($context->arguments['virtualRouter']);
+                $virtualRouterToProcess = $system->owner->network->$RouterStore->findVirtualRouter($context->arguments['virtualRouter']);
                 if( $virtualRouterToProcess === null )
                     derr("VirtualRouter named '{$context->arguments['virtualRouter']}' not found");
 
@@ -3938,7 +3942,7 @@ DeviceCallContext::$supportedActions['find-zone-from-ip'] = array(
             }
             else
             {
-                $vRouters = $system->owner->network->virtualRouterStore->virtualRouters();
+                $vRouters = $system->owner->network->$RouterStore->virtualRouters();
                 $foundRouters = array();
 
                 foreach( $vRouters as $router )
@@ -3957,9 +3961,9 @@ DeviceCallContext::$supportedActions['find-zone-from-ip'] = array(
                 $string = "VSYS/DG '{$system->name()}' has interfaces attached to " . count($foundRouters) . " virtual routers";
                 PH::ACTIONlog($context, $string);
                 if( count($foundRouters) > 1 )
-                    derr("more than 1 suitable virtual routers found, please specify one fo the following: " . PH::list_to_string($foundRouters));
+                    derr("more than 1 suitable virtual routers found, please specify one of the following: " . PH::list_to_string($foundRouters), null, false);
                 if( count($foundRouters) == 0 )
-                    derr("no suitable VirtualRouter found, please force one or check your configuration");
+                    derr("no suitable VirtualRouter found, please force one or check your configuration", null, false);
 
                 $virtualRouterToProcess = $foundRouters[0];
             }

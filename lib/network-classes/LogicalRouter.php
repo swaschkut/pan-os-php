@@ -478,7 +478,7 @@ class LogicalRouter
                     mwarning("route {$route->name()}/{$route->destination()} ignored because nextVR is blank or invalid '", $route->xmlroot, null, FALSE);
                     continue;
                 }
-                $nextvrObject = $this->owner->findLogicalRouter($nextVR);
+                $nextvrObject = $this->owner->findVirtualRouter($nextVR);
                 if( $nextvrObject === null )
                 {
                     mwarning("route {$route->name()}/{$route->destination()} ignored because nextVR '{$nextVR}' was not found", null, FALSE);

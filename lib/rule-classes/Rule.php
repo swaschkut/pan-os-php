@@ -1159,6 +1159,13 @@ class Rule
 
         $system = $this->owner->owner;
 
+        $RouterStore = "virtualRouterStore";
+        if( get_class($system) == "VirtualSystem" && isset($system->owner) && get_class($system->owner) == "PANConf" )
+        {
+            if( $system->owner->_advance_routing_enabled )
+                $RouterStore = "logicalRouterStore";
+        }
+
         /** @var VirtualRouter $virtualRouterToProcess */
         $virtualRouterToProcess = null;
 
@@ -1208,7 +1215,7 @@ class Rule
                         $entries = $res->getElementsByTagName('entry');
 
                         /** @var VirtualRouter $vr */
-                        $tmp_vr = $firewall->network->virtualRouterStore->findVirtualRouter( $virtualRouter );
+                        $tmp_vr = $firewall->network->$RouterStore->findVirtualRouter( $virtualRouter );
 
                         foreach( $entries as $key => $child )
                         {
@@ -1277,16 +1284,16 @@ class Rule
                 }
 
                 if( $configIsOnLocalFirewall )
-                    $virtualRouterToProcess = $firewall->network->virtualRouterStore->findVirtualRouter($virtualRouter);
+                    $virtualRouterToProcess = $firewall->network->$RouterStore->findVirtualRouter($virtualRouter);
                 else
-                    $virtualRouterToProcess = $template->deviceConfiguration->network->virtualRouterStore->findVirtualRouter($virtualRouter);
+                    $virtualRouterToProcess = $template->deviceConfiguration->network->$RouterStore->findVirtualRouter($virtualRouter);
 
                 if( $virtualRouterToProcess === null )
                 {
                     if( $configIsOnLocalFirewall )
-                        $tmpVar = $firewall->network->virtualRouterStore->virtualRouters();
+                        $tmpVar = $firewall->network->$RouterStore->virtualRouters();
                     else
-                        $tmpVar = $template->deviceConfiguration->network->virtualRouterStore->virtualRouters();
+                        $tmpVar = $template->deviceConfiguration->network->$RouterStore->virtualRouters();
 
                     derr("cannot find VirtualRouter named '{$virtualRouter}' in Template '{$template_name}'. Available VR list: " . PH::list_to_string($tmpVar));
                 }
@@ -1327,13 +1334,13 @@ class Rule
             }
             else if( $virtualRouter != '*autodetermine*' )
             {
-                $virtualRouterToProcess = $system->owner->network->virtualRouterStore->findVirtualRouter($virtualRouter);
+                $virtualRouterToProcess = $system->owner->network->$RouterStore->findVirtualRouter($virtualRouter);
                 if( $virtualRouterToProcess === null )
                     derr("VirtualRouter named '{$virtualRouter}' not found");
             }
             else
             {
-                $vRouters = $system->owner->network->virtualRouterStore->virtualRouters();
+                $vRouters = $system->owner->network->$RouterStore->virtualRouters();
                 $foundRouters = array();
 
                 foreach( $vRouters as $router )
@@ -1595,6 +1602,15 @@ class Rule
 
         $system = $this->owner->owner;
 
+        $RouterStore = "virtualRouterStore";
+        if( get_class($system) == "VirtualSystem" && isset($system->owner) && get_class($system->owner) == "PANConf" )
+        {
+            if( $system->owner->_advance_routing_enabled )
+                $RouterStore = "logicalRouterStore";
+        }
+        if( $RouterStore == "logicalRouterStore" )
+            derr( "Locigal Router not yet suported", null, FALSE );
+
         /** @var VirtualRouter $virtualRouterToProcess */
         $virtualRouterToProcess = null;
 
@@ -1636,6 +1652,7 @@ class Rule
                         $doc = $connector->getMergedConfig();
                         $firewall->load_from_domxml($doc);
 
+                        //Todo 20241109 swaschkut extend with logical-router part
                         //This is to get full routing table incl. dynamic routing for zone-calculation
                         $cmd = "<show><routing><route><virtual-router>".$virtualRouter."</virtual-router></route></routing></show>";
                         $res = $connector->sendOpRequest($cmd, TRUE);
