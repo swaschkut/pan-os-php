@@ -591,17 +591,23 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     if( get_class($object) == "AntiVirusProfile" )
                     {
                         if( $object->av_action_best_practice() && $object->av_wildfireaction_best_practice() && $object->av_mlavaction_best_practice() )
-                            $lines .= $context->encloseFunction('BP AV action set');
+                            $lines .= $context->encloseFunction('BP AV actions set');
                         else
-                            $lines .= $context->encloseFunction('NO BP');
+                            $lines .= $context->encloseFunction('NO BP AV actions');
                     }
                     elseif( get_class($object) == "AntiSpywareProfile" )
                     {
-                        $lines .= $context->encloseFunction('BP_AS_rule_dummy');
+                        if( $object->spyware_rules_best_practice() )
+                            $lines .= $context->encloseFunction('BP AS rules set');
+                        else
+                            $lines .= $context->encloseFunction('NO BP AS rules');
                     }
                     elseif( get_class($object) == "VulnerabilityProfile" )
                     {
-                        $lines .= $context->encloseFunction('BP_VB_rule_dummy');
+                        if( $object->vulnerability_rules_best_practice() )
+                            $lines .= $context->encloseFunction('BP VP rules set');
+                        else
+                            $lines .= $context->encloseFunction('NO BP VP rules');
                     }
                     else
                         $lines .= $context->encloseFunction('---');
@@ -739,7 +745,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         if( $object->spyware_dnslist_best_practice() )
                             $lines .= $context->encloseFunction('BP AS dns_list set');
                         else
-                            $lines .= $context->encloseFunction('NO BP');
+                            $lines .= $context->encloseFunction('NO BP AS dns_list');
                     }
 
                     elseif( get_class($object) == "VulnerabilityProfile" )
@@ -757,7 +763,10 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 {
                     if( get_class($object) == "AntiSpywareProfile" )
                     {
-                        $lines .= $context->encloseFunction('BP_AS_DNS_security_dummy');
+                        if( $object->spyware_dns_security_best_practice() )
+                            $lines .= $context->encloseFunction('BP AS dns_security set');
+                        else
+                            $lines .= $context->encloseFunction('NO BP AS dns_security');
                     }
                     elseif( get_class($object) == "VulnerabilityProfile" )
                         $lines .= $context->encloseFunction('---');
@@ -777,7 +786,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         if( $object->cloud_inline_analysis_best_practice() )
                             $lines .= $context->encloseFunction('BP mica_engine set');
                         else
-                            $lines .= $context->encloseFunction('NO BP');
+                            $lines .= $context->encloseFunction('NO BP mica_engine');
                     }
                     else
                         $lines .= $context->encloseFunction('---');

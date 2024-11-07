@@ -626,6 +626,77 @@ class AntiSpywareProfile extends SecurityProfile2
         return FALSE;
     }
 
+
+    public function spyware_rules_best_practice()
+    {
+        $bp_set = false;
+        if( !empty( $this->rules_obj ) )
+        {
+            /*
+              "subquery1": "subquery1=((action eq reset-both) and ((severity has critical) and (category is.any)))",
+              "subquery2": "subquery2=((action eq reset-both) and ((severity has high) and (category is.any)))",
+              "subquery3": "subquery3=((action eq reset-both) and ((severity has medium) and (category is.any)))",
+              "subquery4": "subquery4=((action eq default) and ((severity has low) and (category is.any)))",
+              "subquery5": "subquery5=((action eq default) and ((severity has informational) and (category is.any)))",
+             */
+            foreach ($this->rules_obj as $rulename => $rule)
+            {
+                /** @var ThreatPolicySpyware $rule */
+                if( ( in_array( "any", $rule->severity )
+                        || in_array( "medium", $rule->severity )
+                        || in_array( "high", $rule->severity )
+                        || in_array( "critical", $rule->severity )
+                    )
+                    && $rule->action() !== "reset-both"
+                    && $rule->packetCapture() != "single-packet"
+                )
+                    return false;
+                else
+                    $bp_set = true;
+            }
+        }
+        return $bp_set;
+    }
+
+    //todo: 20241107 swaschkut - bring in BP
+    public function spyware_exception_best_practice()
+    {
+        if( !empty( $this->threatException ) )
+        {
+            foreach ($this->threatException as $threatname => $threat)
+            {
+                //which check??
+            }
+        }
+        derr( "BP AS exception check not impemented" );
+    }
+
+    public function spyware_dns_security_best_practice()
+    {
+        $bp_set = false;
+        foreach( $this->additional['botnet-domain']['dns-security-categories'] as $name => $value )
+        {
+            /** @var DNSPolicy $value */
+            /*
+            "subquery6": "subquery6=((action eq sinkhole) and (name eq pan-dns-sec-cc))",
+            "subquery7": "subquery7=((action eq sinkhole) and (name eq pan-dns-sec-malware))",
+            "subquery8": "subquery8=((action eq sinkhole) and (name eq pan-dns-sec-phishing))",
+             */
+            if( ( $value->name() == "pan-dns-sec-cc"
+                || $value->name() == "pan-dns-sec-malware"
+                || $value->name() == "pan-dns-sec-phishing"
+                )
+                && $value->action() != "sinkhole"
+                && $value->packetCapture() != "single-packet"
+            )
+                return false;
+            else
+                $bp_set = true;
+        }
+        #derr( "BP AS dns_security check not impemented" );
+        return $bp_set;
+    }
+
     static $templatexml = '<entry name="**temporarynamechangeme**"></entry>';
 
     static $templatexml_100 = '<entry name="**temporarynamechangeme**">
