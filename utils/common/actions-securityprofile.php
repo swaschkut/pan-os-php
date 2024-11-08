@@ -765,6 +765,8 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         $enabled = "[no]";
                         if( $object->cloud_inline_analysis_enabled )
                             $enabled = "[yes]";
+                        elseif( $bestPractice )
+                            $enabled .= "<-";
                         $string_mica_engine[] = "mica-engine-spyware-enabled: ". $enabled;
 
                         foreach ($object->additional['mica-engine-spyware-enabled'] as $name => $threat)
@@ -782,6 +784,8 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         $enabled = "[no]";
                         if( $object->cloud_inline_analysis_enabled )
                             $enabled = "[yes]";
+                        elseif( $bestPractice )
+                            $enabled .= "<-";
                         $string_mica_engine[] = "mica-engine-vulnerability-enabled: ". $enabled;
 
                         foreach ($object->additional['mica-engine-vulnerability-enabled'] as $name => $threat)
