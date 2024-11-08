@@ -355,6 +355,8 @@ class PLAYBOOK__
                     $in = $input;
                 elseif( !in_array( $script, $in_exclude ) && !$this->isAPI )
                     $in = $out;
+                elseif( $this->isAPI )
+                    $in = $input;
 
                 if( $output == "/dev/null" )
                     $out = "/dev/null";

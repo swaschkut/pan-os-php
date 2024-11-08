@@ -629,9 +629,10 @@ class AntiSpywareProfile extends SecurityProfile2
 
     public function spyware_rules_best_practice()
     {
-        $bp_set = false;
+        $bp_set = null;
         if( !empty( $this->rules_obj ) )
         {
+            $bp_set = false;
             /*
               "subquery1": "subquery1=((action eq reset-both) and ((severity has critical) and (category is.any)))",
               "subquery2": "subquery2=((action eq reset-both) and ((severity has high) and (category is.any)))",
