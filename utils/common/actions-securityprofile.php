@@ -757,7 +757,13 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         $string_mica_engine[] = "mica-engine-spyware-enabled: ". $enabled;
 
                         foreach ($object->additional['mica-engine-spyware-enabled'] as $name => $threat)
-                            $string_mica_engine[] = $name . " - inline-policy-action :" . $object->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action'];
+                        {
+                            $tmp_string = $name . " - inline-policy-action :" . $object->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action'];
+                            if( $object->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action'] != "reset-both" )
+                                $tmp_string .= "<-";
+                            $string_mica_engine[] = $tmp_string;
+                        }
+
                     }
 
                     if( !empty( $object->additional['mica-engine-vulnerability-enabled'] ) )
@@ -768,7 +774,13 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         $string_mica_engine[] = "mica-engine-vulnerability-enabled: ". $enabled;
 
                         foreach ($object->additional['mica-engine-vulnerability-enabled'] as $name => $threat)
-                            $string_mica_engine[] = $name . " - inline-policy-action :" . $object->additional['mica-engine-vulnerability-enabled'][$name]['inline-policy-action'];
+                        {
+                            $tmp_string = $name . " - inline-policy-action :" . $object->additional['mica-engine-vulnerability-enabled'][$name]['inline-policy-action'];
+                            if( $object->additional['mica-engine-vulnerability-enabled'][$name]['inline-policy-action'] != "reset-both" )
+                                $tmp_string .= "<-";
+                            $string_mica_engine[] = $tmp_string;
+                        }
+
                     }
 
                     if( !empty( $object->additional['mlav-engine-filebased-enabled'] ) )
@@ -776,7 +788,13 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         $string_mica_engine[] = "mlav-engine-filebased-enabled: ";
 
                         foreach ($object->additional['mlav-engine-filebased-enabled'] as $name => $threat)
-                            $string_mica_engine[] = $name . " - mlav-policy-action :" . $object->additional['mlav-engine-filebased-enabled'][$name]['mlav-policy-action'];
+                        {
+                            $tmp_string = $name . " - mlav-policy-action :" . $object->additional['mlav-engine-filebased-enabled'][$name]['mlav-policy-action'];
+                            if( $object->additional['mlav-engine-filebased-enabled'][$name]['mlav-policy-action'] != "enable" )
+                                $tmp_string .= "<-";
+                            $string_mica_engine[] = $tmp_string;
+                        }
+
                     }
                 }
 
