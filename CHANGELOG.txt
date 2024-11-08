@@ -16,6 +16,7 @@ UTIL:
 * class VlanInterface | improve with IPv6
 * type=seccurityprofile | introduce new 'filter=(av/as/vb is.best-practice)'
 * type=seccurityprofilegroup | introduce new 'filter=(object is.best-practice)' 'actions=exporttoexcel:file.html,bestpractice'
+* type=rule | introduce 'filter=(secprof is.best-practice)'
 
 BUGFIX:
 * online method | bugfix for in=api:// | if your password does have special characters like @/! aso.l

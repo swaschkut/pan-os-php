@@ -2327,6 +2327,51 @@ RQuery::$defaultFilters['rule']['secprof']['operators']['group.is.undefined'] = 
         'input' => 'input/panorama-8.0.xml'
     )
 );
+RQuery::$defaultFilters['rule']['secprof']['operators']['is.best-practice'] = array(
+    'Function' => function (RuleRQueryContext $context) {
+        $rule = $context->object;
+        if( !$rule->isSecurityRule() && !$rule->isDefaultSecurityRule() )
+            return FALSE;
+        if( !$context->object->securityProfileIsBlank()
+            && $context->object->securityProfileType() == "group" )
+        {
+            $group_name = $context->object->securityProfileGroup();
+            $group = $context->object->owner->owner->securityProfileGroupStore->find($group_name);
+            if( $group->is_best_practice() )
+                return TRUE;
+            else
+                return FALSE;
+        }
+        else
+        {
+            $profiles = $context->object->securityProfiles();
+            $bp_set = FALSE;
+            foreach($profiles as $type => $profile)
+            {
+                if( $type == "virus" || $type == "spyware" || $type == "vulnerability" )
+                {
+                    /** @var AntiVirusProfile $profile */
+                    if( $profile->is_best_practice() )
+                        $bp_set = TRUE;
+                    else
+                        return FALSE;
+                }
+            }
+
+            if( $bp_set )
+                return TRUE;
+            else
+                return FALSE;
+        }
+
+        return null;
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
 RQuery::$defaultFilters['rule']['secprof']['operators']['av-profile.is'] = array(
     'Function' => function (RuleRQueryContext $context) {
         $rule = $context->object;
