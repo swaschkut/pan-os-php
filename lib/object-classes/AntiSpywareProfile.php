@@ -676,18 +676,11 @@ class AntiSpywareProfile extends SecurityProfile2
             "subquery7": "subquery7=((action eq sinkhole) and (name eq pan-dns-sec-malware))",
             "subquery8": "subquery8=((action eq sinkhole) and (name eq pan-dns-sec-phishing))",
              */
-            if( ( $value->name() == "pan-dns-sec-cc"
-                || $value->name() == "pan-dns-sec-malware"
-                || $value->name() == "pan-dns-sec-phishing"
-                )
-                && $value->action() != "sinkhole"
-                && $value->packetCapture() != "single-packet"
-            )
-                return false;
-            else
+            if( $value->spyware_dns_security_rule_bestpractice() )
                 $bp_set = true;
+            else
+                return false;
         }
-        #derr( "BP AS dns_security check not impemented" );
         return $bp_set;
     }
 

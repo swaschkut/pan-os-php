@@ -120,6 +120,20 @@ class DNSPolicy
 
         PH::print_stdout( $string );
     }
+
+    public function spyware_dns_security_rule_bestpractice()
+    {
+        if( ( $this->name() == "pan-dns-sec-cc"
+                || $this->name() == "pan-dns-sec-malware"
+                || $this->name() == "pan-dns-sec-phishing"
+            )
+            && $this->action() != "sinkhole"
+            && $this->packetCapture() != "single-packet"
+        )
+            return false;
+        else
+            return true;
+    }
 }
 
 

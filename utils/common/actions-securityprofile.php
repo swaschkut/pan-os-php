@@ -614,7 +614,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                             {
                                 if ($type == "ftp" || $type == "http" || $type == "http2" || $type == "smb")
                                 {
-                                    if ($object->$type['mlav-action'] != "default")
+                                    if( $object->$type['mlav-action'] != "default")
                                         $string .= "<-";
                                 }
                                 else
@@ -712,7 +712,15 @@ SecurityProfileCallContext::$supportedActions[] = array(
                                 {
                                     $string = $name." -  action: ".$value['action'];
                                     if( isset($value['packet-capture']) )
+                                    {
                                         $string .= " -  packet-capture: ".$value['packet-capture'];
+                                        if( $bestPractice && $name == "default-paloalto-dns" )
+                                        {
+                                            if( $value['action'] != "sinkhole" && ($value['packet-capture'] != "single-packet" || $value['packet-capture'] != "extended-capture" ) )
+                                                $string .= "<-";
+                                        }
+                                    }
+
                                     $string_dns_list[] =  $string;
                                 }
 
@@ -732,6 +740,9 @@ SecurityProfileCallContext::$supportedActions[] = array(
                                     $string .= " - log-level: '".$rule->logLevel()."'";
                                     $string .= " - action: '".$rule->action."'";
                                     $string .= " - packet-capture: '".$rule->packetCapture()."'";
+                                    /** @var DNSPolicy $rule */
+                                    if( $bestPractice && !$rule->spyware_dns_security_rule_bestpractice() )
+                                        $string .= "<-";
                                     $string_dns_security[] = $string;
                                 }
                             }
@@ -759,7 +770,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         foreach ($object->additional['mica-engine-spyware-enabled'] as $name => $threat)
                         {
                             $tmp_string = $name . " - inline-policy-action :" . $object->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action'];
-                            if( $object->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action'] != "reset-both" )
+                            if( $bestPractice && $object->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action'] != "reset-both" )
                                 $tmp_string .= "<-";
                             $string_mica_engine[] = $tmp_string;
                         }
@@ -776,7 +787,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         foreach ($object->additional['mica-engine-vulnerability-enabled'] as $name => $threat)
                         {
                             $tmp_string = $name . " - inline-policy-action :" . $object->additional['mica-engine-vulnerability-enabled'][$name]['inline-policy-action'];
-                            if( $object->additional['mica-engine-vulnerability-enabled'][$name]['inline-policy-action'] != "reset-both" )
+                            if( $bestPractice && $object->additional['mica-engine-vulnerability-enabled'][$name]['inline-policy-action'] != "reset-both" )
                                 $tmp_string .= "<-";
                             $string_mica_engine[] = $tmp_string;
                         }
@@ -790,7 +801,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         foreach ($object->additional['mlav-engine-filebased-enabled'] as $name => $threat)
                         {
                             $tmp_string = $name . " - mlav-policy-action :" . $object->additional['mlav-engine-filebased-enabled'][$name]['mlav-policy-action'];
-                            if( $object->additional['mlav-engine-filebased-enabled'][$name]['mlav-policy-action'] != "enable" )
+                            if( $bestPractice && $object->additional['mlav-engine-filebased-enabled'][$name]['mlav-policy-action'] != "enable" )
                                 $tmp_string .= "<-";
                             $string_mica_engine[] = $tmp_string;
                         }
