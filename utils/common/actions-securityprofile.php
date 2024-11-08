@@ -582,7 +582,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                             {
                                 if ($type == "ftp" || $type == "http" || $type == "http2" || $type == "smb")
                                 {
-                                    if ($this->$type['action'] != "default")
+                                    if ($object->$type['action'] != "default")
                                         $string .= "<-";
                                 }
                                 else
@@ -598,7 +598,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                             {
                                 if ($type == "ftp" || $type == "http" || $type == "http2" || $type == "smb")
                                 {
-                                    if ($this->$type['wildfire-action'] != "default")
+                                    if ($object->$type['wildfire-action'] != "default")
                                         $string .= "<-";
                                 }
                                 else
@@ -614,7 +614,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                             {
                                 if ($type == "ftp" || $type == "http" || $type == "http2" || $type == "smb")
                                 {
-                                    if ($this->$type['mlav-action'] != "default")
+                                    if ($object->$type['mlav-action'] != "default")
                                         $string .= "<-";
                                 }
                                 else
