@@ -559,9 +559,9 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     foreach( $object->rules_obj as $rulename => $rule )
                     {
                         $tmp_string = "'".$rule->name()."' | severity:'". implode( ",", $rule->severity )."' - action:'".$rule->action()."' - packetCapture:'".$rule->packetCapture()."' - category:'".$rule->category()."' - host:'".$rule->host()."'";
-                        if( get_class($rule ) == "ThreatPolicySpyware" && !$rule->spyware_rule_best_practice() )
+                        if( get_class($rule ) == "ThreatPolicySpyware" && !$rule->spyware_rule_best_practice() && $bestPractice )
                             $tmp_string .= " <-";
-                        elseif( get_class($rule ) == "ThreatPolicyVulnerability" && !$rule->vulnerability_rule_best_practice() )
+                        elseif( get_class($rule ) == "ThreatPolicyVulnerability" && !$rule->vulnerability_rule_best_practice() && $bestPractice )
                             $tmp_string .= " <-";
                         $tmp_array[] = $tmp_string;
                     }
@@ -576,13 +576,28 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     {
                         $string = $type;
                         if( isset( $object->$type['action'] ) )
+                        {
                             $string .= "          - action:          '" . $object->$type['action'] . "'";
+                            if( $bestPractice && $object->$type['action'] != "reset-both")
+                                $string .= "<-";
+                        }
+
 
                         if( isset( $object->$type['wildfire-action'] ) )
+                        {
                             $string .=  "          - wildfire-action: '" . $object->$type['wildfire-action'] . "'";
+                            if( $bestPractice && $object->$type['wildfire-action'] != "reset-both")
+                                $string .= "<-";
+                        }
+
 
                         if( isset( $object->$type['mlav-action'] ) )
+                        {
                             $string .= "          - mlav-action: '" . $object->$type['mlav-action'] . "'";
+                            if( $bestPractice && $object->$type['mlav-action'] != "reset-both")
+                                $string .= "<-";
+                        }
+
                         $array[] = $string;
                     }
                     $lines .= $context->encloseFunction($array);
