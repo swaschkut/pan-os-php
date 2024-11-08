@@ -629,37 +629,38 @@ class AntiSpywareProfile extends SecurityProfile2
 
     public function spyware_rules_best_practice()
     {
-        $bp_set = null;
-        if( !empty( $this->rules_obj ) )
-        {
-            $bp_set = false;
-            /*
-              "subquery1": "subquery1=((action eq reset-both) and ((severity has critical) and (category is.any)))",
-              "subquery2": "subquery2=((action eq reset-both) and ((severity has high) and (category is.any)))",
-              "subquery3": "subquery3=((action eq reset-both) and ((severity has medium) and (category is.any)))",
-              "subquery4": "subquery4=((action eq default) and ((severity has low) and (category is.any)))",
-              "subquery5": "subquery5=((action eq default) and ((severity has informational) and (category is.any)))",
-             */
-            foreach ($this->rules_obj as $rulename => $rule)
-            {
-                /** @var ThreatPolicySpyware $rule */
-                if( $rule->spyware_rule_best_practice() )
-                    $bp_set = true;
-                else
-                    return false;
+        if( $this->owner->owner->version >= 102 ) {
+            $bp_set = null;
+            if (!empty($this->rules_obj)) {
+                $bp_set = false;
+                /*
+                  "subquery1": "subquery1=((action eq reset-both) and ((severity has critical) and (category is.any)))",
+                  "subquery2": "subquery2=((action eq reset-both) and ((severity has high) and (category is.any)))",
+                  "subquery3": "subquery3=((action eq reset-both) and ((severity has medium) and (category is.any)))",
+                  "subquery4": "subquery4=((action eq default) and ((severity has low) and (category is.any)))",
+                  "subquery5": "subquery5=((action eq default) and ((severity has informational) and (category is.any)))",
+                 */
+                foreach ($this->rules_obj as $rulename => $rule) {
+                    /** @var ThreatPolicySpyware $rule */
+                    if ($rule->spyware_rule_best_practice())
+                        $bp_set = true;
+                    else
+                        return false;
+                }
             }
+            return $bp_set;
         }
-        return $bp_set;
+        return null;
     }
 
     //todo: 20241107 swaschkut - bring in BP
     public function spyware_exception_best_practice()
     {
-        if( !empty( $this->threatException ) )
-        {
-            foreach ($this->threatException as $threatname => $threat)
-            {
-                //which check??
+        if( $this->owner->owner->version >= 102 ) {
+            if (!empty($this->threatException)) {
+                foreach ($this->threatException as $threatname => $threat) {
+                    //which check??
+                }
             }
         }
         derr( "BP AS exception check not impemented" );
@@ -667,32 +668,39 @@ class AntiSpywareProfile extends SecurityProfile2
 
     public function spyware_dns_security_best_practice()
     {
-        $bp_set = false;
-        foreach( $this->additional['botnet-domain']['dns-security-categories'] as $name => $value )
+        if( $this->owner->owner->version >= 102 )
         {
-            /** @var DNSPolicy $value */
-            /*
-            "subquery6": "subquery6=((action eq sinkhole) and (name eq pan-dns-sec-cc))",
-            "subquery7": "subquery7=((action eq sinkhole) and (name eq pan-dns-sec-malware))",
-            "subquery8": "subquery8=((action eq sinkhole) and (name eq pan-dns-sec-phishing))",
-             */
-            if( $value->spyware_dns_security_rule_bestpractice() )
-                $bp_set = true;
-            else
-                return false;
+            $bp_set = false;
+            foreach ($this->additional['botnet-domain']['dns-security-categories'] as $name => $value) {
+                /** @var DNSPolicy $value */
+                /*
+                "subquery6": "subquery6=((action eq sinkhole) and (name eq pan-dns-sec-cc))",
+                "subquery7": "subquery7=((action eq sinkhole) and (name eq pan-dns-sec-malware))",
+                "subquery8": "subquery8=((action eq sinkhole) and (name eq pan-dns-sec-phishing))",
+                 */
+                if ($value->spyware_dns_security_rule_bestpractice())
+                    $bp_set = true;
+                else
+                    return false;
+            }
+            return $bp_set;
         }
-        return $bp_set;
+        return null;
     }
 
     public function is_best_practice()
     {
-        if( $this->spyware_rules_best_practice() && $this->cloud_inline_analysis_best_practice()
-            && $this->spyware_dns_security_best_practice() && $this->spyware_dnslist_best_practice()
-            #&& $this->vulnerability_exception_best_practice()
-        )
-            return TRUE;
-        else
-            return FALSE;
+        if( $this->owner->owner->version >= 102 )
+        {
+            if( $this->spyware_rules_best_practice() && $this->cloud_inline_analysis_best_practice()
+                && $this->spyware_dns_security_best_practice() && $this->spyware_dnslist_best_practice()
+                #&& $this->vulnerability_exception_best_practice()
+            )
+                return TRUE;
+            else
+                return FALSE;
+        }
+        return null;
     }
 
     static $templatexml = '<entry name="**temporarynamechangeme**"></entry>';

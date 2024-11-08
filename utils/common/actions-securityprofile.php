@@ -639,14 +639,14 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         else
                             $lines .= $context->encloseFunction('NO BP AV actions');
                     }
-                    elseif( get_class($object) == "AntiSpywareProfile" )
+                    elseif( get_class($object) == "AntiSpywareProfile" && $object->owner->owner->version >= 102 )
                     {
                         if( $object->spyware_rules_best_practice() )
                             $lines .= $context->encloseFunction('BP AS rules set');
                         else
                             $lines .= $context->encloseFunction('NO BP AS rules');
                     }
-                    elseif( get_class($object) == "VulnerabilityProfile" )
+                    elseif( get_class($object) == "VulnerabilityProfile" && $object->owner->owner->version >= 110 )
                     {
                         if( $object->vulnerability_rules_best_practice() )
                             $lines .= $context->encloseFunction('BP VP rules set');
@@ -681,11 +681,11 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     $lines .= $context->encloseFunction('');
                 if( $bestPractice )
                 {
-                    if( get_class($object) == "AntiSpywareProfile" )
+                    if( get_class($object) == "AntiSpywareProfile" && $object->owner->owner->version >= 102 )
                     {
                         $lines .= $context->encloseFunction('BP_AS_exception_dummy');
                     }
-                    elseif( get_class($object) == "VulnerabilityProfile" )
+                    elseif( get_class($object) == "VulnerabilityProfile" && $object->owner->owner->version >= 110 )
                     {
                         $lines .= $context->encloseFunction('BP_VB_exception_dummy');
                     }
@@ -817,7 +817,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 $lines .= $context->encloseFunction($string_dns_list);
                 if( $bestPractice )
                 {
-                    if( get_class($object) == "AntiSpywareProfile" )
+                    if( get_class($object) == "AntiSpywareProfile" && $object->owner->owner->version >= 102 )
                     {
                         if( $object->spyware_dnslist_best_practice() )
                             $lines .= $context->encloseFunction('BP AS dns_list set');
@@ -838,7 +838,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 $lines .= $context->encloseFunction($string_dns_security);
                 if( $bestPractice )
                 {
-                    if( get_class($object) == "AntiSpywareProfile" )
+                    if( get_class($object) == "AntiSpywareProfile" && $object->owner->owner->version >= 102 )
                     {
                         if( $object->spyware_dns_security_best_practice() )
                             $lines .= $context->encloseFunction('BP AS dns_security set');
@@ -858,7 +858,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 $lines .= $context->encloseFunction($string_mica_engine);
                 if( $bestPractice )
                 {
-                    if( get_class($object) == "AntiSpywareProfile" || get_class($object) == "VulnerabilityProfile" || get_class($object) == "AntiVirusProfile" )
+                    if( (get_class($object) == "AntiSpywareProfile" && $object->owner->owner->version >= 102 ) || (get_class($object) == "VulnerabilityProfile" && $object->owner->owner->version >= 110 ) || get_class($object) == "AntiVirusProfile" )
                     {
                         if( $object->cloud_inline_analysis_best_practice() )
                             $lines .= $context->encloseFunction('BP mica_engine set');
@@ -1584,9 +1584,9 @@ SecurityProfileCallContext::$supportedActions['spyware.alert-only-set'] = array(
   </entry>
 </mica-engine-spyware-enabled>';
 
-            if( $this->owner->owner->version >= 102 )
+            if( $object->owner->owner->version >= 102 )
             {
-                $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $xmlString);
+                $xmlElement = DH::importXmlStringOrDie($object->xmlroot->ownerDocument, $xmlString);
                 $object->xmlroot->appendChild($xmlElement);
 
                 $tmp_mlav_engine = DH::findFirstElementOrCreate('cloud-inline-analysis', $object->xmlroot);
@@ -1739,7 +1739,7 @@ SecurityProfileCallContext::$supportedActions['vulnerability.best-practice-set']
             return null;
 
         $tmp_mlav_engine = DH::findFirstElement('cloud-inline-analysis', $object->xmlroot);
-        if( $this->owner->owner->version >= 110 )
+        if( $object->owner->owner->version >= 110 )
         {
             if( $tmp_mlav_engine === False )
                 $tmp_mlav_engine = DH::findFirstElementOrCreate('cloud-inline-analysis', $object->xmlroot);
@@ -1749,7 +1749,7 @@ SecurityProfileCallContext::$supportedActions['vulnerability.best-practice-set']
 
 
         $tmp_mlav_engine = DH::findFirstElement('mica-engine-vulnerability-enabled', $object->xmlroot);
-        if( $this->owner->owner->version >= 110 )
+        if( $object->owner->owner->version >= 110 )
         {
             if ($tmp_mlav_engine === False)
                 $tmp_mlav_engine = DH::findFirstElementOrCreate('mica-engine-vulnerability-enabled', $object->xmlroot);
@@ -1833,7 +1833,7 @@ SecurityProfileCallContext::$supportedActions['vulnerability.alert-only-set'] = 
 
 
         $tmp_mlav_engine = DH::findFirstElement('mica-engine-vulnerability-enabled', $object->xmlroot);
-        if( $this->owner->owner->version >= 110 )
+        if( $object->owner->owner->version >= 110 )
         {
             if ($tmp_mlav_engine === False)
                 $tmp_mlav_engine = DH::findFirstElementOrCreate('mica-engine-vulnerability-enabled', $object->xmlroot);
