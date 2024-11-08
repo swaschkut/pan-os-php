@@ -99,6 +99,11 @@ class VlanInterface
         return $this->_ipv4Addresses;
     }
 
+    public function getIPv6Addresses()
+    {
+        return $this->_ipv6Addresses;
+    }
+    
     /**
      * return true if change was successful false if not (duplicate rulename?)
      * @param string $name new name for the rule
