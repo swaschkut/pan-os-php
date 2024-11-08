@@ -642,14 +642,7 @@ class AntiSpywareProfile extends SecurityProfile2
             foreach ($this->rules_obj as $rulename => $rule)
             {
                 /** @var ThreatPolicySpyware $rule */
-                if( ( in_array( "any", $rule->severity )
-                        || in_array( "medium", $rule->severity )
-                        || in_array( "high", $rule->severity )
-                        || in_array( "critical", $rule->severity )
-                    )
-                    && $rule->action() !== "reset-both"
-                    && $rule->packetCapture() != "single-packet"
-                )
+                if( $rule->spyware_rule_best_practice() )
                     return false;
                 else
                     $bp_set = true;

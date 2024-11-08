@@ -26,6 +26,20 @@ class ThreatPolicySpyware extends ThreatPolicy
         parent::__construct($name, $owner);
     }
 
+    public function spyware_rule_best_practice()
+    {
+        if( ( in_array( "any", $this->severity )
+                || in_array( "medium", $this->severity )
+                || in_array( "high", $this->severity )
+                || in_array( "critical", $this->severity )
+            )
+            && $this->action() !== "reset-both"
+            && ( $this->packetCapture() != "single-packet" && $this->packetCapture() != "extended-capture" )
+        )
+            return false;
+        else
+            return true;
+    }
 
     public function spywarepolicy_load_from_domxml( $threatx )
     {

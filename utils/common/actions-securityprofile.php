@@ -558,7 +558,12 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     $tmp_array = array();
                     foreach( $object->rules_obj as $rulename => $rule )
                     {
-                        $tmp_array[] = "'".$rule->name()."' | severity:'". implode( ",", $rule->severity )."' - action:'".$rule->action()."' - packetCapture:'".$rule->packetCapture()."' - category:'".$rule->category()."' - host:'".$rule->host()."'";
+                        $tmp_string = "'".$rule->name()."' | severity:'". implode( ",", $rule->severity )."' - action:'".$rule->action()."' - packetCapture:'".$rule->packetCapture()."' - category:'".$rule->category()."' - host:'".$rule->host()."'";
+                        if( get_class($rule ) == "ThreatPolicySpyware" && !$rule->spyware_rule_best_practice() )
+                            $tmp_string .= " <-";
+                        elseif( get_class($rule ) == "ThreatPolicyVulnerability" && !$rule->vulnerability_rule_best_practice() )
+                            $tmp_string .= " <-";
+                        $tmp_array[] = $tmp_string;
                     }
 
 
