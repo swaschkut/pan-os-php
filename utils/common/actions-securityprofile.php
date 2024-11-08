@@ -578,24 +578,48 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         if( isset( $object->$type['action'] ) )
                         {
                             $string .= "          - action:          '" . $object->$type['action'] . "'";
-                            if( $bestPractice && $object->$type['action'] != "reset-both")
-                                $string .= "<-";
+                            if( $bestPractice && $object->$type['action'] != "reset-both" )
+                            {
+                                if ($type == "ftp" || $type == "http" || $type == "http2" || $type == "smb")
+                                {
+                                    if ($this->$type['action'] != "default")
+                                        $string .= "<-";
+                                }
+                                else
+                                    $string .= "<-";
+                            }
                         }
 
 
                         if( isset( $object->$type['wildfire-action'] ) )
                         {
                             $string .=  "          - wildfire-action: '" . $object->$type['wildfire-action'] . "'";
-                            if( $bestPractice && $object->$type['wildfire-action'] != "reset-both")
-                                $string .= "<-";
+                            if( $bestPractice && $object->$type['wildfire-action'] != "reset-both" )
+                            {
+                                if ($type == "ftp" || $type == "http" || $type == "http2" || $type == "smb")
+                                {
+                                    if ($this->$type['wildfire-action'] != "default")
+                                        $string .= "<-";
+                                }
+                                else
+                                    $string .= "<-";
+                            }
                         }
 
 
                         if( isset( $object->$type['mlav-action'] ) )
                         {
                             $string .= "          - mlav-action: '" . $object->$type['mlav-action'] . "'";
-                            if( $bestPractice && $object->$type['mlav-action'] != "reset-both")
-                                $string .= "<-";
+                            if( $bestPractice && $object->$type['mlav-action'] != "reset-both" )
+                            {
+                                if ($type == "ftp" || $type == "http" || $type == "http2" || $type == "smb")
+                                {
+                                    if ($this->$type['mlav-action'] != "default")
+                                        $string .= "<-";
+                                }
+                                else
+                                    $string .= "<-";
+                            }
                         }
 
                         $array[] = $string;

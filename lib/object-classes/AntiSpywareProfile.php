@@ -644,9 +644,9 @@ class AntiSpywareProfile extends SecurityProfile2
             {
                 /** @var ThreatPolicySpyware $rule */
                 if( $rule->spyware_rule_best_practice() )
-                    return false;
-                else
                     $bp_set = true;
+                else
+                    return false;
             }
         }
         return $bp_set;
