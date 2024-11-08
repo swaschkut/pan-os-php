@@ -58,6 +58,16 @@ RQuery::$defaultFilters['securityprofilegroup']['object']['operators']['is.tmp']
         'input' => 'input/panorama-8.0.xml'
     )
 );
+RQuery::$defaultFilters['securityprofilegroup']['object']['operators']['is.best-practice'] = array(
+    'Function' => function (SecurityprofilegroupRQueryContext $context) {
+        return $context->object->is_best_practice();
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
 RQuery::$defaultFilters['securityprofilegroup']['name']['operators']['eq'] = array(
     'Function' => function (SecurityprofilegroupRQueryContext $context) {
         return $context->object->name() == $context->value;

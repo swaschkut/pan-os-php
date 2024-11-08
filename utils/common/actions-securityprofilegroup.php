@@ -249,8 +249,20 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
             $addCountDisabledRules = TRUE;
         }
 
+        if( isset($optionalFields['BestPractice']) )
+            $bestPractice = TRUE;
 
-        $headers = '<th>ID</th><th>location</th><th>name</th><th>Antivirus</th><th>Anti-Spyware</th><th>Vulnerability</th><th>URL Filtering</th><th>File Blocking</th><th>Data Filtering</th><th>WildFire Analysis</th>';
+        $headers = '<th>ID</th><th>location</th><th>name</th>';
+        $headers .= '<th>Antivirus</th>';
+        if( $bestPractice )
+            $headers .= '<th>BP</th>';
+        $headers .= '<th>Anti-Spyware</th>';
+        if( $bestPractice )
+            $headers .= '<th>BP</th>';
+        $headers .= '<th>Vulnerability</th>';
+        if( $bestPractice )
+            $headers .= '<th>BP</th>';
+        $headers .= '<th>URL Filtering</th><th>File Blocking</th><th>Data Filtering</th><th>WildFire Analysis</th>';
 
         if( $addWhereUsed )
             $headers .= '<th>where used</th>';
@@ -284,10 +296,31 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
                 //private $secprof_array = array('virus', 'spyware', 'vulnerability', 'file-blocking', 'wildfire-analysis', 'url-filtering', 'data-filtering');
 
                 $lines .= $context->encloseFunction($object->secprofiles['virus']);
+                if( $bestPractice )
+                {
+                    if( $object->secprofiles['virus']->is_best_practice() )
+                        $lines .= $context->encloseFunction("AV BP set");
+                    else
+                        $lines .= $context->encloseFunction("NO BP");
+                }
 
                 $lines .= $context->encloseFunction($object->secprofiles['spyware']);
+                if( $bestPractice )
+                {
+                    if( $object->secprofiles['spyware']->is_best_practice() )
+                        $lines .= $context->encloseFunction("AS BP set");
+                    else
+                        $lines .= $context->encloseFunction("NO BP");
+                }
 
                 $lines .= $context->encloseFunction($object->secprofiles['vulnerability']);
+                if( $bestPractice )
+                {
+                    if( $object->secprofiles['vulnerability']->is_best_practice() )
+                        $lines .= $context->encloseFunction("VB BP set");
+                    else
+                        $lines .= $context->encloseFunction("NO BP");
+                }
 
                 $lines .= $context->encloseFunction($object->secprofiles['url-filtering']);
 
@@ -358,12 +391,13 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
             array('type' => 'pipeSeparatedList',
                 'subtype' => 'string',
                 'default' => '*NONE*',
-                'choices' => array('WhereUsed', 'UsedInLocation', 'TotalUse'),
+                'choices' => array('WhereUsed', 'UsedInLocation', 'TotalUse', 'BestPractice'),
                 'help' =>
                     "pipe(|) separated list of additional field to include in the report. The following is available:\n" .
                     "  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n" .
                     "  - WhereUsed : list places where object is used (rules, groups ...)\n" .
-                    "  - TotalUse : list a counter how often this object is used\n"
+                    "  - TotalUse : list a counter how often this object is used\n" .
+                    "  - BestPractice : show if BestPractice is configured\n"
             )
     )
 );

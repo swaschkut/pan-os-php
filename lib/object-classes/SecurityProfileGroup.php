@@ -477,6 +477,18 @@ class SecurityProfileGroup
         return $counter;
     }
 
+    public function is_best_practice()
+    {
+        if( $this->secprofiles['spyware']->is_best_practice()
+            && $this->secprofiles['virus']->is_best_practice()
+            && $this->secprofiles['vulnerability']->is_best_practice()
+        )
+            return TRUE;
+        else
+            return FALSE;
+    }
+
+
     /*
     public function rewriteSecProfXML()
     {
