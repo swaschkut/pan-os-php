@@ -684,6 +684,17 @@ class AntiSpywareProfile extends SecurityProfile2
         return $bp_set;
     }
 
+    public function is_best_practice()
+    {
+        if( $this->spyware_rules_best_practice() && $this->cloud_inline_analysis_best_practice()
+            && $this->spyware_dns_security_best_practice() && $this->spyware_dnslist_best_practice()
+            #&& $this->vulnerability_exception_best_practice()
+        )
+            return TRUE;
+        else
+            return FALSE;
+    }
+
     static $templatexml = '<entry name="**temporarynamechangeme**"></entry>';
 
     static $templatexml_100 = '<entry name="**temporarynamechangeme**">

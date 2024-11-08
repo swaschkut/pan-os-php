@@ -896,7 +896,20 @@ RQuery::$defaultFilters['securityprofile']['av.mica-engine']['operators']['is.be
         return $object->cloud_inline_analysis_best_practice();
     },
     'arg' => false,
-    'help' => "'securityprofiletype=spyware' e.g. 'filter=(av.mica-engine is.best-practice)'"
+    'help' => "'securityprofiletype=virus' e.g. 'filter=(av.mica-engine is.best-practice)'"
+);
+RQuery::$defaultFilters['securityprofile']['av']['operators']['is.best-practice'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var AntiVirusProfile $object */
+        $object = $context->object;
+
+        if( $object->secprof_type != 'virus' )
+            return null;
+
+        return $object->is_best_practice();
+    },
+    'arg' => false,
+    'help' => "'securityprofiletype=virus' e.g. 'filter=(av is.best-practice)'"
 );
 RQuery::$defaultFilters['securityprofile']['as.mica-engine']['operators']['is.best-practice'] = array(
     'Function' => function (SecurityProfileRQueryContext $context) {
@@ -924,6 +937,19 @@ RQuery::$defaultFilters['securityprofile']['as.rules']['operators']['is.best-pra
     'arg' => false,
     'help' => "'securityprofiletype=spyware' e.g. 'filter=(as.rules is.best-practice)'"
 );
+RQuery::$defaultFilters['securityprofile']['as']['operators']['is.best-practice'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var AntiSpywareProfile $object */
+        $object = $context->object;
+
+        if( $object->secprof_type != 'spyware' )
+            return null;
+
+        return $object->is_best_practice();
+    },
+    'arg' => false,
+    'help' => "'securityprofiletype=spyware' e.g. 'filter=(vb is.best-practice)'"
+);
 RQuery::$defaultFilters['securityprofile']['vb.mica-engine']['operators']['is.best-practice'] = array(
     'Function' => function (SecurityProfileRQueryContext $context) {
         /** @var VulnerabilityProfile $object */
@@ -935,7 +961,7 @@ RQuery::$defaultFilters['securityprofile']['vb.mica-engine']['operators']['is.be
         return $object->cloud_inline_analysis_best_practice();
     },
     'arg' => false,
-    'help' => "'securityprofiletype=spyware' e.g. 'filter=(vb.mica-engine is.best-practice)'"
+    'help' => "'securityprofiletype=vulnerability' e.g. 'filter=(vb.mica-engine is.best-practice)'"
 );
 RQuery::$defaultFilters['securityprofile']['vb.rules']['operators']['is.best-practice'] = array(
     'Function' => function (SecurityProfileRQueryContext $context) {
@@ -948,7 +974,20 @@ RQuery::$defaultFilters['securityprofile']['vb.rules']['operators']['is.best-pra
         return $object->vulnerability_rules_best_practice();
     },
     'arg' => false,
-    'help' => "'securityprofiletype=spyware' e.g. 'filter=(vb.rules is.best-practice)'"
+    'help' => "'securityprofiletype=vulnerability' e.g. 'filter=(vb.rules is.best-practice)'"
+);
+RQuery::$defaultFilters['securityprofile']['vb']['operators']['is.best-practice'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var VulnerabilityProfile $object */
+        $object = $context->object;
+
+        if( $object->secprof_type != 'vulnerability' )
+            return null;
+
+        return $object->is_best_practice();
+    },
+    'arg' => false,
+    'help' => "'securityprofiletype=vulnerability' e.g. 'filter=(vb is.best-practice)'"
 );
 RQuery::$defaultFilters['securityprofile']['dns-list.action']['operators']['has'] = array(
     'Function' => function (SecurityProfileRQueryContext $context) {

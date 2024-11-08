@@ -14,6 +14,7 @@ UTIL:
 * type=securityprofile 'actions=exporttoexcel:sp_bp.html,bestpractice' securityprofiletype=spyware,vulnerability,virus | extend with more real BP checkes, mark also dummy entries
 * type=securityprofile | new 'filters=(av.actions/av.mica-engine/as.mica-engine/as.rules/vb.mice-engine/vb.rules is.best-practice)'
 * class VlanInterface | improve with IPv6
+* type=seccurityprofile | introduce new 'filter=(av/as/vb is.best-practice)'
 
 BUGFIX:
 * online method | bugfix for in=api:// | if your password does have special characters like @/! aso.l
