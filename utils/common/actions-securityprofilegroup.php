@@ -234,6 +234,7 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
         $addUsedInLocation = FALSE;
         $addCountDisabledRules = FALSE;
         $addTotalUse = FALSE;
+        $bestPractice = FALSE;
 
         $optionalFields = &$context->arguments['additionalFields'];
 
