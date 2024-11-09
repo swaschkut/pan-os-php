@@ -298,28 +298,43 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
                 $lines .= $context->encloseFunction($object->secprofiles['virus']);
                 if( $bestPractice )
                 {
-                    if( $object->secprofiles['virus']->is_best_practice() )
-                        $lines .= $context->encloseFunction("AV BP set");
+                    if(isset($object->secprofiles['virus']))
+                    {
+                        if( $object->secprofiles['virus']->is_best_practice() )
+                            $lines .= $context->encloseFunction("AV BP set");
+                        else
+                            $lines .= $context->encloseFunction("NO BP");
+                    }
                     else
-                        $lines .= $context->encloseFunction("NO BP");
+                        $lines .= $context->encloseFunction("---");
                 }
 
                 $lines .= $context->encloseFunction($object->secprofiles['spyware']);
                 if( $bestPractice )
                 {
-                    if( $object->secprofiles['spyware']->is_best_practice() )
-                        $lines .= $context->encloseFunction("AS BP set");
+                    if(isset($object->secprofiles['spyware']))
+                    {
+                        if( $object->secprofiles['spyware']->is_best_practice() )
+                            $lines .= $context->encloseFunction("AS BP set");
+                        else
+                            $lines .= $context->encloseFunction("NO BP");
+                    }
                     else
-                        $lines .= $context->encloseFunction("NO BP");
+                        $lines .= $context->encloseFunction("---");
                 }
 
                 $lines .= $context->encloseFunction($object->secprofiles['vulnerability']);
                 if( $bestPractice )
                 {
-                    if( $object->secprofiles['vulnerability']->is_best_practice() )
-                        $lines .= $context->encloseFunction("VB BP set");
+                    if(isset($object->secprofiles['vulnerability']))
+                    {
+                        if( $object->secprofiles['vulnerability']->is_best_practice() )
+                            $lines .= $context->encloseFunction("VB BP set");
+                        else
+                            $lines .= $context->encloseFunction("NO BP");
+                    }
                     else
-                        $lines .= $context->encloseFunction("NO BP");
+                        $lines .= $context->encloseFunction("---");
                 }
 
                 $lines .= $context->encloseFunction($object->secprofiles['url-filtering']);

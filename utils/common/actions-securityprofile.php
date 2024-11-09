@@ -298,7 +298,6 @@ SecurityProfileCallContext::$supportedActions['name-touppercase'] = array(
         if( $context->isAPI )
             $object->API_setName($newName);
         else
-
             $object->setName($newName);
     }
 );
