@@ -686,7 +686,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     }
                     elseif( get_class($object) == "VulnerabilityProfile" && $object->owner->owner->version >= 110 )
                     {
-                        $lines .= $context->encloseFunction('BP_VB_exception_dummy');
+                        $lines .= $context->encloseFunction('BP_VP_exception_dummy');
                     }
                     elseif( get_class($object) == "AntiVirusProfile" )
                         $lines .= $context->encloseFunction('---');

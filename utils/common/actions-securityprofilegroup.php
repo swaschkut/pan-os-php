@@ -330,7 +330,7 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
                     if(isset($object->secprofiles['vulnerability']))
                     {
                         if( $object->secprofiles['vulnerability']->is_best_practice() )
-                            $lines .= $context->encloseFunction("VB BP set");
+                            $lines .= $context->encloseFunction("VP BP set");
                         else
                             $lines .= $context->encloseFunction("NO BP");
                     }

@@ -37,7 +37,7 @@ ThreatRuleCallContext::$supportedActions[] = array(
         $threat = $context->object;
 
         PH::print_stdout( $context->padding . "* " . get_class($threat) . " '{$threat->name()}' " );
-        PH::print_stdout( "          - use in AS/VB Profile: ".$threat->owner->name() );
+        PH::print_stdout( "          - use in AS/VP Profile: ".$threat->owner->name() );
         $threat->display();
     }
 );
