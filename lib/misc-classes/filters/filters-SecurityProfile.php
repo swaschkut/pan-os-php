@@ -976,7 +976,7 @@ RQuery::$defaultFilters['securityprofile']['vp.rules']['operators']['is.best-pra
     'arg' => false,
     'help' => "'securityprofiletype=vulnerability' e.g. 'filter=(vp.rules is.best-practice)'"
 );
-RQuery::$defaultFilters['securityprofile']['vb']['operators']['is.best-practice'] = array(
+RQuery::$defaultFilters['securityprofile']['vp']['operators']['is.best-practice'] = array(
     'Function' => function (SecurityProfileRQueryContext $context) {
         /** @var VulnerabilityProfile $object */
         $object = $context->object;

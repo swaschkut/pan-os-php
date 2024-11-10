@@ -302,8 +302,11 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
                 {
                     if(isset($object->secprofiles['virus']))
                     {
-                        $profile = $context->object->owner->owner->AntiVirusProfileStore->find($object->secprofiles['virus']);
-                        if( $profile != null )
+                        if( is_object($object->secprofiles['virus']) )
+                            $profile = $object->secprofiles['virus'];
+                        else
+                            $profile = $context->object->owner->owner->AntiVirusProfileStore->find($object->secprofiles['virus']);
+                        if( is_object( $profile ) )
                         {
                             if ($profile->is_best_practice())
                                 $lines .= $context->encloseFunction("AV BP set");
@@ -322,8 +325,11 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
                 {
                     if(isset($object->secprofiles['spyware']))
                     {
-                        $profile = $context->object->owner->owner->AntiSpywareProfileStore->find($object->secprofiles['spyware']);
-                        if( $profile != null )
+                        if( is_object($object->secprofiles['spyware']) )
+                            $profile = $object->secprofiles['spyware'];
+                        else
+                            $profile = $context->object->owner->owner->AntiSpywareProfileStore->find($object->secprofiles['spyware']);
+                        if( is_object( $profile ) )
                         {
                             if ($profile->is_best_practice())
                                 $lines .= $context->encloseFunction("AS BP set");
@@ -342,8 +348,11 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
                 {
                     if(isset($object->secprofiles['vulnerability']))
                     {
-                        $profile = $context->object->owner->owner->VulnerabilityProfileStore->find($object->secprofiles['vulnerability']);
-                        if( $profile != null )
+                        if( is_object($object->secprofiles['vulnerability']) )
+                            $profile = $object->secprofiles['vulnerability'];
+                        else
+                            $profile = $context->object->owner->owner->VulnerabilityProfileStore->find($object->secprofiles['vulnerability']);
+                        if( is_object( $profile ) )
                         {
                             if( $profile->is_best_practice() )
                                 $lines .= $context->encloseFunction("VP BP set");
