@@ -279,9 +279,10 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
         {
             foreach( $context->objectList as $object )
             {
+                /** @var SecurityProfileGroup $object */
                 $count++;
 
-                /** @var Tag $object */
+                /** @var AntiVirusProfile|AntiSpywareProfile|VulnerabilityProfile $object */
                 if( $count % 2 == 1 )
                     $lines .= "<tr>\n";
                 else
@@ -301,10 +302,16 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
                 {
                     if(isset($object->secprofiles['virus']))
                     {
-                        if( $object->secprofiles['virus']->is_best_practice() )
-                            $lines .= $context->encloseFunction("AV BP set");
+                        $profile = $context->object->owner->owner->AntiVirusProfileStore->find($object->secprofiles['virus']);
+                        if( $profile != null )
+                        {
+                            if ($profile->is_best_practice())
+                                $lines .= $context->encloseFunction("AV BP set");
+                            else
+                                $lines .= $context->encloseFunction("NO BP");
+                        }
                         else
-                            $lines .= $context->encloseFunction("NO BP");
+                            $lines .= $context->encloseFunction("- check not possible -");
                     }
                     else
                         $lines .= $context->encloseFunction("---");
@@ -315,10 +322,16 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
                 {
                     if(isset($object->secprofiles['spyware']))
                     {
-                        if( $object->secprofiles['spyware']->is_best_practice() )
-                            $lines .= $context->encloseFunction("AS BP set");
+                        $profile = $context->object->owner->owner->AntiSpywareProfileStore->find($object->secprofiles['spyware']);
+                        if( $profile != null )
+                        {
+                            if ($profile->is_best_practice())
+                                $lines .= $context->encloseFunction("AS BP set");
+                            else
+                                $lines .= $context->encloseFunction("NO BP");
+                        }
                         else
-                            $lines .= $context->encloseFunction("NO BP");
+                            $lines .= $context->encloseFunction("- check not possible -");
                     }
                     else
                         $lines .= $context->encloseFunction("---");
@@ -329,10 +342,16 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
                 {
                     if(isset($object->secprofiles['vulnerability']))
                     {
-                        if( $object->secprofiles['vulnerability']->is_best_practice() )
-                            $lines .= $context->encloseFunction("VP BP set");
+                        $profile = $context->object->owner->owner->VulnerabilityProfileStore->find($object->secprofiles['vulnerability']);
+                        if( $profile != null )
+                        {
+                            if( $profile->is_best_practice() )
+                                $lines .= $context->encloseFunction("VP BP set");
+                            else
+                                $lines .= $context->encloseFunction("NO BP");
+                        }
                         else
-                            $lines .= $context->encloseFunction("NO BP");
+                            $lines .= $context->encloseFunction("- check not possible -");
                     }
                     else
                         $lines .= $context->encloseFunction("---");

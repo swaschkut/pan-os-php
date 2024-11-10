@@ -479,9 +479,69 @@ class SecurityProfileGroup
 
     public function is_best_practice()
     {
-        if( $this->secprofiles['spyware']->is_best_practice()
-            && $this->secprofiles['virus']->is_best_practice()
-            && $this->secprofiles['vulnerability']->is_best_practice()
+        $bp_set = false;
+        if(isset($this->secprofiles['virus']))
+        {
+            if( is_string($this->secprofiles['virus']) )
+                $profile = $this->owner->owner->AntiVirusProfileStore->find($this->secprofiles['virus']);
+            else
+                $profile = $this->secprofiles['virus'];
+            if( $profile != null )
+            {
+                if ($profile->is_best_practice())
+                    $bp_set = TRUE;
+                else
+                    return FALSE;
+            }
+            else
+            {
+                mwarning( "BP SPG check not possible - SecurityProfile AV ".$this->secprofiles['virus']." not found", null, false );
+                return FALSE;
+            }
+
+        }
+        elseif(isset($this->secprofiles['spyware']))
+        {
+            if( is_string($this->secprofiles['spyware']) )
+                $profile = $this->owner->owner->AntiSpywareProfileStore->find($this->secprofiles['spyware']);
+            else
+                $profile = $this->secprofiles['spyware'];
+            if( $profile != null )
+            {
+                if ($profile->is_best_practice())
+                    $bp_set = TRUE;
+                else
+                    return FALSE;
+            }
+            else
+            {
+                mwarning( "BP SPG check not possible - profile AS ".$this->secprofiles['spyware']." not found", null, false );
+                return FALSE;
+            }
+
+        }
+        elseif(isset($this->secprofiles['vulnerability']))
+        {
+            if( is_string($this->secprofiles['vulnerability']) )
+                $profile = $this->owner->owner->VulnerabilityProfileStore->find($this->secprofiles['vulnerability']);
+            else
+                $profile = $this->secprofiles['vulnerability'];
+            if( $profile != null )
+            {
+                if ($profile->is_best_practice())
+                    $bp_set = TRUE;
+                else
+                    return FALSE;
+            }
+            else
+            {
+                mwarning( "BP SPG check not possible - profile VP ".$this->secprofiles['vulnerability']." not found", null, false );
+                return FALSE;
+            }
+
+        }
+
+        if( $bp_set
         )
             return TRUE;
         else

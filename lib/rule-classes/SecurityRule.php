@@ -932,7 +932,7 @@ class SecurityRule extends RuleWithUserID
         $domNode = DH::findFirstElementOrDie('action', $this->xmlroot);
         $connector = findConnectorOrDie($this);
 
-        if( $con->isAPI() )
+        if( $connector->isAPI() )
             $connector->sendSetRequest($this->getXPath(), '<action>'.$domNode->textContent.'</action>');
     }
 

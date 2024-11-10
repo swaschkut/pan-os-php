@@ -2344,17 +2344,25 @@ RQuery::$defaultFilters['rule']['secprof']['operators']['is.best-practice'] = ar
         }
         else
         {
-            $profiles = $context->object->securityProfiles();
+            $profiles = $context->object->securityProfiles_obj();
             $bp_set = FALSE;
             foreach($profiles as $type => $profile)
             {
                 if( $type == "virus" || $type == "spyware" || $type == "vulnerability" )
                 {
                     /** @var AntiVirusProfile $profile */
-                    if( $profile->is_best_practice() )
-                        $bp_set = TRUE;
+                    if( is_object( $profile ) )
+                    {
+                        if( $profile->is_best_practice() )
+                            $bp_set = TRUE;
+                        else
+                            return FALSE;
+                    }
                     else
+                    {
+                        mwarning( "BP SPG check not possible - SecurityProfile type: ".$type." name '".$profile."' not found", null, false );
                         return FALSE;
+                    }
                 }
             }
 
