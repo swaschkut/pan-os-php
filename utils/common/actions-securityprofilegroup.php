@@ -254,6 +254,8 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
             $bestPractice = TRUE;
 
         $headers = '<th>ID</th><th>location</th><th>name</th>';
+        if( $bestPractice )
+            $headers .= '<th>BP group</th>';
         $headers .= '<th>Antivirus</th>';
         if( $bestPractice )
             $headers .= '<th>BP</th>';
@@ -294,7 +296,13 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
 
                 $lines .= $context->encloseFunction($object->name());
 
-
+                if( $bestPractice )
+                {
+                    if ($object->is_best_practice())
+                        $lines .= $context->encloseFunction("BP set");
+                    else
+                        $lines .= $context->encloseFunction("NO BP");
+                }
                 //private $secprof_array = array('virus', 'spyware', 'vulnerability', 'file-blocking', 'wildfire-analysis', 'url-filtering', 'data-filtering');
 
                 $lines .= $context->encloseFunction($object->secprofiles['virus']);

@@ -532,7 +532,95 @@ class RuleCallContext extends CallContext
             return self::enclose( $app_seen_text );
         }
 
-        if( $fieldName == 'security-profile' )
+        if( $fieldName == 'security-profile' ) {
+            if (!$rule->isSecurityRule() && !$rule->isDefaultSecurityRule())
+                return self::enclose('');
+
+            if ($rule->securityProfileType() == 'none')
+                return self::enclose('');
+
+            if ($rule->securityProfileType() == 'group')
+                return self::enclose('group:' . $rule->securityProfileGroup(), $wrap);
+
+            $profiles = array();
+
+            foreach ($rule->securityProfiles() as $profType => $profileName)
+            {
+
+                if( empty($profileName) )
+                {
+                    $profiles[] = $profType . ':---';
+                    continue;
+                }
+
+
+                if( $profType == "virus" || $profType == "spyware" || $profType == "vulnerability" )
+                {
+                    if( is_string($profileName) )
+                    {
+                        if( $profType == "virus" )
+                            $profile = $rule->owner->owner->AntiVirusProfileStore->find($profileName);
+                        elseif( $profType == "spyware" )
+                            $profile = $rule->owner->owner->AntiSpywareProfileStore->find($profileName);
+                        elseif( $profType == "vulnerability" )
+                            $profile = $rule->owner->owner->VulnerabilityProfileStore->find($profileName);
+                    }
+
+                    if( !is_object($profile) )
+                    {
+                        $profiles[] = $profType . ':' . $profileName." | no check";
+                    }
+                    else
+                    {
+                        $bp_check = "";
+                        if( $profType == "virus" || $profType == "spyware" || $profType == "vulnerability" )
+                        {
+                            /** @var AntiVirusProfile|AntiSpywareProfile|VulnerabilityProfile */
+                            if( !$profile->is_best_practice() )
+                                $bp_check = "<-";
+                        }
+                        $profiles[] = $profType . ':' . $profile->name().$bp_check;
+                    }
+                }
+                else
+                    $profiles[] = $profType . ':' . $profileName;
+
+            }
+
+
+            return self::enclose($profiles, $wrap);
+        }
+
+        if($fieldName == 'sp_best_practice' )
+        {
+            if( !$rule->isSecurityRule() && !$rule->isDefaultSecurityRule() )
+                return self::enclose('');
+
+            if( $rule->securityProfileType() == 'none' )
+            {
+                if( $rule->action() == "allow" )
+                    return self::enclose('NO BP');
+                else
+                    return self::enclose('');
+            }
+
+            if( $rule->SP_isBestPractice() === null )
+            {
+                if( $rule->action() == "allow" )
+                    return self::enclose('NO BP');
+                else
+                    return self::enclose('');
+            }
+            elseif( $rule->SP_isBestPractice() )
+            {
+                $rule->SP_isBestPractice();
+                return self::enclose('BP set');
+            }
+            else
+                return self::enclose('NO BP');
+        }
+
+        if($fieldName == 'sp_best_practice_details' )
         {
             if( !$rule->isSecurityRule() && !$rule->isDefaultSecurityRule() )
                 return self::enclose('');
@@ -541,14 +629,40 @@ class RuleCallContext extends CallContext
                 return self::enclose('');
 
             if( $rule->securityProfileType() == 'group' )
-                return self::enclose('group:' . $rule->securityProfileGroup(), $wrap);
+            {
+                $group_name = $rule->securityProfileGroup();
+                /** @var SecurityProfileGroup $group */
+                $group = $rule->owner->owner->securityProfileGroupStore->find($group_name);
+                foreach( $group->securityProfiles() as $profType => $profile )
+                {
+                    if( is_string($profile) )
+                    {
+                        $profiles[] = $profType . ':' . $profile." | no check";
+                    }
 
-            $profiles = array();
+                    elseif( $profile === null )
+                        $profiles[] = $profType . ':---';
+                    else
+                    {
+                        $bp_check = "";
+                        if( $profType == "virus" || $profType == "spyware" || $profType == "vulnerability" )
+                        {
+                            /** @var AntiVirusProfile|AntiSpywareProfile|VulnerabilityProfile */
+                            if( !$profile->is_best_practice() )
+                                $bp_check = "<-";
+                        }
+                        $profiles[] = $profType . ':' . $profile->name().$bp_check;
+                    }
+                }
 
-            foreach( $rule->securityProfiles() as $profType => $profName )
-                $profiles[] = $profType . ':' . $profName;
 
-            return self::enclose($profiles, $wrap);
+                return self::enclose($profiles, $wrap);
+
+
+            }
+
+            else
+                return self::enclose('');
         }
 
         if( $fieldName == 'action' )

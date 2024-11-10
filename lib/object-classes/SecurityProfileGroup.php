@@ -482,11 +482,12 @@ class SecurityProfileGroup
         $bp_set = false;
         if(isset($this->secprofiles['virus']))
         {
+            /** @var AntiVirusProfile $profile */
             if( is_string($this->secprofiles['virus']) )
                 $profile = $this->owner->owner->AntiVirusProfileStore->find($this->secprofiles['virus']);
             else
                 $profile = $this->secprofiles['virus'];
-            if( $profile != null )
+            if( is_object($profile) )
             {
                 if ($profile->is_best_practice())
                     $bp_set = TRUE;
@@ -500,13 +501,15 @@ class SecurityProfileGroup
             }
 
         }
-        elseif(isset($this->secprofiles['spyware']))
+
+        if(isset($this->secprofiles['spyware']))
         {
+            /** @var AntiSpywareProfile $profile */
             if( is_string($this->secprofiles['spyware']) )
                 $profile = $this->owner->owner->AntiSpywareProfileStore->find($this->secprofiles['spyware']);
             else
                 $profile = $this->secprofiles['spyware'];
-            if( $profile != null )
+            if( is_object($profile) )
             {
                 if ($profile->is_best_practice())
                     $bp_set = TRUE;
@@ -520,13 +523,15 @@ class SecurityProfileGroup
             }
 
         }
-        elseif(isset($this->secprofiles['vulnerability']))
+
+        if(isset($this->secprofiles['vulnerability']))
         {
+            /** @var VulnerabilityProfile $profile */
             if( is_string($this->secprofiles['vulnerability']) )
                 $profile = $this->owner->owner->VulnerabilityProfileStore->find($this->secprofiles['vulnerability']);
             else
                 $profile = $this->secprofiles['vulnerability'];
-            if( $profile != null )
+            if( is_object($profile) )
             {
                 if ($profile->is_best_practice())
                     $bp_set = TRUE;
@@ -541,8 +546,7 @@ class SecurityProfileGroup
 
         }
 
-        if( $bp_set
-        )
+        if( $bp_set)
             return TRUE;
         else
             return FALSE;

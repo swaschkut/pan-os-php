@@ -4779,6 +4779,7 @@ RuleCallContext::$supportedActions[] = array(
         $addResolvedServiceAppDefaultSummary = FALSE;
         $addAppSeenSummary = FALSE;
         $addHitCountSummary = FALSE;
+        $bestPractice = FALSE;
 
         $optionalFields = &$context->arguments['additionalFields'];
 
@@ -4796,6 +4797,9 @@ RuleCallContext::$supportedActions[] = array(
             $addAppSeenSummary = TRUE;
         if( isset($optionalFields['HitCount']) )
             $addHitCountSummary = TRUE;
+        if( isset($optionalFields['BestPractice']) )
+            $bestPractice = TRUE;
+
         $fields = array(
             'ID' => 'ID',
             'location' => 'location',
@@ -4839,6 +4843,8 @@ RuleCallContext::$supportedActions[] = array(
             'application_seen' => 'application_seen',
             'action' => 'action',
             'security-profile' => 'security-profile',
+            'sp_best_practice' => 'sp_best_practice',
+            'sp_best_practice_details' => 'sp_best_practice_details',
             'disabled' => 'disabled',
             'src_user' => 'src-user',
             'url_category' => 'url-category',
@@ -4909,7 +4915,9 @@ RuleCallContext::$supportedActions[] = array(
                                 $fieldName == 'snat_address_resovled_sum' || $fieldName == "dnat_type" || $fieldName == 'dnat_host' ||
                                 $fieldName == 'dnat_host_resovled_sum' || $fieldName == 'dnat_port' || $fieldName == 'dnat_distribution' ||
                                 $fieldName == "dst_interface" || $fieldName == "snat_interface" )
-                            && get_class($rule) !== "NatRule")
+                            && get_class($rule) !== "NatRule") ||
+                        (($fieldName == 'sp_best_practice' ) && !$bestPractice) ||
+                        (($fieldName == 'sp_best_practice_details' ) && !$bestPractice)
                     )
                         continue;
                     $rule_hitcount_array = array();
@@ -4980,7 +4988,7 @@ RuleCallContext::$supportedActions[] = array(
             array('type' => 'pipeSeparatedList',
                 'subtype' => 'string',
                 'default' => '*NONE*',
-                'choices' => array('ResolveAddressSummary', 'ResolveServiceSummary', 'ResolveServiceAppDefaultSummary', 'ResolveApplicationSummary', 'ResolveScheduleSummary', 'ApplicationSeen', 'HitCount'),
+                'choices' => array('ResolveAddressSummary', 'ResolveServiceSummary', 'ResolveServiceAppDefaultSummary', 'ResolveApplicationSummary', 'ResolveScheduleSummary', 'ApplicationSeen', 'HitCount', 'BestPractice'),
                 'help' => "example: 'actions=exporttoexcel:file.html,HitCount|ApplicationSeen'\n" .
                     "pipe(|) separated list of additional field to include in the report. The following is available:\n" .
                     "  - ResolveAddressSummary : fields with address objects will be resolved to IP addressed and summarized in a new column\n" .
@@ -4989,7 +4997,8 @@ RuleCallContext::$supportedActions[] = array(
                     "  - ResolveApplicationSummary : fields with application objects will be resolved to their category and risk\n" .
                     "  - ResolveScheduleSummary : fields with schedule objects will be resolved to their expire time\n" .
                     "  - ApplicationSeen : all App-ID seen on the Device SecurityRule will be listed\n" .
-                    "  - HitCount : Rule - 'first-hit' - 'last-hit' - 'hit-count' - 'rule-creation will be listed\n"
+                    "  - HitCount : Rule - 'first-hit' - 'last-hit' - 'hit-count' - 'rule-creation will be listed\n" .
+                    "  - BestPractice : show if BestPractice is configured\n"
             )
     )
 );

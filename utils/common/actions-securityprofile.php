@@ -479,7 +479,10 @@ SecurityProfileCallContext::$supportedActions[] = array(
             $bestPractice = TRUE;
 
 
-        $headers = '<th>ID</th><th>location</th><th>name</th><th>store</th><th>type</th><th>rules</th>';
+        $headers = '<th>ID</th><th>location</th><th>name</th>';
+        if( $bestPractice )
+            $headers .= '<th>BP SP</th>';
+        $headers .= '<th>store</th><th>type</th><th>rules</th>';
         if( $bestPractice )
             $headers .= '<th>BP</th>';
 
@@ -543,7 +546,32 @@ SecurityProfileCallContext::$supportedActions[] = array(
 
 
                 $lines .= $context->encloseFunction($object->name());
-
+                if( $bestPractice )
+                {
+                    if( get_class($object) == "AntiVirusProfile" )
+                    {
+                        if( $object->is_best_practice() )
+                            $lines .= $context->encloseFunction('BP AV set');
+                        else
+                            $lines .= $context->encloseFunction('NO BP AV');
+                    }
+                    elseif( get_class($object) == "AntiSpywareProfile" && $object->owner->owner->version >= 102 )
+                    {
+                        if( $object->is_best_practice() )
+                            $lines .= $context->encloseFunction('BP AS');
+                        else
+                            $lines .= $context->encloseFunction('NO BP AS');
+                    }
+                    elseif( get_class($object) == "VulnerabilityProfile" && $object->owner->owner->version >= 110 )
+                    {
+                        if( $object->is_best_practice() )
+                            $lines .= $context->encloseFunction('BP VP');
+                        else
+                            $lines .= $context->encloseFunction('NO BP VP');
+                    }
+                    else
+                        $lines .= $context->encloseFunction('---');
+                }
                 $lines .= $context->encloseFunction( $object->owner->name() );
 
 
