@@ -515,13 +515,25 @@ class AntiVirusProfile extends SecurityProfile2
 
     public function is_best_practice()
     {
-        if( $this->av_action_best_practice() && $this->av_wildfireaction_best_practice() && $this->av_mlavaction_best_practice()
-            && $this->cloud_inline_analysis_best_practice()
-            #&& $this->vulnerability_exception_best_practice()
-        )
-            return TRUE;
+        if( $this->owner->owner->version >= 102 )
+        {
+            if ($this->av_action_best_practice() && $this->av_wildfireaction_best_practice() && $this->av_mlavaction_best_practice()
+                && $this->cloud_inline_analysis_best_practice()
+                #&& $this->vulnerability_exception_best_practice()
+            )
+                return TRUE;
+            else
+                return FALSE;
+        }
         else
-            return FALSE;
+        {
+            if ($this->av_action_best_practice() && $this->av_wildfireaction_best_practice() && $this->av_mlavaction_best_practice()
+                #&& $this->vulnerability_exception_best_practice()
+            )
+                return TRUE;
+            else
+                return FALSE;
+        }
     }
 
     static $templatexml = '<entry name="**temporarynamechangeme**"></entry>';

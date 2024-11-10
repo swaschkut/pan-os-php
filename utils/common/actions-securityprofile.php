@@ -555,14 +555,14 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         else
                             $lines .= $context->encloseFunction('NO BP AV');
                     }
-                    elseif( get_class($object) == "AntiSpywareProfile" && $object->owner->owner->version >= 102 )
+                    elseif( get_class($object) == "AntiSpywareProfile")
                     {
                         if( $object->is_best_practice() )
                             $lines .= $context->encloseFunction('BP AS');
                         else
                             $lines .= $context->encloseFunction('NO BP AS');
                     }
-                    elseif( get_class($object) == "VulnerabilityProfile" && $object->owner->owner->version >= 110 )
+                    elseif( get_class($object) == "VulnerabilityProfile")
                     {
                         if( $object->is_best_practice() )
                             $lines .= $context->encloseFunction('BP VP');
@@ -666,14 +666,14 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         else
                             $lines .= $context->encloseFunction('NO BP AV actions');
                     }
-                    elseif( get_class($object) == "AntiSpywareProfile" && $object->owner->owner->version >= 102 )
+                    elseif( get_class($object) == "AntiSpywareProfile" )
                     {
                         if( $object->spyware_rules_best_practice() )
                             $lines .= $context->encloseFunction('BP AS rules set');
                         else
                             $lines .= $context->encloseFunction('NO BP AS rules');
                     }
-                    elseif( get_class($object) == "VulnerabilityProfile" && $object->owner->owner->version >= 110 )
+                    elseif( get_class($object) == "VulnerabilityProfile" )
                     {
                         if( $object->vulnerability_rules_best_practice() )
                             $lines .= $context->encloseFunction('BP VP rules set');

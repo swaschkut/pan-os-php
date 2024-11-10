@@ -700,6 +700,16 @@ class AntiSpywareProfile extends SecurityProfile2
             else
                 return FALSE;
         }
+        else
+        {
+            if( $this->spyware_rules_best_practice()
+                && $this->spyware_dns_security_best_practice() && $this->spyware_dnslist_best_practice()
+                #&& $this->vulnerability_exception_best_practice()
+            )
+                return TRUE;
+            else
+                return FALSE;
+        }
         return null;
     }
 
