@@ -479,7 +479,9 @@ class SecurityProfileGroup
 
     public function is_best_practice()
     {
-        $bp_set = false;
+        $bp_av_set = false;
+        $bp_as_set = false;
+        $bp_vp_set = false;
         if(isset($this->secprofiles['virus']))
         {
             /** @var AntiVirusProfile $profile */
@@ -490,7 +492,7 @@ class SecurityProfileGroup
             if( is_object($profile) )
             {
                 if ($profile->is_best_practice())
-                    $bp_set = TRUE;
+                    $bp_av_set = TRUE;
                 else
                     return FALSE;
             }
@@ -512,7 +514,7 @@ class SecurityProfileGroup
             if( is_object($profile) )
             {
                 if ($profile->is_best_practice())
-                    $bp_set = TRUE;
+                    $bp_as_set = TRUE;
                 else
                     return FALSE;
             }
@@ -534,7 +536,7 @@ class SecurityProfileGroup
             if( is_object($profile) )
             {
                 if ($profile->is_best_practice())
-                    $bp_set = TRUE;
+                    $bp_vp_set = TRUE;
                 else
                     return FALSE;
             }
@@ -546,7 +548,7 @@ class SecurityProfileGroup
 
         }
 
-        if( $bp_set)
+        if( $bp_av_set && $bp_as_set && $bp_vp_set)
             return TRUE;
         else
             return FALSE;

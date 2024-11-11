@@ -258,13 +258,13 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
             $headers .= '<th>BP group</th>';
         $headers .= '<th>Antivirus</th>';
         if( $bestPractice )
-            $headers .= '<th>BP</th>';
+            $headers .= '<th>BP AV</th>';
         $headers .= '<th>Anti-Spyware</th>';
         if( $bestPractice )
-            $headers .= '<th>BP</th>';
+            $headers .= '<th>BP AS</th>';
         $headers .= '<th>Vulnerability</th>';
         if( $bestPractice )
-            $headers .= '<th>BP</th>';
+            $headers .= '<th>BP VP</th>';
         $headers .= '<th>URL Filtering</th><th>File Blocking</th><th>Data Filtering</th><th>WildFire Analysis</th>';
 
         if( $addWhereUsed )
@@ -284,7 +284,6 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
                 /** @var SecurityProfileGroup $object */
                 $count++;
 
-                /** @var AntiVirusProfile|AntiSpywareProfile|VulnerabilityProfile $object */
                 if( $count % 2 == 1 )
                     $lines .= "<tr>\n";
                 else
@@ -299,9 +298,9 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
                 if( $bestPractice )
                 {
                     if ($object->is_best_practice())
-                        $lines .= $context->encloseFunction("BP set");
+                        $lines .= $context->encloseFunction("yes");
                     else
-                        $lines .= $context->encloseFunction("NO BP");
+                        $lines .= $context->encloseFunction("no");
                 }
                 //private $secprof_array = array('virus', 'spyware', 'vulnerability', 'file-blocking', 'wildfire-analysis', 'url-filtering', 'data-filtering');
 
@@ -317,9 +316,9 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
                         if( is_object( $profile ) )
                         {
                             if ($profile->is_best_practice())
-                                $lines .= $context->encloseFunction("AV BP set");
+                                $lines .= $context->encloseFunction("yes");
                             else
-                                $lines .= $context->encloseFunction("NO BP");
+                                $lines .= $context->encloseFunction("no");
                         }
                         else
                             $lines .= $context->encloseFunction("- check not possible -");
@@ -340,9 +339,9 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
                         if( is_object( $profile ) )
                         {
                             if ($profile->is_best_practice())
-                                $lines .= $context->encloseFunction("AS BP set");
+                                $lines .= $context->encloseFunction("yes");
                             else
-                                $lines .= $context->encloseFunction("NO BP");
+                                $lines .= $context->encloseFunction("no");
                         }
                         else
                             $lines .= $context->encloseFunction("- check not possible -");
@@ -363,9 +362,9 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
                         if( is_object( $profile ) )
                         {
                             if( $profile->is_best_practice() )
-                                $lines .= $context->encloseFunction("VP BP set");
+                                $lines .= $context->encloseFunction("yes");
                             else
-                                $lines .= $context->encloseFunction("NO BP");
+                                $lines .= $context->encloseFunction("no");
                         }
                         else
                             $lines .= $context->encloseFunction("- check not possible -");

@@ -4924,7 +4924,7 @@ RuleCallContext::$supportedActions[] = array(
                     if(($fieldName == 'first-hit' || $fieldName == 'last-hit' || $fieldName == 'hit-count' || $fieldName == 'rule-creation')
                         && $addHitCountSummary && $context->isAPI )
                         $rule_hitcount_array = $rule->API_showRuleHitCount( false, false );
-                    $lines .= $context->ruleFieldHtmlExport($rule, $fieldID, TRUE, $rule_hitcount_array);
+                    $lines .= $context->ruleFieldHtmlExport($rule, $fieldID, TRUE, $rule_hitcount_array, $bestPractice);
                 }
 
 
@@ -4961,7 +4961,9 @@ RuleCallContext::$supportedActions[] = array(
                         $fieldName == 'snat_address_resovled_sum' || $fieldName == "dnat_type" || $fieldName == 'dnat_host' ||
                         $fieldName == 'dnat_host_resovled_sum' || $fieldName == 'dnat_port' || $fieldName == 'dnat_distribution'  ||
                         $fieldName == "dst_interface" || $fieldName == "snat_interface" )  && $rule !== null
-                    && get_class($rule) !== "NatRule")
+                    && get_class($rule) !== "NatRule") ||
+                (($fieldName == 'sp_best_practice' ) && !$bestPractice) ||
+                (($fieldName == 'sp_best_practice_details' ) && !$bestPractice)
             )
                 continue;
             $tableHeaders .= "<th>{$fieldName}</th>\n";

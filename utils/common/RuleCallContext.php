@@ -296,8 +296,12 @@ class RuleCallContext extends CallContext
      * @param $fieldName
      * @return string
      */
-    public function ruleFieldHtmlExport($rule, $fieldName, $wrap = TRUE, $rule_hitcount_array = array())
+    public function ruleFieldHtmlExport($rule, $fieldName, $wrap = TRUE, $rule_hitcount_array = array(), $sp_best_practice = false)
     {
+        $bp_text_yes = "yes";
+        $bp_text_no = "no";
+        $bp_NOT_sign = " | **NOT BP**";
+
         if( $fieldName == 'ID' )
         {
             //already added outside
@@ -577,7 +581,11 @@ class RuleCallContext extends CallContext
                         {
                             /** @var AntiVirusProfile|AntiSpywareProfile|VulnerabilityProfile */
                             if( !$profile->is_best_practice() )
-                                $bp_check = "<-";
+                            {
+                                if( $sp_best_practice )
+                                    $bp_check = $bp_NOT_sign;
+                            }
+
                         }
                         $profiles[] = $profType . ':' . $profile->name().$bp_check;
                     }
@@ -599,7 +607,7 @@ class RuleCallContext extends CallContext
             if( $rule->securityProfileType() == 'none' )
             {
                 if( $rule->action() == "allow" )
-                    return self::enclose('NO BP');
+                    return self::enclose($bp_text_no);
                 else
                     return self::enclose('');
             }
@@ -607,17 +615,16 @@ class RuleCallContext extends CallContext
             if( $rule->SP_isBestPractice() === null )
             {
                 if( $rule->action() == "allow" )
-                    return self::enclose('NO BP');
+                    return self::enclose($bp_text_no);
                 else
                     return self::enclose('');
             }
             elseif( $rule->SP_isBestPractice() )
             {
-                $rule->SP_isBestPractice();
-                return self::enclose('BP set');
+                return self::enclose($bp_text_yes);
             }
             else
-                return self::enclose('NO BP');
+                return self::enclose($bp_text_no);
         }
 
         if($fieldName == 'sp_best_practice_details' )
@@ -637,11 +644,19 @@ class RuleCallContext extends CallContext
                 {
                     if( is_string($profile) )
                     {
-                        $profiles[] = $profType . ':' . $profile." | no check";
+                        $bp_check = "";
+                        if( $profType == "virus" || $profType == "spyware" || $profType == "vulnerability" )
+                            $bp_check = " | **no check possible**";
+                        $profiles[] = $profType . ':' . $profile.$bp_check;
+                    }
+                    elseif( $profile === null )
+                    {
+                        $bp_check = "";
+                        if( $profType == "virus" || $profType == "spyware" || $profType == "vulnerability" )
+                            $bp_check = $bp_NOT_sign;
+                        $profiles[] = $profType . ':---'.$bp_check;
                     }
 
-                    elseif( $profile === null )
-                        $profiles[] = $profType . ':---';
                     else
                     {
                         $bp_check = "";
@@ -649,7 +664,11 @@ class RuleCallContext extends CallContext
                         {
                             /** @var AntiVirusProfile|AntiSpywareProfile|VulnerabilityProfile */
                             if( !$profile->is_best_practice() )
-                                $bp_check = "<-";
+                            {
+                                if( $sp_best_practice )
+                                    $bp_check = $bp_NOT_sign;
+                            }
+
                         }
                         $profiles[] = $profType . ':' . $profile->name().$bp_check;
                     }
@@ -660,7 +679,6 @@ class RuleCallContext extends CallContext
 
 
             }
-
             else
                 return self::enclose('');
         }

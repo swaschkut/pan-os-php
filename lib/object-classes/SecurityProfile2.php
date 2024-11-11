@@ -6,7 +6,7 @@ class SecurityProfile2
 
     public function cloud_inline_analysis_best_practice()
     {
-        $bestpractise = FALSE;
+        $bp_set = FALSE;
 
         if( $this->secprof_type != 'spyware' and $this->secprof_type != 'vulnerability' and $this->secprof_type != 'virus' )
             return null;
@@ -19,7 +19,7 @@ class SecurityProfile2
                 foreach( $this->additional['mica-engine-vulnerability-enabled'] as $name)
                 {
                     if( $name['inline-policy-action'] == "reset-both" )
-                        $bestpractise = TRUE;
+                        $bp_set = TRUE;
                     else
                         return FALSE;
                 }
@@ -30,7 +30,7 @@ class SecurityProfile2
                 foreach( $this->additional['mica-engine-spyware-enabled'] as $name)
                 {
                     if( $name['inline-policy-action'] == "reset-both" )
-                        $bestpractise = TRUE;
+                        $bp_set = TRUE;
                     else
                         return FALSE;
                 }
@@ -44,13 +44,13 @@ class SecurityProfile2
             foreach( $this->additional['mlav-engine-filebased-enabled'] as $name)
             {
                 if( $name['mlav-policy-action'] == "enable" )
-                    $bestpractise = TRUE;
+                    $bp_set = TRUE;
                 else
                     return FALSE;
             }
         }
 
-        return $bestpractise;
+        return $bp_set;
     }
 
     public function countDisabledRefRule()

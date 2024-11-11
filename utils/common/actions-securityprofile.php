@@ -516,6 +516,9 @@ SecurityProfileCallContext::$supportedActions[] = array(
 
 
         $lines = '';
+        $bp_text_yes = "yes";
+        $bp_text_no = "no";
+        $bp_NOT_sign = " | **NOT BP**";
 
         $count = 0;
         if( isset($context->objectList) )
@@ -551,23 +554,23 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     if( get_class($object) == "AntiVirusProfile" )
                     {
                         if( $object->is_best_practice() )
-                            $lines .= $context->encloseFunction('BP AV set');
+                            $lines .= $context->encloseFunction($bp_text_yes);
                         else
-                            $lines .= $context->encloseFunction('NO BP AV');
+                            $lines .= $context->encloseFunction('no');
                     }
                     elseif( get_class($object) == "AntiSpywareProfile")
                     {
                         if( $object->is_best_practice() )
-                            $lines .= $context->encloseFunction('BP AS');
+                            $lines .= $context->encloseFunction($bp_text_yes);
                         else
-                            $lines .= $context->encloseFunction('NO BP AS');
+                            $lines .= $context->encloseFunction($bp_text_no);
                     }
                     elseif( get_class($object) == "VulnerabilityProfile")
                     {
                         if( $object->is_best_practice() )
-                            $lines .= $context->encloseFunction('BP VP');
+                            $lines .= $context->encloseFunction($bp_text_yes);
                         else
-                            $lines .= $context->encloseFunction('NO BP VP');
+                            $lines .= $context->encloseFunction($bp_text_no);
                     }
                     else
                         $lines .= $context->encloseFunction('---');
@@ -587,9 +590,9 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     {
                         $tmp_string = "'".$rule->name()."' | severity:'". implode( ",", $rule->severity )."' - action:'".$rule->action()."' - packetCapture:'".$rule->packetCapture()."' - category:'".$rule->category()."' - host:'".$rule->host()."'";
                         if( get_class($rule ) == "ThreatPolicySpyware" && !$rule->spyware_rule_best_practice() && $bestPractice )
-                            $tmp_string .= " <-";
+                            $tmp_string .= $bp_NOT_sign;
                         elseif( get_class($rule ) == "ThreatPolicyVulnerability" && !$rule->vulnerability_rule_best_practice() && $bestPractice )
-                            $tmp_string .= " <-";
+                            $tmp_string .= $bp_NOT_sign;
                         $tmp_array[] = $tmp_string;
                     }
 
@@ -610,10 +613,10 @@ SecurityProfileCallContext::$supportedActions[] = array(
                                 if ($type == "ftp" || $type == "http" || $type == "http2" || $type == "smb")
                                 {
                                     if ($object->$type['action'] != "default")
-                                        $string .= "<-";
+                                        $string .= $bp_NOT_sign;
                                 }
                                 else
-                                    $string .= "<-";
+                                    $string .= $bp_NOT_sign;
                             }
                         }
 
@@ -626,10 +629,10 @@ SecurityProfileCallContext::$supportedActions[] = array(
                                 if ($type == "ftp" || $type == "http" || $type == "http2" || $type == "smb")
                                 {
                                     if ($object->$type['wildfire-action'] != "default")
-                                        $string .= "<-";
+                                        $string .= $bp_NOT_sign;
                                 }
                                 else
-                                    $string .= "<-";
+                                    $string .= $bp_NOT_sign;
                             }
                         }
 
@@ -642,10 +645,10 @@ SecurityProfileCallContext::$supportedActions[] = array(
                                 if ($type == "ftp" || $type == "http" || $type == "http2" || $type == "smb")
                                 {
                                     if( $object->$type['mlav-action'] != "default")
-                                        $string .= "<-";
+                                        $string .= $bp_NOT_sign;
                                 }
                                 else
-                                    $string .= "<-";
+                                    $string .= $bp_NOT_sign;
                             }
                         }
 
@@ -662,23 +665,23 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     if( get_class($object) == "AntiVirusProfile" )
                     {
                         if( $object->av_action_best_practice() && $object->av_wildfireaction_best_practice() && $object->av_mlavaction_best_practice() )
-                            $lines .= $context->encloseFunction('BP AV actions set');
+                            $lines .= $context->encloseFunction($bp_text_yes.' BP AV actions set');
                         else
-                            $lines .= $context->encloseFunction('NO BP AV actions');
+                            $lines .= $context->encloseFunction($bp_text_no.' NO BP AV actions');
                     }
                     elseif( get_class($object) == "AntiSpywareProfile" )
                     {
                         if( $object->spyware_rules_best_practice() )
-                            $lines .= $context->encloseFunction('BP AS rules set');
+                            $lines .= $context->encloseFunction($bp_text_yes.' BP AS rules set');
                         else
-                            $lines .= $context->encloseFunction('NO BP AS rules');
+                            $lines .= $context->encloseFunction($bp_text_no.' NO BP AS rules');
                     }
                     elseif( get_class($object) == "VulnerabilityProfile" )
                     {
                         if( $object->vulnerability_rules_best_practice() )
-                            $lines .= $context->encloseFunction('BP VP rules set');
+                            $lines .= $context->encloseFunction($bp_text_yes.' BP VP rules set');
                         else
-                            $lines .= $context->encloseFunction('NO BP VP rules');
+                            $lines .= $context->encloseFunction($bp_text_no.' NO BP VP rules');
                     }
                     else
                         $lines .= $context->encloseFunction('---');
@@ -744,7 +747,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                                         if( $bestPractice && $name == "default-paloalto-dns" )
                                         {
                                             if( $value['action'] != "sinkhole" && ($value['packet-capture'] != "single-packet" || $value['packet-capture'] != "extended-capture" ) )
-                                                $string .= "<-";
+                                                $string .= $bp_NOT_sign;
                                         }
                                     }
 
@@ -769,7 +772,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                                     $string .= " - packet-capture: '".$rule->packetCapture()."'";
                                     /** @var DNSPolicy $rule */
                                     if( $bestPractice && !$rule->spyware_dns_security_rule_bestpractice() )
-                                        $string .= "<-";
+                                        $string .= $bp_NOT_sign;
                                     $string_dns_security[] = $string;
                                 }
                             }
@@ -793,14 +796,14 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         if( $object->cloud_inline_analysis_enabled )
                             $enabled = "[yes]";
                         elseif( $bestPractice )
-                            $enabled .= "<-";
+                            $enabled .= $bp_NOT_sign;
                         $string_mica_engine[] = "mica-engine-spyware-enabled: ". $enabled;
 
                         foreach ($object->additional['mica-engine-spyware-enabled'] as $name => $threat)
                         {
                             $tmp_string = $name . " - inline-policy-action :" . $object->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action'];
                             if( $bestPractice && $object->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action'] != "reset-both" )
-                                $tmp_string .= "<-";
+                                $tmp_string .= $bp_NOT_sign;
                             $string_mica_engine[] = $tmp_string;
                         }
 
@@ -812,14 +815,14 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         if( $object->cloud_inline_analysis_enabled )
                             $enabled = "[yes]";
                         elseif( $bestPractice )
-                            $enabled .= "<-";
+                            $enabled .= $bp_NOT_sign;
                         $string_mica_engine[] = "mica-engine-vulnerability-enabled: ". $enabled;
 
                         foreach ($object->additional['mica-engine-vulnerability-enabled'] as $name => $threat)
                         {
                             $tmp_string = $name . " - inline-policy-action :" . $object->additional['mica-engine-vulnerability-enabled'][$name]['inline-policy-action'];
                             if( $bestPractice && $object->additional['mica-engine-vulnerability-enabled'][$name]['inline-policy-action'] != "reset-both" )
-                                $tmp_string .= "<-";
+                                $tmp_string .= $bp_NOT_sign;
                             $string_mica_engine[] = $tmp_string;
                         }
 
@@ -833,7 +836,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         {
                             $tmp_string = $name . " - mlav-policy-action :" . $object->additional['mlav-engine-filebased-enabled'][$name]['mlav-policy-action'];
                             if( $bestPractice && $object->additional['mlav-engine-filebased-enabled'][$name]['mlav-policy-action'] != "enable" )
-                                $tmp_string .= "<-";
+                                $tmp_string .= $bp_NOT_sign;
                             $string_mica_engine[] = $tmp_string;
                         }
 
@@ -847,9 +850,9 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     if( get_class($object) == "AntiSpywareProfile" && $object->owner->owner->version >= 102 )
                     {
                         if( $object->spyware_dnslist_best_practice() )
-                            $lines .= $context->encloseFunction('BP AS dns_list set');
+                            $lines .= $context->encloseFunction($bp_text_yes.' BP AS dns_list set');
                         else
-                            $lines .= $context->encloseFunction('NO BP AS dns_list');
+                            $lines .= $context->encloseFunction($bp_text_no.' NO BP AS dns_list');
                     }
 
                     elseif( get_class($object) == "VulnerabilityProfile" )
@@ -868,9 +871,9 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     if( get_class($object) == "AntiSpywareProfile" && $object->owner->owner->version >= 102 )
                     {
                         if( $object->spyware_dns_security_best_practice() )
-                            $lines .= $context->encloseFunction('BP AS dns_security set');
+                            $lines .= $context->encloseFunction($bp_text_yes.' BP AS dns_security set');
                         else
-                            $lines .= $context->encloseFunction('NO BP AS dns_security');
+                            $lines .= $context->encloseFunction($bp_text_no.' NO BP AS dns_security');
                     }
                     elseif( get_class($object) == "VulnerabilityProfile" )
                         $lines .= $context->encloseFunction('---');
@@ -888,9 +891,9 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     if( (get_class($object) == "AntiSpywareProfile" && $object->owner->owner->version >= 102 ) || (get_class($object) == "VulnerabilityProfile" && $object->owner->owner->version >= 110 ) || get_class($object) == "AntiVirusProfile" )
                     {
                         if( $object->cloud_inline_analysis_best_practice() )
-                            $lines .= $context->encloseFunction('BP mica_engine set');
+                            $lines .= $context->encloseFunction($bp_text_yes.' BP mica_engine set');
                         else
-                            $lines .= $context->encloseFunction('NO BP mica_engine');
+                            $lines .= $context->encloseFunction($bp_text_no.' NO BP mica_engine');
                     }
                     else
                         $lines .= $context->encloseFunction('---');
