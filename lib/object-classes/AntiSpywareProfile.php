@@ -310,7 +310,7 @@ class AntiSpywareProfile extends SecurityProfile2
                     $this->additional['botnet-domain']['sinkhole']['ipv4-address'] = $tmp_sinkhole_ipv4->textContent;
                 }
 
-                $tmp_sinkhole_ipv6 = DH::findFirstElement('ipv6-address', $tmp_sinkhole);
+                $tmp_sinkhole_ipv6 = DH::findFirstElementOrCreate('ipv6-address', $tmp_sinkhole);
                 if( $tmp_sinkhole_ipv6 !== FALSE )
                 {
                     $tmp_sinkhole_ipv6->textContent = "::1";
