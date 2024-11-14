@@ -295,9 +295,40 @@ class AntiSpywareProfile extends SecurityProfile2
                 $tmp_sinkhole_ipv4 = DH::findFirstElement('ipv4-address', $tmp_sinkhole);
                 if( $tmp_sinkhole_ipv4 !== FALSE )
                     $this->additional['botnet-domain']['sinkhole']['ipv4-address'] = $tmp_sinkhole_ipv4->textContent;
+                else
+                {
+                    $tmp_sinkhole_ipv4 = DH::findFirstElementOrCreate('ipv4-address', $tmp_sinkhole);
+                    $tmp_sinkhole_ipv4->textContent = "pan-sinkhole-default-ip";
+                    $this->additional['botnet-domain']['sinkhole']['ipv4-address'] = $tmp_sinkhole_ipv4->textContent;
+                }
                 $tmp_sinkhole_ipv6 = DH::findFirstElement('ipv6-address', $tmp_sinkhole);
                 if( $tmp_sinkhole_ipv6 !== FALSE )
                     $this->additional['botnet-domain']['sinkhole']['ipv6-address'] = $tmp_sinkhole_ipv6->textContent;
+                else
+                {
+                    $tmp_sinkhole_ipv6 = DH::findFirstElementOrCreate('ipv6-address', $tmp_sinkhole);
+                    $tmp_sinkhole_ipv6->textContent = "2600:5200::1";
+                    $this->additional['botnet-domain']['sinkhole']['ipv6-address'] = $tmp_sinkhole_ipv6->textContent;
+                }
+            }
+            else
+            {
+                $tmp_sinkhole = DH::findFirstElementOrCreate('sinkhole', $tmp_rule);
+                $this->additional['botnet-domain']['sinkhole'] = array();
+                $tmp_sinkhole_ipv4 = DH::findFirstElementOrCreate('ipv4-address', $tmp_sinkhole);
+                if( $tmp_sinkhole_ipv4 !== FALSE )
+                {
+                    $tmp_sinkhole_ipv4->textContent = "pan-sinkhole-default-ip";
+                    $this->additional['botnet-domain']['sinkhole']['ipv4-address'] = $tmp_sinkhole_ipv4->textContent;
+                }
+
+                $tmp_sinkhole_ipv6 = DH::findFirstElementOrCreate('ipv6-address', $tmp_sinkhole);
+                if( $tmp_sinkhole_ipv6 !== FALSE )
+                {
+                    $tmp_sinkhole_ipv6->textContent = "2600:5200::1";
+                    $this->additional['botnet-domain']['sinkhole']['ipv6-address'] = $tmp_sinkhole_ipv6->textContent;
+                }
+
             }
 
             $tmp_lists = DH::findFirstElement('lists', $tmp_rule);
