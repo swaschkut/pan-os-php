@@ -4526,6 +4526,7 @@ DeviceCallContext::$supportedActions['authkey-add'] = array(
 
         $classtype = get_class($object);
         $authkeyName = $context->arguments['authkey-name'];
+        $authkeyLifetime = $context->arguments['lifetime'];
 
         if( !$object->owner->isPanorama() )
             derr("this device action is only working against Panorama device", null, false);
@@ -4535,7 +4536,7 @@ DeviceCallContext::$supportedActions['authkey-add'] = array(
             $apiArgs = array();
             $apiArgs['type'] = 'op';
             #lifetime in minutes 1440 -> 1day
-            $apiArgs['cmd'] = '<request><authkey><add><name>'.$authkeyName.'</name><lifetime>1440</lifetime><count>100</count></add></authkey></request>';
+            $apiArgs['cmd'] = '<request><authkey><add><name>'.$authkeyName.'</name><lifetime>'.$authkeyLifetime.'</lifetime><count>100</count></add></authkey></request>';
 
             if( $context->isAPI )
             {
@@ -4555,7 +4556,8 @@ DeviceCallContext::$supportedActions['authkey-add'] = array(
         }
     },
     'args' => array(
-        'authkey-name' => array('type' => 'string', 'default' => 'pan-os-php-authkey')
+        'authkey-name' => array('type' => 'string', 'default' => 'pan-os-php-authkey'),
+        'lifetime' => array('type' => 'string', 'default' => '86400')
     ),
     'help' => "This Action is displaying the default authkey available in the Panorama"
 );
