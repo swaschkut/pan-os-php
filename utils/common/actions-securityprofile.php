@@ -1807,7 +1807,12 @@ SecurityProfileCallContext::$supportedActions['spyware.alert-only-set'] = array(
         {
             $tmp_action = DH::findFirstElement("action", $rule->xmlroot);
             $tmp_packet_capture = DH::findFirstElement("packet-capture", $rule->xmlroot);
+            if( $tmp_packet_capture === FALSE )
+                $tmp_packet_capture = DH::findFirstElementOrCreate("packet-capture", $rule->xmlroot);
             $tmp_log_level = DH::findFirstElement("log-level", $rule->xmlroot);
+            if( $tmp_log_level === FALSE )
+                $tmp_log_level = DH::findFirstElementOrCreate("log-level", $rule->xmlroot);
+
             /** @var DNSPolicy $rule */
             if( $rule->action() == "allow" )
             {
