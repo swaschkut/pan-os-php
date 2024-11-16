@@ -20,6 +20,7 @@ UTIL:
 * type=rule/securityprofile/securityprofilegroup actions=exporttoexcel:file.html,bestpractice | extend with overall BP information for AV/AS/VP
 * class AntiSpyware | add sinkhole default settings
 * type=schedule | new 'filter=(expired.at.date > 01-12-2024) or (expired.at.date < 2024/12/21)'
+* introduce section 'visibility' for type=rule/securityprofilegroup/securityprofile actions=exporttoexcel:file.html,visibility
 
 BUGFIX:
 * online method | bugfix for in=api:// | if your password does have special characters like @/! aso.l

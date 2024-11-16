@@ -657,7 +657,7 @@ class AntiSpywareProfile extends SecurityProfile2
         return FALSE;
     }
 
-    public function spyware_dnslist_alert_is_enabled()
+    public function spyware_dnslist_visibility()
     {
         if( $this->secprof_type != 'spyware' )
             return null;
@@ -670,7 +670,7 @@ class AntiSpywareProfile extends SecurityProfile2
                 {
                     if( isset($array['action']) )
                     {
-                        if ( $array['action'] !== "allow" )
+                        if ( $array['action'] == "alert" )
                             return TRUE;
                     }
                 }
@@ -696,6 +696,26 @@ class AntiSpywareProfile extends SecurityProfile2
                 foreach ($this->rules_obj as $rulename => $rule) {
                     /** @var ThreatPolicySpyware $rule */
                     if ($rule->spyware_rule_best_practice())
+                        $bp_set = true;
+                    else
+                        return false;
+                }
+            }
+            return $bp_set;
+        }
+        return null;
+    }
+
+    public function spyware_rules_visibility()
+    {
+        if( $this->owner->owner->version >= 102 ) {
+            $bp_set = null;
+            if (!empty($this->rules_obj)) {
+                $bp_set = false;
+
+                foreach ($this->rules_obj as $rulename => $rule) {
+                    /** @var ThreatPolicySpyware $rule */
+                    if ($rule->spyware_rule_visibility())
                         $bp_set = true;
                     else
                         return false;
@@ -741,6 +761,28 @@ class AntiSpywareProfile extends SecurityProfile2
         return null;
     }
 
+    public function spyware_dns_security_visibility()
+    {
+        if( $this->owner->owner->version >= 102 )
+        {
+            $bp_set = false;
+            foreach ($this->additional['botnet-domain']['dns-security-categories'] as $name => $value) {
+                /** @var DNSPolicy $value */
+                /*
+                "subquery6": "subquery6=((action eq sinkhole) and (name eq pan-dns-sec-cc))",
+                "subquery7": "subquery7=((action eq sinkhole) and (name eq pan-dns-sec-malware))",
+                "subquery8": "subquery8=((action eq sinkhole) and (name eq pan-dns-sec-phishing))",
+                 */
+                if ($value->spyware_dns_security_rule_visibility())
+                    $bp_set = true;
+                else
+                    return false;
+            }
+            return $bp_set;
+        }
+        return null;
+    }
+
     public function is_best_practice()
     {
         if( $this->owner->owner->version >= 102 )
@@ -758,6 +800,29 @@ class AntiSpywareProfile extends SecurityProfile2
             if( $this->spyware_rules_best_practice()
                 && $this->spyware_dns_security_best_practice() && $this->spyware_dnslist_best_practice()
                 #&& $this->vulnerability_exception_best_practice()
+            )
+                return TRUE;
+            else
+                return FALSE;
+        }
+        return null;
+    }
+
+    public function is_visibility()
+    {
+        if( $this->owner->owner->version >= 102 )
+        {
+            if( $this->spyware_rules_visibility() && $this->cloud_inline_analysis_visibility()
+                && $this->spyware_dns_security_visibility() && $this->spyware_dnslist_visibility()
+            )
+                return TRUE;
+            else
+                return FALSE;
+        }
+        else
+        {
+            if( $this->spyware_rules_visibility()
+                && $this->spyware_dns_security_visibility() && $this->spyware_dnslist_visibility()
             )
                 return TRUE;
             else

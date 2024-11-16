@@ -554,6 +554,82 @@ class SecurityProfileGroup
             return FALSE;
     }
 
+    public function is_visibility()
+    {
+        $bp_av_set = false;
+        $bp_as_set = false;
+        $bp_vp_set = false;
+        if(isset($this->secprofiles['virus']))
+        {
+            /** @var AntiVirusProfile $profile */
+            if( is_string($this->secprofiles['virus']) )
+                $profile = $this->owner->owner->AntiVirusProfileStore->find($this->secprofiles['virus']);
+            else
+                $profile = $this->secprofiles['virus'];
+            if( is_object($profile) )
+            {
+                if ($profile->is_visibility())
+                    $bp_av_set = TRUE;
+                else
+                    return FALSE;
+            }
+            else
+            {
+                mwarning( "Visibility SPG check not possible - SecurityProfile AV ".$this->secprofiles['virus']." not found", null, false );
+                return FALSE;
+            }
+
+        }
+
+        if(isset($this->secprofiles['spyware']))
+        {
+            /** @var AntiSpywareProfile $profile */
+            if( is_string($this->secprofiles['spyware']) )
+                $profile = $this->owner->owner->AntiSpywareProfileStore->find($this->secprofiles['spyware']);
+            else
+                $profile = $this->secprofiles['spyware'];
+            if( is_object($profile) )
+            {
+                if ($profile->is_visibility())
+                    $bp_as_set = TRUE;
+                else
+                    return FALSE;
+            }
+            else
+            {
+                mwarning( "Visibility SPG check not possible - profile AS ".$this->secprofiles['spyware']." not found", null, false );
+                return FALSE;
+            }
+
+        }
+
+        if(isset($this->secprofiles['vulnerability']))
+        {
+            /** @var VulnerabilityProfile $profile */
+            if( is_string($this->secprofiles['vulnerability']) )
+                $profile = $this->owner->owner->VulnerabilityProfileStore->find($this->secprofiles['vulnerability']);
+            else
+                $profile = $this->secprofiles['vulnerability'];
+            if( is_object($profile) )
+            {
+                if ($profile->is_visibility())
+                    $bp_vp_set = TRUE;
+                else
+                    return FALSE;
+            }
+            else
+            {
+                mwarning( "Visibility SPG check not possible - profile VP ".$this->secprofiles['vulnerability']." not found", null, false );
+                return FALSE;
+            }
+
+        }
+
+        if( $bp_av_set && $bp_as_set && $bp_vp_set)
+            return TRUE;
+        else
+            return FALSE;
+    }
 
     /*
     public function rewriteSecProfXML()

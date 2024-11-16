@@ -68,6 +68,16 @@ RQuery::$defaultFilters['securityprofilegroup']['object']['operators']['is.best-
         'input' => 'input/panorama-8.0.xml'
     )
 );
+RQuery::$defaultFilters['securityprofilegroup']['object']['operators']['is.visibility'] = array(
+    'Function' => function (SecurityprofilegroupRQueryContext $context) {
+        return $context->object->is_visibility();
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
 RQuery::$defaultFilters['securityprofilegroup']['name']['operators']['eq'] = array(
     'Function' => function (SecurityprofilegroupRQueryContext $context) {
         return $context->object->name() == $context->value;

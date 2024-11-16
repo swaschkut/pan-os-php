@@ -2339,6 +2339,18 @@ RQuery::$defaultFilters['rule']['secprof']['operators']['is.best-practice'] = ar
         'input' => 'input/panorama-8.0.xml'
     )
 );
+RQuery::$defaultFilters['rule']['secprof']['operators']['is.visibility'] = array(
+    'Function' => function (RuleRQueryContext $context) {
+        $rule = $context->object;
+
+        return $rule->SP_isVisibility();
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
 RQuery::$defaultFilters['rule']['secprof']['operators']['av-profile.is'] = array(
     'Function' => function (RuleRQueryContext $context) {
         $rule = $context->object;

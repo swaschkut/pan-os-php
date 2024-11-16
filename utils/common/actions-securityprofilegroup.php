@@ -322,7 +322,12 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
                         $lines .= $context->encloseFunction($bp_text_no);
                 }
                 if( $visibility )
-                    $lines .= $context->encloseFunction("");
+                {
+                    if ($object->is_visibility())
+                        $lines .= $context->encloseFunction($bp_text_yes);
+                    else
+                        $lines .= $context->encloseFunction($bp_text_no);
+                }
                 //private $secprof_array = array('virus', 'spyware', 'vulnerability', 'file-blocking', 'wildfire-analysis', 'url-filtering', 'data-filtering');
 
                 $lines .= $context->encloseFunction($object->secprofiles['virus']);
@@ -345,7 +350,12 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
                                     $lines .= $context->encloseFunction($bp_text_no);
                             }
                             if( $visibility)
-                                $lines .= $context->encloseFunction("dummy");
+                            {
+                                if ($profile->is_visibility())
+                                    $lines .= $context->encloseFunction($bp_text_yes);
+                                else
+                                    $lines .= $context->encloseFunction($bp_text_no);
+                            }
                         }
                         else
                         {
@@ -384,7 +394,12 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
                                     $lines .= $context->encloseFunction($bp_text_no);
                             }
                             if( $visibility )
-                                $lines .= $context->encloseFunction("dummy");
+                            {
+                                if ($profile->is_visibility())
+                                    $lines .= $context->encloseFunction($bp_text_yes);
+                                else
+                                    $lines .= $context->encloseFunction($bp_text_no);
+                            }
                         }
                         else
                         {
@@ -422,7 +437,12 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
                                     $lines .= $context->encloseFunction($bp_text_no);
                             }
                             if( $visibility )
-                                $lines .= $context->encloseFunction("dummy");
+                            {
+                                if( $profile->is_visibility() )
+                                    $lines .= $context->encloseFunction($bp_text_yes);
+                                else
+                                    $lines .= $context->encloseFunction($bp_text_no);
+                            }
                         }
                         else
                         {

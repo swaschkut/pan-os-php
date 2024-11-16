@@ -445,6 +445,37 @@ class AntiVirusProfile extends SecurityProfile2
         return $bestpractise;
     }
 
+    public function av_action_visibility()
+    {
+        $bestpractise = FALSE;
+
+        if( $this->secprof_type != 'virus' )
+            return null;
+
+        if( isset($this->tmp_virus_prof_array) )
+        {
+            foreach( $this->tmp_virus_prof_array as $key => $type )
+            {
+                if( isset($this->$type['action']) )
+                {
+                    if ($type == "ftp" || $type == "http" || $type == "http2" || $type == "smb") {
+                        if ($this->$type['action'] == "alert")
+                            $bestpractise = TRUE;
+                        else
+                            return False;
+                    } else {
+                        if ($this->$type['action'] == "alert")
+                            $bestpractise = TRUE;
+                        else
+                            return FALSE;
+                    }
+                }
+            }
+        }
+
+        return $bestpractise;
+    }
+
     public function av_wildfireaction_best_practice()
     {
         $bestpractise = FALSE;
@@ -468,6 +499,40 @@ class AntiVirusProfile extends SecurityProfile2
                     else
                     {
                         if( $this->$type['wildfire-action'] == "reset-both" )
+                            $bestpractise = TRUE;
+                        else
+                            return False;
+                    }
+                }
+            }
+        }
+
+        return $bestpractise;
+    }
+
+    public function av_wildfireaction_visibility()
+    {
+        $bestpractise = FALSE;
+
+        if( $this->secprof_type != 'virus' )
+            return null;
+
+        if( isset($this->tmp_virus_prof_array) )
+        {
+            foreach( $this->tmp_virus_prof_array as $key => $type )
+            {
+                if( isset( $this->$type['wildfire-action'] ) )
+                {
+                    if( $type == "ftp" || $type == "http" || $type == "http2" || $type == "smb" )
+                    {
+                        if( $this->$type['wildfire-action'] == "alert" )
+                            $bestpractise = TRUE;
+                        else
+                            return False;
+                    }
+                    else
+                    {
+                        if( $this->$type['wildfire-action'] == "alert" )
                             $bestpractise = TRUE;
                         else
                             return False;
@@ -513,6 +578,40 @@ class AntiVirusProfile extends SecurityProfile2
         return $bestpractise;
     }
 
+    public function av_mlavaction_visibility()
+    {
+        $bestpractise = FALSE;
+
+        if( $this->secprof_type != 'virus' )
+            return null;
+
+        if( isset($this->tmp_virus_prof_array) )
+        {
+            foreach( $this->tmp_virus_prof_array as $key => $type )
+            {
+                if( isset( $this->$type['mlav-action'] ) )
+                {
+                    if( $type == "ftp" || $type == "http" || $type == "http2" || $type == "smb" )
+                    {
+                        if( $this->$type['mlav-action'] == "alert" )
+                            $bestpractise = TRUE;
+                        else
+                            return False;
+                    }
+                    else
+                    {
+                        if( $this->$type['mlav-action'] == "alert" )
+                            $bestpractise = TRUE;
+                        else
+                            return False;
+                    }
+                }
+            }
+        }
+
+        return $bestpractise;
+    }
+
     public function is_best_practice()
     {
         if( $this->owner->owner->version >= 102 )
@@ -529,6 +628,27 @@ class AntiVirusProfile extends SecurityProfile2
         {
             if ($this->av_action_best_practice() && $this->av_wildfireaction_best_practice() && $this->av_mlavaction_best_practice()
                 #&& $this->vulnerability_exception_best_practice()
+            )
+                return TRUE;
+            else
+                return FALSE;
+        }
+    }
+
+    public function is_visibility()
+    {
+        if( $this->owner->owner->version >= 102 )
+        {
+            if ($this->av_action_visibility() && $this->av_wildfireaction_visibility() && $this->av_mlavaction_visibility()
+                && $this->cloud_inline_analysis_visibility()
+            )
+                return TRUE;
+            else
+                return FALSE;
+        }
+        else
+        {
+            if ($this->av_action_visibility() && $this->av_wildfireaction_visibility() && $this->av_mlavaction_visibility()
             )
                 return TRUE;
             else

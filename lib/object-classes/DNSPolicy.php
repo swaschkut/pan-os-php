@@ -127,8 +127,22 @@ class DNSPolicy
                 || $this->name() == "pan-dns-sec-malware"
                 || $this->name() == "pan-dns-sec-phishing"
             )
-            && $this->action() != "sinkhole"
-            && $this->packetCapture() != "single-packet"
+            && ( $this->action() != "sinkhole"
+            || $this->packetCapture() != "single-packet" )
+        )
+            return false;
+        else
+            return true;
+    }
+
+    public function spyware_dns_security_rule_visibility()
+    {
+        if( ( $this->name() == "pan-dns-sec-cc"
+                || $this->name() == "pan-dns-sec-malware"
+                || $this->name() == "pan-dns-sec-phishing"
+            )
+            && $this->action() != "allow"
+            #&& $this->packetCapture() != "single-packet"
         )
             return false;
         else

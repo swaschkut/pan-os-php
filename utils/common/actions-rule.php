@@ -4780,6 +4780,7 @@ RuleCallContext::$supportedActions[] = array(
         $addAppSeenSummary = FALSE;
         $addHitCountSummary = FALSE;
         $bestPractice = FALSE;
+        $visibility = FALSE;
 
         $optionalFields = &$context->arguments['additionalFields'];
 
@@ -4799,6 +4800,8 @@ RuleCallContext::$supportedActions[] = array(
             $addHitCountSummary = TRUE;
         if( isset($optionalFields['BestPractice']) )
             $bestPractice = TRUE;
+        if( isset($optionalFields['Visibility']) )
+            $visibility = TRUE;
 
         $fields = array(
             'ID' => 'ID',
@@ -4845,6 +4848,7 @@ RuleCallContext::$supportedActions[] = array(
             'security-profile' => 'security-profile',
             'sp_best_practice' => 'sp_best_practice',
             'sp_best_practice_details' => 'sp_best_practice_details',
+            'sp_visibility' => 'sp_visibility',
             'disabled' => 'disabled',
             'src_user' => 'src-user',
             'url_category' => 'url-category',
@@ -4916,15 +4920,16 @@ RuleCallContext::$supportedActions[] = array(
                                 $fieldName == 'dnat_host_resovled_sum' || $fieldName == 'dnat_port' || $fieldName == 'dnat_distribution' ||
                                 $fieldName == "dst_interface" || $fieldName == "snat_interface" )
                             && get_class($rule) !== "NatRule") ||
-                        (($fieldName == 'sp_best_practice' ) && !$bestPractice) ||
-                        (($fieldName == 'sp_best_practice_details' ) && !$bestPractice)
+                        (($fieldName == 'sp_best_practice' ) && !$bestPractice ) ||
+                        (($fieldName == 'sp_best_practice_details' ) && (!$bestPractice && !$visibility) ) ||
+                        (($fieldName == 'sp_visibility' ) && !$visibility )
                     )
                         continue;
                     $rule_hitcount_array = array();
                     if(($fieldName == 'first-hit' || $fieldName == 'last-hit' || $fieldName == 'hit-count' || $fieldName == 'rule-creation')
                         && $addHitCountSummary && $context->isAPI )
                         $rule_hitcount_array = $rule->API_showRuleHitCount( false, false );
-                    $lines .= $context->ruleFieldHtmlExport($rule, $fieldID, TRUE, $rule_hitcount_array, $bestPractice);
+                    $lines .= $context->ruleFieldHtmlExport($rule, $fieldID, TRUE, $rule_hitcount_array, $bestPractice, $visibility);
                 }
 
 
@@ -4962,8 +4967,9 @@ RuleCallContext::$supportedActions[] = array(
                         $fieldName == 'dnat_host_resovled_sum' || $fieldName == 'dnat_port' || $fieldName == 'dnat_distribution'  ||
                         $fieldName == "dst_interface" || $fieldName == "snat_interface" )  && $rule !== null
                     && get_class($rule) !== "NatRule") ||
-                (($fieldName == 'sp_best_practice' ) && !$bestPractice) ||
-                (($fieldName == 'sp_best_practice_details' ) && !$bestPractice)
+                (($fieldName == 'sp_best_practice' ) && !$bestPractice ) ||
+                (($fieldName == 'sp_best_practice_details' ) && (!$bestPractice && !$visibility) ) ||
+                (($fieldName == 'sp_visibility' ) && !$visibility )
             )
                 continue;
             $tableHeaders .= "<th>{$fieldName}</th>\n";
@@ -4990,7 +4996,7 @@ RuleCallContext::$supportedActions[] = array(
             array('type' => 'pipeSeparatedList',
                 'subtype' => 'string',
                 'default' => '*NONE*',
-                'choices' => array('ResolveAddressSummary', 'ResolveServiceSummary', 'ResolveServiceAppDefaultSummary', 'ResolveApplicationSummary', 'ResolveScheduleSummary', 'ApplicationSeen', 'HitCount', 'BestPractice'),
+                'choices' => array('ResolveAddressSummary', 'ResolveServiceSummary', 'ResolveServiceAppDefaultSummary', 'ResolveApplicationSummary', 'ResolveScheduleSummary', 'ApplicationSeen', 'HitCount', 'BestPractice', 'Visibility'),
                 'help' => "example: 'actions=exporttoexcel:file.html,HitCount|ApplicationSeen'\n" .
                     "pipe(|) separated list of additional field to include in the report. The following is available:\n" .
                     "  - ResolveAddressSummary : fields with address objects will be resolved to IP addressed and summarized in a new column\n" .
