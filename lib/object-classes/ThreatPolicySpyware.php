@@ -41,6 +41,21 @@ class ThreatPolicySpyware extends ThreatPolicy
             return true;
     }
 
+    public function spyware_rule_alert_is_enabled()
+    {
+        if( ( in_array( "any", $this->severity )
+                || in_array( "medium", $this->severity )
+                || in_array( "high", $this->severity )
+                || in_array( "critical", $this->severity )
+            )
+            && $this->action() === "allow"
+            #&& ( $this->packetCapture() != "single-packet" && $this->packetCapture() != "extended-capture" )
+        )
+            return false;
+        else
+            return true;
+    }
+
     public function spywarepolicy_load_from_domxml( $threatx )
     {
         $this->type = "ThreatPolicySpyware";

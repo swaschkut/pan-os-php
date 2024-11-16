@@ -657,6 +657,28 @@ class AntiSpywareProfile extends SecurityProfile2
         return FALSE;
     }
 
+    public function spyware_dnslist_alert_is_enabled()
+    {
+        if( $this->secprof_type != 'spyware' )
+            return null;
+
+        if( isset($this->additional['botnet-domain']) && isset($this->additional['botnet-domain']['lists']) )
+        {
+            foreach( $this->additional['botnet-domain']['lists'] as $name => $array)
+            {
+                if( $name == "default-paloalto-dns" )
+                {
+                    if( isset($array['action']) )
+                    {
+                        if ( $array['action'] !== "allow" )
+                            return TRUE;
+                    }
+                }
+            }
+        }
+
+        return FALSE;
+    }
 
     public function spyware_rules_best_practice()
     {
