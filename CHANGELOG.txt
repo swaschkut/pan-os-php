@@ -31,6 +31,7 @@ BUGFIX:
 * class NetworkPropertiesContainer | bugfix to not create new XMLnode - fix needed for argument outputformatset
 * type=playbook | bugfix for in=api:// mode
 * type=securityprofilegroup actions=exporttoexcel:file.html,bestpractise | bugfix if no SP is set for SPG
+* type=rule-compare | bugfix if EDL are used
 
 GENERAL:
 * improve different network classes for IPv6 | improve for Panroama Template object usage in network classes

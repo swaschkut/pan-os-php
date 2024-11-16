@@ -22,7 +22,7 @@
 
 class EDL
 {
-    use ReferenceableObject;
+    use AddressCommon;
     use PathableName;
     use XmlConvertible;
 
@@ -218,7 +218,6 @@ class EDL
     {
         return TRUE;
     }
-
 
 
     /**

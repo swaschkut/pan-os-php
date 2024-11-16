@@ -997,6 +997,8 @@ class RuleCallContext extends CallContext
         {
             if( $member->isGroup() )
                 $strMapping[] = "group";
+            elseif( $member->isEDL() )
+                $strMapping[] = "EDL";
             else
                 $strMapping[] = $member->value();
         }
@@ -1030,6 +1032,10 @@ class RuleCallContext extends CallContext
                     $strMapping[] = $tmp_member->value();
                     #$strMapping[] = "group";
                 }
+            }
+            elseif( $member->isEDL() )
+            {
+
             }
 
             else
@@ -1074,7 +1080,10 @@ class RuleCallContext extends CallContext
                     $mapObject->addMap($localMap, TRUE);
                 }
             }
+            elseif( $member->isEDL() )
+            {
 
+            }
             else
             {
                 $tmp_member = $rule->owner->owner->addressStore->find($member->name());
