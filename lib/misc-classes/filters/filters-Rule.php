@@ -3936,6 +3936,33 @@ RQuery::$defaultFilters['rule']['schedule.expire.in.days']['operators']['>,<,=,!
         'input' => 'input/panorama-8.0.xml'
     )
 );
+RQuery::$defaultFilters['rule']['schedule.expired.at.date']['operators']['>,<,=,!'] = array(
+    'Function' => function (RuleRQueryContext $context) {
+        $rule = $context->object;
+        if( !$rule->isSecurityRule() && !$rule->isDoSRule() &&  !$rule->isPbfRule() && !$rule->isQoSRule() )
+            return FALSE;
+
+        /** @var Schedule $schedule */
+        $schedule = $rule->schedule();
+
+        if( is_object( $schedule ) )
+        {
+            $operator = $context->operator;
+            if( $operator == '=' )
+                $operator = '==';
+
+            return $schedule->isExpired( $context->value, $operator );
+        }
+        else
+            return null;
+    },
+    'arg' => true,
+    'ci' => array(
+        'fString' => '(%PROP% 5 )',
+        'input' => 'input/panorama-8.0.xml'
+    ),
+    'help' => 'returns TRUE if rule name matches the specified timestamp MM/DD/YYYY [american] / DD-MM-YYYY [european]'
+);
 RQuery::$defaultFilters['rule']['uuid']['operators']['eq'] = array(
     'Function' => function (RuleRQueryContext $context) {
         return $context->object->uuid() == $context->value;

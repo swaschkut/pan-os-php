@@ -40,6 +40,18 @@ RQuery::$defaultFilters['schedule']['object']['operators']['expire.in.days'] = a
     },
     'arg' => true,
 );
+RQuery::$defaultFilters['schedule']['object']['operators']['expired.at.date'] = array(
+    'Function' => function (ScheduleRQueryContext $context) {
+        $value = $context->object;
+
+        $operator = $context->operator;
+        if( $operator == '=' )
+            $operator = '==';
+
+        return $value->isExpired( $context->value, $operator );
+    },
+    'arg' => true,
+);
 RQuery::$defaultFilters['schedule']['name']['operators']['is.in.file'] = array(
     'Function' => function (ScheduleRQueryContext $context) {
         $object = $context->object;
@@ -415,5 +427,18 @@ RQuery::$defaultFilters['schedule']['expire.in.days']['operators']['>,<,=,!'] = 
         return $value->isExpired( $context->value, $operator );
     },
     'arg' => true,
+);
+RQuery::$defaultFilters['schedule']['expired.at.date']['operators']['>,<,=,!'] = array(
+    'Function' => function (ScheduleRQueryContext $context) {
+        $value = $context->object;
+
+        $operator = $context->operator;
+        if( $operator == '=' )
+            $operator = '==';
+
+        return $value->isExpired( $context->value, $operator );
+    },
+    'arg' => true,
+    'help' => 'returns TRUE if rule name matches the specified timestamp MM/DD/YYYY [american] / DD-MM-YYYY [european]'
 );
 // </editor-fold>

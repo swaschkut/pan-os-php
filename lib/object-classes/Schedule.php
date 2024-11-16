@@ -361,11 +361,26 @@ class Schedule
             return false;
 
         $d_actual = time();
-        $d = $d_actual;
-        if( $futuredate !== 0 )
+        if( strpos( $futuredate, "/" ) !== FALSE )
         {
-            $d = $d_actual + ($futuredate)*24*3600;
+            $d2 = DateTime::createFromFormat('Y/m/d', $futuredate);
+            $d = $d2->getTimestamp();
         }
+        elseif(  strpos( $futuredate, "-" ) !== FALSE)
+        {
+            $d2 = DateTime::createFromFormat('d-m-Y', $futuredate);
+            $d = $d2->getTimestamp();
+        }
+
+        else
+        {
+            $d = $d_actual;
+            if( $futuredate !== 0 )
+            {
+                $d = $d_actual + ($futuredate)*24*3600;
+            }
+        }
+
         $expired = false;
         foreach( $this->recurring_array['non-recurring'] as $member )
         {
