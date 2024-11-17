@@ -528,7 +528,7 @@ trait ReferenceableObject
         if( $this->countReferences() == 0 )
         {
             //- check if higher DG has same name and only if it is also unused return TRUE
-            $tmp_obj = $this->owner->find( $this->name() );
+            $tmp_obj = $this->owner->parentCentralStore->find($this->name());
             if( $tmp_obj === null || $tmp_obj->countReferences() == 0 )
                 return TRUE;
             else
@@ -553,7 +553,7 @@ trait ReferenceableObject
         if( $this->countReferences() == 0 )
         {
             //- check if higher DG has same name and only if it is also unused return TRUE
-            $tmp_obj = $this->owner->find( $this->name() );
+            $tmp_obj = $this->owner->parentCentralStore->find($this->name());
             if( $tmp_obj === null || $tmp_obj->countReferences() == 0 )
                 return TRUE;
             else
