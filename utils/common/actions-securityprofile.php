@@ -2065,6 +2065,14 @@ SecurityProfileCallContext::$supportedActions['vulnerability.alert-only-set'] = 
         if (get_class($object) !== "VulnerabilityProfile")
             return null;
 
+        $tmp_mlav_engine = DH::findFirstElement('cloud-inline-analysis', $object->xmlroot);
+        if( $object->owner->owner->version >= 110 )
+        {
+            if( $tmp_mlav_engine === False )
+                $tmp_mlav_engine = DH::findFirstElementOrCreate('cloud-inline-analysis', $object->xmlroot);
+
+            $tmp_mlav_engine->textContent = "yes";
+        }
 
 
         $tmp_mlav_engine = DH::findFirstElement('mica-engine-vulnerability-enabled', $object->xmlroot);

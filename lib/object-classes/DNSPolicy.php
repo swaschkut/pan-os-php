@@ -137,6 +137,7 @@ class DNSPolicy
 
     public function spyware_dns_security_rule_visibility()
     {
+        /*
         if( ( $this->name() == "pan-dns-sec-cc"
                 || $this->name() == "pan-dns-sec-malware"
                 || $this->name() == "pan-dns-sec-phishing"
@@ -144,9 +145,12 @@ class DNSPolicy
             && $this->action() == "allow"
             #&& $this->packetCapture() != "single-packet"
         )
-            return false;
-        else
             return true;
+        else
+            return false;
+        */
+        //every setting is visibility
+        return true;
     }
 }
 
