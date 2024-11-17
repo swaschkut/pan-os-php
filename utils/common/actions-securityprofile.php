@@ -1669,8 +1669,10 @@ SecurityProfileCallContext::$supportedActions['spyware.best-practice-set'] = arr
             {
                 if( $hasDNSlicense )
                 {
-                    $tmp_action->textContent = "allow";
-                    $tmp_packet_capture->textContent = "disable";
+                    if( $tmp_action->textContent == "" )
+                        $tmp_action->textContent = "allow";
+                    if( $tmp_packet_capture->textContent == "" )
+                        $tmp_packet_capture->textContent = "disable";
                 }
                 else
                 {
@@ -1875,7 +1877,8 @@ SecurityProfileCallContext::$supportedActions['spyware.alert-only-set'] = array(
                 //move this to DNSPolicy create method "setAction($name)"
                 if( $hasDNSlicense )
                 {
-                    $tmp_action->textContent = "allow";
+                    if( $tmp_action->textContent == "" )
+                        $tmp_action->textContent = "allow";
                     if( $tmp_packet_capture->textContent == "" )
                         $tmp_packet_capture->textContent = "disable";
                 }
@@ -1896,7 +1899,8 @@ SecurityProfileCallContext::$supportedActions['spyware.alert-only-set'] = array(
                 {
                     if( $hasDNSlicense )
                     {
-                        $tmp_action->textContent = "allow";
+                        if( $tmp_action->textContent == "" )
+                            $tmp_action->textContent = "allow";
                         if( $tmp_packet_capture->textContent == "" )
                             $tmp_packet_capture->textContent = "disable";
                     }
