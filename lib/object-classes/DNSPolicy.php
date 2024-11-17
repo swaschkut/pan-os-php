@@ -141,7 +141,7 @@ class DNSPolicy
                 || $this->name() == "pan-dns-sec-malware"
                 || $this->name() == "pan-dns-sec-phishing"
             )
-            && $this->action() != "allow"
+            && $this->action() == "allow"
             #&& $this->packetCapture() != "single-packet"
         )
             return false;

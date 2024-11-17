@@ -686,11 +686,11 @@ SecurityProfileCallContext::$supportedActions[] = array(
                                 else
                                     $string .= $bp_NOT_sign;
                             }
-                            if( $visibility && $object->$type['action'] != "alert" )
+                            if( $visibility && $object->$type['action'] == "allow" )
                             {
                                 if ($type == "ftp" || $type == "http" || $type == "http2" || $type == "smb")
                                 {
-                                    if ($object->$type['action'] != "alert")
+                                    if ($object->$type['action'] == "allow")
                                         $string .= $visible_NOT_sign;
                                 }
                                 else
@@ -712,11 +712,11 @@ SecurityProfileCallContext::$supportedActions[] = array(
                                 else
                                     $string .= $bp_NOT_sign;
                             }
-                            if( $visibility && $object->$type['wildfire-action'] != "alert" )
+                            if( $visibility && $object->$type['wildfire-action'] == "allow" )
                             {
                                 if ($type == "ftp" || $type == "http" || $type == "http2" || $type == "smb")
                                 {
-                                    if ($object->$type['wildfire-action'] != "alert")
+                                    if ($object->$type['wildfire-action'] == "allow")
                                         $string .= $visible_NOT_sign;
                                 }
                                 else
@@ -738,11 +738,11 @@ SecurityProfileCallContext::$supportedActions[] = array(
                                 else
                                     $string .= $bp_NOT_sign;
                             }
-                            if( $bestPractice && $object->$type['mlav-action'] != "alert" )
+                            if( $visibility && $object->$type['mlav-action'] == "allow" )
                             {
                                 if ($type == "ftp" || $type == "http" || $type == "http2" || $type == "smb")
                                 {
-                                    if( $object->$type['mlav-action'] != "alert")
+                                    if( $object->$type['mlav-action'] == "allow")
                                         $string .= $visible_NOT_sign;
                                 }
                                 else
@@ -893,7 +893,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                                         }
                                         if( $visibility && $name == "default-paloalto-dns" )
                                         {
-                                            if( $value['action'] != "alert" )
+                                            if( $value['action'] == "allow" )
                                                 $string .= $visible_NOT_sign;
                                         }
                                     }
@@ -960,7 +960,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                             $tmp_string = $name . " - inline-policy-action :" . $object->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action'];
                             if( $bestPractice && $object->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action'] != "reset-both" )
                                 $tmp_string .= $bp_NOT_sign;
-                            if( $visibility && $object->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action'] != "alert" )
+                            if( $visibility && $object->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action'] == "allow" )
                                 $tmp_string .= $visible_NOT_sign;
                             $string_mica_engine[] = $tmp_string;
                         }
@@ -987,7 +987,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                             $tmp_string = $name . " - inline-policy-action :" . $object->additional['mica-engine-vulnerability-enabled'][$name]['inline-policy-action'];
                             if( $bestPractice && $object->additional['mica-engine-vulnerability-enabled'][$name]['inline-policy-action'] != "reset-both" )
                                 $tmp_string .= $bp_NOT_sign;
-                            if( $visibility && $object->additional['mica-engine-vulnerability-enabled'][$name]['inline-policy-action'] != "alert" )
+                            if( $visibility && $object->additional['mica-engine-vulnerability-enabled'][$name]['inline-policy-action'] == "allow" )
                                 $tmp_string .= $visible_NOT_sign;
                             $string_mica_engine[] = $tmp_string;
                         }
@@ -1003,7 +1003,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                             $tmp_string = $name . " - mlav-policy-action :" . $object->additional['mlav-engine-filebased-enabled'][$name]['mlav-policy-action'];
                             if( $bestPractice && $object->additional['mlav-engine-filebased-enabled'][$name]['mlav-policy-action'] != "enable" )
                                 $tmp_string .= $bp_NOT_sign;
-                            if( $visibility && $object->additional['mlav-engine-filebased-enabled'][$name]['mlav-policy-action'] != "enable(alert-only)" )
+                            if( $visibility && $object->additional['mlav-engine-filebased-enabled'][$name]['mlav-policy-action'] == "disable" )
                                 $tmp_string .= $visible_NOT_sign;
                             $string_mica_engine[] = $tmp_string;
                         }

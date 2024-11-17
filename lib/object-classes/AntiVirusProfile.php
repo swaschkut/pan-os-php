@@ -459,12 +459,12 @@ class AntiVirusProfile extends SecurityProfile2
                 if( isset($this->$type['action']) )
                 {
                     if ($type == "ftp" || $type == "http" || $type == "http2" || $type == "smb") {
-                        if ($this->$type['action'] == "alert")
+                        if ($this->$type['action'] !== "allow")
                             $bestpractise = TRUE;
                         else
                             return False;
                     } else {
-                        if ($this->$type['action'] == "alert")
+                        if ($this->$type['action'] !== "allow")
                             $bestpractise = TRUE;
                         else
                             return FALSE;
@@ -525,14 +525,14 @@ class AntiVirusProfile extends SecurityProfile2
                 {
                     if( $type == "ftp" || $type == "http" || $type == "http2" || $type == "smb" )
                     {
-                        if( $this->$type['wildfire-action'] == "alert" )
+                        if( $this->$type['wildfire-action'] !== "allow" )
                             $bestpractise = TRUE;
                         else
                             return False;
                     }
                     else
                     {
-                        if( $this->$type['wildfire-action'] == "alert" )
+                        if( $this->$type['wildfire-action'] !== "allow" )
                             $bestpractise = TRUE;
                         else
                             return False;
@@ -593,14 +593,14 @@ class AntiVirusProfile extends SecurityProfile2
                 {
                     if( $type == "ftp" || $type == "http" || $type == "http2" || $type == "smb" )
                     {
-                        if( $this->$type['mlav-action'] == "alert" )
+                        if( $this->$type['mlav-action'] !== "allow" )
                             $bestpractise = TRUE;
                         else
                             return False;
                     }
                     else
                     {
-                        if( $this->$type['mlav-action'] == "alert" )
+                        if( $this->$type['mlav-action'] !== "allow" )
                             $bestpractise = TRUE;
                         else
                             return False;

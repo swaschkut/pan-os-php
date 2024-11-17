@@ -64,13 +64,12 @@ class SecurityProfile2
         {
             if( isset($this->additional['mica-engine-vulnerability-enabled']) )
             {
-
                 foreach( $this->additional['mica-engine-vulnerability-enabled'] as $name)
                 {
-                    if( $name['inline-policy-action'] == "alert" )
-                        $bp_set = TRUE;
-                    else
+                    if( $name['inline-policy-action'] == "allow" )
                         return FALSE;
+                    else
+                        $bp_set =  TRUE;
                 }
             }
 
@@ -78,10 +77,10 @@ class SecurityProfile2
             {
                 foreach( $this->additional['mica-engine-spyware-enabled'] as $name)
                 {
-                    if( $name['inline-policy-action'] == "alert" )
-                        $bp_set = TRUE;
-                    else
+                    if( $name['inline-policy-action'] == "allow" )
                         return FALSE;
+                    else
+                        $bp_set =  TRUE;
                 }
             }
         }
@@ -90,12 +89,12 @@ class SecurityProfile2
         //- all models must be set to 'enable (inherit per-protocol actions)'
         if( isset($this->additional['mlav-engine-filebased-enabled']) )
         {
-            foreach( $this->additional['mlav-engine-filebased-enabled'] as $name)
+            foreach( $this->additional['mlav-engine-filebased-enabled'] as $type => $name)
             {
-                if( $name['mlav-policy-action'] == "enable(alert-only)" )
-                    $bp_set = TRUE;
-                else
+                if( $name['mlav-policy-action'] == "disable" )
                     return FALSE;
+                else
+                    $bp_set =  TRUE;
             }
         }
 

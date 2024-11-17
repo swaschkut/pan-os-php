@@ -670,7 +670,7 @@ class AntiSpywareProfile extends SecurityProfile2
                 {
                     if( isset($array['action']) )
                     {
-                        if ( $array['action'] == "alert" )
+                        if ( $array['action'] !== "allow" )
                             return TRUE;
                     }
                 }
