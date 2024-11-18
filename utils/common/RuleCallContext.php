@@ -548,6 +548,7 @@ class RuleCallContext extends CallContext
             if ($rule->securityProfileType() == 'group')
                 return self::enclose('group:' . $rule->securityProfileGroup(), $wrap);
 
+            /*
             $profiles = array();
 
             foreach ($rule->securityProfiles() as $profType => $profileName)
@@ -582,6 +583,7 @@ class RuleCallContext extends CallContext
                         if( $profType == "virus" || $profType == "spyware" || $profType == "vulnerability" )
                         {
                             /** @var AntiVirusProfile|AntiSpywareProfile|VulnerabilityProfile */
+/*
                             if( !$profile->is_best_practice() )
                             {
                                 if( $sp_best_practice )
@@ -603,6 +605,8 @@ class RuleCallContext extends CallContext
 
 
             return self::enclose($profiles, $wrap);
+*/
+            return self::display_SP_details( $rule, $wrap, $sp_best_practice, $sp_visibility, $bp_NOT_sign, $visibility_NOT_sign );
         }
 
         if($fieldName == 'sp_best_practice' )
@@ -646,8 +650,17 @@ class RuleCallContext extends CallContext
                 $group_name = $rule->securityProfileGroup();
                 /** @var SecurityProfileGroup $group */
                 $group = $rule->owner->owner->securityProfileGroupStore->find($group_name);
-                foreach( $group->securityProfiles() as $profType => $profile )
+                $sp_working_array = array( 'virus', 'spyware', 'vulnerability', 'file-blocking', 'url-filtering', 'data-filtering', 'wildfire-analysis' );
+                $group_profiles = $group->securityProfiles();
+
+                foreach( $sp_working_array as $profType )
+                #foreach( $group->securityProfiles() as $profType => $profile )
                 {
+                    if( isset( $group_profiles[ $profType ] ) )
+                        $profile = $group_profiles[ $profType ];
+                    else
+                        continue;
+
                     if( is_string($profile) )
                     {
                         $bp_check = "";
@@ -1006,8 +1019,17 @@ class RuleCallContext extends CallContext
     {
         $profiles = array();
 
-        foreach ($rule->securityProfiles() as $profType => $profileName)
+        $sp_working_array = array( 'virus', 'spyware', 'vulnerability', 'url-filtering', 'file-blocking', 'data-filtering', 'wildfire-analysis' );
+        $rule_profiles = $rule->securityProfiles();
+
+        foreach( $sp_working_array as $profType )
+        #foreach ($rule->securityProfiles() as $profType => $profileName)
         {
+            if( isset( $rule_profiles[ $profType ] ) )
+                $profileName = $rule_profiles[ $profType ];
+            else
+                continue;
+
             if( empty($profileName) )
             {
                 $profiles[] = $profType . ':---';
