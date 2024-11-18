@@ -548,64 +548,7 @@ class RuleCallContext extends CallContext
             if ($rule->securityProfileType() == 'group')
                 return self::enclose('group:' . $rule->securityProfileGroup(), $wrap);
 
-            /*
-            $profiles = array();
 
-            foreach ($rule->securityProfiles() as $profType => $profileName)
-            {
-
-                if( empty($profileName) )
-                {
-                    $profiles[] = $profType . ':---';
-                    continue;
-                }
-
-
-                if( $profType == "virus" || $profType == "spyware" || $profType == "vulnerability" )
-                {
-                    if( is_string($profileName) )
-                    {
-                        if( $profType == "virus" )
-                            $profile = $rule->owner->owner->AntiVirusProfileStore->find($profileName);
-                        elseif( $profType == "spyware" )
-                            $profile = $rule->owner->owner->AntiSpywareProfileStore->find($profileName);
-                        elseif( $profType == "vulnerability" )
-                            $profile = $rule->owner->owner->VulnerabilityProfileStore->find($profileName);
-                    }
-
-                    if( !is_object($profile) )
-                    {
-                        $profiles[] = $profType . ':' . $profileName." | no check";
-                    }
-                    else
-                    {
-                        $bp_check = "";
-                        if( $profType == "virus" || $profType == "spyware" || $profType == "vulnerability" )
-                        {
-                            /** @var AntiVirusProfile|AntiSpywareProfile|VulnerabilityProfile */
-/*
-                            if( !$profile->is_best_practice() )
-                            {
-                                if( $sp_best_practice )
-                                    $bp_check .= $bp_NOT_sign;
-                            }
-                            if( !$profile->is_visibility() )
-                            {
-                                if( $sp_visibility )
-                                    $bp_check .= $visibility_NOT_sign;
-                            }
-                        }
-                        $profiles[] = $profType . ':' . $profile->name().$bp_check;
-                    }
-                }
-                else
-                    $profiles[] = $profType . ':' . $profileName;
-
-            }
-
-
-            return self::enclose($profiles, $wrap);
-*/
             return self::display_SP_details( $rule, $wrap, $sp_best_practice, $sp_visibility, $bp_NOT_sign, $visibility_NOT_sign );
         }
 
