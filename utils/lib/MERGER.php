@@ -1755,12 +1755,40 @@ class MERGER extends UTIL
 
                 //todo: swaschkut 20241119
                 //another validation; is there a object with same name at child level???
-                #print "search: ".$pickedObject->name()."\n";
+                //this needs to be added to different objetc types: adrgroup/service/srv-group
                 if( isset( $child_NamehashMap[$pickedObject->name()] ) )
                 {
-                    print "picked: ".$pickedObject->_PANC_shortName()."\n";
-                    print "override: ".$child_NamehashMap[$pickedObject->name()]->_PANC_shortName()."\n";
-                    derr( "check", null, FAlse );
+                    $skip2 = FALSE;
+                    $skip3 = FALSE;
+                    $skippedOBJ = null;
+                    foreach( $child_NamehashMap[$pickedObject->name()] as $key => $overrideOBJ )
+                    {
+                        if( !$overrideOBJ->isAddress() )
+                        {
+                            $skip2 = TRUE;
+                            $skippedOBJ = $overrideOBJ;
+                            break;
+                        }
+                        if( $overrideOBJ->value() !== $pickedObject->value() )
+                        {
+                            $skip3 = TRUE;
+                            $skippedOBJ = $overrideOBJ;
+                            break;
+                        }
+                    }
+
+                    if( $skip2 )
+                    {
+                        PH::print_stdout("    - SKIP: object name '{$pickedObject->_PANC_shortName()}' as one ancestor is of type addressgroup");
+                        $this->skippedObject( $index, $pickedObject, $skippedOBJ, "ancestor of type addressgroup");
+                        continue;
+                    }
+                    if( $skip3 )
+                    {
+                        PH::print_stdout("    - SKIP: object name '{$pickedObject->_PANC_shortName()}' as one childancestor has same name");
+                        $this->skippedObject( $index, $pickedObject, $skippedOBJ, " childancestor has same name");
+                        continue;
+                    }
                 }
 
                 // Merging loop finally!

@@ -35,6 +35,7 @@ BUGFIX:
 * type=securityprofilegroup actions=exporttoexcel:file.html,bestpractise | bugfix if no SP is set for SPG
 * type=rule-compare | bugfix if EDL are used
 * type=address 'filter=(object is.unused / is.unused.recursive)' | bugfix to search correct upper addressgroup
+* type=address-merger | extend validation if pickedobject name is overriden at childDG level with different value
 
 GENERAL:
 * improve different network classes for IPv6 | improve for Panroama Template object usage in network classes
