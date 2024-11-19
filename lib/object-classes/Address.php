@@ -796,6 +796,8 @@ class Address
 
         $pan = PH::findRootObjectOrDie($this->owner);
 
+        $name = $this->name();
+
         if( strpos($this->name(), '-') === FALSE )
         {
             $explode = explode('/', $this->name());
