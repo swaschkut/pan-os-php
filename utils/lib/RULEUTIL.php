@@ -154,6 +154,9 @@ class RULEUTIL extends UTIL
                         $DG_object = $this->pan->findDeviceGroup($location);
                         if( $DG_object !== null )
                             $parentDGS = $DG_object->parentDeviceGroups();
+                        //Todo: how to find out which DG is of interest
+                        #elseif( $location == "any" )
+                        #    $parentDGS = $sub->parentDeviceGroups();
                         else
                             derr( "shadow-loaddghierarchy - is right now only supported with specific DG 'location=DG-NAME' - this DG is not found: 'location=".$location."'", null, FALSE );
                     }
@@ -179,6 +182,9 @@ class RULEUTIL extends UTIL
                         $DG_object = $this->pan->findDeviceGroup($location);
                         if( $DG_object !== null )
                             $parentDGS = $DG_object->parentDeviceGroups();
+                        //Todo: how to find out which DG is of interest
+                        #elseif( $location == "any" )
+                        #    $parentDGS = $sub->parentDeviceGroups();
                         else
                             derr( "shadow-loaddghierarchy - is right now only supported with specific DG 'location=DG-NAME' - this DG is not found: 'location=".$location."'", null, FALSE );
 
