@@ -3114,6 +3114,41 @@ class MERGER extends UTIL
 
                     $pickedObject = $this->hashMapPickfilter( $upperHashMap, $index, $hash );
 
+                    if( isset( $child_NamehashMap[$pickedObject->name()] ) )
+                    {
+                        $skip2 = FALSE;
+                        $skip3 = FALSE;
+                        $skippedOBJ = null;
+                        foreach( $child_NamehashMap[$pickedObject->name()] as $key => $overrideOBJ )
+                        {
+                            /** @var Service $overrideOBJ */
+                            if( !$overrideOBJ->isService() )
+                            {
+                                $skip2 = TRUE;
+                                $skippedOBJ = $overrideOBJ;
+                                break;
+                            }
+                            if( !$overrideOBJ->dstPortMapping()->equals($pickedObject->dstPortMapping()) || $overrideOBJ->protocol() != $pickedObject->protocol() )
+                            {
+                                $skip3 = TRUE;
+                                $skippedOBJ = $overrideOBJ;
+                                break;
+                            }
+                        }
+
+                        if( $skip2 )
+                        {
+                            PH::print_stdout("    - SKIP: object name '{$pickedObject->_PANC_shortName()}' as one ancestor is of type servicegroup");
+                            $this->skippedObject( $index, $pickedObject, $skippedOBJ, "ancestor of type addressgroup");
+                            continue;
+                        }
+                        if( $skip3 )
+                        {
+                            PH::print_stdout("    - SKIP: object name '{$pickedObject->_PANC_shortName()}' as one childancestor has same name");
+                            $this->skippedObject( $index, $pickedObject, $skippedOBJ, " childancestor has same name");
+                            continue;
+                        }
+                    }
 
                     foreach( $hash as $object )
                     {
