@@ -1753,6 +1753,15 @@ class MERGER extends UTIL
 
                 $pickedObject = $this->hashMapPickfilter( $upperHashMap, $index, $hash );
 
+                //todo: swaschkut 20241119
+                //another validation; is there a object with same name at child level???
+                #print "search: ".$pickedObject->name()."\n";
+                if( isset( $child_NamehashMap[$pickedObject->name()] ) )
+                {
+                    print "picked: ".$pickedObject->_PANC_shortName()."\n";
+                    print "override: ".$child_NamehashMap[$pickedObject->name()]->_PANC_shortName()."\n";
+                    derr( "check", null, FAlse );
+                }
 
                 // Merging loop finally!
                 foreach( $hash as $objectIndex => $object )
