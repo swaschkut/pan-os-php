@@ -155,9 +155,7 @@ class RULEUTIL extends UTIL
                         if( $DG_object !== null )
                             $parentDGS = $DG_object->parentDeviceGroups();
                         else
-                        {
                             derr( "shadow-loaddghierarchy - is right now only supported with specific DG 'location=DG-NAME' - this DG is not found: 'location=".$location."'", null, FALSE );
-                        }
                     }
 
                     if( $location == 'any' || $location == $sub->name() || isset( $parentDGS[$sub->name()] ) )
@@ -179,7 +177,10 @@ class RULEUTIL extends UTIL
                     foreach( $subGroups as $sub )
                     {
                         $DG_object = $this->pan->findDeviceGroup($location);
-                        $parentDGS = $DG_object->parentDeviceGroups();
+                        if( $DG_object !== null )
+                            $parentDGS = $DG_object->parentDeviceGroups();
+                        else
+                            derr( "shadow-loaddghierarchy - is right now only supported with specific DG 'location=DG-NAME' - this DG is not found: 'location=".$location."'", null, FALSE );
 
                         if ($location == 'any' || $location == $sub->name() || isset($parentDGS[$sub->name()]))
                         {
