@@ -852,19 +852,19 @@ class Address
                 if( $rangeDetected )
                     $objToReplace = $this->owner->API_newAddress($newName, 'ip-range', $explode[0] . '-' . $explode[1]);
                 else
-                    $objToReplace = $this->owner->API_newAddress($newName, 'ip-netmask', $name . '/' . $mask);
+                    $objToReplace = $this->owner->API_newAddress($newName, 'ip-netmask', $newName . '/' . $mask);
             }
             else
             {
                 if( $rangeDetected )
                     $objToReplace = $this->owner->newAddress($newName, 'ip-range', $explode[0] . '-' . $explode[1]);
                 else
-                    $objToReplace = $this->owner->newAddress($newName, 'ip-netmask', $name . '/' . $mask);
+                    $objToReplace = $this->owner->newAddress($newName, 'ip-netmask', $newName . '/' . $mask);
             }
         }
         else
         {
-            $objMap = IP4Map::mapFromText($name . '/' . $mask);
+            $objMap = IP4Map::mapFromText($newName . '/' . $mask);
             if( !$objMap->equals($objToReplace->getIP4Mapping()) )
             {
                 $string = "because an object with same name exists but has different value";
