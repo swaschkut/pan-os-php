@@ -1896,7 +1896,10 @@ class MERGER extends UTIL
                         PH::print_stdout($text);
 
                         if( $this->upperLevelSearch )
+                        {
                             $tmpstring = "|->ERROR object '{$object->name()}' '{$ancestor->type()}' cannot be merged because it has an ancestor " . $ancestor_different_value . " | ".$text;
+                            $this->skippedObject( $index, $object, $ancestor, $tmpstring);
+                        }
                         else
                             $tmpstring = "|-> ancestor: '" . $object->_PANC_shortName() . "' you did not allow to merged";
                         self::deletedObjectSetRemoved($index, $tmpstring);
@@ -3219,7 +3222,10 @@ class MERGER extends UTIL
                             PH::print_stdout( $text );
 
                             if( $this->upperLevelSearch )
+                            {
                                 $tmpstring = "|->ERROR ancestor: '" . $object->_PANC_shortName() . "' cannot be merged. | ".$text;
+                                $this->skippedObject( $index, $object, $ancestor, $tmpstring);
+                            }
                             else
                                 $tmpstring = "|-> ancestor: '" . $object->_PANC_shortName() . "' you did not allow to merged";
                             self::deletedObjectSetRemoved( $index, $tmpstring );
@@ -3311,7 +3317,10 @@ class MERGER extends UTIL
                             PH::print_stdout( $text );
 
                             if( $this->upperLevelSearch )
+                            {
                                 $tmpstring = "|->ERROR ancestor: '" . $object->_PANC_shortName() . "' cannot be merged. | ".$text ;
+                                $this->skippedObject( $index, $object, $ancestor, $tmpstring);
+                            }
                             else
                                 $tmpstring = "|-> ancestor: '" . $object->_PANC_shortName() . "' you did not allow to merged";
                             self::deletedObjectSetRemoved( $index, $tmpstring );
@@ -3742,7 +3751,10 @@ class MERGER extends UTIL
                         PH::print_stdout($text);
 
                         if( $this->upperLevelSearch )
+                        {
                             $tmpstring = "|->ERROR ancestor: '" . $object->_PANC_shortName() . "  color: '{$object->getColor()}' "."' cannot be merged. | ".$text;
+                            $this->skippedObject( $index, $object, $ancestor, $tmpstring);
+                        }
                         else
                             $tmpstring = "|-> ancestor: '" . $object->_PANC_shortName() . "' you did not allow to merged";
                         self::deletedObjectSetRemoved( $index, $tmpstring );
@@ -4154,7 +4166,10 @@ class MERGER extends UTIL
                         $this->skippedObject( $index, $object, $ancestor, $tmp_skippedReason);
 
                         if( $this->upperLevelSearch )
+                        {
                             $tmpstring = "|->ERROR ancestor: '" . $object->_PANC_shortName() . "  value: '".implode("./.",$ancestor->getmembers())."' "."' cannot be merged. | ".$text;
+                            $this->skippedObject( $index, $object, $ancestor, $tmpstring);
+                        }
                         else
                             $tmpstring = "|-> ancestor: '" . $object->_PANC_shortName() . "' you did not allow to merged";
                         self::deletedObjectSetRemoved( $index, $tmpstring );
@@ -4573,7 +4588,10 @@ class MERGER extends UTIL
                         PH::print_stdout($text);
 
                         if( $this->upperLevelSearch )
+                        {
                             $tmpstring = "|->ERROR ancestor: '" . $object->_PANC_shortName() . "  color: '{$object->getColor()}' "."' cannot be merged. | ".$text;
+                            $this->skippedObject( $index, $object, $ancestor, $tmpstring);
+                        }
                         else
                             $tmpstring = "|-> ancestor: '" . $object->_PANC_shortName() . "' you did not allow to merged";
                         self::deletedObjectSetRemoved( $index, $tmpstring );
