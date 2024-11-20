@@ -1833,7 +1833,7 @@ class MERGER extends UTIL
                         }
                         if( $skip3 )
                         {
-                            PH::print_stdout("    - SKIP: object name '{$object->_PANC_shortName()}' as one childancestor has same name");
+                            PH::print_stdout("    - SKIP: object name '{$object->_PANC_shortName()}' as one ancestor has same name, but different value");
                             $this->skippedObject( $index, $object, $skippedOBJ, " ancestor has same name, but different value");
                             continue;
                         }
