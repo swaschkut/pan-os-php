@@ -685,6 +685,128 @@ class RuleCallContext extends CallContext
                 return self::enclose($bp_text_no);
         }
 
+        if($fieldName == 'sp_av_bp' )
+        {
+            $sp_type = "virus";
+            $check_type = "bp";
+            if (!$rule->isSecurityRule() && !$rule->isDefaultSecurityRule())
+                return self::enclose('');
+
+            return self::display_SP_details_Y_N( $rule, $wrap, $sp_best_practice, $sp_visibility, $sp_type, $check_type);
+        }
+        if($fieldName == 'sp_av_visible' )
+        {
+            $sp_type = "virus";
+            $check_type = "visible";
+            if (!$rule->isSecurityRule() && !$rule->isDefaultSecurityRule())
+                return self::enclose('');
+
+            return self::display_SP_details_Y_N( $rule, $wrap, $sp_best_practice, $sp_visibility, $sp_type, $check_type);
+        }
+        if($fieldName == 'sp_as_bp' )
+        {
+            $sp_type = "spyware";
+            $check_type = "bp";
+            if (!$rule->isSecurityRule() && !$rule->isDefaultSecurityRule())
+                return self::enclose('');
+
+            return self::display_SP_details_Y_N( $rule, $wrap, $sp_best_practice, $sp_visibility, $sp_type, $check_type);
+        }
+        if($fieldName == 'sp_as_visible' )
+        {
+            $sp_type = "spyware";
+            $check_type = "visible";
+            if (!$rule->isSecurityRule() && !$rule->isDefaultSecurityRule())
+                return self::enclose('');
+
+            return self::display_SP_details_Y_N( $rule, $wrap, $sp_best_practice, $sp_visibility, $sp_type, $check_type);
+        }
+        if($fieldName == 'sp_vp_bp' )
+        {
+            $sp_type = "vulnerability";
+            $check_type = "bp";
+            if (!$rule->isSecurityRule() && !$rule->isDefaultSecurityRule())
+                return self::enclose('');
+
+            return self::display_SP_details_Y_N( $rule, $wrap, $sp_best_practice, $sp_visibility, $sp_type, $check_type);
+        }
+        if($fieldName == 'sp_vp_visible' )
+        {
+            $sp_type = "vulnerability";
+            $check_type = "visible";
+            if (!$rule->isSecurityRule() && !$rule->isDefaultSecurityRule())
+                return self::enclose('');
+
+            return self::display_SP_details_Y_N( $rule, $wrap, $sp_best_practice, $sp_visibility, $sp_type, $check_type);
+        }
+        if($fieldName == 'sp_url_bp' )
+        {
+            $sp_type = "url-filtering";
+            $check_type = "bp";
+            if (!$rule->isSecurityRule() && !$rule->isDefaultSecurityRule())
+                return self::enclose('');
+
+            return self::display_SP_details_Y_N( $rule, $wrap, $sp_best_practice, $sp_visibility, $sp_type, $check_type);
+        }
+        if($fieldName == 'sp_url_visible' )
+        {
+            $sp_type = "url-filtering";
+            $check_type = "visible";
+            if (!$rule->isSecurityRule() && !$rule->isDefaultSecurityRule())
+                return self::enclose('');
+
+            return self::display_SP_details_Y_N( $rule, $wrap, $sp_best_practice, $sp_visibility, $sp_type, $check_type);
+        }
+        if($fieldName == 'sp_file_bp' )
+        {
+            $sp_type = "file-blocking";
+            $check_type = "bp";
+            if (!$rule->isSecurityRule() && !$rule->isDefaultSecurityRule())
+                return self::enclose('');
+
+            return self::display_SP_details_Y_N( $rule, $wrap, $sp_best_practice, $sp_visibility, $sp_type, $check_type);
+        }
+        if($fieldName == 'sp_file_visible' )
+        {
+            $sp_type = "file-blocking";
+            $check_type = "visible";
+            if (!$rule->isSecurityRule() && !$rule->isDefaultSecurityRule())
+                return self::enclose('');
+
+            return self::display_SP_details_Y_N( $rule, $wrap, $sp_best_practice, $sp_visibility, $sp_type, $check_type);
+        }
+        if($fieldName == 'sp_data_bp' )
+        {
+            $sp_type = "data-filtering";
+            $check_type = "bp";
+            if (!$rule->isSecurityRule() && !$rule->isDefaultSecurityRule())
+                return self::enclose('');
+            return self::display_SP_details_Y_N( $rule, $wrap, $sp_best_practice, $sp_visibility, $sp_type, $check_type);
+        }
+        if($fieldName == 'sp_data_visible' )
+        {
+            $sp_type = "data-filtering";
+            $check_type = "visible";
+            if (!$rule->isSecurityRule() && !$rule->isDefaultSecurityRule())
+                return self::enclose('');
+            return self::display_SP_details_Y_N( $rule, $wrap, $sp_best_practice, $sp_visibility, $sp_type, $check_type);
+        }
+        if($fieldName == 'sp_wf_bp' )
+        {
+            $sp_type = "wildfire-analysis";
+            $check_type = "bp";
+            if (!$rule->isSecurityRule() && !$rule->isDefaultSecurityRule())
+                return self::enclose('');
+            return self::display_SP_details_Y_N( $rule, $wrap, $sp_best_practice, $sp_visibility, $sp_type, $check_type);
+        }
+        if($fieldName == 'sp_wf_visible' )
+        {
+            $sp_type = "wildfire-analysis";
+            $check_type = "visible";
+            if (!$rule->isSecurityRule() && !$rule->isDefaultSecurityRule())
+                return self::enclose('');
+            return self::display_SP_details_Y_N( $rule, $wrap, $sp_best_practice, $sp_visibility, $sp_type, $check_type);
+        }
         if( $fieldName == 'action' )
         {
             if( !$rule->isSecurityRule() && !$rule->isDefaultSecurityRule() && !$rule->isCaptivePortalRule() )
@@ -966,7 +1088,6 @@ class RuleCallContext extends CallContext
         $rule_profiles = $rule->securityProfiles();
 
         foreach( $sp_working_array as $profType )
-        #foreach ($rule->securityProfiles() as $profType => $profileName)
         {
             if( isset( $rule_profiles[ $profType ] ) )
                 $profileName = $rule_profiles[ $profType ];
@@ -990,6 +1111,8 @@ class RuleCallContext extends CallContext
                     elseif( $profType == "vulnerability" )
                         $profile = $rule->owner->owner->VulnerabilityProfileStore->find($profileName);
                 }
+                else
+                    $profile = $profileName;
 
                 if( !is_object($profile) )
                 {
@@ -1021,6 +1144,89 @@ class RuleCallContext extends CallContext
         }
 
         return self::enclose($profiles, $wrap);
+    }
+
+    public function display_SP_details_Y_N( $rule, $wrap, $sp_best_practice, $sp_visibility, $sp_Type, $checkType)
+    {
+        $profiles = array();
+
+
+        if( $rule->securityProfileType() == 'none' )
+            return self::enclose('N/A');
+
+        if( $rule->securityProfileType() == 'group' ) {
+            $group_name = $rule->securityProfileGroup();
+            /** @var SecurityProfileGroup $group */
+            $group = $rule->owner->owner->securityProfileGroupStore->find($group_name);
+
+            $rule_profiles = $group->securityProfiles();
+        }
+        else
+            $rule_profiles = $rule->securityProfiles();
+
+
+        $sp_working_array = array( 'virus', 'spyware', 'vulnerability', 'url-filtering', 'file-blocking', 'data-filtering', 'wildfire-analysis' );
+        foreach( $sp_working_array as $profType )
+        {
+            if( $sp_Type !== $profType )
+                continue;
+
+            if( isset( $rule_profiles[ $profType ] ) )
+                $profileName = $rule_profiles[ $profType ];
+            else
+                return self::enclose("no", $wrap);
+
+            if( empty($profileName) )
+            {
+                return self::enclose("no", $wrap);
+            }
+
+            if( $profType == "virus" || $profType == "spyware" || $profType == "vulnerability" )
+            {
+                if( is_string($profileName) )
+                {
+                    if( $profType == "virus" )
+                        $profile = $rule->owner->owner->AntiVirusProfileStore->find($profileName);
+                    elseif( $profType == "spyware" )
+                        $profile = $rule->owner->owner->AntiSpywareProfileStore->find($profileName);
+                    elseif( $profType == "vulnerability" )
+                        $profile = $rule->owner->owner->VulnerabilityProfileStore->find($profileName);
+                }
+                else
+                    $profile = $profileName;
+
+                if( !isset($profile) || !is_object($profile) )
+                {
+                    return self::enclose("no", $wrap);
+                }
+                else
+                {
+
+                    if( $profType == "virus" || $profType == "spyware" || $profType == "vulnerability" )
+                    {
+                        /** @var AntiVirusProfile|AntiSpywareProfile|VulnerabilityProfile */
+                        if( $sp_best_practice && $checkType == "bp" )
+                        {
+                            if( !$profile->is_best_practice() )
+                                return self::enclose("no", $wrap);
+                            else
+                                return self::enclose("yes", $wrap);
+                        }
+
+                        if( $sp_visibility && $checkType == "visible")
+                        {
+                            if( !$profile->is_visibility() )
+                                return self::enclose("no", $wrap);
+                            else
+                                return self::enclose("yes", $wrap);
+                        }
+                    }
+                }
+            }
+            else
+                return self::enclose("no", $wrap);
+
+        }
     }
 
     public function AddressResolveSummary( $rule, $typeSrcDst, &$unresolvedArray = array() )

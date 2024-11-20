@@ -4849,6 +4849,20 @@ RuleCallContext::$supportedActions[] = array(
             'sp_best_practice' => 'sp_best_practice',
             'sp_best_practice_details' => 'sp_best_practice_details',
             'sp_visibility' => 'sp_visibility',
+            'sp_av_bp' => 'sp_av_bp',
+            'sp_as_bp' => 'sp_as_bp',
+            'sp_vp_bp' => 'sp_vp_bp',
+            'sp_url_bp' => 'sp_url_bp',
+            'sp_file_bp' => 'sp_file_bp',
+            'sp_data_bp' => 'sp_data_bp',
+            'sp_wf_bp' => 'sp_wf_bp',
+            'sp_av_visible' => 'sp_av_visible',
+            'sp_as_visible' => 'sp_as_visible',
+            'sp_vp_visible' => 'sp_vp_visible',
+            'sp_url_visible' => 'sp_url_visible',
+            'sp_file_visible' => 'sp_file_visible',
+            'sp_data_visible' => 'sp_data_visible',
+            'sp_wf_visible' => 'sp_wf_visible',
             'disabled' => 'disabled',
             'src_user' => 'src-user',
             'url_category' => 'url-category',
@@ -4921,7 +4935,11 @@ RuleCallContext::$supportedActions[] = array(
                                 $fieldName == "dst_interface" || $fieldName == "snat_interface" )
                             && get_class($rule) !== "NatRule") ||
                         (($fieldName == 'sp_best_practice' ) && !$bestPractice ) ||
-                        (($fieldName == 'sp_best_practice_details' ) && (!$bestPractice && !$visibility) ) ||
+                        (($fieldName == 'sp_best_practice_details'
+                                || $fieldName == 'sp_av_bp' || $fieldName == 'sp_as_bp' || $fieldName == 'sp_vp_bp' || $fieldName == 'sp_url_bp' || $fieldName == 'sp_file_bp' || $fieldName == 'sp_data_bp' || $fieldName == 'sp_wf_bp'
+                                || $fieldName == 'sp_av_visible' || $fieldName == 'sp_as_visible' || $fieldName == 'sp_vp_visible' || $fieldName == 'sp_url_visible' || $fieldName == 'sp_file_visible' || $fieldName == 'sp_data_visible' || $fieldName == 'sp_wf_visible'
+                            )
+                            && (!$bestPractice && !$visibility) ) ||
                         (($fieldName == 'sp_visibility' ) && !$visibility )
                     )
                         continue;
@@ -4968,7 +4986,11 @@ RuleCallContext::$supportedActions[] = array(
                         $fieldName == "dst_interface" || $fieldName == "snat_interface" )  && $rule !== null
                     && get_class($rule) !== "NatRule") ||
                 (($fieldName == 'sp_best_practice' ) && !$bestPractice ) ||
-                (($fieldName == 'sp_best_practice_details' ) && (!$bestPractice && !$visibility) ) ||
+                (($fieldName == 'sp_best_practice_details'
+                        || $fieldName == 'sp_av_bp' || $fieldName == 'sp_as_bp' || $fieldName == 'sp_vp_bp' || $fieldName == 'sp_url_bp' || $fieldName == 'sp_file_bp' || $fieldName == 'sp_data_bp' || $fieldName == 'sp_wf_bp'
+                        || $fieldName == 'sp_av_visible' || $fieldName == 'sp_as_visible' || $fieldName == 'sp_vp_visible' || $fieldName == 'sp_url_visible' || $fieldName == 'sp_file_visible' || $fieldName == 'sp_data_visible' || $fieldName == 'sp_wf_visible'
+                    )
+                    && (!$bestPractice && !$visibility) ) ||
                 (($fieldName == 'sp_visibility' ) && !$visibility )
             )
                 continue;
