@@ -867,12 +867,25 @@ class Address
         }
         else
         {
-            $objMap = IP4Map::mapFromText($name . '/' . $mask);
-            if( !$objMap->equals($objToReplace->getIP4Mapping()) )
+            if( $rangeDetected )
             {
-                $string = "because an object with same name exists but has different value";
-                PH::ACTIONstatus( $context, "SKIPPED", $string );
-                return;
+                $objMap = IP4Map::mapFromText($name);
+                if( !$objMap->equals($objToReplace->getIP4Mapping()) )
+                {
+                    $string = "because an object with same name exists but has different value";
+                    PH::ACTIONstatus( $context, "SKIPPED", $string );
+                    return;
+                }
+            }
+            else
+            {
+                $objMap = IP4Map::mapFromText($name . '/' . $mask);
+                if( !$objMap->equals($objToReplace->getIP4Mapping()) )
+                {
+                    $string = "because an object with same name exists but has different value";
+                    PH::ACTIONstatus( $context, "SKIPPED", $string );
+                    return;
+                }
             }
         }
 
