@@ -797,6 +797,7 @@ class Address
         $pan = PH::findRootObjectOrDie($this->owner);
 
         $name = $this->name();
+        $mask = $maxmaskvalue;
 
         if( strpos($this->name(), '-') === FALSE )
         {

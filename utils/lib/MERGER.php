@@ -1126,6 +1126,7 @@ class MERGER extends UTIL
 
                 $pickedObject = $this->hashMapPickfilter( $upperHashMap, $index, $hash );
 
+                //todo: swaschkut 20241119 validate if group object with same name is not available at lower level
 
                 // Merging loop finally!
                 foreach( $hash as $object )
@@ -2548,6 +2549,7 @@ class MERGER extends UTIL
 
                 $pickedObject = $this->hashMapPickfilter( $upperHashMap, $index, $hash );
 
+                //todo: swaschkut 20241119 validate if group object with same name is not available at lower level
 
                 // Merging loop finally!
                 foreach( $hash as $object )

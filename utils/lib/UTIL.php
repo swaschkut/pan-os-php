@@ -174,6 +174,8 @@ class UTIL
 
     public $scope = null;
 
+    public $networkUsedObjects = array();
+
     function __construct($utilType, $argv, $argc, $PHP_FILE, $_supportedArguments = array(), $_usageMsg = "", $projectFolder = "")
     {
         PanAPIConnector::$projectfolder = $projectFolder;
