@@ -1495,7 +1495,6 @@ class MERGER extends UTIL
                     if( $object->owner === $store )
                     {
                         $hashMap[$value][] = $object;
-                        $upper_NamehashMap[$object->name()][] = $object;
                         if( $parentStore !== null )
                             $object->ancestor = self::findAncestor( $parentStore, $object, "addressStore" );
 
@@ -1534,7 +1533,11 @@ class MERGER extends UTIL
                         $object->childancestor = self::findChildAncestor( $childDeviceGroups, $object, "addressStore");
                     }
                     else
+                    {
                         $upperHashMap[$value][] = $object;
+                        $upper_NamehashMap[$object->name()][] = $object;
+                    }
+
                 }
             else derr("unsupported use case");
 
@@ -2866,6 +2869,8 @@ class MERGER extends UTIL
             $child_hashMap = array();
             $child_NamehashMap = array();
             $upperHashMap = array();
+            $upper_NamehashMap = array();
+
             if( $this->dupAlg == 'sameports' || $this->dupAlg == 'samedstsrcports' || $this->dupAlg == 'identical' )
             {
                 //todo: childDG/childDG to parentDG merge is always done; should it not combined to upperLevelSearch value?
@@ -2926,7 +2931,11 @@ class MERGER extends UTIL
                         $object->childancestor = self::findChildAncestor( $childDeviceGroups, $object, "serviceStore");
                     }
                     else
+                    {
                         $upperHashMap[$value][] = $object;
+                        $upper_NamehashMap[$object->name()][] = $object;
+                    }
+
 
                 }
             }
@@ -2954,7 +2963,11 @@ class MERGER extends UTIL
                         $object->childancestor = self::findChildAncestor( $childDeviceGroups, $object, "serviceStore");
                     }
                     else
+                    {
                         $upperHashMap[$value][] = $object;
+                        $upper_NamehashMap[$object->name()][] = $object;
+                    }
+
                 }
             }
             else derr("unsupported use case");
@@ -3113,6 +3126,44 @@ class MERGER extends UTIL
                     {
                         if( $tmp_service === null )
                             continue;
+
+                        //validate if object with same name at upperlevel has same type / value
+                        //if not it can be a problem if the upperlevel obejct is used in an upperlevel addressgroup and this address-group is used at same level as $object is located
+                        if( isset( $upper_NamehashMap[$object->name()] ) )
+                        {
+                            $skip2 = FALSE;
+                            $skip3 = FALSE;
+                            $skippedOBJ = null;
+
+                            foreach( $upper_NamehashMap[$pickedObject->name()] as $key => $overridenOBJ )
+                            {
+                                if( !$overridenOBJ->isAddress() )
+                                {
+                                    $skip2 = TRUE;
+                                    $skippedOBJ = $overridenOBJ;
+                                    break;
+                                }
+                                if( $overridenOBJ->value() !== $object->value() )
+                                {
+                                    $skip3 = TRUE;
+                                    $skippedOBJ = $overridenOBJ;
+                                    break;
+                                }
+                            }
+
+                            if( $skip2 )
+                            {
+                                PH::print_stdout("    - SKIP: object name '{$object->_PANC_shortName()}' as one ancestor is of type addressgroup");
+                                $this->skippedObject( $index, $object, $skippedOBJ, "ancestor of type addressgroup");
+                                continue;
+                            }
+                            if( $skip3 )
+                            {
+                                PH::print_stdout("    - SKIP: object name '{$object->_PANC_shortName()}' as one ancestor has same name, but different value");
+                                $this->skippedObject( $index, $object, $skippedOBJ, " ancestor has same name, but different value");
+                                continue;
+                            }
+                        }
 
                         if( $this->dupAlg == 'identical' )
                             if( $object->name() != $tmp_service->name() )
