@@ -1786,6 +1786,41 @@ class MERGER extends UTIL
                             continue;
                         }
                     }
+                    if( isset( $child_NamehashMap[$object->name()] ) )
+                    {
+                        $skip2 = FALSE;
+                        $skip3 = FALSE;
+                        $skippedOBJ = null;
+
+                        foreach( $child_NamehashMap[$object->name()] as $key => $overridenOBJ )
+                        {
+                            if( !$overridenOBJ->isAddress() )
+                            {
+                                $skip2 = TRUE;
+                                $skippedOBJ = $overridenOBJ;
+                                break;
+                            }
+                            if( $overridenOBJ->value() !== $object->value() )
+                            {
+                                $skip3 = TRUE;
+                                $skippedOBJ = $overridenOBJ;
+                                break;
+                            }
+                        }
+
+                        if( $skip2 )
+                        {
+                            PH::print_stdout("    - SKIP: object name '{$object->_PANC_shortName()}' as one ancestor is of type addressgroup");
+                            $this->skippedObject( $index, $object, $skippedOBJ, "ancestor of type addressgroup");
+                            continue;
+                        }
+                        if( $skip3 )
+                        {
+                            PH::print_stdout("    - SKIP: object name '{$object->_PANC_shortName()}' as one ancestor has same name, but different value");
+                            $this->skippedObject( $index, $object, $skippedOBJ, " ancestor has same name, but different value");
+                            continue;
+                        }
+                    }
 
                     if( $this->dupAlg == 'identical' )
                         if( $object->name() != $tmp_address->name() )
