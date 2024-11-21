@@ -1440,6 +1440,7 @@ class MERGER extends UTIL
                 $objectsToSearchThrough = $store->addressObjects();
 
             $hashMap = array();
+            $NamehashMap = array();
             $child_hashMap = array();
             $child_NamehashMap = array();
             $upperHashMap = array();
@@ -1495,6 +1496,7 @@ class MERGER extends UTIL
                     if( $object->owner === $store )
                     {
                         $hashMap[$value][] = $object;
+                        $NamehashMap[$object->name()][] = $object;
                         if( $parentStore !== null )
                             $object->ancestor = self::findAncestor( $parentStore, $object, "addressStore" );
 
@@ -1509,6 +1511,7 @@ class MERGER extends UTIL
                 }
             }
             elseif( $this->dupAlg == 'whereused' )
+            {
                 foreach( $objectsToSearchThrough as $object )
                 {
                     if( !$object->isAddress() )
@@ -1527,10 +1530,11 @@ class MERGER extends UTIL
                     if( $object->owner === $store )
                     {
                         $hashMap[$value][] = $object;
+                        $NamehashMap[$object->name()][] = $object;
                         if( $parentStore !== null )
                             $object->ancestor = self::findAncestor( $parentStore, $object, "addressStore" );
 
-                        $object->childancestor = self::findChildAncestor( $childDeviceGroups, $object, "addressStore");
+                        $object->childancestor = self::findChildAncestor( $childDeviceGroups, $object, "addressStore" );
                     }
                     else
                     {
@@ -1539,6 +1543,7 @@ class MERGER extends UTIL
                     }
 
                 }
+            }
             else derr("unsupported use case");
 
 //
@@ -1709,6 +1714,44 @@ class MERGER extends UTIL
                     if( $tmp_address === null )
                         continue;
 
+                    //we are at childmerging
+                    //check if the child object, has an object with same name at upperlevel, if different value skip
+                    if( isset( $NamehashMap[$object->name()] ) )
+                    {
+                        $skip2 = FALSE;
+                        $skip3 = FALSE;
+                        $skippedOBJ = null;
+
+                        foreach( $NamehashMap[$object->name()] as $key => $overridenOBJ )
+                        {
+                            if( !$overridenOBJ->isAddress() )
+                            {
+                                $skip2 = TRUE;
+                                $skippedOBJ = $overridenOBJ;
+                                break;
+                            }
+                            if( $overridenOBJ->value() !== $object->value() )
+                            {
+                                $skip3 = TRUE;
+                                $skippedOBJ = $overridenOBJ;
+                                break;
+                            }
+                        }
+
+                        if( $skip2 )
+                        {
+                            PH::print_stdout("    - SKIP: object name '{$object->_PANC_shortName()}' as one ancestor is of type addressgroup");
+                            $this->skippedObject( $index, $object, $skippedOBJ, "ancestor of type addressgroup");
+                            continue;
+                        }
+                        if( $skip3 )
+                        {
+                            PH::print_stdout("    - SKIP: object name '{$object->_PANC_shortName()}' as one ancestor has same name, but different value");
+                            $this->skippedObject( $index, $object, $skippedOBJ, " ancestor has same name, but different value");
+                            continue;
+                        }
+                    }
+
                     if( $this->dupAlg == 'identical' )
                         if( $object->name() != $tmp_address->name() )
                         {
@@ -1812,7 +1855,7 @@ class MERGER extends UTIL
                         $skip3 = FALSE;
                         $skippedOBJ = null;
 
-                        foreach( $upper_NamehashMap[$pickedObject->name()] as $key => $overridenOBJ )
+                        foreach( $upper_NamehashMap[$object->name()] as $key => $overridenOBJ )
                         {
                             if( !$overridenOBJ->isAddress() )
                             {
@@ -1946,6 +1989,7 @@ class MERGER extends UTIL
                         {
                             $tmpstring = "|->ERROR object '{$object->name()}' '{$ancestor->type()}' cannot be merged because it has an ancestor " . $ancestor_different_value . " | ".$text;
                             $this->skippedObject( $index, $object, $ancestor, $tmpstring);
+                            break;
                         }
                         else
                             $tmpstring = "|-> ancestor: '" . $object->_PANC_shortName() . "' you did not allow to merged";
