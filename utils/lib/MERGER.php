@@ -1919,6 +1919,41 @@ class MERGER extends UTIL
                 {
                     //validate if object with same name at upperlevel has same type / value
                     //if not it can be a problem if the upperlevel obejct is used in an upperlevel addressgroup and this address-group is used at same level as $object is located
+                    if( isset( $NamehashMap[$object->name()] ) )
+                    {
+                        $skip2 = FALSE;
+                        $skip3 = FALSE;
+                        $skippedOBJ = null;
+
+                        foreach( $NamehashMap[$object->name()] as $key => $overridenOBJ )
+                        {
+                            if( !$overridenOBJ->isAddress() )
+                            {
+                                $skip2 = TRUE;
+                                $skippedOBJ = $overridenOBJ;
+                                break;
+                            }
+                            if( $overridenOBJ->value() !== $object->value() )
+                            {
+                                $skip3 = TRUE;
+                                $skippedOBJ = $overridenOBJ;
+                                break;
+                            }
+                        }
+
+                        if( $skip2 )
+                        {
+                            PH::print_stdout("    - SKIP: object name '{$object->_PANC_shortName()}' as one ancestor is of type addressgroup");
+                            $this->skippedObject( $index, $object, $skippedOBJ, "ancestor of type addressgroup");
+                            continue;
+                        }
+                        if( $skip3 )
+                        {
+                            PH::print_stdout("    - SKIP: object name '{$object->_PANC_shortName()}' as one ancestor has same name, but different value");
+                            $this->skippedObject( $index, $object, $skippedOBJ, " ancestor has same name, but different value");
+                            continue;
+                        }
+                    }
                     if( isset( $upper_NamehashMap[$object->name()] ) )
                     {
                         $skip2 = FALSE;
@@ -1926,6 +1961,41 @@ class MERGER extends UTIL
                         $skippedOBJ = null;
 
                         foreach( $upper_NamehashMap[$object->name()] as $key => $overridenOBJ )
+                        {
+                            if( !$overridenOBJ->isAddress() )
+                            {
+                                $skip2 = TRUE;
+                                $skippedOBJ = $overridenOBJ;
+                                break;
+                            }
+                            if( $overridenOBJ->value() !== $object->value() )
+                            {
+                                $skip3 = TRUE;
+                                $skippedOBJ = $overridenOBJ;
+                                break;
+                            }
+                        }
+
+                        if( $skip2 )
+                        {
+                            PH::print_stdout("    - SKIP: object name '{$object->_PANC_shortName()}' as one ancestor is of type addressgroup");
+                            $this->skippedObject( $index, $object, $skippedOBJ, "ancestor of type addressgroup");
+                            continue;
+                        }
+                        if( $skip3 )
+                        {
+                            PH::print_stdout("    - SKIP: object name '{$object->_PANC_shortName()}' as one ancestor has same name, but different value");
+                            $this->skippedObject( $index, $object, $skippedOBJ, " ancestor has same name, but different value");
+                            continue;
+                        }
+                    }
+                    if( isset( $child_NamehashMap[$object->name()] ) )
+                    {
+                        $skip2 = FALSE;
+                        $skip3 = FALSE;
+                        $skippedOBJ = null;
+
+                        foreach( $child_NamehashMap[$object->name()] as $key => $overridenOBJ )
                         {
                             if( !$overridenOBJ->isAddress() )
                             {
