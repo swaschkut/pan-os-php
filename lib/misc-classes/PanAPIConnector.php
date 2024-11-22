@@ -1218,7 +1218,9 @@ class PanAPIConnector
                 curl_setopt($this->_curl_handle, CURLOPT_HTTPHEADER, array('Content-Type: application/x-www-form-urlencoded'));
             }
             $properParams = http_build_query($parameters);
-            $properParams = urldecode($properParams);
+            //Todo: swaschkut 20241122
+            //this was added to generate API key correct - but now a problem with type=upload from/to-Xpath
+            //$properParams = urldecode($properParams);
             curl_setopt($this->_curl_handle, CURLOPT_POSTFIELDS, $properParams);
         }
 
