@@ -1663,7 +1663,6 @@ SecurityProfileCallContext::$supportedActions['spyware.best-practice-set'] = arr
             /** @var DNSPolicy $rule */
             if( $rule->name() == "pan-dns-sec-adtracking"
                 || $rule->name() == "pan-dns-sec-ddns"
-                || $rule->name() == "pan-dns-sec-parked"
                 || $rule->name() == "pan-dns-sec-recent"
             )
             {
@@ -1672,7 +1671,7 @@ SecurityProfileCallContext::$supportedActions['spyware.best-practice-set'] = arr
                     if( $tmp_action->textContent == "" )
                         $tmp_action->textContent = "allow";
                     if( $tmp_packet_capture->textContent == "" )
-                        $tmp_packet_capture->textContent = "disable";
+                        $tmp_packet_capture->textContent = "single-packet";
                 }
                 else
                 {
@@ -1681,12 +1680,14 @@ SecurityProfileCallContext::$supportedActions['spyware.best-practice-set'] = arr
                     $tmp_log_level->textContent = "none";
                 }
             }
-            elseif( $rule->name() == "pan-dns-sec-cc" )
+            elseif( $rule->name() == "pan-dns-sec-parked" )
             {
                 if( $hasDNSlicense )
                 {
-                    $tmp_action->textContent = "sinkhole";
-                    $tmp_packet_capture->textContent = "extended-capture";
+                    if( $tmp_action->textContent == "" )
+                        $tmp_action->textContent = "allow";
+                    if( $tmp_packet_capture->textContent == "" )
+                        $tmp_packet_capture->textContent = "disable";
                 }
                 else
                 {

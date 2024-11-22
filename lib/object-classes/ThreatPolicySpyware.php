@@ -33,8 +33,11 @@ class ThreatPolicySpyware extends ThreatPolicy
                 || in_array( "high", $this->severity )
                 || in_array( "critical", $this->severity )
             )
-            && $this->action() !== "reset-both"
-            && ( $this->packetCapture() != "single-packet" && $this->packetCapture() != "extended-capture" )
+            &&
+            (
+                $this->action() !== "reset-both"
+                || ( $this->packetCapture() != "single-packet" && $this->packetCapture() != "extended-capture" )
+            )
         )
             return false;
         else
