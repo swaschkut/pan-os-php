@@ -1220,7 +1220,8 @@ class PanAPIConnector
             $properParams = http_build_query($parameters);
             //Todo: swaschkut 20241122
             //this was added to generate API key correct - but now a problem with type=upload from/to-Xpath
-            //$properParams = urldecode($properParams);
+            if( $apikeyrequest )
+                $properParams = urldecode($properParams);
             curl_setopt($this->_curl_handle, CURLOPT_POSTFIELDS, $properParams);
         }
 
