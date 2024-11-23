@@ -1571,11 +1571,9 @@ class MERGER extends UTIL
                 PH::print_stdout();
                 PH::print_stdout(" - value '{$index}'");
 
-
                 $pickedObject = $this->PickObject( $hash );
 
-                //todo: swaschkut 20241119
-                $checkHash = $this->address_hash_map_check( $index, $pickedObject, true, true, true );
+                $checkHash = $this->address_hash_map_check( $index, $pickedObject, $NamehashMap, $upper_NamehashMap, $child_NamehashMap,true, true, true );
                 if( !$checkHash )
                     continue;
 
@@ -1718,10 +1716,7 @@ class MERGER extends UTIL
                     if( $tmp_address === null )
                         continue;
 
-                    //todo: swaschkut 20241119
-                    //we are at childmerging
-                    //check if the child object, has an object with same name at upperlevel, if different value skip
-                    $checkHash = $this->address_hash_map_check( $index, $object, true, true, true );
+                    $checkHash = $this->address_hash_map_check( $index, $object, $NamehashMap, $upper_NamehashMap, $child_NamehashMap,true, true, true );
                     if( !$checkHash )
                         continue;
 
@@ -1779,21 +1774,16 @@ class MERGER extends UTIL
 
                 $pickedObject = $this->hashMapPickfilter( $upperHashMap, $index, $hash );
 
-                //todo: swaschkut 20241119
-                //another validation; is there a object with same name at child level???
-                //this needs to be added to different objetc types: adrgroup/service/srv-group
-                #$checkHash = $this->address_hash_map_check( $index, $pickedObject, false, false, true );
-                $checkHash = $this->address_hash_map_check( $index, $pickedObject, true, true, true );
+
+                $checkHash = $this->address_hash_map_check( $index, $pickedObject, $NamehashMap, $upper_NamehashMap, $child_NamehashMap,true, true, true );
                 if( !$checkHash )
                     continue;
 
                 // Merging loop finally!
                 foreach( $hash as $objectIndex => $object )
                 {
-                    //todo: swaschkut 20241119 validate
-                    //validate if object with same name at upperlevel has same type / value
-                    //if not it can be a problem if the upperlevel obejct is used in an upperlevel addressgroup and this address-group is used at same level as $object is located
-                    $checkHash = $this->address_hash_map_check( $index, $object, true, true, true );
+                    
+                    $checkHash = $this->address_hash_map_check( $index, $object, $NamehashMap, $upper_NamehashMap, $child_NamehashMap,true, true, true );
                     if( !$checkHash )
                         continue;
 
@@ -1982,7 +1972,7 @@ class MERGER extends UTIL
         }    
     }
 
-    function address_hash_map_check( $index, $object, $checkNamehashMap = false, $checkUpperhashMap = false, $checkChildhashMap = false )
+    function address_hash_map_check( $index, $object, $NamehashMap, $upper_NamehashMap, $child_NamehashMap, $checkNamehashMap = false, $checkUpperhashMap = false, $checkChildhashMap = false )
     {
         if( $checkNamehashMap )
         {
