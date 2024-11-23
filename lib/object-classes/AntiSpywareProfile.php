@@ -441,12 +441,36 @@ class AntiSpywareProfile extends SecurityProfile2
 
                     $dnsPolicy_obj = new DNSPolicy( $name, $this );
                     $dnsPolicy_obj->load_from_domxml( $tmp_entry1 );
-                    $this->dns_rules_obj[] = $dnsPolicy_obj;
+                    $this->dns_rules_obj[$name] = $dnsPolicy_obj;
                     $dnsPolicy_obj->addReference( $this );
 
                     $this->owner->owner->DNSPolicyStore->add($dnsPolicy_obj);
 
-                    $this->additional['botnet-domain']['dns-security-categories'][] = $dnsPolicy_obj;
+                    $this->additional['botnet-domain']['dns-security-categories'][$name] = $dnsPolicy_obj;
+                }
+
+                foreach( $this->owner->owner->DNSPolicyStore->tmp_dns_prof_array as $dns_category )
+                {
+                    if( !isset($this->additional['botnet-domain']['dns-security-categories'][$dns_category]) )
+                    {
+                        $tmp_xml_string = '<entry name="'.$dns_category.'">
+                           <log-level>default</log-level>
+                           <action>default</action>
+                           <packet-capture>disable</packet-capture>
+                        </entry>';
+
+                        $dnsPolicy_obj = new DNSPolicy( $dns_category, $this );
+                        $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $tmp_xml_string);
+                        $tmp_dns_security_categories->appendChild($xmlElement);
+
+                        $dnsPolicy_obj->load_from_domxml( $xmlElement );
+                        $this->dns_rules_obj[$name] = $dnsPolicy_obj;
+                        $dnsPolicy_obj->addReference( $this );
+
+                        $this->owner->owner->DNSPolicyStore->add($dnsPolicy_obj);
+
+                        $this->additional['botnet-domain']['dns-security-categories'][$name] = $dnsPolicy_obj;
+                    }
                 }
             }
 
