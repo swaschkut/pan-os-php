@@ -146,7 +146,11 @@ class URLProfile extends SecurityProfile2
             $predefined_urls = $predefined_url_store->securityProfiles();
 
             foreach( $predefined_urls as $predefined_url )
+            {
                 $this->allow[$predefined_url->name()] = $predefined_url->name();
+                $this->allow_credential[$predefined_url->name()] = $predefined_url->name();
+            }
+
             $this->predefined = $this->allow;
         }
         else

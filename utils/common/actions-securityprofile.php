@@ -414,8 +414,8 @@ SecurityProfileCallContext::$supportedActions['display-xml'] = array(
     },
 );
 
-SecurityProfileCallContext::$supportedActions['action-set'] = array(
-    'name' => 'action-set',
+SecurityProfileCallContext::$supportedActions['url.action-set'] = array(
+    'name' => 'url.action-set',
     'MainFunction' => function (SecurityProfileCallContext $context) {
         $object = $context->object;
         $action = $context->action;
@@ -2218,6 +2218,37 @@ SecurityProfileCallContext::$supportedActions['url.alert-only-set'] = array(
             $alert_xmlnode->appendChild($xmlElement);
         }
         $object->allow = array();
+
+        $credential_xmlnode = DH::findFirstElementOrCreate("credential-enforcement", $object->xmlroot);
+        $allow_credential_xmlnode = DH::findFirstElement("allow", $credential_xmlnode);
+        $alert_credential_xmlnode = DH::findFirstElementOrCreate("alert", $credential_xmlnode);
+        if( $allow_credential_xmlnode !== False )
+        {
+            foreach( $allow_credential_xmlnode->childNodes as $allow_node )
+            {
+                if( $allow_node->nodeType != XML_ELEMENT_NODE )
+                    continue;
+
+                $clone_node = $allow_node->cloneNode(true);
+                $alert_credential_xmlnode->appendChild($clone_node);
+                $allow_credential_xmlnode->removeChild($allow_node);
+                $tmp_name = $allow_node->textContent;
+
+                $key = array_search ($tmp_name, $object->allow_credential);
+                unset($object->allow_credential[$key]);
+            }
+            $credential_xmlnode->removeChild($allow_credential_xmlnode);
+        }
+
+        foreach( $object->allow_credential as $allow )
+        {
+            $object->alert_credential[] = $allow;
+
+            $xmlString = '<member>'.$allow.'</member>';
+            $xmlElement = DH::importXmlStringOrDie($object->xmlroot->ownerDocument, $xmlString);
+            $alert_credential_xmlnode->appendChild($xmlElement);
+        }
+        $object->allow_credential = array();
 
         //Todo: missing stuff credential-enforcement // but framework class must be extended
         if( $context->object->owner->owner->version >= 102 )

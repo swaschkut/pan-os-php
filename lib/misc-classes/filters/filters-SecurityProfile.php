@@ -417,7 +417,7 @@ RQuery::$defaultFilters['securityprofile']['reftype']['operators']['is'] = array
     )
 );
 
-RQuery::$defaultFilters['securityprofile']['alert']['operators']['has'] = array(
+RQuery::$defaultFilters['securityprofile']['url']['operators']['alert.has'] = array(
     'Function' => function (SecurityProfileRQueryContext $context) {
         $object = $context->object;
         $value = $context->value;
@@ -440,7 +440,7 @@ RQuery::$defaultFilters['securityprofile']['alert']['operators']['has'] = array(
     'help' => "'securityprofiletype=url'"
 );
 
-RQuery::$defaultFilters['securityprofile']['block']['operators']['has'] = array(
+RQuery::$defaultFilters['securityprofile']['url']['operators']['block.has'] = array(
     'Function' => function (SecurityProfileRQueryContext $context) {
         $object = $context->object;
         $value = $context->value;
@@ -463,7 +463,7 @@ RQuery::$defaultFilters['securityprofile']['block']['operators']['has'] = array(
     'help' => "'securityprofiletype=url'"
 );
 
-RQuery::$defaultFilters['securityprofile']['allow']['operators']['has'] = array(
+RQuery::$defaultFilters['securityprofile']['url']['operators']['allow.has'] = array(
     'Function' => function (SecurityProfileRQueryContext $context) {
         $object = $context->object;
         $value = $context->value;
@@ -486,7 +486,8 @@ RQuery::$defaultFilters['securityprofile']['allow']['operators']['has'] = array(
     'help' => "'securityprofiletype=url'"
 );
 
-RQuery::$defaultFilters['securityprofile']['continue']['operators']['has'] = array(
+
+RQuery::$defaultFilters['securityprofile']['url']['operators']['continue.has'] = array(
     'Function' => function (SecurityProfileRQueryContext $context) {
         $object = $context->object;
         $value = $context->value;
@@ -509,7 +510,7 @@ RQuery::$defaultFilters['securityprofile']['continue']['operators']['has'] = arr
     'help' => "'securityprofiletype=url'"
 );
 
-RQuery::$defaultFilters['securityprofile']['override']['operators']['has'] = array(
+RQuery::$defaultFilters['securityprofile']['url']['operators']['override.has'] = array(
     'Function' => function (SecurityProfileRQueryContext $context) {
         $object = $context->object;
         $value = $context->value;

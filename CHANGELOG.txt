@@ -23,6 +23,7 @@ UTIL:
 * introduce section 'visibility' for type=rule/securityprofilegroup/securityprofile actions=exporttoexcel:file.html,visibility
 * type=securityprofile securityprofile=spyware | update dns-sec-cc packetCapture BP must be extended-capture
 * type=securityprofile securityprofiletype=url-filtering | extend reading with credential-enforcement
+* type=securityprofile securityprofiletype=url-filtering actions=url.alert-only-set | extend with credential-enforcement
 
 BUGFIX:
 * online method | bugfix for in=api:// | if your password does have special characters like @/! aso.l
