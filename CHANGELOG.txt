@@ -22,6 +22,7 @@ UTIL:
 * type=schedule | new 'filter=(expired.at.date > 01-12-2024) or (expired.at.date < 2024/12/21)'
 * introduce section 'visibility' for type=rule/securityprofilegroup/securityprofile actions=exporttoexcel:file.html,visibility
 * type=securityprofile securityprofile=spyware | update dns-sec-cc packetCapture BP must be extended-capture
+* type=securityprofile securityprofiletype=url-filtering | extend reading with credential-enforcement
 
 BUGFIX:
 * online method | bugfix for in=api:// | if your password does have special characters like @/! aso.l
@@ -44,7 +45,7 @@ GENERAL:
 * introduction of class LogicalRouter/LogicalRouterContainer/LogicalRouterStore
 * update to Device App-ID version: 8909-9044
 * Class AntiSpyware | adjust PAN-OS version check - all starting with PANOS 10.2
-
+* update to Device App-ID version: 8917-9092
 
 2.1.27 (20241011)
 UTIL:

@@ -15,6 +15,7 @@ class URLProfile extends SecurityProfile2
     protected $value;
 
     public $_all;
+    public $_all_credential;
 
     /** @var SecurityProfileStore|null */
     public $owner;
@@ -22,10 +23,15 @@ class URLProfile extends SecurityProfile2
     public $secprof_type;
 
     public $allow = array();
+    public $allow_credential = array();
     public $alert = array();
+    public $alert_credential = array();
     public $block = array();
+    public $block_credential = array();
     public $continue = array();
+    public $continue_credential = array();
     public $override = array();
+    public $override_credential = array();
 
     public $predefined = array();
 
@@ -198,6 +204,42 @@ class URLProfile extends SecurityProfile2
             }
         }
 
+        $tmp_credential_enforcement = DH::findFirstElement("credential-enforcement", $xml);
+        if( $tmp_credential_enforcement != null )
+        {
+            foreach( $this->tmp_url_prof_array as $url_type )
+            {
+                $tmp_url_action = DH::findFirstElement($url_type, $tmp_credential_enforcement);
+                if( $tmp_url_action !== FALSE )
+                {
+                    foreach( $tmp_url_action->childNodes as $tmp_entry )
+                    {
+                        if( $tmp_entry->nodeType != XML_ELEMENT_NODE )
+                            continue;
+
+                        $url_category = $tmp_entry->textContent;
+                        $this->_all_credential[ $url_category ] = $url_type;
+
+                        if( $url_type == 'allow' )
+                            $this->allow_credential[ $url_category ] = $url_category;
+                        elseif( $url_type !== 'allow' )
+                        {
+                            if( $url_type == 'alert' )
+                                $this->alert_credential[ $url_category ] = $url_category;
+                            elseif( $url_type == 'block' )
+                                $this->block_credential[ $url_category ] = $url_category;
+                            elseif( $url_type == 'continue' )
+                                $this->continue_credential[ $url_category ] = $url_category;
+                            elseif( $url_type == 'override' )
+                                $this->override_credential[ $url_category ] = $url_category;
+
+                            unset($this->allow_credential[ $url_category ]);
+                        }
+                    }
+                }
+            }
+        }
+
         return TRUE;
     }
 
@@ -217,6 +259,14 @@ class URLProfile extends SecurityProfile2
             {
                 PH::print_stdout(  "         - " . $member );
                 PH::$JSON_TMP['sub']['object'][$this->name()][strtoupper($url_type)][] = $member;
+            }
+
+            $url_type_credential = $url_type."_credential";
+            PH::print_stdout(  "       " . PH::boldText(strtoupper($url_type_credential)) );
+            foreach( $this->$url_type_credential as $member )
+            {
+                PH::print_stdout(  "         - " . $member );
+                PH::$JSON_TMP['sub']['object'][$this->name()][strtoupper($url_type_credential)][] = $member;
             }
         }
     }
