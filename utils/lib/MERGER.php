@@ -1574,6 +1574,10 @@ class MERGER extends UTIL
 
                 $pickedObject = $this->PickObject( $hash );
 
+                //todo: swaschkut 20241119
+                $checkHash = $this->address_hash_map_check( $index, $pickedObject, true, true, true );
+                if( !$checkHash )
+                    continue;
 
                 $tmp_DG_name = $store->owner->name();
                 if( $tmp_DG_name == "" )
@@ -1714,113 +1718,12 @@ class MERGER extends UTIL
                     if( $tmp_address === null )
                         continue;
 
+                    //todo: swaschkut 20241119
                     //we are at childmerging
                     //check if the child object, has an object with same name at upperlevel, if different value skip
-                    if( isset( $NamehashMap[$object->name()] ) )
-                    {
-                        $skip2 = FALSE;
-                        $skip3 = FALSE;
-                        $skippedOBJ = null;
-
-                        foreach( $NamehashMap[$object->name()] as $key => $overridenOBJ )
-                        {
-                            if( !$overridenOBJ->isAddress() )
-                            {
-                                $skip2 = TRUE;
-                                $skippedOBJ = $overridenOBJ;
-                                break;
-                            }
-                            if( $overridenOBJ->value() !== $object->value() )
-                            {
-                                $skip3 = TRUE;
-                                $skippedOBJ = $overridenOBJ;
-                                break;
-                            }
-                        }
-
-                        if( $skip2 )
-                        {
-                            PH::print_stdout("    - SKIP: object name '{$object->_PANC_shortName()}' as one ancestor is of type addressgroup");
-                            $this->skippedObject( $index, $object, $skippedOBJ, "ancestor of type addressgroup");
-                            continue;
-                        }
-                        if( $skip3 )
-                        {
-                            PH::print_stdout("    - SKIP: object name '{$object->_PANC_shortName()}' as one ancestor has same name, but different value");
-                            $this->skippedObject( $index, $object, $skippedOBJ, " ancestor has same name, but different value");
-                            continue;
-                        }
-                    }
-                    if( isset( $upper_NamehashMap[$object->name()] ) )
-                    {
-                        $skip2 = FALSE;
-                        $skip3 = FALSE;
-                        $skippedOBJ = null;
-
-                        foreach( $upper_NamehashMap[$object->name()] as $key => $overridenOBJ )
-                        {
-                            if( !$overridenOBJ->isAddress() )
-                            {
-                                $skip2 = TRUE;
-                                $skippedOBJ = $overridenOBJ;
-                                break;
-                            }
-                            if( $overridenOBJ->value() !== $object->value() )
-                            {
-                                $skip3 = TRUE;
-                                $skippedOBJ = $overridenOBJ;
-                                break;
-                            }
-                        }
-
-                        if( $skip2 )
-                        {
-                            PH::print_stdout("    - SKIP: object name '{$object->_PANC_shortName()}' as one ancestor is of type addressgroup");
-                            $this->skippedObject( $index, $object, $skippedOBJ, "ancestor of type addressgroup");
-                            continue;
-                        }
-                        if( $skip3 )
-                        {
-                            PH::print_stdout("    - SKIP: object name '{$object->_PANC_shortName()}' as one ancestor has same name, but different value");
-                            $this->skippedObject( $index, $object, $skippedOBJ, " ancestor has same name, but different value");
-                            continue;
-                        }
-                    }
-                    if( isset( $child_NamehashMap[$object->name()] ) )
-                    {
-                        $skip2 = FALSE;
-                        $skip3 = FALSE;
-                        $skippedOBJ = null;
-
-                        foreach( $child_NamehashMap[$object->name()] as $key => $overridenOBJ )
-                        {
-                            if( !$overridenOBJ->isAddress() )
-                            {
-                                $skip2 = TRUE;
-                                $skippedOBJ = $overridenOBJ;
-                                break;
-                            }
-                            if( $overridenOBJ->value() !== $object->value() )
-                            {
-                                $skip3 = TRUE;
-                                $skippedOBJ = $overridenOBJ;
-                                break;
-                            }
-                        }
-
-                        if( $skip2 )
-                        {
-                            PH::print_stdout("    - SKIP: object name '{$object->_PANC_shortName()}' as one ancestor is of type addressgroup");
-                            $this->skippedObject( $index, $object, $skippedOBJ, "ancestor of type addressgroup");
-                            continue;
-                        }
-                        if( $skip3 )
-                        {
-                            PH::print_stdout("    - SKIP: object name '{$object->_PANC_shortName()}' as one ancestor has same name, but different value");
-                            $this->skippedObject( $index, $object, $skippedOBJ, " ancestor has same name, but different value");
-                            continue;
-                        }
-                    }
+                    $checkHash = $this->address_hash_map_check( $index, $object, true, true, true );
+                    if( !$checkHash )
+                        continue;
 
                     if( $this->dupAlg == 'identical' )
                         if( $object->name() != $tmp_address->name() )
@@ -1879,151 +1782,20 @@ class MERGER extends UTIL
                 //todo: swaschkut 20241119
                 //another validation; is there a object with same name at child level???
                 //this needs to be added to different objetc types: adrgroup/service/srv-group
-                if( isset( $child_NamehashMap[$pickedObject->name()] ) )
-                {
-                    $skip2 = FALSE;
-                    $skip3 = FALSE;
-                    $skippedOBJ = null;
-                    foreach( $child_NamehashMap[$pickedObject->name()] as $key => $overrideOBJ )
-                    {
-                        if( !$overrideOBJ->isAddress() )
-                        {
-                            $skip2 = TRUE;
-                            $skippedOBJ = $overrideOBJ;
-                            break;
-                        }
-                        if( $overrideOBJ->value() !== $pickedObject->value() )
-                        {
-                            $skip3 = TRUE;
-                            $skippedOBJ = $overrideOBJ;
-                            break;
-                        }
-                    }
-
-                    if( $skip2 )
-                    {
-                        PH::print_stdout("    - SKIP: object name '{$pickedObject->_PANC_shortName()}' as one ancestor is of type addressgroup");
-                        $this->skippedObject( $index, $pickedObject, $skippedOBJ, "ancestor of type addressgroup");
-                        continue;
-                    }
-                    if( $skip3 )
-                    {
-                        PH::print_stdout("    - SKIP: object name '{$pickedObject->_PANC_shortName()}' as one childancestor has same name");
-                        $this->skippedObject( $index, $pickedObject, $skippedOBJ, " childancestor has same name");
-                        continue;
-                    }
-                }
+                #$checkHash = $this->address_hash_map_check( $index, $pickedObject, false, false, true );
+                $checkHash = $this->address_hash_map_check( $index, $pickedObject, true, true, true );
+                if( !$checkHash )
+                    continue;
 
                 // Merging loop finally!
                 foreach( $hash as $objectIndex => $object )
                 {
+                    //todo: swaschkut 20241119 validate
                     //validate if object with same name at upperlevel has same type / value
                     //if not it can be a problem if the upperlevel obejct is used in an upperlevel addressgroup and this address-group is used at same level as $object is located
-                    if( isset( $NamehashMap[$object->name()] ) )
-                    {
-                        $skip2 = FALSE;
-                        $skip3 = FALSE;
-                        $skippedOBJ = null;
-
-                        foreach( $NamehashMap[$object->name()] as $key => $overridenOBJ )
-                        {
-                            if( !$overridenOBJ->isAddress() )
-                            {
-                                $skip2 = TRUE;
-                                $skippedOBJ = $overridenOBJ;
-                                break;
-                            }
-                            if( $overridenOBJ->value() !== $object->value() )
-                            {
-                                $skip3 = TRUE;
-                                $skippedOBJ = $overridenOBJ;
-                                break;
-                            }
-                        }
-
-                        if( $skip2 )
-                        {
-                            PH::print_stdout("    - SKIP: object name '{$object->_PANC_shortName()}' as one ancestor is of type addressgroup");
-                            $this->skippedObject( $index, $object, $skippedOBJ, "ancestor of type addressgroup");
-                            continue;
-                        }
-                        if( $skip3 )
-                        {
-                            PH::print_stdout("    - SKIP: object name '{$object->_PANC_shortName()}' as one ancestor has same name, but different value");
-                            $this->skippedObject( $index, $object, $skippedOBJ, " ancestor has same name, but different value");
-                            continue;
-                        }
-                    }
-                    if( isset( $upper_NamehashMap[$object->name()] ) )
-                    {
-                        $skip2 = FALSE;
-                        $skip3 = FALSE;
-                        $skippedOBJ = null;
-
-                        foreach( $upper_NamehashMap[$object->name()] as $key => $overridenOBJ )
-                        {
-                            if( !$overridenOBJ->isAddress() )
-                            {
-                                $skip2 = TRUE;
-                                $skippedOBJ = $overridenOBJ;
-                                break;
-                            }
-                            if( $overridenOBJ->value() !== $object->value() )
-                            {
-                                $skip3 = TRUE;
-                                $skippedOBJ = $overridenOBJ;
-                                break;
-                            }
-                        }
-
-                        if( $skip2 )
-                        {
-                            PH::print_stdout("    - SKIP: object name '{$object->_PANC_shortName()}' as one ancestor is of type addressgroup");
-                            $this->skippedObject( $index, $object, $skippedOBJ, "ancestor of type addressgroup");
-                            continue;
-                        }
-                        if( $skip3 )
-                        {
-                            PH::print_stdout("    - SKIP: object name '{$object->_PANC_shortName()}' as one ancestor has same name, but different value");
-                            $this->skippedObject( $index, $object, $skippedOBJ, " ancestor has same name, but different value");
-                            continue;
-                        }
-                    }
-                    if( isset( $child_NamehashMap[$object->name()] ) )
-                    {
-                        $skip2 = FALSE;
-                        $skip3 = FALSE;
-                        $skippedOBJ = null;
-
-                        foreach( $child_NamehashMap[$object->name()] as $key => $overridenOBJ )
-                        {
-                            if( !$overridenOBJ->isAddress() )
-                            {
-                                $skip2 = TRUE;
-                                $skippedOBJ = $overridenOBJ;
-                                break;
-                            }
-                            if( $overridenOBJ->value() !== $object->value() )
-                            {
-                                $skip3 = TRUE;
-                                $skippedOBJ = $overridenOBJ;
-                                break;
-                            }
-                        }
-
-                        if( $skip2 )
-                        {
-                            PH::print_stdout("    - SKIP: object name '{$object->_PANC_shortName()}' as one ancestor is of type addressgroup");
-                            $this->skippedObject( $index, $object, $skippedOBJ, "ancestor of type addressgroup");
-                            continue;
-                        }
-                        if( $skip3 )
-                        {
-                            PH::print_stdout("    - SKIP: object name '{$object->_PANC_shortName()}' as one ancestor has same name, but different value");
-                            $this->skippedObject( $index, $object, $skippedOBJ, " ancestor has same name, but different value");
-                            continue;
-                        }
-                    }
+                    $checkHash = $this->address_hash_map_check( $index, $object, true, true, true );
+                    if( !$checkHash )
+                        continue;
 
                     /** @var Address $object */
                     if( isset($object->ancestor) )
@@ -2208,6 +1980,124 @@ class MERGER extends UTIL
             PH::print_stdout( "\n\nDuplicates removal is now done. Number of objects after cleanup: '{$store->countAddresses()}' (removed {$countRemoved} addresses)\n" );
 
         }    
+    }
+
+    function address_hash_map_check( $index, $object, $checkNamehashMap = false, $checkUpperhashMap = false, $checkChildhashMap = false )
+    {
+        if( $checkNamehashMap )
+        {
+            if (isset($NamehashMap[$object->name()]))
+            {
+                $skip2 = FALSE;
+                $skip3 = FALSE;
+                $skippedOBJ = null;
+
+                foreach ($NamehashMap[$object->name()] as $key => $overridenOBJ)
+                {
+                    if (!$overridenOBJ->isAddress())
+                    {
+                        $skip2 = TRUE;
+                        $skippedOBJ = $overridenOBJ;
+                        break;
+                    }
+                    if ($overridenOBJ->value() !== $object->value())
+                    {
+                        $skip3 = TRUE;
+                        $skippedOBJ = $overridenOBJ;
+                        break;
+                    }
+                }
+
+                if ($skip2)
+                {
+                    PH::print_stdout("    - SKIP: object name '{$object->_PANC_shortName()}' as one ancestor is of type addressgroup");
+                    $this->skippedObject($index, $object, $skippedOBJ, "ancestor of type addressgroup");
+                    return FALSE;//continue
+                }
+                if ($skip3)
+                {
+                    PH::print_stdout("    - SKIP: object name '{$object->_PANC_shortName()}' as one ancestor has same name, but different value");
+                    $this->skippedObject($index, $object, $skippedOBJ, " ancestor has same name, but different value");
+                    return FALSE;//continue
+                }
+            }
+        }
+
+        if( $checkUpperhashMap )
+        {
+            if (isset($upper_NamehashMap[$object->name()]))
+            {
+                $skip2 = FALSE;
+                $skip3 = FALSE;
+                $skippedOBJ = null;
+
+                foreach ($upper_NamehashMap[$object->name()] as $key => $overridenOBJ)
+                {
+                    if (!$overridenOBJ->isAddress()) {
+                        $skip2 = TRUE;
+                        $skippedOBJ = $overridenOBJ;
+                        break;
+                    }
+                    if ($overridenOBJ->value() !== $object->value()) {
+                        $skip3 = TRUE;
+                        $skippedOBJ = $overridenOBJ;
+                        break;
+                    }
+                }
+
+                if ($skip2)
+                {
+                    PH::print_stdout("    - SKIP: object name '{$object->_PANC_shortName()}' as one ancestor is of type addressgroup");
+                    $this->skippedObject($index, $object, $skippedOBJ, "ancestor of type addressgroup");
+                    return FALSE;//continue
+                }
+                if ($skip3)
+                {
+                    PH::print_stdout("    - SKIP: object name '{$object->_PANC_shortName()}' as one ancestor has same name, but different value");
+                    $this->skippedObject($index, $object, $skippedOBJ, " ancestor has same name, but different value");
+                    return FALSE;//continue
+                }
+            }
+        }
+
+        if( $checkChildhashMap )
+        {
+            if (isset($child_NamehashMap[$object->name()]))
+            {
+                $skip2 = FALSE;
+                $skip3 = FALSE;
+                $skippedOBJ = null;
+
+                foreach ($child_NamehashMap[$object->name()] as $key => $overridenOBJ)
+                {
+                    if (!$overridenOBJ->isAddress()) {
+                        $skip2 = TRUE;
+                        $skippedOBJ = $overridenOBJ;
+                        break;
+                    }
+                    if ($overridenOBJ->value() !== $object->value()) {
+                        $skip3 = TRUE;
+                        $skippedOBJ = $overridenOBJ;
+                        break;
+                    }
+                }
+
+                if ($skip2)
+                {
+                    PH::print_stdout("    - SKIP: object name '{$object->_PANC_shortName()}' as one ancestor is of type addressgroup");
+                    $this->skippedObject($index, $object, $skippedOBJ, "ancestor of type addressgroup");
+                    return FALSE;//continue
+                }
+                if ($skip3)
+                {
+                    PH::print_stdout("    - SKIP: object name '{$object->_PANC_shortName()}' as one ancestor has same name, but different value");
+                    $this->skippedObject($index, $object, $skippedOBJ, " ancestor has same name, but different value");
+                    return FALSE;//continue
+                }
+            }
+        }
+
+        return TRUE;
     }
 
     function address_tag_merge_check( $pickedObject, $ancestor, $index)
