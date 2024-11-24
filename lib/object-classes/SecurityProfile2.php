@@ -3,6 +3,17 @@
 class SecurityProfile2
 {
 
+    public function cloud_inline_analysis_define_bp_visibility()
+    {
+        $this->checkArray['virus'] = array();
+        $this->checkArray['virus']['cloud-inline']['bp']['inline-policy-action'] = array('enable');
+        $this->checkArray['spyware']['cloud-inline']['bp']['inline-policy-action'] = array('reset-both');
+        $this->checkArray['vulnerability']['cloud-inline']['bp']['inline-policy-action'] = array('reset-both');
+
+        $this->checkArray['virus']['cloud-inline']['visibility']['inline-policy-action'] = array('!disable');
+        $this->checkArray['spyware']['cloud-inline']['visibility']['inline-policy-action'] = array('!allow');
+        $this->checkArray['vulnerability']['cloud-inline']['visibility']['inline-policy-action'] = array('!allow');
+    }
 
     public function cloud_inline_analysis_best_practice()
     {

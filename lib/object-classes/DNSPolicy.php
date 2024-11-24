@@ -121,6 +121,18 @@ class DNSPolicy
         PH::print_stdout( $string );
     }
 
+    public function spyware_dns_define_bp_visibility()
+    {
+        $this->checkArray['spyware'] = array();
+        $this->checkArray['spyware']['dns']['bp']['action'][0]['type'] = array('pan-dns-sec-malware','pan-dns-sec-phishing');
+        $this->checkArray['spyware']['dns']['bp']['action'][0]['action'] = array('sinkhole');
+        $this->checkArray['spyware']['dns']['bp']['action'][0]['packet-capture'] = array('single-packet');
+
+        $this->checkArray['spyware']['dns']['bp']['action'][1]['type'] = array('pan-dns-sec-cc');
+        $this->checkArray['spyware']['dns']['bp']['action'][1]['action'] = array('sinkhole');
+        $this->checkArray['spyware']['dns']['bp']['action'][1]['packet-capture'] = array('extended-capture');
+    }
+
     public function spyware_dns_security_rule_bestpractice()
     {
         if( ( $this->name() == "pan-dns-sec-malware"

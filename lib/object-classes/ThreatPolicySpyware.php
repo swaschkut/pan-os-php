@@ -21,17 +21,34 @@
 
 class ThreatPolicySpyware extends ThreatPolicy
 {
+    public $checkArray;
+
     public function __construct($name, $owner)
     {
         parent::__construct($name, $owner);
     }
 
+    public function spyware_define_rule_bp_visibility()
+    {
+        $this->checkArray['spyware'] = array();
+        $this->checkArray['spyware']['rule']['bp']['severity'] = array('any', 'critical', 'high', 'medium');
+        $this->checkArray['spyware']['rule']['bp']['action'] = array('reset-both');
+        $this->checkArray['spyware']['rule']['bp']['packet-capture'] = array('single-packet', 'extended-capture');
+        $this->checkArray['spyware']['rule']['visibility']['severity'] = array('any', 'critical', 'high', 'medium','low','informational');
+        $this->checkArray['spyware']['rule']['visibility']['action'] = array('!allow');
+    }
+
+    public function spyware_rule_best_practice_new()
+    {
+
+    }
+
     public function spyware_rule_best_practice()
     {
         if( ( in_array( "any", $this->severity )
-                || in_array( "medium", $this->severity )
-                || in_array( "high", $this->severity )
                 || in_array( "critical", $this->severity )
+                || in_array( "high", $this->severity )
+                || in_array( "medium", $this->severity )
             )
             &&
             (
@@ -47,9 +64,11 @@ class ThreatPolicySpyware extends ThreatPolicy
     public function spyware_rule_visibility()
     {
         if( ( in_array( "any", $this->severity )
-                || in_array( "medium", $this->severity )
-                || in_array( "high", $this->severity )
                 || in_array( "critical", $this->severity )
+                || in_array( "high", $this->severity )
+                || in_array( "medium", $this->severity )
+                || in_array( "low", $this->severity )
+                || in_array( "informational", $this->severity )
             )
             && $this->action() == "allow"
             #&& ( $this->packetCapture() != "single-packet" && $this->packetCapture() != "extended-capture" )

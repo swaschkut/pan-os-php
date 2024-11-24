@@ -710,13 +710,7 @@ class AntiSpywareProfile extends SecurityProfile2
             $bp_set = null;
             if (!empty($this->rules_obj)) {
                 $bp_set = false;
-                /*
-                  "subquery1": "subquery1=((action eq reset-both) and ((severity has critical) and (category is.any)))",
-                  "subquery2": "subquery2=((action eq reset-both) and ((severity has high) and (category is.any)))",
-                  "subquery3": "subquery3=((action eq reset-both) and ((severity has medium) and (category is.any)))",
-                  "subquery4": "subquery4=((action eq default) and ((severity has low) and (category is.any)))",
-                  "subquery5": "subquery5=((action eq default) and ((severity has informational) and (category is.any)))",
-                 */
+
                 foreach ($this->rules_obj as $rulename => $rule) {
                     /** @var ThreatPolicySpyware $rule */
                     if ($rule->spyware_rule_best_practice())

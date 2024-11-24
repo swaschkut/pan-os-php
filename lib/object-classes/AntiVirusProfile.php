@@ -414,6 +414,25 @@ class AntiVirusProfile extends SecurityProfile2
         }
     }
 
+    public function virus_define_rule_bp_visibility()
+    {
+        $this->checkArray['virus'] = array();
+        $this->checkArray['virus']['rule']['bp']['action']['type'] = array('ftp', 'http', 'http2', 'smb');
+        $this->checkArray['virus']['rule']['bp']['action']['action'] = array('reset-both', 'default');
+        $this->checkArray['virus']['rule']['bp']['action']['action-not-matching-type'] = array('reset-both');
+        $this->checkArray['virus']['rule']['visibility']['action'] = array('!allow');
+
+        $this->checkArray['virus']['rule']['bp']['wildfire-action']['type'] = array('ftp', 'http', 'http2', 'smb');
+        $this->checkArray['virus']['rule']['bp']['wildfire-action']['action'] = array('reset-both', 'default');
+        $this->checkArray['virus']['rule']['bp']['wildfire-action']['action-not-matching-type'] = array('reset-both');
+        $this->checkArray['virus']['rule']['visibility']['wildfire-action'] = array('!allow');
+
+        $this->checkArray['virus']['rule']['bp']['mlav-action']['type'] = array('ftp', 'http', 'http2', 'smb');
+        $this->checkArray['virus']['rule']['bp']['mlav-action']['action'] = array('reset-both', 'default');
+        $this->checkArray['virus']['rule']['bp']['mlav-action']['action-not-matching-type'] = array('reset-both');
+        $this->checkArray['virus']['rule']['visibility']['mlav-action'] = array('!allow');
+    }
+
     public function av_action_best_practice()
     {
         $bestpractise = FALSE;
