@@ -739,8 +739,11 @@ class MERGER extends UTIL
                 $objectsToSearchThrough = $store->addressGroups();
 
             $hashMap = array();
+            $NamehashMap = array();
             $child_hashMap = array();
+            $child_NamehashMap = array();
             $upperHashMap = array();
+            $upper_NamehashMap = array();
 
             //todo: childDG/childDG to parentDG merge is always done; should it not combined to upperLevelSearch value?
             foreach( $childDeviceGroups as $dg )
@@ -843,6 +846,7 @@ class MERGER extends UTIL
 
                 $pickedObject = $this->PickObject( $hash );
 
+                //Todo: swaschkut 20241124 bring in hash map validation as for other objects types
 
                 $tmp_DG_name = $store->owner->name();
                 if( $tmp_DG_name == "" )
@@ -1035,6 +1039,8 @@ class MERGER extends UTIL
                     if( $tmp_address === null )
                         continue;
 
+                    //Todo: swaschkut 20241124 bring in hash map validation as for other objects types
+
                     if( isset( $object->childancestor ) )
                     {
                         $childancestor = $object->childancestor;
@@ -1132,6 +1138,9 @@ class MERGER extends UTIL
                 foreach( $hash as $object )
                 {
                     /** @var AddressGroup $object */
+
+                    //Todo: swaschkut 20241124 bring in hash map validation as for other objects types
+
                     if( isset($object->ancestor) )
                     {
                         $ancestor = $object->ancestor;
@@ -1782,12 +1791,12 @@ class MERGER extends UTIL
                 // Merging loop finally!
                 foreach( $hash as $objectIndex => $object )
                 {
-                    
+                    /** @var Address $object */
+
                     $checkHash = $this->address_service_hash_map_check( $index, $object, $NamehashMap, $upper_NamehashMap, $child_NamehashMap,true, true, true );
                     if( !$checkHash )
                         continue;
 
-                    /** @var Address $object */
                     if( isset($object->ancestor) )
                     {
                         $ancestor = $object->ancestor;
@@ -2357,7 +2366,11 @@ class MERGER extends UTIL
             }
 
             $hashMap = array();
+            $NamehashMap = array();
+            $child_hashMap = array();
+            $child_NamehashMap = array();
             $upperHashMap = array();
+            $upper_NamehashMap = array();
             foreach( $objectsToSearchThrough as $object )
             {
                 if( !$object->isGroup() )
@@ -2445,6 +2458,7 @@ class MERGER extends UTIL
 
                 $pickedObject = $this->PickObject( $hash );
 
+                //Todo: swaschkut 20241124 bring in hash map validation as for other objects types
 
                 $tmp_DG_name = $store->owner->name();
                 if( $tmp_DG_name == "" )
@@ -2563,6 +2577,8 @@ class MERGER extends UTIL
                     if( $tmp_service === null )
                         continue;
 
+                    //Todo: swaschkut 20241124 bring in hash map validation as for other objects types
+
                     if( $this->dupAlg == 'identical' )
                         if( $object->name() != $tmp_service->name() )
                         {
@@ -2619,12 +2635,15 @@ class MERGER extends UTIL
 
                 $pickedObject = $this->hashMapPickfilter( $upperHashMap, $index, $hash );
 
-                //todo: swaschkut 20241119 validate if group object with same name is not available at lower level
+                //Todo: swaschkut 20241124 bring in hash map validation as for other objects types
 
                 // Merging loop finally!
                 foreach( $hash as $object )
                 {
                     /** @var ServiceGroup $object */
+
+                    //Todo: swaschkut 20241124 bring in hash map validation as for other objects types
+
                     if( isset($object->ancestor) )
                     {
                         $ancestor = $object->ancestor;
@@ -2886,6 +2905,7 @@ class MERGER extends UTIL
                 $objectsToSearchThrough = $store->serviceObjects();
 
             $hashMap = array();
+            $NamehashMap = array();
             $child_hashMap = array();
             $child_NamehashMap = array();
             $upperHashMap = array();
@@ -2945,6 +2965,7 @@ class MERGER extends UTIL
                     if( $object->owner === $store )
                     {
                         $hashMap[$value][] = $object;
+                        $NamehashMap[$object->name()][] = $object;
                         if( $parentStore !== null )
                             $object->ancestor = self::findAncestor($parentStore, $object, "serviceStore");
 
@@ -2978,6 +2999,7 @@ class MERGER extends UTIL
                     if( $object->owner === $store )
                     {
                         $hashMap[$value][] = $object;
+                        $NamehashMap[$object->name()][] = $object;
                         if( $parentStore !== null )
                             $object->ancestor = self::findAncestor($parentStore, $object, "serviceStore");
                         $object->childancestor = self::findChildAncestor( $childDeviceGroups, $object, "serviceStore");
@@ -3022,6 +3044,9 @@ class MERGER extends UTIL
 
                     $pickedObject = $this->PickObject( $hash );
 
+                    $checkHash = $this->address_service_hash_map_check( $index, $pickedObject, $NamehashMap, $upper_NamehashMap, $child_NamehashMap,true, true, true );
+                    if( !$checkHash )
+                        continue;
 
                     $tmp_DG_name = $store->owner->name();
                     if( $tmp_DG_name == "" )
@@ -3087,6 +3112,7 @@ class MERGER extends UTIL
 
                             $value = $tmp_service->dstPortMapping()->mappingToText();
                             $hashMap[$value][] = $tmp_service;
+                            $NamehashMap[$tmp_service->name()][] = $tmp_service;
                         }
                         else
                             $tmp_service = "[".$tmp_DG_name."] - ".$pickedObject->name()." {new}";
@@ -3145,6 +3171,10 @@ class MERGER extends UTIL
                     foreach( $hash as $objectIndex => $object )
                     {
                         if( $tmp_service === null )
+                            continue;
+
+                        $checkHash = $this->address_service_hash_map_check( $index, $object, $NamehashMap, $upper_NamehashMap, $child_NamehashMap,true, true, true );
+                        if( !$checkHash )
                             continue;
 
                         //validate if object with same name at upperlevel has same type / value
@@ -3234,45 +3264,18 @@ class MERGER extends UTIL
 
                     $pickedObject = $this->hashMapPickfilter( $upperHashMap, $index, $hash );
 
-                    if( isset( $child_NamehashMap[$pickedObject->name()] ) )
-                    {
-                        $skip2 = FALSE;
-                        $skip3 = FALSE;
-                        $skippedOBJ = null;
-                        foreach( $child_NamehashMap[$pickedObject->name()] as $key => $overrideOBJ )
-                        {
-                            /** @var Service $overrideOBJ */
-                            if( !$overrideOBJ->isService() )
-                            {
-                                $skip2 = TRUE;
-                                $skippedOBJ = $overrideOBJ;
-                                break;
-                            }
-                            if( !$overrideOBJ->dstPortMapping()->equals($pickedObject->dstPortMapping()) || $overrideOBJ->protocol() != $pickedObject->protocol() )
-                            {
-                                $skip3 = TRUE;
-                                $skippedOBJ = $overrideOBJ;
-                                break;
-                            }
-                        }
+                    $checkHash = $this->address_service_hash_map_check( $index, $pickedObject, $NamehashMap, $upper_NamehashMap, $child_NamehashMap,true, true, true );
+                    if( !$checkHash )
+                        continue;
 
-                        if( $skip2 )
-                        {
-                            PH::print_stdout("    - SKIP: object name '{$pickedObject->_PANC_shortName()}' as one ancestor is of type servicegroup");
-                            $this->skippedObject( $index, $pickedObject, $skippedOBJ, "ancestor of type addressgroup");
-                            continue;
-                        }
-                        if( $skip3 )
-                        {
-                            PH::print_stdout("    - SKIP: object name '{$pickedObject->_PANC_shortName()}' as one childancestor has same name");
-                            $this->skippedObject( $index, $pickedObject, $skippedOBJ, " childancestor has same name");
-                            continue;
-                        }
-                    }
 
                     foreach( $hash as $object )
                     {
                         /** @var Service $object */
+
+                        $checkHash = $this->address_service_hash_map_check( $index, $object, $NamehashMap, $upper_NamehashMap, $child_NamehashMap,true, true, true );
+                        if( !$checkHash )
+                            continue;
 
                         if( isset($object->ancestor) )
                         {
@@ -3412,12 +3415,21 @@ class MERGER extends UTIL
 
 
                     $pickedObject = $this->PickObject( $hash);
+
+                    $checkHash = $this->address_service_hash_map_check( $index, $pickedObject, $NamehashMap, $upper_NamehashMap, $child_NamehashMap,true, true, true );
+                    if( !$checkHash )
+                        continue;
+
                     PH::print_stdout( "   * keeping object '{$pickedObject->_PANC_shortName()}'" );
 
 
                     foreach( $hash as $object )
                     {
                         /** @var Service $object */
+
+                        $checkHash = $this->address_service_hash_map_check( $index, $object, $NamehashMap, $upper_NamehashMap, $child_NamehashMap,true, true, true );
+                        if( !$checkHash )
+                            continue;
 
                         if( isset($object->ancestor) )
                         {
@@ -3567,9 +3579,11 @@ class MERGER extends UTIL
                 $objectsToSearchThrough = $store->tags();
 
             $hashMap = array();
+            $NamehashMap = array();
             $child_hashMap = array();
             $child_NamehashMap = array();
             $upperHashMap = array();
+            $upper_NamehashMap = array();
             if( $this->dupAlg == 'samecolor' || $this->dupAlg == 'identical' || $this->dupAlg == 'samename' )
             {
                 //todo: childDG/childDG to parentDG merge is always done; should it not combined to upperLevelSearch value?
@@ -3684,6 +3698,7 @@ class MERGER extends UTIL
 
                 $pickedObject = $this->PickObject( $hash);
 
+                //Todo: swaschkut 20241124 bring in hash map validation as for other objects types
 
                 $tmp_DG_name = $store->owner->name();
                 if( $tmp_DG_name == "" )
@@ -3790,11 +3805,15 @@ class MERGER extends UTIL
 
                 $pickedObject = $this->hashMapPickfilter( $upperHashMap, $index, $hash );
 
+                //Todo: swaschkut 20241124 bring in hashmap validation in same way as for address/service
 
                 // Merging loop finally!
                 foreach( $hash as $objectIndex => $object )
                 {
                     /** @var Tag $object */
+
+                    //Todo: swaschkut 20241124 bring in hash map validation as for other objects types
+
                     if( isset($object->ancestor) )
                     {
                         $ancestor = $object->ancestor;
@@ -4086,6 +4105,7 @@ class MERGER extends UTIL
 
                 $pickedObject = $this->PickObject( $hash);
 
+                //Todo: swaschkut 20241124 bring in hash map validation as for other objects types
 
                 $tmp_DG_name = $store->owner->name();
                 if( $tmp_DG_name == "" )
@@ -4153,6 +4173,8 @@ class MERGER extends UTIL
                 // Merging loop finally!
                 foreach( $hash as $objectIndex => $object )
                 {
+                    //Todo: swaschkut 20241124 bring in hash map validation as for other objects types
+
                     PH::print_stdout("    - replacing '{$object->_PANC_shortName()}' ...");
 
                     if( $this->action === "merge" )
@@ -4194,11 +4216,15 @@ class MERGER extends UTIL
 
                 $pickedObject = $this->hashMapPickfilter( $upperHashMap, $index, $hash );
 
+                //Todo: swaschkut 20241124 bring in hashmap validation as for other objects types
 
                 // Merging loop finally!
                 foreach( $hash as $objectIndex => $object )
                 {
                     /** @var customURLProfile $object */
+
+                    //Todo: swaschkut 20241124 bring in hash map validation as for other objects types
+
                     if( isset($object->ancestor) )
                     {
                         $ancestor = $object->ancestor;
@@ -4525,6 +4551,7 @@ class MERGER extends UTIL
 
                 $pickedObject = $this->PickObject( $hash);
 
+                //Todo: swaschkut 20241124 bring in hash map validation as for other objects types
 
                 $tmp_DG_name = $store->owner->name();
                 if( $tmp_DG_name == "" )
@@ -4595,6 +4622,8 @@ class MERGER extends UTIL
                 // Merging loop finally!
                 foreach( $hash as $objectIndex => $object )
                 {
+                    //Todo: swaschkut 20241124 bring in hash map validation as for other objects types
+
                     PH::print_stdout("    - replacing '{$object->_PANC_shortName()}' ...");
                     #$object->__replaceWhereIamUsed($this->apiMode, $tmp_tag, TRUE, 5);
                     if( $this->action === "merge" )
@@ -4627,11 +4656,15 @@ class MERGER extends UTIL
 
                 $pickedObject = $this->hashMapPickfilter( $upperHashMap, $index, $hash );
 
+                //Todo: swaschkut 20241124 bring in hash map validation as for other objects types
 
                 // Merging loop finally!
                 foreach( $hash as $objectIndex => $object )
                 {
                     /** @var Tag $object */
+
+                    //Todo: swaschkut 20241124 bring in hash map validation as for other objects types
+
                     if( isset($object->ancestor) )
                     {
                         $ancestor = $object->ancestor;
