@@ -2039,14 +2039,16 @@ class MERGER extends UTIL
 
                 if ($skip2)
                 {
+
                     PH::print_stdout("    - SKIP: object name '{$object->_PANC_shortName()}' as one ancestor is of type ".$tmp_string_obj_type);
-                    $this->skippedObject($index, $object, $skippedOBJ, "ancestor of type addressgroup");
+                    $this->skippedObject($index, $object, $skippedOBJ, "ancestor of type ".$tmp_string_obj_type);
+
                     return FALSE;//continue
                 }
                 if ($skip3)
                 {
-                    PH::print_stdout("    - SKIP: object name '{$object->_PANC_shortName()}' as one ancestor has same name, but different value");
-                    $this->skippedObject($index, $object, $skippedOBJ, " ancestor has same name, but different value");
+                    PH::print_stdout("    - SKIP: object name '{$object->_PANC_shortName()}' as one ".$key." ancestor has same name, but different value");
+                    $this->skippedObject($index, $object, $skippedOBJ, " ".$key." ancestor has same name, but different value");
                     return FALSE;//continue
                 }
             }
