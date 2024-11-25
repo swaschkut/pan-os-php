@@ -27,6 +27,7 @@ UTIL:
 * class AntiSpywareProfile | add default config if not avaialble for dns categories
 * type=address-merger | better validation for upper/childhashmap if same objectname with different type/value is available
 * type=address/service | introduce actions=name-rename-wrong-characerts
+* type=xml-issue | extend with searching for address/-group/service/-group names which include wrong non PAN-OS supported characters
 
 BUGFIX:
 * online method | bugfix for in=api:// | if your password does have special characters like @/! aso.l

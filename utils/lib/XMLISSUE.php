@@ -22,6 +22,8 @@ class XMLISSUE extends UTIL
 {
     public $region_array = array();
 
+    public $pregMatch_pattern_wrong_characters = '/[^\w $\-.]/';
+
     public function utilStart()
     {
         $this->usageMsg = PH::boldText("USAGE: ") . "php " . basename(__FILE__) . " in=api://[MGMT-IP-Address] ";
@@ -145,9 +147,11 @@ class XMLISSUE extends UTIL
         $countMissconfiguredAddressObjects = 0;
         $countMissconfiguredAddressRegionObjects = 0;
         $countAddressObjectsWithDoubleSpaces = 0;
+        $countAddressObjectsWithWrongCharacters = 0;
 
         $countMissconfiguredServiceObjects = 0;
         $countServiceObjectsWithDoubleSpaces = 0;
+        $countServiceObjectsWithWrongCharacters = 0;
         $countServiceObjectsWithNameappdefault = 0;
         $fixedServiceObjectsWithSameTag = 0;
 
@@ -228,7 +232,9 @@ class XMLISSUE extends UTIL
 
             $address_region = array();
             $address_name = array();
+            $address_wrong_name = array();
             $service_name = array();
+            $service_wrong_name = array();
             $service_name_appdefault = array();
             $secrule_name = array();
             $natrule_name = array();
@@ -246,6 +252,7 @@ class XMLISSUE extends UTIL
 
                     $this->check_region( $objectName, $objectNode, $address_region );
                     $this->check_name( $objectName, $objectNode, $address_name );
+                    $this->check_wrong_name( $objectName, $objectNode, $address_wrong_name );
 
                     $addressObjects[$objectName][] = $objectNode;
 
@@ -270,6 +277,7 @@ class XMLISSUE extends UTIL
 
                     $this->check_region( $objectName, $objectNode, $address_region );
                     $this->check_name( $objectName, $objectNode, $address_name );
+                    $this->check_wrong_name( $objectName, $objectNode, $address_wrong_name );
 
                     $addressGroups[$objectName][] = $objectNode;
 
@@ -304,6 +312,32 @@ class XMLISSUE extends UTIL
             {
                 PH::print_stdout( "    - address object '{$objectName}' from DG/VSYS {$locationName} has '  ' double Spaces in name, this causes problems by copy&past 'set commands' ... (*FIX_MANUALLY*) at XML line #{$node->getLineNo()}");
                 $countAddressObjectsWithDoubleSpaces++;
+            }
+
+            //
+            //
+            //
+            PH::print_stdout( " - Scanning for address / addressgroup with wrong characters in name...");
+            foreach( $address_wrong_name as $objectName => $node )
+            {
+                preg_match_all($this->pregMatch_pattern_wrong_characters, $objectName, $matches , PREG_SET_ORDER, 0);
+
+                $findings = array();
+                foreach( $matches as $match )
+                    $findings[$match[0]] = $match[0];
+                #print_r($findings);
+                PH::print_stdout( "    - address object '{$objectName}' from DG/VSYS {$locationName} has wrong characters in name, '".implode('', $findings)."' this causes commit issues  (*FIX_MANUALLY*) at XML line #{$node->getLineNo()}");
+
+                $newName = $objectName;
+                foreach( $findings as $replace )
+                    $newName = str_replace($replace, "_", $newName);
+
+                PH::print_stdout( "       oldname: '".$objectName."' | suggested newname: '".$newName."'\n" );
+                //xml-issue can not work on objects here :-)
+                #$node->setName($newName);
+
+
+                $countAddressObjectsWithWrongCharacters++;
             }
 
             //
@@ -668,6 +702,7 @@ class XMLISSUE extends UTIL
                     $objectName = $objectNode->getAttribute('name');
 
                     $this->check_name( $objectName, $objectNode, $service_name );
+                    $this->check_wrong_name( $objectName, $objectNode, $service_wrong_name );
                     $this->check_service_name_appdefault( $objectName, $objectNode, $service_name_appdefault );
 
                     if( strcmp( $objectName, "application-default") === 0 )
@@ -695,6 +730,7 @@ class XMLISSUE extends UTIL
                     $objectName = $objectNode->getAttribute('name');
 
                     $this->check_name( $objectName, $objectNode, $service_name );
+                    $this->check_wrong_name( $objectName, $objectNode, $service_wrong_name );
                     $this->check_service_name_appdefault( $objectName, $objectNode, $service_name_appdefault );
 
                     $serviceGroups[$objectName][] = $objectNode;
@@ -719,6 +755,30 @@ class XMLISSUE extends UTIL
             {
                 PH::print_stdout( "    - service object '{$objectName}' from DG/VSYS {$locationName} has '  ' double Spaces in name, this causes problems by copy&past 'set commands' ... (*FIX_MANUALLY*) at XML line #{$node->getLineNo()}");
                 $countServiceObjectsWithDoubleSpaces++;
+            }
+
+            //
+            //
+            //
+            PH::print_stdout( " - Scanning for service / servicegroup  with wrong characters in name...");
+            foreach( $service_wrong_name as $objectName => $node )
+            {
+                preg_match_all($this->pregMatch_pattern_wrong_characters, $objectName, $matches , PREG_SET_ORDER, 0);
+
+                $findings = array();
+                foreach( $matches as $match )
+                    $findings[$match[0]] = $match[0];
+                #print_r($findings);
+
+                PH::print_stdout( "    - service object '{$objectName}' from DG/VSYS {$locationName} has wrong characters in name, '".implode('', $findings)."' this causes commit issues  (*FIX_MANUALLY*) at XML line #{$node->getLineNo()}");
+
+                $newName = $objectName;
+                foreach( $findings as $replace )
+                    $newName = str_replace($replace, "_", $newName);
+
+                PH::print_stdout( "       oldname: '".$objectName."' | suggested newname: '".$newName."'\n" );
+
+                $countServiceObjectsWithWrongCharacters++;
             }
 
             //
@@ -1867,12 +1927,14 @@ class XMLISSUE extends UTIL
 
         PH::print_stdout( " - FIX_MANUALLY: missconfigured address objects: {$countMissconfiguredAddressObjects} (look in the logs)");
         PH::print_stdout( " - FIX_MANUALLY: address objects with double spaces in name: {$countAddressObjectsWithDoubleSpaces} (look in the logs)");
+        PH::print_stdout( " - FIX_MANUALLY: address objects with wrong Characters in name: {$countAddressObjectsWithWrongCharacters} (look in the logs)");
         PH::print_stdout( " - FIX_MANUALLY: address objects with same name as REGION: {$countMissconfiguredAddressRegionObjects} (look in the logs)");
         PH::print_stdout( " - FIX_MANUALLY: empty address-group: {$countEmptyAddressGroup} (look in the logs)");
         PH::print_stdout();
 
         PH::print_stdout( " - FIX_MANUALLY: missconfigured service objects: {$countMissconfiguredServiceObjects} (look in the logs)");
         PH::print_stdout( " - FIX_MANUALLY: service objects with double spaces in name: {$countServiceObjectsWithDoubleSpaces} (look in the logs)");
+        PH::print_stdout( " - FIX_MANUALLY: service objects with wrong Characters in name: {$countServiceObjectsWithWrongCharacters} (look in the logs)");
         PH::print_stdout( " - FIX_MANUALLY: service objects with name 'application-default': {$countServiceObjectsWithNameappdefault} (look in the logs)");
         PH::print_stdout( " - FIX_MANUALLY: empty service-group: {$countEmptyServiceGroup} (look in the logs)");
         PH::print_stdout();
@@ -1937,6 +1999,18 @@ class XMLISSUE extends UTIL
         {
             $address_name[ $name ] = $object;
         }
+    }
+
+    /**
+     * @param $name string
+     * @param $object DOMNode
+     * @param $address_name array
+     **/
+    function check_wrong_name( $name, $object, &$wrong_name )
+    {
+        preg_match_all($this->pregMatch_pattern_wrong_characters, $name, $matches , PREG_SET_ORDER, 0);
+        if( count($matches) > 0 )
+            $wrong_name[ $name ] = $object;
     }
 
     /**
