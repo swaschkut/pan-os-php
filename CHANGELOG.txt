@@ -51,6 +51,8 @@ GENERAL:
 * update to Device App-ID version: 8909-9044
 * Class AntiSpyware | adjust PAN-OS version check - all starting with PANOS 10.2
 * update to Device App-ID version: 8917-9092
+* update util action/filter | bp json file
+
 
 2.1.27 (20241011)
 UTIL:
