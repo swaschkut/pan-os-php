@@ -1206,6 +1206,7 @@ ServiceCallContext::$supportedActions[] = array(
             $findings[$match[0]] = $match[0];
 
         $newName = str_replace("&amp;", "_", $newName);
+        $newName = str_replace("–", "-", $newName);
         foreach( $findings as $replace )
             $newName = str_replace($replace, "_", $newName);
 

@@ -26,7 +26,7 @@ UTIL:
 * type=securityprofile securityprofiletype=url-filtering actions=url.alert-only-set | extend with credential-enforcement
 * class AntiSpywareProfile | add default config if not avaialble for dns categories
 * type=address-merger | better validation for upper/childhashmap if same objectname with different type/value is available
-* type=address/service | introduce actions=name-rename-wrong-characerts
+* type=address/service/rule | introduce 'filter=(name has.wrong.characters)' - actions=(name-Rename-wrong-characters)'
 * type=xml-issue | extend with searching for address/-group/service/-group names which include wrong non PAN-OS supported characters
 
 BUGFIX:

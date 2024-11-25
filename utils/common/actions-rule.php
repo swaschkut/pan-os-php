@@ -4034,6 +4034,68 @@ RuleCallContext::$supportedActions[] = array(
     ),
     'help' => ''
 );
+RuleCallContext::$supportedActions[] = array(
+    'name' => 'name-Rename-wrong-characters',
+    'MainFunction' => function (RuleCallContext $context) {
+        $object = $context->object;
+
+        $newName = htmlspecialchars_decode( $object->name() );
+        preg_match_all('/[^\w $\-.]/', $newName, $matches , PREG_SET_ORDER, 0);
+
+        if( count($matches) == 0 )
+            return;
+
+        $findings = array();
+        foreach( $matches as $match )
+            $findings[$match[0]] = $match[0];
+
+        $newName = str_replace("&amp;", "_", $newName);
+        $newName = str_replace("–", "-", $newName);
+        foreach( $findings as $replace )
+            $newName = str_replace($replace, "_", $newName);
+
+
+        if( $object->name() == $newName )
+        {
+            $string = "new name and old name are the same";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
+        $max_length = 63;
+        if( strlen($newName) > $max_length )
+        {
+            $string = "resulting name is too long";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
+        $newName = str_replace(",", "_", $newName);
+
+        $string = "new name will be '{$newName}'";
+        PH::ACTIONlog( $context, $string );
+
+        $findObject = $object->owner->find($newName, null, false);
+        if( $findObject !== null )
+        {
+            $string = "an object with same name already exists";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+        else
+        {
+            $string = $context->padding . " - renaming object... ";
+            if( $context->isAPI )
+                $object->API_setName($newName);
+            else
+                $object->setName($newName);
+
+            PH::ACTIONlog( $context, $string );
+        }
+
+    },
+    'help' => ''
+);
 
 RuleCallContext::$supportedActions[] = array(
     'name' => 'ruleType-Change',
