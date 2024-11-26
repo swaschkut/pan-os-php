@@ -32,7 +32,10 @@ class SecurityProfile2
                 {
                     foreach( $check_array['inline-policy-action'] as $validate )
                     {
-                        if( $name['inline-policy-action'] == $validate )
+                        $negate_string = "";
+                        if( strpos( $validate, "!" ) !== FALSE )
+                            $negate_string = "!";
+                        if( $negate_string.$name['inline-policy-action'] == $validate )
                             $bp_set = TRUE;
                         else
                             $bp_set = FALSE;
@@ -54,7 +57,10 @@ class SecurityProfile2
                 {
                     foreach( $check_array['inline-policy-action'] as $validate )
                     {
-                        if( $name['inline-policy-action'] == $validate )
+                        $negate_string = "";
+                        if( strpos( $validate, "!" ) !== FALSE )
+                            $negate_string = "!";
+                        if( $negate_string.$name['inline-policy-action'] == $validate )
                             $bp_set = TRUE;
                         else
                             $bp_set = FALSE;
@@ -79,7 +85,10 @@ class SecurityProfile2
             {
                 foreach( $check_array['inline-policy-action'] as $validate )
                 {
-                    if( $name['mlav-policy-action'] == $validate )
+                    $negate_string = "";
+                    if( strpos( $validate, "!" ) !== FALSE )
+                        $negate_string = "!";
+                    if( $negate_string.$name['mlav-policy-action'] == $validate )
                         $bp_set = TRUE;
                     else
                         $bp_set = FALSE;
@@ -115,7 +124,10 @@ class SecurityProfile2
                 {
                     foreach( $check_array['inline-policy-action'] as $validate )
                     {
-                        if( "!".$name['inline-policy-action'] == $validate )
+                        $negate_string = "";
+                        if( strpos( $validate, "!" ) !== FALSE )
+                            $negate_string = "!";
+                        if( $negate_string.$name['inline-policy-action'] == $validate )
                             $bp_set = FALSE;
                         else
                             $bp_set = TRUE;
@@ -137,7 +149,10 @@ class SecurityProfile2
                 {
                     foreach( $check_array['inline-policy-action'] as $validate )
                     {
-                        if( "!".$name['inline-policy-action'] == $validate )
+                        $negate_string = "";
+                        if( strpos( $validate, "!" ) !== FALSE )
+                            $negate_string = "!";
+                        if( $negate_string.$name['inline-policy-action'] == $validate )
                             $bp_set = FALSE;
                         else
                             $bp_set = TRUE;
@@ -162,7 +177,10 @@ class SecurityProfile2
             {
                 foreach( $check_array['inline-policy-action'] as $validate )
                 {
-                    if( "!".$name['mlav-policy-action'] == $validate )
+                    $negate_string = "";
+                    if( strpos( $validate, "!" ) !== FALSE )
+                        $negate_string = "!";
+                    if( $negate_string.$name['mlav-policy-action'] == $validate )
                         $bp_set = FALSE;
                     else
                         $bp_set = TRUE;
