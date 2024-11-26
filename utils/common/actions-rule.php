@@ -4195,7 +4195,7 @@ RuleCallContext::$supportedActions[] = array(
 
             if( $addResolvedServiceSummary )
             {
-                PH::$JSON_TMP['sub']['object'][$rule->name()]['srv_resolved_sum'] = $rule->ServiceResolveSummary($rule->owner->owner);
+                PH::$JSON_TMP['sub']['object'][$rule->name()]['srv_resolved_sum'] = $context->ServiceResolveSummary($rule);
                 PH::$JSON_TMP['sub']['object'][$rule->name()]['srv_resolved_nested_name'] = $context->ServiceResolveNameNestedSummary( $rule );
                 PH::$JSON_TMP['sub']['object'][$rule->name()]['srv_resolved_nested_value'] = $context->ServiceResolveValueNestedSummary( $rule );
             }

@@ -43,6 +43,7 @@ BUGFIX:
 * type=rule-compare | bugfix if EDL are used
 * type=address 'filter=(object is.unused / is.unused.recursive)' | bugfix to search correct upper addressgroup
 * type=address-merger | extend validation if pickedobject name is overriden at childDG level with different value
+* type=rule actions=exporttoexcel:file.html,serviceresolvesummary | bugfix to calculate correct mapping
 
 GENERAL:
 * improve different network classes for IPv6 | improve for Panroama Template object usage in network classes

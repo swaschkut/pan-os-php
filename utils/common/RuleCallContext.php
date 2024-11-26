@@ -456,7 +456,7 @@ class RuleCallContext extends CallContext
 
         if( $fieldName == 'service_resolved_sum' )
         {
-            $port_mapping_text = $rule->ServiceResolveSummary( $rule->owner->owner );
+            $port_mapping_text = $this->ServiceResolveSummary( $rule );
             return self::enclose($port_mapping_text);
         }
 
@@ -1531,10 +1531,57 @@ class RuleCallContext extends CallContext
         return $calculatedCounter;
     }
 
+    public function ServiceResolveSummary( $rule )
+    {
+        $mapObject = new ServiceDstPortMapping();
+        if( $rule->services->isAny() )
+        {
+            $localMap = ServiceDstPortMapping::mappingFromText('0-65535', TRUE);
+            $mapObject->mergeWithMapping($localMap);
+            $localMap = ServiceDstPortMapping::mappingFromText('0-65535', FALSE);
+            $mapObject->mergeWithMapping($localMap);
+        }
+
+
+        $allMembers = $rule->services->getAll();
+        $strMapping = array();
+        foreach($allMembers as $member)
+        {
+            if( $member->isGroup() )
+            {
+                $tmp_array = array();
+                $members = $member->expand(FALSE, $tmp_array, $rule->owner->owner);
+                foreach( $members as $member )
+                {
+                    $tmp_member = $rule->owner->owner->serviceStore->find($member->name());
+
+                    $localMap = $tmp_member->dstPortMapping( array(), $rule->owner->owner );
+                    $mapObject->mergeWithMapping($localMap);
+                }
+            }
+            else
+            {
+                $tmp_member = $rule->owner->owner->serviceStore->find($member->name());
+
+                $localMap = $tmp_member->dstPortMapping( array(), $rule->owner->owner );
+                $mapObject->mergeWithMapping($localMap);
+            }
+
+        }
+
+
+        $strMapping = explode(',', $mapObject->mappingToText());
+
+        if( count( $strMapping) === 1 && empty( $strMapping[0] ) )
+            $strMapping = array();
+
+        return $strMapping;
+    }
+
     public function ServiceResolveValueNestedSummary( $rule )
     {
         if( $rule->services->isAny() )
-            return array( '0.0.0.0/0', '::0-ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff');
+            return array('tcp/0-65535', 'udp/0-65535');
 
         $allMembers = $rule->services->getAll();
         $strMapping = array();
