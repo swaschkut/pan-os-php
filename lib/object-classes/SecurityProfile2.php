@@ -3,6 +3,7 @@
 class SecurityProfile2
 {
 
+    //delete it, everything is coming from JSON now
     public function cloud_inline_analysis_define_bp_visibility()
     {
         $this->checkArray['virus'] = array();
@@ -222,14 +223,11 @@ class SecurityProfile2
         if( $details === null )
             derr( "invalid JSON file provided", null, FALSE );
 
-        #print_r($details);
-
         if( isset($details[$secprof_type]['cloud-inline']) )
         {
             if( $checkType == "bp" )
             {
                 if( isset($details[$secprof_type]['cloud-inline']['bp']['inline-policy-action']) )
-                    #$checkArray = $details[$secprof_type]['cloud-inline']['bp']['inline-policy-action']."\n";
                     $checkArray = $details[$secprof_type]['cloud-inline']['bp'];
                 else
                     derr( "this JSON bp/visibility JSON file does not have 'bp' -> 'inline-policy-action' defined correctly for: '".$secprof_type."'", null, FALSE );
@@ -237,7 +235,6 @@ class SecurityProfile2
             elseif( $checkType == "visibility")
             {
                 if( isset($details[$secprof_type]['cloud-inline']['visibility']['inline-policy-action']) )
-                    #$checkArray[] = $details[$secprof_type]['cloud-inline']['visibility']['inline-policy-action']."\n";
                     $checkArray = $details[$secprof_type]['cloud-inline']['visibility'];
                 else
                     derr( "this JSON bp/visibility JSON file does not have 'visibility' -> 'inline-policy-action' defined correctly for: '".$secprof_type."'", null, FALSE );

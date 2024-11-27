@@ -414,23 +414,106 @@ class AntiVirusProfile extends SecurityProfile2
         }
     }
 
-    public function virus_define_rule_bp_visibility()
+
+    public function virus_bp_visibility_JSON( $checkType, $av_action_type )
     {
-        $this->checkArray['virus'] = array();
-        $this->checkArray['virus']['rule']['bp']['action']['type'] = array('ftp', 'http', 'http2', 'smb');
-        $this->checkArray['virus']['rule']['bp']['action']['action'] = array('reset-both', 'default');
-        $this->checkArray['virus']['rule']['bp']['action']['action-not-matching-type'] = array('reset-both');
-        $this->checkArray['virus']['rule']['visibility']['action'] = array('!allow');
+        #print "checktype: ".$checkType." -".$av_action_type."\n";
+        //Todo: swaschkut 20241126
+        //if file already read store it complete at UTIL and read array from there
 
-        $this->checkArray['virus']['rule']['bp']['wildfire-action']['type'] = array('ftp', 'http', 'http2', 'smb');
-        $this->checkArray['virus']['rule']['bp']['wildfire-action']['action'] = array('reset-both', 'default');
-        $this->checkArray['virus']['rule']['bp']['wildfire-action']['action-not-matching-type'] = array('reset-both');
-        $this->checkArray['virus']['rule']['visibility']['wildfire-action'] = array('!allow');
+        $secprof_type = "virus";
+        $checkArray = array();
 
-        $this->checkArray['virus']['rule']['bp']['mlav-action']['type'] = array('ftp', 'http', 'http2', 'smb');
-        $this->checkArray['virus']['rule']['bp']['mlav-action']['action'] = array('reset-both', 'default');
-        $this->checkArray['virus']['rule']['bp']['mlav-action']['action-not-matching-type'] = array('reset-both');
-        $this->checkArray['virus']['rule']['visibility']['mlav-action'] = array('!allow');
+        if( $checkType !== "bp" && $checkType !== "visibility" )
+            derr( "only 'bp' or 'visibility' argument allowed" );
+
+        if( $av_action_type !== "action" && $av_action_type !== "wildfire-action" && $av_action_type !== "mlav-action")
+            derr( "only 'action' or 'wildfire-action' or 'mlav-action' argument allowed as av_action_type" );
+
+        ###############################
+        //add bp JSON filename to UTIL???
+        //so this can be flexible if customer like to use its own file
+
+        //get actual file space
+        $filename = dirname(__FILE__)."/../../utils/api/v1/bp/bp_sp_panw.json";
+        $JSONarray = file_get_contents( $filename);
+
+        if( $JSONarray === false )
+            derr("cannot open file '{$filename}");
+
+        $details = json_decode($JSONarray, true);
+
+        if( $details === null )
+            derr( "invalid JSON file provided", null, FALSE );
+
+        if( isset($details[$secprof_type]['rule']) )
+        {
+            if( $checkType == "bp" )
+            {
+                if( isset($details[$secprof_type]['rule']['bp'][$av_action_type]))
+                    $checkArray = $details[$secprof_type]['rule']['bp'][$av_action_type];
+                else
+                    derr( "this JSON bp/visibility JSON file does not have 'bp' -> 'rule' defined correctly for: '".$secprof_type."' '".[$av_action_type]."'", null, FALSE );
+            }
+            elseif( $checkType == "visibility")
+            {
+                if( isset($details[$secprof_type]['rule']['visibility'][$av_action_type]))
+                    $checkArray = $details[$secprof_type]['rule']['visibility'][$av_action_type];
+                else
+                    derr( "this JSON bp/visibility JSON file does not have 'visibility' -> 'rule' defined correctly for: '".$secprof_type."' '".[$av_action_type]."'", null, FALSE );
+            }
+        }
+
+        return $checkArray;
+    }
+
+    public function check_bp_json($av_type, $check_array, $av_type_action)
+    {
+        if (in_array($av_type, $check_array['type']))
+        {
+            //action check
+            foreach ($check_array['action'] as $validate_action)
+            {
+                $negate_string = "";
+                if (strpos($validate_action, "!") !== FALSE)
+                    $negate_string = "!";
+                if ($negate_string . $this->$av_type[$av_type_action] === $validate_action)
+                    $bestpractise = TRUE;
+                else
+                    $bestpractise = FALSE;
+            }
+        }
+        else
+        {
+            foreach ($check_array['action-not-matching-type'] as $validate_action)
+            {
+                $negate_string = "";
+                if (strpos($validate_action, "!") !== FALSE)
+                    $negate_string = "!";
+                if ($negate_string . $this->$av_type[$av_type_action] === $validate_action)
+                    $bestpractise = TRUE;
+                else
+                    $bestpractise = FALSE;
+            }
+        }
+
+        return $bestpractise;
+    }
+
+    public function check_visibility_json($av_type, $check_array, $av_type_action)
+    {
+        foreach( $check_array as $validate )
+        {
+            $negate_string = "";
+            if( strpos($validate, "!" ) !== FALSE )
+                $negate_string = "!";
+            if( $negate_string.$this->$av_type[$av_type_action] === $validate)
+                $bestpractise = FALSE;
+            else
+                $bestpractise = TRUE;
+        }
+
+        return $bestpractise;
     }
 
     public function av_action_best_practice()
@@ -440,23 +523,19 @@ class AntiVirusProfile extends SecurityProfile2
         if( $this->secprof_type != 'virus' )
             return null;
 
+        $av_type_action = "action";
+        $check_array = $this->virus_bp_visibility_JSON( "bp", $av_type_action );
+
         if( isset($this->tmp_virus_prof_array) )
         {
             foreach( $this->tmp_virus_prof_array as $key => $type )
             {
-                if( isset($this->$type['action']) )
+                if( isset( $this->$type[$av_type_action] ) )
                 {
-                    if ($type == "ftp" || $type == "http" || $type == "http2" || $type == "smb") {
-                        if ($this->$type['action'] == "reset-both" || $this->$type['action'] == "default")
-                            $bestpractise = TRUE;
-                        else
-                            return False;
-                    } else {
-                        if ($this->$type['action'] == "reset-both")
-                            $bestpractise = TRUE;
-                        else
-                            return FALSE;
-                    }
+                    $bestpractise = $this->check_bp_json($type, $check_array, $av_type_action);
+
+                    if ($bestpractise == FALSE)
+                        return FALSE;
                 }
             }
         }
@@ -471,23 +550,27 @@ class AntiVirusProfile extends SecurityProfile2
         if( $this->secprof_type != 'virus' )
             return null;
 
+        $av_type_action = "action";
+        $check_array = $this->virus_bp_visibility_JSON( "visibility", $av_type_action );
+
         if( isset($this->tmp_virus_prof_array) )
         {
             foreach( $this->tmp_virus_prof_array as $key => $type )
             {
                 if( isset($this->$type['action']) )
                 {
-                    if ($type == "ftp" || $type == "http" || $type == "http2" || $type == "smb") {
-                        if ($this->$type['action'] !== "allow")
-                            $bestpractise = TRUE;
+                    foreach( $check_array as $validate )
+                    {
+                        $negate_string = "";
+                        if( strpos($validate, "!" ) !== FALSE )
+                            $negate_string = "!";
+                        if( $negate_string.$this->$type['action'] === $validate)
+                            $bestpractise = FALSE;
                         else
-                            return False;
-                    } else {
-                        if ($this->$type['action'] !== "allow")
                             $bestpractise = TRUE;
-                        else
-                            return FALSE;
                     }
+                    if($bestpractise == FALSE)
+                        return FALSE;
                 }
             }
         }
@@ -502,26 +585,19 @@ class AntiVirusProfile extends SecurityProfile2
         if( $this->secprof_type != 'virus' )
             return null;
 
+        $av_type_action = "wildfire-action";
+        $check_array = $this->virus_bp_visibility_JSON( "bp", $av_type_action );
+
         if( isset($this->tmp_virus_prof_array) )
         {
             foreach( $this->tmp_virus_prof_array as $key => $type )
             {
-                if( isset( $this->$type['wildfire-action'] ) )
+                if( isset( $this->$type[$av_type_action] ) )
                 {
-                    if( $type == "ftp" || $type == "http" || $type == "http2" || $type == "smb" )
-                    {
-                        if( $this->$type['wildfire-action'] == "reset-both" || $this->$type['wildfire-action'] == "default" )
-                            $bestpractise = TRUE;
-                        else
-                            return False;
-                    }
-                    else
-                    {
-                        if( $this->$type['wildfire-action'] == "reset-both" )
-                            $bestpractise = TRUE;
-                        else
-                            return False;
-                    }
+                    $bestpractise = $this->check_bp_json($type, $check_array, $av_type_action);
+
+                    if ($bestpractise == FALSE)
+                        return FALSE;
                 }
             }
         }
@@ -536,26 +612,27 @@ class AntiVirusProfile extends SecurityProfile2
         if( $this->secprof_type != 'virus' )
             return null;
 
+        $av_type_action = "wildfire-action";
+        $check_array = $this->virus_bp_visibility_JSON( "visibility", $av_type_action );
+
         if( isset($this->tmp_virus_prof_array) )
         {
             foreach( $this->tmp_virus_prof_array as $key => $type )
             {
                 if( isset( $this->$type['wildfire-action'] ) )
                 {
-                    if( $type == "ftp" || $type == "http" || $type == "http2" || $type == "smb" )
+                    foreach( $check_array as $validate )
                     {
-                        if( $this->$type['wildfire-action'] !== "allow" )
-                            $bestpractise = TRUE;
+                        $negate_string = "";
+                        if( strpos($validate, "!" ) !== FALSE )
+                            $negate_string = "!";
+                        if( $negate_string.$this->$type['wildfire-action'] === $validate)
+                            $bestpractise = FALSE;
                         else
-                            return False;
-                    }
-                    else
-                    {
-                        if( $this->$type['wildfire-action'] !== "allow" )
                             $bestpractise = TRUE;
-                        else
-                            return False;
                     }
+                    if($bestpractise == FALSE)
+                        return FALSE;
                 }
             }
         }
@@ -570,26 +647,19 @@ class AntiVirusProfile extends SecurityProfile2
         if( $this->secprof_type != 'virus' )
             return null;
 
+        $av_type_action = "mlav-action";
+        $check_array = $this->virus_bp_visibility_JSON( "bp", $av_type_action );
+
         if( isset($this->tmp_virus_prof_array) )
         {
             foreach( $this->tmp_virus_prof_array as $key => $type )
             {
-                if( isset( $this->$type['mlav-action'] ) )
+                if( isset( $this->$type[$av_type_action] ) )
                 {
-                    if( $type == "ftp" || $type == "http" || $type == "http2" || $type == "smb" )
-                    {
-                        if( $this->$type['mlav-action'] == "reset-both" || $this->$type['mlav-action'] == "default" )
-                            $bestpractise = TRUE;
-                        else
-                            return False;
-                    }
-                    else
-                    {
-                        if( $this->$type['mlav-action'] == "reset-both" )
-                            $bestpractise = TRUE;
-                        else
-                            return False;
-                    }
+                    $bestpractise = $this->check_bp_json($type, $check_array, $av_type_action);
+
+                    if($bestpractise == FALSE)
+                        return FALSE;
                 }
             }
         }
@@ -597,12 +667,14 @@ class AntiVirusProfile extends SecurityProfile2
         return $bestpractise;
     }
 
-    public function av_mlavaction_visibility()
+    public function av_mlavaction_is_visibility()
     {
         $bestpractise = FALSE;
 
         if( $this->secprof_type != 'virus' )
             return null;
+
+        $check_array = $this->virus_bp_visibility_JSON( "visibility", "mlav-action" );
 
         if( isset($this->tmp_virus_prof_array) )
         {
@@ -610,20 +682,19 @@ class AntiVirusProfile extends SecurityProfile2
             {
                 if( isset( $this->$type['mlav-action'] ) )
                 {
-                    if( $type == "ftp" || $type == "http" || $type == "http2" || $type == "smb" )
+                    foreach( $check_array as $validate )
                     {
-                        if( $this->$type['mlav-action'] !== "allow" )
-                            $bestpractise = TRUE;
+                        $negate_string = "";
+                        if( strpos($validate, "!" ) !== FALSE )
+                            $negate_string = "!";
+                        if( $negate_string.$this->$type['mlav-action'] === $validate)
+                            $bestpractise = FALSE;
                         else
-                            return False;
-                    }
-                    else
-                    {
-                        if( $this->$type['mlav-action'] !== "allow" )
                             $bestpractise = TRUE;
-                        else
-                            return False;
                     }
+
+                    if($bestpractise == FALSE)
+                        return FALSE;
                 }
             }
         }
@@ -658,7 +729,7 @@ class AntiVirusProfile extends SecurityProfile2
     {
         if( $this->owner->owner->version >= 102 )
         {
-            if ($this->av_action_visibility() && $this->av_wildfireaction_visibility() && $this->av_mlavaction_visibility()
+            if ($this->av_action_visibility() && $this->av_wildfireaction_visibility() && $this->av_mlavaction_is_visibility()
                 && $this->cloud_inline_analysis_visibility()
             )
                 return TRUE;
@@ -667,7 +738,7 @@ class AntiVirusProfile extends SecurityProfile2
         }
         else
         {
-            if ($this->av_action_visibility() && $this->av_wildfireaction_visibility() && $this->av_mlavaction_visibility()
+            if ($this->av_action_visibility() && $this->av_wildfireaction_visibility() && $this->av_mlavaction_is_visibility()
             )
                 return TRUE;
             else

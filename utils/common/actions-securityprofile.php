@@ -771,7 +771,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         }
                         if( $visibility )
                         {
-                            if( $object->av_action_visibility() && $object->av_wildfireaction_visibility() && $object->av_mlavaction_visibility() )
+                            if( $object->av_action_visibility() && $object->av_wildfireaction_visibility() && $object->av_mlavaction_is_visibility() )
                                 $lines .= $context->encloseFunction($bp_text_yes.' Visibility AV actions set');
                             else
                                 $lines .= $context->encloseFunction($bp_text_no.' NO Visibility AV actions');

@@ -28,6 +28,7 @@ UTIL:
 * type=address-merger | better validation for upper/childhashmap if same objectname with different type/value is available
 * type=address/service/rule | introduce 'filter=(name has.wrong.characters)' - actions=(name-Rename-wrong-characters)'
 * type=xml-issue | extend with searching for address/-group/service/-group names which include wrong non PAN-OS supported characters
+* class AntiVirusProfile | introduce bp JSON file reading
 
 BUGFIX:
 * online method | bugfix for in=api:// | if your password does have special characters like @/! aso.l
