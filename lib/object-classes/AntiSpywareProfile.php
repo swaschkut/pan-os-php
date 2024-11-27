@@ -727,26 +727,16 @@ class AntiSpywareProfile extends SecurityProfile2
                             {
                                 foreach( $validation['action'] as $check_action)
                                 {
-                                    if ( $array['action'] == $check_action )
-                                    {
+                                    $negate_string = "";
+                                    if( strpos( $check_action, "!" ) !== FALSE )
+                                        $negate_string = "!";
+                                    if ( $negate_string.$array['action'] == $check_action )
                                         return TRUE;
-                                    }
                                 }
                             }
                         }
                     }
                 }
-
-                /*
-                if( $name == "default-paloalto-dns" )
-                {
-                    if( isset($array['action']) )
-                    {
-                        if ( $array['action'] == "sinkhole" )
-                            return TRUE;
-                    }
-                }
-                */
             }
         }
 
@@ -772,16 +762,22 @@ class AntiSpywareProfile extends SecurityProfile2
                         {
                             if( isset($array['action']) )
                             {
+                                $check_result = FALSE;
                                 foreach( $validation['action'] as $check_action)
                                 {
                                     $negate_string = "";
                                     if( strpos( $check_action, "!" ) !== FALSE )
                                         $negate_string = "!";
                                     if ( $negate_string.$array['action'] == $check_action )
-                                        return FALSE;
+                                        $check_result =  FALSE;
                                     else
-                                        return TRUE;
+                                        $check_result = TRUE;
                                 }
+
+                                if( $check_result )
+                                    return TRUE;
+                                else
+                                    return FALSE;
                             }
                         }
                     }
