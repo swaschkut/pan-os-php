@@ -2,20 +2,6 @@
 
 class SecurityProfile2
 {
-
-    //delete it, everything is coming from JSON now
-    public function cloud_inline_analysis_define_bp_visibility()
-    {
-        $this->checkArray['virus'] = array();
-        $this->checkArray['virus']['cloud-inline']['bp']['inline-policy-action'] = array('enable');
-        $this->checkArray['spyware']['cloud-inline']['bp']['inline-policy-action'] = array('reset-both');
-        $this->checkArray['vulnerability']['cloud-inline']['bp']['inline-policy-action'] = array('reset-both');
-
-        $this->checkArray['virus']['cloud-inline']['visibility']['inline-policy-action'] = array('!disable');
-        $this->checkArray['spyware']['cloud-inline']['visibility']['inline-policy-action'] = array('!allow');
-        $this->checkArray['vulnerability']['cloud-inline']['visibility']['inline-policy-action'] = array('!allow');
-    }
-
     public function cloud_inline_analysis_best_practice()
     {
         $bp_set = FALSE;
@@ -43,12 +29,6 @@ class SecurityProfile2
                     }
                     if($bp_set == FALSE)
                         return false;
-                    /*
-                     if( $name['inline-policy-action'] == "reset-both" )
-                            $bp_set = TRUE;
-                       else
-                           return FALSE;
-                     */
                 }
             }
 
@@ -68,12 +48,6 @@ class SecurityProfile2
                     }
                     if($bp_set == FALSE)
                         return false;
-                    /*
-                    if( $name['inline-policy-action'] == "reset-both" )
-                        $bp_set = TRUE;
-                    else
-                        return FALSE;
-                    */
                 }
             }
         }
@@ -96,12 +70,6 @@ class SecurityProfile2
                 }
                 if($bp_set == FALSE)
                     return false;
-                /*
-                if( $name['mlav-policy-action'] == "enable" )
-                    $bp_set = TRUE;
-                else
-                    return FALSE;
-                */
             }
         }
 
@@ -135,12 +103,6 @@ class SecurityProfile2
                     }
                     if($bp_set == FALSE)
                         return FALSE;
-                    /*
-                    if( $name['inline-policy-action'] == "allow" )
-                        return FALSE;
-                    else
-                        $bp_set =  TRUE;
-                    */
                 }
             }
 
@@ -160,12 +122,6 @@ class SecurityProfile2
                     }
                     if($bp_set == FALSE)
                         return FALSE;
-                    /*
-                    if( $name['inline-policy-action'] == "allow" )
-                        return FALSE;
-                    else
-                        $bp_set =  TRUE;
-                    */
                 }
             }
         }
@@ -188,12 +144,6 @@ class SecurityProfile2
                 }
                 if($bp_set == FALSE)
                     return false;
-                /*
-                if( $name['mlav-policy-action'] == "disable" )
-                    return FALSE;
-                else
-                    $bp_set =  TRUE;
-                */
             }
         }
 
