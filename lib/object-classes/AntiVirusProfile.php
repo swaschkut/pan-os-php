@@ -467,7 +467,7 @@ class AntiVirusProfile extends SecurityProfile2
         return $checkArray;
     }
 
-    public function check_bp_json($av_type, $check_array, $av_type_action)
+    public function check_bp_json($av_type, $check_array, $av_action_type)
     {
         if (in_array($av_type, $check_array['type']))
         {
@@ -477,7 +477,7 @@ class AntiVirusProfile extends SecurityProfile2
                 $negate_string = "";
                 if (strpos($validate_action, "!") !== FALSE)
                     $negate_string = "!";
-                if ($negate_string . $this->$av_type[$av_type_action] === $validate_action)
+                if ($negate_string . $this->$av_type[$av_action_type] === $validate_action)
                     $bestpractise = TRUE;
                 else
                     $bestpractise = FALSE;
@@ -490,7 +490,7 @@ class AntiVirusProfile extends SecurityProfile2
                 $negate_string = "";
                 if (strpos($validate_action, "!") !== FALSE)
                     $negate_string = "!";
-                if ($negate_string . $this->$av_type[$av_type_action] === $validate_action)
+                if ($negate_string . $this->$av_type[$av_action_type] === $validate_action)
                     $bestpractise = TRUE;
                 else
                     $bestpractise = FALSE;
@@ -500,14 +500,14 @@ class AntiVirusProfile extends SecurityProfile2
         return $bestpractise;
     }
 
-    public function check_visibility_json($av_type, $check_array, $av_type_action)
+    public function check_visibility_json($av_type, $check_array, $av_action_type)
     {
         foreach( $check_array as $validate )
         {
             $negate_string = "";
             if( strpos($validate, "!" ) !== FALSE )
                 $negate_string = "!";
-            if( $negate_string.$this->$av_type[$av_type_action] === $validate)
+            if( $negate_string.$this->$av_type[$av_action_type] === $validate)
                 $bestpractise = FALSE;
             else
                 $bestpractise = TRUE;
@@ -518,189 +518,41 @@ class AntiVirusProfile extends SecurityProfile2
 
     public function av_action_best_practice()
     {
-        /*
-        $bestpractise = FALSE;
-
-        if( $this->secprof_type != 'virus' )
-            return null;
-
-        $av_type_action = "action";
-        $check_array = $this->virus_bp_visibility_JSON( "bp", $av_type_action );
-
-        if( isset($this->tmp_virus_prof_array) )
-        {
-            foreach( $this->tmp_virus_prof_array as $key => $type )
-            {
-                if( isset( $this->$type[$av_type_action] ) )
-                {
-                    $bestpractise = $this->check_bp_json($type, $check_array, $av_type_action);
-
-                    if ($bestpractise == FALSE)
-                        return FALSE;
-                }
-            }
-        }
-
-
-        return $bestpractise;
-        */
         return $this->av_general_action_best_practice( "action" );
     }
 
     public function av_action_visibility()
     {
-        /*
-        $bestpractise = FALSE;
-
-        if( $this->secprof_type != 'virus' )
-            return null;
-
-        $av_type_action = "action";
-        $check_array = $this->virus_bp_visibility_JSON( "visibility", $av_type_action );
-
-        if( isset($this->tmp_virus_prof_array) )
-        {
-            foreach( $this->tmp_virus_prof_array as $key => $type )
-            {
-                if( isset($this->$type['action']) )
-                {
-                    $bestpractise = $this->check_visibility_json($type, $check_array, $av_type_action);
-
-                    if($bestpractise == FALSE)
-                        return FALSE;
-                }
-            }
-        }
-
-        return $bestpractise;
-        */
         return $this->av_general_action_visibility( "action" );
     }
 
     public function av_wildfireaction_best_practice()
     {
-        /*
-        $bestpractise = FALSE;
 
-        if( $this->secprof_type != 'virus' )
-            return null;
-
-        $av_type_action = "wildfire-action";
-        $check_array = $this->virus_bp_visibility_JSON( "bp", $av_type_action );
-
-        if( isset($this->tmp_virus_prof_array) )
-        {
-            foreach( $this->tmp_virus_prof_array as $key => $type )
-            {
-                if( isset( $this->$type[$av_type_action] ) )
-                {
-                    $bestpractise = $this->check_bp_json($type, $check_array, $av_type_action);
-
-                    if ($bestpractise == FALSE)
-                        return FALSE;
-                }
-            }
-        }
-
-        return $bestpractise;
-        */
         return $this->av_general_action_best_practice( "wildfire-action" );
     }
 
     public function av_wildfireaction_visibility()
     {
-        /*
-        $bestpractise = FALSE;
 
-        if( $this->secprof_type != 'virus' )
-            return null;
-
-        $av_type_action = "wildfire-action";
-        $check_array = $this->virus_bp_visibility_JSON( "visibility", $av_type_action );
-
-        if( isset($this->tmp_virus_prof_array) )
-        {
-            foreach( $this->tmp_virus_prof_array as $key => $type )
-            {
-                if( isset( $this->$type[$av_type_action] ) )
-                {
-                    $bestpractise = $this->check_visibility_json($type, $check_array, $av_type_action);
-
-                    if($bestpractise == FALSE)
-                        return FALSE;
-                }
-            }
-        }
-
-        return $bestpractise;
-        */
         return $this->av_general_action_visibility( "wildfire-action" );
     }
 
     public function av_mlavaction_best_practice()
     {
-        /*
-        $bestpractise = FALSE;
 
-        if( $this->secprof_type != 'virus' )
-            return null;
-
-        $av_type_action = "mlav-action";
-        $check_array = $this->virus_bp_visibility_JSON( "bp", $av_type_action );
-
-        if( isset($this->tmp_virus_prof_array) )
-        {
-            foreach( $this->tmp_virus_prof_array as $key => $type )
-            {
-                if( isset( $this->$type[$av_type_action] ) )
-                {
-                    $bestpractise = $this->check_bp_json($type, $check_array, $av_type_action);
-
-                    if($bestpractise == FALSE)
-                        return FALSE;
-                }
-            }
-        }
-
-        return $bestpractise;
-        */
         return $this->av_general_action_best_practice( "mlav-action" );
     }
 
     public function av_mlavaction_is_visibility()
     {
-        /*
-        $bestpractise = FALSE;
-
-        if( $this->secprof_type != 'virus' )
-            return null;
-
-        $av_type_action = "mlav-action";
-        $check_array = $this->virus_bp_visibility_JSON( "visibility", $av_type_action );
-
-        if( isset($this->tmp_virus_prof_array) )
-        {
-            foreach( $this->tmp_virus_prof_array as $key => $type )
-            {
-                if( isset( $this->$type[$av_type_action] ) )
-                {
-                    $bestpractise = $this->check_visibility_json($type, $check_array, $av_type_action);
-
-                    if($bestpractise == FALSE)
-                        return FALSE;
-                }
-            }
-        }
-
-        return $bestpractise;
-        */
         return $this->av_general_action_visibility( "mlav-action" );
     }
 
 
-    public function av_general_action_best_practice( $av_type_action )
+    public function av_general_action_best_practice( $av_action_type )
     {
-        if( $av_type_action != "action" && $av_type_action != "wildfire-action" && $av_type_action != "mlav-action")
+        if( $av_action_type != "action" && $av_action_type != "wildfire-action" && $av_action_type != "mlav-action")
             derr( "only support specific valued like action / wildfire-action / mlav-action" );
 
         $bestpractise = FALSE;
@@ -708,16 +560,15 @@ class AntiVirusProfile extends SecurityProfile2
         if( $this->secprof_type != 'virus' )
             return null;
 
-        $av_type_action = "mlav-action";
-        $check_array = $this->virus_bp_visibility_JSON( "bp", $av_type_action );
+        $check_array = $this->virus_bp_visibility_JSON( "bp", $av_action_type );
 
         if( isset($this->tmp_virus_prof_array) )
         {
             foreach( $this->tmp_virus_prof_array as $key => $type )
             {
-                if( isset( $this->$type[$av_type_action] ) )
+                if( isset( $this->$type[$av_action_type] ) )
                 {
-                    $bestpractise = $this->check_bp_json($type, $check_array, $av_type_action);
+                    $bestpractise = $this->check_bp_json($type, $check_array, $av_action_type);
 
                     if($bestpractise == FALSE)
                         return FALSE;
@@ -728,9 +579,9 @@ class AntiVirusProfile extends SecurityProfile2
         return $bestpractise;
     }
 
-    public function av_general_action_visibility( $av_type_action )
+    public function av_general_action_visibility( $av_action_type )
     {
-        if( $av_type_action != "action" && $av_type_action != "wildfire-action" && $av_type_action != "mlav-action")
+        if( $av_action_type != "action" && $av_action_type != "wildfire-action" && $av_action_type != "mlav-action")
             derr( "only support specific valued like action / wildfire-action / mlav-action" );
 
         $bestpractise = FALSE;
@@ -738,15 +589,15 @@ class AntiVirusProfile extends SecurityProfile2
         if( $this->secprof_type != 'virus' )
             return null;
 
-        $check_array = $this->virus_bp_visibility_JSON( "visibility", $av_type_action );
+        $check_array = $this->virus_bp_visibility_JSON( "visibility", $av_action_type );
 
         if( isset($this->tmp_virus_prof_array) )
         {
             foreach( $this->tmp_virus_prof_array as $key => $type )
             {
-                if( isset( $this->$type[$av_type_action] ) )
+                if( isset( $this->$type[$av_action_type] ) )
                 {
-                    $bestpractise = $this->check_visibility_json($type, $check_array, $av_type_action);
+                    $bestpractise = $this->check_visibility_json($type, $check_array, $av_action_type);
 
                     if($bestpractise == FALSE)
                         return FALSE;
