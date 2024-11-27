@@ -658,15 +658,86 @@ class AntiSpywareProfile extends SecurityProfile2
         #PH::print_stdout();
     }
 
+    public function spyware_lists_bp_visibility_JSON( $checkType )
+    {
+        //Todo: swaschkut 20241126
+        //if file already read store it complete at UTIL and read array from there
+
+        $secprof_type = "spyware";
+        $checkArray = array();
+
+        if( $checkType !== "bp" && $checkType !== "visibility" )
+            derr( "only 'bp' or 'visibility' argument allowed" );
+
+        ###############################
+        //add bp JSON filename to UTIL???
+        //so this can be flexible if customer like to use its own file
+
+        //get actual file space
+        $filename = dirname(__FILE__)."/../../utils/api/v1/bp/bp_sp_panw.json";
+        $JSONarray = file_get_contents( $filename);
+
+        if( $JSONarray === false )
+            derr("cannot open file '{$filename}");
+
+        $details = json_decode($JSONarray, true);
+
+        if( $details === null )
+            derr( "invalid JSON file provided", null, FALSE );
+
+        if( isset($details[$secprof_type]['lists']) )
+        {
+            if( $checkType == "bp" )
+            {
+                if( isset($details[$secprof_type]['lists']['bp']))
+                    $checkArray = $details[$secprof_type]['lists']['bp'];
+                else
+                    derr( "this JSON bp/visibility JSON file does not have 'bp' -> 'lists' defined correctly for: '".$secprof_type, null, FALSE );
+            }
+            elseif( $checkType == "visibility")
+            {
+                if( isset($details[$secprof_type]['lists']['visibility']))
+                    $checkArray = $details[$secprof_type]['lists']['visibility'];
+                else
+                    derr( "this JSON bp/visibility JSON file does not have 'visibility' -> 'lists' defined correctly for: '".$secprof_type, null, FALSE );
+            }
+        }
+
+        return $checkArray;
+    }
+
     public function spyware_dnslist_best_practice()
     {
         if( $this->secprof_type != 'spyware' )
             return null;
 
+        $check_array = $this->spyware_lists_bp_visibility_JSON( "bp");
+
         if( isset($this->additional['botnet-domain']) && isset($this->additional['botnet-domain']['lists']) )
         {
             foreach( $this->additional['botnet-domain']['lists'] as $name => $array)
             {
+                foreach( $check_array['action'] as $validation )
+                {
+                    foreach( $validation['type'] as $check_type )
+                    {
+                        if( $name == $check_type )
+                        {
+                            if( isset($array['action']) )
+                            {
+                                foreach( $validation['action'] as $check_action)
+                                {
+                                    if ( $array['action'] == $check_action )
+                                    {
+                                        return TRUE;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                /*
                 if( $name == "default-paloalto-dns" )
                 {
                     if( isset($array['action']) )
@@ -675,6 +746,7 @@ class AntiSpywareProfile extends SecurityProfile2
                             return TRUE;
                     }
                 }
+                */
             }
         }
 
@@ -686,16 +758,32 @@ class AntiSpywareProfile extends SecurityProfile2
         if( $this->secprof_type != 'spyware' )
             return null;
 
+        $check_array = $this->spyware_lists_bp_visibility_JSON( "visibility");
+
         if( isset($this->additional['botnet-domain']) && isset($this->additional['botnet-domain']['lists']) )
         {
             foreach( $this->additional['botnet-domain']['lists'] as $name => $array)
             {
-                if( $name == "default-paloalto-dns" )
+                foreach( $check_array['action'] as $validation )
                 {
-                    if( isset($array['action']) )
+                    foreach( $validation['type'] as $check_type )
                     {
-                        if ( $array['action'] !== "allow" )
-                            return TRUE;
+                        if( $name == $check_type )
+                        {
+                            if( isset($array['action']) )
+                            {
+                                foreach( $validation['action'] as $check_action)
+                                {
+                                    $negate_string = "";
+                                    if( strpos( $check_action, "!" ) !== FALSE )
+                                        $negate_string = "!";
+                                    if ( $negate_string.$array['action'] == $check_action )
+                                        return FALSE;
+                                    else
+                                        return TRUE;
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -762,13 +850,9 @@ class AntiSpywareProfile extends SecurityProfile2
         if( $this->owner->owner->version >= 102 )
         {
             $bp_set = false;
-            foreach ($this->additional['botnet-domain']['dns-security-categories'] as $name => $value) {
+            foreach ($this->additional['botnet-domain']['dns-security-categories'] as $name => $value)
+            {
                 /** @var DNSPolicy $value */
-                /*
-                "subquery6": "subquery6=((action eq sinkhole) and (name eq pan-dns-sec-cc))",
-                "subquery7": "subquery7=((action eq sinkhole) and (name eq pan-dns-sec-malware))",
-                "subquery8": "subquery8=((action eq sinkhole) and (name eq pan-dns-sec-phishing))",
-                 */
                 if ($value->spyware_dns_security_rule_bestpractice())
                     $bp_set = true;
                 else
@@ -784,13 +868,9 @@ class AntiSpywareProfile extends SecurityProfile2
         if( $this->owner->owner->version >= 102 )
         {
             $bp_set = false;
-            foreach ($this->additional['botnet-domain']['dns-security-categories'] as $name => $value) {
+            foreach ($this->additional['botnet-domain']['dns-security-categories'] as $name => $value)
+            {
                 /** @var DNSPolicy $value */
-                /*
-                "subquery6": "subquery6=((action eq sinkhole) and (name eq pan-dns-sec-cc))",
-                "subquery7": "subquery7=((action eq sinkhole) and (name eq pan-dns-sec-malware))",
-                "subquery8": "subquery8=((action eq sinkhole) and (name eq pan-dns-sec-phishing))",
-                 */
                 if ($value->spyware_dns_security_rule_visibility())
                     $bp_set = true;
                 else

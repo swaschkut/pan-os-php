@@ -469,18 +469,32 @@ class AntiVirusProfile extends SecurityProfile2
 
     public function check_bp_json($av_type, $check_array, $av_action_type)
     {
+        $bestpractise = FALSE;
+
+        #print "\ncall check-bp-json ". $av_type ." action_type: ". $av_action_type ." \n";
+
         if (in_array($av_type, $check_array['type']))
         {
             //action check
             foreach ($check_array['action'] as $validate_action)
             {
+                #print "validate action: ".$validate_action."\n";
                 $negate_string = "";
                 if (strpos($validate_action, "!") !== FALSE)
                     $negate_string = "!";
+                #print "1): '".$negate_string . $this->$av_type[$av_action_type]."'\n";
+                #print "2): '".$validate_action."'\n";
                 if ($negate_string . $this->$av_type[$av_action_type] === $validate_action)
+                {
+                    #print "bp: TRUE\n\n\n";
                     $bestpractise = TRUE;
+                    break;
+                }
                 else
+                {
+                    #print "bp: TRUE\n\n\n";
                     $bestpractise = FALSE;
+                }
             }
         }
         else
@@ -491,9 +505,16 @@ class AntiVirusProfile extends SecurityProfile2
                 if (strpos($validate_action, "!") !== FALSE)
                     $negate_string = "!";
                 if ($negate_string . $this->$av_type[$av_action_type] === $validate_action)
+                {
+                    #print "bp: TRUE\n\n\n";
                     $bestpractise = TRUE;
+                    break;
+                }
                 else
+                {
+                    #print "bp: FALSe\n\n\n";
                     $bestpractise = FALSE;
+                }
             }
         }
 
@@ -502,15 +523,27 @@ class AntiVirusProfile extends SecurityProfile2
 
     public function check_visibility_json($av_type, $check_array, $av_action_type)
     {
+        $bestpractise = FALSE;
+
+        #print "\ncall check_visibility_json ". $av_type ." action_type: ". $av_action_type ." \n";
+
         foreach( $check_array as $validate )
         {
             $negate_string = "";
             if( strpos($validate, "!" ) !== FALSE )
                 $negate_string = "!";
+            #print "1): '".$negate_string . $this->$av_type[$av_action_type]."'\n";
+            #print "2): '".$validate."'\n";
             if( $negate_string.$this->$av_type[$av_action_type] === $validate)
+            {
+                #print "visibility: FALSE\n\n\n";
                 $bestpractise = FALSE;
+            }
             else
+            {
+                #print "visibility: TRUE\n\n\n";
                 $bestpractise = TRUE;
+            }
         }
 
         return $bestpractise;

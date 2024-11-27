@@ -133,6 +133,32 @@
                 ]
             }
         },
+        "lists": {
+            "bp": {
+                "action": [
+                    {
+                        "type": [
+                            "default-paloalto-dns"
+                        ],
+                        "action": [
+                            "sinkhole"
+                        ]
+                    }
+                ]
+            },
+            "visibility": {
+                "action": [
+                    {
+                        "type": [
+                            "default-paloalto-dns"
+                        ],
+                        "action": [
+                            "!allow"
+                        ]
+                    }
+                ]
+            }
+        },
         "cloud-inline": {
             "bp": {
                 "inline-policy-action": [

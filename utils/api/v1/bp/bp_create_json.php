@@ -74,6 +74,12 @@ $checkArray['spyware']['dns']['bp']['action'][1]['action'] = array('sinkhole');
 $checkArray['spyware']['dns']['bp']['action'][1]['packet-capture'] = array('extended-capture');
 
 
+$checkArray['spyware']['lists']['bp']['action'][0]['type'] = array('default-paloalto-dns');
+$checkArray['spyware']['lists']['bp']['action'][0]['action'] = array('sinkhole');
+$checkArray['spyware']['lists']['visibility']['action'][0]['type'] = array('default-paloalto-dns');
+$checkArray['spyware']['lists']['visibility']['action'][0]['action'] = array('!allow');
+
+
 ######################################################################################################################
 ######## CLOUD INLINE
 
