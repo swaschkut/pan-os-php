@@ -559,16 +559,8 @@ class AntiVirusProfile extends SecurityProfile2
             {
                 if( isset($this->$type['action']) )
                 {
-                    foreach( $check_array as $validate )
-                    {
-                        $negate_string = "";
-                        if( strpos($validate, "!" ) !== FALSE )
-                            $negate_string = "!";
-                        if( $negate_string.$this->$type['action'] === $validate)
-                            $bestpractise = FALSE;
-                        else
-                            $bestpractise = TRUE;
-                    }
+                    $bestpractise = $this->check_visibility_json($type, $check_array, $av_type_action);
+
                     if($bestpractise == FALSE)
                         return FALSE;
                 }
@@ -619,18 +611,10 @@ class AntiVirusProfile extends SecurityProfile2
         {
             foreach( $this->tmp_virus_prof_array as $key => $type )
             {
-                if( isset( $this->$type['wildfire-action'] ) )
+                if( isset( $this->$type[$av_type_action] ) )
                 {
-                    foreach( $check_array as $validate )
-                    {
-                        $negate_string = "";
-                        if( strpos($validate, "!" ) !== FALSE )
-                            $negate_string = "!";
-                        if( $negate_string.$this->$type['wildfire-action'] === $validate)
-                            $bestpractise = FALSE;
-                        else
-                            $bestpractise = TRUE;
-                    }
+                    $bestpractise = $this->check_visibility_json($type, $check_array, $av_type_action);
+
                     if($bestpractise == FALSE)
                         return FALSE;
                 }
@@ -674,24 +658,16 @@ class AntiVirusProfile extends SecurityProfile2
         if( $this->secprof_type != 'virus' )
             return null;
 
-        $check_array = $this->virus_bp_visibility_JSON( "visibility", "mlav-action" );
+        $av_type_action = "mlav-action";
+        $check_array = $this->virus_bp_visibility_JSON( "visibility", $av_type_action );
 
         if( isset($this->tmp_virus_prof_array) )
         {
             foreach( $this->tmp_virus_prof_array as $key => $type )
             {
-                if( isset( $this->$type['mlav-action'] ) )
+                if( isset( $this->$type[$av_type_action] ) )
                 {
-                    foreach( $check_array as $validate )
-                    {
-                        $negate_string = "";
-                        if( strpos($validate, "!" ) !== FALSE )
-                            $negate_string = "!";
-                        if( $negate_string.$this->$type['mlav-action'] === $validate)
-                            $bestpractise = FALSE;
-                        else
-                            $bestpractise = TRUE;
-                    }
+                    $bestpractise = $this->check_visibility_json($type, $check_array, $av_type_action);
 
                     if($bestpractise == FALSE)
                         return FALSE;
