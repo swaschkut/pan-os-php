@@ -182,7 +182,7 @@ class SecurityProfile2
         if( $checkType !== "bp" && $checkType !== "visibility" )
             derr( "only 'bp' or 'visibility' argument allowed" );
 
-        $this->getBPjsonFile();
+        $details = $this->getBPjsonFile();
 
         $array_type = "cloud-inline";
         $check_action_type = "inline-policy-action";
