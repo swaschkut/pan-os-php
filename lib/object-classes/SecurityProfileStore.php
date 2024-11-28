@@ -34,6 +34,9 @@ class SecurityProfileStore extends ObjStore
     /** @var DOMElement */
     public $securityProfileRoot;
 
+    public $bp_json_file = null;
+    public $bp_details_array = null;
+
 
 
     static private $storeNameByType = array(
@@ -79,6 +82,8 @@ class SecurityProfileStore extends ObjStore
 
     public function __construct($owner, $profileType)
     {
+        $this->bp_json_file = dirname(__FILE__)."/../../utils/api/v1/bp/bp_sp_panw.json";
+
         $this->classn = &self::$childn;
 
         $this->owner = $owner;
@@ -721,6 +726,31 @@ class SecurityProfileStore extends ObjStore
         }
 
         return $objects;
+    }
+
+    public function getBPjsonFile()
+    {
+        if( $this->bp_details_array == null )
+        {
+            $this->bp_details_array = array();
+            ###############################
+            //add bp JSON filename to UTIL???
+            //so this can be flexible if customer like to use its own file
+
+            $JSONarray = file_get_contents( $this->bp_json_file);
+
+            if( $JSONarray === false )
+                derr("cannot open file '{$this->bp_json_file}");
+
+            $details = json_decode($JSONarray, true);
+
+            if( $details === null )
+                derr( "invalid JSON file provided", null, FALSE );
+
+            $this->bp_details_array = $details;
+        }
+
+        return $this->bp_details_array;
     }
 
     public function rewriteXML()

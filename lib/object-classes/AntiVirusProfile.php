@@ -415,52 +415,40 @@ class AntiVirusProfile extends SecurityProfile2
     }
 
 
-    public function virus_bp_visibility_JSON( $checkType, $av_action_type )
+    public function virus_bp_visibility_JSON( $checkType, $secprof_type, $av_action_type = null )
     {
-        #print "checktype: ".$checkType." -".$av_action_type."\n";
-        //Todo: swaschkut 20241126
-        //if file already read store it complete at UTIL and read array from there
-
-        $secprof_type = "virus";
         $checkArray = array();
 
         if( $checkType !== "bp" && $checkType !== "visibility" )
             derr( "only 'bp' or 'visibility' argument allowed" );
 
-        if( $av_action_type !== "action" && $av_action_type !== "wildfire-action" && $av_action_type !== "mlav-action")
-            derr( "only 'action' or 'wildfire-action' or 'mlav-action' argument allowed as av_action_type" );
+        if( $secprof_type == "virus" )
+        {
+            if( $av_action_type !== "action" && $av_action_type !== "wildfire-action" && $av_action_type !== "mlav-action")
+                derr( "only 'action' or 'wildfire-action' or 'mlav-action' argument allowed as av_action_type" );
+        }
+
 
         ###############################
-        //add bp JSON filename to UTIL???
-        //so this can be flexible if customer like to use its own file
+        $details = $this->owner->getBPjsonFile();
 
-        //get actual file space
-        $filename = dirname(__FILE__)."/../../utils/api/v1/bp/bp_sp_panw.json";
-        $JSONarray = file_get_contents( $filename);
+        $array_type = "rule";
 
-        if( $JSONarray === false )
-            derr("cannot open file '{$filename}");
-
-        $details = json_decode($JSONarray, true);
-
-        if( $details === null )
-            derr( "invalid JSON file provided", null, FALSE );
-
-        if( isset($details[$secprof_type]['rule']) )
+        if( isset($details[$secprof_type][$array_type]) )
         {
             if( $checkType == "bp" )
             {
-                if( isset($details[$secprof_type]['rule']['bp'][$av_action_type]))
-                    $checkArray = $details[$secprof_type]['rule']['bp'][$av_action_type];
+                if( isset($details[$secprof_type][$array_type]['bp'][$av_action_type]))
+                    $checkArray = $details[$secprof_type][$array_type]['bp'][$av_action_type];
                 else
-                    derr( "this JSON bp/visibility JSON file does not have 'bp' -> 'rule' defined correctly for: '".$secprof_type."' '".[$av_action_type]."'", null, FALSE );
+                    derr( "this JSON bp/visibility JSON file does not have 'bp' -> '".$array_type."' defined correctly for: '".$secprof_type."' '".[$av_action_type]."'", null, FALSE );
             }
             elseif( $checkType == "visibility")
             {
-                if( isset($details[$secprof_type]['rule']['visibility'][$av_action_type]))
-                    $checkArray = $details[$secprof_type]['rule']['visibility'][$av_action_type];
+                if( isset($details[$secprof_type][$array_type]['visibility'][$av_action_type]))
+                    $checkArray = $details[$secprof_type][$array_type]['visibility'][$av_action_type];
                 else
-                    derr( "this JSON bp/visibility JSON file does not have 'visibility' -> 'rule' defined correctly for: '".$secprof_type."' '".[$av_action_type]."'", null, FALSE );
+                    derr( "this JSON bp/visibility JSON file does not have 'visibility' -> '".$array_type."' defined correctly for: '".$secprof_type."' '".[$av_action_type]."'", null, FALSE );
             }
         }
 
@@ -471,30 +459,20 @@ class AntiVirusProfile extends SecurityProfile2
     {
         $bestpractise = FALSE;
 
-        #print "\ncall check-bp-json ". $av_type ." action_type: ". $av_action_type ." \n";
-
         if (in_array($av_type, $check_array['type']))
         {
-            //action check
             foreach ($check_array['action'] as $validate_action)
             {
-                #print "validate action: ".$validate_action."\n";
                 $negate_string = "";
                 if (strpos($validate_action, "!") !== FALSE)
                     $negate_string = "!";
-                #print "1): '".$negate_string . $this->$av_type[$av_action_type]."'\n";
-                #print "2): '".$validate_action."'\n";
                 if ($negate_string . $this->$av_type[$av_action_type] === $validate_action)
                 {
-                    #print "bp: TRUE\n\n\n";
                     $bestpractise = TRUE;
                     break;
                 }
                 else
-                {
-                    #print "bp: TRUE\n\n\n";
                     $bestpractise = FALSE;
-                }
             }
         }
         else
@@ -506,15 +484,11 @@ class AntiVirusProfile extends SecurityProfile2
                     $negate_string = "!";
                 if ($negate_string . $this->$av_type[$av_action_type] === $validate_action)
                 {
-                    #print "bp: TRUE\n\n\n";
                     $bestpractise = TRUE;
                     break;
                 }
                 else
-                {
-                    #print "bp: FALSe\n\n\n";
                     $bestpractise = FALSE;
-                }
             }
         }
 
@@ -525,25 +499,16 @@ class AntiVirusProfile extends SecurityProfile2
     {
         $bestpractise = FALSE;
 
-        #print "\ncall check_visibility_json ". $av_type ." action_type: ". $av_action_type ." \n";
-
         foreach( $check_array as $validate )
         {
             $negate_string = "";
             if( strpos($validate, "!" ) !== FALSE )
                 $negate_string = "!";
-            #print "1): '".$negate_string . $this->$av_type[$av_action_type]."'\n";
-            #print "2): '".$validate."'\n";
+
             if( $negate_string.$this->$av_type[$av_action_type] === $validate)
-            {
-                #print "visibility: FALSE\n\n\n";
                 $bestpractise = FALSE;
-            }
             else
-            {
-                #print "visibility: TRUE\n\n\n";
                 $bestpractise = TRUE;
-            }
         }
 
         return $bestpractise;
@@ -593,7 +558,7 @@ class AntiVirusProfile extends SecurityProfile2
         if( $this->secprof_type != 'virus' )
             return null;
 
-        $check_array = $this->virus_bp_visibility_JSON( "bp", $av_action_type );
+        $check_array = $this->virus_bp_visibility_JSON( "bp", "virus", $av_action_type );
 
         if( isset($this->tmp_virus_prof_array) )
         {
@@ -622,7 +587,7 @@ class AntiVirusProfile extends SecurityProfile2
         if( $this->secprof_type != 'virus' )
             return null;
 
-        $check_array = $this->virus_bp_visibility_JSON( "visibility", $av_action_type );
+        $check_array = $this->virus_bp_visibility_JSON( "visibility", "virus", $av_action_type );
 
         if( isset($this->tmp_virus_prof_array) )
         {

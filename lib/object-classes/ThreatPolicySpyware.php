@@ -29,49 +29,33 @@ class ThreatPolicySpyware extends ThreatPolicy
     }
 
 
-    public function spyware_rule_bp_visibility_JSON( $checkType )
+    public function spyware_rule_bp_visibility_JSON( $checkType, $secprof_type )
     {
-        //Todo: swaschkut 20241126
-        //if file already read store it complete at UTIL and read array from there
-
-        $secprof_type = "spyware";
         $checkArray = array();
 
         if( $checkType !== "bp" && $checkType !== "visibility" )
             derr( "only 'bp' or 'visibility' argument allowed" );
 
-
         ###############################
-        //add bp JSON filename to UTIL???
-        //so this can be flexible if customer like to use its own file
+        $details = $this->owner->owner->getBPjsonFile();
 
-        //get actual file space
-        $filename = dirname(__FILE__)."/../../utils/api/v1/bp/bp_sp_panw.json";
-        $JSONarray = file_get_contents( $filename);
+        $array_type = "rule";
 
-        if( $JSONarray === false )
-            derr("cannot open file '{$filename}");
-
-        $details = json_decode($JSONarray, true);
-
-        if( $details === null )
-            derr( "invalid JSON file provided", null, FALSE );
-
-        if( isset($details[$secprof_type]['rule']) )
+        if( isset($details[$secprof_type][$array_type]) )
         {
             if( $checkType == "bp" )
             {
-                if( isset($details[$secprof_type]['rule']['bp']))
-                    $checkArray = $details[$secprof_type]['rule']['bp'];
+                if( isset($details[$secprof_type][$array_type]['bp']))
+                    $checkArray = $details[$secprof_type][$array_type]['bp'];
                 else
-                    derr( "this JSON bp/visibility JSON file does not have 'bp' -> 'rule' defined correctly for: '".$secprof_type."'", null, FALSE );
+                    derr( "this JSON bp/visibility JSON file does not have 'bp' -> '".$array_type."' defined correctly for: '".$secprof_type."'", null, FALSE );
             }
             elseif( $checkType == "visibility")
             {
-                if( isset($details[$secprof_type]['rule']['visibility']))
-                    $checkArray = $details[$secprof_type]['rule']['visibility'];
+                if( isset($details[$secprof_type][$array_type]['visibility']))
+                    $checkArray = $details[$secprof_type][$array_type]['visibility'];
                 else
-                    derr( "this JSON bp/visibility JSON file does not have 'visibility' -> 'rule' defined correctly for: '".$secprof_type."'", null, FALSE );
+                    derr( "this JSON bp/visibility JSON file does not have 'visibility' -> '".$array_type."' defined correctly for: '".$secprof_type."'", null, FALSE );
             }
         }
 
@@ -152,7 +136,7 @@ class ThreatPolicySpyware extends ThreatPolicy
 
     public function spyware_rule_best_practice()
     {
-        $check_array = $this->spyware_rule_bp_visibility_JSON( "bp" );
+        $check_array = $this->spyware_rule_bp_visibility_JSON( "bp", "spyware" );
         $bestpractise = $this->check_bp_json( $check_array );
 
         if ($bestpractise == FALSE)
@@ -163,7 +147,7 @@ class ThreatPolicySpyware extends ThreatPolicy
 
     public function spyware_rule_visibility()
     {
-        $check_array = $this->spyware_rule_bp_visibility_JSON( "visibility" );
+        $check_array = $this->spyware_rule_bp_visibility_JSON( "visibility", "spyware" );
         $bestpractise = $this->check_visibility_json( $check_array );
 
         if ($bestpractise == FALSE)

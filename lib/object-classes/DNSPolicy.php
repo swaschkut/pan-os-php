@@ -121,23 +121,8 @@ class DNSPolicy
         PH::print_stdout( $string );
     }
 
-    public function spyware_dns_define_bp_visibility()
-    {
-        $this->checkArray['spyware'] = array();
-        $this->checkArray['spyware']['dns']['bp']['action'][0]['type'] = array('pan-dns-sec-malware','pan-dns-sec-phishing');
-        $this->checkArray['spyware']['dns']['bp']['action'][0]['action'] = array('sinkhole');
-        $this->checkArray['spyware']['dns']['bp']['action'][0]['packet-capture'] = array('single-packet');
-
-        $this->checkArray['spyware']['dns']['bp']['action'][1]['type'] = array('pan-dns-sec-cc');
-        $this->checkArray['spyware']['dns']['bp']['action'][1]['action'] = array('sinkhole');
-        $this->checkArray['spyware']['dns']['bp']['action'][1]['packet-capture'] = array('extended-capture');
-    }
-
     public function spyware_dns_bp_visibility_JSON( $checkType )
     {
-        //Todo: swaschkut 20241126
-        //if file already read store it complete at UTIL and read array from there
-
         $secprof_type = "spyware";
         $checkArray = array();
 
@@ -145,20 +130,7 @@ class DNSPolicy
             derr( "only 'bp' or 'visibility' argument allowed" );
 
         ###############################
-        //add bp JSON filename to UTIL???
-        //so this can be flexible if customer like to use its own file
-
-        //get actual file space
-        $filename = dirname(__FILE__)."/../../utils/api/v1/bp/bp_sp_panw.json";
-        $JSONarray = file_get_contents( $filename);
-
-        if( $JSONarray === false )
-            derr("cannot open file '{$filename}");
-
-        $details = json_decode($JSONarray, true);
-
-        if( $details === null )
-            derr( "invalid JSON file provided", null, FALSE );
+        $details = $this->owner->owner->getBPjsonFile();
 
         if( isset($details[$secprof_type]['dns']) )
         {

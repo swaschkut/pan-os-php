@@ -658,48 +658,33 @@ class AntiSpywareProfile extends SecurityProfile2
         #PH::print_stdout();
     }
 
-    public function spyware_lists_bp_visibility_JSON( $checkType )
+    public function spyware_lists_bp_visibility_JSON( $checkType, $secprof_type, $av_action_type = null )
     {
-        //Todo: swaschkut 20241126
-        //if file already read store it complete at UTIL and read array from there
-
-        $secprof_type = "spyware";
         $checkArray = array();
 
         if( $checkType !== "bp" && $checkType !== "visibility" )
             derr( "only 'bp' or 'visibility' argument allowed" );
 
         ###############################
-        //add bp JSON filename to UTIL???
-        //so this can be flexible if customer like to use its own file
+        $details = $this->owner->getBPjsonFile();
 
-        //get actual file space
-        $filename = dirname(__FILE__)."/../../utils/api/v1/bp/bp_sp_panw.json";
-        $JSONarray = file_get_contents( $filename);
+        $array_type = "lists";
 
-        if( $JSONarray === false )
-            derr("cannot open file '{$filename}");
-
-        $details = json_decode($JSONarray, true);
-
-        if( $details === null )
-            derr( "invalid JSON file provided", null, FALSE );
-
-        if( isset($details[$secprof_type]['lists']) )
+        if( isset($details[$secprof_type][$array_type]) )
         {
             if( $checkType == "bp" )
             {
-                if( isset($details[$secprof_type]['lists']['bp']))
-                    $checkArray = $details[$secprof_type]['lists']['bp'];
+                if( isset($details[$secprof_type][$array_type]['bp']))
+                    $checkArray = $details[$secprof_type][$array_type]['bp'];
                 else
-                    derr( "this JSON bp/visibility JSON file does not have 'bp' -> 'lists' defined correctly for: '".$secprof_type, null, FALSE );
+                    derr( "this JSON bp/visibility JSON file does not have 'bp' -> '".$array_type."' defined correctly for: '".$secprof_type, null, FALSE );
             }
             elseif( $checkType == "visibility")
             {
-                if( isset($details[$secprof_type]['lists']['visibility']))
-                    $checkArray = $details[$secprof_type]['lists']['visibility'];
+                if( isset($details[$secprof_type][$array_type]['visibility']))
+                    $checkArray = $details[$secprof_type][$array_type]['visibility'];
                 else
-                    derr( "this JSON bp/visibility JSON file does not have 'visibility' -> 'lists' defined correctly for: '".$secprof_type, null, FALSE );
+                    derr( "this JSON bp/visibility JSON file does not have 'visibility' -> '".$array_type."' defined correctly for: '".$secprof_type, null, FALSE );
             }
         }
 
@@ -711,7 +696,7 @@ class AntiSpywareProfile extends SecurityProfile2
         if( $this->secprof_type != 'spyware' )
             return null;
 
-        $check_array = $this->spyware_lists_bp_visibility_JSON( "bp");
+        $check_array = $this->spyware_lists_bp_visibility_JSON( "bp", "spyware");
 
         if( isset($this->additional['botnet-domain']) && isset($this->additional['botnet-domain']['lists']) )
         {
@@ -748,7 +733,7 @@ class AntiSpywareProfile extends SecurityProfile2
         if( $this->secprof_type != 'spyware' )
             return null;
 
-        $check_array = $this->spyware_lists_bp_visibility_JSON( "visibility");
+        $check_array = $this->spyware_lists_bp_visibility_JSON( "visibility", "spyware");
 
         if( isset($this->additional['botnet-domain']) && isset($this->additional['botnet-domain']['lists']) )
         {

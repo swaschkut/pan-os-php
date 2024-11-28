@@ -132,6 +132,7 @@ class SecurityProfile2
         {
             foreach( $this->additional['mlav-engine-filebased-enabled'] as $type => $name)
             {
+                //$check_array is unique for all AV/AS/VP from JSON file
                 foreach( $check_array['inline-policy-action'] as $validate )
                 {
                     $negate_string = "";
@@ -163,6 +164,7 @@ class SecurityProfile2
 
         //get actual file space
         $filename = dirname(__FILE__)."/../../utils/api/v1/bp/bp_sp_panw.json";
+
         $JSONarray = file_get_contents( $filename);
 
         if( $JSONarray === false )
@@ -173,21 +175,26 @@ class SecurityProfile2
         if( $details === null )
             derr( "invalid JSON file provided", null, FALSE );
 
-        if( isset($details[$secprof_type]['cloud-inline']) )
+
+        $array_type = "cloud-inline";
+        $check_action_type = "inline-policy-action";
+
+
+        if( isset($details[$secprof_type][$array_type]) )
         {
             if( $checkType == "bp" )
             {
-                if( isset($details[$secprof_type]['cloud-inline']['bp']['inline-policy-action']) )
-                    $checkArray = $details[$secprof_type]['cloud-inline']['bp'];
+                if( isset($details[$secprof_type][$array_type]['bp'][$check_action_type]) )
+                    $checkArray = $details[$secprof_type][$array_type]['bp'];
                 else
-                    derr( "this JSON bp/visibility JSON file does not have 'bp' -> 'inline-policy-action' defined correctly for: '".$secprof_type."'", null, FALSE );
+                    derr( "this JSON bp/visibility JSON file does not have 'bp' -> '".$check_action_type."' defined correctly for: '".$secprof_type."'", null, FALSE );
             }
             elseif( $checkType == "visibility")
             {
-                if( isset($details[$secprof_type]['cloud-inline']['visibility']['inline-policy-action']) )
-                    $checkArray = $details[$secprof_type]['cloud-inline']['visibility'];
+                if( isset($details[$secprof_type][$array_type]['visibility'][$check_action_type]) )
+                    $checkArray = $details[$secprof_type][$array_type]['visibility'];
                 else
-                    derr( "this JSON bp/visibility JSON file does not have 'visibility' -> 'inline-policy-action' defined correctly for: '".$secprof_type."'", null, FALSE );
+                    derr( "this JSON bp/visibility JSON file does not have 'visibility' -> '".$check_action_type."' defined correctly for: '".$secprof_type."'", null, FALSE );
             }
         }
 
