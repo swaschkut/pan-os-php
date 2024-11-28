@@ -451,6 +451,7 @@ class AntiSpywareProfile extends SecurityProfile2
 
                 foreach( $this->owner->owner->DNSPolicyStore->tmp_dns_prof_array as $dns_category )
                 {
+                    //add missing DNS security categories
                     if( !isset($this->additional['botnet-domain']['dns-security-categories'][$dns_category]) )
                     {
                         $tmp_xml_string = '<entry name="'.$dns_category.'">
@@ -464,12 +465,12 @@ class AntiSpywareProfile extends SecurityProfile2
                         $tmp_dns_security_categories->appendChild($xmlElement);
 
                         $dnsPolicy_obj->load_from_domxml( $xmlElement );
-                        $this->dns_rules_obj[$name] = $dnsPolicy_obj;
+                        $this->dns_rules_obj[$dns_category] = $dnsPolicy_obj;
                         $dnsPolicy_obj->addReference( $this );
 
                         $this->owner->owner->DNSPolicyStore->add($dnsPolicy_obj);
 
-                        $this->additional['botnet-domain']['dns-security-categories'][$name] = $dnsPolicy_obj;
+                        $this->additional['botnet-domain']['dns-security-categories'][$dns_category] = $dnsPolicy_obj;
                     }
                 }
             }
