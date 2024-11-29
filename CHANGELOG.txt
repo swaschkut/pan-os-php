@@ -29,6 +29,7 @@ UTIL:
 * type=address/service/rule | introduce 'filter=(name has.wrong.characters)' - actions=(name-Rename-wrong-characters)'
 * type=xml-issue | extend with searching for address/-group/service/-group names which include wrong non PAN-OS supported characters
 * class AntiVirusProfile | introduce bp JSON file reading
+* type=xml-issue | extend search for sec-/nat-rule name with wrong characters in
 
 BUGFIX:
 * online method | bugfix for in=api:// | if your password does have special characters like @/! aso.l
