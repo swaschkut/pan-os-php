@@ -2,10 +2,12 @@ CHANGELOG
 
 2.1.29
 UTIL:
+* class Address/AddressGroup/Region/IP4MAP/IP6MAP - extend with IPv6
 
 BUGFIX:
 
 GENERAL:
+* update to Device App-ID version: 8918-9101
 
 
 2.1.28 (20241201)

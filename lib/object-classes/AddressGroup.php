@@ -1017,6 +1017,50 @@ class AddressGroup
         return $result;
     }
 
+    /**
+     * return 0 if not match, 1 if this object is fully included in $network, 2 if this object is partially matched by $ref.
+     * @param string|IP6Map $network ie: 192.168.0.2/24, 192.168.0.2,192.168.0.2-192.168.0.4
+     * @return int
+     */
+    public function includedInIP6Network($network)
+    {
+        if( is_object($network) )
+            $netStartEnd = $network;
+        else
+            $netStartEnd = IP6Map::mapFromText($network);
+
+        if( count($this->members) == 0 )
+            return 0;
+
+        $result = -1;
+
+        foreach( $this->members as $o )
+        {
+            $localResult = $o->includedInIP6Network($netStartEnd);
+            if( $localResult == 1 )
+            {
+                if( $result == 2 )
+                    continue;
+                if( $result == -1 )
+                    $result = 1;
+                else if( $result == 0 )
+                    return 2;
+            }
+            elseif( $localResult == 2 )
+            {
+                return 2;
+            }
+            elseif( $localResult == 0 )
+            {
+                if( $result == -1 )
+                    $result = 0;
+                else if( $result == 1 )
+                    return 2;
+            }
+        }
+
+        return $result;
+    }
 
     /**
      * return 0 if not match, 1 if $network is fully included in this object, 2 if $network is partially matched by this object.
@@ -1029,6 +1073,44 @@ class AddressGroup
             $netStartEnd = $network;
         else
             $netStartEnd = IP4Map::mapFromText($network);
+
+        if( count($this->members) == 0 )
+            return 0;
+
+        $result = -1;
+
+        foreach( $this->members as $o )
+        {
+            $localResult = $o->includesIP4Network($netStartEnd);
+            if( $localResult == 1 )
+            {
+                return 1;
+            }
+            elseif( $localResult == 2 )
+            {
+                $result = 2;
+            }
+            elseif( $localResult == 0 )
+            {
+                if( $result == -1 )
+                    $result = 0;
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * return 0 if not match, 1 if $network is fully included in this object, 2 if $network is partially matched by this object.
+     * @param $network string|IP6Map ie: 192.168.0.2/24, 192.168.0.2,192.168.0.2-192.168.0.4
+     * @return int
+     */
+    public function includesIP6Network($network)
+    {
+        if( is_object($network) )
+            $netStartEnd = $network;
+        else
+            $netStartEnd = IP6Map::mapFromText($network);
 
         if( count($this->members) == 0 )
             return 0;
@@ -1109,10 +1191,64 @@ class AddressGroup
         return $mapObject;
     }
 
+    /**
+     * @return IP6Map
+     */
+    public function getIP6Mapping( $RuleReferenceLocation = null )
+    {
+        $mapObject6 = new IP6Map();
+
+        /*
+        if( $this->isDynamic() )
+        {
+            $mapObject->unresolved[$this->name] = $this;
+            return $mapObject;
+        }
+        */
+
+        if( $RuleReferenceLocation !== null )
+        {
+            foreach( $this->members as $key => $member )
+                $this->members[$key] = $RuleReferenceLocation->addressStore->find($member->name());
+        }
+
+        foreach( $this->members as $member )
+        {
+            if( $member->isTmpAddr() && !$member->nameIsValidRuleIPEntry() )
+            {
+                $mapObject->unresolved[$member->name()] = $member;
+                continue;
+            }
+            elseif( $member->isAddress() )
+            {
+                if( $member->type() == 'fqdn' )
+                {
+                    $mapObject->unresolved[$member->name()] = $member;
+                }
+                else
+                {
+                    $localMap6 = $member->getIP6Mapping();
+                    $mapObject6->addMap($localMap6, TRUE);
+                }
+            }
+            elseif( $member->isGroup() )
+            {
+                $localMap6 = $member->getIP6Mapping();
+                $mapObject6->addMap($localMap6, TRUE);
+            }
+            else
+                derr('unsupported type of objects ' . $member->toString());
+        }
+        $mapObject6->sortAndRecalculate();
+
+        return $mapObject6;
+    }
+
     public function getFullMapping()
     {
         $result = array('unresolved' => array());
         $mapObject = new IP4Map();
+        $mapObject6 = new IP6Map();
 
         foreach( $this->members as $member )
         {
@@ -1131,6 +1267,9 @@ class AddressGroup
                 {
                     $localMap = $member->getIP4Mapping();
                     $mapObject->addMap($localMap, TRUE);
+
+                    $localMap6 = $member->getIP6Mapping();
+                    $mapObject6->addMap($localMap6, TRUE);
                 }
             }
             elseif( $member->isGroup() )
@@ -1141,6 +1280,7 @@ class AddressGroup
                 {
                     $localMap = $member->getFullMapping();
                     $mapObject->addMap($localMap['ip4'], TRUE);
+                    $mapObject6->addMap($localMap['ip6'], TRUE);
                     foreach( $localMap['unresolved'] as $unresolvedEntry )
                         $result['unresolved'][spl_object_hash($unresolvedEntry)] = $unresolvedEntry;
                 }
@@ -1151,6 +1291,7 @@ class AddressGroup
         $mapObject->sortAndRecalculate();
 
         $result['ip4'] = $mapObject;
+        $result['ip6'] = $mapObject6;
 
         return $result;
     }
@@ -1502,6 +1643,7 @@ class AddressGroup
             }
         }
     }
+
     /**
      * @return string ie: 'ip-netmask' 'ip-range'
      */

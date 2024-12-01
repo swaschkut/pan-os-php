@@ -19,16 +19,16 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-class IP4Map extends IPMap
+class IP6Map extends IPMap
 {
 
-    public function substract(IP4Map $substractedMap)
+    public function substract(IP6Map $substractedMap)
     {
         $affectedRows = 0;
 
         foreach( $substractedMap->_map as &$subMap )
         {
-            $affectedRows += $this->substractSingleIP4Entry($subMap);
+            $affectedRows += $this->substractSingleIP6Entry($subMap);
 
             if( count($this->_map) == 0 )
                 break;
@@ -37,9 +37,9 @@ class IP4Map extends IPMap
         return $affectedRows;
     }
 
-    public function intersection(IP4Map $otherMap)
+    public function intersection(IP6Map $otherMap)
     {
-        $invertedMap = IP4Map::mapFromText('0.0.0.0-255.255.255.255');
+        $invertedMap = IP6Map::mapFromText('::/0');
         $invertedMap->substract($otherMap);
 
         $result = clone $otherMap;
@@ -48,7 +48,7 @@ class IP4Map extends IPMap
         return $result;
     }
 
-    public function substractSingleIP4Entry(&$subEntry)
+    public function substractSingleIP6Entry(&$subEntry)
     {
         $affectedRows = 0;
 

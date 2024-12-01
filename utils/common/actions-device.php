@@ -3983,6 +3983,8 @@ DeviceCallContext::$supportedActions['find-zone-from-ip'] = array(
 
 
         $resolvedZones = &$addressContainer->calculateZonesFromIP4Mapping($ipMapping['ipv4']);
+        //Todo: IPv6 not implemented yet
+        $resolvedZonesv6 = &$addressContainer->calculateZonesFromIP6Mapping($ipMapping['ipv6']);
 
         if( count($resolvedZones) == 0 )
         {

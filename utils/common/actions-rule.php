@@ -232,6 +232,7 @@ RuleCallContext::$commonActionFunctions['calculate-zones'] = array(
             $resolvedZones = &$addressContainer->calculateZonesFromIP4Mapping($ipMapping['ipv4'], $addrContainerIsNegated);
         else
             $resolvedZones = &$addressContainer->calculateZonesFromIP4Mapping($ipMapping['ipv4']);
+        //Todo: IPv6 not implemented yet
 
         if( count($resolvedZones) == 0 )
         {

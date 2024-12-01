@@ -60,6 +60,7 @@ class Address
     protected $type = self::TypeTmp;
 
     public $_ip4Map = null;
+    public $_ip6Map = null;
 
     public $ancestor;
     public $childancestor;
@@ -188,6 +189,8 @@ class Address
     {
         if( isset($this->_ip4Map) )
             unset($this->_ip4Map);
+        if( isset($this->_ip6Map) )
+            unset($this->_ip6Map);
 
         if( !is_string($newValue) )
             derr('value can be text only');
@@ -219,6 +222,8 @@ class Address
     {
         if( isset($this->_ip4Map) )
             unset($this->_ip4Map);
+        if( isset($this->_ip6Map) )
+            unset($this->_ip6Map);
 
         $tmp = array_search($newType, self::$AddressTypes);
         if( $tmp === FALSE )
@@ -331,7 +336,10 @@ class Address
         $this->xmlroot->setAttribute('name', $newName);
 
         if( $this->isTmpAddr() )
+        {
             unset($this->_ip4Map);
+            unset($this->_ip6Map);
+        }
 
         return TRUE;
     }
@@ -589,6 +597,149 @@ class Address
         return cidr::netMatch($networkEntry, $localEntry);
     }
 
+//////////////////////
+    /**
+     * Return an array['start']= startip and ['end']= endip
+     * @return IP6Map
+     */
+    public function getIP6Mapping( $RuleReferenceLocation = null )
+    {
+        derr( "IPv6 not implemented yet" );
+        if( $RuleReferenceLocation !== null )
+            $object = $RuleReferenceLocation->addressStore->find($this->name());
+        else
+            $object = $this;
+
+        if( isset($object->_ip6Map) )
+        {
+            return $object->_ip6Map;
+        }
+
+        if( $object->isTmpAddr() )
+        {
+            if( !$object->nameIsValidRuleIPEntry() )
+            {
+                // if this object is temporary/unsupported, we send an empty mapping
+                $object->_ip6Map = new IP6Map();
+                $object->_ip6Map->unresolved[$object->name] = $object;
+            }
+            else
+                $object->_ip6Map = IP6Map::mapFromText($object->name);
+        }
+        elseif( $object->type != self::TypeIpRange && $object->type != self::TypeIpNetmask && $object->type != self::TypeIpWildcard )
+        {
+            $object->_ip6Map = new IP6Map();
+            $object->_ip6Map->unresolved[$object->name] = $object;
+        }
+        elseif( $object->type == self::TypeIpNetmask || $object->type == self::TypeIpRange || $object->type == self::TypeIpWildcard )
+        {
+            if( $object->type == self::TypeIpWildcard )
+            {
+                $array = explode( "/", $object->value() );
+                $address = $array[0];
+                $wildcardmask = $array[1];
+
+                $cidr_array = explode(".", $wildcardmask);
+                $tmp_hostCidr = "";
+                foreach( $cidr_array as $key => &$entry )
+                {
+                    $final_entry = 255 - (int)$entry;
+                    if( $key == 0 )
+                        $tmp_hostCidr .= $final_entry;
+                    else
+                        $tmp_hostCidr .= ".".$final_entry;
+                }
+
+                $cidr = CIDR::netmask2cidr($tmp_hostCidr);
+                if( is_int( $cidr ) )
+                {
+                    $tmp_value = $address."/".$cidr;
+
+                    $object->_ip6Map = IP6Map::mapFromText($tmp_value);
+                    if( $object->_ip6Map->count() == 0 )
+                        $object->_ip6Map->unresolved[$object->name] = $object->value();
+                }
+                else
+                {
+                    $object->_ip6Map->unresolved[$object->name] = $object->value();
+                }
+
+            }
+            else
+            {
+                $object->_ip6Map = IP6Map::mapFromText($object->value);
+                if( $object->_ip6Map->count() == 0 )
+                    $object->_ip6Map->unresolved[$object->name] = $object;
+            }
+        }
+        else
+        {
+            derr("unexpected type: ".$object->type() );
+        }
+
+        return $object->_ip6Map;
+    }
+
+
+    /**
+     * return 0 if not match, 1 if this object is fully included in $network, 2 if this object is partially matched by $ref.
+     * @param $network string|IP6Map ie: 192.168.0.2/24, 192.168.0.2,192.168.0.2-192.168.0.4
+     * @return int
+     */
+    public function includedInIP6Network($network)
+    {
+        derr( "IPv6 not implemented yet" );
+        if( $this->type != self::TypeIpNetmask && $this->type != self::TypeIpRange && !$this->isTmpAddr() )
+            return 0;
+
+        if( is_object($network) )
+        {
+            $networkMap = $network;
+        }
+        else
+            $networkMap = IP4Map::mapFromText($network);
+
+        $localEntry = $networkMap->getFirstMapEntry();
+        if( $localEntry === null )
+            return 0;
+
+        $networkEntry = $this->getIP6Mapping()->getFirstMapEntry();
+        if( $networkEntry === null )
+            return 0;
+
+        return cidr::netMatch($localEntry, $networkEntry);
+    }
+
+    /**
+     * return 0 if not match, 1 if $network is fully included in this object, 2 if $network is partially matched by this object.
+     * @param $network string|IP6Map ie: 192.168.0.2/24, 192.168.0.2,192.168.0.2-192.168.0.4
+     * @return int
+     */
+    public function includesIP6Network($network)
+    {
+        derr( "IPv6 not implemented yet" );
+        if( $this->type != self::TypeIpNetmask && $this->type != self::TypeIpRange && !$this->isTmpAddr() )
+            return 0;
+
+        if( is_object($network) )
+        {
+            $networkMap = $network;
+        }
+        else
+            $networkMap = IP6Map::mapFromText($network);
+
+        $localEntry = $networkMap->getFirstMapEntry();
+        if( $localEntry === null )
+            return 0;
+
+        $networkEntry = $this->getIP6Mapping()->getFirstMapEntry();
+        if( $networkEntry === null )
+            return 0;
+
+
+        return cidr::netMatch($networkEntry, $localEntry);
+    }
+    //////////////////////////
 
     public function removeReference($object)
     {
