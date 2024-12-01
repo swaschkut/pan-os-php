@@ -670,7 +670,7 @@ trait SHAREDNEW
     }
 
     //copied from Expedition lib-objects.php
-    function isAinB_Zones(array $groupA, array $groupB, array &$foundZones = null)
+    function isAinB_Zones(array $groupA, array $groupB, array|null &$foundZones = null)
     {
         //$groupA/B are arrays of zoneObjects -> name is needed
         //Todo: deep validation of $groupA/B info is needed

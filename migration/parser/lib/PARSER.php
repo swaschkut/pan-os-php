@@ -143,7 +143,7 @@ abstract class PARSER extends CONVERTER
 
     }
 
-    function setCompleted(STRING $submessage = null, STRING $resultCode = null)
+    function setCompleted(STRING|null $submessage = null, STRING|null $resultCode = null)
     {
 
         global $app;
@@ -208,7 +208,7 @@ abstract class PARSER extends CONVERTER
         $this->notifyCompletedTaskJob($job);
     }
 
-    function updateTaskStatus(STRING $submessage = null, STRING $resultCode = null, STRING $percentage, BOOL $correct)
+    function updateTaskStatus(STRING $percentage, BOOL $correct, STRING|null $submessage = null, STRING|null $resultCode = null)
     {
         global $app;
         $submessage = is_null($submessage) ? '' : $submessage;
@@ -274,7 +274,7 @@ abstract class PARSER extends CONVERTER
         }
     }
 
-    function setCompletedSilent(STRING $submessage = null, STRING $resultCode = null)
+    function setCompletedSilent(STRING|null $submessage = null, STRING|null $resultCode = null)
     {
         global $app;
         $submessage = is_null($submessage) ? '' : $submessage;
@@ -302,7 +302,7 @@ abstract class PARSER extends CONVERTER
         }
     }
 
-    function setFailed(STRING $submessage = null, STRING $resultCode = null)
+    function setFailed(STRING|null $submessage = null, STRING|null $resultCode = null)
     {
         global $app;
         $submessage = is_null($submessage) ? '' : $submessage;
@@ -331,7 +331,7 @@ abstract class PARSER extends CONVERTER
         $this->notifyFailedTaskJob($job);
     }
 
-    function setFailedSilent(STRING $submessage = null, STRING $resultCode = null)
+    function setFailedSilent(STRING|null $submessage = null, STRING|null $resultCode = null)
     {
         global $app;
         $submessage = is_null($submessage) ? '' : $submessage;
