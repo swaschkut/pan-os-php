@@ -532,6 +532,26 @@ RQuery::$defaultFilters['address']['name']['operators']['same.as.region.predefin
         'input' => 'input/panorama-8.0.xml'
     )
 );
+RQuery::$defaultFilters['address']['name']['operators']['has.wrong.characters'] = array(
+    'Function' => function (AddressRQueryContext $context) {
+        $object = $context->object;
+
+        $newName = htmlspecialchars_decode( $object->name() );
+        preg_match_all('/[^\w $\-.]/', $newName, $matches , PREG_SET_ORDER, 0);
+
+        if( count($matches) == 0 )
+            return FALSE;
+        else
+            return TRUE;
+
+        return null;
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
 RQuery::$defaultFilters['address']['netmask']['operators']['>,<,=,!'] = array(
     'eval' => '!$object->isGroup() && !$object->isRegion() && $object->isType_ipNetmask() && $object->getNetworkMask() !operator! !value!',
     'arg' => TRUE,

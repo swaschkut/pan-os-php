@@ -33,6 +33,7 @@ class XPATH extends UTIL
             "        \"[display-xmlnode]\"\n".
             "        \"[display-xmllineno]\"\n".
             "        \"[display-attributename]\"\n".
+            "        \"[display-api-command]\"\n".
             "php ".basename(__FILE__)." help          : more help messages\n";
 
         $this->add_supported_arguments();
@@ -59,16 +60,20 @@ class XPATH extends UTIL
         $fullxpath = false;
         $xpath = null;
         $displayXMLnode = false;
+        $displayAPIcommand = false;
         $displayXMLlineno = false;
         $displayAttributeName = false;
         $action = "display";
 
         if( isset( PH::$args['actions'] ) )
         {
-            $supportedActions = array( 'display', 'remove', 'set-text', 'manipulate' );
+            //Todo: 20241022: swaschkut / no clue what I planned to do there
+            $supportedActions = array( 'display', 'remove', 'set-text', 'manipulate', 'display-api-command' );
             $action = PH::$args['actions'];
 
-            if( !in_array( $action, $supportedActions ) && strpos( $action, 'set-text:' ) === FALSE && strpos( $action, 'manipulate:' ) === FALSE )
+            if( !in_array( $action, $supportedActions )
+                && strpos( $action, 'set-text:' ) === FALSE && strpos( $action, 'manipulate:' ) === FALSE
+            )
                     derr( "action: ". $action. " not supported", null, false );
 
             if( strpos( $action, 'manipulate:' ) !== FALSE )
@@ -107,6 +112,13 @@ class XPATH extends UTIL
 
         if( isset( PH::$args['display-xmlnode'] ) )
             $displayXMLnode = true;
+
+        if( isset( PH::$args['display-api-command'] ) )
+        {
+            $displayXMLnode = true;
+            $displayAPIcommand = true;
+        }
+
 
         if( isset( PH::$args['display-xmllineno'] ) )
             $displayXMLlineno = true;
@@ -197,9 +209,9 @@ class XPATH extends UTIL
                             PH::print_stdout("     |" . $item['xpath'] . "|");
 
                         if( $displayXMLnode )
-                            $this->getXpathDisplay( $item['xpath'], "", false, $action);
+                            $this->getXpathDisplay( $item['xpath'], "test", false, $action);
                         if( $displayAttributeName )
-                            $this->getXpathDisplay( $item['xpath'], "", true, $action);
+                            $this->getXpathDisplay( $item['xpath'], "test", true, $action);
                     }
                 }
             }
@@ -221,9 +233,38 @@ class XPATH extends UTIL
                         PH::print_stdout( "   * line: ".$miscEntry['line'] );
 
                     if( $displayXMLnode )
-                        $this->getXpathDisplay( $xpath, "", false, $action);
+                        $this->getXpathDisplay( $xpath, "test", false, $action);
                     if( $displayAttributeName )
-                        $this->getXpathDisplay( $xpath, "", true, $action);
+                        $this->getXpathDisplay( $xpath, "test", true, $action);
+
+                    if( $displayAPIcommand )
+                    {
+                        $splitXPATH = explode( "/", PH::$JSON_TMP["test"]["xpath"] );
+                        array_pop($splitXPATH);
+                        $newXpath = "";
+                        foreach( $splitXPATH as $entry )
+                        {
+                            $newXpath .= "/".$entry;
+                        }
+                        $newXpath = str_replace("//", "/", $newXpath);
+                        $newValue = str_replace("\n", "", PH::$JSON_TMP["test"]["value"]);
+
+                        if( $this->pan->connector !==  null )
+                        {
+                            $FIREWALL_IP = $this->pan->connector->apihost;
+                            $APIkey = $this->pan->connector->apikey;
+                        }
+                        else
+                        {
+                            $FIREWALL_IP = "{FW-MGMT-IP}\n";
+                            $APIkey = "{API-KEY}\n";
+                        }
+
+
+                        PH::print_stdout("----------------");
+                        PH::print_stdout( "https://".$FIREWALL_IP."/api/?"."key=".$APIkey."\n&type=config&action=set&xpath=".$newXpath."\n&element=".$newValue );
+                        PH::print_stdout("----------------");
+                    }
                 }
             }
 
@@ -297,9 +338,9 @@ class XPATH extends UTIL
             {
             */
                 if( $displayAttributeName )
-                    $this->getXpathDisplay( $xpath, "", true, $action);
+                    $this->getXpathDisplay( $xpath, "test", true, $action);
                 else
-                    $this->getXpathDisplay( $xpath, "", false, $action);
+                    $this->getXpathDisplay( $xpath, "test", false, $action);
             //}
         }
 

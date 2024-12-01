@@ -72,8 +72,10 @@ class NETWORKUTIL extends UTIL
                         $this->objectsToProcess[] = Array('store' => $this->pan->network->virtualWireStore, 'objects' => $this->pan->network->virtualWireStore->virtualWires());
                     elseif( $this->utilType == 'interface' )
                         $this->objectsToProcess[] = Array('store' => $this->pan->network, 'objects' => $this->pan->network->getAllInterfaces());
-                    elseif( $this->utilType == 'routing' )
+                    elseif( $this->utilType == 'routing' && !$this->pan->_advance_routing_enabled )
                         $this->objectsToProcess[] = Array('store' => $this->pan->network->virtualRouterStore, 'objects' => $this->pan->network->virtualRouterStore->getAll());
+                    elseif( $this->utilType == 'routing' && $this->pan->_advance_routing_enabled )
+                        $this->objectsToProcess[] = Array('store' => $this->pan->network->logicalRouterStore, 'objects' => $this->pan->network->logicalRouterStore->getAll());
                     elseif( $this->utilType == 'dhcp' )
                         $this->objectsToProcess[] = Array('store' => $this->pan->network->dhcpStore, 'objects' => $this->pan->network->dhcpStore->getAll());
                     elseif( $this->utilType == 'zone' )
@@ -84,12 +86,16 @@ class NETWORKUTIL extends UTIL
                     {
                         $this->objectsToProcess[] = Array('store' => $this->pan->certificateStore, 'objects' => $this->pan->certificateStore->getAll());
                     }
-                    elseif( $this->utilType == 'static-route' )
+                    elseif( $this->utilType == 'static-route' && !$this->pan->_advance_routing_enabled )
                     {
                         foreach($this->pan->network->virtualRouterStore->getAll() as $vr )
                             $this->objectsToProcess[] = Array('store' => $vr, 'objects' => $vr->staticRoutes());
                     }
-
+                    elseif( $this->utilType == 'static-route' && $this->pan->_advance_routing_enabled )
+                    {
+                        foreach($this->pan->network->logicalRouterStore->getAll() as $vr )
+                            $this->objectsToProcess[] = Array('store' => $vr, 'objects' => $vr->staticRoutes());
+                    }
 
 
                     $locationFound = TRUE;

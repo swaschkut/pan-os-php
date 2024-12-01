@@ -22,6 +22,8 @@ class XMLISSUE extends UTIL
 {
     public $region_array = array();
 
+    public $pregMatch_pattern_wrong_characters = '/[^\w $\-.]/';
+
     public function utilStart()
     {
         $this->usageMsg = PH::boldText("USAGE: ") . "php " . basename(__FILE__) . " in=api://[MGMT-IP-Address] ";
@@ -119,7 +121,9 @@ class XMLISSUE extends UTIL
         $countDuplicateNATRuleObjects = 0;
 
         $countSecRuleObjectsWithDoubleSpaces = 0;
+        $countSecRuleObjectsWithWrongCharacters = 0;
         $countNATRuleObjectsWithDoubleSpaces = 0;
+        $countNATRuleObjectsWithWrongCharacters = 0;
 
         $countMissconfiguredSecRuleServiceObjects=0;
         $fixedSecRuleServiceObjects=0;
@@ -145,9 +149,11 @@ class XMLISSUE extends UTIL
         $countMissconfiguredAddressObjects = 0;
         $countMissconfiguredAddressRegionObjects = 0;
         $countAddressObjectsWithDoubleSpaces = 0;
+        $countAddressObjectsWithWrongCharacters = 0;
 
         $countMissconfiguredServiceObjects = 0;
         $countServiceObjectsWithDoubleSpaces = 0;
+        $countServiceObjectsWithWrongCharacters = 0;
         $countServiceObjectsWithNameappdefault = 0;
         $fixedServiceObjectsWithSameTag = 0;
 
@@ -228,10 +234,14 @@ class XMLISSUE extends UTIL
 
             $address_region = array();
             $address_name = array();
+            $address_wrong_name = array();
             $service_name = array();
+            $service_wrong_name = array();
             $service_name_appdefault = array();
             $secrule_name = array();
+            $secrule_wrong_name = array();
             $natrule_name = array();
+            $natrule_wrong_name = array();
 
             $objectTypeNode = DH::findFirstElement('address', $locationNode);
             if( $objectTypeNode !== FALSE )
@@ -246,6 +256,7 @@ class XMLISSUE extends UTIL
 
                     $this->check_region( $objectName, $objectNode, $address_region );
                     $this->check_name( $objectName, $objectNode, $address_name );
+                    $this->check_wrong_name( $objectName, $objectNode, $address_wrong_name );
 
                     $addressObjects[$objectName][] = $objectNode;
 
@@ -270,6 +281,7 @@ class XMLISSUE extends UTIL
 
                     $this->check_region( $objectName, $objectNode, $address_region );
                     $this->check_name( $objectName, $objectNode, $address_name );
+                    $this->check_wrong_name( $objectName, $objectNode, $address_wrong_name );
 
                     $addressGroups[$objectName][] = $objectNode;
 
@@ -304,6 +316,32 @@ class XMLISSUE extends UTIL
             {
                 PH::print_stdout( "    - address object '{$objectName}' from DG/VSYS {$locationName} has '  ' double Spaces in name, this causes problems by copy&past 'set commands' ... (*FIX_MANUALLY*) at XML line #{$node->getLineNo()}");
                 $countAddressObjectsWithDoubleSpaces++;
+            }
+
+            //
+            //
+            //
+            PH::print_stdout( " - Scanning for address / addressgroup with wrong characters in name...");
+            foreach( $address_wrong_name as $objectName => $node )
+            {
+                preg_match_all($this->pregMatch_pattern_wrong_characters, $objectName, $matches , PREG_SET_ORDER, 0);
+
+                $findings = array();
+                foreach( $matches as $match )
+                    $findings[$match[0]] = $match[0];
+                #print_r($findings);
+                PH::print_stdout( "    - address object '{$objectName}' from DG/VSYS {$locationName} has wrong characters in name, '".implode('', $findings)."' this causes commit issues  (*FIX_MANUALLY*) at XML line #{$node->getLineNo()}");
+
+                $newName = $objectName;
+                foreach( $findings as $replace )
+                    $newName = str_replace($replace, "_", $newName);
+
+                PH::print_stdout( "       oldname: '".$objectName."' | suggested newname: '".$newName."'\n" );
+                //xml-issue can not work on objects here :-)
+                #$node->setName($newName);
+
+
+                $countAddressObjectsWithWrongCharacters++;
             }
 
             //
@@ -668,6 +706,7 @@ class XMLISSUE extends UTIL
                     $objectName = $objectNode->getAttribute('name');
 
                     $this->check_name( $objectName, $objectNode, $service_name );
+                    $this->check_wrong_name( $objectName, $objectNode, $service_wrong_name );
                     $this->check_service_name_appdefault( $objectName, $objectNode, $service_name_appdefault );
 
                     if( strcmp( $objectName, "application-default") === 0 )
@@ -695,6 +734,7 @@ class XMLISSUE extends UTIL
                     $objectName = $objectNode->getAttribute('name');
 
                     $this->check_name( $objectName, $objectNode, $service_name );
+                    $this->check_wrong_name( $objectName, $objectNode, $service_wrong_name );
                     $this->check_service_name_appdefault( $objectName, $objectNode, $service_name_appdefault );
 
                     $serviceGroups[$objectName][] = $objectNode;
@@ -719,6 +759,30 @@ class XMLISSUE extends UTIL
             {
                 PH::print_stdout( "    - service object '{$objectName}' from DG/VSYS {$locationName} has '  ' double Spaces in name, this causes problems by copy&past 'set commands' ... (*FIX_MANUALLY*) at XML line #{$node->getLineNo()}");
                 $countServiceObjectsWithDoubleSpaces++;
+            }
+
+            //
+            //
+            //
+            PH::print_stdout( " - Scanning for service / servicegroup  with wrong characters in name...");
+            foreach( $service_wrong_name as $objectName => $node )
+            {
+                preg_match_all($this->pregMatch_pattern_wrong_characters, $objectName, $matches , PREG_SET_ORDER, 0);
+
+                $findings = array();
+                foreach( $matches as $match )
+                    $findings[$match[0]] = $match[0];
+                #print_r($findings);
+
+                PH::print_stdout( "    - service object '{$objectName}' from DG/VSYS {$locationName} has wrong characters in name, '".implode('', $findings)."' this causes commit issues  (*FIX_MANUALLY*) at XML line #{$node->getLineNo()}");
+
+                $newName = $objectName;
+                foreach( $findings as $replace )
+                    $newName = str_replace($replace, "_", $newName);
+
+                PH::print_stdout( "       oldname: '".$objectName."' | suggested newname: '".$newName."'\n" );
+
+                $countServiceObjectsWithWrongCharacters++;
             }
 
             //
@@ -1043,6 +1107,7 @@ class XMLISSUE extends UTIL
                                     $objectName = $objectNode->getAttribute('name');
 
                                     $this->check_name( $objectName, $objectNode, $secrule_name );
+                                    $this->check_wrong_name( $objectName, $objectNode, $secrule_wrong_name );
 
                                     $secRules[$objectName][] = $objectNode;
 
@@ -1321,6 +1386,7 @@ class XMLISSUE extends UTIL
                                     $objectName = $objectNode->getAttribute('name');
 
                                     $this->check_name( $objectName, $objectNode, $natrule_name );
+                                    $this->check_name( $objectName, $objectNode, $natrule_wrong_name );
 
                                     $natRules[$objectName][] = $objectNode;
 
@@ -1347,6 +1413,13 @@ class XMLISSUE extends UTIL
                     {
                         PH::print_stdout( "    - Security Rules object '{$objectName}' from DG/VSYS {$locationName} has '  ' double Spaces in name, this causes problems by copy&past 'set commands' ... (*FIX_MANUALLY*) at XML line #{$node->getLineNo()}");
                         $countSecRuleObjectsWithDoubleSpaces++;
+                    }
+
+                    PH::print_stdout( " - Scanning for Security Rules with wrong characters in name...");
+                    foreach( $secrule_wrong_name as $objectName => $node )
+                    {
+                        PH::print_stdout( "    - Security Rules object '{$objectName}' from DG/VSYS {$locationName} has wrong characters in name ... (*FIX_MANUALLY*) at XML line #{$node->getLineNo()}");
+                        $countSecRuleObjectsWithWrongCharacters++;
                     }
 
                     PH::print_stdout( " - Scanning for duplicate Security Rules...");
@@ -1392,6 +1465,12 @@ class XMLISSUE extends UTIL
                     {
                         PH::print_stdout( "    - NAT Rules object '{$objectName}' from DG/VSYS {$locationName} has '  ' double Spaces in name, this causes problems by copy&past 'set commands' ... (*FIX_MANUALLY*) at XML line #{$node->getLineNo()}");
                         $countNATRuleObjectsWithDoubleSpaces++;
+                    }
+                    PH::print_stdout( " - Scanning for NAT Rules with wrong characters in name...");
+                    foreach( $natrule_wrong_name as $objectName => $node )
+                    {
+                        PH::print_stdout( "    - NAT Rules object '{$objectName}' from DG/VSYS {$locationName} has wrong characters in name ... (*FIX_MANUALLY*) at XML line #{$node->getLineNo()}");
+                        $countNATRuleObjectsWithWrongCharacters++;
                     }
 
                     PH::print_stdout( "\n - Scanning for duplicate NAT Rules...");
@@ -1826,75 +1905,128 @@ class XMLISSUE extends UTIL
         PH::print_stdout();
 
         PH::print_stdout( "Summary:" );
-        PH::print_stdout( " - FIXED: duplicate address objects: {$fixedDuplicateAddressObjects}");
-        PH::print_stdout( " - FIXED: duplicate service objects: {$fixedDuplicateServiceObjects}");
+        if( $fixedDuplicateAddressObjects > 0 )
+            PH::print_stdout( " - FIXED: duplicate address objects: {$fixedDuplicateAddressObjects}");
+        if( $fixedDuplicateServiceObjects > 0 )
+            PH::print_stdout( " - FIXED: duplicate service objects: {$fixedDuplicateServiceObjects}");
 
-        PH::print_stdout( "\n - FIXED: duplicate address-group members: {$totalAddressGroupsFixed}");
-        PH::print_stdout( " - FIXED: duplicate service-group members: {$totalServiceGroupsFixed}");
-        PH::print_stdout( " - FIXED: own address-group as subgroup member: {$totalAddressGroupsSubGroupFixed}");
-        PH::print_stdout( " - FIXED: own dynamic address-group as tag member: {$totalDynamicAddressGroupsTagFixed}");
+        if( $totalAddressGroupsFixed > 0 )
+            PH::print_stdout( "\n - FIXED: duplicate address-group members: {$totalAddressGroupsFixed}");
+        if( $totalServiceGroupsFixed > 0 )
+            PH::print_stdout( " - FIXED: duplicate service-group members: {$totalServiceGroupsFixed}");
+        if( $totalAddressGroupsSubGroupFixed > 0 )
+            PH::print_stdout( " - FIXED: own address-group as subgroup member: {$totalAddressGroupsSubGroupFixed}");
+        if( $totalDynamicAddressGroupsTagFixed > 0 )
+            PH::print_stdout( " - FIXED: own dynamic address-group as tag member: {$totalDynamicAddressGroupsTagFixed}");
 
-        PH::print_stdout( "\n - FIXED: service objects with multiple times same tag: {$fixedServiceObjectsWithSameTag}");
+        if( $fixedServiceObjectsWithSameTag > 0 )
+            PH::print_stdout( "\n - FIXED: service objects with multiple times same tag: {$fixedServiceObjectsWithSameTag}");
 
-        PH::print_stdout( "\n - FIXED: own service-group as subgroup members: {$totalServiceGroupsSubGroupFixed}");
+        if( $totalServiceGroupsSubGroupFixed > 0 )
+            PH::print_stdout( "\n - FIXED: own service-group as subgroup members: {$totalServiceGroupsSubGroupFixed}");
 
-        PH::print_stdout( "\n - FIXED: duplicate application-group members: {$totalApplicationGroupsFixed}");
-        PH::print_stdout( " - FIXED: duplicate custom-url-category members: {$totalCustomUrlCategoryFixed}");
+        if( $totalApplicationGroupsFixed > 0 )
+            PH::print_stdout( "\n - FIXED: duplicate application-group members: {$totalApplicationGroupsFixed}");
+        if( $totalCustomUrlCategoryFixed > 0 )
+            PH::print_stdout( " - FIXED: duplicate custom-url-category members: {$totalCustomUrlCategoryFixed}");
 
-        PH::print_stdout( "\n - FIXED: SecRule with duplicate from members: {$fixedSecRuleFromObjects}");
-        PH::print_stdout( " - FIXED: SecRule with duplicate to members: {$fixedSecRuleToObjects}");
-        PH::print_stdout( " - FIXED: SecRule with duplicate source members: {$fixedSecRuleSourceObjects}");
-        PH::print_stdout( " - FIXED: SecRule with duplicate destination members: {$fixedSecRuleDestinationObjects}");
-        PH::print_stdout( " - FIXED: SecRule with duplicate service members: {$fixedSecRuleServiceObjects}");
-        PH::print_stdout( " - FIXED: SecRule with duplicate application members: {$fixedSecRuleApplicationObjects}");
-        PH::print_stdout( " - FIXED: SecRule with duplicate category members: {$fixedSecRuleCategoryObjects}");
-        PH::print_stdout( " - FIXED: SecRule with duplicate tag members: {$fixedSecRuleTagObjects}");
+        if( $fixedSecRuleFromObjects > 0 )
+            PH::print_stdout( "\n - FIXED: SecRule with duplicate from members: {$fixedSecRuleFromObjects}");
+        if( $fixedSecRuleToObjects > 0 )
+            PH::print_stdout( " - FIXED: SecRule with duplicate to members: {$fixedSecRuleToObjects}");
+        if( $fixedSecRuleSourceObjects > 0 )
+            PH::print_stdout( " - FIXED: SecRule with duplicate source members: {$fixedSecRuleSourceObjects}");
+        if( $fixedSecRuleDestinationObjects > 0 )
+            PH::print_stdout( " - FIXED: SecRule with duplicate destination members: {$fixedSecRuleDestinationObjects}");
+        if( $fixedSecRuleServiceObjects > 0 )
+            PH::print_stdout( " - FIXED: SecRule with duplicate service members: {$fixedSecRuleServiceObjects}");
+        if( $fixedSecRuleApplicationObjects > 0 )
+            PH::print_stdout( " - FIXED: SecRule with duplicate application members: {$fixedSecRuleApplicationObjects}");
+        if( $fixedSecRuleCategoryObjects > 0 )
+            PH::print_stdout( " - FIXED: SecRule with duplicate category members: {$fixedSecRuleCategoryObjects}");
+        if( $fixedSecRuleTagObjects > 0 )
+            PH::print_stdout( " - FIXED: SecRule with duplicate tag members: {$fixedSecRuleTagObjects}");
 
-        PH::print_stdout( "\n - FIXED: ReadOnly duplicate AddressGroup : {$fixedReadOnlyAddressGroupobjects}");
-        PH::print_stdout( " - FIXED: ReadOnly duplicate DeviceGroup : {$fixedReadOnlyDeviceGroupobjects}");
-        PH::print_stdout( " - FIXED: ReadOnly duplicate Template : {$fixedReadOnlyTemplateobjects}");
-        PH::print_stdout( " - FIXED: ReadOnly duplicate TemplateStack : {$fixedReadOnlyTemplateStackobjects}");
+        if( $fixedReadOnlyAddressGroupobjects > 0 )
+            PH::print_stdout( "\n - FIXED: ReadOnly duplicate AddressGroup : {$fixedReadOnlyAddressGroupobjects}");
+        if( $fixedReadOnlyDeviceGroupobjects > 0 )
+            PH::print_stdout( " - FIXED: ReadOnly duplicate DeviceGroup : {$fixedReadOnlyDeviceGroupobjects}");
+        if( $fixedReadOnlyTemplateobjects > 0 )
+            PH::print_stdout( " - FIXED: ReadOnly duplicate Template : {$fixedReadOnlyTemplateobjects}");
+        if( $fixedReadOnlyTemplateStackobjects > 0 )
+            PH::print_stdout( " - FIXED: ReadOnly duplicate TemplateStack : {$fixedReadOnlyTemplateStackobjects}");
 
-        PH::print_stdout( "\n - FIXED: import/network/interface : {$fixedImportNetworkInterfaceWithSameInterface}");
+        if( $fixedImportNetworkInterfaceWithSameInterface > 0 )
+            PH::print_stdout( "\n - FIXED: import/network/interface : {$fixedImportNetworkInterfaceWithSameInterface}");
 
 
         PH::print_stdout( "\n\nIssues that could not be fixed (look in logs for FIX_MANUALLY keyword):");
 
 
-        PH::print_stdout( " - FIX_MANUALLY: duplicate address objects: {$countDuplicateAddressObjects} (look in the logs )");
-        PH::print_stdout( " - FIX_MANUALLY: duplicate service objects: {$countDuplicateServiceObjects} (look in the logs)");
+        if( $countDuplicateAddressObjects > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: duplicate address objects: {$countDuplicateAddressObjects} (look in the logs )");
+        if( $countDuplicateServiceObjects > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: duplicate service objects: {$countDuplicateServiceObjects} (look in the logs)");
         PH::print_stdout();
 
-        PH::print_stdout( " - FIX_MANUALLY: missconfigured address objects: {$countMissconfiguredAddressObjects} (look in the logs)");
-        PH::print_stdout( " - FIX_MANUALLY: address objects with double spaces in name: {$countAddressObjectsWithDoubleSpaces} (look in the logs)");
-        PH::print_stdout( " - FIX_MANUALLY: address objects with same name as REGION: {$countMissconfiguredAddressRegionObjects} (look in the logs)");
-        PH::print_stdout( " - FIX_MANUALLY: empty address-group: {$countEmptyAddressGroup} (look in the logs)");
+        if( $countMissconfiguredAddressObjects > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: missconfigured address objects: {$countMissconfiguredAddressObjects} (look in the logs)");
+        if( $countAddressObjectsWithDoubleSpaces > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: address objects with double spaces in name: {$countAddressObjectsWithDoubleSpaces} (look in the logs)");
+        if( $countAddressObjectsWithWrongCharacters > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: address objects with wrong Characters in name: {$countAddressObjectsWithWrongCharacters} (look in the logs)");
+        if( $countMissconfiguredAddressRegionObjects > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: address objects with same name as REGION: {$countMissconfiguredAddressRegionObjects} (look in the logs)");
+        if( $countEmptyAddressGroup > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: empty address-group: {$countEmptyAddressGroup} (look in the logs)");
         PH::print_stdout();
 
-        PH::print_stdout( " - FIX_MANUALLY: missconfigured service objects: {$countMissconfiguredServiceObjects} (look in the logs)");
-        PH::print_stdout( " - FIX_MANUALLY: service objects with double spaces in name: {$countServiceObjectsWithDoubleSpaces} (look in the logs)");
-        PH::print_stdout( " - FIX_MANUALLY: service objects with name 'application-default': {$countServiceObjectsWithNameappdefault} (look in the logs)");
-        PH::print_stdout( " - FIX_MANUALLY: empty service-group: {$countEmptyServiceGroup} (look in the logs)");
+        if( $countMissconfiguredServiceObjects > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: missconfigured service objects: {$countMissconfiguredServiceObjects} (look in the logs)");
+        if( $countServiceObjectsWithDoubleSpaces > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: service objects with double spaces in name: {$countServiceObjectsWithDoubleSpaces} (look in the logs)");
+        if( $countServiceObjectsWithWrongCharacters > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: service objects with wrong Characters in name: {$countServiceObjectsWithWrongCharacters} (look in the logs)");
+        if( $countServiceObjectsWithNameappdefault > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: service objects with name 'application-default': {$countServiceObjectsWithNameappdefault} (look in the logs)");
+        if( $countEmptyServiceGroup > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: empty service-group: {$countEmptyServiceGroup} (look in the logs)");
         PH::print_stdout();
 
-        PH::print_stdout( " - FIX_MANUALLY: Security Rules with double spaces in name: {$countSecRuleObjectsWithDoubleSpaces} (look in the logs )");
-        PH::print_stdout( " - FIX_MANUALLY: duplicate Security Rules: {$countDuplicateSecRuleObjects} (look in the logs )");
-        PH::print_stdout( " - FIX_MANUALLY: NAT Rules with double spaces in name: {$countNATRuleObjectsWithDoubleSpaces} (look in the logs )");
-        PH::print_stdout( " - FIX_MANUALLY: duplicate NAT Rules: {$countDuplicateNATRuleObjects} (look in the logs )");
+        if( $countSecRuleObjectsWithDoubleSpaces > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: Security Rules with double spaces in name: {$countSecRuleObjectsWithDoubleSpaces} (look in the logs )");
+        if( $countSecRuleObjectsWithWrongCharacters > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: Security Rules with wrong characters in name: {$countSecRuleObjectsWithWrongCharacters} (look in the logs )");
+        if( $countDuplicateSecRuleObjects > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: duplicate Security Rules: {$countDuplicateSecRuleObjects} (look in the logs )");
+        if( $countNATRuleObjectsWithDoubleSpaces > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: NAT Rules with double spaces in name: {$countNATRuleObjectsWithDoubleSpaces} (look in the logs )");
+        if( $countNATRuleObjectsWithWrongCharacters > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: NAT Rules with wrong characters in name: {$countNATRuleObjectsWithWrongCharacters} (look in the logs )");
+        if( $countDuplicateNATRuleObjects > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: duplicate NAT Rules: {$countDuplicateNATRuleObjects} (look in the logs )");
         PH::print_stdout();
 
-        PH::print_stdout( " - FIX_MANUALLY: missconfigured From Field in Security Rules: {$countMissconfiguredSecRuleFromObjects} (look in the logs )");
-        PH::print_stdout( " - FIX_MANUALLY: missconfigured To Field in Security Rules: {$countMissconfiguredSecRuleToObjects} (look in the logs )");
-        PH::print_stdout( " - FIX_MANUALLY: missconfigured Source Field in Security Rules: {$countMissconfiguredSecRuleSourceObjects} (look in the logs )");
-        PH::print_stdout( " - FIX_MANUALLY: missconfigured Destination Field in Security Rules: {$countMissconfiguredSecRuleDestinationObjects} (look in the logs )");
-        PH::print_stdout( " - FIX_MANUALLY: missconfigured Service Field in Security Rules: {$countMissconfiguredSecRuleServiceObjects} (look in the logs )");
-        PH::print_stdout( " - FIX_MANUALLY: missconfigured Application Field in Security Rules: {$countMissconfiguredSecRuleApplicationObjects} (look in the logs )");
-        PH::print_stdout( " - FIX_MANUALLY: missconfigured Category Field in Security Rules: {$countMissconfiguredSecRuleCategoryObjects} (look in the logs )");
+        if( $countMissconfiguredSecRuleFromObjects > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: missconfigured From Field in Security Rules: {$countMissconfiguredSecRuleFromObjects} (look in the logs )");
+        if( $countMissconfiguredSecRuleToObjects > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: missconfigured To Field in Security Rules: {$countMissconfiguredSecRuleToObjects} (look in the logs )");
+        if( $countMissconfiguredSecRuleSourceObjects > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: missconfigured Source Field in Security Rules: {$countMissconfiguredSecRuleSourceObjects} (look in the logs )");
+        if( $countMissconfiguredSecRuleDestinationObjects > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: missconfigured Destination Field in Security Rules: {$countMissconfiguredSecRuleDestinationObjects} (look in the logs )");
+        if( $countMissconfiguredSecRuleServiceObjects > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: missconfigured Service Field in Security Rules: {$countMissconfiguredSecRuleServiceObjects} (look in the logs )");
+        if( $countMissconfiguredSecRuleApplicationObjects > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: missconfigured Application Field in Security Rules: {$countMissconfiguredSecRuleApplicationObjects} (look in the logs )");
+        if( $countMissconfiguredSecRuleCategoryObjects > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: missconfigured Category Field in Security Rules: {$countMissconfiguredSecRuleCategoryObjects} (look in the logs )");
         PH::print_stdout();
 
         if( $service_app_default_available )
         {
-            PH::print_stdout( " - FIX_MANUALLY: SERVICE OBJECT 'application-default' available and used in Security Rules: {$countMissconfiguredSecRuleServiceAppDefaultObjects} (look in the logs )");
+            if( $countMissconfiguredSecRuleServiceAppDefaultObjects > 0 )
+                PH::print_stdout( " - FIX_MANUALLY: SERVICE OBJECT 'application-default' available and used in Security Rules: {$countMissconfiguredSecRuleServiceAppDefaultObjects} (look in the logs )");
             PH::print_stdout();
         }
 
@@ -1928,15 +2060,27 @@ class XMLISSUE extends UTIL
     /**
      * @param $name string
      * @param $object DOMNode
-     * @param $address_name array
+     * @param $object_name array
      **/
-    function check_name( $name, $object, &$address_name )
+    function check_name( $name, $object, &$object_name )
     {
         $needle = "  ";
         if( strpos( $name, $needle ) !== FALSE )
         {
-            $address_name[ $name ] = $object;
+            $object_name[ $name ] = $object;
         }
+    }
+
+    /**
+     * @param $name string
+     * @param $object DOMNode
+     * @param $wrong_name array
+     **/
+    function check_wrong_name( $name, $object, &$wrong_name )
+    {
+        preg_match_all($this->pregMatch_pattern_wrong_characters, $name, $matches , PREG_SET_ORDER, 0);
+        if( count($matches) > 0 )
+            $wrong_name[ $name ] = $object;
     }
 
     /**

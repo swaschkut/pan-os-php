@@ -164,7 +164,7 @@ class Snippet
     public $devices = array();
 
     /** @var FawkesConf|Buckbeak|null $owner */
-    public function __construct( $owner, Container $applicableDG = null)
+    public function __construct( $owner, Container|null $applicableDG = null)
     {
         $this->owner = $owner;
 

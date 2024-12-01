@@ -179,6 +179,8 @@ class PANConf
 
     public $_public_cloud_server = null;
 
+    public $_advance_routing_enabled = false;
+
     public $_auditComment = false;
 
     public $panorama = null;
@@ -349,16 +351,90 @@ class PANConf
             $this->localhostroot->setAttribute('name', 'localhost.localdomain');
         }
 
-        $this->vsyssroot = DH::findFirstElementOrCreate('vsys', $this->localhostroot);
+        $this->vsyssroot = DH::findFirstElement('vsys', $this->localhostroot);
 
 
         $this->deviceconfigroot = DH::findFirstElement('deviceconfig', $this->localhostroot);
 
 
-        // Now listing and extracting all DeviceConfig configurations
-        foreach( $this->vsyssroot->childNodes as $node )
+        //
+        // Extract setting related configs
+        //
+        if( $this->deviceconfigroot !== FALSE )
         {
+            $settingroot = DH::findFirstElement('setting', $this->deviceconfigroot);
+            if( $settingroot !== FALSE )
+            {
+                $tmp1 = DH::findFirstElement('wildfire', $settingroot);
+                if( $tmp1 !== FALSE )
+                {
+                    $tmp2 = DH::findFirstElement('public-cloud-server', $tmp1);
+                    if( $tmp2 )
+                    {
+                        $this->_public_cloud_server = $tmp1->textContent;
+                    }
+                }
 
+                $managementroot = DH::findFirstElement('management', $settingroot);
+                if( $managementroot !== FALSE )
+                {
+                    $auditComment = DH::findFirstElement('rule-require-audit-comment', $managementroot);
+                    if( $auditComment != FALSE )
+                        if( $auditComment->textContent === "yes" )
+                            $this->_auditComment = TRUE;
+                }
+
+                $advanceRoutingroot = DH::findFirstElement('advance-routing', $settingroot);
+                if( $advanceRoutingroot !== FALSE )
+                {
+                    if( $advanceRoutingroot->textContent === "yes" )
+                        $this->_advance_routing_enabled = TRUE;
+                }
+            }
+
+            $systemroot = DH::findFirstElement('system', $this->deviceconfigroot);
+            if( $systemroot !== FALSE )
+            {
+                $timezone = DH::findFirstElement('timezone', $systemroot);
+                if( $timezone )
+                {
+                    $this->timezone = $timezone->textContent;
+
+                    PH::enableExceptionSupport();
+                    try
+                    {
+                        date_default_timezone_set($timezone->textContent);
+                    }
+                    catch(Exception $e)
+                    {
+                        $timezone_backward = PH::timezone_backward_migration( $this->timezone );
+                        $this->timezone = $timezone_backward;
+                        date_default_timezone_set($timezone_backward);
+
+                        PH::print_stdout("   --------------");
+                        PH::print_stdout( " X Timezone: $timezone->textContent is not supported with this PHP version. ".$this->timezone." is used." );
+                        PH::print_stdout("   - the timezone is IANA deprecated. Please change to a supported one:");
+
+
+                        PH::print_stdout();
+                        PH::print_stdout("   -- '".$this->timezone."'");
+                        PH::print_stdout("   --------------");
+                        PH::print_stdout();
+                    }
+                    PH::disableExceptionSupport();
+                }
+            }
+        }
+        //
+
+
+        // Now listing and extracting all DeviceConfig configurations
+        if( $this->vsyssroot !== FALSE )
+        {
+            foreach( $this->vsyssroot->childNodes as $node )
+            {
+
+            }
         }
 
 
@@ -613,107 +689,43 @@ class PANConf
         //
 
         // Now listing and extracting all VirtualSystem configurations
-        foreach( $this->vsyssroot->childNodes as $node )
+        if( $this->vsyssroot !== FALSE )
         {
-            if( $node->nodeType != 1 ) continue;
-            //PH::print_stdout(  "DOM type: ".$node->nodeType );
+            foreach ($this->vsyssroot->childNodes as $node) {
+                if ($node->nodeType != 1) continue;
+                //PH::print_stdout(  "DOM type: ".$node->nodeType );
 
-            $localVirtualSystemName = DH::findAttribute('name', $node);
+                $localVirtualSystemName = DH::findAttribute('name', $node);
 
-            if( $localVirtualSystemName === FALSE || strlen($localVirtualSystemName) < 1 )
-                derr('cannot find VirtualSystem name');
+                if ($localVirtualSystemName === FALSE || strlen($localVirtualSystemName) < 1)
+                    derr('cannot find VirtualSystem name');
 
-            $dg = null;
+                $dg = null;
 
-            if( isset($this->panorama) )
-            {
-                if( $this->panorama->_fakeMode )
-                    $dg = $this->panorama->findDeviceGroup($localVirtualSystemName);
+                if (isset($this->panorama)) {
+                    if ($this->panorama->_fakeMode)
+                        $dg = $this->panorama->findDeviceGroup($localVirtualSystemName);
+                    else
+                        $dg = $this->panorama->findApplicableDGForVsys($this->serial, $localVirtualSystemName);
+                }
+
+                if ($dg !== FALSE && $dg !== null)
+                    $localVsys = new VirtualSystem($this, $dg);
                 else
-                    $dg = $this->panorama->findApplicableDGForVsys($this->serial, $localVirtualSystemName);
-            }
+                    $localVsys = new VirtualSystem($this);
 
-            if( $dg !== FALSE && $dg !== null )
-                $localVsys = new VirtualSystem($this, $dg);
-            else
-                $localVsys = new VirtualSystem($this);
+                if ($debugLoadTime)
+                    PH::print_DEBUG_loadtime("vsys");
 
-            if( $debugLoadTime )
-                PH::print_DEBUG_loadtime("vsys");
+                $localVsys->load_from_domxml($node);
+                $this->virtualSystems[] = $localVsys;
 
-            $localVsys->load_from_domxml($node);
-            $this->virtualSystems[] = $localVsys;
-
-            $importedInterfaces = $localVsys->importedInterfaces->interfaces();
-            foreach( $importedInterfaces as &$ifName )
-            {
-                $ifName->importedByVSYS = $localVsys;
-            }
-        }
-
-
-        //
-        // Extract setting related configs
-        //
-        if( $this->deviceconfigroot !== FALSE )
-        {
-            $settingroot = DH::findFirstElement('setting', $this->deviceconfigroot);
-            if( $settingroot !== FALSE )
-            {
-                $tmp1 = DH::findFirstElement('wildfire', $settingroot);
-                if( $tmp1 !== FALSE )
-                {
-                    $tmp2 = DH::findFirstElement('public-cloud-server', $tmp1);
-                    if( $tmp2 )
-                    {
-                        $this->_public_cloud_server = $tmp1->textContent;
-                    }
-                }
-
-                $managementroot = DH::findFirstElement('management', $settingroot);
-                if( $managementroot !== FALSE )
-                {
-                    $auditComment = DH::findFirstElement('rule-require-audit-comment', $managementroot);
-                    if( $auditComment != FALSE )
-                        if( $auditComment->textContent === "yes" )
-                            $this->_auditComment = TRUE;
-                }
-            }
-
-            $systemroot = DH::findFirstElement('system', $this->deviceconfigroot);
-            if( $systemroot !== FALSE )
-            {
-                $timezone = DH::findFirstElement('timezone', $systemroot);
-                if( $timezone )
-                {
-                    $this->timezone = $timezone->textContent;
-
-                    PH::enableExceptionSupport();
-                    try
-                    {
-                        date_default_timezone_set($timezone->textContent);
-                    }
-                    catch(Exception $e)
-                    {
-                        $timezone_backward = PH::timezone_backward_migration( $this->timezone );
-                        $this->timezone = $timezone_backward;
-                        date_default_timezone_set($timezone_backward);
-
-                        PH::print_stdout("   --------------");
-                        PH::print_stdout( " X Timezone: $timezone->textContent is not supported with this PHP version. ".$this->timezone." is used." );
-                        PH::print_stdout("   - the timezone is IANA deprecated. Please change to a supported one:");
-
-
-                        PH::print_stdout();
-                        PH::print_stdout("   -- '".$this->timezone."'");
-                        PH::print_stdout("   --------------");
-                        PH::print_stdout();
-                    }
-                    PH::disableExceptionSupport();
+                $importedInterfaces = $localVsys->importedInterfaces->interfaces();
+                foreach ($importedInterfaces as &$ifName) {
+                    $ifName->importedByVSYS = $localVsys;
                 }
             }
         }
-        //
 
 
         //

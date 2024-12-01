@@ -2327,6 +2327,30 @@ RQuery::$defaultFilters['rule']['secprof']['operators']['group.is.undefined'] = 
         'input' => 'input/panorama-8.0.xml'
     )
 );
+RQuery::$defaultFilters['rule']['secprof']['operators']['is.best-practice'] = array(
+    'Function' => function (RuleRQueryContext $context) {
+        $rule = $context->object;
+
+        return $rule->SP_isBestPractice();
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['rule']['secprof']['operators']['is.visibility'] = array(
+    'Function' => function (RuleRQueryContext $context) {
+        $rule = $context->object;
+
+        return $rule->SP_isVisibility();
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
 RQuery::$defaultFilters['rule']['secprof']['operators']['av-profile.is'] = array(
     'Function' => function (RuleRQueryContext $context) {
         $rule = $context->object;
@@ -3246,6 +3270,26 @@ RQuery::$defaultFilters['rule']['name']['operators']['is.in.file'] = array(
     'arg' => TRUE,
     'help' => 'returns TRUE if rule name matches one of the names found in text file provided in argument'
 );
+RQuery::$defaultFilters['rule']['name']['operators']['has.wrong.characters'] = array(
+    'Function' => function (RuleRQueryContext $context) {
+        $object = $context->object;
+
+        $newName = htmlspecialchars_decode( $object->name() );
+        preg_match_all('/[^\w $\-.]/', $newName, $matches , PREG_SET_ORDER, 0);
+
+        if( count($matches) == 0 )
+            return FALSE;
+        else
+            return TRUE;
+
+        return null;
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
 
 //                                              //
 //                UserID properties             //
@@ -3923,6 +3967,33 @@ RQuery::$defaultFilters['rule']['schedule.expire.in.days']['operators']['>,<,=,!
         'fString' => '(%PROP% 5 )',
         'input' => 'input/panorama-8.0.xml'
     )
+);
+RQuery::$defaultFilters['rule']['schedule.expired.at.date']['operators']['>,<,=,!'] = array(
+    'Function' => function (RuleRQueryContext $context) {
+        $rule = $context->object;
+        if( !$rule->isSecurityRule() && !$rule->isDoSRule() &&  !$rule->isPbfRule() && !$rule->isQoSRule() )
+            return FALSE;
+
+        /** @var Schedule $schedule */
+        $schedule = $rule->schedule();
+
+        if( is_object( $schedule ) )
+        {
+            $operator = $context->operator;
+            if( $operator == '=' )
+                $operator = '==';
+
+            return $schedule->isExpired( $context->value, $operator );
+        }
+        else
+            return null;
+    },
+    'arg' => true,
+    'ci' => array(
+        'fString' => '(%PROP% 5 )',
+        'input' => 'input/panorama-8.0.xml'
+    ),
+    'help' => 'returns TRUE if rule name matches the specified timestamp MM/DD/YYYY [american] / DD-MM-YYYY [european]'
 );
 RQuery::$defaultFilters['rule']['uuid']['operators']['eq'] = array(
     'Function' => function (RuleRQueryContext $context) {

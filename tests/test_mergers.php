@@ -150,7 +150,8 @@ foreach( $test_merger as $merger )
             $location = 'any';
             $output = '/dev/null';
 
-            $cli = "php $util in={$ci['input']} out={$output} location={$location} {$allowmergingwithupperlevel}";
+            $path = dirname(__FILE__)."/";
+            $cli = "php ".$path.$util." in=".$path.$ci['input']." out={$output} location={$location} {$allowmergingwithupperlevel}";
 
             #if( $merger != 'address' )
                 $cli .= " DupAlgorithm={$dupalgorithm}";

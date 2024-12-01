@@ -60,10 +60,11 @@ foreach( $supportedUTILTypes as $util )
         $additional .= " method=matchFromToSrcDstApp panoramaPreRules";
     }
 
+    $path = dirname(__FILE__)."/";
     if( $util == "key-manager" )
-        $cli = "php $utilscript type={$util}";
+        $cli = "php ".$path.$utilscript." type={$util}";
     else
-        $cli = "php $utilscript type={$util} in={$input} out={$output} location={$location}";
+        $cli = "php ".$path.$utilscript." type={$util} in=".$path.$input." out={$output} location={$location}";
 
     $cli .= $additional;
 

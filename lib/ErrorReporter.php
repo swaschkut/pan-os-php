@@ -20,7 +20,7 @@
 
 class ErrorReporter
 {
-    static function derr($msg, DOMNode $object = null)
+    static function derr($msg, DOMNode|null $object = null)
     {
         if( $object !== null )
         {

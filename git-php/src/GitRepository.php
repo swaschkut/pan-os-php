@@ -16,7 +16,7 @@
 		 * @param  string $repository
 		 * @throws GitException
 		 */
-		public function __construct($repository, IRunner $runner = NULL)
+		public function __construct($repository, IRunner|null $runner = NULL)
 		{
 			if (basename($repository) === '.git') {
 				$repository = dirname($repository);
@@ -50,7 +50,7 @@
 		 * @throws GitException
 		 * @return static
 		 */
-		public function createTag($name, $options = NULL)
+		public function createTag($name, array|null $options = NULL)
 		{
 			$this->run('tag', $options, '--end-of-options', $name);
 			return $this;
@@ -112,7 +112,7 @@
 		 * @throws GitException
 		 * @return static
 		 */
-		public function merge($branch, $options = NULL)
+		public function merge($branch, array|null $options = NULL)
 		{
 			$this->run('merge', $options, '--end-of-options', $branch);
 			return $this;
@@ -325,7 +325,7 @@
 		 * @throws GitException
 		 * @return static
 		 */
-		public function renameFile($file, $to = NULL)
+		public function renameFile($file, string|null $to = NULL)
 		{
 			if (!is_array($file)) { // rename(file, to);
 				$file = [
@@ -349,7 +349,7 @@
 		 * @throws GitException
 		 * @return static
 		 */
-		public function commit($message, $options = NULL)
+		public function commit($message, array|null $options = NULL)
 		{
             if( $this->hasChanges() )
             {
@@ -482,7 +482,7 @@
 		 * @return static
 		 * @throws GitException
 		 */
-		public function pull($remote = NULL, array $options = NULL)
+		public function pull(string|array|null$remote = NULL, array|null $options = NULL)
 		{
 			$this->run('pull', $options, '--end-of-options', $remote);
 			return $this;
@@ -496,7 +496,7 @@
 		 * @return static
 		 * @throws GitException
 		 */
-		public function push($remote = NULL, array $options = NULL)
+		public function push(string|array|null $remote = NULL, array|null $options = NULL)
 		{
 			$this->run('push', $options, '--end-of-options', $remote);
 			return $this;
@@ -510,7 +510,7 @@
 		 * @return static
 		 * @throws GitException
 		 */
-		public function fetch($remote = NULL, array $options = NULL)
+		public function fetch( string|array|null $remote = NULL, array|null $options = NULL)
 		{
 			$this->run('fetch', $options, '--end-of-options', $remote);
 			return $this;
@@ -525,7 +525,7 @@
 		 * @return static
 		 * @throws GitException
 		 */
-		public function addRemote($name, $url, array $options = NULL)
+		public function addRemote($name, $url, array|null $options = NULL)
 		{
 			$this->run('remote', 'add', $options, '--end-of-options', $name, $url);
 			return $this;
@@ -567,7 +567,7 @@
 		 * @return static
 		 * @throws GitException
 		 */
-		public function setRemoteUrl($name, $url, array $options = NULL)
+		public function setRemoteUrl($name, $url, array|null $options = NULL)
 		{
 			$this->run('remote', 'set-url', $options, '--end-of-options', $name, $url);
 			return $this;
@@ -591,7 +591,7 @@
 		 * @return string[]|NULL
 		 * @throws GitException
 		 */
-		protected function extractFromCommand(array $args, callable $filter = NULL)
+		protected function extractFromCommand(array $args, callable|null $filter = NULL)
 		{
 			$result = $this->run(...$args);
 			$output = $result->getOutput();

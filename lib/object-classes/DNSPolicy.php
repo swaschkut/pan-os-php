@@ -34,11 +34,14 @@ class DNSPolicy
     public $action = null;
     public $packetCapture = null;
 
-    public function __construct($name, $owner)
+    public $advanced = null;
+
+    public function __construct($name, $owner, $advanced = false)
     {
         $this->owner = $owner;
         $this->name = $name;
         $this->xmlroot = null;
+        $this->advanced = $advanced;
     }
 
     public function load_from_domxml( $tmp_entry1 )
@@ -116,6 +119,112 @@ class DNSPolicy
         }
 
         PH::print_stdout( $string );
+    }
+
+    public function spyware_dns_bp_visibility_JSON( $checkType )
+    {
+        $secprof_type = "spyware";
+        $checkArray = array();
+
+        if( $checkType !== "bp" && $checkType !== "visibility" )
+            derr( "only 'bp' or 'visibility' argument allowed" );
+
+        ###############################
+        $details = $this->owner->owner->getBPjsonFile();
+
+        if( isset($details[$secprof_type]['dns']) )
+        {
+            if( $checkType == "bp" )
+            {
+                if( isset($details[$secprof_type]['dns']['bp']))
+                    $checkArray = $details[$secprof_type]['dns']['bp'];
+                else
+                    derr( "this JSON bp/visibility JSON file does not have 'bp' -> 'dns' defined correctly for: '".$secprof_type, null, FALSE );
+            }
+            elseif( $checkType == "visibility")
+            {
+                if( isset($details[$secprof_type]['dns']['visibility']))
+                    $checkArray = $details[$secprof_type]['dns']['visibility'];
+                #else
+                //until now all settings are visibilty
+                #    derr( "this JSON bp/visibility JSON file does not have 'visibility' -> 'dns' defined correctly for: '".$secprof_type, null, FALSE );
+            }
+        }
+
+        return $checkArray;
+    }
+
+    public function spyware_dns_security_rule_bestpractice()
+    {
+        $check_array = $this->spyware_dns_bp_visibility_JSON( "bp");
+
+        foreach( $check_array['action'] as $validate )
+        {
+            $bp_action = FALSE;
+            $bp_packet = FALSE;
+
+            foreach( $validate['type'] as $name )
+            {
+                if( $this->name() == $name )
+                {
+                    foreach( $validate['action'] as $final_action_check )
+                    {
+                        #print "1) action: ".$this->action()." |validate: ".$final_action_check."\n";
+                        if( $this->action() == $final_action_check )
+                        {
+                            $bp_action = TRUE;
+                            break;
+                        }
+                        else
+                            $bp_action = FALSE;
+                    }
+
+
+                    foreach( $validate['packet-capture'] as $final_packet_check )
+                    {
+                        #print "2) packet: ".$this->packetCapture()." |validate: ".$final_packet_check."\n";
+                        if( $this->packetCapture() == $final_packet_check )
+                        {
+                            $bp_packet = TRUE;
+                            break;
+                        }
+                        else
+                            $bp_packet = FALSE;
+                    }
+
+
+                    if( $bp_action && $bp_packet )
+                        return TRUE;
+                    else
+                        return FALSE;
+                }
+            }
+        }
+
+        /*
+        if( ( $this->name() == "pan-dns-sec-malware"
+                || $this->name() == "pan-dns-sec-phishing"
+            )
+            && ( $this->action() != "sinkhole"
+            || $this->packetCapture() != "single-packet" )
+        )
+            return false;
+        elseif( ( $this->name() == "pan-dns-sec-cc"
+                )
+                && ( $this->action() != "sinkhole"
+                    || $this->packetCapture() != "extended-capture" )
+            )
+            return false;
+        else
+            return true;
+        */
+        return TRUE;
+    }
+
+    public function spyware_dns_security_rule_visibility()
+    {
+        //every setting is visibility
+        return true;
     }
 }
 

@@ -48,7 +48,14 @@ RuleCallContext::$commonActionFunctions['calculate-zones'] = array(
         $mode = $context->arguments['mode'];
         $system = $rule->owner->owner;
 
-        /** @var VirtualRouter $virtualRouterToProcess */
+        $RouterStore = "virtualRouterStore";
+        if( get_class($system) == "VirtualSystem" && isset($system->owner) && get_class($system->owner) == "PANConf" )
+        {
+            if( $system->owner->_advance_routing_enabled )
+                $RouterStore = "logicalRouterStore";
+        }
+
+        /** @var VirtualRouter|LogicalRouter $virtualRouterToProcess */
         $virtualRouterToProcess = null;
 
         if( !isset($context->cachedIPmapping) )
@@ -128,16 +135,16 @@ RuleCallContext::$commonActionFunctions['calculate-zones'] = array(
                 }
 
                 if( $configIsOnLocalFirewall )
-                    $virtualRouterToProcess = $firewall->network->virtualRouterStore->findVirtualRouter($context->arguments['virtualRouter']);
+                    $virtualRouterToProcess = $firewall->network->$RouterStore->findVirtualRouter($context->arguments['virtualRouter']);
                 else
-                    $virtualRouterToProcess = $template->deviceConfiguration->network->virtualRouterStore->findVirtualRouter($context->arguments['virtualRouter']);
+                    $virtualRouterToProcess = $template->deviceConfiguration->network->$RouterStore->findVirtualRouter($context->arguments['virtualRouter']);
 
                 if( $virtualRouterToProcess === null )
                 {
                     if( $configIsOnLocalFirewall )
-                        $tmpVar = $firewall->network->virtualRouterStore->virtualRouters();
+                        $tmpVar = $firewall->network->$RouterStore->virtualRouters();
                     else
-                        $tmpVar = $template->deviceConfiguration->network->virtualRouterStore->virtualRouters();
+                        $tmpVar = $template->deviceConfiguration->network->$RouterStore->virtualRouters();
 
                     derr("cannot find VirtualRouter named '{$context->arguments['virtualRouter']}' in Template '{$context->arguments['template']}'. Available VR list: " . PH::list_to_string($tmpVar), null, FALSE);
                 }
@@ -178,13 +185,13 @@ RuleCallContext::$commonActionFunctions['calculate-zones'] = array(
             }
             else if( $context->arguments['virtualRouter'] != '*autodetermine*' )
             {
-                $virtualRouterToProcess = $system->owner->network->virtualRouterStore->findVirtualRouter($context->arguments['virtualRouter']);
+                $virtualRouterToProcess = $system->owner->network->$RouterStore->findVirtualRouter($context->arguments['virtualRouter']);
                 if( $virtualRouterToProcess === null )
                     derr("VirtualRouter named '{$context->arguments['virtualRouter']}' not found", null, FALSE);
             }
             else
             {
-                $vRouters = $system->owner->network->virtualRouterStore->virtualRouters();
+                $vRouters = $system->owner->network->$RouterStore->virtualRouters();
                 $foundRouters = array();
 
                 foreach( $vRouters as $router )
@@ -4027,6 +4034,68 @@ RuleCallContext::$supportedActions[] = array(
     ),
     'help' => ''
 );
+RuleCallContext::$supportedActions[] = array(
+    'name' => 'name-Rename-wrong-characters',
+    'MainFunction' => function (RuleCallContext $context) {
+        $object = $context->object;
+
+        $newName = htmlspecialchars_decode( $object->name() );
+        preg_match_all('/[^\w $\-.]/', $newName, $matches , PREG_SET_ORDER, 0);
+
+        if( count($matches) == 0 )
+            return;
+
+        $findings = array();
+        foreach( $matches as $match )
+            $findings[$match[0]] = $match[0];
+
+        $newName = str_replace("&amp;", "_", $newName);
+        $newName = str_replace("–", "-", $newName);
+        foreach( $findings as $replace )
+            $newName = str_replace($replace, "_", $newName);
+
+
+        if( $object->name() == $newName )
+        {
+            $string = "new name and old name are the same";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
+        $max_length = 63;
+        if( strlen($newName) > $max_length )
+        {
+            $string = "resulting name is too long";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
+        $newName = str_replace(",", "_", $newName);
+
+        $string = "new name will be '{$newName}'";
+        PH::ACTIONlog( $context, $string );
+
+        $findObject = $object->owner->find($newName, null, false);
+        if( $findObject !== null )
+        {
+            $string = "an object with same name already exists";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+        else
+        {
+            $string = $context->padding . " - renaming object... ";
+            if( $context->isAPI )
+                $object->API_setName($newName);
+            else
+                $object->setName($newName);
+
+            PH::ACTIONlog( $context, $string );
+        }
+
+    },
+    'help' => ''
+);
 
 RuleCallContext::$supportedActions[] = array(
     'name' => 'ruleType-Change',
@@ -4126,7 +4195,7 @@ RuleCallContext::$supportedActions[] = array(
 
             if( $addResolvedServiceSummary )
             {
-                PH::$JSON_TMP['sub']['object'][$rule->name()]['srv_resolved_sum'] = $rule->ServiceResolveSummary($rule->owner->owner);
+                PH::$JSON_TMP['sub']['object'][$rule->name()]['srv_resolved_sum'] = $context->ServiceResolveSummary($rule);
                 PH::$JSON_TMP['sub']['object'][$rule->name()]['srv_resolved_nested_name'] = $context->ServiceResolveNameNestedSummary( $rule );
                 PH::$JSON_TMP['sub']['object'][$rule->name()]['srv_resolved_nested_value'] = $context->ServiceResolveValueNestedSummary( $rule );
             }
@@ -4207,6 +4276,130 @@ RuleCallContext::$supportedActions[] = array(
 
 
 
+    }
+);
+
+RuleCallContext::$supportedActions[] = array(
+    'name' => 'display-app-id-change',
+    'GlobalInitFunction' => function (RuleCallContext $context)
+    {
+        $req = '<type><threat>'.
+            '<sortby>repeatcnt</sortby>'.
+            '<group-by>rule_uuid</group-by>'.
+            '<aggregate-by><member>rule</member><member>threatid</member></aggregate-by>'.
+            '<values><member>repeatcnt</member></values></threat></type>'.
+            '<period>last-7-days</period><topn>100</topn><topm>25</topm><caption>app-id-change</caption>'.
+            '<query>(category-of-threatid eq app-id-change)</query>';
+
+
+        $apiArgs = Array();
+        $apiArgs['type'] = 'report';
+        $apiArgs['reporttype'] = 'dynamic';
+        $apiArgs['reportname'] = 'custom-dynamic-report';
+        $apiArgs['async'] = 'yes';
+        $apiArgs['cmd'] = $req;
+
+        $context->lines = "";
+        $context->count = 0;
+
+        if( $context->isAPI )
+            $context->cachedList = $context->connector->getReport($apiArgs);
+
+    },
+    'MainFunction' => function (RuleCallContext $context)
+    {
+        /** @var SecurityRule $rule */
+        $rule = $context->object;
+
+        if( $context->isAPI )
+        {
+            if( !empty($context->cachedList ) )
+            {
+                foreach( $context->cachedList as $appidInfo )
+                {
+                    if( $rule->uuid() == $appidInfo['rule_uuid'] )
+                    {
+                        $padding = "       ";
+                        $ruleAppAny = $rule->apps->isAny();
+
+                        $explode = explode(" To ", $appidInfo['threatid']);
+
+                        $context->count++;
+
+                        /** @var Tag $object */
+                        if ($context->count % 2 == 1)
+                            $context->lines .= "<tr>\n";
+                        else
+                            $context->lines .= "<tr bgcolor=\"#DDDDDD\">";
+
+                        $context->lines .= $context->encloseFunction((string)$context->count);
+
+                        $context->lines .= $context->encloseFunction($appidInfo['rule']);
+
+                        $context->lines .= $context->encloseFunction($appidInfo['threatid']);
+                        PH::print_stdout($padding."ThreatInfo: ".$appidInfo['threatid'] );
+
+                        if (!$ruleAppAny)
+                        {
+                            $app_string = "";
+                            $array_count = 1;
+                            foreach ($rule->apps->apps() as $key => $app)
+                            {
+                                $array_count++;
+                                $app_string .= $app->name();
+                                if ($array_count < count($rule->apps->apps()))
+                                    $app_string .= ",";
+                            }
+                            $context->lines .= $context->encloseFunction($app_string);
+                            PH::print_stdout($padding."actual set APP-IDs: '".$app_string."'" );
+
+                            $context->lines .= $context->encloseFunction($explode[1]);
+                            PH::print_stdout($padding."APP-ID to add: '".$explode[1]."'" );
+                        }
+                        else
+                        {
+                            $context->lines .= $context->encloseFunction("any");
+                            PH::print_stdout($padding."actual set APP-IDs: 'any'" );
+                            $context->lines .= $context->encloseFunction("");
+                            PH::print_stdout($padding."APP-ID to add: ''" );
+                        }
+
+                        $context->lines .= "</tr>\n";
+                    }
+                }
+            }
+        }
+        else
+        {
+            mwarning("actions is only working in API mode", null, false);
+            exit();
+        }
+    },
+    'GlobalFinishFunction' => function (RuleCallContext $context)
+    {
+        $filename = "app-id-change.html";
+
+        if( isset( $_SERVER['REQUEST_METHOD'] ) )
+            $filename = "project/html/".$filename;
+
+
+        $headers = '<th>ID</th><th>Rule</th><th>threatid</th><th>actual Rule set to APP-ID</th><th>APP-ID to add</th>';
+
+
+
+        $content = file_get_contents(dirname(__FILE__) . '/../common/html/export-template.html');
+        $content = str_replace('%TableHeaders%', $headers, $content);
+
+        $content = str_replace('%lines%', $context->lines, $content);
+
+        $jscontent = file_get_contents(dirname(__FILE__) . '/../common/html/jquery.min.js');
+        $jscontent .= "\n";
+        $jscontent .= file_get_contents(dirname(__FILE__) . '/../common/html/jquery.stickytableheaders.min.js');
+        $jscontent .= "\n\$('table').stickyTableHeaders();\n";
+
+        $content = str_replace('%JSCONTENT%', $jscontent, $content);
+
+        file_put_contents($filename, $content);
     }
 );
 
@@ -4648,6 +4841,8 @@ RuleCallContext::$supportedActions[] = array(
         $addResolvedServiceAppDefaultSummary = FALSE;
         $addAppSeenSummary = FALSE;
         $addHitCountSummary = FALSE;
+        $bestPractice = FALSE;
+        $visibility = FALSE;
 
         $optionalFields = &$context->arguments['additionalFields'];
 
@@ -4665,6 +4860,11 @@ RuleCallContext::$supportedActions[] = array(
             $addAppSeenSummary = TRUE;
         if( isset($optionalFields['HitCount']) )
             $addHitCountSummary = TRUE;
+        if( isset($optionalFields['BestPractice']) )
+            $bestPractice = TRUE;
+        if( isset($optionalFields['Visibility']) )
+            $visibility = TRUE;
+
         $fields = array(
             'ID' => 'ID',
             'location' => 'location',
@@ -4708,6 +4908,23 @@ RuleCallContext::$supportedActions[] = array(
             'application_seen' => 'application_seen',
             'action' => 'action',
             'security-profile' => 'security-profile',
+            'sp_best_practice' => 'sp_best_practice',
+            'sp_best_practice_details' => 'sp_best_practice_details',
+            'sp_visibility' => 'sp_visibility',
+            'sp_av_bp' => 'sp_av_bp',
+            'sp_as_bp' => 'sp_as_bp',
+            'sp_vp_bp' => 'sp_vp_bp',
+            'sp_url_bp' => 'sp_url_bp',
+            'sp_file_bp' => 'sp_file_bp',
+            'sp_data_bp' => 'sp_data_bp',
+            'sp_wf_bp' => 'sp_wf_bp',
+            'sp_av_visible' => 'sp_av_visible',
+            'sp_as_visible' => 'sp_as_visible',
+            'sp_vp_visible' => 'sp_vp_visible',
+            'sp_url_visible' => 'sp_url_visible',
+            'sp_file_visible' => 'sp_file_visible',
+            'sp_data_visible' => 'sp_data_visible',
+            'sp_wf_visible' => 'sp_wf_visible',
             'disabled' => 'disabled',
             'src_user' => 'src-user',
             'url_category' => 'url-category',
@@ -4753,7 +4970,8 @@ RuleCallContext::$supportedActions[] = array(
 
                 foreach( $fields as $fieldName => $fieldID )
                 {
-                        if( ((
+                        if(
+                        ((
                             $fieldName == 'src_resolved_sum' || $fieldName == 'src_resolved_sumOLD' || $fieldName == 'src_resolved_value' ||
                             $fieldName == 'src_resolved_nested_name' || $fieldName == 'src_resolved_nested_value' || $fieldName == 'src_resolved_nested_location' ||
                             $fieldName == 'dst_resolved_sum' || $fieldName == 'dst_resolved_sumOLD' || $fieldName == 'dst_resolved_value' ||
@@ -4763,23 +4981,35 @@ RuleCallContext::$supportedActions[] = array(
                             && !$addResolvedAddressSummary) ||
                         (($fieldName == 'service_resolved_sum' ||
                                 $fieldName == 'service_resolved_nested_name' || $fieldName == 'service_resolved_nested_value' || $fieldName == 'service_resolved_nested_location' ||
-                                $fieldName == 'service_count' || $fieldName == 'service_count_tcp' || $fieldName == 'service_count_udp') && !$addResolvedServiceSummary) ||
+                                $fieldName == 'service_count' || $fieldName == 'service_count_tcp' || $fieldName == 'service_count_udp')
+                            && !$addResolvedServiceSummary) ||
                         (($fieldName == 'service_appdefault_resolved_sum') && !$addResolvedServiceAppDefaultSummary) ||
                         (($fieldName == 'application_resolved_sum') && !$addResolvedApplicationSummary) ||
                         (($fieldName == 'schedule_resolved_sum' ) && !$addResolvedScheduleSummary) ||
                         (($fieldName == 'application_seen') && (!$addAppSeenSummary || !$context->isAPI) ) ||
-                        (($fieldName == 'first-hit' || $fieldName == 'last-hit' || $fieldName == 'hit-count' || $fieldName == 'rule-creation') && (!$addHitCountSummary || !$context->isAPI) ) ||
-                        (($fieldName == 'sec_rule_type' )  && get_class($rule) !== "SecurityRule") ||
+                        (($fieldName == 'first-hit' || $fieldName == 'last-hit' || $fieldName == 'hit-count' || $fieldName == 'rule-creation')
+                            && (!$addHitCountSummary || !$context->isAPI) ) ||
+                        (($fieldName == 'sec_rule_type' )
+                            && get_class($rule) !== "SecurityRule") ||
                         (($fieldName == 'nat_rule_type' || $fieldName == 'snat_type' || $fieldName == 'snat_address' ||
                                 $fieldName == 'snat_address_resovled_sum' || $fieldName == "dnat_type" || $fieldName == 'dnat_host' ||
                                 $fieldName == 'dnat_host_resovled_sum' || $fieldName == 'dnat_port' || $fieldName == 'dnat_distribution' ||
-                                $fieldName == "dst_interface" || $fieldName == "snat_interface" )  && get_class($rule) !== "NatRule")
+                                $fieldName == "dst_interface" || $fieldName == "snat_interface" )
+                            && get_class($rule) !== "NatRule") ||
+                        (($fieldName == 'sp_best_practice' ) && !$bestPractice ) ||
+                        (($fieldName == 'sp_best_practice_details'
+                                || $fieldName == 'sp_av_bp' || $fieldName == 'sp_as_bp' || $fieldName == 'sp_vp_bp' || $fieldName == 'sp_url_bp' || $fieldName == 'sp_file_bp' || $fieldName == 'sp_data_bp' || $fieldName == 'sp_wf_bp'
+                                || $fieldName == 'sp_av_visible' || $fieldName == 'sp_as_visible' || $fieldName == 'sp_vp_visible' || $fieldName == 'sp_url_visible' || $fieldName == 'sp_file_visible' || $fieldName == 'sp_data_visible' || $fieldName == 'sp_wf_visible'
+                            )
+                            && (!$bestPractice && !$visibility) ) ||
+                        (($fieldName == 'sp_visibility' ) && !$visibility )
                     )
                         continue;
                     $rule_hitcount_array = array();
-                    if(($fieldName == 'first-hit' || $fieldName == 'last-hit' || $fieldName == 'hit-count' || $fieldName == 'rule-creation') && $addHitCountSummary && $context->isAPI )
+                    if(($fieldName == 'first-hit' || $fieldName == 'last-hit' || $fieldName == 'hit-count' || $fieldName == 'rule-creation')
+                        && $addHitCountSummary && $context->isAPI )
                         $rule_hitcount_array = $rule->API_showRuleHitCount( false, false );
-                    $lines .= $context->ruleFieldHtmlExport($rule, $fieldID, TRUE, $rule_hitcount_array);
+                    $lines .= $context->ruleFieldHtmlExport($rule, $fieldID, TRUE, $rule_hitcount_array, $bestPractice, $visibility);
                 }
 
 
@@ -4802,16 +5032,28 @@ RuleCallContext::$supportedActions[] = array(
                     && !$addResolvedAddressSummary) ||
                 (($fieldName == 'service_resolved_sum' ||
                         $fieldName == 'service_resolved_nested_name' || $fieldName == 'service_resolved_nested_value' || $fieldName == 'service_resolved_nested_location' ||
-                        $fieldName == 'service_count' || $fieldName == 'service_count_tcp' || $fieldName == 'service_count_udp') && !$addResolvedServiceSummary) ||
+                        $fieldName == 'service_count' || $fieldName == 'service_count_tcp' || $fieldName == 'service_count_udp')
+                    && !$addResolvedServiceSummary) ||
                 (($fieldName == 'service_appdefault_resolved_sum') && !$addResolvedServiceAppDefaultSummary) ||
                 (($fieldName == 'application_resolved_sum') && !$addResolvedApplicationSummary) ||
                 (($fieldName == 'schedule_resolved_sum') && !$addResolvedScheduleSummary) ||
                 (($fieldName == 'application_seen') && (!$addAppSeenSummary || !$context->isAPI) ) ||
-                (($fieldName == 'first-hit' || $fieldName == 'last-hit' || $fieldName == 'hit-count' || $fieldName == 'rule-creation' ) && (!$addHitCountSummary || !$context->isAPI) ) ||
+                (($fieldName == 'first-hit' || $fieldName == 'last-hit' || $fieldName == 'hit-count' || $fieldName == 'rule-creation' )
+                    && (!$addHitCountSummary || !$context->isAPI) ) ||
+                (($fieldName == 'sec_rule_type' ) && $rule !== null
+                    && get_class($rule) !== "SecurityRule") ||
                 (($fieldName == 'nat_rule_type' || $fieldName == 'snat_type' || $fieldName == 'snat_address' ||
                         $fieldName == 'snat_address_resovled_sum' || $fieldName == "dnat_type" || $fieldName == 'dnat_host' ||
                         $fieldName == 'dnat_host_resovled_sum' || $fieldName == 'dnat_port' || $fieldName == 'dnat_distribution'  ||
-                        $fieldName == "dst_interface" || $fieldName == "snat_interface" )  && $rule !== null && get_class($rule) !== "NatRule")
+                        $fieldName == "dst_interface" || $fieldName == "snat_interface" )  && $rule !== null
+                    && get_class($rule) !== "NatRule") ||
+                (($fieldName == 'sp_best_practice' ) && !$bestPractice ) ||
+                (($fieldName == 'sp_best_practice_details'
+                        || $fieldName == 'sp_av_bp' || $fieldName == 'sp_as_bp' || $fieldName == 'sp_vp_bp' || $fieldName == 'sp_url_bp' || $fieldName == 'sp_file_bp' || $fieldName == 'sp_data_bp' || $fieldName == 'sp_wf_bp'
+                        || $fieldName == 'sp_av_visible' || $fieldName == 'sp_as_visible' || $fieldName == 'sp_vp_visible' || $fieldName == 'sp_url_visible' || $fieldName == 'sp_file_visible' || $fieldName == 'sp_data_visible' || $fieldName == 'sp_wf_visible'
+                    )
+                    && (!$bestPractice && !$visibility) ) ||
+                (($fieldName == 'sp_visibility' ) && !$visibility )
             )
                 continue;
             $tableHeaders .= "<th>{$fieldName}</th>\n";
@@ -4838,7 +5080,7 @@ RuleCallContext::$supportedActions[] = array(
             array('type' => 'pipeSeparatedList',
                 'subtype' => 'string',
                 'default' => '*NONE*',
-                'choices' => array('ResolveAddressSummary', 'ResolveServiceSummary', 'ResolveServiceAppDefaultSummary', 'ResolveApplicationSummary', 'ResolveScheduleSummary', 'ApplicationSeen', 'HitCount'),
+                'choices' => array('ResolveAddressSummary', 'ResolveServiceSummary', 'ResolveServiceAppDefaultSummary', 'ResolveApplicationSummary', 'ResolveScheduleSummary', 'ApplicationSeen', 'HitCount', 'BestPractice', 'Visibility'),
                 'help' => "example: 'actions=exporttoexcel:file.html,HitCount|ApplicationSeen'\n" .
                     "pipe(|) separated list of additional field to include in the report. The following is available:\n" .
                     "  - ResolveAddressSummary : fields with address objects will be resolved to IP addressed and summarized in a new column\n" .
@@ -4847,7 +5089,8 @@ RuleCallContext::$supportedActions[] = array(
                     "  - ResolveApplicationSummary : fields with application objects will be resolved to their category and risk\n" .
                     "  - ResolveScheduleSummary : fields with schedule objects will be resolved to their expire time\n" .
                     "  - ApplicationSeen : all App-ID seen on the Device SecurityRule will be listed\n" .
-                    "  - HitCount : Rule - 'first-hit' - 'last-hit' - 'hit-count' - 'rule-creation will be listed\n"
+                    "  - HitCount : Rule - 'first-hit' - 'last-hit' - 'hit-count' - 'rule-creation will be listed\n" .
+                    "  - BestPractice : show if BestPractice is configured\n"
             )
     )
 );

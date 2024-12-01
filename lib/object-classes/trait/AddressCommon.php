@@ -40,6 +40,11 @@ trait AddressCommon
         return FALSE;
     }
 
+    public function isEDL()
+    {
+        return FALSE;
+    }
+
     public function isRegion()
     {
         return FALSE;

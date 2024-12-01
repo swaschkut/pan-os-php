@@ -24,6 +24,19 @@ class DNSPolicyStore extends ObjStore
 
     public static $childn = 'DNS';
 
+
+    public $tmp_dns_prof_array = array(
+        "pan-dns-sec-adtracking",
+        "pan-dns-sec-cc",
+        "pan-dns-sec-ddns",
+        "pan-dns-sec-grayware",
+        "pan-dns-sec-malware",
+        "pan-dns-sec-parked",
+        "pan-dns-sec-phishing",
+        "pan-dns-sec-proxy",
+        "pan-dns-sec-recent"
+    );
+
     public function __construct($owner)
     {
         $this->classn = &self::$childn;

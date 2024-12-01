@@ -26,6 +26,9 @@ class NetworkPropertiesContainer
     /** @var VirtualRouterStore */
     public $virtualRouterStore;
 
+    /** @var LogicalRouterStore */
+    public $logicalRouterStore;
+
     /** @var IkeCryptoProfileStore */
     public $ikeCryptoProfileStore;
 
@@ -72,6 +75,7 @@ class NetworkPropertiesContainer
         $this->greTunnelStore = new GreTunnelStore('GreTunnels', $owner);
         $this->tmpInterfaceStore = new TmpInterfaceStore('TmpIfaces', $owner);
         $this->virtualRouterStore = new VirtualRouterStore('', $owner);
+        $this->logicalRouterStore = new LogicalRouterStore('', $owner);
         $this->ikeCryptoProfileStore = new IkeCryptoProfileStore('IkeCryptoProfiles', $owner);
         $this->ipsecCryptoProfileStore = new IPSecCryptoProfileStore('IPSecCryptoProfiles', $owner);
         $this->ikeGatewayStore = new IKEGatewayStore('IkeGateways', $owner);
@@ -88,43 +92,55 @@ class NetworkPropertiesContainer
         $this->xmlroot = $xml;
 
 
-        $xmlInterface = DH::findFirstElementOrCreate('interface', $this->xmlroot);
-        $tmp = DH::findFirstElement('ethernet', $xmlInterface);
-        if( $tmp !== FALSE )
-            $this->ethernetIfStore->load_from_domxml($tmp);
-
-        $tmp = DH::findFirstElement('aggregate-ethernet', $xmlInterface);
-        if( $tmp !== FALSE )
-            $this->aggregateEthernetIfStore->load_from_domxml($tmp);
-
-        $tmp = DH::findFirstElement('loopback', $xmlInterface);
-        if( $tmp !== FALSE )
+        $xmlInterface = DH::findFirstElement('interface', $this->xmlroot);
+        if( $xmlInterface !== FALSE )
         {
-            $tmp = DH::findFirstElement('units', $tmp);
+            $tmp = DH::findFirstElement('ethernet', $xmlInterface);
             if( $tmp !== FALSE )
-                $this->loopbackIfStore->load_from_domxml($tmp);
+                $this->ethernetIfStore->load_from_domxml($tmp);
+
+            $tmp = DH::findFirstElement('aggregate-ethernet', $xmlInterface);
+            if( $tmp !== FALSE )
+                $this->aggregateEthernetIfStore->load_from_domxml($tmp);
+
+            $tmp = DH::findFirstElement('loopback', $xmlInterface);
+            if( $tmp !== FALSE )
+            {
+                $tmp = DH::findFirstElement('units', $tmp);
+                if( $tmp !== FALSE )
+                    $this->loopbackIfStore->load_from_domxml($tmp);
+            }
+
+            $tmp = DH::findFirstElement('vlan', $xmlInterface);
+            if( $tmp !== FALSE )
+            {
+                $tmp = DH::findFirstElement('units', $tmp);
+                if( $tmp !== FALSE )
+                    $this->vlanIfStore->load_from_domxml($tmp);
+            }
+
+            $tmp = DH::findFirstElement('tunnel', $xmlInterface);
+            if( $tmp !== FALSE )
+            {
+                $tmp = DH::findFirstElement('units', $tmp);
+                if( $tmp !== FALSE )
+                    $this->tunnelIfStore->load_from_domxml($tmp);
+            }
         }
 
-        $tmp = DH::findFirstElement('vlan', $xmlInterface);
-        if( $tmp !== FALSE )
+
+        if( $this->owner->_advance_routing_enabled )
         {
-            $tmp = DH::findFirstElement('units', $tmp);
+            $tmp = DH::findFirstElement('logical-router', $this->xmlroot);
             if( $tmp !== FALSE )
-                $this->vlanIfStore->load_from_domxml($tmp);
+                $this->logicalRouterStore->load_from_domxml($tmp);
         }
-
-        $tmp = DH::findFirstElement('tunnel', $xmlInterface);
-        if( $tmp !== FALSE )
+        else
         {
-            $tmp = DH::findFirstElement('units', $tmp);
+            $tmp = DH::findFirstElement('virtual-router', $this->xmlroot);
             if( $tmp !== FALSE )
-                $this->tunnelIfStore->load_from_domxml($tmp);
+                $this->virtualRouterStore->load_from_domxml($tmp);
         }
-
-
-        $tmp = DH::findFirstElement('virtual-router', $this->xmlroot);
-        if( $tmp !== FALSE )
-            $this->virtualRouterStore->load_from_domxml($tmp);
 
         $tmp = DH::findFirstElement('virtual-wire', $this->xmlroot);
         if( $tmp !== FALSE )
@@ -198,6 +214,11 @@ class NetworkPropertiesContainer
             if( $tmp1 !== FALSE )
                 $this->greTunnelStore->load_from_domxml($tmp1);
         }
+
+        //todo: these are specification for NGFW; Panorama template is already done
+        //todo: check again static Route information if objects are used to set references
+
+        //todo: check interfaces if objects are used
     }
 
 

@@ -34,10 +34,12 @@ class StaticRoute
 
     /** @var string */
     protected $_destination;
-
+    protected $_destinationObject;
     protected $_nexthopType = 'none';
 
     protected $_nexthopIP = null;
+
+    protected $_nexthopIPObject = null;
 
     protected $_metric = null;
 
@@ -76,6 +78,16 @@ class StaticRoute
             //<destination>192.168.220.70/32</destination>
         //</entry>
 
+        /*
+        <entry name="test">
+          <nexthop><ip-address>Route_6.7.8.9</ip-address></nexthop>
+          <bfd><profile>None</profile></bfd>
+          <metric>10</metric>
+          <destination>Route_DST_192.168.10.0m24</destination>
+          <route-table><unicast/></route-table>
+        </entry>
+         */
+
         $this->name = DH::findAttribute('name', $xml);
         if( $this->name === FALSE )
             derr("static-route name not found\n");
@@ -95,12 +107,7 @@ class StaticRoute
             }
             else
             {
-                //Todo: swaschkut 20201216 - _destination can be also an address object;
-                //how to find correct addressStore if Panorama? because
-                $array_vsys = $this->owner->findConcernedVsys();
-
-                if( isset($array_vsys[0]) )
-                    $this->_destination = $array_vsys[0];
+                $this->validateIPorObject($dstNode->textContent, 'destination');
             }
         }
 
@@ -135,6 +142,7 @@ class StaticRoute
             {
                 $this->_nexthopType = 'ip-address';
                 $this->_nexthopIP = $fhTypeNode->textContent;
+                $this->validateIPorObject($this->_nexthopIP, 'nexthop');
                 return;
             }
             $fhTypeNode = DH::findFirstElement('ipv6-address', $fhNode);
@@ -142,6 +150,7 @@ class StaticRoute
             {
                 $this->_nexthopType = 'ipv6-address';
                 $this->_nexthopIP = $fhTypeNode->textContent;
+                $this->validateIPorObject($this->_nexthopIP, 'nexthop');
                 return;
             }
             $fhTypeNode = DH::findFirstElement('next-vr', $fhNode);
@@ -152,6 +161,71 @@ class StaticRoute
                 return;
             }
 
+        }
+    }
+
+    function validateIPorObject($nexthopIP, $type = 'destination')
+    {
+        $pan_object = $this->owner->owner->owner;
+        #print "CLASS pan: ".get_class($pan_object)."\n";
+        if( isset( $pan_object->owner ) )
+        {
+            if( get_class($pan_object->owner) == "Template" )
+            {
+                $template_object = $pan_object->owner;
+                $panorama_object = $template_object->owner;
+                $shared_object = $panorama_object->addressStore->find($nexthopIP);
+                if( $shared_object != null )
+                {
+                    $shared_object->addReference($this);
+
+                    if( $type == "destination" )
+                    {
+                        $this->_destination = $shared_object->value();
+                        $this->_destinationObject = $shared_object;
+                    }
+                    elseif( $type == "nexthop" )
+                    {
+                        $this->_nexthopIP = $shared_object->value();
+                        $this->_nexthopIPObject = $shared_object;
+                    }
+                }
+            }
+        }
+        else
+        {
+            //Todo: NGFW not easy to handle
+            //print "it is a firewall\n";
+            //it is directly a NGFW
+            $all_vsys = $pan_object->getVirtualSystems();
+
+            //vsys information not available at the time for reading config
+            //
+
+            //print "count vsys: ".count($all_vsys)."\n";
+
+            foreach( $all_vsys as $vsys )
+            {
+                #not correct because you need to find correct vsys;
+                #static route per interface???
+                $ngfw_object = $vsys->addressStore->find($nexthopIP);
+                if( $ngfw_object != null )
+                {
+                    #print "add Reference for :".$ngfw_object->name()."\n";
+                    $ngfw_object->addReference($this);
+
+                    if( $type == "destination" )
+                    {
+                        $this->_destination = $ngfw_object->value();
+                        $this->_destinationObject = $ngfw_object;
+                    }
+                    elseif( $type == "nexthop" )
+                    {
+                        $this->_nexthopIP = $ngfw_object->value();
+                        $this->_nexthopIPObject = $ngfw_object;
+                    }
+                }
+            }
         }
     }
 
@@ -198,6 +272,11 @@ class StaticRoute
         return $this->_destination;
     }
 
+    public function destinationObject()
+    {
+        return $this->_destinationObject;
+    }
+
     /**
      * @return bool|string
      */
@@ -225,6 +304,11 @@ class StaticRoute
     public function nexthopIP()
     {
         return $this->_nexthopIP;
+    }
+
+    public function nexthopIPobject()
+    {
+        return $this->_nexthopIPObject;
     }
 
     /**
@@ -283,14 +367,31 @@ class StaticRoute
 
         $tmpArray[$this->name()]['name'] = $this->name();
 
-        $text .= " - DEST: " . str_pad($this->destination(), 20);
-        $tmpArray[$this->name()]['destination'] = $this->destination();
+        if($this->destination() !== null)
+        {
+            $string_destination = $this->destination();
+            if( $this->destinationObject() !== "" && $this->destinationObject() !== null )
+                $string_destination .= " [".$this->destinationObject()->name()."]";
+
+            $text .= " - DEST: " . str_pad($string_destination, 20);
+            $tmpArray[$this->name()]['destination'] = $this->destination();
+            if( $this->destinationObject() !== "" && $this->destinationObject() !== null )
+                $tmpArray[$this->name()]['destinationObject'] = $this->destinationObject()->name();
+        }
+        else
+            $text .= str_pad( " ", 30 );
 
 
         if( $this->nexthopIP() !== null )
         {
-            $text .= " - NEXTHOP: " . str_pad($this->nexthopIP(), 20);
+            $string_nexthopIP = $this->nexthopIP();
+            if( $this->nexthopIPobject() !== "" && $this->nexthopIPobject() !== null )
+                $string_nexthopIP .= " [".$this->nexthopIPobject()->name()."]";
+
+            $text .= " - NEXTHOP: " . str_pad($string_nexthopIP, 20);
             $tmpArray[$this->name()]['nexthop'] = $this->nexthopIP();
+            if( $this->nexthopIPobject() !== "" && $this->nexthopIPobject() !== null )
+                $tmpArray[$this->name()]['nexthopObject'] = $this->nexthopIPobject()->name();
         }
         else
             $text .= str_pad( " ", 30 );

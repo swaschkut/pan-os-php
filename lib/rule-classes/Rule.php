@@ -1159,6 +1159,13 @@ class Rule
 
         $system = $this->owner->owner;
 
+        $RouterStore = "virtualRouterStore";
+        if( get_class($system) == "VirtualSystem" && isset($system->owner) && get_class($system->owner) == "PANConf" )
+        {
+            if( $system->owner->_advance_routing_enabled )
+                $RouterStore = "logicalRouterStore";
+        }
+
         /** @var VirtualRouter $virtualRouterToProcess */
         $virtualRouterToProcess = null;
 
@@ -1208,7 +1215,7 @@ class Rule
                         $entries = $res->getElementsByTagName('entry');
 
                         /** @var VirtualRouter $vr */
-                        $tmp_vr = $firewall->network->virtualRouterStore->findVirtualRouter( $virtualRouter );
+                        $tmp_vr = $firewall->network->$RouterStore->findVirtualRouter( $virtualRouter );
 
                         foreach( $entries as $key => $child )
                         {
@@ -1277,16 +1284,16 @@ class Rule
                 }
 
                 if( $configIsOnLocalFirewall )
-                    $virtualRouterToProcess = $firewall->network->virtualRouterStore->findVirtualRouter($virtualRouter);
+                    $virtualRouterToProcess = $firewall->network->$RouterStore->findVirtualRouter($virtualRouter);
                 else
-                    $virtualRouterToProcess = $template->deviceConfiguration->network->virtualRouterStore->findVirtualRouter($virtualRouter);
+                    $virtualRouterToProcess = $template->deviceConfiguration->network->$RouterStore->findVirtualRouter($virtualRouter);
 
                 if( $virtualRouterToProcess === null )
                 {
                     if( $configIsOnLocalFirewall )
-                        $tmpVar = $firewall->network->virtualRouterStore->virtualRouters();
+                        $tmpVar = $firewall->network->$RouterStore->virtualRouters();
                     else
-                        $tmpVar = $template->deviceConfiguration->network->virtualRouterStore->virtualRouters();
+                        $tmpVar = $template->deviceConfiguration->network->$RouterStore->virtualRouters();
 
                     derr("cannot find VirtualRouter named '{$virtualRouter}' in Template '{$template_name}'. Available VR list: " . PH::list_to_string($tmpVar));
                 }
@@ -1327,13 +1334,13 @@ class Rule
             }
             else if( $virtualRouter != '*autodetermine*' )
             {
-                $virtualRouterToProcess = $system->owner->network->virtualRouterStore->findVirtualRouter($virtualRouter);
+                $virtualRouterToProcess = $system->owner->network->$RouterStore->findVirtualRouter($virtualRouter);
                 if( $virtualRouterToProcess === null )
                     derr("VirtualRouter named '{$virtualRouter}' not found");
             }
             else
             {
-                $vRouters = $system->owner->network->virtualRouterStore->virtualRouters();
+                $vRouters = $system->owner->network->$RouterStore->virtualRouters();
                 $foundRouters = array();
 
                 foreach( $vRouters as $router )
@@ -1595,6 +1602,15 @@ class Rule
 
         $system = $this->owner->owner;
 
+        $RouterStore = "virtualRouterStore";
+        if( get_class($system) == "VirtualSystem" && isset($system->owner) && get_class($system->owner) == "PANConf" )
+        {
+            if( $system->owner->_advance_routing_enabled )
+                $RouterStore = "logicalRouterStore";
+        }
+        if( $RouterStore == "logicalRouterStore" )
+            derr( "Locigal Router not yet suported", null, FALSE );
+
         /** @var VirtualRouter $virtualRouterToProcess */
         $virtualRouterToProcess = null;
 
@@ -1636,6 +1652,7 @@ class Rule
                         $doc = $connector->getMergedConfig();
                         $firewall->load_from_domxml($doc);
 
+                        //Todo 20241109 swaschkut extend with logical-router part
                         //This is to get full routing table incl. dynamic routing for zone-calculation
                         $cmd = "<show><routing><route><virtual-router>".$virtualRouter."</virtual-router></route></routing></show>";
                         $res = $connector->sendOpRequest($cmd, TRUE);
@@ -2422,6 +2439,109 @@ class Rule
     }
 
 
+    public function SP_isBestPractice()
+    {
+        if( !$this->isSecurityRule() && !$this->isDefaultSecurityRule() )
+            return FALSE;
+        if( !$this->securityProfileIsBlank()
+            && $this->securityProfileType() == "group" )
+        {
+            $group_name = $this->securityProfileGroup();
+            /** @var SecurityProfileGroup $group */
+            $group = $this->owner->owner->securityProfileGroupStore->find($group_name);
+
+            if( $group->is_best_practice() )
+                return TRUE;
+            else
+                return FALSE;
+        }
+        else
+        {
+            $profiles = $this->securityProfiles_obj();
+            if( count($profiles) > 0 )
+            {
+                $bp_set = FALSE;
+                foreach ($profiles as $type => $profile) {
+                    if ($type == "virus" || $type == "spyware" || $type == "vulnerability") {
+                        /** @var AntiVirusProfile $profile */
+                        if (is_object($profile)) {
+                            if ($profile->is_best_practice())
+                                $bp_set = TRUE;
+                            else
+                                return FALSE;
+                        } else {
+                            mwarning("BP SPG check not possible - SecurityProfile type: " . $type . " name '" . $profile . "' not found", null, false);
+                            return FALSE;
+                        }
+                    }
+                }
+                if( !isset($profiles['virus']) )
+                    return FALSE;
+                if( !isset($profiles['spyware']) )
+                    return FALSE;
+                if( !isset($profiles['vulnerability']) )
+                    return FALSE;
+
+                if ($bp_set)
+                    return TRUE;
+                else
+                    return FALSE;
+            }
+            return null;
+        }
+    }
+
+    public function SP_isVisibility()
+    {
+        if( !$this->isSecurityRule() && !$this->isDefaultSecurityRule() )
+            return FALSE;
+        if( !$this->securityProfileIsBlank()
+            && $this->securityProfileType() == "group" )
+        {
+            $group_name = $this->securityProfileGroup();
+            /** @var SecurityProfileGroup $group */
+            $group = $this->owner->owner->securityProfileGroupStore->find($group_name);
+
+            if( $group->is_visibility() )
+                return TRUE;
+            else
+                return FALSE;
+        }
+        else
+        {
+            $profiles = $this->securityProfiles_obj();
+            if( count($profiles) > 0 )
+            {
+                $bp_set = FALSE;
+                foreach ($profiles as $type => $profile) {
+                    if ($type == "virus" || $type == "spyware" || $type == "vulnerability") {
+                        /** @var AntiVirusProfile $profile */
+                        if (is_object($profile)) {
+                            if ($profile->is_visibility())
+                                $bp_set = TRUE;
+                            else
+                                return FALSE;
+                        } else {
+                            mwarning("BP SPG check not possible - SecurityProfile type: " . $type . " name '" . $profile . "' not found", null, false);
+                            return FALSE;
+                        }
+                    }
+                }
+                if( !isset($profiles['virus']) )
+                    return FALSE;
+                if( !isset($profiles['spyware']) )
+                    return FALSE;
+                if( !isset($profiles['vulnerability']) )
+                    return FALSE;
+
+                if ($bp_set)
+                    return TRUE;
+                else
+                    return FALSE;
+            }
+            return null;
+        }
+    }
 
     public function isPreRule()
     {

@@ -20,7 +20,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-class customURLProfile
+class customURLProfile extends SecurityProfile2
 {
     use ReferenceableObject;
     use PathableName;

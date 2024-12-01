@@ -232,7 +232,10 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
 
         $addWhereUsed = FALSE;
         $addUsedInLocation = FALSE;
+        $addCountDisabledRules = FALSE;
         $addTotalUse = FALSE;
+        $bestPractice = FALSE;
+        $visibility = FALSE;
 
         $optionalFields = &$context->arguments['additionalFields'];
 
@@ -243,9 +246,42 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
             $addUsedInLocation = TRUE;
 
         if( isset($optionalFields['TotalUse']) )
+        {
             $addTotalUse = TRUE;
+            $addCountDisabledRules = TRUE;
+        }
 
-        $headers = '<th>ID</th><th>location</th><th>name</th><th>Antivirus</th><th>Anti-Spyware</th><th>Vulnerability</th><th>URL Filtering</th><th>File Blocking</th><th>Data Filtering</th><th>WildFire Analysis</th>';
+        if( isset($optionalFields['BestPractice']) )
+            $bestPractice = TRUE;
+
+        if( isset($optionalFields['Visibility']) )
+            $visibility = TRUE;
+
+        $headers = '<th>ID</th><th>location</th><th>name</th>';
+        if( $bestPractice )
+            $headers .= '<th>BP group</th>';
+        if( $visibility )
+            $headers .= '<th>visibility group</th>';
+
+        $headers .= '<th>Antivirus</th>';
+        if( $bestPractice )
+            $headers .= '<th>BP AV</th>';
+        if( $visibility )
+            $headers .= '<th>visibility</th>';
+
+        $headers .= '<th>Anti-Spyware</th>';
+        if( $bestPractice )
+            $headers .= '<th>BP AS</th>';
+        if( $visibility )
+            $headers .= '<th>visibility</th>';
+
+        $headers .= '<th>Vulnerability</th>';
+        if( $bestPractice )
+            $headers .= '<th>BP VP</th>';
+        if( $visibility )
+            $headers .= '<th>visibility</th>';
+
+        $headers .= '<th>URL Filtering</th><th>File Blocking</th><th>Data Filtering</th><th>WildFire Analysis</th>';
 
         if( $addWhereUsed )
             $headers .= '<th>where used</th>';
@@ -253,15 +289,20 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
             $headers .= '<th>location used</th>';
         if( $addTotalUse )
             $headers .= '<th>total use</th>';
+        if( $addCountDisabledRules )
+            $headers .= '<th>count disabled Rules</th>';
+
+        $bp_text_yes = "yes";
+        $bp_text_no = "no";
 
         $count = 0;
         if( isset($context->objectList) )
         {
             foreach( $context->objectList as $object )
             {
+                /** @var SecurityProfileGroup $object */
                 $count++;
 
-                /** @var Tag $object */
                 if( $count % 2 == 1 )
                     $lines .= "<tr>\n";
                 else
@@ -273,14 +314,152 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
 
                 $lines .= $context->encloseFunction($object->name());
 
-
+                if( $bestPractice )
+                {
+                    if ($object->is_best_practice())
+                        $lines .= $context->encloseFunction($bp_text_yes);
+                    else
+                        $lines .= $context->encloseFunction($bp_text_no);
+                }
+                if( $visibility )
+                {
+                    if ($object->is_visibility())
+                        $lines .= $context->encloseFunction($bp_text_yes);
+                    else
+                        $lines .= $context->encloseFunction($bp_text_no);
+                }
                 //private $secprof_array = array('virus', 'spyware', 'vulnerability', 'file-blocking', 'wildfire-analysis', 'url-filtering', 'data-filtering');
 
                 $lines .= $context->encloseFunction($object->secprofiles['virus']);
+                if( $bestPractice || $visibility )
+                {
+                    if(isset($object->secprofiles['virus']))
+                    {
+                        if( is_object($object->secprofiles['virus']) )
+                            $profile = $object->secprofiles['virus'];
+                        else
+                            $profile = $context->object->owner->owner->AntiVirusProfileStore->find($object->secprofiles['virus']);
+
+                        if( is_object( $profile ) )
+                        {
+                            if( $bestPractice )
+                            {
+                                if ($profile->is_best_practice())
+                                    $lines .= $context->encloseFunction($bp_text_yes);
+                                else
+                                    $lines .= $context->encloseFunction($bp_text_no);
+                            }
+                            if( $visibility)
+                            {
+                                if ($profile->is_visibility())
+                                    $lines .= $context->encloseFunction($bp_text_yes);
+                                else
+                                    $lines .= $context->encloseFunction($bp_text_no);
+                            }
+                        }
+                        else
+                        {
+                            if( $bestPractice)
+                                $lines .= $context->encloseFunction("- check not possible -");
+                            if( $visibility)
+                                $lines .= $context->encloseFunction("- check not possible -");
+                        }
+                    }
+                    else
+                    {
+                        if( $bestPractice )
+                            $lines .= $context->encloseFunction($bp_text_no);
+                        if( $visibility )
+                            $lines .= $context->encloseFunction($bp_text_no);
+                    }
+                }
 
                 $lines .= $context->encloseFunction($object->secprofiles['spyware']);
+                if( $bestPractice || $visibility)
+                {
+                    if(isset($object->secprofiles['spyware']))
+                    {
+                        if( is_object($object->secprofiles['spyware']) )
+                            $profile = $object->secprofiles['spyware'];
+                        else
+                            $profile = $context->object->owner->owner->AntiSpywareProfileStore->find($object->secprofiles['spyware']);
+
+                        if( is_object( $profile ) )
+                        {
+                            if( $bestPractice )
+                            {
+                                if ($profile->is_best_practice())
+                                    $lines .= $context->encloseFunction($bp_text_yes);
+                                else
+                                    $lines .= $context->encloseFunction($bp_text_no);
+                            }
+                            if( $visibility )
+                            {
+                                if ($profile->is_visibility())
+                                    $lines .= $context->encloseFunction($bp_text_yes);
+                                else
+                                    $lines .= $context->encloseFunction($bp_text_no);
+                            }
+                        }
+                        else
+                        {
+                            if( $bestPractice)
+                                $lines .= $context->encloseFunction("- check not possible -");
+                            if( $visibility)
+                                $lines .= $context->encloseFunction("- check not possible -");
+                        }
+                    }
+                    else
+                    {
+                        if( $bestPractice )
+                            $lines .= $context->encloseFunction($bp_text_no);
+                        if( $visibility )
+                            $lines .= $context->encloseFunction($bp_text_no);
+                    }
+                }
 
                 $lines .= $context->encloseFunction($object->secprofiles['vulnerability']);
+                if( $bestPractice || $visibility )
+                {
+                    if(isset($object->secprofiles['vulnerability']))
+                    {
+                        if( is_object($object->secprofiles['vulnerability']) )
+                            $profile = $object->secprofiles['vulnerability'];
+                        else
+                            $profile = $context->object->owner->owner->VulnerabilityProfileStore->find($object->secprofiles['vulnerability']);
+                        if( is_object( $profile ) )
+                        {
+                            if( $bestPractice )
+                            {
+                                if( $profile->is_best_practice() )
+                                    $lines .= $context->encloseFunction($bp_text_yes);
+                                else
+                                    $lines .= $context->encloseFunction($bp_text_no);
+                            }
+                            if( $visibility )
+                            {
+                                if( $profile->is_visibility() )
+                                    $lines .= $context->encloseFunction($bp_text_yes);
+                                else
+                                    $lines .= $context->encloseFunction($bp_text_no);
+                            }
+                        }
+                        else
+                        {
+                            if( $bestPractice)
+                                $lines .= $context->encloseFunction("- check not possible -");
+                            if( $visibility)
+                                $lines .= $context->encloseFunction("- check not possible -");
+                        }
+                    }
+                    else
+                    {
+                        if( $bestPractice )
+                            $lines .= $context->encloseFunction($bp_text_no);
+                        if( $visibility )
+                            $lines .= $context->encloseFunction($bp_text_no);
+                    }
+                }
 
                 $lines .= $context->encloseFunction($object->secprofiles['url-filtering']);
 
@@ -318,6 +497,15 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
                         $refCount = (string)$refCount ;
                     $lines .= $context->encloseFunction( $refCount );
                 }
+                if( $addCountDisabledRules)
+                {
+                    $refCount = $object->countDisabledRefRule();
+                    if( $refCount == 0 )
+                        $refCount = "---";
+                    else
+                        $refCount = (string)$refCount ;
+                    $lines .= $context->encloseFunction( $refCount );
+                }
 
                 $lines .= "</tr>\n";
             }
@@ -342,12 +530,14 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
             array('type' => 'pipeSeparatedList',
                 'subtype' => 'string',
                 'default' => '*NONE*',
-                'choices' => array('WhereUsed', 'UsedInLocation', 'TotalUse'),
+                'choices' => array('WhereUsed', 'UsedInLocation', 'TotalUse', 'BestPractice', 'Visibility'),
                 'help' =>
                     "pipe(|) separated list of additional field to include in the report. The following is available:\n" .
                     "  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n" .
                     "  - WhereUsed : list places where object is used (rules, groups ...)\n" .
-                    "  - TotalUse : list a counter how often this object is used\n"
+                    "  - TotalUse : list a counter how often this object is used\n" .
+                    "  - BestPractice : show if BestPractice is configured\n" .
+                    "  - Visibility : show if SP log is configured\n"
             )
     )
 );

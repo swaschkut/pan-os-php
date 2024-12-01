@@ -191,6 +191,11 @@ class DIFF extends UTIL
                     PH::print_stdout( "Opening COMPARE 'CandidateConfig' XML file... ");
                     $doc1 = $connector->getCandidateConfig();
 
+                    $this->xmlDoc = $doc1;
+                    $this->configInput['type'] = 'api';
+                    $this->configInput['connector'] = $configInput['connector'];
+                    $this->determineConfigType();
+
                     $substring = str_replace( $matches[1], "", PH::$args['filter'] );
                     $substring = str_replace( $matches[2], "", $substring );
                     $pid = explode( "name", $substring );
@@ -237,6 +242,12 @@ class DIFF extends UTIL
                     PH::print_stdout( "Opening ORIGINAL 'RunningConfig' XML file... ");
                     $doc1 = $connector->getRunningConfig();
 
+                    $this->xmlDoc = $doc1;
+                    $this->configInput['type'] = 'api';
+                    $this->configInput['connector'] = $configInput['connector'];
+                    $this->determineConfigType();
+
+
                     PH::print_stdout( "Opening COMPARE 'Candidate' XML file... ");
                     $doc2 = $connector->getCandidateConfig();
                 }
@@ -262,6 +273,11 @@ class DIFF extends UTIL
             //second document needed for combinedRuleOrderCheck at the end of the diff
             $origDoc1 = new DOMDocument();
             $origDoc1->load($file1, XML_PARSE_BIG_LINES);
+
+            $this->xmlDoc = $origDoc1;
+            $this->configInput['type'] = 'file';
+            $this->determineConfigType();
+
 
             $pattern = "/(.*)\{\{name\}\}(.*)/";
 
@@ -1123,6 +1139,9 @@ class DIFF extends UTIL
 
 
                 $multiVSYS = FALSE;
+                //Todo: bug configType not working here
+                if( $this->debugAPI )
+                    PH::print_stdout("configtype: '".$this->configType);
                 if( $this->configType == 'panos' )
                 {
                     if( count($this->pan->getVirtualSystems()) > 1 )
@@ -1131,7 +1150,7 @@ class DIFF extends UTIL
                 elseif( $this->configType == 'panorama' )
                 {
                     //check if xpath is template related
-                    if( strpos( $xpath, "template") !== FALSE )
+                    #if( strpos( $xpath, "template") !== FALSE )
                         $multiVSYS = TRUE;
                 }
 

@@ -109,6 +109,26 @@ RQuery::$defaultFilters['service']['name']['operators']['is.in.file'] = array(
     },
     'arg' => TRUE
 );
+RQuery::$defaultFilters['service']['name']['operators']['has.wrong.characters'] = array(
+    'Function' => function (ServiceRQueryContext $context) {
+        $object = $context->object;
+
+        $newName = htmlspecialchars_decode( $object->name() );
+        preg_match_all('/[^\w $\-.]/', $newName, $matches , PREG_SET_ORDER, 0);
+
+        if( count($matches) == 0 )
+            return FALSE;
+        else
+            return TRUE;
+
+        return null;
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
 RQuery::$defaultFilters['service']['object']['operators']['is.group'] = array(
     'Function' => function (ServiceRQueryContext $context) {
         return $context->object->isGroup();

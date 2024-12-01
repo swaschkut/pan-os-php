@@ -258,7 +258,8 @@ foreach( $json_a as $type => $UTILtype )
         $ruletype = 'any';
 
 
-        $cli = "php $util in={$ci['input']} out={$output} location={$location} 'actions={$actionName}'";
+        $path = dirname(__FILE__)."/";
+        $cli = "php ".$path.$util." in=".$path.$ci['input']." out={$output} location={$location} 'actions={$actionName}'";
 
         if( $type == 'rule' )
             $cli .= " ruletype={$ruletype}";

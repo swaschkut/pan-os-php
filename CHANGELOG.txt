@@ -1,6 +1,65 @@
 CHANGELOG
 
-2.1.27
+2.1.28
+UTIL:
+* type=playbook | improve reading in= argument from the above utility output=
+* type=tsf | extend argument help with actions= information - extend actions=extract-running-and-merged-config
+* type=rule | introduce 'actions=display-app-id-change'
+* type=device | actions=sp_spg-create-bp - improvement for PAN-OS 11.2 - also for URL artificial-intelligence,marijuana, scanning-activity
+* class AntiSpyware | extend with advanced-dns-security-categories for PAN-OS 11.2
+* type=xpath | introduce argument 'display-api-command'
+* UTIL | introduction of LogicalRouter in different Classes and utilities | main usage type=routing / =static-route
+* type=securityprofile/securityprofilegroup | extend 'actions=exporttoexcel:file.html,Totaluse' with a column to display the count of usage in disabled rules
+* type=device actions=find-zone-from-ip:{IPADDRESS} | extend for NGFW to get this working with logical Router
+* type=securityprofile 'actions=exporttoexcel:sp_bp.html,bestpractice' securityprofiletype=spyware,vulnerability,virus | extend with more real BP checkes, mark also dummy entries
+* type=securityprofile | new 'filters=(av.actions/av.mica-engine/as.mica-engine/as.rules/vb.mice-engine/vb.rules is.best-practice)'
+* class VlanInterface | improve with IPv6
+* type=seccurityprofile | introduce new 'filter=(av/as/vb is.best-practice)'
+* type=seccurityprofilegroup | introduce new 'filter=(object is.best-practice)' 'actions=exporttoexcel:file.html,bestpractice'
+* type=rule | introduce 'filter=(secprof is.best-practice)'
+* type=rule/securityprofile/securityprofilegroup actions=exporttoexcel:file.html,bestpractice | extend with overall BP information for AV/AS/VP
+* class AntiSpyware | add sinkhole default settings
+* type=schedule | new 'filter=(expired.at.date > 01-12-2024) or (expired.at.date < 2024/12/21)'
+* introduce section 'visibility' for type=rule/securityprofilegroup/securityprofile actions=exporttoexcel:file.html,visibility
+* type=securityprofile securityprofile=spyware | update dns-sec-cc packetCapture BP must be extended-capture
+* type=securityprofile securityprofiletype=url-filtering | extend reading with credential-enforcement
+* type=securityprofile securityprofiletype=url-filtering actions=url.alert-only-set | extend with credential-enforcement
+* class AntiSpywareProfile | add default config if not avaialble for dns categories
+* type=address-merger | better validation for upper/childhashmap if same objectname with different type/value is available
+* type=address/service/rule | introduce 'filter=(name has.wrong.characters)' - actions=(name-Rename-wrong-characters)'
+* type=xml-issue | extend with searching for address/-group/service/-group names which include wrong non PAN-OS supported characters
+* class AntiVirusProfile | introduce bp JSON file reading
+* type=xml-issue | extend search for sec-/nat-rule name with wrong characters in
+
+BUGFIX:
+* online method | bugfix for in=api:// | if your password does have special characters like @/! aso.l
+* type=rule ruletype=nat | actions=exporttoexcel - bugfix to display correct column for NAT rules
+* type=diff | or all utilities with outputformatset | bugfix to display correct vsys for template/multi-vsys firewall
+* type=securityprofile securityprofiletype=spyware actions=spyware.bestpractice-set | fix to set it to allow
+* class UTIL | bugfix for argument outputformatset
+* type=securityprofile securityprofiletype=vulnerability | bugfix to add mica-engine-vulnerability-enabled only on PANOS version >=11.0
+* type=XYZ | argument outputformat=setcommand.txt | bugfix to load origXML at the beginning
+* class NetworkPropertiesContainer | bugfix to not create new XMLnode - fix needed for argument outputformatset
+* type=playbook | bugfix for in=api:// mode
+* type=securityprofilegroup actions=exporttoexcel:file.html,bestpractise | bugfix if no SP is set for SPG
+* type=rule-compare | bugfix if EDL are used
+* type=address 'filter=(object is.unused / is.unused.recursive)' | bugfix to search correct upper addressgroup
+* type=address-merger | extend validation if pickedobject name is overriden at childDG level with different value
+* type=rule actions=exporttoexcel:file.html,serviceresolvesummary | bugfix to calculate correct mapping
+* class Logical/VirtualRouter | bugfix for type=device actions=find-zone-from-ip:IPADDRESS
+
+GENERAL:
+* improve different network classes for IPv6 | improve for Panroama Template object usage in network classes
+* Docker file, move to nonroot user: "ubuntu" - more valdiation needed for develop script
+* introduction of class LogicalRouter/LogicalRouterContainer/LogicalRouterStore
+* update to Device App-ID version: 8909-9044
+* Class AntiSpyware | adjust PAN-OS version check - all starting with PANOS 10.2
+* update to Device App-ID version: 8917-9092
+* update util action/filter | bp json file
+* improve code for usage of PHP version 8.4.x
+
+
+2.1.27 (20241011)
 UTIL:
 * type=address | introduce actions=replaceByMembers:{tag/description} | to be flexible to keep addressgroup
 * type=service | introduce actions=replaceByMembers | to be flexible to keep servicegroup

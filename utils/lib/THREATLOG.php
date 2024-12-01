@@ -96,7 +96,8 @@ class THREATLOG extends UTIL
             $actions = PH::$args['actions'];
         }
         else
-            $actions =  null;
+            $actions =  "display";
+
 ########################################################################################################################
 
         $inputConnector->refreshSystemInfos();
@@ -121,36 +122,61 @@ class THREATLOG extends UTIL
 
         if( !empty($output) )
         {
-            foreach( $output as $log )
+            if( $actions == "exporttoexcel" )
             {
-                if( $actions == null )
+                $filename = "threatLog.html";
+                $count = 0;
+                $lines = "";
+                $headers = null;
+            }
+
+            foreach( $output as $key => $log )
+            {
+                if( $actions === "display" )
                 {
                     PH::print_stdout(  " - ".http_build_query($log,'',' | ') );
                     PH::print_stdout();
 
                     PH::$JSON_OUT['threat-log'][] = $log;
                 }
-                else
+                elseif( $actions == "display-threatname" )
                 {
-                    if( $actions == "display-threatname" )
+                    if( isset($log['threat_name']) )
                     {
-                        if( isset($log['threat_name']) )
-                        {
-                            $tmp_log = $log['threat_name'];
+                        $tmp_subtype = $log['subtype'];
 
-                            $ruleID = $log['rule_uuid'];
-                            PH::print_stdout(  " - threat_name: '".$tmp_log."' | rule-ID: '".$ruleID."'" );
+                        $tmp_log = $log['threat_name'];
+
+                        $ruleID = $log['rule_uuid'];
+                        PH::print_stdout(  " - type: '".$tmp_subtype."' | threat_name: '".$tmp_log."' | rule-ID: '".$ruleID."'" );
+                        $missingAPPID = null;
+                        if( strpos( $tmp_log, " TO " ) !== FALSE )
+                        {
                             $posTO = strrpos($tmp_log," To ");
                             $missingAPPID = substr($tmp_log, $posTO + 4);
-                            if( $missingAPPID !== null )
-                                PH::print_stdout( "    x missing APP-ID: '".$missingAPPID."'");
-                            PH::print_stdout();
-
-                            PH::$JSON_OUT['threat-log'][] = array( 'rule_uuid' => $ruleID, 'threat_name' => $tmp_log );
                         }
+
+                        if( $missingAPPID !== null )
+                            PH::print_stdout( "    x missing APP-ID: '".$missingAPPID."'");
+                        PH::print_stdout();
+
+                        PH::$JSON_OUT['threat-log'][] = array( 'subtype' => $tmp_subtype, 'rule_uuid' => $ruleID, 'threat_name' => $tmp_log );
                     }
                 }
+                elseif( $actions == "exporttoexcel" )
+                {
+                    if( $key == 0 )
+                    {
+                        $headers = $log;
+                    }
+                    $this->exportToExcel_Threat_log_line( $log, $count, $lines);
+                }
+            }
 
+            if( $actions == "exporttoexcel" )
+            {
+                //Todo: 20241103 swaschkut not all response lines does have all headers, fix it
+                $this->exportToExcel_Table_Headers($lines, $headers, $filename);
             }
         }
         else
@@ -164,5 +190,98 @@ class THREATLOG extends UTIL
         PH::print_stdout( "##########################################" );
         PH::print_stdout();
     }
+
+    public function exportToExcel_Threat_log_line( $log, &$count, &$lines)
+    {
+        $wrap = TRUE;
+
+        $count++;
+
+        /** @var SecurityRule|NatRule $rule */
+        if( $count % 2 == 1 )
+            $lines .= "<tr>\n";
+        else
+            $lines .= "<tr bgcolor=\"#DDDDDD\">";
+
+        $lines .= $this->encloseFunction( (string)$count );
+
+        $first = true;
+        foreach( $log as $fieldName => $fieldID )
+        {
+            if( $first )
+            {
+                $first = false;
+                continue;
+            }
+            $lines .= $this->encloseFunction(strval($fieldID), $wrap);
+        }
+
+        $lines .= "</tr>\n";
+    }
+
+    public function exportToExcel_Table_Headers( $lines, $headers, $filename )
+    {
+        $tableHeaders = '';
+        foreach( $headers as $fieldName => $value )
+        {
+            $tableHeaders .= "<th>{$fieldName}</th>\n";
+        }
+
+        $content = file_get_contents(dirname(__FILE__) . '/../common/html/export-template.html');
+
+        $content = str_replace('%TableHeaders%', $tableHeaders, $content);
+
+        $content = str_replace('%lines%', $lines, $content);
+
+        $jscontent = file_get_contents(dirname(__FILE__) . '/../common/html/jquery.min.js');
+        $jscontent .= "\n";
+        $jscontent .= file_get_contents(dirname(__FILE__) . '/../common/html/jquery.stickytableheaders.min.js');
+        $jscontent .= "\n\$('table').stickyTableHeaders();\n";
+
+        $content = str_replace('%JSCONTENT%', $jscontent, $content);
+
+        file_put_contents($filename, $content);
+    }
+
+    public function encloseFunction( $value, $nowrap = TRUE )
+    {
+        if( $value == NULL )
+            $output = "---";
+        elseif( is_string($value) )
+            $output = htmlspecialchars($value);
+        elseif( is_array($value) )
+        {
+            $output = '';
+            $first = TRUE;
+            foreach( $value as $subValue )
+            {
+                if( !$first )
+                {
+                    $output .= '<br />';
+                }
+                else
+                    $first = FALSE;
+
+                if( is_string($subValue) || is_numeric($subValue) )
+                    $output .= htmlspecialchars($subValue);
+                elseif( is_object($subValue) )
+                    $output .= htmlspecialchars($subValue->name());
+                else
+                    $output .= "";
+            }
+        }
+        elseif( is_object($value) )
+        {
+            $output = htmlspecialchars( $value->name() );
+        }
+        else
+            derr('TYPE: '.gettype($value).' unsupported', null, false);
+
+        if( $nowrap )
+            return '<td style="white-space: nowrap">' . $output . '</td>';
+
+        return '<td>' . $output . '</td>';
+    }
+
 
 }

@@ -296,6 +296,11 @@ var subjectObject =
                 },
                 "help": ""
             },
+            "name-rename-wrong-characters": {
+                "name": "name-rename-wrong-characters",
+                "MainFunction": {},
+                "help": ""
+            },
             "name-replace-character": {
                 "name": "name-Replace-Character",
                 "MainFunction": {},
@@ -639,6 +644,14 @@ var subjectObject =
                         "arg": true
                     },
                     "same.as.region.predefined": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "has.wrong.characters": {
                         "Function": {},
                         "arg": false,
                         "ci": {
@@ -1606,6 +1619,10 @@ var subjectObject =
                     "authkey-name": {
                         "type": "string",
                         "default": "pan-os-php-authkey"
+                    },
+                    "lifetime": {
+                        "type": "string",
+                        "default": "86400"
                     }
                 },
                 "help": "This Action is displaying the default authkey available in the Panorama"
@@ -3293,6 +3310,12 @@ var subjectObject =
                     }
                 }
             },
+            "display-app-id-change": {
+                "name": "display-app-id-change",
+                "GlobalInitFunction": {},
+                "MainFunction": {},
+                "GlobalFinishFunction": {}
+            },
             "display-app-seen": {
                 "name": "display-app-seen",
                 "MainFunction": {}
@@ -3488,9 +3511,11 @@ var subjectObject =
                             "ResolveApplicationSummary",
                             "ResolveScheduleSummary",
                             "ApplicationSeen",
-                            "HitCount"
+                            "HitCount",
+                            "BestPractice",
+                            "Visibility"
                         ],
-                        "help": "example: 'actions=exporttoexcel:file.html,HitCount|ApplicationSeen'\npipe(|) separated list of additional field to include in the report. The following is available:\n  - ResolveAddressSummary : fields with address objects will be resolved to IP addressed and summarized in a new column\n  - ResolveServiceSummary : fields with service objects will be resolved to their value and summarized in a new column\n  - ResolveServiceAppDefaultSummary : fields with application objects will be resolved to their service default value and summarized in a new column\n  - ResolveApplicationSummary : fields with application objects will be resolved to their category and risk\n  - ResolveScheduleSummary : fields with schedule objects will be resolved to their expire time\n  - ApplicationSeen : all App-ID seen on the Device SecurityRule will be listed\n  - HitCount : Rule - 'first-hit' - 'last-hit' - 'hit-count' - 'rule-creation will be listed\n"
+                        "help": "example: 'actions=exporttoexcel:file.html,HitCount|ApplicationSeen'\npipe(|) separated list of additional field to include in the report. The following is available:\n  - ResolveAddressSummary : fields with address objects will be resolved to IP addressed and summarized in a new column\n  - ResolveServiceSummary : fields with service objects will be resolved to their value and summarized in a new column\n  - ResolveServiceAppDefaultSummary : fields with application objects will be resolved to their service default value and summarized in a new column\n  - ResolveApplicationSummary : fields with application objects will be resolved to their category and risk\n  - ResolveScheduleSummary : fields with schedule objects will be resolved to their expire time\n  - ApplicationSeen : all App-ID seen on the Device SecurityRule will be listed\n  - HitCount : Rule - 'first-hit' - 'last-hit' - 'hit-count' - 'rule-creation will be listed\n  - BestPractice : show if BestPractice is configured\n"
                     }
                 }
             },
@@ -3841,6 +3866,11 @@ var subjectObject =
                         "help": "This bool is used to allow longer rule name for PAN-OS starting with version 8.1."
                     }
                 },
+                "help": ""
+            },
+            "name-rename-wrong-characters": {
+                "name": "name-Rename-wrong-characters",
+                "MainFunction": {},
                 "help": ""
             },
             "name-replace-character": {
@@ -5268,6 +5298,14 @@ var subjectObject =
                         "Function": {},
                         "arg": true,
                         "help": "returns TRUE if rule name matches one of the names found in text file provided in argument"
+                    },
+                    "has.wrong.characters": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
                     }
                 }
             },
@@ -5421,6 +5459,19 @@ var subjectObject =
                     }
                 }
             },
+            "schedule.expired.at.date": {
+                "operators": {
+                    ">,<,=,!": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% 5 )",
+                            "input": "input\/panorama-8.0.xml"
+                        },
+                        "help": "returns TRUE if rule name matches the specified timestamp MM\/DD\/YYYY [american] \/ DD-MM-YYYY [european]"
+                    }
+                }
+            },
             "secprof": {
                 "operators": {
                     "not.set": {
@@ -5482,6 +5533,22 @@ var subjectObject =
                         }
                     },
                     "group.is.undefined": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.best-practice": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.visibility": {
                         "Function": {},
                         "arg": false,
                         "ci": {
@@ -6345,6 +6412,15 @@ var subjectObject =
                     }
                 }
             },
+            "expired.at.date": {
+                "operators": {
+                    ">,<,=,!": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if rule name matches the specified timestamp MM\/DD\/YYYY [american] \/ DD-MM-YYYY [european]"
+                    }
+                }
+            },
             "location": {
                 "operators": {
                     "is": {
@@ -6441,6 +6517,10 @@ var subjectObject =
                         "Function": {},
                         "arg": true
                     },
+                    "expired.at.date": {
+                        "Function": {},
+                        "arg": true
+                    },
                     "is.tmp": {
                         "Function": {},
                         "arg": false,
@@ -6512,22 +6592,6 @@ var subjectObject =
     "securityprofile": {
         "name": "securityprofile",
         "action": {
-            "action-set": {
-                "name": "action-set",
-                "MainFunction": {},
-                "args": {
-                    "action": {
-                        "type": "string",
-                        "default": "*nodefault*",
-                        "help": "allow, alert, block, continue, override"
-                    },
-                    "filter": {
-                        "type": "string",
-                        "default": "all",
-                        "help": "all \/ all-[action] \/ category"
-                    }
-                }
-            },
             "custom-url-category-add-ending-token": {
                 "name": "custom-url-category-add-ending-token",
                 "MainFunction": {},
@@ -6592,9 +6656,10 @@ var subjectObject =
                             "WhereUsed",
                             "UsedInLocation",
                             "TotalUse",
-                            "BestPractice"
+                            "BestPractice",
+                            "Visibility"
                         ],
-                        "help": "pipe(|) separated list of additional fields (ie: Arg1|Arg2|Arg3...) to include in the report. The following is available:\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n  - WhereUsed : list places where object is used (rules, groups ...)\n  - TotalUse : list a counter how often this object is used\n  - BestPractice : show if BestPractice is configured\n"
+                        "help": "pipe(|) separated list of additional fields (ie: Arg1|Arg2|Arg3...) to include in the report. The following is available:\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n  - WhereUsed : list places where object is used (rules, groups ...)\n  - TotalUse : list a counter how often this object is used\n  - BestPractice : show if BestPractice is configured\n  - Visibility : show if SP log is configured\n"
                     }
                 }
             },
@@ -6656,8 +6721,8 @@ var subjectObject =
                 "args": {
                     "has-DNS-license": {
                         "type": "bool",
-                        "default": true,
-                        "help": "define correct AS Profile setting if License is available"
+                        "default": "true",
+                        "help": "[has-DNS-license] 'spyware.alert-only-set:FALSE' - define correct AS Profile setting if License is NOT available"
                     }
                 }
             },
@@ -6667,8 +6732,8 @@ var subjectObject =
                 "args": {
                     "has-DNS-license": {
                         "type": "bool",
-                        "default": true,
-                        "help": "define correct AS Profile setting if License is available"
+                        "default": "true",
+                        "help": "[has-DNS-license] 'spyware.best-practice-set:FALSE' - define correct AS Profile setting if License is NOT available"
                     }
                 }
             },
@@ -6683,6 +6748,22 @@ var subjectObject =
                     "url-category": {
                         "type": "string",
                         "default": "false"
+                    }
+                }
+            },
+            "url.action-set": {
+                "name": "url.action-set",
+                "MainFunction": {},
+                "args": {
+                    "action": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "allow, alert, block, continue, override"
+                    },
+                    "filter": {
+                        "type": "string",
+                        "default": "all",
+                        "help": "all \/ all-[action] \/ category"
                     }
                 }
             },
@@ -6722,29 +6803,59 @@ var subjectObject =
                     }
                 }
             },
-            "alert": {
+            "as": {
                 "operators": {
-                    "has": {
+                    "is.best-practice": {
                         "Function": {},
-                        "arg": true,
-                        "ci": {
-                            "fString": "(%PROP% securityrule )",
-                            "input": "input\/panorama-8.0.xml"
-                        },
-                        "help": "'securityprofiletype=url'"
+                        "arg": false,
+                        "help": "'securityprofiletype=spyware' e.g. 'filter=(vb is.best-practice)'"
+                    },
+                    "is.visibility": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=spyware' e.g. 'filter=(vb is.visibility)'"
                     }
                 }
             },
-            "allow": {
+            "as.mica-engine": {
                 "operators": {
-                    "has": {
+                    "is.best-practice": {
                         "Function": {},
-                        "arg": true,
-                        "ci": {
-                            "fString": "(%PROP% securityrule )",
-                            "input": "input\/panorama-8.0.xml"
-                        },
-                        "help": "'securityprofiletype=url'"
+                        "arg": false,
+                        "help": "'securityprofiletype=spyware' e.g. 'filter=(as.mica-engine is.best-practice)'"
+                    },
+                    "is.visibility": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=spyware' e.g. 'filter=(as.mica-engine is.visibility)'"
+                    }
+                }
+            },
+            "as.rules": {
+                "operators": {
+                    "is.best-practice": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=spyware' e.g. 'filter=(as.rules is.best-practice)'"
+                    },
+                    "is.visibility": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=spyware' e.g. 'filter=(as.rules is.visibility)'"
+                    }
+                }
+            },
+            "av": {
+                "operators": {
+                    "is.best-practice": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=virus' e.g. 'filter=(av is.best-practice)'"
+                    },
+                    "is.visibility": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=virus' e.g. 'filter=(av is.best-practice)'"
                     }
                 }
             },
@@ -6754,12 +6865,50 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=virus'"
+                    },
+                    "is.visibility": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=virus'"
+                    }
+                }
+            },
+            "av.actions": {
+                "operators": {
+                    "is.best-practice": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=virus'"
+                    },
+                    "is.visibility": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=virus'"
+                    }
+                }
+            },
+            "av.mica-engine": {
+                "operators": {
+                    "is.best-practice": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=virus' e.g. 'filter=(av.mica-engine is.best-practice)'"
+                    },
+                    "is.visibility": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=virus' e.g. 'filter=(av.mica-engine is.best-practice)'"
                     }
                 }
             },
             "av.mlav-action": {
                 "operators": {
                     "is.best-practice": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=virus'"
+                    },
+                    "is.visibility": {
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=virus'"
@@ -6772,19 +6921,11 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=virus'"
-                    }
-                }
-            },
-            "block": {
-                "operators": {
-                    "has": {
+                    },
+                    "is.visibility": {
                         "Function": {},
-                        "arg": true,
-                        "ci": {
-                            "fString": "(%PROP% securityrule )",
-                            "input": "input\/panorama-8.0.xml"
-                        },
-                        "help": "'securityprofiletype=url'"
+                        "arg": false,
+                        "help": "'securityprofiletype=virus'"
                     }
                 }
             },
@@ -6817,6 +6958,11 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=spyware,vulnerability'"
+                    },
+                    "is.visibility": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=spyware,vulnerability'"
                     }
                 }
             },
@@ -6833,25 +6979,17 @@ var subjectObject =
                     }
                 }
             },
-            "continue": {
-                "operators": {
-                    "has": {
-                        "Function": {},
-                        "arg": true,
-                        "ci": {
-                            "fString": "(%PROP% securityrule )",
-                            "input": "input\/panorama-8.0.xml"
-                        },
-                        "help": "'securityprofiletype=url'"
-                    }
-                }
-            },
             "dns-list": {
                 "operators": {
                     "is.best-practice": {
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=spyware' e.g. 'filter=(dns-list is.best-practice)'"
+                    },
+                    "is.visibility": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=spyware' e.g. 'filter=(dns-list is.visibility)'"
                     }
                 }
             },
@@ -7062,19 +7200,6 @@ var subjectObject =
                     }
                 }
             },
-            "override": {
-                "operators": {
-                    "has": {
-                        "Function": {},
-                        "arg": true,
-                        "ci": {
-                            "fString": "(%PROP% securityrule )",
-                            "input": "input\/panorama-8.0.xml"
-                        },
-                        "help": "'securityprofiletype=url'"
-                    }
-                }
-            },
             "packet-capture": {
                 "operators": {
                     "eq": {
@@ -7175,6 +7300,97 @@ var subjectObject =
                         "help": "'securityprofiletype=spyware,vulnerability' example: 'filter=(threat-rule has.from.query subquery1)' 'subquery1=(action eq alert)'"
                     }
                 }
+            },
+            "url": {
+                "operators": {
+                    "alert.has": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% securityrule )",
+                            "input": "input\/panorama-8.0.xml"
+                        },
+                        "help": "'securityprofiletype=url'"
+                    },
+                    "block.has": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% securityrule )",
+                            "input": "input\/panorama-8.0.xml"
+                        },
+                        "help": "'securityprofiletype=url'"
+                    },
+                    "allow.has": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% securityrule )",
+                            "input": "input\/panorama-8.0.xml"
+                        },
+                        "help": "'securityprofiletype=url'"
+                    },
+                    "continue.has": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% securityrule )",
+                            "input": "input\/panorama-8.0.xml"
+                        },
+                        "help": "'securityprofiletype=url'"
+                    },
+                    "override.has": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% securityrule )",
+                            "input": "input\/panorama-8.0.xml"
+                        },
+                        "help": "'securityprofiletype=url'"
+                    }
+                }
+            },
+            "vp": {
+                "operators": {
+                    "is.best-practice": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=vulnerability' e.g. 'filter=(vb is.best-practice)'"
+                    },
+                    "is.visibility": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=vulnerability' e.g. 'filter=(vb is.best-practice)'"
+                    }
+                }
+            },
+            "vp.mica-engine": {
+                "operators": {
+                    "is.best-practice": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=vulnerability' e.g. 'filter=(vp.mica-engine is.best-practice)'"
+                    },
+                    "is.visibility": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=vulnerability' e.g. 'filter=(vp.mica-engine is.visibility)'"
+                    }
+                }
+            },
+            "vp.rules": {
+                "operators": {
+                    "is.best-practice": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=vulnerability' e.g. 'filter=(vp.rules is.best-practice)'"
+                    },
+                    "is.visibility": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=vulnerability' e.g. 'filter=(vp.rules is.visibility)'"
+                    }
+                }
             }
         }
     },
@@ -7206,9 +7422,11 @@ var subjectObject =
                         "choices": [
                             "WhereUsed",
                             "UsedInLocation",
-                            "TotalUse"
+                            "TotalUse",
+                            "BestPractice",
+                            "Visibility"
                         ],
-                        "help": "pipe(|) separated list of additional field to include in the report. The following is available:\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n  - WhereUsed : list places where object is used (rules, groups ...)\n  - TotalUse : list a counter how often this object is used\n"
+                        "help": "pipe(|) separated list of additional field to include in the report. The following is available:\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n  - WhereUsed : list places where object is used (rules, groups ...)\n  - TotalUse : list a counter how often this object is used\n  - BestPractice : show if BestPractice is configured\n  - Visibility : show if SP log is configured\n"
                     }
                 }
             },
@@ -7346,6 +7564,22 @@ var subjectObject =
                         }
                     },
                     "is.tmp": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.best-practice": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.visibility": {
                         "Function": {},
                         "arg": false,
                         "ci": {
@@ -7721,6 +7955,11 @@ var subjectObject =
                 },
                 "help": ""
             },
+            "name-rename-wrong-characters": {
+                "name": "name-Rename-wrong-characters",
+                "MainFunction": {},
+                "help": ""
+            },
             "name-replace-character": {
                 "name": "name-Replace-Character",
                 "MainFunction": {},
@@ -7973,6 +8212,14 @@ var subjectObject =
                     "is.in.file": {
                         "Function": {},
                         "arg": true
+                    },
+                    "has.wrong.characters": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
                     },
                     "eq": {
                         "Function": {},

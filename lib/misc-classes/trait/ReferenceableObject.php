@@ -528,11 +528,15 @@ trait ReferenceableObject
         if( $this->countReferences() == 0 )
         {
             //- check if higher DG has same name and only if it is also unused return TRUE
-            $tmp_obj = $this->owner->find( $this->name() );
-            if( $tmp_obj === null || $tmp_obj->countReferences() == 0 )
-                return TRUE;
-            else
-                return FALSE;
+            //Todo: 2024117 swaschkut - compare how it is done in MERGER class - findAncestor / findChildAncestor
+            if( isset($this->owner->parentCentralStore) && $this->owner->parentCentralStore !== null )
+            {
+                $tmp_obj = $this->owner->parentCentralStore->find($this->name());
+                if ($tmp_obj === null || $tmp_obj->countReferences() == 0)
+                    return TRUE;
+                else
+                    return FALSE;
+            }
         }
 
         return FALSE;
@@ -553,11 +557,15 @@ trait ReferenceableObject
         if( $this->countReferences() == 0 )
         {
             //- check if higher DG has same name and only if it is also unused return TRUE
-            $tmp_obj = $this->owner->find( $this->name() );
-            if( $tmp_obj === null || $tmp_obj->countReferences() == 0 )
-                return TRUE;
-            else
-                return FALSE;
+            //Todo: 2024117 swaschkut - compare how it is done in MERGER class - findAncestor / findChildAncestor
+            if( isset($this->owner->parentCentralStore) && $this->owner->parentCentralStore !== null )
+            {
+                $tmp_obj = $this->owner->parentCentralStore->find($this->name());
+                if( $tmp_obj === null || $tmp_obj->countReferences() == 0 )
+                    return TRUE;
+                else
+                    return FALSE;
+            }
         }
 
         $groups = $this->findReferencesWithClass($className);

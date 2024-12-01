@@ -237,8 +237,8 @@ foreach( RQuery::$defaultFilters as $type => &$filtersByField )
 
             else
                 $input = $ci['input'];
-
-            $cli = "php $util in={$input} out={$output} location={$location} actions=display 'filter={$filterString}'";
+            $path = dirname(__FILE__)."/";
+            $cli = "php ".$path.$util." in=".$path.$input." out=".$output." location={$location} actions=display 'filter={$filterString}'";
 
             if( $type == 'rule' )
                 $cli .= " ruletype={$ruletype}";

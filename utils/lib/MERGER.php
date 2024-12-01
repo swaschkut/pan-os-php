@@ -739,8 +739,11 @@ class MERGER extends UTIL
                 $objectsToSearchThrough = $store->addressGroups();
 
             $hashMap = array();
+            $NamehashMap = array();
             $child_hashMap = array();
+            $child_NamehashMap = array();
             $upperHashMap = array();
+            $upper_NamehashMap = array();
 
             //todo: childDG/childDG to parentDG merge is always done; should it not combined to upperLevelSearch value?
             foreach( $childDeviceGroups as $dg )
@@ -843,6 +846,7 @@ class MERGER extends UTIL
 
                 $pickedObject = $this->PickObject( $hash );
 
+                //Todo: swaschkut 20241124 bring in hash map validation as for other objects types
 
                 $tmp_DG_name = $store->owner->name();
                 if( $tmp_DG_name == "" )
@@ -1035,6 +1039,8 @@ class MERGER extends UTIL
                     if( $tmp_address === null )
                         continue;
 
+                    //Todo: swaschkut 20241124 bring in hash map validation as for other objects types
+
                     if( isset( $object->childancestor ) )
                     {
                         $childancestor = $object->childancestor;
@@ -1126,11 +1132,15 @@ class MERGER extends UTIL
 
                 $pickedObject = $this->hashMapPickfilter( $upperHashMap, $index, $hash );
 
+                //todo: swaschkut 20241119 validate if group object with same name is not available at lower level
 
                 // Merging loop finally!
                 foreach( $hash as $object )
                 {
                     /** @var AddressGroup $object */
+
+                    //Todo: swaschkut 20241124 bring in hash map validation as for other objects types
+
                     if( isset($object->ancestor) )
                     {
                         $ancestor = $object->ancestor;
@@ -1439,9 +1449,11 @@ class MERGER extends UTIL
                 $objectsToSearchThrough = $store->addressObjects();
 
             $hashMap = array();
+            $NamehashMap = array();
             $child_hashMap = array();
             $child_NamehashMap = array();
             $upperHashMap = array();
+            $upper_NamehashMap = array();
             if( $this->dupAlg == 'sameaddress' || $this->dupAlg == 'identical' )
             {
                 //todo: childDG/childDG to parentDG merge is always done; should it not combined to upperLevelSearch value?
@@ -1493,16 +1505,22 @@ class MERGER extends UTIL
                     if( $object->owner === $store )
                     {
                         $hashMap[$value][] = $object;
+                        $NamehashMap[$object->name()][] = $object;
                         if( $parentStore !== null )
                             $object->ancestor = self::findAncestor( $parentStore, $object, "addressStore" );
 
                         $object->childancestor = self::findChildAncestor( $childDeviceGroups, $object, "addressStore");
                     }
                     else
+                    {
                         $upperHashMap[$value][] = $object;
+                        $upper_NamehashMap[$object->name()][] = $object;
+                    }
+
                 }
             }
             elseif( $this->dupAlg == 'whereused' )
+            {
                 foreach( $objectsToSearchThrough as $object )
                 {
                     if( !$object->isAddress() )
@@ -1521,14 +1539,20 @@ class MERGER extends UTIL
                     if( $object->owner === $store )
                     {
                         $hashMap[$value][] = $object;
+                        $NamehashMap[$object->name()][] = $object;
                         if( $parentStore !== null )
                             $object->ancestor = self::findAncestor( $parentStore, $object, "addressStore" );
 
-                        $object->childancestor = self::findChildAncestor( $childDeviceGroups, $object, "addressStore");
+                        $object->childancestor = self::findChildAncestor( $childDeviceGroups, $object, "addressStore" );
                     }
                     else
+                    {
                         $upperHashMap[$value][] = $object;
+                        $upper_NamehashMap[$object->name()][] = $object;
+                    }
+
                 }
+            }
             else derr("unsupported use case");
 
 //
@@ -1556,9 +1580,11 @@ class MERGER extends UTIL
                 PH::print_stdout();
                 PH::print_stdout(" - value '{$index}'");
 
-
                 $pickedObject = $this->PickObject( $hash );
 
+                $checkHash = $this->address_service_hash_map_check( $index, $pickedObject, $NamehashMap, $upper_NamehashMap, $child_NamehashMap,true, true, true );
+                if( !$checkHash )
+                    continue;
 
                 $tmp_DG_name = $store->owner->name();
                 if( $tmp_DG_name == "" )
@@ -1699,6 +1725,10 @@ class MERGER extends UTIL
                     if( $tmp_address === null )
                         continue;
 
+                    $checkHash = $this->address_service_hash_map_check( $index, $object, $NamehashMap, $upper_NamehashMap, $child_NamehashMap,true, true, true );
+                    if( !$checkHash )
+                        continue;
+
                     if( $this->dupAlg == 'identical' )
                         if( $object->name() != $tmp_address->name() )
                         {
@@ -1754,10 +1784,19 @@ class MERGER extends UTIL
                 $pickedObject = $this->hashMapPickfilter( $upperHashMap, $index, $hash );
 
 
+                $checkHash = $this->address_service_hash_map_check( $index, $pickedObject, $NamehashMap, $upper_NamehashMap, $child_NamehashMap,true, true, true );
+                if( !$checkHash )
+                    continue;
+
                 // Merging loop finally!
                 foreach( $hash as $objectIndex => $object )
                 {
                     /** @var Address $object */
+
+                    $checkHash = $this->address_service_hash_map_check( $index, $object, $NamehashMap, $upper_NamehashMap, $child_NamehashMap,true, true, true );
+                    if( !$checkHash )
+                        continue;
+
                     if( isset($object->ancestor) )
                     {
                         $ancestor = $object->ancestor;
@@ -1858,7 +1897,11 @@ class MERGER extends UTIL
                         PH::print_stdout($text);
 
                         if( $this->upperLevelSearch )
+                        {
                             $tmpstring = "|->ERROR object '{$object->name()}' '{$ancestor->type()}' cannot be merged because it has an ancestor " . $ancestor_different_value . " | ".$text;
+                            $this->skippedObject( $index, $object, $ancestor, $tmpstring);
+                            break;
+                        }
                         else
                             $tmpstring = "|-> ancestor: '" . $object->_PANC_shortName() . "' you did not allow to merged";
                         self::deletedObjectSetRemoved($index, $tmpstring);
@@ -1936,6 +1979,82 @@ class MERGER extends UTIL
             PH::print_stdout( "\n\nDuplicates removal is now done. Number of objects after cleanup: '{$store->countAddresses()}' (removed {$countRemoved} addresses)\n" );
 
         }    
+    }
+
+    function address_service_hash_map_check( $index, $object, $NamehashMap, $upper_NamehashMap, $child_NamehashMap, $checkNamehashMap = false, $checkUpperhashMap = false, $checkChildhashMap = false )
+    {
+        $array_hashMap = array( "name"=>$NamehashMap, "upper"=>$upper_NamehashMap, "child"=>$child_NamehashMap );
+        foreach( $array_hashMap as $key => $MainHashMap )
+        {
+            if( $key == "name" && !$checkNamehashMap )
+                continue;
+            elseif( $key == "upper" && !$checkUpperhashMap )
+                continue;
+            elseif( $key == "child" && !$checkChildhashMap )
+                continue;
+
+
+            if( isset($MainHashMap[$object->name()]) )
+            {
+                $skip2 = FALSE;
+                $skip3 = FALSE;
+                $skippedOBJ = null;
+
+                $tmp_string_obj_type = "";
+                foreach( $MainHashMap[$object->name()] as $key => $overridenOBJ )
+                {
+                    if( get_class($object) == "Address" )
+                    {
+                        if (!$overridenOBJ->isAddress())
+                        {
+                            $skip2 = TRUE;
+                            $tmp_string_obj_type = "addressgroup";
+                            $skippedOBJ = $overridenOBJ;
+                            break;
+                        }
+                        if ($overridenOBJ->value() !== $object->value())
+                        {
+                            $skip3 = TRUE;
+                            $skippedOBJ = $overridenOBJ;
+                            break;
+                        }
+                    }
+                    elseif( get_class($object) == "Service" )
+                    {
+                        if (!$overridenOBJ->isService())
+                        {
+                            $skip2 = TRUE;
+                            $tmp_string_obj_type = "servicegroup";
+                            $skippedOBJ = $overridenOBJ;
+                            break;
+                        }
+                        if( $overridenOBJ->getDestPort() !== $object->getDestPort() || $overridenOBJ->getSourcePort() !== $object->getSourcePort() || $overridenOBJ->protocol() !== $object->protocol() )
+                        {
+                            $skip3 = TRUE;
+                            $skippedOBJ = $overridenOBJ;
+                            break;
+                        }
+                    }
+                }
+
+                if ($skip2)
+                {
+
+                    PH::print_stdout("    - SKIP: object name '{$object->_PANC_shortName()}' as one ancestor is of type ".$tmp_string_obj_type);
+                    $this->skippedObject($index, $object, $skippedOBJ, "ancestor of type ".$tmp_string_obj_type);
+
+                    return FALSE;//continue
+                }
+                if ($skip3)
+                {
+                    PH::print_stdout("    - SKIP: object name '{$object->_PANC_shortName()}' as one ".$key." ancestor has same name, but different value");
+                    $this->skippedObject($index, $object, $skippedOBJ, " ".$key." ancestor has same name, but different value");
+                    return FALSE;//continue
+                }
+            }
+        }
+
+        return TRUE;
     }
 
     function address_tag_merge_check( $pickedObject, $ancestor, $index)
@@ -2249,7 +2368,11 @@ class MERGER extends UTIL
             }
 
             $hashMap = array();
+            $NamehashMap = array();
+            $child_hashMap = array();
+            $child_NamehashMap = array();
             $upperHashMap = array();
+            $upper_NamehashMap = array();
             foreach( $objectsToSearchThrough as $object )
             {
                 if( !$object->isGroup() )
@@ -2337,6 +2460,7 @@ class MERGER extends UTIL
 
                 $pickedObject = $this->PickObject( $hash );
 
+                //Todo: swaschkut 20241124 bring in hash map validation as for other objects types
 
                 $tmp_DG_name = $store->owner->name();
                 if( $tmp_DG_name == "" )
@@ -2455,6 +2579,8 @@ class MERGER extends UTIL
                     if( $tmp_service === null )
                         continue;
 
+                    //Todo: swaschkut 20241124 bring in hash map validation as for other objects types
+
                     if( $this->dupAlg == 'identical' )
                         if( $object->name() != $tmp_service->name() )
                         {
@@ -2511,11 +2637,15 @@ class MERGER extends UTIL
 
                 $pickedObject = $this->hashMapPickfilter( $upperHashMap, $index, $hash );
 
+                //Todo: swaschkut 20241124 bring in hash map validation as for other objects types
 
                 // Merging loop finally!
                 foreach( $hash as $object )
                 {
                     /** @var ServiceGroup $object */
+
+                    //Todo: swaschkut 20241124 bring in hash map validation as for other objects types
+
                     if( isset($object->ancestor) )
                     {
                         $ancestor = $object->ancestor;
@@ -2777,9 +2907,12 @@ class MERGER extends UTIL
                 $objectsToSearchThrough = $store->serviceObjects();
 
             $hashMap = array();
+            $NamehashMap = array();
             $child_hashMap = array();
             $child_NamehashMap = array();
             $upperHashMap = array();
+            $upper_NamehashMap = array();
+
             if( $this->dupAlg == 'sameports' || $this->dupAlg == 'samedstsrcports' || $this->dupAlg == 'identical' )
             {
                 //todo: childDG/childDG to parentDG merge is always done; should it not combined to upperLevelSearch value?
@@ -2834,13 +2967,18 @@ class MERGER extends UTIL
                     if( $object->owner === $store )
                     {
                         $hashMap[$value][] = $object;
+                        $NamehashMap[$object->name()][] = $object;
                         if( $parentStore !== null )
                             $object->ancestor = self::findAncestor($parentStore, $object, "serviceStore");
 
                         $object->childancestor = self::findChildAncestor( $childDeviceGroups, $object, "serviceStore");
                     }
                     else
+                    {
                         $upperHashMap[$value][] = $object;
+                        $upper_NamehashMap[$object->name()][] = $object;
+                    }
+
 
                 }
             }
@@ -2863,12 +3001,17 @@ class MERGER extends UTIL
                     if( $object->owner === $store )
                     {
                         $hashMap[$value][] = $object;
+                        $NamehashMap[$object->name()][] = $object;
                         if( $parentStore !== null )
                             $object->ancestor = self::findAncestor($parentStore, $object, "serviceStore");
                         $object->childancestor = self::findChildAncestor( $childDeviceGroups, $object, "serviceStore");
                     }
                     else
+                    {
                         $upperHashMap[$value][] = $object;
+                        $upper_NamehashMap[$object->name()][] = $object;
+                    }
+
                 }
             }
             else derr("unsupported use case");
@@ -2903,6 +3046,9 @@ class MERGER extends UTIL
 
                     $pickedObject = $this->PickObject( $hash );
 
+                    $checkHash = $this->address_service_hash_map_check( $index, $pickedObject, $NamehashMap, $upper_NamehashMap, $child_NamehashMap,true, true, true );
+                    if( !$checkHash )
+                        continue;
 
                     $tmp_DG_name = $store->owner->name();
                     if( $tmp_DG_name == "" )
@@ -2968,6 +3114,7 @@ class MERGER extends UTIL
 
                             $value = $tmp_service->dstPortMapping()->mappingToText();
                             $hashMap[$value][] = $tmp_service;
+                            $NamehashMap[$tmp_service->name()][] = $tmp_service;
                         }
                         else
                             $tmp_service = "[".$tmp_DG_name."] - ".$pickedObject->name()." {new}";
@@ -3028,6 +3175,48 @@ class MERGER extends UTIL
                         if( $tmp_service === null )
                             continue;
 
+                        $checkHash = $this->address_service_hash_map_check( $index, $object, $NamehashMap, $upper_NamehashMap, $child_NamehashMap,true, true, true );
+                        if( !$checkHash )
+                            continue;
+
+                        //validate if object with same name at upperlevel has same type / value
+                        //if not it can be a problem if the upperlevel obejct is used in an upperlevel addressgroup and this address-group is used at same level as $object is located
+                        if( isset( $upper_NamehashMap[$object->name()] ) )
+                        {
+                            $skip2 = FALSE;
+                            $skip3 = FALSE;
+                            $skippedOBJ = null;
+
+                            foreach( $upper_NamehashMap[$pickedObject->name()] as $key => $overridenOBJ )
+                            {
+                                if( !$overridenOBJ->isAddress() )
+                                {
+                                    $skip2 = TRUE;
+                                    $skippedOBJ = $overridenOBJ;
+                                    break;
+                                }
+                                if( $overridenOBJ->value() !== $object->value() )
+                                {
+                                    $skip3 = TRUE;
+                                    $skippedOBJ = $overridenOBJ;
+                                    break;
+                                }
+                            }
+
+                            if( $skip2 )
+                            {
+                                PH::print_stdout("    - SKIP: object name '{$object->_PANC_shortName()}' as one ancestor is of type addressgroup");
+                                $this->skippedObject( $index, $object, $skippedOBJ, "ancestor of type addressgroup");
+                                continue;
+                            }
+                            if( $skip3 )
+                            {
+                                PH::print_stdout("    - SKIP: object name '{$object->_PANC_shortName()}' as one ancestor has same name, but different value");
+                                $this->skippedObject( $index, $object, $skippedOBJ, " ancestor has same name, but different value");
+                                continue;
+                            }
+                        }
+
                         if( $this->dupAlg == 'identical' )
                             if( $object->name() != $tmp_service->name() )
                             {
@@ -3077,10 +3266,18 @@ class MERGER extends UTIL
 
                     $pickedObject = $this->hashMapPickfilter( $upperHashMap, $index, $hash );
 
+                    $checkHash = $this->address_service_hash_map_check( $index, $pickedObject, $NamehashMap, $upper_NamehashMap, $child_NamehashMap,true, true, true );
+                    if( !$checkHash )
+                        continue;
+
 
                     foreach( $hash as $object )
                     {
                         /** @var Service $object */
+
+                        $checkHash = $this->address_service_hash_map_check( $index, $object, $NamehashMap, $upper_NamehashMap, $child_NamehashMap,true, true, true );
+                        if( !$checkHash )
+                            continue;
 
                         if( isset($object->ancestor) )
                         {
@@ -3145,7 +3342,10 @@ class MERGER extends UTIL
                             PH::print_stdout( $text );
 
                             if( $this->upperLevelSearch )
+                            {
                                 $tmpstring = "|->ERROR ancestor: '" . $object->_PANC_shortName() . "' cannot be merged. | ".$text;
+                                $this->skippedObject( $index, $object, $ancestor, $tmpstring);
+                            }
                             else
                                 $tmpstring = "|-> ancestor: '" . $object->_PANC_shortName() . "' you did not allow to merged";
                             self::deletedObjectSetRemoved( $index, $tmpstring );
@@ -3217,12 +3417,21 @@ class MERGER extends UTIL
 
 
                     $pickedObject = $this->PickObject( $hash);
+
+                    $checkHash = $this->address_service_hash_map_check( $index, $pickedObject, $NamehashMap, $upper_NamehashMap, $child_NamehashMap,true, true, true );
+                    if( !$checkHash )
+                        continue;
+
                     PH::print_stdout( "   * keeping object '{$pickedObject->_PANC_shortName()}'" );
 
 
                     foreach( $hash as $object )
                     {
                         /** @var Service $object */
+
+                        $checkHash = $this->address_service_hash_map_check( $index, $object, $NamehashMap, $upper_NamehashMap, $child_NamehashMap,true, true, true );
+                        if( !$checkHash )
+                            continue;
 
                         if( isset($object->ancestor) )
                         {
@@ -3237,7 +3446,10 @@ class MERGER extends UTIL
                             PH::print_stdout( $text );
 
                             if( $this->upperLevelSearch )
+                            {
                                 $tmpstring = "|->ERROR ancestor: '" . $object->_PANC_shortName() . "' cannot be merged. | ".$text ;
+                                $this->skippedObject( $index, $object, $ancestor, $tmpstring);
+                            }
                             else
                                 $tmpstring = "|-> ancestor: '" . $object->_PANC_shortName() . "' you did not allow to merged";
                             self::deletedObjectSetRemoved( $index, $tmpstring );
@@ -3369,9 +3581,11 @@ class MERGER extends UTIL
                 $objectsToSearchThrough = $store->tags();
 
             $hashMap = array();
+            $NamehashMap = array();
             $child_hashMap = array();
             $child_NamehashMap = array();
             $upperHashMap = array();
+            $upper_NamehashMap = array();
             if( $this->dupAlg == 'samecolor' || $this->dupAlg == 'identical' || $this->dupAlg == 'samename' )
             {
                 //todo: childDG/childDG to parentDG merge is always done; should it not combined to upperLevelSearch value?
@@ -3486,6 +3700,7 @@ class MERGER extends UTIL
 
                 $pickedObject = $this->PickObject( $hash);
 
+                //Todo: swaschkut 20241124 bring in hash map validation as for other objects types
 
                 $tmp_DG_name = $store->owner->name();
                 if( $tmp_DG_name == "" )
@@ -3592,11 +3807,15 @@ class MERGER extends UTIL
 
                 $pickedObject = $this->hashMapPickfilter( $upperHashMap, $index, $hash );
 
+                //Todo: swaschkut 20241124 bring in hashmap validation in same way as for address/service
 
                 // Merging loop finally!
                 foreach( $hash as $objectIndex => $object )
                 {
                     /** @var Tag $object */
+
+                    //Todo: swaschkut 20241124 bring in hash map validation as for other objects types
+
                     if( isset($object->ancestor) )
                     {
                         $ancestor = $object->ancestor;
@@ -3668,7 +3887,10 @@ class MERGER extends UTIL
                         PH::print_stdout($text);
 
                         if( $this->upperLevelSearch )
+                        {
                             $tmpstring = "|->ERROR ancestor: '" . $object->_PANC_shortName() . "  color: '{$object->getColor()}' "."' cannot be merged. | ".$text;
+                            $this->skippedObject( $index, $object, $ancestor, $tmpstring);
+                        }
                         else
                             $tmpstring = "|-> ancestor: '" . $object->_PANC_shortName() . "' you did not allow to merged";
                         self::deletedObjectSetRemoved( $index, $tmpstring );
@@ -3885,6 +4107,7 @@ class MERGER extends UTIL
 
                 $pickedObject = $this->PickObject( $hash);
 
+                //Todo: swaschkut 20241124 bring in hash map validation as for other objects types
 
                 $tmp_DG_name = $store->owner->name();
                 if( $tmp_DG_name == "" )
@@ -3952,6 +4175,8 @@ class MERGER extends UTIL
                 // Merging loop finally!
                 foreach( $hash as $objectIndex => $object )
                 {
+                    //Todo: swaschkut 20241124 bring in hash map validation as for other objects types
+
                     PH::print_stdout("    - replacing '{$object->_PANC_shortName()}' ...");
 
                     if( $this->action === "merge" )
@@ -3993,11 +4218,15 @@ class MERGER extends UTIL
 
                 $pickedObject = $this->hashMapPickfilter( $upperHashMap, $index, $hash );
 
+                //Todo: swaschkut 20241124 bring in hashmap validation as for other objects types
 
                 // Merging loop finally!
                 foreach( $hash as $objectIndex => $object )
                 {
                     /** @var customURLProfile $object */
+
+                    //Todo: swaschkut 20241124 bring in hash map validation as for other objects types
+
                     if( isset($object->ancestor) )
                     {
                         $ancestor = $object->ancestor;
@@ -4080,7 +4309,10 @@ class MERGER extends UTIL
                         $this->skippedObject( $index, $object, $ancestor, $tmp_skippedReason);
 
                         if( $this->upperLevelSearch )
+                        {
                             $tmpstring = "|->ERROR ancestor: '" . $object->_PANC_shortName() . "  value: '".implode("./.",$ancestor->getmembers())."' "."' cannot be merged. | ".$text;
+                            $this->skippedObject( $index, $object, $ancestor, $tmpstring);
+                        }
                         else
                             $tmpstring = "|-> ancestor: '" . $object->_PANC_shortName() . "' you did not allow to merged";
                         self::deletedObjectSetRemoved( $index, $tmpstring );
@@ -4321,6 +4553,7 @@ class MERGER extends UTIL
 
                 $pickedObject = $this->PickObject( $hash);
 
+                //Todo: swaschkut 20241124 bring in hash map validation as for other objects types
 
                 $tmp_DG_name = $store->owner->name();
                 if( $tmp_DG_name == "" )
@@ -4391,6 +4624,8 @@ class MERGER extends UTIL
                 // Merging loop finally!
                 foreach( $hash as $objectIndex => $object )
                 {
+                    //Todo: swaschkut 20241124 bring in hash map validation as for other objects types
+
                     PH::print_stdout("    - replacing '{$object->_PANC_shortName()}' ...");
                     #$object->__replaceWhereIamUsed($this->apiMode, $tmp_tag, TRUE, 5);
                     if( $this->action === "merge" )
@@ -4423,11 +4658,15 @@ class MERGER extends UTIL
 
                 $pickedObject = $this->hashMapPickfilter( $upperHashMap, $index, $hash );
 
+                //Todo: swaschkut 20241124 bring in hash map validation as for other objects types
 
                 // Merging loop finally!
                 foreach( $hash as $objectIndex => $object )
                 {
                     /** @var Tag $object */
+
+                    //Todo: swaschkut 20241124 bring in hash map validation as for other objects types
+
                     if( isset($object->ancestor) )
                     {
                         $ancestor = $object->ancestor;
@@ -4499,7 +4738,10 @@ class MERGER extends UTIL
                         PH::print_stdout($text);
 
                         if( $this->upperLevelSearch )
+                        {
                             $tmpstring = "|->ERROR ancestor: '" . $object->_PANC_shortName() . "  color: '{$object->getColor()}' "."' cannot be merged. | ".$text;
+                            $this->skippedObject( $index, $object, $ancestor, $tmpstring);
+                        }
                         else
                             $tmpstring = "|-> ancestor: '" . $object->_PANC_shortName() . "' you did not allow to merged";
                         self::deletedObjectSetRemoved( $index, $tmpstring );
