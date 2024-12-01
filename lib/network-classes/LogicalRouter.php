@@ -334,8 +334,7 @@ class LogicalRouter
                     unset($record);
                 }
             }
-            //Todo: extend this to $if->isVlanType() / $if->isTunnelType()
-            elseif( $if->isLoopbackType() )
+            elseif( $if->isLoopbackType() || $if->isTunnelType() || $if->isVlanType() )
             {
                 $findZone = $contextVSYS->zoneStore->findZoneMatchingInterfaceName($if->name());
                 if( $findZone === null )

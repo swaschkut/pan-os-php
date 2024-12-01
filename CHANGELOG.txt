@@ -46,6 +46,7 @@ BUGFIX:
 * type=address 'filter=(object is.unused / is.unused.recursive)' | bugfix to search correct upper addressgroup
 * type=address-merger | extend validation if pickedobject name is overriden at childDG level with different value
 * type=rule actions=exporttoexcel:file.html,serviceresolvesummary | bugfix to calculate correct mapping
+* class Logical/VirtualRouter | bugfix for type=device actions=find-zone-from-ip:IPADDRESS
 
 GENERAL:
 * improve different network classes for IPv6 | improve for Panroama Template object usage in network classes
