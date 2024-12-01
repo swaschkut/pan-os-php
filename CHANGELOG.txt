@@ -1,6 +1,14 @@
 CHANGELOG
 
-2.1.28
+2.1.29
+UTIL:
+
+BUGFIX:
+
+GENERAL:
+
+
+2.1.28 (20241201)
 UTIL:
 * type=playbook | improve reading in= argument from the above utility output=
 * type=tsf | extend argument help with actions= information - extend actions=extract-running-and-merged-config
