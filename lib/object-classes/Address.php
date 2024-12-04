@@ -604,7 +604,7 @@ class Address
      */
     public function getIP6Mapping( $RuleReferenceLocation = null )
     {
-        derr( "IPv6 not implemented yet" );
+        mwarning( "class ADDRESS IPv6 Mapping not implemented yet", null, FALSE );
         if( $RuleReferenceLocation !== null )
             $object = $RuleReferenceLocation->addressStore->find($this->name());
         else

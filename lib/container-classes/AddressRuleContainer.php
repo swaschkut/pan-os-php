@@ -883,7 +883,7 @@ class AddressRuleContainer extends ObjRuleContainer
      */
     public function &calculateZonesFromIP6Mapping(&$zoneIP6Mapping, $objectIsNegated = FALSE)
     {
-        derr( "IPv6 not implemented" );
+        mwarning( "class AddressRuleContainer IPv6 not implemented", null, false );
         $zones = array();
 
         $objectsMapping = $this->getIP6Mapping();
@@ -895,6 +895,9 @@ class AddressRuleContainer extends ObjRuleContainer
             $objectsMapping = $fakeMapping;
         }
 
+        //Todo: missing ADDRESS mapping implementation
+        if( $zoneIP6Mapping == null )
+            return $zones;
         foreach( $zoneIP6Mapping as &$zoneMapping )
         {
             $result = $objectsMapping->substractSingleIP6Entry($zoneMapping);

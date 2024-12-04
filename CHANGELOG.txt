@@ -5,6 +5,7 @@ UTIL:
 * class Address/AddressGroup/Region/IP4MAP/IP6MAP - extend with IPv6
 
 BUGFIX:
+* type=device actions=find-zone-from-ip:{IPADDRESS} | still no IPv6 support
 
 GENERAL:
 * update to Device App-ID version: 8918-9101

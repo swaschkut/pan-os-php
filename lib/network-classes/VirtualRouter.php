@@ -303,6 +303,7 @@ class VirtualRouter
     public function getIPtoZoneRouteMapping($contextVSYS, $orderByNarrowest = TRUE, $loopFilter = null)
     {
         $ipv4 = array();
+        $ipv6 = array();
 
         $ipv4sort = array();
 
@@ -572,7 +573,14 @@ class VirtualRouter
             {
                 foreach( $subRecord as &$subSubRecord )
                 {
-                    $ipv4[] = &$subSubRecord;
+                    //only IPv4
+                    if( isset($subSubRecord['network']) && strpos( $subSubRecord['network'], ":" ) !== FALSE )
+                    {
+                        $ipv6[] = &$subSubRecord;
+                        continue;
+                    }
+                    else
+                        $ipv4[] = &$subSubRecord;
                 }
             }
         }
