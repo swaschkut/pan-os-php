@@ -1,6 +1,18 @@
 CHANGELOG
 
-2.1.28
+2.1.29
+UTIL:
+* class Address/AddressGroup/Region/IP4MAP/IP6MAP - extend with IPv6
+
+BUGFIX:
+* type=device actions=find-zone-from-ip:{IPADDRESS} | still no IPv6 support
+* bugfix for resolveAddresssummary
+
+GENERAL:
+* update to Device App-ID version: 8918-9101
+
+
+2.1.28 (20241201)
 UTIL:
 * type=playbook | improve reading in= argument from the above utility output=
 * type=tsf | extend argument help with actions= information - extend actions=extract-running-and-merged-config

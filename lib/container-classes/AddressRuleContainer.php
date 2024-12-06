@@ -389,6 +389,58 @@ class AddressRuleContainer extends ObjRuleContainer
     }
 
     /**
+     * return 0 if not match, 1 if this object is fully included in $network, 2 if this object is partially matched by $ref.
+     * Always return 0 (not match) if this is object = ANY
+     * @param string|IP6Map $network ie: 192.168.0.2/24, 192.168.0.2,192.168.0.2-192.168.0.4
+     * @return int
+     */
+    public function includedInIP6Network($network)
+    {
+        if( is_object($network) )
+            $netStartEnd = $network;
+        else
+            $netStartEnd = IP6Map::mapFromText($network);
+
+        if( count($this->o) == 0 )
+            return 0;
+
+        $result = -1;
+
+        foreach( $this->o as $o )
+        {
+            if( get_class($o) === "EDL" )
+                continue;
+
+            if( $o->isRegion() )
+                continue;
+
+            $localResult = $o->includedInIP6Network($netStartEnd);
+            if( $localResult == 1 )
+            {
+                if( $result == 2 )
+                    continue;
+                if( $result == -1 )
+                    $result = 1;
+                else if( $result == 0 )
+                    return 2;
+            }
+            elseif( $localResult == 2 )
+            {
+                return 2;
+            }
+            elseif( $localResult == 0 )
+            {
+                if( $result == -1 )
+                    $result = 0;
+                else if( $result == 1 )
+                    return 2;
+            }
+        }
+
+        return $result;
+    }
+
+    /**
      * return 0 if not match, 1 if $network is fully included in this object, 2 if $network is partially matched by this object.
      * @param $network string|IP4Map ie: 192.168.0.2/24, 192.168.0.2,192.168.0.2-192.168.0.4
      * @return int
@@ -432,7 +484,49 @@ class AddressRuleContainer extends ObjRuleContainer
         return $result;
     }
 
+    /**
+     * return 0 if not match, 1 if $network is fully included in this object, 2 if $network is partially matched by this object.
+     * @param $network string|IP6Map ie: 192.168.0.2/24, 192.168.0.2,192.168.0.2-192.168.0.4
+     * @return int
+     */
+    public function includesIP6Network($network)
+    {
+        if( is_object($network) )
+            $netStartEnd = $network;
+        else
+            $netStartEnd = IP6map::mapFromText($network);
 
+        if( count($this->o) == 0 )
+            return 0;
+
+        $result = -1;
+
+        foreach( $this->o as $o )
+        {
+            if( get_class($o) === "EDL" )
+                continue;
+
+            if( $o->isRegion() )
+                continue;
+
+            $localResult = $o->includesIP6Network($netStartEnd);
+            if( $localResult == 1 )
+            {
+                return 1;
+            }
+            elseif( $localResult == 2 )
+            {
+                $result = 2;
+            }
+            elseif( $localResult == 0 )
+            {
+                if( $result == -1 )
+                    $result = 0;
+            }
+        }
+
+        return $result;
+    }
 
 
 
@@ -640,7 +734,7 @@ class AddressRuleContainer extends ObjRuleContainer
 
         foreach( $this->o as $member )
         {
-            if( get_class($member) === "EDL" )
+            if( $member == null || get_class($member) === "EDL" )
                 continue;
             if( $member->isTmpAddr() && !$member->nameIsValidRuleIPEntry() )
             {
@@ -668,6 +762,62 @@ class AddressRuleContainer extends ObjRuleContainer
             {
                 /** @var Region $member */
                 $localMap = $member->getIP4Mapping( $RuleReferenceLocation );
+                $mapObject->addMap($localMap, TRUE);
+            }
+            else
+                derr('unsupported type of objects ' . $member->toString());
+        }
+        $mapObject->sortAndRecalculate();
+
+        return $mapObject;
+    }
+
+    /**
+     * @return IP6Map
+     */
+    public function getIP6Mapping( $RuleReferenceLocation = null )
+    {
+        if( $this->isAny() )
+            return IP6Map::mapFromText('::/0');
+
+        $mapObject = new IP6Map();
+
+        if( $RuleReferenceLocation !== null )
+        {
+            foreach( $this->o as $key => $member )
+                $this->o[$key] = $RuleReferenceLocation->addressStore->find($member->name());
+        }
+
+        foreach( $this->o as $member )
+        {
+            if( $member == null || get_class($member) === "EDL" )
+                continue;
+            if( $member->isTmpAddr() && !$member->nameIsValidRuleIPEntry() )
+            {
+                $mapObject->unresolved[$member->name()] = $member;
+                continue;
+            }
+            elseif( $member->isAddress() )
+            {
+                /** @var Address $member */
+                $localMap = $member->getIP6Mapping( $RuleReferenceLocation );
+                $mapObject->addMap($localMap, TRUE);
+            }
+            elseif( $member->isGroup() )
+            {
+                /** @var AddressGroup $member */
+                if( $member->isDynamic() )
+                    $mapObject->unresolved[$member->name()] = $member;
+                else
+                {
+                    $localMap = $member->getIP6Mapping( $RuleReferenceLocation );
+                    $mapObject->addMap($localMap, TRUE);
+                }
+            }
+            elseif( $member->isRegion() )
+            {
+                /** @var Region $member */
+                $localMap = $member->getIP6Mapping( $RuleReferenceLocation );
                 $mapObject->addMap($localMap, TRUE);
             }
             else
@@ -712,6 +862,45 @@ class AddressRuleContainer extends ObjRuleContainer
         foreach( $zoneIP4Mapping as &$zoneMapping )
         {
             $result = $objectsMapping->substractSingleIP4Entry($zoneMapping);
+
+            if( $result != 0 )
+            {
+                $zones[$zoneMapping['zone']] = $zoneMapping['zone'];
+            }
+
+            if( $objectsMapping->count() == 0 )
+                break;
+
+        }
+
+        return $zones;
+    }
+
+    /**
+     * @param $zoneIP4Mapping array  array of IP start-end to zone ie  Array( 0=>Array('start'=>0, 'end'=>50, 'zone'=>'internet') 1=>...  )
+     * @param $objectIsNegated bool  IP4Mapping of this object will be inverted before doing resolution
+     * @return string[] containing zones matched
+     */
+    public function &calculateZonesFromIP6Mapping(&$zoneIP6Mapping, $objectIsNegated = FALSE)
+    {
+        mwarning( "class AddressRuleContainer IPv6 not implemented", null, false );
+        $zones = array();
+
+        $objectsMapping = $this->getIP6Mapping();
+
+        if( $objectIsNegated )
+        {
+            $fakeMapping = IP6Map::mapFromText('::/0');
+            $fakeMapping->substract($objectsMapping);
+            $objectsMapping = $fakeMapping;
+        }
+
+        //Todo: missing ADDRESS mapping implementation
+        if( $zoneIP6Mapping == null )
+            return $zones;
+        foreach( $zoneIP6Mapping as &$zoneMapping )
+        {
+            $result = $objectsMapping->substractSingleIP6Entry($zoneMapping);
 
             if( $result != 0 )
             {

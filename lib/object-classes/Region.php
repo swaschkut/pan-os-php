@@ -29,6 +29,7 @@ class Region
 
     public $owner;
     public $_ip4Map;
+    public $_ip6Map;
 
 
     private $members = array();
@@ -130,7 +131,10 @@ class Region
         $this->xmlroot->setAttribute('name', $newName);
 
         if( $this->isTmpAddr() )
+        {
             unset($this->_ip4Map);
+            unset($this->_ip6Map);
+        }
     }
 
     /**
@@ -170,6 +174,22 @@ class Region
         return $this->_ip4Map;
     }
 
+    /**
+     * Return an array['start']= startip and ['end']= endip
+     * @return IP6Map
+     */
+    public function getIP6Mapping( $RuleReferenceLocation = null)
+    {
+        if( isset($this->_ip6Map) )
+        {
+            return $this->_ip6Map;
+        }
+
+        $this->_ip6Map = new IP6Map();
+
+
+        return $this->_ip6Map;
+    }
     public function value()
     {
         $string = implode( ", ", $this->members);

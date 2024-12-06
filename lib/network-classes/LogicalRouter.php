@@ -297,6 +297,7 @@ class LogicalRouter
     public function getIPtoZoneRouteMapping($contextVSYS, $orderByNarrowest = TRUE, $loopFilter = null)
     {
         $ipv4 = array();
+        $ipv6 = array();
 
         $ipv4sort = array();
 
@@ -330,7 +331,9 @@ class LogicalRouter
 
                     $ipv4Mapping = cidr::stringToStartEnd($interfaceIP);
                     $record = array('network' => $interfaceIP, 'start' => $ipv4Mapping['start'], 'end' => $ipv4Mapping['end'], 'zone' => $findZone->name(), 'origin' => 'connected', 'priority' => 1);
-                    $ipv4sort[$record['end'] - $record['start']][$record['start']][] = &$record;
+                    //Todo: int working well for IPv4; IPv6 is float
+                    #$ipv4sort[$record['end'] - $record['start']][$record['start']][] = &$record;
+                    $this->IPvalidation64bit( $ipv4sort, $record );
                     unset($record);
                 }
             }
@@ -354,7 +357,9 @@ class LogicalRouter
 
                     $ipv4Mapping = cidr::stringToStartEnd($interfaceIP);
                     $record = array('network' => $interfaceIP, 'start' => $ipv4Mapping['start'], 'end' => $ipv4Mapping['end'], 'zone' => $findZone->name(), 'origin' => 'connected', 'priority' => 1);
-                    $ipv4sort[$record['end'] - $record['start']][$record['start']][] = &$record;
+                    //Todo: int working well for IPv4; IPv6 is float
+                    #$ipv4sort[$record['end'] - $record['start']][$record['start']][] = &$record;
+                    $this->IPvalidation64bit( $ipv4sort, $record );
                     unset($record);
                 }
             }
@@ -385,7 +390,9 @@ class LogicalRouter
                     {
 
                         $record = array('network' => $route->destination(), 'start' => $ipv4Mapping['start'], 'end' => $ipv4Mapping['end'], 'zone' => $findZone->name(), 'origin' => 'static', 'priority' => 2);
-                        $ipv4sort[$record['end'] - $record['start']][$record['start']][] = &$record;
+                        //Todo: int working well for IPv4; IPv6 is float
+                        #$ipv4sort[$record['end'] - $record['start']][$record['start']][] = &$record;
+                        $this->IPvalidation64bit( $ipv4sort, $record );
                         unset($record);
                     }
                 }
@@ -407,7 +414,9 @@ class LogicalRouter
                     }
 
                     $record = array('network' => $route->destination(), 'start' => $ipv4Mapping['start'], 'end' => $ipv4Mapping['end'], 'zone' => $externalZone->name(), 'origin' => 'static', 'priority' => 2);
-                    $ipv4sort[$record['end'] - $record['start']][$record['start']][] = &$record;
+                    //Todo: int working well for IPv4; IPv6 is float
+                    #$ipv4sort[$record['end'] - $record['start']][$record['start']][] = &$record;
+                    $this->IPvalidation64bit( $ipv4sort, $record );
                     unset($record);
                 }
 
@@ -465,7 +474,9 @@ class LogicalRouter
                 }
 
                 $record = array('network' => $route->destination(), 'start' => $ipv4Mapping['start'], 'end' => $ipv4Mapping['end'], 'zone' => $findZone->name(), 'origin' => 'static', 'priority' => 2);
-                $ipv4sort[$record['end'] - $record['start']][$record['start']][] = &$record;
+                //Todo: int working well for IPv4; IPv6 is float
+                #$ipv4sort[$record['end'] - $record['start']][$record['start']][] = &$record;
+                $this->IPvalidation64bit( $ipv4sort, $record );
                 unset($record);
             }
             else if( $route->nexthopType() == 'next-vr' )
@@ -539,7 +550,9 @@ class LogicalRouter
 
                             if( !empty( $record ) )
                             {
-                                $ipv4sort[$record['end'] - $record['start']][$record['start']][] = &$record;
+                                //Todo: int working well for IPv4; IPv6 is float
+                                #$ipv4sort[$record['end'] - $record['start']][$record['start']][] = &$record;
+                                $this->IPvalidation64bit( $ipv4sort, $record );
                             }
 
                             unset($record);
@@ -566,7 +579,14 @@ class LogicalRouter
             {
                 foreach( $subRecord as &$subSubRecord )
                 {
-                    $ipv4[] = &$subSubRecord;
+                    //only IPv4
+                    if( isset($subSubRecord['network']) && strpos( $subSubRecord['network'], ":" ) !== FALSE )
+                    {
+                        $ipv6[] = &$subSubRecord;
+                        continue;
+                    }
+                    else
+                        $ipv4[] = &$subSubRecord;
                 }
             }
         }
@@ -574,6 +594,21 @@ class LogicalRouter
         $result = array('ipv4' => &$ipv4);
 
         return $result;
+    }
+
+
+    private function IPvalidation64bit( &$ipv4sort, $record )
+    {
+        if( $record['end'] > 9223372036854775807 )
+        {
+            #print "DEBUG output IPv6 related:\n";
+            #print "start: ".$record['start']."\n";
+            #print "end: ".$record['end']."\n";
+            #(int)$test = $record['end'] - $record['start'];
+            #print "end-start".intval($test)."\n";
+        }
+        else
+            $ipv4sort[$record['end'] - $record['start']][$record['start']][] = &$record;
     }
 
     /**

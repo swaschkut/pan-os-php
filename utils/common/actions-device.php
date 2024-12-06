@@ -3787,6 +3787,8 @@ DeviceCallContext::$supportedActions['find-zone-from-ip'] = array(
         }
 
         $ip_address = $context->arguments['ip'];
+        if( strpos( $ip_address, ":" ) !== FALSE )
+            derr( "IPv6 is NOT yet supported", null, FALSE );
 
 
         $ip = new Address( $ip_address, null );
@@ -3983,6 +3985,8 @@ DeviceCallContext::$supportedActions['find-zone-from-ip'] = array(
 
 
         $resolvedZones = &$addressContainer->calculateZonesFromIP4Mapping($ipMapping['ipv4']);
+        //Todo: IPv6 not implemented yet
+        $resolvedZonesv6 = &$addressContainer->calculateZonesFromIP6Mapping($ipMapping['ipv6']);
 
         if( count($resolvedZones) == 0 )
         {

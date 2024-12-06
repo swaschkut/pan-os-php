@@ -195,7 +195,9 @@ require_once $basedir . '/misc-classes/PanAPIConnector.php';
 require_once $basedir . '/misc-classes/PanSaseAPIConnector.php';
 
 
+require_once $basedir . '/helper-classes/IPMap.php';
 require_once $basedir . '/helper-classes/IP4Map.php';
+require_once $basedir . '/helper-classes/IP6Map.php';
 require_once $basedir . '/helper-classes/ServiceDstPortMapping.php';
 require_once $basedir . '/helper-classes/ServiceSrcPortMapping.php';
 require_once $basedir . '/helper-classes/cidr.php';
