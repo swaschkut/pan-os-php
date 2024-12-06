@@ -734,7 +734,7 @@ class AddressRuleContainer extends ObjRuleContainer
 
         foreach( $this->o as $member )
         {
-            if( get_class($member) === "EDL" )
+            if( $member == null || get_class($member) === "EDL" )
                 continue;
             if( $member->isTmpAddr() && !$member->nameIsValidRuleIPEntry() )
             {
@@ -790,7 +790,7 @@ class AddressRuleContainer extends ObjRuleContainer
 
         foreach( $this->o as $member )
         {
-            if( get_class($member) === "EDL" )
+            if( $member == null || get_class($member) === "EDL" )
                 continue;
             if( $member->isTmpAddr() && !$member->nameIsValidRuleIPEntry() )
             {
