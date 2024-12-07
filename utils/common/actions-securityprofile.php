@@ -673,92 +673,35 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     foreach( $object->tmp_virus_prof_array as $key => $type )
                     {
                         $string = $type;
-                        if( isset( $object->$type['action'] ) )
+
+                        $actionTypeArray = array('action', 'wildfire-action', 'mlav-action');
+
+                        foreach( $actionTypeArray as $actionType )
                         {
-                            $string .= "          - action:          '" . $object->$type['action'] . "'";
-                            if( $bestPractice && $object->$type['action'] != "reset-both" )
+                            if( isset( $object->$type[$actionType] ) )
                             {
-                                //Todo: this is still hardcoded - how to use BP JSON file???
-                                //PH::$shadow_bp_jsonfile
-                                if ($type == "ftp" || $type == "http" || $type == "http2" || $type == "smb")
+                                $string .= "          - ".$actionType.":          '" . $object->$type[$actionType] . "'";
+                                if( $bestPractice )
                                 {
-                                    if ($object->$type['action'] != "default")
-                                        $string .= $bp_NOT_sign;
+                                    $check_array = PH::$shadow_bp_jsonfile['virus']['rule']['bp'][$actionType];
+                                    if( in_array( $type, $check_array['type'] ) )
+                                    {
+                                        if( !in_array( $object->$type[$actionType], $check_array['action'] ) )
+                                            $string .= $bp_NOT_sign;
+                                    }
+                                    else
+                                    {
+                                        if( !in_array( $object->$type[$actionType], $check_array['action-not-matching-type'] ) )
+                                            $string .= $bp_NOT_sign;
+                                    }
                                 }
-                                else
-                                    $string .= $bp_NOT_sign;
-                            }
-                            if( $visibility && $object->$type['action'] == "allow" )
-                            {
-                                //Todo: this is still hardcoded - how to use BP JSON file???
-                                //PH::$shadow_bp_jsonfile
-                                if ($type == "ftp" || $type == "http" || $type == "http2" || $type == "smb")
+                                if( $visibility )
                                 {
-                                    if ($object->$type['action'] == "allow")
+                                    //Todo: to get same output as BP; change JSON and validate what is needed
+                                    $check_array = PH::$shadow_bp_jsonfile['virus']['rule']['visibility'][$actionType];
+                                    if( in_array( "!".$object->$type[$actionType], $check_array ) )
                                         $string .= $visible_NOT_sign;
                                 }
-                                else
-                                    $string .= $visible_NOT_sign;
-                            }
-                        }
-
-
-                        if( isset( $object->$type['wildfire-action'] ) )
-                        {
-                            $string .=  "          - wildfire-action: '" . $object->$type['wildfire-action'] . "'";
-                            if( $bestPractice && $object->$type['wildfire-action'] != "reset-both" )
-                            {
-                                //Todo: this is still hardcoded - how to use BP JSON file???
-                                //PH::$shadow_bp_jsonfile
-                                if ($type == "ftp" || $type == "http" || $type == "http2" || $type == "smb")
-                                {
-                                    if ($object->$type['wildfire-action'] != "default")
-                                        $string .= $bp_NOT_sign;
-                                }
-                                else
-                                    $string .= $bp_NOT_sign;
-                            }
-                            if( $visibility && $object->$type['wildfire-action'] == "allow" )
-                            {
-                                //Todo: this is still hardcoded - how to use BP JSON file???
-                                //PH::$shadow_bp_jsonfile
-                                if ($type == "ftp" || $type == "http" || $type == "http2" || $type == "smb")
-                                {
-                                    if ($object->$type['wildfire-action'] == "allow")
-                                        $string .= $visible_NOT_sign;
-                                }
-                                else
-                                    $string .= $visible_NOT_sign;
-                            }
-                        }
-
-
-                        if( isset( $object->$type['mlav-action'] ) )
-                        {
-                            $string .= "          - mlav-action: '" . $object->$type['mlav-action'] . "'";
-                            if( $bestPractice && $object->$type['mlav-action'] != "reset-both" )
-                            {
-                                //Todo: this is still hardcoded - how to use BP JSON file???
-                                //PH::$shadow_bp_jsonfile
-                                if ($type == "ftp" || $type == "http" || $type == "http2" || $type == "smb")
-                                {
-                                    if( $object->$type['mlav-action'] != "default")
-                                        $string .= $bp_NOT_sign;
-                                }
-                                else
-                                    $string .= $bp_NOT_sign;
-                            }
-                            if( $visibility && $object->$type['mlav-action'] == "allow" )
-                            {
-                                //Todo: this is still hardcoded - how to use BP JSON file???
-                                //PH::$shadow_bp_jsonfile
-                                if ($type == "ftp" || $type == "http" || $type == "http2" || $type == "smb")
-                                {
-                                    if( $object->$type['mlav-action'] == "allow")
-                                        $string .= $visible_NOT_sign;
-                                }
-                                else
-                                    $string .= $visible_NOT_sign;
                             }
                         }
 
