@@ -226,6 +226,8 @@ class AntiVirusProfile extends SecurityProfile2
         if( $tmp_rule !== FALSE )
         {
             $this->additional['mlav-engine-filebased-enabled'] = array();
+            $tmp_mica_MSOffice_found = false;
+            $tmp_mica_Shell_found = false;
             $tmp_mica_OOXML_found = false;
             $tmp_mica_MachO_found = false;
             foreach( $tmp_rule->childNodes as $tmp_entry1 )
@@ -234,7 +236,11 @@ class AntiVirusProfile extends SecurityProfile2
                     continue;
 
                 $name = DH::findAttribute("name", $tmp_entry1);
-                if( $name == "OOXML" )
+                if( $name == "MSOffice" )
+                    $tmp_mica_MSOffice_found = TRUE;
+                elseif( $name == "Shell" )
+                    $tmp_mica_Shell_found = TRUE;
+                elseif( $name == "OOXML" )
                     $tmp_mica_OOXML_found = TRUE;
                 elseif( $name == "MachO" )
                     $tmp_mica_MachO_found = TRUE;
@@ -250,6 +256,13 @@ class AntiVirusProfile extends SecurityProfile2
                 }
             }
 
+            $MSOFFICE_xmlstring = '<entry name="MSOffice">
+    <mlav-policy-action>disable</mlav-policy-action>
+  </entry>';
+            $Shell_xmlstring = '<entry name="Shell">
+    <mlav-policy-action>disable</mlav-policy-action>
+  </entry>';
+
             $OOXML_xmlstring = '<entry name="OOXML">
   <mlav-policy-action>disable</mlav-policy-action>
 </entry>';
@@ -257,6 +270,20 @@ class AntiVirusProfile extends SecurityProfile2
   <mlav-policy-action>disable</mlav-policy-action>
 </entry>';
 
+            if( !$tmp_mica_MSOffice_found && $this->owner->owner->version >= 100)
+            {
+                $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $MSOFFICE_xmlstring);
+                $tmp_rule->appendChild($xmlElement);
+
+                $this->additional['mlav-engine-filebased-enabled']['MSOffice']['mlav-policy-action'] = "disable";
+            }
+            if( !$tmp_mica_Shell_found && $this->owner->owner->version >= 100)
+            {
+                $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $Shell_xmlstring);
+                $tmp_rule->appendChild($xmlElement);
+
+                $this->additional['mlav-engine-filebased-enabled']['Shell']['mlav-policy-action'] = "disable";
+            }
             if( !$tmp_mica_OOXML_found && $this->owner->owner->version >= 111)
             {
                 $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $OOXML_xmlstring);

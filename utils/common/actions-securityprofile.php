@@ -678,6 +678,8 @@ SecurityProfileCallContext::$supportedActions[] = array(
                             $string .= "          - action:          '" . $object->$type['action'] . "'";
                             if( $bestPractice && $object->$type['action'] != "reset-both" )
                             {
+                                //Todo: this is still hardcoded - how to use BP JSON file???
+                                //PH::$shadow_bp_jsonfile
                                 if ($type == "ftp" || $type == "http" || $type == "http2" || $type == "smb")
                                 {
                                     if ($object->$type['action'] != "default")
@@ -688,6 +690,8 @@ SecurityProfileCallContext::$supportedActions[] = array(
                             }
                             if( $visibility && $object->$type['action'] == "allow" )
                             {
+                                //Todo: this is still hardcoded - how to use BP JSON file???
+                                //PH::$shadow_bp_jsonfile
                                 if ($type == "ftp" || $type == "http" || $type == "http2" || $type == "smb")
                                 {
                                     if ($object->$type['action'] == "allow")
@@ -704,6 +708,8 @@ SecurityProfileCallContext::$supportedActions[] = array(
                             $string .=  "          - wildfire-action: '" . $object->$type['wildfire-action'] . "'";
                             if( $bestPractice && $object->$type['wildfire-action'] != "reset-both" )
                             {
+                                //Todo: this is still hardcoded - how to use BP JSON file???
+                                //PH::$shadow_bp_jsonfile
                                 if ($type == "ftp" || $type == "http" || $type == "http2" || $type == "smb")
                                 {
                                     if ($object->$type['wildfire-action'] != "default")
@@ -714,6 +720,8 @@ SecurityProfileCallContext::$supportedActions[] = array(
                             }
                             if( $visibility && $object->$type['wildfire-action'] == "allow" )
                             {
+                                //Todo: this is still hardcoded - how to use BP JSON file???
+                                //PH::$shadow_bp_jsonfile
                                 if ($type == "ftp" || $type == "http" || $type == "http2" || $type == "smb")
                                 {
                                     if ($object->$type['wildfire-action'] == "allow")
@@ -730,6 +738,8 @@ SecurityProfileCallContext::$supportedActions[] = array(
                             $string .= "          - mlav-action: '" . $object->$type['mlav-action'] . "'";
                             if( $bestPractice && $object->$type['mlav-action'] != "reset-both" )
                             {
+                                //Todo: this is still hardcoded - how to use BP JSON file???
+                                //PH::$shadow_bp_jsonfile
                                 if ($type == "ftp" || $type == "http" || $type == "http2" || $type == "smb")
                                 {
                                     if( $object->$type['mlav-action'] != "default")
@@ -740,6 +750,8 @@ SecurityProfileCallContext::$supportedActions[] = array(
                             }
                             if( $visibility && $object->$type['mlav-action'] == "allow" )
                             {
+                                //Todo: this is still hardcoded - how to use BP JSON file???
+                                //PH::$shadow_bp_jsonfile
                                 if ($type == "ftp" || $type == "http" || $type == "http2" || $type == "smb")
                                 {
                                     if( $object->$type['mlav-action'] == "allow")
@@ -885,6 +897,8 @@ SecurityProfileCallContext::$supportedActions[] = array(
                                     $string = $name." -  action: ".$value['action'];
                                     if( isset($value['packet-capture']) )
                                     {
+                                        //Todo: this is still hardcoded - how to use BP JSON file???
+                                        //PH::$shadow_bp_jsonfile
                                         $string .= " -  packet-capture: ".$value['packet-capture'];
                                         if( $bestPractice && $name == "default-paloalto-dns" )
                                         {
@@ -955,13 +969,30 @@ SecurityProfileCallContext::$supportedActions[] = array(
 
                         $string_mica_engine[] = "mica-engine-spyware-enabled: ". $enabled;
 
-                        foreach ($object->additional['mica-engine-spyware-enabled'] as $name => $threat)
+                        foreach ($object->additional['mica-engine-spyware-enabled'] as $type => $array)
                         {
-                            $tmp_string = $name . " - inline-policy-action :" . $object->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action'];
-                            if( $bestPractice && $object->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action'] != "reset-both" )
-                                $tmp_string .= $bp_NOT_sign;
-                            if( $visibility && $object->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action'] == "allow" )
-                                $tmp_string .= $visible_NOT_sign;
+                            $tmp_string = $type . " - inline-policy-action :" . $object->additional['mica-engine-spyware-enabled'][$type]['inline-policy-action'];
+                            if( $bestPractice )
+                            {
+                                $check_array = PH::$shadow_bp_jsonfile['spyware']['cloud-inline']['bp'];
+                                foreach( $check_array['inline-policy-action'] as $validate )
+                                {
+                                    $bp_set = $object->bp_stringValidation($array, 'inline-policy-action', $validate);
+                                }
+                                if($bp_set == FALSE)
+                                    $tmp_string .= $bp_NOT_sign;
+                            }
+
+                            if( $visibility )
+                            {
+                                $check_array = PH::$shadow_bp_jsonfile['spyware']['cloud-inline']['visibility'];
+                                foreach( $check_array['inline-policy-action'] as $validate )
+                                {
+                                    $bp_set = $object->visibility_stringValidation($array, 'inline-policy-action', $validate);
+                                }
+                                if($bp_set == FALSE)
+                                    $tmp_string .= $visible_NOT_sign;
+                            }
                             $string_mica_engine[] = $tmp_string;
                         }
 
@@ -982,13 +1013,26 @@ SecurityProfileCallContext::$supportedActions[] = array(
 
                         $string_mica_engine[] = "mica-engine-vulnerability-enabled: ". $enabled;
 
-                        foreach ($object->additional['mica-engine-vulnerability-enabled'] as $name => $threat)
+                        foreach ($object->additional['mica-engine-vulnerability-enabled'] as $type => $array)
                         {
-                            $tmp_string = $name . " - inline-policy-action :" . $object->additional['mica-engine-vulnerability-enabled'][$name]['inline-policy-action'];
-                            if( $bestPractice && $object->additional['mica-engine-vulnerability-enabled'][$name]['inline-policy-action'] != "reset-both" )
-                                $tmp_string .= $bp_NOT_sign;
-                            if( $visibility && $object->additional['mica-engine-vulnerability-enabled'][$name]['inline-policy-action'] == "allow" )
-                                $tmp_string .= $visible_NOT_sign;
+                            $tmp_string = $type . " - inline-policy-action :" . $object->additional['mica-engine-vulnerability-enabled'][$type]['inline-policy-action'];
+                            if( $bestPractice )
+                            {
+                                $check_array = PH::$shadow_bp_jsonfile['vulnerability']['cloud-inline']['bp'];
+                                foreach( $check_array['inline-policy-action'] as $validate )
+                                    $bp_set = $object->bp_stringValidation($array, 'inline-policy-action', $validate);
+                                if($bp_set == FALSE)
+                                    $tmp_string .= $bp_NOT_sign;
+                            }
+
+                            if( $visibility )
+                            {
+                                $check_array = PH::$shadow_bp_jsonfile['vulnerability']['cloud-inline']['visibility'];
+                                foreach( $check_array['inline-policy-action'] as $validate )
+                                    $bp_set = $object->visibility_stringValidation($array, 'inline-policy-action', $validate);
+                                if($bp_set == FALSE)
+                                    $tmp_string .= $visible_NOT_sign;
+                            }
                             $string_mica_engine[] = $tmp_string;
                         }
 
@@ -998,13 +1042,27 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     {
                         $string_mica_engine[] = "mlav-engine-filebased-enabled: ";
 
-                        foreach ($object->additional['mlav-engine-filebased-enabled'] as $name => $threat)
+                        foreach ($object->additional['mlav-engine-filebased-enabled'] as $type => $array)
                         {
-                            $tmp_string = $name . " - mlav-policy-action :" . $object->additional['mlav-engine-filebased-enabled'][$name]['mlav-policy-action'];
-                            if( $bestPractice && $object->additional['mlav-engine-filebased-enabled'][$name]['mlav-policy-action'] != "enable" )
-                                $tmp_string .= $bp_NOT_sign;
-                            if( $visibility && $object->additional['mlav-engine-filebased-enabled'][$name]['mlav-policy-action'] == "disable" )
-                                $tmp_string .= $visible_NOT_sign;
+                            $tmp_string = $type . " - mlav-policy-action :" . $object->additional['mlav-engine-filebased-enabled'][$type]['mlav-policy-action'];
+                            if( $bestPractice )
+                            {
+                                $check_array = PH::$shadow_bp_jsonfile['virus']['cloud-inline']['bp'];
+                                foreach( $check_array['inline-policy-action'] as $validate )
+                                    $bp_set = $object->bp_stringValidation($array, 'mlav-policy-action', $validate);
+                                if($bp_set == FALSE)
+                                    $tmp_string .= $bp_NOT_sign;
+                            }
+
+                            if( $visibility )
+                            {
+                                $check_array = PH::$shadow_bp_jsonfile['virus']['cloud-inline']['visibility'];
+                                foreach( $check_array['inline-policy-action'] as $validate )
+                                    $bp_set = $object->visibility_stringValidation($array, 'mlav-policy-action', $validate);
+                                if($bp_set == FALSE)
+                                    $tmp_string .= $visible_NOT_sign;
+                            }
+
                             $string_mica_engine[] = $tmp_string;
                         }
 

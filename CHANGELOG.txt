@@ -2,6 +2,7 @@ CHANGELOG
 
 2.1.30
 UTIL:
+* type=securityprofile actions=exporttoexcel:file.html,bestspractice|visibility | improvements for dynamic BP JSON validation - inline-policy-action
 
 BUGFIX:
 
