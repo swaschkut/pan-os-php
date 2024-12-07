@@ -6,6 +6,7 @@ UTIL:
 BUGFIX:
 
 GENERAL:
+* introduce argument "shadow-bpjsonfile=FILENAME.json
 
 
 2.1.29 (20241206)

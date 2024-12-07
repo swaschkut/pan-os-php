@@ -1081,14 +1081,14 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     {
                         if( $bestPractice )
                         {
-                            if( $object->cloud_inline_analysis_best_practice() )
+                            if( $object->cloud_inline_analysis_best_practice($object->owner->bp_json_file) )
                                 $lines .= $context->encloseFunction($bp_text_yes.' BP mica_engine set');
                             else
                                 $lines .= $context->encloseFunction($bp_text_no.' NO BP mica_engine');
                         }
                         if( $visibility )
                         {
-                            if( $object->cloud_inline_analysis_visibility() )
+                            if( $object->cloud_inline_analysis_visibility($object->owner->bp_json_file) )
                                 $lines .= $context->encloseFunction($bp_text_yes.' Visibility mica_engine set');
                             else
                                 $lines .= $context->encloseFunction($bp_text_no.' NO Visibility mica_engine');
