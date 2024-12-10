@@ -1428,50 +1428,30 @@ SecurityProfileCallContext::$supportedActions['virus.best-practice-set'] = array
         {
             $xmlNode = DH::findFirstElementByNameAttr("entry", $decoder, $tmp_decoder);
 
+            $actionTypeArray = array( "action", "wildfire-action", "mlav-action" );
+
             if( $decoder == "http" || $decoder == "https" || $decoder == "ftp" || $decoder == "smb" )
             {
-                if( $object->$decoder['action'] != "default" && $object->$decoder['action'] != "reset-both"  )
+                foreach( $actionTypeArray as $actionType )
                 {
-                    $object->$decoder['action'] = "reset-both";
-                    $action_xmlNode = DH::findFirstElement("action", $xmlNode);
-                    $action_xmlNode->textContent = "reset-both";
-                }
-
-                if( $object->$decoder['wildfire-action'] != "default" && $object->$decoder['wildfire-action'] != "reset-both"  )
-                {
-                    $object->$decoder['wildfire-action'] = "reset-both";
-                    $action_xmlNode = DH::findFirstElement("wildfire-action", $xmlNode);
-                    $action_xmlNode->textContent = "reset-both";
-                }
-
-                if( $object->$decoder['mlav-action'] != "default" && $object->$decoder['mlav-action'] != "reset-both"  )
-                {
-                    $object->$decoder['mlav-action'] = "reset-both";
-                    $action_xmlNode = DH::findFirstElement("mlav-action", $xmlNode);
-                    $action_xmlNode->textContent = "reset-both";
+                    if( $object->$decoder[$actionType] != "default" && $object->$decoder[$actionType] != "reset-both"  )
+                    {
+                        $object->$decoder[$actionType] = "reset-both";
+                        $action_xmlNode = DH::findFirstElement($actionType, $xmlNode);
+                        $action_xmlNode->textContent = "reset-both";
+                    }
                 }
             }
             else
             {
-                if( $object->$decoder['action'] != "reset-both"  )
+                foreach( $actionTypeArray as $actionType )
                 {
-                    $object->$decoder['action'] = "reset-both";
-                    $action_xmlNode = DH::findFirstElement("action", $xmlNode);
-                    $action_xmlNode->textContent = "reset-both";
-                }
-
-                if( $object->$decoder['wildfire-action'] != "reset-both"  )
-                {
-                    $object->$decoder['wildfire-action'] = "reset-both";
-                    $action_xmlNode = DH::findFirstElement("wildfire-action", $xmlNode);
-                    $action_xmlNode->textContent = "reset-both";
-                }
-
-                if( $object->$decoder['mlav-action'] != "reset-both"  )
-                {
-                    $object->$decoder['mlav-action'] = "reset-both";
-                    $action_xmlNode = DH::findFirstElement("mlav-action", $xmlNode);
-                    $action_xmlNode->textContent = "reset-both";
+                    if( $object->$decoder[$actionType] != "reset-both"  )
+                    {
+                        $object->$decoder[$actionType] = "reset-both";
+                        $action_xmlNode = DH::findFirstElement($actionType, $xmlNode);
+                        $action_xmlNode->textContent = "reset-both";
+                    }
                 }
             }
         }
@@ -1514,49 +1494,13 @@ SecurityProfileCallContext::$supportedActions['virus.alert-only-set'] = array(
         {
             $xmlNode = DH::findFirstElementByNameAttr("entry", $decoder, $tmp_decoder);
 
-            if( $decoder == "http" || $decoder == "https" || $decoder == "ftp" || $decoder == "smb" )
+            $actionTypeArray = array( "action", "wildfire-action", "mlav-action" );
+
+            foreach( $actionTypeArray as $actionType )
             {
-                if( $object->$decoder['action'] == "allow" )
-                {
-                    $object->$decoder['action'] = "alert";
-                    $action_xmlNode = DH::findFirstElement("action", $xmlNode);
-                    $action_xmlNode->textContent = "alert";
-                }
-
-                if( $object->$decoder['wildfire-action'] == "allow" )
-                {
-                    $object->$decoder['wildfire-action'] = "alert";
-                    $action_xmlNode = DH::findFirstElement("wildfire-action", $xmlNode);
-                    $action_xmlNode->textContent = "alert";
-                }
-
-                if( $object->$decoder['mlav-action'] == "allow" )
-                {
-                    $object->$decoder['mlav-action'] = "alert";
-                    $action_xmlNode = DH::findFirstElement("mlav-action", $xmlNode);
-                    $action_xmlNode->textContent = "alert";
-                }
-            }
-            else
-            {
-                if( $object->$decoder['action'] == "allow"  )
-                {
-                    $object->$decoder['action'] = "alert";
-                    $action_xmlNode = DH::findFirstElement("action", $xmlNode);
-                    $action_xmlNode->textContent = "alert";
-                }
-
-                if( $object->$decoder['wildfire-action'] == "allow"  )
-                {
-                    $object->$decoder['wildfire-action'] = "alert";
-                    $action_xmlNode = DH::findFirstElement("wildfire-action", $xmlNode);
-                    $action_xmlNode->textContent = "alert";
-                }
-
-                if( $object->$decoder['mlav-action'] == "allow"  )
-                {
-                    $object->$decoder['mlav-action'] = "alert";
-                    $action_xmlNode = DH::findFirstElement("mlav-action", $xmlNode);
+                if ($object->$decoder[$actionType] == "allow") {
+                    $object->$decoder[$actionType] = "alert";
+                    $action_xmlNode = DH::findFirstElement($actionType, $xmlNode);
                     $action_xmlNode->textContent = "alert";
                 }
             }
