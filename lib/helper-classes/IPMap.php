@@ -37,17 +37,20 @@ class IPMap
 
     /**
      * @param $text
-     * @return IP4Map
+     * @return IP4Map|IP6Map
      */
     static public function mapFromText($text)
     {
-        $map = new IPMap();
+        if( get_called_class() == "IP4Map" )
+            $map = new IP4Map();
+        elseif( get_called_class() == "IP6Map" )
+            $map = new IP6Map();
 
         $map->_map[] = cidr::stringToStartEnd($text);
         return $map;
     }
 
-    public function equals(IPMap $other)
+    public function equals(IP4Map|IP6Map $other)
     {
         $ref1 = &$this->_map;
         $ref2 = &$other->_map;
@@ -72,8 +75,7 @@ class IPMap
 
 
 
-
-    public function &mapDiff(IPMap $other)
+    public function &mapDiff(IP4Map|IP6Map $other)
     {
         $thisCopy = clone $this;
         $otherCopy = clone $other;
@@ -93,7 +95,7 @@ class IPMap
      * @param IP4Map $other
      * @return int 1 if full match, 0 if not match, 2 if partial match
      */
-    public function includesOtherMap(IPMap $other)
+    public function includesOtherMap(IP4Map|IP6Map $other)
     {
         if( $other->count() == 0 )
             return 0;
@@ -118,7 +120,7 @@ class IPMap
      * @param IP4Map $other
      * @return int 1 if full match, 0 if not match, 2 if partial match
      */
-    public function includedInOtherMap(IPMap $other)
+    public function includedInOtherMap(IP4Map|IP6Map $other)
     {
         if( $other->count() == 0 )
             return 0;

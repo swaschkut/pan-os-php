@@ -83,6 +83,8 @@ class SecurityProfileStore extends ObjStore
     public function __construct($owner, $profileType)
     {
         $this->bp_json_file = dirname(__FILE__)."/../../utils/api/v1/bp/bp_sp_panw.json";
+        if( PH::$shadow_bp_jsonfilename == null )
+            PH::$shadow_bp_jsonfilename = $this->bp_json_file;
 
         $this->classn = &self::$childn;
 
@@ -737,17 +739,23 @@ class SecurityProfileStore extends ObjStore
             //add bp JSON filename to UTIL???
             //so this can be flexible if customer like to use its own file
 
-            $JSONarray = file_get_contents( $this->bp_json_file);
+            if( PH::$shadow_bp_jsonfile == null )
+            {
+                $JSONarray = file_get_contents( $this->bp_json_file);
 
-            if( $JSONarray === false )
-                derr("cannot open file '{$this->bp_json_file}");
+                if( $JSONarray === false )
+                    derr("cannot open file '{$this->bp_json_file}");
 
-            $details = json_decode($JSONarray, true);
+                $details = json_decode($JSONarray, true);
 
-            if( $details === null )
-                derr( "invalid JSON file provided", null, FALSE );
+                if( $details === null )
+                    derr( "invalid JSON file provided", null, FALSE );
 
-            $this->bp_details_array = $details;
+                $this->bp_details_array = $details;
+                PH::$shadow_bp_jsonfile = $details;
+            }
+            else
+                $this->bp_details_array = PH::$shadow_bp_jsonfile;
         }
 
         return $this->bp_details_array;

@@ -673,80 +673,35 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     foreach( $object->tmp_virus_prof_array as $key => $type )
                     {
                         $string = $type;
-                        if( isset( $object->$type['action'] ) )
+
+                        $actionTypeArray = array('action', 'wildfire-action', 'mlav-action');
+
+                        foreach( $actionTypeArray as $actionType )
                         {
-                            $string .= "          - action:          '" . $object->$type['action'] . "'";
-                            if( $bestPractice && $object->$type['action'] != "reset-both" )
+                            if( isset( $object->$type[$actionType] ) )
                             {
-                                if ($type == "ftp" || $type == "http" || $type == "http2" || $type == "smb")
+                                $string .= "          - ".$actionType.":          '" . $object->$type[$actionType] . "'";
+                                if( $bestPractice )
                                 {
-                                    if ($object->$type['action'] != "default")
-                                        $string .= $bp_NOT_sign;
+                                    $check_array = PH::$shadow_bp_jsonfile['virus']['rule']['bp'][$actionType];
+                                    if( in_array( $type, $check_array['type'] ) )
+                                    {
+                                        if( !in_array( $object->$type[$actionType], $check_array['action'] ) )
+                                            $string .= $bp_NOT_sign;
+                                    }
+                                    else
+                                    {
+                                        if( !in_array( $object->$type[$actionType], $check_array['action-not-matching-type'] ) )
+                                            $string .= $bp_NOT_sign;
+                                    }
                                 }
-                                else
-                                    $string .= $bp_NOT_sign;
-                            }
-                            if( $visibility && $object->$type['action'] == "allow" )
-                            {
-                                if ($type == "ftp" || $type == "http" || $type == "http2" || $type == "smb")
+                                if( $visibility )
                                 {
-                                    if ($object->$type['action'] == "allow")
+                                    //Todo: to get same output as BP; change JSON and validate what is needed
+                                    $check_array = PH::$shadow_bp_jsonfile['virus']['rule']['visibility'][$actionType];
+                                    if( in_array( "!".$object->$type[$actionType], $check_array ) )
                                         $string .= $visible_NOT_sign;
                                 }
-                                else
-                                    $string .= $visible_NOT_sign;
-                            }
-                        }
-
-
-                        if( isset( $object->$type['wildfire-action'] ) )
-                        {
-                            $string .=  "          - wildfire-action: '" . $object->$type['wildfire-action'] . "'";
-                            if( $bestPractice && $object->$type['wildfire-action'] != "reset-both" )
-                            {
-                                if ($type == "ftp" || $type == "http" || $type == "http2" || $type == "smb")
-                                {
-                                    if ($object->$type['wildfire-action'] != "default")
-                                        $string .= $bp_NOT_sign;
-                                }
-                                else
-                                    $string .= $bp_NOT_sign;
-                            }
-                            if( $visibility && $object->$type['wildfire-action'] == "allow" )
-                            {
-                                if ($type == "ftp" || $type == "http" || $type == "http2" || $type == "smb")
-                                {
-                                    if ($object->$type['wildfire-action'] == "allow")
-                                        $string .= $visible_NOT_sign;
-                                }
-                                else
-                                    $string .= $visible_NOT_sign;
-                            }
-                        }
-
-
-                        if( isset( $object->$type['mlav-action'] ) )
-                        {
-                            $string .= "          - mlav-action: '" . $object->$type['mlav-action'] . "'";
-                            if( $bestPractice && $object->$type['mlav-action'] != "reset-both" )
-                            {
-                                if ($type == "ftp" || $type == "http" || $type == "http2" || $type == "smb")
-                                {
-                                    if( $object->$type['mlav-action'] != "default")
-                                        $string .= $bp_NOT_sign;
-                                }
-                                else
-                                    $string .= $bp_NOT_sign;
-                            }
-                            if( $visibility && $object->$type['mlav-action'] == "allow" )
-                            {
-                                if ($type == "ftp" || $type == "http" || $type == "http2" || $type == "smb")
-                                {
-                                    if( $object->$type['mlav-action'] == "allow")
-                                        $string .= $visible_NOT_sign;
-                                }
-                                else
-                                    $string .= $visible_NOT_sign;
                             }
                         }
 
@@ -885,6 +840,8 @@ SecurityProfileCallContext::$supportedActions[] = array(
                                     $string = $name." -  action: ".$value['action'];
                                     if( isset($value['packet-capture']) )
                                     {
+                                        //Todo: this is still hardcoded - how to use BP JSON file???
+                                        //PH::$shadow_bp_jsonfile
                                         $string .= " -  packet-capture: ".$value['packet-capture'];
                                         if( $bestPractice && $name == "default-paloalto-dns" )
                                         {
@@ -955,13 +912,38 @@ SecurityProfileCallContext::$supportedActions[] = array(
 
                         $string_mica_engine[] = "mica-engine-spyware-enabled: ". $enabled;
 
-                        foreach ($object->additional['mica-engine-spyware-enabled'] as $name => $threat)
+                        foreach ($object->additional['mica-engine-spyware-enabled'] as $type => $array)
                         {
-                            $tmp_string = $name . " - inline-policy-action :" . $object->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action'];
-                            if( $bestPractice && $object->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action'] != "reset-both" )
-                                $tmp_string .= $bp_NOT_sign;
-                            if( $visibility && $object->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action'] == "allow" )
-                                $tmp_string .= $visible_NOT_sign;
+                            $tmp_string = $type . " - inline-policy-action :" . $object->additional['mica-engine-spyware-enabled'][$type]['inline-policy-action'];
+                            if( $bestPractice )
+                            {
+                                if( isset(PH::$shadow_bp_jsonfile['spyware']['cloud-inline']['bp']) )
+                                {
+                                    $check_array = PH::$shadow_bp_jsonfile['spyware']['cloud-inline']['bp'];
+                                    if( isset($check_array['inline-policy-action']) )
+                                    {
+                                        foreach( $check_array['inline-policy-action'] as $validate )
+                                            $bp_set = $object->bp_stringValidation($array, 'inline-policy-action', $validate);
+                                        if($bp_set == FALSE)
+                                            $tmp_string .= $bp_NOT_sign;
+                                    }
+                                }
+                            }
+
+                            if( $visibility )
+                            {
+                                if( isset(PH::$shadow_bp_jsonfile['spyware']['cloud-inline']['visibility']) )
+                                {
+                                    $check_array = PH::$shadow_bp_jsonfile['spyware']['cloud-inline']['visibility'];
+                                    if( isset($check_array['inline-policy-action']) )
+                                    {
+                                        foreach( $check_array['inline-policy-action'] as $validate )
+                                            $bp_set = $object->visibility_stringValidation($array, 'inline-policy-action', $validate);
+                                        if($bp_set == FALSE)
+                                            $tmp_string .= $visible_NOT_sign;
+                                    }
+                                }
+                            }
                             $string_mica_engine[] = $tmp_string;
                         }
 
@@ -982,13 +964,39 @@ SecurityProfileCallContext::$supportedActions[] = array(
 
                         $string_mica_engine[] = "mica-engine-vulnerability-enabled: ". $enabled;
 
-                        foreach ($object->additional['mica-engine-vulnerability-enabled'] as $name => $threat)
+                        foreach ($object->additional['mica-engine-vulnerability-enabled'] as $type => $array)
                         {
-                            $tmp_string = $name . " - inline-policy-action :" . $object->additional['mica-engine-vulnerability-enabled'][$name]['inline-policy-action'];
-                            if( $bestPractice && $object->additional['mica-engine-vulnerability-enabled'][$name]['inline-policy-action'] != "reset-both" )
-                                $tmp_string .= $bp_NOT_sign;
-                            if( $visibility && $object->additional['mica-engine-vulnerability-enabled'][$name]['inline-policy-action'] == "allow" )
-                                $tmp_string .= $visible_NOT_sign;
+                            $tmp_string = $type . " - inline-policy-action :" . $object->additional['mica-engine-vulnerability-enabled'][$type]['inline-policy-action'];
+                            if( $bestPractice )
+                            {
+                                if( isset(PH::$shadow_bp_jsonfile['vulnerability']['cloud-inline']['bp']) )
+                                {
+                                    $check_array = PH::$shadow_bp_jsonfile['vulnerability']['cloud-inline']['bp'];
+                                    if( isset($check_array['inline-policy-action']) )
+                                    {
+                                        foreach( $check_array['inline-policy-action'] as $validate )
+                                            $bp_set = $object->bp_stringValidation($array, 'inline-policy-action', $validate);
+                                        if($bp_set == FALSE)
+                                            $tmp_string .= $bp_NOT_sign;
+                                    }
+                                }
+                            }
+
+                            if( $visibility )
+                            {
+                                if( isset(PH::$shadow_bp_jsonfile['vulnerability']['cloud-inline']['visibility']) )
+                                {
+                                    $check_array = PH::$shadow_bp_jsonfile['vulnerability']['cloud-inline']['visibility'];
+                                    if( isset($check_array['inline-policy-action']) )
+                                    {
+                                        foreach( $check_array['inline-policy-action'] as $validate )
+                                            $bp_set = $object->visibility_stringValidation($array, 'inline-policy-action', $validate);
+                                        if($bp_set == FALSE)
+                                            $tmp_string .= $visible_NOT_sign;
+                                    }
+                                }
+
+                            }
                             $string_mica_engine[] = $tmp_string;
                         }
 
@@ -998,13 +1006,39 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     {
                         $string_mica_engine[] = "mlav-engine-filebased-enabled: ";
 
-                        foreach ($object->additional['mlav-engine-filebased-enabled'] as $name => $threat)
+                        foreach ($object->additional['mlav-engine-filebased-enabled'] as $type => $array)
                         {
-                            $tmp_string = $name . " - mlav-policy-action :" . $object->additional['mlav-engine-filebased-enabled'][$name]['mlav-policy-action'];
-                            if( $bestPractice && $object->additional['mlav-engine-filebased-enabled'][$name]['mlav-policy-action'] != "enable" )
-                                $tmp_string .= $bp_NOT_sign;
-                            if( $visibility && $object->additional['mlav-engine-filebased-enabled'][$name]['mlav-policy-action'] == "disable" )
-                                $tmp_string .= $visible_NOT_sign;
+                            $tmp_string = $type . " - mlav-policy-action :" . $object->additional['mlav-engine-filebased-enabled'][$type]['mlav-policy-action'];
+                            if( $bestPractice )
+                            {
+                                if( isset(PH::$shadow_bp_jsonfile['virus']['cloud-inline']['bp']) )
+                                {
+                                    $check_array = PH::$shadow_bp_jsonfile['virus']['cloud-inline']['bp'];
+                                    if( isset($check_array['inline-policy-action']) )
+                                    {
+                                        foreach( $check_array['inline-policy-action'] as $validate )
+                                            $bp_set = $object->bp_stringValidation($array, 'mlav-policy-action', $validate);
+                                        if($bp_set == FALSE)
+                                            $tmp_string .= $bp_NOT_sign;
+                                    }
+                                }
+                            }
+
+                            if( $visibility )
+                            {
+                                if( isset(PH::$shadow_bp_jsonfile['virus']['cloud-inline']['visibility']) )
+                                {
+                                    $check_array = PH::$shadow_bp_jsonfile['virus']['cloud-inline']['visibility'];
+                                    if( isset($check_array['inline-policy-action']) )
+                                    {
+                                        foreach( $check_array['inline-policy-action'] as $validate )
+                                            $bp_set = $object->visibility_stringValidation($array, 'mlav-policy-action', $validate);
+                                        if($bp_set == FALSE)
+                                            $tmp_string .= $visible_NOT_sign;
+                                    }
+                                }
+                            }
+
                             $string_mica_engine[] = $tmp_string;
                         }
 
@@ -1081,14 +1115,14 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     {
                         if( $bestPractice )
                         {
-                            if( $object->cloud_inline_analysis_best_practice() )
+                            if( $object->cloud_inline_analysis_best_practice($object->owner->bp_json_file) )
                                 $lines .= $context->encloseFunction($bp_text_yes.' BP mica_engine set');
                             else
                                 $lines .= $context->encloseFunction($bp_text_no.' NO BP mica_engine');
                         }
                         if( $visibility )
                         {
-                            if( $object->cloud_inline_analysis_visibility() )
+                            if( $object->cloud_inline_analysis_visibility($object->owner->bp_json_file) )
                                 $lines .= $context->encloseFunction($bp_text_yes.' Visibility mica_engine set');
                             else
                                 $lines .= $context->encloseFunction($bp_text_no.' NO Visibility mica_engine');
@@ -1394,50 +1428,30 @@ SecurityProfileCallContext::$supportedActions['virus.best-practice-set'] = array
         {
             $xmlNode = DH::findFirstElementByNameAttr("entry", $decoder, $tmp_decoder);
 
+            $actionTypeArray = array( "action", "wildfire-action", "mlav-action" );
+
             if( $decoder == "http" || $decoder == "https" || $decoder == "ftp" || $decoder == "smb" )
             {
-                if( $object->$decoder['action'] != "default" && $object->$decoder['action'] != "reset-both"  )
+                foreach( $actionTypeArray as $actionType )
                 {
-                    $object->$decoder['action'] = "reset-both";
-                    $action_xmlNode = DH::findFirstElement("action", $xmlNode);
-                    $action_xmlNode->textContent = "reset-both";
-                }
-
-                if( $object->$decoder['wildfire-action'] != "default" && $object->$decoder['wildfire-action'] != "reset-both"  )
-                {
-                    $object->$decoder['wildfire-action'] = "reset-both";
-                    $action_xmlNode = DH::findFirstElement("wildfire-action", $xmlNode);
-                    $action_xmlNode->textContent = "reset-both";
-                }
-
-                if( $object->$decoder['mlav-action'] != "default" && $object->$decoder['mlav-action'] != "reset-both"  )
-                {
-                    $object->$decoder['mlav-action'] = "reset-both";
-                    $action_xmlNode = DH::findFirstElement("mlav-action", $xmlNode);
-                    $action_xmlNode->textContent = "reset-both";
+                    if( $object->$decoder[$actionType] != "default" && $object->$decoder[$actionType] != "reset-both"  )
+                    {
+                        $object->$decoder[$actionType] = "reset-both";
+                        $action_xmlNode = DH::findFirstElement($actionType, $xmlNode);
+                        $action_xmlNode->textContent = "reset-both";
+                    }
                 }
             }
             else
             {
-                if( $object->$decoder['action'] != "reset-both"  )
+                foreach( $actionTypeArray as $actionType )
                 {
-                    $object->$decoder['action'] = "reset-both";
-                    $action_xmlNode = DH::findFirstElement("action", $xmlNode);
-                    $action_xmlNode->textContent = "reset-both";
-                }
-
-                if( $object->$decoder['wildfire-action'] != "reset-both"  )
-                {
-                    $object->$decoder['wildfire-action'] = "reset-both";
-                    $action_xmlNode = DH::findFirstElement("wildfire-action", $xmlNode);
-                    $action_xmlNode->textContent = "reset-both";
-                }
-
-                if( $object->$decoder['mlav-action'] != "reset-both"  )
-                {
-                    $object->$decoder['mlav-action'] = "reset-both";
-                    $action_xmlNode = DH::findFirstElement("mlav-action", $xmlNode);
-                    $action_xmlNode->textContent = "reset-both";
+                    if( $object->$decoder[$actionType] != "reset-both"  )
+                    {
+                        $object->$decoder[$actionType] = "reset-both";
+                        $action_xmlNode = DH::findFirstElement($actionType, $xmlNode);
+                        $action_xmlNode->textContent = "reset-both";
+                    }
                 }
             }
         }
@@ -1480,49 +1494,13 @@ SecurityProfileCallContext::$supportedActions['virus.alert-only-set'] = array(
         {
             $xmlNode = DH::findFirstElementByNameAttr("entry", $decoder, $tmp_decoder);
 
-            if( $decoder == "http" || $decoder == "https" || $decoder == "ftp" || $decoder == "smb" )
+            $actionTypeArray = array( "action", "wildfire-action", "mlav-action" );
+
+            foreach( $actionTypeArray as $actionType )
             {
-                if( $object->$decoder['action'] == "allow" )
-                {
-                    $object->$decoder['action'] = "alert";
-                    $action_xmlNode = DH::findFirstElement("action", $xmlNode);
-                    $action_xmlNode->textContent = "alert";
-                }
-
-                if( $object->$decoder['wildfire-action'] == "allow" )
-                {
-                    $object->$decoder['wildfire-action'] = "alert";
-                    $action_xmlNode = DH::findFirstElement("wildfire-action", $xmlNode);
-                    $action_xmlNode->textContent = "alert";
-                }
-
-                if( $object->$decoder['mlav-action'] == "allow" )
-                {
-                    $object->$decoder['mlav-action'] = "alert";
-                    $action_xmlNode = DH::findFirstElement("mlav-action", $xmlNode);
-                    $action_xmlNode->textContent = "alert";
-                }
-            }
-            else
-            {
-                if( $object->$decoder['action'] == "allow"  )
-                {
-                    $object->$decoder['action'] = "alert";
-                    $action_xmlNode = DH::findFirstElement("action", $xmlNode);
-                    $action_xmlNode->textContent = "alert";
-                }
-
-                if( $object->$decoder['wildfire-action'] == "allow"  )
-                {
-                    $object->$decoder['wildfire-action'] = "alert";
-                    $action_xmlNode = DH::findFirstElement("wildfire-action", $xmlNode);
-                    $action_xmlNode->textContent = "alert";
-                }
-
-                if( $object->$decoder['mlav-action'] == "allow"  )
-                {
-                    $object->$decoder['mlav-action'] = "alert";
-                    $action_xmlNode = DH::findFirstElement("mlav-action", $xmlNode);
+                if ($object->$decoder[$actionType] == "allow") {
+                    $object->$decoder[$actionType] = "alert";
+                    $action_xmlNode = DH::findFirstElement($actionType, $xmlNode);
                     $action_xmlNode->textContent = "alert";
                 }
             }

@@ -827,7 +827,7 @@ RQuery::$defaultFilters['securityprofile']['cloud-inline-analysis']['operators']
         if( $object->secprof_type != 'spyware' and $object->secprof_type != 'vulnerability' and $object->secprof_type != 'virus' )
             return null;
 
-        return $object->cloud_inline_analysis_best_practice();
+        return $object->cloud_inline_analysis_best_practice($object->owner->bp_json_file);
     },
     'arg' => false,
     'help' => "'securityprofiletype=spyware,vulnerability'"
@@ -840,7 +840,7 @@ RQuery::$defaultFilters['securityprofile']['cloud-inline-analysis']['operators']
         if( $object->secprof_type != 'spyware' and $object->secprof_type != 'vulnerability' and $object->secprof_type != 'virus' )
             return null;
 
-        return $object->cloud_inline_analysis_visibility();
+        return $object->cloud_inline_analysis_visibility($object->owner->bp_json_file);
     },
     'arg' => false,
     'help' => "'securityprofiletype=spyware,vulnerability'"
@@ -959,7 +959,7 @@ RQuery::$defaultFilters['securityprofile']['av.mica-engine']['operators']['is.be
         if( $object->secprof_type != 'virus' )
             return null;
 
-        return $object->cloud_inline_analysis_best_practice();
+        return $object->cloud_inline_analysis_best_practice($object->owner->bp_json_file);
     },
     'arg' => false,
     'help' => "'securityprofiletype=virus' e.g. 'filter=(av.mica-engine is.best-practice)'"
@@ -972,7 +972,7 @@ RQuery::$defaultFilters['securityprofile']['av.mica-engine']['operators']['is.vi
         if( $object->secprof_type != 'virus' )
             return null;
 
-        return $object->cloud_inline_analysis_visibility();
+        return $object->cloud_inline_analysis_visibility($object->owner->bp_json_file);
     },
     'arg' => false,
     'help' => "'securityprofiletype=virus' e.g. 'filter=(av.mica-engine is.best-practice)'"
@@ -1011,7 +1011,7 @@ RQuery::$defaultFilters['securityprofile']['as.mica-engine']['operators']['is.be
         if( $object->secprof_type != 'spyware' )
             return null;
 
-        return $object->cloud_inline_analysis_best_practice();
+        return $object->cloud_inline_analysis_best_practice($object->owner->bp_json_file);
     },
     'arg' => false,
     'help' => "'securityprofiletype=spyware' e.g. 'filter=(as.mica-engine is.best-practice)'"
@@ -1024,7 +1024,7 @@ RQuery::$defaultFilters['securityprofile']['as.mica-engine']['operators']['is.vi
         if( $object->secprof_type != 'spyware' )
             return null;
 
-        return $object->cloud_inline_analysis_visibility();
+        return $object->cloud_inline_analysis_visibility($object->owner->bp_json_file);
     },
     'arg' => false,
     'help' => "'securityprofiletype=spyware' e.g. 'filter=(as.mica-engine is.visibility)'"
@@ -1089,7 +1089,7 @@ RQuery::$defaultFilters['securityprofile']['vp.mica-engine']['operators']['is.be
         if( $object->secprof_type != 'vulnerability' )
             return null;
 
-        return $object->cloud_inline_analysis_best_practice();
+        return $object->cloud_inline_analysis_best_practice($object->owner->bp_json_file);
     },
     'arg' => false,
     'help' => "'securityprofiletype=vulnerability' e.g. 'filter=(vp.mica-engine is.best-practice)'"
@@ -1102,7 +1102,7 @@ RQuery::$defaultFilters['securityprofile']['vp.mica-engine']['operators']['is.vi
         if( $object->secprof_type != 'vulnerability' )
             return null;
 
-        return $object->cloud_inline_analysis_visibility();
+        return $object->cloud_inline_analysis_visibility($object->owner->bp_json_file);
     },
     'arg' => false,
     'help' => "'securityprofiletype=vulnerability' e.g. 'filter=(vp.mica-engine is.visibility)'"

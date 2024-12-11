@@ -2,8 +2,12 @@
 
 class SecurityProfile2
 {
-    public function cloud_inline_analysis_best_practice()
+    public $bp_json_file = null;
+
+    public function cloud_inline_analysis_best_practice( $bp_json_file )
     {
+        $this->bp_json_file = $bp_json_file;
+
         $bp_set = FALSE;
 
         if( $this->secprof_type != 'spyware' and $this->secprof_type != 'vulnerability' and $this->secprof_type != 'virus' )
@@ -18,15 +22,7 @@ class SecurityProfile2
                 foreach( $this->additional['mica-engine-vulnerability-enabled'] as $name)
                 {
                     foreach( $check_array['inline-policy-action'] as $validate )
-                    {
-                        $negate_string = "";
-                        if( strpos( $validate, "!" ) !== FALSE )
-                            $negate_string = "!";
-                        if( $negate_string.$name['inline-policy-action'] == $validate )
-                            $bp_set = TRUE;
-                        else
-                            $bp_set = FALSE;
-                    }
+                        $bp_set = $this->bp_stringValidation($name, 'inline-policy-action', $validate);
                     if($bp_set == FALSE)
                         return false;
                 }
@@ -37,15 +33,7 @@ class SecurityProfile2
                 foreach( $this->additional['mica-engine-spyware-enabled'] as $name)
                 {
                     foreach( $check_array['inline-policy-action'] as $validate )
-                    {
-                        $negate_string = "";
-                        if( strpos( $validate, "!" ) !== FALSE )
-                            $negate_string = "!";
-                        if( $negate_string.$name['inline-policy-action'] == $validate )
-                            $bp_set = TRUE;
-                        else
-                            $bp_set = FALSE;
-                    }
+                        $bp_set = $this->bp_stringValidation($name, 'inline-policy-action', $validate);
                     if($bp_set == FALSE)
                         return false;
                 }
@@ -59,15 +47,7 @@ class SecurityProfile2
             foreach( $this->additional['mlav-engine-filebased-enabled'] as $name)
             {
                 foreach( $check_array['inline-policy-action'] as $validate )
-                {
-                    $negate_string = "";
-                    if( strpos( $validate, "!" ) !== FALSE )
-                        $negate_string = "!";
-                    if( $negate_string.$name['mlav-policy-action'] == $validate )
-                        $bp_set = TRUE;
-                    else
-                        $bp_set = FALSE;
-                }
+                    $bp_set = $this->bp_stringValidation($name, 'mlav-policy-action', $validate);
                 if($bp_set == FALSE)
                     return false;
             }
@@ -76,8 +56,10 @@ class SecurityProfile2
         return $bp_set;
     }
 
-    public function cloud_inline_analysis_visibility()
+    public function cloud_inline_analysis_visibility( $bp_json_file )
     {
+        $this->bp_json_file = $bp_json_file;
+
         $bp_set = FALSE;
 
         if( $this->secprof_type != 'spyware' and $this->secprof_type != 'vulnerability' and $this->secprof_type != 'virus' )
@@ -92,15 +74,7 @@ class SecurityProfile2
                 foreach( $this->additional['mica-engine-vulnerability-enabled'] as $name)
                 {
                     foreach( $check_array['inline-policy-action'] as $validate )
-                    {
-                        $negate_string = "";
-                        if( strpos( $validate, "!" ) !== FALSE )
-                            $negate_string = "!";
-                        if( $negate_string.$name['inline-policy-action'] == $validate )
-                            $bp_set = FALSE;
-                        else
-                            $bp_set = TRUE;
-                    }
+                        $bp_set = $this->visibility_stringValidation($name, 'inline-policy-action', $validate);
                     if($bp_set == FALSE)
                         return FALSE;
                 }
@@ -111,15 +85,7 @@ class SecurityProfile2
                 foreach( $this->additional['mica-engine-spyware-enabled'] as $name)
                 {
                     foreach( $check_array['inline-policy-action'] as $validate )
-                    {
-                        $negate_string = "";
-                        if( strpos( $validate, "!" ) !== FALSE )
-                            $negate_string = "!";
-                        if( $negate_string.$name['inline-policy-action'] == $validate )
-                            $bp_set = FALSE;
-                        else
-                            $bp_set = TRUE;
-                    }
+                        $bp_set = $this->visibility_stringValidation($name, 'inline-policy-action', $validate);
                     if($bp_set == FALSE)
                         return FALSE;
                 }
@@ -134,19 +100,38 @@ class SecurityProfile2
             {
                 //$check_array is unique for all AV/AS/VP from JSON file
                 foreach( $check_array['inline-policy-action'] as $validate )
-                {
-                    $negate_string = "";
-                    if( strpos( $validate, "!" ) !== FALSE )
-                        $negate_string = "!";
-                    if( $negate_string.$name['mlav-policy-action'] == $validate )
-                        $bp_set = FALSE;
-                    else
-                        $bp_set = TRUE;
-                }
+                    $bp_set = $this->visibility_stringValidation($name, 'mlav-policy-action', $validate);
                 if($bp_set == FALSE)
                     return false;
             }
         }
+
+        return $bp_set;
+    }
+
+
+    public function visibility_stringValidation($array, $key, $validate)
+    {
+        $negate_string = "";
+        if( strpos( $validate, "!" ) !== FALSE )
+            $negate_string = "!";
+        if( $negate_string.$array[$key] == $validate )
+            $bp_set = FALSE;
+        else
+            $bp_set = TRUE;
+
+        return $bp_set;
+    }
+
+    public function bp_stringValidation($array, $key, $validate)
+    {
+        $negate_string = "";
+        if( strpos( $validate, "!" ) !== FALSE )
+            $negate_string = "!";
+        if( $negate_string.$array[$key] == $validate )
+            $bp_set = TRUE;
+        else
+            $bp_set = FALSE;
 
         return $bp_set;
     }
@@ -156,21 +141,24 @@ class SecurityProfile2
         //Todo: this is duplicate code, also available in class SecurityProfileStore
 
         ###############################
-        //add bp JSON filename to UTIL???
-        //so this can be flexible if customer like to use its own file
+        if( PH::$shadow_bp_jsonfile == null )
+        {
+            $filename = $this->bp_json_file;
 
-        //get actual file space
-        $filename = dirname(__FILE__)."/../../utils/api/v1/bp/bp_sp_panw.json";
+            $JSONarray = file_get_contents( $filename);
 
-        $JSONarray = file_get_contents( $filename);
+            if( $JSONarray === false )
+                derr("cannot open file '{$filename}");
 
-        if( $JSONarray === false )
-            derr("cannot open file '{$filename}");
+            $details = json_decode($JSONarray, true);
 
-        $details = json_decode($JSONarray, true);
+            if( $details === null )
+                derr( "invalid JSON file provided", null, FALSE );
 
-        if( $details === null )
-            derr( "invalid JSON file provided", null, FALSE );
+            PH::$shadow_bp_jsonfile = $details;
+        }
+        else
+            $details = PH::$shadow_bp_jsonfile;
 
         return $details;
     }

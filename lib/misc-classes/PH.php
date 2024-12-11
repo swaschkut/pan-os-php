@@ -148,6 +148,30 @@ class PH
                     $argc--;
                 continue;
             }
+            elseif( strpos( $arg, 'shadow-bpjsonfile' ) !== FALSE )
+            {
+                $projectFolder = "";
+                if( isset(PH::$args['projectfolder']) )
+                    $projectFolder = PH::$args['projectfolder']."/";
+
+                $arg_array = explode( "=", $arg );
+
+                PH::$shadow_bp_jsonfilename = $projectFolder.$arg_array[1];
+                $JSONarray = file_get_contents( PH::$shadow_bp_jsonfilename );
+
+                if( $JSONarray === false )
+                    derr("cannot open file '".PH::$shadow_bp_jsonfilename."'");
+
+                PH::$shadow_bp_jsonfile = json_decode($JSONarray, true);
+
+                if( PH::$shadow_bp_jsonfile === null )
+                    derr( "invalid JSON file provided", null, FALSE );
+
+                unset(PH::$argv[$argIndex]);
+                if( !isset( $_SERVER['REQUEST_METHOD'] ) )
+                    $argc--;
+                continue;
+            }
         }
         unset($argIndex);
         unset($arg);
@@ -187,6 +211,9 @@ class PH
 
     public static $shadow_json = FALSE;
 
+    public static $shadow_bp_jsonfilename = FALSE;
+    public static $shadow_bp_jsonfile = FALSE;
+
     public static $shadow_displayxmlnode = FALSE;
 
     public static $shadow_loadreduce = FALSE;
@@ -202,7 +229,7 @@ class PH
 
     private static $library_version_major = 2;
     private static $library_version_sub = 1;
-    private static $library_version_bugfix = 29;
+    private static $library_version_bugfix = 30;
 
     //BASIC AUTH PAN-OS 7.1
     public static $softwareupdate_key = "658d787f293e631196dac9fb29490f1cc1bb3827";

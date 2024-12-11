@@ -1,6 +1,18 @@
 CHANGELOG
 
-2.1.29
+2.1.30
+UTIL:
+* type=securityprofile actions=exporttoexcel:file.html,bestspractice|visibility | improvements for dynamic BP JSON validation - AV/AS/VP inline-policy-action
+* type=securityprofile actions=exporttoexcel:file.html,bestpractice|visiblity | improve validation against BP JSON file for AV rules
+
+BUGFIX:
+* bugfix class IPMap/IP4Map/IP6Map | call correct class method
+
+GENERAL:
+* introduce argument "shadow-bpjsonfile=FILENAME.json
+
+
+2.1.29 (20241206)
 UTIL:
 * class Address/AddressGroup/Region/IP4MAP/IP6MAP - extend with IPv6
 
