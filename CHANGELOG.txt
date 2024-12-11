@@ -1,6 +1,14 @@
 CHANGELOG
 
-2.1.30
+2.1.31
+UTIL:
+
+BUGFIX:
+
+GENERAL:
+
+
+2.1.30 (20241211)
 UTIL:
 * type=securityprofile actions=exporttoexcel:file.html,bestspractice|visibility | improvements for dynamic BP JSON validation - AV/AS/VP inline-policy-action
 * type=securityprofile actions=exporttoexcel:file.html,bestpractice|visiblity | improve validation against BP JSON file for AV rules
