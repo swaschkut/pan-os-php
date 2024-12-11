@@ -22,7 +22,7 @@
 class IP6Map extends IPMap
 {
 
-    public function substract(IP6Map $substractedMap)
+    public function substract(IP4Map|IP6Map $substractedMap)
     {
         $affectedRows = 0;
 

@@ -6,6 +6,7 @@ UTIL:
 * type=securityprofile actions=exporttoexcel:file.html,bestpractice|visiblity | improve validation against BP JSON file for AV rules
 
 BUGFIX:
+* bugfix class IPMap/IP4Map/IP6Map | call correct class method
 
 GENERAL:
 * introduce argument "shadow-bpjsonfile=FILENAME.json
