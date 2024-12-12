@@ -494,7 +494,7 @@ class UTIL
                         }
 
                         if( isset($arg['help']) )
-                            $output .= "\n: ".$arg['help'];
+                            $output .= "\n     : ".$arg['help'];
 
                         $count++;
                         $first = FALSE;

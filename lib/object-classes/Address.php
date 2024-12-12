@@ -604,7 +604,7 @@ class Address
      */
     public function getIP6Mapping( $RuleReferenceLocation = null )
     {
-        mwarning( "class ADDRESS IPv6 Mapping not implemented yet", null, FALSE );
+        #mwarning( "class ADDRESS IPv6 Mapping not implemented yet", null, FALSE );
         if( $RuleReferenceLocation !== null )
             $object = $RuleReferenceLocation->addressStore->find($this->name());
         else
@@ -688,7 +688,7 @@ class Address
      */
     public function includedInIP6Network($network)
     {
-        derr( "IPv6 not implemented yet" );
+        #derr( "IPv6 not implemented yet" );
         if( $this->type != self::TypeIpNetmask && $this->type != self::TypeIpRange && !$this->isTmpAddr() )
             return 0;
 
@@ -697,7 +697,7 @@ class Address
             $networkMap = $network;
         }
         else
-            $networkMap = IP4Map::mapFromText($network);
+            $networkMap = IP6Map::mapFromText($network);
 
         $localEntry = $networkMap->getFirstMapEntry();
         if( $localEntry === null )
