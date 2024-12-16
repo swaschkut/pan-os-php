@@ -352,7 +352,7 @@ class Address
         if( $this->isTmpAddr() )
         {
             mwarning('renaming of TMP object in API is not possible, it was ignored');
-            return;
+            return null;
         }
 
         $c = findConnectorOrDie($this);
@@ -365,6 +365,8 @@ class Address
             $c->sendRenameRequest($xpath, $newName);
         elseif( $c->isSaseAPI() )
             $c->sendPUTRequest($this);
+
+        return TRUE;
     }
 
 

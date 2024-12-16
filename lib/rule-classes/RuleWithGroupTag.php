@@ -69,6 +69,7 @@ trait RuleWithGroupTag
             $tmpRoot = DH::findFirstElementOrCreate('group-tag', $this->xmlroot);
             DH::setDomNodeText($tmpRoot, $this->grouptag->name());
         }
+        return null;
     }
 
     /**

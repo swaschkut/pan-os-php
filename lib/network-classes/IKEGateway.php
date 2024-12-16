@@ -349,16 +349,18 @@ class IKEGateway
     //Todo: swaschkut 20201001 update this
     public function setExchangeMode($mode)
     {
-        if( $this->proposal == $proposal )
+        if( $this->exchangemode == $mode )
             return TRUE;
 
-        $this->proposal = $proposal;
+        $this->exchangemode = $mode;
 
+        //find correct xpath
+        /*
         $tmp_gateway = DH::findFirstElementOrCreate('protocol', $this->xmlroot);
         $tmp_gateway = DH::findFirstElementOrCreate($this->version, $tmp_gateway);
         $tmp_gateway = DH::findFirstElementOrCreate('ike-crypto-profile', $tmp_gateway);
-        DH::setDomNodeText($tmp_gateway, $proposal);
-
+        DH::setDomNodeText($tmp_gateway, $mode);
+        */
         return TRUE;
     }
 

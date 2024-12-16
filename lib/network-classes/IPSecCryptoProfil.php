@@ -373,7 +373,6 @@ class IPSecCryptoProfil
             if( $node->nodeType != XML_ELEMENT_NODE )
                 continue;
 
-            $node->textContent;
             $tmp_gateway->removeChild($node);
         }
 

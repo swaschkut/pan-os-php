@@ -910,6 +910,7 @@ class BuckbeakConf
             #PH::print_stdout( $return );
             PH::print_stdout( $stdoutarray, true  );
         }
+        return null;
     }
 
 

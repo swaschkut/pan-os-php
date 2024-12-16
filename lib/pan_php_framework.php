@@ -824,6 +824,7 @@ function yesNoBool($yes)
         return FALSE;
 
     derr("unsupported value '$yes' given");
+    return null;
 }
 
 /**

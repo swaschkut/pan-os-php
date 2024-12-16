@@ -188,8 +188,7 @@ class ThreatPolicy
 
     public function display()
     {
-        $string = "";
-        $string .= "          '".$this->name()."':";
+        $string = "          '" . $this->name() . "':";
 
         if( isset( $this->severity ) )
         {

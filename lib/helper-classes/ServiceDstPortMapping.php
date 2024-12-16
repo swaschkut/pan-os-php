@@ -199,9 +199,9 @@ class ServiceDstPortMapping
             foreach( $this->tcpPortMap as &$map )
             {
                 if( $map['start'] == $map['end'] )
-                    $mapsText[] = "tcp/".(string)$map['start'];
+                    $mapsText[] = "tcp/". $map['start'];
                 else
-                    $mapsText[] = "tcp/".(string)$map['start'] . '-' . (string)$map['end'];
+                    $mapsText[] = "tcp/". $map['start'] . '-' . $map['end'];
             }
 
             $returnText = PH::list_to_string($mapsText, ",");
@@ -223,9 +223,9 @@ class ServiceDstPortMapping
             foreach( $this->udpPortMap as &$map )
             {
                 if( $map['start'] == $map['end'] )
-                    $mapsText[] = "udp/".(string)$map['start'];
+                    $mapsText[] = "udp/". $map['start'];
                 else
-                    $mapsText[] = "udp/".(string)$map['start'] . '-' . (string)$map['end'];
+                    $mapsText[] = "udp/". $map['start'] . '-' . $map['end'];
             }
 
             $returnText = PH::list_to_string($mapsText, ",");

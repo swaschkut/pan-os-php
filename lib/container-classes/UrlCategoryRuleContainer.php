@@ -337,10 +337,8 @@ class UrlCategoryRuleContainer extends ObjRuleContainer
         if( $anyIsAcceptable && $this->count() == 0 )
             return FALSE;
 
-        foreach( $this->o as $o )
-        {
-            if( $o === $object )
-                return TRUE;
+        if (in_array($object, $this->o, true)) {
+            return TRUE;
         }
 
         return FALSE;

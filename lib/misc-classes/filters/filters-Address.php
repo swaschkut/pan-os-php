@@ -185,7 +185,7 @@ RQuery::$defaultFilters['address']['object']['operators']['is.ipv4'] = Array(
             return false;
         }
 
-
+        return null;
     },
     'arg' => false
 );
@@ -230,7 +230,7 @@ RQuery::$defaultFilters['address']['object']['operators']['is.ipv6'] = Array(
             return false;
         }
 
-
+        return null;
     },
     'arg' => false
 );
@@ -878,10 +878,8 @@ RQuery::$defaultFilters['address']['reflocationtype']['operators']['is.devicegro
         #print_r( $reflocation_array );
 
         $return = FALSE;
-        foreach( $reflocation_array as $reflocation )
-        {
-            if( $reflocation == "DeviceGroup" )
-                return TRUE;
+        if (in_array("DeviceGroup", $reflocation_array)) {
+            return TRUE;
         }
 
         return FALSE;

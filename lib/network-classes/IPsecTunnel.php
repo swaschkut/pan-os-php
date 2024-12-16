@@ -386,6 +386,7 @@ class IPsecTunnel
         }
 
         derr("this should never happen");
+        return false;
     }
 
 

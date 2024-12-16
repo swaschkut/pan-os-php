@@ -177,12 +177,8 @@ class ObjRuleContainer
      */
     public function display($indentSpace = 0)
     {
-        $indent = '';
 
-        for( $i = 0; $i < $indentSpace; $i++ )
-        {
-            $indent .= ' ';
-        }
+        $indent = str_repeat(' ', $indentSpace);
 
         $c = count($this->o);
 
@@ -420,6 +416,7 @@ class ObjRuleContainer
             return $retString;
 
         PH::print_stdout( $retString );
+        return null;
     }
 
     public function name()

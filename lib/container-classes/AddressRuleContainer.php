@@ -321,7 +321,7 @@ class AddressRuleContainer extends ObjRuleContainer
         if( $this->xmlroot === null )
             return;
 
-        DH::Hosts_to_xmlDom($this->xmlroot, $this->o, 'member', TRUE);
+        DH::Hosts_to_xmlDom($this->xmlroot, $this->o);
     }
 
     public function toString_inline()

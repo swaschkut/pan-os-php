@@ -867,6 +867,7 @@ class PH
         }
 
         derr("cannot find PanoramaConf or PANConf | Fawkesconf or BuckbeackConf object");
+        return null;
     }
 
     /**
@@ -890,6 +891,7 @@ class PH
         }
 
         derr("cannot find PanoramaConf or PANConf object");
+        return null;
     }
 
     /**

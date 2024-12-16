@@ -205,7 +205,7 @@ class AppRuleContainer extends ObjRuleContainer
 
     public function rewriteXML()
     {
-        DH::Hosts_to_xmlDom($this->xmlroot, $this->o, 'member', TRUE);
+        DH::Hosts_to_xmlDom($this->xmlroot, $this->o);
     }
 
     public function toString_inline()
@@ -317,10 +317,8 @@ class AppRuleContainer extends ObjRuleContainer
             {
                 if( $singleapp->isContainer() )
                 {
-                    foreach( $singleapp->containerApps() as $containerApp )
-                    {
-                        if( $containerApp == $app )
-                            return TRUE;
+                    if (in_array($app, $singleapp->containerApps())) {
+                        return TRUE;
                     }
                 }
             }

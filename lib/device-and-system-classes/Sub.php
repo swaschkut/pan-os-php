@@ -113,7 +113,7 @@ class Sub
         if( get_class($this->owner) !== "PanoramaConf" )
         {
             if( $originalRuleNode->hasChildNodes() === FALSE )
-                return;
+                return null;
         }
 
         $newdoc = new DOMDocument;

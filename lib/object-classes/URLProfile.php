@@ -35,31 +35,6 @@ class URLProfile extends SecurityProfile2
 
     public $predefined = array();
 
-
-    /*
-        const TypeTmp = 0;
-        const TypeVirus = 1;
-        const TypeSpyware = 2;
-        const TypeVulnerability = 3;
-        const TypeFile_blocking = 4;
-        const TypeWildfire_analysis = 5;
-        const TypeUrl_filtering = 6;
-
-
-
-        static private $SecurityProfileTypes = Array(self::TypeTmp => 'tmp',
-            self::TypeVirus => 'virus',
-            self::TypeSpyware => 'spyware',
-            self::TypeVulnerability => 'vulnerability',
-            self::TypeFile_blocking => 'file-blocking',
-            self::TypeWildfire_analysis => 'wildfire-analysis',
-            self::TypeUrl_filtering =>  'url-filtering'
-        );
-
-
-
-        protected $type = self::TypeTmp;
-    */
     public $tmp_url_prof_array = array('allow', 'alert', 'block', 'continue', 'override');
 
     /**

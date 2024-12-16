@@ -282,7 +282,7 @@ class StaticRoute
      */
     public function destinationIP4Mapping()
     {
-        self::destinationIPMapping();
+        return self::destinationIPMapping();
     }
 
     /**

@@ -97,8 +97,7 @@ class DNSPolicy
 
     public function display($padding="")
     {
-        $string = "";
-        $string .= $padding."          '".$this->name()."':";
+        $string = $padding . "          '" . $this->name() . "':";
 
         if( isset( $this->logLevel ) )
         {

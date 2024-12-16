@@ -340,6 +340,8 @@ class customURLProfile extends SecurityProfile2
             return $retString;
 
         PH::print_stdout( $retString );
+
+        return null;
     }
 
     static public $templatexml = '<entry name="**temporarynamechangeme**"></entry>';
