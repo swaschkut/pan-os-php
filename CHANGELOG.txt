@@ -3,6 +3,7 @@ CHANGELOG
 2.1.31
 UTIL:
 * type=address | introduce new IPv6 'filter=(value ip6.included-in.from.file / ip6.includes-full-or-partial.from.file     - ip6.includes-full.from.file / ip6.match.exact.from.file FILENAME)'
+* type=securityprofile | introdruce actions=url.best-practice-set
 
 BUGFIX:
 

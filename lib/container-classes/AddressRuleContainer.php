@@ -48,7 +48,7 @@ class AddressRuleContainer extends ObjRuleContainer
      * @param Address|AddressGroup $Obj
      * @return bool
      */
-    public function addObject($Obj)
+    public function addObject(Address|AddressGroup $Obj): bool
     {
         $this->fasthashcomp = null;
 
@@ -84,8 +84,9 @@ class AddressRuleContainer extends ObjRuleContainer
     /**
      * @param Address|AddressGroup $Obj
      * @return bool
+     * @throws Exception
      */
-    public function API_add($Obj)
+    public function API_add(Address|AddressGroup $Obj): bool
     {
         if( $this->addObject($Obj) )
         {
@@ -123,10 +124,10 @@ class AddressRuleContainer extends ObjRuleContainer
      * @param Address|AddressGroup $Obj
      * @param bool $rewriteXml
      * @param bool $forceAny
-     *
+     * @param null $context
      * @return bool  True if Zone was found and removed. False if not found.
      */
-    public function remove($Obj, $rewriteXml = TRUE, $forceAny = FALSE, $context = null)
+    public function remove($Obj, bool $rewriteXml = TRUE, bool $forceAny = FALSE, $context = null): bool
     {
         $count = count($this->o);
 
@@ -155,9 +156,11 @@ class AddressRuleContainer extends ObjRuleContainer
     /**
      * @param Address|AddressGroup $Obj
      * @param bool $forceAny
+     * @param null $context
      * @return bool
+     * @throws Exception
      */
-    public function API_remove($Obj, $forceAny = FALSE, $context = null)
+    public function API_remove(Address|AddressGroup $Obj, bool $forceAny = FALSE, $context = null): bool
     {
         if( $this->remove($Obj, TRUE, $forceAny, $context) )
         {
@@ -193,7 +196,7 @@ class AddressRuleContainer extends ObjRuleContainer
     }
 
 
-    public function API_sync( $new = false )
+    public function API_sync( $new = false ): void
     {
         $con = findConnectorOrDie($this);
 
@@ -224,7 +227,7 @@ class AddressRuleContainer extends ObjRuleContainer
 
     }
 
-    public function setAny()
+    public function setAny(): void
     {
         $this->removeAll();
 
@@ -233,9 +236,10 @@ class AddressRuleContainer extends ObjRuleContainer
 
     /**
      * @param Address|AddressGroup|string $object can be Address|AddressGroup object or object name (string)
+     * @param bool $caseSensitive
      * @return bool
      */
-    public function has($object, $caseSensitive = TRUE)
+    public function has($object, $caseSensitive = TRUE): bool
     {
         return parent::has($object, $caseSensitive);
     }
@@ -244,7 +248,7 @@ class AddressRuleContainer extends ObjRuleContainer
      * return true/false based if object is EDL or not
      * @return bool
      */
-    public function hasEDL()
+    public function hasEDL(): bool
     {
         foreach( $this->o as $member)
         {
@@ -258,7 +262,7 @@ class AddressRuleContainer extends ObjRuleContainer
      * return an array with all objects
      * @return Address[]|AddressGroup[]
      */
-    public function members()
+    public function members(): array
     {
         return $this->o;
     }
@@ -267,7 +271,7 @@ class AddressRuleContainer extends ObjRuleContainer
      * return an array with all objects
      * @return Address[]|AddressGroup[]
      */
-    public function all()
+    public function all(): array
     {
         return $this->o;
     }
@@ -276,9 +280,10 @@ class AddressRuleContainer extends ObjRuleContainer
     /**
      * should only be called from a Rule constructor
      * @param DOMElement $xml
+     * @throws Exception
      * @ignore
      */
-    public function load_from_domxml($xml)
+    public function load_from_domxml(DOMElement $xml): void
     {
         //PH::print_stdout( "started to extract '".$this->toString()."' from xml" );
         $this->xmlroot = $xml;
@@ -310,7 +315,7 @@ class AddressRuleContainer extends ObjRuleContainer
     }
 
 
-    public function rewriteXML()
+    public function rewriteXML(): void
     {
         if( $this->name == 'snathosts' )
         {
@@ -324,25 +329,23 @@ class AddressRuleContainer extends ObjRuleContainer
         DH::Hosts_to_xmlDom($this->xmlroot, $this->o);
     }
 
-    public function toString_inline()
+    public function toString_inline(): string
     {
         if( count($this->o) == 0 )
         {
-            $out = '**ANY**';
-            return $out;
+            return '**ANY**';
         }
 
-        $out = parent::toString_inline();
-        return $out;
+        return parent::toString_inline();
     }
 
     /**
      * return 0 if not match, 1 if this object is fully included in $network, 2 if this object is partially matched by $ref.
      * Always return 0 (not match) if this is object = ANY
-     * @param string|IP4Map $network ie: 192.168.0.2/24, 192.168.0.2,192.168.0.2-192.168.0.4
+     * @param IP4Map|string $network ie: 192.168.0.2/24, 192.168.0.2,192.168.0.2-192.168.0.4
      * @return int
      */
-    public function includedInIP4Network($network)
+    public function includedInIP4Network(IP4Map|string $network): int
     {
         if( is_object($network) )
             $netStartEnd = $network;
@@ -391,10 +394,10 @@ class AddressRuleContainer extends ObjRuleContainer
     /**
      * return 0 if not match, 1 if this object is fully included in $network, 2 if this object is partially matched by $ref.
      * Always return 0 (not match) if this is object = ANY
-     * @param string|IP6Map $network ie: 192.168.0.2/24, 192.168.0.2,192.168.0.2-192.168.0.4
+     * @param IP6Map|string $network ie: 192.168.0.2/24, 192.168.0.2,192.168.0.2-192.168.0.4
      * @return int
      */
-    public function includedInIP6Network($network)
+    public function includedInIP6Network(IP6Map|string $network): int
     {
         if( is_object($network) )
             $netStartEnd = $network;
@@ -442,10 +445,10 @@ class AddressRuleContainer extends ObjRuleContainer
 
     /**
      * return 0 if not match, 1 if $network is fully included in this object, 2 if $network is partially matched by this object.
-     * @param $network string|IP4Map ie: 192.168.0.2/24, 192.168.0.2,192.168.0.2-192.168.0.4
+     * @param $network IP4Map|string ie: 192.168.0.2/24, 192.168.0.2,192.168.0.2-192.168.0.4
      * @return int
      */
-    public function includesIP4Network($network)
+    public function includesIP4Network(IP4Map|string $network): int
     {
         if( is_object($network) )
             $netStartEnd = $network;
@@ -486,10 +489,10 @@ class AddressRuleContainer extends ObjRuleContainer
 
     /**
      * return 0 if not match, 1 if $network is fully included in this object, 2 if $network is partially matched by this object.
-     * @param $network string|IP6Map ie: 192.168.0.2/24, 192.168.0.2,192.168.0.2-192.168.0.4
+     * @param $network IP6Map|string ie: 192.168.0.2/24, 192.168.0.2,192.168.0.2-192.168.0.4
      * @return int
      */
-    public function includesIP6Network($network)
+    public function includesIP6Network(IP6Map|string $network): int
     {
         if( is_object($network) )
             $netStartEnd = $network;
@@ -535,7 +538,7 @@ class AddressRuleContainer extends ObjRuleContainer
      * then the result will be 'any'.
      *
      */
-    public function merge($other)
+    public function merge($other): void
     {
         $this->fasthashcomp = null;
 
@@ -559,11 +562,12 @@ class AddressRuleContainer extends ObjRuleContainer
 
     /**
      * To determine if a container has all the zones from another container. Very useful when looking to compare similar rules.
-     * @param $other
-     * @param $anyIsAcceptable
+     * @param AddressRuleContainer $other
+     * @param bool $anyIsAcceptable
+     * @param array $foundAddress
      * @return boolean true if Zones from $other are all in this store
      */
-    public function includesContainer(AddressRuleContainer $other, $anyIsAcceptable = TRUE, &$foundAddress = array())
+    public function includesContainer(AddressRuleContainer $other, bool $anyIsAcceptable = TRUE, array &$foundAddress = array()): bool
     {
         $tmp_return = TRUE;
 
@@ -596,7 +600,7 @@ class AddressRuleContainer extends ObjRuleContainer
 
     }
 
-    public function API_setAny()
+    public function API_setAny(): void
     {
         $this->setAny();
         $xpath = &$this->getXPath();
@@ -613,7 +617,7 @@ class AddressRuleContainer extends ObjRuleContainer
     /**
      * @return string
      */
-    public function &getXPath()
+    public function &getXPath(): string
     {
         $str = $this->owner->getXPath() . '/' . $this->name;
 
@@ -623,18 +627,19 @@ class AddressRuleContainer extends ObjRuleContainer
     /**
      * @return bool
      */
-    public function isAny()
+    public function isAny(): bool
     {
         return (count($this->o) == 0);
     }
 
 
     /**
-     * @param Address|AddressGroup
+     * @param Address|AddressGroup $object
      * @param bool $anyIsAcceptable
      * @return bool
+     * @throws Exception
      */
-    public function hasObjectRecursive($object, $anyIsAcceptable = FALSE)
+    public function hasObjectRecursive(Address|AddressGroup $object, bool $anyIsAcceptable = FALSE): bool
     {
         if( $object === null )
             derr('cannot work with null objects');
@@ -660,7 +665,7 @@ class AddressRuleContainer extends ObjRuleContainer
      * @param bool $anyIsAcceptable if any of these objects is Any the it will return false
      * @return bool true if Address objects from $other are all in this store
      */
-    public function includesContainerExpanded(AddressRuleContainer $other, $anyIsAcceptable = TRUE)
+    public function includesContainerExpanded(AddressRuleContainer $other, bool $anyIsAcceptable = TRUE): bool
     {
 
         if( !$anyIsAcceptable )
@@ -717,9 +722,11 @@ class AddressRuleContainer extends ObjRuleContainer
     }
 
     /**
+     * @param null $RuleReferenceLocation
      * @return IP4Map
+     * @throws Exception
      */
-    public function getIP4Mapping( $RuleReferenceLocation = null )
+    public function getIP4Mapping( $RuleReferenceLocation = null ): IP4Map
     {
         if( $this->isAny() )
             return IP4Map::mapFromText('0.0.0.0/0');
@@ -773,9 +780,11 @@ class AddressRuleContainer extends ObjRuleContainer
     }
 
     /**
+     * @param null $RuleReferenceLocation
      * @return IP6Map
+     * @throws Exception
      */
-    public function getIP6Mapping( $RuleReferenceLocation = null )
+    public function getIP6Mapping( $RuleReferenceLocation = null ): IP6Map
     {
         if( $this->isAny() )
             return IP6Map::mapFromText('::/0');
@@ -828,7 +837,7 @@ class AddressRuleContainer extends ObjRuleContainer
         return $mapObject;
     }
 
-    public function copy(AddressRuleContainer $other)
+    public function copy(AddressRuleContainer $other): void
     {
         $this->removeAll();
 
@@ -845,8 +854,9 @@ class AddressRuleContainer extends ObjRuleContainer
      * @param $zoneIP4Mapping array  array of IP start-end to zone ie  Array( 0=>Array('start'=>0, 'end'=>50, 'zone'=>'internet') 1=>...  )
      * @param $objectIsNegated bool  IP4Mapping of this object will be inverted before doing resolution
      * @return string[] containing zones matched
+     * @throws Exception
      */
-    public function &calculateZonesFromIP4Mapping(&$zoneIP4Mapping, $objectIsNegated = FALSE)
+    public function &calculateZonesFromIP4Mapping(array &$zoneIP4Mapping, bool $objectIsNegated = FALSE): array
     {
         $zones = array();
 
@@ -877,11 +887,12 @@ class AddressRuleContainer extends ObjRuleContainer
     }
 
     /**
-     * @param $zoneIP4Mapping array  array of IP start-end to zone ie  Array( 0=>Array('start'=>0, 'end'=>50, 'zone'=>'internet') 1=>...  )
+     * @param $zoneIP6Mapping array  array of IP start-end to zone ie  Array( 0=>Array('start'=>0, 'end'=>50, 'zone'=>'internet') 1=>...  )
      * @param $objectIsNegated bool  IP4Mapping of this object will be inverted before doing resolution
      * @return string[] containing zones matched
+     * @throws Exception
      */
-    public function &calculateZonesFromIP6Mapping(&$zoneIP6Mapping, $objectIsNegated = FALSE)
+    public function &calculateZonesFromIP6Mapping(array &$zoneIP6Mapping, bool $objectIsNegated = FALSE): array
     {
         mwarning( "class AddressRuleContainer IPv6 not implemented", null, false );
         $zones = array();
@@ -918,7 +929,7 @@ class AddressRuleContainer extends ObjRuleContainer
     /**
      * @return Address[]|AddressGroup[]
      */
-    public function &membersExpanded($keepGroupsInList = FALSE)
+    public function &membersExpanded($keepGroupsInList = FALSE): array
     {
         $localA = array();
 
