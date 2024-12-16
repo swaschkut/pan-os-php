@@ -543,8 +543,6 @@ RQuery::$defaultFilters['address']['name']['operators']['has.wrong.characters'] 
             return FALSE;
         else
             return TRUE;
-
-        return null;
     },
     'arg' => FALSE,
     'ci' => array(

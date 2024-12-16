@@ -556,7 +556,6 @@ trait AddressCommon
                         $success = false;
                         $success2 = false;
                         exit();
-                        continue;
                     }
                 }
 

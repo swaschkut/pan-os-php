@@ -3281,8 +3281,6 @@ RQuery::$defaultFilters['rule']['name']['operators']['has.wrong.characters'] = a
             return FALSE;
         else
             return TRUE;
-
-        return null;
     },
     'arg' => FALSE,
     'ci' => array(

@@ -102,7 +102,22 @@ $checkArray['vulnerability']['cloud-inline']['visibility']['inline-policy-action
 
 
 ######################################################################################################################
-
+######## URL
+$checkArray['url']['site_access']['visibility'] = array('!allow');
+$checkArray['url']['site_access']['bp']['action'][0]['type'] = array('command-and-control','grayware', 'malware', 'phishing', 'ransamware', 'scanning-activity');
+$checkArray['url']['site_access']['bp']['action'][0]['action'] = array('block');
+$checkArray['url']['site_access']['bp']['action'][1]['type'] = array('dynamic-dns', 'hacking', 'insufficient-content', 'newly-registered-domains', 'not-resolved', 'parked', 'proxy-avoidance-and-anonymizers', 'unknown');
+$checkArray['url']['site_access']['bp']['action'][1]['action'] = array('alert');
+$checkArray['url']['site_access']['bp']['action'][1]['type'] = array('abused-drugs', 'adult', 'copyright-infringement', 'extremism', 'gambling', 'peer-to-peer', 'questionable', 'weapons');
+$checkArray['url']['site_access']['bp']['action'][1]['action'] = array('alert');
+$checkArray['url']['user_credential_submission']['visibility'] = array('!allow');
+$checkArray['url']['user_credential_submission']['bp']['action'][0]['type'] = array('command-and-control','grayware', 'malware', 'phishing', 'ransamware', 'scanning-activity');
+$checkArray['url']['user_credential_submission']['bp']['action'][0]['action'] = array('block');
+$checkArray['url']['user_credential_submission']['bp']['action'][1]['type'] = array('dynamic-dns', 'hacking', 'insufficient-content', 'newly-registered-domains', 'not-resolved', 'parked', 'proxy-avoidance-and-anonymizers', 'unknown');
+$checkArray['url']['user_credential_submission']['bp']['action'][1]['action'] = array('alert');
+$checkArray['url']['user_credential_submission']['bp']['action'][1]['type'] = array('abused-drugs', 'adult', 'copyright-infringement', 'extremism', 'gambling', 'peer-to-peer', 'questionable', 'weapons');
+$checkArray['url']['user_credential_submission']['bp']['action'][1]['action'] = array('alert');
+######################################################################################################################
 
 $json = json_encode($checkArray, JSON_PRETTY_PRINT);
 

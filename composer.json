@@ -22,6 +22,9 @@
       "ext-mbstring": "*",
       "ext-bcmath": "*",
       "ext-mysqli": "*",
-      "ext-yaml": "*"
+      "ext-yaml": "*",
+      "ext-iconv": "*",
+      "ext-openssl": "*",
+      "ext-libxml": "*"
     }
 }
