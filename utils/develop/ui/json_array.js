@@ -1019,7 +1019,8 @@ var subjectObject =
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1.1.1.1)",
-                            "input": "input\/panorama-8.0.xml"
+                            "input": "input\/panorama-8.0.xml",
+                            "help": "value ip4.included-in 1.1.1.1 or also possible with a variable 'value ip4.included-inl RFC1918' to cover all IPv4 private addresses"
                         }
                     },
                     "ip4.includes-full": {
@@ -1027,7 +1028,8 @@ var subjectObject =
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1.1.1.1)",
-                            "input": "input\/panorama-8.0.xml"
+                            "input": "input\/panorama-8.0.xml",
+                            "help": "value ip4.included-in 1.1.1.1 or also possible with a variable 'value ip4.included-in RFC1918' to cover all IPv4 private addresses"
                         }
                     },
                     "ip4.includes-full-or-partial": {
@@ -1035,8 +1037,25 @@ var subjectObject =
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1.1.1.1)",
-                            "input": "input\/panorama-8.0.xml"
+                            "input": "input\/panorama-8.0.xml",
+                            "help": "value ip4.includes-full-or-partial 1.1.1.1 or also possible with a variable 'value ip4.includes-full-or-partial RFC1918' to cover all IPv4 private addresses"
                         }
+                    },
+                    "ip6.match.exact.from.file": {
+                        "Function": {},
+                        "arg": true
+                    },
+                    "ip6.included-in.from.file": {
+                        "Function": {},
+                        "arg": true
+                    },
+                    "ip6.includes-full.from.file": {
+                        "Function": {},
+                        "arg": true
+                    },
+                    "ip6.includes-full-or-partial.from.file": {
+                        "Function": {},
+                        "arg": true
                     },
                     "string.regex": {
                         "Function": {},
@@ -6769,6 +6788,10 @@ var subjectObject =
             },
             "url.alert-only-set": {
                 "name": "url.alert-only-set",
+                "MainFunction": {}
+            },
+            "url.best-practice-set": {
+                "name": "url.best-practice-set",
                 "MainFunction": {}
             },
             "virus.alert-only-set": {
