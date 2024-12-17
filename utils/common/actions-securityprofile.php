@@ -2249,86 +2249,14 @@ SecurityProfileCallContext::$supportedActions['url.best-practice-set'] = array(
     'MainFunction' => function (SecurityProfileCallContext $context) {
         $object = $context->object;
 
-        /*
-         * duplicate code from above alert-only-set
-        */
-        if (get_class($object) !== "URLProfile")
-            return null;
+        //call alert-only-set from above
+        $f = SecurityProfileCallContext::$supportedActions['url.alert-only-set']['MainFunction'];
+        $f($context);
 
-        $allow_xmlnode = DH::findFirstElement("allow", $object->xmlroot);
+
         $alert_xmlnode = DH::findFirstElementOrCreate("alert", $object->xmlroot);
-        if( $allow_xmlnode !== False )
-        {
-            foreach( $allow_xmlnode->childNodes as $allow_node )
-            {
-                if( $allow_node->nodeType != XML_ELEMENT_NODE )
-                    continue;
-
-                $clone_node = $allow_node->cloneNode(true);
-                $alert_xmlnode->appendChild($clone_node);
-                $allow_xmlnode->removeChild($allow_node);
-                $tmp_name = $allow_node->textContent;
-
-                $key = array_search ($tmp_name, $object->allow);
-                unset($object->allow[$key]);
-            }
-            $object->xmlroot->removeChild($allow_xmlnode);
-        }
-
-        foreach( $object->allow as $allow )
-        {
-            $object->alert[] = $allow;
-
-            $xmlString = '<member>'.$allow.'</member>';
-            $xmlElement = DH::importXmlStringOrDie($object->xmlroot->ownerDocument, $xmlString);
-            $alert_xmlnode->appendChild($xmlElement);
-        }
-        $object->allow = array();
-
-        $credential_xmlnode = DH::findFirstElementOrCreate("credential-enforcement", $object->xmlroot);
-        $allow_credential_xmlnode = DH::findFirstElement("allow", $credential_xmlnode);
-        $alert_credential_xmlnode = DH::findFirstElementOrCreate("alert", $credential_xmlnode);
-        if( $allow_credential_xmlnode !== False )
-        {
-            foreach( $allow_credential_xmlnode->childNodes as $allow_node )
-            {
-                if( $allow_node->nodeType != XML_ELEMENT_NODE )
-                    continue;
-
-                $clone_node = $allow_node->cloneNode(true);
-                $alert_credential_xmlnode->appendChild($clone_node);
-                $allow_credential_xmlnode->removeChild($allow_node);
-                $tmp_name = $allow_node->textContent;
-
-                $key = array_search ($tmp_name, $object->allow_credential);
-                unset($object->allow_credential[$key]);
-            }
-            $credential_xmlnode->removeChild($allow_credential_xmlnode);
-        }
-
-        foreach( $object->allow_credential as $allow )
-        {
-            $object->alert_credential[] = $allow;
-
-            $xmlString = '<member>'.$allow.'</member>';
-            $xmlElement = DH::importXmlStringOrDie($object->xmlroot->ownerDocument, $xmlString);
-            $alert_credential_xmlnode->appendChild($xmlElement);
-        }
-        $object->allow_credential = array();
-
-        if( $context->object->owner->owner->version >= 102 )
-        {
-            $xmlnode = DH::findFirstElementOrCreate("local-inline-cat", $object->xmlroot);
-            $xmlnode->textContent = "yes";
-
-            $xmlnode = DH::findFirstElementOrCreate("cloud-inline-cat", $object->xmlroot);
-            $xmlnode->textContent = "yes";
-        }
-        /* above is duplicate from  alert-only-set*/
-
         $block_categories = array('command-and-control','grayware','malware','phishing','ransomware','scanning-activity');
         $block_xmlnode = DH::findFirstElementOrCreate("block", $object->xmlroot);
-        $block_credential_xmlnode = DH::findFirstElementOrCreate("block", $credential_xmlnode);
         foreach( $block_categories as $block_category )
         {
             if( !in_array( $block_category, $object->block ) )
@@ -2337,34 +2265,76 @@ SecurityProfileCallContext::$supportedActions['url.best-practice-set'] = array(
                 {
                     $key = array_search ($block_category, $object->alert);
                     unset( $object->alert[$key] );
-                    $alert_category_xmlnode = DH::findFirstElementByNameAttr("member", $block_category, $alert_xmlnode );
+                    $alert_category_xmlnode = DH::findFirstElementByValue("member", $block_category, $alert_xmlnode );
                     $alert_xmlnode->removeChild($alert_category_xmlnode);
 
-                    $object->block[] = $block_category;
+                    $object->block[$block_category] = $block_category;
+
+                    $xmlString = '<member>'.$block_category.'</member>';
+                    $xmlElement = DH::importXmlStringOrDie($object->xmlroot->ownerDocument, $xmlString);
+                    $block_xmlnode->appendChild($xmlElement);
+                }
+                elseif( in_array( $block_category, $object->allow ) )
+                {
+                    $key = array_search ($block_category, $object->allow);
+                    unset( $object->allow[$key] );
+                    $allow_category_xmlnode = DH::findFirstElementByValue("member", $block_category, $allow_xmlnode );
+                    $allow_xmlnode->removeChild($allow_category_xmlnode);
+
+                    $object->block[$block_category] = $block_category;
 
                     $xmlString = '<member>'.$block_category.'</member>';
                     $xmlElement = DH::importXmlStringOrDie($object->xmlroot->ownerDocument, $xmlString);
                     $block_xmlnode->appendChild($xmlElement);
                 }
             }
+        }
 
-            if( !in_array( $block_category, $object->block_credential ) )
+        //credential all from alert to block
+        $credential_xmlnode = DH::findFirstElementOrCreate("credential-enforcement", $object->xmlroot);
+
+        $alert_credential_xmlnode = DH::findFirstElementOrCreate("alert", $credential_xmlnode);
+        $block_credential_xmlnode = DH::findFirstElementOrCreate("block", $credential_xmlnode);
+
+        if( $alert_credential_xmlnode !== False )
+        {
+            foreach( $alert_credential_xmlnode->childNodes as $alert_node )
             {
-                if( in_array( $block_category, $object->alert_credential ) )
+                if( $alert_node->nodeType != XML_ELEMENT_NODE )
+                    continue;
+
+                $tmp_name = $alert_node->textContent;
+
+                $clone_node = $alert_node->cloneNode(true);
+                if( !in_array($tmp_name, $object->block_credential) )
                 {
-                    $key = array_search ($block_category, $object->alert_credential);
-                    unset( $object->alert_credential[$key] );
-                    $alert_credential_category_xmlnode = DH::findFirstElementByNameAttr("member", $block_category, $alert_credential_xmlnode );
-                    $alert_credential_xmlnode->removeChild($alert_credential_category_xmlnode);
-
-                    $object->block_credential[] = $block_category;
-
-                    $xmlString = '<member>'.$block_category.'</member>';
-                    $xmlElement = DH::importXmlStringOrDie($object->xmlroot->ownerDocument, $xmlString);
-                    $block_credential_xmlnode->appendChild($xmlElement);
+                    $block_credential_xmlnode->appendChild($clone_node);
+                    $object->block_credential[$tmp_name] = $tmp_name;
                 }
+
+                $alert_credential_xmlnode->removeChild($alert_node);
+
+
+                $key = array_search ($tmp_name, $object->allow_credential);
+                unset($object->alert_credential[$key]);
+            }
+            $credential_xmlnode->removeChild($alert_credential_xmlnode);
+        }
+
+
+        foreach( $object->alert_credential as $alert )
+        {
+            if( !in_array($alert, $object->block_credential) )
+            {
+                $object->block_credential[$alert] = $alert;
+
+                $xmlString = '<member>'.$alert.'</member>';
+                $xmlElement = DH::importXmlStringOrDie($object->xmlroot->ownerDocument, $xmlString);
+                $block_credential_xmlnode->appendChild($xmlElement);
             }
         }
+        $object->alert_credential = array();
+
 
         if( $context->isAPI )
         {

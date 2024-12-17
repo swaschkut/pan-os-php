@@ -339,6 +339,26 @@ class DH
     }
 
     /**
+     * @param string $tagName
+     * @param $value
+     * @param DOMNode $node
+     * @return DOMNode|bool
+     */
+    static function findFirstElementByValue($tagName, $value, DOMNode $node)
+    {
+        foreach( $node->childNodes as $lnode )
+        {
+            if( $lnode->nodeName == $tagName )
+            {
+                if( $lnode->nodeValue == $value )
+                    return $lnode;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * @param string $attrName
      * @param DOMElement|DOMNode $node
      * @return bool|string
