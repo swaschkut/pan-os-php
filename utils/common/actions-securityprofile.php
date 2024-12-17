@@ -2274,19 +2274,6 @@ SecurityProfileCallContext::$supportedActions['url.best-practice-set'] = array(
                     $xmlElement = DH::importXmlStringOrDie($object->xmlroot->ownerDocument, $xmlString);
                     $block_xmlnode->appendChild($xmlElement);
                 }
-                elseif( in_array( $block_category, $object->allow ) )
-                {
-                    $key = array_search ($block_category, $object->allow);
-                    unset( $object->allow[$key] );
-                    $allow_category_xmlnode = DH::findFirstElementByValue("member", $block_category, $allow_xmlnode );
-                    $allow_xmlnode->removeChild($allow_category_xmlnode);
-
-                    $object->block[$block_category] = $block_category;
-
-                    $xmlString = '<member>'.$block_category.'</member>';
-                    $xmlElement = DH::importXmlStringOrDie($object->xmlroot->ownerDocument, $xmlString);
-                    $block_xmlnode->appendChild($xmlElement);
-                }
             }
         }
 
