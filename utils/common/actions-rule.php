@@ -4284,12 +4284,14 @@ RuleCallContext::$supportedActions[] = array(
     'name' => 'display-app-id-change',
     'GlobalInitFunction' => function (RuleCallContext $context)
     {
+        $period = "last-7-days";
+
         $req = '<type><threat>'.
             '<sortby>repeatcnt</sortby>'.
             '<group-by>rule_uuid</group-by>'.
             '<aggregate-by><member>rule</member><member>threatid</member></aggregate-by>'.
             '<values><member>repeatcnt</member></values></threat></type>'.
-            '<period>last-7-days</period><topn>100</topn><topm>25</topm><caption>app-id-change</caption>'.
+            '<period>'.$period.'</period><topn>100</topn><topm>25</topm><caption>app-id-change</caption>'.
             '<query>(category-of-threatid eq app-id-change)</query>';
 
 
