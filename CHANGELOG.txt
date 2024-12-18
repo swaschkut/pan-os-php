@@ -9,7 +9,7 @@ BUGFIX:
 
 GENERAL:
 * code optimisation
-* update Device App-ID version: 8925-9124
+* update Device App-ID version: 8926-9129
 
 
 2.1.30 (20241211)
