@@ -1635,8 +1635,8 @@ SecurityProfileCallContext::$supportedActions['spyware.best-practice-set'] = arr
         $hasDNSlicense = $context->arguments['has-DNS-license'];
         foreach( $object->dns_rules_obj as $rule )
         {
-            $tmp_action = DH::findFirstElement("action", $rule->xmlroot);
-            $tmp_packet_capture = DH::findFirstElement("packet-capture", $rule->xmlroot);
+            $tmp_action = DH::findFirstElementOrCreate("action", $rule->xmlroot);
+            $tmp_packet_capture = DH::findFirstElementOrCreate("packet-capture", $rule->xmlroot);
             $tmp_log_level = DH::findFirstElement("log-level", $rule->xmlroot);
             /** @var DNSPolicy $rule */
             if( $rule->name() == "pan-dns-sec-adtracking"

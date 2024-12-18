@@ -6,6 +6,7 @@ UTIL:
 * type=securityprofile | introdruce actions=url.best-practice-set
 
 BUGFIX:
+* type=securityprofile securityprofiletype=spyware actions=best-practice-set | bugfix
 
 GENERAL:
 * code optimisation
