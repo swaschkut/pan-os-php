@@ -518,6 +518,10 @@ SecurityProfileCallContext::$supportedActions[] = array(
         if( $visibility )
             $headers .= '<th>visibility</th>';
 
+        if( $bestPractice )
+            $headers .= '<th>URL BP</th>';
+        if( $visibility )
+            $headers .= '<th>URL visibility</th>';
         $headers .= '<th>URL members</th>';
 
 
@@ -1129,23 +1133,92 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         }
                     }
                     else
+                    {
                         $lines .= $context->encloseFunction('---');
+                        $lines .= $context->encloseFunction('---');
+                    }
                 }
 
                 if( get_class($object) == "customURLProfile" )
                 {
+                    if( $bestPractice )
+                        $lines .= $context->encloseFunction('---');
+                    if( $visibility )
+                        $lines .= $context->encloseFunction('---');
+
                     /**
                      * @var $object customURLProfile
                      */
                     $tmp_array = array();
                     foreach( $object->getmembers() as  $member )
                         $tmp_array[] = $member;
-
-                    $string = implode( ",", $tmp_array);
+                    
                     $lines .= $context->encloseFunction( $tmp_array );
+                }
+                elseif( get_class($object) == "URLProfile" )
+                {
+                    if( $bestPractice )
+                    {
+                        $tmp_array = array();
+                        $block_categories = array('command-and-control','grayware','malware','phishing','ransomware','scanning-activity');
+                        $notBlock = array();
+                        foreach( $block_categories as $block_category )
+                        {
+                            if( !in_array( $block_category, $object->block ) )
+                                $notBlock[] = $block_category;
+
+                        }
+                        if( !empty($notBlock) )
+                        {
+                            $tmp_array[] = 'BLOCK missing: ';
+                            $tmp_array = array_merge( $tmp_array, $notBlock );
+                        }
+                        else
+                            $tmp_array[] = "";
+
+                        $lines .= $context->encloseFunction($tmp_array);
+                    }
+
+                    if( $visibility )
+                    {
+                        $tmp_array = array();
+                        if( empty($object->allow) )
+                            $tmp_array[] = "";
+                        else
+                            $tmp_array[] = 'ALLOW: "set all action to alert"';
+
+                        $lines .= $context->encloseFunction($tmp_array);
+                    }
+
+
+                    /**
+                     * @var $object URLProfile
+                     */
+                    $tmp_profile_array = array();
+                    $tmp_array = array();
+                    foreach( $object->allow as  $member )
+                        $tmp_array[] = $member;
+                    $tmp_profile_array[] = "allow: ".implode( ",", $tmp_array)."\n";
+
+                    $tmp_array = array();
+                    foreach( $object->alert as  $member )
+                        $tmp_array[] = $member;
+                    $tmp_profile_array[] = "alert: ".implode( ",", $tmp_array)."\n";
+
+                    $tmp_array = array();
+                    foreach( $object->block as  $member )
+                        $tmp_array[] = $member;
+
+                    $tmp_profile_array[] = "block: ".implode( ",", $tmp_array)."\n";
+
+                    $lines .= $context->encloseFunction( $tmp_profile_array );
                 }
                 else
                 {
+                    if( $bestPractice )
+                        $lines .= $context->encloseFunction('---');
+                    if( $visibility )
+                        $lines .= $context->encloseFunction('---');
                     $lines .= $context->encloseFunction('');
                 }
 
