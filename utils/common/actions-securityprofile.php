@@ -461,6 +461,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
         $addCountDisabledRules = FALSE;
         $bestPractice = FALSE;
         $visibility = FALSE;
+        $addURLmembers = FALSE;
 
         $optionalFields = &$context->arguments['additionalFields'];
 
@@ -519,10 +520,17 @@ SecurityProfileCallContext::$supportedActions[] = array(
             $headers .= '<th>visibility</th>';
 
         if( $bestPractice )
+        {
             $headers .= '<th>URL BP</th>';
+            $headers .= '<th>URL BP details</th>';
+        }
         if( $visibility )
+        {
             $headers .= '<th>URL visibility</th>';
-        $headers .= '<th>URL members</th>';
+            $headers .= '<th>URL visibility details</th>';
+        }
+        if( $addURLmembers or ( !$bestPractice and !$visibility ) )
+            $headers .= '<th>URL members</th>';
 
 
         if( $addWhereUsed )
@@ -1142,23 +1150,44 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 if( get_class($object) == "customURLProfile" )
                 {
                     if( $bestPractice )
+                    {
                         $lines .= $context->encloseFunction('---');
+                        $lines .= $context->encloseFunction('---');
+                    }
                     if( $visibility )
+                    {
                         $lines .= $context->encloseFunction('---');
+                        $lines .= $context->encloseFunction('---');
+                    }
 
-                    /**
-                     * @var $object customURLProfile
-                     */
-                    $tmp_array = array();
-                    foreach( $object->getmembers() as  $member )
-                        $tmp_array[] = $member;
-                    
-                    $lines .= $context->encloseFunction( $tmp_array );
+                    if( !$bestPractice and !$visibility )
+                    {
+                        /**
+                         * @var $object customURLProfile
+                         */
+                        $tmp_array = array();
+                        foreach ($object->getmembers() as $member)
+                            $tmp_array[] = $member;
+
+                        $lines .= $context->encloseFunction($tmp_array);
+                    }
                 }
                 elseif( get_class($object) == "URLProfile" )
                 {
                     if( $bestPractice )
                     {
+                        //URL BP -> yes/no
+                        $lines .= $context->encloseFunction("test");
+                    }
+                    if( $visibility )
+                    {
+                        //URL visibility -> yes/no
+                        $lines .= $context->encloseFunction("test");
+                    }
+
+                    if( $bestPractice )
+                    {
+                        //URL detail BP
                         $tmp_array = array();
                         $block_categories = array('command-and-control','grayware','malware','phishing','ransomware','scanning-activity');
                         $notBlock = array();
@@ -1181,6 +1210,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
 
                     if( $visibility )
                     {
+                        //URL detail visibility
                         $tmp_array = array();
                         if( empty($object->allow) )
                             $tmp_array[] = "";
@@ -1190,36 +1220,45 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         $lines .= $context->encloseFunction($tmp_array);
                     }
 
+                    if( $addURLmembers or ( !$bestPractice and !$visibility ) )
+                    {
+                        /**
+                         * @var $object URLProfile
+                         */
+                        $tmp_profile_array = array();
+                        $tmp_array = array();
+                        foreach( $object->allow as  $member )
+                            $tmp_array[] = $member;
+                        $tmp_profile_array[] = "allow: ".implode( ",", $tmp_array)."\n";
 
-                    /**
-                     * @var $object URLProfile
-                     */
-                    $tmp_profile_array = array();
-                    $tmp_array = array();
-                    foreach( $object->allow as  $member )
-                        $tmp_array[] = $member;
-                    $tmp_profile_array[] = "allow: ".implode( ",", $tmp_array)."\n";
+                        $tmp_array = array();
+                        foreach( $object->alert as  $member )
+                            $tmp_array[] = $member;
+                        $tmp_profile_array[] = "alert: ".implode( ",", $tmp_array)."\n";
 
-                    $tmp_array = array();
-                    foreach( $object->alert as  $member )
-                        $tmp_array[] = $member;
-                    $tmp_profile_array[] = "alert: ".implode( ",", $tmp_array)."\n";
+                        $tmp_array = array();
+                        foreach( $object->block as  $member )
+                            $tmp_array[] = $member;
 
-                    $tmp_array = array();
-                    foreach( $object->block as  $member )
-                        $tmp_array[] = $member;
+                        $tmp_profile_array[] = "block: ".implode( ",", $tmp_array)."\n";
 
-                    $tmp_profile_array[] = "block: ".implode( ",", $tmp_array)."\n";
-
-                    $lines .= $context->encloseFunction( $tmp_profile_array );
+                        $lines .= $context->encloseFunction( $tmp_profile_array );
+                    }
                 }
                 else
                 {
                     if( $bestPractice )
+                    {
                         $lines .= $context->encloseFunction('---');
+                        $lines .= $context->encloseFunction('---');
+                    }
                     if( $visibility )
+                    {
                         $lines .= $context->encloseFunction('---');
-                    $lines .= $context->encloseFunction('');
+                        $lines .= $context->encloseFunction('---');
+                    }
+                    if( $addURLmembers or ( !$bestPractice and !$visibility ) )
+                        $lines .= $context->encloseFunction('');
                 }
 
                 if( $addWhereUsed )
@@ -1287,14 +1326,15 @@ SecurityProfileCallContext::$supportedActions[] = array(
             array('type' => 'pipeSeparatedList',
                 'subtype' => 'string',
                 'default' => '*NONE*',
-                'choices' => array('WhereUsed', 'UsedInLocation', 'TotalUse', 'BestPractice', 'Visibility'),
+                'choices' => array('WhereUsed', 'UsedInLocation', 'TotalUse', 'BestPractice', 'Visibility', 'URLmembers'),
                 'help' =>
                     "pipe(|) separated list of additional fields (ie: Arg1|Arg2|Arg3...) to include in the report. The following is available:\n" .
                     "  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n" .
                     "  - WhereUsed : list places where object is used (rules, groups ...)\n" .
                     "  - TotalUse : list a counter how often this object is used\n" .
                     "  - BestPractice : show if BestPractice is configured\n" .
-                    "  - Visibility : show if SP log is configured\n"
+                    "  - Visibility : show if SP log is configured\n" .
+                    "  - URLmembers : add URL members also if bestpractice or visibility is added\n"
             )
     )
 

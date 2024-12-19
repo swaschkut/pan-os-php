@@ -150,13 +150,14 @@ class PH
             }
             elseif( strpos( $arg, 'shadow-bpjsonfile' ) !== FALSE )
             {
-                $projectFolder = "";
-                if( isset(PH::$args['projectfolder']) )
-                    $projectFolder = PH::$args['projectfolder']."/";
+                #$projectFolder = "";
+                #if( isset(PH::$args['projectfolder']) )
+                #    $projectFolder = PH::$args['projectfolder']."/";
 
                 $arg_array = explode( "=", $arg );
 
-                PH::$shadow_bp_jsonfilename = $projectFolder.$arg_array[1];
+                #PH::$shadow_bp_jsonfilename = $projectFolder.$arg_array[1];
+                PH::$shadow_bp_jsonfilename = $arg_array[1];
                 $JSONarray = file_get_contents( PH::$shadow_bp_jsonfilename );
 
                 if( $JSONarray === false )

@@ -4,10 +4,11 @@ CHANGELOG
 UTIL:
 * type=address | introduce new IPv6 'filter=(value ip6.included-in.from.file / ip6.includes-full-or-partial.from.file     - ip6.includes-full.from.file / ip6.match.exact.from.file FILENAME)'
 * type=securityprofile | introdruce actions=url.best-practice-set
+* type=rule actions=exporttoexcel:bp.html,bestpractice|visibility - improve output if not bp/visibile
+* type=securityprofile securityprofiletype=url-filtering actions=exporttoexcel:url_bp.html,bestpractice|visibility - improve output
 
 BUGFIX:
 * type=securityprofile securityprofiletype=spyware actions=best-practice-set | bugfix
-* type=rule actions=exporttoexcel:bp.html,bestpractice|visibility - improve output if not bp/visibile
 
 GENERAL:
 * code optimisation
