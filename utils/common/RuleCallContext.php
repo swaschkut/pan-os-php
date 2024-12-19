@@ -1174,11 +1174,11 @@ class RuleCallContext extends CallContext
             if( isset( $rule_profiles[ $profType ] ) )
                 $profileName = $rule_profiles[ $profType ];
             else
-                return self::enclose("", $wrap);
+                return self::enclose("N/A", $wrap);
 
             if( empty($profileName) )
             {
-                return self::enclose("", $wrap);
+                return self::enclose("N/A", $wrap);
             }
 
             if( $profType == "virus" || $profType == "spyware" || $profType == "vulnerability" )
@@ -1197,7 +1197,7 @@ class RuleCallContext extends CallContext
 
                 if( !isset($profile) || !is_object($profile) )
                 {
-                    return self::enclose("", $wrap);
+                    return self::enclose("N/A", $wrap);
                 }
                 else
                 {
@@ -1208,7 +1208,7 @@ class RuleCallContext extends CallContext
                         if( $sp_best_practice && $checkType == "bp" )
                         {
                             if( !$profile->is_best_practice() )
-                                return self::enclose("", $wrap);
+                                return self::enclose("no", $wrap);
                             else
                                 return self::enclose($profile->name(), $wrap);
                         }
@@ -1216,7 +1216,7 @@ class RuleCallContext extends CallContext
                         if( $sp_visibility && $checkType == "visible")
                         {
                             if( !$profile->is_visibility() )
-                                return self::enclose("", $wrap);
+                                return self::enclose("no", $wrap);
                             else
                                 return self::enclose($profile->name(), $wrap);
                         }
@@ -1224,7 +1224,7 @@ class RuleCallContext extends CallContext
                 }
             }
             else
-                return self::enclose("", $wrap);
+                return self::enclose("---", $wrap);
 
         }
     }

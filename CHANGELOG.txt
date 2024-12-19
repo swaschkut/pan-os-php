@@ -7,6 +7,7 @@ UTIL:
 
 BUGFIX:
 * type=securityprofile securityprofiletype=spyware actions=best-practice-set | bugfix
+* type=rule actions=exporttoexcel:bp.html,bestpractice|visibility - improve output if not bp/visibile
 
 GENERAL:
 * code optimisation
