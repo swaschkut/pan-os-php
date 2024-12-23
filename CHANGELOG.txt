@@ -6,6 +6,7 @@ UTIL:
 * type=securityprofile | introdruce actions=url.best-practice-set
 * type=rule actions=exporttoexcel:bp.html,bestpractice|visibility - improve output if not bp/visibile
 * type=securityprofile securityprofiletype=url-filtering actions=exporttoexcel:url_bp.html,bestpractice|visibility - improve output
+* develop day1config bp_config_validation.php
 
 BUGFIX:
 * type=securityprofile securityprofiletype=spyware actions=best-practice-set | bugfix
