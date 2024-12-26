@@ -8,6 +8,7 @@ UTIL:
 * type=securityprofile securityprofiletype=url-filtering actions=exporttoexcel:url_bp.html,bestpractice|visibility - improve output
 * develop day1config bp_config_validation.php
 * develop extend bp_config check also with UI
+* develop optimise bp_secprof_test.php
 
 BUGFIX:
 * type=securityprofile securityprofiletype=spyware actions=best-practice-set | bugfix

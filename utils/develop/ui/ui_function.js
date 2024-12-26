@@ -784,6 +784,11 @@ function tableRemoveAllBP()
     $('#tbodyBP').empty();
 }
 
+function tableRemoveAllBPsecprof()
+{
+    $('#tbodyBPsecprof').empty();
+}
+
 function setHeight(jq_in){
     jq_in.each(function(index, elem){
         elem.style.height = elem.scrollHeight+'px';
@@ -799,6 +804,12 @@ function eraseTextBP() {
     $("#js-textareaBP").val("");
     $("#js-textareaBP").height( '40px' );
 }
+
+function eraseTextBPsecprof() {
+    $("#js-textareaBPsecprof").val("");
+    $("#js-textareaBPsecprof").height( '40px' );
+}
+
 function ScriptSet( Idx, SCRIPTtype )
 {
     $("#script" + Idx ).find('option[value="'+ SCRIPTtype +'"]').attr('selected','selected');
@@ -1017,8 +1028,8 @@ function createTableFromJSON_bp( textValue )
     tableRemoveAllBP();
     //missing stuff, check that all additional columns actions / filters are also removed
 
-    for (var i = 1; i <= rowIdx; i++) {
-        for (var ii = 3; ii <= columnIdx; ii++) {
+    for (var i = 1; i <= rowIdxBP; i++) {
+        for (var ii = 3; ii <= columnIdxBP; ii++) {
             deleteColumn(ii, i);
         }
     }
@@ -1076,6 +1087,73 @@ function createTableFromJSON_bp( textValue )
 
         $( "#comment" + Idx ).val( commentValue );
         $( "#comment" + Idx ).change();
+    }
+}
+
+function createTableFromJSON_bp_secprof( textValue )
+{
+    //intermediate; display file value
+    $("#js-textareaBPsecprof").val( textValue );
+    //setHeight($("#js-textarea"));
+    $("#js-textareaBPsecprof").height( '400px' );
+
+    tableRemoveAllBPsecprof();
+    //missing stuff, check that all additional columns actions / filters are also removed
+
+    for (var i = 1; i <= rowIdxBP; i++) {
+        for (var ii = 3; ii <= columnIdxBP; ii++) {
+            deleteColumn(ii, i);
+        }
+    }
+
+    rowIdxBP = 0;
+    columnActionIdxBP = 1;
+    columnFilterIdxBP = 0;
+    columnIdxBP = 3;
+
+    const obj = JSON.parse( textValue );
+
+    var keys = [];
+    for(var k in obj) keys.push(k);
+
+
+    keys.forEach(myFunction)
+
+    function myFunction(item, index, arr) {
+        arr[index] = item * 10;
+    }
+
+    for (var i = 0; i < obj.length; i++)
+    {
+        //"check": "true",
+        //"xpath": "deviceconfig\/system\/timezone",
+        //"value": "Europe\/Berlin",
+        //"variable-name": "{{ TIMEZONE }}"
+
+
+        //$("#addBtnBPsecprof").trigger('click');
+
+        var Idx = rowIdxBP;
+
+
+        $('#tbodyBP').append(`<tr id="R${Idx}-1">
+                        <td colspan="5">----------------------------------------------------------------------------------------------------</td>
+                    </tr>
+                    <tr id="R${Idx}-2">
+                    <td>
+                        <li>
+                        <input type="text" id="type${Idx}" name="type${Idx}" value="" style="width:80%"/>
+                        </li>
+                    </td>
+                </tr>
+                `);
+
+        typeValue = obj[i]['type']
+
+        //----------------------------
+
+        $( "#type" + Idx ).val( xpathValue );
+        $( "#type" + Idx ).change();
     }
 }
 

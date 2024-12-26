@@ -80,6 +80,8 @@ else
             <tr>
             <tr>
                 <td><a href="index.php">MAIN page</a></td>
+                <td><a href="bp_config.php">BP config page</a></td>
+                <td><a href="bp_secprof_test_chatgpt.php">BP secprof test page</a></td>
                 <td><a href="single.php">single command</a></td>
                 <td><a href="playbook.php">JSON PLAYBOOK</a></td>
                 <td><a href="preparation.php">upload file / store APIkey</a></td>
@@ -98,7 +100,7 @@ else
         <table class="table table-bordered" style="width:100%">
             <tr>
                 <td style="width:50%" >
-                    load Playbook from JSON-file:
+                    load BP config from JSON-file:
 
                     <input type="button" value="Clear TextArea" onclick="eraseTextBP();">
                     <form method="post">
@@ -107,7 +109,7 @@ else
                     </form>
                 </td>
                 <td>
-                    store Playbook to JSON-file:
+                    store BP config to JSON-file:
                     <input type="text" id="json-outputBP" value="bp_config.json" />
                     <button class="btn btn-md btn-primary" id="storeBtnBP" type="button">download PLAYBOOK JSON file</button>
                     <div>

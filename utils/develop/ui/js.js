@@ -90,6 +90,14 @@ $(document).ready(function () {
         reader.readAsText($("#js-fileBP")[0].files[0], "UTF-8");
     });
 
+    $("#js-fileBPsecprof").change(function(){
+        var reader = new FileReader();
+        reader.onload = function(e){
+            createTableFromJSON_bp_secprof(  e.target.result );
+        };
+        reader.readAsText($("#js-fileBPsecprof")[0].files[0], "UTF-8");
+    });
+
     $("#configSelect").change(function(){
         for (var i = 1; i <= rowIdx; i++) {
             updateScriptsyntax( i );
@@ -105,6 +113,9 @@ $(document).ready(function () {
         createJSONstringAndDownloadBP();
     });
 
+    $('#storeBtnBP2').on('click', function () {
+        createJSONstringAndDownloadBP();
+    });
 
     taskAtStart();
 });

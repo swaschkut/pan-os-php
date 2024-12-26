@@ -56,11 +56,6 @@ else
 
 
     <script type="text/javascript"
-            src="json_array.js"
-    ></script>
-
-
-    <script type="text/javascript"
             src="ui_function.js"
     ></script>
 
@@ -81,6 +76,7 @@ else
             <tr>
                 <td><a href="index.php">MAIN page</a></td>
                 <td><a href="bp_config.php">BP config page</a></td>
+                <td><a href="bp_sec_profile.php">BP Security Profile page</a></td>
                 <td><a href="single.php">single command</a></td>
                 <td><a href="playbook.php">JSON PLAYBOOK</a></td>
                 <td><a href="preparation.php">upload file / store APIkey</a></td>
@@ -101,18 +97,18 @@ else
                 <td style="width:50%" >
                     load Playbook from JSON-file:
 
-                    <input type="button" value="Clear TextArea" onclick="eraseText();">
+                    <input type="button" value="Clear TextArea" onclick="eraseTextBP();">
                     <form method="post">
-                        <textarea disabled id="js-textarea" style="width:100%" ></textarea>
-                        <input type="file" id="js-file" accept=".txt,.json" onclick="this.value=null">
+                        <textarea disabled id="js-textareaBPsecprof" style="width:100%" ></textarea>
+                        <input type="file" id="js-fileBPsecprof" accept=".txt,.json" onclick="this.value=null">
                     </form>
                 </td>
                 <td>
                     store Playbook to JSON-file:
-                    <input type="text" id="json-output" value="playbook.json" />
-                    <button class="btn btn-md btn-primary" id="storeBtn" type="button">download PLAYBOOK JSON file</button>
+                    <input type="text" id="json-outputBPsecprof" value="bp_config.json" />
+                    <button class="btn btn-md btn-primary" id="storeBtnBPsecprof" type="button">download PLAYBOOK JSON file</button>
                     <div>
-                        <textarea type="text" disabled id="json-display-out" name="json-display-out" style="width:100%" ></textarea>
+                        <textarea type="text" disabled id="json-display-outBPsecprof" name="json-display-outBPsecprof" style="width:100%" ></textarea>
                     </div>
                 </td>
             </tr>
@@ -121,91 +117,25 @@ else
 
     <form id="user_form" target="_blank" name="user_form" method="post" enctype="multipart/form-data">
 
-        <div class="input-output" style="border:1px solid black; padding: 10px;">
-            <table class="table table-bordered" style="width:100%">
-                <tr>
-                    <a href="preparation.php">go to preparation site:</a>
-                    <td style="width:50%" >
-                        <b>offline MODE:</b>
-                        <input type="radio" id="offlinemode" name="mode" value="offlinemode" checked>
-                    </td>
-                    <td style="width:50%" >
-                        select Project file:
-                        <select id="configSelect" name="configSelect" class="form-control input-sm">
-                            <option value="---" selected>---</option>
-                            <?php
-                            foreach( glob($projectFOLDER.'/*') as $filename )
-                            {
-                                $filename = basename($filename);
-
-                                if( $filename == "html" )
-                                    continue;
-
-                                echo "<option value='" . $filename . "'>".$filename. "</option>";
-                            }
-                            ?>
-                        </select>
-                    </td>
-                </tr>
-                <tr>
-                    <td style="width:50%" >
-                        <b>online MODE:</b>
-                        <input type="radio" id="onlinemode" name="mode" value="onlinemode">
-                    </td>
-                    <td style="width:50%" >
-                        select Host for 'api://'
-                        <select id="configapi" name="configapi" class="form-control input-sm">
-                            <option value="---" selected>---</option>
-                            <?php
-                            foreach( file($panconfkeystoreFILE ) as $entry )
-                            {
-                                $host = explode( ":", $entry);
-
-                                echo "<option value='" . $host[0] . "'>".$host[0]. "</option>";
-                            }
-                            ?>
-                        </select>
-                    </td>
-                </tr>
-            </table>
-        </div>
-
         <div class="table-responsive" style="border:1px solid black; padding: 10px; width:100%">
             <table id="myTable" class="table table-bordered" style="width:100%">
                 <thead>
                 <tr>
                     <th class="text-center">Remove Row</th>
-                    <th class="text-center">SCRIPT</th>
-                    <th class="text-center">
-                        ACTION
-
-
-                    </th>
+                    <th class="text-center" style="width:80%">SCRIPT</th>
                 </tr>
                 </thead>
-                <form id="json-store">
-                    <tbody id="tbody">
+                <form id="json-storeBPsecprof">
+                    <tbody id="tbodyBPsecprof">
 
                     </tbody>
                 </form>
             </table>
-            <button class="btn btn-md btn-primary"
-                    id="addBtn" type="button">
-                new Row
-            </button>
         </div>
     </form>
 
 
 </div>
-
-missing stuff:</br>
-1) rule filter 'dst' operator 'has.from.query subquery1' -> add this automatically and define based on filter src/dst/srv what subquery can be done and prefill the part there</br>
-2) converter - migration part with vendor select</br>
-</br>
-ruletype=</br>
-devicetype=</br>
-securityprofiletype=</br>
 
 </body>
 
