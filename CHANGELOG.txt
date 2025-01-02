@@ -12,6 +12,7 @@ UTIL:
 
 BUGFIX:
 * type=securityprofile securityprofiletype=spyware actions=best-practice-set | bugfix
+* type=static-route | bugfix for NGFW if address objects are used as reference
 
 GENERAL:
 * code optimisation
