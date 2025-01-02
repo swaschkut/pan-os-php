@@ -96,6 +96,14 @@ class NETWORKUTIL extends UTIL
                         foreach($this->pan->network->logicalRouterStore->getAll() as $vr )
                             $this->objectsToProcess[] = Array('store' => $vr, 'objects' => $vr->staticRoutes());
                     }
+                    elseif( $this->utilType == 'gpgateway' )
+                    {
+                        //gpgateway store only in vsys available
+                    }
+                    elseif( $this->utilType == 'gpportal' )
+                    {
+                        //gpportal store only in vsys available
+                    }
 
 
                     $locationFound = TRUE;
@@ -121,6 +129,10 @@ class NETWORKUTIL extends UTIL
                             {}
                             elseif( $this->utilType == 'certificate' )
                             {}
+                            elseif( $this->utilType == 'gpgateway' )
+                            {}
+                            elseif( $this->utilType == 'gpportal' )
+                            {}
 
                             $locationFound = TRUE;
                         }
@@ -141,7 +153,10 @@ class NETWORKUTIL extends UTIL
                             {}
                             elseif( $this->utilType == 'certificate' )
                                 $this->objectsToProcess[] = Array('store' => $sub->certificateStore, 'objects' => $sub->certificateStore->getAll());
-
+                            elseif( $this->utilType == 'gpgateway' )
+                                $this->objectsToProcess[] = array('store' => $sub->GPGatewayStore, 'objects' => $sub->GPGatewayStore->getall());
+                            elseif( $this->utilType == 'gpportal' )
+                                $this->objectsToProcess[] = array('store' => $sub->GPPortalStore, 'objects' => $sub->GPPortalStore->getall());
                             $locationFound = TRUE;
                         }
                     }
@@ -165,6 +180,10 @@ class NETWORKUTIL extends UTIL
                         {}
                         elseif( $this->utilType == 'certificate' )
                             $this->objectsToProcess[] = Array('store' => $sub->certificateStore, 'objects' => $sub->certificateStore->getAll());
+                        elseif( $this->utilType == 'gpgateway' )
+                            $this->objectsToProcess[] = array('store' => $sub->GPGatewayStore, 'objects' => $sub->GPGatewayStore->getall());
+                        elseif( $this->utilType == 'gpportal' )
+                            $this->objectsToProcess[] = array('store' => $sub->GPPortalStore, 'objects' => $sub->GPPortalStore->getall());
 
                         $locationFound = TRUE;
                     }
@@ -219,6 +238,14 @@ class NETWORKUTIL extends UTIL
                                     foreach($template->deviceConfiguration->network->virtualRouterStore->getAll() as $vr )
                                         $this->objectsToProcess[] = Array('store' => $vr, 'objects' => $vr->staticRoutes());
                                 }
+                                elseif( $this->utilType == 'gpgateway' )
+                                {
+                                    //gpgateway store only in vsys available
+                                }
+                                elseif( $this->utilType == 'gpportal' )
+                                {
+                                    //gpportal store only in vsys available
+                                }
 
                                 $locationFound = true;
                             }
@@ -239,6 +266,10 @@ class NETWORKUTIL extends UTIL
                                     {}
                                     elseif( $this->utilType == 'certificate' )
                                         $this->objectsToProcess[] = Array('store' => $sub->certificateStore, 'objects' => $sub->certificateStore->getAll());
+                                    elseif( $this->utilType == 'gpgateway' )
+                                        $this->objectsToProcess[] = array('store' => $sub->GPGatewayStore, 'objects' => $sub->GPGatewayStore->getall());
+                                    elseif( $this->utilType == 'gpportal' )
+                                        $this->objectsToProcess[] = array('store' => $sub->GPPortalStore, 'objects' => $sub->GPPortalStore->getall());
 
                                     $locationFound = TRUE;
                                 }

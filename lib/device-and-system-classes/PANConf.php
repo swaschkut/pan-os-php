@@ -679,6 +679,7 @@ class PANConf
         //
         // Extract network related configs
         //
+        //Todo: 20250101 - can network part be moved after vsys reading ?? - virutalsystem reading interfaces, must be done later to get address references
         $tmp = DH::findFirstElement('network', $this->localhostroot);
         if( $tmp !== FALSE )
         {
@@ -702,7 +703,8 @@ class PANConf
 
                 $dg = null;
 
-                if (isset($this->panorama)) {
+                if (isset($this->panorama))
+                {
                     if ($this->panorama->_fakeMode)
                         $dg = $this->panorama->findDeviceGroup($localVirtualSystemName);
                     else

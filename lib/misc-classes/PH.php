@@ -1006,6 +1006,7 @@ class PH
         "rule",
         "device", "securityprofile", "securityprofilegroup",
         "zone",  "interface", "virtualwire", "routing", "dhcp", "certificate", "static-route",
+        "gpgateway", "gpportal",
         "key-manager",
         "address-merger", "addressgroup-merger",
         "service-merger", "servicegroup-merger",
@@ -1102,6 +1103,8 @@ class PH
             || $type == "dhcp"
             || $type == "certificate"
             || $type == "static-route"
+            || $type == "gpgateway"
+            || $type == "gpportal"
         )
             $util = new NETWORKUTIL($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
 

@@ -113,3 +113,11 @@ CertificateCallContext::prepareSupportedActions();
 require_once ( "StaticRouteCallContext.php");
 require_once  "actions-static-route.php";
 StaticRouteCallContext::prepareSupportedActions();
+
+require_once("GPGatewayCallContext.php");
+require_once "actions-gpgateway.php";
+GPGatewayCallContext::prepareSupportedActions();
+
+require_once("GPPortalCallContext.php");
+require_once "actions-gpportal.php";
+GPPortalCallContext::prepareSupportedActions();

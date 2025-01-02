@@ -173,6 +173,12 @@ class VirtualSystem
     /** @var ZoneStore */
     public $zoneStore = null;
 
+    /** @var GPGatewayStore */
+    public $GPGatewayStore = null;
+
+    /** @var GPPortalStore */
+    public $GPPortalStore = null;
+
     /** @var CertificateStore */
     public $certificateStore = null;
 
@@ -235,6 +241,12 @@ class VirtualSystem
 
         $this->zoneStore = new ZoneStore($this);
         $this->zoneStore->setName('zoneStore');
+
+        $this->GPGatewayStore = new GPGatewayStore($this);
+        $this->GPGatewayStore->setName('GPGatewayStore');
+
+        $this->GPPortalStore = new GPPortalStore($this);
+        $this->GPPortalStore->setName('GPPortalStore');
 
         $this->certificateStore = new CertificateStore($this);
         $this->certificateStore->setName('certificateStore');
@@ -778,9 +790,9 @@ class VirtualSystem
                     $interfaces = array();
 
 
-                foreach( $interfaces as $layer3IPv4Address )
+                foreach( $interfaces as $layer3IPAddress )
                 {
-                    $findobject = $this->addressStore->find($layer3IPv4Address);
+                    $findobject = $this->addressStore->find($layer3IPAddress);
                     if( is_object($findobject) )
                         $findobject->addReference($interface);
                 }
@@ -788,7 +800,7 @@ class VirtualSystem
         }
 
         //Todo: addressobject reference missing for: IKE gateway / GP Portal / GP Gateway (where GP is not implemented at all)
-
+        //Todo: addressobject referenc emissing for: static routing
 
         //
         // Extract Zone objects
@@ -973,6 +985,31 @@ class VirtualSystem
             $this->certificateStore->load_from_domxml($tmp);
         }
         // End of Certificate objects extraction
+
+        //
+        // Extract GlobalProtect objects
+        //
+        $tmp_globalprotect = DH::findFirstElement('global-protect', $xml);
+        if( $tmp_globalprotect !== FALSE )
+        {
+            //
+            // Extract GP Gateway objects
+            //
+            $tmp = DH::findFirstElement('global-protect-gateway', $tmp_globalprotect);
+            if( $tmp !== FALSE )
+                $this->GPGatewayStore->load_from_domxml($tmp);
+
+
+            //
+            // Extract GP Portal objects
+            //
+            $tmp = DH::findFirstElement('global-protect-portal', $tmp_globalprotect);
+            if( $tmp !== FALSE )
+                $this->GPPortalStore->load_from_domxml($tmp);
+        }
+        // End of GlobalProtect objects extraction
+
+
     }
 
     public function &getXPath()

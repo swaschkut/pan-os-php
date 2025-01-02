@@ -345,6 +345,10 @@ require_once $basedir . '/network-classes/TunnelIfStore.php';
 require_once $basedir . '/network-classes/TunnelInterface.php';
 require_once $basedir . '/network-classes/VirtualWire.php';
 require_once $basedir . '/network-classes/VirtualWireStore.php';
+require_once $basedir . '/network-classes/GPGateway.php';
+require_once $basedir . '/network-classes/GPGatewayStore.php';
+require_once $basedir . '/network-classes/GPPortal.php';
+require_once $basedir . '/network-classes/GPPortalStore.php';
 
 require_once $basedir . '/network-classes/SharedGatewayStore.php';
 
