@@ -121,3 +121,23 @@ GPGatewayCallContext::prepareSupportedActions();
 require_once("GPPortalCallContext.php");
 require_once "actions-gpportal.php";
 GPPortalCallContext::prepareSupportedActions();
+
+require_once("IKEprofileCallContext.php");
+require_once "actions-ikeprofile.php";
+IKEprofileCallContext::prepareSupportedActions();
+
+require_once("IKEgatewayCallContext.php");
+require_once "actions-ikegateway.php";
+IKEgatewayCallContext::prepareSupportedActions();
+
+require_once("IPsecprofileCallContext.php");
+require_once "actions-ipsecprofile.php";
+IPsecprofileCallContext::prepareSupportedActions();
+
+require_once("IPsectunnelCallContext.php");
+require_once "actions-ipsectunnel.php";
+IPsectunnelCallContext::prepareSupportedActions();
+
+require_once("GREtunnelCallContext.php");
+require_once "actions-gretunnel.php";
+GREtunnelCallContext::prepareSupportedActions();

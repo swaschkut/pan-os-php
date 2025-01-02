@@ -451,6 +451,17 @@ class UTIL
         elseif( $this->utilType == 'gp-portal' )
             $tmp_array = &GPPortalCallContext::$supportedActions;
 
+        elseif( $this->utilType == 'ike-profile' )
+            $tmp_array = &IKEprofileCallContext::$supportedActions;
+        elseif( $this->utilType == 'ike-gateway' )
+            $tmp_array = &IKEgatewayCallContext::$supportedActions;
+        elseif( $this->utilType == 'ipsec-profile' )
+            $tmp_array = &IPsecprofileCallContext::$supportedActions;
+        elseif( $this->utilType == 'ipsec-tunnel' )
+            $tmp_array = &IPsectunnelCallContext::$supportedActions;
+        elseif( $this->utilType == 'gre-tunnel' )
+            $tmp_array = &GREtunnelCallContext::$supportedActions;
+
         return $tmp_array;
     }
 
@@ -1291,6 +1302,16 @@ class UTIL
                 $context = new GPGatewayCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'gp-portal' )
                 $context = new GPPortalCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+            elseif( $this->utilType == 'ike-profile' )
+                $context = new IKEprofileCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+            elseif( $this->utilType == 'ike-gateway' )
+                $context = new IKEgatewayCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+            elseif( $this->utilType == 'ipsec-profile' )
+                $context = new IPsecprofileCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+            elseif( $this->utilType == 'ipsec-tunnel' )
+                $context = new IPsectunnelCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+            elseif( $this->utilType == 'gre-tunnel' )
+                $context = new GREtunnelCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
 
             $context->baseObject = $this->pan;
             if( isset($this->configInput['type'])  )

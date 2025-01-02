@@ -1007,6 +1007,8 @@ class PH
         "device", "securityprofile", "securityprofilegroup",
         "zone",  "interface", "virtualwire", "routing", "dhcp", "certificate", "static-route",
         "gp-gateway", "gp-portal",
+        "ike-profile", "ike-gateway", 'ipsec-profile', 'ipsec-tunnel',
+        "gre-tunnel",
         "key-manager",
         "address-merger", "addressgroup-merger",
         "service-merger", "servicegroup-merger",
@@ -1105,6 +1107,11 @@ class PH
             || $type == "static-route"
             || $type == "gp-gateway"
             || $type == "gp-portal"
+            || $type == "ike-profile"
+            || $type == "ike-gateway"
+            || $type == "ipsec-profile"
+            || $type == "ipsec-tunnel"
+            || $type == "gre-tunnel"
         )
             $util = new NETWORKUTIL($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
 

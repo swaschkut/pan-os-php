@@ -104,7 +104,26 @@ class NETWORKUTIL extends UTIL
                     {
                         //gpportal store only in vsys available
                     }
-
+                    elseif( $this->utilType == 'ike-profile' )
+                    {
+                        $this->objectsToProcess[] = Array('store' => $this->pan->network->ikeCryptoProfileStore, 'objects' => $this->pan->network->ikeCryptoProfileStore->ikeCryptoProfil());
+                    }
+                    elseif( $this->utilType == 'ike-gateway' )
+                    {
+                        $this->objectsToProcess[] = Array('store' => $this->pan->network->ikeGatewayStore, 'objects' => $this->pan->network->ikeGatewayStore->gateways());
+                    }
+                    elseif( $this->utilType == 'ipsec-profile' )
+                    {
+                        $this->objectsToProcess[] = Array('store' => $this->pan->network->ipsecCryptoProfileStore, 'objects' => $this->pan->network->ipsecCryptoProfileStore->ipsecCryptoProfil());
+                    }
+                    elseif( $this->utilType == 'ipsec-tunnel' )
+                    {
+                        $this->objectsToProcess[] = Array('store' => $this->pan->network->ipsecTunnelStore, 'objects' => $this->pan->network->ipsecTunnelStore->tunnels());
+                    }
+                    elseif( $this->utilType == 'gre-tunnel' )
+                    {
+                        $this->objectsToProcess[] = Array('store' => $this->pan->network->greTunnelStore, 'objects' => $this->pan->network->greTunnelStore->tunnels());
+                    }
 
                     $locationFound = TRUE;
                 }
@@ -133,6 +152,14 @@ class NETWORKUTIL extends UTIL
                             {}
                             elseif( $this->utilType == 'gp-portal' )
                             {}
+                            elseif( $this->utilType == 'ike-profile' )
+                            {}
+                            elseif( $this->utilType == 'ike-gateway' )
+                            {}
+                            elseif( $this->utilType == 'ipsec-profile' )
+                            {}
+                            elseif( $this->utilType == 'ipsec-tunnel' )
+                            {}
 
                             $locationFound = TRUE;
                         }
@@ -157,6 +184,15 @@ class NETWORKUTIL extends UTIL
                                 $this->objectsToProcess[] = array('store' => $sub->GPGatewayStore, 'objects' => $sub->GPGatewayStore->getall());
                             elseif( $this->utilType == 'gp-portal' )
                                 $this->objectsToProcess[] = array('store' => $sub->GPPortalStore, 'objects' => $sub->GPPortalStore->getall());
+                            elseif( $this->utilType == 'ike-profile' )
+                            {}
+                            elseif( $this->utilType == 'ike-gateway' )
+                            {}
+                            elseif( $this->utilType == 'ipsec-profile' )
+                            {}
+                            elseif( $this->utilType == 'ipsec-tunnel' )
+                            {}
+
                             $locationFound = TRUE;
                         }
                     }
@@ -184,6 +220,14 @@ class NETWORKUTIL extends UTIL
                             $this->objectsToProcess[] = array('store' => $sub->GPGatewayStore, 'objects' => $sub->GPGatewayStore->getall());
                         elseif( $this->utilType == 'gp-portal' )
                             $this->objectsToProcess[] = array('store' => $sub->GPPortalStore, 'objects' => $sub->GPPortalStore->getall());
+                        elseif( $this->utilType == 'ike-profile' )
+                        {}
+                        elseif( $this->utilType == 'ike-gateway' )
+                        {}
+                        elseif( $this->utilType == 'ipsec-profile' )
+                        {}
+                        elseif( $this->utilType == 'ipsec-tunnel' )
+                        {}
 
                         $locationFound = TRUE;
                     }
@@ -245,6 +289,26 @@ class NETWORKUTIL extends UTIL
                                 elseif( $this->utilType == 'gp-portal' )
                                 {
                                     //gpportal store only in vsys available
+                                }
+                                elseif( $this->utilType == 'ike-profile' )
+                                {
+                                    $this->objectsToProcess[] = Array('store' => $template->deviceConfiguration->network->ikeCryptoProfileStore, 'objects' => $template->deviceConfiguration->network->ikeCryptoProfileStore->ikeCryptoProfil());
+                                }
+                                elseif( $this->utilType == 'ike-gateway' )
+                                {
+                                    $this->objectsToProcess[] = Array('store' => $template->deviceConfiguration->network->ikeGatewayStore, 'objects' => $template->deviceConfiguration->network->ikeGatewayStore->gateways());
+                                }
+                                elseif( $this->utilType == 'ipsec-profile' )
+                                {
+                                    $this->objectsToProcess[] = Array('store' => $template->deviceConfiguration->network->ipsecCryptoProfileStore, 'objects' => $template->deviceConfiguration->network->ipsecCryptoProfileStore->ipsecCryptoProfil());
+                                }
+                                elseif( $this->utilType == 'ipsec-tunnel' )
+                                {
+                                    $this->objectsToProcess[] = Array('store' => $template->deviceConfiguration->network->ipsecTunnelStore, 'objects' => $template->deviceConfiguration->network->ipsecTunnelStore->tunnels());
+                                }
+                                elseif( $this->utilType == 'gre-tunnel' )
+                                {
+                                    $this->objectsToProcess[] = Array('store' => $template->deviceConfiguration->network->greTunnelStore, 'objects' => $template->deviceConfiguration->network->greTunnelStore->tunnels());
                                 }
 
                                 $locationFound = true;
