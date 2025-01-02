@@ -799,9 +799,6 @@ class VirtualSystem
             }
         }
 
-        //Todo: addressobject reference missing for: IKE gateway / GP Portal / GP Gateway (where GP is not implemented at all)
-        //Todo: addressobject referenc emissing for: static routing
-
         //
         // Extract Zone objects
         //

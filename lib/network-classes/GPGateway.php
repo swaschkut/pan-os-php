@@ -35,6 +35,8 @@ class GPGateway
     private $localAddress_ipv4 = NULL;
     private $localAddress_ipv6 = NULL;
 
+    /** @var TunnelInterface */
+    public $remote_user_tunnel;
 
     /**
      * @param string $name
@@ -126,34 +128,25 @@ class GPGateway
         if( strlen($this->name) < 1 )
             derr("GPGateway name '" . $this->name . "' is not valid", $xml);
 
-        /*
-        <local-address>
-           <ip>
-              <ipv4>10.10.0.254/24</ipv4>
-              <ipv6>v6_eth1_2_DNS</ipv6>
-           </ip>
-           <interface>ethernet1/2</interface>
-           <ip-address-family>ipv4_ipv6</ip-address-family>
-        </local-address>
-         */
         $local_address_Node = DH::findFirstElement('local-address', $xml);
         if( $local_address_Node !== FALSE )
         {
             $interface_Node = DH::findFirstElement('interface', $local_address_Node);
             if( $interface_Node !== FALSE )
             {
-                #PH::print_stdout( "Interface: ".$interface_Node->textContent);
                 $this->localAddress_interface = $interface_Node->textContent;
-            }
 
+                $vsys_interfaces = $this->owner->owner->importedInterfaces->getAll();
+                foreach( $vsys_interfaces as $vsys_interface )
+                {
+                    if( $vsys_interface->name() == $this->localAddress_interface )
+                        $vsys_interface->addReference( $this );
+                }
+            }
 
             $ip_address_family__Node = DH::findFirstElement('ip-address-family', $local_address_Node);
             if( $ip_address_family__Node !== FALSE )
-            {
-                #PH::print_stdout( "IP_Familiy: ".$ip_address_family__Node->textContent);
                 $this->localAddress_IPfamiliy = $ip_address_family__Node->textContent;
-            }
-
 
             $ip_Node = DH::findFirstElement('ip', $local_address_Node);
             if( $ip_Node !== FALSE )
@@ -161,25 +154,162 @@ class GPGateway
                 $ipv4_Node = DH::findFirstElement('ipv4', $ip_Node);
                 if( $ipv4_Node !== FALSE )
                 {
-                    #PH::print_stdout( "IPv4: ".$ipv4_Node->textContent);
                     $this->localAddress_ipv4 = $ipv4_Node->textContent;
-                }
 
+                    $tmp_address = $this->owner->owner->addressStore->find($this->localAddress_ipv4);
+                    if( $tmp_address !== False && $tmp_address !== NULL )
+                        $tmp_address->addReference($this);
+                }
 
                 $ipv6_Node = DH::findFirstElement('ipv6', $ip_Node);
                 if( $ipv6_Node !== FALSE )
                 {
-                    #PH::print_stdout( "IPv6: ".$ipv6_Node->textContent);
                     $this->localAddress_ipv6 = $ipv6_Node->textContent;
+
+                    $tmp_address = $this->owner->owner->addressStore->find($this->localAddress_ipv6);
+                    if( $tmp_address !== False && $tmp_address !== NULL )
+                        $tmp_address->addReference($this);
                 }
-
             }
-
         }
 
+        //remote-user-tunnel-configs
+        $remote_user_tunnel_configs_Node = DH::findFirstElement('remote-user-tunnel-configs', $xml);
+        if( $remote_user_tunnel_configs_Node !== FALSE )
+        {
+            foreach( $remote_user_tunnel_configs_Node->childNodes as $remote_tunnel_config_node )
+            {
+                if( $remote_tunnel_config_node->nodeType != XML_ELEMENT_NODE )
+                    continue;
+                /** @var DOMElement $remote_tunnel_config_node */
+
+                //split-tunneling/access-route/childnodes
+                $split_tunneling_Node = DH::findFirstElement('split-tunneling', $remote_tunnel_config_node);
+                if( $split_tunneling_Node !== FALSE )
+                {
+                    $access_route_Node = DH::findFirstElement('access-route', $split_tunneling_Node);
+                    if( $access_route_Node !== FALSE )
+                    {
+                        foreach( $access_route_Node->childNodes as $memberNode )
+                        {
+                            if ($memberNode->nodeType != XML_ELEMENT_NODE)
+                                continue;
+                            /** @var DOMElement $memberNode */
+
+                            $tmp_adress_name = $memberNode->textContent;
+
+                            $tmp_address = $this->owner->owner->addressStore->find($tmp_adress_name);
+                            if( $tmp_address !== False && $tmp_address !== NULL )
+                                $tmp_address->addReference($this);
+                        }
+                    }
+
+
+                    $exclude_access_route_Node = DH::findFirstElement('exclude-access-route', $split_tunneling_Node);
+                    if( $exclude_access_route_Node !== FALSE )
+                    {
+                        foreach( $exclude_access_route_Node->childNodes as $memberNode )
+                        {
+                            if ($memberNode->nodeType != XML_ELEMENT_NODE)
+                                continue;
+                            /** @var DOMElement $memberNode */
+
+                            $tmp_adress_name = $memberNode->textContent;
+
+                            $tmp_address = $this->owner->owner->addressStore->find($tmp_adress_name);
+                            if( $tmp_address !== False && $tmp_address !== NULL )
+                                $tmp_address->addReference($this);
+                        }
+                    }
+                }
+
+                //ip-pool/childnodes
+                $ip_pool_Node = DH::findFirstElement('ip-pool', $remote_tunnel_config_node);
+                if( $ip_pool_Node !== FALSE )
+                {
+                    foreach( $ip_pool_Node->childNodes as $memberNode )
+                    {
+                        if ($memberNode->nodeType != XML_ELEMENT_NODE)
+                            continue;
+                        /** @var DOMElement $memberNode */
+
+                        $tmp_adress_name = $memberNode->textContent;
+
+                        $tmp_address = $this->owner->owner->addressStore->find($tmp_adress_name);
+                        if( $tmp_address !== False && $tmp_address !== NULL )
+                            $tmp_address->addReference($this);
+                    }
+                }
+
+                //authentication-server-ip-pool
+                $authentication_server_ip_pool_Node = DH::findFirstElement('authentication-server-ip-pool', $remote_tunnel_config_node);
+                if( $authentication_server_ip_pool_Node !== FALSE )
+                {
+                    foreach( $authentication_server_ip_pool_Node->childNodes as $memberNode )
+                    {
+                        if ($memberNode->nodeType != XML_ELEMENT_NODE)
+                            continue;
+                        /** @var DOMElement $memberNode */
+
+                        $tmp_adress_name = $memberNode->textContent;
+
+                        $tmp_address = $this->owner->owner->addressStore->find($tmp_adress_name);
+                        if( $tmp_address !== False && $tmp_address !== NULL )
+                            $tmp_address->addReference($this);
+                    }
+                }
+
+                $source_address_Node = DH::findFirstElement('source-address', $remote_tunnel_config_node);
+                if( $source_address_Node !== FALSE )
+                {
+                    $source_ip_address_Node = DH::findFirstElement('ip-address', $source_address_Node);
+                    if($source_ip_address_Node !== FALSE)
+                    {
+                        foreach( $source_ip_address_Node->childNodes as $memberNode )
+                        {
+                            if ($memberNode->nodeType != XML_ELEMENT_NODE)
+                                continue;
+                            /** @var DOMElement $memberNode */
+
+                            $tmp_address = $this->owner->owner->addressStore->find($memberNode->textContent);
+                            if ($tmp_address !== False && $tmp_address !== NULL)
+                                $tmp_address->addReference($this);
+                        }
+                    }
+                    $source_region_Node = DH::findFirstElement('region', $source_address_Node);
+                    if($source_region_Node !== FALSE)
+                    {
+                        foreach( $source_region_Node->childNodes as $memberNode )
+                        {
+                            if ($memberNode->nodeType != XML_ELEMENT_NODE)
+                                continue;
+                            /** @var DOMElement $memberNode */
+
+                            $tmp_address = $this->owner->owner->addressStore->find($memberNode->textContent);
+                            if ($tmp_address !== False && $tmp_address !== NULL)
+                                $tmp_address->addReference($this);
+                        }
+                    }
+                }
+            }
+        }
+
+        $remote_user_tunnel_Node = DH::findFirstElement('remote-user-tunnel', $xml);
+        if( $remote_user_tunnel_Node !== FALSE )
+        {
+            $tmp_remote_user_tunnel = $remote_user_tunnel_Node->textContent;
+
+            $vsys_interfaces = $this->owner->owner->importedInterfaces->getAll();
+            foreach( $vsys_interfaces as $vsys_interface )
+            {
+                if( $vsys_interface->name() == $tmp_remote_user_tunnel )
+                {
+                    $vsys_interface->addReference( $this );
+                    $this->remote_user_tunnel = $vsys_interface;
+                }
+            }
+        }
     }
-
-
 
 
     public function API_setName($newname)

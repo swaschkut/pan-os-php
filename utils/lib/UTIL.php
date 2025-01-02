@@ -446,9 +446,9 @@ class UTIL
         elseif( $this->utilType == 'static-route' )
             $tmp_array = &StaticRouteCallContext::$supportedActions;
 
-        elseif( $this->utilType == 'gpgateway' )
+        elseif( $this->utilType == 'gp-gateway' )
             $tmp_array = &GPGatewayCallContext::$supportedActions;
-        elseif( $this->utilType == 'gpportal' )
+        elseif( $this->utilType == 'gp-portal' )
             $tmp_array = &GPPortalCallContext::$supportedActions;
 
         return $tmp_array;
@@ -1287,9 +1287,9 @@ class UTIL
                 $context = new CertificateCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'static-route' )
                 $context = new StaticRouteCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
-            elseif( $this->utilType == 'gpgateway' )
+            elseif( $this->utilType == 'gp-gateway' )
                 $context = new GPGatewayCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
-            elseif( $this->utilType == 'gpportal' )
+            elseif( $this->utilType == 'gp-portal' )
                 $context = new GPPortalCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
 
             $context->baseObject = $this->pan;

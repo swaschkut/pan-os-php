@@ -26,6 +26,14 @@ GPPortalCallContext::$supportedActions['display'] = Array(
         $object = $context->object;
         PH::print_stdout("     * ".get_class($object)." '{$object->name()}'" );
 
+
+        PH::print_stdout("       - localAddress:" );
+        PH::print_stdout("          - Interface: '{$object->getLocalAddress_interface()}'" );
+        PH::print_stdout("          - IPFamily: '{$object->getLocalAddress_IPfamiliy()}'" );
+        PH::print_stdout("          - IPv4: '{$object->getLocalAddress_ipv4()}'" );
+        PH::print_stdout("          - IPv6: '{$object->getLocalAddress_ipv6()}'" );
+
+
         if( PH::$shadow_displayxmlnode )
         {
             PH::print_stdout(  "" );

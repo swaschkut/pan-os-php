@@ -120,6 +120,10 @@ class RQuery
             $this->contextObject = new ThreatRuleRQueryContext($this);
         elseif( $this->objectType == 'dns-rule' )
             $this->contextObject = new DNSRuleRQueryContext($this);
+        elseif( $this->objectType == 'gp-gateway' )
+            $this->contextObject = new GPGatewayRQueryContext($this);
+        elseif( $this->objectType == 'gp-portal' )
+            $this->contextObject = new GPPortalRQueryContext($this);
         else
             derr("unsupported object type '$objectType'");
 
@@ -714,5 +718,7 @@ require_once 'filters/filters-Certificate.php';
 require_once 'filters/filters-Static-Route.php';
 require_once 'filters/filters-ThreatRule.php';
 require_once 'filters/filters-DNSRule.php';
+require_once 'filters/filters-GPGateway.php';
+require_once 'filters/filters-GPPortal.php';
 
 

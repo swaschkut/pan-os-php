@@ -30,6 +30,11 @@ class GPPortal
 
     private $isTmp = TRUE;
 
+    private $localAddress_interface = NULL;
+    private $localAddress_IPfamiliy = NULL;
+    private $localAddress_ipv4 = NULL;
+    private $localAddress_ipv6 = NULL;
+
 
     /**
      * @param string $name
@@ -121,31 +126,54 @@ class GPPortal
         if( strlen($this->name) < 1 )
             derr("GPPortal name '" . $this->name . "' is not valid", $xml);
 
-        $user_id_Node = DH::findFirstElement('enable-user-identification', $xml);
-        if( $user_id_Node !== FALSE )
+        $portal_config_Node = DH::findFirstElement('portal-config', $xml);
+        if( $portal_config_Node !== FALSE )
         {
-            if( $user_id_Node->textContent === "yes" )
-                $this->userID = TRUE;
-        }
+            $local_address_Node = DH::findFirstElement('local-address', $portal_config_Node);
+            if ($local_address_Node !== FALSE)
+            {
+                $interface_Node = DH::findFirstElement('interface', $local_address_Node);
+                if ($interface_Node !== FALSE)
+                {
+                    $this->localAddress_interface = $interface_Node->textContent;
 
-        $networkNode = DH::findFirstElement('network', $xml);
-
-        if( $networkNode === FALSE )
-            return;
-
-        foreach( $networkNode->childNodes as $node )
-        {
-            if( $node->nodeType != XML_ELEMENT_NODE )
-                continue;
+                    $vsys_interfaces = $this->owner->owner->importedInterfaces->getAll();
+                    foreach ($vsys_interfaces as $vsys_interface) {
+                        if ($vsys_interface->name() == $this->localAddress_interface)
+                            $vsys_interface->addReference($this);
+                    }
+                }
 
 
-            #else
-            #    mwarning("GPPortal type: " . $node->tagName . " is not yet supported.", null, False);
+                $ip_address_family__Node = DH::findFirstElement('ip-address-family', $local_address_Node);
+                if ($ip_address_family__Node !== FALSE)
+                    $this->localAddress_IPfamiliy = $ip_address_family__Node->textContent;
 
+                $ip_Node = DH::findFirstElement('ip', $local_address_Node);
+                if ($ip_Node !== FALSE) {
+                    $ipv4_Node = DH::findFirstElement('ipv4', $ip_Node);
+                    if ($ipv4_Node !== FALSE)
+                    {
+                        $this->localAddress_ipv4 = $ipv4_Node->textContent;
+
+                        $tmp_address = $this->owner->owner->addressStore->find($this->localAddress_ipv4);
+                        if( $tmp_address !== False && $tmp_address !== NULL )
+                            $tmp_address->addReference($this);
+                    }
+
+                    $ipv6_Node = DH::findFirstElement('ipv6', $ip_Node);
+                    if ($ipv6_Node !== FALSE)
+                    {
+                        $this->localAddress_ipv6 = $ipv6_Node->textContent;
+
+                        $tmp_address = $this->owner->owner->addressStore->find($this->localAddress_ipv6);
+                        if( $tmp_address !== False && $tmp_address !== NULL )
+                            $tmp_address->addReference($this);
+                    }
+                }
+            }
         }
     }
-
-
 
 
     public function API_setName($newname)
@@ -164,7 +192,25 @@ class GPPortal
         }
     }
 
+    public function getLocalAddress_interface()
+    {
+        return $this->localAddress_interface;
+    }
 
+    public function getLocalAddress_IPfamiliy()
+    {
+        return $this->localAddress_IPfamiliy;
+    }
+
+    public function getLocalAddress_ipv4()
+    {
+        return $this->localAddress_ipv4;
+    }
+
+    public function getLocalAddress_ipv6()
+    {
+        return $this->localAddress_ipv6;
+    }
 
     public function &getXPath()
     {

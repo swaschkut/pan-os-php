@@ -1,7 +1,7 @@
 <?php
 
 // <editor-fold desc=" ***** GPGateway filters *****" defaultstate="collapsed" >
-RQuery::$defaultFilters['gpgateway']['refcount']['operators']['>,<,=,!'] = array(
+RQuery::$defaultFilters['gp-gateway']['refcount']['operators']['>,<,=,!'] = array(
     'eval' => '$object->countReferences() !operator! !value!',
     'arg' => TRUE,
     'ci' => array(
@@ -9,7 +9,7 @@ RQuery::$defaultFilters['gpgateway']['refcount']['operators']['>,<,=,!'] = array
         'input' => 'input/panorama-8.0.xml'
     )
 );
-RQuery::$defaultFilters['gpgateway']['object']['operators']['is.unused'] = array(
+RQuery::$defaultFilters['gp-gateway']['object']['operators']['is.unused'] = array(
     'Function' => function (GPGatewayRQueryContext $context) {
         return $context->object->countReferences() == 0;
     },
@@ -19,7 +19,7 @@ RQuery::$defaultFilters['gpgateway']['object']['operators']['is.unused'] = array
         'input' => 'input/panorama-8.0.xml'
     )
 );
-RQuery::$defaultFilters['gpgateway']['name']['operators']['is.in.file'] = array(
+RQuery::$defaultFilters['gp-gateway']['name']['operators']['is.in.file'] = array(
     'Function' => function (GPGatewayRQueryContext $context) {
         $object = $context->object;
 
@@ -49,7 +49,7 @@ RQuery::$defaultFilters['gpgateway']['name']['operators']['is.in.file'] = array(
     'arg' => TRUE
 );
 
-RQuery::$defaultFilters['gpgateway']['name']['operators']['eq'] = array(
+RQuery::$defaultFilters['gp-gateway']['name']['operators']['eq'] = array(
     'Function' => function (GPGatewayRQueryContext $context) {
         return $context->object->name() == $context->value;
     },
@@ -59,7 +59,7 @@ RQuery::$defaultFilters['gpgateway']['name']['operators']['eq'] = array(
         'input' => 'input/panorama-8.0.xml'
     )
 );
-RQuery::$defaultFilters['gpgateway']['name']['operators']['eq.nocase'] = array(
+RQuery::$defaultFilters['gp-gateway']['name']['operators']['eq.nocase'] = array(
     'Function' => function (GPGatewayRQueryContext $context) {
         return strtolower($context->object->name()) == strtolower($context->value);
     },
@@ -69,7 +69,7 @@ RQuery::$defaultFilters['gpgateway']['name']['operators']['eq.nocase'] = array(
         'input' => 'input/panorama-8.0.xml'
     )
 );
-RQuery::$defaultFilters['gpgateway']['name']['operators']['contains'] = array(
+RQuery::$defaultFilters['gp-gateway']['name']['operators']['contains'] = array(
     'Function' => function (GPGatewayRQueryContext $context) {
         return strpos($context->object->name(), $context->value) !== FALSE;
     },
@@ -79,7 +79,7 @@ RQuery::$defaultFilters['gpgateway']['name']['operators']['contains'] = array(
         'input' => 'input/panorama-8.0.xml'
     )
 );
-RQuery::$defaultFilters['gpgateway']['name']['operators']['regex'] = array(
+RQuery::$defaultFilters['gp-gateway']['name']['operators']['regex'] = array(
     'Function' => function (GPGatewayRQueryContext $context) {
         $object = $context->object;
         $value = $context->value;
@@ -106,7 +106,7 @@ RQuery::$defaultFilters['gpgateway']['name']['operators']['regex'] = array(
         'input' => 'input/panorama-8.0.xml'
     )
 );
-RQuery::$defaultFilters['gpgateway']['location']['operators']['is'] = array(
+RQuery::$defaultFilters['gp-gateway']['location']['operators']['is'] = array(
     'Function' => function (GPGatewayRQueryContext $context) {
         $owner = $context->object->owner->owner;
         if( strtolower($context->value) == 'shared' )
@@ -128,7 +128,7 @@ RQuery::$defaultFilters['gpgateway']['location']['operators']['is'] = array(
         'input' => 'input/panorama-8.0.xml'
     )
 );
-RQuery::$defaultFilters['gpgateway']['location']['operators']['regex'] = array(
+RQuery::$defaultFilters['gp-gateway']['location']['operators']['regex'] = array(
     'Function' => function (GPGatewayRQueryContext $context) {
         $name = $context->object->getLocationString();
         $matching = preg_match($context->value, $name);
@@ -144,7 +144,7 @@ RQuery::$defaultFilters['gpgateway']['location']['operators']['regex'] = array(
         'input' => 'input/panorama-8.0.xml'
     )
 );
-RQuery::$defaultFilters['gpgateway']['location']['operators']['is.child.of'] = array(
+RQuery::$defaultFilters['gp-gateway']['location']['operators']['is.child.of'] = array(
     'Function' => function (GPGatewayRQueryContext $context) {
         $zone_location = $context->object->getLocationString();
 
@@ -195,7 +195,7 @@ RQuery::$defaultFilters['gpgateway']['location']['operators']['is.child.of'] = a
         'input' => 'input/panorama-8.0.xml'
     )
 );
-RQuery::$defaultFilters['gpgateway']['location']['operators']['is.parent.of'] = array(
+RQuery::$defaultFilters['gp-gateway']['location']['operators']['is.parent.of'] = array(
     'Function' => function (GPGatewayRQueryContext $context) {
         $zone_location = $context->object->getLocationString();
 
@@ -248,7 +248,7 @@ RQuery::$defaultFilters['gpgateway']['location']['operators']['is.parent.of'] = 
         'input' => 'input/panorama-8.0.xml'
     )
 );
-RQuery::$defaultFilters['gpgateway']['reflocation']['operators']['is'] = array(
+RQuery::$defaultFilters['gp-gateway']['reflocation']['operators']['is'] = array(
     'Function' => function (GPGatewayRQueryContext $context) {
         $object = $context->object;
         $owner = $context->object->owner->owner;
@@ -291,7 +291,7 @@ RQuery::$defaultFilters['gpgateway']['reflocation']['operators']['is'] = array(
         'input' => 'input/panorama-8.0.xml'
     )
 );
-RQuery::$defaultFilters['gpgateway']['reflocation']['operators']['is.only'] = array(
+RQuery::$defaultFilters['gp-gateway']['reflocation']['operators']['is.only'] = array(
     'Function' => function (GPGatewayRQueryContext $context) {
         $owner = $context->object->owner->owner;
         $reflocations = $context->object->getReferencesLocation();
@@ -327,7 +327,7 @@ RQuery::$defaultFilters['gpgateway']['reflocation']['operators']['is.only'] = ar
         'input' => 'input/panorama-8.0.xml'
     )
 );
-RQuery::$defaultFilters['gpgateway']['refstore']['operators']['is'] = array(
+RQuery::$defaultFilters['gp-gateway']['refstore']['operators']['is'] = array(
     'Function' => function (GPGatewayRQueryContext $context) {
         $value = $context->value;
         $value = strtolower($value);
@@ -348,7 +348,7 @@ RQuery::$defaultFilters['gpgateway']['refstore']['operators']['is'] = array(
         'input' => 'input/panorama-8.0.xml'
     )
 );
-RQuery::$defaultFilters['gpgateway']['reftype']['operators']['is'] = array(
+RQuery::$defaultFilters['gp-gateway']['reftype']['operators']['is'] = array(
     'Function' => function (GPGatewayRQueryContext $context) {
         $value = $context->value;
         $value = strtolower($value);

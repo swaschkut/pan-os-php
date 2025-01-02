@@ -190,6 +190,9 @@ require_once $basedir . '/misc-classes/CertificateRQueryContext.php';
 
 require_once $basedir . '/misc-classes/StaticRouteRQueryContext.php';
 
+require_once $basedir . '/misc-classes/GPGatewayRQueryContext.php';
+require_once $basedir . '/misc-classes/GPPortalRQueryContext.php';
+
 require_once $basedir . '/misc-classes/CsvParser.php';
 require_once $basedir . '/misc-classes/trait/PanSubHelperTrait.php';
 require_once $basedir . '/misc-classes/PanAPIConnector.php';

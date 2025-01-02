@@ -395,7 +395,7 @@ foreach( $template_array as $template )
             foreach( $ipsec as $ipsecCryptoProfil )
             {
                 PH::print_stdout( " - ".$ipsecCryptoProfil->name() . " - protocol: " . $ipsecCryptoProfil->ipsecProtocol );
-                $text = "encryption: " . $ipsecCryptoProfil->encryption . " - authentication: " . $ipsecCryptoProfil->authentication . " - dhgroup: " . $ipsecCryptoProfil->dhgroup;
+                $text = "      encryption: " . $ipsecCryptoProfil->encryption . " - authentication: " . $ipsecCryptoProfil->authentication . " - dhgroup: " . $ipsecCryptoProfil->dhgroup;
 
                 if( $ipsecCryptoProfil->lifetime_seconds != "" )
                     $text .= " - lifetime: " . $ipsecCryptoProfil->lifetime_seconds . " seconds";
@@ -466,14 +466,15 @@ foreach( $template_array as $template )
 
             foreach( $ipsecTunnel as $tunnel )
             {
-                $text = " - "."Tunnel: " . str_pad($tunnel->name(), 25) . " - IKE Gateway: " . $tunnel->gateway;
+                $text = "\n";
+                $text .= " - "."Tunnel: " . str_pad($tunnel->name(), 25) . " - IKE Gateway: " . $tunnel->gateway;
                 $text .= " - interface: " . $tunnel->interface . " - proposal: " . $tunnel->proposal;
                 $text .= " -disabled: " . $tunnel->disabled;
                 PH::print_stdout($text);
 
                 foreach( $tunnel->proxyIdList() as $proxyId )
                 {
-                    $text = "  - Name: " . $proxyId['name'] . " - ";
+                    $text = "   - Name: " . $proxyId['name'] . " - ";
                     $text .= "local: " . $proxyId['local'] . " - ";
                     $text .= "remote: " . $proxyId['remote'] . " - ";
                     $text .= "protocol: " . $proxyId['protocol']['type'] . " - ";

@@ -9,7 +9,8 @@ UTIL:
 * develop day1config bp_config_validation.php
 * develop extend bp_config check also with UI
 * develop optimise bp_secprof_test.php
-* type=gpgateway/gpportal | introduce GPGateway / GPPortal reading
+* type=gp-gateway/gp-portal | introduce GPGateway / GPPortal reading
+* class IKEGateway/IPsectunnel extend to reference interface and address objects
 
 BUGFIX:
 * type=securityprofile securityprofiletype=spyware actions=best-practice-set | bugfix
