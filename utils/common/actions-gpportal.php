@@ -26,6 +26,12 @@ GPPortalCallContext::$supportedActions['display'] = Array(
         $object = $context->object;
         PH::print_stdout("     * ".get_class($object)." '{$object->name()}'" );
 
+        if( PH::$shadow_displayxmlnode )
+        {
+            PH::print_stdout(  "" );
+            DH::DEBUGprintDOMDocument($context->object->xmlroot);
+        }
+
         PH::print_stdout();
     },
 

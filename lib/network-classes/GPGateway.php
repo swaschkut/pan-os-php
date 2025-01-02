@@ -30,6 +30,11 @@ class GPGateway
 
     private $isTmp = TRUE;
 
+    private $localAddress_interface = NULL;
+    private $localAddress_IPfamiliy = NULL;
+    private $localAddress_ipv4 = NULL;
+    private $localAddress_ipv6 = NULL;
+
 
     /**
      * @param string $name
@@ -121,28 +126,57 @@ class GPGateway
         if( strlen($this->name) < 1 )
             derr("GPGateway name '" . $this->name . "' is not valid", $xml);
 
-        $user_id_Node = DH::findFirstElement('enable-user-identification', $xml);
-        if( $user_id_Node !== FALSE )
+        /*
+        <local-address>
+           <ip>
+              <ipv4>10.10.0.254/24</ipv4>
+              <ipv6>v6_eth1_2_DNS</ipv6>
+           </ip>
+           <interface>ethernet1/2</interface>
+           <ip-address-family>ipv4_ipv6</ip-address-family>
+        </local-address>
+         */
+        $local_address_Node = DH::findFirstElement('local-address', $xml);
+        if( $local_address_Node !== FALSE )
         {
-            if( $user_id_Node->textContent === "yes" )
-                $this->userID = TRUE;
+            $interface_Node = DH::findFirstElement('interface', $local_address_Node);
+            if( $interface_Node !== FALSE )
+            {
+                #PH::print_stdout( "Interface: ".$interface_Node->textContent);
+                $this->localAddress_interface = $interface_Node->textContent;
+            }
+
+
+            $ip_address_family__Node = DH::findFirstElement('ip-address-family', $local_address_Node);
+            if( $ip_address_family__Node !== FALSE )
+            {
+                #PH::print_stdout( "IP_Familiy: ".$ip_address_family__Node->textContent);
+                $this->localAddress_IPfamiliy = $ip_address_family__Node->textContent;
+            }
+
+
+            $ip_Node = DH::findFirstElement('ip', $local_address_Node);
+            if( $ip_Node !== FALSE )
+            {
+                $ipv4_Node = DH::findFirstElement('ipv4', $ip_Node);
+                if( $ipv4_Node !== FALSE )
+                {
+                    #PH::print_stdout( "IPv4: ".$ipv4_Node->textContent);
+                    $this->localAddress_ipv4 = $ipv4_Node->textContent;
+                }
+
+
+                $ipv6_Node = DH::findFirstElement('ipv6', $ip_Node);
+                if( $ipv6_Node !== FALSE )
+                {
+                    #PH::print_stdout( "IPv6: ".$ipv6_Node->textContent);
+                    $this->localAddress_ipv6 = $ipv6_Node->textContent;
+                }
+
+            }
+
         }
 
-        $networkNode = DH::findFirstElement('network', $xml);
-
-        if( $networkNode === FALSE )
-            return;
-
-        foreach( $networkNode->childNodes as $node )
-        {
-            if( $node->nodeType != XML_ELEMENT_NODE )
-                continue;
-
-
-            #else
-            #    mwarning("GPGateway type: " . $node->tagName . " is not yet supported.", null, False);
-
-        }
     }
 
 
@@ -165,6 +199,25 @@ class GPGateway
     }
 
 
+    public function getLocalAddress_interface()
+    {
+        return $this->localAddress_interface;
+    }
+
+    public function getLocalAddress_IPfamiliy()
+    {
+        return $this->localAddress_IPfamiliy;
+    }
+
+    public function getLocalAddress_ipv4()
+    {
+        return $this->localAddress_ipv4;
+    }
+
+    public function getLocalAddress_ipv6()
+    {
+        return $this->localAddress_ipv6;
+    }
 
     public function &getXPath()
     {

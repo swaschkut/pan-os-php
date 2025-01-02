@@ -2901,6 +2901,26 @@ var subjectObject =
         "action": [],
         "filter": []
     },
+    "gpgateway": {
+        "name": "gpgateway",
+        "action": {
+            "display": {
+                "name": "display",
+                "MainFunction": {}
+            }
+        },
+        "filter": []
+    },
+    "gpportal": {
+        "name": "gpportal",
+        "action": {
+            "display": {
+                "name": "display",
+                "MainFunction": {}
+            }
+        },
+        "filter": []
+    },
     "gratuitous-arp": {
         "name": "gratuitous-arp",
         "action": [],
@@ -6676,9 +6696,10 @@ var subjectObject =
                             "UsedInLocation",
                             "TotalUse",
                             "BestPractice",
-                            "Visibility"
+                            "Visibility",
+                            "URLmembers"
                         ],
-                        "help": "pipe(|) separated list of additional fields (ie: Arg1|Arg2|Arg3...) to include in the report. The following is available:\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n  - WhereUsed : list places where object is used (rules, groups ...)\n  - TotalUse : list a counter how often this object is used\n  - BestPractice : show if BestPractice is configured\n  - Visibility : show if SP log is configured\n"
+                        "help": "pipe(|) separated list of additional fields (ie: Arg1|Arg2|Arg3...) to include in the report. The following is available:\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n  - WhereUsed : list places where object is used (rules, groups ...)\n  - TotalUse : list a counter how often this object is used\n  - BestPractice : show if BestPractice is configured\n  - Visibility : show if SP log is configured\n  - URLmembers : add URL members also if bestpractice or visibility is added\n"
                     }
                 }
             },
