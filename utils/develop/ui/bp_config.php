@@ -18,7 +18,6 @@ else
 /**
  * ISC License
  *
- * Copyright (c) 2019, Palo Alto Networks Inc.
  * Copyright (c) 2024, Sven Waschkut - pan-os-php@waschkut.net
  *
  * Permission to use, copy, modify, and/or distribute this software for any
@@ -103,6 +102,8 @@ else
                     load BP config from JSON-file:
 
                     <input type="button" value="Clear TextArea" onclick="eraseTextBP();">
+                    <input type="button" value="update JSON Table" onclick="updateTableBP();">
+                    <input type="button" value="clear JSON Table" onclick="clearTableBP();">
                     <form method="post">
                         <textarea disabled id="js-textareaBP" style="width:100%" ></textarea>
                         <input type="file" id="js-fileBP" accept=".txt,.json" onclick="this.value=null">
@@ -718,6 +719,17 @@ else
 "comment": ""
 }
 ];
+
+    function updateTableBP( )
+    {
+        //data = $("#js-textareaBP").val()
+        //createTableFromJSON_bp( JSON.stringify(data, null, 2) );
+    }
+
+    function clearTableBP()
+    {
+        $("#myTable tr").remove();
+    }
 
     createTableFromJSON_bp(  JSON.stringify(jsonData, null, 2) );
 

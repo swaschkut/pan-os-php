@@ -1023,7 +1023,7 @@ function createTableFromJSON_bp( textValue )
     //intermediate; display file value
     $("#js-textareaBP").val( textValue );
     //setHeight($("#js-textarea"));
-    $("#js-textareaBP").height( '400px' );
+    $("#js-textareaBP").height( '300px' );
 
     tableRemoveAllBP();
     //missing stuff, check that all additional columns actions / filters are also removed
@@ -1095,7 +1095,7 @@ function createTableFromJSON_bp_secprof( textValue )
     //intermediate; display file value
     $("#js-textareaBPsecprof").val( textValue );
     //setHeight($("#js-textarea"));
-    $("#js-textareaBPsecprof").height( '400px' );
+    $("#js-textareaBPsecprof").height( '300px' );
 
     tableRemoveAllBPsecprof();
     //missing stuff, check that all additional columns actions / filters are also removed
