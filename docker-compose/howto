@@ -1,0 +1,8 @@
+alias pan-os-php-cli="docker run --name panosphp --rm -v .:/share -it swaschkut/pan-os-php-cli:develop pan-os-php"
+alias pan-os-php="docker run --name panosphp --rm -v .:/share -it swaschkut/pan-os-php:develop pan-os-php"
+alias docker-pan-os-php="docker run --name panosphp --rm -v .:/share -it swaschkut/pan-os-php:develop"
+alias docker-pan-os-php-cli="docker run --name panosphpcli --rm -v .:/share -it swaschkut/pan-os-php-cli:develop"
+alias docker-compose-pan-os-php-up="docker-compose -f [full_path_to]/docker_compose/docker-compose.yml up -d"
+alias docker-compose-pan-os-php-down="docker-compose -f [full_path_to]/docker_compose/docker-compose.yml down"
+alias docker-pan-os-php-api='docker run -d -p 8082:80 --mount type=bind,source="[full_path_to]/pan-os-php",target=/var/www/html -v [full_path_to]/pan-os-php/var/docker/uploads.ini:/usr/local/etc/php/conf.d/uploads.ini php:apache'
+alias pan-os-php-local='php -r "require_once '"'"'[full_path_to]/pan-os-php/utils/pan-os-php.php'"'"';" $@'
