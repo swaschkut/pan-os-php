@@ -282,7 +282,9 @@ function UTILcaller( $url_pieces, $argv, $argc, $PHP_FILE )
             {
                 if( $key == "in" )
                 {
-                    unset( $argv[1] );
+                    //Todo: swaschkut 20250103 - this was the issue that actions was mostly used with actions=display default
+                    //why this is/was there????
+                    #unset( $argv[1] );
                     if( strpos( $get, "api" ) === false )
                         $get = $projects_folder."/".$get;
                     else
