@@ -52,7 +52,7 @@
 		          class="btn btn-primary">LOGIN</button>
             <a href="create-login.php">CREATE USER</a>
 		</form>
-
+          <a href="../index.php">MAIN page</a>
       </div>
 </body>
 </html>
