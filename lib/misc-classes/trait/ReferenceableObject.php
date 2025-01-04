@@ -537,6 +537,8 @@ trait ReferenceableObject
                 else
                     return FALSE;
             }
+
+            return TRUE;
         }
 
         return FALSE;
