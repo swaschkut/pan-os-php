@@ -12,6 +12,7 @@ UTIL:
 * type=gp-gateway/gp-portal | introduce GPGateway / GPPortal reading
 * class IKEGateway/IPsectunnel extend to reference interface and address objects
 * introduction for type=ike-profile/ike-gateway/ipsec-profile/ipsec-tunnel/gre-tunnel
+* type=address | introduce 'actions=display-xpath-usage'
 
 BUGFIX:
 * type=securityprofile securityprofiletype=spyware actions=best-practice-set | bugfix

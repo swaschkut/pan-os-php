@@ -3083,6 +3083,47 @@ AddressCallContext::$supportedActions[] = array(
     },
 );
 
+AddressCallContext::$supportedActions[] = array(
+    'name' => 'display-xpath-usage',
+    'MainFunction' => function (AddressCallContext $context) {
+        /** @var Address $object */
+        $object = $context->object;
+
+        //------------------------
+        $qualifiedNodeName = '//*[text()="'.$object->name().'"]';
+        $xmlDoc = $object->owner->owner->xmldoc;
+        $string1 = "";
+        DH::getXpathDisplay( $string1, $xmlDoc, $qualifiedNodeName, "test", false, "display" );
+
+
+        //------------------------
+        $fullxpath = false;
+        $displayAPIcommand = false;
+        $displayXMLlineno = false;
+        $displayAttributeName = false;
+        $pan = false;
+
+        $displayXMLnode = false;
+        $qualifiedNodeName = "entry";
+        $nameattribute = $object->name();
+
+        $own_xpath = $object->getXPath();
+
+        $xpath = null;
+        $string2 = "";
+        DH::getXpathDisplayMain( $string2, $xmlDoc, $qualifiedNodeName, $nameattribute, $xpath, $displayXMLnode, $displayAttributeName, $displayXMLlineno, $fullxpath, $displayAPIcommand, $pan, $own_xpath );
+
+        //------------------------
+        if( !empty($string1) )
+            $context->objectList[$object->name()][] = $string1;
+        if( !empty($string2) )
+            $context->objectList[$object->name()][] = $string2;
+    },
+    'GlobalFinishFunction' => function (AddressCallContext $context) {
+        print_r( $context->objectList );
+    }
+);
+
 AddressCallContext::$supportedActions['create-Address'] = array(
     'name' => 'create-address',
     'MainFunction' => function (AddressCallContext $context) {

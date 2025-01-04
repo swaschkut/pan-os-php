@@ -538,10 +538,12 @@ trait ReferenceableObject
                     return FALSE;
             }
 
+            //Todo: check also childDg if same name is available,
+            //for shared level, as this has no parentStore
             return TRUE;
         }
 
-        return FALSE;
+        return false;
     }
 
     public function objectIsUnusedRecursive()

@@ -971,6 +971,337 @@ class DH
         return false;
     }
 
+    static public function getXpathDisplay( &$string, $xmlDoc, $xpath, $serial, $entry = false, $actions = "display" )
+    {
+        $padding = "   ";
+        global $jsonArray;
+
+        $string .= "\n";
+
+        $text_contains_search = false;
+
+        PH::$JSON_TMP[$serial]['serial'] = $serial;
+        //check Xpath
+        $xpathResult = DH::findXPath( $xpath, $xmlDoc);
+        $tmp_string = "  * XPATH: " . $xpath;
+        $string .= $padding . $tmp_string . "\n";
+        //PH::print_stdout( $tmp_string );
+
+        if( strpos($xpath, "[text()") !== FALSE )
+            $text_contains_search = true;
+
+        PH::$JSON_TMP[$serial]['xpath'] = $xpath;
+
+        foreach( $xpathResult as $xpath1 )
+        {
+            if($text_contains_search)
+            {
+                /** @var DOMElement $xpath1 */
+                $string .= "\n";
+                //PH::print_stdout();
+                $nodePath = $xpath1->getNodePath();
+
+                $tmp_string = "   * XPATH: ".$nodePath;
+                $string .= $padding.$tmp_string."\n";
+                //PH::print_stdout( $tmp_string );
+
+                $tmpArray = explode("]", $nodePath);
+                $tmp_path = "";
+                foreach( $tmpArray as $key => $path_tmp )
+                {
+                    if( strpos($path_tmp, "[") === FALSE )
+                        continue;
+
+                    if( !empty($path_tmp) )
+                    {
+                        $newstring = substr($path_tmp, -7);
+                        if( strpos( $newstring, "[" ) !== false )
+                            $tmp_path .= $path_tmp."]";
+
+                        $xpathResult = DH::findXPath( $tmp_path, $xmlDoc);
+                        if( $xpathResult[0]->hasAttribute('name') )
+                        {
+                            $tmp_string = "    - "."entry[@name='".$xpathResult[0]->getAttribute('name')."']";
+                            $string .= $padding.$tmp_string."\n";
+                            //PH::print_stdout( $tmp_string );
+                        }
+                        else
+                        {
+                            $tmp_string = "    - ".$xpathResult[0]->nodeName;
+                            $string .= $padding.$tmp_string."\n";
+                            //PH::print_stdout( $tmp_string );
+                        }
+                    }
+                }
+            }
+
+            $newdoc = new DOMDocument;
+            $node = $newdoc->importNode($xpath1, true);
+            $newdoc->appendChild($node);
+
+            if( $entry === false )
+            {
+                $lineReturn = TRUE;
+                $indentingXmlIncreament = 3;
+                $indentingXml = 0;
+                $xml = &DH::dom_to_xml($newdoc->documentElement, $indentingXml, $lineReturn, -1, $indentingXmlIncreament);
+
+                $tmp_string = $padding."      * VALUE: ";
+                $string .= $padding.$tmp_string."\n";
+                //PH::print_stdout( $tmp_string );
+                $xml = str_replace( "\n", "\n".$padding."           ", $xml );
+                $tmp_string = $padding."           ".$xml;
+                $string .= $tmp_string."\n";
+                //PH::print_stdout( $xml );
+                PH::$JSON_TMP[$serial]['value'] = $xml;
+            }
+            else
+            {
+                foreach( $node->childNodes as $child )
+                {
+                    if( $child->nodeType != XML_ELEMENT_NODE )
+                        continue;
+                    if( $child->getAttribute('name') !== "" )
+                    {
+                        $tmp_string = "     - name: ". $child->getAttribute('name');
+                        $string .= $padding.$tmp_string."\n";
+                        //PH::print_stdout( $tmp_string );
+                    }
+                }
+            }
+
+
+            if( $actions === "remove" )
+            {
+                PH::print_stdout("remove xpath!!!");
+                $xpath1->parentNode->removeChild($xpath1);
+            }
+
+            if( strpos( $actions, 'set-text:' ) !== FALSE )
+            {
+                $array = explode( ":", $actions );
+                if( isset( $array[1] ) )
+                {
+                    $tmpText = $array[1];
+                    PH::print_stdout("set xpath Text: ".$array[1]);
+                    $xpath1->textContent = $array[1];
+
+                    DH::DEBUGprintDOMDocument($xpath1);
+                }
+            }
+
+            if( strpos( $actions, 'manipulate:' ) !== FALSE )
+            {
+                print_r($jsonArray);
+            }
+
+        }
+
+
+        #if( count($xpathResult) > 0 )
+        #    PH::print_stdout($string);
+        if( count($xpathResult) == 0 )
+            $string = "";
+    }
+
+    static public function getXpathDisplayMain( &$string, $xmlDoc, $qualifiedNodeName, $nameattribute, $xpath, $displayXMLnode, $displayAttributeName, $displayXMLlineno, $fullxpath, $displayAPIcommand, $pan, $own_xpath = null )
+    {
+        $padding = "   ";
+
+        //$string .= "\n";
+
+        $nodeList = $xmlDoc->getElementsByTagName($qualifiedNodeName);
+        $nodeArray = iterator_to_array($nodeList);
+
+        $templateEntryArray = array();
+        foreach( $nodeArray as $item )
+        {
+            if( $nameattribute !== null )
+            {
+                $XMLnameAttribute = DH::findAttribute("name", $item);
+                if( $XMLnameAttribute === FALSE )
+                    continue;
+
+                if( $XMLnameAttribute !== $nameattribute )
+                    continue;
+            }
+            $text = DH::elementToPanXPath($item);
+            $replace_template = "/config/devices/entry[@name='localhost.localdomain']/template/";
+
+            if( $xpath !== null && strpos($text, $xpath) === FALSE )
+                continue;
+
+            if( strpos($text, $replace_template) !== FALSE )
+            {
+                $tmpArray['xpath'] = $text;
+                $text = str_replace($replace_template, "", $text);
+
+                $templateXpathArray = explode("/", $text);
+
+                $templateName = str_replace("entry[@name='", "", $templateXpathArray[0]);
+                $templateName = str_replace("']", "", $templateName);
+
+                $replace = "entry[@name='" . $templateName . "']";
+                $text = str_replace($replace, "", $text);
+
+                $tmpArray['text'] = $text;
+                $tmpArray['node'] = $item;
+                $tmpArray['line'] = $item->getLineNo();
+
+                $templateEntryArray['template'][$templateName][] = $tmpArray;
+
+            }
+            else
+            {
+                $tmpArray['text'] = $text;
+                $tmpArray['node'] = $item;
+                $tmpArray['line'] = $item->getLineNo();
+
+                $templateEntryArray['misc'][] = $tmpArray;
+            }
+
+        }
+
+
+        if( isset($templateEntryArray['template']) )
+        {
+            foreach( $templateEntryArray['template'] as $templateName => $templateEntry )
+            {
+                //$string .= "\n";
+                //PH::print_stdout();
+                $tmp_string = "TEMPLATE: " . $templateName;
+                $string .= $padding.$tmp_string."\n";
+                //PH::print_stdout($tmp_string);
+                foreach( $templateEntry as $item )
+                {
+                    $xpath = $item['xpath'];
+                    //$string .= "\n";
+                    //PH::print_stdout();
+                    //PH::print_stdout("---------");
+                    if( !$displayXMLnode && !$displayAttributeName )
+                    {
+                        $tmp_string = "   * XPATH: ".$xpath;
+                        $string .= $padding.$tmp_string."\n";
+                    }
+
+
+                    if( $displayXMLlineno )
+                    {
+                        $tmp_string = "   * line: ".$item['line'];
+                        $string .= $padding.$tmp_string."\n";
+                    }
+
+                    if( $fullxpath )
+                    {
+                        $tmp_string = "     |" . $xpath . "|";
+                        $string .= $padding.$tmp_string."\n";
+                    }
+
+
+                    if( $displayXMLnode )
+                    {
+                        $tmp_string = "";
+                        DH::getXpathDisplay( $tmp_string, $xmlDoc, $xpath, "test", false, "display");
+                        $string .= $tmp_string;
+                    }
+
+                    if( $displayAttributeName )
+                    {
+                        $tmp_string = "";
+                        DH::getXpathDisplay( $tmp_string, $xmlDoc, $xpath, "test", true, "display");
+                        $string .= $tmp_string;
+                    }
+
+                }
+
+                $string .= "\n";
+            }
+        }
+
+        if( isset($templateEntryArray['misc']) )
+        {
+            //$tmp_string = "MISC:";
+            //$string .= $padding.$tmp_string."\n";
+            //PH::print_stdout($tmp_string);
+
+            foreach( $templateEntryArray['misc'] as $miscEntry )
+            {
+                $xpath = $miscEntry['text'];
+
+                //$string .= "\n";
+                //PH::print_stdout();
+                //PH::print_stdout("---------");
+
+                if( !$displayXMLnode && !$displayAttributeName )
+                {
+                    if( $own_xpath !== null )
+                    {
+                        if( $own_xpath !== $xpath )
+                        {
+                            $tmp_string = "   * XPATH: ".$xpath ;
+                            $string .= $padding.$tmp_string."\n";
+                        }
+                    }
+                    else
+                    {
+                        $tmp_string = "   * XPATH: ".$xpath ;
+                        $string .= $padding.$tmp_string."\n";
+                    }
+                }
+
+                if( $displayXMLlineno )
+                {
+                    $tmp_string = "   * line: ".$miscEntry['line'];
+                    $string .= $padding.$tmp_string."\n";
+                }
+
+                if( $displayXMLnode )
+                {
+                    $tmp_string = "";
+                    DH::getXpathDisplay( $tmp_string, $xmlDoc, $xpath, "test", false, "display");
+                    $string .= $tmp_string;
+                }
+                if( $displayAttributeName )
+                {
+                    $tmp_string = "";
+                    DH::getXpathDisplay( $tmp_string, $xmlDoc, $xpath, "test", true, "display");
+                    $string .= $tmp_string;
+                }
+
+
+                if( $displayAPIcommand )
+                {
+                    $splitXPATH = explode( "/", PH::$JSON_TMP["test"]["xpath"] );
+                    array_pop($splitXPATH);
+                    $newXpath = "";
+                    foreach( $splitXPATH as $entry )
+                    {
+                        $newXpath .= "/".$entry;
+                    }
+                    $newXpath = str_replace("//", "/", $newXpath);
+                    $newValue = str_replace("\n", "", PH::$JSON_TMP["test"]["value"]);
+
+                    if( $pan->connector !==  null )
+                    {
+                        $FIREWALL_IP = $pan->connector->apihost;
+                        $APIkey = $pan->connector->apikey;
+                    }
+                    else
+                    {
+                        $FIREWALL_IP = "{FW-MGMT-IP}\n";
+                        $APIkey = "{API-KEY}\n";
+                    }
+
+
+                    $string .= "----------------";
+                    $string .= "https://".$FIREWALL_IP."/api/?"."key=".$APIkey."\n&type=config&action=set&xpath=".$newXpath."\n&element=".$newValue ;
+                    $string .= "----------------";
+                }
+            }
+        }
+    }
+
+
     //todo: 20210615 swaschkut
     //merge two XML node // DomDocument
 }
