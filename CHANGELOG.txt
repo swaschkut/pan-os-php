@@ -16,6 +16,7 @@ UTIL:
 BUGFIX:
 * type=securityprofile securityprofiletype=spyware actions=best-practice-set | bugfix
 * type=static-route | bugfix for NGFW if address objects are used as reference
+* type=address 'filter=(object is.unused)' | bugfix for unused objects at shared level
 
 GENERAL:
 * code optimisation
