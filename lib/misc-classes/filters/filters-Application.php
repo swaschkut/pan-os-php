@@ -227,12 +227,6 @@ RQuery::$defaultFilters['application']['subcategory']['operators']['eq'] = array
 RQuery::$defaultFilters['application']['apptag']['operators']['has'] = array(
     'Function' => function (ApplicationRQueryContext $context) {
 
-        if( $context->object->name() == "appneta" )
-        {
-            print "appneta\n";
-            print_r($context->object->apptag );
-        }
-
         if( isset( $context->object->apptag) )
         {
             foreach( $context->object->apptag as $apptag )
