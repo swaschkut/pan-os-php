@@ -785,7 +785,14 @@ class VirtualSystem
                         {
                             $interfacesv4 = $subinterface->getLayer3IPv4Addresses();
                             $interfacesv6 = $subinterface->getLayer3IPv6Addresses();
-                            $interfaces = array_merge($interfacesv4, $interfacesv6);
+                            $sub_interfaces = array_merge($interfacesv4, $interfacesv6);
+
+                            foreach( $sub_interfaces as $layer3IPAddress )
+                            {
+                                $findobject = $this->addressStore->find($layer3IPAddress);
+                                if( is_object($findobject) )
+                                    $findobject->addReference($subinterface);
+                            }
                         }
                     }
                 }

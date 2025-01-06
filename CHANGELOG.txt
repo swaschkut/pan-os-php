@@ -6,6 +6,7 @@ UTIL:
 BUGFIX:
 
 GENERAL:
+* class VirtualSystem - ethernet subInterfaces, add address objects references
 
 
 2.1.31  (20250106)
