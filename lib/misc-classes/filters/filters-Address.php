@@ -915,6 +915,54 @@ RQuery::$defaultFilters['address']['reflocationtype']['operators']['is.only.devi
         'input' => 'input/panorama-8.0.xml'
     )
 );
+RQuery::$defaultFilters['address']['reflocationtype']['operators']['is.virtualsystem'] = array(
+    'Function' => function (AddressRQueryContext $context) {
+        $object = $context->object;
+        $owner = $context->object->owner->owner;
+
+        $reflocation_array = $object->getReferencesLocationType();
+        #print_r( $reflocation_array );
+
+        $return = FALSE;
+        if (in_array("VirtualSystem", $reflocation_array)) {
+            return TRUE;
+        }
+
+        return FALSE;
+    },
+    'arg' => FALSE,
+    'help' => 'returns TRUE if object locationtype is Template or TemplateStack',
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['address']['reflocationtype']['operators']['is.only.virtualsystem'] = array(
+    'Function' => function (AddressRQueryContext $context) {
+        $object = $context->object;
+        $owner = $context->object->owner->owner;
+
+        $reflocation_array = $object->getReferencesLocationType();
+        #print_r( $reflocation_array );
+
+        $return = FALSE;
+        foreach( $reflocation_array as $reflocation )
+        {
+            if( $reflocation == "VirtualSystem" )
+                $return = TRUE;
+            else
+                return FALSE;
+        }
+
+        return $return;
+    },
+    'arg' => FALSE,
+    'help' => 'returns TRUE if object locationtype is Template or TemplateStack',
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
 RQuery::$defaultFilters['address']['reflocation']['operators']['is.only'] = array(
     'Function' => function (AddressRQueryContext $context) {
         $owner = $context->object->owner->owner;
