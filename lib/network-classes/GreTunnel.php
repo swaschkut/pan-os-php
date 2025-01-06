@@ -98,11 +98,31 @@ class GreTunnel
             if( $node->nodeName == 'local-address' )
             {
                 $tmp = DH::findFirstElement('interface', $node);
+                if( $tmp !== FALSE )
+                {
+                    $tmpInterface = $this->owner->owner->network->findInterface( $tmp->textContent );
+                    $tmpInterface->addReference( $this->localInterface );
 
-                $tmpInterface = $this->owner->owner->network->findInterface( $tmp->textContent );
-                $tmpInterface->addReference( $this->localInterface );
+                    $this->localInterface->addInterface( $tmpInterface );
+                    PH::print_stdout("add reference: ".$tmp->textContent);
+                }
 
-                $this->localInterface->addInterface( $tmpInterface );
+                $tmp = DH::findFirstElement('ip', $node);
+                if( $tmp !== FALSE )
+                {
+                    $this->localIP = $tmp->textContent;
+
+                    $tmp_interfaces = $this->localInterface->interfaces();
+
+                    /** @var EthernetInterface $tmp_usedInterface */
+                    $tmp_usedInterface = $tmp_interfaces[0];
+
+                    /** @var VirtualSystem $tmp_vsys */
+                    $tmp_vsys = $tmp_usedInterface->importedByVSYS;
+
+                    $tmp_address = $tmp_vsys->addressStore->find($tmp->textContent);
+                    $tmp_address->addReference( $this );
+                }
             }
 
             if( $node->nodeName == 'tunnel-interface' )

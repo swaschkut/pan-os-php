@@ -546,9 +546,8 @@ trait AddressCommon
                     (get_class($objectRef) == "EthernetInterface") or
                     (get_class($objectRef) == "VlanInterface") or
 
-                    //Todo: missing address references
-                    (get_class($objectRef) == "GRETunnel") or
 
+                    (get_class($objectRef) == "GreTunnel") or
                     (get_class($objectRef) == "IKEGateway") or
                     (get_class($objectRef) == "GPPortal") or
                     (get_class($objectRef) == "GPGateway") or

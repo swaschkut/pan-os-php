@@ -507,6 +507,22 @@ trait ReferenceableObject
         return $ret;
     }
 
+    /**
+     * @param string $className
+     * @return array
+     */
+    public function & findReferencesWithOwnerClass($className)
+    {
+        $ret = array();
+
+        foreach( $this->refrules as $reference )
+        {
+            if( get_class($reference->owner) == $className )
+                $ret[] = $reference;
+        }
+
+        return $ret;
+    }
 
     public function name()
     {

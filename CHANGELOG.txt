@@ -14,6 +14,7 @@ UTIL:
 * introduction for type=ike-profile/ike-gateway/ipsec-profile/ipsec-tunnel/gre-tunnel
 * type=address | introduce 'actions=display-xpath-usage'
 * type=address-merger | skip if address object reference is from Class type of not implemented for merging
+* class GreTunnel | add address object reference - benefit for type=address-merger to see all address object references
 
 BUGFIX:
 * type=securityprofile securityprofiletype=spyware actions=best-practice-set | bugfix
