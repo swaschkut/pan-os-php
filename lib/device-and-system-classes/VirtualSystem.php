@@ -778,6 +778,16 @@ class VirtualSystem
                     $interfacesv4 = $interface->getLayer3IPv4Addresses();
                     $interfacesv6 = $interface->getLayer3IPv6Addresses();
                     $interfaces = array_merge($interfacesv4, $interfacesv6);
+
+                    if( !empty($interface->subInterfaces()) )
+                    {
+                        foreach( $interface->subInterfaces() as $subinterface )
+                        {
+                            $interfacesv4 = $subinterface->getLayer3IPv4Addresses();
+                            $interfacesv6 = $subinterface->getLayer3IPv6Addresses();
+                            $interfaces = array_merge($interfacesv4, $interfacesv6);
+                        }
+                    }
                 }
                 elseif( $interface->isVlanType() || $interface->isLoopbackType() || $interface->isTunnelType() )
                 {
@@ -785,6 +795,8 @@ class VirtualSystem
                     $interfacesv6 = $interface->getIPv6Addresses();
                     $interfaces = array_merge($interfacesv4, $interfacesv6);
                 }
+                //elseif( $interface->isAggregateType() )
+                //{}
 
                 else
                     $interfaces = array();
