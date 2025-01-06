@@ -120,6 +120,22 @@ class RQuery
             $this->contextObject = new ThreatRuleRQueryContext($this);
         elseif( $this->objectType == 'dns-rule' )
             $this->contextObject = new DNSRuleRQueryContext($this);
+        elseif( $this->objectType == 'gp-gateway' )
+            $this->contextObject = new GPGatewayRQueryContext($this);
+        elseif( $this->objectType == 'gp-portal' )
+            $this->contextObject = new GPPortalRQueryContext($this);
+
+        elseif( $this->objectType == 'ike-profile' )
+            $this->contextObject = new IKEprofileRQueryContext($this);
+        elseif( $this->objectType == 'ike-gateway' )
+            $this->contextObject = new IKEgatewayRQueryContext($this);
+        elseif( $this->objectType == 'ipsec-profile' )
+            $this->contextObject = new IPSECprofileRQueryContext($this);
+        elseif( $this->objectType == 'ipsec-tunnel' )
+            $this->contextObject = new IPSECtunnelRQueryContext($this);
+        elseif( $this->objectType == 'gre-tunnel' )
+            $this->contextObject = new GREtunnelRQueryContext($this);
+
         else
             derr("unsupported object type '$objectType'");
 
@@ -714,5 +730,13 @@ require_once 'filters/filters-Certificate.php';
 require_once 'filters/filters-Static-Route.php';
 require_once 'filters/filters-ThreatRule.php';
 require_once 'filters/filters-DNSRule.php';
+require_once 'filters/filters-GPGateway.php';
+require_once 'filters/filters-GPPortal.php';
+
+require_once 'filters/filters-IKEgateway.php';
+require_once 'filters/filters-IKEprofile.php';
+require_once 'filters/filters-IPSECprofile.php';
+require_once 'filters/filters-IPSECtunnel.php';
+require_once 'filters/filters-GREtunnel.php';
 
 

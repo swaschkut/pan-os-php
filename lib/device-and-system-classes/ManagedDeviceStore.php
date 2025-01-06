@@ -173,7 +173,6 @@ class ManagedDeviceStore extends ObjStore
      * @param $serial
      * @param null $ref
      * @param bool $nested
-     * @return ManagedDevice
      */
     public function removeManagedDevice($serial, $ref = null, $nested = TRUE)
     {

@@ -42,7 +42,6 @@ class ExpeditionTaskReporter implements TaskReporter
         if( $this->dbConnection->connect_error )
         {
             trigger_error('Database connection failed: ' . $this->dbConnection->connect_error, E_USER_ERROR);
-            return FALSE;
         }
 
         return TRUE;

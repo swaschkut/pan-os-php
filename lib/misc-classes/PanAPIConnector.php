@@ -1306,7 +1306,7 @@ class PanAPIConnector
             PH::print_stdout(  $httpReplyContent );
             PH::print_stdout();
 
-            return;
+            return null;
         }
         PH::disableExceptionSupport();
 
@@ -2082,10 +2082,10 @@ class PanAPIConnector
         if( $found === null )
         {
             derr('no job id found!');
+            return null;
         }
-
-        else return $found['content'];
-
+        else
+            return $found['content'];
     }
 
     /**

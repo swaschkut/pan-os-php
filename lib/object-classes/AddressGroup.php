@@ -282,7 +282,7 @@ class AddressGroup
                     }
                     $membersIndex[$memberName] = TRUE;
 
-                    $f = $this->owner->findOrCreate($memberName, $this, TRUE);
+                    $f = $this->owner->findOrCreate($memberName, $this);
 
                     if( $f->isGroup() )
                     {
@@ -310,7 +310,7 @@ class AddressGroup
                 if( strlen($memberName) < 1 )
                     derr('found a member with empty name !', $node);
 
-                $f = $this->owner->findOrCreate($memberName, $this, TRUE);
+                $f = $this->owner->findOrCreate($memberName, $this);
                 $this->members[] = $f;
 
                 if( $f->isAddress() && $f->isType_FQDN() )
@@ -685,10 +685,8 @@ class AddressGroup
             return FALSE;
         }
 
-        foreach( $this->members as $o )
-        {
-            if( $o === $obj )
-                return TRUE;
+        if (in_array($obj, $this->members, true)) {
+            return TRUE;
         }
 
         return FALSE;
@@ -870,6 +868,8 @@ class AddressGroup
             return $retString;
 
         PH::print_stdout( $retString );
+
+        return null;
     }
 
     /**
@@ -1216,14 +1216,14 @@ class AddressGroup
         {
             if( $member->isTmpAddr() && !$member->nameIsValidRuleIPEntry() )
             {
-                $mapObject->unresolved[$member->name()] = $member;
+                $mapObject6->unresolved[$member->name()] = $member;
                 continue;
             }
             elseif( $member->isAddress() )
             {
                 if( $member->type() == 'fqdn' )
                 {
-                    $mapObject->unresolved[$member->name()] = $member;
+                    $mapObject6->unresolved[$member->name()] = $member;
                 }
                 else
                 {

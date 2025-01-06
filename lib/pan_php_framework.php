@@ -4,6 +4,7 @@
  *
  * Copyright (c) 2014-2018, Palo Alto Networks Inc.
  * Copyright (c) 2019, Palo Alto Networks Inc.
+ * Copyright (c) 2024, Sven Waschkut - pan-os-php@waschkut.net
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -189,6 +190,9 @@ require_once $basedir . '/misc-classes/CertificateRQueryContext.php';
 
 require_once $basedir . '/misc-classes/StaticRouteRQueryContext.php';
 
+require_once $basedir . '/misc-classes/GPGatewayRQueryContext.php';
+require_once $basedir . '/misc-classes/GPPortalRQueryContext.php';
+
 require_once $basedir . '/misc-classes/CsvParser.php';
 require_once $basedir . '/misc-classes/trait/PanSubHelperTrait.php';
 require_once $basedir . '/misc-classes/PanAPIConnector.php';
@@ -344,6 +348,10 @@ require_once $basedir . '/network-classes/TunnelIfStore.php';
 require_once $basedir . '/network-classes/TunnelInterface.php';
 require_once $basedir . '/network-classes/VirtualWire.php';
 require_once $basedir . '/network-classes/VirtualWireStore.php';
+require_once $basedir . '/network-classes/GPGateway.php';
+require_once $basedir . '/network-classes/GPGatewayStore.php';
+require_once $basedir . '/network-classes/GPPortal.php';
+require_once $basedir . '/network-classes/GPPortalStore.php';
 
 require_once $basedir . '/network-classes/SharedGatewayStore.php';
 
@@ -824,6 +832,7 @@ function yesNoBool($yes)
         return FALSE;
 
     derr("unsupported value '$yes' given");
+    return null;
 }
 
 /**

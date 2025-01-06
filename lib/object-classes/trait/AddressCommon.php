@@ -187,7 +187,7 @@ trait AddressCommon
                     }
                     if( $ref->name == 'snathosts' )
                         derr('unsupported use case in ' . $ref->owner->_PANC_shortName());
-                    if( $ref->name == 'source' && $ref->owner->natType() == 'static-ip' )
+                    if( $ref->name == 'source' && $ref->owner->SourceNat_Type() == 'static-ip' )
                         derr('unsupported use case with static-ip NAT and source insertion in ' . $ref->owner->_PANC_shortName());
 
                     if( $displayOutput )
@@ -539,7 +539,20 @@ trait AddressCommon
                     $tmp_store = $objectRef->owner->owner->addressStore;
                 elseif( (get_class($objectRef) == "AddressRuleContainer") )
                     $tmp_store = $objectRef->owner->owner->owner->addressStore;
-                elseif( (get_class($objectRef) == "TunnelInterface") or (get_class($objectRef) == "EthernetInterface") )
+                elseif(
+                    //implementation done via VirtualSystem class
+                    (get_class($objectRef) == "TunnelInterface") or
+                    (get_class($objectRef) == "LoopbackInterface") or
+                    (get_class($objectRef) == "EthernetInterface") or
+                    (get_class($objectRef) == "VlanInterface") or
+
+
+                    (get_class($objectRef) == "GreTunnel") or
+                    (get_class($objectRef) == "IKEGateway") or
+                    (get_class($objectRef) == "GPPortal") or
+                    (get_class($objectRef) == "GPGateway") or
+                    (get_class($objectRef) == "StaticRoute")
+                )
                 {
                     PH::print_stdout( "- SKIP: not yet possible on ".get_class($objectRef) );
                     $success = false;
@@ -556,7 +569,6 @@ trait AddressCommon
                         $success = false;
                         $success2 = false;
                         exit();
-                        continue;
                     }
                 }
 

@@ -65,6 +65,7 @@ class AppGroup extends App
 
         ksort( $this->groupapps );
 
+        return TRUE;
     }
 
 }

@@ -66,6 +66,7 @@ trait RuleWithSchedule
             $tmpRoot = DH::findFirstElementOrCreate('schedule', $this->xmlroot);
             DH::setDomNodeText($tmpRoot, $this->schedule->name());
         }
+        return null;
     }
 
     /**

@@ -2,6 +2,32 @@
 
 class SecurityProfile2
 {
+    const TypeTmp = 0;
+    const TypeVirus = 1;
+    const TypeSpyware = 2;
+    const TypeVulnerability = 3;
+    const TypeFile_blocking = 4;
+    const TypeWildfire_analysis = 5;
+    const TypeUrl_filtering = 6;
+    const TypeData_filtering = 7;
+    const TypeDNS_security = 8;
+    const TypeSaas_security = 9;
+
+    static public $SecurityProfileTypes = array(
+        self::TypeTmp => 'tmp',
+        self::TypeVirus => 'virus',
+        self::TypeSpyware => 'spyware',
+        self::TypeVulnerability => 'vulnerability',
+        self::TypeFile_blocking => 'file-blocking',
+        self::TypeWildfire_analysis => 'wildfire-analysis',
+        self::TypeUrl_filtering => 'url-filtering',
+        self::TypeData_filtering => 'data-filtering',
+        self::TypeDNS_security => 'dns-security',
+        self::TypeSaas_security => 'saas-security'
+    );
+
+    public $type = self::TypeTmp;
+
     public $bp_json_file = null;
 
     public function cloud_inline_analysis_best_practice( $bp_json_file )

@@ -21,6 +21,7 @@ else
 * ISC License
 *
 * Copyright (c) 2019, Palo Alto Networks Inc.
+* Copyright (c) 2024, Sven Waschkut - pan-os-php@waschkut.net
 *
 * Permission to use, copy, modify, and/or distribute this software for any
 * purpose with or without fee is hereby granted, provided that the above
@@ -88,6 +89,8 @@ else
             <tr>
             <tr>
                 <td><a href="index.php">MAIN page</a></td>
+                <td><a href="bp_config.php">BP config page</a></td>
+                <td><a href="bp_secprof.php">BP secprof page</a></td>
                 <td><a href="single.php">single command</a></td>
                 <td><a href="playbook.php">JSON PLAYBOOK</a></td>
                 <td><a href="preparation.php">upload file / store APIkey</a></td>

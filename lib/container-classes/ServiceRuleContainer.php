@@ -666,6 +666,7 @@ class ServiceRuleContainer extends ObjRuleContainer
             if( intval($port_mapping_range[0]) <= intval($value) && intval($port_mapping_range[1]) >= intval($value) )
                 return TRUE;
         }
+        return null;
     }
 
     public function checkPortMapping( $port_mapping_text, $rangeValue, $port_value_range, $value)
@@ -703,6 +704,7 @@ class ServiceRuleContainer extends ObjRuleContainer
             elseif( $value == $port_mapping_text )
                 return TRUE;
         }
+        return null;
     }
 }
 

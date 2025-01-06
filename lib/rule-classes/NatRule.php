@@ -634,7 +634,7 @@ class NatRule extends Rule
     public function setNoDNAT()
     {
         if( $this->dnathost === null )
-            return;
+            return null;
 
         $this->dnathost->removeReference($this);
         $this->dnathost = null;

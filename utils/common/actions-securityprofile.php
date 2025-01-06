@@ -461,6 +461,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
         $addCountDisabledRules = FALSE;
         $bestPractice = FALSE;
         $visibility = FALSE;
+        $addURLmembers = FALSE;
 
         $optionalFields = &$context->arguments['additionalFields'];
 
@@ -518,7 +519,18 @@ SecurityProfileCallContext::$supportedActions[] = array(
         if( $visibility )
             $headers .= '<th>visibility</th>';
 
-        $headers .= '<th>URL members</th>';
+        if( $bestPractice )
+        {
+            $headers .= '<th>URL BP</th>';
+            $headers .= '<th>URL BP details</th>';
+        }
+        if( $visibility )
+        {
+            $headers .= '<th>URL visibility</th>';
+            $headers .= '<th>URL visibility details</th>';
+        }
+        if( $addURLmembers or ( !$bestPractice and !$visibility ) )
+            $headers .= '<th>URL members</th>';
 
 
         if( $addWhereUsed )
@@ -1129,24 +1141,124 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         }
                     }
                     else
+                    {
                         $lines .= $context->encloseFunction('---');
+                        $lines .= $context->encloseFunction('---');
+                    }
                 }
 
                 if( get_class($object) == "customURLProfile" )
                 {
-                    /**
-                     * @var $object customURLProfile
-                     */
-                    $tmp_array = array();
-                    foreach( $object->getmembers() as  $member )
-                        $tmp_array[] = $member;
+                    if( $bestPractice )
+                    {
+                        $lines .= $context->encloseFunction('---');
+                        $lines .= $context->encloseFunction('---');
+                    }
+                    if( $visibility )
+                    {
+                        $lines .= $context->encloseFunction('---');
+                        $lines .= $context->encloseFunction('---');
+                    }
 
-                    $string = implode( ",", $tmp_array);
-                    $lines .= $context->encloseFunction( $tmp_array );
+                    if( !$bestPractice and !$visibility )
+                    {
+                        /**
+                         * @var $object customURLProfile
+                         */
+                        $tmp_array = array();
+                        foreach ($object->getmembers() as $member)
+                            $tmp_array[] = $member;
+
+                        $lines .= $context->encloseFunction($tmp_array);
+                    }
+                }
+                elseif( get_class($object) == "URLProfile" )
+                {
+                    if( $bestPractice )
+                    {
+                        //URL BP -> yes/no
+                        $lines .= $context->encloseFunction("test");
+                    }
+                    if( $visibility )
+                    {
+                        //URL visibility -> yes/no
+                        $lines .= $context->encloseFunction("test");
+                    }
+
+                    if( $bestPractice )
+                    {
+                        //URL detail BP
+                        $tmp_array = array();
+                        $block_categories = array('command-and-control','grayware','malware','phishing','ransomware','scanning-activity');
+                        $notBlock = array();
+                        foreach( $block_categories as $block_category )
+                        {
+                            if( !in_array( $block_category, $object->block ) )
+                                $notBlock[] = $block_category;
+
+                        }
+                        if( !empty($notBlock) )
+                        {
+                            $tmp_array[] = 'BLOCK missing: ';
+                            $tmp_array = array_merge( $tmp_array, $notBlock );
+                        }
+                        else
+                            $tmp_array[] = "";
+
+                        $lines .= $context->encloseFunction($tmp_array);
+                    }
+
+                    if( $visibility )
+                    {
+                        //URL detail visibility
+                        $tmp_array = array();
+                        if( empty($object->allow) )
+                            $tmp_array[] = "";
+                        else
+                            $tmp_array[] = 'ALLOW: "set all action to alert"';
+
+                        $lines .= $context->encloseFunction($tmp_array);
+                    }
+
+                    if( $addURLmembers or ( !$bestPractice and !$visibility ) )
+                    {
+                        /**
+                         * @var $object URLProfile
+                         */
+                        $tmp_profile_array = array();
+                        $tmp_array = array();
+                        foreach( $object->allow as  $member )
+                            $tmp_array[] = $member;
+                        $tmp_profile_array[] = "allow: ".implode( ",", $tmp_array)."\n";
+
+                        $tmp_array = array();
+                        foreach( $object->alert as  $member )
+                            $tmp_array[] = $member;
+                        $tmp_profile_array[] = "alert: ".implode( ",", $tmp_array)."\n";
+
+                        $tmp_array = array();
+                        foreach( $object->block as  $member )
+                            $tmp_array[] = $member;
+
+                        $tmp_profile_array[] = "block: ".implode( ",", $tmp_array)."\n";
+
+                        $lines .= $context->encloseFunction( $tmp_profile_array );
+                    }
                 }
                 else
                 {
-                    $lines .= $context->encloseFunction('');
+                    if( $bestPractice )
+                    {
+                        $lines .= $context->encloseFunction('---');
+                        $lines .= $context->encloseFunction('---');
+                    }
+                    if( $visibility )
+                    {
+                        $lines .= $context->encloseFunction('---');
+                        $lines .= $context->encloseFunction('---');
+                    }
+                    if( $addURLmembers or ( !$bestPractice and !$visibility ) )
+                        $lines .= $context->encloseFunction('');
                 }
 
                 if( $addWhereUsed )
@@ -1214,14 +1326,15 @@ SecurityProfileCallContext::$supportedActions[] = array(
             array('type' => 'pipeSeparatedList',
                 'subtype' => 'string',
                 'default' => '*NONE*',
-                'choices' => array('WhereUsed', 'UsedInLocation', 'TotalUse', 'BestPractice', 'Visibility'),
+                'choices' => array('WhereUsed', 'UsedInLocation', 'TotalUse', 'BestPractice', 'Visibility', 'URLmembers'),
                 'help' =>
                     "pipe(|) separated list of additional fields (ie: Arg1|Arg2|Arg3...) to include in the report. The following is available:\n" .
                     "  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n" .
                     "  - WhereUsed : list places where object is used (rules, groups ...)\n" .
                     "  - TotalUse : list a counter how often this object is used\n" .
                     "  - BestPractice : show if BestPractice is configured\n" .
-                    "  - Visibility : show if SP log is configured\n"
+                    "  - Visibility : show if SP log is configured\n" .
+                    "  - URLmembers : add URL members also if bestpractice or visibility is added\n"
             )
     )
 
@@ -1635,8 +1748,8 @@ SecurityProfileCallContext::$supportedActions['spyware.best-practice-set'] = arr
         $hasDNSlicense = $context->arguments['has-DNS-license'];
         foreach( $object->dns_rules_obj as $rule )
         {
-            $tmp_action = DH::findFirstElement("action", $rule->xmlroot);
-            $tmp_packet_capture = DH::findFirstElement("packet-capture", $rule->xmlroot);
+            $tmp_action = DH::findFirstElementOrCreate("action", $rule->xmlroot);
+            $tmp_packet_capture = DH::findFirstElementOrCreate("packet-capture", $rule->xmlroot);
             $tmp_log_level = DH::findFirstElement("log-level", $rule->xmlroot);
             /** @var DNSPolicy $rule */
             if( $rule->name() == "pan-dns-sec-adtracking"
@@ -2228,7 +2341,6 @@ SecurityProfileCallContext::$supportedActions['url.alert-only-set'] = array(
         }
         $object->allow_credential = array();
 
-        //Todo: missing stuff credential-enforcement // but framework class must be extended
         if( $context->object->owner->owner->version >= 102 )
         {
             $xmlnode = DH::findFirstElementOrCreate("local-inline-cat", $object->xmlroot);
@@ -2237,6 +2349,92 @@ SecurityProfileCallContext::$supportedActions['url.alert-only-set'] = array(
             $xmlnode = DH::findFirstElementOrCreate("cloud-inline-cat", $object->xmlroot);
             $xmlnode->textContent = "yes";
         }
+
+        if( $context->isAPI )
+        {
+            $object->API_sync();
+        }
+    },
+);
+
+SecurityProfileCallContext::$supportedActions['url.best-practice-set'] = array(
+    'name' => 'url.best-practice-set',
+    'MainFunction' => function (SecurityProfileCallContext $context) {
+        $object = $context->object;
+
+        //call alert-only-set from above
+        $f = SecurityProfileCallContext::$supportedActions['url.alert-only-set']['MainFunction'];
+        $f($context);
+
+
+        $alert_xmlnode = DH::findFirstElementOrCreate("alert", $object->xmlroot);
+        $block_categories = array('command-and-control','grayware','malware','phishing','ransomware','scanning-activity');
+        $block_xmlnode = DH::findFirstElementOrCreate("block", $object->xmlroot);
+        foreach( $block_categories as $block_category )
+        {
+            if( !in_array( $block_category, $object->block ) )
+            {
+                if( in_array( $block_category, $object->alert ) )
+                {
+                    $key = array_search ($block_category, $object->alert);
+                    unset( $object->alert[$key] );
+                    $alert_category_xmlnode = DH::findFirstElementByValue("member", $block_category, $alert_xmlnode );
+                    $alert_xmlnode->removeChild($alert_category_xmlnode);
+
+                    $object->block[$block_category] = $block_category;
+
+                    $xmlString = '<member>'.$block_category.'</member>';
+                    $xmlElement = DH::importXmlStringOrDie($object->xmlroot->ownerDocument, $xmlString);
+                    $block_xmlnode->appendChild($xmlElement);
+                }
+            }
+        }
+
+        //credential all from alert to block
+        $credential_xmlnode = DH::findFirstElementOrCreate("credential-enforcement", $object->xmlroot);
+
+        $alert_credential_xmlnode = DH::findFirstElementOrCreate("alert", $credential_xmlnode);
+        $block_credential_xmlnode = DH::findFirstElementOrCreate("block", $credential_xmlnode);
+
+        if( $alert_credential_xmlnode !== False )
+        {
+            foreach( $alert_credential_xmlnode->childNodes as $alert_node )
+            {
+                if( $alert_node->nodeType != XML_ELEMENT_NODE )
+                    continue;
+
+                $tmp_name = $alert_node->textContent;
+
+                $clone_node = $alert_node->cloneNode(true);
+                if( !in_array($tmp_name, $object->block_credential) )
+                {
+                    $block_credential_xmlnode->appendChild($clone_node);
+                    $object->block_credential[$tmp_name] = $tmp_name;
+                }
+
+                $alert_credential_xmlnode->removeChild($alert_node);
+
+
+                $key = array_search ($tmp_name, $object->allow_credential);
+                unset($object->alert_credential[$key]);
+            }
+            $credential_xmlnode->removeChild($alert_credential_xmlnode);
+        }
+
+
+        foreach( $object->alert_credential as $alert )
+        {
+            if( !in_array($alert, $object->block_credential) )
+            {
+                $object->block_credential[$alert] = $alert;
+
+                $xmlString = '<member>'.$alert.'</member>';
+                $xmlElement = DH::importXmlStringOrDie($object->xmlroot->ownerDocument, $xmlString);
+                $block_credential_xmlnode->appendChild($xmlElement);
+            }
+        }
+        $object->alert_credential = array();
+
 
         if( $context->isAPI )
         {

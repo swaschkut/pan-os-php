@@ -17,6 +17,11 @@ var columnActionIdx = 1;
 var columnFilterIdx = 0;
 var columnIdx = 2;
 
+var rowIdxBP = 0;
+var columnActionIdxBP = 1;
+var columnFilterIdxBP = 0;
+var columnIdxBP = 2;
+
 $(document).ready(function () {
 
     createAddScript();
@@ -26,12 +31,20 @@ $(document).ready(function () {
         console.log( $( "#json-store" ).serialize() );
     });
 
+    $( "#json-storeBP" ).submit(function( event ) {
+        //console.log( "done");
+        console.log( $( "#json-storeBP" ).serialize() );
+    });
+
 
     // jQuery button click event to add a row
     $('#addBtn').on('click', function () {
         addNewRow();
     });
 
+    $('#addBtnBP').on('click', function () {
+        addNewRowBP();
+    });
 
     // jQuery button click event to remove a row.
     $('#tbody').on('click', '.remove', function () {
@@ -48,6 +61,17 @@ $(document).ready(function () {
         $("#R" + Idx + "-5").closest('tr').remove();
     });
 
+    $('#tbodyBP').on('click', '.remove', function () {
+        var Idx = $(this).closest('tr').attr('id');
+        var IdxArray = Idx.split("-");
+        Idx = IdxArray[0];
+        Idx = Idx.replace("R", "");
+        console.log( "delete rowID: "+Idx );
+
+        $("#R" + Idx + "-1").closest('tr').remove();
+        $("#R" + Idx + "-2").closest('tr').remove();
+    });
+
 
 
     $("#js-file").change(function(){
@@ -56,6 +80,22 @@ $(document).ready(function () {
             createTableFromJSON(  e.target.result );
         };
         reader.readAsText($("#js-file")[0].files[0], "UTF-8");
+    });
+
+    $("#js-fileBP").change(function(){
+        var reader = new FileReader();
+        reader.onload = function(e){
+            createTableFromJSON_bp(  e.target.result );
+        };
+        reader.readAsText($("#js-fileBP")[0].files[0], "UTF-8");
+    });
+
+    $("#js-fileBPsecprof").change(function(){
+        var reader = new FileReader();
+        reader.onload = function(e){
+            createTableFromJSON_bp_secprof(  e.target.result );
+        };
+        reader.readAsText($("#js-fileBPsecprof")[0].files[0], "UTF-8");
     });
 
     $("#configSelect").change(function(){
@@ -69,6 +109,13 @@ $(document).ready(function () {
         createJSONstringAndDownload();
     });
 
+    $('#storeBtnBP').on('click', function () {
+        createJSONstringAndDownloadBP();
+    });
+
+    $('#storeBtnBP2').on('click', function () {
+        createJSONstringAndDownloadBP();
+    });
 
     taskAtStart();
 });

@@ -158,6 +158,16 @@ class Region
     }
 
     /**
+     * @return string
+     */
+    public function &getXPath()
+    {
+        $str = $this->owner->getAddressStoreXPath() . "/entry[@name='" . $this->name . "']";
+
+        return $str;
+    }
+
+    /**
      * Return an array['start']= startip and ['end']= endip
      * @return IP4Map
      */

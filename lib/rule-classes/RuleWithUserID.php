@@ -226,6 +226,7 @@ class RuleWithUserID extends Rule
             if( $con->isAPI() )
                 $con->sendDeleteRequest($xpath);
         }
+        return null;
     }
 
     function API_userID_setany()

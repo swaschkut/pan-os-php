@@ -507,6 +507,22 @@ trait ReferenceableObject
         return $ret;
     }
 
+    /**
+     * @param string $className
+     * @return array
+     */
+    public function & findReferencesWithOwnerClass($className)
+    {
+        $ret = array();
+
+        foreach( $this->refrules as $reference )
+        {
+            if( get_class($reference->owner) == $className )
+                $ret[] = $reference;
+        }
+
+        return $ret;
+    }
 
     public function name()
     {
@@ -537,9 +553,13 @@ trait ReferenceableObject
                 else
                     return FALSE;
             }
+
+            //Todo: check also childDg if same name is available,
+            //for shared level, as this has no parentStore
+            return TRUE;
         }
 
-        return FALSE;
+        return false;
     }
 
     public function objectIsUnusedRecursive()

@@ -19,8 +19,10 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-require_once("lib/pan_php_framework.php");
-require_once ( "utils/lib/UTIL.php");
+set_include_path(get_include_path() . PATH_SEPARATOR . dirname(__FILE__) . '/../');
+require_once dirname(__FILE__)."/../../lib/pan_php_framework.php";
+require_once dirname(__FILE__)."/../../utils/lib/UTIL.php";
+
 
 PH::print_stdout();
 PH::print_stdout("***********************************************");

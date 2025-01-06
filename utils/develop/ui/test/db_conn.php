@@ -38,12 +38,15 @@ try
 {
     if( $db_host !== "" && $db_user !== "" && $db_pwd !== "" && $db_name !== "" )
     {
-        $conn = new mysqli($db_host, $db_user, $db_pwd, $db_name);
-        if ($conn->connect_error) {
-            #die("Connection failed: " . $conn->connect_error);
-        } else {
-            $demo = false;
-            #echo "Connected to MySQL server successfully!";
+        if (class_exists('mysqli'))
+        {
+            $conn = new mysqli($db_host, $db_user, $db_pwd, $db_name);
+            if ($conn->connect_error) {
+                #die("Connection failed: " . $conn->connect_error);
+            } else {
+                $demo = false;
+                #echo "Connected to MySQL server successfully!";
+            }
         }
     }
 }

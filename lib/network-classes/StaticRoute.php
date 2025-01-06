@@ -167,7 +167,6 @@ class StaticRoute
     function validateIPorObject($nexthopIP, $type = 'destination')
     {
         $pan_object = $this->owner->owner->owner;
-        #print "CLASS pan: ".get_class($pan_object)."\n";
         if( isset( $pan_object->owner ) )
         {
             if( get_class($pan_object->owner) == "Template" )
@@ -202,14 +201,16 @@ class StaticRoute
             //vsys information not available at the time for reading config
             //
 
-            //print "count vsys: ".count($all_vsys)."\n";
+            #print "count vsys: ".count($all_vsys)."\n";
 
             foreach( $all_vsys as $vsys )
             {
                 #not correct because you need to find correct vsys;
                 #static route per interface???
+                #if( $nexthopIP == "" )
+                #    mwarning("empty name");
                 $ngfw_object = $vsys->addressStore->find($nexthopIP);
-                if( $ngfw_object != null )
+                if( $ngfw_object != null && !$ngfw_object->isTmpAddr() )
                 {
                     #print "add Reference for :".$ngfw_object->name()."\n";
                     $ngfw_object->addReference($this);
@@ -225,6 +226,14 @@ class StaticRoute
                         $this->_nexthopIPObject = $ngfw_object;
                     }
                 }
+            }
+
+            if( count($all_vsys) == 0 )
+            {
+                if( $type == "destination" )
+                    $this->_destination = $nexthopIP;
+                elseif( $type == "nexthop" )
+                    $this->_nexthopIP = $nexthopIP;
             }
         }
     }
@@ -282,7 +291,7 @@ class StaticRoute
      */
     public function destinationIP4Mapping()
     {
-        self::destinationIPMapping();
+        return self::destinationIPMapping();
     }
 
     /**

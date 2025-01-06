@@ -150,13 +150,14 @@ class PH
             }
             elseif( strpos( $arg, 'shadow-bpjsonfile' ) !== FALSE )
             {
-                $projectFolder = "";
-                if( isset(PH::$args['projectfolder']) )
-                    $projectFolder = PH::$args['projectfolder']."/";
+                #$projectFolder = "";
+                #if( isset(PH::$args['projectfolder']) )
+                #    $projectFolder = PH::$args['projectfolder']."/";
 
                 $arg_array = explode( "=", $arg );
 
-                PH::$shadow_bp_jsonfilename = $projectFolder.$arg_array[1];
+                #PH::$shadow_bp_jsonfilename = $projectFolder.$arg_array[1];
+                PH::$shadow_bp_jsonfilename = $arg_array[1];
                 $JSONarray = file_get_contents( PH::$shadow_bp_jsonfilename );
 
                 if( $JSONarray === false )
@@ -229,7 +230,7 @@ class PH
 
     private static $library_version_major = 2;
     private static $library_version_sub = 1;
-    private static $library_version_bugfix = 30;
+    private static $library_version_bugfix = 31;
 
     //BASIC AUTH PAN-OS 7.1
     public static $softwareupdate_key = "658d787f293e631196dac9fb29490f1cc1bb3827";
@@ -867,6 +868,7 @@ class PH
         }
 
         derr("cannot find PanoramaConf or PANConf | Fawkesconf or BuckbeackConf object");
+        return null;
     }
 
     /**
@@ -890,6 +892,7 @@ class PH
         }
 
         derr("cannot find PanoramaConf or PANConf object");
+        return null;
     }
 
     /**
@@ -1003,6 +1006,9 @@ class PH
         "rule",
         "device", "securityprofile", "securityprofilegroup",
         "zone",  "interface", "virtualwire", "routing", "dhcp", "certificate", "static-route",
+        "gp-gateway", "gp-portal",
+        "ike-profile", "ike-gateway", 'ipsec-profile', 'ipsec-tunnel',
+        "gre-tunnel",
         "key-manager",
         "address-merger", "addressgroup-merger",
         "service-merger", "servicegroup-merger",
@@ -1099,6 +1105,13 @@ class PH
             || $type == "dhcp"
             || $type == "certificate"
             || $type == "static-route"
+            || $type == "gp-gateway"
+            || $type == "gp-portal"
+            || $type == "ike-profile"
+            || $type == "ike-gateway"
+            || $type == "ipsec-profile"
+            || $type == "ipsec-tunnel"
+            || $type == "gre-tunnel"
         )
             $util = new NETWORKUTIL($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
 

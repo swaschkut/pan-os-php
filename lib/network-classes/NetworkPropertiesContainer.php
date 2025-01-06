@@ -215,10 +215,44 @@ class NetworkPropertiesContainer
                 $this->greTunnelStore->load_from_domxml($tmp1);
         }
 
-        //todo: these are specification for NGFW; Panorama template is already done
+        if( $this->owner->_advance_routing_enabled )
+            $allRouters = $this->logicalRouterStore->getAll();
+        else
+            $allRouters = $this->virtualRouterStore->getAll();
+
         //todo: check again static Route information if objects are used to set references
+        //only for NGFW
+        $tmp_PanoramaConfig = false;
+        if( isset($this->owner->owner->owner) )
+        {
+            $tmp_PanoramaConfig = true;
+        }
+
+        if( !$tmp_PanoramaConfig )
+        {
+            foreach( $allRouters as $router )
+            {
+                /** @var LogicalRouter|VirtualRouter $router */
+                $allStaticRoutes = $router->staticRoutes();
+
+                foreach( $allStaticRoutes as $staticRoute )
+                {
+                    $staticRouteDestionation = $staticRoute->destination();
+                    $staticRouteNextHop = $staticRoute->nexthopIP();
+
+                    if( $staticRouteDestionation !== null && $staticRoute->destinationObject() == null )
+                        $staticRoute->validateIPorObject($staticRouteDestionation, 'destination');
+
+                    if( $staticRouteNextHop !== null && $staticRoute->nexthopIPobject() == null )
+                        $staticRoute->validateIPorObject($staticRouteNextHop, 'nexthop');
+                }
+            }
+        }
+
+        //todo: these are specification for NGFW; Panorama template is already done
 
         //todo: check interfaces if objects are used
+        //this is done for NGFW directly in class VirtualSystem - check all attached interfaces
     }
 
 

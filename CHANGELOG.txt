@@ -1,6 +1,33 @@
 CHANGELOG
 
-2.1.30
+2.1.31
+UTIL:
+* type=address | introduce new IPv6 'filter=(value ip6.included-in.from.file / ip6.includes-full-or-partial.from.file     - ip6.includes-full.from.file / ip6.match.exact.from.file FILENAME)'
+* type=securityprofile | introdruce actions=url.best-practice-set
+* type=rule actions=exporttoexcel:bp.html,bestpractice|visibility - improve output if not bp/visibile
+* type=securityprofile securityprofiletype=url-filtering actions=exporttoexcel:url_bp.html,bestpractice|visibility - improve output
+* develop day1config bp_config_validation.php
+* develop extend bp_config check also with UI
+* develop optimise bp_secprof_test.php
+* type=gp-gateway/gp-portal | introduce GPGateway / GPPortal reading
+* class IKEGateway/IPsectunnel extend to reference interface and address objects
+* introduction for type=ike-profile/ike-gateway/ipsec-profile/ipsec-tunnel/gre-tunnel
+* type=address | introduce 'actions=display-xpath-usage'
+* type=address-merger | skip if address object reference is from Class type of not implemented for merging
+* class GreTunnel | add address object reference - benefit for type=address-merger to see all address object references
+
+BUGFIX:
+* type=securityprofile securityprofiletype=spyware actions=best-practice-set | bugfix
+* type=static-route | bugfix for NGFW if address objects are used as reference
+* type=address 'filter=(object is.unused)' | bugfix for unused objects at shared level
+
+GENERAL:
+* code optimisation
+* update Device App-ID version: 8926-9129
+* update util action / filter
+
+
+2.1.30 (20241211)
 UTIL:
 * type=securityprofile actions=exporttoexcel:file.html,bestspractice|visibility | improvements for dynamic BP JSON validation - AV/AS/VP inline-policy-action
 * type=securityprofile actions=exporttoexcel:file.html,bestpractice|visiblity | improve validation against BP JSON file for AV rules

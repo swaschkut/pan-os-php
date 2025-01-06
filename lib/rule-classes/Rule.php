@@ -926,7 +926,7 @@ class Rule
 
             $res = DH::findFirstElement( "rule-hit-count", $res);
             if( !$res )
-                return;
+                return null;
 
             if( $system->isPanorama() )
             {

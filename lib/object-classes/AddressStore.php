@@ -490,7 +490,7 @@ class AddressStore
             PH::print_stdout(  " - " . $object->name() );
         }
 
-        PH::print_stdout(  "" );
+        PH::print_stdout();
     }
 
 

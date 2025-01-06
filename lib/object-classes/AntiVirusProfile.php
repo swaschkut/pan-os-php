@@ -468,14 +468,14 @@ class AntiVirusProfile extends SecurityProfile2
                 if( isset($details[$secprof_type][$array_type]['bp'][$av_action_type]))
                     $checkArray = $details[$secprof_type][$array_type]['bp'][$av_action_type];
                 else
-                    derr( "this JSON bp/visibility JSON file does not have 'bp' -> '".$array_type."' defined correctly for: '".$secprof_type."' '".[$av_action_type]."'", null, FALSE );
+                    derr( "this JSON bp/visibility JSON file does not have 'bp' -> '".$array_type."' defined correctly for: '".$secprof_type."' '".$av_action_type."'", null, FALSE );
             }
             elseif( $checkType == "visibility")
             {
                 if( isset($details[$secprof_type][$array_type]['visibility'][$av_action_type]))
                     $checkArray = $details[$secprof_type][$array_type]['visibility'][$av_action_type];
                 else
-                    derr( "this JSON bp/visibility JSON file does not have 'visibility' -> '".$array_type."' defined correctly for: '".$secprof_type."' '".[$av_action_type]."'", null, FALSE );
+                    derr( "this JSON bp/visibility JSON file does not have 'visibility' -> '".$array_type."' defined correctly for: '".$secprof_type."' '".$av_action_type."'", null, FALSE );
             }
         }
 

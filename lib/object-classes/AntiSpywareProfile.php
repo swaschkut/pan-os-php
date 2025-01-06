@@ -885,7 +885,6 @@ class AntiSpywareProfile extends SecurityProfile2
             else
                 return FALSE;
         }
-        return null;
     }
 
     public function is_visibility()
@@ -908,7 +907,6 @@ class AntiSpywareProfile extends SecurityProfile2
             else
                 return FALSE;
         }
-        return null;
     }
 
     static $templatexml = '<entry name="**temporarynamechangeme**"></entry>';

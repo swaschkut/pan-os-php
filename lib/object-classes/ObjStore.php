@@ -155,12 +155,8 @@ class ObjStore
      */
     public function display($indentSpace = 0)
     {
-        $indent = '';
 
-        for( $i = 0; $i < $indentSpace; $i++ )
-        {
-            $indent .= ' ';
-        }
+        $indent = str_repeat(' ', $indentSpace);
 
         $c = count($this->o);
         $k = array_keys($this->o);

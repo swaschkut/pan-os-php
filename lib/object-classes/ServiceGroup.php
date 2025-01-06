@@ -399,10 +399,8 @@ class ServiceGroup
             return FALSE;
         }
 
-        foreach( $this->members as $o )
-        {
-            if( $o === $obj )
-                return TRUE;
+        if (in_array($obj, $this->members, true)) {
+            return TRUE;
         }
 
         return FALSE;
@@ -836,19 +834,19 @@ class ServiceGroup
         {
             $string = "this is not a group";
             PH::ACTIONstatus($context, "SKIPPED", $string);
-            return;
+            return null;
         }
         if( !$this->isGroup() )
         {
             $string = "unsupported object type";
             PH::ACTIONstatus($context, "SKIPPED", $string);
-            return;
+            return null;
         }
         if( $this->count() < 1 )
         {
             $string = "group has no member";
             PH::ACTIONstatus($context, "SKIPPED", $string);
-            return;
+            return null;
         }
 
         $mapping = $this->dstPortMapping();
@@ -856,7 +854,7 @@ class ServiceGroup
         {
             $string = "group has a mix of UDP and TCP based mappings, they cannot be merged in a single object";
             PH::ACTIONstatus($context, "SKIPPED", $string);
-            return;
+            return null;
         }
 
         foreach( $this->members() as $member )
@@ -865,7 +863,7 @@ class ServiceGroup
             {
                 $string = "temporary services detected";
                 PH::ACTIONstatus($context, "SKIPPED", $string);
-                return;
+                return null;
             }
         }
 

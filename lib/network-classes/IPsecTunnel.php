@@ -312,6 +312,10 @@ class IPsecTunnel
             if( $node->nodeName == 'tunnel-interface' )
             {
                 $this->interface = $node->textContent;
+
+                $tmp_interface = $this->owner->owner->network->findInterface($this->interface);
+                if( $tmp_interface != NULL )
+                    $tmp_interface->addReference($this);
             }
 
             if( $node->nodeName == 'disabled' )
@@ -386,6 +390,7 @@ class IPsecTunnel
         }
 
         derr("this should never happen");
+        return false;
     }
 
 

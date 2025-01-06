@@ -22,12 +22,24 @@ class XPATH extends UTIL
 {
     public $jsonArray = array();
 
+    private $fullxpath = false;
+    private $xpath = null;
+    private $displayXMLnode = false;
+    private $displayAPIcommand = false;
+    private $displayXMLlineno = false;
+    private $displayAttributeName = false;
+    private $action = "display";
+
+    private $qualifiedNodeName = false;
+    private $nameattribute = false;
+
     public function utilStart()
     {
         $this->usageMsg = PH::boldText("USAGE: ")."php ".basename(__FILE__)." in=inputfile.xml ".
             "        \"filter-node=certificate\"\n".
             "        \"[filter-nameattribute=address_object_name]\"\n".
             "        \"[filter-text=xml-node-text]\"\n".
+            "        \"[filter-text_regex=xml-node-text]\"\n".
             "        \"[filter-xpath=/config/devices/entry[@name='localhost.localdomain']/deviceconfig/system/update-server]\"\n".
             "        \"[display-fullxpath]\"\n".
             "        \"[display-xmlnode]\"\n".
@@ -57,29 +69,21 @@ class XPATH extends UTIL
     {
         global $jsonArray;
 
-        $fullxpath = false;
-        $xpath = null;
-        $displayXMLnode = false;
-        $displayAPIcommand = false;
-        $displayXMLlineno = false;
-        $displayAttributeName = false;
-        $action = "display";
-
         if( isset( PH::$args['actions'] ) )
         {
             //Todo: 20241022: swaschkut / no clue what I planned to do there
             $supportedActions = array( 'display', 'remove', 'set-text', 'manipulate', 'display-api-command' );
-            $action = PH::$args['actions'];
+            $this->action = PH::$args['actions'];
 
-            if( !in_array( $action, $supportedActions )
-                && strpos( $action, 'set-text:' ) === FALSE && strpos( $action, 'manipulate:' ) === FALSE
+            if( !in_array( $this->action, $supportedActions )
+                && strpos( $this->action, 'set-text:' ) === FALSE && strpos( $this->action, 'manipulate:' ) === FALSE
             )
-                    derr( "action: ". $action. " not supported", null, false );
+                    derr( "action: ". $this->action. " not supported", null, false );
 
-            if( strpos( $action, 'manipulate:' ) !== FALSE )
+            if( strpos( $this->action, 'manipulate:' ) !== FALSE )
             {
                 //read file from:
-                $tmpArray = explode( ":", $action );
+                $tmpArray = explode( ":", $this->action );
                 if( isset($tmpArray[1]) )
                 {
                     $strJsonFileContents = file_get_contents($tmpArray[1]);
@@ -93,180 +97,54 @@ class XPATH extends UTIL
         }
 
 
-        if( !isset( PH::$args['filter-node'] ) && !isset( PH::$args['filter-nameattribute'] ) && !isset( PH::$args['filter-xpath'] ) && !isset( PH::$args['filter-text'] ) )
+        if( !isset( PH::$args['filter-node'] ) && !isset( PH::$args['filter-nameattribute'] ) && !isset( PH::$args['filter-xpath'] ) && !isset( PH::$args['filter-text'] ) && !isset( PH::$args['filter-text_regex'] ) )
             $this->display_error_usage_exit('"filter-node" argument is not set: example "certificate"');
         elseif( !isset( PH::$args['filter-node'] ) && isset( PH::$args['filter-nameattribute'] ) )
-            $qualifiedNodeName = "entry";
+            $this->qualifiedNodeName = "entry";
         elseif( isset( PH::$args['filter-text'] ) )
-            $qualifiedNodeName = "//*[text()[contains(.,'".PH::$args['filter-text']."')]]";
+            $this->qualifiedNodeName = '//*[text()="'.PH::$args['filter-text'].'"]';
+        elseif( isset( PH::$args['filter-text_regex'] ) )
+            $this->qualifiedNodeName = '//*[text()[contains(.,"'.PH::$args['filter-text_regex'].'")]]';
         elseif( !isset( PH::$args['filter-xpath'] ) )
-            $qualifiedNodeName = PH::$args['filter-node'];
+            $this->qualifiedNodeName = PH::$args['filter-node'];
 
         if( isset( PH::$args['filter-xpath'] ) )
-            $xpath = PH::$args['filter-xpath'];
-        elseif( isset( PH::$args['filter-text'] ) )
-            $xpath = $qualifiedNodeName;
+            $this->xpath = PH::$args['filter-xpath'];
+        elseif( isset( PH::$args['filter-text'] ) || isset( PH::$args['filter-text_regex'] ) )
+            $this->xpath = $this->qualifiedNodeName;
 
         if( isset( PH::$args['display-fullxpath'] ) )
-            $fullxpath = true;
+            $this->fullxpath = true;
 
         if( isset( PH::$args['display-xmlnode'] ) )
-            $displayXMLnode = true;
+            $this->displayXMLnode = true;
 
         if( isset( PH::$args['display-api-command'] ) )
         {
-            $displayXMLnode = true;
-            $displayAPIcommand = true;
+            $this->displayXMLnode = true;
+            $this->displayAPIcommand = true;
         }
 
 
         if( isset( PH::$args['display-xmllineno'] ) )
-            $displayXMLlineno = true;
+            $this->displayXMLlineno = true;
 
         if( isset( PH::$args['filter-nameattribute'] ) )
-            $nameattribute = PH::$args['filter-nameattribute'];
+            $this->nameattribute = PH::$args['filter-nameattribute'];
         else
-            $nameattribute = null;
+            $this->nameattribute = null;
 
         if( isset( PH::$args['display-nameattribute'] ) )
-            $displayAttributeName = true;
+            $this->displayAttributeName = true;
         ########################################################################################################################
 
-        if( !isset( PH::$args['filter-xpath'] ) && !isset( PH::$args['filter-text'] ) )
+        if( !isset( PH::$args['filter-xpath'] ) && !isset( PH::$args['filter-text'] ) && !isset( PH::$args['filter-text_regex'] ) )
         {
             //todo: missing connector support
-            $nodeList = $this->xmlDoc->getElementsByTagName($qualifiedNodeName);
-            $nodeArray = iterator_to_array($nodeList);
-
-            $templateEntryArray = array();
-            foreach( $nodeArray as $item )
-            {
-                if( $nameattribute !== null )
-                {
-                    $XMLnameAttribute = DH::findAttribute("name", $item);
-                    if( $XMLnameAttribute === FALSE )
-                        continue;
-
-                    if( $XMLnameAttribute !== $nameattribute )
-                        continue;
-                }
-                $text = DH::elementToPanXPath($item);
-                $replace_template = "/config/devices/entry[@name='localhost.localdomain']/template/";
-
-                if( $xpath !== null && strpos($text, $xpath) === FALSE )
-                    continue;
-
-                if( strpos($text, $replace_template) !== FALSE )
-                {
-                    $tmpArray['xpath'] = $text;
-                    $text = str_replace($replace_template, "", $text);
-
-
-                    $templateXpathArray = explode("/", $text);
-                    //"entry[@name='CALEPA-TMS-PAN_Template01']"
-                    $templateName = str_replace("entry[@name='", "", $templateXpathArray[0]);
-                    $templateName = str_replace("']", "", $templateName);
-
-                    $replace = "entry[@name='" . $templateName . "']";
-                    $text = str_replace($replace, "", $text);
-
-                    $tmpArray['text'] = $text;
-                    $tmpArray['node'] = $item;
-                    $tmpArray['line'] = $item->getLineNo();
-
-                    $templateEntryArray['template'][$templateName][] = $tmpArray;
-
-                }
-                else
-                {
-                    $tmpArray['text'] = $text;
-                    $tmpArray['node'] = $item;
-                    $tmpArray['line'] = $item->getLineNo();
-
-                    $templateEntryArray['misc'][] = $tmpArray;
-                }
-
-            }
-
-
-            if( isset($templateEntryArray['template']) )
-            {
-                foreach( $templateEntryArray['template'] as $templateName => $templateEntry )
-                {
-                    PH::print_stdout();
-                    PH::print_stdout("TEMPLATE: " . $templateName);
-                    foreach( $templateEntry as $item )
-                    {
-                        PH::print_stdout();
-                        PH::print_stdout("---------");
-                        if( !$displayXMLnode && !$displayAttributeName )
-                            PH::print_stdout( "   * XPATH: ".$item['text'] );
-
-                        if( $displayXMLlineno )
-                            PH::print_stdout( "   * line: ".$item['line'] );
-
-                        if( $fullxpath )
-                            PH::print_stdout("     |" . $item['xpath'] . "|");
-
-                        if( $displayXMLnode )
-                            $this->getXpathDisplay( $item['xpath'], "test", false, $action);
-                        if( $displayAttributeName )
-                            $this->getXpathDisplay( $item['xpath'], "test", true, $action);
-                    }
-                }
-            }
-
-            if( isset($templateEntryArray['misc']) )
-            {
-                PH::print_stdout("MISC:");
-
-                foreach( $templateEntryArray['misc'] as $miscEntry )
-                {
-                    $xpath = $miscEntry['text'];
-                    PH::print_stdout();
-                    PH::print_stdout("---------");
-
-                    if( !$displayXMLnode && !$displayAttributeName )
-                        PH::print_stdout( "   * XPATH: ".$xpath );
-
-                    if( $displayXMLlineno )
-                        PH::print_stdout( "   * line: ".$miscEntry['line'] );
-
-                    if( $displayXMLnode )
-                        $this->getXpathDisplay( $xpath, "test", false, $action);
-                    if( $displayAttributeName )
-                        $this->getXpathDisplay( $xpath, "test", true, $action);
-
-                    if( $displayAPIcommand )
-                    {
-                        $splitXPATH = explode( "/", PH::$JSON_TMP["test"]["xpath"] );
-                        array_pop($splitXPATH);
-                        $newXpath = "";
-                        foreach( $splitXPATH as $entry )
-                        {
-                            $newXpath .= "/".$entry;
-                        }
-                        $newXpath = str_replace("//", "/", $newXpath);
-                        $newValue = str_replace("\n", "", PH::$JSON_TMP["test"]["value"]);
-
-                        if( $this->pan->connector !==  null )
-                        {
-                            $FIREWALL_IP = $this->pan->connector->apihost;
-                            $APIkey = $this->pan->connector->apikey;
-                        }
-                        else
-                        {
-                            $FIREWALL_IP = "{FW-MGMT-IP}\n";
-                            $APIkey = "{API-KEY}\n";
-                        }
-
-
-                        PH::print_stdout("----------------");
-                        PH::print_stdout( "https://".$FIREWALL_IP."/api/?"."key=".$APIkey."\n&type=config&action=set&xpath=".$newXpath."\n&element=".$newValue );
-                        PH::print_stdout("----------------");
-                    }
-                }
-            }
+            //$this->getXpathDisplayMain();
+            $tmp_string = "";
+            DH::getXpathDisplayMain( $tmp_string, $this->xmlDoc, $this->qualifiedNodeName, $this->nameattribute, $this->xpath, $this->displayXMLnode, $this->displayAttributeName, $this->displayXMLlineno, $this->fullxpath, $this->displayAPIcommand, $this->pan );
+            PH::print_stdout( $tmp_string );
 
             PH::print_stdout();
         }
@@ -337,14 +215,22 @@ class XPATH extends UTIL
             else
             {
             */
-                if( $displayAttributeName )
-                    $this->getXpathDisplay( $xpath, "test", true, $action);
+                if( $this->displayAttributeName )
+                {
+                    $tmp_string = "";
+                    DH::getXpathDisplay( $tmp_string, $this->xmlDoc, $this->qualifiedNodeName, "test", true);
+                    PH::print_stdout( $tmp_string );
+                }
                 else
-                    $this->getXpathDisplay( $xpath, "test", false, $action);
+                {
+                    $tmp_string = "";
+                    DH::getXpathDisplay( $tmp_string, $this->xmlDoc, $this->qualifiedNodeName, "test", false);
+                    PH::print_stdout( $tmp_string );
+                }
             //}
         }
 
-        if( $action == "remove" || strpos( $action, 'set-text:' ) !== FALSE || strpos( $action, 'manipulate:' ) !== FALSE )
+        if( $this->action == "remove" || strpos( $this->action, 'set-text:' ) !== FALSE || strpos( $this->action, 'manipulate:' ) !== FALSE )
         {
             //todo: save output
             //check if out is set
@@ -373,6 +259,8 @@ class XPATH extends UTIL
         $this->supportedArguments[] = Array('niceName' => 'filter-node', 'shortHelp' => 'specify the filter-node to get all xPath within this configuration file');
         $this->supportedArguments[] = Array('niceName' => 'filter-xpath', 'shortHelp' => 'specify the xpath to get the value defined on this config');
         $this->supportedArguments[] = Array('niceName' => 'filter-nameattribute', 'shortHelp' => 'specify the nameattribute to get only XMLnode where nameattribute match');
+        $this->supportedArguments[] = Array('niceName' => 'filter-text', 'shortHelp' => 'specify the textContent to get only XMLnode where text is match exactly');
+        $this->supportedArguments[] = Array('niceName' => 'filter-text_regex', 'shortHelp' => 'specify the textContent to get only XMLnode where text is containing');
 
         $this->supportedArguments[] = Array('niceName' => 'display-fullxpath', 'shortHelp' => 'display full xpath for templates');
         $this->supportedArguments[] = Array('niceName' => 'display-NameAttribute', 'shortHelp' => 'display not full Xpath content, only attribute name');
@@ -380,36 +268,201 @@ class XPATH extends UTIL
         $this->supportedArguments[] = Array('niceName' => 'display-xmlLineNo', 'shortHelp' => 'display LineNo of XML node ');
         
     }
-    
-    function getXpathDisplay( $xpath, $serial, $entry = false, $actions = "display")
+
+    function getXpathDisplayMain( $xmlDoc, $qualifiedNodeName, $nameattribute, $xpath, $displayXMLnode, $displayAttributeName, $displayXMLlineno, $fullxpath, $displayAPIcommand, $pan )
     {
+        $nodeList = $xmlDoc->getElementsByTagName($qualifiedNodeName);
+        $nodeArray = iterator_to_array($nodeList);
+
+        $templateEntryArray = array();
+        foreach( $nodeArray as $item )
+        {
+            if( $nameattribute !== null )
+            {
+                $XMLnameAttribute = DH::findAttribute("name", $item);
+                if( $XMLnameAttribute === FALSE )
+                    continue;
+
+                if( $XMLnameAttribute !== $nameattribute )
+                    continue;
+            }
+            $text = DH::elementToPanXPath($item);
+            $replace_template = "/config/devices/entry[@name='localhost.localdomain']/template/";
+
+            if( $xpath !== null && strpos($text, $xpath) === FALSE )
+                continue;
+
+            if( strpos($text, $replace_template) !== FALSE )
+            {
+                $tmpArray['xpath'] = $text;
+                $text = str_replace($replace_template, "", $text);
+
+                $templateXpathArray = explode("/", $text);
+
+                $templateName = str_replace("entry[@name='", "", $templateXpathArray[0]);
+                $templateName = str_replace("']", "", $templateName);
+
+                $replace = "entry[@name='" . $templateName . "']";
+                $text = str_replace($replace, "", $text);
+
+                $tmpArray['text'] = $text;
+                $tmpArray['node'] = $item;
+                $tmpArray['line'] = $item->getLineNo();
+
+                $templateEntryArray['template'][$templateName][] = $tmpArray;
+
+            }
+            else
+            {
+                $tmpArray['text'] = $text;
+                $tmpArray['node'] = $item;
+                $tmpArray['line'] = $item->getLineNo();
+
+                $templateEntryArray['misc'][] = $tmpArray;
+            }
+
+        }
+
+
+        if( isset($templateEntryArray['template']) )
+        {
+            foreach( $templateEntryArray['template'] as $templateName => $templateEntry )
+            {
+                PH::print_stdout();
+                PH::print_stdout("TEMPLATE: " . $templateName);
+                foreach( $templateEntry as $item )
+                {
+                    $xpath = $item['xpath'];
+                    PH::print_stdout();
+                    PH::print_stdout("---------");
+                    if( !$displayXMLnode && !$displayAttributeName )
+                        PH::print_stdout( "   * XPATH: ".$xpath );
+
+                    if( $displayXMLlineno )
+                        PH::print_stdout( "   * line: ".$item['line'] );
+
+                    if( $fullxpath )
+                        PH::print_stdout("     |" . $xpath . "|");
+
+                    if( $displayXMLnode )
+                    {
+                        //$this->getXpathDisplay("test", false);
+                        DH::getXpathDisplay( $xmlDoc, $qualifiedNodeName, "test", false);
+                    }
+
+                    if( $displayAttributeName )
+                    {
+                        //$this->getXpathDisplay("test", true);
+                        DH::getXpathDisplay( $xmlDoc, $qualifiedNodeName, "test", true);
+                    }
+
+                }
+            }
+        }
+
+        if( isset($templateEntryArray['misc']) )
+        {
+            PH::print_stdout("MISC:");
+
+            foreach( $templateEntryArray['misc'] as $miscEntry )
+            {
+                $xpath = $miscEntry['text'];
+                PH::print_stdout();
+                PH::print_stdout("---------");
+
+                if( !$displayXMLnode && !$displayAttributeName )
+                    PH::print_stdout( "   * XPATH: ".$xpath );
+
+                if( $displayXMLlineno )
+                    PH::print_stdout( "   * line: ".$miscEntry['line'] );
+
+                if( $displayXMLnode )
+                {
+                    //$this->getXpathDisplay( "test", false);
+                    DH::getXpathDisplay( $xmlDoc, $qualifiedNodeName, "test", false);
+                }
+                if( $displayAttributeName )
+                {
+                    //$this->getXpathDisplay( "test", true);
+                    DH::getXpathDisplay( $xmlDoc, $qualifiedNodeName, "test", true);
+                }
+
+
+                if( $displayAPIcommand )
+                {
+                    $splitXPATH = explode( "/", PH::$JSON_TMP["test"]["xpath"] );
+                    array_pop($splitXPATH);
+                    $newXpath = "";
+                    foreach( $splitXPATH as $entry )
+                    {
+                        $newXpath .= "/".$entry;
+                    }
+                    $newXpath = str_replace("//", "/", $newXpath);
+                    $newValue = str_replace("\n", "", PH::$JSON_TMP["test"]["value"]);
+
+                    if( $pan->connector !==  null )
+                    {
+                        $FIREWALL_IP = $pan->connector->apihost;
+                        $APIkey = $pan->connector->apikey;
+                    }
+                    else
+                    {
+                        $FIREWALL_IP = "{FW-MGMT-IP}\n";
+                        $APIkey = "{API-KEY}\n";
+                    }
+
+
+                    PH::print_stdout("----------------");
+                    PH::print_stdout( "https://".$FIREWALL_IP."/api/?"."key=".$APIkey."\n&type=config&action=set&xpath=".$newXpath."\n&element=".$newValue );
+                    PH::print_stdout("----------------");
+                }
+            }
+        }
+    }
+
+    function getXpathDisplay( $serial, $entry = false)
+    {
+        $string = "";
+
+        //Todo: swaschkut 20250104 - can this be combined with DH::getXpathDisplay
         global $jsonArray;
 
         $text_contains_search = false;
 
         PH::$JSON_TMP[$serial]['serial'] = $serial;
         //check Xpath
-        $xpathResult = DH::findXPath( $xpath, $this->xmlDoc);
-        PH::print_stdout( "   * XPATH: ".$xpath );
+        $xpathResult = DH::findXPath( $this->xpath, $this->xmlDoc);
 
-        if( strpos($xpath, "[text()[contains(") !== FALSE )
+        $string .= "\n";
+        $tmp_string = "* XPATH: ".$this->xpath;
+        $string .= $tmp_string."\n";
+        //PH::print_stdout( $tmp_string );
+
+        if( strpos($this->xpath, "[text()") !== FALSE )
             $text_contains_search = true;
 
-        PH::$JSON_TMP[$serial]['xpath'] = $xpath;
+        PH::$JSON_TMP[$serial]['xpath'] = $this->xpath;
 
         foreach( $xpathResult as $xpath1 )
         {
             if($text_contains_search)
             {
                 /** @var DOMElement $xpath1 */
-                PH::print_stdout();
+                //PH::print_stdout();
+                $string .= "\n";
+
                 $nodePath = $xpath1->getNodePath();
-                PH::print_stdout( "   * XPATH: ".$nodePath );
+                $tmp_string = "   * XPATH: ".$nodePath;
+                $string .= $tmp_string."\n";
+                //PH::print_stdout( $tmp_string );
 
                 $tmpArray = explode("]", $nodePath);
                 $tmp_path = "";
                 foreach( $tmpArray as $key => $path_tmp )
                 {
+                    if( strpos($path_tmp, "[") === FALSE )
+                        continue;
+
                     if( !empty($path_tmp) )
                     {
                         $newstring = substr($path_tmp, -7);
@@ -418,9 +471,17 @@ class XPATH extends UTIL
 
                         $xpathResult = DH::findXPath( $tmp_path, $this->xmlDoc);
                         if( $xpathResult[0]->hasAttribute('name') )
-                            print "    - "."entry[@name='".$xpathResult[0]->getAttribute('name')."']\n";
+                        {
+                            $tmp_string = "    - "."entry[@name='".$xpathResult[0]->getAttribute('name')."']";
+                            $string .= $tmp_string."\n";
+                            #PH::print_stdout( $tmp_string );
+                        }
                         else
-                            print "    - ".$xpathResult[0]->nodeName."\n";
+                        {
+                            $tmp_string = "    - ".$xpathResult[0]->nodeName;
+                            $string .= $tmp_string."\n";
+                            #PH::print_stdout( $tmp_string );
+                        }
                     }
                 }
             }
@@ -436,8 +497,12 @@ class XPATH extends UTIL
                 $indentingXml = 0;
                 $xml = &DH::dom_to_xml($newdoc->documentElement, $indentingXml, $lineReturn, -1, $indentingXmlIncreament);
 
-                PH::print_stdout( "   * VALUE: " );
-                PH::print_stdout( $xml );
+                $tmp_string = "      * VALUE: ";
+                $string .= $tmp_string."\n";
+                //PH::print_stdout( $tmp_string );
+                $tmp_string = "        ".$xml;
+                $string .= $tmp_string."\n";
+                //PH::print_stdout( $tmp_string );
                 PH::$JSON_TMP[$serial]['value'] = $xml;
             }
             else
@@ -447,30 +512,37 @@ class XPATH extends UTIL
                     if( $child->nodeType != XML_ELEMENT_NODE )
                         continue;
                     if( $child->getAttribute('name') !== "" )
-                        PH::print_stdout( "     - name: ". $child->getAttribute('name') );
+                    {
+                        $tmp_string = "     - name: ". $child->getAttribute('name');
+                        $string .= $tmp_string."\n";
+                        //PH::print_stdout( $tmp_string );
+                    }
+
                 }
             }
 
-            if( $actions === "remove" )
+            if( $this->action === "remove" )
             {
                 PH::print_stdout("remove xpath!!!");
                 $xpath1->parentNode->removeChild($xpath1);
             }
 
-            if( strpos( $actions, 'set-text:' ) !== FALSE )
+            if( strpos( $this->action, 'set-text:' ) !== FALSE )
             {
-                $array = explode( ":", $actions );
+                $array = explode( ":", $this->action );
                 if( isset( $array[1] ) )
                 {
                     $tmpText = $array[1];
-                    PH::print_stdout("set xpath Text: ".$array[1]);
+                    $tmp_string = "set xpath Text: ".$array[1];
+                    $string .= $tmp_string."\n";
+                    #PH::print_stdout($tmp_string);
                     $xpath1->textContent = $array[1];
 
                     DH::DEBUGprintDOMDocument($xpath1);
                 }
             }
 
-            if( strpos( $actions, 'manipulate:' ) !== FALSE )
+            if( strpos( $this->action, 'manipulate:' ) !== FALSE )
             {
                 print_r($jsonArray);
             }
@@ -478,11 +550,13 @@ class XPATH extends UTIL
 
         if( count($xpathResult) == 0 )
         {
-            PH::print_stdout( "   * VALUE: not set" );
+            $tmp_string = "   * VALUE: not set";
+            $string .= $tmp_string."\n";
+            #PH::print_stdout( $tmp_string );
             PH::$JSON_TMP[$serial]['value'] = "---";
         }
 
-
-        PH::print_stdout();
+        $string .= "\n";
+        PH::print_stdout($string);
     }
 }

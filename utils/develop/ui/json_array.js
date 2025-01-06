@@ -189,6 +189,11 @@ var subjectObject =
                 "name": "display-NAT-usage",
                 "MainFunction": {}
             },
+            "display-xpath-usage": {
+                "name": "display-xpath-usage",
+                "MainFunction": {},
+                "GlobalFinishFunction": {}
+            },
             "displayreferences": {
                 "name": "displayReferences",
                 "MainFunction": {}
@@ -1019,7 +1024,8 @@ var subjectObject =
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1.1.1.1)",
-                            "input": "input\/panorama-8.0.xml"
+                            "input": "input\/panorama-8.0.xml",
+                            "help": "value ip4.included-in 1.1.1.1 or also possible with a variable 'value ip4.included-inl RFC1918' to cover all IPv4 private addresses"
                         }
                     },
                     "ip4.includes-full": {
@@ -1027,7 +1033,8 @@ var subjectObject =
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1.1.1.1)",
-                            "input": "input\/panorama-8.0.xml"
+                            "input": "input\/panorama-8.0.xml",
+                            "help": "value ip4.included-in 1.1.1.1 or also possible with a variable 'value ip4.included-in RFC1918' to cover all IPv4 private addresses"
                         }
                     },
                     "ip4.includes-full-or-partial": {
@@ -1035,8 +1042,25 @@ var subjectObject =
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1.1.1.1)",
-                            "input": "input\/panorama-8.0.xml"
+                            "input": "input\/panorama-8.0.xml",
+                            "help": "value ip4.includes-full-or-partial 1.1.1.1 or also possible with a variable 'value ip4.includes-full-or-partial RFC1918' to cover all IPv4 private addresses"
                         }
+                    },
+                    "ip6.match.exact.from.file": {
+                        "Function": {},
+                        "arg": true
+                    },
+                    "ip6.included-in.from.file": {
+                        "Function": {},
+                        "arg": true
+                    },
+                    "ip6.includes-full.from.file": {
+                        "Function": {},
+                        "arg": true
+                    },
+                    "ip6.includes-full-or-partial.from.file": {
+                        "Function": {},
+                        "arg": true
                     },
                     "string.regex": {
                         "Function": {},
@@ -2882,15 +2906,398 @@ var subjectObject =
         "action": [],
         "filter": []
     },
+    "gp-gateway": {
+        "name": "gp-gateway",
+        "action": {
+            "display": {
+                "name": "display",
+                "MainFunction": {}
+            }
+        },
+        "filter": {
+            "location": {
+                "operators": {
+                    "is": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% shared )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "regex": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% \/shared\/)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.child.of": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches \/ is child the one specified in argument",
+                        "ci": {
+                            "fString": "(%PROP%  Datacenter-Firewalls)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.parent.of": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches \/ is parent the one specified in argument",
+                        "ci": {
+                            "fString": "(%PROP%  Datacenter-Firewalls)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "name": {
+                "operators": {
+                    "is.in.file": {
+                        "Function": {},
+                        "arg": true
+                    },
+                    "eq": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% grp.shared-group1)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "eq.nocase": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% grp.shared-group1)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "contains": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% grp)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "regex": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% \/-group\/)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "object": {
+                "operators": {
+                    "is.unused": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "refcount": {
+                "operators": {
+                    ">,<,=,!": {
+                        "eval": "$object->countReferences() !operator! !value!",
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% 1)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "reflocation": {
+                "operators": {
+                    "is": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% shared )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.only": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% shared )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "refstore": {
+                "operators": {
+                    "is": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% rulestore )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "reftype": {
+                "operators": {
+                    "is": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% securityrule )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "gp-portal": {
+        "name": "gp-portal",
+        "action": {
+            "display": {
+                "name": "display",
+                "MainFunction": {}
+            }
+        },
+        "filter": {
+            "location": {
+                "operators": {
+                    "is": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% shared )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "regex": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% \/shared\/)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.child.of": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches \/ is child the one specified in argument",
+                        "ci": {
+                            "fString": "(%PROP%  Datacenter-Firewalls)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.parent.of": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches \/ is parent the one specified in argument",
+                        "ci": {
+                            "fString": "(%PROP%  Datacenter-Firewalls)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "name": {
+                "operators": {
+                    "is.in.file": {
+                        "Function": {},
+                        "arg": true
+                    },
+                    "eq": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% grp.shared-group1)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "eq.nocase": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% grp.shared-group1)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "contains": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% grp)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "regex": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% \/-group\/)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "object": {
+                "operators": {
+                    "is.unused": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "refcount": {
+                "operators": {
+                    ">,<,=,!": {
+                        "eval": "$object->countReferences() !operator! !value!",
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% 1)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "reflocation": {
+                "operators": {
+                    "is": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% shared )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.only": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% shared )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "refstore": {
+                "operators": {
+                    "is": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% rulestore )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "reftype": {
+                "operators": {
+                    "is": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% securityrule )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            }
+        }
+    },
     "gratuitous-arp": {
         "name": "gratuitous-arp",
         "action": [],
         "filter": []
     },
+    "gre-tunnel": {
+        "name": "gre-tunnel",
+        "action": {
+            "display": {
+                "name": "display",
+                "MainFunction": {}
+            }
+        },
+        "filter": {
+            "name": {
+                "operators": {
+                    "eq": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% grp.shared-group1)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            }
+        }
+    },
     "html-merger": {
         "name": "html-merger",
         "action": [],
         "filter": []
+    },
+    "ike-gateway": {
+        "name": "ike-gateway",
+        "action": {
+            "display": {
+                "name": "display",
+                "MainFunction": {}
+            }
+        },
+        "filter": {
+            "name": {
+                "operators": {
+                    "eq": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% grp.shared-group1)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "ike-profile": {
+        "name": "ike-profile",
+        "action": {
+            "display": {
+                "name": "display",
+                "MainFunction": {}
+            }
+        },
+        "filter": {
+            "name": {
+                "operators": {
+                    "eq": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% grp.shared-group1)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            }
+        }
     },
     "interface": {
         "name": "interface",
@@ -2956,6 +3363,52 @@ var subjectObject =
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% \/tcp\/)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "ipsec-profile": {
+        "name": "ipsec-profile",
+        "action": {
+            "display": {
+                "name": "display",
+                "MainFunction": {}
+            }
+        },
+        "filter": {
+            "name": {
+                "operators": {
+                    "eq": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% grp.shared-group1)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "ipsec-tunnel": {
+        "name": "ipsec-tunnel",
+        "action": {
+            "display": {
+                "name": "display",
+                "MainFunction": {}
+            }
+        },
+        "filter": {
+            "name": {
+                "operators": {
+                    "eq": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% grp.shared-group1)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -6657,9 +7110,10 @@ var subjectObject =
                             "UsedInLocation",
                             "TotalUse",
                             "BestPractice",
-                            "Visibility"
+                            "Visibility",
+                            "URLmembers"
                         ],
-                        "help": "pipe(|) separated list of additional fields (ie: Arg1|Arg2|Arg3...) to include in the report. The following is available:\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n  - WhereUsed : list places where object is used (rules, groups ...)\n  - TotalUse : list a counter how often this object is used\n  - BestPractice : show if BestPractice is configured\n  - Visibility : show if SP log is configured\n"
+                        "help": "pipe(|) separated list of additional fields (ie: Arg1|Arg2|Arg3...) to include in the report. The following is available:\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n  - WhereUsed : list places where object is used (rules, groups ...)\n  - TotalUse : list a counter how often this object is used\n  - BestPractice : show if BestPractice is configured\n  - Visibility : show if SP log is configured\n  - URLmembers : add URL members also if bestpractice or visibility is added\n"
                     }
                 }
             },
@@ -6769,6 +7223,10 @@ var subjectObject =
             },
             "url.alert-only-set": {
                 "name": "url.alert-only-set",
+                "MainFunction": {}
+            },
+            "url.best-practice-set": {
+                "name": "url.best-practice-set",
                 "MainFunction": {}
             },
             "virus.alert-only-set": {

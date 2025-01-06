@@ -19,7 +19,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-
+//Todo: 20250102 - all these part are now separatly available as utility e.g. type=ike-gateway
 
 set_include_path(dirname(__FILE__) . '/../' . PATH_SEPARATOR . get_include_path());
 require_once dirname(__FILE__)."/../../lib/pan_php_framework.php";
@@ -395,7 +395,7 @@ foreach( $template_array as $template )
             foreach( $ipsec as $ipsecCryptoProfil )
             {
                 PH::print_stdout( " - ".$ipsecCryptoProfil->name() . " - protocol: " . $ipsecCryptoProfil->ipsecProtocol );
-                $text = "encryption: " . $ipsecCryptoProfil->encryption . " - authentication: " . $ipsecCryptoProfil->authentication . " - dhgroup: " . $ipsecCryptoProfil->dhgroup;
+                $text = "      encryption: " . $ipsecCryptoProfil->encryption . " - authentication: " . $ipsecCryptoProfil->authentication . " - dhgroup: " . $ipsecCryptoProfil->dhgroup;
 
                 if( $ipsecCryptoProfil->lifetime_seconds != "" )
                     $text .= " - lifetime: " . $ipsecCryptoProfil->lifetime_seconds . " seconds";
@@ -466,14 +466,15 @@ foreach( $template_array as $template )
 
             foreach( $ipsecTunnel as $tunnel )
             {
-                $text = " - "."Tunnel: " . str_pad($tunnel->name(), 25) . " - IKE Gateway: " . $tunnel->gateway;
+                $text = "\n";
+                $text .= " - "."Tunnel: " . str_pad($tunnel->name(), 25) . " - IKE Gateway: " . $tunnel->gateway;
                 $text .= " - interface: " . $tunnel->interface . " - proposal: " . $tunnel->proposal;
                 $text .= " -disabled: " . $tunnel->disabled;
                 PH::print_stdout($text);
 
                 foreach( $tunnel->proxyIdList() as $proxyId )
                 {
-                    $text = "  - Name: " . $proxyId['name'] . " - ";
+                    $text = "   - Name: " . $proxyId['name'] . " - ";
                     $text .= "local: " . $proxyId['local'] . " - ";
                     $text .= "remote: " . $proxyId['remote'] . " - ";
                     $text .= "protocol: " . $proxyId['protocol']['type'] . " - ";

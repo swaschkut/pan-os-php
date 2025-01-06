@@ -646,7 +646,7 @@ class RuleStore
         if( $ruleToBeMoved === $ruleRef )
         {
             mwarning("Tried to move rule '{$ruleToBeMoved->name()}' after itself!");
-            return;
+            return null;
         }
 
         // TODO fix after pre/post suppression
@@ -820,7 +820,7 @@ class RuleStore
         {
             PH::print_stdout();
             PH::print_stdout( "   - skipp object '" . PH::boldText($ruleToBeMoved->name()) . "' can't move before self!" );
-            return;
+            return null;
         }
 
         // TODO fix after pre/post suppression

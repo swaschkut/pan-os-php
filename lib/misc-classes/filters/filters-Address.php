@@ -185,7 +185,7 @@ RQuery::$defaultFilters['address']['object']['operators']['is.ipv4'] = Array(
             return false;
         }
 
-
+        return null;
     },
     'arg' => false
 );
@@ -230,7 +230,7 @@ RQuery::$defaultFilters['address']['object']['operators']['is.ipv6'] = Array(
             return false;
         }
 
-
+        return null;
     },
     'arg' => false
 );
@@ -543,8 +543,6 @@ RQuery::$defaultFilters['address']['name']['operators']['has.wrong.characters'] 
             return FALSE;
         else
             return TRUE;
-
-        return null;
     },
     'arg' => FALSE,
     'ci' => array(
@@ -878,10 +876,8 @@ RQuery::$defaultFilters['address']['reflocationtype']['operators']['is.devicegro
         #print_r( $reflocation_array );
 
         $return = FALSE;
-        foreach( $reflocation_array as $reflocation )
-        {
-            if( $reflocation == "DeviceGroup" )
-                return TRUE;
+        if (in_array("DeviceGroup", $reflocation_array)) {
+            return TRUE;
         }
 
         return FALSE;
@@ -1162,7 +1158,9 @@ RQuery::$defaultFilters['address']['value']['operators']['ip4.match.exact.from.f
             if( $text === false )
                 derr("cannot open file '{$context->value}");
 
-            print $text."n";
+            #PH::print_stdout("--------");
+            #PH::print_stdout($text);
+            #PH::print_stdout("--------");
             $lines = explode("\n", $text);
 
             $mapping = new IP4Map();
@@ -1172,7 +1170,11 @@ RQuery::$defaultFilters['address']['value']['operators']['ip4.match.exact.from.f
             {
                 $net = trim($net);
                 if( strlen($net) < 1 )
+                {
+                    continue;
                     derr("empty network/IP name provided for argument #$count");
+                }
+
                 $mapping->addMap(IP4Map::mapFromText($net));
                 $count++;
             }
@@ -1223,7 +1225,8 @@ RQuery::$defaultFilters['address']['value']['operators']['ip4.included-in'] = ar
     'arg' => TRUE,
     'ci' => array(
         'fString' => '(%PROP% 1.1.1.1)',
-        'input' => 'input/panorama-8.0.xml'
+        'input' => 'input/panorama-8.0.xml',
+        'help' => "value ip4.included-in 1.1.1.1 or also possible with a variable 'value ip4.included-inl RFC1918' to cover all IPv4 private addresses"
     )
 );
 RQuery::$defaultFilters['address']['value']['operators']['ip4.includes-full'] = array(
@@ -1268,7 +1271,8 @@ RQuery::$defaultFilters['address']['value']['operators']['ip4.includes-full'] = 
     'arg' => TRUE,
     'ci' => array(
         'fString' => '(%PROP% 1.1.1.1)',
-        'input' => 'input/panorama-8.0.xml'
+        'input' => 'input/panorama-8.0.xml',
+        'help' => "value ip4.included-in 1.1.1.1 or also possible with a variable 'value ip4.included-in RFC1918' to cover all IPv4 private addresses"
     )
 );
 RQuery::$defaultFilters['address']['value']['operators']['ip4.includes-full-or-partial'] = array(
@@ -1313,8 +1317,188 @@ RQuery::$defaultFilters['address']['value']['operators']['ip4.includes-full-or-p
     'arg' => TRUE,
     'ci' => array(
         'fString' => '(%PROP% 1.1.1.1)',
-        'input' => 'input/panorama-8.0.xml'
+        'input' => 'input/panorama-8.0.xml',
+        'help' => "value ip4.includes-full-or-partial 1.1.1.1 or also possible with a variable 'value ip4.includes-full-or-partial RFC1918' to cover all IPv4 private addresses"
     )
+);
+RQuery::$defaultFilters['address']['value']['operators']['ip6.match.exact.from.file'] = Array(
+    'Function' => function(AddressRQueryContext $context )
+    {
+        $object = $context->object;
+
+
+        if( !isset($context->cachedValueMapping) )
+        {
+            $text = file_get_contents($context->value);
+
+            if( $text === false )
+                derr("cannot open file '{$context->value}");
+
+            #PH::print_stdout("--------");
+            #PH::print_stdout($text);
+            #PH::print_stdout("--------");
+            $lines = explode("\n", $text);
+
+            $mapping = new IP6Map();
+
+            $count = 0;
+            foreach( $lines as $net )
+            {
+                $net = trim($net);
+                if( strlen($net) < 1 )
+                {
+                    continue;
+                    #derr("empty network/IP name provided for argument #$count");
+                }
+
+                $mapping->addMap(IP6Map::mapFromText($net));
+                $count++;
+            }
+            $context->cachedValueMapping = $mapping;
+        }
+        else
+            $mapping = $context->cachedValueMapping;
+
+        return $object->getIP6Mapping()->equals($mapping);
+
+    },
+    'arg' => true
+);
+RQuery::$defaultFilters['address']['value']['operators']['ip6.included-in.from.file'] = array(
+    'Function' => function (AddressRQueryContext $context) {
+        $object = $context->object;
+
+        if( $object->isAddress() && ( $object->isTmpAddr() || $object->isType_FQDN() ) )
+            return null;
+
+        if( $object->isGroup() && ( $object->isDynamic() || $object->count() < 1 || $object->hasFQDN() ) )
+            return null;
+
+
+        if( !isset($context->cachedValueMapping) )
+        {
+            $text = file_get_contents($context->value);
+
+            if( $text === false )
+                derr("cannot open file '{$context->value}");
+
+            $lines = explode("\n", $text);
+
+            $mapping = new IP6Map();
+
+            $count = 0;
+            foreach( $lines as $net )
+            {
+                $net = trim($net);
+                if( strlen($net) < 1 )
+                    continue;
+
+                $mapping->addMap(IP6Map::mapFromText($net));
+                $count++;
+            }
+            $context->cachedValueMapping = $mapping;
+        }
+        else
+            $mapping = $context->cachedValueMapping;
+
+        return $object->getIP6Mapping()->includedInOtherMap($mapping) == 1;
+    },
+    'arg' => TRUE
+);
+RQuery::$defaultFilters['address']['value']['operators']['ip6.includes-full.from.file'] = array(
+    'Function' => function (AddressRQueryContext $context) {
+        $object = $context->object;
+
+        if( $object->isAddress() )
+        {
+            if( $object->isType_FQDN()  )
+                return null;
+            elseif( $object->isTmpAddr() && $object->value() == "" )
+                return null;
+        }
+
+        if( $object->isGroup() && ( $object->isDynamic() || $object->count() < 1 || $object->hasFQDN() ) )
+            return null;
+
+
+        if( !isset($context->cachedValueMapping) )
+        {
+            $text = file_get_contents($context->value);
+
+            if( $text === false )
+                derr("cannot open file '{$context->value}");
+
+            $lines = explode("\n", $text);
+
+            $mapping = new IP6Map();
+
+            $count = 0;
+            foreach( $lines as $net )
+            {
+                $net = trim($net);
+                if( strlen($net) < 1 )
+                    continue;
+
+                $mapping->addMap(IP6Map::mapFromText($net));
+                $count++;
+            }
+            $context->cachedValueMapping = $mapping;
+        }
+        else
+            $mapping = $context->cachedValueMapping;
+
+        return $mapping->includedInOtherMap($object->getIP6Mapping()) == 1;
+    },
+    'arg' => TRUE
+    #'ci' => array('fString' => '(%PROP% 1.1.1.1)', 'input' => 'input/panorama-8.0.xml')
+);
+RQuery::$defaultFilters['address']['value']['operators']['ip6.includes-full-or-partial.from.file'] = array(
+    'Function' => function (AddressRQueryContext $context) {
+        $object = $context->object;
+
+        if( $object->isAddress() )
+        {
+            if( $object->isType_FQDN()  )
+                return null;
+            elseif( $object->isTmpAddr() && $object->value() == "" )
+                return null;
+        }
+
+        if( $object->isGroup() && ( $object->isDynamic() || $object->count() < 1 || $object->hasFQDN() ) )
+            return null;
+
+        if( !isset($context->cachedValueMapping) )
+        {
+            $text = file_get_contents($context->value);
+
+            if( $text === false )
+                derr("cannot open file '{$context->value}");
+
+            $lines = explode("\n", $text);
+
+            $mapping = new IP6Map();
+
+            $count = 0;
+            foreach( $lines as $net )
+            {
+                $net = trim($net);
+                if( strlen($net) < 1 )
+                {
+                    continue;
+                    #derr("empty network/IP name provided for argument #$count");
+                }
+
+                $mapping->addMap(IP6Map::mapFromText($net));
+                $count++;
+            }
+            $context->cachedValueMapping = $mapping;
+        }
+        else
+            $mapping = $context->cachedValueMapping;
+
+        return $mapping->includedInOtherMap($object->getIP6Mapping()) != 0;
+    },
+    'arg' => TRUE
 );
 RQuery::$defaultFilters['address']['value']['operators']['string.regex'] = array(
     'Function' => function (AddressRQueryContext $context) {

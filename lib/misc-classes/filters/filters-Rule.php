@@ -3281,8 +3281,6 @@ RQuery::$defaultFilters['rule']['name']['operators']['has.wrong.characters'] = a
             return FALSE;
         else
             return TRUE;
-
-        return null;
     },
     'arg' => FALSE,
     'ci' => array(
@@ -3389,9 +3387,9 @@ RQuery::$defaultFilters['rule']['user']['operators']['has'] = array(
 
         $users = $rule->userID_getUsers();
 
-        foreach( $users as $user )
-            if( $user == $context->value )
-                return TRUE;
+        if (in_array($context->value, $users)) {
+            return TRUE;
+        }
 
         return FALSE;
     },

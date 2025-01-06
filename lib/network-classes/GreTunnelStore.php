@@ -20,6 +20,8 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+//todo: GRE and IPsectunnel are insame namespace!!!
+
 /**
  * Class GreTunnelStore
  * @property $o GreTunnel[]

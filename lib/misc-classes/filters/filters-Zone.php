@@ -481,8 +481,6 @@ RQuery::$defaultFilters['zone']['interface']['operators']['is.set'] = array(
             return TRUE;
         else
             return FALSE;
-
-        return null;
     },
     'arg' => FALSE
 );

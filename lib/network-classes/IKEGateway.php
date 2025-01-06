@@ -115,6 +115,13 @@ class IKEGateway
                     $tmp_interface->addReference($this);
                 }
 
+                $localAddressNode = DH::findFirstElement('ip', $node);
+                if( $localAddressNode != null )
+                {
+                    $this->localAddress = $localAddressNode->textContent;
+                    $this->validateIPorObject($this->localAddress, $type = 'local-address');
+                }
+
             }
 
             if( $node->nodeName == 'peer-address' )
@@ -123,70 +130,7 @@ class IKEGateway
                 if( $peerAddressNode != null )
                 {
                     $this->peerAddress = $peerAddressNode->textContent;
-
-                    $isIP = FALSE;
-                    if( filter_var($this->peerAddress, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)
-                        or filter_var($this->peerAddress, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)
-                    )
-                        $isIP = TRUE;
-
-                    if( !$isIP )
-                    {
-                        if( isset($this->owner->owner) && $this->owner->owner->isFirewall() )
-                        {
-                            if( isset($this->owner->owner->owner->owner) && $this->owner->owner->owner->owner->isPanorama() )
-                            {
-                                //check which template;
-                                /** @var Template $template1 */
-                                $template1 = $this->owner->owner->owner;
-                                #print "template Name: ".$template1->name()."\n";
-
-                                $references = $template1->getReferences();
-                                foreach( $references as $ref )
-                                    print get_class( $ref )."\n";
-
-                                //check if template is used / matching to a DG
-                                $tmp_stack = $template1->owner->templatestacks;
-                                $tmp_stack = $template1->owner->getTemplatesStacks();
-                                foreach( $tmp_stack as $stack )
-                                {
-                                    print "1STack: ".$stack->name()."\n";
-                                    /** @var TemplateStack $stack*/
-                                    foreach( $stack->templates as $template2 )
-                                    {
-                                        print "2stackTemplate: ".$template2->name()."\n";
-                                        if( $template1->name() == $template2->name() )
-                                            print "STack: ".$stack->name()."\n";
-                                    }
-                                }
-
-
-                                //check all matching device groups;
-
-
-
-                            }
-                            else
-                            {
-                                //FW get vsys
-                                if( $tmp_interface !== null )
-                                {
-                                    /** @var VirtualSystem $tmp_vsys */
-                                    $tmp_vsys = $tmp_interface->importedByVSYS;
-
-                                    if( $tmp_vsys !== null )
-                                    {
-                                        $tmp_address = $tmp_vsys->addressStore->find($this->peerAddress,null, TRUE);
-                                        if( $tmp_address !== null )
-                                        {
-                                            $tmp_address->addReference($this);
-                                            break;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    $this->validateIPorObject($this->peerAddress, $type = 'peer-address');
                 }
             }
 
@@ -197,7 +141,7 @@ class IKEGateway
                 if( $this->version != null )
                     $this->version = $this->version->textContent;
 
-                $tmp_ikevX = $this->proposal = DH::findFirstElement($this->version, $node);
+                $tmp_ikevX = DH::findFirstElement($this->version, $node);
                 if( $tmp_ikevX != null )
                 {
                     $proposalNode = DH::findFirstElement('ike-crypto-profile', $tmp_ikevX);
@@ -281,6 +225,68 @@ class IKEGateway
         }
     }
 
+
+    function validateIPorObject($nexthopIP, $type = 'local-address')
+    {
+        $pan_object = $this->owner->owner;
+        if( isset( $pan_object->owner ) )
+        {
+            if( get_class($pan_object->owner) == "Template" )
+            {
+                $template_object = $pan_object->owner;
+                $panorama_object = $template_object->owner;
+                $shared_object = $panorama_object->addressStore->find($nexthopIP);
+                if( $shared_object != null )
+                {
+                    $shared_object->addReference($this);
+
+                    if( $type == "local-address" )
+                    {
+                        #$this->_destination = $shared_object->value();
+                        #$this->_destinationObject = $shared_object;
+                    }
+                    elseif( $type == "peer-address" )
+                    {
+                        #$this->_nexthopIP = $shared_object->value();
+                        #$this->_nexthopIPObject = $shared_object;
+                    }
+                }
+            }
+        }
+        else
+        {
+            $all_vsys = $pan_object->getVirtualSystems();
+
+            foreach( $all_vsys as $vsys )
+            {
+                $ngfw_object = $vsys->addressStore->find($nexthopIP);
+                if( $ngfw_object != null && !$ngfw_object->isTmpAddr() )
+                {
+                    $ngfw_object->addReference($this);
+
+                    if( $type == "local-address" )
+                    {
+                        #$this->_destination = $ngfw_object->value();
+                        #$this->_destinationObject = $ngfw_object;
+                    }
+                    elseif( $type == "peer-address" )
+                    {
+                        #$this->_nexthopIP = $ngfw_object->value();
+                        #$this->_nexthopIPObject = $ngfw_object;
+                    }
+                }
+            }
+
+            if( count($all_vsys) == 0 )
+            {
+                #if( $type == "local-address" )
+                #    $this->_destination = $nexthopIP;
+                #elseif( $type == "peer-address" )
+                #    $this->_nexthopIP = $nexthopIP;
+            }
+        }
+    }
+
     /**
      * return true if change was successful false if not (duplicate rulename?)
      * @param string $name new name for the rule
@@ -349,16 +355,18 @@ class IKEGateway
     //Todo: swaschkut 20201001 update this
     public function setExchangeMode($mode)
     {
-        if( $this->proposal == $proposal )
+        if( $this->exchangemode == $mode )
             return TRUE;
 
-        $this->proposal = $proposal;
+        $this->exchangemode = $mode;
 
+        //find correct xpath
+        /*
         $tmp_gateway = DH::findFirstElementOrCreate('protocol', $this->xmlroot);
         $tmp_gateway = DH::findFirstElementOrCreate($this->version, $tmp_gateway);
         $tmp_gateway = DH::findFirstElementOrCreate('ike-crypto-profile', $tmp_gateway);
-        DH::setDomNodeText($tmp_gateway, $proposal);
-
+        DH::setDomNodeText($tmp_gateway, $mode);
+        */
         return TRUE;
     }
 

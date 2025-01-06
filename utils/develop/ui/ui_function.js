@@ -277,6 +277,48 @@ function addNewRow()
     });
 }
 
+function addNewRowBP()
+{
+    rowIdxBP = ++rowIdxBP
+    var Idx = rowIdxBP;
+    var ActionIdx = columnActionIdxBP;
+    var FilterIdx = columnFilterIdxBP;
+
+    // Adding a row inside the tbody.
+    $('#tbodyBP').append(`<tr id="R${Idx}-1">
+                        <td colspan="5">----------------------------------------------------------------------------------------------------</td>
+                    </tr>
+                    <tr id="R${Idx}-2">
+
+                    <td class="text-center">
+                        <button class="btn btn-danger remove"
+                        type="button">Remove</button>
+                    </td>
+                    <td>
+                        <li>
+                        check_______:
+                        <input type="checkbox" id="check${Idx}" name="check${Idx}" 
+                        >
+                        </li><li>
+                        XPath_______:
+                        <input type="text" id="xpath${Idx}" name="xpath${Idx}" value="" style="width:80%"/>
+                        </li>
+                        <li>
+                        value________:
+                        <input type="text" id="value${Idx}" name="value${Idx}" style="width:80%" />
+                        </li>
+                        <li>
+                        variable-name:
+                        <input type="text" id="variable${Idx}" name="variable${Idx}" style="width:80%" />
+                        </li>
+                        <li>
+                        comment____:
+                        <input type="text" id="comment${Idx}" name="comment${Idx}" style="width:80%" />
+                        </li>
+                    </td>
+                </tr>
+                `);
+}
 function updateScriptsyntax( Idx ) {
 
     var ActionIdx = $( "#actionID-" + Idx ).val();
@@ -737,6 +779,16 @@ function tableRemoveAll()
     $('#tbody').empty();
 }
 
+function tableRemoveAllBP()
+{
+    $('#tbodyBP').empty();
+}
+
+function tableRemoveAllBPsecprof()
+{
+    $('#tbodyBPsecprof').empty();
+}
+
 function setHeight(jq_in){
     jq_in.each(function(index, elem){
         elem.style.height = elem.scrollHeight+'px';
@@ -746,6 +798,16 @@ function setHeight(jq_in){
 function eraseText() {
     $("#js-textarea").val("");
     $("#js-textarea").height( '40px' );
+}
+
+function eraseTextBP() {
+    $("#js-textareaBP").val("");
+    $("#js-textareaBP").height( '40px' );
+}
+
+function eraseTextBPsecprof() {
+    $("#js-textareaBPsecprof").val("");
+    $("#js-textareaBPsecprof").height( '40px' );
 }
 
 function ScriptSet( Idx, SCRIPTtype )
@@ -956,6 +1018,144 @@ function createTableFromJSON( textValue )
     }
 }
 
+function createTableFromJSON_bp( textValue )
+{
+    //intermediate; display file value
+    $("#js-textareaBP").val( textValue );
+    //setHeight($("#js-textarea"));
+    $("#js-textareaBP").height( '300px' );
+
+    tableRemoveAllBP();
+    //missing stuff, check that all additional columns actions / filters are also removed
+
+    for (var i = 1; i <= rowIdxBP; i++) {
+        for (var ii = 3; ii <= columnIdxBP; ii++) {
+            deleteColumn(ii, i);
+        }
+    }
+
+    rowIdxBP = 0;
+    columnActionIdxBP = 1;
+    columnFilterIdxBP = 0;
+    columnIdxBP = 3;
+
+    const obj = JSON.parse( textValue );
+
+
+    for (var i = 0; i < obj.length; i++)
+    {
+        //"check": "true",
+        //"xpath": "deviceconfig\/system\/timezone",
+        //"value": "Europe\/Berlin",
+        //"variable-name": "{{ TIMEZONE }}"
+
+
+        $("#addBtnBP").trigger('click');
+
+        var Idx = rowIdxBP;
+
+
+        checkValue = obj[i]['check']
+        xpathValue = obj[i]['xpath']
+
+        valueValue = obj[i]['value']
+        variableNameValue = obj[i]['variable-name']
+
+        commentValue = ""
+        if( obj[i]['comment'] !== undefined )
+            commentValue = obj[i]['comment']
+
+        //----------------------------
+
+        $( "#check" + Idx ).attr("checked", true);
+
+        if( checkValue == "false" )
+            $( "#check" + Idx ).attr("checked", false);
+        else if( checkValue == "true" )
+            $( "#check" + Idx ).attr("checked", true);
+
+        $( "#check" + Idx ).change();
+
+        $( "#xpath" + Idx ).val( xpathValue );
+        $( "#xpath" + Idx ).change();
+
+        $( "#value" + Idx ).val( valueValue );
+        $( "#value" + Idx ).change();
+
+        $( "#variable" + Idx ).val( variableNameValue );
+        $( "#variable" + Idx ).change();
+
+        $( "#comment" + Idx ).val( commentValue );
+        $( "#comment" + Idx ).change();
+    }
+}
+
+function createTableFromJSON_bp_secprof( textValue )
+{
+    //intermediate; display file value
+    $("#js-textareaBPsecprof").val( textValue );
+    //setHeight($("#js-textarea"));
+    $("#js-textareaBPsecprof").height( '300px' );
+
+    tableRemoveAllBPsecprof();
+    //missing stuff, check that all additional columns actions / filters are also removed
+
+    for (var i = 1; i <= rowIdxBP; i++) {
+        for (var ii = 3; ii <= columnIdxBP; ii++) {
+            deleteColumn(ii, i);
+        }
+    }
+
+    rowIdxBP = 0;
+    columnActionIdxBP = 1;
+    columnFilterIdxBP = 0;
+    columnIdxBP = 3;
+
+    const obj = JSON.parse( textValue );
+
+    var keys = [];
+    for(var k in obj) keys.push(k);
+
+
+    keys.forEach(myFunction)
+
+    function myFunction(item, index, arr) {
+        arr[index] = item * 10;
+    }
+
+    for (var i = 0; i < obj.length; i++)
+    {
+        //"check": "true",
+        //"xpath": "deviceconfig\/system\/timezone",
+        //"value": "Europe\/Berlin",
+        //"variable-name": "{{ TIMEZONE }}"
+
+
+        //$("#addBtnBPsecprof").trigger('click');
+
+        var Idx = rowIdxBP;
+
+
+        $('#tbodyBP').append(`<tr id="R${Idx}-1">
+                        <td colspan="5">----------------------------------------------------------------------------------------------------</td>
+                    </tr>
+                    <tr id="R${Idx}-2">
+                    <td>
+                        <li>
+                        <input type="text" id="type${Idx}" name="type${Idx}" value="" style="width:80%"/>
+                        </li>
+                    </td>
+                </tr>
+                `);
+
+        typeValue = obj[i]['type']
+
+        //----------------------------
+
+        $( "#type" + Idx ).val( xpathValue );
+        $( "#type" + Idx ).change();
+    }
+}
 
 function addActionBtn( Idx )
 {
@@ -1184,6 +1384,58 @@ function createJSONstringAndDownload()
 
 
     var filename = $("#json-output").val();
+    // Start file download.
+    download(filename,jsonPretty);
+}
+
+function createJSONstringAndDownloadBP()
+{
+    //console.log( rowIdxBP );
+
+    var jsonSTRING = "";
+    var jsonStringStart = "[\n";
+    var jsonStringEnd = "]";
+
+    jsonSTRING += jsonStringStart;
+
+    var i = 1;
+    for( i; i <= rowIdxBP; i++ )
+    {
+        //console.log( "xpath: " + $( "#xpath" + i ).val() );
+
+
+        var text = "\n{ ";
+
+        if( $( "#check" + i ).is(':checked') )
+            text += '"check": "true",';
+        else
+            text += '"check": "false",';
+        text += '"xpath": "' + $( "#xpath" + i ).val() + '",';
+        text += '"value": "' + $( "#value" + i ).val() + '",';
+        text += '"variable-name": "' + $( "#variable" + i ).val() + '",';
+        text += '"comment": "' + $( "#comment" + i ).val() + '"';
+
+
+
+        text += "},";
+        jsonSTRING += text;
+        //console.log( text );
+    }
+    //remove last , from string
+    jsonSTRING = jsonSTRING.substring(0, jsonSTRING.length - 1);
+
+    jsonSTRING += jsonStringEnd;
+
+    //console.log( jsonSTRING );
+
+    var jsonPretty = JSON.stringify(JSON.parse(jsonSTRING),null,2);
+    $("#json-display-outBP").val( jsonPretty );
+
+    $("#json-display-outBP").height( "400px" );
+    //setHeight($("#json-display-out"));
+
+
+    var filename = $("#json-outputBP").val();
     // Start file download.
     download(filename,jsonPretty);
 }
