@@ -125,21 +125,22 @@ class EDL
 
         $tmp_type_node = DH::findFirstElement('type', $xml);
         $tmp_type = DH::firstChildElement($tmp_type_node);
-        $this->type = $tmp_type->nodeName;
-        $supportedType = array( 'ip', 'domain', 'url', 'imei', 'imsi', 'predefined-ip', 'predefined-url' );
-        //todo: supported type: ip/domain/url/imei/imsi
-
-
-        $tmp_recurring_node = DH::findFirstElement('recurring', $tmp_type);
-        if( $tmp_recurring_node != False )
+        if( $tmp_type !== FALSE )
         {
-            $tmp_recurring = DH::firstChildElement($tmp_recurring_node);
-            $this->recurring = $tmp_recurring->nodeName;
-        }
+            $this->type = $tmp_type->nodeName;
+            $supportedType = array('ip', 'domain', 'url', 'imei', 'imsi', 'predefined-ip', 'predefined-url');
+            //todo: supported type: ip/domain/url/imei/imsi
 
-        $tmp_url_node = DH::findFirstElement('url', $tmp_type);
-        if( $tmp_url_node != False )
-            $this->url = $tmp_url_node->textContent;
+
+            $tmp_recurring_node = DH::findFirstElement('recurring', $tmp_type);
+            if ($tmp_recurring_node != False) {
+                $tmp_recurring = DH::firstChildElement($tmp_recurring_node);
+                $this->recurring = $tmp_recurring->nodeName;
+            }
+
+            $tmp_url_node = DH::findFirstElement('url', $tmp_type);
+            if ($tmp_url_node != False)
+                $this->url = $tmp_url_node->textContent;
 
             /*
             +<entry name="EDL_waschkut_IP">
@@ -204,9 +205,10 @@ class EDL
             + </type>
             +</entry>
              */
-        //todo - implement EDL reading type IP / FQDN
-        # EDL take precedence over address / address-group  by name
-        //todo: EDL of type IP-LIST can be used in security rule source/destination
+            //todo - implement EDL reading type IP / FQDN
+            # EDL take precedence over address / address-group  by name
+            //todo: EDL of type IP-LIST can be used in security rule source/destination
+        }
     }
 
 

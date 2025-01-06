@@ -3091,7 +3091,28 @@ AddressCallContext::$supportedActions[] = array(
 
         //------------------------
         $qualifiedNodeName = '//*[text()="'.$object->name().'"]';
-        $xmlDoc = $object->owner->owner->xmldoc;
+
+        //
+        if( get_class($object->owner->owner) == "PanoramaConf" || get_class($object->owner->owner) == "PANConf" )
+            $xmlDoc = $object->owner->owner->xmldoc;
+        elseif( get_class($object->owner->owner) == "VirtualSystem" )
+        {
+            if( get_class($object->owner->owner->owner ) == "PANConf" )
+            {
+                if( !isset( $object->owner->owner->owner->owner ) )
+                    $xmlDoc = $object->owner->owner->owner->xmldoc;
+                else
+                {
+                    //Template ??? but there is no AddressStore
+                }
+            }
+        }
+        elseif( get_class($object->owner->owner) == "DeviceGroup" )
+        {
+            if( get_class($object->owner->owner->owner) == "PanoramaConf" )
+                $xmlDoc = $object->owner->owner->owner->xmldoc;
+        }
+
         $string1 = "";
         DH::getXpathDisplay( $string1, $xmlDoc, $qualifiedNodeName, "test", false, "display" );
 
@@ -3103,7 +3124,7 @@ AddressCallContext::$supportedActions[] = array(
         $displayAttributeName = false;
         $pan = false;
 
-        $displayXMLnode = false;
+        $displayXMLnode = true;
         $qualifiedNodeName = "entry";
         $nameattribute = $object->name();
 
@@ -3115,12 +3136,161 @@ AddressCallContext::$supportedActions[] = array(
 
         //------------------------
         if( !empty($string1) )
-            $context->objectList[$object->name()][] = $string1;
+            $context->objectList[$object->name()]['text'] = $string1;
         if( !empty($string2) )
-            $context->objectList[$object->name()][] = $string2;
+            $context->objectList[$object->name()]['nameattribute'] = $string2;
     },
-    'GlobalFinishFunction' => function (AddressCallContext $context) {
-        print_r( $context->objectList );
+    'GlobalFinishFunction' => function (AddressCallContext $context)
+    {
+        $remove_known_references = false;
+
+        //optimise array
+        foreach( $context->objectList as $key => &$object )
+        {
+            if( isset( $object['text'] ) )
+            {
+                $tmp_array = explode( "* XPATH:", $object['text'] );
+                foreach( $tmp_array as $key2 => $value2 )
+                {
+                    $tmp_array2 = preg_split("/\r\n|\n|\r/", $value2);
+                    $tmp_array2 = array_map('trim', $tmp_array2);
+                    $tmp_array[$key2] = array_filter($tmp_array2);
+                }
+                $tmp_array = array_filter($tmp_array);
+                unset( $tmp_array[1] );
+                $object['text'] = $tmp_array;
+            }
+            if( isset( $object['nameattribute'] ) )
+            {
+                $tmp_array = explode( "* XPATH:", $object['nameattribute'] );
+                unset( $tmp_array[0] );
+                foreach( $tmp_array as $key2 => $value2 )
+                {
+                    $tmp_array2 = preg_split("/\r\n|\n|\r/", $value2);
+                    $tmp_array2 = array_map('trim', $tmp_array2);
+                    foreach( $tmp_array2 as $key3 => $value3 )
+                    {
+                        if( strpos( $value3, "TEMPLATE" ) !== FALSE )
+                            unset( $tmp_array2[$key3] );
+                    }
+                    $tmp_array[$key2] = array_filter($tmp_array2);
+                }
+
+                $object['nameattribute'] = $tmp_array;
+                if( empty($tmp_array) )
+                    unset( $context->objectList[$key] );
+            }
+        }
+
+        //remove already know reference:
+        if( $remove_known_references )
+        {
+            foreach( $context->objectList as $key => &$object )
+            {
+                if( isset( $object['text'] ) )
+                {
+                    foreach( $object['text'] as $key2 => $value2 )
+                    {
+                        if( strpos( $value2[0], "device-group" ) !== FALSE || strpos( $value2[0], "vsys" ) !== FALSE )
+                        {
+                            if( strpos( $value2[0], "address" ) !== FALSE )
+                            {
+                                unset( $object['text'][$key2] );
+                            }
+                            if( strpos( $value2[0], "-rulebase" ) !== FALSE || strpos( $value2[0], "rules" ) !== FALSE )
+                            {
+                                unset( $object['text'][$key2] );
+                            }
+                            if( strpos( $value2[0], "tag" ) !== FALSE )
+                            {
+                                unset( $object['text'][$key2] );
+                            }
+                        }
+                        if( strpos( $value2[0], "shared" ) !== FALSE )
+                        {
+                            if( strpos( $value2[0], "tag" ) !== FALSE )
+                            {
+                                unset( $object['text'][$key2] );
+                            }
+                        }
+                    }
+                    if( empty($object['text']) )
+                        unset( $object['text'] );
+                }
+
+                if( isset( $object['nameattribute'] ) )
+                {
+                    foreach( $object['nameattribute'] as $key2 => $value2 )
+                    {
+                        if( strpos( $value2[0], "device-group" ) !== FALSE || strpos( $value2[0], "vsys" ) !== FALSE )
+                        {
+                            if( strpos( $value2[0], "address" ) !== FALSE )
+                            {
+                                unset( $object['nameattribute'][$key2] );
+                            }
+                            if( strpos( $value2[0], "-rulebase" ) !== FALSE || strpos( $value2[0], "rules" ) !== FALSE )
+                            {
+                                unset( $object['nameattribute'][$key2] );
+                            }
+                            if( strpos( $value2[0], "tag" ) !== FALSE )
+                            {
+                                unset( $object['nameattribute'][$key2] );
+                            }
+                        }
+                        if( strpos( $value2[0], "shared" ) !== FALSE )
+                        {
+                            if( strpos( $value2[0], "tag" ) !== FALSE )
+                            {
+                                unset( $object['nameattribute'][$key2] );
+                            }
+                        }
+
+                    }
+                    if( empty($object['nameattribute']) )
+                        unset( $object['nameattribute'] );
+                }
+                if( empty($object) )
+                    unset( $context->objectList[$key] );
+            }
+        }
+
+
+        //print_r( $context->objectList );
+        $padding = "  ";
+        foreach( $context->objectList as $object_name => $object )
+        {
+            PH::print_stdout( $padding."* ".$object_name );
+            //key -> 'text' || 'nameattribute'
+            foreach( $object as $key2 => $value2 )
+            {
+
+                foreach( $value2 as $key3 => $value3 )
+                {
+                    $xmlfound = false;
+                    $xmlString = "";
+                    foreach( $value3 as $key4 => $value4 )
+                    {
+                        if ($key4 == 0)
+                            PH::print_stdout($padding.$padding."- XPATH: " . $value4);
+                        elseif (strpos($value4, "VALUE") !== FALSE) {
+                            $xmlfound = true;
+                        } elseif ($xmlfound) {
+                            $xmlString .= $value4;
+                        } else
+                            PH::print_stdout($padding.$padding."  ".$value4);
+                    }
+
+                    DH::XMLstringToPrettyDOMDocument($xmlString);
+
+                    $padding2 = $padding.$padding.$padding."   ";
+                    $xmlString = str_replace( "\n", "\n".$padding2, $xmlString );
+                    PH::print_stdout($padding2.$xmlString);
+
+
+                }
+            }
+            PH::print_stdout( );
+        }
     }
 );
 

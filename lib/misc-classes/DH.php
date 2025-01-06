@@ -958,6 +958,24 @@ class DH
 
     }
 
+    static public function XMLstringToPrettyDOMDocument( &$string )
+    {
+        if( !empty($string) )
+        {
+            $newdoc = new DOMDocument;
+            $node = $newdoc->loadXML($string, true);
+            #$newdoc->appendChild($node);
+
+            $lineReturn = TRUE;
+            $indentingXmlIncreament = 1;
+            $indentingXml = 0;
+            $xml = &DH::dom_to_xml($newdoc->documentElement, $indentingXml, $lineReturn, -1, $indentingXmlIncreament);
+            //print $xml;
+            $string = $xml;
+        }
+
+    }
+
     static public function hasChild($p)
     {
         if( $p->hasChildNodes() )
@@ -1108,7 +1126,7 @@ class DH
     {
         $padding = "   ";
 
-        //$string .= "\n";
+        $string .= "\n";
 
         $nodeList = $xmlDoc->getElementsByTagName($qualifiedNodeName);
         $nodeArray = iterator_to_array($nodeList);

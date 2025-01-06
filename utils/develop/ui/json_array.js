@@ -189,6 +189,11 @@ var subjectObject =
                 "name": "display-NAT-usage",
                 "MainFunction": {}
             },
+            "display-xpath-usage": {
+                "name": "display-xpath-usage",
+                "MainFunction": {},
+                "GlobalFinishFunction": {}
+            },
             "displayreferences": {
                 "name": "displayReferences",
                 "MainFunction": {}
