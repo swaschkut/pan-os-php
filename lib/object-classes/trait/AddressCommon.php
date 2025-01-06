@@ -539,7 +539,21 @@ trait AddressCommon
                     $tmp_store = $objectRef->owner->owner->addressStore;
                 elseif( (get_class($objectRef) == "AddressRuleContainer") )
                     $tmp_store = $objectRef->owner->owner->owner->addressStore;
-                elseif( (get_class($objectRef) == "TunnelInterface") or (get_class($objectRef) == "EthernetInterface") )
+                elseif(
+                    //implementation done via VirtualSystem class
+                    (get_class($objectRef) == "TunnelInterface") or
+                    (get_class($objectRef) == "LoopbackInterface") or
+                    (get_class($objectRef) == "EthernetInterface") or
+                    (get_class($objectRef) == "VlanInterface") or
+
+                    //Todo: missing address references
+                    (get_class($objectRef) == "GRETunnel") or
+
+                    (get_class($objectRef) == "IKEGateway") or
+                    (get_class($objectRef) == "GPPortal") or
+                    (get_class($objectRef) == "GPGateway") or
+                    (get_class($objectRef) == "StaticRoute")
+                )
                 {
                     PH::print_stdout( "- SKIP: not yet possible on ".get_class($objectRef) );
                     $success = false;
