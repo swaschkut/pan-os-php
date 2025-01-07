@@ -57,6 +57,9 @@ class NetworkPropertiesContainer
     /** @var virtualWireStore */
     public $virtualWireStore;
 
+    /** @var SecureWebGateway */
+    public $secureWebGateway;
+
     /** @var DOMElement|null */
     public $xmlroot = null;
 
@@ -83,6 +86,8 @@ class NetworkPropertiesContainer
         $this->tunnelIfStore = new TunnelIfStore('TunnelIfaces', $owner);
         $this->virtualWireStore = new VirtualWireStore('', $owner);
         $this->dhcpStore = new DHCPStore('DHCP', $owner);
+        $this->secureWebGateway = new SecureWebGateway('SecurityWebGateway', $owner);
+
 
         $this->sharedGatewayStore = new SharedGatewayStore('SharedGateway', $owner);
     }
@@ -172,6 +177,11 @@ class NetworkPropertiesContainer
 
         }
 
+        $tmp = DH::findFirstElement('secure-web-gateway', $this->xmlroot);
+        if( $tmp !== FALSE )
+        {
+            $this->secureWebGateway->load_from_domxml($tmp);
+        }
     }
 
     function load_from_domxml_2(DOMElement $xml)

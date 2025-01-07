@@ -358,6 +358,8 @@ require_once $basedir . '/network-classes/SharedGatewayStore.php';
 require_once $basedir . '/network-classes/Certificate.php';
 require_once $basedir . '/network-classes/CertificateStore.php';
 
+require_once $basedir . '/network-classes/SecureWebGateway.php';
+
 
 require_once $basedir . '/rule-classes/RuleWithGroupTag.php';
 

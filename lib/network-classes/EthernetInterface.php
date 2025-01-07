@@ -188,7 +188,6 @@ class EthernetInterface
                                 $shared_object = $panorama_object->addressStore->find($tmpIP);
                                 if( $shared_object != null )
                                 {
-                                    print "add reference: ".$shared_object->name()."\n";
                                     $shared_object->addReference($this);
                                     $this->l3ipv6Addresses[] = $shared_object->value();
                                 }

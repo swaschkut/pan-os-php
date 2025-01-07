@@ -7,6 +7,7 @@ BUGFIX:
 
 GENERAL:
 * class VirtualSystem - ethernet subInterfaces, add address objects references
+* introduce class SecureWebGateway | to reference used interfaces
 
 
 2.1.31  (20250106)

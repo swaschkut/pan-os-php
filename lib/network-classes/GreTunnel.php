@@ -104,7 +104,6 @@ class GreTunnel
                     $tmpInterface->addReference( $this->localInterface );
 
                     $this->localInterface->addInterface( $tmpInterface );
-                    PH::print_stdout("add reference: ".$tmp->textContent);
                 }
 
                 $tmp = DH::findFirstElement('ip', $node);

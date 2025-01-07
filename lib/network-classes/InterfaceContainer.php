@@ -33,7 +33,7 @@ class InterfaceContainer extends ObjRuleContainer
     public $owner;
 
     /**
-     * @param VirtualSystem|DeviceCloud|Zone|VirtualRouter|PbfRule|DoSRule|DHCP $owner
+     * @param VirtualSystem|DeviceCloud|Zone|VirtualRouter|PbfRule|DoSRule|DHCP|SecureWebGateway $owner
      * @param NetworkPropertiesContainer $centralStore
      */
     public function __construct($owner, $centralStore)
