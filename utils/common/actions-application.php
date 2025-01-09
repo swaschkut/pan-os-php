@@ -272,6 +272,197 @@ ApplicationCallContext::$supportedActions['display'] = array(
     }
 );
 
+ApplicationCallContext::$supportedActions[] = array(
+    'name' => 'exportToExcel',
+    'MainFunction' => function (ApplicationCallContext $context) {
+        $object = $context->object;
+        $context->objectList[] = $object;
+    },
+    'GlobalInitFunction' => function (ApplicationCallContext $context) {
+        $context->objectList = array();
+    },
+    'GlobalFinishFunction' => function (ApplicationCallContext $context) {
+        $args = &$context->arguments;
+        $filename = $args['filename'];
+
+        if( isset( $_SERVER['REQUEST_METHOD'] ) )
+            $filename = "project/html/".$filename;
+
+        $addWhereUsed = FALSE;
+        $addUsedInLocation = FALSE;
+
+
+        $optionalFields = &$context->arguments['additionalFields'];
+
+        if( isset($optionalFields['WhereUsed']) )
+            $addWhereUsed = TRUE;
+
+        if( isset($optionalFields['UsedInLocation']) )
+            $addUsedInLocation = TRUE;
+
+
+        $headers = '<th>ID</th><th>subID</th><th>type</th><th>object-type</th><th>location</th><th>name</th>';
+        $headers .= '<th>category</th><th>subCategory</th><th>risk</th><th>technology</th><th>apptag</th><th>characteristics</th><th>standardPorts</th><th>options</th><th>description</th>';
+
+        if( $addWhereUsed )
+            $headers .= '<th>where used</th>';
+        if( $addUsedInLocation )
+            $headers .= '<th>location used</th>';
+
+
+        $lines = '';
+
+        $count = 0;
+        if( isset($context->objectList) )
+        {
+            foreach( $context->objectList as $object )
+            {
+                $count++;
+
+                /** @var App $object */
+                if( $count % 2 == 1 )
+                    $lines .= "<tr>\n";
+                else
+                    $lines .= "<tr bgcolor=\"#DDDDDD\">";
+
+                $lines .= $context->encloseFunction( (string)$count );
+                $lines .= $context->encloseFunction( "" );
+
+                $lines .= $context->encloseFunction( $object->type() );
+
+                $objType = "application";
+                if( $object->isContainer() )
+                    $objType = "container";
+                elseif( $object->isApplicationCustom() )
+                    $objType = "application-custom";
+                elseif( $object->isApplicationGroup() )
+                    $objType = "application-group";
+                elseif( $object->isApplicationFilter() )
+                    $objType = "application-filter";
+
+                $lines .= $context->encloseFunction( $objType );
+
+                if( isset($object->owner) && isset($object->owner->owner) )
+                {
+                    if($object->owner->owner->isPanorama() || $object->owner->owner->isFirewall() )
+                        $lines .= $context->encloseFunction('shared');
+                    else
+                        $lines .= $context->encloseFunction($object->owner->owner->name());
+                }
+                else
+                    $lines .= $context->encloseFunction("---");
+
+
+                $lines .= $context->encloseFunction($object->name());
+
+                //Todo: add more information about app-id
+
+                if( $addWhereUsed )
+                {
+                    $refTextArray = array();
+                    foreach( $object->getReferences() as $ref )
+                        $refTextArray[] = $ref->_PANC_shortName();
+
+                    $lines .= $context->encloseFunction($refTextArray);
+                }
+                if( $addUsedInLocation )
+                {
+                    $refTextArray = array();
+                    foreach( $object->getReferences() as $ref )
+                    {
+                        $location = PH::getLocationString($object->owner);
+                        $refTextArray[$location] = $location;
+                    }
+
+                    $lines .= $context->encloseFunction($refTextArray);
+                }
+
+                if( !$object->isContainer() and !$object->isApplicationCustom() and !$object->isApplicationGroup() and !$object->isApplicationFilter() )
+                    $object->spreadsheetAppDetails( $context,$lines);
+
+                if( $object->isApplicationFilter() )
+                {
+                    $lines .= $context->encloseFunction($object->app_filter_details['category']);
+                    $lines .= $context->encloseFunction($object->app_filter_details['subcategory']);
+                    $lines .= $context->encloseFunction($object->app_filter_details['risk']);
+                    $lines .= $context->encloseFunction($object->app_filter_details['technology']);
+                    $lines .= $context->encloseFunction($object->app_filter_details['tagging']);
+
+                    $tmp = array_keys($object->_characteristics);
+                    $lines .= $context->encloseFunction($tmp);
+
+
+                }
+
+
+                $lines .= "</tr>\n";
+
+                $count1 = 0;
+                if( $object->isContainer() )
+                {
+                    foreach( $object->containerApps() as $app )
+                    {
+                        $count1++;
+                        $app->spreadsheetContainerGroupFilter( $context, $count, $count1, $lines);
+                        $app->spreadsheetAppDetails( $context,$lines);
+
+                        $lines .= "</tr>\n";
+                    }
+                }
+                elseif( $object->isApplicationGroup() )
+                {
+                    foreach( $object->groupApps() as $app )
+                    {
+                        $count1++;
+                        $app->spreadsheetContainerGroupFilter( $context, $count, $count1, $lines);
+                        $app->spreadsheetAppDetails( $context,$lines);
+
+                        $lines .= "</tr>\n";
+                    }
+                }
+                elseif( $object->isApplicationFilter() )
+                {
+                    foreach( $object->filteredApps() as $app )
+                    {
+                        $count1++;
+                        $app->spreadsheetContainerGroupFilter( $context, $count, $count1, $lines);
+                        $app->spreadsheetAppDetails( $context,$lines);
+
+                        $lines .= "</tr>\n";
+                    }
+                }
+            }
+        }
+
+        $content = file_get_contents(dirname(__FILE__) . '/html/export-template.html');
+        $content = str_replace('%TableHeaders%', $headers, $content);
+
+        $content = str_replace('%lines%', $lines, $content);
+
+        $jscontent = file_get_contents(dirname(__FILE__) . '/html/jquery.min.js');
+        $jscontent .= "\n";
+        $jscontent .= file_get_contents(dirname(__FILE__) . '/html/jquery.stickytableheaders.min.js');
+        $jscontent .= "\n\$('table').stickyTableHeaders();\n";
+
+        $content = str_replace('%JSCONTENT%', $jscontent, $content);
+
+        file_put_contents($filename, $content);
+    },
+    'args' => array('filename' => array('type' => 'string', 'default' => '*nodefault*'),
+        'additionalFields' =>
+            array('type' => 'pipeSeparatedList',
+                'subtype' => 'string',
+                'default' => '*NONE*',
+                'choices' => array('WhereUsed', 'UsedInLocation'),
+                'help' =>
+                    "pipe(|) separated list of additional fields (ie: Arg1|Arg2|Arg3...) to include in the report. The following is available:\n" .
+                    "  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n" .
+                    "  - WhereUsed : list places where object is used (rules, groups ...)\n"
+            )
+    )
+
+);
+
 ApplicationCallContext::$supportedActions['move'] = array(
     'name' => 'move',
     'MainFunction' => function (ApplicationCallContext $context) {

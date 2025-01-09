@@ -221,6 +221,9 @@ class App
             if( $app->isApplicationFilter() )
                 continue;
 
+            if( isset( $this->exclude[$app->name()] ) )
+                continue;
+
             $hasCategory = TRUE;
             if( count( $categories ) > 0 )
             {
@@ -713,7 +716,7 @@ class App
         if( $returnString )
             $app_mapping[] = $this->name().",".$string_category.",".$string_subcategory.",".$string_technology.",".$string_risk.",".$string_apptag.",".$string_characteristic;
         else
-            $app_mapping[] = array( "name" => $this->name(), "category" => $string_category, "subcatecory" => $string_subcategory, "technology" => $string_technology, "risk" => $string_risk, "tag" => $string_apptag, "characteristic" => $string_characteristic );
+            $app_mapping[] = array( "name" => $this->name(), "category" => $string_category, "subcategory" => $string_subcategory, "technology" => $string_technology, "risk" => $string_risk, "tag" => $string_apptag, "characteristic" => $string_characteristic );
     }
 
     function getAppServiceDefault( $secure = false, &$port_mapping_text = array(), &$subarray = array() )
@@ -804,6 +807,85 @@ class App
             //$subarray[$this->name()]['icmpcode'] = $this->icmpcode;
             $subarray[$this->name()]['tcp'] = $this->icmpcode;
         */
+    }
+
+    function spreadsheetContainerGroupFilter( $context, $count, $count1, &$lines)
+    {
+        /** @var App $object */
+        if( $count % 2 == 1 )
+            $lines .= "<tr>\n";
+        else
+            $lines .= "<tr bgcolor=\"#DDDDDD\">";
+
+        $lines .= $context->encloseFunction( "" );
+        $lines .= $context->encloseFunction( (string)$count1 );
+
+        $lines .= $context->encloseFunction( $this->type() );
+
+        $objType = "application";
+        if( $this->isContainer() )
+            $objType = "container";
+        elseif( $this->isApplicationCustom() )
+            $objType = "application-custom";
+        elseif( $this->isApplicationGroup() )
+            $objType = "application-group";
+        elseif( $this->isApplicationFilter() )
+            $objType = "application-filter";
+
+        $lines .= $context->encloseFunction( $objType );
+
+        if( isset($this->owner) && isset($this->owner->owner) )
+        {
+            if($this->owner->owner->isPanorama() || $this->owner->owner->isFirewall() )
+                $lines .= $context->encloseFunction('shared');
+            else
+                $lines .= $context->encloseFunction($this->owner->owner->name());
+        }
+        else
+            $lines .= $context->encloseFunction("---");
+
+        $lines .= $context->encloseFunction($this->name());
+    }
+
+    function spreadsheetAppDetails( $context, &$lines)
+    {
+        $lines .= $context->encloseFunction( $this->category);
+
+        $lines .= $context->encloseFunction( $this->subCategory);
+
+        $lines .= $context->encloseFunction( $this->risk);
+
+        $lines .= $context->encloseFunction( $this->technology);
+
+        $lines .= $context->encloseFunction( $this->apptag);
+
+        $tmp = array_keys( $this->_characteristics );
+        $lines .= $context->encloseFunction( $tmp);
+
+        $port_mapping_text = array();
+        $subArray = array();
+        $this->getAppServiceDefault( false, $port_Mapping_text, $subArray);
+        $lines .= $context->encloseFunction( $port_Mapping_text);
+
+        $array = array();
+        if( isset($this->timeout) )
+            $array[] = "tcp_timeout:".$this->timeout;
+        else
+            $array[] = "tcp_timeout: 3600";
+        if( isset($this->tcp_half_closed_timeout) )
+            $array[] = "tcp_half_closed:".$this->tcp_half_closed_timeout;
+        else
+            $array[] = "tcp_half_closed: 120";
+        if( isset($this->tcp_time_wait_timeout) )
+            $array[] = "tcp_time_wait:".$this->tcp_time_wait_timeout;
+        else
+            $array[] = "tcp_time_wait: 15";
+        $lines .= $context->encloseFunction( $array);
+
+        $lines .= $context->encloseFunction( array() );
+
+
+
     }
 }
 
