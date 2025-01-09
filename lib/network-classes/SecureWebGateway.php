@@ -59,11 +59,12 @@ class SecureWebGateway
         $this->owner = $owner;
         $this->name = $name;
 
-        if( isset($owner->network) )
+        if( get_class($owner) !== "PanoramaConf" )
         {
             $this->localInterface = new InterfaceContainer($this, $owner->network);
             $this->upstreamInterface = new InterfaceContainer($this, $owner->network);
         }
+
 
     }
 
@@ -89,21 +90,8 @@ class SecureWebGateway
         if( $this->type !== null )
         {
             $tmp_type = DH::findFirstElement($this->type, $xml);
-            if( $tmp_type !== null )
+            if( $tmp_type !== False )
             {
-                /*
-                <explicit-web-gateway>
-                    <proxy-ip>
-                       <ipv4>10.10.0.254/24</ipv4>
-                    </proxy-ip>
-                    <interface>ethernet1/2</interface>
-                    <upstream-interface>loopback.1</upstream-interface>
-                    <dns-proxy>DNS_proxy</dns-proxy>
-                    <log-setting>default</log-setting>
-                    <authentication-method>none</authentication-method>
-                    <sni-dest-check>no</sni-dest-check>
-                 </explicit-web-gateway>
-                 */
                 $interface = DH::findFirstElement('interface', $tmp_type);
                 $tmpInterface = $this->owner->network->findInterface( $interface->textContent );
                 $this->localInterface->addInterface( $tmpInterface );

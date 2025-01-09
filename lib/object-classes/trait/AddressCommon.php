@@ -554,9 +554,35 @@ trait AddressCommon
                     (get_class($objectRef) == "StaticRoute")
                 )
                 {
-                    PH::print_stdout( "- SKIP: not yet possible on ".get_class($objectRef) );
-                    $success = false;
-                    $success2 = false;
+                    //This is only changeing the XML,
+                    $objectRef->referencedObjectRenamed($withObject, $this->name());
+                    PH::print_stdout( $outputPadding . "- replacing in {$objectRef->toString()}" );
+
+                    //Todo: swaschkut 20250110 - is it needed to change object reference??
+                    /*
+                    if( get_class($objectRef->owner->owner) === "PANConf" )
+                    {
+                        if( isset( $objectRef->owner->owner->owner ) )
+                        {
+                            PH::print_stdout( "- SKIP: not yet possible on ".get_class($objectRef) );
+                            $success = false;
+                            $success2 = false;
+                            continue;
+                        }
+                        else
+                        {
+                            /** @var PANConf $panConf */
+                    /*
+                            $panConf = $objectRef->owner->owner;
+                            $tmp_vsys1 = $panConf->findVirtualSystem("vsys1");
+                            $tmp_store = $tmp_vsys1->addressStore;
+                        }
+                    }
+                    elseif( get_class($objectRef->owner->owner) === "VirtualSystem" )
+                    {
+                        $tmp_store = $objectRef->owner->owner->addressStore;
+                    }
+                     */
                     continue;
                 }
                 else
@@ -573,7 +599,6 @@ trait AddressCommon
                 }
 
                 #template <tunnel><units><entry name="tunnel.1"><ip>
-
 
                 $tmp_addr = $tmp_store->find( $withObject->name() );
                 if( $tmp_addr !== null )

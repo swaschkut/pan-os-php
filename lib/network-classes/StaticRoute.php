@@ -346,13 +346,22 @@ class StaticRoute
         return $this->_nexthopType;
     }
 
-    public function referencedObjectRenamed($h)
+    public function referencedObjectRenamed($h, $old)
     {
-        if( $this->_interface === $h )
+        if( get_class($h) == "EthernetInterface" )
         {
-            $this->_interface = $h;
-            $this->rewriteInterface_XML();
+            if( $this->_interface !== $h )
+            {
+                //why set it again????
+                $this->_interface = $h;
 
+                $this->rewriteInterface_XML();
+
+                return;
+            }
+        }
+        elseif( get_class($h) == "Address" )
+        {
             return;
         }
 

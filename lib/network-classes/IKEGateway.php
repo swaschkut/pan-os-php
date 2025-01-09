@@ -494,19 +494,94 @@ class IKEGateway
         return TRUE;
     }
 
-    public function referencedObjectRenamed($h)
+    public function referencedObjectRenamed($h, $old)
     {
-        if( $this->localInterface !== $h->name() )
+        if( is_object($h) )
         {
-            //why set it again????
-            $this->localInterface = $h->name();
+            if( get_class( $h ) == "Address" )
+            {
+                //Text replace
+                $qualifiedNodeName = '//*[text()="'.$old.'"]';
+                $xpathResult = DH::findXPath( $qualifiedNodeName, $this->xmlroot);
+                foreach( $xpathResult as $node )
+                    $node->textContent = $h->name();
 
-            $this->rewriteInterface_XML();
+
+                //attribute replace
+                $nameattribute = $old;
+                $qualifiedNodeName = "entry";
+                $nodeList = $this->xmlroot->getElementsByTagName($qualifiedNodeName);
+                $nodeArray = iterator_to_array($nodeList);
+
+                $templateEntryArray = array();
+                foreach( $nodeArray as $item )
+                {
+                    if ($nameattribute !== null)
+                    {
+                        $XMLnameAttribute = DH::findAttribute("name", $item);
+                        if ($XMLnameAttribute === FALSE)
+                            continue;
+
+                        if ($XMLnameAttribute !== $nameattribute)
+                            continue;
+                    }
+                    $item->setAttribute('name', $h->name());
+                }
+            }
 
             return;
         }
 
-        mwarning("object is not part of this object : {$h->toString()}");
+        mwarning("object is not part of this Tunnel Interface : {$h->toString()}");
+    }
+
+
+    public function replaceReferencedObject($old, $new)
+    {
+        /*
+        if( $old === $new )
+            return FALSE;
+
+        $pos = array_search($old, $this->o, TRUE);
+
+        if( $pos !== FALSE )
+        {
+            while( $pos !== FALSE )
+            {
+                unset($this->o[$pos]);
+                $pos = array_search($old, $this->o, TRUE);
+            }
+
+            if( $new !== null && !$this->has($new->name()) )
+            {
+                $this->o[] = $new;
+                $new->addReference($this);
+            }
+            $old->removeReference($this);
+
+            if( $new === null || $new->name() != $old->name() )
+                $this->rewriteXML();
+
+            return TRUE;
+        }
+        #elseif( !$this->isDynamic() )
+        #    mwarning("object is not part of this group: " . $old->toString());
+        */
+
+
+        return FALSE;
+    }
+
+    public function API_replaceReferencedObject($old, $new)
+    {
+        $ret = $this->replaceReferencedObject($old, $new);
+
+        if( $ret )
+        {
+            $this->API_sync();
+        }
+
+        return $ret;
     }
 
     public function rewriteInterface_XML()

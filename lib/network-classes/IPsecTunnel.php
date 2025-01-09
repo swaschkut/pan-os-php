@@ -554,19 +554,45 @@ class IPsecTunnel
         return TRUE;
     }
 
-    public function referencedObjectRenamed($h)
+    public function referencedObjectRenamed($h, $old)
     {
-        if( $this->interface !== $h->name() )
+        if( is_object($h) )
         {
-            //why set it again????
-            $this->interface = $h->name();
+            if( get_class( $h ) == "Address" )
+            {
+                //Text replace
+                $qualifiedNodeName = '//*[text()="'.$old.'"]';
+                $xpathResult = DH::findXPath( $qualifiedNodeName, $this->xmlroot);
+                foreach( $xpathResult as $node )
+                    $node->textContent = $h->name();
 
-            $this->rewriteInterface_XML();
+
+                //attribute replace
+                $nameattribute = $old;
+                $qualifiedNodeName = "entry";
+                $nodeList = $this->xmlroot->getElementsByTagName($qualifiedNodeName);
+                $nodeArray = iterator_to_array($nodeList);
+
+                $templateEntryArray = array();
+                foreach( $nodeArray as $item )
+                {
+                    if ($nameattribute !== null)
+                    {
+                        $XMLnameAttribute = DH::findAttribute("name", $item);
+                        if ($XMLnameAttribute === FALSE)
+                            continue;
+
+                        if ($XMLnameAttribute !== $nameattribute)
+                            continue;
+                    }
+                    $item->setAttribute('name', $h->name());
+                }
+            }
 
             return;
         }
 
-        mwarning("object is not part of this object : {$h->toString()}");
+        mwarning("object is not part of this Tunnel Interface : {$h->toString()}");
     }
 
     public function rewriteInterface_XML()
