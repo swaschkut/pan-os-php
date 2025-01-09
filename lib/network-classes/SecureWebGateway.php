@@ -59,8 +59,12 @@ class SecureWebGateway
         $this->owner = $owner;
         $this->name = $name;
 
-        $this->localInterface = new InterfaceContainer($this, $owner->network);
-        $this->upstreamInterface = new InterfaceContainer($this, $owner->network);
+        if( isset($owner->network) )
+        {
+            $this->localInterface = new InterfaceContainer($this, $owner->network);
+            $this->upstreamInterface = new InterfaceContainer($this, $owner->network);
+        }
+
     }
 
     /**
