@@ -889,6 +889,24 @@ var subjectObject =
                             "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
+                    },
+                    "is.virtualsystem": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "returns TRUE if object locationtype is Template or TemplateStack",
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.only.virtualsystem": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "returns TRUE if object locationtype is Template or TemplateStack",
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
                     }
                 }
             },
@@ -1158,6 +1176,18 @@ var subjectObject =
                     }
                 }
             },
+            "category": {
+                "operators": {
+                    "eq": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
             "characteristic": {
                 "operators": {
                     "has": {
@@ -1385,6 +1415,18 @@ var subjectObject =
                         "arg": false,
                         "ci": {
                             "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "technology": {
+                "operators": {
+                    "eq": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% evasive) ",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }

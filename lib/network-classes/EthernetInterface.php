@@ -480,7 +480,7 @@ class EthernetInterface
         if( is_object($ip) )
         {
             $ip = $ip->name();
-            derr( "adding address object to Interface not implemented yet", null, False );
+            derr( "adding address object to Interface not implemented yet", null, false );
         }
 
         $ip = $this->findorCreateAddressObject( $ip );
@@ -833,6 +833,7 @@ class EthernetInterface
         {
             if( get_class( $h ) == "Address" )
             {
+                //to get XMLfile correct why not act like replacing an object by name?
                 $this->addIPv4Address( $h );
 
                 $this->removeIPv4Address( $old );

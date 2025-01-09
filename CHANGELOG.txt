@@ -3,6 +3,7 @@ CHANGELOG
 2.1.32
 UTIL:
 * type=address | introdruce 'filter=(reflocationtype is.virtualsystem)' / is.only.virtualsystem
+* type=application | introduce 'filter=(technology eq XYZ)' /  (category eq XYZ)
 
 BUGFIX:
 
