@@ -382,11 +382,26 @@ ApplicationCallContext::$supportedActions[] = array(
 
                 if( $object->isApplicationFilter() )
                 {
-                    $lines .= $context->encloseFunction($object->app_filter_details['category']);
-                    $lines .= $context->encloseFunction($object->app_filter_details['subcategory']);
-                    $lines .= $context->encloseFunction($object->app_filter_details['risk']);
-                    $lines .= $context->encloseFunction($object->app_filter_details['technology']);
-                    $lines .= $context->encloseFunction($object->app_filter_details['tagging']);
+                    if( isset($object->app_filter_details['category']) )
+                        $lines .= $context->encloseFunction($object->app_filter_details['category']);
+                    else
+                        $lines .= $context->encloseFunction( "--" );
+                    if( isset($object->app_filter_details['subcategory']) )
+                        $lines .= $context->encloseFunction($object->app_filter_details['subcategory']);
+                    else
+                        $lines .= $context->encloseFunction( "--" );
+                    if( isset($object->app_filter_details['risk']) )
+                        $lines .= $context->encloseFunction($object->app_filter_details['risk']);
+                    else
+                        $lines .= $context->encloseFunction( "--" );
+                    if( isset($object->app_filter_details['technology']) )
+                        $lines .= $context->encloseFunction($object->app_filter_details['technology']);
+                    else
+                        $lines .= $context->encloseFunction( "--" );
+                    if( isset($object->app_filter_details['tagging']) )
+                        $lines .= $context->encloseFunction($object->app_filter_details['tagging']);
+                    else
+                        $lines .= $context->encloseFunction( "--" );
 
                     $tmp = array_keys($object->_characteristics);
                     $lines .= $context->encloseFunction($tmp);
