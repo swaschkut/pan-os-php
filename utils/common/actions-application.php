@@ -61,7 +61,18 @@ ApplicationCallContext::$supportedActions['display'] = array(
     'MainFunction' => function (ApplicationCallContext $context) {
         $app = $context->object;
 
-        PH::print_stdout( $context->padding . "* " . get_class($app) . " '{$app->name()}' " );
+        $txt_counter = "";
+        $counter = "";
+        if( $app->isContainer() )
+            $counter = count( $app->containerApps() );
+        elseif( $app->isApplicationGroup() )
+            $counter = count( $app->groupApps() );
+        elseif( $app->isApplicationFilter() )
+            $counter = count( $app->filteredApps() );
+
+        if( !empty($counter) )
+            $txt_counter = "app_counter: ".$counter;
+        PH::print_stdout( $context->padding . "* " . get_class($app) . " '{$app->name()}' ".$txt_counter );
         PH::$JSON_TMP['sub']['object'][$app->name()]['name'] = $app->name();
         PH::$JSON_TMP['sub']['object'][$app->name()]['type'] = get_class($app);
 
