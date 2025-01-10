@@ -8,6 +8,7 @@ UTIL:
 * different network class | improvement to change address object name and change references - same as merging address objects and change ref
 
 BUGFIX:
+* bugfix | class AntiSpyware / EDL / VulnerabilityProfile
 
 GENERAL:
 * class VirtualSystem - ethernet subInterfaces, add address objects references

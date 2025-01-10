@@ -133,9 +133,11 @@ class EDL
 
 
             $tmp_recurring_node = DH::findFirstElement('recurring', $tmp_type);
-            if ($tmp_recurring_node != False) {
+            if ($tmp_recurring_node != False)
+            {
                 $tmp_recurring = DH::firstChildElement($tmp_recurring_node);
-                $this->recurring = $tmp_recurring->nodeName;
+                if ($tmp_recurring != False)
+                    $this->recurring = $tmp_recurring->nodeName;
             }
 
             $tmp_url_node = DH::findFirstElement('url', $tmp_type);
