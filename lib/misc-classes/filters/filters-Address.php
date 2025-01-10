@@ -1186,6 +1186,28 @@ RQuery::$defaultFilters['address']['refstore']['operators']['is.gpgatewaystore']
         'input' => 'input/panorama-8.0.xml'
     )
 );
+RQuery::$defaultFilters['address']['refstore']['operators']['is.ikegatewaystore'] = array(
+    'Function' => function (AddressRQueryContext $context) {
+        #$value = $context->value;
+        #$value = strtolower($value);
+        $value = "ikegatewaystore";
+
+        $context->object->ReferencesStoreValidation($value);
+
+        $refstore = $context->object->getReferencesStore();
+
+        if( array_key_exists($value, $refstore) )
+            return TRUE;
+
+        return FALSE;
+
+    },
+    'arg' => false,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
 RQuery::$defaultFilters['address']['reftype']['operators']['is'] = array(
     'Function' => function (AddressRQueryContext $context) {
         $value = $context->value;
