@@ -390,7 +390,7 @@ trait ReferenceableObject
             if( isset($cur->owner->owner) && $cur->owner->owner !== null )
             {
                 $class = get_class($cur->owner->owner);
-                if( $class == "DeviceGroup" )
+                if( $class == "DeviceGroup" || $class == "VirtualSystem" || $class == "PanoramaConf" )
                     $class = get_class($cur->owner);
                 $class = strtolower($class);
                 $store_array[$class] = $class;
