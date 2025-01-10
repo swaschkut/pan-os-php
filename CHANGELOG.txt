@@ -1,6 +1,14 @@
 CHANGELOG
 
-2.1.32
+2.1.33
+UTIL:
+
+BUGFIX:
+
+GENERAL:
+
+
+2.1.32 (20250110)
 UTIL:
 * type=address | introduce 'filter=(reflocationtype is.virtualsystem)' / is.only.virtualsystem
 * type=address | introduce 'filter=(refstore is.rulestore)' / is.only.rulestore
