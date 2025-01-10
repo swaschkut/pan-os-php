@@ -20,6 +20,10 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+/**
+ * Class ServiceCallContext
+ * @property Service|ServiceGroup $object
+ */
 class ServiceCallContext extends CallContext
 {
     /** @var  Service|ServiceGroup */

@@ -19,10 +19,12 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+/**
+ * Class AddressCallContext
+ * @property Address|AddressGroup|Region|EDL $object
+ */
 class AddressCallContext extends CallContext
 {
-    /** @var  Address|AddressGroup */
-
     public static $commonActionFunctions = array();
     public static $supportedActions = array();
 
