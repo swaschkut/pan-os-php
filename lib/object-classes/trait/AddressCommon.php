@@ -554,36 +554,26 @@ trait AddressCommon
                     (get_class($objectRef) == "StaticRoute")
                 )
                 {
-                    //This is only changeing the XML,
-                    $objectRef->referencedObjectRenamed($withObject, $this->name());
-                    PH::print_stdout( $outputPadding . "- replacing in {$objectRef->toString()}" );
 
-                    //Todo: swaschkut 20250110 - is it needed to change object reference??
-                    /*
-                    if( get_class($objectRef->owner->owner) === "PANConf" )
+                    if( isset($objectRef->owner->owner) && $objectRef->owner->owner !== null )
                     {
-                        if( isset( $objectRef->owner->owner->owner ) )
+                        $class = $objectRef->owner->owner;
+                        $classTxt = get_class($class);
+
+                        if( $classTxt == "PANConf" )
                         {
-                            PH::print_stdout( "- SKIP: not yet possible on ".get_class($objectRef) );
-                            $success = false;
-                            $success2 = false;
-                            continue;
+                            if( isset( $objectRef->owner->owner->owner ) and get_class($objectRef->owner->owner->owner) == "Template" )
+                            {
+                                $class = $objectRef->owner->owner->owner;
+                                $classTxt = get_class($class);
+
+                                if( $classTxt == "Template" )
+                                    $class = $class->owner;
+                            }
                         }
-                        else
-                        {
-                            /** @var PANConf $panConf */
-                    /*
-                            $panConf = $objectRef->owner->owner;
-                            $tmp_vsys1 = $panConf->findVirtualSystem("vsys1");
-                            $tmp_store = $tmp_vsys1->addressStore;
-                        }
+
+                        $tmp_store = $class->addressStore;
                     }
-                    elseif( get_class($objectRef->owner->owner) === "VirtualSystem" )
-                    {
-                        $tmp_store = $objectRef->owner->owner->addressStore;
-                    }
-                     */
-                    continue;
                 }
                 else
                 {

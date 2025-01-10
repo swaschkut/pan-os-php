@@ -1054,20 +1054,69 @@ RQuery::$defaultFilters['address']['refstore']['operators']['is.rulestore'] = ar
         'input' => 'input/panorama-8.0.xml'
     )
 );
-RQuery::$defaultFilters['address']['refstore']['operators']['is.addressstore'] = array(
+RQuery::$defaultFilters['address']['refstore']['operators']['is.only.rulestore'] = array(
     'Function' => function (AddressRQueryContext $context) {
         #$value = $context->value;
         #$value = strtolower($value);
+        $value = "rulestore";
+
+        $context->object->ReferencesStoreValidation($value);
+        $refstore_array = $context->object->getReferencesStore();
+
+        $return = FALSE;
+        foreach( $refstore_array as $refstore => $value )
+        {
+            if( $refstore == $value )
+                $return = TRUE;
+            else
+                return FALSE;
+        }
+
+        return $return;
+
+    },
+    'arg' => false,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['address']['refstore']['operators']['is.addressstore'] = array(
+    'Function' => function (AddressRQueryContext $context) {
         $value = "addressstore";
 
         $context->object->ReferencesStoreValidation($value);
-
         $refstore = $context->object->getReferencesStore();
 
         if( array_key_exists($value, $refstore) )
             return TRUE;
 
         return FALSE;
+
+    },
+    'arg' => false,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['address']['refstore']['operators']['is.only.addressstore'] = array(
+    'Function' => function (AddressRQueryContext $context) {
+        $value = "addressstore";
+
+        $context->object->ReferencesStoreValidation($value);
+        $refstore_array = $context->object->getReferencesStore();
+
+        $return = FALSE;
+        foreach( $refstore_array as $refstore => $value )
+        {
+            if( $refstore == $value )
+                $return = TRUE;
+            else
+                return FALSE;
+        }
+
+        return $return;
 
     },
     'arg' => false,

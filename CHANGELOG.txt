@@ -7,6 +7,7 @@ UTIL:
 * type=application | introduce actions=exporttoexcel:app_name.html
 * different network class | improvement to change address object name and change references - same as merging address objects and change ref
 * class ReferenceableObject - extend ReferencesStoreValidation | type=address introduce different filter=(refstore is.XYZ
+* type=address-merger | final implementation for apimode if network part is using address objects
 
 BUGFIX:
 * bugfix | class AntiSpyware / EDL / VulnerabilityProfile

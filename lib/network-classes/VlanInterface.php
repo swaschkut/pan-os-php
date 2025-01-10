@@ -197,6 +197,24 @@ class VlanInterface
         mwarning("object is not part of this Tunnel Interface : {$h->toString()}");
     }
 
+    public function replaceReferencedObject($old, $new)
+    {
+        $this->referencedObjectRenamed($new, $old->name());
+        return true;
+    }
+
+    public function API_replaceReferencedObject($old, $new)
+    {
+        $ret = $this->replaceReferencedObject($old, $new);
+
+        if( $ret )
+        {
+            $this->API_sync();
+        }
+
+        return $ret;
+    }
+
     /**
      * @return string
      */

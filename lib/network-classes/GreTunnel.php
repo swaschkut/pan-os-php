@@ -284,6 +284,24 @@ class GreTunnel
         return TRUE;
     }
 
+    public function replaceReferencedObject($old, $new)
+    {
+        $this->referencedObjectRenamed($new, $old->name());
+        return true;
+    }
+
+    public function API_replaceReferencedObject($old, $new)
+    {
+        $ret = $this->replaceReferencedObject($old, $new);
+
+        if( $ret )
+        {
+            $this->API_sync();
+        }
+
+        return $ret;
+    }
+
     static public $templatexml = '<entry name="**temporarynamechangeme**">
               <local-address></local-address>
               <peer-address></peer-address>

@@ -868,38 +868,8 @@ class EthernetInterface
 
     public function replaceReferencedObject($old, $new)
     {
-        /*
-        if( $old === $new )
-            return FALSE;
-
-        $pos = array_search($old, $this->o, TRUE);
-
-        if( $pos !== FALSE )
-        {
-            while( $pos !== FALSE )
-            {
-                unset($this->o[$pos]);
-                $pos = array_search($old, $this->o, TRUE);
-            }
-
-            if( $new !== null && !$this->has($new->name()) )
-            {
-                $this->o[] = $new;
-                $new->addReference($this);
-            }
-            $old->removeReference($this);
-
-            if( $new === null || $new->name() != $old->name() )
-                $this->rewriteXML();
-
-            return TRUE;
-        }
-        #elseif( !$this->isDynamic() )
-        #    mwarning("object is not part of this group: " . $old->toString());
-        */
-
-
-        return FALSE;
+        $this->referencedObjectRenamed($new, $old->name());
+        return true;
     }
 
     public function API_replaceReferencedObject($old, $new)
