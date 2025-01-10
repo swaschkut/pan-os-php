@@ -139,6 +139,63 @@ class TunnelInterface
 
     }
 
+    public function referencedObjectRenamed($h, $old)
+    {
+        if( is_object($h) )
+        {
+            if( get_class( $h ) == "Address" )
+            {
+                //Text replace
+                $qualifiedNodeName = '//*[text()="'.$old.'"]';
+                $xpathResult = DH::findXPath( $qualifiedNodeName, $this->xmlroot);
+                foreach( $xpathResult as $node )
+                    $node->textContent = $h->name();
+
+
+                //attribute replace
+                $nameattribute = $old;
+                $qualifiedNodeName = "entry";
+                $nodeList = $this->xmlroot->getElementsByTagName($qualifiedNodeName);
+                $nodeArray = iterator_to_array($nodeList);
+                foreach( $nodeArray as $item )
+                {
+                    if ($nameattribute !== null)
+                    {
+                        $XMLnameAttribute = DH::findAttribute("name", $item);
+                        if ($XMLnameAttribute === FALSE)
+                            continue;
+
+                        if ($XMLnameAttribute !== $nameattribute)
+                            continue;
+                    }
+                    $item->setAttribute('name', $h->name());
+                }
+            }
+
+            return;
+        }
+
+        mwarning("object is not part of this Tunnel Interface : {$h->toString()}");
+    }
+
+    public function replaceReferencedObject($old, $new)
+    {
+        $this->referencedObjectRenamed($new, $old->name());
+        return true;
+    }
+
+    public function API_replaceReferencedObject($old, $new)
+    {
+        $ret = $this->replaceReferencedObject($old, $new);
+
+        if( $ret )
+        {
+            $this->API_sync();
+        }
+
+        return $ret;
+    }
+
     /**
      * @return string
      */

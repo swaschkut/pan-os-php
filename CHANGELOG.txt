@@ -1,6 +1,26 @@
 CHANGELOG
 
-2.1.31
+2.1.32
+UTIL:
+* type=address | introduce 'filter=(reflocationtype is.virtualsystem)' / is.only.virtualsystem
+* type=address | introduce 'filter=(refstore is.rulestore)' / is.only.rulestore
+* type=address | introduce 'filter=(refstore is.addressstore)' / is.only.addressstore
+* type=application | introduce 'filter=(technology eq XYZ)' /  (category eq XYZ)
+* type=application | introduce actions=exporttoexcel:app_name.html
+* different network class | improvement to change address object name and change references - same as merging address objects and change ref
+* class ReferenceableObject - extend ReferencesStoreValidation | type=address introduce different filter=(refstore is.XYZ
+* type=address-merger | final implementation for apimode if network part is using address objects
+
+BUGFIX:
+* bugfix | class AntiSpyware / EDL / VulnerabilityProfile
+
+GENERAL:
+* class VirtualSystem - ethernet subInterfaces, add address objects references
+* introduce class SecureWebGateway | to reference used interfaces
+* continue working on SCM - Fawkes/Buckbeak - class Container/DeviceCloud/DeviceOnPrem
+
+
+2.1.31  (20250106)
 UTIL:
 * type=address | introduce new IPv6 'filter=(value ip6.included-in.from.file / ip6.includes-full-or-partial.from.file     - ip6.includes-full.from.file / ip6.match.exact.from.file FILENAME)'
 * type=securityprofile | introdruce actions=url.best-practice-set

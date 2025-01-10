@@ -104,7 +104,6 @@ class GreTunnel
                     $tmpInterface->addReference( $this->localInterface );
 
                     $this->localInterface->addInterface( $tmpInterface );
-                    PH::print_stdout("add reference: ".$tmp->textContent);
                 }
 
                 $tmp = DH::findFirstElement('ip', $node);
@@ -121,14 +120,16 @@ class GreTunnel
                     $tmp_vsys = $tmp_usedInterface->importedByVSYS;
 
                     $tmp_address = $tmp_vsys->addressStore->find($tmp->textContent);
-                    $tmp_address->addReference( $this );
+                    if( $tmp_address !== FALSE && $tmp_address !== NULL )
+                        $tmp_address->addReference( $this );
                 }
             }
 
             if( $node->nodeName == 'tunnel-interface' )
             {
                 $tmpInterface = $this->owner->owner->network->findInterface( $node->textContent );
-                $tmpInterface->addReference( $this->tunnelInterface );
+                if( $tmpInterface !== FALSE && $tmpInterface !== NULL )
+                    $tmpInterface->addReference( $this->tunnelInterface );
 
                 $this->tunnelInterface->addInterface( $tmpInterface );
             }
@@ -198,16 +199,47 @@ class GreTunnel
         return TRUE;
     }
 
-    public function referencedObjectRenamed($h)
+    public function referencedObjectRenamed($h, $old)
     {
-        if( $this->interface !== $h->name() )
+        if( get_class($h) == "EthernetInterface" )
         {
-            //why set it again????
-            $this->interface = $h->name();
+            if( $this->interface !== $h->name() )
+            {
+                //why set it again????
+                $this->interface = $h->name();
 
-            $this->rewriteInterface_XML();
+                $this->rewriteInterface_XML();
 
-            return;
+                return;
+            }
+        }
+        elseif( get_class( $h ) == "Address" )
+        {
+            //Text replace
+            $qualifiedNodeName = '//*[text()="'.$old.'"]';
+            $xpathResult = DH::findXPath( $qualifiedNodeName, $this->xmlroot);
+            foreach( $xpathResult as $node )
+                $node->textContent = $h->name();
+
+
+            //attribute replace
+            $nameattribute = $old;
+            $qualifiedNodeName = "entry";
+            $nodeList = $this->xmlroot->getElementsByTagName($qualifiedNodeName);
+            $nodeArray = iterator_to_array($nodeList);
+            foreach( $nodeArray as $item )
+            {
+                if ($nameattribute !== null)
+                {
+                    $XMLnameAttribute = DH::findAttribute("name", $item);
+                    if ($XMLnameAttribute === FALSE)
+                        continue;
+
+                    if ($XMLnameAttribute !== $nameattribute)
+                        continue;
+                }
+                $item->setAttribute('name', $h->name());
+            }
         }
 
         mwarning("object is not part of this object : {$h->toString()}");
@@ -250,6 +282,24 @@ class GreTunnel
     public function isGreTunnelType()
     {
         return TRUE;
+    }
+
+    public function replaceReferencedObject($old, $new)
+    {
+        $this->referencedObjectRenamed($new, $old->name());
+        return true;
+    }
+
+    public function API_replaceReferencedObject($old, $new)
+    {
+        $ret = $this->replaceReferencedObject($old, $new);
+
+        if( $ret )
+        {
+            $this->API_sync();
+        }
+
+        return $ret;
     }
 
     static public $templatexml = '<entry name="**temporarynamechangeme**">

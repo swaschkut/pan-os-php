@@ -554,10 +554,26 @@ trait AddressCommon
                     (get_class($objectRef) == "StaticRoute")
                 )
                 {
-                    PH::print_stdout( "- SKIP: not yet possible on ".get_class($objectRef) );
-                    $success = false;
-                    $success2 = false;
-                    continue;
+
+                    if( isset($objectRef->owner->owner) && $objectRef->owner->owner !== null )
+                    {
+                        $class = $objectRef->owner->owner;
+                        $classTxt = get_class($class);
+
+                        if( $classTxt == "PANConf" )
+                        {
+                            if( isset( $objectRef->owner->owner->owner ) and get_class($objectRef->owner->owner->owner) == "Template" )
+                            {
+                                $class = $objectRef->owner->owner->owner;
+                                $classTxt = get_class($class);
+
+                                if( $classTxt == "Template" )
+                                    $class = $class->owner;
+                            }
+                        }
+
+                        $tmp_store = $class->addressStore;
+                    }
                 }
                 else
                 {
@@ -573,7 +589,6 @@ trait AddressCommon
                 }
 
                 #template <tunnel><units><entry name="tunnel.1"><ip>
-
 
                 $tmp_addr = $tmp_store->find( $withObject->name() );
                 if( $tmp_addr !== null )

@@ -67,6 +67,8 @@ class AppFilter extends App
     public $tagging;
     public $risk;
 
+    public $exclude;
+
     /**
      * @return string
      */
@@ -119,68 +121,6 @@ class AppFilter extends App
                 }
             }
         }
-        /*
-        $tmp = DH::findFirstElement('category', $appx);
-        if( $tmp !== FALSE )
-        {
-            $this->app_filter_details['category'] = array();
-            foreach( $tmp->childNodes as $tmp1 )
-            {
-                if( $tmp1->nodeType != XML_ELEMENT_NODE ) continue;
-                $this->category = $tmp1->textContent;
-                $this->app_filter_details['category'][$tmp1->textContent] = $tmp1->textContent;
-
-            }
-        }
-
-        $tmp = DH::findFirstElement('subcategory', $appx);
-        if( $tmp !== FALSE )
-        {
-            $this->app_filter_details['subcategory'] = array();
-            foreach( $tmp->childNodes as $tmp1 )
-            {
-                if( $tmp1->nodeType != XML_ELEMENT_NODE ) continue;
-                $this->subCategory = $tmp1->textContent;
-                $this->app_filter_details['subcategory'][$tmp1->textContent] = $tmp1->textContent;
-            }
-        }
-
-        $tmp = DH::findFirstElement('technology', $appx);
-        if( $tmp !== FALSE )
-        {
-            $this->app_filter_details['technology'] = array();
-            foreach( $tmp->childNodes as $tmp1 )
-            {
-                if( $tmp1->nodeType != XML_ELEMENT_NODE ) continue;
-                $this->technology = $tmp1->textContent;
-                $this->app_filter_details['technology'][$tmp1->textContent] = $tmp1->textContent;
-            }
-        }
-
-        $tmp = DH::findFirstElement('risk', $appx);
-        if( $tmp !== FALSE )
-        {
-            $this->app_filter_details['risk'] = array();
-            foreach( $tmp->childNodes as $tmp1 )
-            {
-                if( $tmp1->nodeType != XML_ELEMENT_NODE ) continue;
-                $this->risk = $tmp1->textContent;
-                $this->app_filter_details['risk'][$tmp1->textContent] = $tmp1->textContent;
-            }
-        }
-
-        $tmp = DH::findFirstElement('tag', $appx);
-        if( $tmp !== FALSE )
-        {
-            $this->app_filter_details['tag'] = array();
-            foreach( $tmp->childNodes as $tmp1 )
-            {
-                if( $tmp1->nodeType != XML_ELEMENT_NODE ) continue;
-                $this->technology = $tmp1->textContent;
-                $this->app_filter_details['tag'][$tmp1->textContent] = $tmp1->textContent;
-            }
-        }
-        */
 
 
         #$arry = array( 'evasive', 'excessive-bandwidth-use', 'used-by-malware', 'transfers-files', 'has-known-vulnerabilities', 'tunnels-other-apps', 'prone-to-misuse', 'pervasive'  );
@@ -233,6 +173,19 @@ class AppFilter extends App
         {
             if( $tmp->textContent == 'yes' )
                 $this->_characteristics['widely-used'] = TRUE;
+        }
+
+        //////////
+        $tmp = DH::findFirstElement('exclude', $appx);
+        if( $tmp !== FALSE )
+        {
+            foreach( $tmp->childNodes as $tmp1 )
+            {
+                if ($tmp1->nodeType != XML_ELEMENT_NODE)
+                    continue;
+
+                $this->exclude[$tmp1->textContent] = $tmp1->textContent;
+            }
         }
     }
 }

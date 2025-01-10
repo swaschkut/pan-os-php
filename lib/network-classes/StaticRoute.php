@@ -71,23 +71,6 @@ class StaticRoute
     {
         $this->xmlroot = $xml;
 
-        //<entry name="Route 161">
-            //<nexthop><ip-address>10.34.111.1</ip-address></nexthop>
-            //<metric>10</metric>
-            //<interface>Port-channel22.511</interface>
-            //<destination>192.168.220.70/32</destination>
-        //</entry>
-
-        /*
-        <entry name="test">
-          <nexthop><ip-address>Route_6.7.8.9</ip-address></nexthop>
-          <bfd><profile>None</profile></bfd>
-          <metric>10</metric>
-          <destination>Route_DST_192.168.10.0m24</destination>
-          <route-table><unicast/></route-table>
-        </entry>
-         */
-
         $this->name = DH::findAttribute('name', $xml);
         if( $this->name === FALSE )
             derr("static-route name not found\n");
@@ -346,12 +329,47 @@ class StaticRoute
         return $this->_nexthopType;
     }
 
-    public function referencedObjectRenamed($h)
+    public function referencedObjectRenamed($h, $old)
     {
-        if( $this->_interface === $h )
+        if( get_class($h) == "EthernetInterface" )
         {
-            $this->_interface = $h;
-            $this->rewriteInterface_XML();
+            if( $this->_interface !== $h )
+            {
+                //why set it again????
+                $this->_interface = $h;
+
+                $this->rewriteInterface_XML();
+
+                return;
+            }
+        }
+        elseif( get_class($h) == "Address" )
+        {
+            //Text replace
+            $qualifiedNodeName = '//*[text()="'.$old.'"]';
+            $xpathResult = DH::findXPath( $qualifiedNodeName, $this->xmlroot);
+            foreach( $xpathResult as $node )
+                $node->textContent = $h->name();
+
+
+            //attribute replace
+            $nameattribute = $old;
+            $qualifiedNodeName = "entry";
+            $nodeList = $this->xmlroot->getElementsByTagName($qualifiedNodeName);
+            $nodeArray = iterator_to_array($nodeList);
+            foreach( $nodeArray as $item )
+            {
+                if ($nameattribute !== null)
+                {
+                    $XMLnameAttribute = DH::findAttribute("name", $item);
+                    if ($XMLnameAttribute === FALSE)
+                        continue;
+
+                    if ($XMLnameAttribute !== $nameattribute)
+                        continue;
+                }
+                $item->setAttribute('name', $h->name());
+            }
 
             return;
         }
@@ -437,5 +455,23 @@ class StaticRoute
             PH::$JSON_TMP['sub']['object'] = $tmpArray;
 
         return $text;
+    }
+
+    public function replaceReferencedObject($old, $new)
+    {
+        $this->referencedObjectRenamed($new, $old->name());
+        return true;
+    }
+
+    public function API_replaceReferencedObject($old, $new)
+    {
+        $ret = $this->replaceReferencedObject($old, $new);
+
+        if( $ret )
+        {
+            $this->API_sync();
+        }
+
+        return $ret;
     }
 }

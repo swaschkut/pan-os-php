@@ -56,6 +56,12 @@ class DeviceCloud
     /** @var SecurityProfileStore */
     public $SaasSecurityProfileStore = null;
 
+    /** @var ThreatPolicyStore */
+    public $ThreatPolicyStore = null;
+
+    /** @var DNSPolicyStore */
+    public $DNSPolicyStore = null;
+
     /** @var SecurityProfileStore */
     public $VulnerabilityProfileStore = null;
 
@@ -115,6 +121,8 @@ class DeviceCloud
     /** @var ScheduleStore */
     public $scheduleStore = null;
 
+    /** @var EDLStore */
+    public $EDLStore = null;
 
 /*
     public static $templateCloudxml = '<entry name="**Need a Name**"><address></address>
@@ -250,6 +258,12 @@ class DeviceCloud
         $this->SaasSecurityProfileStore = new SecurityProfileStore($this, "SaasSecurityProfile");
         $this->SaasSecurityProfileStore->name = 'SaasSecurity';
 
+        $this->ThreatPolicyStore = new ThreatPolicyStore($this, "ThreatPolicy");
+        $this->ThreatPolicyStore->name = 'ThreatPolicy';
+
+        $this->DNSPolicyStore = new DNSPolicyStore($this, "DNSPolicy");
+        $this->DNSPolicyStore->name = 'DNSPolicy';
+
         $this->VulnerabilityProfileStore = new SecurityProfileStore($this, "VulnerabilityProfile");
         $this->VulnerabilityProfileStore->name = 'Vulnerability';
 
@@ -307,6 +321,8 @@ class DeviceCloud
         $this->scheduleStore = new ScheduleStore($this);
         $this->scheduleStore->setName('scheduleStore');
 
+        $this->EDLStore = new EDLStore($this);
+        $this->EDLStore->setName('EDLStore');
 
         $this->securityRules = new RuleStore($this, 'SecurityRule');
         $this->securityRules->name = 'Security';
@@ -733,6 +749,13 @@ class DeviceCloud
                 $this->scheduleStore->load_from_domxml($tmp);
             // End of address groups extraction
 
+            //
+            // Extract EDL objects
+            //
+            $tmp = DH::findFirstElement('external-list', $xml);
+            if( $tmp !== FALSE )
+                $this->EDLStore->load_from_domxml($tmp);
+            // End of EDL extraction
         }
 
 

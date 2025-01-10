@@ -93,6 +93,38 @@ RQuery::$defaultFilters['application']['characteristic']['operators']['has'] = a
     )
 );
 
+RQuery::$defaultFilters['application']['technology']['operators']['eq'] = array(
+    'Function' => function (ApplicationRQueryContext $context) {
+        $app = $context->object;
+
+        if( $app->isContainer() )
+            return null;
+
+        if( $app->technology === strtolower($context->value) )
+            return TRUE;
+
+        return FALSE;
+    },
+    'arg' => TRUE,
+    'ci' => array(
+        'fString' => '(%PROP% evasive) ',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+
+RQuery::$defaultFilters['application']['category']['operators']['eq'] = array(
+    'Function' => function (ApplicationRQueryContext $context) {
+        if( $context->object->category == $context->value )
+            return TRUE;
+
+        return FALSE;
+    },
+    'arg' => TRUE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
 
 RQuery::$defaultFilters['application']['object']['operators']['is.predefined'] = array(
     'Function' => function (ApplicationRQueryContext $context) {

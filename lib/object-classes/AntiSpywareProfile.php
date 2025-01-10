@@ -353,7 +353,12 @@ class AntiSpywareProfile extends SecurityProfile2
                     $name = DH::findAttribute("name", $tmp_entry1);
                     $action_element = DH::findFirstElement("action", $tmp_entry1);
                     if( $action_element !== FALSE )
-                        $this->additional['botnet-domain']['lists'][$name]['action'] = $action_element->firstElementChild->nodeName;
+                    {
+                        $tmp_firstElement = $action_element->firstElementChild;
+                        if( $tmp_firstElement !== FALSE && $tmp_firstElement !== null )
+                            $this->additional['botnet-domain']['lists'][$name]['action'] = $action_element->firstElementChild->nodeName;
+                    }
+
                     $tmp_packet_capture = DH::findFirstElement("packet-capture", $tmp_entry1);
                     if( $tmp_packet_capture !== FALSE )
                         $this->additional['botnet-domain']['lists'][$name]['packet-capture'] = $tmp_packet_capture->textContent;

@@ -188,7 +188,6 @@ class EthernetInterface
                                 $shared_object = $panorama_object->addressStore->find($tmpIP);
                                 if( $shared_object != null )
                                 {
-                                    print "add reference: ".$shared_object->name()."\n";
                                     $shared_object->addReference($this);
                                     $this->l3ipv6Addresses[] = $shared_object->value();
                                 }
@@ -481,7 +480,7 @@ class EthernetInterface
         if( is_object($ip) )
         {
             $ip = $ip->name();
-            derr( "adding address object to Interface not implemented yet", null, False );
+            mwarning( "adding address object to Interface not implemented yet", null, false );
         }
 
         $ip = $this->findorCreateAddressObject( $ip );
@@ -834,15 +833,55 @@ class EthernetInterface
         {
             if( get_class( $h ) == "Address" )
             {
-                $this->addIPv4Address( $h );
+                //Text replace
+                $qualifiedNodeName = '//*[text()="'.$old.'"]';
+                $xpathResult = DH::findXPath( $qualifiedNodeName, $this->xmlroot);
+                foreach( $xpathResult as $node )
+                    $node->textContent = $h->name();
 
-                $this->removeIPv4Address( $old );
+
+                //attribute replace
+                $nameattribute = $old;
+                $qualifiedNodeName = "entry";
+                $nodeList = $this->xmlroot->getElementsByTagName($qualifiedNodeName);
+                $nodeArray = iterator_to_array($nodeList);
+                foreach( $nodeArray as $item )
+                {
+                    if ($nameattribute !== null)
+                    {
+                        $XMLnameAttribute = DH::findAttribute("name", $item);
+                        if ($XMLnameAttribute === FALSE)
+                            continue;
+
+                        if ($XMLnameAttribute !== $nameattribute)
+                            continue;
+                    }
+                    $item->setAttribute('name', $h->name());
+                }
             }
 
             return;
         }
 
-        mwarning("object is not part of this static route : {$h->toString()}");
+        mwarning("object is not part of this Tunnel Interface : {$h->toString()}");
+    }
+
+    public function replaceReferencedObject($old, $new)
+    {
+        $this->referencedObjectRenamed($new, $old->name());
+        return true;
+    }
+
+    public function API_replaceReferencedObject($old, $new)
+    {
+        $ret = $this->replaceReferencedObject($old, $new);
+
+        if( $ret )
+        {
+            $this->API_sync();
+        }
+
+        return $ret;
     }
 
     public function findorCreateAddressObject( $ip )

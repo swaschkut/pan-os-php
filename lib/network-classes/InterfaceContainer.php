@@ -33,7 +33,7 @@ class InterfaceContainer extends ObjRuleContainer
     public $owner;
 
     /**
-     * @param VirtualSystem|DeviceCloud|Zone|VirtualRouter|PbfRule|DoSRule|DHCP $owner
+     * @param VirtualSystem|DeviceCloud|Zone|VirtualRouter|PbfRule|DoSRule|DHCP|SecureWebGateway $owner
      * @param NetworkPropertiesContainer $centralStore
      */
     public function __construct($owner, $centralStore)
@@ -143,15 +143,18 @@ class InterfaceContainer extends ObjRuleContainer
         $this->o[] = $if;
         $if->addReference($this);
 
-        if( $this->xmlroot === null )
+        if( get_class( $this->owner ) !== "SecureWebGateway" )
         {
-            $importRoot = DH::findFirstElementOrCreate('import', $this->owner->xmlroot);
-            $networkRoot = DH::findFirstElementOrCreate('network', $importRoot);
-            $this->xmlroot = DH::findFirstElementOrCreate('interface', $networkRoot);
+            if( $this->xmlroot === null )
+            {
+                $importRoot = DH::findFirstElementOrCreate('import', $this->owner->xmlroot);
+                $networkRoot = DH::findFirstElementOrCreate('network', $importRoot);
+                $this->xmlroot = DH::findFirstElementOrCreate('interface', $networkRoot);
+            }
+
+            DH::createElement($this->xmlroot, 'member', $if->name());
         }
 
-
-        DH::createElement($this->xmlroot, 'member', $if->name());
 
         return TRUE;
     }

@@ -115,6 +115,8 @@ class DeviceOnPrem
     /** @var ScheduleStore */
     public $scheduleStore = null;
 
+    /** @var EDLStore */
+    public $EDLStore = null;
 
 /*
     public static $templateCloudxml = '<entry name="**Need a Name**"><address></address>
@@ -311,6 +313,8 @@ class DeviceOnPrem
         $this->scheduleStore = new ScheduleStore($this);
         $this->scheduleStore->setName('scheduleStore');
 
+        $this->EDLStore = new EDLStore($this);
+        $this->EDLStore->setName('EDLStore');
 
         $this->securityRules = new RuleStore($this, 'SecurityRule');
         $this->securityRules->name = 'Security';
@@ -736,6 +740,13 @@ class DeviceOnPrem
                 $this->scheduleStore->load_from_domxml($tmp);
             // End of address groups extraction
 
+            //
+            // Extract EDL objects
+            //
+            $tmp = DH::findFirstElement('external-list', $xml);
+            if( $tmp !== FALSE )
+                $this->EDLStore->load_from_domxml($tmp);
+            // End of EDL extraction
         }
 
 
