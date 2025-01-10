@@ -390,7 +390,11 @@ trait ReferenceableObject
             if( isset($cur->owner->owner) && $cur->owner->owner !== null )
             {
                 $class = get_class($cur->owner->owner);
-                if( $class == "DeviceGroup" || $class == "VirtualSystem" || $class == "PanoramaConf" )
+                if( $class == "PanoramaConf" || $class == "PANConf"
+                    || $class == "DeviceGroup" || $class == "VirtualSystem"
+                    || $class == "BuckbeakConf" || $class == "FawkesConf"
+                    || $class == "Container" || $class == "DeviceCloud" || $class == "DeviceOnPrem" || $class == "Snippet"
+                )
                     $class = get_class($cur->owner);
                 $class = strtolower($class);
                 $store_array[$class] = $class;
@@ -409,6 +413,17 @@ trait ReferenceableObject
         $store_array['servicestore'] = FALSE;
         $store_array['rulestore'] = FALSE;
         $store_array['securityprofilegroupstore'] = FALSE;
+
+        $store_array['logicalrouterstore'] = FALSE;
+        $store_array['virtualrouterstore'] = FALSE;
+        $store_array['ethernetifstore'] = FALSE;
+        $store_array['tunnelifstore'] = FALSE;
+        $store_array['gpgatewaystore'] = FALSE;
+        $store_array['gpportalstore'] = FALSE;
+        $store_array['ikegatewaystore'] = FALSE;
+        $store_array['gretunnelstore'] = FALSE;
+        $store_array['loopbackifstore'] = FALSE;
+        $store_array['vlanifstore'] = FALSE;
 
 
         if( !array_key_exists($value, $store_array) )

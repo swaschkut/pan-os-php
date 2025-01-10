@@ -1032,6 +1032,160 @@ RQuery::$defaultFilters['address']['refstore']['operators']['is'] = array(
         'input' => 'input/panorama-8.0.xml'
     )
 );
+RQuery::$defaultFilters['address']['refstore']['operators']['is.rulestore'] = array(
+    'Function' => function (AddressRQueryContext $context) {
+        #$value = $context->value;
+        #$value = strtolower($value);
+        $value = "rulestore";
+
+        $context->object->ReferencesStoreValidation($value);
+
+        $refstore = $context->object->getReferencesStore();
+
+        if( array_key_exists($value, $refstore) )
+            return TRUE;
+
+        return FALSE;
+
+    },
+    'arg' => false,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['address']['refstore']['operators']['is.addressstore'] = array(
+    'Function' => function (AddressRQueryContext $context) {
+        #$value = $context->value;
+        #$value = strtolower($value);
+        $value = "addressstore";
+
+        $context->object->ReferencesStoreValidation($value);
+
+        $refstore = $context->object->getReferencesStore();
+
+        if( array_key_exists($value, $refstore) )
+            return TRUE;
+
+        return FALSE;
+
+    },
+    'arg' => false,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['address']['refstore']['operators']['is.servicestore'] = array(
+    'Function' => function (AddressRQueryContext $context) {
+        #$value = $context->value;
+        #$value = strtolower($value);
+        $value = "servicestore";
+
+        $context->object->ReferencesStoreValidation($value);
+
+        $refstore = $context->object->getReferencesStore();
+
+        if( array_key_exists($value, $refstore) )
+            return TRUE;
+
+        return FALSE;
+
+    },
+    'arg' => false,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['address']['refstore']['operators']['is.logicalrouterstore'] = array(
+    'Function' => function (AddressRQueryContext $context) {
+        #$value = $context->value;
+        #$value = strtolower($value);
+        $value = "logicalrouterstore";
+
+        $context->object->ReferencesStoreValidation($value);
+
+        $refstore = $context->object->getReferencesStore();
+
+        if( array_key_exists($value, $refstore) )
+            return TRUE;
+
+        return FALSE;
+
+    },
+    'arg' => false,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['address']['refstore']['operators']['is.virtualrouterstore'] = array(
+    'Function' => function (AddressRQueryContext $context) {
+        #$value = $context->value;
+        #$value = strtolower($value);
+        $value = "virtualrouterstore";
+
+        $context->object->ReferencesStoreValidation($value);
+
+        $refstore = $context->object->getReferencesStore();
+
+        if( array_key_exists($value, $refstore) )
+            return TRUE;
+
+        return FALSE;
+
+    },
+    'arg' => false,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['address']['refstore']['operators']['is.tunnelifstore'] = array(
+    'Function' => function (AddressRQueryContext $context) {
+        #$value = $context->value;
+        #$value = strtolower($value);
+        $value = "tunnelifstore";
+
+        $context->object->ReferencesStoreValidation($value);
+
+        $refstore = $context->object->getReferencesStore();
+
+        if( array_key_exists($value, $refstore) )
+            return TRUE;
+
+        return FALSE;
+
+    },
+    'arg' => false,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['address']['refstore']['operators']['is.gpgatewaystore'] = array(
+    'Function' => function (AddressRQueryContext $context) {
+        #$value = $context->value;
+        #$value = strtolower($value);
+        $value = "gpgatewaystore";
+
+        $context->object->ReferencesStoreValidation($value);
+
+        $refstore = $context->object->getReferencesStore();
+
+        if( array_key_exists($value, $refstore) )
+            return TRUE;
+
+        return FALSE;
+
+    },
+    'arg' => false,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
 RQuery::$defaultFilters['address']['reftype']['operators']['is'] = array(
     'Function' => function (AddressRQueryContext $context) {
         $value = $context->value;

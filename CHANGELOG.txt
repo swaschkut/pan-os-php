@@ -6,6 +6,7 @@ UTIL:
 * type=application | introduce 'filter=(technology eq XYZ)' /  (category eq XYZ)
 * type=application | introduce actions=exporttoexcel:app_name.html
 * different network class | improvement to change address object name and change references - same as merging address objects and change ref
+* class ReferenceableObject - extend ReferencesStoreValidation | type=address introduce different filter=(refstore is.XYZ
 
 BUGFIX:
 * bugfix | class AntiSpyware / EDL / VulnerabilityProfile
