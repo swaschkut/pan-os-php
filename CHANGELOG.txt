@@ -2,7 +2,9 @@ CHANGELOG
 
 2.1.32
 UTIL:
-* type=address | introdruce 'filter=(reflocationtype is.virtualsystem)' / is.only.virtualsystem
+* type=address | introduce 'filter=(reflocationtype is.virtualsystem)' / is.only.virtualsystem
+* type=address | introduce 'filter=(refstore is.rulestore)' / is.only.rulestore
+* type=address | introduce 'filter=(refstore is.addressstore)' / is.only.addressstore
 * type=application | introduce 'filter=(technology eq XYZ)' /  (category eq XYZ)
 * type=application | introduce actions=exporttoexcel:app_name.html
 * different network class | improvement to change address object name and change references - same as merging address objects and change ref
