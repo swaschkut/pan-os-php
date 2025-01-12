@@ -2,7 +2,8 @@ CHANGELOG
 
 2.1.33
 UTIL:
-* type=rule | introduce 'filter=(threat-log.occurrence.date > 31-12-2024)'
+* type=rule | introduce 'filter=(threat-log.occurrence.date.fast > 31-12-2024)'
+* type=rule | introduce 'filter=(threat-log.occurrence.per-rule.date.fast > 31-12-2024)'
 
 BUGFIX:
 * bugfix for type=address/server actions=xyz-create if type is not defined

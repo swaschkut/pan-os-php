@@ -2574,7 +2574,8 @@ class Rule
         //var_dump($d);
         //exit();
         /////////////////
-        if( empty($context->cachedList) ) {
+        if( empty($context->cachedList) )
+        {
             $query_operator = "geq";
             if( $operator == ">" )
                 $query_operator = "geq";
@@ -2590,7 +2591,7 @@ class Rule
             //( receive_time geq '2025/01/12 00:00:00' ) and (time_generated geq '2025/01/12 00:00:00')
             //$query = "(time_generated geq '".$d." 00:00:00')";
             if( $perRule )
-                $query = "(time_generated ".$query_operator." '".$query_date." 00:00:00') and ( severity geq 'medium' )  and ( rule eq '".$rule->name()."' )";
+                $query = "(time_generated ".$query_operator." '".$query_date." 00:00:00') and ( severity geq 'medium' )  and ( rule eq '".$this->name()."' )";
             else
                 $query = "(time_generated ".$query_operator." '".$query_date." 00:00:00') and ( severity geq 'medium' )";
 
@@ -2606,6 +2607,7 @@ class Rule
 
             if( $connector === null )
                 derr("this filter is available only from API enabled PANConf objects");
+
             $context->cachedList = $connector->getLog($apiArgs);
         }
 
@@ -2624,6 +2626,9 @@ class Rule
                 }
             }
         }
+
+        if( $perRule )
+            $context->cachedList = array();
 
         return $threatArray;
     }
