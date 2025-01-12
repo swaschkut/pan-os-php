@@ -3619,7 +3619,16 @@ AddressCallContext::$supportedActions['create-AddressGroup'] = array(
             PH::ACTIONlog( $context, $string );
 
             if( $context->isAPI )
-                $addressStore->API_newAddressGroup($newName);
+            {
+                $tmp_address = $addressStore->API_newAddress("dummy", "ip-netmask", "127.0.0.1", "dummy");
+                $tmp_group = $addressStore->newAddressGroup( $newName);
+                $tmp_group->addMember( $tmp_address );
+                $tmp_group->API_sync();
+
+                //PAN-OS
+                //$addressStore->API_newAddressGroup($newName);
+            }
+
             else
                 $addressStore->newAddressGroup( $newName);
         }
