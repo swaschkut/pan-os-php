@@ -4004,5 +4004,54 @@ RQuery::$defaultFilters['rule']['uuid']['operators']['eq'] = array(
         'input' => 'input/panorama-8.0.xml'
     )
 );
+RQuery::$defaultFilters['rule']['threat-log.occurrence.date']['operators']['>,<,=,!'] = array(
+    'Function' => function (RuleRQueryContext $context) {
+        $rule = $context->object;
+
+        if( !$rule->isSecurityRule() && !$rule->isDoSRule() &&  !$rule->isPbfRule() && !$rule->isQoSRule() )
+            return FALSE;
+
+        $operator = $context->operator;
+        if( $operator == '=' )
+            $operator = '==';
+
+        /////////////////
+        $futuredate = $context->value;
+
+        $string = "";
+        $return = false;
+        $threatArray = $rule->getRuleThreatLog( $futuredate,$context,$operator, false);
+
+        if(isset($threatArray[$rule->name()]))
+        {
+            $threatLogs = $threatArray[$rule->name()];
+            foreach( $threatLogs as $threat_log )
+            {
+                $tmp_subtype = $threat_log['subtype'];
+                $tmp_log = $threat_log['threat_name'];
+                $tmp_time_generated = $threat_log['time_generated'];
+                $tmp_severity = $threat_log['severity'];
+
+
+                $string .=  "          "." - time_generated: '".$tmp_time_generated."' | type: '".$tmp_subtype."' | threat_name: '".$tmp_log."' | severity: '".$tmp_severity."'"."\n";
+
+                $return = true;
+            }
+
+
+            PH::print_stdout( "------------------------------------------------------------------------");
+            PH::print_stdout( $string );
+        }
+
+        return $return;
+    },
+    'arg' => true,
+    'ci' => array(
+        'fString' => '(%PROP% 5 )',
+        'input' => 'input/panorama-8.0.xml'
+    ),
+    'help' => 'returns TRUE if rule name matches the specified timestamp MM/DD/YYYY [american] / DD-MM-YYYY [european]'
+);
+
 // </editor-fold>
 

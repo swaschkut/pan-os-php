@@ -2,8 +2,10 @@ CHANGELOG
 
 2.1.33
 UTIL:
+* type=rule | introduce 'filter=(threat-log.occurrence.date > 31-12-2024)'
 
 BUGFIX:
+* bugfix for type=address/server actions=xyz-create if type is not defined
 
 GENERAL:
 
@@ -21,7 +23,6 @@ UTIL:
 
 BUGFIX:
 * bugfix | class AntiSpyware / EDL / VulnerabilityProfile
-* bugfix for type=address/server actions=xyz-create if type is not defined
 
 GENERAL:
 * class VirtualSystem - ethernet subInterfaces, add address objects references

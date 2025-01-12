@@ -97,6 +97,10 @@ var subjectObject =
                         "type": "string",
                         "default": "*nodefault*",
                         "help": "tmp, ip-netmask, ip-range, fqdn, dynamic, ip-wildcard"
+                    },
+                    "description": {
+                        "type": "string",
+                        "default": "-"
                     }
                 }
             },
@@ -6704,6 +6708,19 @@ var subjectObject =
                     }
                 }
             },
+            "threat-log.occurrence.date": {
+                "operators": {
+                    ">,<,=,!": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% 5 )",
+                            "input": "input\/panorama-8.0.xml"
+                        },
+                        "help": "returns TRUE if rule name matches the specified timestamp MM\/DD\/YYYY [american] \/ DD-MM-YYYY [european]"
+                    }
+                }
+            },
             "timestamp-first-hit.fast": {
                 "operators": {
                     ">,<,=,!": {
@@ -8406,6 +8423,10 @@ var subjectObject =
                     "sport": {
                         "type": "string",
                         "default": "*nodefault*"
+                    },
+                    "description": {
+                        "type": "string",
+                        "default": "---"
                     }
                 }
             },

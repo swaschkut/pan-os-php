@@ -343,7 +343,7 @@ class SecurityProfileStore extends ObjStore
                 $filter = &$withFilter;
 
             $errMesg = '';
-            $query = new RQuery('rule');
+            $query = new RQuery('securityprofile');
             if( $query->parseFromString($filter, $errMsg) === FALSE )
                 derr("error while parsing query: {$errMesg}");
 

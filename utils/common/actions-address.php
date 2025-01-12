@@ -3360,7 +3360,7 @@ AddressCallContext::$supportedActions['create-Address'] = array(
             'help' =>
                 implode( ", ", Address::$AddressTypes )
         ),
-        'description' => array('type' => 'string', 'default' => '---')
+        'description' => array('type' => 'string', 'default' => '-')
     )
 );
 

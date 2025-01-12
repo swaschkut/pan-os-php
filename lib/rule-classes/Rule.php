@@ -2543,6 +2543,90 @@ class Rule
         }
     }
 
+    public function getRuleThreatLog( $date, $context, $operator, $perRule = false )
+    {
+        if( !$this->isSecurityRule() && !$this->isDoSRule() &&  !$this->isPbfRule() && !$this->isQoSRule() )
+            return FALSE;
+
+        $threatArray = array();
+
+        $d_actual = time();
+        if( strpos( $date, "/" ) !== FALSE )
+        {
+            $d2 = DateTime::createFromFormat('Y/m/d', $date);
+            $d = $d2->getTimestamp();
+        }
+        elseif(  strpos( $date, "-" ) !== FALSE)
+        {
+            $d2 = DateTime::createFromFormat('d-m-Y', $date);
+            $d = $d2->getTimestamp();
+
+        }
+
+        else
+        {
+            $d = $d_actual;
+            if( $date !== 0 )
+            {
+                $d = $d_actual + ($date)*24*3600;
+            }
+        }
+        //var_dump($d);
+        //exit();
+        /////////////////
+        if( empty($context->cachedList) ) {
+            $query_operator = "geq";
+            if( $operator == ">" )
+                $query_operator = "geq";
+            elseif( $operator == "<" )
+                $query_operator = "leq";
+            else
+                derr( "actual supported operator '>' and '<'", null, false );
+
+            $year = $d2->format("Y");
+            $month = $d2->format("m");
+            $day = $d2->format("d");
+            $query_date = $year."/".$month."/".$day;
+            //( receive_time geq '2025/01/12 00:00:00' ) and (time_generated geq '2025/01/12 00:00:00')
+            //$query = "(time_generated geq '".$d." 00:00:00')";
+            if( $perRule )
+                $query = "(time_generated ".$query_operator." '".$query_date." 00:00:00') and ( severity geq 'medium' )  and ( rule eq '".$rule->name()."' )";
+            else
+                $query = "(time_generated ".$query_operator." '".$query_date." 00:00:00') and ( severity geq 'medium' )";
+
+            //get threat-log per day
+            $apiArgs = Array();
+            $apiArgs['type'] = 'log';
+            $apiArgs['log-type'] = 'threat';
+            $apiArgs['nlogs'] = '5000';
+            if( !empty($query) )
+                $apiArgs['query'] = $query;
+
+            $connector = findConnector($this->owner->owner);
+
+            if( $connector === null )
+                derr("this filter is available only from API enabled PANConf objects");
+            $context->cachedList = $connector->getLog($apiArgs);
+        }
+
+        $counter = 0;
+        foreach( $context->cachedList as $threat_log )
+        {
+            if( isset( $threat_log['rule'] ) )
+            {
+                if( $threat_log['rule'] === $this->name() )
+                {
+                    $threatArray[$this->name()][] = $threat_log;
+
+                    $counter++;
+                    if( $counter > 10 )
+                        break;
+                }
+            }
+        }
+
+        return $threatArray;
+    }
     public function isPreRule()
     {
         return $this->owner->ruleIsPreRule($this);
