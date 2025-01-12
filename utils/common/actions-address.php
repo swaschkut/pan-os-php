@@ -3306,6 +3306,7 @@ AddressCallContext::$supportedActions['create-Address'] = array(
 
         $value = $context->arguments['value'];
         $type = $context->arguments['type'];
+        $description = $context->arguments['description'];
 
         if( !in_array( $type, Address::$AddressTypes) )
         {
@@ -3323,9 +3324,9 @@ AddressCallContext::$supportedActions['create-Address'] = array(
             PH::ACTIONlog( $context, $string );
 
             if( $context->isAPI )
-                $addressStore->API_newAddress($newName, $type, $value);
+                $addressStore->API_newAddress($newName, $type, $value, $description);
             else
-                $addressStore->newAddress( $newName, $type, $value);
+                $addressStore->newAddress( $newName, $type, $value, $description);
         }
         else
         {
@@ -3358,7 +3359,8 @@ AddressCallContext::$supportedActions['create-Address'] = array(
             'default' => '*nodefault*',
             'help' =>
                 implode( ", ", Address::$AddressTypes )
-        )
+        ),
+        'description' => array('type' => 'string', 'default' => '---')
     )
 );
 

@@ -1946,6 +1946,7 @@ ServiceCallContext::$supportedActions[] = array(
         $protocol = $context->arguments['protocol'];
         $port = $context->arguments['port'];
         $sport = $context->arguments['sport'];
+        $description = $context->arguments['description'];
 
         if( $protocol !== "tcp" && $protocol !== "udp" )
         {
@@ -1970,9 +1971,9 @@ ServiceCallContext::$supportedActions[] = array(
             else
             {
                 if( $sport !== "*nodefault*" )
-                    $serviceStore->newService( $newName, $protocol, $port, $sport );
+                    $serviceStore->newService( $newName, $protocol, $port, $description, $sport );
                 else
-                    $serviceStore->newService( $newName, $protocol, $port);
+                    $serviceStore->newService( $newName, $protocol, $port, $description, $sport );
             }
         }
         else
@@ -1986,6 +1987,7 @@ ServiceCallContext::$supportedActions[] = array(
         'protocol' => array('type' => 'string', 'default' => '*nodefault*'),
         'port' => array('type' => 'string', 'default' => '*nodefault*'),
         'sport' => array('type' => 'string', 'default' => '*nodefault*'),
+        'description' => array('type' => 'string', 'default' => '---')
     )
 );
 
