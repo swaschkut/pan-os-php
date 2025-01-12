@@ -4025,8 +4025,8 @@ RQuery::$defaultFilters['rule']['threat-log.occurrence.date.fast']['operators'][
     'Function' => function (RuleRQueryContext $context) {
         $rule = $context->object;
 
-        if( !$rule->isSecurityRule() && !$rule->isDoSRule() &&  !$rule->isPbfRule() && !$rule->isQoSRule() )
-            return FALSE;
+        if( !$rule->isSecurityRule() )
+            return null;
 
         $operator = $context->operator;
         if( $operator == '=' )
@@ -4048,14 +4048,13 @@ RQuery::$defaultFilters['rule']['threat-log.occurrence.date.fast']['operators'][
                 $tmp_log = $threat_log['threat_name'];
                 $tmp_time_generated = $threat_log['time_generated'];
                 $tmp_severity = $threat_log['severity'];
+                $tmp_action = $threat_log['action'];
 
-
-                $string .=  "          "." - time_generated: '".$tmp_time_generated."' | type: '".$tmp_subtype."' | threat_name: '".$tmp_log."' | severity: '".$tmp_severity."'"."\n";
+                $string .=  "          "." - time_generated: '".$tmp_time_generated."' | type: '".$tmp_subtype."' | threat_name: '".$tmp_log."' | severity: '".$tmp_severity."' | action: '".$tmp_action."'"."\n";
 
                 $return = true;
             }
-
-
+            
             PH::print_stdout( "------------------------------------------------------------------------");
             PH::print_stdout( $string );
         }
@@ -4073,8 +4072,8 @@ RQuery::$defaultFilters['rule']['threat-log.occurrence.per-rule.date.fast']['ope
     'Function' => function (RuleRQueryContext $context) {
         $rule = $context->object;
 
-        if( !$rule->isSecurityRule() && !$rule->isDoSRule() &&  !$rule->isPbfRule() && !$rule->isQoSRule() )
-            return FALSE;
+        if( !$rule->isSecurityRule() )
+            return null;
 
         $operator = $context->operator;
         if( $operator == '=' )
@@ -4096,8 +4095,9 @@ RQuery::$defaultFilters['rule']['threat-log.occurrence.per-rule.date.fast']['ope
                 $tmp_log = $threat_log['threat_name'];
                 $tmp_time_generated = $threat_log['time_generated'];
                 $tmp_severity = $threat_log['severity'];
+                $tmp_action = $threat_log['action'];
 
-                $string .=  "          "." - time_generated: '".$tmp_time_generated."' | type: '".$tmp_subtype."' | threat_name: '".$tmp_log."' | severity: '".$tmp_severity."'"."\n";
+                $string .=  "          "." - time_generated: '".$tmp_time_generated."' | type: '".$tmp_subtype."' | threat_name: '".$tmp_log."' | severity: '".$tmp_severity."' | action: '".$tmp_action."'"."\n";
 
                 $return = true;
             }
