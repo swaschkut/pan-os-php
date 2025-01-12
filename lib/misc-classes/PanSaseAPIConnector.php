@@ -475,8 +475,12 @@ class PanSaseAPIConnector
 
         $jsonArray = json_decode($response, TRUE);
 
-        if( isset($jsonArray['_error']) )
-            derr($jsonArray['_error']['message'], null, FALSE);
+        if( isset($jsonArray['_errors']) )
+        {
+            print_r($jsonArray['_errors']);
+            derr($jsonArray['_errors']['message'], null, FALSE);
+        }
+
 
         if( $jsonArray !== null
             && isset($jsonArray['total'])
@@ -1102,8 +1106,12 @@ class PanSaseAPIConnector
 
     private function displayCurlResponse( $response )
     {
-        if( isset($jsonArray['_error']) )
-            derr($jsonArray['_error']['message'], null, FALSE);
+        if( isset($jsonArray['_errors']) )
+        {
+            print_r($jsonArray['_errors']);
+            derr($jsonArray['_errors']['message'], null, FALSE);
+        }
+
 
         if( $this->showApiCalls )
         {
