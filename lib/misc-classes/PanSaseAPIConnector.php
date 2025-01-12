@@ -1106,6 +1106,8 @@ class PanSaseAPIConnector
 
     private function displayCurlResponse( $response )
     {
+        $jsonArray = json_decode($response, TRUE);
+        
         if( isset($jsonArray['_errors']) )
         {
             print_r($jsonArray['_errors']);
@@ -1119,7 +1121,6 @@ class PanSaseAPIConnector
             //check ID from response and add it to config file
             //{"id":"8b9fd854-ad26-4d38-909a-ca24bf9ff7f0","name":"sven3","folder":"All","description":{},"ip_netmask":"4.5.6.7"}
 
-            $jsonArray = json_decode($response, TRUE);
             print_r( $jsonArray );
             if( $jsonArray !== null && isset($jsonArray['id']) )
             {
