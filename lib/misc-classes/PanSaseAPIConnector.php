@@ -478,7 +478,7 @@ class PanSaseAPIConnector
         if( isset($jsonArray['_errors']) )
         {
             print_r($jsonArray['_errors']);
-            derr($jsonArray['_errors']['message'], null, FALSE);
+            derr($jsonArray['_errors'][0]['message'], null, FALSE);
         }
 
 
@@ -1107,11 +1107,11 @@ class PanSaseAPIConnector
     private function displayCurlResponse( $response )
     {
         $jsonArray = json_decode($response, TRUE);
-        
+
         if( isset($jsonArray['_errors']) )
         {
             print_r($jsonArray['_errors']);
-            derr($jsonArray['_errors']['message'], null, FALSE);
+            derr($jsonArray['_errors'][0]['message'], null, FALSE);
         }
 
 
