@@ -3310,6 +3310,7 @@ AddressCallContext::$supportedActions['create-Address'] = array(
         if( !in_array( $type, Address::$AddressTypes) )
         {
             $string = "Address named '" . $newName . "' cannot create as type: ".$type." is not allowed";
+            derr($string, null, false);
             PH::ACTIONlog( $context, $string );
             return;
         }

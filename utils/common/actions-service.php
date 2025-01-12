@@ -1950,6 +1950,7 @@ ServiceCallContext::$supportedActions[] = array(
         if( $protocol !== "tcp" && $protocol !== "udp" )
         {
             $string = "Service named '" . $newName . "' cannot create as protool: ".$protocol." is not allowed";
+            derr($string, null, false);
             PH::ACTIONlog( $context, $string );
             return;
         }
