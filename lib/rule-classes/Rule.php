@@ -2595,20 +2595,35 @@ class Rule
             else
                 $query = "(time_generated ".$query_operator." '".$query_date." 00:00:00') and ( severity geq 'medium' )";
 
-            //get threat-log per day
-            $apiArgs = Array();
-            $apiArgs['type'] = 'log';
-            $apiArgs['log-type'] = 'threat';
-            $apiArgs['nlogs'] = '5000';
-            if( !empty($query) )
-                $apiArgs['query'] = $query;
+            $tmp_array = array();
+            $full_array = array();
+            $orig_query = $query;
+            do
+            {
+                //get threat-log per day
+                $apiArgs = Array();
+                $apiArgs['type'] = 'log';
+                $apiArgs['log-type'] = 'threat';
+                $apiArgs['nlogs'] = '5000';
+                if( !empty($query) )
+                    $apiArgs['query'] = $query;
 
-            $connector = findConnector($this->owner->owner);
+                $connector = findConnector($this->owner->owner);
 
-            if( $connector === null )
-                derr("this filter is available only from API enabled PANConf objects");
+                if( $connector === null )
+                    derr("this filter is available only from API enabled PANConf objects");
 
-            $context->cachedList = $connector->getLog($apiArgs);
+                $tmp_array = $connector->getLog($apiArgs);
+                $full_array = array_merge($tmp_array, $full_array);
+
+                $last_array_entry = end($tmp_array);
+                $query = $orig_query." and (time_generated leq '".$last_array_entry['time_generated']."')";
+
+            }while( (count($tmp_array) == 5000) );
+            $context->cachedList = $full_array;
+
+            PH::print_stdout( "------------------------------------------------------------------------");
+            PH::print_stdout("Threat Log count: ".count($context->cachedList));
         }
 
         $counter = 0;
