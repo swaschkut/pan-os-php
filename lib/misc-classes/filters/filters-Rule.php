@@ -4054,7 +4054,7 @@ RQuery::$defaultFilters['rule']['threat-log.occurrence.date.fast']['operators'][
 
                 $return = true;
             }
-            
+
             PH::print_stdout( "------------------------------------------------------------------------");
             PH::print_stdout( $string );
         }

@@ -79,6 +79,12 @@ PH::disableExceptionSupport();
 
 class DeviceGroupRuleAppUsage
 {
+    public $UsageType = "app";
+    public $keyword = "apps";
+
+    public $SrcDst = false;
+    public $logArray = array();
+
     public $logs = Array();
     public $logsSrcDst = Array();
 
@@ -124,6 +130,8 @@ class DeviceGroupRuleAppUsage
                 $this->logsSrcDst[$ruleName] = &$logRecord;
             else
                 $this->logs[$ruleName] = &$logRecord;
+
+
             unset($logRecord);
         }
 
