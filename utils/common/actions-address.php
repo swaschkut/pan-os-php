@@ -3620,13 +3620,15 @@ AddressCallContext::$supportedActions['create-AddressGroup'] = array(
 
             if( $context->isAPI )
             {
-                $tmp_address = $addressStore->API_newAddress("dummy", "ip-netmask", "127.0.0.1", "dummy");
-                $tmp_group = $addressStore->newAddressGroup( $newName);
-                $tmp_group->addMember( $tmp_address );
-                $tmp_group->API_sync();
-
-                //PAN-OS
-                //$addressStore->API_newAddressGroup($newName);
+                if( $context->isSaseAPI )
+                {
+                    $tmp_address = $addressStore->API_newAddress("dummy", "ip-netmask", "127.0.0.1", "dummy");
+                    $tmp_group = $addressStore->newAddressGroup( $newName);
+                    $tmp_group->addMember( $tmp_address );
+                    $tmp_group->API_sync();
+                }
+                else
+                    $addressStore->API_newAddressGroup($newName);
             }
 
             else
