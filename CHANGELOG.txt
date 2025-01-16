@@ -6,7 +6,8 @@ UTIL:
 * type=rule | introduce 'filter=(threat-log.occurrence.per-rule.date.fast > 31-12-2024)'
 
 BUGFIX:
-* bugfix for type=address/server actions=xyz-create if type is not defined
+* type=address/server actions=xyz-create if type is not defined
+* type=rule | bugfix for 'filter=(schedule.expire.in.days < -90)' - to use negative values
 
 GENERAL:
 
