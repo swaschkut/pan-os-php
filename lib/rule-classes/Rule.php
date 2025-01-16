@@ -2551,12 +2551,13 @@ class Rule
         $threatArray = array();
 
         $d_actual = time();
+        $char_counter_array = count_chars($date,1);
         if( strpos( $date, "/" ) !== FALSE )
         {
             $d2 = DateTime::createFromFormat('Y/m/d', $date);
             $d = $d2->getTimestamp();
         }
-        elseif(  strpos( $date, "-" ) !== FALSE)
+        elseif(  isset($char_counter_array['-']) and $char_counter_array['-'] == 2)
         {
             $d2 = DateTime::createFromFormat('d-m-Y', $date);
             $d = $d2->getTimestamp();

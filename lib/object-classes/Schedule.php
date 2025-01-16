@@ -361,12 +361,13 @@ class Schedule
             return false;
 
         $d_actual = time();
+        $char_counter_array = count_chars($futuredate,1);
         if( strpos( $futuredate, "/" ) !== FALSE )
         {
             $d2 = DateTime::createFromFormat('Y/m/d', $futuredate);
             $d = $d2->getTimestamp();
         }
-        elseif(  strpos( $futuredate, "-" ) !== FALSE)
+        elseif(  isset($char_counter_array['-']) and $char_counter_array['-'] == 2)
         {
             $d2 = DateTime::createFromFormat('d-m-Y', $futuredate);
             $d = $d2->getTimestamp();
