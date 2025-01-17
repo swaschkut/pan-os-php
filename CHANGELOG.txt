@@ -9,6 +9,7 @@ BUGFIX:
 * type=address/server actions=xyz-create if type is not defined
 * type=rule | bugfix for 'filter=(schedule.expire.in.days < -90)' - to use negative values
 * type=rule actions=schedule-set:XYZ in=api://MGMT-IP | bugfix for API mode
+* class VirtualRouter | add address object references for BGP peer-group
 
 GENERAL:
 * introduce develop part to read panos known-issues - for actual supported panos version
