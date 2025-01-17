@@ -1,0 +1,1542 @@
+
+<!DOCTYPE HTML><html  lang="en-US">
+<head>
+    <meta charset="UTF-8">
+	<meta name="content-type" content="text/html; charset=UTF-8">
+	<title class="panspeaktitle">Compare Next-Generation Firewalls - Palo Alto Networks</title>
+		<meta name="keywords" content="X-Portfolio">
+	<meta name="pan-keywords" content="X-Portfolio">
+    <meta class="panspeaksummary"  name="description" content="Compare Next-Generation Firewalls - Palo Alto Networks">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="canonical" href="https://www.paloaltonetworks.com/products/product-comparison"/>
+<script>var globalConfig = {"visitorProfilingEnabled":true,"visitorProfileCookieExpirationPeriod":525600,"mktVisitorCompanyDetailsCookieExpirationPeriod":10080,"recommendationsDisplayedCookieExpirationPeriod":10080,"selectivePageVisitorProfilingEnabled":true,"repeatingRecommendationsEnabled":false,"resourcepageRecommendationsEnabled":false,"abmBannerEnabled":false,"abmRecommendationsEnabled":false,"abmRecommendationsLabelEnabled":true,"panUserProfilingEnabled":false,"homePageTeaserAnimationEnabled":true,"enableMktVisitorCompanyDetailsForGlobalForm":true,"enableMktVisitorCompanyDetailsForRecommendations":true,"enableMktVisitorCompanyDetailsForABMBanner":false,"imageWebWorkerEnabled":true,"embedClientLibsEnabled":false,"abmBannerUsingRecommendations":true,"abmBannerCookieExpirationPeriod":120,"ldapEmailListEnabledZoomWebinar":true,"jobLevelAndRoleConfigPath":"/etc/formsconfig/joblevelandrole.json","webFormsConfigPath":"/etc/formsconfig/webformsconfig.json","buildName":"SCM_PRODUCT_FIXES__DEC_END_2024","tldsRegex":""};</script><link rel="apple-touch-icon" sizes="57x57" href="/etc/clientlibs/pan/img/favicons2020/apple-touch-icon-57x57.png">
+<link rel="apple-touch-icon" sizes="60x60" href="/etc/clientlibs/pan/img/favicons2020/apple-touch-icon-60x60.png">
+<link rel="apple-touch-icon" sizes="72x72" href="/etc/clientlibs/pan/img/favicons2020/apple-touch-icon-72x72.png">
+<link rel="apple-touch-icon" sizes="76x76" href="/etc/clientlibs/pan/img/favicons2020/apple-touch-icon-76x76.png">
+<link rel="apple-touch-icon" sizes="114x114" href="/etc/clientlibs/pan/img/favicons2020/apple-touch-icon-114x114.png">
+<link rel="apple-touch-icon" sizes="120x120" href="/etc/clientlibs/pan/img/favicons2020/apple-touch-icon-120x120.png">
+<link rel="apple-touch-icon" sizes="144x144" href="/etc/clientlibs/pan/img/favicons2020/apple-touch-icon-144x144.png">
+<link rel="apple-touch-icon" sizes="152x152" href="/etc/clientlibs/pan/img/favicons2020/apple-touch-icon-152x152.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/etc/clientlibs/pan/img/favicons2020/apple-touch-icon-180x180.png">
+<link rel="icon" type="image/png" href="/etc/clientlibs/pan/img/favicons2020/strata_32x32.png" sizes="32x32">
+		<link rel="icon" type="image/png" href="/etc/clientlibs/pan/img/favicons2020/strata_16x16.png" sizes="16x16">
+		<link rel="icon" type="image/png" href="/etc/clientlibs/pan/img/favicons2020/strata_194x194.png" sizes="194x194">
+		<link rel="icon" type="image/png" href="/etc/clientlibs/pan/img/favicons2020/strata_96x96.png" sizes="96x96">
+		<link rel="icon" type="image/png" href="/etc/clientlibs/pan/img/favicons2020/strata_192x192.png" sizes="192x192">
+		<link rel="shortcut icon" href="/etc/clientlibs/pan/img/favicons2020/stratafaviconico.png">
+	<meta name="msapplication-TileImage" content="/etc/clientlibs/pan/img/favicons2020/mstile-144x144.png">
+<meta name="msapplication-config" content="/etc/clientlibs/pan/img/favicons2020/browserconfig.xml">
+<meta name="msapplication-TileColor" content="#da532c">
+<meta name="theme-color" content="#8ad3de">
+<script>var mktoConfig = {"mktoAppURL":"https://start.paloaltonetworks.com","mktoFormPostEndPoint":"/index.php/leadCapture/save2","mktoFormPostURL":"https://start.paloaltonetworks.com/index.php/leadCapture/save2","mktoWebFormId":"1086","mktoMunchkinId":"531-OCS-018","mktoSubscribeFormLpId":"21963","mktoRCDefautLpId":"2100","mktoFormSubmitServerURL":"https://www.paloaltonetworks.com","mktoFormSubmitEndPoint":"/apps/pan/public/formsubmithandler.submitform.json","mktoFormSubmitURL":"/apps/pan/public/formsubmithandler.submitform.json","mktoRCDefaultProgramId":"1192"};</script><script src="/etc/clientlibs/pan-templates/cyberpediacommon/critical/image-observer.js" defer></script>
+                     <script type="text/javascript">
+		var disableOverridden = false;
+		if(typeof localStorage != "undefined" && localStorage)
+		{
+			disableOverridden = localStorage.getItem("jcOverrideDisable");
+		}
+
+		if(!disableOverridden)
+		{
+			var quietConsole = {};
+            for(var m in console) {
+                if(typeof console[m] == "function") {
+                    quietConsole[m] = function(){};
+                }
+            }
+            window.console=quietConsole;
+		}
+	</script>
+<script type="text/javascript">
+	 var mobileSelector = false ;
+     var userHeaderModel;
+     var botSelector = false;
+     window.PAN_Clean_Util = {
+        isIE: false
+     };
+	document.addEventListener("DOMContentLoaded", function(event) {
+ 	// recaptcha on foucs call
+    $('input.emailinput').on('focus', function () {
+		   var recapthaPage = $("script[src='https://www.google.com/recaptcha/api.js?hl=en_US']").length
+		    console.log("recapthaPage",recapthaPage);
+		    if (!recapthaPage) {
+                    // trigger loading api.js (recaptcha.js) script
+                  var head = document.getElementsByTagName('head')[0];
+                  var script = document.createElement('script');
+                  script.type = 'text/javascript';
+                  script.src = 'https://www.google.com/recaptcha/api.js?hl=en_US';
+                  head.appendChild(script);
+    	      }
+	      	// remove focus to avoid js error:
+ 		     // Uncaught Error: reCAPTCHA has already been rendered in this element at Object.kh
+      		$('input.emailinput').off('focus');
+      		$('.pan-footer-captcha-block').css('height', 78)
+    	});
+  	});
+</script>
+<meta name="google-site-verification" content="yZTC3zLUAlohH5KdyGFhucj62F6WYFsceaLFqQjj3wM" />
+
+<!--[if lt IE 9]>
+    <script type="text/javascript" src="/etc/clientlibs/pan/js/html5-shiv-3.7.0.js"></script>
+<![endif]-->
+<!-- <script src="https://code.jquery.com/jquery-3.6.1.min.js"></script> -->
+<link rel="stylesheet" href="/etc/clientlibs/common.min.css" type="text/css">
+<script src="/etc.clientlibs/clientlibs/granite/jquery.min.js"></script>
+<script src="/etc.clientlibs/clientlibs/granite/moment.min.js"></script>
+<script src="/etc/clientlibs/common.min.js"></script>
+<link rel="stylesheet" href="/etc/clientlibs/pan-productpage.min.css" type="text/css">
+<script src="/etc/clientlibs/pan-productpage.min.js"></script>
+<script>Granite.I18n.setLocale('en_US');</script>
+<script>
+	var languageFromPath = 'en_US';
+	var languageFromPage = "en_US";
+
+	var shortCutURL = true;
+	var mktoProgramId = "";
+</script>
+
+<link rel="prerender" href="/_jcr_content/globals/cleanHeaderNgfw.ngfwRenderer.html">
+  				<script type="text/javascript">
+			PAN.setIndexable(true);
+		</script>
+            <script type="text/javascript">
+                PAN.RunOnPageModelLoad = [];
+				window.PAN_RunOnPageModelLoad = [];
+                
+
+                $(document).ready(function() {
+                    function loadAsyncScript(uri) {
+                        return new Promise(function(resolve, reject) {
+                            var tag = document.createElement('script');
+                            tag.src = uri;
+                            tag.async = true;
+                            tag.onload = function() {
+                                resolve();
+                            }
+                            //var firstScriptTag = document.getElementsByTagName('script')[0];
+                            //firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+                            document.getElementsByTagName('body')[0].appendChild(tag);
+                        });
+                    }
+                    var scriptLoaded = loadAsyncScript('/apps/pan/public/singlePageReactModel?pageId=/content/pan/en_US/products/product-comparison');
+                    scriptLoaded.then(function() {
+                        var i=0;
+                        try {
+                            while (i<PAN.RunOnPageModelLoad.length) {
+                                try { PAN.RunOnPageModelLoad[i](); }
+                                catch (e) {}
+                                i++;
+                            }
+                        } catch (e2) {}
+						i=0;
+						try {
+							while (i<PAN_RunOnPageModelLoad.length) {
+								try { PAN_RunOnPageModelLoad[i](); }
+								catch (e) {}
+								i++;
+							}
+						} catch (e2) {}
+                    });
+                });
+				</script>
+	<script type="text/javascript" src="/apps/pan/public/userHeaderModel">
+    
+
+    var userInfo = {"userID":"anonymous"};
+
+</script>
+<script type="text/javascript">
+    PAN.setCurrentPageId('/content/pan/en_US/products/product-comparison');
+    PAN.tracking.addId('/content/pan/en_US/products/product-comparison');
+	PAN.shouldRedirectDuringLogin = false;
+</script>
+
+<script type="text/javascript">
+
+	
+
+	PAN.setPath("/content/pan/en_US/products/product-comparison");
+
+	var webData = {};
+	webData.myAccount={};
+	webData.myAccount.site={};
+	webData.events = [];
+
+		try{
+webData.internalonlytags = {};
+webData.internalonlytags.gtm = "X-Portfolio";
+}catch(error){}
+try{webData.createdOn = "12/01/2022";}catch(error){}
+
+		webData.products = "Compare Next-Generation Firewalls";
+		webData.events = ["prodView"];
+	
+		webData.productsCat = "products";
+	
+        	webData.pageName = 'en_US:products:product-comparison';
+    	
+        	webData.channel = 'products';
+    	
+       	 	webData.language = 'en_US';
+    	
+    		webData.sectionPath = 'products:product-comparison';
+    	
+			webData.resourceAssetID = 'ebb5763aa729a2fe066478f650ca3339';
+		
+	if (userHeaderModel) {
+		if (userHeaderModel.id !== "anonymous") {
+			webData.GUID = userHeaderModel.id;
+			webData.loggedInState = "Logged-In";
+	      	webData.formType = "Janrain";
+
+	      	if (userHeaderModel.provider) {
+	      		webData.portalAccessed = 'Janrain: '+userHeaderModel.provider;
+	    		webData.loginType = 'Janrain: '+userHeaderModel.provider;
+	      	} else {
+	      		webData.portalAccessed = 'Janrain: Profile';
+				webData.loginType = 'Janrain: Profile';
+	      	}
+	      	if (userHeaderModel.eventType) {
+				if (userHeaderModel.eventType === 'register') {
+					webData.formName = "Registration / Login";
+		    	 	webData.events.push('registers','login');
+				} else {
+					webData.formName = "Login";
+		    		webData.events.push('login');
+				}
+			}
+		}
+
+      	if (userHeaderModel.businessEmail) {
+      		webData.eMail = userHeaderModel.businessEmail;
+      	}
+    	if (userHeaderModel.hashedEmail) {
+    		webData.hashEmail = userHeaderModel.hashedEmail;
+    	}
+    	if (userHeaderModel.company) {
+    		webData.companyName = userHeaderModel.company;
+    		if (userHeaderModel.company === 'Palo Alto Networks') {
+    			webData.userType = 'Employee';
+    		} else {
+    			webData.userType = 'Non-Employee';
+    		}
+    	}
+    	if (userHeaderModel.jobRole) {
+    		webData.jobTitle = userHeaderModel.jobRole;
+    	}
+    	if (userHeaderModel.country) {
+    		webData.country = userHeaderModel.country;
+    	}
+    	if (userHeaderModel.state) {
+    		webData.state = userHeaderModel.state;
+    	}
+      	if (userHeaderModel.firstName) {
+      		webData.firstName = userHeaderModel.firstName;
+      	}
+      	if (userHeaderModel.lastName) {
+      		webData.lastName = userHeaderModel.lastName;
+      	}
+      	if (userHeaderModel.salesForceAccountIds) {
+      		webData.sfaid = userHeaderModel.salesForceAccountIds;
+      	}
+	}
+
+	// Adding a script for promise functionality only for IE
+    if(/MSIE \d|Trident.*rv:/.test(navigator.userAgent)) {
+        var head = document.getElementsByTagName('head')[0];
+        var script = document.createElement('script');
+        script.type = 'text/javascript';
+        script.src = '/etc/clientlibs/pan-mainNavigation/js/bluebird.js';
+        head.appendChild(script);
+
+    }
+
+
+    //ie11 polyfill for Number.isFinite
+    if (typeof Number.isFinite !== 'function') {
+        Number.isFinite = function (value) {
+            return !(typeof value !== 'number' || value !== value || value === Infinity || value === -Infinity)
+        }
+    };
+
+    //ie11 polyfill for Number.isInteger
+    if (typeof Number.isInteger !== 'function') {
+        Number.isInteger = function(value) {
+            return typeof value === "number" &&
+                Number.isFinite(value) &&
+                Math.floor(value) === value;
+        }
+    }
+
+	//ie11 polyfill for endsWith
+	if (!String.prototype.endsWith) {
+		String.prototype.endsWith = function(search, this_len) {
+			if (this_len === undefined || this_len > this.length) {
+			this_len = this.length;
+			}
+			return this.substring(this_len - search.length, this_len) === search;
+		};
+	}
+
+    //ie11 polyfill for includes
+    if (!String.prototype.includes) {
+        String.prototype.includes = function (search, start) {
+            if (typeof start !== 'number') {
+                start = 0
+            }
+
+            if (start + search.length > this.length) {
+                return false
+            } else {
+                return this.indexOf(search, start) !== -1
+            }
+        }
+    };
+    
+    function scriptsToBeLoadOnWindowLoad(url) {
+        var head = document.getElementsByTagName('head')[0];
+        var script = document.createElement('script');
+        script.type = 'text/javascript';
+        script.src = url;
+        head.appendChild(script);
+    }
+
+	window.onload = function () {
+		var ua = window.navigator.userAgent;
+		var isIE = /MSIE|Trident/.test(ua);
+		console.log("checking for IE !!!");
+		if (isIE) {
+			console.log("IE !!!!! --- found");
+			//IE specific code goes here
+			var head = document.getElementsByTagName("head")[0];
+			var script = document.createElement("script");
+			script.type = "text/javascript";
+			script.src =
+				"/etc/clientlibs/clean/dependencies/ie-pollyfill/ie-pollyfill.js";
+			head.insertBefore(script, head.firstChild);
+			// add GliderJS compatibility script
+			var gliderCompatScript = document.createElement("script");
+			gliderCompatScript.type = "text/javascript";
+			gliderCompatScript.src =
+				"/etc/clientlibs/clean/dependencies/gliderjs-1.7.6/glider-compat.min.js";
+			head.insertBefore(gliderCompatScript, head.firstChild);
+		}
+
+        //scriptsToBeLoadOnWindowLoad('https://static.cloud.coveo.com/searchui/v2.10112/js/CoveoJsSearch.Lazy.min.js');
+        //scriptsToBeLoadOnWindowLoad('https://www.google.com/recaptcha/api.js?hl=en_US');
+        //scriptsToBeLoadOnWindowLoad('//platform-api.sharethis.com/js/sharethis.js#property=5a1e6fc71d108f0012ed9f04&product=custom-share-buttons');
+	};
+</script>
+
+<script async>
+;(function(win, doc, style, timeout) {
+  var STYLE_ID = 'at-body-style';
+  function getParent() {
+    return doc.getElementsByTagName('head')[0];
+  }
+  function addStyle(parent, id, def) {
+    if (!parent) {
+      return;
+    }
+    var style = doc.createElement('style');
+    style.id = id;
+    style.innerHTML = def;
+    parent.appendChild(style);
+  }
+  function removeStyle(parent, id) {
+    if (!parent) {
+      return;
+    }
+    var style = doc.getElementById(id);
+    if (!style) {
+      return;
+    }
+    parent.removeChild(style);
+  }
+  addStyle(getParent(), STYLE_ID, style);
+  setTimeout(function() {
+    removeStyle(getParent(), STYLE_ID);
+  }, timeout);
+}(window, document, "#at-prehide {opacity: 0 !important}", 3000));
+</script>
+<script src="//assets.adobedtm.com/9273d4aedcd2/0d76ae0322d7/launch-425c423d843b.min.js" async></script><meta name="twitter:site" content="@PaloAltoNtwks"/>
+    <meta name="twitter:creator" content="@PaloAltoNtwks"/>
+    <meta property="og:site_name" content="Palo Alto Networks"/>
+    <meta property="og:locale" content="en_US"/>
+
+    <meta property="og:title" content="Compare Next-Generation Firewalls"/>
+                <meta property="og:type"  content="website"/>
+                <meta property="og:description" content="Compare Next-Generation Firewalls - Palo Alto Networks"/>
+                <meta property="og:url" content="https://www.paloaltonetworks.com/products/product-comparison"/>
+                <meta name="twitter:title" content="Compare Next-Generation Firewalls"/>
+                <meta property="twitter:description" name="twitter:description" content="Compare Next-Generation Firewalls - Palo Alto Networks"/>
+                <meta name="twitter:card" content="summary"/>
+                <meta name="image" property="og:image" content="https://www.paloaltonetworks.com/etc/clientlibs/pan-templates/seoimages/social-strata.png"/>
+                <meta name="twitter:image" property="twitter:image" content="https://www.paloaltonetworks.com/etc/clientlibs/pan-templates/seoimages/social-strata.png"/>
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/etc/designs/pan/favicon.ico">
+		<link rel="shortcut icon" type="image/vnd.microsoft.icon" href="/etc/designs/pan/favicon.ico">
+	<script type="text/javascript">
+               $(document).ready(function(){
+               //as part of sitewide performance improvements
+                   $(document).on('click', 'button.abm-share-board-btn', function(ev) {
+                       ev.preventDefault();
+                       ev.stopImmediatePropagation();
+                        var shareThis = $("script[src='//platform-api.sharethis.com/js/sharethis.js#property=5a1e6fc71d108f0012ed9f04&product=custom-share-buttons']").length
+                        if (!shareThis) {
+                               var head = document.getElementsByTagName('head')[0];
+                               var script = document.createElement('script');
+                               script.type = 'text/javascript';
+                               script.src = '//platform-api.sharethis.com/js/sharethis.js#property=5a1e6fc71d108f0012ed9f04&product=custom-share-buttons';
+                               head.appendChild(script);
+                        }
+                    });
+                    if (typeof window.$ == 'function') {
+                     $('.st-custom-button').off('click').on('click', function(ev) {
+                            ev.preventDefault();
+                            ev.stopImmediatePropagation();
+                            __sharethis__.share({
+                                count_url: this.getAttribute("data-count-url"),
+                                description: this.getAttribute("data-description"),
+                                image: this.getAttribute("data-image"),
+                                message: this.getAttribute("data-message"),
+                                network: this.getAttribute("data-network"),
+                                share_url: this.getAttribute("data-short-url"),
+                                title: this.getAttribute("data-title"),
+                                url: this.getAttribute("data-url"),
+                                username: this.getAttribute("data-username")
+                            });
+                        });
+                    }
+               });
+            </script>
+		
+<script>(window.BOOMR_mq=window.BOOMR_mq||[]).push(["addVar",{"rua.upush":"true","rua.cpush":"false","rua.upre":"true","rua.cpre":"false","rua.uprl":"false","rua.cprl":"false","rua.cprf":"false","rua.trans":"SJ-5deb9167-9a7d-4916-9c82-58e2bd90b523","rua.cook":"true","rua.ims":"false","rua.ufprl":"false","rua.cfprl":"true","rua.isuxp":"false","rua.texp":"norulematch","rua.ceh":"false","rua.ueh":"false","rua.ieh.st":"0"}]);</script>
+                              <script>!function(e){var n="https://s.go-mpulse.net/boomerang/";if("False"=="True")e.BOOMR_config=e.BOOMR_config||{},e.BOOMR_config.PageParams=e.BOOMR_config.PageParams||{},e.BOOMR_config.PageParams.pci=!0,n="https://s2.go-mpulse.net/boomerang/";if(window.BOOMR_API_key="6KU9W-5DTLL-AXSJY-VNWUZ-RTS7Q",function(){function e(){if(!o){var e=document.createElement("script");e.id="boomr-scr-as",e.src=window.BOOMR.url,e.async=!0,i.parentNode.appendChild(e),o=!0}}function t(e){o=!0;var n,t,a,r,d=document,O=window;if(window.BOOMR.snippetMethod=e?"if":"i",t=function(e,n){var t=d.createElement("script");t.id=n||"boomr-if-as",t.src=window.BOOMR.url,BOOMR_lstart=(new Date).getTime(),e=e||d.body,e.appendChild(t)},!window.addEventListener&&window.attachEvent&&navigator.userAgent.match(/MSIE [67]\./))return window.BOOMR.snippetMethod="s",void t(i.parentNode,"boomr-async");a=document.createElement("IFRAME"),a.src="about:blank",a.title="",a.role="presentation",a.loading="eager",r=(a.frameElement||a).style,r.width=0,r.height=0,r.border=0,r.display="none",i.parentNode.appendChild(a);try{O=a.contentWindow,d=O.document.open()}catch(_){n=document.domain,a.src="javascript:var d=document.open();d.domain='"+n+"';void(0);",O=a.contentWindow,d=O.document.open()}if(n)d._boomrl=function(){this.domain=n,t()},d.write("<bo"+"dy onload='document._boomrl();'>");else if(O._boomrl=function(){t()},O.addEventListener)O.addEventListener("load",O._boomrl,!1);else if(O.attachEvent)O.attachEvent("onload",O._boomrl);d.close()}function a(e){window.BOOMR_onload=e&&e.timeStamp||(new Date).getTime()}if(!window.BOOMR||!window.BOOMR.version&&!window.BOOMR.snippetExecuted){window.BOOMR=window.BOOMR||{},window.BOOMR.snippetStart=(new Date).getTime(),window.BOOMR.snippetExecuted=!0,window.BOOMR.snippetVersion=12,window.BOOMR.url=n+"6KU9W-5DTLL-AXSJY-VNWUZ-RTS7Q";var i=document.currentScript||document.getElementsByTagName("script")[0],o=!1,r=document.createElement("link");if(r.relList&&"function"==typeof r.relList.supports&&r.relList.supports("preload")&&"as"in r)window.BOOMR.snippetMethod="p",r.href=window.BOOMR.url,r.rel="preload",r.as="script",r.addEventListener("load",e),r.addEventListener("error",function(){t(!0)}),setTimeout(function(){if(!o)t(!0)},3e3),BOOMR_lstart=(new Date).getTime(),i.parentNode.appendChild(r);else t(!1);if(window.addEventListener)window.addEventListener("load",a,!1);else if(window.attachEvent)window.attachEvent("onload",a)}}(),"".length>0)if(e&&"performance"in e&&e.performance&&"function"==typeof e.performance.setResourceTimingBufferSize)e.performance.setResourceTimingBufferSize();!function(){if(BOOMR=e.BOOMR||{},BOOMR.plugins=BOOMR.plugins||{},!BOOMR.plugins.AK){var n="true"=="true"?1:0,t="cookiepresent",a="fich3bfkyq24akqce3ycpaacrftyu2j3-f-4aec5d65e-clienttons-s.akamaihd.net",i="false"=="true"?2:1,o={"ak.v":"39","ak.cp":"231409","ak.ai":parseInt("287050",10),"ak.ol":"0","ak.cr":36,"ak.ipv":6,"ak.proto":"h2","ak.rid":"637a13b","ak.r":50959,"ak.a2":n,"ak.m":"dscg","ak.n":"essl","ak.bpcip":"2a04:7d84:aac4:35c0::","ak.cport":61462,"ak.gh":"2.19.182.197","ak.quicv":"","ak.tlsv":"tls1.3","ak.0rtt":"","ak.0rtt.ed":"","ak.csrc":"-","ak.acc":"","ak.t":"1737124155","ak.ak":"hOBiQwZUYzCg5VSAfCLimQ==JWb7sJKwsPnVTumZ6i2u3xPMNq/8cYyVyDh7vU0Zjy+5Ve9Wx52qEwVy1T1DPiY/SqiZw6pMVUrvjMuNVKfIdi9B93HUY6GKJZ1LjK/FsulHBj/iL3YJoHwZv1couhBBme/QexMTMAK8/sC4qCIHIUEWPac/X7Fa9KB/KeKHdvGBz8K1FSBSEPt0XGTmXTDeioaC9haKwheWQi15Ypf+Dlb1g/UbIMDG0tF6oQNcPVNhOkNk1/PVy7CncPP44nv/C+Eu2hk7ObJ/DfJw9yLyxFwIhX6DWtbAX+xz8ByryoNdRoFeeJAM3EFx/JTIF3cxIqqZekprOxMom0jZqSAQczxgjtPhWV5zE+3B04rXnRUCYLP7EevR4eYHCiumyKyvHovpwcs6Rxu/42y7lg1PXdhGyIeL9Uflq2aPRbxsaiA=","ak.pv":"346","ak.dpoabenc":"","ak.tf":i};if(""!==t)o["ak.ruds"]=t;var r={i:!1,av:function(n){var t="http.initiator";if(n&&(!n[t]||"spa_hard"===n[t]))o["ak.feo"]=void 0!==e.aFeoApplied?1:0,BOOMR.addVar(o)},rv:function(){var e=["ak.bpcip","ak.cport","ak.cr","ak.csrc","ak.gh","ak.ipv","ak.m","ak.n","ak.ol","ak.proto","ak.quicv","ak.tlsv","ak.0rtt","ak.0rtt.ed","ak.r","ak.acc","ak.t","ak.tf"];BOOMR.removeVar(e)}};BOOMR.plugins.AK={akVars:o,akDNSPreFetchDomain:a,init:function(){if(!r.i){var e=BOOMR.subscribe;e("before_beacon",r.av,null,null),e("onbeacon",r.rv,null,null),r.i=!0}return this},is_complete:function(){return!0}}}}()}(window);</script></head><body class="productComparison">
+	<div class="pan-nav-dark redesign2020  nav-pan-relative ">
+		<div class="oneColumnPlain"><link rel="stylesheet" href="/etc.clientlibs/panClean/components/mainNavigationComp/clientlibs/panClean/criticalTop.min.css">
+				<link rel="stylesheet" href="/etc.clientlibs/panClean/components/mainNavigationComp/clientlibs/panClean/criticalOldTemplate.min.css">
+				<script>(function(){window.PAN_initializeProduct2021Nav=function(){var e=$(".productNav2021Component");if(e.length){var r=window.matchMedia("(min-width: 1200px)");window.matchMedia("(max-width: 1198.98px)");var f=e.find(".product-2021-nav"),b=e.find(".product-2021-nav-main"),c=b.find(".nav-left \x3e li");b.find(".col-tabs");b.find(".col-nav");var h=e.attr("data-type"),t="sase"===h||"cortex"===h,w="ngfw"===h||"unit"===h||"prisma"===h,v=!1;e.find(".nav-open").on("click",function(g){f.addClass("open");$("body").addClass("no-scroll")});
+e.find(".nav-close").on("click",function(g){g.stopPropagation();f.removeClass("open");$("body").removeClass("no-scroll");c.removeClass("open")});b.find(".nav-left").on("click","\x3e li",function(g){$(this).hasClass("link")||v||(c.removeClass("open"),$(this).addClass("open"),r.matches?f.addClass("open"):($("body").addClass("no-scroll"),b.animate({scrollTop:0},250).addClass("no-scroll")))});c.hover(function(g){if(!$(this).hasClass("link")&&!v&&r.matches&&($("body").removeClass("no-scroll"),c.removeClass("open"),
+$(this).addClass("open"),f.addClass("open"),w&&(g=$(this).find(".mega-dropdown-menu .col-tiles.tile-type-image .tile-image"),g.length))){var u=[];g.each(function(k,l){k=$(l).find(".text").outerHeight();u.push(k)});var p=u.reduce(function(k,l){return k>l?k:l});g.find(".text").css("height",p)}},function(g){!$(this).hasClass("link")&&r.matches&&($("body").removeClass("no-scroll"),$(this).removeClass("open"),f.removeClass("open"),w&&(g=$(this).find(".mega-dropdown-menu .col-tiles.tile-type-image .tile-image"),
+g.length&&g.find(".text").css("height","")))});f.find(".dropdown-overlay").on("click",function(g){f.removeClass("open");$("body").removeClass("no-scroll");$(coveoSearchEl).slideUp(250);r.matches&&c.removeClass("open")});b.find(".btn-nav-back").on("click",function(g){g.stopPropagation();c.removeClass("open");b.removeClass("no-scroll")});t&&(b.find(".nav-left \x3e .link \x3e a, .mega-dropdown-menu .col a").on("click",function(g){r.matches||"_blank"===$(this).attr("target")||(f.removeClass("open"),b.removeClass("no-scroll"),
+c.removeClass("open"),$("body").removeClass("no-scroll"))}),c.find('.mega-dropdown-menu[data-type\x3d"solutions"] .col-list div.title').on("click",function(g){r.matches||$(this).toggleClass("active")}),c.find('.mega-dropdown-menu[data-type\x3d"environments"] .col-list .list-sub-title').on("click",function(g){r.matches||$(this).toggleClass("active")}));if(w){var z=function(g,u,p,k){var l=g.attr("data-mobile-overview"),a=document.createElement("a"),d=g.parent().prev().attr("nav-track-breadcrumb");l||
+(l=b.find(".mobile-inner-header").attr("data-mobile-overview"));$(a).attr({href:k,target:u.attr("target"),"aria-label":"to"+p.text(),"nav-track":"true","nav-track-breadcrumb":d+":"+l}).css({display:"flex","justify-content":"center","align-items":"center",gap:"16px",color:"#141414","font-weight":"500","text-decoration":"none","padding-top":"20px","text-align":"center"}).addClass("regular overview").html(l+'\x3cimg width\x3d"20" height\x3d"20" src\x3d"/etc/clientlibs/clean/imgs/arrow-right-black.svg" alt\x3d"black arrow pointing right to go to '+
+p.text()+'"\x3e').insertAfter(g)};e=function(){if(!1===r.matches){b.find(".nav-left \x3e li \x3e a").click(function(u){$(this).parent().hasClass("link")||u.preventDefault()});var g=b.find(".nav-left \x3e li \x3e a");A||g.each(function(u,p){u=$(this).attr("href");p="undefined"!==typeof u&&"#"!==u;var k=$(this).parent(),l=$(this),a=k.find(".mobile-inner-header .title"),d=k.find(".mobile-inner-header");p&&z(d,l,a,u);$(this).on("click",function(q){$(this).parent().hasClass("link")||q.preventDefault();
+setTimeout(function(){k.hasClass("active")?k.removeClass("active"):k.addClass("active")},0)})});b.find(".mega-dropdown-menu .col-list .title, .mega-dropdown-menu .col-list .mainTitle \x3e *").on("click",function(u){u.preventDefault();var p=$(this).attr("href"),k="undefined"!==typeof p,l=null,a=null,d=this;setTimeout(function(){$(d).hasClass("title")&&(l=$(d),a=$(d).next().find(".lists .list-unstyled:first-child \x3e li:first-child"));$(d).parent().hasClass("mainTitle")&&(l=$(d).parent(),a=l.next())},
+0);setTimeout(function(){if(l.hasClass("active"))l.removeClass("active"),k&&a.remove();else{if(k){var q=a,n=b.find(".mobile-inner-header").attr("data-mobile-overview"),m=$(d).attr("nav-track-breadcrumb"),y=document.createElement("li"),x=q.attr("data-column");$(y).attr({role:"none","data-column":x}).addClass("regular overview").html('\x3ca href\x3d"'+p+'" nav-track\x3d"true" nav-track-breadcrumb\x3d"'+m+":"+n+'" role\x3d"listitem"\x3e'+n+"\x3c/a\x3e").insertBefore(q)}l.addClass("active")}},0)});A||
+(A=!0)}else b.find(".mega-dropdown-menu \x3e a").remove(),b.find(".nav-left \x3e li \x3e a").off("click")};b.find(".mega-dropdown-menu .col a").on("click",function(g){$(this).prop("hash")&&(v=!0,f.removeClass("open"),$("body").removeClass("no-scroll"),c.removeClass("open"),setTimeout(function(){v=!1},1E3))});var A=!1;r.addListener(e);e()}}}})();
+(function(){window.PAN_initialize2021Nav=function(){var e=$(".nav2021Component");if(e.length){var r=function(){if("undefined"!==typeof userHeaderModel)switch(userHeaderModel.id){case "anonymous":return'\x3cli\x3e\x3ca href\x3d"'+userHeaderModel.logoutLink+'" nav-track\x3d"true" nav-track-breadcrumb\x3d"nav:userprofile:logout"\x3eSign Out\x3c/a\x3e\x3c/li\x3e';case "admin":return'\x3cli\x3e\x3ca href\x3d"'+userHeaderModel.logoutLink+'" nav-track\x3d"true" nav-track-breadcrumb\x3d"nav:userprofile:logout" \x3eSign Out\x3c/a\x3e\x3c/li\x3e';
+default:return(userHeaderModel.eventsLink?'\x3cli\x3e\x3ca href\x3d"'+userHeaderModel.eventsLink+'" nav-track\x3d"true" nav-track-breadcrumb\x3d"nav:userprofile:events" \x3eEvents\x3c/a\x3e\x3c/li\x3e':"")+(userHeaderModel.profileLink?'\x3cli\x3e\x3ca href\x3d"'+userHeaderModel.profileLink+'" nav-track\x3d"true" nav-track-breadcrumb\x3d"nav:userprofile:myprofile" \x3eMy Profile\x3c/a\x3e\x3c/li\x3e':"")+(userHeaderModel.myfilesLink?'\x3cli\x3e\x3ca href\x3d"'+userHeaderModel.myfilesLink+'" nav-track\x3d"true" nav-track-breadcrumb\x3d"nav:userprofile:myfiles" \x3eMy Files\x3c/a\x3e\x3c/li\x3e':
+"")+((userHeaderModel.isMKTGAdmin||userHeaderModel.isSiteAdmin)&&userHeaderModel.manageSitesLink?'\x3cli\x3e\x3ca href\x3d"'+userHeaderModel.manageSitesLink+'" nav-track\x3d"true" nav-track-breadcrumb\x3d"nav:userprofile:managesite" \x3eManage Sites\x3c/a\x3e\x3c/li\x3e':"")+(userHeaderModel.isJoinee&&userHeaderModel.mySiteLink?'\x3cli\x3e\x3ca href\x3d"'+userHeaderModel.mySiteLink+'" nav-track\x3d"true" nav-track-breadcrumb\x3d"nav:userprofile:mysite" \x3eMy Site\x3c/a\x3e\x3c/li\x3e':"")+(userHeaderModel.boardsLink?
+'\x3cli\x3e\x3ca href\x3d"'+userHeaderModel.boardsLink+'" nav-track\x3d"true" nav-track-breadcrumb\x3d"nav:userprofile:boards" \x3eBoards\x3c/a\x3e\x3c/li\x3e':"")+(userHeaderModel.macrosLink?'\x3cli\x3e\x3ca href\x3d"'+userHeaderModel.macrosLink+'" target\x3d"_blank" nav-track\x3d"true" nav-track-breadcrumb\x3d"nav:userprofile:macros" \x3eMacros\x3c/a\x3e\x3c/li\x3e':"")+(userHeaderModel.logoutLink?'\x3cli\x3e\x3ca href\x3d"'+userHeaderModel.logoutLink+'" nav-track\x3d"true" nav-track-breadcrumb\x3d"nav:userprofile:logout" \x3eLogout\x3c/a\x3e\x3c/li\x3e':
+"")}},f=window.matchMedia("(min-width: 1200px)");window.matchMedia("(max-width: 767.98px)");var b=e.find(".pan-2021-nav"),c=e.find(".pan-2021-nav-main"),h=c.find(".nav-left \x3e li"),t=c.find(".col-tabs"),w=c.find(".col-nav"),v=e.hasClass("default"),z=e.hasClass("defaultRedesigned"),A=document.getElementById("coveosearch");e.find(".nav-open").on("click",function(a){setTimeout(function(){b.addClass("open");$("body").addClass("no-scroll")},0)});e.find(".nav-close").on("click",function(a){a.stopPropagation();
+setTimeout(function(){b.removeClass("open");$("body").removeClass("no-scroll");h.hasClass("open")&&(t.parent().parent().hasClass("open")&&(t.removeClass("open"),t.find(".nav-info-heading .title").text(),t.parent().removeClass("no-scroll"),w.find('a[data-toggle\x3d"tab"].active').removeClass("active"),t.find(".tab-pane.show").removeClass("show")),h.removeClass("open"))},0)});if(v)c.find(".nav-left \x3e .link \x3e a, .mega-dropdown-menu .col a").on("click",function(a){f.matches||"_blank"===$(this).attr("target")||
+"tab"===$(this).attr("role")||(b.removeClass("open"),$("body").removeClass("no-scroll"),h.removeClass("open"),t.removeClass("open"),t.find(".nav-info-heading .title").text(),w.parent().removeClass("no-scroll"),w.find('a[data-toggle\x3d"tab"].active').removeClass("active"),t.find(".tab-pane.show").removeClass("show"))});h.find("\x3e a").on("click mouseenter",function(a){if(!$(this).parent().hasClass("link"))if(a.preventDefault(),a=$(this).parent(),f.matches){if(t.length&&!a.find(".tab-pane.active").length){var d=
+a.find(".dropdown-nav-tabs \x3e li.active");d.length?(d=d.find('a[data-toggle\x3d"tab"]').attr("href"),a.find(d).addClass("active")):a.find('a[data-toggle\x3d"tab"]').first().tab("show")}}else t.removeClass("open"),t.find(".nav-info-heading .title").text(),w.parent().removeClass("no-scroll"),w.find('a[data-toggle\x3d"tab"].active').removeClass("active"),t.find(".tab-pane.show").removeClass("show")});if(z){var g=function(a,d,q,n){var m=a.attr("data-mobile-overview"),y=document.createElement("a"),x=
+a.parent().prev().attr("nav-track-breadcrumb");m||(m=c.find(".mobile-inner-header").attr("data-mobile-overview"));$(y).attr({href:n,target:d.attr("target"),"aria-label":"to"+q.text(),"nav-track":"true","nav-track-breadcrumb":x+":"+m}).css({display:"flex","justify-content":"center","align-items":"center",gap:"16px",color:"#141414","font-weight":"500","text-decoration":"none","padding-top":"20px","text-align":"center"}).addClass("regular overview").html(m+'\x3cimg width\x3d"20" height\x3d"20" src\x3d"/etc/clientlibs/clean/imgs/arrow-right-black.svg" alt\x3d"black arrow pointing right to go to '+
+q.text()+'"\x3e').insertAfter(a)};e=function(){if(!1===f.matches){c.find(".nav-left \x3e li \x3e a").click(function(d){$(this).parent().hasClass("link")||d.preventDefault()});var a=c.find(".nav-left \x3e li \x3e a");u||a.each(function(d,q){d=$(this).attr("href");q="undefined"!==typeof d&&"#"!==d;var n=$(this).parent(),m=$(this),y=n.find(".mobile-inner-header .title"),x=n.find(".mobile-inner-header");q&&g(x,m,y,d);$(this).on("click",function(B){$(this).parent().hasClass("link")||B.preventDefault();
+setTimeout(function(){n.hasClass("active")?n.removeClass("active"):n.addClass("active")},0)})});c.find(".mega-dropdown-menu .col-list .title, .mega-dropdown-menu .col-list .mainTitle \x3e *").on("click",function(d){d.preventDefault();var q=$(this).attr("href"),n="undefined"!==typeof q,m=null,y=null,x=this;setTimeout(function(){$(x).hasClass("title")&&(m=$(x),y=$(x).next().find(".lists .list-unstyled:first-child \x3e li:first-child"));$(x).parent().hasClass("mainTitle")&&(m=$(x).parent(),y=m.next())},
+0);setTimeout(function(){if(m.hasClass("active"))m.removeClass("active"),n&&y.remove();else{if(n){var B=y,C=c.find(".mobile-inner-header").attr("data-mobile-overview"),D=$(x).attr("nav-track-breadcrumb"),E=document.createElement("li"),F=B.attr("data-column");$(E).attr({role:"none","data-column":F}).addClass("regular overview").html('\x3ca href\x3d"'+q+'" nav-track\x3d"true" nav-track-breadcrumb\x3d"'+D+":"+C+'" role\x3d"listitem"\x3e'+C+"\x3c/a\x3e").insertBefore(B)}m.addClass("active")}},0)});u||
+(u=!0)}else c.find(".mega-dropdown-menu \x3e a").remove(),c.find(".nav-left \x3e li \x3e a").off("click")};var u=!1;f.addListener(e);e()}c.find(".nav-left").on("click","\x3e li",function(a){if(!$(this).hasClass("link")){var d=this;setTimeout(function(){h.removeClass("open");$(d).addClass("open");f.matches?b.addClass("open"):($("body").addClass("no-scroll"),c.animate({scrollTop:0},250).addClass("no-scroll"))},0)}});h.hover(function(a){if(!$(this).hasClass("logo")&&f.matches&&($("body").removeClass("no-scroll"),
+h.removeClass("open"),$(this).addClass("open"),b.addClass("open"),z&&(a=$(this).find(".mega-dropdown-menu .col-tiles.tile-type-image .tile-image"),a.length))){var d=[];a.each(function(n,m){n=$(m).find(".text").outerHeight();d.push(n)});var q=d.reduce(function(n,m){return n>m?n:m});a.find(".text").css("height",q)}},function(a){!$(this).hasClass("logo")&&f.matches&&($("body").removeClass("no-scroll"),$(this).removeClass("open"),b.removeClass("open"),z&&(a=$(this).find(".mega-dropdown-menu .col-tiles.tile-type-image .tile-image"),
+a.length&&a.find(".text").css("height","")))});b.find(".dropdown-overlay").on("click",function(a){b.removeClass("open");$("body").removeClass("no-scroll");$(A).slideUp(250);f.matches&&h.removeClass("open")});c.find(".btn-nav-back").on("click",function(a){a.stopPropagation();setTimeout(function(){h.removeClass("open");c.removeClass("no-scroll");f.matches||c.find(".nav-mobile-toolbar .nav-left li.open").removeClass("open")},0)});c.find(".btn-tabs-back").on("click",function(a){a.stopPropagation();t.removeClass("open");
+t.find(".nav-info-heading .title").text();w.parent().removeClass("no-scroll");w.find('a[data-toggle\x3d"tab"].active').removeClass("active");t.find(".tab-pane.show").removeClass("show")});c.find('a[data-toggle\x3d"tab"]').on("show.bs.tab",function(a){if(!f.matches){a=$(a.target).text();var d=$(this).closest(".mega-dropdown-menu"),q=d.find(".col-tabs");d.find(".col-nav").parent().animate({scrollTop:0},250).addClass("no-scroll");q.find(".mobile-inner-header .title").text(a);q.addClass("open")}});c.find('a[data-toggle\x3d"tab"]').on("mouseenter",
+function(a){if(f.matches){var d=$(this).attr("href");a=c.find('a[data-toggle\x3d"tab"]:not([href\x3d"'+d+'"])');d=d.substring(1);a.removeClass("active");c.find('.tab-pane:not([id\x3d"'+d+'"])').removeClass("active show");$(this).tab("show")}});var p=b.find(".toolbar-nav.toolbar-left");e=b.find(".nav-mobile-toolbar .nav-left").first();v=function(){if("undefined"!==typeof userHeaderModel)switch(userHeaderModel.id){case "anonymous":return{name:userHeaderModel.displayName,image:null,link:userHeaderModel.loginLink};
+case "admin":return{name:userHeaderModel.displayName,image:null,link:userHeaderModel.profileLink};default:return{name:userHeaderModel.displayName,image:userHeaderModel.photoUrl?userHeaderModel.photoUrl:null,link:userHeaderModel.profileLink}}else return{name:!1,image:null,link:"/login"}}();if(v.name){var k=document.createElement("li");k.className="avatar";var l=r();$(k).html('\x3cdiv class\x3d"dropdown"\x3e\x3ca href\x3d"#" class\x3d"dropdown-toggle" data-toggle\x3d"dropdown"\x3e\x3ci class\x3d"image"'+
+(v.image?"background-image:url("+v.image+")":"")+'\x3e\x3c/i\x3e\x3cspan class\x3d"user"\x3e'+v.name+'\x3c/span\x3e\x3c/a\x3e\x3cul class\x3d"dropdown-menu"\x3e'+l+"\x3c/ul\x3e\x3c/div\x3e");$(k).find(".dropdown-menu li").addClass("dropdown-item");p.find(".account").remove();p.prepend(k);p=document.createElement("li");$(p).html('\x3ca href\x3d"#"\x3eMy Account\x3c/a\x3e\x3cdiv class\x3d"mega-dropdown-menu"\x3e\x3cdiv class\x3d"mobile-inner-header"\x3e\x3cbutton class\x3d"btn btn-nav-back" aria-label\x3d"back to main navigation"\x3e\x3cimg width\x3d"24" height\x3d"24" src\x3d"/etc/clientlibs/clean/imgs/arrow-right-black.svg"/\x3e\x3c/button\x3e\x3cspan class\x3d"title"\x3e\x3cdiv class\x3d"image"\x3e\x3c/div\x3e\x3cspan class\x3d"user"\x3e'+
+v.name+'\x3c/span\x3e\x3c/span\x3e\x3c/div\x3e\x3cdiv class\x3d"col col-list"\x3e\x3cdiv class\x3d"content"\x3e\x3cul class\x3d"list-unstyled"\x3e'+r()+"\x3c/div\x3e\x3c/div\x3e\x3c/div\x3e\x3c/div\x3e");v.image&&$(p).find(".title .image").css("background-image",v.image);$(p).find(".btn-nav-back").get(0).addEventListener("click",function(a){a.stopPropagation();a=$(".nav2021Component").find(".pan-2021-nav-main").find(".col-tabs");a.removeClass("open");a.find(".nav-info-heading .title").text();w.parent().removeClass("no-scroll");
+w.find('a[data-toggle\x3d"tab"].active').removeClass("active");a.find(".tab-pane.show").removeClass("show");$(".nav-mobile-toolbar .nav-left li.open").removeClass("open")});e.find(".account").remove();e.prepend(p)}b.find(".toolbar-nav .dropdown").on("show.bs.dropdown",function(){f.matches&&($(".mainNavigationComp .pan-page-alert").css("z-index",1),b.find(".pan-2021-nav-main").css({position:"relative","z-index":"-1"}),b.find(".pan-2021-nav-toolbar").css({position:"relative","z-index":2}),b.find(".dropdown-overlay").css({visibility:"visible",
+"z-index":1,top:0}))});b.find(".toolbar-nav .dropdown").on("hide.bs.dropdown",function(){f.matches&&($(".mainNavigationComp .pan-page-alert").css("z-index",""),b.find(".pan-2021-nav-main").css({position:"","z-index":""}),b.find(".pan-2021-nav-toolbar").css({position:"","z-index":""}),b.find(".dropdown-overlay").css({visibility:"","z-index":"",top:""}))})}}})();
+function loadScript(e){return new Promise(function(r,f){var b=document.getElementsByTagName("head")[0],c=document.createElement("script");c.src=e;c.onload=function(){r()};c.onerror=function(){f("cannot load script "+e)};b.appendChild(c)})}
+(function(){window.PAN_renderCleanNavAccountMenu=function(h){if("undefined"!=typeof userHeaderModel)if(userHeaderModel.loginLink="/login",userHeaderModel.logoutLink="/system/sling/logout",userHeaderModel.janrain){userHeaderModel.profileLink="/userProfile";userHeaderModel.eventsLink="/userProfile/events";userHeaderModel.myfilesLink="/userProfile/myfiles";userHeaderModel.manageSitesLink="/userProfile/managesites";userHeaderModel.mySiteLink="/userProfile/mysite";userHeaderModel.boardsLink="/userProfile/editBoard";
+if(userHeaderModel.isMacroAdmin||userHeaderModel.isMacroUser)userHeaderModel.macrosLink="/userProfile/macros";userHeaderModel.favoritesLink="/userProfile/favorites";userHeaderModel.downloadsLink="/userProfile/downloads";userHeaderModel.subscriptionLink="https://www.paloaltonetworks.com/company/subscriptions";userHeaderModel.activityLink="/userProfile/activity"}else userHeaderModel.profileLink="/ssoUserProfile",userHeaderModel.myfilesLink="/ssoUserProfile/myfiles",userHeaderModel.manageSitesLink="/ssoUserProfile/managesites",
+userHeaderModel.mySiteLink="/ssoUserProfile/mysite",userHeaderModel.boardsLink="/ssoUserProfile/editBoard",userHeaderModel.macrosLink="/ssoUserProfile/macros",userHeaderModel.favoritesLink="/ssoUserProfile/favorites",userHeaderModel.downloadsLink="/ssoUserProfile/downloads";h()};var e=!1,r=!1,f=!1,b=!1,c=!1;window.PAN_AttemptRenderOfNav=function(h){"adobeTarget"==h&&(e=!0);"userModel"==h&&(r=!0);"janrainInit"==h&&(f=!0);"menuAsyncLoad"==h&&(b=!0);r&&f&&b&&!c&&(c=!0,setTimeout(function(){window.PAN_initialize2021Nav&&
+window.PAN_renderCleanNavAccountMenu(window.PAN_initialize2021Nav);window.PAN_initializeProduct2021Nav&&window.PAN_renderCleanNavAccountMenu(window.PAN_initializeProduct2021Nav);window.location.host.split(".")},500));e&&window.PAN_renderCleanNavAccountMenu(window.PAN_initialize2021Nav)};"undefined"!==typeof PAN_RunOnPageModelLoad?PAN_RunOnPageModelLoad.push(function(){PAN_AttemptRenderOfNav("userModel")}):console.warn("cannot initialize nav because PAN_RunOnPageModelLoad is undefined")})();</script><div class="panClean pan-relative">
+    			<div class="cleanHeaderNgfw mainNavigationComp baseComponent parbase"><div class="base-component-spacer spacer-none  "></div>
+<script panwcombine="true" >
+            window.PAN_MainNavAsyncUrl = '/_jcr_content/globals/cleanHeaderNgfw.ngfwRenderer.html';
+        
+window.initialContainer = "Ngfw";
+
+window.supportedContainer = ["Prisma","Sase","Cortex","Cdss","Ngfw","Unit"];
+</script>
+
+<div class="productNav2021Component light absolute  defaultRedesigned" data-type="ngfw" id="PAN_2021_NAV">
+
+        <div class="product-2021-nav  ">
+
+        <button class="btn nav-open" aria-label="open mobile navigation"></button>
+        <a class="mobile-header-logo" href="/network-security" aria-label="Palo Alto Networks" nav-track="true" nav-track-breadcrumb="ngfwNav:mobile:home"></a>
+        <button class="btn mobile-search" aria-label="search" nav-track="true" nav-track-breadcrumb="init-nav:mobile:search" ></button>
+        <nav class="product-2021-nav-main " aria-label="product main">
+          <div class="mobile-header">
+            <button class="btn nav-close" nav-track="true" nav-track-breadcrumb="ngfwNav:mobile:close nav" aria-label="close mobile navigation">
+              <img width="24" height="24" data-src="/etc/clientlibs/clean/imgs/x-black.svg" alt="x close icon to close mobile navigation" class="lozad "/>
+            </button>
+            <a href="/" class="nav-logo" nav-track="true" nav-track-breadcrumb="ngfwNav:mobile:logo" aria-label="paloaltonetworks">
+              <img width="175" height="23" data-src="/etc/clientlibs/clean/imgs/ngfw-logo-dark.svg" alt="ngfw logo" nolozad="false" class="lozad "/>
+            </a>
+            <button class="btn mobile-search" nav-track="true" nav-track-breadcrumb="ngfwNav:mobile:search" aria-label="search">
+              <img width="28" height="28" data-src="/etc/clientlibs/clean/imgs/search-black.svg" alt="magnifying glass search icon to open search field" nolozad="false" class="lozad "/>
+            </button>
+          </div>
+          <div class="container-fluid">
+            <ul class="nav-left" role="menubar">
+              <li class="link logo" role="menuitem">
+                <a href="/" nav-track="true" nav-track-breadcrumb="ngfwNav:logo" aria-label="Palo Alto Networks"></a>
+              </li>
+              <li class=" " role="menuitem">
+                  <a href="#" id="nav_products" aria-haspopup="true" aria-expanded="false" nav-track="true" nav-track-breadcrumb="nav:ngfw:Products">Products</a>
+                      </li>
+              <li class=" " role="menuitem">
+                  <a href="#" id="nav_solutions" aria-haspopup="true" aria-expanded="false" nav-track="true" nav-track-breadcrumb="nav:ngfw:Solutions">Solutions</a>
+                      </li>
+              <li class=" " role="menuitem">
+                  <a href="#" id="nav_resources" aria-haspopup="true" aria-expanded="false" nav-track="true" nav-track-breadcrumb="nav:ngfw:Resources">Resources</a>
+                      </li>
+              </ul>
+            <ul class="nav-right" role="list">
+              <li class="search" role="listitem">
+                <a href="#" nav-track="true" nav-track-breadcrumb="ngfwNav:Search" aria-label="search"></a>
+              </li>
+              <li class="cta" role="listitem">
+                <a href="/network-security/get-started" class="btn btn-primary" nav-track="true" nav-track-breadcrumb="ngfwNav:Get Started">Get Started</a>
+              </li>
+            </ul>
+          </div>
+          <div class="mobile-bottom">
+            <a href="#" onclick='gotolp();' class="pan-home" nav-track="true" nav-track-breadcrumb="nav:ngfw:panw">
+              <img width="33" height="26" src="/etc/clientlibs/clean/imgs/logo-default.svg" nolozad="true" alt="Palo Alto Networks logo icon"/>
+              <img class="back-arrow" width="16" height="16" src="/etc/clientlibs/clean/imgs/arrow-right-white.svg" nolozad="true" alt="white arrow icon pointing left to return to main Palo Alto Networks site"/>
+            </a>
+          </div>
+        </nav>
+        <div class="dropdown-overlay"></div>
+        <!-- coveo search -->
+        <div class="pan-nav-search">
+          <div class="searchReference reference parbase"><div class="cq-dd-paragraph"><div class="mainParsys parsys"><div class="coveosearch baseComponent parbase section"><style panwcombine="true" >
+.coveo-visible-to-screen-reader-only {
+	position: absolute;
+    left: -10000px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+}
+</style>
+<script panwcombine="true" >
+var Coveo_organizationId = "paloaltonetworksintranet";
+var searchResultsPagePath = "/content/pan/en_US/search/ngfwcdsssearch";
+var techDocsPagePath = "https://docs.paloaltonetworks.com/search#sort=relevancy&layout=card&numberOfResults=25&f:@panproductcategory=[Network%20Security,CN-Series,Cloud-Delivered%20Security%20Services]";
+
+</script>
+
+	<!-- Each DOM element with a class starting with "Coveo" (uppercase) will instantiate a component. Remove padding later while integration-->
+<div id="coveosearch" class='CoveoSearchInterface pan-search-coveo' data-results-per-page='4' data-pipeline='WWW NgfwCdss Site Search' data-expression='' data-auto-trigger-query="true">
+  <div class="pan-search-coveo-header">
+    <div class="container">
+
+      <div class="hidden-xs logo-placeholder"></div>
+
+      <span class="visible-lg visible-md searchtext">Search</span>
+        <span class="searchIconHeader hidden"><svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 17 17" style="enable-background:new 0 0 17 17;" xml:space="preserve" aria-hidden="true">
+        <path d="M13.5,7.3c0,3.5-2.8,6.2-6.2,6.2C3.8,13.5,1,10.7,1,7.3C1,3.8,3.8,1,7.3,1C10.7,1,13.5,3.8,13.5,7.3z M16,16
+        l-4.3-4.3"></path>
+      </svg></span>
+
+      <div class="coveo-container">
+		<div class="dropdown">
+    	      <button class="btn btn-default dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+        	    All
+                <span class="caretnew">
+                                    <svg width="11" height="7" viewBox="0 0 11 7" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                    <path d="M1 1L5.5 5.5L10 1" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                </span>
+                </button>
+          		<ul class="dropdown-menu" aria-labelledby="dropdownMenu1">
+            		<li><a href="https://docs.paloaltonetworks.com/search#sort=relevancy&layout=card&numberOfResults=25&f:@panproductcategory=[Network%20Security,CN-Series,Cloud-Delivered%20Security%20Services]" id="tech-docs" rel="nofollow" data-page-track="true" data-page-track-value="products:product-comparison: section:">Tech Docs</a></li>
+          		</ul>
+        	</div>
+		<!-- Note that any Coveo component can be removed (or added); none is actually required for the page to load. -->
+        <div class="CoveoSearchbox" role='search' data-enable-search-as-you-type="false" data-enable-omnibox='true' data-omnibox-timeout='1000' data-enable-query-suggest-addon='true' data-trigger-query-on-clear="true" id="pan-coveo-input"></div>
+	        	</div>
+
+      <button class="btn btn-link btn-close-pan-search" aria-label="Close Search modal">
+                <svg width="17" height="18" viewBox="0 0 17 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-labelledby="closeSearchModal2">
+                        <title id="closeSearchModal2">Close search modal</title>
+                        <line x1="1.5" y1="-1.5" x2="18.3323" y2="-1.5" transform="matrix(0.70711 -0.707104 0.70711 0.707104 1.97656 17.0236)" stroke="black" stroke-width="3" stroke-linecap="round"/>
+                        <line x1="1.5" y1="-1.5" x2="18.3323" y2="-1.5" transform="matrix(-0.707106 -0.707107 -0.707106 0.707107 14.0234 17.0236)" stroke="black" stroke-width="3" stroke-linecap="round"/>
+                   </svg>
+                </button>
+    </div>
+  </div>
+
+   </div>
+</div>
+</div>
+</div></div>
+</div>
+        <!-- end coveo search -->
+      </div>
+    </div>
+
+  </div>
+</div>
+
+				<script></script><script type="text/javascript" src="/etc.clientlibs/panClean/components/mainNavigationComp/clientlibs/panClean/defered.min.js" defer></script>
+				<script type="text/javascript">
+					$(document).ready(function() {
+						var noScriptNode = document.getElementsByTagName('body')[0];
+						var nonCriticalCss = document.createElement('link');
+						nonCriticalCss.rel = 'stylesheet';
+						nonCriticalCss.href = '/etc.clientlibs/panClean/components/mainNavigationComp/clientlibs/panClean/defered.min.css';
+						nonCriticalCss.type = 'text/css';
+						noScriptNode.appendChild(nonCriticalCss);
+
+						nonCriticalCss = document.createElement('link');
+						nonCriticalCss.rel = 'stylesheet';
+						nonCriticalCss.href = '/etc.clientlibs/panClean/components/mainNavigationComp/clientlibs/panClean/deferedOldTemplate.min.css';
+						nonCriticalCss.type = 'text/css';
+						noScriptNode.appendChild(nonCriticalCss);
+
+						setTimeout(function(){
+							if (typeof userHeaderModel != 'undefined') {
+								window.PAN_AttemptRenderOfNav('userModel');
+							} else {
+								if ((typeof botSelector != 'undefined' && !botSelector)||(typeof botSelector == 'undefined')) {
+									$.get('/apps/pan/public/userHeaderModel', function(data) {
+										window.userHeaderModel = userHeaderModel;
+										window.PAN_AttemptRenderOfNav('userModel');
+									})
+								}
+							}
+						}, 500);
+				});
+
+				</script>
+			<div class="container">
+	<div class="row "><div class="col-md-12 parsys-column"><div class="parsys"><div class="text baseComponent parbase section"><h1>Product comparison</h1>
+</div>
+</div>
+<div class="productCompareController productcomparecontroller searchcontroller parbase"><script type="text/javascript">
+	var currentLanguage = 'en_US';
+	var featureMap = {"2-0-3-1_dfi": {"name": "App-ID firewall throughput", "group": "Performance"}, "2-0-4-1_dfi": {"name": "FACETApp-ID firewall throughput", "group": "Performance"}, "2-0-5-1_dfi": {"name": "Threat prevention throughput", "group": "Performance"}, "2-0-6-1_dfi": {"name": "FACETThreat prevention throughput", "group": "Performance"}, "2-0-7-1_dfi": {"name": "IPSec VPN throughput", "group": "Performance"}, "2-0-8-1_dfi": {"name": "Connections per second", "group": "Performance"}, "2-0-9-1_dfi": {"name": "FACETConnections per second", "group": "Performance"}, "11-0-12-1_dfi": {"name": "Max sessions (IPv4 or IPv6)", "group": "Sessions"}, "11-0-13-1_dfi": {"name": "FACETMax sessions (IPv4 or IPv6)", "group": "Sessions"}, "15-0-16-1_dfi": {"name": "Security rules", "group": "Policies", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pa-1420": {"note": "Requires PAN-OS 11.0.2 or above"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pa-1410": {"note": "Requires PAN-OS 11.0.2 or above"}}}, "15-0-17-1_dfi": {"name": "Security rule schedules", "group": "Policies", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "15-0-18-1_dfi": {"name": "NAT rules", "group": "Policies", "productNotes": {"pa-5450": {"note": "This capacity is the same regardless of how many DPCs are installed in a PA-5400 Series chassis"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "15-0-19-1_dfi": {"name": "Decryption rules", "group": "Policies", "productNotes": {"pa-5450": {"note": "This capacity is the same regardless of how many DPCs are installed a PA-5400 Series chassis"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "15-0-20-1_dfi": {"name": "App override rules", "group": "Policies", "productNotes": {"pa-5450": {"note": "This capacity is the same regardless of how many DPCs are installed in a PA-5400 Series chassis"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "15-0-21-1_dfi": {"name": "Tunnel content inspection rules", "group": "Policies", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "15-0-22-1_dfi": {"name": "SD-WAN rules", "group": "Policies", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "15-0-23-1_dfi": {"name": "Policy based forwarding rules", "group": "Policies", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "15-0-24-1_dfi": {"name": "Captive portal rules", "group": "Policies", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "15-0-25-1_dfi": {"name": "DoS protection rules", "group": "Policies", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "27-0-28-1_dfi": {"name": "Max security zones", "group": "Security Zones", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pa-1420": {"note": "Requires PAN-OS 11.0.2 or above"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pa-1410": {"note": "Requires PAN-OS 11.0.2 or above"}}}, "30-0-31-1_dfi": {"name": "Address objects", "group": "Objects (addresses and services)", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "30-0-32-1_dfi": {"name": "Address groups", "group": "Objects (addresses and services)", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "30-0-33-1_dfi": {"name": "Members per address group", "group": "Objects (addresses and services)", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "30-0-34-1_dfi": {"name": "Service objects", "group": "Objects (addresses and services)", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "30-0-35-1_dfi": {"name": "Service groups", "group": "Objects (addresses and services)", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "30-0-36-1_dfi": {"name": "Members per service group", "group": "Objects (addresses and services)", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "30-0-37-1_dfi": {"name": "FQDN address objects", "group": "Objects (addresses and services)", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "30-0-38-1_dfi": {"name": "Max DAG IP addresses", "group": "Objects (addresses and services)", "details": "System wide capacity", "productNotes": {"pa-7050": {"note": "Capacity based on SMC model capacity"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pa-7080": {"note": "Capacity based on SMC model capacity"}}}, "30-0-39-1_dfi": {"name": "Tags per IP address", "group": "Objects (addresses and services)", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "41-0-42-1_dfi": {"name": "Security profiles", "group": "Security Profiles", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "44-0-45-1_dfi": {"name": "Custom App-ID signatures", "group": "App-ID", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "44-0-46-1_dfi": {"name": "Shared custom App-IDs", "group": "App-ID", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "44-0-47-1_dfi": {"name": "Custom App-IDs (virtual system specific)", "group": "App-ID", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "49-0-50-1_dfi": {"name": "IP-User mappings (management plane)", "group": "User-ID"}, "49-0-51-1_dfi": {"name": "IP-User mappings (data plane)", "group": "User-ID", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "49-0-52-1_dfi": {"name": "Active and unique groups used in policy", "group": "User-ID", "details": "Aggregate of LDAP groups, XML API Groups and Dynamic User Groups", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "49-0-53-1_dfi": {"name": "Number of User-ID agents", "group": "User-ID", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "49-0-54-1_dfi": {"name": "Monitored servers for User-ID", "group": "User-ID", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "49-0-55-1_dfi": {"name": "Terminal server agents", "group": "User-ID", "productNotes": {"pa-7050": {"note": "Capacity based on SMC model capacity"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pa-7080": {"note": "Capacity based on SMC model capacity"}}}, "49-0-56-1_dfi": {"name": "Tags per User", "group": "User-ID", "details": "Only valid for PAN-OS 9.1 and above"}, "58-0-59-1_dfi": {"name": "Max SSL inbound certificates", "group": "SSL Decryption", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "58-0-60-1_dfi": {"name": "SSL certificate cache (forward proxy)", "group": "SSL Decryption", "productNotes": {"pa-7050": {"note": "Maximum cache entries supported with high capacity NPC cards"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pa-7080": {"note": "Maximum cache entries supported with high capacity NPC cards"}}}, "58-0-61-1_dfi": {"name": "Max concurrent decryption sessions", "group": "SSL Decryption", "productNotes": {"pa-7050": {"note": "Maximum sessions supported with high capacity NPC cards"}, "pa-7080": {"note": "Maximum sessions supported with high capacity NPC cards"}}}, "58-0-62-1_dfi": {"name": "Decryption Port Mirror", "group": "SSL Decryption"}, "58-0-63-1_dfi": {"name": "Network Packet Broker", "group": "SSL Decryption", "details": "For VM-Series, check VM Flex licensing on Customer Support Portal"}, "58-0-64-1_dfi": {"name": "HSM Supported", "group": "SSL Decryption"}, "66-0-67-1_dfi": {"name": "Total entries for allow list, block list and custom categories", "group": "URL Filtering", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "66-0-68-1_dfi": {"name": "Max custom categories", "group": "URL Filtering", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "66-0-69-1_dfi": {"name": "Max custom categories (virtual system specific)", "group": "URL Filtering", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "66-0-70-1_dfi": {"name": "Dataplane cache size for URL filtering", "group": "URL Filtering"}, "66-0-71-1_dfi": {"name": "Management plane dynamic cache size", "group": "URL Filtering"}, "73-0-74-1_dfi": {"name": "Max number of custom lists", "group": "EDL"}, "73-0-75-1_dfi": {"name": "Max number of IPs per system", "group": "EDL"}, "73-0-76-1_dfi": {"name": "Max number of DNS Domains per system", "group": "EDL"}, "73-0-77-1_dfi": {"name": "Max number of URL per system", "group": "EDL"}, "73-0-78-1_dfi": {"name": "Shortest check interval (min)", "group": "EDL"}, "80-0-81-1_dfi": {"name": "Mgmt - out-of-band", "group": "Interfaces"}, "80-0-82-1_dfi": {"name": "Mgmt - 10/100/1000 high availability", "group": "Interfaces"}, "80-0-83-1_dfi": {"name": "Mgmt - 40Gbps high availability", "group": "Interfaces"}, "80-0-84-1_dfi": {"name": "Mgmt - 10Gbps high availability", "group": "Interfaces"}, "80-0-85-1_dfi": {"name": "Traffic - 10/100/1000", "group": "Interfaces"}, "80-0-86-1_dfi": {"name": "Traffic - 10M/100M/1G/2.5G/5G", "group": "Interfaces", "details": "10M/100M/..."}, "80-0-87-1_dfi": {"name": "Traffic - 100/1000/10000", "group": "Interfaces"}, "80-0-88-1_dfi": {"name": "Traffic - 1Gbps SFP", "group": "Interfaces"}, "80-0-89-1_dfi": {"name": "Traffic - 10Gbps SFP+", "group": "Interfaces"}, "80-0-90-1_dfi": {"name": "Traffic - 25Gbps SFP28", "group": "Interfaces"}, "80-0-91-1_dfi": {"name": "Traffic - 40/100Gbps QSFP+/QSFP28", "group": "Interfaces"}, "80-0-92-1_dfi": {"name": "802.1q tags per device", "group": "Interfaces", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "80-0-93-1_dfi": {"name": "802.1q tags per physical interface", "group": "Interfaces", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "80-0-94-1_dfi": {"name": "Max interfaces (logical and physical)", "group": "Interfaces", "productNotes": {"pa-7050": {"note": "Capacity based on SMC model capacity"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pa-7080": {"note": "Capacity based on SMC model capacity"}}}, "80-0-95-1_dfi": {"name": "Maximum aggregate interfaces", "group": "Interfaces", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "80-0-96-1_dfi": {"name": "Maximum SD-WAN virtual interfaces", "group": "Interfaces", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "98-0-99-1_dfi": {"name": "PoE Enabled Interfaces", "group": "Power Over Ethernet"}, "98-0-100-1_dfi": {"name": "PoE Interface Speed", "group": "Power Over Ethernet"}, "98-0-101-1_dfi": {"name": "Total Power Budget", "group": "Power Over Ethernet"}, "98-0-102-1_dfi": {"name": "Max Power per single port", "group": "Power Over Ethernet"}, "104-0-105-1_dfi": {"name": "5G", "group": "Cellular Interface"}, "107-0-108-1_dfi": {"name": "Virtual routers", "group": "Virtual Routers", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "110-0-111-1_dfi": {"name": "Virtual wires", "group": "Virtual Wires", "productNotes": {"pa-7050": {"note": "Capacity based on SMC model capacity"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pa-7080": {"note": "Capacity based on SMC model capacity"}}}, "113-0-114-1_dfi": {"name": "Base virtual systems", "group": "Virtual Systems", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "113-0-115-1_dfi": {"name": "Max virtual systems", "group": "Virtual Systems", "details": "Additional licenses are required for virtual system capacities above the base virtual systems capacity", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "117-0-118-1_dfi": {"name": "IPv4 forwarding table size", "group": "Routing", "details": "Entries shared across virtual routers", "productNotes": {"pa-7050": {"note": "Capacity based on SMC model capacity"}, "pan-pa-5400-dpc-a": {"note": "Capacity based on SMC model capacity"}, "pan-pa-7000-100g-npc-a": {"note": "Capacity based on SMC model capacity"}, "pan-pa-7000-dpc-a": {"note": "Capacity based on SMC model capacity"}, "pa-7080": {"note": "Capacity based on SMC model capacity"}}}, "117-0-119-1_dfi": {"name": "IPv6 forwarding table size", "group": "Routing", "details": "Entries shared across virtual routers", "productNotes": {"pa-7050": {"note": "Capacity based on SMC model capacity"}, "pan-pa-5400-dpc-a": {"note": "Capacity based on SMC model capacity"}, "pan-pa-7000-100g-npc-a": {"note": "Capacity based on SMC model capacity"}, "pan-pa-7000-dpc-a": {"note": "Capacity based on SMC model capacity"}, "pa-7080": {"note": "Capacity based on SMC model capacity"}}}, "117-0-120-1_dfi": {"name": "System total forwarding table size", "group": "Routing", "productNotes": {"pa-7050": {"note": "Capacity based on SMC model capacity"}, "pan-pa-5400-dpc-a": {"note": "Capacity based on SMC model capacity"}, "pan-pa-7000-100g-npc-a": {"note": "Capacity based on SMC model capacity"}, "pan-pa-7000-dpc-a": {"note": "Capacity based on SMC model capacity"}, "pa-7080": {"note": "Capacity based on SMC model capacity"}}}, "117-0-121-1_dfi": {"name": "Max route maps per virtual router", "group": "Routing", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "117-0-122-1_dfi": {"name": "Max routing peers (protocol dependent)", "group": "Routing", "productNotes": {"pa-7050": {"note": "Capacity based on SMC model capacity"}, "pan-pa-5400-dpc-a": {"note": "Capacity based on SMC model capacity"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pa-7080": {"note": "Capacity based on SMC model capacity"}}}, "117-0-123-1_dfi": {"name": "Static entries - DNS proxy", "group": "Routing", "productNotes": {"pan-pa-5400-dpc-a": {"note": "Capacity based on SMC model capacity"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "117-0-124-1_dfi": {"name": "Bidirectional Forwarding Detection (BFD) Sessions", "group": "Routing", "productNotes": {"pan-pa-5400-dpc-a": {"note": "Capacity based on SMC model capacity"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "126-0-127-1_dfi": {"name": "ARP table size per device", "group": "L2 Forwarding", "productNotes": {"pa-7050": {"note": "Capacity based on SMC model capacity"}, "pa-5450": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-5400-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pa-7080": {"note": "Capacity based on SMC model capacity"}}}, "126-0-128-1_dfi": {"name": "IPv6 neighbor table size", "group": "L2 Forwarding", "productNotes": {"pa-7050": {"note": "Capacity based on SMC model capacity"}, "pa-5450": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-5400-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pa-7080": {"note": "Capacity based on SMC model capacity"}}}, "126-0-129-1_dfi": {"name": "MAC table size per device", "group": "L2 Forwarding", "productNotes": {"pa-7050": {"note": "Capacity based on SMC model capacity"}, "pa-5450": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-5400-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pa-7080": {"note": "Capacity based on SMC model capacity"}}}, "126-0-130-1_dfi": {"name": "Max ARP entries per broadcast domain", "group": "L2 Forwarding", "productNotes": {"pa-7050": {"note": "Capacity based on SMC model capacity"}, "pa-5450": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-5400-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pa-7080": {"note": "Capacity based on SMC model capacity"}}}, "126-0-131-1_dfi": {"name": "Max MAC entries per broadcast domain", "group": "L2 Forwarding", "productNotes": {"pa-7050": {"note": "Capacity based on SMC model capacity"}, "pa-5450": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-5400-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pa-7080": {"note": "Capacity based on SMC model capacity"}}}, "134-0-135-1_dfi": {"name": "Total NAT rule capacity", "group": "NAT", "productNotes": {"pa-5450": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-5400-dpc-a": {"note": "Capacity based on SMC model capacity"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "134-0-136-1_dfi": {"name": "Max NAT rules (static)", "group": "NAT", "details": "Configuring static NAT rules to full capacity requires that no other NAT rule types are used.", "productNotes": {"pa-5450": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-5400-dpc-a": {"note": "Capacity based on SMC model capacity"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "134-0-137-1_dfi": {"name": "Max NAT rules (DIP)", "group": "NAT", "details": "Configuring DIP NAT rules to full capacity requires that no other NAT rule types are used.", "productNotes": {"pa-5450": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-5400-dpc-a": {"note": "Capacity based on SMC model capacity"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "134-0-138-1_dfi": {"name": "Max NAT rules (DIPP)", "group": "NAT", "productNotes": {"pa-5450": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-5400-dpc-a": {"note": "Capacity based on SMC model capacity"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "134-0-139-1_dfi": {"name": "Max translated IPs (DIP)", "group": "NAT", "productNotes": {"pa-5450": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-5400-dpc-a": {"note": "Capacity based on SMC model capacity"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "134-0-140-1_dfi": {"name": "Max translated IPs (DIPP)", "group": "NAT", "details": "DIPP translated IP capacity is proportional to the DIPP pool oversubscription value. The capacity shown here is based on an oversubscription value of 1x.", "productNotes": {"pa-5450": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-5400-dpc-a": {"note": "Capacity based on SMC model capacity"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "134-0-141-1_dfi": {"name": "Default DIPP pool oversubscription", "group": "NAT", "details": "Source IP and source port reuse across concurrent sessions", "productNotes": {"pa-5450": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-5400-dpc-a": {"note": "Capacity based on SMC model capacity"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "143-0-144-1_dfi": {"name": "DHCP servers", "group": "Address Assignment", "productNotes": {"pa-5450": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-5400-dpc-a": {"note": "Capacity based on SMC model capacity"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "143-0-145-1_dfi": {"name": "DHCP relays", "group": "Address Assignment", "details": "Maximum capacity represents total DHCP servers and DHCP relays combined", "productNotes": {"pa-7050": {"note": "Total includes number of DHCP servers and DHCP relays"}, "pa-3250": {"note": "Total includes number of DHCP servers and DHCP relays"}, "pa-5450": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pa-5250": {"note": "Total includes number of DHCP servers and DHCP relays"}, "pan-pa-5400-dpc-a": {"note": "Capacity based on SMC model capacity"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pa-1410": {"note": "Total includes number of DHCP servers and DHCP relays"}, "pa-220r": {"note": "Total includes number of DHCP servers and DHCP relays"}, "pa-820": {"note": "Total includes number of DHCP servers and DHCP relays"}, "pa-445": {"note": "Total includes number of DHCP servers and DHCP relays"}, "pa-460": {"note": "Total includes number of DHCP servers and DHCP relays"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pa-440": {"note": "Total includes number of DHCP servers and DHCP relays"}, "pa-220": {"note": "Total includes number of DHCP servers and DHCP relays"}, "pa-5260": {"note": "Total includes number of DHCP servers and DHCP relays"}, "pa-5280": {"note": "Total includes number of DHCP servers and DHCP relays"}, "pa-5220": {"note": "Total includes number of DHCP servers and DHCP relays"}, "pa-3260": {"note": "Total includes number of DHCP servers and DHCP relays"}, "pa-3220": {"note": "Total includes number of DHCP servers and DHCP relays"}, "pa-1420": {"note": "Total includes number of DHCP servers and DHCP relays"}, "pa-415": {"note": "Total includes number of DHCP servers and DHCP relays"}, "pa-450": {"note": "Total includes number of DHCP servers and DHCP relays"}, "pa-410": {"note": "Total includes number of DHCP servers and DHCP relays"}, "pa-850": {"note": "Total includes number of DHCP servers and DHCP relays"}, "pa-7080": {"note": "Total includes number of DHCP servers and DHCP relays"}}}, "143-0-146-1_dfi": {"name": "Max number of assigned addresses", "group": "Address Assignment", "productNotes": {"pa-5450": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-5400-dpc-a": {"note": "Capacity based on SMC model capacity"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "148-0-149-1_dfi": {"name": "Devices supported", "group": "High Availability", "productNotes": {"pan-pa-5400-dpc-a": {"note": "Capacity based on SMC model capacity"}}}, "148-0-150-1_dfi": {"name": "Max virtual addresses", "group": "High Availability", "productNotes": {"pa-5450": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-5400-dpc-a": {"note": "Capacity based on SMC model capacity"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "152-0-153-1_dfi": {"name": "Number of QoS policies", "group": "QoS", "productNotes": {"pa-5450": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-5400-dpc-a": {"note": "Capacity based on SMC model capacity"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "152-0-154-1_dfi": {"name": "Physical interfaces supporting QoS", "group": "QoS", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "Limited by the capacity enforced per PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "Limited by the capacity enforced per PA-7000 Series chassis"}}}, "152-0-155-1_dfi": {"name": "Clear text nodes per physical interface", "group": "QoS", "productNotes": {"pa-5450": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-5400-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "152-0-156-1_dfi": {"name": "DSCP marking by policy", "group": "QoS", "productNotes": {"pa-5450": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-5400-dpc-a": {"note": "Capacity based on SMC model capacity"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "152-0-157-1_dfi": {"name": "Subinterfaces supported", "group": "QoS", "productNotes": {"pa-5450": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-5400-dpc-a": {"note": "Capacity based on SMC model capacity"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "159-0-160-1_dfi": {"name": "Max IKE Peers", "group": "IPSec VPN", "productNotes": {"pan-pa-5400-dpc-a": {"note": "Capacity based on SMC model capacity"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many XM NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many XM NPCs are installed in the PA-7000 Series chassis"}}}, "159-0-161-1_dfi": {"name": "Site to site (with proxy id)", "group": "IPSec VPN", "productNotes": {"pa-7050": {"note": "Standard memory NPC / XM or 100G NPC"}, "pan-pa-5400-dpc-a": {"note": "Capacity based on SMC model capacity"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many XM NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many XM NPCs are installed in the PA-7000 Series chassis"}, "pa-7080": {"note": "Standard memory NPC / XM or 100G NPC"}}}, "159-0-162-1_dfi": {"name": "SD-WAN IPSec tunnels", "group": "IPSec VPN", "productNotes": {"pa-7050": {"note": "Standard memory NPC / XM or 100G NPC"}, "pan-pa-5400-dpc-a": {"note": "Capacity based on SMC model capacity"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many XM NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many XM NPCs are installed in the PA-7000 Series chassis"}, "pa-7080": {"note": "Standard memory NPC / XM or 100G NPC"}}}, "164-0-165-1_dfi": {"name": "Max tunnels (SSL, IPSec, and IKE with XAUTH)", "group": "GlobalProtect Client VPN", "productNotes": {"pa-7050": {"note": "Capacity based on SMC model capacity"}, "pan-pa-5400-dpc-a": {"note": "Capacity based on SMC model capacity"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pa-7080": {"note": "Capacity based on SMC model capacity"}}}, "167-0-168-1_dfi": {"name": "Max SSL tunnels", "group": "GlobalProtect Clientless VPN", "productNotes": {"pa-7050": {"note": "Capacity based on SMC model capacity"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many XM NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many XM NPCs are installed in the PA-7000 Series chassis"}, "pa-7080": {"note": "Capacity based on SMC model capacity"}}}, "170-0-171-1_dfi": {"name": "Replication (egress interfaces)", "group": "Multicast", "productNotes": {"pa-7050": {"note": "Standard memory NPC / XM or 100G NPC"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pa-7080": {"note": "Standard memory NPC / XM or 100G NPC"}}}, "170-0-172-1_dfi": {"name": "Routes", "group": "Multicast", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "174-0-175-1_dfi": {"name": "End-of-sale", "group": "Product Notes"}};
+	var groupMap = {"Performance": {"name": "Performance", "details": "1. Firewall throughput measured with  App-ID and User-ID features enabled utilizing AppMix transactions.  2.  Threat prevention throughput measured with App-ID, User-ID, IPS, antivirus and anti-spyware features enabled utilizing AppMix transactions.  3.  New sessions per second measured with 1 byte HTTP transactions.  Additionally, for VM models, please refer to hypervisor, cloud specific data sheet for associated performance." }, "Sessions": {"name": "Sessions"}, "Policies": {"name": "Policies"}, "Security Zones": {"name": "Security Zones"}, "Objects (addresses and services)": {"name": "Objects (addresses and services)"}, "Security Profiles": {"name": "Security Profiles"}, "App-ID": {"name": "App-ID"}, "User-ID": {"name": "User-ID"}, "SSL Decryption": {"name": "SSL Decryption"}, "URL Filtering": {"name": "URL Filtering"}, "EDL": {"name": "EDL"}, "Interfaces": {"name": "Interfaces"}, "Power Over Ethernet": {"name": "Power Over Ethernet"}, "Cellular Interface": {"name": "Cellular Interface"}, "Virtual Routers": {"name": "Virtual Routers"}, "Virtual Wires": {"name": "Virtual Wires"}, "Virtual Systems": {"name": "Virtual Systems"}, "Routing": {"name": "Routing"}, "L2 Forwarding": {"name": "L2 Forwarding"}, "NAT": {"name": "NAT"}, "Address Assignment": {"name": "Address Assignment"}, "High Availability": {"name": "High Availability"}, "QoS": {"name": "QoS"}, "IPSec VPN": {"name": "IPSec VPN"}, "GlobalProtect Client VPN": {"name": "GlobalProtect Client VPN"}, "GlobalProtect Clientless VPN": {"name": "GlobalProtect Clientless VPN"}, "Multicast": {"name": "Multicast"}, "Product Notes": {"name": "Product Notes"}};
+	var chosen = {};
+
+	function getChosen()
+	{
+		var qs = window.location.search.substring(1);
+		var allParams = qs.split('&');
+		for(var i = 0; i < allParams.length; i++)
+		{
+			var paramName = allParams[i].split('=');
+			if(paramName[0] == 'chosen')
+			{
+                console.log(paramName[0]);
+                var chosenValue = paramName[1];
+                var escapedChosen = escapeHtml(chosenValue);
+                console.log("Chosen Value:");
+                console.log(escapedChosen);
+				return escapedChosen;
+			}
+		}
+		return null;
+	}
+
+    function escapeHtml(str) {
+        var div = document.createElement('div');
+        div.appendChild(document.createTextNode(str));
+        return div.innerHTML;
+	}
+
+
+</script>
+<link rel="stylesheet" href="/etc/clientlibs/clientlibs_prodcomp.min.css" type="text/css">
+<script src="/etc/clientlibs/clientlibs_prodcomp.min.js"></script>
+<script type="text/javascript">
+        var Manager;
+        var trt = 'pan/components/custom/productcompare/productcomparecontroller';
+        var corename = 'productcompare';
+
+        (function ($) {
+
+          $(function () {
+            Manager = new AjaxSolr.Manager({
+              
+                  proxyUrl: '/apps/pan/public/solr/proxy'
+                
+            });
+
+            
+
+    AjaxSolr.ResultWidget = AjaxSolr.AbstractWidget.extend({
+      start: 0,
+
+      beforeRequest: function () {
+        $(this.target).html($('<img>').attr('src', '/etc/clientlibs/pan/img/spinner-bg.svg'));
+      },
+
+      facetLinks: function (facet_field, facet_values) {
+        var links = [];
+        if (facet_values) {
+          for (var i = 0, l = facet_values.length; i < l; i++) {
+            if (facet_values[i] !== undefined) {
+              links.push(
+                $('<a href="#"></a>')
+                .text(facet_values[i])
+                .click(this.facetHandler(facet_field, facet_values[i]))
+              );
+            }
+            else {
+              links.push('no items found in current selection');
+            }
+          }
+        }
+        return links;
+      },
+
+      facetHandler: function (facet_field, facet_value) {
+        var self = this;
+        return function () {
+          self.manager.store.remove('fq');
+          self.manager.store.addByValue('fq', facet_field + ':' + AjaxSolr.Parameter.escapeValue(facet_value));
+          self.doRequest();
+          return false;
+        };
+      },
+
+      afterRequest: function () {
+      	var products = '';
+        $(this.target).empty();
+        var docs = this.manager.response.response.docs;
+        var docCount = docs.length;
+        var dfi = '_dfi';
+        
+        if(docCount > 0)
+        {
+        	var chosenKeys = Object.keys(chosen);
+			var output = '';
+			output += '<thead><tr><th>Feature</th>';
+			for(var i = 0, l = docs.length; i < l; i++)
+			{
+				//var chosenId = chosenKeys[i];
+				//var doc = getDocById(docs, chosenId);
+				//if(!doc)
+				//{
+				//	continue;
+				//}
+				doc = docs[i];
+				var smallThumbnailUrl = doc['small-image-url'];
+                smallThumbnailUrl = smallThumbnailUrl.replace("/jcr:content/renditions/cq5dam.thumbnail.72.72.margin.png", ".transform/productThumbSmall/image.png");
+				output += '<th class="prod-col"><h2><a href="' + doc['url'] + '">' + doc['product_name'] + '</a></h2>';
+				output += '<img class="lozad" alt="' + doc['product_name'] + '" data-src="' + smallThumbnailUrl + '">';
+				output += '</img>';
+				output += '<p><a data-pid="' + doc['product_id'] + '" class="remove" title="' + doc['product_name'] + '">Remove</a></p>'
+				output += '</th>';
+				products += doc['category'] + ';' + doc['product_id'];
+		          if(i < l - 1)
+		          {
+		          	products += ',';
+		          }
+			}
+
+
+			output += '</tr></thead><tbody>';
+			var currentGroup = "";
+			for(var k in featureMap)
+			{
+				if(k.toLowerCase().indexOf("facet") == -1)
+				{
+	          		if({}.hasOwnProperty.call(featureMap, k))
+	          		{
+	          			var f = featureMap[k];
+                        var fname = f['name'];
+						if(fname && typeof fname !== 'undefined' && fname.toLowerCase().indexOf("facet") == -1)
+                        {
+                            var featureDetails = '';
+                            if({}.hasOwnProperty.call(f, 'details'))
+                            {
+                                //featureDetails = f['details'];
+                                featureDetails = '<a class="footnote" href="" data-toggle="tooltip" data-placement="right" title="' + f['details'] + '">*</a><span class="footnote-text">* ' + f['details'] + '</span>';
+                            }
+                            var g = f['group'];
+                            var gd = g;
+                            if(g != currentGroup)
+                            {
+                                if({}.hasOwnProperty.call(groupMap, g))
+                                {
+                                    var groupObj = groupMap[g];
+                                    if({}.hasOwnProperty.call(groupObj, 'details'))
+                                    {
+                                        var groupDetails = groupObj['details'];
+                                        gd+= '<a class="footnote" href="" data-toggle="tooltip" data-placement="right" title="' + groupDetails + '">*</a><span class="footnote-text">* ' + groupDetails + '</span>';
+                                    }
+                                }
+                                output += '<tr><td colspan="' + (l + 1) + '" class="prod-cat">' + gd + '</td></tr>';
+                                currentGroup = g;
+                            }
+                            output += '<tr><td class="prod-spec">'+ f['name'] + featureDetails + '</td>';
+                            for(var i = 0, l = docs.length; i < l; i++)
+                            {
+                                //var chosenId = chosenKeys[i];
+                                //var doc = getDocById(docs, chosenId);
+                                //if(!doc)
+                                //{
+                                //	continue;
+                                //}
+                                doc = docs[i];
+                                var langlessId = doc.id.substring(doc.id.indexOf('-') + 1);
+                                var productNotes = null;
+                                if({}.hasOwnProperty.call(f, 'productNotes'))
+                                {
+                                    var productNotesObj = f['productNotes'];
+                                    if({}.hasOwnProperty.call(productNotesObj, langlessId))
+                                    {
+                                        productNotes = productNotesObj[langlessId];
+                                    }
+                                }
+                                if({}.hasOwnProperty.call(doc, k))
+                                {
+                                    output += '<td>' + doc[k]
+                                    if(productNotes)
+                                    {
+                                        output += '<a class="footnote" href="" data-toggle="tooltip" data-placement="right" title="' + productNotes['note'] + '">*</a><span class="footnote-text">* ' + productNotes['note'] + '</span>';
+                                    }
+                                    output += '</td>';
+                                }
+                                else
+                                {
+                                    output += '<td>N/A</td>';
+                                }
+                            }
+                            output += '</tr>';
+                    	}
+	          		}
+          		}
+          	}
+          	output += '</tbody>';
+          	$(this.target).append(output);
+        }
+        
+        if(typeof s != 'undefined')
+        {
+        	console.log("Found SiteCatalyst");
+	        s.products = products;
+	        s.events = 'prodView,event1';
+	        s.linkTrackVars='events,products';
+	    	s.linkTrackEvents='prodView,event1';
+	        s.tl(true, 'o', 'Product View');
+        }
+        else
+        {
+        	console.log("Could not find SiteCatalyst");
+        }
+        initTooltip();
+        initChosen();
+        initRemove();
+        initPdfButton();
+        
+        //for (var i = 0, l = this.manager.response.response.docs.length; i < l; i++) {
+        //  var doc = this.manager.response.response.docs[i];
+        //  $(this.target).append(this.template(doc));
+        //}
+      },
+
+      template: function (doc) {
+        var snippet = '';
+        if(doc.teaser.length > 250)
+        {
+        	snippet += doc.teaser.substring(0, 250);
+        	snippet += '<span style="display:none">' + doc.teaser.substring(250);
+        	snippet += '</span> <a href="#" class="more">more</a>';
+        }
+        else
+        {
+        	snippet += doc.teaser;
+        }
+
+        var title = doc.title;
+        var output = '';
+
+        if(this.manager.response.highlighting && this.manager.response.highlighting[doc.id]) {
+            if(this.manager.response.highlighting[doc.id]['teaser']) {
+                var teaserSnippet = this.manager.response.highlighting[doc.id]['teaser'][0];
+
+                if (teaserSnippet.length > 250) {
+                    snippet = teaserSnippet.substring(0, 250);
+                    snippet += '<span style="display:none">' + teaserSnippet.substring(250);
+                    snippet += '</span> <a href="#" class="more">more</a>';
+                } else {
+                    snippet = teaserSnippet;
+                }
+            }
+        }
+
+        //output += '<div class="result-card">';
+        //output += '<a href="' + doc['product_id'] + '" class="google-title">' + title + '</a>';
+        //output += '<div class="google-url">' + doc['product_id'] + '</div>';
+        //output += '<div>' + snippet + '</div>';
+        //output += '<table>';
+        //for(var k in doc)
+        //{
+        //	if({}.hasOwnProperty.call(doc, k))
+        //	{
+        //		output += '<tr><td>'+ k + '</td><td>' + doc[k] + '</td></tr>';
+        //	}
+        //}
+        //output += '</table>';
+        //output += '</div>';
+
+
+        return output;
+      },
+
+      init: function () {
+        $(document).on('click', 'a.more', function () {
+          var $this = $(this),
+              span = $this.parent().find('span');
+
+          if (span.is(':visible')) {
+            span.hide();
+            $this.text('more');
+          }
+          else {
+            span.show();
+            $this.text('less');
+          }
+
+          return false;
+        });
+      }
+    });
+
+    Manager.addWidget(new AjaxSolr.ResultWidget({
+      id: 'result',
+      target: '#searchresults'
+    }));
+
+
+            Manager.init();
+
+            
+              Manager.store.addByValue('corename', 'productcompare');
+            
+
+			var chosenQP = getChosen();
+			if(!chosenQP)
+			{
+				Manager.store.addByValue('q', '*:*');
+			}
+			else
+			{
+                console.log(paramToQueryString(chosenQP));
+				Manager.store.addByValue('q', paramToQueryString(chosenQP));
+			}
+
+			var passFq = 'language:"en_US"' ;
+            
+
+            var params = {
+              
+              'fq': passFq,
+
+              'fl': '',
+              
+              'rows': 10,
+              'json.nl': 'map',
+              'sort': 'position asc'
+            };
+            for (var name in params) {
+              Manager.store.addByValue(name, params[name]);
+            }
+                Manager.doRequest();
+              });
+
+            })(jQuery);
+        </script>
+
+        <script src="/etc/clientlibs/panGlobalBarCustom.min.js"></script>
+<script src="/etc/clientlibs/aemsolrsearch/ajax-solr.min.js"></script>
+<link rel="stylesheet" href="/etc/clientlibs/panGlobalBarCustom.min.css" type="text/css">
+<link rel="stylesheet" href="/etc/clientlibs/aemsolrsearch/ajax-solr.min.css" type="text/css">
+</div>
+<div class="productCompareResults productcompareresults searchresults parbase"><div class="actions container">
+	<div class="row">
+		<div class="span2"> <a class="btn btn-mini" href="/products/product-selection" data-page-track="true" data-page-track-value="products:product-comparison: parbase:product comparison"><i class="icon-step-backward"></i> Back to previous page</a> </div>
+		<a class="btn btn-mini pull-right" target="_blank" href="#" id="pdfbutton" rel="noopener" data-page-track="true" data-page-track-value="products:product-comparison: parbase:product comparison"><i class="icon-download-alt"></i> Download PDF</a> </div>
+	</div>
+</div>
+<div class="container">
+	<div class="row">
+		<div class="span10 table-responsive" style="min-height:4396px;">
+			<table id="searchresults" class="table table-condensed table-hover table-striped table-bordered">
+			</table>
+		</div>
+	</div>
+</div>
+</div>
+</div></div>
+</div><hr/><div class="container">
+	<div class="row "><div class="col-md-12 "><div class="inheritedFooterNav baseComponent parbase"></div>
+</div></div>
+</div><div class="product-page-footer footer baseComponent parbase"><div class="panClean new-footer-old-template">
+					<div class="cleanDynamicFooter mainFooterComp baseComponent parbase"><!-- custom spacing -->
+
+
+
+
+
+<a class="page-anchor" name="footer"></a>
+
+
+
+
+<section class="lozad-background footer-form" style="" data-background-image=" url('\2f etc\2f clientlibs\2f clean\2fimgs\2f 2023\2f footer-form-bg.svg')">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12 col-md-4 col-xl-6">
+                <h2 class="h4 form-title text-white mb-0">Get the latest news, invites to events, and threat alerts</h2>
+            </div>
+            <div class="col-12 col-md-8 col-xl-6 col-xxxl-5 offset-xxxl-1">
+                <form id="footer_form_manage_subscriptions" name="footer_form_manage_subscriptions" class="form d-flex flex-wrap" action="/apps/pan/public/formsubmithandler.submitform.json" method="POST" novalidate data-lang="en_US">
+                    
+                    <input type="hidden" name="mktoOptIn" value="true"/>
+                    <input type="hidden" name="Qualifying_Campaign__c" value="7010g000001J5shAAC"/>
+                    <input type="hidden" name="emailFormMask" value=""/>
+                    <input type="hidden" name="Company" id="Company" value=""/>
+                    <input type="hidden" name="FormName" value="subscription-all-corp-site-us"/>
+                    <input type="hidden" name="formid" value="1086"/>
+                    <input type="hidden" name="formVid" value="1086"/>
+                    <input type="hidden" name="munchkinId" value="531-OCS-018"/>
+                    <input type="hidden" name="programId" value="5373"/>
+                    <div class="footer-form-input-container d-flex flex-column">
+                        <div class="d-flex">
+                            <label class="form-field" aria-label="Enter your email now to subscribe!" for="PAN_FOOTER_EMAIL_FIELD">
+                                <span class="sr-only" style="display: none;">Enter your email now to subscribe!</span>
+                                <input type="text" name="Email" required class="mb-md-3 body-serif-1 text-white" placeholder="Enter your email now to subscribe!" id="PAN_FOOTER_EMAIL_FIELD" pattern="[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$"/>
+                                <div class="form-validation validation body-serif-4"></div>
+                                <div class="validation-icon"></div>
+                            </label>
+                            <div class="actions d-none d-md-block">
+                                
+                                    <button type="submit" class="btn btn-primary flex-grow-0 flex-shrink-0 ml-md-4" disabled data-page-track="true" data-page-track-value="product-comparison:footer:Sign up">Sign up <i></i></button>
+                                
+                                
+                                
+                            </div>
+                        </div>
+
+                        
+                            <div id="PAN_FOOTER_CAPTCHA_HOLDER" class="mb-2 mt-sm-2 mt-xl-0">
+                                <div class="g-recaptcha" data-expired-callback="recaptchaExpired" data-callback="captchaComplete" data-sitekey="6Lc5EhgTAAAAAJa-DzE7EeWABasWg4LKv-R3ao6o"></div>
+                            </div>
+                        
+
+                        <div class="legal">
+                            
+                                <p class="label-3 text-400 text-white form-legal">
+                            
+                            
+                                
+                                    By submitting this form, you agree to our
+                                    <a class="text-white" href="/legal-notices/terms-of-use" data-page-track="true" data-page-track-value="product-comparison:footer:terms-of-use">Terms of Use</a>
+                                    and acknowledge our
+                                    <a class="text-white" href="/legal-notices/privacy" data-page-track="true" data-page-track-value="product-comparison:footer:privacy">Privacy Statement</a>.
+
+                                
+                                
+                            </p>
+
+                        </div>
+                        <div class="mobile-actions d-block d-md-none">
+                            
+                                <button type="submit" class="btn btn-primary flex-grow-0 flex-shrink-0 ml-0" disabled data-page-track="true" data-page-track-value="product-comparison:footer:mobile:Sign up">Sign up <i></i></button>
+                            
+                            
+                            
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+<section class="mega-footer accordion" id="footer_accordion">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12 col-md-16 col-xxl-8">
+                <div class="heading-col collapsed pr-4 pr-md-0" data-toggle="collapse" data-target="#collapse_col_0">
+                    <h2 class="nav-headline mb-0">Products and Services</h2>
+                </div>
+                <div id="collapse_col_0" class="columns collapse d-md-flex flex-nowrap" data-parent="#footer_accordion">
+                    <ul class="list-unstyled nav-list mb-0">
+                        <li class="sub-title nav-subheader">
+                            <a href="/network-security" class="d-flex d-md-inline text-black" target="_self" data-page-track="true" data-page-track-value="product-comparison:mainfootercomp:col-0:link-0:network security platform" rel="noopener"> 
+                                Network Security Platform
+                            </a>
+                        </li>
+                    
+                        <li class="sub-title nav-subheader">
+                            <a href="/network-security/security-subscriptions" class="d-flex d-md-inline text-black" target="_self" data-page-track="true" data-page-track-value="product-comparison:mainfootercomp:col-0:link-1:cloud delivered security services" rel="noopener"> 
+                                CLOUD DELIVERED SECURITY SERVICES
+                            </a>
+                        </li>
+                    
+                        <li class="link">
+                            <a href="/network-security/advanced-threat-prevention" class="d-flex d-md-inline text-black" target="_self" data-page-track="true" data-page-track-value="product-comparison:mainfootercomp:col-0:link-2:advanced threat prevention" rel="noopener"> 
+                                Advanced Threat Prevention
+                            </a>
+                        </li>
+                    
+                        <li class="link">
+                            <a href="/network-security/advanced-wildfire" class="d-flex d-md-inline text-black" target="_self" data-page-track="true" data-page-track-value="product-comparison:mainfootercomp:col-0:link-3:advanced wildfire" rel="noopener"> 
+                                Advanced WildFire
+                            </a>
+                        </li>
+                    
+                        <li class="link">
+                            <a href="/network-security/advanced-dns-security" class="d-flex d-md-inline text-black" target="_self" data-page-track="true" data-page-track-value="product-comparison:mainfootercomp:col-0:link-4:dns security" rel="noopener"> 
+                                DNS Security
+                            </a>
+                        </li>
+                    
+                        <li class="link">
+                            <a href="/network-security/enterprise-data-loss-prevention" class="d-flex d-md-inline text-black" target="_self" data-page-track="true" data-page-track-value="product-comparison:mainfootercomp:col-0:link-5:data loss prevention" rel="noopener"> 
+                                Data Loss Prevention
+                            </a>
+                        </li>
+                    
+                        <li class="link">
+                            <a href="/network-security/enterprise-iot-security" class="d-flex d-md-inline text-black" target="_self" data-page-track="true" data-page-track-value="product-comparison:mainfootercomp:col-0:link-6:iot security" rel="noopener"> 
+                                IoT Security
+                            </a>
+                        </li>
+                    
+                        <li class="sub-title nav-subheader">
+                            <a href="/network-security/next-generation-firewall" class="d-flex d-md-inline text-black" target="_self" data-page-track="true" data-page-track-value="product-comparison:mainfootercomp:col-0:link-7:next-generation firewalls" rel="noopener"> 
+                                Next-Generation Firewalls
+                            </a>
+                        </li>
+                    
+                        <li class="link">
+                            <a href="/network-security/next-generation-firewall-hardware" class="d-flex d-md-inline text-black" target="_self" data-page-track="true" data-page-track-value="product-comparison:mainfootercomp:col-0:link-8:hardware firewalls" rel="noopener"> 
+                                Hardware Firewalls
+                            </a>
+                        </li>
+                    
+                        <li class="link">
+                            <a href="/network-security/strata-cloud-manager" class="d-flex d-md-inline text-black" target="_self" data-page-track="true" data-page-track-value="product-comparison:mainfootercomp:col-0:link-9:strata cloud manager" rel="noopener"> 
+                                Strata Cloud Manager
+                            </a>
+                        </li>
+                    
+                        <li class="sub-title nav-subheader">
+                            <a href="/sase" class="d-flex d-md-inline text-black" target="_self" data-page-track="true" data-page-track-value="product-comparison:mainfootercomp:col-0:link-10:secure access service edge" rel="noopener"> 
+                                SECURE ACCESS SERVICE EDGE
+                            </a>
+                        </li>
+                    
+                        <li class="link">
+                            <a href="/sase/access" class="d-flex d-md-inline text-black" target="_self" data-page-track="true" data-page-track-value="product-comparison:mainfootercomp:col-0:link-11:prisma access" rel="noopener"> 
+                                Prisma Access
+                            </a>
+                        </li>
+                    
+                        <li class="link">
+                            <a href="/sase/sd-wan" class="d-flex d-md-inline text-black" target="_self" data-page-track="true" data-page-track-value="product-comparison:mainfootercomp:col-0:link-12:prisma sd-wan" rel="noopener"> 
+                                Prisma SD-WAN
+                            </a>
+                        </li>
+                    
+                        <li class="link">
+                            <a href="/sase/adem" class="d-flex d-md-inline text-black" target="_self" data-page-track="true" data-page-track-value="product-comparison:mainfootercomp:col-0:link-13:autonomous digital experience management" rel="noopener"> 
+                                Autonomous Digital Experience Management
+                            </a>
+                        </li>
+                    
+                        <li class="link">
+                            <a href="/sase/next-gen-casb" class="d-flex d-md-inline text-black" target="_self" data-page-track="true" data-page-track-value="product-comparison:mainfootercomp:col-0:link-14:cloud access security broker" rel="noopener"> 
+                                Cloud Access Security Broker
+                            </a>
+                        </li>
+                    
+                        <li class="link">
+                            <a href="/sase/ztna" class="d-flex d-md-inline text-black" target="_self" data-page-track="true" data-page-track-value="product-comparison:mainfootercomp:col-0:link-15:zero trust network access" rel="noopener"> 
+                                Zero Trust Network Access
+                            </a>
+                        </li>
+                    </ul>
+                
+                    <ul class="list-unstyled nav-list mb-0">
+                        <li class="sub-title nav-subheader">
+                            <a href="/prisma/whyprisma" class="d-flex d-md-inline text-black" target="_self" data-page-track="true" data-page-track-value="product-comparison:mainfootercomp:col-0:link-0:code to cloud platform" rel="noopener"> 
+                                Code to Cloud Platform
+                            </a>
+                        </li>
+                    
+                        <li class="link">
+                            <a href="/prisma/cloud" class="d-flex d-md-inline text-black" target="_self" data-page-track="true" data-page-track-value="product-comparison:mainfootercomp:col-0:link-1:prisma cloud" rel="noopener"> 
+                                Prisma Cloud
+                            </a>
+                        </li>
+                    </ul>
+                
+                    <ul class="list-unstyled nav-list mb-0">
+                        <li class="sub-title nav-subheader">
+                            <a href="/cortex" class="d-flex d-md-inline text-black" target="_self" data-page-track="true" data-page-track-value="product-comparison:mainfootercomp:col-0:link-0:ai-driven security operations platform" rel="noopener"> 
+                                AI-Driven Security Operations Platform
+                            </a>
+                        </li>
+                    
+                        <li class="link">
+                            <a href="/cortex/cortex-xdr" class="d-flex d-md-inline text-black" target="_self" data-page-track="true" data-page-track-value="product-comparison:mainfootercomp:col-0:link-1:cortex xdr" rel="noopener"> 
+                                Cortex XDR
+                            </a>
+                        </li>
+                    
+                        <li class="link">
+                            <a href="/cortex/cortex-xsoar" class="d-flex d-md-inline text-black" target="_self" data-page-track="true" data-page-track-value="product-comparison:mainfootercomp:col-0:link-2:cortex xsoar" rel="noopener"> 
+                                Cortex XSOAR
+                            </a>
+                        </li>
+                    
+                        <li class="link">
+                            <a href="/cortex/cortex-xpanse" class="d-flex d-md-inline text-black" target="_self" data-page-track="true" data-page-track-value="product-comparison:mainfootercomp:col-0:link-3:cortex xpanse" rel="noopener"> 
+                                Cortex Xpanse
+                            </a>
+                        </li>
+                    
+                        <li class="link">
+                            <a href="/cortex/cortex-xsiam" class="d-flex d-md-inline text-black" target="_self" data-page-track="true" data-page-track-value="product-comparison:mainfootercomp:col-0:link-4:cortex xsiam" rel="noopener"> 
+                                Cortex XSIAM
+                            </a>
+                        </li>
+                    
+                        <li class="link">
+                            <a href="/cortex/cortex-xpanse/attack-surface-management" class="d-flex d-md-inline text-black" target="_self" data-page-track="true" data-page-track-value="product-comparison:mainfootercomp:col-0:link-5:external attack surface protection" rel="noopener"> 
+                                External Attack Surface Protection
+                            </a>
+                        </li>
+                    
+                        <li class="link">
+                            <a href="/cortex/security-operations-automation" class="d-flex d-md-inline text-black" target="_self" data-page-track="true" data-page-track-value="product-comparison:mainfootercomp:col-0:link-6:security automation" rel="noopener"> 
+                                Security Automation
+                            </a>
+                        </li>
+                    
+                        <li class="link">
+                            <a href="/cortex/detection-and-response" class="d-flex d-md-inline text-black" target="_self" data-page-track="true" data-page-track-value="product-comparison:mainfootercomp:col-0:link-7:threat prevention detection &amp;amp; response" rel="noopener"> 
+                                Threat Prevention, Detection &amp; Response
+                            </a>
+                        </li>
+                    </ul>
+                
+                    <ul class="list-unstyled nav-list mb-0">
+                        <li class="sub-title nav-subheader">
+                            <a href="/unit42" class="d-flex d-md-inline text-black" target="_self" data-page-track="true" data-page-track-value="product-comparison:mainfootercomp:col-0:link-0:threat intel and incident response services" rel="noopener"> 
+                                Threat Intel and Incident Response Services
+                            </a>
+                        </li>
+                    
+                        <li class="link">
+                            <a href="/unit42/assess" class="d-flex d-md-inline text-black" target="_self" data-page-track="true" data-page-track-value="product-comparison:mainfootercomp:col-0:link-1:proactive assessments" rel="noopener"> 
+                                Proactive Assessments
+                            </a>
+                        </li>
+                    
+                        <li class="link">
+                            <a href="/unit42/respond" class="d-flex d-md-inline text-black" target="_self" data-page-track="true" data-page-track-value="product-comparison:mainfootercomp:col-0:link-2:incident response" rel="noopener"> 
+                                Incident Response
+                            </a>
+                        </li>
+                    
+                        <li class="link">
+                            <a href="/unit42/transform" class="d-flex d-md-inline text-black" target="_self" data-page-track="true" data-page-track-value="product-comparison:mainfootercomp:col-0:link-3:transform your security strategy" rel="noopener"> 
+                                Transform Your Security Strategy
+                            </a>
+                        </li>
+                    
+                        <li class="link">
+                            <a href="/unit42/threat-intelligence-partners" class="d-flex d-md-inline text-black" target="_self" data-page-track="true" data-page-track-value="product-comparison:mainfootercomp:col-0:link-4:discover threat intelligence" rel="noopener"> 
+                                Discover Threat Intelligence
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        
+            <div class="col-12 col-md-4 col-xxl-2">
+                <div class="heading-col collapsed pr-4 pr-md-0" data-toggle="collapse" data-target="#collapse_col_1">
+                    <h2 class="nav-headline mb-0">Company</h2>
+                </div>
+                <div id="collapse_col_1" class="columns collapse d-md-flex flex-nowrap" data-parent="#footer_accordion">
+                    <ul class="list-unstyled nav-list mb-0">
+                        <li class="link">
+                            <a href="/about-us" class="d-flex d-md-inline text-black" target="_self" data-page-track="true" data-page-track-value="product-comparison:mainfootercomp:col-1:link-0:about us" rel="noopener"> 
+                                About Us
+                            </a>
+                        </li>
+                    
+                        <li class="link">
+                            <a href="https://jobs.paloaltonetworks.com/en/" class="d-flex d-md-inline text-black" target="_blank" data-page-track="true" data-page-track-value="product-comparison:mainfootercomp:col-1:link-1:careers" rel="noopener"> 
+                                Careers
+                            </a>
+                        </li>
+                    
+                        <li class="link">
+                            <a href="/company/contact-sales" class="d-flex d-md-inline text-black" target="_self" data-page-track="true" data-page-track-value="product-comparison:mainfootercomp:col-1:link-2:contact us" rel="noopener"> 
+                                Contact Us
+                            </a>
+                        </li>
+                    
+                        <li class="link">
+                            <a href="/about-us/corporate-responsibility" class="d-flex d-md-inline text-black" target="_self" data-page-track="true" data-page-track-value="product-comparison:mainfootercomp:col-1:link-3:corporate responsiblity" rel="noopener"> 
+                                Corporate Responsiblity
+                            </a>
+                        </li>
+                    
+                        <li class="link">
+                            <a href="/customers" class="d-flex d-md-inline text-black" target="_self" data-page-track="true" data-page-track-value="product-comparison:mainfootercomp:col-1:link-4:customers" rel="noopener"> 
+                                Customers
+                            </a>
+                        </li>
+                    
+                        <li class="link">
+                            <a href="https://investors.paloaltonetworks.com/" class="d-flex d-md-inline text-black" target="_blank" data-page-track="true" data-page-track-value="product-comparison:mainfootercomp:col-1:link-5:investor relations" rel="noopener"> 
+                                Investor Relations
+                            </a>
+                        </li>
+                    
+                        <li class="link">
+                            <a href="/about-us/locations" class="d-flex d-md-inline text-black" target="_self" data-page-track="true" data-page-track-value="product-comparison:mainfootercomp:col-1:link-6:location" rel="noopener"> 
+                                Location
+                            </a>
+                        </li>
+                    
+                        <li class="link">
+                            <a href="/company/newsroom" class="d-flex d-md-inline text-black" target="_self" data-page-track="true" data-page-track-value="product-comparison:mainfootercomp:col-1:link-7:newsroom" rel="noopener"> 
+                                Newsroom
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        
+            <div class="col-12 col-md-4 col-xxl-2">
+                <div class="heading-col collapsed pr-4 pr-md-0" data-toggle="collapse" data-target="#collapse_col_2">
+                    <h2 class="nav-headline mb-0">Popular Links</h2>
+                </div>
+                <div id="collapse_col_2" class="columns collapse d-md-flex flex-nowrap" data-parent="#footer_accordion">
+                    <ul class="list-unstyled nav-list mb-0">
+                        <li class="link">
+                            <a href="/blog/" class="d-flex d-md-inline text-black" target="_blank" data-page-track="true" data-page-track-value="product-comparison:mainfootercomp:col-2:link-0:blog" rel="noopener"> 
+                                Blog
+                            </a>
+                        </li>
+                    
+                        <li class="link">
+                            <a href="/communities" class="d-flex d-md-inline text-black" target="_self" data-page-track="true" data-page-track-value="product-comparison:mainfootercomp:col-2:link-1:communities" rel="noopener"> 
+                                Communities
+                            </a>
+                        </li>
+                    
+                        <li class="link">
+                            <a href="/resources" class="d-flex d-md-inline text-black" target="_self" data-page-track="true" data-page-track-value="product-comparison:mainfootercomp:col-2:link-2:content library" rel="noopener"> 
+                                Content Library
+                            </a>
+                        </li>
+                    
+                        <li class="link">
+                            <a href="/cyberpedia" class="d-flex d-md-inline text-black" target="_self" data-page-track="true" data-page-track-value="product-comparison:mainfootercomp:col-2:link-3:cyberpedia" rel="noopener"> 
+                                Cyberpedia
+                            </a>
+                        </li>
+                    
+                        <li class="link">
+                            <a href="https://events.paloaltonetworks.com/" class="d-flex d-md-inline text-black" target="_blank" data-page-track="true" data-page-track-value="product-comparison:mainfootercomp:col-2:link-4:event center" rel="noopener"> 
+                                Event Center
+                            </a>
+                        </li>
+                    
+                        <li class="link">
+                            <a href="https://start.paloaltonetworks.com/preference-center" class="d-flex d-md-inline text-black" target="_blank" data-page-track="true" data-page-track-value="product-comparison:mainfootercomp:col-2:link-5:manage email preferences" rel="noopener"> 
+                                Manage Email Preferences
+                            </a>
+                        </li>
+                    
+                        <li class="link">
+                            <a href="/products/products-a-z" class="d-flex d-md-inline text-black" target="_self" data-page-track="true" data-page-track-value="product-comparison:mainfootercomp:col-2:link-6:products a-z" rel="noopener"> 
+                                Products A-Z
+                            </a>
+                        </li>
+                    
+                        <li class="link">
+                            <a href="/legal-notices/trust-center/compliance" class="d-flex d-md-inline text-black" target="_self" data-page-track="true" data-page-track-value="product-comparison:mainfootercomp:col-2:link-7:product certifications" rel="noopener"> 
+                                Product Certifications
+                            </a>
+                        </li>
+                    
+                        <li class="link">
+                            <a href="/security-disclosure" class="d-flex d-md-inline text-black" target="_self" data-page-track="true" data-page-track-value="product-comparison:mainfootercomp:col-2:link-8:report a vulnerability" rel="noopener"> 
+                                Report a Vulnerability
+                            </a>
+                        </li>
+                    
+                        <li class="link">
+                            <a href="/sitemap" class="d-flex d-md-inline text-black" target="_self" data-page-track="true" data-page-track-value="product-comparison:mainfootercomp:col-2:link-9:sitemap" rel="noopener"> 
+                                Sitemap
+                            </a>
+                        </li>
+                    
+                        <li class="link">
+                            <a href="https://docs.paloaltonetworks.com/" class="d-flex d-md-inline text-black" target="_blank" data-page-track="true" data-page-track-value="product-comparison:mainfootercomp:col-2:link-10:tech docs" rel="nofollow noopener"> 
+                                Tech Docs
+                            </a>
+                        </li>
+                    
+                        <li class="link">
+                            <a href="https://unit42.paloaltonetworks.com/" class="d-flex d-md-inline text-black" target="_blank" data-page-track="true" data-page-track-value="product-comparison:mainfootercomp:col-2:link-11:unit 42" rel="noopener"> 
+                                Unit 42
+                            </a>
+                        </li>
+                    
+                        <li class="link">
+                            <a href="https://panwedd.exterro.net/portal/dsar.htm?target=panwedd" class="d-flex d-md-inline text-black" target="_blank" data-page-track="true" data-page-track-value="product-comparison:mainfootercomp:col-2:link-12:do not sell or share my personal information" onclick="noSell(event)" rel="noopener"> 
+                                Do Not Sell or Share My Personal Information
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<footer class="footer-bottom">
+    <div class="container-fluid">
+        <div class="row align-items-center">
+            <div class="col-12 col-md-6 order-md-1 col-xxl-12">
+                <div class="pan-logo d-flex">
+                    <img data-src="/etc/clientlibs/clean/imgs/pan-logo-dark.svg" alt="PAN logo" class="lozad "/>
+                </div>
+            </div>
+            <div class="col-12 col-md-12 order-md-3 col-xxl-8 order-xxl-2">
+                <ul class="list-unstyled bottom-links nav-list d-flex flex-column flex-md-row">
+                    <li>
+                        <a href="/legal-notices/privacy" class="text-black" data-page-track="true" data-page-track-value="product-comparison:mainfootercomp:bottomlinks-0:privacy">
+                            Privacy
+                        </a>
+                    </li>
+                
+                    <li>
+                        <a href="/legal-notices/trust-center" class="text-black" data-page-track="true" data-page-track-value="product-comparison:mainfootercomp:bottomlinks-1:trust center">
+                            Trust Center
+                        </a>
+                    </li>
+                
+                    <li>
+                        <a href="/legal-notices/terms-of-use" class="text-black" data-page-track="true" data-page-track-value="product-comparison:mainfootercomp:bottomlinks-2:terms of use">
+                            Terms of Use
+                        </a>
+                    </li>
+                
+                    <li>
+                        <a href="/legal" class="text-black" data-page-track="true" data-page-track-value="product-comparison:mainfootercomp:bottomlinks-3:documents">
+                            Documents
+                        </a>
+                    </li>
+                </ul>
+                <p class="copyright text-black nav-list mb-3 mb-md-0">Copyright © 2025 Palo Alto Networks. All Rights Reserved</p>
+            </div>
+            <div class="col-12 col-md-6 order-md-2 col-xxl-4 order-xxl-3">
+                <ul class="list-unstyled social-icons d-flex justify-content-start justify-content-md-end align-items-center">
+                    
+                        <li>
+                            <a href="https://www.youtube.com/user/paloaltonetworks" target="_blank" class="social-icon d-flex" aria-label="social link" data-page-track="true" data-page-track-value="product-comparison:mainfootercomp:socials-0:youtube" rel="noopener">
+                                <img data-src="/etc/clientlibs/clean/imgs/social/youtube-black.svg" alt="Youtube" class="lozad "/>
+                            </a>
+                        </li>
+                    
+                        <li>
+                            <a href="https://twitter.com/PaloAltoNtwks" target="_blank" class="social-icon d-flex" aria-label="social link" data-page-track="true" data-page-track-value="product-comparison:mainfootercomp:socials-1:twitter" rel="noopener">
+                                <img data-src="/etc/clientlibs/clean/imgs/social/twitter-x-black.svg" alt="Twitter" class="lozad "/>
+                            </a>
+                        </li>
+                    
+                        <li>
+                            <a href="https://www.facebook.com/PaloAltoNetworks/" target="_blank" class="social-icon d-flex" aria-label="social link" data-page-track="true" data-page-track-value="product-comparison:mainfootercomp:socials-2:facebook" rel="noopener">
+                                <img data-src="/etc/clientlibs/clean/imgs/social/facebook-black.svg" alt="Facebook" class="lozad "/>
+                            </a>
+                        </li>
+                    
+                        <li>
+                            <a href="https://www.linkedin.com/company/palo-alto-networks" target="_blank" class="social-icon d-flex" aria-label="social link" data-page-track="true" data-page-track-value="product-comparison:mainfootercomp:socials-3:linkedin" rel="noopener">
+                                <img data-src="/etc/clientlibs/clean/imgs/social/linkedin-black.svg" alt="LinkedIn" class="lozad "/>
+                            </a>
+                        </li>
+                    
+                        <li>
+                            <a href="https://unit42.paloaltonetworks.com/unit-42-threat-vector-podcast/" target="_blank" class="social-icon d-flex" aria-label="social link" data-page-track="true" data-page-track-value="product-comparison:mainfootercomp:socials-4:podcast" rel="noopener">
+                                <img data-src="/content/dam/pan/en_US/images/icons/podcast.svg" alt="Podcast" class="lozad "/>
+                            </a>
+                        </li>
+                    
+                    <li>
+                        <div class="dropdown" data-language-json="[{&#39;localTitle&#39;:&#39;USA (ENGLISH)&#39;, &#39;localLink&#39;:&#39;#&#39;}, {&#39;localTitle&#39;:&#39;AUSTRALIA (ENGLISH)&#39;, &#39;localLink&#39;:&#39;https://www.paloaltonetworks.com.au&#39;}, {&#39;localTitle&#39;:&#39;BRAZIL (PORTUGUÉS)&#39;, &#39;localLink&#39;:&#39;https://www.paloaltonetworks.com.br&#39;}, {&#39;localTitle&#39;:&#39;CANADA (ENGLISH)&#39;, &#39;localLink&#39;:&#39;https://www.paloaltonetworks.ca&#39;}, {&#39;localTitle&#39;:&#39;CHINA (简体中文)&#39;, &#39;localLink&#39;:&#39;https://www.paloaltonetworks.cn&#39;}, {&#39;localTitle&#39;:&#39;FRANCE (FRANÇAIS)&#39;, &#39;localLink&#39;:&#39;https://www.paloaltonetworks.fr&#39;}, {&#39;localTitle&#39;:&#39;GERMANY (DEUTSCH)&#39;, &#39;localLink&#39;:&#39;https://www.paloaltonetworks.de&#39;}, {&#39;localTitle&#39;:&#39;INDIA (ENGLISH)&#39;, &#39;localLink&#39;:&#39;https://www.paloaltonetworks.in&#39;}, {&#39;localTitle&#39;:&#39;ITALY (ITALIANO)&#39;, &#39;localLink&#39;:&#39;https://www.paloaltonetworks.it&#39;}, {&#39;localTitle&#39;:&#39;JAPAN (日本語)&#39;, &#39;localLink&#39;:&#39;https://www.paloaltonetworks.jp&#39;}, {&#39;localTitle&#39;:&#39;KOREA (한국어)&#39;, &#39;localLink&#39;:&#39;https://www.paloaltonetworks.co.kr&#39;}, {&#39;localTitle&#39;:&#39;LATIN AMERICA (ESPAÑOL)&#39;, &#39;localLink&#39;:&#39;https://www.paloaltonetworks.lat&#39;}, {&#39;localTitle&#39;:&#39;MEXICO (ESPAÑOL)&#39;, &#39;localLink&#39;:&#39;https://www.paloaltonetworks.com.mx&#39;}, {&#39;localTitle&#39;:&#39;SINGAPORE (ENGLISH)&#39;, &#39;localLink&#39;:&#39;https://www.paloaltonetworks.sg&#39;}, {&#39;localTitle&#39;:&#39;SPAIN (ESPAÑOL)&#39;, &#39;localLink&#39;:&#39;https://www.paloaltonetworks.es&#39;}, {&#39;localTitle&#39;:&#39;TAIWAN (繁體中文)&#39;, &#39;localLink&#39;:&#39;https://www.paloaltonetworks.tw&#39;}, {&#39;localTitle&#39;:&#39;UK (ENGLISH)&#39;, &#39;localLink&#39;:&#39;https://www.paloaltonetworks.co.uk&#39;}]">
+                            <button class="btn btn-language d-inline-flex align-items-center lozad-background" type="button" id="language_dropdown_menu_button" data-toggle="dropdown" aria-expanded="false" data-offset="30" data-background-image="url('/etc/clientlibs/clean/imgs/globe-black.svg')">
+                                <span class="d-inline-flex">EN</span>
+                                <i class="d-inline-flex"></i>
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-right" aria-labelledby="language_dropdown_menu_button">
+                                <span class="h8 title d-flex pb-2">Select your language</span>
+
+                                <ul class="list-unstyled nav-list p-0 d-block d-md-flex flex-wrap"></ul>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</footer>
+</div>
+</div>
+                <link rel="stylesheet" href="/etc.clientlibs/panClean/dynamicComponents/mainFooterComp/clientlibs/panClean/criticalTop.min.css">
+                <link rel="stylesheet" href="/etc.clientlibs/panClean/dynamicComponents/mainFooterComp/clientlibs/panClean/oldTemplate.min.css">
+				<script type="text/javascript" src="/etc.clientlibs/panClean/dynamicComponents/mainFooterComp/clientlibs/panClean/defered.min.js" defer></script>
+				<script type="text/javascript">
+					$(document).ready(function() {
+						var noScriptNode = document.getElementsByTagName('body')[0];
+						var nonCriticalCss = document.createElement('link');
+						nonCriticalCss.rel = 'stylesheet';
+						nonCriticalCss.href = '/etc.clientlibs/panClean/dynamicComponents/mainFooterComp/clientlibs/panClean/defered.min.css';
+						nonCriticalCss.type = 'text/css';
+						noScriptNode.appendChild(nonCriticalCss);
+				        });
+				</script>
+
+			</div>
+</div><nav id="footerBoxNav" class="navbar-fixed-bottom" aria-label="footer box "><div class="container"><div class="footerBoxNav baseComponent parbase"></div>
+</div></nav><div class="cloudservices servicecomponents"><div id="at-prehide"></div></div>
+</div>
+	<script type="text/javascript">
+	    if(document.getElementsByTagName('video').length > 0){
+             var head = document.getElementsByTagName('head')[0];
+             var video = document.createElement('script');
+             video.type = 'text/javascript';
+             video.src = '/etc/clientlibs/pan/js/video.min.js';
+             head.appendChild(video);
+        }
+    </script>
+	      <noscript></noscript><script type="text/javascript">
+                            {
+                                /* load non critical css */
+                                var myNonCriticalCss = document.createElement('link');
+                                myNonCriticalCss.rel = 'stylesheet';
+                                myNonCriticalCss.href = '/etc/clientlibs/pan-englishOnly.min.css';
+                                myNonCriticalCss.type = 'text/css';
+                                var myNoScriptNode = document.getElementsByTagName('noscript')[0];
+                                myNoScriptNode.appendChild(myNonCriticalCss);
+                            }
+                        </script>
+                    </body></html>

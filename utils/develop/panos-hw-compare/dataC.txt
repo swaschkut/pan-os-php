@@ -1,0 +1,1474 @@
+{"2-0-3-1_dfi": {"name": "App-ID firewall throughput", "group": "Performance"}, "2-0-4-1_dfi": {"name": "FACETApp-ID firewall throughput", "group": "Performance"}, "2-0-5-1_dfi": {"name": "Threat prevention throughput", "group": "Performance"}, "2-0-6-1_dfi": {"name": "FACETThreat prevention throughput", "group": "Performance"}, "2-0-7-1_dfi": {"name": "IPSec VPN throughput", "group": "Performance"}, "2-0-8-1_dfi": {"name": "Connections per second", "group": "Performance"}, "2-0-9-1_dfi": {"name": "FACETConnections per second", "group": "Performance"}, "11-0-12-1_dfi": {"name": "Max sessions (IPv4 or IPv6)", "group": "Sessions"}, "11-0-13-1_dfi": {"name": "FACETMax sessions (IPv4 or IPv6)", "group": "Sessions"}, "15-0-16-1_dfi": {"name": "Security rules", "group": "Policies", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pa-1420": {"note": "Requires PAN-OS 11.0.2 or above"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pa-1410": {"note": "Requires PAN-OS 11.0.2 or above"}}}, "15-0-17-1_dfi": {"name": "Security rule schedules", "group": "Policies", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "15-0-18-1_dfi": {"name": "NAT rules", "group": "Policies", "productNotes": {"pa-5450": {"note": "This capacity is the same regardless of how many DPCs are installed in a PA-5400 Series chassis"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "15-0-19-1_dfi": {"name": "Decryption rules", "group": "Policies", "productNotes": {"pa-5450": {"note": "This capacity is the same regardless of how many DPCs are installed a PA-5400 Series chassis"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "15-0-20-1_dfi": {"name": "App override rules", "group": "Policies", "productNotes": {"pa-5450": {"note": "This capacity is the same regardless of how many DPCs are installed in a PA-5400 Series chassis"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "15-0-21-1_dfi": {"name": "Tunnel content inspection rules", "group": "Policies", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "15-0-22-1_dfi": {"name": "SD-WAN rules", "group": "Policies", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "15-0-23-1_dfi": {"name": "Policy based forwarding rules", "group": "Policies", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "15-0-24-1_dfi": {"name": "Captive portal rules", "group": "Policies", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "15-0-25-1_dfi": {"name": "DoS protection rules", "group": "Policies", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "27-0-28-1_dfi": {"name": "Max security zones", "group": "Security Zones", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pa-1420": {"note": "Requires PAN-OS 11.0.2 or above"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pa-1410": {"note": "Requires PAN-OS 11.0.2 or above"}}}, "30-0-31-1_dfi": {"name": "Address objects", "group": "Objects (addresses and services)", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "30-0-32-1_dfi": {"name": "Address groups", "group": "Objects (addresses and services)", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "30-0-33-1_dfi": {"name": "Members per address group", "group": "Objects (addresses and services)", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "30-0-34-1_dfi": {"name": "Service objects", "group": "Objects (addresses and services)", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "30-0-35-1_dfi": {"name": "Service groups", "group": "Objects (addresses and services)", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "30-0-36-1_dfi": {"name": "Members per service group", "group": "Objects (addresses and services)", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "30-0-37-1_dfi": {"name": "FQDN address objects", "group": "Objects (addresses and services)", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "30-0-38-1_dfi": {"name": "Max DAG IP addresses", "group": "Objects (addresses and services)", "details": "System wide capacity", "productNotes": {"pa-7050": {"note": "Capacity based on SMC model capacity"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pa-7080": {"note": "Capacity based on SMC model capacity"}}}, "30-0-39-1_dfi": {"name": "Tags per IP address", "group": "Objects (addresses and services)", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "41-0-42-1_dfi": {"name": "Security profiles", "group": "Security Profiles", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "44-0-45-1_dfi": {"name": "Custom App-ID signatures", "group": "App-ID", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "44-0-46-1_dfi": {"name": "Shared custom App-IDs", "group": "App-ID", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "44-0-47-1_dfi": {"name": "Custom App-IDs (virtual system specific)", "group": "App-ID", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "49-0-50-1_dfi": {"name": "IP-User mappings (management plane)", "group": "User-ID"}, "49-0-51-1_dfi": {"name": "IP-User mappings (data plane)", "group": "User-ID", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "49-0-52-1_dfi": {"name": "Active and unique groups used in policy", "group": "User-ID", "details": "Aggregate of LDAP groups, XML API Groups and Dynamic User Groups", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "49-0-53-1_dfi": {"name": "Number of User-ID agents", "group": "User-ID", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "49-0-54-1_dfi": {"name": "Monitored servers for User-ID", "group": "User-ID", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "49-0-55-1_dfi": {"name": "Terminal server agents", "group": "User-ID", "productNotes": {"pa-7050": {"note": "Capacity based on SMC model capacity"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pa-7080": {"note": "Capacity based on SMC model capacity"}}}, "49-0-56-1_dfi": {"name": "Tags per User", "group": "User-ID", "details": "Only valid for PAN-OS 9.1 and above"}, "58-0-59-1_dfi": {"name": "Max SSL inbound certificates", "group": "SSL Decryption", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "58-0-60-1_dfi": {"name": "SSL certificate cache (forward proxy)", "group": "SSL Decryption", "productNotes": {"pa-7050": {"note": "Maximum cache entries supported with high capacity NPC cards"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pa-7080": {"note": "Maximum cache entries supported with high capacity NPC cards"}}}, "58-0-61-1_dfi": {"name": "Max concurrent decryption sessions", "group": "SSL Decryption", "productNotes": {"pa-7050": {"note": "Maximum sessions supported with high capacity NPC cards"}, "pa-7080": {"note": "Maximum sessions supported with high capacity NPC cards"}}}, "58-0-62-1_dfi": {"name": "Decryption Port Mirror", "group": "SSL Decryption"}, "58-0-63-1_dfi": {"name": "Network Packet Broker", "group": "SSL Decryption", "details": "For VM-Series, check VM Flex licensing on Customer Support Portal"}, "58-0-64-1_dfi": {"name": "HSM Supported", "group": "SSL Decryption"}, "66-0-67-1_dfi": {"name": "Total entries for allow list, block list and custom categories", "group": "URL Filtering", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "66-0-68-1_dfi": {"name": "Max custom categories", "group": "URL Filtering", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "66-0-69-1_dfi": {"name": "Max custom categories (virtual system specific)", "group": "URL Filtering", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "66-0-70-1_dfi": {"name": "Dataplane cache size for URL filtering", "group": "URL Filtering"}, "66-0-71-1_dfi": {"name": "Management plane dynamic cache size", "group": "URL Filtering"}, "73-0-74-1_dfi": {"name": "Max number of custom lists", "group": "EDL"}, "73-0-75-1_dfi": {"name": "Max number of IPs per system", "group": "EDL"}, "73-0-76-1_dfi": {"name": "Max number of DNS Domains per system", "group": "EDL"}, "73-0-77-1_dfi": {"name": "Max number of URL per system", "group": "EDL"}, "73-0-78-1_dfi": {"name": "Shortest check interval (min)", "group": "EDL"}, "80-0-81-1_dfi": {"name": "Mgmt - out-of-band", "group": "Interfaces"}, "80-0-82-1_dfi": {"name": "Mgmt - 10/100/1000 high availability", "group": "Interfaces"}, "80-0-83-1_dfi": {"name": "Mgmt - 40Gbps high availability", "group": "Interfaces"}, "80-0-84-1_dfi": {"name": "Mgmt - 10Gbps high availability", "group": "Interfaces"}, "80-0-85-1_dfi": {"name": "Traffic - 10/100/1000", "group": "Interfaces"}, "80-0-86-1_dfi": {"name": "Traffic - 10M/100M/1G/2.5G/5G", "group": "Interfaces", "details": "10M/100M/..."}, "80-0-87-1_dfi": {"name": "Traffic - 100/1000/10000", "group": "Interfaces"}, "80-0-88-1_dfi": {"name": "Traffic - 1Gbps SFP", "group": "Interfaces"}, "80-0-89-1_dfi": {"name": "Traffic - 10Gbps SFP+", "group": "Interfaces"}, "80-0-90-1_dfi": {"name": "Traffic - 25Gbps SFP28", "group": "Interfaces"}, "80-0-91-1_dfi": {"name": "Traffic - 40/100Gbps QSFP+/QSFP28", "group": "Interfaces"}, "80-0-92-1_dfi": {"name": "802.1q tags per device", "group": "Interfaces", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "80-0-93-1_dfi": {"name": "802.1q tags per physical interface", "group": "Interfaces", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "80-0-94-1_dfi": {"name": "Max interfaces (logical and physical)", "group": "Interfaces", "productNotes": {"pa-7050": {"note": "Capacity based on SMC model capacity"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pa-7080": {"note": "Capacity based on SMC model capacity"}}}, "80-0-95-1_dfi": {"name": "Maximum aggregate interfaces", "group": "Interfaces", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "80-0-96-1_dfi": {"name": "Maximum SD-WAN virtual interfaces", "group": "Interfaces", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "98-0-99-1_dfi": {"name": "PoE Enabled Interfaces", "group": "Power Over Ethernet"}, "98-0-100-1_dfi": {"name": "PoE Interface Speed", "group": "Power Over Ethernet"}, "98-0-101-1_dfi": {"name": "Total Power Budget", "group": "Power Over Ethernet"}, "98-0-102-1_dfi": {"name": "Max Power per single port", "group": "Power Over Ethernet"}, "104-0-105-1_dfi": {"name": "5G", "group": "Cellular Interface"}, "107-0-108-1_dfi": {"name": "Virtual routers", "group": "Virtual Routers", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "110-0-111-1_dfi": {"name": "Virtual wires", "group": "Virtual Wires", "productNotes": {"pa-7050": {"note": "Capacity based on SMC model capacity"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pa-7080": {"note": "Capacity based on SMC model capacity"}}}, "113-0-114-1_dfi": {"name": "Base virtual systems", "group": "Virtual Systems", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "113-0-115-1_dfi": {"name": "Max virtual systems", "group": "Virtual Systems", "details": "Additional licenses are required for virtual system capacities above the base virtual systems capacity", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "117-0-118-1_dfi": {"name": "IPv4 forwarding table size", "group": "Routing", "details": "Entries shared across virtual routers", "productNotes": {"pa-7050": {"note": "Capacity based on SMC model capacity"}, "pan-pa-5400-dpc-a": {"note": "Capacity based on SMC model capacity"}, "pan-pa-7000-100g-npc-a": {"note": "Capacity based on SMC model capacity"}, "pan-pa-7000-dpc-a": {"note": "Capacity based on SMC model capacity"}, "pa-7080": {"note": "Capacity based on SMC model capacity"}}}, "117-0-119-1_dfi": {"name": "IPv6 forwarding table size", "group": "Routing", "details": "Entries shared across virtual routers", "productNotes": {"pa-7050": {"note": "Capacity based on SMC model capacity"}, "pan-pa-5400-dpc-a": {"note": "Capacity based on SMC model capacity"}, "pan-pa-7000-100g-npc-a": {"note": "Capacity based on SMC model capacity"}, "pan-pa-7000-dpc-a": {"note": "Capacity based on SMC model capacity"}, "pa-7080": {"note": "Capacity based on SMC model capacity"}}}, "117-0-120-1_dfi": {"name": "System total forwarding table size", "group": "Routing", "productNotes": {"pa-7050": {"note": "Capacity based on SMC model capacity"}, "pan-pa-5400-dpc-a": {"note": "Capacity based on SMC model capacity"}, "pan-pa-7000-100g-npc-a": {"note": "Capacity based on SMC model capacity"}, "pan-pa-7000-dpc-a": {"note": "Capacity based on SMC model capacity"}, "pa-7080": {"note": "Capacity based on SMC model capacity"}}}, "117-0-121-1_dfi": {"name": "Max route maps per virtual router", "group": "Routing", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "117-0-122-1_dfi": {"name": "Max routing peers (protocol dependent)", "group": "Routing", "productNotes": {"pa-7050": {"note": "Capacity based on SMC model capacity"}, "pan-pa-5400-dpc-a": {"note": "Capacity based on SMC model capacity"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pa-7080": {"note": "Capacity based on SMC model capacity"}}}, "117-0-123-1_dfi": {"name": "Static entries - DNS proxy", "group": "Routing", "productNotes": {"pan-pa-5400-dpc-a": {"note": "Capacity based on SMC model capacity"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "117-0-124-1_dfi": {"name": "Bidirectional Forwarding Detection (BFD) Sessions", "group": "Routing", "productNotes": {"pan-pa-5400-dpc-a": {"note": "Capacity based on SMC model capacity"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "126-0-127-1_dfi": {"name": "ARP table size per device", "group": "L2 Forwarding", "productNotes": {"pa-7050": {"note": "Capacity based on SMC model capacity"}, "pa-5450": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-5400-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pa-7080": {"note": "Capacity based on SMC model capacity"}}}, "126-0-128-1_dfi": {"name": "IPv6 neighbor table size", "group": "L2 Forwarding", "productNotes": {"pa-7050": {"note": "Capacity based on SMC model capacity"}, "pa-5450": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-5400-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pa-7080": {"note": "Capacity based on SMC model capacity"}}}, "126-0-129-1_dfi": {"name": "MAC table size per device", "group": "L2 Forwarding", "productNotes": {"pa-7050": {"note": "Capacity based on SMC model capacity"}, "pa-5450": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-5400-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pa-7080": {"note": "Capacity based on SMC model capacity"}}}, "126-0-130-1_dfi": {"name": "Max ARP entries per broadcast domain", "group": "L2 Forwarding", "productNotes": {"pa-7050": {"note": "Capacity based on SMC model capacity"}, "pa-5450": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-5400-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pa-7080": {"note": "Capacity based on SMC model capacity"}}}, "126-0-131-1_dfi": {"name": "Max MAC entries per broadcast domain", "group": "L2 Forwarding", "productNotes": {"pa-7050": {"note": "Capacity based on SMC model capacity"}, "pa-5450": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-5400-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pa-7080": {"note": "Capacity based on SMC model capacity"}}}, "134-0-135-1_dfi": {"name": "Total NAT rule capacity", "group": "NAT", "productNotes": {"pa-5450": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-5400-dpc-a": {"note": "Capacity based on SMC model capacity"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "134-0-136-1_dfi": {"name": "Max NAT rules (static)", "group": "NAT", "details": "Configuring static NAT rules to full capacity requires that no other NAT rule types are used.", "productNotes": {"pa-5450": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-5400-dpc-a": {"note": "Capacity based on SMC model capacity"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "134-0-137-1_dfi": {"name": "Max NAT rules (DIP)", "group": "NAT", "details": "Configuring DIP NAT rules to full capacity requires that no other NAT rule types are used.", "productNotes": {"pa-5450": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-5400-dpc-a": {"note": "Capacity based on SMC model capacity"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "134-0-138-1_dfi": {"name": "Max NAT rules (DIPP)", "group": "NAT", "productNotes": {"pa-5450": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-5400-dpc-a": {"note": "Capacity based on SMC model capacity"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "134-0-139-1_dfi": {"name": "Max translated IPs (DIP)", "group": "NAT", "productNotes": {"pa-5450": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-5400-dpc-a": {"note": "Capacity based on SMC model capacity"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "134-0-140-1_dfi": {"name": "Max translated IPs (DIPP)", "group": "NAT", "details": "DIPP translated IP capacity is proportional to the DIPP pool oversubscription value. The capacity shown here is based on an oversubscription value of 1x.", "productNotes": {"pa-5450": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-5400-dpc-a": {"note": "Capacity based on SMC model capacity"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "134-0-141-1_dfi": {"name": "Default DIPP pool oversubscription", "group": "NAT", "details": "Source IP and source port reuse across concurrent sessions", "productNotes": {"pa-5450": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-5400-dpc-a": {"note": "Capacity based on SMC model capacity"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "143-0-144-1_dfi": {"name": "DHCP servers", "group": "Address Assignment", "productNotes": {"pa-5450": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-5400-dpc-a": {"note": "Capacity based on SMC model capacity"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "143-0-145-1_dfi": {"name": "DHCP relays", "group": "Address Assignment", "details": "Maximum capacity represents total DHCP servers and DHCP relays combined", "productNotes": {"pa-7050": {"note": "Total includes number of DHCP servers and DHCP relays"}, "pa-3250": {"note": "Total includes number of DHCP servers and DHCP relays"}, "pa-5450": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pa-5250": {"note": "Total includes number of DHCP servers and DHCP relays"}, "pan-pa-5400-dpc-a": {"note": "Capacity based on SMC model capacity"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pa-1410": {"note": "Total includes number of DHCP servers and DHCP relays"}, "pa-220r": {"note": "Total includes number of DHCP servers and DHCP relays"}, "pa-820": {"note": "Total includes number of DHCP servers and DHCP relays"}, "pa-445": {"note": "Total includes number of DHCP servers and DHCP relays"}, "pa-460": {"note": "Total includes number of DHCP servers and DHCP relays"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pa-440": {"note": "Total includes number of DHCP servers and DHCP relays"}, "pa-220": {"note": "Total includes number of DHCP servers and DHCP relays"}, "pa-5260": {"note": "Total includes number of DHCP servers and DHCP relays"}, "pa-5280": {"note": "Total includes number of DHCP servers and DHCP relays"}, "pa-5220": {"note": "Total includes number of DHCP servers and DHCP relays"}, "pa-3260": {"note": "Total includes number of DHCP servers and DHCP relays"}, "pa-3220": {"note": "Total includes number of DHCP servers and DHCP relays"}, "pa-1420": {"note": "Total includes number of DHCP servers and DHCP relays"}, "pa-415": {"note": "Total includes number of DHCP servers and DHCP relays"}, "pa-450": {"note": "Total includes number of DHCP servers and DHCP relays"}, "pa-410": {"note": "Total includes number of DHCP servers and DHCP relays"}, "pa-850": {"note": "Total includes number of DHCP servers and DHCP relays"}, "pa-7080": {"note": "Total includes number of DHCP servers and DHCP relays"}}}, "143-0-146-1_dfi": {"name": "Max number of assigned addresses", "group": "Address Assignment", "productNotes": {"pa-5450": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-5400-dpc-a": {"note": "Capacity based on SMC model capacity"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "148-0-149-1_dfi": {"name": "Devices supported", "group": "High Availability", "productNotes": {"pan-pa-5400-dpc-a": {"note": "Capacity based on SMC model capacity"}}}, "148-0-150-1_dfi": {"name": "Max virtual addresses", "group": "High Availability", "productNotes": {"pa-5450": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-5400-dpc-a": {"note": "Capacity based on SMC model capacity"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "152-0-153-1_dfi": {"name": "Number of QoS policies", "group": "QoS", "productNotes": {"pa-5450": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-5400-dpc-a": {"note": "Capacity based on SMC model capacity"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "152-0-154-1_dfi": {"name": "Physical interfaces supporting QoS", "group": "QoS", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "Limited by the capacity enforced per PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "Limited by the capacity enforced per PA-7000 Series chassis"}}}, "152-0-155-1_dfi": {"name": "Clear text nodes per physical interface", "group": "QoS", "productNotes": {"pa-5450": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-5400-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "152-0-156-1_dfi": {"name": "DSCP marking by policy", "group": "QoS", "productNotes": {"pa-5450": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-5400-dpc-a": {"note": "Capacity based on SMC model capacity"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "152-0-157-1_dfi": {"name": "Subinterfaces supported", "group": "QoS", "productNotes": {"pa-5450": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-5400-dpc-a": {"note": "Capacity based on SMC model capacity"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "159-0-160-1_dfi": {"name": "Max IKE Peers", "group": "IPSec VPN", "productNotes": {"pan-pa-5400-dpc-a": {"note": "Capacity based on SMC model capacity"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many XM NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many XM NPCs are installed in the PA-7000 Series chassis"}}}, "159-0-161-1_dfi": {"name": "Site to site (with proxy id)", "group": "IPSec VPN", "productNotes": {"pa-7050": {"note": "Standard memory NPC / XM or 100G NPC"}, "pan-pa-5400-dpc-a": {"note": "Capacity based on SMC model capacity"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many XM NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many XM NPCs are installed in the PA-7000 Series chassis"}, "pa-7080": {"note": "Standard memory NPC / XM or 100G NPC"}}}, "159-0-162-1_dfi": {"name": "SD-WAN IPSec tunnels", "group": "IPSec VPN", "productNotes": {"pa-7050": {"note": "Standard memory NPC / XM or 100G NPC"}, "pan-pa-5400-dpc-a": {"note": "Capacity based on SMC model capacity"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many XM NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many XM NPCs are installed in the PA-7000 Series chassis"}, "pa-7080": {"note": "Standard memory NPC / XM or 100G NPC"}}}, "164-0-165-1_dfi": {"name": "Max tunnels (SSL, IPSec, and IKE with XAUTH)", "group": "GlobalProtect Client VPN", "productNotes": {"pa-7050": {"note": "Capacity based on SMC model capacity"}, "pan-pa-5400-dpc-a": {"note": "Capacity based on SMC model capacity"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pa-7080": {"note": "Capacity based on SMC model capacity"}}}, "167-0-168-1_dfi": {"name": "Max SSL tunnels", "group": "GlobalProtect Clientless VPN", "productNotes": {"pa-7050": {"note": "Capacity based on SMC model capacity"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many XM NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many XM NPCs are installed in the PA-7000 Series chassis"}, "pa-7080": {"note": "Capacity based on SMC model capacity"}}}, "170-0-171-1_dfi": {"name": "Replication (egress interfaces)", "group": "Multicast", "productNotes": {"pa-7050": {"note": "Standard memory NPC / XM or 100G NPC"}, "pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pa-7080": {"note": "Standard memory NPC / XM or 100G NPC"}}}, "170-0-172-1_dfi": {"name": "Routes", "group": "Multicast", "productNotes": {"pan-pa-7000-100g-npc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}, "pan-pa-7000-dpc-a": {"note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"}}}, "174-0-175-1_dfi": {"name": "End-of-sale", "group": "Product Notes"}}
+
+{
+    "2-0-3-1_dfi": {
+        "name": "App-ID firewall throughput",
+        "group": "Performance"
+    },
+    "2-0-4-1_dfi": {
+        "name": "FACETApp-ID firewall throughput",
+        "group": "Performance"
+    },
+    "2-0-5-1_dfi": {
+        "name": "Threat prevention throughput",
+        "group": "Performance"
+    },
+    "2-0-6-1_dfi": {
+        "name": "FACETThreat prevention throughput",
+        "group": "Performance"
+    },
+    "2-0-7-1_dfi": {
+        "name": "IPSec VPN throughput",
+        "group": "Performance"
+    },
+    "2-0-8-1_dfi": {
+        "name": "Connections per second",
+        "group": "Performance"
+    },
+    "2-0-9-1_dfi": {
+        "name": "FACETConnections per second",
+        "group": "Performance"
+    },
+    "11-0-12-1_dfi": {
+        "name": "Max sessions (IPv4 or IPv6)",
+        "group": "Sessions"
+    },
+    "11-0-13-1_dfi": {
+        "name": "FACETMax sessions (IPv4 or IPv6)",
+        "group": "Sessions"
+    },
+    "15-0-16-1_dfi": {
+        "name": "Security rules",
+        "group": "Policies",
+        "productNotes": {
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pa-1420": {
+                "note": "Requires PAN-OS 11.0.2 or above"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pa-1410": {
+                "note": "Requires PAN-OS 11.0.2 or above"
+            }
+        }
+    },
+    "15-0-17-1_dfi": {
+        "name": "Security rule schedules",
+        "group": "Policies",
+        "productNotes": {
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            }
+        }
+    },
+    "15-0-18-1_dfi": {
+        "name": "NAT rules",
+        "group": "Policies",
+        "productNotes": {
+            "pa-5450": {
+                "note": "This capacity is the same regardless of how many DPCs are installed in a PA-5400 Series chassis"
+            },
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            }
+        }
+    },
+    "15-0-19-1_dfi": {
+        "name": "Decryption rules",
+        "group": "Policies",
+        "productNotes": {
+            "pa-5450": {
+                "note": "This capacity is the same regardless of how many DPCs are installed a PA-5400 Series chassis"
+            },
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            }
+        }
+    },
+    "15-0-20-1_dfi": {
+        "name": "App override rules",
+        "group": "Policies",
+        "productNotes": {
+            "pa-5450": {
+                "note": "This capacity is the same regardless of how many DPCs are installed in a PA-5400 Series chassis"
+            },
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            }
+        }
+    },
+    "15-0-21-1_dfi": {
+        "name": "Tunnel content inspection rules",
+        "group": "Policies",
+        "productNotes": {
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            }
+        }
+    },
+    "15-0-22-1_dfi": {
+        "name": "SD-WAN rules",
+        "group": "Policies",
+        "productNotes": {
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            }
+        }
+    },
+    "15-0-23-1_dfi": {
+        "name": "Policy based forwarding rules",
+        "group": "Policies",
+        "productNotes": {
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            }
+        }
+    },
+    "15-0-24-1_dfi": {
+        "name": "Captive portal rules",
+        "group": "Policies",
+        "productNotes": {
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            }
+        }
+    },
+    "15-0-25-1_dfi": {
+        "name": "DoS protection rules",
+        "group": "Policies",
+        "productNotes": {
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            }
+        }
+    },
+    "27-0-28-1_dfi": {
+        "name": "Max security zones",
+        "group": "Security Zones",
+        "productNotes": {
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pa-1420": {
+                "note": "Requires PAN-OS 11.0.2 or above"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pa-1410": {
+                "note": "Requires PAN-OS 11.0.2 or above"
+            }
+        }
+    },
+    "30-0-31-1_dfi": {
+        "name": "Address objects",
+        "group": "Objects (addresses and services)",
+        "productNotes": {
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            }
+        }
+    },
+    "30-0-32-1_dfi": {
+        "name": "Address groups",
+        "group": "Objects (addresses and services)",
+        "productNotes": {
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            }
+        }
+    },
+    "30-0-33-1_dfi": {
+        "name": "Members per address group",
+        "group": "Objects (addresses and services)",
+        "productNotes": {
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            }
+        }
+    },
+    "30-0-34-1_dfi": {
+        "name": "Service objects",
+        "group": "Objects (addresses and services)",
+        "productNotes": {
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            }
+        }
+    },
+    "30-0-35-1_dfi": {
+        "name": "Service groups",
+        "group": "Objects (addresses and services)",
+        "productNotes": {
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            }
+        }
+    },
+    "30-0-36-1_dfi": {
+        "name": "Members per service group",
+        "group": "Objects (addresses and services)",
+        "productNotes": {
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            }
+        }
+    },
+    "30-0-37-1_dfi": {
+        "name": "FQDN address objects",
+        "group": "Objects (addresses and services)",
+        "productNotes": {
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            }
+        }
+    },
+    "30-0-38-1_dfi": {
+        "name": "Max DAG IP addresses",
+        "group": "Objects (addresses and services)",
+        "details": "System wide capacity",
+        "productNotes": {
+            "pa-7050": {
+                "note": "Capacity based on SMC model capacity"
+            },
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pa-7080": {
+                "note": "Capacity based on SMC model capacity"
+            }
+        }
+    },
+    "30-0-39-1_dfi": {
+        "name": "Tags per IP address",
+        "group": "Objects (addresses and services)",
+        "productNotes": {
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            }
+        }
+    },
+    "41-0-42-1_dfi": {
+        "name": "Security profiles",
+        "group": "Security Profiles",
+        "productNotes": {
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            }
+        }
+    },
+    "44-0-45-1_dfi": {
+        "name": "Custom App-ID signatures",
+        "group": "App-ID",
+        "productNotes": {
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            }
+        }
+    },
+    "44-0-46-1_dfi": {
+        "name": "Shared custom App-IDs",
+        "group": "App-ID",
+        "productNotes": {
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            }
+        }
+    },
+    "44-0-47-1_dfi": {
+        "name": "Custom App-IDs (virtual system specific)",
+        "group": "App-ID",
+        "productNotes": {
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            }
+        }
+    },
+    "49-0-50-1_dfi": {
+        "name": "IP-User mappings (management plane)",
+        "group": "User-ID"
+    },
+    "49-0-51-1_dfi": {
+        "name": "IP-User mappings (data plane)",
+        "group": "User-ID",
+        "productNotes": {
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            }
+        }
+    },
+    "49-0-52-1_dfi": {
+        "name": "Active and unique groups used in policy",
+        "group": "User-ID",
+        "details": "Aggregate of LDAP groups, XML API Groups and Dynamic User Groups",
+        "productNotes": {
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            }
+        }
+    },
+    "49-0-53-1_dfi": {
+        "name": "Number of User-ID agents",
+        "group": "User-ID",
+        "productNotes": {
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            }
+        }
+    },
+    "49-0-54-1_dfi": {
+        "name": "Monitored servers for User-ID",
+        "group": "User-ID",
+        "productNotes": {
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            }
+        }
+    },
+    "49-0-55-1_dfi": {
+        "name": "Terminal server agents",
+        "group": "User-ID",
+        "productNotes": {
+            "pa-7050": {
+                "note": "Capacity based on SMC model capacity"
+            },
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pa-7080": {
+                "note": "Capacity based on SMC model capacity"
+            }
+        }
+    },
+    "49-0-56-1_dfi": {
+        "name": "Tags per User",
+        "group": "User-ID",
+        "details": "Only valid for PAN-OS 9.1 and above"
+    },
+    "58-0-59-1_dfi": {
+        "name": "Max SSL inbound certificates",
+        "group": "SSL Decryption",
+        "productNotes": {
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            }
+        }
+    },
+    "58-0-60-1_dfi": {
+        "name": "SSL certificate cache (forward proxy)",
+        "group": "SSL Decryption",
+        "productNotes": {
+            "pa-7050": {
+                "note": "Maximum cache entries supported with high capacity NPC cards"
+            },
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pa-7080": {
+                "note": "Maximum cache entries supported with high capacity NPC cards"
+            }
+        }
+    },
+    "58-0-61-1_dfi": {
+        "name": "Max concurrent decryption sessions",
+        "group": "SSL Decryption",
+        "productNotes": {
+            "pa-7050": {
+                "note": "Maximum sessions supported with high capacity NPC cards"
+            },
+            "pa-7080": {
+                "note": "Maximum sessions supported with high capacity NPC cards"
+            }
+        }
+    },
+    "58-0-62-1_dfi": {
+        "name": "Decryption Port Mirror",
+        "group": "SSL Decryption"
+    },
+    "58-0-63-1_dfi": {
+        "name": "Network Packet Broker",
+        "group": "SSL Decryption",
+        "details": "For VM-Series, check VM Flex licensing on Customer Support Portal"
+    },
+    "58-0-64-1_dfi": {
+        "name": "HSM Supported",
+        "group": "SSL Decryption"
+    },
+    "66-0-67-1_dfi": {
+        "name": "Total entries for allow list, block list and custom categories",
+        "group": "URL Filtering",
+        "productNotes": {
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            }
+        }
+    },
+    "66-0-68-1_dfi": {
+        "name": "Max custom categories",
+        "group": "URL Filtering",
+        "productNotes": {
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            }
+        }
+    },
+    "66-0-69-1_dfi": {
+        "name": "Max custom categories (virtual system specific)",
+        "group": "URL Filtering",
+        "productNotes": {
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            }
+        }
+    },
+    "66-0-70-1_dfi": {
+        "name": "Dataplane cache size for URL filtering",
+        "group": "URL Filtering"
+    },
+    "66-0-71-1_dfi": {
+        "name": "Management plane dynamic cache size",
+        "group": "URL Filtering"
+    },
+    "73-0-74-1_dfi": {
+        "name": "Max number of custom lists",
+        "group": "EDL"
+    },
+    "73-0-75-1_dfi": {
+        "name": "Max number of IPs per system",
+        "group": "EDL"
+    },
+    "73-0-76-1_dfi": {
+        "name": "Max number of DNS Domains per system",
+        "group": "EDL"
+    },
+    "73-0-77-1_dfi": {
+        "name": "Max number of URL per system",
+        "group": "EDL"
+    },
+    "73-0-78-1_dfi": {
+        "name": "Shortest check interval (min)",
+        "group": "EDL"
+    },
+    "80-0-81-1_dfi": {
+        "name": "Mgmt - out-of-band",
+        "group": "Interfaces"
+    },
+    "80-0-82-1_dfi": {
+        "name": "Mgmt - 10/100/1000 high availability",
+        "group": "Interfaces"
+    },
+    "80-0-83-1_dfi": {
+        "name": "Mgmt - 40Gbps high availability",
+        "group": "Interfaces"
+    },
+    "80-0-84-1_dfi": {
+        "name": "Mgmt - 10Gbps high availability",
+        "group": "Interfaces"
+    },
+    "80-0-85-1_dfi": {
+        "name": "Traffic - 10/100/1000",
+        "group": "Interfaces"
+    },
+    "80-0-86-1_dfi": {
+        "name": "Traffic - 10M/100M/1G/2.5G/5G",
+        "group": "Interfaces",
+        "details": "10M/100M/..."
+    },
+    "80-0-87-1_dfi": {
+        "name": "Traffic - 100/1000/10000",
+        "group": "Interfaces"
+    },
+    "80-0-88-1_dfi": {
+        "name": "Traffic - 1Gbps SFP",
+        "group": "Interfaces"
+    },
+    "80-0-89-1_dfi": {
+        "name": "Traffic - 10Gbps SFP+",
+        "group": "Interfaces"
+    },
+    "80-0-90-1_dfi": {
+        "name": "Traffic - 25Gbps SFP28",
+        "group": "Interfaces"
+    },
+    "80-0-91-1_dfi": {
+        "name": "Traffic - 40/100Gbps QSFP+/QSFP28",
+        "group": "Interfaces"
+    },
+    "80-0-92-1_dfi": {
+        "name": "802.1q tags per device",
+        "group": "Interfaces",
+        "productNotes": {
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            }
+        }
+    },
+    "80-0-93-1_dfi": {
+        "name": "802.1q tags per physical interface",
+        "group": "Interfaces",
+        "productNotes": {
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            }
+        }
+    },
+    "80-0-94-1_dfi": {
+        "name": "Max interfaces (logical and physical)",
+        "group": "Interfaces",
+        "productNotes": {
+            "pa-7050": {
+                "note": "Capacity based on SMC model capacity"
+            },
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pa-7080": {
+                "note": "Capacity based on SMC model capacity"
+            }
+        }
+    },
+    "80-0-95-1_dfi": {
+        "name": "Maximum aggregate interfaces",
+        "group": "Interfaces",
+        "productNotes": {
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            }
+        }
+    },
+    "80-0-96-1_dfi": {
+        "name": "Maximum SD-WAN virtual interfaces",
+        "group": "Interfaces",
+        "productNotes": {
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            }
+        }
+    },
+    "98-0-99-1_dfi": {
+        "name": "PoE Enabled Interfaces",
+        "group": "Power Over Ethernet"
+    },
+    "98-0-100-1_dfi": {
+        "name": "PoE Interface Speed",
+        "group": "Power Over Ethernet"
+    },
+    "98-0-101-1_dfi": {
+        "name": "Total Power Budget",
+        "group": "Power Over Ethernet"
+    },
+    "98-0-102-1_dfi": {
+        "name": "Max Power per single port",
+        "group": "Power Over Ethernet"
+    },
+    "104-0-105-1_dfi": {
+        "name": "5G",
+        "group": "Cellular Interface"
+    },
+    "107-0-108-1_dfi": {
+        "name": "Virtual routers",
+        "group": "Virtual Routers",
+        "productNotes": {
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            }
+        }
+    },
+    "110-0-111-1_dfi": {
+        "name": "Virtual wires",
+        "group": "Virtual Wires",
+        "productNotes": {
+            "pa-7050": {
+                "note": "Capacity based on SMC model capacity"
+            },
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pa-7080": {
+                "note": "Capacity based on SMC model capacity"
+            }
+        }
+    },
+    "113-0-114-1_dfi": {
+        "name": "Base virtual systems",
+        "group": "Virtual Systems",
+        "productNotes": {
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            }
+        }
+    },
+    "113-0-115-1_dfi": {
+        "name": "Max virtual systems",
+        "group": "Virtual Systems",
+        "details": "Additional licenses are required for virtual system capacities above the base virtual systems capacity",
+        "productNotes": {
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            }
+        }
+    },
+    "117-0-118-1_dfi": {
+        "name": "IPv4 forwarding table size",
+        "group": "Routing",
+        "details": "Entries shared across virtual routers",
+        "productNotes": {
+            "pa-7050": {
+                "note": "Capacity based on SMC model capacity"
+            },
+            "pan-pa-5400-dpc-a": {
+                "note": "Capacity based on SMC model capacity"
+            },
+            "pan-pa-7000-100g-npc-a": {
+                "note": "Capacity based on SMC model capacity"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "Capacity based on SMC model capacity"
+            },
+            "pa-7080": {
+                "note": "Capacity based on SMC model capacity"
+            }
+        }
+    },
+    "117-0-119-1_dfi": {
+        "name": "IPv6 forwarding table size",
+        "group": "Routing",
+        "details": "Entries shared across virtual routers",
+        "productNotes": {
+            "pa-7050": {
+                "note": "Capacity based on SMC model capacity"
+            },
+            "pan-pa-5400-dpc-a": {
+                "note": "Capacity based on SMC model capacity"
+            },
+            "pan-pa-7000-100g-npc-a": {
+                "note": "Capacity based on SMC model capacity"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "Capacity based on SMC model capacity"
+            },
+            "pa-7080": {
+                "note": "Capacity based on SMC model capacity"
+            }
+        }
+    },
+    "117-0-120-1_dfi": {
+        "name": "System total forwarding table size",
+        "group": "Routing",
+        "productNotes": {
+            "pa-7050": {
+                "note": "Capacity based on SMC model capacity"
+            },
+            "pan-pa-5400-dpc-a": {
+                "note": "Capacity based on SMC model capacity"
+            },
+            "pan-pa-7000-100g-npc-a": {
+                "note": "Capacity based on SMC model capacity"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "Capacity based on SMC model capacity"
+            },
+            "pa-7080": {
+                "note": "Capacity based on SMC model capacity"
+            }
+        }
+    },
+    "117-0-121-1_dfi": {
+        "name": "Max route maps per virtual router",
+        "group": "Routing",
+        "productNotes": {
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            }
+        }
+    },
+    "117-0-122-1_dfi": {
+        "name": "Max routing peers (protocol dependent)",
+        "group": "Routing",
+        "productNotes": {
+            "pa-7050": {
+                "note": "Capacity based on SMC model capacity"
+            },
+            "pan-pa-5400-dpc-a": {
+                "note": "Capacity based on SMC model capacity"
+            },
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pa-7080": {
+                "note": "Capacity based on SMC model capacity"
+            }
+        }
+    },
+    "117-0-123-1_dfi": {
+        "name": "Static entries - DNS proxy",
+        "group": "Routing",
+        "productNotes": {
+            "pan-pa-5400-dpc-a": {
+                "note": "Capacity based on SMC model capacity"
+            },
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            }
+        }
+    },
+    "117-0-124-1_dfi": {
+        "name": "Bidirectional Forwarding Detection (BFD) Sessions",
+        "group": "Routing",
+        "productNotes": {
+            "pan-pa-5400-dpc-a": {
+                "note": "Capacity based on SMC model capacity"
+            },
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            }
+        }
+    },
+    "126-0-127-1_dfi": {
+        "name": "ARP table size per device",
+        "group": "L2 Forwarding",
+        "productNotes": {
+            "pa-7050": {
+                "note": "Capacity based on SMC model capacity"
+            },
+            "pa-5450": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-5400-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pa-7080": {
+                "note": "Capacity based on SMC model capacity"
+            }
+        }
+    },
+    "126-0-128-1_dfi": {
+        "name": "IPv6 neighbor table size",
+        "group": "L2 Forwarding",
+        "productNotes": {
+            "pa-7050": {
+                "note": "Capacity based on SMC model capacity"
+            },
+            "pa-5450": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-5400-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pa-7080": {
+                "note": "Capacity based on SMC model capacity"
+            }
+        }
+    },
+    "126-0-129-1_dfi": {
+        "name": "MAC table size per device",
+        "group": "L2 Forwarding",
+        "productNotes": {
+            "pa-7050": {
+                "note": "Capacity based on SMC model capacity"
+            },
+            "pa-5450": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-5400-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pa-7080": {
+                "note": "Capacity based on SMC model capacity"
+            }
+        }
+    },
+    "126-0-130-1_dfi": {
+        "name": "Max ARP entries per broadcast domain",
+        "group": "L2 Forwarding",
+        "productNotes": {
+            "pa-7050": {
+                "note": "Capacity based on SMC model capacity"
+            },
+            "pa-5450": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-5400-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pa-7080": {
+                "note": "Capacity based on SMC model capacity"
+            }
+        }
+    },
+    "126-0-131-1_dfi": {
+        "name": "Max MAC entries per broadcast domain",
+        "group": "L2 Forwarding",
+        "productNotes": {
+            "pa-7050": {
+                "note": "Capacity based on SMC model capacity"
+            },
+            "pa-5450": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-5400-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pa-7080": {
+                "note": "Capacity based on SMC model capacity"
+            }
+        }
+    },
+    "134-0-135-1_dfi": {
+        "name": "Total NAT rule capacity",
+        "group": "NAT",
+        "productNotes": {
+            "pa-5450": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-5400-dpc-a": {
+                "note": "Capacity based on SMC model capacity"
+            },
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            }
+        }
+    },
+    "134-0-136-1_dfi": {
+        "name": "Max NAT rules (static)",
+        "group": "NAT",
+        "details": "Configuring static NAT rules to full capacity requires that no other NAT rule types are used.",
+        "productNotes": {
+            "pa-5450": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-5400-dpc-a": {
+                "note": "Capacity based on SMC model capacity"
+            },
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            }
+        }
+    },
+    "134-0-137-1_dfi": {
+        "name": "Max NAT rules (DIP)",
+        "group": "NAT",
+        "details": "Configuring DIP NAT rules to full capacity requires that no other NAT rule types are used.",
+        "productNotes": {
+            "pa-5450": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-5400-dpc-a": {
+                "note": "Capacity based on SMC model capacity"
+            },
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            }
+        }
+    },
+    "134-0-138-1_dfi": {
+        "name": "Max NAT rules (DIPP)",
+        "group": "NAT",
+        "productNotes": {
+            "pa-5450": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-5400-dpc-a": {
+                "note": "Capacity based on SMC model capacity"
+            },
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            }
+        }
+    },
+    "134-0-139-1_dfi": {
+        "name": "Max translated IPs (DIP)",
+        "group": "NAT",
+        "productNotes": {
+            "pa-5450": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-5400-dpc-a": {
+                "note": "Capacity based on SMC model capacity"
+            },
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            }
+        }
+    },
+    "134-0-140-1_dfi": {
+        "name": "Max translated IPs (DIPP)",
+        "group": "NAT",
+        "details": "DIPP translated IP capacity is proportional to the DIPP pool oversubscription value. The capacity shown here is based on an oversubscription value of 1x.",
+        "productNotes": {
+            "pa-5450": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-5400-dpc-a": {
+                "note": "Capacity based on SMC model capacity"
+            },
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            }
+        }
+    },
+    "134-0-141-1_dfi": {
+        "name": "Default DIPP pool oversubscription",
+        "group": "NAT",
+        "details": "Source IP and source port reuse across concurrent sessions",
+        "productNotes": {
+            "pa-5450": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-5400-dpc-a": {
+                "note": "Capacity based on SMC model capacity"
+            },
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            }
+        }
+    },
+    "143-0-144-1_dfi": {
+        "name": "DHCP servers",
+        "group": "Address Assignment",
+        "productNotes": {
+            "pa-5450": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-5400-dpc-a": {
+                "note": "Capacity based on SMC model capacity"
+            },
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            }
+        }
+    },
+    "143-0-145-1_dfi": {
+        "name": "DHCP relays",
+        "group": "Address Assignment",
+        "details": "Maximum capacity represents total DHCP servers and DHCP relays combined",
+        "productNotes": {
+            "pa-7050": {
+                "note": "Total includes number of DHCP servers and DHCP relays"
+            },
+            "pa-3250": {
+                "note": "Total includes number of DHCP servers and DHCP relays"
+            },
+            "pa-5450": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pa-5250": {
+                "note": "Total includes number of DHCP servers and DHCP relays"
+            },
+            "pan-pa-5400-dpc-a": {
+                "note": "Capacity based on SMC model capacity"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pa-1410": {
+                "note": "Total includes number of DHCP servers and DHCP relays"
+            },
+            "pa-220r": {
+                "note": "Total includes number of DHCP servers and DHCP relays"
+            },
+            "pa-820": {
+                "note": "Total includes number of DHCP servers and DHCP relays"
+            },
+            "pa-445": {
+                "note": "Total includes number of DHCP servers and DHCP relays"
+            },
+            "pa-460": {
+                "note": "Total includes number of DHCP servers and DHCP relays"
+            },
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pa-440": {
+                "note": "Total includes number of DHCP servers and DHCP relays"
+            },
+            "pa-220": {
+                "note": "Total includes number of DHCP servers and DHCP relays"
+            },
+            "pa-5260": {
+                "note": "Total includes number of DHCP servers and DHCP relays"
+            },
+            "pa-5280": {
+                "note": "Total includes number of DHCP servers and DHCP relays"
+            },
+            "pa-5220": {
+                "note": "Total includes number of DHCP servers and DHCP relays"
+            },
+            "pa-3260": {
+                "note": "Total includes number of DHCP servers and DHCP relays"
+            },
+            "pa-3220": {
+                "note": "Total includes number of DHCP servers and DHCP relays"
+            },
+            "pa-1420": {
+                "note": "Total includes number of DHCP servers and DHCP relays"
+            },
+            "pa-415": {
+                "note": "Total includes number of DHCP servers and DHCP relays"
+            },
+            "pa-450": {
+                "note": "Total includes number of DHCP servers and DHCP relays"
+            },
+            "pa-410": {
+                "note": "Total includes number of DHCP servers and DHCP relays"
+            },
+            "pa-850": {
+                "note": "Total includes number of DHCP servers and DHCP relays"
+            },
+            "pa-7080": {
+                "note": "Total includes number of DHCP servers and DHCP relays"
+            }
+        }
+    },
+    "143-0-146-1_dfi": {
+        "name": "Max number of assigned addresses",
+        "group": "Address Assignment",
+        "productNotes": {
+            "pa-5450": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-5400-dpc-a": {
+                "note": "Capacity based on SMC model capacity"
+            },
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            }
+        }
+    },
+    "148-0-149-1_dfi": {
+        "name": "Devices supported",
+        "group": "High Availability",
+        "productNotes": {
+            "pan-pa-5400-dpc-a": {
+                "note": "Capacity based on SMC model capacity"
+            }
+        }
+    },
+    "148-0-150-1_dfi": {
+        "name": "Max virtual addresses",
+        "group": "High Availability",
+        "productNotes": {
+            "pa-5450": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-5400-dpc-a": {
+                "note": "Capacity based on SMC model capacity"
+            },
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            }
+        }
+    },
+    "152-0-153-1_dfi": {
+        "name": "Number of QoS policies",
+        "group": "QoS",
+        "productNotes": {
+            "pa-5450": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-5400-dpc-a": {
+                "note": "Capacity based on SMC model capacity"
+            },
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            }
+        }
+    },
+    "152-0-154-1_dfi": {
+        "name": "Physical interfaces supporting QoS",
+        "group": "QoS",
+        "productNotes": {
+            "pan-pa-7000-100g-npc-a": {
+                "note": "Limited by the capacity enforced per PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "Limited by the capacity enforced per PA-7000 Series chassis"
+            }
+        }
+    },
+    "152-0-155-1_dfi": {
+        "name": "Clear text nodes per physical interface",
+        "group": "QoS",
+        "productNotes": {
+            "pa-5450": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-5400-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            }
+        }
+    },
+    "152-0-156-1_dfi": {
+        "name": "DSCP marking by policy",
+        "group": "QoS",
+        "productNotes": {
+            "pa-5450": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-5400-dpc-a": {
+                "note": "Capacity based on SMC model capacity"
+            },
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            }
+        }
+    },
+    "152-0-157-1_dfi": {
+        "name": "Subinterfaces supported",
+        "group": "QoS",
+        "productNotes": {
+            "pa-5450": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-5400-dpc-a": {
+                "note": "Capacity based on SMC model capacity"
+            },
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            }
+        }
+    },
+    "159-0-160-1_dfi": {
+        "name": "Max IKE Peers",
+        "group": "IPSec VPN",
+        "productNotes": {
+            "pan-pa-5400-dpc-a": {
+                "note": "Capacity based on SMC model capacity"
+            },
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many XM NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many XM NPCs are installed in the PA-7000 Series chassis"
+            }
+        }
+    },
+    "159-0-161-1_dfi": {
+        "name": "Site to site (with proxy id)",
+        "group": "IPSec VPN",
+        "productNotes": {
+            "pa-7050": {
+                "note": "Standard memory NPC / XM or 100G NPC"
+            },
+            "pan-pa-5400-dpc-a": {
+                "note": "Capacity based on SMC model capacity"
+            },
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many XM NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many XM NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pa-7080": {
+                "note": "Standard memory NPC / XM or 100G NPC"
+            }
+        }
+    },
+    "159-0-162-1_dfi": {
+        "name": "SD-WAN IPSec tunnels",
+        "group": "IPSec VPN",
+        "productNotes": {
+            "pa-7050": {
+                "note": "Standard memory NPC / XM or 100G NPC"
+            },
+            "pan-pa-5400-dpc-a": {
+                "note": "Capacity based on SMC model capacity"
+            },
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many XM NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many XM NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pa-7080": {
+                "note": "Standard memory NPC / XM or 100G NPC"
+            }
+        }
+    },
+    "164-0-165-1_dfi": {
+        "name": "Max tunnels (SSL, IPSec, and IKE with XAUTH)",
+        "group": "GlobalProtect Client VPN",
+        "productNotes": {
+            "pa-7050": {
+                "note": "Capacity based on SMC model capacity"
+            },
+            "pan-pa-5400-dpc-a": {
+                "note": "Capacity based on SMC model capacity"
+            },
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pa-7080": {
+                "note": "Capacity based on SMC model capacity"
+            }
+        }
+    },
+    "167-0-168-1_dfi": {
+        "name": "Max SSL tunnels",
+        "group": "GlobalProtect Clientless VPN",
+        "productNotes": {
+            "pa-7050": {
+                "note": "Capacity based on SMC model capacity"
+            },
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many XM NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many XM NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pa-7080": {
+                "note": "Capacity based on SMC model capacity"
+            }
+        }
+    },
+    "170-0-171-1_dfi": {
+        "name": "Replication (egress interfaces)",
+        "group": "Multicast",
+        "productNotes": {
+            "pa-7050": {
+                "note": "Standard memory NPC / XM or 100G NPC"
+            },
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pa-7080": {
+                "note": "Standard memory NPC / XM or 100G NPC"
+            }
+        }
+    },
+    "170-0-172-1_dfi": {
+        "name": "Routes",
+        "group": "Multicast",
+        "productNotes": {
+            "pan-pa-7000-100g-npc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            },
+            "pan-pa-7000-dpc-a": {
+                "note": "This capacity is the same regardless of how many NPCs are installed in the PA-7000 Series chassis"
+            }
+        }
+    },
+    "174-0-175-1_dfi": {
+        "name": "End-of-sale",
+        "group": "Product Notes"
+    }
+}

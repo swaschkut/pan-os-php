@@ -38,6 +38,7 @@ if( isset(PH::$args['text']) )
 {
     $filterInfo = true;
     $filterInfoTxt = PH::$args['text'];
+    $filterInfoTxt = strtolower($filterInfoTxt);
 }
 
 $displayCounter = 0;
