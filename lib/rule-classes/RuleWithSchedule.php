@@ -135,9 +135,9 @@ trait RuleWithSchedule
             if( !is_object( $this->schedule )  )
                 if( $con->isAPI() )
                     $con->sendDeleteRequest($xpath);
-            else
-                if( $con->isAPI() )
-                    $con->sendSetRequest($this->getXPath(), '<schedule>' . htmlspecialchars($this->schedule->name()) . '</schedule>');
+
+            if( $con->isAPI() )
+                $con->sendSetRequest($this->getXPath(), '<schedule>' . htmlspecialchars($this->schedule->name()) . '</schedule>');
 
         }
 
