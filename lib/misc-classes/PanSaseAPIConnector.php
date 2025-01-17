@@ -1,5 +1,12 @@
 <?php
 
+//Todo: swaschkut 20250117:
+//check new Strata Cloud Manager adjusted part:
+//https://pan.dev/scm/docs/release-notes/november2024/
+
+//access policy:
+//https://pan.dev/scm/api/iam/post-iam-v-1-access-policies/
+
 class PanSaseAPIConnector
 {
     public $name = 'connector';
