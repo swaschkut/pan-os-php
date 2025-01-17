@@ -235,6 +235,8 @@ trait lib_2_report_generator
 
         $ruleCount = 0;
 
+        //enable if fully published
+        $srcOrDst = false;
         foreach( $rules as $rule )
         {
             /** @var SecurityRule $rule */
