@@ -134,6 +134,45 @@ class LogicalRouter
                     $protocolEnabled = DH::findFirstElement("enable", $node);
                     if( $protocolEnabled !== FALSE )
                         $this->routingProtocols[$tmpProtocolName]['enabled'] = $protocolEnabled->textContent;
+
+
+                    if( $protocoll == "bgp" )
+                    {
+                        $tmp_peer_group = DH::findFirstElement('peer-group', $node);
+                        if(  $tmp_peer_group !== False )
+                        {
+                            foreach( $tmp_peer_group->childNodes as $node )
+                            {
+                                if ($node->nodeType != XML_ELEMENT_NODE)
+                                    continue;
+
+                                $tmp_peer_node = DH::findFirstElement('peer', $node);
+                                if(  $tmp_peer_node !== False )
+                                {
+                                    foreach ($tmp_peer_node->childNodes as $node2)
+                                    {
+                                        if ($node2->nodeType != XML_ELEMENT_NODE)
+                                            continue;
+                                        DH::DEBUGprintDOMDocument($node2);
+                                        $tmp_peer_address_node = DH::findFirstElement('peer-address', $node2);
+                                        $peerAddressNode = DH::findFirstElement('ip', $tmp_peer_address_node);
+                                        if ($peerAddressNode != null) {
+                                            #$this->peerAddress = $peerAddressNode->textContent;
+                                            $this->validateIPorObject($peerAddressNode->textContent, $type = 'peer-address');
+                                        }
+
+                                        $tmp_local_address_node = DH::findFirstElement('local-address', $node2);
+                                        $localAddressNode = DH::findFirstElement('ip', $tmp_local_address_node);
+                                        if ($localAddressNode != null) {
+                                            #$this->localAddress = $localAddressNode->textContent;
+                                            $this->validateIPorObject($localAddressNode->textContent, $type = 'local-address');
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                    }
                 }
             }
         }
@@ -609,6 +648,67 @@ class LogicalRouter
         }
         else
             $ipv4sort[$record['end'] - $record['start']][$record['start']][] = &$record;
+    }
+
+    function validateIPorObject($nexthopIP, $type = 'local-address')
+    {
+        $pan_object = $this->owner->owner;
+        if( isset( $pan_object->owner ) )
+        {
+            if( get_class($pan_object->owner) == "Template" )
+            {
+                $template_object = $pan_object->owner;
+                $panorama_object = $template_object->owner;
+                $shared_object = $panorama_object->addressStore->find($nexthopIP);
+                if( $shared_object != null )
+                {
+                    $shared_object->addReference($this);
+
+                    if( $type == "local-address" )
+                    {
+                        #$this->_destination = $shared_object->value();
+                        #$this->_destinationObject = $shared_object;
+                    }
+                    elseif( $type == "peer-address" )
+                    {
+                        #$this->_nexthopIP = $shared_object->value();
+                        #$this->_nexthopIPObject = $shared_object;
+                    }
+                }
+            }
+        }
+        else
+        {
+            $all_vsys = $pan_object->getVirtualSystems();
+
+            foreach( $all_vsys as $vsys )
+            {
+                $ngfw_object = $vsys->addressStore->find($nexthopIP);
+                if( $ngfw_object != null && !$ngfw_object->isTmpAddr() )
+                {
+                    $ngfw_object->addReference($this);
+
+                    if( $type == "local-address" )
+                    {
+                        #$this->_destination = $ngfw_object->value();
+                        #$this->_destinationObject = $ngfw_object;
+                    }
+                    elseif( $type == "peer-address" )
+                    {
+                        #$this->_nexthopIP = $ngfw_object->value();
+                        #$this->_nexthopIPObject = $ngfw_object;
+                    }
+                }
+            }
+
+            if( count($all_vsys) == 0 )
+            {
+                #if( $type == "local-address" )
+                #    $this->_destination = $nexthopIP;
+                #elseif( $type == "peer-address" )
+                #    $this->_nexthopIP = $nexthopIP;
+            }
+        }
     }
 
     /**
