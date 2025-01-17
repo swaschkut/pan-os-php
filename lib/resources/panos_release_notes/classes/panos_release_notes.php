@@ -1,5 +1,7 @@
 <?php
 
+require_once dirname(__FILE__)."/../../../../lib/resources/panos_release_notes/classes/panos_release_misc.php";
+
 class panos_release_notes
 {
     public $version_store = array();
@@ -17,6 +19,14 @@ class panos_release_notes
         if( $this->type == "known" )
         {
             //list all files from known_issues/json
+            if(!file_exists($directory."/../known_issues/json") )
+            {
+                //download HTML files
+                panos_release_misc::request_html();
+
+                //create JSON files
+                panos_release_misc::displayJSON();
+            }
             $scanned_directory = array_diff(scandir($directory."/../known_issues/json"), array('..', '.'));
 
             #print_r($scanned_directory);
