@@ -153,7 +153,7 @@ class LogicalRouter
                                     {
                                         if ($node2->nodeType != XML_ELEMENT_NODE)
                                             continue;
-                                        DH::DEBUGprintDOMDocument($node2);
+
                                         $tmp_peer_address_node = DH::findFirstElement('peer-address', $node2);
                                         $peerAddressNode = DH::findFirstElement('ip', $tmp_peer_address_node);
                                         if ($peerAddressNode != null) {
@@ -171,7 +171,6 @@ class LogicalRouter
                                 }
                             }
                         }
-
                     }
                 }
             }
