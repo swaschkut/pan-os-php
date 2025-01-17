@@ -35,10 +35,11 @@ class panos_release_notes
             {
                 $fileName = str_replace( "pan-os-", "", $file );
                 $version_string = str_replace( "-known-issues", "", $fileName );
+                $tmp_version_string = str_replace("-", ".", $version_string);
 
                 $tmpVersion = new panos_version( $this, "known", $version_string, $directory."/../known_issues/json/", $scanned_directory );
 
-                $this->version_store[$version_string] = $tmpVersion;
+                $this->version_store[$tmp_version_string] = $tmp_version_string;
             }
         }
         elseif( $this->type == "fixed" )

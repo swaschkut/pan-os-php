@@ -14,7 +14,9 @@ class panos_known_issue
         $this->owner = $owner;
 
         $this->issueNumber = $issueNumber;
-        $this->version_listed[$owner->version] = $owner->version;
+        $tmp_version_string = $owner->version;
+        $tmp_version_string = str_replace("-", ".", $tmp_version_string);
+        $this->version_listed[$tmp_version_string] = $tmp_version_string;
 
         $this->info = $issueDetails['info'][0];
 

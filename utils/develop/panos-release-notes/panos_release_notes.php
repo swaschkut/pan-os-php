@@ -1,8 +1,14 @@
 <?php
 
 
-set_include_path(dirname(__FILE__) . '/../../../' . PATH_SEPARATOR . get_include_path());
+#set_include_path(dirname(__FILE__) . '/../../../' . PATH_SEPARATOR . get_include_path());
 
+set_include_path(get_include_path() . PATH_SEPARATOR . dirname(__FILE__) . '/../');
+
+require_once dirname(__FILE__)."/../../../lib/pan_php_framework.php";
+require_once dirname(__FILE__)."/../../../utils/lib/UTIL.php";
+
+PH::processCliArgs();
 
 require_once dirname(__FILE__)."/../../../lib/resources/panos_release_notes/classes/panos_release_notes.php";
 
@@ -17,31 +23,58 @@ require_once dirname(__FILE__)."/../../../lib/resources/panos_release_notes/clas
 
 $releaseNotes = new panos_release_notes( "known" );
 
-$filterVersion = true;
-$filterVersionTxt = "11-1";
+$filterVersion = false;
+if( isset(PH::$args['version']) )
+{
+    $filterVersion = true;
+    $filterVersionTxt = PH::$args['version'];
 
-$filterInfo = true;
-$filterInfoTxt = "IPv6";
+    #$filterVersionTxt = str_replace(".", "-", $filterVersionTxt);
+}
 
+
+$filterInfo = false;
+if( isset(PH::$args['text']) )
+{
+    $filterInfo = true;
+    $filterInfoTxt = PH::$args['text'];
+}
+
+$displayCounter = 0;
 foreach($releaseNotes->knownIssues as $issue)
 {
     if( $filterVersion && $filterInfo )
     {
         if( filterVersion($issue, $filterVersionTxt ) && filterInfo($issue, $filterInfoTxt ) )
+        {
             display_Issue($issue);
+            $displayCounter++;
+        }
     }
     elseif( $filterVersion )
     {
         if( filterVersion($issue, $filterVersionTxt ) )
+        {
             display_Issue($issue);
+            $displayCounter++;
+        }
     }
     elseif( $filterInfo )
     {
         if( filterInfo($issue, $filterInfoTxt ) )
+        {
             display_Issue($issue);
+            $displayCounter++;
+        }
+    }
+    else
+    {
+        display_Issue($issue);
+        $displayCounter++;
     }
 }
 
+PH::print_stdout("Counter: ".$displayCounter);
 
 function display_Issue( $issue)
 {
@@ -52,8 +85,8 @@ function display_Issue( $issue)
     print $padding."INFO: ".$issue->info."\n";
 
 
-    print $padding."VERSION: \n";
-    print_r( $issue->version_listed );
+    print $padding."VERSION: ";
+    print implode( ", ", $issue->version_listed)."\n";
 
     if( isset($issue->solved_issue) )
     {
@@ -67,7 +100,9 @@ function filterVersion($issue, $subVersion )
     $versionArrayKeys = array_keys($versionArray);
     foreach ($versionArrayKeys as $version)
     {
-        if( str_contains($version, $subVersion) )
+        //string contains is case sensitive
+        #if( str_contains($version, $subVersion) )
+        if( strpos($version, $subVersion) !== FALSE )
             return true;
     }
     return false;
@@ -75,8 +110,9 @@ function filterVersion($issue, $subVersion )
 
 function filterInfo($issue, $infoFilterTxt )
 {
-    if( str_contains($issue->info, $infoFilterTxt) )
-            return true;
+    #if( str_contains($issue->info, $infoFilterTxt) )
+    if( strpos($issue->info, $infoFilterTxt) !== FALSE )
+        return true;
 
     return false;
 }

@@ -19,7 +19,9 @@ class panos_version
         $this->owner = $owner;
 
         $this->type = $type;
-        $this->version = $version_string;
+        $tmp_version_string = $version_string;
+        $tmp_version_string = str_replace("-", ".", $tmp_version_string);
+        $this->version = $tmp_version_string;
         $this->directory = $directory;
 
         $this->scanned_directory = $scanned_directory;
@@ -41,7 +43,9 @@ class panos_version
                     if( isset($this->owner->knownIssues[$issueNumber]) )
                     {
                         //add Version
-                        $this->owner->knownIssues[$issueNumber]->version_listed[$version_string] = $version_string;
+                        $tmp_version_string = $version_string;
+                        $tmp_version_string = str_replace("-", ".", $tmp_version_string);
+                        $this->owner->knownIssues[$issueNumber]->version_listed[$tmp_version_string] = $tmp_version_string;
 
 
                         if( isset($issueDetails['solved']) )
