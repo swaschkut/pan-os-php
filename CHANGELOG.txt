@@ -10,6 +10,7 @@ BUGFIX:
 * type=rule | bugfix for 'filter=(schedule.expire.in.days < -90)' - to use negative values
 
 GENERAL:
+* introduce develop part to read panos known-issues - for actual supported panos version
 
 
 2.1.32 (20250110)

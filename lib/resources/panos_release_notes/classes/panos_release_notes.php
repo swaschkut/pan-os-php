@@ -1,0 +1,44 @@
+<?php
+
+class panos_release_notes
+{
+    public $version_store = array();
+    public $type;
+
+    public $knownIssues = array();
+    public $fixedIssues = array();
+
+    function __construct( $type = "known")
+    {
+        $directory = dirname(__FILE__);
+
+        $this->type = $type;
+
+        if( $this->type == "known" )
+        {
+            //list all files from known_issues/json
+            $scanned_directory = array_diff(scandir($directory."/../known_issues/json"), array('..', '.'));
+
+            #print_r($scanned_directory);
+
+            foreach( $scanned_directory as $file )
+            {
+                $fileName = str_replace( "pan-os-", "", $file );
+                $version_string = str_replace( "-known-issues", "", $fileName );
+
+                $tmpVersion = new panos_version( $this, "known", $version_string, $directory."/../known_issues/json/", $scanned_directory );
+
+                $this->version_store[$version_string] = $tmpVersion;
+            }
+        }
+        elseif( $this->type == "fixed" )
+        {
+            //list all files from known_issues/json
+            $scanned_directory = array_diff(scandir($directory."/../fixed_issues/json"), array('..', '.'));
+
+            print_r($scanned_directory);
+        }
+    }
+
+
+}
