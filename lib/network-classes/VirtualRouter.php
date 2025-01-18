@@ -308,17 +308,33 @@ class VirtualRouter
             }
         }
 
-        /*
-        if( $node !== false )
+        $tmp_multicast = DH::findFirstElement('multicast', $xml);
+        if( $tmp_multicast !== FALSE )
         {
-            for( $i=0; $i < $node->length; $i++ )
+            $tmp_interface_group_node = DH::findFirstElement('interface-group', $tmp_multicast);
+            if( $tmp_interface_group_node !== FALSE )
             {
-                $newRoute = new StaticRoute('***tmp**', $this);
-                $newRoute->load_from_xml($node->item($i));
-                $this->_staticRoutes[] = $newRoute;
+                foreach( $tmp_interface_group_node->childNodes as $interface_group_entry )
+                {
+                    if ($interface_group_entry->nodeType != XML_ELEMENT_NODE)
+                        continue;
+
+                    $tmp_interface_node = DH::findFirstElement('interface', $interface_group_entry);
+                    if ($tmp_interface_node != null)
+                    {
+                        foreach ($tmp_interface_node->childNodes as $member_node)
+                        {
+                            if ($member_node->nodeType != XML_ELEMENT_NODE)
+                                continue;
+
+                            $tmp_interface = $this->owner->owner->network->findInterfaceOrCreateTmp($member_node->textContent);
+                            $tmp_interface->addReference($this);
+                        }
+                    }
+
+                }
             }
         }
-        */
     }
 
     /**

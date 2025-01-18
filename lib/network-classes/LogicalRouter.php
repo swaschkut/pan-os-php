@@ -188,23 +188,104 @@ class LogicalRouter
                     elseif( $protocoll == "rip" )
                     {
                         mwarning( "RIP found", null, False );
+                        DH::DEBUGprintDOMDocument($node);
+                        $tmp_interface_node = DH::findFirstElement('interface', $node);
+                        if( $tmp_interface_node !== False )
+                        {
+                            foreach( $tmp_interface_node->childNodes as $interface_entry )
+                            {
+                                if ($interface_entry->nodeType != XML_ELEMENT_NODE)
+                                    continue;
+
+                                $interface_name = DH::findAttribute('name', $interface_entry);
+                                $tmp_interface = $this->owner->owner->network->findInterfaceOrCreateTmp($interface_name);
+                                $tmp_interface->addReference($this);
+                            }
+                        }
                     }
                     //ospf
-                    elseif( $protocoll == "ospf" )
+                    elseif( $protocoll == "ospf" || $protocoll == "ospfv3" )
                     {
+                        DH::DEBUGprintDOMDocument($node);
                         mwarning( "OSPF found", null, False );
+                        $tmp_area = DH::findFirstElement('area', $node);
+                        if( $tmp_area !== False )
+                        {
+                            foreach( $tmp_area->childNodes as $area_entry )
+                            {
+                                if ($area_entry->nodeType != XML_ELEMENT_NODE)
+                                    continue;
+
+                                $tmp_interface_node = DH::findFirstElement('interface', $area_entry);
+                                if( $tmp_interface_node !== False )
+                                {
+                                    foreach ($tmp_interface_node->childNodes as $interface_entry)
+                                    {
+                                        if ($interface_entry->nodeType != XML_ELEMENT_NODE)
+                                            continue;
+
+                                        $interface_name = DH::findAttribute('name', $interface_entry);
+                                        $tmp_interface = $this->owner->owner->network->findInterfaceOrCreateTmp($interface_name);
+                                        $tmp_interface->addReference($this);
+                                    }
+                                }
+                            }
+                        }
                     }
-                    //ospfv3
-                    elseif( $protocoll == "ospfv3" )
+
+                    elseif( $protocoll == "multicast")
                     {
-                        mwarning( "OSPFv3 found", null, False );
-                    }
-                    //redist-profile
-                    elseif( $protocoll == "redist-profile" )
-                    {
+                        DH::DEBUGprintDOMDocument($node);
                         mwarning( "redist-profile found", null, False );
+                        /*
+                                 *               <multicast>
+                         <pim>
+                            <ssm-address-space>
+                               <group-list>None</group-list>
+                            </ssm-address-space>
+                            <interface>
+                               <entry name="ethernet1/2">
+                                  <dr-priority>1</dr-priority>
+                                  <neighbor-filter>None</neighbor-filter>
+                                  <send-bsm>yes</send-bsm>
+                               </entry>
+                            </interface>
+                            <rpf-lookup-mode>mrib-then-urib</rpf-lookup-mode>
+                            <route-ageout-time>210</route-ageout-time>
+                            <enable>yes</enable>
+                         </pim>
+                         <igmp>
+                            <dynamic>
+                               <interface>
+                                  <entry name="ethernet1/2">
+                                     <group-filter>None</group-filter>
+                                     <version>3</version>
+                                     <robustness>2</robustness>
+                                     <max-groups>unlimited</max-groups>
+                                     <max-sources>unlimited</max-sources>
+                                     <router-alert-policing>no</router-alert-policing>
+                                  </entry>
+                               </interface>
+                            </dynamic>
+                            <enable>yes</enable>
+                         </igmp>
+                         <msdp>
+                            <enable>no</enable>
+                         </msdp>
+                         <static-route>
+                            <entry name="multicast_int_adr">
+                               <interface>ethernet1/2</interface>
+                               <destination>Route_6.7.8.9</destination>
+                            </entry>
+                         </static-route>
+                         <enable>no</enable>
+                      </multicast>
+                         */
                     }
-                    //
+                    elseif( $protocoll == "ecmp" )
+                    {
+
+                    }
                 }
             }
         }
