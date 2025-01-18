@@ -187,8 +187,8 @@ class LogicalRouter
                     }
                     elseif( $protocoll == "rip" )
                     {
-                        mwarning( "RIP found", null, False );
-                        DH::DEBUGprintDOMDocument($node);
+                        #mwarning( "RIP found", null, False );
+                        #DH::DEBUGprintDOMDocument($node);
                         $tmp_interface_node = DH::findFirstElement('interface', $node);
                         if( $tmp_interface_node !== False )
                         {
@@ -206,8 +206,8 @@ class LogicalRouter
                     //ospf
                     elseif( $protocoll == "ospf" || $protocoll == "ospfv3" )
                     {
-                        DH::DEBUGprintDOMDocument($node);
-                        mwarning( "OSPF found", null, False );
+                        #DH::DEBUGprintDOMDocument($node);
+                        #mwarning( "OSPF found", null, False );
                         $tmp_area = DH::findFirstElement('area', $node);
                         if( $tmp_area !== False )
                         {
@@ -235,8 +235,8 @@ class LogicalRouter
 
                     elseif( $protocoll == "multicast")
                     {
-                        DH::DEBUGprintDOMDocument($node);
-                        mwarning( "redist-profile found", null, False );
+                        #DH::DEBUGprintDOMDocument($node);
+                        #mwarning( "redist-profile found", null, False );
                         /*
                                  *               <multicast>
                          <pim>
