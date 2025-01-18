@@ -152,21 +152,6 @@ class VirtualRouter
             $tmp_protocol = DH::findFirstElement('ospf', $this->xmlroot_protocol);
             if( $tmp_protocol !== False )
             {
-                //mwarning( "OSPF found", null, False );
-                /*
-                 * <ospf>
-                       <enable>no</enable>
-                       <area>
-                          <entry name="0.0.0.4">
-                             <type>
-                                <normal/>
-                             </type>
-                             <interface>
-                                <entry name="ethernet1/1">
-                                   <bfd>
-                        ...
-                        <entry name="0.0.0.5">
-                 */
                 $tmp_area = DH::findFirstElement('area', $tmp_protocol);
                 if( $tmp_area !== False )
                 {
@@ -176,14 +161,17 @@ class VirtualRouter
                             continue;
 
                         $tmp_interface_node = DH::findFirstElement('interface', $area_entry);
-                        foreach( $tmp_interface_node->childNodes as $interface_entry )
+                        if( $tmp_interface_node !== False )
                         {
-                            if ($interface_entry->nodeType != XML_ELEMENT_NODE)
-                                continue;
+                            foreach( $tmp_interface_node->childNodes as $interface_entry )
+                            {
+                                if ($interface_entry->nodeType != XML_ELEMENT_NODE)
+                                    continue;
 
-                            $interface_name = DH::findAttribute('name', $interface_entry);
-                            $tmp_interface = $this->owner->owner->network->findInterfaceOrCreateTmp($interface_name);
-                            $tmp_interface->addReference($this);
+                                $interface_name = DH::findAttribute('name', $interface_entry);
+                                $tmp_interface = $this->owner->owner->network->findInterfaceOrCreateTmp($interface_name);
+                                $tmp_interface->addReference($this);
+                            }
                         }
                     }
                 }
@@ -201,14 +189,17 @@ class VirtualRouter
                             continue;
 
                         $tmp_interface_node = DH::findFirstElement('interface', $area_entry);
-                        foreach( $tmp_interface_node->childNodes as $interface_entry )
+                        if( $tmp_interface_node !== False )
                         {
-                            if ($interface_entry->nodeType != XML_ELEMENT_NODE)
-                                continue;
+                            foreach ($tmp_interface_node->childNodes as $interface_entry)
+                            {
+                                if ($interface_entry->nodeType != XML_ELEMENT_NODE)
+                                    continue;
 
-                            $interface_name = DH::findAttribute('name', $interface_entry);
-                            $tmp_interface = $this->owner->owner->network->findInterfaceOrCreateTmp($interface_name);
-                            $tmp_interface->addReference($this);
+                                $interface_name = DH::findAttribute('name', $interface_entry);
+                                $tmp_interface = $this->owner->owner->network->findInterfaceOrCreateTmp($interface_name);
+                                $tmp_interface->addReference($this);
+                            }
                         }
                     }
                 }
@@ -226,10 +217,16 @@ class VirtualRouter
                     if( $tmp_filter_node != false )
                     {
                         $tmp_interface_node = DH::findFirstElement('interface', $tmp_filter_node);
-                        $tmp_interface_member_node = DH::findFirstElement('member', $tmp_interface_node);
-                        $interface_name = $tmp_interface_member_node->textContent;
-                        $tmp_interface = $this->owner->owner->network->findInterfaceOrCreateTmp($interface_name);
-                        $tmp_interface->addReference($this);
+                        if( $tmp_interface_node != false )
+                        {
+                            $tmp_interface_member_node = DH::findFirstElement('member', $tmp_interface_node);
+                            if( $tmp_interface_member_node != false )
+                            {
+                                $interface_name = $tmp_interface_member_node->textContent;
+                                $tmp_interface = $this->owner->owner->network->findInterfaceOrCreateTmp($interface_name);
+                                $tmp_interface->addReference($this);
+                            }
+                        }
                     }
                 }
             }
@@ -246,10 +243,16 @@ class VirtualRouter
                     if( $tmp_filter_node != false )
                     {
                         $tmp_interface_node = DH::findFirstElement('interface', $tmp_filter_node);
-                        $tmp_interface_member_node = DH::findFirstElement('member', $tmp_interface_node);
-                        $interface_name = $tmp_interface_member_node->textContent;
-                        $tmp_interface = $this->owner->owner->network->findInterfaceOrCreateTmp($interface_name);
-                        $tmp_interface->addReference($this);
+                        if( $tmp_interface_node != false )
+                        {
+                            $tmp_interface_member_node = DH::findFirstElement('member', $tmp_interface_node);
+                            if( $tmp_interface_member_node != false )
+                            {
+                                $interface_name = $tmp_interface_member_node->textContent;
+                                $tmp_interface = $this->owner->owner->network->findInterfaceOrCreateTmp($interface_name);
+                                $tmp_interface->addReference($this);
+                            }
+                        }
                     }
                 }
             }
