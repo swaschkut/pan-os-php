@@ -68,7 +68,7 @@ $deviceArray["pa-3220"] = true;
 $deviceArray["pa-3250"] = true;
 $deviceArray["pa-3260"] = true;
 
-$deviceArray["pa-5210"] = true;
+
 $deviceArray["pa-5220"] = true;
 $deviceArray["pa-5250"] = true;
 $deviceArray["pa-5260"] = true;
