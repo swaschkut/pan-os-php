@@ -155,23 +155,56 @@ class LogicalRouter
                                             continue;
 
                                         $tmp_peer_address_node = DH::findFirstElement('peer-address', $node2);
-                                        $peerAddressNode = DH::findFirstElement('ip', $tmp_peer_address_node);
-                                        if ($peerAddressNode != null) {
-                                            #$this->peerAddress = $peerAddressNode->textContent;
-                                            $this->validateIPorObject($peerAddressNode->textContent, $type = 'peer-address');
+                                        if ($tmp_peer_address_node != null)
+                                        {
+                                            $peerAddressNode = DH::findFirstElement('ip', $tmp_peer_address_node);
+                                            if ($peerAddressNode != null) {
+                                                #$this->peerAddress = $peerAddressNode->textContent;
+                                                $this->validateIPorObject($peerAddressNode->textContent, $type = 'peer-address');
+                                            }
                                         }
 
                                         $tmp_local_address_node = DH::findFirstElement('local-address', $node2);
-                                        $localAddressNode = DH::findFirstElement('ip', $tmp_local_address_node);
-                                        if ($localAddressNode != null) {
-                                            #$this->localAddress = $localAddressNode->textContent;
-                                            $this->validateIPorObject($localAddressNode->textContent, $type = 'local-address');
+                                        if ($tmp_local_address_node != null)
+                                        {
+                                            $localAddressNode = DH::findFirstElement('ip', $tmp_local_address_node);
+                                            if ($localAddressNode != null)
+                                            {
+                                                #$this->localAddress = $localAddressNode->textContent;
+                                                $this->validateIPorObject($localAddressNode->textContent, $type = 'local-address');
+                                            }
+                                            $localInterfaceNode = DH::findFirstElement('interface', $tmp_local_address_node);
+                                            if ($localInterfaceNode != null)
+                                            {
+                                                $tmp_interface = $this->owner->owner->network->findInterfaceOrCreateTmp($localInterfaceNode->textContent);
+                                                $tmp_interface->addReference($this);
+                                            }
                                         }
                                     }
                                 }
                             }
                         }
                     }
+                    elseif( $protocoll == "rip" )
+                    {
+                        mwarning( "RIP found", null, False );
+                    }
+                    //ospf
+                    elseif( $protocoll == "ospf" )
+                    {
+                        mwarning( "OSPF found", null, False );
+                    }
+                    //ospfv3
+                    elseif( $protocoll == "ospfv3" )
+                    {
+                        mwarning( "OSPFv3 found", null, False );
+                    }
+                    //redist-profile
+                    elseif( $protocoll == "redist-profile" )
+                    {
+                        mwarning( "redist-profile found", null, False );
+                    }
+                    //
                 }
             }
         }

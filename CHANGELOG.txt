@@ -14,6 +14,7 @@ BUGFIX:
 
 GENERAL:
 * introduce develop part to read panos known-issues - for actual supported panos version
+* class VirtualRouter / LogicalRouter - extend address/interface object references reading
 
 
 2.1.32 (20250110)
