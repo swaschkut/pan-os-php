@@ -235,52 +235,107 @@ class LogicalRouter
 
                     elseif( $protocoll == "multicast")
                     {
-                        #DH::DEBUGprintDOMDocument($node);
-                        #mwarning( "redist-profile found", null, False );
-                        /*
-                                 *               <multicast>
-                         <pim>
-                            <ssm-address-space>
-                               <group-list>None</group-list>
-                            </ssm-address-space>
-                            <interface>
-                               <entry name="ethernet1/2">
-                                  <dr-priority>1</dr-priority>
-                                  <neighbor-filter>None</neighbor-filter>
-                                  <send-bsm>yes</send-bsm>
-                               </entry>
-                            </interface>
-                            <rpf-lookup-mode>mrib-then-urib</rpf-lookup-mode>
-                            <route-ageout-time>210</route-ageout-time>
-                            <enable>yes</enable>
-                         </pim>
-                         <igmp>
-                            <dynamic>
-                               <interface>
-                                  <entry name="ethernet1/2">
-                                     <group-filter>None</group-filter>
-                                     <version>3</version>
-                                     <robustness>2</robustness>
-                                     <max-groups>unlimited</max-groups>
-                                     <max-sources>unlimited</max-sources>
-                                     <router-alert-policing>no</router-alert-policing>
-                                  </entry>
-                               </interface>
-                            </dynamic>
-                            <enable>yes</enable>
-                         </igmp>
-                         <msdp>
-                            <enable>no</enable>
-                         </msdp>
-                         <static-route>
-                            <entry name="multicast_int_adr">
-                               <interface>ethernet1/2</interface>
-                               <destination>Route_6.7.8.9</destination>
-                            </entry>
-                         </static-route>
-                         <enable>no</enable>
-                      </multicast>
-                         */
+
+                        foreach( $node->childNodes as $multicast_type_node )
+                        {
+                            if ($multicast_type_node->nodeType != XML_ELEMENT_NODE)
+                                continue;
+
+                            $nodeName = $multicast_type_node->nodeName;
+                            if( $nodeName == "pim" )
+                            {
+                                /*
+                                 <pim>
+                                    <ssm-address-space>
+                                       <group-list>None</group-list>
+                                    </ssm-address-space>
+                                    <interface>
+                                       <entry name="ethernet1/2">
+                                          <dr-priority>1</dr-priority>
+                                          <neighbor-filter>None</neighbor-filter>
+                                          <send-bsm>yes</send-bsm>
+                                       </entry>
+                                    </interface>
+                                    <rpf-lookup-mode>mrib-then-urib</rpf-lookup-mode>
+                                    <route-ageout-time>210</route-ageout-time>
+                                    <enable>yes</enable>
+                                 </pim>
+                                 */
+                                $tmp_interface_node = DH::findFirstElement('interface', $multicast_type_node);
+                                foreach( $tmp_interface_node->childNodes as $interface_entry )
+                                {
+                                    if ($interface_entry->nodeType != XML_ELEMENT_NODE)
+                                        continue;
+
+                                    $interface_name = DH::findAttribute('name', $interface_entry);
+                                    $tmp_interface = $this->owner->owner->network->findInterfaceOrCreateTmp($interface_name);
+                                    $tmp_interface->addReference($this);
+                                }
+                            }
+                            elseif( $nodeName == "igmp" )
+                            {
+                                /*
+                                 <igmp>
+                                    <dynamic>
+                                       <interface>
+                                          <entry name="ethernet1/2">
+                                             <group-filter>None</group-filter>
+                                             <version>3</version>
+                                             <robustness>2</robustness>
+                                             <max-groups>unlimited</max-groups>
+                                             <max-sources>unlimited</max-sources>
+                                             <router-alert-policing>no</router-alert-policing>
+                                          </entry>
+                                       </interface>
+                                    </dynamic>
+                                    <enable>yes</enable>
+                                 </igmp>
+                                 */
+                                $tmp_dynamic_node = DH::findFirstElement('dynamic', $multicast_type_node);
+                                if( $tmp_dynamic_node !== False )
+                                {
+                                    $tmp_interface_node = DH::findFirstElement('interface', $tmp_dynamic_node);
+                                    foreach ($tmp_interface_node->childNodes as $interface_entry)
+                                    {
+                                        if ($interface_entry->nodeType != XML_ELEMENT_NODE)
+                                            continue;
+
+                                        $interface_name = DH::findAttribute('name', $interface_entry);
+                                        $tmp_interface = $this->owner->owner->network->findInterfaceOrCreateTmp($interface_name);
+                                        $tmp_interface->addReference($this);
+                                    }
+                                }
+                            }
+                            elseif( $nodeName == "static-route" )
+                            {
+                                /*
+                                 <static-route>
+                                    <entry name="multicast_int_adr">
+                                       <interface>ethernet1/2</interface>
+                                       <destination>Route_6.7.8.9</destination>
+                                    </entry>
+                                 </static-route>
+                                 */
+                                foreach ($multicast_type_node->childNodes as $static_route_entry)
+                                {
+                                    if ($static_route_entry->nodeType != XML_ELEMENT_NODE)
+                                        continue;
+
+                                    $tmp_interface_node = DH::findFirstElement('interface', $static_route_entry);
+                                    if( $tmp_interface_node !== False )
+                                    {
+                                        $interface_name = $tmp_interface_node->textContent;
+                                        $tmp_interface = $this->owner->owner->network->findInterfaceOrCreateTmp($interface_name);
+                                        $tmp_interface->addReference($this);
+                                    }
+                                    $tmp_destination_node = DH::findFirstElement('destination', $static_route_entry);
+                                    if( $tmp_destination_node !== False )
+                                    {
+                                        $this->validateIPorObject($tmp_destination_node->textContent, $type = 'destination');
+                                    }
+                                }
+                            }
+                        }
                     }
                     elseif( $protocoll == "ecmp" )
                     {
