@@ -187,8 +187,6 @@ class LogicalRouter
                     }
                     elseif( $protocoll == "rip" )
                     {
-                        #mwarning( "RIP found", null, False );
-                        #DH::DEBUGprintDOMDocument($node);
                         $tmp_interface_node = DH::findFirstElement('interface', $node);
                         if( $tmp_interface_node !== False )
                         {
@@ -203,11 +201,8 @@ class LogicalRouter
                             }
                         }
                     }
-                    //ospf
                     elseif( $protocoll == "ospf" || $protocoll == "ospfv3" )
                     {
-                        #DH::DEBUGprintDOMDocument($node);
-                        #mwarning( "OSPF found", null, False );
                         $tmp_area = DH::findFirstElement('area', $node);
                         if( $tmp_area !== False )
                         {
@@ -244,23 +239,6 @@ class LogicalRouter
                             $nodeName = $multicast_type_node->nodeName;
                             if( $nodeName == "pim" )
                             {
-                                /*
-                                 <pim>
-                                    <ssm-address-space>
-                                       <group-list>None</group-list>
-                                    </ssm-address-space>
-                                    <interface>
-                                       <entry name="ethernet1/2">
-                                          <dr-priority>1</dr-priority>
-                                          <neighbor-filter>None</neighbor-filter>
-                                          <send-bsm>yes</send-bsm>
-                                       </entry>
-                                    </interface>
-                                    <rpf-lookup-mode>mrib-then-urib</rpf-lookup-mode>
-                                    <route-ageout-time>210</route-ageout-time>
-                                    <enable>yes</enable>
-                                 </pim>
-                                 */
                                 $tmp_interface_node = DH::findFirstElement('interface', $multicast_type_node);
                                 foreach( $tmp_interface_node->childNodes as $interface_entry )
                                 {
@@ -274,23 +252,6 @@ class LogicalRouter
                             }
                             elseif( $nodeName == "igmp" )
                             {
-                                /*
-                                 <igmp>
-                                    <dynamic>
-                                       <interface>
-                                          <entry name="ethernet1/2">
-                                             <group-filter>None</group-filter>
-                                             <version>3</version>
-                                             <robustness>2</robustness>
-                                             <max-groups>unlimited</max-groups>
-                                             <max-sources>unlimited</max-sources>
-                                             <router-alert-policing>no</router-alert-policing>
-                                          </entry>
-                                       </interface>
-                                    </dynamic>
-                                    <enable>yes</enable>
-                                 </igmp>
-                                 */
                                 $tmp_dynamic_node = DH::findFirstElement('dynamic', $multicast_type_node);
                                 if( $tmp_dynamic_node !== False )
                                 {
@@ -308,14 +269,6 @@ class LogicalRouter
                             }
                             elseif( $nodeName == "static-route" )
                             {
-                                /*
-                                 <static-route>
-                                    <entry name="multicast_int_adr">
-                                       <interface>ethernet1/2</interface>
-                                       <destination>Route_6.7.8.9</destination>
-                                    </entry>
-                                 </static-route>
-                                 */
                                 foreach ($multicast_type_node->childNodes as $static_route_entry)
                                 {
                                     if ($static_route_entry->nodeType != XML_ELEMENT_NODE)
