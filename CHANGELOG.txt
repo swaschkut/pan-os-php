@@ -11,6 +11,7 @@ BUGFIX:
 * type=rule actions=schedule-set:XYZ in=api://MGMT-IP | bugfix for API mode
 * class VirtualRouter | add address object references for BGP peer-group
 * class LogicalRouter  | add address object references for BGP peer-group
+* class IPsecTunnel | bugfix - it is allowed to have no IKEGateway set in PAN-OS
 
 GENERAL:
 * introduce develop part to read panos known-issues - for actual supported panos version

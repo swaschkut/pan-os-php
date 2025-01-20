@@ -96,11 +96,19 @@ class IPsecTunnel
                 //print "found type auto key\n";
 
                 // now extracts IPSEC tunnel name
-                $tmp_gateway = DH::findFirstElementOrCreate('ike-gateway', $node);
-                $tmp_gateway_entry = DH::findFirstElementOrCreate('entry', $tmp_gateway);
-                $this->gateway = DH::findAttribute('name', $tmp_gateway_entry);
-                if( $this->gateway === FALSE )
-                    mwarning("ike-gateway not found", null, False);
+                $tmp_gateway = DH::findFirstElement('ike-gateway', $node);
+                if( $tmp_gateway !== FALSE )
+                {
+                    $tmp_gateway_entry = DH::findFirstElement('entry', $tmp_gateway);
+                    if( $tmp_gateway_entry !== FALSE )
+                    {
+                        $this->gateway = DH::findAttribute('name', $tmp_gateway_entry);
+                        //it is possible to set no gateway, if flag is disabled in GUI
+                        #if( $this->gateway === FALSE )
+                        #    mwarning("ike-gateway not found", null, False);
+                    }
+                }
+
 
 
                 $tmp_proposal = DH::findFirstElement('ipsec-crypto-profile', $node);
