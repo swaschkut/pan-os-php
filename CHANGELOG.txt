@@ -17,6 +17,7 @@ BUGFIX:
 GENERAL:
 * introduce develop part to read panos known-issues - for actual supported panos version
 * class VirtualRouter / LogicalRouter - extend address/interface object references reading
+* update Docker to ubuntu25.04 / php:8.4-apache / php:8.4-cli
 
 
 2.1.32 (20250110)
