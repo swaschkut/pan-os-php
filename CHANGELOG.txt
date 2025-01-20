@@ -4,6 +4,7 @@ CHANGELOG
 UTIL:
 * type=rule | introduce 'filter=(threat-log.occurrence.date.fast > 31-12-2024)'
 * type=rule | introduce 'filter=(threat-log.occurrence.per-rule.date.fast > 31-12-2024)'
+* class SecurityProfileGroupStore | extend method all( $withFilter = null ) - needed to get count of BP / none BP objects
 
 BUGFIX:
 * type=address/server actions=xyz-create if type is not defined
