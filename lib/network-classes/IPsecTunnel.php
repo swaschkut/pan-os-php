@@ -100,7 +100,7 @@ class IPsecTunnel
                 $tmp_gateway_entry = DH::findFirstElementOrCreate('entry', $tmp_gateway);
                 $this->gateway = DH::findAttribute('name', $tmp_gateway_entry);
                 if( $this->gateway === FALSE )
-                    mwarning("ike-gateway not found\n");
+                    mwarning("ike-gateway not found", null, False);
 
 
                 $tmp_proposal = DH::findFirstElement('ipsec-crypto-profile', $node);
