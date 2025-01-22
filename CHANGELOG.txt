@@ -1,6 +1,27 @@
 CHANGELOG
 
-2.1.32
+2.1.33
+UTIL:
+* type=rule | introduce 'filter=(threat-log.occurrence.date.fast > 31-12-2024)'
+* type=rule | introduce 'filter=(threat-log.occurrence.per-rule.date.fast > 31-12-2024)'
+* class SecurityProfileGroupStore | extend method all( $withFilter = null ) - needed to get count of BP / none BP objects
+
+BUGFIX:
+* type=address/server actions=xyz-create if type is not defined
+* type=rule | bugfix for 'filter=(schedule.expire.in.days < -90)' - to use negative values
+* type=rule actions=schedule-set:XYZ in=api://MGMT-IP | bugfix for API mode
+* class VirtualRouter | add address object references for BGP peer-group
+* class LogicalRouter  | add address object references for BGP peer-group
+* class IPsecTunnel | bugfix - it is allowed to have no IKEGateway set in PAN-OS
+* class NetworkPropertiesContainer | bugfix to read virtual/logicalRouter References correctly
+
+GENERAL:
+* introduce develop part to read panos known-issues - for actual supported panos version
+* class VirtualRouter / LogicalRouter - extend address/interface object references reading
+* update Docker to ubuntu25.04 / php:8.4-apache / php:8.4-cli
+
+
+2.1.32 (20250110)
 UTIL:
 * type=address | introduce 'filter=(reflocationtype is.virtualsystem)' / is.only.virtualsystem
 * type=address | introduce 'filter=(refstore is.rulestore)' / is.only.rulestore

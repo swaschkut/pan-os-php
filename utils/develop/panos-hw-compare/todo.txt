@@ -1,0 +1,28 @@
+plain download is not showing product information as it is Javascript related:
+
+
+
+class="table table-condensed table-hover table-striped table-bordered
+
+https://www.paloaltonetworks.com/products/product-comparison?chosen=pa-3410
+
+
+
+https://www.paloaltonetworks.com/products/product-comparison?chosen=pa-1410,pa-1420
+
+https://www.paloaltonetworks.com/products/product-comparison?chosen=pa-3410,pa-3420,pa-3430,pa-3440
+
+https://www.paloaltonetworks.com/products/product-comparison?chosen=pa-5410,pa-5420,pa-5430,pa-5440,pa-5445,pa-5450
+
+----------------------------------------------
+PDF:
+https://www.paloaltonetworks.com/apps/productcompare/createpdf?language=en_US&corename=productcompare&q=product_id:%22pa-5410%22&rows=3&json.nl=map&sort=position+asc&wt=json&chosen=pa-5410
+----------------------------------------------
+
+HW EoL:
+https://www.paloaltonetworks.com/services/support/end-of-life-announcements/hardware-end-of-life-dates
+
+
+SW EoL:
+https://www.paloaltonetworks.com/services/support/end-of-life-announcements/end-of-life-summary#pan-os-panorama
+

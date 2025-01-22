@@ -1,5 +1,12 @@
 <?php
 
+//Todo: swaschkut 20250117:
+//check new Strata Cloud Manager adjusted part:
+//https://pan.dev/scm/docs/release-notes/november2024/
+
+//access policy:
+//https://pan.dev/scm/api/iam/post-iam-v-1-access-policies/
+
 class PanSaseAPIConnector
 {
     public $name = 'connector';
@@ -475,8 +482,12 @@ class PanSaseAPIConnector
 
         $jsonArray = json_decode($response, TRUE);
 
-        if( isset($jsonArray['_error']) )
-            derr($jsonArray['_error']['message'], null, FALSE);
+        if( isset($jsonArray['_errors']) )
+        {
+            print_r($jsonArray['_errors']);
+            derr($jsonArray['_errors'][0]['message'], null, FALSE);
+        }
+
 
         if( $jsonArray !== null
             && isset($jsonArray['total'])
@@ -1102,8 +1113,14 @@ class PanSaseAPIConnector
 
     private function displayCurlResponse( $response )
     {
-        if( isset($jsonArray['_error']) )
-            derr($jsonArray['_error']['message'], null, FALSE);
+        $jsonArray = json_decode($response, TRUE);
+
+        if( isset($jsonArray['_errors']) )
+        {
+            print_r($jsonArray['_errors']);
+            derr($jsonArray['_errors'][0]['message'], null, FALSE);
+        }
+
 
         if( $this->showApiCalls )
         {
@@ -1111,7 +1128,6 @@ class PanSaseAPIConnector
             //check ID from response and add it to config file
             //{"id":"8b9fd854-ad26-4d38-909a-ca24bf9ff7f0","name":"sven3","folder":"All","description":{},"ip_netmask":"4.5.6.7"}
 
-            $jsonArray = json_decode($response, TRUE);
             print_r( $jsonArray );
             if( $jsonArray !== null && isset($jsonArray['id']) )
             {

@@ -134,6 +134,172 @@ class LogicalRouter
                     $protocolEnabled = DH::findFirstElement("enable", $node);
                     if( $protocolEnabled !== FALSE )
                         $this->routingProtocols[$tmpProtocolName]['enabled'] = $protocolEnabled->textContent;
+
+
+                    if( $protocoll == "bgp" )
+                    {
+                        $tmp_peer_group = DH::findFirstElement('peer-group', $node);
+                        if(  $tmp_peer_group !== False )
+                        {
+                            foreach( $tmp_peer_group->childNodes as $node )
+                            {
+                                if ($node->nodeType != XML_ELEMENT_NODE)
+                                    continue;
+
+                                $tmp_peer_node = DH::findFirstElement('peer', $node);
+                                if(  $tmp_peer_node !== False )
+                                {
+                                    foreach ($tmp_peer_node->childNodes as $node2)
+                                    {
+                                        if ($node2->nodeType != XML_ELEMENT_NODE)
+                                            continue;
+
+                                        $tmp_peer_address_node = DH::findFirstElement('peer-address', $node2);
+                                        if ($tmp_peer_address_node != null)
+                                        {
+                                            $peerAddressNode = DH::findFirstElement('ip', $tmp_peer_address_node);
+                                            if ($peerAddressNode != null) {
+                                                #$this->peerAddress = $peerAddressNode->textContent;
+                                                $this->validateIPorObject($peerAddressNode->textContent, $type = 'peer-address');
+                                            }
+                                        }
+
+                                        $tmp_local_address_node = DH::findFirstElement('local-address', $node2);
+                                        if ($tmp_local_address_node != null)
+                                        {
+                                            $localAddressNode = DH::findFirstElement('ip', $tmp_local_address_node);
+                                            if ($localAddressNode != null)
+                                            {
+                                                #$this->localAddress = $localAddressNode->textContent;
+                                                $this->validateIPorObject($localAddressNode->textContent, $type = 'local-address');
+                                            }
+                                            $localInterfaceNode = DH::findFirstElement('interface', $tmp_local_address_node);
+                                            if ($localInterfaceNode != null)
+                                            {
+                                                $tmp_interface = $this->owner->owner->network->findInterfaceOrCreateTmp($localInterfaceNode->textContent);
+                                                $tmp_interface->addReference($this);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    elseif( $protocoll == "rip" )
+                    {
+                        $tmp_interface_node = DH::findFirstElement('interface', $node);
+                        if( $tmp_interface_node !== False )
+                        {
+                            foreach( $tmp_interface_node->childNodes as $interface_entry )
+                            {
+                                if ($interface_entry->nodeType != XML_ELEMENT_NODE)
+                                    continue;
+
+                                $interface_name = DH::findAttribute('name', $interface_entry);
+                                $tmp_interface = $this->owner->owner->network->findInterfaceOrCreateTmp($interface_name);
+                                $tmp_interface->addReference($this);
+                            }
+                        }
+                    }
+                    elseif( $protocoll == "ospf" || $protocoll == "ospfv3" )
+                    {
+                        $tmp_area = DH::findFirstElement('area', $node);
+                        if( $tmp_area !== False )
+                        {
+                            foreach( $tmp_area->childNodes as $area_entry )
+                            {
+                                if ($area_entry->nodeType != XML_ELEMENT_NODE)
+                                    continue;
+
+                                $tmp_interface_node = DH::findFirstElement('interface', $area_entry);
+                                if( $tmp_interface_node !== False )
+                                {
+                                    foreach ($tmp_interface_node->childNodes as $interface_entry)
+                                    {
+                                        if ($interface_entry->nodeType != XML_ELEMENT_NODE)
+                                            continue;
+
+                                        $interface_name = DH::findAttribute('name', $interface_entry);
+                                        $tmp_interface = $this->owner->owner->network->findInterfaceOrCreateTmp($interface_name);
+                                        $tmp_interface->addReference($this);
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    elseif( $protocoll == "multicast")
+                    {
+
+                        foreach( $node->childNodes as $multicast_type_node )
+                        {
+                            if ($multicast_type_node->nodeType != XML_ELEMENT_NODE)
+                                continue;
+
+                            $nodeName = $multicast_type_node->nodeName;
+                            if( $nodeName == "pim" )
+                            {
+                                $tmp_interface_node = DH::findFirstElement('interface', $multicast_type_node);
+                                if($tmp_interface_node !== False )
+                                {
+                                    foreach( $tmp_interface_node->childNodes as $interface_entry )
+                                    {
+                                        if ($interface_entry->nodeType != XML_ELEMENT_NODE)
+                                            continue;
+
+                                        $interface_name = DH::findAttribute('name', $interface_entry);
+                                        $tmp_interface = $this->owner->owner->network->findInterfaceOrCreateTmp($interface_name);
+                                        $tmp_interface->addReference($this);
+                                    }
+                                }
+                            }
+                            elseif( $nodeName == "igmp" )
+                            {
+                                $tmp_dynamic_node = DH::findFirstElement('dynamic', $multicast_type_node);
+                                if( $tmp_dynamic_node !== False )
+                                {
+                                    $tmp_interface_node = DH::findFirstElement('interface', $tmp_dynamic_node);
+                                    if( $tmp_interface_node !== False )
+                                    {
+                                        foreach ($tmp_interface_node->childNodes as $interface_entry)
+                                        {
+                                            if ($interface_entry->nodeType != XML_ELEMENT_NODE)
+                                                continue;
+
+                                            $interface_name = DH::findAttribute('name', $interface_entry);
+                                            $tmp_interface = $this->owner->owner->network->findInterfaceOrCreateTmp($interface_name);
+                                            $tmp_interface->addReference($this);
+                                        }
+                                    }
+                                }
+                            }
+                            elseif( $nodeName == "static-route" )
+                            {
+                                foreach ($multicast_type_node->childNodes as $static_route_entry)
+                                {
+                                    if ($static_route_entry->nodeType != XML_ELEMENT_NODE)
+                                        continue;
+
+                                    $tmp_interface_node = DH::findFirstElement('interface', $static_route_entry);
+                                    if( $tmp_interface_node !== False )
+                                    {
+                                        $interface_name = $tmp_interface_node->textContent;
+                                        $tmp_interface = $this->owner->owner->network->findInterfaceOrCreateTmp($interface_name);
+                                        $tmp_interface->addReference($this);
+                                    }
+                                    $tmp_destination_node = DH::findFirstElement('destination', $static_route_entry);
+                                    if( $tmp_destination_node !== False )
+                                    {
+                                        $this->validateIPorObject($tmp_destination_node->textContent, $type = 'destination');
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    elseif( $protocoll == "ecmp" )
+                    {
+
+                    }
                 }
             }
         }
@@ -609,6 +775,59 @@ class LogicalRouter
         }
         else
             $ipv4sort[$record['end'] - $record['start']][$record['start']][] = &$record;
+    }
+
+    function validateIPorObject($nexthopIP, $type = 'local-address')
+    {
+        $pan_object = $this->owner->owner;
+        if( isset( $pan_object->owner ) )
+        {
+            if( get_class($pan_object->owner) == "Template" )
+            {
+                $template_object = $pan_object->owner;
+                $panorama_object = $template_object->owner;
+                $shared_object = $panorama_object->addressStore->find($nexthopIP);
+                if( $shared_object != null )
+                {
+                    $shared_object->addReference($this);
+
+                    if( $type == "local-address" )
+                    {
+                        #$this->_destination = $shared_object->value();
+                        #$this->_destinationObject = $shared_object;
+                    }
+                    elseif( $type == "peer-address" )
+                    {
+                        #$this->_nexthopIP = $shared_object->value();
+                        #$this->_nexthopIPObject = $shared_object;
+                    }
+                }
+            }
+        }
+        else
+        {
+            $all_vsys = $pan_object->getVirtualSystems();
+
+            foreach( $all_vsys as $vsys )
+            {
+                $ngfw_object = $vsys->addressStore->find($nexthopIP);
+                if( $ngfw_object != null && !$ngfw_object->isTmpAddr() )
+                {
+                    $ngfw_object->addReference($this);
+
+                    if( $type == "local-address" )
+                    {
+                        #$this->_destination = $ngfw_object->value();
+                        #$this->_destinationObject = $ngfw_object;
+                    }
+                    elseif( $type == "peer-address" )
+                    {
+                        #$this->_nexthopIP = $ngfw_object->value();
+                        #$this->_nexthopIPObject = $ngfw_object;
+                    }
+                }
+            }
+        }
     }
 
     /**

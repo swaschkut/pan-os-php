@@ -198,6 +198,7 @@ trait lib_2_report_generator
         if( file_exists($ruleStatFile_SrcDst) )
         {
             PH::print_stdout(" - Previous rule stats found, loading from file $ruleStatFile_SrcDst... ");
+            $ruleStats->SrcDst = true;
             $ruleStats->load_from_file($ruleStatFile_SrcDst, true);
         }
         else
@@ -234,6 +235,8 @@ trait lib_2_report_generator
 
         $ruleCount = 0;
 
+        //enable if fully published
+        $srcOrDst = false;
         foreach( $rules as $rule )
         {
             /** @var SecurityRule $rule */
@@ -345,6 +348,7 @@ trait lib_2_report_generator
                 PH::print_stdout("     * Results (" . count($reports) . "):");
 
 
+                $ruleStats->SrcDst = true;
                 $ruleStats->createRuleStats($rule->name(), true);
                 $ruleStats->updateRuleUpdateTimestamp($rule->name(), true);
 
@@ -395,7 +399,11 @@ trait lib_2_report_generator
         $ruleStats->save_to_file($ruleStatFile);
 
         if( $srcOrDst )
+        {
+            $ruleStats->SrcDst = true;
             $ruleStats->save_to_file($ruleStatFile_SrcDst, true);
+        }
+
 
 
         //Todo - export not working for HTML but tool is using XML file - HTML is only for user

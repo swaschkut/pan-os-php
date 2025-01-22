@@ -191,7 +191,7 @@ class NetworkPropertiesContainer
         $tmp = DH::findFirstElement('ike', $this->xmlroot);
         if( $tmp !== FALSE )
         {
-            $tmp_crypto = DH::findFirstElementOrCreate('crypto-profiles', $tmp);
+            $tmp_crypto = DH::findFirstElement('crypto-profiles', $tmp);
             if( $tmp_crypto !== FALSE )
             {
                 $tmp_ike = DH::findFirstElement('ike-crypto-profiles', $tmp_crypto);
@@ -256,6 +256,8 @@ class NetworkPropertiesContainer
                     if( $staticRouteNextHop !== null && $staticRoute->nexthopIPobject() == null )
                         $staticRoute->validateIPorObject($staticRouteNextHop, 'nexthop');
                 }
+
+                $router->load_from_domxml($router->xmlroot);
             }
         }
 

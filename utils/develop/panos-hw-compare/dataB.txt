@@ -1,0 +1,90 @@
+{"Performance": {"name": "Performance", "details": "1. Firewall throughput measured with  App-ID and User-ID features enabled utilizing AppMix transactions.  2.  Threat prevention throughput measured with App-ID, User-ID, IPS, antivirus and anti-spyware features enabled utilizing AppMix transactions.  3.  New sessions per second measured with 1 byte HTTP transactions.  Additionally, for VM models, please refer to hypervisor, cloud specific data sheet for associated performance." }, "Sessions": {"name": "Sessions"}, "Policies": {"name": "Policies"}, "Security Zones": {"name": "Security Zones"}, "Objects (addresses and services)": {"name": "Objects (addresses and services)"}, "Security Profiles": {"name": "Security Profiles"}, "App-ID": {"name": "App-ID"}, "User-ID": {"name": "User-ID"}, "SSL Decryption": {"name": "SSL Decryption"}, "URL Filtering": {"name": "URL Filtering"}, "EDL": {"name": "EDL"}, "Interfaces": {"name": "Interfaces"}, "Power Over Ethernet": {"name": "Power Over Ethernet"}, "Cellular Interface": {"name": "Cellular Interface"}, "Virtual Routers": {"name": "Virtual Routers"}, "Virtual Wires": {"name": "Virtual Wires"}, "Virtual Systems": {"name": "Virtual Systems"}, "Routing": {"name": "Routing"}, "L2 Forwarding": {"name": "L2 Forwarding"}, "NAT": {"name": "NAT"}, "Address Assignment": {"name": "Address Assignment"}, "High Availability": {"name": "High Availability"}, "QoS": {"name": "QoS"}, "IPSec VPN": {"name": "IPSec VPN"}, "GlobalProtect Client VPN": {"name": "GlobalProtect Client VPN"}, "GlobalProtect Clientless VPN": {"name": "GlobalProtect Clientless VPN"}, "Multicast": {"name": "Multicast"}, "Product Notes": {"name": "Product Notes"}}
+
+
+{
+    "Performance": {
+        "name": "Performance",
+        "details": "1. Firewall throughput measured with  App-ID and User-ID features enabled utilizing AppMix transactions.  2.  Threat prevention throughput measured with App-ID, User-ID, IPS, antivirus and anti-spyware features enabled utilizing AppMix transactions.  3.  New sessions per second measured with 1 byte HTTP transactions.  Additionally, for VM models, please refer to hypervisor, cloud specific data sheet for associated performance."
+    },
+    "Sessions": {
+        "name": "Sessions"
+    },
+    "Policies": {
+        "name": "Policies"
+    },
+    "Security Zones": {
+        "name": "Security Zones"
+    },
+    "Objects (addresses and services)": {
+        "name": "Objects (addresses and services)"
+    },
+    "Security Profiles": {
+        "name": "Security Profiles"
+    },
+    "App-ID": {
+        "name": "App-ID"
+    },
+    "User-ID": {
+        "name": "User-ID"
+    },
+    "SSL Decryption": {
+        "name": "SSL Decryption"
+    },
+    "URL Filtering": {
+        "name": "URL Filtering"
+    },
+    "EDL": {
+        "name": "EDL"
+    },
+    "Interfaces": {
+        "name": "Interfaces"
+    },
+    "Power Over Ethernet": {
+        "name": "Power Over Ethernet"
+    },
+    "Cellular Interface": {
+        "name": "Cellular Interface"
+    },
+    "Virtual Routers": {
+        "name": "Virtual Routers"
+    },
+    "Virtual Wires": {
+        "name": "Virtual Wires"
+    },
+    "Virtual Systems": {
+        "name": "Virtual Systems"
+    },
+    "Routing": {
+        "name": "Routing"
+    },
+    "L2 Forwarding": {
+        "name": "L2 Forwarding"
+    },
+    "NAT": {
+        "name": "NAT"
+    },
+    "Address Assignment": {
+        "name": "Address Assignment"
+    },
+    "High Availability": {
+        "name": "High Availability"
+    },
+    "QoS": {
+        "name": "QoS"
+    },
+    "IPSec VPN": {
+        "name": "IPSec VPN"
+    },
+    "GlobalProtect Client VPN": {
+        "name": "GlobalProtect Client VPN"
+    },
+    "GlobalProtect Clientless VPN": {
+        "name": "GlobalProtect Clientless VPN"
+    },
+    "Multicast": {
+        "name": "Multicast"
+    },
+    "Product Notes": {
+        "name": "Product Notes"
+    }
+}

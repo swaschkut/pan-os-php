@@ -1647,9 +1647,26 @@ RQuery::$defaultFilters['rule']['app']['operators']['has.seen.fast-api'] = array
         return null;
     },
     'arg' => TRUE,
+    'deprecated' => 'this filter "app has.seen.fast-api XYZ" is deprecated, you should use "app has.seen.fast XYZ" instead!',
     'help' => 'example: \'filter=(app has.seen.fast-api unknown-tcp)\'',
 );
+RQuery::$defaultFilters['rule']['app']['operators']['has.seen.fast'] = array(
+    'Function' => function (RuleRQueryContext $context) {
+        $rule = $context->object;
 
+        #if( !$context->isAPI )
+        #    derr( "this filter is only supported in API mode", null, false );
+
+        $rule_array = $rule->API_apps_seen();
+
+        if( isset($rule_array['apps-seen']) && in_array( $context->value, array_keys($rule_array['apps-seen'])) )
+            return TRUE;
+
+        return null;
+    },
+    'arg' => TRUE,
+    'help' => 'example: \'filter=(app has.seen.fast unknown-tcp)\'',
+);
 
 //                                              //
 //          Services properties                 //
@@ -4003,6 +4020,100 @@ RQuery::$defaultFilters['rule']['uuid']['operators']['eq'] = array(
         'fString' => '(%PROP%  1234567890)',
         'input' => 'input/panorama-8.0.xml'
     )
+);
+RQuery::$defaultFilters['rule']['threat-log.occurrence.date.fast']['operators']['>,<,=,!'] = array(
+    'Function' => function (RuleRQueryContext $context) {
+        $rule = $context->object;
+
+        if( !$rule->isSecurityRule() )
+            return null;
+
+        $operator = $context->operator;
+        if( $operator == '=' )
+            $operator = '==';
+
+        /////////////////
+        $futuredate = $context->value;
+
+        $string = "";
+        $return = false;
+        $threatArray = $rule->getRuleThreatLog( $futuredate,$context,$operator, false);
+
+        if(isset($threatArray[$rule->name()]))
+        {
+            $threatLogs = $threatArray[$rule->name()];
+            foreach( $threatLogs as $threat_log )
+            {
+                $tmp_subtype = $threat_log['subtype'];
+                $tmp_log = $threat_log['threat_name'];
+                $tmp_time_generated = $threat_log['time_generated'];
+                $tmp_severity = $threat_log['severity'];
+                $tmp_action = $threat_log['action'];
+
+                $string .=  "          "." - time_generated: '".$tmp_time_generated."' | type: '".$tmp_subtype."' | threat_name: '".$tmp_log."' | severity: '".$tmp_severity."' | action: '".$tmp_action."'"."\n";
+
+                $return = true;
+            }
+
+            PH::print_stdout( "------------------------------------------------------------------------");
+            PH::print_stdout( $string );
+        }
+
+        return $return;
+    },
+    'arg' => true,
+    'ci' => array(
+        'fString' => '(%PROP% 5 )',
+        'input' => 'input/panorama-8.0.xml'
+    ),
+    'help' => 'returns TRUE if rule name matches the specified timestamp MM/DD/YYYY [american] / DD-MM-YYYY [european]'
+);
+RQuery::$defaultFilters['rule']['threat-log.occurrence.per-rule.date.fast']['operators']['>,<,=,!'] = array(
+    'Function' => function (RuleRQueryContext $context) {
+        $rule = $context->object;
+
+        if( !$rule->isSecurityRule() )
+            return null;
+
+        $operator = $context->operator;
+        if( $operator == '=' )
+            $operator = '==';
+
+        /////////////////
+        $futuredate = $context->value;
+
+        $string = "";
+        $return = false;
+        $threatArray = $rule->getRuleThreatLog( $futuredate,$context,$operator, true);
+
+        if(isset($threatArray[$rule->name()]))
+        {
+            $threatLogs = $threatArray[$rule->name()];
+            foreach( $threatLogs as $threat_log )
+            {
+                $tmp_subtype = $threat_log['subtype'];
+                $tmp_log = $threat_log['threat_name'];
+                $tmp_time_generated = $threat_log['time_generated'];
+                $tmp_severity = $threat_log['severity'];
+                $tmp_action = $threat_log['action'];
+
+                $string .=  "          "." - time_generated: '".$tmp_time_generated."' | type: '".$tmp_subtype."' | threat_name: '".$tmp_log."' | severity: '".$tmp_severity."' | action: '".$tmp_action."'"."\n";
+
+                $return = true;
+            }
+
+            PH::print_stdout( "------------------------------------------------------------------------");
+            PH::print_stdout( $string );
+        }
+
+        return $return;
+    },
+    'arg' => true,
+    'ci' => array(
+        'fString' => '(%PROP% 5 )',
+        'input' => 'input/panorama-8.0.xml'
+    ),
+    'help' => 'returns TRUE if rule name matches the specified timestamp MM/DD/YYYY [american] / DD-MM-YYYY [european]'
 );
 // </editor-fold>
 

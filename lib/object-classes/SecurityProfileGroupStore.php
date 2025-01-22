@@ -41,9 +41,42 @@ class SecurityProfileGroupStore extends ObjStore
         $this->setParentCentralStore( 'securityProfileGroupStore' );
     }
 
-    public function all()
+    public function all($withFilter = null)
     {
-        return $this->o;
+        $query = null;
+
+        if( $withFilter !== null && $withFilter !== '' )
+        {
+            $queryContext = array();
+
+            if( is_array($withFilter) )
+            {
+                $filter = &$withFilter['query'];
+                $queryContext['nestedQueries'] = &$withFilter;
+            }
+            else
+                $filter = &$withFilter;
+
+            $errMesg = '';
+            $query = new RQuery('securityprofilegroup');
+            if( $query->parseFromString($filter, $errMsg) === FALSE )
+                derr("error while parsing query: {$errMesg}");
+
+            $res = array();
+
+            foreach( $this->o as $securityProfileGroup )
+            {
+                $queryContext['object'] = $securityProfileGroup;
+                if( $query->matchSingleObject($queryContext) )
+                    $res[] = $securityProfileGroup;
+            }
+
+            return $res;
+        }
+
+        $res = $this->o;
+
+        return $res;
     }
 
     public function count()

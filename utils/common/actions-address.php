@@ -3306,10 +3306,12 @@ AddressCallContext::$supportedActions['create-Address'] = array(
 
         $value = $context->arguments['value'];
         $type = $context->arguments['type'];
+        $description = $context->arguments['description'];
 
         if( !in_array( $type, Address::$AddressTypes) )
         {
             $string = "Address named '" . $newName . "' cannot create as type: ".$type." is not allowed";
+            derr($string, null, false);
             PH::ACTIONlog( $context, $string );
             return;
         }
@@ -3322,9 +3324,9 @@ AddressCallContext::$supportedActions['create-Address'] = array(
             PH::ACTIONlog( $context, $string );
 
             if( $context->isAPI )
-                $addressStore->API_newAddress($newName, $type, $value);
+                $addressStore->API_newAddress($newName, $type, $value, $description);
             else
-                $addressStore->newAddress( $newName, $type, $value);
+                $addressStore->newAddress( $newName, $type, $value, $description);
         }
         else
         {
@@ -3357,7 +3359,8 @@ AddressCallContext::$supportedActions['create-Address'] = array(
             'default' => '*nodefault*',
             'help' =>
                 implode( ", ", Address::$AddressTypes )
-        )
+        ),
+        'description' => array('type' => 'string', 'default' => '-')
     )
 );
 
@@ -3616,7 +3619,18 @@ AddressCallContext::$supportedActions['create-AddressGroup'] = array(
             PH::ACTIONlog( $context, $string );
 
             if( $context->isAPI )
-                $addressStore->API_newAddressGroup($newName);
+            {
+                if( $context->isSaseAPI )
+                {
+                    $tmp_address = $addressStore->API_newAddress("dummy", "ip-netmask", "127.0.0.1", "dummy");
+                    $tmp_group = $addressStore->newAddressGroup( $newName);
+                    $tmp_group->addMember( $tmp_address );
+                    $tmp_group->API_sync();
+                }
+                else
+                    $addressStore->API_newAddressGroup($newName);
+            }
+
             else
                 $addressStore->newAddressGroup( $newName);
         }

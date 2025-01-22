@@ -97,6 +97,10 @@ var subjectObject =
                         "type": "string",
                         "default": "*nodefault*",
                         "help": "tmp, ip-netmask, ip-range, fqdn, dynamic, ip-wildcard"
+                    },
+                    "description": {
+                        "type": "string",
+                        "default": "-"
                     }
                 }
             },
@@ -5334,7 +5338,13 @@ var subjectObject =
                     "has.seen.fast-api": {
                         "Function": {},
                         "arg": true,
+                        "deprecated": "this filter \"app has.seen.fast-api XYZ\" is deprecated, you should use \"app has.seen.fast XYZ\" instead!",
                         "help": "example: 'filter=(app has.seen.fast-api unknown-tcp)'"
+                    },
+                    "has.seen.fast": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "example: 'filter=(app has.seen.fast unknown-tcp)'"
                     },
                     "category.is": {
                         "Function": {},
@@ -6701,6 +6711,32 @@ var subjectObject =
                             "fString": "(%PROP%  00YC25C)",
                             "input": "input\/panorama-8.0.xml"
                         }
+                    }
+                }
+            },
+            "threat-log.occurrence.date.fast": {
+                "operators": {
+                    ">,<,=,!": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% 5 )",
+                            "input": "input\/panorama-8.0.xml"
+                        },
+                        "help": "returns TRUE if rule name matches the specified timestamp MM\/DD\/YYYY [american] \/ DD-MM-YYYY [european]"
+                    }
+                }
+            },
+            "threat-log.occurrence.per-rule.date.fast": {
+                "operators": {
+                    ">,<,=,!": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% 5 )",
+                            "input": "input\/panorama-8.0.xml"
+                        },
+                        "help": "returns TRUE if rule name matches the specified timestamp MM\/DD\/YYYY [american] \/ DD-MM-YYYY [european]"
                     }
                 }
             },
@@ -8406,6 +8442,10 @@ var subjectObject =
                     "sport": {
                         "type": "string",
                         "default": "*nodefault*"
+                    },
+                    "description": {
+                        "type": "string",
+                        "default": "---"
                     }
                 }
             },

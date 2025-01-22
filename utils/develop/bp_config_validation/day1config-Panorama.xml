@@ -683,9 +683,9 @@
                     <server>
                       <entry name="Sample_Email_Profile">
                         <display-name>Threat_Alerts</display-name>
-                        <gateway>194.25.83.39</gateway>
-                        <from>panorama-vdm@vdm-metals.com</from>
-                        <to>gina.zitterich@vdm-metals.com</to>
+                        <gateway>192.0.2.2</gateway>
+                        <from>panorama@domain.com</from>
+                        <to>user@domain.com</to>
                         <protocol>SMTP</protocol>
                       </entry>
                     </server>
@@ -1016,9 +1016,9 @@
           <server>
             <entry name="Sample_Email_Profile">
               <display-name>Threat_Alerts</display-name>
-              <gateway>194.25.83.39</gateway>
-              <from>panorama-vdm@vdm-metals.com</from>
-              <to>gina.zitterich@vdm-metals.com</to>
+              <gateway>192.0.2.2</gateway>
+              <from>panorama@domain.com</from>
+              <to>user@domain.com</to>
               <protocol>SMTP</protocol>
             </entry>
           </server>

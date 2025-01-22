@@ -147,8 +147,15 @@ class THREATLOG extends UTIL
 
                         $tmp_log = $log['threat_name'];
 
-                        $ruleID = $log['rule_uuid'];
-                        PH::print_stdout(  " - type: '".$tmp_subtype."' | threat_name: '".$tmp_log."' | rule-ID: '".$ruleID."'" );
+                        if(isset($log['rule_uuid']))
+                            $ruleID = $log['rule_uuid'];
+                        else
+                            $ruleID = "---";
+                        if(isset($log['rule']))
+                            $rule = $log['rule'];
+                        else
+                            $rule = "---";
+                        PH::print_stdout(  " - type: '".$tmp_subtype."' | threat_name: '".$tmp_log."' | rule-ID: '".$ruleID."' | rule_name: '".$rule."'" );
                         $missingAPPID = null;
                         if( strpos( $tmp_log, " TO " ) !== FALSE )
                         {
