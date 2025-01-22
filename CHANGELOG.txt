@@ -13,6 +13,7 @@ BUGFIX:
 * class VirtualRouter | add address object references for BGP peer-group
 * class LogicalRouter  | add address object references for BGP peer-group
 * class IPsecTunnel | bugfix - it is allowed to have no IKEGateway set in PAN-OS
+* class NetworkPropertiesContainer | bugfix to read virtual/logicalRouter References correctly
 
 GENERAL:
 * introduce develop part to read panos known-issues - for actual supported panos version

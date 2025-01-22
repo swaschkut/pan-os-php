@@ -240,14 +240,17 @@ class LogicalRouter
                             if( $nodeName == "pim" )
                             {
                                 $tmp_interface_node = DH::findFirstElement('interface', $multicast_type_node);
-                                foreach( $tmp_interface_node->childNodes as $interface_entry )
+                                if($tmp_interface_node !== False )
                                 {
-                                    if ($interface_entry->nodeType != XML_ELEMENT_NODE)
-                                        continue;
+                                    foreach( $tmp_interface_node->childNodes as $interface_entry )
+                                    {
+                                        if ($interface_entry->nodeType != XML_ELEMENT_NODE)
+                                            continue;
 
-                                    $interface_name = DH::findAttribute('name', $interface_entry);
-                                    $tmp_interface = $this->owner->owner->network->findInterfaceOrCreateTmp($interface_name);
-                                    $tmp_interface->addReference($this);
+                                        $interface_name = DH::findAttribute('name', $interface_entry);
+                                        $tmp_interface = $this->owner->owner->network->findInterfaceOrCreateTmp($interface_name);
+                                        $tmp_interface->addReference($this);
+                                    }
                                 }
                             }
                             elseif( $nodeName == "igmp" )
@@ -256,14 +259,17 @@ class LogicalRouter
                                 if( $tmp_dynamic_node !== False )
                                 {
                                     $tmp_interface_node = DH::findFirstElement('interface', $tmp_dynamic_node);
-                                    foreach ($tmp_interface_node->childNodes as $interface_entry)
+                                    if( $tmp_interface_node !== False )
                                     {
-                                        if ($interface_entry->nodeType != XML_ELEMENT_NODE)
-                                            continue;
+                                        foreach ($tmp_interface_node->childNodes as $interface_entry)
+                                        {
+                                            if ($interface_entry->nodeType != XML_ELEMENT_NODE)
+                                                continue;
 
-                                        $interface_name = DH::findAttribute('name', $interface_entry);
-                                        $tmp_interface = $this->owner->owner->network->findInterfaceOrCreateTmp($interface_name);
-                                        $tmp_interface->addReference($this);
+                                            $interface_name = DH::findAttribute('name', $interface_entry);
+                                            $tmp_interface = $this->owner->owner->network->findInterfaceOrCreateTmp($interface_name);
+                                            $tmp_interface->addReference($this);
+                                        }
                                     }
                                 }
                             }
@@ -820,14 +826,6 @@ class LogicalRouter
                         #$this->_nexthopIPObject = $ngfw_object;
                     }
                 }
-            }
-
-            if( count($all_vsys) == 0 )
-            {
-                #if( $type == "local-address" )
-                #    $this->_destination = $nexthopIP;
-                #elseif( $type == "peer-address" )
-                #    $this->_nexthopIP = $nexthopIP;
             }
         }
     }

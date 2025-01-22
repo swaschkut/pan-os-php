@@ -256,6 +256,8 @@ class NetworkPropertiesContainer
                     if( $staticRouteNextHop !== null && $staticRoute->nexthopIPobject() == null )
                         $staticRoute->validateIPorObject($staticRouteNextHop, 'nexthop');
                 }
+
+                $router->load_from_domxml($router->xmlroot);
             }
         }
 
