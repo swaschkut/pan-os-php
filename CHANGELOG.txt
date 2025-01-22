@@ -1,6 +1,14 @@
 CHANGELOG
 
-2.1.33
+2.1.34
+UTIL:
+
+BUGFIX:
+
+GENERAL:
+
+
+2.1.33 (20250122)
 UTIL:
 * type=rule | introduce 'filter=(threat-log.occurrence.date.fast > 31-12-2024)'
 * type=rule | introduce 'filter=(threat-log.occurrence.per-rule.date.fast > 31-12-2024)'
