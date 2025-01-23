@@ -802,6 +802,13 @@ class EthernetInterface
 
     }
 
+    public function getLinkState()
+    {
+        if ($this->isSubInterface())
+            return null;
+
+        return $this->linkstate;
+    }
     //Todo: (20180722)
     //---(also needed for vlan / loopback / tunnel interface)
     //- add Virtual Router

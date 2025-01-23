@@ -2,6 +2,7 @@ CHANGELOG
 
 2.1.34
 UTIL:
+* class EthernetInterface | introduce method 'getLinkState' to use it in | type=interface actions=display | to show if an interface is configured to "down"
 
 BUGFIX:
 
@@ -15,7 +16,7 @@ UTIL:
 * class SecurityProfileGroupStore | extend method all( $withFilter = null ) - needed to get count of BP / none BP objects
 
 BUGFIX:
-* type=address/server actions=xyz-create if type is not defined
+* type=address/service actions=xyz-create if type is not defined
 * type=rule | bugfix for 'filter=(schedule.expire.in.days < -90)' - to use negative values
 * type=rule actions=schedule-set:XYZ in=api://MGMT-IP | bugfix for API mode
 * class VirtualRouter | add address object references for BGP peer-group
