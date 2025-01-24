@@ -156,17 +156,6 @@ foreach ($scanned_directory as $filename)
 {
     #PH::print_stdout("FILENAME: ".$filename);
 
-    if( $filename == "XG310-network-WAN-Gateways.xml" )
-        continue;
-    #elseif( $filename == "XG310-network-lags.xml" )
-    #    continue;
-    //
-    /*
-        XG310-objects-fqdn.xml
-        XG310-objects-ip.xml
-        XG310-objects-mac.xml
-        XG310-objects-service.xml
-     */
     $xml = new DOMDocument;
     $xml->load($directory."/".$filename);
     #$xml->loadXML(file_get_contents($filename));
@@ -192,7 +181,58 @@ foreach ($scanned_directory as $filename)
     }
     elseif( strpos($filename, 'network-lags') !== false )
     {
+        //Todo: is this finalised???
         sophos_xg_networkLAGS($v, $XMLroot);
+    }
+    elseif( strpos($filename, 'objects-mac') !== false )
+    {
+        //Todo: is this of interest?
+        /*
+         *   <MACHost transactionid="">
+                <Name>T2-Client-SBE-Wifi-08:71:90:A1:1B:7F</Name>
+                <Type>MACAddress</Type>
+                <MACAddress>08:71:90:A1:1B:7F</MACAddress>
+              </MACHost>
+         */
+    }
+    elseif( strpos($filename, 'network-vlans') !== false )
+    {
+        sophos_xg_networkVLANS($v, $XMLroot);
+    }
+    elseif( strpos($filename, 'network-zones') !== false )
+    {
+        //Todo: swaschkut 20250124 implementation needed
+        /*
+          <Zone transactionid="">
+            <Name>LAN</Name>
+            <Type>LAN</Type>
+            <Description/>
+            <ApplianceAccess>
+              <AdminServices>
+                <HTTPS>Enable</HTTPS>
+                <SSH>Enable</SSH>
+              </AdminServices>
+              <AuthenticationServices>
+                <ClientAuthentication>Enable</ClientAuthentication>
+                <CaptivePortal>Enable</CaptivePortal>
+                <RadiusSSO>Enable</RadiusSSO>
+                <ChromebookSSO>Enable</ChromebookSSO>
+              </AuthenticationServices>
+              <NetworkServices>
+                <DNS>Enable</DNS>
+                <Ping>Enable</Ping>
+              </NetworkServices>
+              <OtherServices>
+                <WebProxy>Enable</WebProxy>
+                <SSLVPN>Enable</SSLVPN>
+                <UserPortal>Enable</UserPortal>
+                <WirelessProtection>Enable</WirelessProtection>
+                <SMTPRelay>Enable</SMTPRelay>
+                <SNMP>Enable</SNMP>
+              </OtherServices>
+            </ApplianceAccess>
+          </Zone>
+         */
     }
 }
 
@@ -690,11 +730,18 @@ function sophos_xg_networkLAGS( $v, $XMLroot)
         if ($child->nodeName != 'LAG')
             continue;
 
-        DH::DEBUGprintDOMDocument($child);
+        //Todo: swaschkut 20250124 check what is missing
+        #DH::DEBUGprintDOMDocument($child);
 
         $name_node = DH::findFirstElement( 'Name', $child);
         $name = $name_node->textContent;
 
+        $ipv4Configuration_node = DH::findFirstElement( 'IPv4Configuration', $child);
+        $ipv6Configuration_node = DH::findFirstElement( 'IPv6Configuration', $child);
+
+        $ipv4Address_node = DH::findFirstElement( 'IPv4Address', $child);
+        $ipv4Netmask_node = DH::findFirstElement( 'Netmask', $child);
+        $subnetmask = CIDR::netmask2cidr( $ipv4Netmask_node->textContent );
 
         $aeInterface = $v->owner->network->aggregateEthernetIfStore->newEthernetIf( $name, "layer3" );
 
@@ -721,32 +768,114 @@ function sophos_xg_networkLAGS( $v, $XMLroot)
 
         /*
          * <LAG transactionid="">
- <Hardware>Uplink</Hardware>
- <Name>Uplink</Name>
- <MemberInterface>
-  <Interface>PortE1</Interface>
-  <Interface>PortE2</Interface>
- </MemberInterface>
- <Mode>802.3ad(LACP)</Mode>
- <NetworkZone>LAN</NetworkZone>
- <IPAssignment>Static</IPAssignment>
- <IPv4Configuration>Enable</IPv4Configuration>
- <IPv6Configuration>Disable</IPv6Configuration>
- <InterfaceSpeed>Auto Negotiate</InterfaceSpeed>
- <AutoNegotiation>Enable</AutoNegotiation>
- <FEC>Off</FEC>
- <MTU>1500</MTU>
- <MACAddress>Default</MACAddress>
- <MSS>
-  <OverrideMSS>Disable</OverrideMSS>
-  <MSSValue>1460</MSSValue>
- </MSS>
- <IPv4Address>10.255.255.254</IPv4Address>
- <Netmask>255.255.255.0</Netmask>
- <XmitHashPolicy>Layer2</XmitHashPolicy>
-</LAG>
-
+         <Hardware>Uplink</Hardware>
+         <Name>Uplink</Name>
+         <MemberInterface>
+          <Interface>PortE1</Interface>
+          <Interface>PortE2</Interface>
+         </MemberInterface>
+         <Mode>802.3ad(LACP)</Mode>
+         <NetworkZone>LAN</NetworkZone>
+         <IPAssignment>Static</IPAssignment>
+         <IPv4Configuration>Enable</IPv4Configuration>
+         <IPv6Configuration>Disable</IPv6Configuration>
+         <InterfaceSpeed>Auto Negotiate</InterfaceSpeed>
+         <AutoNegotiation>Enable</AutoNegotiation>
+         <FEC>Off</FEC>
+         <MTU>1500</MTU>
+         <MACAddress>Default</MACAddress>
+         <MSS>
+          <OverrideMSS>Disable</OverrideMSS>
+          <MSSValue>1460</MSSValue>
+         </MSS>
+         <IPv4Address>10.255.255.254</IPv4Address>
+         <Netmask>255.255.255.0</Netmask>
+         <XmitHashPolicy>Layer2</XmitHashPolicy>
+        </LAG>
          */
+    }
+}
+
+function sophos_xg_networkVLANS( $v, $XMLroot)
+{
+    /** @var VirtualSystem $v */
+
+    foreach ($XMLroot->childNodes as $child)
+    {
+        /** @var DOMElement $node */
+        if ($child->nodeType != XML_ELEMENT_NODE)
+            continue;
+
+        if ($child->nodeName != 'VLAN')
+            continue;
+
+        $ipv4Enable = false;
+        $ipv6Enable = false;
+        //subinterface
+        /*
+         <VLAN transactionid="">
+            <Zone>T1</Zone>
+            <Interface>Uplink</Interface>
+            <Hardware>Uplink.1401</Hardware>
+            <Name>Uplink.1401</Name>
+            <VLANID>1401</VLANID>
+            <IPv4Configuration>Enable</IPv4Configuration>
+            <IPv6Configuration>Disable</IPv6Configuration>
+            <IPv4Assignment>Static</IPv4Assignment>
+            <IPv6Address/>
+            <IPv6Prefix/>
+            <IPv6GatewayName/>
+            <IPv6GatewayAddress/>
+            <LocalIP/>
+            <Status>Connected, 20000 Mbps - Full Duplex, FEC off</Status>
+            <IPv6Assignment/>
+            <DHCPRapidCommit/>
+            <IPAddress>172.22.140.1</IPAddress>
+            <Netmask>255.255.255.0</Netmask>
+          </VLAN>
+         */
+
+        $zone_node = DH::findFirstElement( 'Zone', $child);
+
+        $name_node = DH::findFirstElement( 'Name', $child);
+        $name = $name_node->textContent;
+
+        //MAIN interface
+        $interface_node = DH::findFirstElement( 'Interface', $child);
+        //subinterface
+        $hardware_node = DH::findFirstElement( 'Hardware', $child);
+        //VLANID
+        $vlanid_node = DH::findFirstElement( 'VLANID', $child);
+
+        $ipv4Configuration_node = DH::findFirstElement( 'IPv4Configuration', $child);
+        $ipv6Configuration_node = DH::findFirstElement( 'IPv6Configuration', $child);
+
+        if( $ipv4Configuration_node->textContent == "Enable" )
+        {
+            $ipv4Enable = true;
+            $ipv4Address_node = DH::findFirstElement( 'IPAddress', $child);
+            $ipv4Netmask_node = DH::findFirstElement( 'Netmask', $child);
+            $subnetmask = CIDR::netmask2cidr( $ipv4Netmask_node->textContent );
+        }
+
+        if( $ipv6Configuration_node->textContent == "Enable" )
+        {
+            /*
+                <IPv6Address/>
+                <IPv6Prefix/>
+                <IPv6GatewayName/>
+                <IPv6GatewayAddress/>
+                <LocalIP/>
+             */
+        }
+
+        $mainInterface = $v->owner->network->ethernetIfStore->find( $interface_node->textContent );
+        $mainAEInterface = $v->owner->network->aggregateEthernetIfStore->find( $interface_node->textContent );
+        if( $mainInterface === null && $mainAEInterface !== null )
+            $mainInterface = $mainAEInterface;
+
+        $mainInterface = $v->owner->network->ethernetIfStore->addSubinterfaceToStore()
+        DH::DEBUGprintDOMDocument($child);
     }
 }
 function print_xml_info($appx3, $print = false)
