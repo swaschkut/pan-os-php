@@ -163,17 +163,25 @@ foreach ($scanned_directory as $filename)
 
     $XMLroot = $xml->documentElement;
 
-    if( strpos($filename, 'objects-ip') !== false )
+    if( strpos($filename, 'objects-ip.xml') !== false )
     {
         sophos_xg_objectsIP($v, $XMLroot);
+    }
+    if( strpos($filename, 'objects-ipgroup') !== false )
+    {
+        sophos_xg_objectsIPGROUP($v, $XMLroot);
     }
     elseif( strpos($filename, 'objects-fqdn') !== false )
     {
         sophos_xg_objectsFQDN($v, $XMLroot);
     }
-    elseif( strpos($filename, 'objects-service') !== false )
+    elseif( strpos($filename, 'objects-service.xml') !== false )
     {
         sophos_xg_objectsSERVICE($v, $XMLroot);
+    }
+    elseif( strpos($filename, 'objects-servicegroup') !== false )
+    {
+        sophos_xg_objectsSERVICEGROUP($v, $XMLroot);
     }
     elseif( strpos($filename, 'network-interfaces') !== false )
     {
@@ -234,52 +242,18 @@ foreach ($scanned_directory as $filename)
           </Zone>
          */
     }
+    elseif( strpos($filename, 'routes-static') !== false )
+    {
+        sophos_xg_routeSTATIC($v, $XMLroot);
+    }
+    elseif( strpos($filename, 'rules-firewall') !== false )
+    {
+        sophos_xg_rulesFIREWALL($v, $XMLroot);
+    }
+
 }
 
-/*
-///profile/interface-list/interface/if-item-list/item/physical-if/if-dev-name
-$xml_interface_list = DH::findFirstElementOrCreate('interface-list', $XMLroot );
-watchguard_getInterface($pan, $v, $xml_interface_list);
 
-
-$xml_system_parameters = DH::findFirstElementOrCreate('system-parameters', $XMLroot );
-$xml_route = DH::findFirstElementOrCreate('route', $xml_system_parameters );
-watchguard_getRoute($pan, $xml_route);
-
-
-// <abs-ipsec-action-list>
-$xml_abs_ipsec_action_list = DH::findFirstElementOrCreate('abs-ipsec-action-list', $XMLroot );
-watchguard_getIPsecAction($pan, $v, $xml_abs_ipsec_action_list);
-#exit();
-*/
-
-#$xml_Address = DH::findFirstElementOrCreate('address-group-list', $XMLroot );
-#watchguard_getAddress( $v, $xml_Address );
-
-/*
-$xml_Service = DH::findFirstElementOrCreate('service-list', $XMLroot );
-watchguard_getService( $v, $xml_Service );
-
-#policy-list is not of interest
-#$xml_Policy = DH::findFirstElementOrCreate('policy-list', $XMLroot );
-
-#read alist first into array
-$alias_array = array();
-$xml_alias = DH::findFirstElementOrCreate('alias-list', $XMLroot );
-watchguard_alias($v, $xml_alias, $alias_array);
-
-#print_r( $alias_array );
-
-#read nat first into array
-$nat_array = array();
-$xml_alias = DH::findFirstElementOrCreate('nat-list', $XMLroot );
-watchguard_nat($v, $xml_alias, $nat_array);
-
-#print_r( $nat_array );
-
-$xml_Policy = DH::findFirstElementOrCreate('abs-policy-list', $XMLroot );
-watchguard_getPolicy( $v, $xml_Policy, $alias_array, $nat_array );
-*/
 
 #######################################################
 
@@ -388,12 +362,62 @@ function sophos_xg_objectsIP( $v, $XMLroot)
     }
 }
 
+function sophos_xg_objectsIPGROUP( $v, $XMLroot)
+{
+    /** @var VirtualSystem $v */
+
+    foreach ($XMLroot->childNodes as $child)
+    {
+        /** @var DOMElement $node */
+        if ($child->nodeType != XML_ELEMENT_NODE)
+            continue;
+
+        if ($child->nodeName != 'IPHostGroup')
+            continue;
+
+
+        $name_node = DH::findFirstElement( 'Name', $child);
+        $name = normalizeNames($name_node->textContent);
+
+        $tmpGroup = $v->addressStore->newAddressGroup($name);
+
+        $hostList_node = DH::findFirstElement( 'HostList', $child);
+        if( $hostList_node !== FALSE )
+        {
+            foreach( $hostList_node->childNodes as $host )
+            {
+                /** @var DOMElement $node */
+                if ($host->nodeType != XML_ELEMENT_NODE)
+                    continue;
+
+                $obj_name = normalizeNames($host->textContent);
+                $tmp_adr = $v->addressStore->find($obj_name);
+                if($tmp_adr !== null)
+                    $tmpGroup->addMember($tmp_adr);
+                else
+                {
+                    mwarning( "adr object: $obj_name not found", null, false );
+                }
+            }
+        }
+        /*
+         *   <IPHostGroup transactionid="">
+            <Name>LAN Group IGZ Falkenberg</Name>
+            <Description/>
+            <HostList>
+              <Host>LAN IGZ-L Geb1 192.168.191.0/24</Host>
+              <Host>LAN IGZ-L Server 192.168.181.0/24</Host>
+              <Host>LAN IGZ-L Transfer 192.168.180.0/24</Host>
+            </HostList>
+            <IPFamily>IPv4</IPFamily>
+          </IPHostGroup>
+         */
+    }
+}
 
 function sophos_xg_objectsSERVICE( $v, $XMLroot)
 {
     /** @var VirtualSystem $v */
-
-
 
     foreach ($XMLroot->childNodes as $child)
     {
@@ -413,7 +437,8 @@ function sophos_xg_objectsSERVICE( $v, $XMLroot)
 
         $serviceDetails_node = DH::findFirstElement( 'ServiceDetails', $child);
         $serviceCount = 0;
-        foreach( $serviceDetails_node->childNodes as $serviceDetail_node) {
+        foreach( $serviceDetails_node->childNodes as $serviceDetail_node)
+        {
             /** @var DOMElement $serviceDetail_node */
             if ($serviceDetail_node->nodeType != XML_ELEMENT_NODE)
                 continue;
@@ -435,7 +460,7 @@ function sophos_xg_objectsSERVICE( $v, $XMLroot)
 
             if( $type_node->textContent == "TCPorUDP" )
             {
-                continue;
+
                 $sourcePort_node = DH::findFirstElement( 'SourcePort', $serviceDetail_node);
                 $destinationPort_node = DH::findFirstElement( 'DestinationPort', $serviceDetail_node);
                 $protocol_node = DH::findFirstElement( 'Protocol', $serviceDetail_node);
@@ -491,20 +516,6 @@ function sophos_xg_objectsSERVICE( $v, $XMLroot)
                     $newService = $v->serviceStore->newService("tmp-" . $name, "tcp", "1-65535", $description);
                     $newService->setDescription( "protocol-id:{".$protocolName_node->textContent."}" );
                 }
-
-
-                //protocoll like AH:
-                /*
-                 * <Services transactionid="">
-                     <Name>AH</Name>
-                     <Type>IP</Type>
-                     <ServiceDetails>
-                      <ServiceDetail>
-                       <ProtocolName>AH</ProtocolName>
-                      </ServiceDetail>
-                     </ServiceDetails>
-                    </Services>
-                 */
             }
             elseif( $type_node->textContent == "ICMP" )
             {
@@ -519,24 +530,9 @@ function sophos_xg_objectsSERVICE( $v, $XMLroot)
                     $newService = $v->serviceStore->newService("tmp-" . $name, "tcp", "1-65535", $description);
                     $newService->setDescription( "icmptype:{".$icmpType_node->textContent."},icmpcode:{".$icmpCode_node->textContent."}" );
                 }
-
-
-                /*
-                 * <Services transactionid="">
-                 <Name>INFO_ADDRESS</Name>
-                 <Type>ICMP</Type>
-                 <ServiceDetails>
-                  <ServiceDetail>
-                   <ICMPType>Address Mask Request</ICMPType>
-                   <ICMPCode>Any Code</ICMPCode>
-                  </ServiceDetail>
-                 </ServiceDetails>
-                </Services>
-                 */
             }
             elseif( $type_node->textContent == "ICMPv6" )
             {
-                #DH::DEBUGprintDOMDocument($child);
                 $icmpv6Type_node = DH::findFirstElement( 'ICMPv6Type', $serviceDetail_node);
                 $icmpv6Code_node = DH::findFirstElement( 'ICMPv6Code', $serviceDetail_node);
 
@@ -549,19 +545,6 @@ function sophos_xg_objectsSERVICE( $v, $XMLroot)
                     $newService->set_node_attribute('error', 'Service Protocol found [' . $name . '] and Protocol [ICMPv6] - Replace it by the right app-id - tcp 6500 is used');
                     $newService->setDescription( "icmpv6type:{".$icmpv6Type_node->textContent."},icmpv6code:{".$icmpv6Code_node->textContent."}" );
                 }
-
-                /*
-                 * <Services transactionid="">
-                 <Name>PING6</Name>
-                 <Type>ICMPv6</Type>
-                 <ServiceDetails>
-                  <ServiceDetail>
-                   <ICMPv6Type>Echo Request</ICMPv6Type>
-                   <ICMPv6Code>Any Code</ICMPv6Code>
-                  </ServiceDetail>
-                 </ServiceDetails>
-                </Services>
-                 */
             }
             else
             {
@@ -588,6 +571,52 @@ function sophos_xg_objectsSERVICE( $v, $XMLroot)
     }
 }
 
+
+function sophos_xg_objectsSERVICEGROUP( $v, $XMLroot)
+{
+    /** @var VirtualSystem $v */
+
+    foreach ($XMLroot->childNodes as $child)
+    {
+        /** @var DOMElement $node */
+        if ($child->nodeType != XML_ELEMENT_NODE)
+            continue;
+
+        if ($child->nodeName != 'ServiceGroup')
+            continue;
+
+
+        $name_node = DH::findFirstElement( 'Name', $child);
+        $name = normalizeNames($name_node->textContent);
+
+        $tmpGroup = $v->serviceStore->newServiceGroup($name);
+
+        $serviceList_node = DH::findFirstElement( 'ServiceList', $child);
+        if( $serviceList_node !== FALSE )
+        {
+            foreach( $serviceList_node->childNodes as $service  )
+            {
+                /** @var DOMElement $node */
+                if ($service->nodeType != XML_ELEMENT_NODE)
+                    continue;
+
+                $obj_name = normalizeNames($service->textContent);
+                $tmp_srv = $v->serviceStore->find($obj_name);
+                if( $tmp_srv === null )
+                {
+                    $tmp_srv = $v->serviceStore->find("tmp-".$obj_name);
+                    if( $tmp_srv === null )
+                    {
+                        $tmp_srv = $v->serviceStore->newService("tmp-".$obj_name, "tcp", "65000",);
+                    }
+                }
+
+                if( $tmp_srv !== null )
+                    $tmpGroup->addMember($tmp_srv);
+            }
+        }
+    }
+}
 function sophos_xg_objectsFQDN( $v, $XMLroot)
 {
     /** @var VirtualSystem $v */
@@ -610,17 +639,6 @@ function sophos_xg_objectsFQDN( $v, $XMLroot)
         $new_address = $v->addressStore->find($name);
         if( $new_address === null )
             $new_address = $v->addressStore->newAddress( $name, "fqdn", $fqdn_node->textContent );
-
-        /*
-         * <FQDNHost transactionid="">
-             <Name>login.microsoftonline.com</Name>
-             <FQDN>login.microsoftonline.com</FQDN>
-             <FQDNHostGroupList>
-              <FQDNHostGroup>Microsoft tenant restrictions</FQDNHostGroup>
-             </FQDNHostGroupList>
-            </FQDNHost>
-
-         */
     }
 }
 
@@ -637,7 +655,7 @@ function sophos_xg_networkINTERFACES( $v, $XMLroot)
         if ($child->nodeName != 'Interface')
             continue;
 
-        #DH::DEBUGprintDOMDocument($child);
+
 
         $hardware_node = DH::findFirstElement( 'Hardware', $child);
         $hardware_name = $hardware_node->textContent;
@@ -668,6 +686,7 @@ function sophos_xg_networkINTERFACES( $v, $XMLroot)
         $status = $status_node->textContent;
 
         $newInterface = $v->owner->network->ethernetIfStore->newEthernetIf( $name, "layer3" );
+        $v->importedInterfaces->addInterface($newInterface);
 
         if( $ipv4Configuration_node->textContent == "Enable" )
         {
@@ -734,6 +753,9 @@ function sophos_xg_networkLAGS( $v, $XMLroot)
         #DH::DEBUGprintDOMDocument($child);
 
         $name_node = DH::findFirstElement( 'Name', $child);
+        if( $name_node === false )
+            continue;
+
         $name = $name_node->textContent;
 
         $ipv4Configuration_node = DH::findFirstElement( 'IPv4Configuration', $child);
@@ -756,6 +778,7 @@ function sophos_xg_networkLAGS( $v, $XMLroot)
             $memberInterface = $interface_node->textContent;
 
             $interfaceOBJ = $v->owner->network->ethernetIfStore->newEthernetIf( $memberInterface, "aggregate-group", $name );
+
             #$interfaceOBJ->remove();
             /*
              *  <MemberInterface>
@@ -811,6 +834,7 @@ function sophos_xg_networkVLANS( $v, $XMLroot)
 
         $ipv4Enable = false;
         $ipv6Enable = false;
+
         //subinterface
         /*
          <VLAN transactionid="">
@@ -836,6 +860,8 @@ function sophos_xg_networkVLANS( $v, $XMLroot)
          */
 
         $zone_node = DH::findFirstElement( 'Zone', $child);
+        $tmp_zone = $v->zoneStore->findOrCreate($zone_node->textContent);
+
 
         $name_node = DH::findFirstElement( 'Name', $child);
         $name = $name_node->textContent;
@@ -874,8 +900,469 @@ function sophos_xg_networkVLANS( $v, $XMLroot)
         if( $mainInterface === null && $mainAEInterface !== null )
             $mainInterface = $mainAEInterface;
 
-        $mainInterface = $v->owner->network->ethernetIfStore->addSubinterfaceToStore()
-        DH::DEBUGprintDOMDocument($child);
+
+        if( $mainInterface === null )
+            $mainInterface = $v->owner->network->aggregateEthernetIfStore->newEthernetIf( $interface_node->textContent );
+
+        #DH::DEBUGprintDOMDocument($child);
+        if( $mainInterface !== null )
+        {
+            //create subinterface
+            /** @var EthernetInterface $tmp_sub */
+            $tmp_sub = $mainInterface->addSubInterface($vlanid_node->textContent, $hardware_node->textContent);
+            $v->importedInterfaces->addInterface($tmp_sub);
+            #$tmp_zone->attachedInterfaces->addInterface($tmp_sub);
+
+
+            if($ipv4Enable)
+            {
+                $tmp_sub->addIPv4Address($ipv4Address_node->textContent."/".$subnetmask );
+            }
+            #DH::DEBUGprintDOMDocument($child);
+        }
+        else
+        {
+            derr("interface ".$interface_node->textContent." not found", null, false);
+        }
+
+    }
+}
+
+function sophos_xg_routeSTATIC( $v, $XMLroot)
+{
+    /** @var VirtualSystem $v */
+
+    foreach ($XMLroot->childNodes as $child)
+    {
+        /** @var DOMElement $node */
+        if ($child->nodeType != XML_ELEMENT_NODE)
+            continue;
+
+        if ($child->nodeName != 'UnicastRoute')
+            continue;
+
+
+        $ipfamiliy_node = DH::findFirstElement( 'IPFamily', $child);
+        $destinationIP_node = DH::findFirstElement( 'DestinationIP', $child);
+        $netmask_node = DH::findFirstElement( 'Netmask', $child);
+        $subnetmask = CIDR::netmask2cidr( $netmask_node->textContent );
+        $route_network = $destinationIP_node->textContent."/".$subnetmask;
+
+        $routename = "R-".$destinationIP_node->textContent."m".$subnetmask;
+
+        $gateway_node = DH::findFirstElement( 'Gateway', $child);
+        $ip_gateway = $gateway_node->textContent;
+
+        $interface_node = DH::findFirstElement( 'Interface', $child);
+
+
+        $distance_node = DH::findFirstElement( 'Distance', $child);
+        $metric = $distance_node->textContent;
+
+        $new_router = $v->owner->network->virtualRouterStore->findVirtualRouter("default");
+        if( $new_router === null )
+            $new_router = $v->owner->network->virtualRouterStore->newVirtualRouter("default");
+
+
+        $xml_interface = "<interface>" . $interface_node->textContent . "</interface>";
+        $tmp_interface = $v->owner->network->find($interface_node->textContent);
+        if( $tmp_interface != null )
+        {
+            $new_router->attachedInterfaces->addInterface($tmp_interface);
+        }
+
+
+        if( $ipfamiliy_node->textContent == "IPv4" )
+            $xmlString = "<entry name=\"" . $routename . "\"><nexthop><ip-address>" . $ip_gateway . "</ip-address></nexthop><metric>" . $metric . "</metric>" . $xml_interface . "<destination>" . $route_network . "</destination></entry>";
+        elseif( $ipfamiliy_node->textContent == "IPv6" )
+            $xmlString = "<entry name=\"" . $routename . "\"><nexthop><ipv6-address>" . $ip_gateway . "</ipv6-address></nexthop><metric>" . $metric . "</metric>" . $xml_interface . "<destination>" . $route_network . "</destination></entry>";
+
+
+        $newRoute = new StaticRoute('***tmp**', $new_router);
+        $tmpRoute = $newRoute->create_staticroute_from_xml($xmlString);
+
+        $new_router->addstaticRoute($tmpRoute);
+
+
+        /*
+           <UnicastRoute transactionid="">
+            <IPFamily>IPv4</IPFamily>
+            <DestinationIP>10.143.0.0</DestinationIP>
+            <Netmask>255.255.0.0</Netmask>
+            <Gateway>172.22.80.26</Gateway>
+            <Interface>Uplink.804</Interface>
+            <Distance>0</Distance>
+            <AdministrativeDistance>1</AdministrativeDistance>
+          </UnicastRoute>
+         */
+
+    }
+
+}
+
+
+function sophos_xg_rulesFIREWALL( $v, $XMLroot)
+{
+    /** @var VirtualSystem $v */
+
+    foreach ($XMLroot->childNodes as $child)
+    {
+        /** @var DOMElement $node */
+        if ($child->nodeType != XML_ELEMENT_NODE)
+            continue;
+
+        if ($child->nodeName != 'FirewallRule')
+            continue;
+
+        $name_node = DH::findFirstElement( 'Name', $child);
+        $name = normalizeNames( $name_node->textContent );
+        $newRule = $v->securityRules->newSecurityRule($name);
+
+
+        $position_node = DH::findFirstElement( 'Position', $child);
+        if( $position_node->textContent === "After" )
+        {
+            $after_node = DH::findFirstElement( 'After', $child);
+            $after_name_node = DH::findFirstElement( 'Name', $after_node);
+            $after_rule_name = normalizeNames( $after_name_node->textContent );
+            $after_rule = $v->securityRules->find($after_rule_name);
+            /*
+             <After>
+              <Name>T1-ADMCenter &gt; T1-1641-Proxmox</Name>
+            </After>
+             */
+            if( $after_rule != null )
+            {
+                $v->securityRules->moveRuleAfter($newRule, $after_rule);
+            }
+            else
+            {
+                #DH::DEBUGprintDOMDocument($child);
+            }
+
+        }
+
+/*
+  <FirewallRule transactionid="">
+    <Name>T2-MA &gt; T1-BYDProjectProc-SMB</Name>
+    <Description/>
+    <IPFamily>IPv4</IPFamily>
+    <Status>Enable</Status>
+    <Position>After</Position>
+    <PolicyType>User</PolicyType>
+    <After>
+      <Name>T2-SSLVPN &gt; T1-BYDProjectProc</Name>
+    </After>
+    <UserPolicy>
+      <Action>Accept</Action>
+      <LogTraffic>Enable</LogTraffic>
+      <SourceZones>
+        <Zone>LAN</Zone>
+        <Zone>WAN</Zone>
+        <Zone>DMZ</Zone>
+      </SourceZones>
+      <DestinationZones>
+        <Zone>T1</Zone>
+      </DestinationZones>
+      <Schedule>All The Time</Schedule>
+      <SkipLocalDestined>Disable</SkipLocalDestined>
+      <MatchIdentity>Enable</MatchIdentity>
+      <WebFilter>None</WebFilter>
+      <WebCategoryBaseQoSPolicy> </WebCategoryBaseQoSPolicy>
+      <BlockQuickQuic>Disable</BlockQuickQuic>
+      <ScanVirus>Disable</ScanVirus>
+      <ZeroDayProtection>Disable</ZeroDayProtection>
+      <ProxyMode>Disable</ProxyMode>
+      <DecryptHTTPS>Disable</DecryptHTTPS>
+      <ApplicationControl>None</ApplicationControl>
+      <ApplicationBaseQoSPolicy> </ApplicationBaseQoSPolicy>
+      <IntrusionPrevention>None</IntrusionPrevention>
+      <TrafficShappingPolicy>None</TrafficShappingPolicy>
+      <WebFilterInternetScheme>Disable</WebFilterInternetScheme>
+      <ApplicationControlInternetScheme>Disable</ApplicationControlInternetScheme>
+      <DSCPMarking>-1</DSCPMarking>
+      <ScanSMTP>Disable</ScanSMTP>
+      <ScanSMTPS>Disable</ScanSMTPS>
+      <ScanIMAP>Disable</ScanIMAP>
+      <ScanIMAPS>Disable</ScanIMAPS>
+      <ScanPOP3>Disable</ScanPOP3>
+      <ScanPOP3S>Disable</ScanPOP3S>
+      <ScanFTP>Disable</ScanFTP>
+      <SourceSecurityHeartbeat>Disable</SourceSecurityHeartbeat>
+      <MinimumSourceHBPermitted>No Restriction</MinimumSourceHBPermitted>
+      <DestSecurityHeartbeat>Disable</DestSecurityHeartbeat>
+      <MinimumDestinationHBPermitted>No Restriction</MinimumDestinationHBPermitted>
+      <DataAccounting>Disable</DataAccounting>
+      <ShowCaptivePortal>Disable</ShowCaptivePortal>
+      <Identity>
+        <Member>fbra@projekt.igz.local</Member>
+        <Member>fbra@igz.com</Member>
+        <Member>slu@igz.com</Member>
+        <Member>ski@projekt.igz.local</Member>
+        <Member>slu@projekt.igz.local</Member>
+        <Member>hha@igz.com</Member>
+        <Member>hha@projekt.igz.local</Member>
+        <Member>ski@igz.com</Member>
+      </Identity>
+      <SourceNetworks>
+        <Network>T2-SSLVPN-Intern-192.168.248.0_24</Network>
+        <Network>T2-MA-172.22.152.0_22</Network>
+        <Network>T2-IGZintern-172.22.128.0_21</Network>
+        <Network>T2-SSLVPN-vpn.igz.com-10.242.0.0_24</Network>
+        <Network>T2-SSLVPN-ras.igz.com-10.242.2.0/24</Network>
+        <Network>T2-G1-3-192.168.191.0-192.168.193.254</Network>
+      </SourceNetworks>
+      <Services>
+        <Service>SMB</Service>
+        <Service>tcp/5985</Service>
+        <Service>tcp/5986</Service>
+      </Services>
+      <DestinationNetworks>
+        <Network>T1-IGZBYDPROJPROC2-172.22.160.13_32</Network>
+        <Network>T1-IGZBYDPROJPROC3-172.22.160.14_32</Network>
+        <Network>T1-IGZBYDPROJPROC-172.22.160.4_32</Network>
+      </DestinationNetworks>
+    </UserPolicy>
+  </FirewallRule>
+ */
+        $networkPolicy_node = DH::findFirstElement( 'NetworkPolicy', $child);
+        $userPolicy_node = DH::findFirstElement( 'UserPolicy', $child);
+        if( $networkPolicy_node !== false )
+            $Policy_node = $networkPolicy_node;
+        elseif( $userPolicy_node !== false )
+            $Policy_node = $userPolicy_node;
+
+        if( $networkPolicy_node !== false || $userPolicy_node !== false )
+        {
+            $action_node = DH::findFirstElement('Action', $Policy_node);
+            if( $action_node->textContent === "Accept" )
+            {
+                $newRule->setAction("allow");
+            }
+            elseif( $action_node->textContent === "Drop" )
+            {
+                $newRule->setAction("drop");
+            }
+            elseif( $action_node->textContent === "Reject" )
+            {
+                $newRule->setAction("reset-both");
+            }
+
+            else
+            {
+                print "ACTION: ".$action_node->textContent."\n";
+                exit();
+            }
+            $logTraffic_node = DH::findFirstElement('LogTraffic', $Policy_node);
+
+            $sourceZones_node = DH::findFirstElement('SourceZones', $Policy_node);
+            if ($sourceZones_node !== false)
+                foreach ($sourceZones_node->childNodes as $sourceZone) {
+                    /** @var DOMElement $sourceZone */
+                    if ($sourceZone->nodeType != XML_ELEMENT_NODE)
+                        continue;
+
+                    $src_zone = $v->zoneStore->findOrCreate($sourceZone->textContent);
+                    $newRule->from->addZone($src_zone);
+                }
+
+            $destinationZones_node = DH::findFirstElement('DestinationZones', $Policy_node);
+            if ($destinationZones_node !== false)
+                foreach ($destinationZones_node->childNodes as $destinationZone)
+                {
+                    /** @var DOMElement $destinationZone */
+                    if ($destinationZone->nodeType != XML_ELEMENT_NODE)
+                        continue;
+
+                    $dst_zone = $v->zoneStore->findOrCreate($destinationZone->textContent);
+                    $newRule->to->addZone($dst_zone);
+                }
+
+
+            $sourceNetworks_node = DH::findFirstElement('SourceNetworks', $Policy_node);
+            if ($sourceNetworks_node !== false)
+                foreach ($sourceNetworks_node->childNodes as $sourceNetwork)
+                {
+                    /** @var DOMElement $sourceNetwork */
+                    if ($sourceNetwork->nodeType != XML_ELEMENT_NODE)
+                        continue;
+
+                    $addr_obj = $v->addressStore->find($sourceNetwork->textContent);
+                    if ($addr_obj !== null)
+                        $newRule->source->addObject($addr_obj);
+                }
+
+
+            $destinationNetworks_node = DH::findFirstElement('DestinationNetworks', $Policy_node);
+            if ($destinationNetworks_node !== false)
+                foreach ($destinationNetworks_node->childNodes as $destinationNetwork)
+                {
+                    /** @var DOMElement $destinationNetwork */
+                    if ($destinationNetwork->nodeType != XML_ELEMENT_NODE)
+                        continue;
+
+                    $addr_obj = $v->addressStore->find($destinationNetwork->textContent);
+                    if ($addr_obj !== null)
+                        $newRule->destination->addObject($addr_obj);
+                }
+
+
+            $services_node = DH::findFirstElement('Services', $Policy_node);
+            if ($services_node !== false)
+            {
+                $continue = false;
+
+                foreach ($services_node->childNodes as $service_node)
+                {
+                    /** @var DOMElement $service_node */
+                    if ($service_node->nodeType != XML_ELEMENT_NODE)
+                        continue;
+
+                    $orig_service_name = $service_node->textContent;
+                    #print "Service1: " . $service_node->textContent . "\n";
+
+
+                    $service_node->textContent = normalizeNames($orig_service_name);
+
+                    //&amp;
+                    $srv_obj = $v->serviceStore->find($service_node->textContent);
+                    if ($srv_obj !== null)
+                        $newRule->services->add($srv_obj);
+                    else
+                    {
+                        $service_node->textContent = str_replace("(", "", $service_node->textContent);
+                        $service_node->textContent = str_replace(")", "", $service_node->textContent);
+                        $service_node->textContent = str_replace("RDP", "tcp/3389", $service_node->textContent);
+                        if (strpos($service_node->textContent, " &amp; ") === false)
+                        {
+                            if (strpos($service_node->textContent, " & ") !== false)
+                                $service_node->textContent = str_replace(" & ", " &amp; ", $service_node->textContent);
+                            else
+                                $service_node->textContent = str_replace(" ", " &amp; ", $service_node->textContent);
+                        }
+
+                        if (strpos($service_node->textContent, " &amp; ") !== false || strpos($service_node->textContent, " & ") !== false) {
+                            if (strpos($service_node->textContent, " &amp; ") !== false)
+                                $service_array = explode(" &amp; ", $service_node->textContent);
+                            elseif (strpos($service_node->textContent, " & ") !== false)
+                                $service_array = explode(" & ", $service_node->textContent);
+
+                            foreach ($service_array as $service)
+                            {
+                                #print "Service2: " . $service . "\n";
+                                $service_array = explode("/", $service);
+                                if (count($service_array) == 2) {
+                                    $srv_obj = $v->serviceStore->find($service_array[0] . "-" . $service_array[1]);
+                                    if ($srv_obj === null)
+                                        $srv_obj = $v->serviceStore->newService($service_array[0] . "-" . $service_array[1], $service_array[0], $service_array[1]);
+                                    $newRule->services->add($srv_obj);
+                                } else {
+                                    print "RULE: ".$newRule->name()."\n";
+                                    mwarning("Service not found '" . $orig_service_name."'", null, false);
+                                    $continue = true;
+                                    break;
+                                }
+
+
+                            }
+                        } elseif (strpos($service_node->textContent, "/") !== false) {
+                            $service_array = explode("/", $service_node->textContent);
+
+                            if (strpos($service_array[0], "-") !== false)
+                            {
+                                $tcp_name = "tcp-" . $service_array[1];
+                                $srv_obj = $v->serviceStore->find($tcp_name);
+                                if ($srv_obj === null)
+                                    $srv_obj = $v->serviceStore->newService($tcp_name, "tcp", $service_array[1]);
+                                $newRule->services->add($srv_obj);
+
+                                $udp_name = "udp-" . $service_array[1];
+                                $srv_obj = $v->serviceStore->find($udp_name);
+                                if ($srv_obj === null)
+                                    $srv_obj = $v->serviceStore->newService($udp_name, "udp", $service_array[1]);
+                                $newRule->services->add($srv_obj);
+                            }
+                            else
+                            {
+                                $protocol = strtolower($service_array[0]);
+                                if( $protocol != "udp" && $protocol != "tcp" )
+                                {
+                                    mwarning("Protocol '" . $protocol . "' not allowed", null, false);
+                                    continue;
+                                }
+
+
+                                $srv_obj = $v->serviceStore->find($protocol . "-" . $service_array[1]);
+                                if ($srv_obj === null)
+                                    $srv_obj = $v->serviceStore->newService($protocol . "-" . $service_array[1], $protocol, $service_array[1]);
+                                $newRule->services->add($srv_obj);
+                            }
+
+                        } else {
+                            $srv_obj = $v->serviceStore->find($service_node->textContent);
+                            if ($srv_obj !== null)
+                                $newRule->services->add($srv_obj);
+                        }
+                    }
+                }
+            }
+
+            $schedule_node = DH::findFirstElement('Schedule', $Policy_node);
+
+            $identity_node = DH::findFirstElement('Identity', $Policy_node);
+            if( $identity_node !== false )
+            {
+                foreach ($identity_node->childNodes as $identity )
+                {
+                    /** @var DOMElement $identity */
+                    if ($identity->nodeType != XML_ELEMENT_NODE)
+                        continue;
+
+                    $newRule->userID_addUser($identity->textContent);
+                }
+            }
+            /*
+             *       <Identity>
+            <Member>fbra@projekt.igz.local</Member>
+            <Member>fbra@igz.com</Member>
+            <Member>slu@igz.com</Member>
+            <Member>ski@projekt.igz.local</Member>
+            <Member>slu@projekt.igz.local</Member>
+            <Member>hha@igz.com</Member>
+            <Member>hha@projekt.igz.local</Member>
+            <Member>ski@igz.com</Member>
+          </Identity>
+                 */
+        }
+        /*
+          <FirewallRule transactionid="">
+            <Name>T1-ADMCenter &gt; T1-1641-Proxmox</Name>
+            <Description/>
+            <IPFamily>IPv4</IPFamily>
+            <Status>Enable</Status>
+            <Position>Top</Position>
+            <PolicyType>Network</PolicyType>
+            <NetworkPolicy>
+              <Action>Accept</Action>
+              <LogTraffic>Enable</LogTraffic>
+              <SkipLocalDestined>Disable</SkipLocalDestined>
+              <SourceZones>
+                <Zone>LAN</Zone>
+              </SourceZones>f
+              <DestinationZones>
+                <Zone>T1</Zone>
+              </DestinationZones>
+              <Schedule>All The Time</Schedule>
+              <SourceNetworks>
+                <Network>T1-IGZADMCENTER-192.168.181.250_32</Network>
+              </SourceNetworks>
+              <Services>
+                <Service>HTTPS</Service>
+              </Services>
+              <DestinationNetworks>
+                <Network>T1-ADM-Proxmox-iLO-172.22.164.2_32</Network>
+              </DestinationNetworks>
+         */
     }
 }
 function print_xml_info($appx3, $print = false)
