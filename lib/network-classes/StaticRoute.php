@@ -342,6 +342,13 @@ class StaticRoute
 
                 return;
             }
+
+            if( $this->_interface === $h )
+            {
+                //already set
+                $this->rewriteInterface_XML();
+                return;
+            }
         }
         elseif( get_class($h) == "Address" )
         {
@@ -374,7 +381,8 @@ class StaticRoute
             return;
         }
 
-        mwarning("object is not part of this static route : {$h->toString()}");
+        print get_class($h)."\n";
+        mwarning("object is not part of this static route : {$h->toString()}", null, false);
     }
 
     public function rewriteInterface_XML()
