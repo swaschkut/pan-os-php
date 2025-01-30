@@ -209,6 +209,8 @@ foreach ($scanned_directory as $filename)
     }
     elseif( strpos($filename, 'network-zones') !== false )
     {
+        //Todo: is this of interest?
+        //all information are used from Rules
         //Todo: swaschkut 20250124 implementation needed
         /*
           <Zone transactionid="">
@@ -250,8 +252,23 @@ foreach ($scanned_directory as $filename)
     {
         sophos_xg_rulesFIREWALL($v, $XMLroot);
     }
+    elseif( strpos($filename, 'rules-nat') !== false )
+    {
+        sophos_xg_rulesNAT($v, $XMLroot);
+    }
 
 }
+
+
+//delete unused address objects:
+$unusedAdr_obj = $v->addressStore->all("(object is.unused)");
+foreach($unusedAdr_obj as $adr)
+{
+    $v->addressStore->remove($adr, true);
+    $v->addressStore->rewriteAddressStoreXML();
+}
+
+validate_interface_names($pan);
 
 #echo PH::boldText("\nVALIDATION - replace tmp services with APP-id if possible\n");
 #CONVERTER::AppMigration( $v, $util->configType );
@@ -1054,89 +1071,7 @@ function sophos_xg_rulesFIREWALL( $v, $XMLroot)
 
         }
 
-/*
-  <FirewallRule transactionid="">
-    <Name>T2-MA &gt; T1-BYDProjectProc-SMB</Name>
-    <Description/>
-    <IPFamily>IPv4</IPFamily>
-    <Status>Enable</Status>
-    <Position>After</Position>
-    <PolicyType>User</PolicyType>
-    <After>
-      <Name>T2-SSLVPN &gt; T1-BYDProjectProc</Name>
-    </After>
-    <UserPolicy>
-      <Action>Accept</Action>
-      <LogTraffic>Enable</LogTraffic>
-      <SourceZones>
-        <Zone>LAN</Zone>
-        <Zone>WAN</Zone>
-        <Zone>DMZ</Zone>
-      </SourceZones>
-      <DestinationZones>
-        <Zone>T1</Zone>
-      </DestinationZones>
-      <Schedule>All The Time</Schedule>
-      <SkipLocalDestined>Disable</SkipLocalDestined>
-      <MatchIdentity>Enable</MatchIdentity>
-      <WebFilter>None</WebFilter>
-      <WebCategoryBaseQoSPolicy> </WebCategoryBaseQoSPolicy>
-      <BlockQuickQuic>Disable</BlockQuickQuic>
-      <ScanVirus>Disable</ScanVirus>
-      <ZeroDayProtection>Disable</ZeroDayProtection>
-      <ProxyMode>Disable</ProxyMode>
-      <DecryptHTTPS>Disable</DecryptHTTPS>
-      <ApplicationControl>None</ApplicationControl>
-      <ApplicationBaseQoSPolicy> </ApplicationBaseQoSPolicy>
-      <IntrusionPrevention>None</IntrusionPrevention>
-      <TrafficShappingPolicy>None</TrafficShappingPolicy>
-      <WebFilterInternetScheme>Disable</WebFilterInternetScheme>
-      <ApplicationControlInternetScheme>Disable</ApplicationControlInternetScheme>
-      <DSCPMarking>-1</DSCPMarking>
-      <ScanSMTP>Disable</ScanSMTP>
-      <ScanSMTPS>Disable</ScanSMTPS>
-      <ScanIMAP>Disable</ScanIMAP>
-      <ScanIMAPS>Disable</ScanIMAPS>
-      <ScanPOP3>Disable</ScanPOP3>
-      <ScanPOP3S>Disable</ScanPOP3S>
-      <ScanFTP>Disable</ScanFTP>
-      <SourceSecurityHeartbeat>Disable</SourceSecurityHeartbeat>
-      <MinimumSourceHBPermitted>No Restriction</MinimumSourceHBPermitted>
-      <DestSecurityHeartbeat>Disable</DestSecurityHeartbeat>
-      <MinimumDestinationHBPermitted>No Restriction</MinimumDestinationHBPermitted>
-      <DataAccounting>Disable</DataAccounting>
-      <ShowCaptivePortal>Disable</ShowCaptivePortal>
-      <Identity>
-        <Member>fbra@projekt.igz.local</Member>
-        <Member>fbra@igz.com</Member>
-        <Member>slu@igz.com</Member>
-        <Member>ski@projekt.igz.local</Member>
-        <Member>slu@projekt.igz.local</Member>
-        <Member>hha@igz.com</Member>
-        <Member>hha@projekt.igz.local</Member>
-        <Member>ski@igz.com</Member>
-      </Identity>
-      <SourceNetworks>
-        <Network>T2-SSLVPN-Intern-192.168.248.0_24</Network>
-        <Network>T2-MA-172.22.152.0_22</Network>
-        <Network>T2-IGZintern-172.22.128.0_21</Network>
-        <Network>T2-SSLVPN-vpn.igz.com-10.242.0.0_24</Network>
-        <Network>T2-SSLVPN-ras.igz.com-10.242.2.0/24</Network>
-        <Network>T2-G1-3-192.168.191.0-192.168.193.254</Network>
-      </SourceNetworks>
-      <Services>
-        <Service>SMB</Service>
-        <Service>tcp/5985</Service>
-        <Service>tcp/5986</Service>
-      </Services>
-      <DestinationNetworks>
-        <Network>T1-IGZBYDPROJPROC2-172.22.160.13_32</Network>
-        <Network>T1-IGZBYDPROJPROC3-172.22.160.14_32</Network>
-        <Network>T1-IGZBYDPROJPROC-172.22.160.4_32</Network>
-      </DestinationNetworks>
-    </UserPolicy>
-  </FirewallRule>
- */
+
         $networkPolicy_node = DH::findFirstElement( 'NetworkPolicy', $child);
         $userPolicy_node = DH::findFirstElement( 'UserPolicy', $child);
         if( $networkPolicy_node !== false )
@@ -1380,50 +1315,110 @@ function sophos_xg_rulesFIREWALL( $v, $XMLroot)
                     $newRule->userID_addUser($identity->textContent);
                 }
             }
-            /*
-             *       <Identity>
-            <Member>fbra@projekt.igz.local</Member>
-            <Member>fbra@igz.com</Member>
-            <Member>slu@igz.com</Member>
-            <Member>ski@projekt.igz.local</Member>
-            <Member>slu@projekt.igz.local</Member>
-            <Member>hha@igz.com</Member>
-            <Member>hha@projekt.igz.local</Member>
-            <Member>ski@igz.com</Member>
-          </Identity>
-                 */
         }
-        /*
-          <FirewallRule transactionid="">
-            <Name>T1-ADMCenter &gt; T1-1641-Proxmox</Name>
-            <Description/>
-            <IPFamily>IPv4</IPFamily>
-            <Status>Enable</Status>
-            <Position>Top</Position>
-            <PolicyType>Network</PolicyType>
-            <NetworkPolicy>
-              <Action>Accept</Action>
-              <LogTraffic>Enable</LogTraffic>
-              <SkipLocalDestined>Disable</SkipLocalDestined>
-              <SourceZones>
-                <Zone>LAN</Zone>
-              </SourceZones>f
-              <DestinationZones>
-                <Zone>T1</Zone>
-              </DestinationZones>
-              <Schedule>All The Time</Schedule>
-              <SourceNetworks>
-                <Network>T1-IGZADMCENTER-192.168.181.250_32</Network>
-              </SourceNetworks>
-              <Services>
-                <Service>HTTPS</Service>
-              </Services>
-              <DestinationNetworks>
-                <Network>T1-ADM-Proxmox-iLO-172.22.164.2_32</Network>
-              </DestinationNetworks>
-         */
     }
 }
+
+
+function sophos_xg_rulesNAT( $v, $XMLroot)
+{
+    /** @var VirtualSystem $v */
+
+
+    foreach ($XMLroot->childNodes as $child)
+    {
+        /** @var DOMElement $node */
+        if ($child->nodeType != XML_ELEMENT_NODE)
+            continue;
+
+        if ($child->nodeName != 'NATRule')
+            continue;
+
+        $name_node = DH::findFirstElement('Name', $child);
+        $name = normalizeNames($name_node->textContent);
+        $newRule = $v->natRules->newNatRule($name);
+
+
+        $position_node = DH::findFirstElement('Position', $child);
+        if ($position_node->textContent === "After") {
+            $after_node = DH::findFirstElement('After', $child);
+            $after_name_node = DH::findFirstElement('Name', $after_node);
+            $after_rule_name = normalizeNames($after_name_node->textContent);
+            $after_rule = $v->natRules->find($after_rule_name);
+            /*
+             <After>
+              <Name>T1-ADMCenter &gt; T1-1641-Proxmox</Name>
+            </After>
+             */
+            if ($after_rule != null) {
+                $v->natRules->moveRuleAfter($newRule, $after_rule);
+            } else {
+                #DH::DEBUGprintDOMDocument($child);
+            }
+
+        }
+
+        $status_node = DH::findFirstElement('Status', $child);
+        if( $status_node->textContent === "Disabled" )
+        {
+            $newRule->setDisabled(true);
+        }
+
+        $LinkedFirewallrule_node = DH::findFirstElement('LinkedFirewallrule', $child);
+        $secRuleName = normalizeNames($LinkedFirewallrule_node->textContent);
+
+
+        $secRule = $v->securityRules->find($secRuleName);
+        if( $secRule != null )
+        {
+            foreach( $secRule->source->getAll() as $source )
+                $newRule->source->addObject($source);
+
+            foreach( $secRule->destination->getAll() as $destination )
+                $newRule->source->addObject($destination);
+
+            foreach( $secRule->from->getAll() as $source )
+                $newRule->from->addZone($source);
+
+            foreach( $secRule->to->getAll() as $destination )
+                $newRule->to->addZone($destination);
+
+            foreach( $secRule->services->getAll() as $service )
+            {
+                print "NATrule: '".$newRule->name()."'\n";
+                print "add Service from secRule: '".$secRule->name()."'\n";
+                print "service: '".$service->name()."'\n";
+                #$newRule->service->add($service);
+            }
+
+        }
+        else
+        {
+            #mwarning("Secrule '".$secRuleName."' not found.", null, false);
+        }
+
+
+    }
+}
+
+/*
+ <NATRule transactionid="">
+    <Name>fw#14_migrated_NAT_Rule</Name>
+    <Description>Created the NAT rule to migrate an earlier version that has NAT configuration at firewall rule level.</Description>
+    <IPFamily>IPv4</IPFamily>
+    <Status>Enable</Status>
+    <Position>After</Position>
+    <LinkedFirewallrule>LAN &gt; WAN -- Geofencing Exclusion Rule</LinkedFirewallrule>
+    <TranslatedDestination>Original</TranslatedDestination>
+    <TranslatedService>Original</TranslatedService>
+    <OverrideInterfaceNATPolicy>Disable</OverrideInterfaceNATPolicy>
+    <After>
+      <Name>LAN-to-WAN-new</Name>
+    </After>
+    <TranslatedSource>MASQ</TranslatedSource>
+  </NATRule>
+ */
+
 function print_xml_info($appx3, $print = false)
 {
     $appName3 = $appx3->nodeName;
@@ -1516,6 +1511,138 @@ function normalizeNames($nameToNormalize)
     return $tmp_regions;
 }
 
+
+function validate_interface_names($template)
+{
+
+    $padding = "   ";
+    $padding_name = substr($padding, 0, -1);
+
+
+    $tmp_interfaces = $template->network->getAllInterfaces();
+
+    $counter = 1;
+    $tmp_int_name = array();
+    foreach( $tmp_interfaces as $tmp_interface )
+    {
+        #if( $tmp_interface->type !== "tmp" && get_class( $tmp_interface ) == "EthernetInterface" )
+        if( $tmp_interface->type !== "tmp" )
+        {
+
+            $int_name = $tmp_interface->name();
+            if( get_class($tmp_interface) == "EthernetInterface" )
+            {
+                if( strpos($int_name, "ethernet") === FALSE && strpos($int_name, "ae") === FALSE && strpos($int_name, "tunnel") === FALSE )
+                {
+                    if( strpos($int_name, ".") === FALSE )
+                    {
+                        do
+                        {
+                            $new_name = "ethernet1/" . $counter;
+
+                            $counter++;
+
+                            $tmp_int = $template->network->findInterface($new_name);
+                            $tmp_int_name[$int_name] = $new_name;
+                        } while( $tmp_int !== null );
+
+                    }
+                    else
+                    {
+                        $tmp_tag = explode(".", $int_name);
+
+                        if( isset( $tmp_int_name[$tmp_tag[0]] ) )
+                            $new_name = $tmp_int_name[$tmp_tag[0]] . "." . $tmp_tag[1];
+                        else
+                        {
+                            $new_name = null;
+                            //Todo: swaschkut 20200930
+                            //write Ethernetstore function remove
+                            #$tmp_interface->owner->remove( $tmp_interface );
+                        }
+                    }
+
+
+
+                    if( $new_name != null )
+                    {
+                        $addlog = "Interface: '" . $int_name . "' renamed to " . $new_name;
+                        print $padding . "X " . $addlog . "\n";
+                        $tmp_interface->display_references();
+                        $tmp_interface->setName($new_name);
+
+                        //todo: add description
+                        #$tmp_interface->_description .= " renamed from '".$int_name."'";
+                        //add migration log
+
+                        $tmp_interface->set_node_attribute('warning', $addlog);
+                    }
+                }
+
+            }
+            elseif( get_class($tmp_interface) == "TunnelInterface" )
+            {
+                $tunnelcounter = 1;
+
+                $validate_name = explode( ".", $int_name);
+                if( $validate_name[0] == "tunnel" &&  is_numeric( $validate_name[1] ))
+                    continue;
+
+                #if( strpos( $int_name, "." ) === false ){
+                do
+                {
+                    $new_name = "tunnel." . $tunnelcounter;
+
+                    $tunnelcounter++;
+
+                    $tmp_int = $template->network->findInterface($new_name);
+                    $tmp_int_name[$int_name] = $new_name;
+                } while( $tmp_int !== null );
+
+                /*}
+                else
+                {
+                    $tmp_tag = explode( ".", $int_name);
+                    $new_name = $tmp_int_name[ $tmp_tag[0] ].".". $tmp_tag[1];
+                }
+                */
+
+                $addlog = "Interface: '" . $int_name . "' renamed to " . $new_name;
+                print $padding . "X " . $addlog . "\n";
+                #$tmp_interface->display_references();
+                $tmp_interface->setName($new_name);
+                $tmp_interface->set_node_attribute('warning', $addlog);
+            }
+            else
+            {
+                print " - migration for interface class: " . get_class($tmp_interface) . " not implemented yet! for interface: ".$int_name."\n";
+            }
+
+            //Todo: replace from routing
+            /*
+                            elseif( strpos( $int_name, "ethernet" ) !== false )
+                            {
+                                //Todo: detailed check needed
+                                print "Interface: ".$int_name." not renamed!\n";
+                            }
+                            elseif( strpos( $int_name, "ae" ) !== false  )
+                            {
+                                //Todo: detailed check needed
+                                print "Interface: ".$int_name." not renamed!\n";
+                            }
+                            elseif( strpos( $int_name, "tunnel" ) !== false  )
+                            {
+                                //Todo: detailed check needed
+                                print "Interface: ".$int_name." not renamed!\n";
+                            }*/
+
+        }
+        else
+        {
+            mwarning("interface: " . $tmp_interface->name() . " is of type: " . $tmp_interface->type . " and not renamed", null, FALSE);
+        }
+    }
+}
 
 
 /////////////////////////////////////////////////////////////////////
