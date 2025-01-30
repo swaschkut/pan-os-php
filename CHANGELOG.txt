@@ -9,6 +9,7 @@ BUGFIX:
 
 GENERAL:
 * class LogicalRouter | adjust for method create/removeStaticRoute
+* class EthernetInterface - method setName() - also set name for subinterfaces
 
 
 2.1.33 (20250122)

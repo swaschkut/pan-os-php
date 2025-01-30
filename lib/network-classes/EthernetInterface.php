@@ -421,6 +421,17 @@ class EthernetInterface
 
         $this->xmlroot->setAttribute('name', $name);
 
+        if( count( $this->subInterfaces() ) > 0 )
+        {
+            foreach($this->subInterfaces() as $sub)
+            {
+                $oldName = $sub->name();
+                $tagName = explode( ".", $oldName );
+                $sub->setName($name.".".$tagName[1]);
+            }
+        }
+
+
         return TRUE;
 
     }
