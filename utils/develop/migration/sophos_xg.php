@@ -675,7 +675,8 @@ function sophos_xg_networkINTERFACES( $v, $XMLroot)
         if ($child->nodeName != 'Interface')
             continue;
 
-
+        $networkzone_node = DH::findFirstElement( 'NetworkZone', $child);
+        $networkzone = $networkzone_node->textContent;
 
         $hardware_node = DH::findFirstElement( 'Hardware', $child);
         $hardware_name = $hardware_node->textContent;
@@ -685,9 +686,6 @@ function sophos_xg_networkINTERFACES( $v, $XMLroot)
 
         $ipv4Configuration_node = DH::findFirstElement( 'IPv4Configuration', $child);
         $ipv6Configuration_node = DH::findFirstElement( 'IPv6Configuration', $child);
-
-        $networkzone_node = DH::findFirstElement( 'NetworkZone', $child);
-        $networkzone = $networkzone_node->textContent;
 
         $ipaddress_node = DH::findFirstElement( 'IPAddress', $child);
         if( $ipaddress_node !== false )
@@ -723,8 +721,17 @@ function sophos_xg_networkINTERFACES( $v, $XMLroot)
         }
 
         /** @var Zone $zone */
-        #$zone = $v->zoneStore->findOrCreate($networkzone);
-        #$zone->attachedInterfaces->addInterface($newInterface);
+
+        if( $networkzone != "None" )
+        {
+            $tmp_zone = $v->zoneStore->find($networkzone);
+            if($tmp_zone === null)
+                $tmp_zone = $v->zoneStore->newZone($networkzone, "layer3");
+            $tmp_zone->type = "layer3";
+            $tmp_zone->attachedInterfaces->addInterface($newInterface);
+        }
+
+
 
         /*
          * <Interface transactionid="">
@@ -880,7 +887,7 @@ function sophos_xg_networkVLANS( $v, $XMLroot)
          */
 
         $zone_node = DH::findFirstElement( 'Zone', $child);
-        $tmp_zone = $v->zoneStore->findOrCreate($zone_node->textContent);
+        $networkzone = $zone_node->textContent;
 
 
         $name_node = DH::findFirstElement( 'Name', $child);
@@ -943,6 +950,16 @@ function sophos_xg_networkVLANS( $v, $XMLroot)
         else
         {
             derr("interface ".$interface_node->textContent." not found", null, false);
+        }
+
+
+        if( $networkzone != "None" )
+        {
+            $tmp_zone = $v->zoneStore->find($networkzone);
+            if($tmp_zone === null)
+                $tmp_zone = $v->zoneStore->newZone($networkzone, "layer3");
+            $tmp_zone->type = "layer3";
+            $tmp_zone->attachedInterfaces->addInterface($tmp_sub);
         }
 
     }
