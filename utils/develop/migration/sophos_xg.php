@@ -141,6 +141,7 @@ $missingURL = array();
 
 
 
+$useLogicalRouter = true;
 
 
 //Todo: read/display all files from directory:
@@ -254,7 +255,7 @@ foreach ($scanned_directory as $filename)
     }
     elseif( strpos($filename, 'rules-nat') !== false )
     {
-        sophos_xg_rulesNAT($v, $XMLroot);
+        #sophos_xg_rulesNAT($v, $XMLroot);
     }
 
 }
@@ -269,6 +270,48 @@ foreach($unusedAdr_obj as $adr)
 }
 
 validate_interface_names($pan);
+
+
+
+//Todo:
+
+
+//Port 2 eth1/5 -> eth1/2
+//Port11 eth1/3-> eth1/8
+//Port12 eth1/4 -> ae1
+
+//Port3 -> eth1/6
+//Port4 -> eth1/7
+
+$intDelete = array();
+$intDelete[] = $v->owner->network->ethernetIfStore->find( "ethernet1/1" );
+$intDelete[] = $v->owner->network->ethernetIfStore->find( "ethernet1/2" );
+$intDelete[] = $v->owner->network->ethernetIfStore->find( "ethernet1/8" );
+$intDelete[] = $v->owner->network->ethernetIfStore->find( "ethernet1/9" );
+$intDelete[] = $v->owner->network->ethernetIfStore->find( "ethernet1/10" );
+$intDelete[] = $v->owner->network->ethernetIfStore->find( "ethernet1/11" );
+$intDelete[] = $v->owner->network->ethernetIfStore->find( "ethernet1/12" );
+
+foreach( $intDelete as $int )
+{
+    /** @var EthernetInterface $int */
+    $int->owner->removeEthernetIf($int);
+
+}
+
+$int = $v->owner->network->ethernetIfStore->find( "ethernet1/5" );
+$int->setName("ethernet1/2");
+
+$int = $v->owner->network->ethernetIfStore->find( "ethernet1/3" );
+$int->setName("ethernet1/8");
+
+$int = $v->owner->network->ethernetIfStore->find( "ethernet1/4" );
+$int->setName("ae1");
+
+
+$int = $v->owner->network->ethernetIfStore->newEthernetIf( "ethernet1/3", "aggregate-group", "ae1" );
+$int = $v->owner->network->ethernetIfStore->newEthernetIf( "ethernet1/4", "aggregate-group", "ae1" );
+
 
 #echo PH::boldText("\nVALIDATION - replace tmp services with APP-id if possible\n");
 #CONVERTER::AppMigration( $v, $util->configType );
@@ -654,16 +697,24 @@ function sophos_xg_objectsFQDN( $v, $XMLroot)
 
         $fqdn_node = DH::findFirstElement( 'FQDN', $child);
 
-        $fqdn_Name = str_replace("*.", "", $fqdn_node->textContent);
+        $fqdn_Name = $fqdn_node->textContent;
+        $description = "";
+        if( strpos( $fqdn_Name, "*." ) === 0 )
+        {
+            $description = $fqdn_Name;
+            $fqdn_Name = str_replace("*.", "", $fqdn_Name);
+        }
+
 
         $new_address = $v->addressStore->find($name);
         if( $new_address === null )
-            $new_address = $v->addressStore->newAddress( $name, "fqdn", $fqdn_Name );
+            $new_address = $v->addressStore->newAddress( $name, "fqdn", $fqdn_Name, $description );
     }
 }
 
 function sophos_xg_networkINTERFACES( $v, $XMLroot)
 {
+    global $useLogicalRouter;
     /** @var VirtualSystem $v */
 
     foreach ($XMLroot->childNodes as $child)
@@ -732,6 +783,19 @@ function sophos_xg_networkINTERFACES( $v, $XMLroot)
         }
 
 
+        if( $useLogicalRouter )
+            $new_router = $v->owner->network->logicalRouterStore->findVirtualRouter("default");
+        else
+            $new_router = $v->owner->network->virtualRouterStore->findVirtualRouter("default");
+        if( $new_router === null )
+        {
+            if( $useLogicalRouter )
+                $new_router = $v->owner->network->logicalRouterStore->newLogicalRouter("default");
+            else
+                $new_router = $v->owner->network->virtualRouterStore->newVirtualRouter("default");
+        }
+
+        $new_router->attachedInterfaces->addInterface($newInterface);
 
         /*
          * <Interface transactionid="">
@@ -765,6 +829,8 @@ function sophos_xg_networkINTERFACES( $v, $XMLroot)
 
 function sophos_xg_networkLAGS( $v, $XMLroot)
 {
+    global $useLogicalRouter;
+
     /** @var VirtualSystem $v */
 
     foreach ($XMLroot->childNodes as $child)
@@ -793,8 +859,23 @@ function sophos_xg_networkLAGS( $v, $XMLroot)
         $subnetmask = CIDR::netmask2cidr( $ipv4Netmask_node->textContent );
 
         $aeInterface = $v->owner->network->aggregateEthernetIfStore->newEthernetIf( $name, "layer3" );
+        $v->importedInterfaces->addInterface($aeInterface);
 
+        if( $useLogicalRouter )
+            $new_router = $v->owner->network->logicalRouterStore->findVirtualRouter("default");
+        else
+            $new_router = $v->owner->network->virtualRouterStore->findVirtualRouter("default");
+        if( $new_router === null )
+        {
+            if( $useLogicalRouter )
+                $new_router = $v->owner->network->logicalRouterStore->newLogicalRouter("default");
+            else
+                $new_router = $v->owner->network->virtualRouterStore->newVirtualRouter("default");
+        }
 
+        $new_router->attachedInterfaces->addInterface($aeInterface);
+
+        
         $memberinterface_node = DH::findFirstElement( 'MemberInterface', $child);
         foreach( $memberinterface_node->childNodes as $interface_node )
         {
@@ -805,6 +886,7 @@ function sophos_xg_networkLAGS( $v, $XMLroot)
             $memberInterface = $interface_node->textContent;
 
             $interfaceOBJ = $v->owner->network->ethernetIfStore->newEthernetIf( $memberInterface, "aggregate-group", $name );
+            $v->importedInterfaces->addInterface($interfaceOBJ);
 
             #$interfaceOBJ->remove();
             /*
@@ -848,6 +930,8 @@ function sophos_xg_networkLAGS( $v, $XMLroot)
 
 function sophos_xg_networkVLANS( $v, $XMLroot)
 {
+    global $useLogicalRouter;
+
     /** @var VirtualSystem $v */
 
     foreach ($XMLroot->childNodes as $child)
@@ -962,11 +1046,28 @@ function sophos_xg_networkVLANS( $v, $XMLroot)
             $tmp_zone->attachedInterfaces->addInterface($tmp_sub);
         }
 
+        if( $useLogicalRouter )
+            $new_router = $v->owner->network->logicalRouterStore->findVirtualRouter("default");
+        else
+            $new_router = $v->owner->network->virtualRouterStore->findVirtualRouter("default");
+        if( $new_router === null )
+        {
+            if( $useLogicalRouter )
+                $new_router = $v->owner->network->logicalRouterStore->newLogicalRouter("default");
+            else
+                $new_router = $v->owner->network->virtualRouterStore->newVirtualRouter("default");
+        }
+
+
+        $new_router->attachedInterfaces->addInterface($tmp_sub);
+
     }
 }
 
 function sophos_xg_routeSTATIC( $v, $XMLroot)
 {
+    global $useLogicalRouter;
+
     /** @var VirtualSystem $v */
 
     foreach ($XMLroot->childNodes as $child)
@@ -995,10 +1096,22 @@ function sophos_xg_routeSTATIC( $v, $XMLroot)
 
         $distance_node = DH::findFirstElement( 'Distance', $child);
         $metric = $distance_node->textContent;
+        if( $metric == 0 )
+            $metric = 1;
 
-        $new_router = $v->owner->network->virtualRouterStore->findVirtualRouter("default");
+
+        if( $useLogicalRouter )
+            $new_router = $v->owner->network->logicalRouterStore->findVirtualRouter("default");
+        else
+            $new_router = $v->owner->network->virtualRouterStore->findVirtualRouter("default");
         if( $new_router === null )
-            $new_router = $v->owner->network->virtualRouterStore->newVirtualRouter("default");
+        {
+            if( $useLogicalRouter )
+                $new_router = $v->owner->network->logicalRouterStore->newLogicalRouter("default");
+            else
+                $new_router = $v->owner->network->virtualRouterStore->newVirtualRouter("default");
+        }
+
 
 
         $xml_interface = "<interface>" . $interface_node->textContent . "</interface>";
@@ -1392,7 +1505,7 @@ function sophos_xg_rulesNAT( $v, $XMLroot)
                 $newRule->source->addObject($source);
 
             foreach( $secRule->destination->getAll() as $destination )
-                $newRule->source->addObject($destination);
+                $newRule->destination->addObject($destination);
 
             foreach( $secRule->from->getAll() as $source )
                 $newRule->from->addZone($source);
@@ -1407,6 +1520,24 @@ function sophos_xg_rulesNAT( $v, $XMLroot)
                 print "service: '".$service->name()."'\n";
                 #$newRule->service->add($service);
             }
+
+            $zone_wan = $v->zoneStore->find("WAN");
+            $newRule->to->addZone($zone_wan);
+            if( $newRule->to->isAny() )
+            {
+                $zone_wan = $v->zoneStore->find("WAN");
+                $newRule->to->addZone($zone_wan);
+            }
+
+            if( count( $newRule->to->getAll() ) > 1 )
+            {
+                foreach( $newRule->to->getAll() as $toZone )
+                {
+                    $newRule->to->removeZone($toZone, true, true);
+                }
+                $newRule->to->addZone($zone_wan);
+            }
+
 
         }
         else
