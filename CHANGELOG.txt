@@ -8,6 +8,7 @@ UTIL:
 BUGFIX:
 
 GENERAL:
+* class LogicalRouter | adjust for method create/removeStaticRoute
 
 
 2.1.33 (20250122)
