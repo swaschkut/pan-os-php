@@ -125,6 +125,19 @@ RQuery::$defaultFilters['address']['object']['operators']['is.fqdn'] = array(
         'input' => 'input/panorama-8.0.xml'
     )
 );
+RQuery::$defaultFilters['address']['object']['operators']['is.edl'] = array(
+    'Function' => function (AddressRQueryContext $context) {
+        if( !$context->object->isGroup() && !$context->object->isRegion() )
+            return $context->object->isEDL() == TRUE;
+        else
+            return FALSE;
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
 RQuery::$defaultFilters['address']['object']['operators']['is.ip-wildcard'] = array(
     'Function' => function (AddressRQueryContext $context) {
         if( !$context->object->isGroup() && !$context->object->isRegion() )
@@ -145,7 +158,7 @@ RQuery::$defaultFilters['address']['object']['operators']['is.ipv4'] = Array(
 
         if( !$object->isGroup() && !$object->isRegion()  )
         {
-            if( $object->isType_FQDN() )
+            if( $object->isType_FQDN() || $object->isEDL() )
             {
                 #PH::print_stdout( "SKIPPED: object is FQDN");
                 return false;
@@ -197,7 +210,7 @@ RQuery::$defaultFilters['address']['object']['operators']['is.ipv6'] = Array(
 
         if( !$object->isGroup() && !$object->isRegion()  )
         {
-            if( $object->isType_FQDN() )
+            if( $object->isType_FQDN() || $object->isEDL() )
             {
                 #PH::print_stdout( "SKIPPED: object is FQDN");
                 return false;
@@ -1465,7 +1478,7 @@ RQuery::$defaultFilters['address']['value']['operators']['ip4.included-in'] = ar
     'Function' => function (AddressRQueryContext $context) {
         $object = $context->object;
 
-        if( $object->isAddress() && ( $object->isTmpAddr() || $object->isType_FQDN() ) )
+        if( $object->isAddress() && ( $object->isTmpAddr() || $object->isType_FQDN() || $object->isEDL() ) )
             return null;
 
         if( $object->isGroup() && ( $object->isDynamic() || $object->count() < 1 || $object->hasFQDN() ) )
@@ -1508,7 +1521,7 @@ RQuery::$defaultFilters['address']['value']['operators']['ip4.includes-full'] = 
 
         if( $object->isAddress() )
         {
-            if( $object->isType_FQDN()  )
+            if( $object->isType_FQDN() || $object->isEDL() )
                 return null;
             elseif( $object->isTmpAddr() && $object->value() == "" )
                 return null;
@@ -1554,7 +1567,7 @@ RQuery::$defaultFilters['address']['value']['operators']['ip4.includes-full-or-p
 
         if( $object->isAddress() )
         {
-            if( $object->isType_FQDN()  )
+            if( $object->isType_FQDN() || $object->isEDL() )
                 return null;
             elseif( $object->isTmpAddr() && $object->value() == "" )
                 return null;
@@ -1641,7 +1654,7 @@ RQuery::$defaultFilters['address']['value']['operators']['ip6.included-in.from.f
     'Function' => function (AddressRQueryContext $context) {
         $object = $context->object;
 
-        if( $object->isAddress() && ( $object->isTmpAddr() || $object->isType_FQDN() ) )
+        if( $object->isAddress() && ( $object->isTmpAddr() || $object->isType_FQDN() || $object->isEDL() ) )
             return null;
 
         if( $object->isGroup() && ( $object->isDynamic() || $object->count() < 1 || $object->hasFQDN() ) )
@@ -1684,7 +1697,7 @@ RQuery::$defaultFilters['address']['value']['operators']['ip6.includes-full.from
 
         if( $object->isAddress() )
         {
-            if( $object->isType_FQDN()  )
+            if( $object->isType_FQDN() || $object->isEDL() )
                 return null;
             elseif( $object->isTmpAddr() && $object->value() == "" )
                 return null;
@@ -1731,7 +1744,7 @@ RQuery::$defaultFilters['address']['value']['operators']['ip6.includes-full-or-p
 
         if( $object->isAddress() )
         {
-            if( $object->isType_FQDN()  )
+            if( $object->isType_FQDN() || $object->isEDL() )
                 return null;
             elseif( $object->isTmpAddr() && $object->value() == "" )
                 return null;
