@@ -308,6 +308,14 @@ $int->setName("ethernet1/8");
 $int = $v->owner->network->ethernetIfStore->find( "ethernet1/4" );
 $int->setName("ae1");
 
+if($v->owner->network->aggregateEthernetIfStore->xmlroot == null)
+    $v->owner->network->aggregateEthernetIfStore->createXmlRoot();
+
+$v->owner->network->aggregateEthernetIfStore->xmlroot->appendChild($int->xmlroot->cloneNode(TRUE));
+$int->xmlroot->parentNode->removeChild($int->xmlroot);
+
+
+
 
 $int = $v->owner->network->ethernetIfStore->newEthernetIf( "ethernet1/3", "aggregate-group", "ae1" );
 $int = $v->owner->network->ethernetIfStore->newEthernetIf( "ethernet1/4", "aggregate-group", "ae1" );
@@ -858,8 +866,8 @@ function sophos_xg_networkLAGS( $v, $XMLroot)
         $ipv4Netmask_node = DH::findFirstElement( 'Netmask', $child);
         $subnetmask = CIDR::netmask2cidr( $ipv4Netmask_node->textContent );
 
-        $aeInterface = $v->owner->network->aggregateEthernetIfStore->newEthernetIf( $name, "layer3" );
-        $v->importedInterfaces->addInterface($aeInterface);
+        #$aeInterface = $v->owner->network->aggregateEthernetIfStore->newEthernetIf( $name );
+        #$v->importedInterfaces->addInterface($aeInterface);
 
         if( $useLogicalRouter )
             $new_router = $v->owner->network->logicalRouterStore->findVirtualRouter("default");
@@ -873,7 +881,7 @@ function sophos_xg_networkLAGS( $v, $XMLroot)
                 $new_router = $v->owner->network->virtualRouterStore->newVirtualRouter("default");
         }
 
-        $new_router->attachedInterfaces->addInterface($aeInterface);
+        #$new_router->attachedInterfaces->addInterface($aeInterface);
 
         
         $memberinterface_node = DH::findFirstElement( 'MemberInterface', $child);
@@ -886,7 +894,7 @@ function sophos_xg_networkLAGS( $v, $XMLroot)
             $memberInterface = $interface_node->textContent;
 
             $interfaceOBJ = $v->owner->network->ethernetIfStore->newEthernetIf( $memberInterface, "aggregate-group", $name );
-            $v->importedInterfaces->addInterface($interfaceOBJ);
+            #$v->importedInterfaces->addInterface($interfaceOBJ);
 
             #$interfaceOBJ->remove();
             /*

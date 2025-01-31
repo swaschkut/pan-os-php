@@ -67,6 +67,7 @@ class CONVERTER extends UTIL
         $this->vendor_array['ciscoasa'] = "CISCO/CISCO_parser.php";
         $this->vendor_array['pfsense'] = "PFSENSE/PFSENSE_parser.php";
         $this->vendor_array['sophos'] = "SOPHOS/SOPHOS_parser.php";
+        $this->vendor_array['sophosxg'] = "SOPHOSXG/SOPHOSXG_parser.php";
         $this->vendor_array['sonicwall'] = "SONICWALL/SONICWALL_parser.php";
         $this->vendor_array['netscreen'] = "SCREENOS/SCREENOS_parser.php";
         $this->vendor_array['fortinet'] = "FORTINET/FORTINET_parser.php";
@@ -192,6 +193,11 @@ class CONVERTER extends UTIL
         {
             require_once(dirname(__FILE__)."/../SOPHOS/SOPHOS.php");
             $this->myParserClass = "SOPHOS";
+        }
+        elseif( $this->vendor == "sophosxg" )
+        {
+            require_once(dirname(__FILE__)."/../SOPHOSXG/SOPHOSXG.php");
+            $this->myParserClass = "SOPHOSXG";
         }
         elseif( $this->vendor == "srx" )
         {
@@ -723,7 +729,9 @@ class CONVERTER extends UTIL
         elseif( empty($this->configOutput) )
             derr("argument: 'OUT=' is not set!", null, False);
         elseif( empty($this->configFile) )
-            derr("argument: 'FILE=' is not set!", null, False);
+        {
+            #derr("argument: 'FILE=' is not set!", null, False);
+        }
 
 
         self::global_start();
