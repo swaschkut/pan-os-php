@@ -424,6 +424,7 @@ trait ReferenceableObject
         $store_array['gretunnelstore'] = FALSE;
         $store_array['loopbackifstore'] = FALSE;
         $store_array['vlanifstore'] = FALSE;
+        $store_array['zonestore'] = FALSE;
 
 
         if( !array_key_exists($value, $store_array) )
