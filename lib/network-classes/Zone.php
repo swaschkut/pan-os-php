@@ -46,6 +46,12 @@ class Zone
 
     public $userID = FALSE;
 
+    public $_userAclInclude = array();
+    public $_userAclExclude = array();
+    public $_deviceAclInclude = array();
+    public $_deviceAclExclude = array();
+
+
     const TypeTmp = 0;
     const TypeLayer3 = 1;
     const TypeExternal = 2;
@@ -175,70 +181,137 @@ class Zone
         }
 
         $networkNode = DH::findFirstElement('network', $xml);
-
         if( $networkNode === FALSE )
-            return;
-
-        foreach( $networkNode->childNodes as $node )
         {
-            if( $node->nodeType != XML_ELEMENT_NODE )
-                continue;
-
-            if( $node->tagName == 'layer3' || $node->tagName == 'virtual-wire' )
+            foreach( $networkNode->childNodes as $node )
             {
-                $this->type = $node->tagName;
+                if( $node->nodeType != XML_ELEMENT_NODE )
+                    continue;
 
-                if( $this->attachedInterfaces !== null )
-                    $this->attachedInterfaces->load_from_domxml($node);
-            }
-            else if( $node->tagName == 'external' )
-            {
-                $this->type = 'external';
-                foreach( $node->childNodes as $memberNode )
+                if( $node->tagName == 'layer3' || $node->tagName == 'virtual-wire' )
                 {
-                    if( $memberNode->nodeType != XML_ELEMENT_NODE )
-                        continue;
-                    $this->externalVsys[$memberNode->textContent] = $memberNode->textContent;
+                    $this->type = $node->tagName;
+
+                    if( $this->attachedInterfaces !== null )
+                        $this->attachedInterfaces->load_from_domxml($node);
                 }
-                if( $this->attachedInterfaces !== null )
-                    $this->attachedInterfaces->load_from_domxml($node);
-            }
-            elseif( $node->tagName == 'tap' )
-            {
-                $this->type = $node->tagName;
-            }
-            elseif( $node->tagName == 'tunnel' )
-            {
-                $this->type = $node->tagName;
-            }
-            elseif( $node->tagName == 'layer2' )
-            {
-                $this->type = $node->tagName;
-            }
-            elseif( $node->tagName == 'zone-protection-profile' )
-            {
-                $this->zoneProtectionProfile = $node->textContent;
-            }
-            elseif( $node->tagName == 'log-setting' )
-            {
-                $this->logsetting = $node->textContent;
-            }
-            elseif( $node->tagName == 'enable-packet-buffer-protection' )
-            {
+                else if( $node->tagName == 'external' )
+                {
+                    $this->type = 'external';
+                    foreach( $node->childNodes as $memberNode )
+                    {
+                        if( $memberNode->nodeType != XML_ELEMENT_NODE )
+                            continue;
+                        $this->externalVsys[$memberNode->textContent] = $memberNode->textContent;
+                    }
+                    if( $this->attachedInterfaces !== null )
+                        $this->attachedInterfaces->load_from_domxml($node);
+                }
+                elseif( $node->tagName == 'tap' )
+                {
+                    $this->type = $node->tagName;
+                }
+                elseif( $node->tagName == 'tunnel' )
+                {
+                    $this->type = $node->tagName;
+                }
+                elseif( $node->tagName == 'layer2' )
+                {
+                    $this->type = $node->tagName;
+                }
+                elseif( $node->tagName == 'zone-protection-profile' )
+                {
+                    $this->zoneProtectionProfile = $node->textContent;
+                }
+                elseif( $node->tagName == 'log-setting' )
+                {
+                    $this->logsetting = $node->textContent;
+                }
+                elseif( $node->tagName == 'enable-packet-buffer-protection' )
+                {
+
+                }
+                elseif( $node->tagName == 'net-inspection' )
+                {
+
+                }
+                elseif( $node->tagName == 'prenat-identification' )
+                {
+
+                }
+                else
+                    mwarning("zone type: " . $node->tagName . " is not yet supported.", null, False);
 
             }
-            elseif( $node->tagName == 'net-inspection' )
-            {
-
-            }
-            elseif( $node->tagName == 'prenat-identification' )
-            {
-
-            }
-            else
-                mwarning("zone type: " . $node->tagName . " is not yet supported.", null, False);
-
         }
+
+
+        $userAclNode = DH::findFirstElement('user-acl', $xml);
+        if( $userAclNode !== FALSE )
+        {
+            $includeListNode = DH::findFirstElement('include-list', $userAclNode);
+            if( $includeListNode !== FALSE )
+            {
+                foreach( $includeListNode->childNodes as $node )
+                {
+                    if( $node->nodeType != XML_ELEMENT_NODE )
+                        continue;
+
+                    $this->_userAclInclude[$node->textContent] = $node->textContent;
+                    $this->ZoneInExludeList_addReference( $node->textContent );
+                }
+            }
+
+            $excludeListNode = DH::findFirstElement('exclude-list', $userAclNode);
+            if( $excludeListNode !== FALSE )
+            {
+                foreach( $excludeListNode->childNodes as $node )
+                {
+                    if( $node->nodeType != XML_ELEMENT_NODE )
+                        continue;
+
+                    $this->_userAclExclude[$node->textContent] = $node->textContent;
+                    $this->ZoneInExludeList_addReference( $node->textContent );
+                }
+            }
+        }
+
+        $deviceAclNode = DH::findFirstElement('device-acl', $xml);
+        if( $deviceAclNode !== FALSE )
+        {
+            $includeListNode = DH::findFirstElement('include-list', $deviceAclNode);
+            if( $includeListNode !== FALSE )
+            {
+                foreach( $includeListNode->childNodes as $node )
+                {
+                    if( $node->nodeType != XML_ELEMENT_NODE )
+                        continue;
+
+                    $this->_deviceAclInclude[$node->textContent] = $node->textContent;
+                    $this->ZoneInExludeList_addReference( $node->textContent );
+                }
+            }
+
+            $excludeListNode = DH::findFirstElement('exclude-list', $deviceAclNode);
+            if( $excludeListNode !== FALSE )
+            {
+                foreach ($excludeListNode->childNodes as $node)
+                {
+                    if ($node->nodeType != XML_ELEMENT_NODE)
+                        continue;
+
+                    $this->_deviceAclExclude[$node->textContent] = $node->textContent;
+                    $this->ZoneInExludeList_addReference( $node->textContent );
+                }
+            }
+        }
+    }
+
+    private function ZoneInExludeList_addReference( $objectName )
+    {
+        $findobject = $this->owner->owner->addressStore->find($objectName);
+        if( is_object($findobject) )
+            $findobject->addReference($this);
     }
 
     /**

@@ -2,6 +2,10 @@
 
 require_once('SOPHOSXGfunction.php');
 
+
+//https://docs.sophos.com/nsg/sophos-firewall/19.5/Help/en-us/webhelp/onlinehelp/AdministratorHelp/BackupAndFirmware/API/index.html
+
+
 class SOPHOSXG extends PARSER
 {
     use SOPHOSXGfunction;

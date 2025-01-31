@@ -8,6 +8,7 @@ UTIL:
 
 BUGFIX:
 * type=address 'filter=(xyz) | related to if object isEDL() - skip filter if object is EDL
+* class Zone.php | bugfix to add References if Address Objects are used in User/Device In/Exclude List
 
 GENERAL:
 * class LogicalRouter | adjust for method create/removeStaticRoute
