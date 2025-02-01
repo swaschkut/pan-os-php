@@ -2,6 +2,8 @@
 ###############################################################
 #request SOPHOS XG configuration data
 ###############################################################
+#https://docs.sophos.com/nsg/sophos-firewall/19.5/API/index.html
+
 
 echo "Request SOPHOS XG configuration data"
 

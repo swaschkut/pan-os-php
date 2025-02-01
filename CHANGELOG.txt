@@ -15,6 +15,7 @@ GENERAL:
 * class LogicalRouter | adjust for method create/removeStaticRoute
 * class EthernetInterface - method setName() - also set name for subinterfaces
 * class EthernetIfStore | new method removeEthernetIf
+* update to Device App-ID version: 8939-9248
 
 
 2.1.33 (20250122)
