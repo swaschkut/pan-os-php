@@ -156,12 +156,12 @@ RQuery::$defaultFilters['address']['object']['operators']['is.ipv4'] = Array(
     {
         $object = $context->object;
 
-        if( !$object->isGroup() && !$object->isRegion()  )
+        if( !$object->isGroup() && !$object->isRegion() && !$object->isEDL() )
         {
-            if( $object->isType_FQDN() || $object->isEDL() )
+            if( $object->isType_FQDN() )
             {
                 #PH::print_stdout( "SKIPPED: object is FQDN");
-                return false;
+                return null;
             }
 
             if( $object->value() !== null && strpos( $object->value(), ":") !== false )
@@ -208,12 +208,12 @@ RQuery::$defaultFilters['address']['object']['operators']['is.ipv6'] = Array(
     {
         $object = $context->object;
 
-        if( !$object->isGroup() && !$object->isRegion()  )
+        if( !$object->isGroup() && !$object->isRegion() && !$object->isEDL() )
         {
-            if( $object->isType_FQDN() || $object->isEDL() )
+            if( $object->isType_FQDN() )
             {
                 #PH::print_stdout( "SKIPPED: object is FQDN");
-                return false;
+                return null;
             }
 
             $addr_value = $object->value();
@@ -1588,7 +1588,10 @@ RQuery::$defaultFilters['address']['value']['operators']['ip4.included-in'] = ar
     'Function' => function (AddressRQueryContext $context) {
         $object = $context->object;
 
-        if( $object->isAddress() && ( $object->isTmpAddr() || $object->isType_FQDN() || $object->isEDL() ) )
+        if( $object->isEDL() )
+            return null;
+
+        if( $object->isAddress() && ( $object->isTmpAddr() || $object->isType_FQDN() ) )
             return null;
 
         if( $object->isGroup() && ( $object->isDynamic() || $object->count() < 1 || $object->hasFQDN() ) )
@@ -1629,9 +1632,12 @@ RQuery::$defaultFilters['address']['value']['operators']['ip4.includes-full'] = 
     'Function' => function (AddressRQueryContext $context) {
         $object = $context->object;
 
+        if( $object->isEDL() )
+            return null;
+
         if( $object->isAddress() )
         {
-            if( $object->isType_FQDN() || $object->isEDL() )
+            if( $object->isType_FQDN() )
                 return null;
             elseif( $object->isTmpAddr() && $object->value() == "" )
                 return null;
@@ -1675,9 +1681,12 @@ RQuery::$defaultFilters['address']['value']['operators']['ip4.includes-full-or-p
     'Function' => function (AddressRQueryContext $context) {
         $object = $context->object;
 
+        if( $object->isEDL() )
+            return null;
+
         if( $object->isAddress() )
         {
-            if( $object->isType_FQDN() || $object->isEDL() )
+            if( $object->isType_FQDN() )
                 return null;
             elseif( $object->isTmpAddr() && $object->value() == "" )
                 return null;
@@ -1764,7 +1773,10 @@ RQuery::$defaultFilters['address']['value']['operators']['ip6.included-in.from.f
     'Function' => function (AddressRQueryContext $context) {
         $object = $context->object;
 
-        if( $object->isAddress() && ( $object->isTmpAddr() || $object->isType_FQDN() || $object->isEDL() ) )
+        if( $object->isEDL() )
+            return null;
+
+        if( $object->isAddress() && ( $object->isTmpAddr() || $object->isType_FQDN() ) )
             return null;
 
         if( $object->isGroup() && ( $object->isDynamic() || $object->count() < 1 || $object->hasFQDN() ) )
@@ -1805,9 +1817,12 @@ RQuery::$defaultFilters['address']['value']['operators']['ip6.includes-full.from
     'Function' => function (AddressRQueryContext $context) {
         $object = $context->object;
 
+        if( $object->isEDL() )
+            return null;
+
         if( $object->isAddress() )
         {
-            if( $object->isType_FQDN() || $object->isEDL() )
+            if( $object->isType_FQDN() )
                 return null;
             elseif( $object->isTmpAddr() && $object->value() == "" )
                 return null;
