@@ -1,0 +1,282 @@
+[
+  {
+    "description": "Nodes",
+    "name": "Nodes",
+    "link": "/api/definitions/nodes"
+  },
+  {
+    "description": "Status",
+    "name": "Status",
+    "link": "/api/definitions/status"
+  },
+  {
+    "description": "aaa",
+    "name": "aaa",
+    "link": "/api/definitions/aaa"
+  },
+  {
+    "description": "amazon_vpc",
+    "name": "amazon_vpc",
+    "link": "/api/definitions/amazon_vpc"
+  },
+  {
+    "description": "application_control",
+    "name": "application_control",
+    "link": "/api/definitions/application_control"
+  },
+  {
+    "description": "authentication",
+    "name": "authentication",
+    "link": "/api/definitions/authentication"
+  },
+  {
+    "description": "awe",
+    "name": "awe",
+    "link": "/api/definitions/awe"
+  },
+  {
+    "description": "awe_network_device_association",
+    "name": "awe_network_device_association",
+    "link": "/api/definitions/awe_network_device_association"
+  },
+  {
+    "description": "aws",
+    "name": "aws",
+    "link": "/api/definitions/aws"
+  },
+  {
+    "description": "awscli",
+    "name": "awscli",
+    "link": "/api/definitions/awscli"
+  },
+  {
+    "description": "bgp",
+    "name": "bgp",
+    "link": "/api/definitions/bgp"
+  },
+  {
+    "description": "ca",
+    "name": "ca",
+    "link": "/api/definitions/ca"
+  },
+  {
+    "description": "clientless_vpn",
+    "name": "clientless_vpn",
+    "link": "/api/definitions/clientless_vpn"
+  },
+  {
+    "description": "condition",
+    "name": "condition",
+    "link": "/api/definitions/condition"
+  },
+  {
+    "description": "cron",
+    "name": "cron",
+    "link": "/api/definitions/cron"
+  },
+  {
+    "description": "dhcp",
+    "name": "dhcp",
+    "link": "/api/definitions/dhcp"
+  },
+  {
+    "description": "dns",
+    "name": "dns",
+    "link": "/api/definitions/dns"
+  },
+  {
+    "description": "dyndns",
+    "name": "dyndns",
+    "link": "/api/definitions/dyndns"
+  },
+  {
+    "description": "emailpki",
+    "name": "emailpki",
+    "link": "/api/definitions/emailpki"
+  },
+  {
+    "description": "epp",
+    "name": "epp",
+    "link": "/api/definitions/epp"
+  },
+  {
+    "description": "ftp",
+    "name": "ftp",
+    "link": "/api/definitions/ftp"
+  },
+  {
+    "description": "geoip",
+    "name": "geoip",
+    "link": "/api/definitions/geoip"
+  },
+  {
+    "description": "hotspot",
+    "name": "hotspot",
+    "link": "/api/definitions/hotspot"
+  },
+  {
+    "description": "http",
+    "name": "http",
+    "link": "/api/definitions/http"
+  },
+  {
+    "description": "interface",
+    "name": "interface",
+    "link": "/api/definitions/interface"
+  },
+  {
+    "description": "ipfix_connection",
+    "name": "ipfix_connection",
+    "link": "/api/definitions/ipfix_connection"
+  },
+  {
+    "description": "ips",
+    "name": "ips",
+    "link": "/api/definitions/ips"
+  },
+  {
+    "description": "ipsec",
+    "name": "ipsec",
+    "link": "/api/definitions/ipsec"
+  },
+  {
+    "description": "ipsec_connection",
+    "name": "ipsec_connection",
+    "link": "/api/definitions/ipsec_connection"
+  },
+  {
+    "description": "ipsec_remote_auth",
+    "name": "ipsec_remote_auth",
+    "link": "/api/definitions/ipsec_remote_auth"
+  },
+  {
+    "description": "itfhw",
+    "name": "itfhw",
+    "link": "/api/definitions/itfhw"
+  },
+  {
+    "description": "itfparams",
+    "name": "itfparams",
+    "link": "/api/definitions/itfparams"
+  },
+  {
+    "description": "mac_list",
+    "name": "mac_list",
+    "link": "/api/definitions/mac_list"
+  },
+  {
+    "description": "network",
+    "name": "network",
+    "link": "/api/definitions/network"
+  },
+  {
+    "description": "notification",
+    "name": "notification",
+    "link": "/api/definitions/notification"
+  },
+  {
+    "description": "ospf",
+    "name": "ospf",
+    "link": "/api/definitions/ospf"
+  },
+  {
+    "description": "override",
+    "name": "override",
+    "link": "/api/definitions/override"
+  },
+  {
+    "description": "packetfilter",
+    "name": "packetfilter",
+    "link": "/api/definitions/packetfilter"
+  },
+  {
+    "description": "pim_sm",
+    "name": "pim_sm",
+    "link": "/api/definitions/pim_sm"
+  },
+  {
+    "description": "pop3",
+    "name": "pop3",
+    "link": "/api/definitions/pop3"
+  },
+  {
+    "description": "qos",
+    "name": "qos",
+    "link": "/api/definitions/qos"
+  },
+  {
+    "description": "remote_syslog",
+    "name": "remote_syslog",
+    "link": "/api/definitions/remote_syslog"
+  },
+  {
+    "description": "reporting",
+    "name": "reporting",
+    "link": "/api/definitions/reporting"
+  },
+  {
+    "description": "reverse_proxy",
+    "name": "reverse_proxy",
+    "link": "/api/definitions/reverse_proxy"
+  },
+  {
+    "description": "right",
+    "name": "right",
+    "link": "/api/definitions/right"
+  },
+  {
+    "description": "role",
+    "name": "role",
+    "link": "/api/definitions/role"
+  },
+  {
+    "description": "route",
+    "name": "route",
+    "link": "/api/definitions/route"
+  },
+  {
+    "description": "scheduler",
+    "name": "scheduler",
+    "link": "/api/definitions/scheduler"
+  },
+  {
+    "description": "service",
+    "name": "service",
+    "link": "/api/definitions/service"
+  },
+  {
+    "description": "smtp",
+    "name": "smtp",
+    "link": "/api/definitions/smtp"
+  },
+  {
+    "description": "snmp",
+    "name": "snmp",
+    "link": "/api/definitions/snmp"
+  },
+  {
+    "description": "spx",
+    "name": "spx",
+    "link": "/api/definitions/spx"
+  },
+  {
+    "description": "ssl_vpn",
+    "name": "ssl_vpn",
+    "link": "/api/definitions/ssl_vpn"
+  },
+  {
+    "description": "stas",
+    "name": "stas",
+    "link": "/api/definitions/stas"
+  },
+  {
+    "description": "time",
+    "name": "time",
+    "link": "/api/definitions/time"
+  },
+  {
+    "description": "user_preferences",
+    "name": "user_preferences",
+    "link": "/api/definitions/user_preferences"
+  }
+]
