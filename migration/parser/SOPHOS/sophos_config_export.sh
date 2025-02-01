@@ -15,10 +15,6 @@ apikey="APIKEY from SOPHOS UTM"
 #password="PASSWORD from SOPHOS UTM"
 fqdn="SOPHOS IP / FQDN"
 
-apikey="YWRtaW46QWRtaW5AMTIzLg=="
-fqdn="192.168.10.185"
-#username="admin"
-#password="Admin@123."
 #authkey=$(echo -n $username + ":" + $password | base64)
 
 echo $authkey
