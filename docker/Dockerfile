@@ -8,7 +8,7 @@ FROM ${IMAGE}
 #unaffected version mpmath 1.3.0-1
 #https://launchpad.net/ubuntu/+source/mpmath
 
-ARG php_var="8.3"
+ARG php_var="8.4"
 ARG user_var="ubuntu"
 
 SHELL ["/bin/bash", "-c"]
