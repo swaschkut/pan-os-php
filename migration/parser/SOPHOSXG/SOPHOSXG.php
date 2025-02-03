@@ -199,8 +199,11 @@ class SOPHOSXG extends PARSER
             $int->setName("ethernet1/2");
 
             $int = $v->owner->network->ethernetIfStore->find( "ethernet1/3" );
-            $int->setName("ethernet1/8");
+            $int->setName("ethernet1/5");
 
+            $int = $v->owner->network->ethernetIfStore->find( "ethernet1/7" );
+            $int->setName("ethernet1/1");
+            
             $int = $v->owner->network->ethernetIfStore->find( "ethernet1/4" );
             $int->setName("ae1");
 
@@ -215,7 +218,6 @@ class SOPHOSXG extends PARSER
 
             $int = $v->owner->network->ethernetIfStore->newEthernetIf( "ethernet1/3", "aggregate-group", "ae1" );
             $int = $v->owner->network->ethernetIfStore->newEthernetIf( "ethernet1/4", "aggregate-group", "ae1" );
-
         }
 
 
