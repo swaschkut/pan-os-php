@@ -1,0 +1,281 @@
+{
+    "11-2-0": [
+        [],
+        {
+            "PAN-262287": {
+                "info": [
+                    " Dereferencing a NULL pointer that occurs might cause pan_task processes to crash. "
+                ]
+            }
+        },
+        {
+            "PAN-260851": {
+                "info": [
+                    " From the NGFW or Panorama CLI, you can override the existing application tag even if Disable Override is enabled for the application (ObjectsApplications) tag. "
+                ]
+            }
+        },
+        {
+            "PAN-260851": {
+                "info": [
+                    " GlobalProtect portal is not accessible via a web browser and the app displays the error ERR_EMPTY_RESPONSE. "
+                ]
+            }
+        },
+        {
+            "PAN-257615": {
+                "solved": "This issue is now resolved. See PAN-OS 11.2.3 Addressed Issues.",
+                "info": [
+                    " The Panorama web interface intermittently displays logs or fails to display logs completely. "
+                ]
+            }
+        },
+        {
+            "PAN-257045": {
+                "info": [
+                    " The firewall using the Advanced Routing Engine loses PIM Hello messages after a two-day steady state run. "
+                ]
+            }
+        },
+        {
+            "PAN-256780": {
+                "info": [
+                    " The firewall using the Advanced Routing Engine has inconsistent formatting of multicast output from the CLI command: show ip igmp sources json. "
+                ]
+            }
+        },
+        {
+            "PAN-256343": {
+                "info": [
+                    " When the firewall is using the Advanced Routing Engine and OSPFv3 is configured, the interface and area information fails to appear in the CLI or the user interface. Additionally, you shouldn't use the CLI command show advanced-routing ospf interface because it disrupts traffic. "
+                ]
+            }
+        },
+        {
+            "PAN-254305": {
+                "info": [
+                    " DHCP request is not sent when the service route is configured. "
+                ]
+            }
+        },
+        {
+            "PAN-254236": {
+                "solved": "This issue is now resolved. See PAN-OS 11.2.1 Addressed Issues.",
+                "info": [
+                    " TLSv1.3 hybridized Kyber support in the latest versions of Chrome and Edge browsers results in dropped Client Hello packets when SSL\/TLS handshake inspection is enabled. Workaround: Disable SSL\/TLS handshake inspection. "
+                ]
+            }
+        },
+        {
+            "PAN-254143": {
+                "info": [
+                    " A firewall that uses the Advanced Routing Engine fails to add a local route to the Routing Information Base (RIB); it is able to add connected routes to the RIB. However the firewall adds both connected and local routes to the Forwarding Information Base (FIB). This results in a mismatch between the RIB and FIB. "
+                ]
+            }
+        },
+        {
+            "PAN-254108": {
+                "info": [
+                    " when upgrading or downgrading a Panorama management server (PanoramaSoftware), managed device (PanoramaDevice DeploymentSoftware), or standalone firewall (DeviceSoftware), Base Releases and Preferred Releases settings are checked (enabled) by default and cause no PAN-OS software images to display. Workaround: Uncheck (disable) Base Releases or Preferred Releases to display either the available base PAN-OS or preferred PAN-OS releases available to download and install. "
+                ]
+            }
+        },
+        {
+            "PAN-253963": {
+                "info": [
+                    " The auto commit job may take longer than expected to complete when the Panorama management server is in Panorama or Log Collector mode. "
+                ]
+            }
+        },
+        {
+            "PAN-253702": {
+                "info": [
+                    " A firewall using the Advanced Routing Engine fails to come up and fails to display OSPFv3 neighbor information. "
+                ]
+            }
+        },
+        {
+            "PAN-252661": {
+                "info": [
+                    " If you change the service route of gp-ip-mgmt in Device > Setup > Services > Service Features > gp-ip-mgmt and Commit, the change won\u00e2\u0080\u0099t take effect. gp-ip-mgmt continues to use the last committed service route. Workaround: After you change the service route interface for gp-ip-mgmt, navigate to either a GlobalProtect portal or gateway, click OK to save the configuration, and Commit the changes. This commit will include the service route change. "
+                ]
+            }
+        },
+        {
+            "PAN-251639": {
+                "info": [
+                    " When a Wildfire Analysis security profile is enabled, an out of memory condition might occur due to a memory leak in the varrcvr process. "
+                ]
+            }
+        },
+        {
+            "PAN-250246": {
+                "info": [
+                    " Panorama and the firewall display inconsistent IP addresses for device group members after manually syncing. "
+                ]
+            }
+        },
+        {
+            "PAN-250062": {
+                "info": [
+                    " Device telemetry might fail at configured intervals due to bundle generation issues. "
+                ]
+            }
+        },
+        {
+            "PAN-249700": {
+                "info": [
+                    " On a firewall that uses the Advanced Routing Engine and has BGP enabled, the BGP process crashes with SIGSEGV signal when the local interface and the peer IP address change. "
+                ]
+            }
+        },
+        {
+            "PAN-248836": {
+                "info": [
+                    " The Advanced DNS Security trial license and trial license information cannot be activated and viewed, respectively, on a managed firewall (with expired or active status) from Panorama. These tasks can only be performed on the firewall. "
+                ]
+            }
+        },
+        {
+            "PAN-248147": {
+                "info": [
+                    " The firewall using the Advanced Routing Engine doesn't properly display the interface name in the CLI command: show advanced-routing ospf neighbor brief yes. "
+                ]
+            }
+        },
+        {
+            "PAN-247728": {
+                "info": [
+                    " When Advanced Routing is enabled, IP multicast is not supported. An upcoming version will provide support for this feature. Customers who have multicast configured or who plan to deploy multicast routing should not upgrade to 11.2.0. Additionally, when Advanced Routing is enabled, the BGP dampening configuration isn't applied to any peers or peer group; the configuration is preserved but has no effect on BGP. Customers can use BGP even if they have applied a Dampening profile to a specific set of peers. The issue doesn't affect any other BGP features. "
+                ]
+            }
+        },
+        {
+            "PAN-247221": {
+                "info": [
+                    " The firewall using the Advanced Routing Engine fails to display output for the CLI command: show advanced-routing bgp peer received-routes. "
+                ]
+            }
+        },
+        {
+            "PAN-241994": {
+                "info": [
+                    " The VMX hardware version was upgraded from vmx-10 to vmx-15 on ESXi and NSX-T. Support for vmx-15 is supported on ESXi 6.7 U2 and onwards. Palo Alto Networks recommends that you upgrade your ESXi version if it is less than 6.7 U2. For more information, see the compatibility matrix. "
+                ]
+            }
+        },
+        {
+            "PAN-241536": {
+                "info": [
+                    " On the Panorama management server, a user with an Admin Role is unable to modify or add filters to profiles under PanoramaNetworkRoutingRouting ProfilesFilters, despite having the necessary read and write privileges. "
+                ]
+            }
+        },
+        {
+            "PAN-239612": {
+                "info": [
+                    " When the firewall is running PAN-OS 11.2.0 and Advanced Routing is enabled, DHCPv4 relay agent functions successfully, but DHCPv6 relay agent doesn't work. "
+                ]
+            }
+        },
+        {
+            "PAN-236649": {
+                "info": [
+                    " If you change the configuration of a firewall acting as a PPPoEv4 or PPPoEv6 client, old routes from the Forwarding Information Base (FIB) and route table for an inherited configuration with dynamic-identifier or client remain visible. Old routes also remain visible for an inherited interface when you execute the CLI command, show interface all. Workaround: Unconfigure and configure the Inherited Interface. "
+                ]
+            }
+        },
+        {
+            "PAN-234015": {
+                "info": [
+                    " The X-Forwarded-For (XFF) value is not displayed in traffic logs. "
+                ]
+            }
+        },
+        {
+            "PAN-207442": {
+                "info": [
+                    " For M-700 appliances in an active\/passive high availability (PanoramaHigh Availability) configuration, the active-primary HA peer configuration sync to the secondary-passive HA peer may fail. When the config sync fails, the job Results is Successful (Tasks), however the sync status on the Dashboard displays as Out of Sync for both HA peers. Workaround: Perform a local commit on the active-primary HA peer and then synchronize the HA configuration. Log in to the Panorama web interface of the active-primary HA peer.Select Commit and Commit to Panorama.In the active-primary HA peer Dashboard, click Sync to Peer in the High Availability widget. "
+                ]
+            }
+        },
+        {
+            "PAN-206909": {
+                "info": [
+                    " The Dedicated Log Collector is unable to reconnect to the Panorama management server if the configd process crashes. This results in the Dedicated Log Collector losing connectivity to Panorama despite the managed collector connection Status (PanoramaManaged Collector) displaying connected and the managed colletor Health status displaying as healthy. This results in the local Panorama config and system logs not being forwarded to the Dedicated Log Collector. Firewall log forwarding to the disconnected Dedicated Log Collector is not impacted. Workaround: Restart the mgmtsrvr process on the Dedicated Log Collector. Log in to the Dedicated Log Collector CLI. Confirm the Dedicated Log Collector is disconnected from Panorama.admin> show panorama-status Verify the Connected status is no.Restart the mgmtsrvr process.admin> debug software restart process management-server "
+                ]
+            }
+        },
+        {
+            "PAN-197588": {
+                "info": [
+                    " The PAN-OS ACC (Application Command Center) does not display a widget detailing statistics and data associated with vulnerability exploits that have been detected using inline cloud analysis. "
+                ]
+            }
+        },
+        {
+            "PAN-197419": {
+                "info": [
+                    " (PA-1400 Series firewalls only) In NetworkInterfaceEthernet, the power over Ethernet (PoE) ports do not display a Tag value. "
+                ]
+            }
+        },
+        {
+            "PAN-196758": {
+                "info": [
+                    " On the Panorama management server, pushing a configuration change to firewalls leveraging SD-WAN erroneously show the auto-provisioned BGP configurations for SD-WAN as being edited or deleted despite no edits or deletions being made when you Preview Changes (CommitPush to DevicesEdit Selections or CommitCommit and PushEdit Selections). "
+                ]
+            }
+        },
+        {
+            "PAN-195968": {
+                "info": [
+                    " (PA-1400 Series firewalls only) When using the CLI to configure power over Ethernet (PoE) on a non-PoE port, the CLI prints an error depending on whether an interface type was selected on the non-PoE port or not. If an interface type, such as tap, Layer 2, or virtual wire, was selected before PoE was configured, the error message will not include the interface name (eg. ethernet1\/4). If an interface type was not selected before PoE was configured, the error message will include the interface name. "
+                ]
+            }
+        },
+        {
+            "PAN-187685": {
+                "info": [
+                    " On the Panorama management server, the Template Status displays no synchronization status (PanoramaManaged DevicesSummary) after a bootstrapped firewall is successfully added to Panorama. Workaround: After the bootstrapped firewall is successfully added to Panorama, log in to the Panorama web interface and select CommitPush to Devices. "
+                ]
+            }
+        },
+        {
+            "PAN-187407": {
+                "info": [
+                    " The configured Advanced Threat Prevention inline cloud analysis action for a given model might not be honored under the following condition: If the firewall is set to Hold client request for category lookup and the action set to Reset-Both and the URL cache has been cleared, the first request for inline cloud analysis will be bypassed. "
+                ]
+            }
+        },
+        {
+            "PAN-184406": {
+                "info": [
+                    " Using the CLI to add a RAID disk pair to an M-700 appliance causes the dmdb process to crash. Workaround: Contact customer support to stop the dmdb process before adding a RAID disk pair to a M-700 appliance. "
+                ]
+            }
+        },
+        {
+            "PAN-183404": {
+                "info": [
+                    " Static IP addresses are not recognized when \"and\" operators are used with IP CIDR range. "
+                ]
+            }
+        },
+        {
+            "PAN-181933": {
+                "info": [
+                    " If you use multiple log forwarding cards (LFCs) on the PA-7000 series, all of the cards may not receive all of the updates and the mappings for the clients may become out of sync, which causes the firewall to not correctly populate the Source User column in the session logs. "
+                ]
+            }
+        },
+        {
+            "PAN-164885": {
+                "solved": "This issue is now resolved. See PAN-OS 11.2.1 Addressed Issues.",
+                "info": [
+                    " On the Panorama management server, pushes to managed firewalls (CommitPush to Devices or Commit and Push) may fail when an EDL (ObjectsExternal Dynamic Lists) is configured to Check for updates every 5 minutes due to the commit and EDL fetch processes overlapping. This is more likely to occur when multiple EDLs are configured to check for updates every 5 minutes. "
+                ]
+            }
+        }
+    ]
+}

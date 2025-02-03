@@ -20,8 +20,9 @@ require_once dirname(__FILE__)."/../../../lib/resources/panos_release_notes/clas
 require_once dirname(__FILE__)."/../../../lib/resources/panos_release_notes/classes/panos_version.php";
 
 
+$update = false;
 
-$releaseNotes = new panos_release_notes( "known" );
+$releaseNotes = new panos_release_notes( "known", $update );
 
 $filterVersion = false;
 if( isset(PH::$args['version']) )
