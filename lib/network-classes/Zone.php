@@ -181,7 +181,7 @@ class Zone
         }
 
         $networkNode = DH::findFirstElement('network', $xml);
-        if( $networkNode === FALSE )
+        if( $networkNode !== FALSE )
         {
             foreach( $networkNode->childNodes as $node )
             {
