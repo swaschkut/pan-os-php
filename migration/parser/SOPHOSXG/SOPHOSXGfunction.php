@@ -6,14 +6,18 @@ trait SOPHOSXGfunction
      {
         /** @var VirtualSystem $v */
 
-        foreach ($XMLroot->childNodes as $child)
-        {
-            /** @var DOMElement $node */
-            if( $child->nodeType != XML_ELEMENT_NODE )
+         foreach( $XMLroot as $child )
+         {
+             /*
+            foreach ($XMLroot->childNodes as $child)
+            {
+                /** @var DOMElement $node *//*
+            if ($child->nodeType != XML_ELEMENT_NODE)
                 continue;
+*/
 
-            if( $child->nodeName != 'IPHost' )
-                continue;
+            #if( $child->nodeName != 'IPHost' )
+            #    continue;
             //IPHost
 
             /*
@@ -111,14 +115,18 @@ trait SOPHOSXGfunction
      {
         /** @var VirtualSystem $v */
 
-        foreach ($XMLroot->childNodes as $child)
-        {
-            /** @var DOMElement $node */
+         foreach( $XMLroot as $child )
+         {
+             /*
+            foreach ($XMLroot->childNodes as $child)
+            {
+                /** @var DOMElement $node *//*
             if ($child->nodeType != XML_ELEMENT_NODE)
                 continue;
+*/
 
-            if ($child->nodeName != 'IPHostGroup')
-                continue;
+            #if ($child->nodeName != 'IPHostGroup')
+            #    continue;
 
 
             $name_node = DH::findFirstElement( 'Name', $child);
@@ -164,16 +172,18 @@ trait SOPHOSXGfunction
      {
         /** @var VirtualSystem $v */
 
-        foreach ($XMLroot->childNodes as $child)
-        {
-            $tmp_servicegroup = null;
-
-            /** @var DOMElement $node */
-            if( $child->nodeType != XML_ELEMENT_NODE )
+         foreach( $XMLroot as $child )
+         {
+             /*
+            foreach ($XMLroot->childNodes as $child)
+            {
+                /** @var DOMElement $node *//*
+            if ($child->nodeType != XML_ELEMENT_NODE)
                 continue;
+*/
 
-            if( $child->nodeName != 'Services' )
-                continue;
+            #if( $child->nodeName != 'Services' )
+            #    continue;
 
             $name_node = DH::findFirstElement( 'Name', $child);
             $name = $this->normalizeNames($name_node->textContent);
@@ -324,14 +334,18 @@ trait SOPHOSXGfunction
     {
         /** @var VirtualSystem $v */
 
-        foreach ($XMLroot->childNodes as $child)
+        foreach( $XMLroot as $child )
         {
-            /** @var DOMElement $node */
+            /*
+           foreach ($XMLroot->childNodes as $child)
+           {
+               /** @var DOMElement $node *//*
             if ($child->nodeType != XML_ELEMENT_NODE)
                 continue;
+*/
 
-            if ($child->nodeName != 'ServiceGroup')
-                continue;
+            #if ($child->nodeName != 'ServiceGroup')
+            #    continue;
 
 
             $name_node = DH::findFirstElement( 'Name', $child);
@@ -369,14 +383,18 @@ trait SOPHOSXGfunction
     {
         /** @var VirtualSystem $v */
 
-        foreach ($XMLroot->childNodes as $child)
+        foreach( $XMLroot as $child )
         {
-            /** @var DOMElement $node */
+            /*
+           foreach ($XMLroot->childNodes as $child)
+           {
+               /** @var DOMElement $node *//*
             if ($child->nodeType != XML_ELEMENT_NODE)
                 continue;
+*/
 
-            if( $child->nodeName != 'FQDNHost' )
-                continue;
+            #if( $child->nodeName != 'FQDNHost' )
+            #    continue;
 
 
             $name_node = DH::findFirstElement( 'Name', $child);
@@ -403,14 +421,18 @@ trait SOPHOSXGfunction
      {
         /** @var VirtualSystem $v */
 
+         foreach( $XMLroot as $child )
+         {
+         /*
         foreach ($XMLroot->childNodes as $child)
         {
-            /** @var DOMElement $node */
+            /** @var DOMElement $node *//*
             if ($child->nodeType != XML_ELEMENT_NODE)
                 continue;
-
+*//*
             if ($child->nodeName != 'Interface')
                 continue;
+            */
 
             $networkzone_node = DH::findFirstElement( 'NetworkZone', $child);
             $networkzone = $networkzone_node->textContent;
@@ -518,14 +540,18 @@ trait SOPHOSXGfunction
 
         /** @var VirtualSystem $v */
 
-        foreach ($XMLroot->childNodes as $child)
-        {
-            /** @var DOMElement $node */
+         foreach( $XMLroot as $child )
+         {
+             /*
+            foreach ($XMLroot->childNodes as $child)
+            {
+                /** @var DOMElement $node *//*
             if ($child->nodeType != XML_ELEMENT_NODE)
                 continue;
+*/
 
-            if ($child->nodeName != 'LAG')
-                continue;
+            #if ($child->nodeName != 'LAG')
+            #    continue;
 
             //Todo: swaschkut 20250124 check what is missing
             #DH::DEBUGprintDOMDocument($child);
@@ -618,14 +644,18 @@ trait SOPHOSXGfunction
 
         /** @var VirtualSystem $v */
 
-        foreach ($XMLroot->childNodes as $child)
+        foreach( $XMLroot as $child )
         {
-            /** @var DOMElement $node */
+            /*
+           foreach ($XMLroot->childNodes as $child)
+           {
+               /** @var DOMElement $node *//*
             if ($child->nodeType != XML_ELEMENT_NODE)
                 continue;
+*/
 
-            if ($child->nodeName != 'VLAN')
-                continue;
+            #if ($child->nodeName != 'VLAN')
+            #    continue;
 
             $ipv4Enable = false;
             $ipv6Enable = false;
@@ -753,14 +783,18 @@ trait SOPHOSXGfunction
 
         /** @var VirtualSystem $v */
 
-        foreach ($XMLroot->childNodes as $child)
+        foreach( $XMLroot as $child )
         {
-            /** @var DOMElement $node */
+            /*
+           foreach ($XMLroot->childNodes as $child)
+           {
+               /** @var DOMElement $node *//*
             if ($child->nodeType != XML_ELEMENT_NODE)
                 continue;
+*/
 
-            if ($child->nodeName != 'UnicastRoute')
-                continue;
+            #if ($child->nodeName != 'UnicastRoute')
+            #    continue;
 
 
             $ipfamiliy_node = DH::findFirstElement( 'IPFamily', $child);
@@ -847,14 +881,18 @@ trait SOPHOSXGfunction
             "KP" => "North Korea"
         );
 
-        foreach ($XMLroot->childNodes as $child)
+        foreach( $XMLroot as $child )
         {
-            /** @var DOMElement $node */
+            /*
+           foreach ($XMLroot->childNodes as $child)
+           {
+               /** @var DOMElement $node *//*
             if ($child->nodeType != XML_ELEMENT_NODE)
                 continue;
+*/
 
-            if ($child->nodeName != 'FirewallRule')
-                continue;
+            #if ($child->nodeName != 'FirewallRule')
+            #    continue;
 
             $name_node = DH::findFirstElement( 'Name', $child);
             $name = $this->normalizeNames( $name_node->textContent );
@@ -1174,14 +1212,18 @@ trait SOPHOSXGfunction
         /** @var VirtualSystem $v */
 
 
-        foreach ($XMLroot->childNodes as $child)
+        foreach( $XMLroot as $child )
         {
-            /** @var DOMElement $node */
+            /*
+           foreach ($XMLroot->childNodes as $child)
+           {
+               /** @var DOMElement $node *//*
             if ($child->nodeType != XML_ELEMENT_NODE)
                 continue;
+*/
 
-            if ($child->nodeName != 'NATRule')
-                continue;
+            #if ($child->nodeName != 'NATRule')
+            #    continue;
 
             $name_node = DH::findFirstElement('Name', $child);
             $name = $this->normalizeNames($name_node->textContent);
