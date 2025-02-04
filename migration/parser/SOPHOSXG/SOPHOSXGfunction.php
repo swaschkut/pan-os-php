@@ -929,7 +929,10 @@ trait SOPHOSXGfunction
                         if ($sourceZone->nodeType != XML_ELEMENT_NODE)
                             continue;
 
-                        $src_zone = $v->zoneStore->findOrCreate($sourceZone->textContent);
+                        $src_zone = $v->zoneStore->find($sourceZone->textContent);
+                        if($src_zone === null)
+                            $src_zone = $v->zoneStore->newZone($sourceZone->textContent, "layer3");
+                        $src_zone->type = "layer3";
                         $newRule->from->addZone($src_zone);
                     }
 
@@ -941,7 +944,10 @@ trait SOPHOSXGfunction
                         if ($destinationZone->nodeType != XML_ELEMENT_NODE)
                             continue;
 
-                        $dst_zone = $v->zoneStore->findOrCreate($destinationZone->textContent);
+                        $dst_zone = $v->zoneStore->find($destinationZone->textContent);
+                        if($dst_zone === null)
+                            $dst_zone = $v->zoneStore->newZone($destinationZone->textContent, "layer3");
+                        $dst_zone->type = "layer3";
                         $newRule->to->addZone($dst_zone);
                     }
 
@@ -1014,7 +1020,7 @@ trait SOPHOSXGfunction
                             }
                             if( !in_array($country, $panwRegions) && !in_array($country, $sophosRegions) )
                             {
-                                mwarning( "DST object: '".$dst_name. "' not found", null, FALSE );
+                                mwarning( "RULE: ".$newRule->name()." DST object: '".$dst_name. "' not found", null, FALSE );
                             }
                         }
 
