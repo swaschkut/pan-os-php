@@ -106,6 +106,9 @@ class THREATLOG extends UTIL
 
         $apiArgs = Array();
         $apiArgs['type'] = 'log';
+        //Todo: extend requesting logs if response is 5000 logs
+        //max per API is 5000 logs;
+        $apiArgs['nlogs'] = '5000';
         $apiArgs['log-type'] = 'threat';
         if( !empty($query) )
             $apiArgs['query'] = $query;
