@@ -750,11 +750,13 @@ AddressCallContext::$supportedActions[] = array(
             $tmp_obj = $deviceGroup->addressStore->find($object->name(), null, FALSE);
             if( $tmp_obj !== null )
             {
-                PH::print_stdout( $context->padding." * DG: '".$deviceGroup->name()."' OBJ: '".$tmp_obj->name()."' - add TAG: '".$objectFind->name()."'" );
                 if( $context->isAPI )
-                    $tmp_obj->tags->API_addTag($objectFind);
+                    $ret = $tmp_obj->tags->API_addTag($objectFind);
                 else
-                    $tmp_obj->tags->addTag($objectFind);
+                    $ret = $tmp_obj->tags->addTag($objectFind);
+
+                if( $ret )
+                    PH::print_stdout( $context->padding." * DG: '".$deviceGroup->name()."' OBJ: '".$tmp_obj->name()."' - add TAG: '".$objectFind->name()."'" );
             }
         }
 
