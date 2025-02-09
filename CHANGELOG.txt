@@ -16,6 +16,7 @@ UTIL:
 * type=securityprofile securityprofiletype=url-filtering | introduce new filter for url visibility/best-practice
 * type=securityprofile actions=exporttoexcel:file.html,bestpractice|visibility - extend for URL/FB/WF
 * type=rule actions=exporttoexcel:file.html,bestpractice|visibiltiy - extend with URL/WF/FB
+* type=securityprofilegroup actions=exporttoexcel:file.html,bestpractice|visibility
 
 BUGFIX:
 * type=address 'filter=(xyz) | related to if object isEDL() - skip filter if object is EDL
