@@ -1299,4 +1299,58 @@ RQuery::$defaultFilters['securityprofile']['wf']['operators']['is.visibility'] =
     'arg' => false,
     'help' => "'securityprofiletype=wildfire-analysis' e.g. 'filter=(wf is.visibility)'"
 );
+
+
+RQuery::$defaultFilters['securityprofile']['fb.rules']['operators']['is.best-practice'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var FileBlockingProfile $object */
+        $object = $context->object;
+
+        if( $object->secprof_type != 'file-blocking' )
+            return null;
+
+        return $object->fileblocking_rules_best_practice();
+    },
+    'arg' => false,
+    'help' => "'securityprofiletype=file-blocking' e.g. 'filter=(fb.rules is.best-practice)'"
+);
+RQuery::$defaultFilters['securityprofile']['fb.rules']['operators']['is.visibility'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var FileBlockingProfile $object */
+        $object = $context->object;
+
+        if( $object->secprof_type != 'file-blocking' )
+            return null;
+
+        return $object->fileblocking_rules_visibility();
+    },
+    'arg' => false,
+    'help' => "'securityprofiletype=file-blocking' e.g. 'filter=(fb.rules is.visibility)'"
+);
+RQuery::$defaultFilters['securityprofile']['fb']['operators']['is.best-practice'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var FileBlockingProfile $object */
+        $object = $context->object;
+
+        if( $object->secprof_type != 'file-blocking' )
+            return null;
+
+        return $object->is_best_practice();
+    },
+    'arg' => false,
+    'help' => "'securityprofiletype=file-blocking' e.g. 'filter=(fb is.best-practice)'"
+);
+RQuery::$defaultFilters['securityprofile']['fb']['operators']['is.visibility'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var FileBlockingProfile $object */
+        $object = $context->object;
+
+        if( $object->secprof_type != 'file-blocking' )
+            return null;
+
+        return $object->is_visibility();
+    },
+    'arg' => false,
+    'help' => "'securityprofiletype=file-blocking' e.g. 'filter=(fb is.visibility)'"
+);
 // </editor-fold>

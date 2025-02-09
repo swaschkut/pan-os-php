@@ -597,7 +597,7 @@ RQuery::$defaultFilters['threat-rule']['filetype']['operators']['is.any'] = arra
     'Function' => function (ThreatRuleRQueryContext $context) {
         $object = $context->object;
 
-        if( in_array("any", $object->fileType()) )
+        if( in_array("any", $object->filetype()) )
             return TRUE;
 
         return FALSE;
@@ -612,7 +612,7 @@ RQuery::$defaultFilters['threat-rule']['filetype']['operators']['has'] = array(
     'Function' => function (ThreatRuleRQueryContext $context) {
         $object = $context->object;
 
-        if( in_array($context->value, $object->fileType()) )
+        if( in_array($context->value, $object->filetype()) )
             return TRUE;
 
         return FALSE;

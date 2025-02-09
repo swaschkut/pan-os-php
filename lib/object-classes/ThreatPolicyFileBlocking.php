@@ -64,41 +64,23 @@ class ThreatPolicyFileBlocking extends ThreatPolicy
 
     public function check_bp_json( $check_array )
     {
-        //Todo: check details what must be validated
-        foreach( $check_array['severity'] as $severity_check )
+        foreach( $check_array as $action => $check )
         {
-            if( in_array( $severity_check, $this->severity ) )
+            if( $this->action() !== $action )
+                continue;
+
+            foreach( $check as $validate => $values )
             {
-                $action_bp = FALSE;
-                foreach( $check_array['action'] as $action_check)
+                if( is_array( $values ) )
                 {
-                    if( $this->action() == $action_check )
+                        //application
+                    //filetype
+                    foreach( $values as $value )
                     {
-                        $action_bp = TRUE;
-                        break;
+                        if( !in_array( $value, $this->$validate ) )
+                            return false;
                     }
-                    else
-                        $action_bp = FALSE;
                 }
-                if( $action_bp == FALSE )
-                    return FALSE;
-
-                $packet_bp = FALSE;
-                foreach( $check_array['packet-capture'] as $packet_check )
-                {
-                    if( $this->packetCapture() == $packet_check )
-                    {
-                        $packet_bp = TRUE;
-                        break;
-                    }
-                    else
-                        $packet_bp = FALSE;
-                }
-                if( $packet_bp == FALSE )
-                    return FALSE;
-
-                if( $action_check && $packet_bp )
-                    return true;
             }
         }
 
@@ -107,29 +89,23 @@ class ThreatPolicyFileBlocking extends ThreatPolicy
 
     public function check_visibility_json( $check_array )
     {
-        //Todo: check details what must be validated
-        foreach( $check_array['severity'] as $severity_check )
+        foreach( $check_array as $action => $check )
         {
-            if( in_array( $severity_check, $this->severity ) )
+            if( $this->action() !== $action )
+                continue;
+
+            foreach( $check as $validate => $values )
             {
-                $action_bp = FALSE;
-                foreach( $check_array['action'] as $action_check)
+                if( is_array( $values ) )
                 {
-                    $negate_string = "";
-                    if( strpos( $action_check, "!" ) !== FALSE )
-                        $negate_string = "!";
-                    if( $negate_string.$this->action() == $action_check )
+                    //application
+                    //filetype
+                    foreach( $values as $value )
                     {
-                        $action_bp = FALSE;
-                        break;
+                        if( !in_array( $value, $this->$validate ) )
+                            return false;
                     }
-                    else
-                        $action_bp = TRUE;
                 }
-                if( $action_bp == FALSE )
-                    return FALSE;
-                else
-                    return TRUE;
             }
         }
 
@@ -138,7 +114,7 @@ class ThreatPolicyFileBlocking extends ThreatPolicy
 
     public function fileblocking_rule_best_practice()
     {
-        $check_array = $this->fileblocking_rule_bp_visibility_JSON( "bp", "fileblocking" );
+        $check_array = $this->fileblocking_rule_bp_visibility_JSON( "bp", "file-blocking" );
         $bestpractise = $this->check_bp_json( $check_array );
 
         if ($bestpractise == FALSE)
@@ -149,7 +125,7 @@ class ThreatPolicyFileBlocking extends ThreatPolicy
 
     public function fileblocking_rule_visibility()
     {
-        $check_array = $this->fileblocking_rule_bp_visibility_JSON( "visibility", "fileblocking" );
+        $check_array = $this->fileblocking_rule_bp_visibility_JSON( "visibility", "file-blocking" );
         $bestpractise = $this->check_visibility_json( $check_array );
 
         if ($bestpractise == FALSE)

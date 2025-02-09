@@ -31,7 +31,7 @@ class ThreatPolicy
     public $xmlroot;
 
     public $severity = array();
-    public $fileType = array();
+    public $filetype = array();
     public $application = array();
     public $action = null;
 
@@ -75,7 +75,7 @@ class ThreatPolicy
                 if( $member->nodeType != XML_ELEMENT_NODE )
                     continue;
 
-                $this->fileType[$member->textContent] = $member->textContent;
+                $this->filetype[$member->textContent] = $member->textContent;
             }
         }
 
@@ -176,9 +176,9 @@ class ThreatPolicy
         return $this->category;
     }
 
-    public function fileType()
+    public function filetype()
     {
-        return $this->fileType;
+        return $this->filetype;
     }
 
     public function application()
@@ -244,10 +244,10 @@ class ThreatPolicy
             PH::$JSON_TMP['sub']['object'][$this->owner->name()]['rule'][$this->name()]['host'] = $this->host();
         }
 
-        if( $this->fileType() !== null && !empty( $this->fileType() ) )
+        if( $this->filetype() !== null && !empty( $this->filetype() ) )
         {
-            $string .= " - fileType: '".implode(",", $this->fileType())."'";
-            PH::$JSON_TMP['sub']['object'][$this->owner->name()]['rule'][$this->name()]['fileType'] = $this->fileType();
+            $string .= " - fileType: '".implode(",", $this->filetype())."'";
+            PH::$JSON_TMP['sub']['object'][$this->owner->name()]['rule'][$this->name()]['fileType'] = $this->filetype();
         }
 
         if( $this->application() !== null && !empty( $this->application() ) )

@@ -121,19 +121,14 @@ $checkArray['url']['user_credential_submission']['bp']['action'][1]['action'] = 
 
 ######################################################################################################################
 ######## FB
-$checkArray['fileblocking']['rule'] = array();
-$checkArray['fileblocking']['rule']['bp'] = array();
-$checkArray['fileblocking']['rule']['visibility'] = array();
+$checkArray['file-blocking']['rule'] = array();
+$checkArray['file-blocking']['rule']['bp'] = array();
+$checkArray['file-blocking']['rule']['visibility'] = array();
 
-$checkArray['fileblocking']['rule']['visibility']['action'][0]['type'] = array('any');
-$checkArray['fileblocking']['rule']['visibility']['action'][0]['action'] = array('alert');
-$checkArray['fileblocking']['rule']['visibility']['action'][1]['type'] = array('7z', 'bat','chm','class','cpl','dll','hlp','hta','jar','ocx','pif','scr','torrent','vbe','wsf');
-$checkArray['fileblocking']['rule']['visibility']['action'][1]['action'] = array('alert');
+$checkArray['file-blocking']['rule']['visibility']['alert']['filetype'] = array('any');
 
-$checkArray['fileblocking']['rule']['bp']['action'][0]['type'] = array('any');
-$checkArray['fileblocking']['rule']['bp']['action'][0]['action'] = array('alert');
-$checkArray['fileblocking']['rule']['bp']['action'][1]['type'] = array('7z', 'bat','chm','class','cpl','dll','hlp','hta','jar','ocx','pif','scr','torrent','vbe','wsf');
-$checkArray['fileblocking']['rule']['bp']['action'][1]['action'] = array('block');
+$checkArray['file-blocking']['rule']['bp']['alert']['filetype'] = array('any');
+$checkArray['file-blocking']['rule']['bp']['block']['filetype'] = array('7z', 'bat','chm','class','cpl','dll','hlp','hta','jar','ocx','pif','scr','torrent','vbe','wsf');
 
 
 ######################################################################################################################
@@ -143,14 +138,14 @@ $checkArray['wildfire']['rule']['bp'] = array();
 $checkArray['wildfire']['rule']['visibility'] = array();
 
 $checkArray['wildfire']['rule']['visibility'][0]['application'] = array('any');
-$checkArray['wildfire']['rule']['visibility'][0]['file-type'] = array('any');
-$checkArray['wildfire']['rule']['visibility'][0]['direction'] = array('both');
-$checkArray['wildfire']['rule']['visibility'][0]['analysis'] = array('public-cloud');
+$checkArray['wildfire']['rule']['visibility'][0]['filetype'] = array('any');
+$checkArray['wildfire']['rule']['visibility'][0]['direction'] = 'both';
+$checkArray['wildfire']['rule']['visibility'][0]['analysis'] = 'public-cloud';
 
 $checkArray['wildfire']['rule']['bp'][0]['application'] = array('any');
-$checkArray['wildfire']['rule']['bp'][0]['file-type'] = array('any');
-$checkArray['wildfire']['rule']['bp'][0]['direction'] = array('both');
-$checkArray['wildfire']['rule']['bp'][0]['analysis'] = array('public-cloud');
+$checkArray['wildfire']['rule']['bp'][0]['filetype'] = array('any');
+$checkArray['wildfire']['rule']['bp'][0]['direction'] = 'both';
+$checkArray['wildfire']['rule']['bp'][0]['analysis'] = 'public-cloud';
 
 
 ######################################################################################################################

@@ -140,42 +140,37 @@ class WildfireProfile extends SecurityProfile2
 
     public function wildfire_rules_best_practice()
     {
-        if( $this->owner->owner->version >= 102 ) {
-            $bp_set = null;
-            if (!empty($this->rules_obj)) {
-                $bp_set = false;
 
-                foreach ($this->rules_obj as $rulename => $rule) {
-                    /** @var ThreatPolicyWildfire $rule */
-                    if ($rule->wildfire_rule_best_practice())
-                        $bp_set = true;
-                    else
-                        return false;
-                }
+        $bp_set = null;
+        if (!empty($this->rules_obj)) {
+            $bp_set = false;
+
+            foreach ($this->rules_obj as $rulename => $rule) {
+                /** @var ThreatPolicyWildfire $rule */
+                if ($rule->wildfire_rule_best_practice())
+                    $bp_set = true;
+                else
+                    return false;
             }
-            return $bp_set;
         }
-        return null;
+        return $bp_set;
     }
 
     public function wildfire_rules_visibility()
     {
-        if( $this->owner->owner->version >= 102 ) {
-            $bp_set = null;
-            if (!empty($this->rules_obj)) {
-                $bp_set = false;
+        $bp_set = null;
+        if (!empty($this->rules_obj)) {
+            $bp_set = false;
 
-                foreach ($this->rules_obj as $rulename => $rule) {
-                    /** @var ThreatPolicyWildfire $rule */
-                    if ($rule->wildfire_rule_visibility())
-                        $bp_set = true;
-                    else
-                        return false;
-                }
+            foreach ($this->rules_obj as $rulename => $rule) {
+                /** @var ThreatPolicyWildfire $rule */
+                if ($rule->wildfire_rule_visibility())
+                    $bp_set = true;
+                else
+                    return false;
             }
-            return $bp_set;
         }
-        return null;
+        return $bp_set;
     }
 
     public function is_best_practice()

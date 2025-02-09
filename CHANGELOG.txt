@@ -12,6 +12,7 @@ UTIL:
 * Class ThreatPolicyFileBlocking/-Wildfire | bring in bp/visibility methods
 * type=securityprofile | delete deprecated filters
 * type=rule | delete deprecated filters
+* type=securityprofile | extend bp/visibility filters for Wildfire and File-Blocking
 
 BUGFIX:
 * type=address 'filter=(xyz) | related to if object isEDL() - skip filter if object is EDL
