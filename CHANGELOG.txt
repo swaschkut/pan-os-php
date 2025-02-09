@@ -7,6 +7,7 @@ UTIL:
 * type=vendor-migration | introduce vendor=sophosxg | objects / secRule / network | NATrule needs improvements
 * type=address actions=name-rename | extend for Zone references
 * type=address | new actions=tag-add_lower_level_object:{TAG}/display_upper_level_object/display_lower_level_object
+* class type FileBlockingProfile / WildfireProfile - optimise for actions=display
 
 BUGFIX:
 * type=address 'filter=(xyz) | related to if object isEDL() - skip filter if object is EDL

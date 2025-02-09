@@ -21,6 +21,8 @@ class WildfireProfile extends SecurityProfile2
 
     public $secprof_type;
 
+    public $tmp_array;
+
     /**
      * you should not need this one for normal use
      * @param string $name
@@ -93,6 +95,21 @@ class WildfireProfile extends SecurityProfile2
         if( $this->name === FALSE )
             derr("WildFire SecurityProfile name not found\n");
 
+        /*
+         <rules>
+            <entry name="Forward-All">
+               <application>
+                  <member>any</member>
+               </application>
+               <file-type>
+                  <member>any</member>
+               </file-type>
+               <direction>both</direction>
+               <analysis>public-cloud</analysis>
+            </entry>
+         </rules>
+        */
+
 
         $tmp_rule = DH::findFirstElement('rules', $xml);
         if( $tmp_rule !== FALSE )
@@ -108,19 +125,19 @@ class WildfireProfile extends SecurityProfile2
                 if( $vb_severity === FALSE )
                     derr("VB severity name not found\n");
 
-                $severity = DH::findFirstElement('severity', $tmp_entry1);
+                $severity = DH::findFirstElement('application', $tmp_entry1);
                 if( $severity !== FALSE )
                 {
                     if( $severity->nodeType != XML_ELEMENT_NODE )
                         continue;
 
-                    $tmp_array[$this->secprof_type][$this->name]['rules'][$vb_severity]['severity'] = array();
+                    $tmp_array[$this->secprof_type][$this->name]['rules'][$vb_severity]['application'] = array();
                     foreach( $severity->childNodes as $member )
                     {
                         if( $member->nodeType != XML_ELEMENT_NODE )
                             continue;
 
-                        $tmp_array[$this->secprof_type][$this->name]['rules'][$vb_severity]['severity'][$member->textContent] = $member->textContent;
+                        $tmp_array[$this->secprof_type][$this->name]['rules'][$vb_severity]['application'][$member->textContent] = $member->textContent;
                     }
                 }
 
@@ -138,29 +155,6 @@ class WildfireProfile extends SecurityProfile2
 
                         $tmp_array[$this->secprof_type][$this->name]['rules'][$vb_severity]['file-type'][$member->textContent] = $member->textContent;
                     }
-                }
-
-                $action = DH::findFirstElement('action', $tmp_entry1);
-                if( $action !== FALSE )
-                {
-                    if( $action->nodeType != XML_ELEMENT_NODE )
-                        continue;
-
-                    $tmp_action = DH::firstChildElement($action);
-                    if( $tmp_action !== FALSE )
-                        $tmp_array[$this->secprof_type][$this->name]['rules'][$vb_severity]['action'] = $tmp_action->nodeName;
-
-                    if( $this->secprof_type == 'file-blocking' )
-                        $tmp_array[$this->secprof_type][$this->name]['rules'][$vb_severity]['action'] = $action->textContent;
-                }
-
-                $packet_capture = DH::findFirstElement('packet-capture', $tmp_entry1);
-                if( $packet_capture !== FALSE )
-                {
-                    if( $packet_capture->nodeType != XML_ELEMENT_NODE )
-                        continue;
-
-                    $tmp_array[$this->secprof_type][$this->name]['rules'][$vb_severity]['packet-capture'] = $packet_capture->textContent;
                 }
 
                 $direction = DH::findFirstElement('direction', $tmp_entry1);
@@ -183,42 +177,24 @@ class WildfireProfile extends SecurityProfile2
             }
         }
 
-        $tmp_threat_exception = DH::findFirstElement('threat-exception', $xml);
-        if( $tmp_threat_exception !== FALSE )
-        {
-            $tmp_array[$this->secprof_type][$this->name]['threat-exception'] = array();
-            foreach( $tmp_threat_exception->childNodes as $tmp_entry1 )
-            {
-                if( $tmp_entry1->nodeType != XML_ELEMENT_NODE )
-                    continue;
 
-                $tmp_name = DH::findAttribute('name', $tmp_entry1);
-                if( $tmp_name === FALSE )
-                    derr("VB severity name not found\n");
-
-                $action = DH::findFirstElement('action', $tmp_entry1);
-                if( $action !== FALSE )
-                {
-                    if( $action->nodeType != XML_ELEMENT_NODE )
-                        continue;
-
-                    $tmp_action = DH::firstChildElement($action);
-                    $tmp_array[$this->secprof_type][$this->name]['threat-exception'][$tmp_name]['action'] = $tmp_action->nodeName;
-                }
-            }
-        }
-
-        #print_r( $tmp_array );
+        $this->tmp_array =  $tmp_array ;
 
         return TRUE;
     }
 
     public function display()
     {
-        PH::print_stdout(  "     * " . get_class($this) . " '" . $this->name() . "'    " );
+        #PH::print_stdout(  "     * " . get_class($this) . " '" . $this->name() . "'    " );
         PH::$JSON_TMP['sub']['object'][$this->name()]['name'] = $this->name();
         PH::$JSON_TMP['sub']['object'][$this->name()]['type'] = get_class($this);
         //Todo: continue for PH::print_stdout( ); out
+
+        #print_r( $this->tmp_array );
+        foreach( $this->tmp_array['wildfire'][$this->name()]['rules'] as $ruleName => $rule )
+        {
+            PH::print_stdout("     * ".$ruleName." | application : '". implode(", ", $rule['application'])."' | file-type: '". implode(", ", $rule['file-type']). "' | direction: '".$rule['direction']."' | analysis: '".$rule['analysis']."'");
+        }
 
     }
 
