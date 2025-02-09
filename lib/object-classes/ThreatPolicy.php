@@ -32,6 +32,7 @@ class ThreatPolicy
 
     public $severity = array();
     public $fileType = array();
+    public $application = array();
     public $action = null;
 
     public $threatname = null;
@@ -75,6 +76,18 @@ class ThreatPolicy
                     continue;
 
                 $this->fileType[$member->textContent] = $member->textContent;
+            }
+        }
+
+        $tmp = DH::findFirstElement('application', $tmp_entry1);
+        if( $tmp !== FALSE )
+        {
+            foreach( $tmp->childNodes as $member )
+            {
+                if( $member->nodeType != XML_ELEMENT_NODE )
+                    continue;
+
+                $this->application[$member->textContent] = $member->textContent;
             }
         }
 
@@ -168,6 +181,11 @@ class ThreatPolicy
         return $this->fileType;
     }
 
+    public function application()
+    {
+        return $this->application;
+    }
+
     public function packetCapture()
     {
         return $this->packetCapture;
@@ -190,7 +208,7 @@ class ThreatPolicy
     {
         $string = "          '" . $this->name() . "':";
 
-        if( isset( $this->severity ) )
+        if( $this->severity() !== null && !empty($this->severity() ) )
         {
             $string .= " - severity: '".implode(",", $this->severity())."'";
             PH::$JSON_TMP['sub']['object'][$this->owner->name()]['rule'][$this->name()]['severity'] = implode(",", $this->severity());
@@ -224,6 +242,30 @@ class ThreatPolicy
         {
             $string .= " - host: '".$this->host()."'";
             PH::$JSON_TMP['sub']['object'][$this->owner->name()]['rule'][$this->name()]['host'] = $this->host();
+        }
+
+        if( $this->fileType() !== null && !empty( $this->fileType() ) )
+        {
+            $string .= " - fileType: '".implode(",", $this->fileType())."'";
+            PH::$JSON_TMP['sub']['object'][$this->owner->name()]['rule'][$this->name()]['fileType'] = $this->fileType();
+        }
+
+        if( $this->application() !== null && !empty( $this->application() ) )
+        {
+            $string .= " - application: '".implode(",", $this->application())."'";
+            PH::$JSON_TMP['sub']['object'][$this->owner->name()]['rule'][$this->name()]['application'] = $this->application();
+        }
+
+        if( $this->direction() !== null )
+        {
+            $string .= " - direction: '".$this->direction()."'";
+            PH::$JSON_TMP['sub']['object'][$this->owner->name()]['rule'][$this->name()]['direction'] = $this->direction();
+        }
+
+        if( $this->analysis() !== null )
+        {
+            $string .= " - analysis: '".$this->analysis()."'";
+            PH::$JSON_TMP['sub']['object'][$this->owner->name()]['rule'][$this->name()]['analysis'] = $this->analysis();
         }
         PH::print_stdout( $string );
     }

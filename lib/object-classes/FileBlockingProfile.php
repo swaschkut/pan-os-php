@@ -21,7 +21,8 @@ class FileBlockingProfile extends SecurityProfile2
 
     public $secprof_type;
 
-    public $tmp_array;
+    public $rules_obj = array();
+
 
     /**
      * you should not need this one for normal use
@@ -95,122 +96,48 @@ class FileBlockingProfile extends SecurityProfile2
         if( $this->name === FALSE )
             derr("FileBlocking SecurityProfile name not found\n");
 
-        #PH::print_stdout(  "\nsecprofURL TMP: object named '".$this->name."' found" );
 
-        #$this->owner->_SecurityProfiles[$this->secprof_type][$this->name] = $this;
-        #$this->owner->_all[$this->secprof_type][$this->name] = $this;
-        #$this->owner->o[] = $this;
-
-
-        //predefined URL category
-        //$tmp_array[$this->secprof_type][$typeName]['allow']['URL category'] = all predefined URL category
-
-
-        /*
-        <entry name="Alert-All">
-           <application>
-              <member>any</member>
-           </application>
-           <file-type>
-              <member>any</member>
-           </file-type>
-           <direction>both</direction>
-           <action>alert</action>
-        </entry>
-
-         */
 
         $tmp_rule = DH::findFirstElement('rules', $xml);
         if( $tmp_rule !== FALSE )
         {
-            #$tmp_array[$this->secprof_type][$this->secprof_type][$this->name]['rules'] = array();
-            $tmp_array[$this->secprof_type][$this->name]['rules'] = array();
             foreach( $tmp_rule->childNodes as $tmp_entry1 )
             {
                 if( $tmp_entry1->nodeType != XML_ELEMENT_NODE )
                     continue;
 
-                $vb_severity = DH::findAttribute('name', $tmp_entry1);
-                if( $vb_severity === FALSE )
-                    derr("VB severity name not found\n");
+                $rule_name = DH::findAttribute('name', $tmp_entry1);
+                if( $rule_name === FALSE )
+                    derr("FileBlocking Rule name not found\n");
 
+                $threadPolicy_obj = new ThreatPolicyFileBlocking( $rule_name, $this );
+                $threadPolicy_obj->fileblockingpolicy_load_from_domxml( $tmp_entry1 );
+                $this->rules_obj[] = $threadPolicy_obj;
+                $threadPolicy_obj->addReference( $this );
 
-                $application = DH::findFirstElement('application', $tmp_entry1);
-                if( $application !== FALSE )
-                {
-                    if( $application->nodeType != XML_ELEMENT_NODE )
-                        continue;
-
-                    $tmp_array[$this->secprof_type][$this->name]['rules'][$vb_severity]['application'] = array();
-                    foreach( $application->childNodes as $member )
-                    {
-                        if( $member->nodeType != XML_ELEMENT_NODE )
-                            continue;
-
-                        $tmp_array[$this->secprof_type][$this->name]['rules'][$vb_severity]['application'][$member->textContent] = $member->textContent;
-                    }
-                }
-
-
-                $severity = DH::findFirstElement('file-type', $tmp_entry1);
-                if( $severity !== FALSE )
-                {
-                    if( $severity->nodeType != XML_ELEMENT_NODE )
-                        continue;
-
-                    $tmp_array[$this->secprof_type][$this->name]['rules'][$vb_severity]['file-type'] = array();
-                    foreach( $severity->childNodes as $member )
-                    {
-                        if( $member->nodeType != XML_ELEMENT_NODE )
-                            continue;
-
-                        $tmp_array[$this->secprof_type][$this->name]['rules'][$vb_severity]['file-type'][$member->textContent] = $member->textContent;
-                    }
-                }
-
-                $action = DH::findFirstElement('action', $tmp_entry1);
-                if( $action !== FALSE )
-                {
-                    if( $action->nodeType != XML_ELEMENT_NODE )
-                        continue;
-
-                    $tmp_action = DH::firstChildElement($action);
-                    if( $tmp_action !== FALSE )
-                        $tmp_array[$this->secprof_type][$this->name]['rules'][$vb_severity]['action'] = $tmp_action->nodeName;
-
-                    if( $this->secprof_type == 'file-blocking' )
-                        $tmp_array[$this->secprof_type][$this->name]['rules'][$vb_severity]['action'] = $action->textContent;
-                }
-
-                $direction = DH::findFirstElement('direction', $tmp_entry1);
-                if( $direction !== FALSE )
-                {
-                    if( $direction->nodeType != XML_ELEMENT_NODE )
-                        continue;
-
-                    $tmp_array[$this->secprof_type][$this->name]['rules'][$vb_severity]['direction'] = $direction->textContent;
-                }
+                $this->owner->owner->ThreatPolicyStore->add($threadPolicy_obj);
             }
         }
-
-        $this->tmp_array = $tmp_array;
 
         return TRUE;
     }
 
     public function display()
     {
-        #PH::print_stdout(  "     * " . get_class($this) . " '" . $this->name() . "'    ");
+
         PH::$JSON_TMP['sub']['object'][$this->name()]['name'] = $this->name();
         PH::$JSON_TMP['sub']['object'][$this->name()]['type'] = get_class($this);
-        //Todo: continue for PH::print_stdout( ); out
 
-        #print_r( $this->tmp_array );
-        foreach( $this->tmp_array['file-blocking'][$this->name()]['rules'] as $ruleName => $rule )
+
+        if( !empty( $this->rules_obj ) )
         {
-            PH::print_stdout("     * ".$ruleName." | application : '". implode(", ", $rule['application'])."' | file-type: '". implode(", ", $rule['file-type']). "' | direction: '".$rule['direction']."' | action: '".$rule['action']."'");
-        }
+            PH::print_stdout("        - threat-rules:");
 
+            foreach ($this->rules_obj as $rulename => $rule)
+            {
+                $rule->display();
+            }
+        }
     }
 
 

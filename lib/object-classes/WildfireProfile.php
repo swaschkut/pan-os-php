@@ -21,7 +21,7 @@ class WildfireProfile extends SecurityProfile2
 
     public $secprof_type;
 
-    public $tmp_array;
+    public $rules_obj = array();
 
     /**
      * you should not need this one for normal use
@@ -95,107 +95,47 @@ class WildfireProfile extends SecurityProfile2
         if( $this->name === FALSE )
             derr("WildFire SecurityProfile name not found\n");
 
-        /*
-         <rules>
-            <entry name="Forward-All">
-               <application>
-                  <member>any</member>
-               </application>
-               <file-type>
-                  <member>any</member>
-               </file-type>
-               <direction>both</direction>
-               <analysis>public-cloud</analysis>
-            </entry>
-         </rules>
-        */
 
 
         $tmp_rule = DH::findFirstElement('rules', $xml);
         if( $tmp_rule !== FALSE )
         {
-            #$tmp_array[$this->secprof_type][$this->secprof_type][$this->name]['rules'] = array();
-            $tmp_array[$this->secprof_type][$this->name]['rules'] = array();
             foreach( $tmp_rule->childNodes as $tmp_entry1 )
             {
                 if( $tmp_entry1->nodeType != XML_ELEMENT_NODE )
                     continue;
 
-                $vb_severity = DH::findAttribute('name', $tmp_entry1);
-                if( $vb_severity === FALSE )
+                $rule_name = DH::findAttribute('name', $tmp_entry1);
+                if( $rule_name === FALSE )
                     derr("VB severity name not found\n");
 
-                $severity = DH::findFirstElement('application', $tmp_entry1);
-                if( $severity !== FALSE )
-                {
-                    if( $severity->nodeType != XML_ELEMENT_NODE )
-                        continue;
+                $threadPolicy_obj = new ThreatPolicyWildfire( $rule_name, $this );
+                $threadPolicy_obj->wildfirepolicy_load_from_domxml( $tmp_entry1 );
+                $this->rules_obj[] = $threadPolicy_obj;
+                $threadPolicy_obj->addReference( $this );
 
-                    $tmp_array[$this->secprof_type][$this->name]['rules'][$vb_severity]['application'] = array();
-                    foreach( $severity->childNodes as $member )
-                    {
-                        if( $member->nodeType != XML_ELEMENT_NODE )
-                            continue;
-
-                        $tmp_array[$this->secprof_type][$this->name]['rules'][$vb_severity]['application'][$member->textContent] = $member->textContent;
-                    }
-                }
-
-                $severity = DH::findFirstElement('file-type', $tmp_entry1);
-                if( $severity !== FALSE )
-                {
-                    if( $severity->nodeType != XML_ELEMENT_NODE )
-                        continue;
-
-                    $tmp_array[$this->secprof_type][$this->name]['rules'][$vb_severity]['file-type'] = array();
-                    foreach( $severity->childNodes as $member )
-                    {
-                        if( $member->nodeType != XML_ELEMENT_NODE )
-                            continue;
-
-                        $tmp_array[$this->secprof_type][$this->name]['rules'][$vb_severity]['file-type'][$member->textContent] = $member->textContent;
-                    }
-                }
-
-                $direction = DH::findFirstElement('direction', $tmp_entry1);
-                if( $direction !== FALSE )
-                {
-                    if( $direction->nodeType != XML_ELEMENT_NODE )
-                        continue;
-
-                    $tmp_array[$this->secprof_type][$this->name]['rules'][$vb_severity]['direction'] = $direction->textContent;
-                }
-
-                $analysis = DH::findFirstElement('analysis', $tmp_entry1);
-                if( $analysis !== FALSE )
-                {
-                    if( $analysis->nodeType != XML_ELEMENT_NODE )
-                        continue;
-
-                    $tmp_array[$this->secprof_type][$this->name]['rules'][$vb_severity]['analysis'] = $analysis->textContent;
-                }
+                $this->owner->owner->ThreatPolicyStore->add($threadPolicy_obj);
             }
         }
-
-
-        $this->tmp_array =  $tmp_array ;
 
         return TRUE;
     }
 
     public function display()
     {
-        #PH::print_stdout(  "     * " . get_class($this) . " '" . $this->name() . "'    " );
         PH::$JSON_TMP['sub']['object'][$this->name()]['name'] = $this->name();
         PH::$JSON_TMP['sub']['object'][$this->name()]['type'] = get_class($this);
-        //Todo: continue for PH::print_stdout( ); out
 
-        #print_r( $this->tmp_array );
-        foreach( $this->tmp_array['wildfire'][$this->name()]['rules'] as $ruleName => $rule )
+
+        if( !empty( $this->rules_obj ) )
         {
-            PH::print_stdout("     * ".$ruleName." | application : '". implode(", ", $rule['application'])."' | file-type: '". implode(", ", $rule['file-type']). "' | direction: '".$rule['direction']."' | analysis: '".$rule['analysis']."'");
-        }
+            PH::print_stdout("        - threat-rules:");
 
+            foreach ($this->rules_obj as $rulename => $rule)
+            {
+                $rule->display();
+            }
+        }
     }
 
 

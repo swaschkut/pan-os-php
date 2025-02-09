@@ -556,7 +556,98 @@ RQuery::$defaultFilters['threat-rule']['threatname']['operators']['is.any'] = ar
 
         return FALSE;
     },
-    'arg' => FALSe,
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP% client )',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+
+RQuery::$defaultFilters['threat-rule']['application']['operators']['is.any'] = array(
+    'Function' => function (ThreatRuleRQueryContext $context) {
+        $object = $context->object;
+
+        if( in_array("any", $object->application()) )
+            return TRUE;
+
+        return FALSE;
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP% client )',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['threat-rule']['application']['operators']['has'] = array(
+    'Function' => function (ThreatRuleRQueryContext $context) {
+        $object = $context->object;
+
+        if( in_array($context->value, $object->application()) )
+            return TRUE;
+
+        return FALSE;
+    },
+    'arg' => TRUE,
+    'ci' => array(
+        'fString' => '(%PROP% client )',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['threat-rule']['filetype']['operators']['is.any'] = array(
+    'Function' => function (ThreatRuleRQueryContext $context) {
+        $object = $context->object;
+
+        if( in_array("any", $object->fileType()) )
+            return TRUE;
+
+        return FALSE;
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP% client )',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['threat-rule']['filetype']['operators']['has'] = array(
+    'Function' => function (ThreatRuleRQueryContext $context) {
+        $object = $context->object;
+
+        if( in_array($context->value, $object->fileType()) )
+            return TRUE;
+
+        return FALSE;
+    },
+    'arg' => TRUE,
+    'ci' => array(
+        'fString' => '(%PROP% client )',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['threat-rule']['direction']['operators']['is.both'] = array(
+    'Function' => function (ThreatRuleRQueryContext $context) {
+        $object = $context->object;
+
+        if( $object->direction() == "both" )
+            return TRUE;
+
+        return FALSE;
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP% client )',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['threat-rule']['direction']['operators']['eq'] = array(
+    'Function' => function (ThreatRuleRQueryContext $context) {
+        $object = $context->object;
+
+        if( $object->direction() == $context->value )
+            return TRUE;
+
+        return FALSE;
+    },
+    'arg' => TRUE,
     'ci' => array(
         'fString' => '(%PROP% client )',
         'input' => 'input/panorama-8.0.xml'

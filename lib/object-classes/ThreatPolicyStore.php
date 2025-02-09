@@ -25,6 +25,9 @@ class ThreatPolicyStore extends ObjStore
     /** @var array|Threat[] */
     public $spywarePolicy = array();
 
+    public $wildfirePolicy = array();
+    public $fileblockingPolicy = array();
+
     public static $childn = 'Threat';
 
     public function __construct($owner)
@@ -50,7 +53,7 @@ class ThreatPolicyStore extends ObjStore
             $threat = new ThreatPolicyVulnerability($threatName, $this);
             $threat->type = 'vulnerabilityPolicy';
             $threat->xmlroot = $threatx;
-            $threat->vulnerability_load_from_domxml( $threatx );
+            $threat->vulnerabilitypolicy_load_from_domxml( $threatx );
 
             $this->add($threat);
 
@@ -72,11 +75,56 @@ class ThreatPolicyStore extends ObjStore
             $threat = new ThreatPolicySpyware($threatName, $this);
             $threat->type = 'spywarePolicy';
             $threat->xmlroot = $threatx;
-            $threat->spyware_load_from_domxml( $threatx );
+            $threat->spywarepolicy_load_from_domxml( $threatx );
 
             $this->add($threat);
 
             $this->spywarePolicy[] = $threat;
+        }
+    }
+
+    public function load_wildfirePolicy_from_domxml(DOMElement $xml)
+    {
+        foreach( $xml->childNodes as $threatx )
+        {
+            if( $threatx->nodeType != XML_ELEMENT_NODE )
+                continue;
+
+            $threatName = DH::findAttribute('name', $threatx);
+            if( $threatName === FALSE )
+                derr("threat name not found\n");
+
+            $threat = new ThreatPolicyWildfire($threatName, $this);
+            $threat->type = 'wildfirePolicy';
+            $threat->xmlroot = $threatx;
+            $threat->wildfirepolicy_load_from_domxml( $threatx );
+
+            $this->add($threat);
+
+            $this->wildfirePolicy[] = $threat;
+        }
+    }
+
+
+    public function load_fileblockingPolicy_from_domxml(DOMElement $xml)
+    {
+        foreach( $xml->childNodes as $threatx )
+        {
+            if( $threatx->nodeType != XML_ELEMENT_NODE )
+                continue;
+
+            $threatName = DH::findAttribute('name', $threatx);
+            if( $threatName === FALSE )
+                derr("threat name not found\n");
+
+            $threat = new ThreatPolicyFileBlocking($threatName, $this);
+            $threat->type = 'fileblockingPolicy';
+            $threat->xmlroot = $threatx;
+            $threat->fileblockingpolicy_load_from_domxml( $threatx );
+
+            $this->add($threat);
+
+            $this->fileblockingPolicy[] = $threat;
         }
     }
 
