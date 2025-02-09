@@ -519,6 +519,17 @@ SecurityProfileCallContext::$supportedActions[] = array(
         if( $visibility )
             $headers .= '<th>visibility</th>';
 
+        /*
+        if( $bestPractice )
+            $headers .= '<th>BP FB</th>';
+        if( $visibility )
+            $headers .= '<th>visibility FB</th>';
+
+        if( $bestPractice )
+            $headers .= '<th>BP WF</th>';
+        if( $visibility )
+            $headers .= '<th>visibility WF</th>';
+        */
         if( $bestPractice )
         {
             $headers .= '<th>URL BP</th>';
@@ -635,6 +646,60 @@ SecurityProfileCallContext::$supportedActions[] = array(
                                 $lines .= $context->encloseFunction($bp_text_no);
                         }
                     }
+                    elseif( get_class($object) == "WildfireProfile")
+                    {
+                        if( $bestPractice )
+                        {
+                            if( $object->is_best_practice() )
+                                $lines .= $context->encloseFunction($bp_text_yes);
+                            else
+                                $lines .= $context->encloseFunction($bp_text_no);
+                        }
+
+                        if( $visibility )
+                        {
+                            if( $object->is_visibility() )
+                                $lines .= $context->encloseFunction($bp_text_yes);
+                            else
+                                $lines .= $context->encloseFunction($bp_text_no);
+                        }
+                    }
+                    elseif( get_class($object) == "FileBlockingProfile")
+                    {
+                        if( $bestPractice )
+                        {
+                            if( $object->is_best_practice() )
+                                $lines .= $context->encloseFunction($bp_text_yes);
+                            else
+                                $lines .= $context->encloseFunction($bp_text_no);
+                        }
+
+                        if( $visibility )
+                        {
+                            if( $object->is_visibility() )
+                                $lines .= $context->encloseFunction($bp_text_yes);
+                            else
+                                $lines .= $context->encloseFunction($bp_text_no);
+                        }
+                    }
+                    elseif( get_class($object) == "URLProfile")
+                    {
+                        if( $bestPractice )
+                        {
+                            if( $object->is_best_practice() )
+                                $lines .= $context->encloseFunction($bp_text_yes);
+                            else
+                                $lines .= $context->encloseFunction($bp_text_no);
+                        }
+
+                        if( $visibility )
+                        {
+                            if( $object->is_visibility() )
+                                $lines .= $context->encloseFunction($bp_text_yes);
+                            else
+                                $lines .= $context->encloseFunction($bp_text_no);
+                        }
+                    }
                     else
                     {
                         if( $bestPractice )
@@ -657,7 +722,35 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     $tmp_array = array();
                     foreach( $object->rules_obj as $rulename => $rule )
                     {
-                        $tmp_string = "'".$rule->name()."' | severity:'". implode( ",", $rule->severity )."' - action:'".$rule->action()."' - packetCapture:'".$rule->packetCapture()."' - category:'".$rule->category()."' - host:'".$rule->host()."'";
+                        $stringSeverity = "";
+                        if( !empty($rule->severity) )
+                            $stringSeverity = " - severity:'". implode( ",", $rule->severity )."'";
+                        $stringApplication = "";
+                        if( !empty($rule->application) )
+                            $stringApplication = " - application:'". implode( ",", $rule->application )."'";
+                        $stringFileType = "";
+                        if( !empty($rule->filetype) )
+                            $stringFileType = " - filetype:'". implode( ",", $rule->filetype )."'";
+                        $stringPacketCapture = "";
+                        if( $rule->packetCapture() !== null )
+                            $stringPacketCapture = " - packetCapture:'".$rule->packetCapture();
+                        $stringCategory = "";
+                        if( $rule->category() !== null )
+                            $stringCategory = " - category:'".$rule->category()."'";
+                        $stringHost = "";
+                        if( $rule->host() !== null )
+                            $stringHost = " - host:'".$rule->host()."'";
+                        $stringAction = "";
+                        if( $rule->action() !== null )
+                            $stringAction = " - action:'".$rule->action()."'";
+                        $stringDirection = "";
+                        if( $rule->direction() !== null )
+                            $stringDirection = " - direction:'".$rule->direction()."'";
+                        $stringAnalysis = "";
+                        if( $rule->analysis() !== null )
+                            $stringAnalysis = " - analysis:'".$rule->analysis()."'";
+
+                        $tmp_string = "'".$rule->name()."' | ".$stringSeverity.$stringAction.$stringApplication.$stringFileType.$stringPacketCapture.$stringCategory.$stringHost.$stringDirection.$stringAnalysis;
                         if( get_class($rule ) == "ThreatPolicySpyware" )
                         {
                             if( !$rule->spyware_rule_best_practice() && $bestPractice )
@@ -671,6 +764,20 @@ SecurityProfileCallContext::$supportedActions[] = array(
                             if( !$rule->vulnerability_rule_best_practice() && $bestPractice )
                                 $tmp_string .= $bp_NOT_sign;
                             if( !$rule->vulnerability_rule_visibility() && $visibility )
+                                $tmp_string .= $visible_NOT_sign;
+                        }
+                        elseif( get_class($rule ) == "ThreatPolicyWildfire" )
+                        {
+                            if( !$rule->wildfire_rule_best_practice() && $bestPractice )
+                                $tmp_string .= $bp_NOT_sign;
+                            if( !$rule->wildfire_rule_visibility() && $visibility )
+                                $tmp_string .= $visible_NOT_sign;
+                        }
+                        elseif( get_class($rule ) == "ThreatPolicyFileBlocking" )
+                        {
+                            if( !$rule->fileblocking_rule_best_practice() && $bestPractice )
+                                $tmp_string .= $bp_NOT_sign;
+                            if( !$rule->fileblocking_rule_visibility() && $visibility )
                                 $tmp_string .= $visible_NOT_sign;
                         }
                         $tmp_array[] = $tmp_string;
