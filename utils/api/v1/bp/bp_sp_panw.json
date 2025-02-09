@@ -222,80 +222,90 @@
     },
     "url": {
         "site_access": {
-            "visibility": [
-                "!allow"
-            ],
-            "bp": {
-                "action": [
-                    {
-                        "type": [
-                            "command-and-control",
-                            "compromised-website",
-                            "grayware",
-                            "malware",
-                            "phishing",
-                            "ransomware",
-                            "scanning-activity"
-                        ],
-                        "action": [
-                            "block"
-                        ]
-                    },
-                    {
-                        "type": [
-                            "abused-drugs",
-                            "adult",
-                            "copyright-infringement",
-                            "extremism",
-                            "gambling",
-                            "peer-to-peer",
-                            "questionable",
-                            "weapons"
-                        ],
-                        "action": [
-                            "alert"
-                        ]
-                    }
-                ]
-            }
+            "visibility": "!allow",
+            "bp": [
+                {
+                    "type": [
+                        "command-and-control",
+                        "compromised-website",
+                        "grayware",
+                        "malware",
+                        "phishing",
+                        "ransomware",
+                        "scanning-activity"
+                    ],
+                    "action": "block"
+                },
+                {
+                    "type": [
+                        "dynamic-dns",
+                        "hacking",
+                        "insufficient-content",
+                        "newly-registered-domains",
+                        "not-resolved",
+                        "parked",
+                        "proxy-avoidance-and-anonymizers",
+                        "unknown"
+                    ],
+                    "action": "alert"
+                },
+                {
+                    "type": [
+                        "abused-drugs",
+                        "adult",
+                        "copyright-infringement",
+                        "extremism",
+                        "gambling",
+                        "peer-to-peer",
+                        "questionable",
+                        "weapons"
+                    ],
+                    "action": "alert"
+                }
+            ]
         },
         "user_credential_submission": {
-            "visibility": [
-                "!allow"
-            ],
-            "bp": {
-                "action": [
-                    {
-                        "type": [
-                            "command-and-control",
-                            "compromised-website",
-                            "grayware",
-                            "malware",
-                            "phishing",
-                            "ransomware",
-                            "scanning-activity"
-                        ],
-                        "action": [
-                            "block"
-                        ]
-                    },
-                    {
-                        "type": [
-                            "abused-drugs",
-                            "adult",
-                            "copyright-infringement",
-                            "extremism",
-                            "gambling",
-                            "peer-to-peer",
-                            "questionable",
-                            "weapons"
-                        ],
-                        "action": [
-                            "alert"
-                        ]
-                    }
-                ]
-            }
+            "visibility": "!allow",
+            "bp": [
+                {
+                    "type": [
+                        "command-and-control",
+                        "compromised-website",
+                        "grayware",
+                        "malware",
+                        "phishing",
+                        "ransomware",
+                        "scanning-activity"
+                    ],
+                    "action": "block"
+                },
+                {
+                    "type": [
+                        "dynamic-dns",
+                        "hacking",
+                        "insufficient-content",
+                        "newly-registered-domains",
+                        "not-resolved",
+                        "parked",
+                        "proxy-avoidance-and-anonymizers",
+                        "unknown"
+                    ],
+                    "action": "alert"
+                },
+                {
+                    "type": [
+                        "abused-drugs",
+                        "adult",
+                        "copyright-infringement",
+                        "extremism",
+                        "gambling",
+                        "peer-to-peer",
+                        "questionable",
+                        "weapons"
+                    ],
+                    "action": "alert"
+                }
+            ]
         }
     },
     "file-blocking": {

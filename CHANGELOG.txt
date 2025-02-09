@@ -13,6 +13,7 @@ UTIL:
 * type=securityprofile | delete deprecated filters
 * type=rule | delete deprecated filters
 * type=securityprofile | extend bp/visibility filters for Wildfire and File-Blocking
+* type=securityprofile securityprofiletype=url-filtering | introduce new filter for url visibility/best-practice
 
 BUGFIX:
 * type=address 'filter=(xyz) | related to if object isEDL() - skip filter if object is EDL

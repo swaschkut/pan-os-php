@@ -1353,4 +1353,30 @@ RQuery::$defaultFilters['securityprofile']['fb']['operators']['is.visibility'] =
     'arg' => false,
     'help' => "'securityprofiletype=file-blocking' e.g. 'filter=(fb is.visibility)'"
 );
+RQuery::$defaultFilters['securityprofile']['url']['operators']['is.visibility'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var URLProfile $object */
+        $object = $context->object;
+
+        if( $object->secprof_type != 'url-filtering' )
+            return null;
+
+        return $object->is_visibility();
+    },
+    'arg' => false,
+    'help' => "'securityprofiletype=url-filtering' e.g. 'filter=(url is.visibility)'"
+);
+RQuery::$defaultFilters['securityprofile']['url']['operators']['is.best-practice'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var URLProfile $object */
+        $object = $context->object;
+
+        if( $object->secprof_type != 'url-filtering' )
+            return null;
+
+        return $object->is_best_practice();
+    },
+    'arg' => false,
+    'help' => "'securityprofiletype=url-filtering' e.g. 'filter=(url is.best-practice)'"
+);
 // </editor-fold>
