@@ -29,7 +29,7 @@ class ThreatPolicyWildfire extends ThreatPolicy
     }
 
 
-    public function wildifre_rule_bp_visibility_JSON( $checkType, $secprof_type )
+    public function wildfire_rule_bp_visibility_JSON( $checkType, $secprof_type )
     {
         $checkArray = array();
 
@@ -64,6 +64,7 @@ class ThreatPolicyWildfire extends ThreatPolicy
 
     public function check_bp_json( $check_array )
     {
+        //Todo: check details what must be validated
         foreach( $check_array['severity'] as $severity_check )
         {
             if( in_array( $severity_check, $this->severity ) )
@@ -106,6 +107,7 @@ class ThreatPolicyWildfire extends ThreatPolicy
 
     public function check_visibility_json( $check_array )
     {
+        //Todo: check details what must be validated
         foreach( $check_array['severity'] as $severity_check )
         {
             if( in_array( $severity_check, $this->severity ) )
@@ -136,7 +138,7 @@ class ThreatPolicyWildfire extends ThreatPolicy
 
     public function wildfire_rule_best_practice()
     {
-        $check_array = $this->spyware_rule_bp_visibility_JSON( "bp", "spyware" );
+        $check_array = $this->wildfire_rule_bp_visibility_JSON( "bp", "wildfire" );
         $bestpractise = $this->check_bp_json( $check_array );
 
         if ($bestpractise == FALSE)
@@ -147,7 +149,7 @@ class ThreatPolicyWildfire extends ThreatPolicy
 
     public function wildfire_rule_visibility()
     {
-        $check_array = $this->spyware_rule_bp_visibility_JSON( "visibility", "spyware" );
+        $check_array = $this->wildfire_rule_bp_visibility_JSON( "visibility", "wildfire" );
         $bestpractise = $this->check_visibility_json( $check_array );
 
         if ($bestpractise == FALSE)

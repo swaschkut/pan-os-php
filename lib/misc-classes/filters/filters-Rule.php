@@ -1632,24 +1632,6 @@ RQuery::$defaultFilters['rule']['app']['operators']['has.from.query'] = array(
     'help' => 'example: \'filter=(app has.from.query subquery1)\' \'subquery1=(object is.application-group)\'',
 );
 
-RQuery::$defaultFilters['rule']['app']['operators']['has.seen.fast-api'] = array(
-    'Function' => function (RuleRQueryContext $context) {
-        $rule = $context->object;
-
-        #if( !$context->isAPI )
-        #    derr( "this filter is only supported in API mode", null, false );
-
-        $rule_array = $rule->API_apps_seen();
-
-        if( isset($rule_array['apps-seen']) && in_array( $context->value, array_keys($rule_array['apps-seen'])) )
-            return TRUE;
-
-        return null;
-    },
-    'arg' => TRUE,
-    'deprecated' => 'this filter "app has.seen.fast-api XYZ" is deprecated, you should use "app has.seen.fast XYZ" instead!',
-    'help' => 'example: \'filter=(app has.seen.fast-api unknown-tcp)\'',
-);
 RQuery::$defaultFilters['rule']['app']['operators']['has.seen.fast'] = array(
     'Function' => function (RuleRQueryContext $context) {
         $rule = $context->object;
@@ -2252,22 +2234,6 @@ RQuery::$defaultFilters['rule']['secprof']['operators']['is.set'] = array(
         'input' => 'input/panorama-8.0.xml'
     )
 );
-// @TODO Remove later / DEPRECATED
-RQuery::$defaultFilters['rule']['secprof']['operators']['is.profile'] = array(
-    'Function' => function (RuleRQueryContext $context) {
-        $rule = $context->object;
-        if( !$rule->isSecurityRule() && !$rule->isDefaultSecurityRule() )
-            return FALSE;
-        return !$context->object->securityProfileIsBlank()
-            && $context->object->securityProfileType() == "profile";
-    },
-    'arg' => FALSE,
-    'deprecated' => 'this filter "secprof is.profile" is deprecated, you should use "secprof type.is.profile" instead!',
-    'ci' => array(
-        'fString' => '(%PROP%)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
 RQuery::$defaultFilters['rule']['secprof']['operators']['type.is.profile'] = array(
     'Function' => function (RuleRQueryContext $context) {
         $rule = $context->object;
@@ -2282,22 +2248,6 @@ RQuery::$defaultFilters['rule']['secprof']['operators']['type.is.profile'] = arr
         'input' => 'input/panorama-8.0.xml'
     )
 );
-RQuery::$defaultFilters['rule']['secprof']['operators']['is.group'] = array(
-    'Function' => function (RuleRQueryContext $context) {
-        $rule = $context->object;
-        if( !$rule->isSecurityRule() && !$rule->isDefaultSecurityRule() )
-            return FALSE;
-        return  !$context->object->securityProfileIsBlank()
-            && $context->object->securityProfileType() == "group";
-    },
-    'arg' => FALSE,
-    'deprecated' => 'this filter "secprof is.group" is deprecated, you should use "secprof type.is.group" instead!',
-    'ci' => array(
-        'fString' => '(%PROP%)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
-// @TODO Remove later / DEPRECATED
 RQuery::$defaultFilters['rule']['secprof']['operators']['type.is.group'] = array(
     'Function' => function (RuleRQueryContext $context) {
         $rule = $context->object;

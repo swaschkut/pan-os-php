@@ -64,6 +64,7 @@ class ThreatPolicyFileBlocking extends ThreatPolicy
 
     public function check_bp_json( $check_array )
     {
+        //Todo: check details what must be validated
         foreach( $check_array['severity'] as $severity_check )
         {
             if( in_array( $severity_check, $this->severity ) )
@@ -106,6 +107,7 @@ class ThreatPolicyFileBlocking extends ThreatPolicy
 
     public function check_visibility_json( $check_array )
     {
+        //Todo: check details what must be validated
         foreach( $check_array['severity'] as $severity_check )
         {
             if( in_array( $severity_check, $this->severity ) )
@@ -136,7 +138,7 @@ class ThreatPolicyFileBlocking extends ThreatPolicy
 
     public function fileblocking_rule_best_practice()
     {
-        $check_array = $this->fileblocking_rule_bp_visibility_JSON( "bp", "spyware" );
+        $check_array = $this->fileblocking_rule_bp_visibility_JSON( "bp", "fileblocking" );
         $bestpractise = $this->check_bp_json( $check_array );
 
         if ($bestpractise == FALSE)
@@ -147,7 +149,7 @@ class ThreatPolicyFileBlocking extends ThreatPolicy
 
     public function fileblocking_rule_visibility()
     {
-        $check_array = $this->fileblocking_rule_bp_visibility_JSON( "visibility", "spyware" );
+        $check_array = $this->fileblocking_rule_bp_visibility_JSON( "visibility", "fileblocking" );
         $bestpractise = $this->check_visibility_json( $check_array );
 
         if ($bestpractise == FALSE)

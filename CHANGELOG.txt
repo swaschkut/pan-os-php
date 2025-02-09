@@ -9,6 +9,9 @@ UTIL:
 * type=address | new actions=tag-add_lower_level_object:{TAG}/display_upper_level_object/display_lower_level_object
 * class type FileBlockingProfile / WildfireProfile - optimise for actions=display
 * class ThreatPolicy | extend with Wildfire and FileBlocking
+* Class ThreatPolicyFileBlocking/-Wildfire | bring in bp/visibility methods
+* type=securityprofile | delete deprecated filters
+* type=rule | delete deprecated filters
 
 BUGFIX:
 * type=address 'filter=(xyz) | related to if object isEDL() - skip filter if object is EDL

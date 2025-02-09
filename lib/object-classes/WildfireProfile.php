@@ -138,6 +138,93 @@ class WildfireProfile extends SecurityProfile2
         }
     }
 
+    public function wildfire_rules_best_practice()
+    {
+        if( $this->owner->owner->version >= 102 ) {
+            $bp_set = null;
+            if (!empty($this->rules_obj)) {
+                $bp_set = false;
+
+                foreach ($this->rules_obj as $rulename => $rule) {
+                    /** @var ThreatPolicyWildfire $rule */
+                    if ($rule->wildfire_rule_best_practice())
+                        $bp_set = true;
+                    else
+                        return false;
+                }
+            }
+            return $bp_set;
+        }
+        return null;
+    }
+
+    public function wildfire_rules_visibility()
+    {
+        if( $this->owner->owner->version >= 102 ) {
+            $bp_set = null;
+            if (!empty($this->rules_obj)) {
+                $bp_set = false;
+
+                foreach ($this->rules_obj as $rulename => $rule) {
+                    /** @var ThreatPolicyWildfire $rule */
+                    if ($rule->wildfire_rule_visibility())
+                        $bp_set = true;
+                    else
+                        return false;
+                }
+            }
+            return $bp_set;
+        }
+        return null;
+    }
+
+    public function is_best_practice()
+    {
+        if( $this->owner->owner->version >= 102 )
+        {
+            if( $this->wildfire_rules_best_practice()
+                #&& $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file)
+                #&& $this->vulnerability_exception_best_practice()
+            )
+                return TRUE;
+            else
+                return FALSE;
+        }
+        else
+        {
+            if( $this->wildfire_rules_best_practice()
+                #&& $this->spyware_dns_security_best_practice() && $this->spyware_dnslist_best_practice()
+                #&& $this->vulnerability_exception_best_practice()
+            )
+                return TRUE;
+            else
+                return FALSE;
+        }
+    }
+
+    public function is_visibility()
+    {
+        if( $this->owner->owner->version >= 102 )
+        {
+            if( $this->wildfire_rules_visibility()
+                #&& $this->cloud_inline_analysis_visibility($this->owner->bp_json_file)
+                #&& $this->spyware_dns_security_visibility() && $this->spyware_dnslist_visibility()
+            )
+                return TRUE;
+            else
+                return FALSE;
+        }
+        else
+        {
+            if( $this->wildfire_rules_visibility()
+                #&& $this->spyware_dns_security_visibility() && $this->spyware_dnslist_visibility()
+            )
+                return TRUE;
+            else
+                return FALSE;
+        }
+    }
+
 
     static $templatexml = '<entry name="**temporarynamechangeme**"></entry>';
 
