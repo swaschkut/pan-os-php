@@ -15,6 +15,7 @@ UTIL:
 * type=securityprofile | extend bp/visibility filters for Wildfire and File-Blocking
 * type=securityprofile securityprofiletype=url-filtering | introduce new filter for url visibility/best-practice
 * type=securityprofile actions=exporttoexcel:file.html,bestpractice|visibility - extend for URL/FB/WF
+* type=rule actions=exporttoexcel:file.html,bestpractice|visibiltiy - extend with URL/WF/FB
 
 BUGFIX:
 * type=address 'filter=(xyz) | related to if object isEDL() - skip filter if object is EDL
