@@ -1389,4 +1389,131 @@ RQuery::$defaultFilters['securityprofile']['dns-rule']['operators']['has.from.qu
     'arg' => TRUE,
     'help' => "'securityprofiletype=spyware' example: 'filter=(dns-rule has.from.query subquery1)' 'subquery1=(action eq alert)'",
 );
+
+RQuery::$defaultFilters['securityprofile']['fb']['operators']['action.is.block'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        $object = $context->object;
+
+        if( $object->secprof_type != 'file-blocking' )
+            return null;
+
+        if( count($object->tmp_array['file-blocking'][$object->name()]['rules']) == 0 )
+            return FALSE;
+
+        foreach($object->tmp_array['file-blocking'][$object->name()]['rules'] as $rule)
+        {
+            if( $rule['action'] == 'block' )
+                return TRUE;
+        }
+
+        return FALSE;
+    },
+    'arg' => FALSE,
+    'help' => "'securityprofiletype=file-blocking' example: 'filter=( fb actions.is.block )' ",
+);
+RQuery::$defaultFilters['securityprofile']['fb']['operators']['direction.is.both'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        $object = $context->object;
+
+        if( $object->secprof_type != 'file-blocking' )
+            return null;
+
+        if( count($object->tmp_array['file-blocking'][$object->name()]['rules']) == 0 )
+            return FALSE;
+
+        foreach($object->tmp_array['file-blocking'][$object->name()]['rules'] as $rule)
+        {
+            if( $rule['direction'] == 'both' )
+                return TRUE;
+        }
+
+        return FALSE;
+    },
+    'arg' => FALSE,
+    'help' => "'securityprofiletype=file-blocking' example: 'filter=( fb direction.is.both )' ",
+);
+RQuery::$defaultFilters['securityprofile']['fb']['operators']['application.is.any'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        $object = $context->object;
+
+        if( $object->secprof_type != 'file-blocking' )
+            return null;
+
+        if( count($object->tmp_array['file-blocking'][$object->name()]['rules']) == 0 )
+            return FALSE;
+
+        foreach($object->tmp_array['file-blocking'][$object->name()]['rules'] as $rule)
+        {
+            if( in_array( 'any', $rule['application'] ) )
+                return TRUE;
+        }
+
+        return FALSE;
+    },
+    'arg' => FALSE,
+    'help' => "'securityprofiletype=file-blocking' example: 'filter=( fb file-type.is.any )' ",
+);
+RQuery::$defaultFilters['securityprofile']['fb']['operators']['application.has'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        $object = $context->object;
+
+        if( $object->secprof_type != 'file-blocking' )
+            return null;
+
+        if( count($object->tmp_array['file-blocking'][$object->name()]['rules']) == 0 )
+            return FALSE;
+
+        foreach($object->tmp_array['file-blocking'][$object->name()]['rules'] as $rule)
+        {
+            if( in_array( $context->value, $rule['application'] ) )
+                return TRUE;
+        }
+
+        return FALSE;
+    },
+    'arg' => TRUE,
+    'help' => "'securityprofiletype=file-blocking' example: 'filter=( fb direction.is.both )' ",
+);
+RQuery::$defaultFilters['securityprofile']['fb']['operators']['file-type.is.any'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        $object = $context->object;
+
+        if( $object->secprof_type != 'file-blocking' )
+            return null;
+
+        if( count($object->tmp_array['file-blocking'][$object->name()]['rules']) == 0 )
+            return FALSE;
+
+        foreach($object->tmp_array['file-blocking'][$object->name()]['rules'] as $rule)
+        {
+            if( in_array( 'any', $rule['file-type'] ) )
+                return TRUE;
+        }
+
+        return FALSE;
+    },
+    'arg' => FALSE,
+    'help' => "'securityprofiletype=file-blocking' example: 'filter=( fb file-type.is.any )' ",
+);
+RQuery::$defaultFilters['securityprofile']['fb']['operators']['file-type.has'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        $object = $context->object;
+
+        if( $object->secprof_type != 'file-blocking' )
+            return null;
+
+        if( count($object->tmp_array['file-blocking'][$object->name()]['rules']) == 0 )
+            return FALSE;
+
+        foreach($object->tmp_array['file-blocking'][$object->name()]['rules'] as $rule)
+        {
+            if( in_array( $context->value, $rule['file-type'] ) )
+                return TRUE;
+        }
+
+        return FALSE;
+    },
+    'arg' => TRUE,
+    'help' => "'securityprofiletype=file-blocking' example: 'filter=( fb file-type.is XYZ )' ",
+);
 // </editor-fold>
