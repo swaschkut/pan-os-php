@@ -417,7 +417,11 @@ class PanoramaConf
             if( isset($this->connector) && $this->connector !== null )
                 $version = $this->connector->getSoftwareVersion();
             else
-                derr('cannot find PANOS version used for make this config');
+            {
+                mwarning('cannot find PANORAMA PANOS version used for make this config', null, False);
+                $version['version'] = "X.Y.Z";
+                #derr('cannot find PANOS version used for make this config');
+            }
 
             $this->version = $version['version'];
         }

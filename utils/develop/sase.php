@@ -49,7 +49,7 @@ PanAPIConnector::loadConnectorsFromUserHome();
 $host = str_replace( "tsg_id:", "", $util_fawkes->scope);
 
 #$connector = PanAPIConnector::findOrCreateConnectorFromHost("tsg_id".$host);
-foreach( PanAPIConnector::$savedConnectors as $connector )
+foreach(PanAPIConnector::$savedConnectors as $connector )
 {
     if( strpos($connector->apihost, $host) !== FALSE )
     {
@@ -79,7 +79,7 @@ if( $connector === null )
     $addHost = "tsg_id".$tsg_id;
     $key = $client_id."%".$client_secret;
 
-    foreach( PanAPIConnector::$savedConnectors as $cIndex => $connector )
+    foreach(PanAPIConnector::$savedConnectors as $cIndex => $connector )
     {
         if( $connector->apihost == $addHost )
             unset(PanAPIConnector::$savedConnectors[$cIndex]);

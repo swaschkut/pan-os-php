@@ -93,6 +93,7 @@ class CONFIG_DOWNLOAD_ALL__ extends UTIL
 
     function downloadFWconfig( $fw_con, $hostname)
     {
+        /** @VAR PanAPIConnector $fw_con */
         print 'FIREWALL serial: ' . $fw_con->info_serial . "\n\n";
 
         $config_candidate = $fw_con->getCandidateConfig();
@@ -106,8 +107,13 @@ class CONFIG_DOWNLOAD_ALL__ extends UTIL
         $config_pushed = $fw_con->getPanoramaPushedConfig();
         if( $config_pushed !== false )
         {
-            if( $config_pushed->nodeType == XML_DOCUMENT_NODE )
-                $found = DH::findFirstElement('config', $config_pushed);
+            #if( $config_pushed->nodeType == XML_DOCUMENT_NODE )
+            if( get_class($config_pushed) === "DOMDocument" )
+            {
+                $first_element = $config_pushed->firstElementChild;
+                #$found = DH::findFirstElement('config', $config_pushed);
+                $found = DH::findFirstElement('panorama', $first_element);
+            }
 
             if( $found !== false )
             {

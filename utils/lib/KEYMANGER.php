@@ -98,7 +98,7 @@ class KEYMANGER extends UTIL
                 derr("argument of 'delete' must be a string , wrong input provided");
 
             $foundConnector = FALSE;
-            foreach( PanAPIConnector::$savedConnectors as $cIndex => $connector )
+            foreach(PanAPIConnector::$savedConnectors as $cIndex => $connector )
             {
                 if( $connector->apihost == $deleteHost )
                 {
@@ -172,7 +172,7 @@ class KEYMANGER extends UTIL
                     }
 
 
-                    foreach( PanAPIConnector::$savedConnectors as $cIndex => $connector )
+                    foreach(PanAPIConnector::$savedConnectors as $cIndex => $connector )
                     {
                         if( $connector->apihost == $addHost )
                             unset(PanAPIConnector::$savedConnectors[$cIndex]);
@@ -185,7 +185,7 @@ class KEYMANGER extends UTIL
                     if( !isset(PH::$args['apikey']) )
                         derr( "argument apikey - must be set to add BPA-/License-APIkey", null, False );
 
-                    foreach( PanAPIConnector::$savedConnectors as $cIndex => $connector )
+                    foreach(PanAPIConnector::$savedConnectors as $cIndex => $connector )
                     {
                         if( $connector->apihost == $addHost )
                             unset(PanAPIConnector::$savedConnectors[$cIndex]);
@@ -218,7 +218,7 @@ class KEYMANGER extends UTIL
 
             if( $checkHost == 'any' || $checkHost == 'all' )
             {
-                foreach( PanAPIConnector::$savedConnectors as $connector )
+                foreach(PanAPIConnector::$savedConnectors as $connector )
                 {
                     $checkHost = $connector->apihost;
                     PH::print_stdout( " - requested to test Host/IP '{$checkHost}'");
@@ -331,7 +331,7 @@ class KEYMANGER extends UTIL
         PH::$JSON_TMP['header'] = $string;
 
         $connectorList = array();
-        foreach( PanAPIConnector::$savedConnectors as $connector )
+        foreach(PanAPIConnector::$savedConnectors as $connector )
         {
             $connectorList[$connector->apihost] = $connector;
         }

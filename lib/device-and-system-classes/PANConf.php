@@ -294,7 +294,6 @@ class PANConf
      */
     public function load_from_domxml($xml, $debugLoadTime = false)
     {
-
         if( $xml->nodeType == XML_DOCUMENT_NODE )
         {
             $this->xmldoc = $xml;
@@ -332,7 +331,7 @@ class PANConf
                     $version = $this->connector->getSoftwareVersion();
                 else
                 {
-                    mwarning('cannot find PANOS version used for make this config', null, False);
+                    mwarning('cannot find PANOS version used for make this config', null, false);
                     $version['version'] = "X.Y.Z";
                 }
 

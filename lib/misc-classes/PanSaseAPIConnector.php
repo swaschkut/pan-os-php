@@ -122,7 +122,7 @@ class PanSaseAPIConnector
         $host = "tsg_id" . $TSGid;
         $connector = null;
 
-        foreach( PanAPIConnector::$savedConnectors as $connector )
+        foreach(PanAPIConnector::$savedConnectors as $connector )
         {
             if( strpos($connector->apihost, $host) !== FALSE )
             {
@@ -150,7 +150,7 @@ class PanSaseAPIConnector
             $addHost = "tsg_id" . $TSGid;
             $key = $this->client_id . "%" . $this->client_secret;
 
-            foreach( PanAPIConnector::$savedConnectors as $cIndex => $connector )
+            foreach(PanAPIConnector::$savedConnectors as $cIndex => $connector )
             {
                 if( $connector->apihost == $addHost )
                     unset(PanAPIConnector::$savedConnectors[$cIndex]);
