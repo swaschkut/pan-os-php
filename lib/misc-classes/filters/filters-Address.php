@@ -835,7 +835,7 @@ RQuery::$defaultFilters['address']['reflocationtype']['operators']['is.template'
 
         #print "NAME: ".$object->name()."\n";
         $reflocation_array = $object->getReferencesLocationType();
-        print_r( $reflocation_array );
+        #print_r( $reflocation_array );
 
         $return = FALSE;
         foreach( $reflocation_array as $reflocation )
@@ -887,7 +887,7 @@ RQuery::$defaultFilters['address']['reflocationtype']['operators']['is.templates
 
         #print "NAME: ".$object->name()."\n";
         $reflocation_array = $object->getReferencesLocationType();
-        print_r( $reflocation_array );
+        #print_r( $reflocation_array );
 
         $return = FALSE;
         foreach( $reflocation_array as $reflocation )
