@@ -25,6 +25,7 @@ BUGFIX:
 * class Zone.php | bugfix to add References if Address Objects are used in User/Device In/Exclude List
 * type=config-download-all | bugfix to also handle Firewalls connected to Panorama but not managed by Panorama
 * timezone related part if timezone is null | bugfix
+* class TemplateStack | extend object references to TemplateStack
 
 GENERAL:
 * class LogicalRouter | adjust for method create/removeStaticRoute

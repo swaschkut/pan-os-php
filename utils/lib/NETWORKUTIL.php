@@ -255,7 +255,11 @@ class NETWORKUTIL extends UTIL
 
                 if( $this->configType == 'panorama' )
                 {
-                    foreach( $this->pan->templates as $template )
+                    $mergedTemplateAndStack = $this->pan->templates;
+                    $mergedTemplateAndStack = array_merge( $mergedTemplateAndStack, $this->pan->templatestacks );
+
+                    //foreach( $this->pan->templates as $template )
+                    foreach( $mergedTemplateAndStack as $template )
                     {
                         if( $this->templateName == 'any' || $this->templateName == $template->name() )
                         {

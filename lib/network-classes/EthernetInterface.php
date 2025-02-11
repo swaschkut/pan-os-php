@@ -133,7 +133,7 @@ class EthernetInterface
                     if( isset( $pan_object->owner ) )
                     {
                         //Panorama Template
-                        if( get_class($pan_object->owner) == "Template" )
+                        if( get_class($pan_object->owner) == "Template" || get_class($pan_object->owner) == "TemplateStack" )
                         {
                             $template_object = $pan_object->owner;
                             $panorama_object = $template_object->owner;
@@ -181,7 +181,8 @@ class EthernetInterface
                         if( isset( $pan_object->owner ) )
                         {
                             //Panorama Template
-                            if( get_class($pan_object->owner) == "Template" )
+                            #if( get_class($pan_object->owner) == "Template" )
+                            if( get_class($pan_object->owner) == "Template" || get_class($pan_object->owner) == "TemplateStack" )
                             {
                                 $template_object = $pan_object->owner;
                                 $panorama_object = $template_object->owner;
