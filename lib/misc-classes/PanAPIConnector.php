@@ -1872,7 +1872,8 @@ class PanAPIConnector
     {
         //PANW details
         //https://docs.paloaltonetworks.com/pan-os/10-2/pan-os-panorama-api/pan-os-xml-api-request-types/export-files-api/export-technical-support-data#id5ee59716-cc29-4970-8718-cf0e982dd31d
-/*
+
+        PH::print_stdout( " - first TSF request");
         $httpReplyContent = $this->sendExportRequest("tech-support");
 
         $xmlDoc = new DOMDocument();
@@ -1919,11 +1920,17 @@ class PanAPIConnector
 
         $jobNode = DH::findFirstElement('job', $cursor);
         $jobID = $jobNode->textContent;
-*/
-        $jobID = "20105";
+
+        PH::print_stdout( " - TSF job-id: '".$jobID."'");
         do
         {
+            PH::print_stdout( " - TSF status request");
+            PH::print_stdout("     - wait 20sec");
+            sleep(20);
+
             $httpReplyContent = $this->sendExportRequest("tech-support", "status", $jobID);
+
+
 
             $xmlDoc = new DOMDocument();
 
@@ -1966,16 +1973,15 @@ class PanAPIConnector
             $jobStatus = $jobStatusNode->textContent;
 
             $progressNode = DH::findFirstElement('progress', $cursor);
-            PH::print_stdout( "Progress: ".$progressNode->textContent);
-
-            PH::print_stdout("     - wait 120sec");
-            sleep(120);
+            PH::print_stdout( "     - Progress: ".$progressNode->textContent."%");
 
         }
         while($jobStatus == "ACT");
 
 
+        PH::print_stdout( " - TSF final request");
         $response = $this->sendExportRequest("tech-support", "get", $jobID);
+        PH::print_stdout( "store TSF within filename: '".$device_detail_filename."_techSupport.tgz'");
         file_put_contents($device_detail_filename."_techSupport.tgz", $response);
     }
 
