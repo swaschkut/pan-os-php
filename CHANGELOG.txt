@@ -22,6 +22,7 @@ UTIL:
 BUGFIX:
 * type=address 'filter=(xyz) | related to if object isEDL() - skip filter if object is EDL
 * class Zone.php | bugfix to add References if Address Objects are used in User/Device In/Exclude List
+* type=config-download-all | bugfix to also handle Firewalls connected to Panorama but not managed by Panorama
 
 GENERAL:
 * class LogicalRouter | adjust for method create/removeStaticRoute

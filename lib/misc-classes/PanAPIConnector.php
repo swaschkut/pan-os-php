@@ -1786,7 +1786,11 @@ class PanAPIConnector
 
         $configRoot = DH::findFirstElement('panorama', $configRoot);
         if( $configRoot === FALSE )
-            derr("<panorama> was not found", $r);
+        {
+            mwarning("<panorama> was not found", $r, false);
+            return false;
+        }
+
 
         DH::makeElementAsRoot($configRoot, $r);
 

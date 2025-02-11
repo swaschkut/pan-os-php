@@ -104,16 +104,20 @@ class CONFIG_DOWNLOAD_ALL__ extends UTIL
 
 
         $config_pushed = $fw_con->getPanoramaPushedConfig();
-        if( $config_pushed->nodeType == XML_DOCUMENT_NODE )
-            $found = DH::findFirstElement('config', $config_pushed);
-
-        if( $found !== false )
+        if( $config_pushed !== false )
         {
-            ##########SAVE config
-            $pan = new PANConf();
-            $pan->load_from_domxml($config_pushed);
-            $pan->save_to_file($fw_con->info_serial."_".$hostname."_FW_panorama-pushed.xml");
+            if( $config_pushed->nodeType == XML_DOCUMENT_NODE )
+                $found = DH::findFirstElement('config', $config_pushed);
+
+            if( $found !== false )
+            {
+                ##########SAVE config
+                $pan = new PANConf();
+                $pan->load_from_domxml($config_pushed);
+                $pan->save_to_file($fw_con->info_serial."_".$hostname."_FW_panorama-pushed.xml");
+            }
         }
+
 
 
         $config_merged = $fw_con->getMergedConfig();

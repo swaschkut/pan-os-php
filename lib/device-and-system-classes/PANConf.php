@@ -332,7 +332,7 @@ class PANConf
                     $version = $this->connector->getSoftwareVersion();
                 else
                 {
-                    mwarning('cannot find PANOS version used for make this config');
+                    mwarning('cannot find PANOS version used for make this config', null, False);
                     $version['version'] = "X.Y.Z";
                 }
 
