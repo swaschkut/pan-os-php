@@ -835,7 +835,7 @@ RQuery::$defaultFilters['address']['reflocationtype']['operators']['is.template'
 
         #print "NAME: ".$object->name()."\n";
         $reflocation_array = $object->getReferencesLocationType();
-        #print_r( $reflocation_array );
+        print_r( $reflocation_array );
 
         $return = FALSE;
         foreach( $reflocation_array as $reflocation )
@@ -872,6 +872,31 @@ RQuery::$defaultFilters['address']['reflocationtype']['operators']['is.only.temp
         }
 
         return $return;
+    },
+    'arg' => FALSE,
+    'help' => 'returns TRUE if object locationtype is Template or TemplateStack',
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['address']['reflocationtype']['operators']['is.templatestack'] = array(
+    'Function' => function (AddressRQueryContext $context) {
+        $object = $context->object;
+        $owner = $context->object->owner->owner;
+
+        #print "NAME: ".$object->name()."\n";
+        $reflocation_array = $object->getReferencesLocationType();
+        print_r( $reflocation_array );
+
+        $return = FALSE;
+        foreach( $reflocation_array as $reflocation )
+        {
+            if( $reflocation == "TemplateStack" )
+                return TRUE;
+        }
+
+        return FALSE;
     },
     'arg' => FALSE,
     'help' => 'returns TRUE if object locationtype is Template or TemplateStack',
