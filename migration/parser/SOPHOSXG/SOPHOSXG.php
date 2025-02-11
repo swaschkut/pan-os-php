@@ -6,6 +6,9 @@ require_once('SOPHOSXGfunction.php');
 //https://docs.sophos.com/nsg/sophos-firewall/19.5/Help/en-us/webhelp/onlinehelp/AdministratorHelp/BackupAndFirmware/API/index.html
 
 
+//Todo:
+//NAT Rules migration NOT supported - swaschkut 20250210
+
 class SOPHOSXG extends PARSER
 {
     use SOPHOSXGfunction;
@@ -80,9 +83,9 @@ class SOPHOSXG extends PARSER
         if( isset( $this->data['FirewallRule'] ) )
             $this->sophos_xg_rulesFIREWALL($v, $this->data['FirewallRule']);
 
-        if( isset( $this->data['NatRule'] ) )
+        if( isset( $this->data['NATRule'] ) )
         {
-            #sophos_xg_rulesNAT($v, $this->data['NatRule']);
+            #$this->sophos_xg_rulesNAT($v, $this->data['NATRule']);
         }
 
 
@@ -132,41 +135,40 @@ class SOPHOSXG extends PARSER
             ////////////////////////////////////////////////////////////////////////////////////////////
 
 
+
             $intDelete = array();
             $intDelete[] = $v->owner->network->ethernetIfStore->find( "ethernet1/1" );
             $intDelete[] = $v->owner->network->ethernetIfStore->find( "ethernet1/2" );
-            $intDelete[] = $v->owner->network->ethernetIfStore->find( "ethernet1/8" );
+            $intDelete[] = $v->owner->network->ethernetIfStore->find( "ethernet1/6" );
             $intDelete[] = $v->owner->network->ethernetIfStore->find( "ethernet1/9" );
-            $intDelete[] = $v->owner->network->ethernetIfStore->find( "ethernet1/10" );
-            $intDelete[] = $v->owner->network->ethernetIfStore->find( "ethernet1/11" );
-            $intDelete[] = $v->owner->network->ethernetIfStore->find( "ethernet1/12" );
 
             foreach( $intDelete as $int )
             {
                 $int->owner->removeEthernetIf($int);
             }
 
-            $int = $v->owner->network->ethernetIfStore->find( "ethernet1/5" );
-            $int->setName("ethernet1/2");
 
-            $int = $v->owner->network->ethernetIfStore->find( "ethernet1/3" );
-            $int->setName("ethernet1/5");
+            #$int = $v->owner->network->ethernetIfStore->find( "ethernet1/5" );
+            #$int->setName("ethernet1/2");
 
-            $int = $v->owner->network->ethernetIfStore->find( "ethernet1/7" );
-            $int->setName("ethernet1/1");
+            #$int = $v->owner->network->ethernetIfStore->find( "ethernet1/3" );
+            #$int->setName("ethernet1/5");
 
-            $int = $v->owner->network->ethernetIfStore->find( "ethernet1/4" );
+            #$int = $v->owner->network->ethernetIfStore->find( "ethernet1/7" );
+            #$int->setName("ethernet1/1");
+
+            /** @var VirtualSystem $v */
+            $int = $v->owner->network->aggregateEthernetIfStore->find( "ethernet1/13" );
             $int->setName("ae1");
 
-            if($v->owner->network->aggregateEthernetIfStore->xmlroot == null)
-                $v->owner->network->aggregateEthernetIfStore->createXmlRoot();
 
-            $v->owner->network->aggregateEthernetIfStore->xmlroot->appendChild($int->xmlroot->cloneNode(TRUE));
-            $int->xmlroot->parentNode->removeChild($int->xmlroot);
+            $int = $v->owner->network->ethernetIfStore->find( "ethernet1/11" );
+            $int->setAE("ae1");
+            $int = $v->owner->network->ethernetIfStore->find( "ethernet1/12" );
+            $int->setAE("ae1");
 
-
-            $int = $v->owner->network->ethernetIfStore->newEthernetIf( "ethernet1/3", "aggregate-group", "ae1" );
-            $int = $v->owner->network->ethernetIfStore->newEthernetIf( "ethernet1/4", "aggregate-group", "ae1" );
+            //find reds interfaces in staticRoute
+            //change it to something else for validation
         }
     }
 

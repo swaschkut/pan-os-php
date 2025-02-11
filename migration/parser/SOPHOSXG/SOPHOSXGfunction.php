@@ -1262,60 +1262,71 @@ trait SOPHOSXGfunction
             }
 
             $LinkedFirewallrule_node = DH::findFirstElement('LinkedFirewallrule', $child);
-            $secRuleName = $this->normalizeNames($LinkedFirewallrule_node->textContent);
-
-
-            $secRule = $v->securityRules->find($secRuleName);
-            if( $secRule != null )
+            if($LinkedFirewallrule_node->textContent !== 'none')
             {
-                if( $secRule->isDisabled() )
-                    $newRule->setDisabled(true);
+                $secRuleName = $this->normalizeNames($LinkedFirewallrule_node->textContent);
 
-                foreach( $secRule->source->getAll() as $source )
-                    $newRule->source->addObject($source);
 
-                foreach( $secRule->destination->getAll() as $destination )
-                    $newRule->destination->addObject($destination);
+                $secRule = $v->securityRules->find($secRuleName);
+                if ($secRule != null) {
+                    if ($secRule->isDisabled())
+                        $newRule->setDisabled(true);
 
-                foreach( $secRule->from->getAll() as $source )
-                    $newRule->from->addZone($source);
+                    foreach ($secRule->source->getAll() as $source)
+                        $newRule->source->addObject($source);
 
-                foreach( $secRule->to->getAll() as $destination )
-                    $newRule->to->addZone($destination);
+                    foreach ($secRule->destination->getAll() as $destination)
+                        $newRule->destination->addObject($destination);
 
-                foreach( $secRule->services->getAll() as $service )
-                {
-                    print "NATrule: '".$newRule->name()."'\n";
-                    print "add Service from secRule: '".$secRule->name()."'\n";
-                    print "service: '".$service->name()."'\n";
-                    #$newRule->service->add($service);
-                }
+                    foreach ($secRule->from->getAll() as $source)
+                        $newRule->from->addZone($source);
 
-                $zone_wan = $v->zoneStore->find("WAN");
-                $newRule->to->addZone($zone_wan);
-                if( $newRule->to->isAny() )
-                {
+                    foreach ($secRule->to->getAll() as $destination)
+                        $newRule->to->addZone($destination);
+
+                    foreach ($secRule->services->getAll() as $service) {
+                        print "NATrule: '" . $newRule->name() . "'\n";
+                        print "add Service from secRule: '" . $secRule->name() . "'\n";
+                        print "service: '" . $service->name() . "'\n";
+                        #$newRule->service->add($service);
+                    }
+
                     $zone_wan = $v->zoneStore->find("WAN");
                     $newRule->to->addZone($zone_wan);
-                }
-
-                if( count( $newRule->to->getAll() ) > 1 )
-                {
-                    foreach( $newRule->to->getAll() as $toZone )
-                    {
-                        $newRule->to->removeZone($toZone, true, true);
+                    if ($newRule->to->isAny()) {
+                        $zone_wan = $v->zoneStore->find("WAN");
+                        $newRule->to->addZone($zone_wan);
                     }
-                    $newRule->to->addZone($zone_wan);
+
+                    if (count($newRule->to->getAll()) > 1) {
+                        foreach ($newRule->to->getAll() as $toZone) {
+                            $newRule->to->removeZone($toZone, true, true);
+                        }
+                        $newRule->to->addZone($zone_wan);
+                    }
+
+
+                } else {
+                    #mwarning("Secrule '".$secRuleName."' not found.", null, false);
                 }
-
-
             }
             else
             {
-                #mwarning("Secrule '".$secRuleName."' not found.", null, false);
+                $TranslatedDestination_node = DH::findFirstElement('TranslatedDestination', $child);
+                $TranslatedService_node = DH::findFirstElement('TranslatedService', $child);
+                $TranslatedSource_node = DH::findFirstElement('TranslatedSource', $child);
+
+                $OriginalSourceNetworks_node = DH::findFirstElement('OriginalSourceNetworks', $child);
+                $OriginalDestinationNetworks_node = DH::findFirstElement('OriginalDestinationNetworks', $child);
+                /*
+                <OriginalSourceNetworks>
+                  <Network>T2-SSLVPN-vpn.igz.com-10.242.0.0_24</Network>
+                </OriginalSourceNetworks>
+                <OriginalDestinationNetworks>
+                  <Network>DMZ-RODCs-192.168.175.0_28</Network>
+                </OriginalDestinationNetworks>
+                 */
             }
-
-
         }
     }
 
