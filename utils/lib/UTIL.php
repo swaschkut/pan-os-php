@@ -2310,7 +2310,7 @@ class UTIL
                         }
                         else
                         {
-                            mwarning("timezone: '".$this->timezone."' not supported by IANA", null, false);
+                            PH::print_stdout("timezone: '".$this->timezone."' not supported by IANA");
                         }
                     }
                     PH::disableExceptionSupport();
