@@ -115,6 +115,13 @@ class CONFIG_DOWNLOAD_ALL__ extends UTIL
             $pan->save_to_file($fw_con->info_serial."_".$hostname."_FW_panorama-pushed.xml");
         }
 
+
+        $config_merged = $fw_con->getMergedConfig();
+        ##########SAVE config
+        $pan = new PANConf();
+        $pan->load_from_domxml($config_merged);
+        $pan->save_to_file($fw_con->info_serial."_".$hostname."_FW_merged.xml");
+
     }
 
 }
