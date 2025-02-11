@@ -17,6 +17,7 @@ UTIL:
 * type=securityprofile actions=exporttoexcel:file.html,bestpractice|visibility - extend for URL/FB/WF
 * type=rule actions=exporttoexcel:file.html,bestpractice|visibiltiy - extend with URL/WF/FB
 * type=securityprofilegroup actions=exporttoexcel:file.html,bestpractice|visibility
+* type=config-download-all | extend firewall config with merged-config download
 
 BUGFIX:
 * type=address 'filter=(xyz) | related to if object isEDL() - skip filter if object is EDL
