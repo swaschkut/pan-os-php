@@ -69,7 +69,7 @@ function derr($msg)
     die();
 }
 
-class PanAPIConnector
+class PanAPIConnectorOLD
 {
     public $name = 'connector';
 
@@ -96,7 +96,7 @@ class PanAPIConnector
                     continue;
                 if( $parts[2] != 'panos' && $parts[2] != 'panorama' && $parts[2] != 'panos-via-panorama' )
                     continue;
-                self::$savedConnectors[] = new PanAPIConnector($parts[0], $parts[2], $parts[1]);
+                self::$savedConnectors[] = new PanAPIConnectorOLD($parts[0], $parts[2], $parts[1]);
             }
         }
     }
@@ -121,7 +121,7 @@ class PanAPIConnector
         $this->showApiCalls = $yes;
     }
 
-    public function PanAPIConnector($host, $key, $type = 'panos', $serial = null)
+    public function PanAPIConnectorOLD($host, $key, $type = 'panos', $serial = null)
     {
         $type = strtolower($type);
         if( $type == 'panos' )
@@ -600,7 +600,7 @@ function &resolveGroupOrDie(&$objects, $subname, &$group)
     return $ret;
 }
 
-function tagObjects(&$list, $tagName, $modePANOS, PanAPIConnector $connector)
+function tagObjects(&$list, $tagName, $modePANOS, PanAPIConnectorOLD $connector)
 {
 
     PH::print_stdout( "creating tag '$tagName'..." );
@@ -640,7 +640,7 @@ function tagObjects(&$list, $tagName, $modePANOS, PanAPIConnector $connector)
  *
  */
 
-$con = new PanAPIConnector($argv[1], '');
+$con = new PanAPIConnectorOLD($argv[1], '');
 //$con->setShowApiCalls(true);
 
 PH::print_stdout( "Requesting API key...");

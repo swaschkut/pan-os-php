@@ -1349,7 +1349,7 @@ class PanAPIConnector
      * @param $category
      * @return string
      */
-    public function & sendExportRequest($category)
+    public function & sendExportRequest($category, $action = null, $jobID = null)
     {
         $this->_createOrRenewCurl();
 
@@ -1384,6 +1384,10 @@ class PanAPIConnector
             curl_setopt($this->_curl_handle, CURLOPT_HTTPHEADER, array('X-PAN-KEY: ' . $this->apikey));
         }
         $parameters['category'] = $category;
+        if( $action !== null )
+            $parameters['action'] = $action;
+        if( $jobID !== null )
+            $parameters['job-id'] = $jobID;
         $parameters['type'] = 'export';
         $properParams = http_build_query($parameters);
 
@@ -1773,6 +1777,25 @@ class PanAPIConnector
         return $r;
     }
 
+    public function getMergedConfigFile($apiTimeOut = 60)
+    {
+        $exceptionUse = PH::$useExceptions;
+        PH::$useExceptions = TRUE;
+        try
+        {
+            $return_config = $this->getSavedConfig('.merged-running-config.xml', $apiTimeOut);
+        }
+        catch(Exception $e)
+        {
+            PH::$useExceptions = $exceptionUse;
+            PH::print_stdout( "'.merged-running-config.xml' not available" );
+            return false;
+        }
+        PH::$useExceptions = $exceptionUse;
+
+        return $return_config;
+    }
+
     public function getPanoramaPushedConfig( $apiTimeOut = 30 )
     {
         $url = '&action=get&type=config&xpath=/config/panorama';
@@ -1786,7 +1809,11 @@ class PanAPIConnector
 
         $configRoot = DH::findFirstElement('panorama', $configRoot);
         if( $configRoot === FALSE )
-            derr("<panorama> was not found", $r);
+        {
+            mwarning("<panorama> was not found", $r, false);
+            return false;
+        }
+
 
         DH::makeElementAsRoot($configRoot, $r);
 
@@ -1828,6 +1855,136 @@ class PanAPIConnector
 
         return $r;
     }
+
+    public function getFirewallDeviceState( $device_detail_filename )
+    {
+        //asynchronous jobl!!!!!
+
+        //?type=export&category=device-state
+        //  /api/?type=export&category=device-state
+        $response = $this->sendExportRequest("device-state");
+
+        #PH::print_stdout($response);
+        file_put_contents($device_detail_filename."_device_state_cfg.tgz", $response);
+    }
+
+    public function getFirewallTechSupportFile( $device_detail_filename )
+    {
+        //PANW details
+        //https://docs.paloaltonetworks.com/pan-os/10-2/pan-os-panorama-api/pan-os-xml-api-request-types/export-files-api/export-technical-support-data#id5ee59716-cc29-4970-8718-cf0e982dd31d
+
+        PH::print_stdout( " - first TSF request");
+        $httpReplyContent = $this->sendExportRequest("tech-support");
+
+        $xmlDoc = new DOMDocument();
+
+        PH::enableExceptionSupport();
+        try
+        {
+            if( !$xmlDoc->loadXML($httpReplyContent, XML_PARSE_BIG_LINES) )
+                derr('Invalid xml input :' . $httpReplyContent);
+        } catch(Exception $e)
+        {
+            PH::disableExceptionSupport();
+            PH::print_stdout( " ***** an error occured : " . $e->getMessage() );
+            PH::print_stdout();
+            PH::print_stdout(  $httpReplyContent );
+            PH::print_stdout();
+
+            return null;
+        }
+        PH::disableExceptionSupport();
+
+
+        $firstElement = DH::firstChildElement($xmlDoc);
+        if( $firstElement === FALSE )
+            derr('cannot find any child Element in xml');
+
+        $statusAttr = DH::findAttribute('status', $firstElement);
+
+        if( $statusAttr === FALSE )
+            derr('XML response has no "status" field: ' . DH::dom_to_xml($firstElement));
+
+        if( $statusAttr != 'success' )
+            derr( 'API reported a failure: "' . $statusAttr . "\" with the following addition infos: " . $firstElement->nodeValue );
+
+
+
+        $cursor = DH::findFirstElement('result', $firstElement);
+        if( $cursor === FALSE )
+        {
+            $cursor = DH::findFirstElement('msg', $firstElement);
+            if( $cursor === FALSE )
+                derr('XML API response has no <result> or <msg> field', $xmlDoc);
+        }
+
+        $jobNode = DH::findFirstElement('job', $cursor);
+        $jobID = $jobNode->textContent;
+
+        PH::print_stdout( " - TSF job-id: '".$jobID."'");
+        do
+        {
+            PH::print_stdout( " - TSF status request");
+            PH::print_stdout("     - wait 20sec");
+            sleep(20);
+
+            $httpReplyContent = $this->sendExportRequest("tech-support", "status", $jobID);
+
+
+
+            $xmlDoc = new DOMDocument();
+
+            PH::enableExceptionSupport();
+            try
+            {
+                if( !$xmlDoc->loadXML($httpReplyContent, XML_PARSE_BIG_LINES) )
+                    derr('Invalid xml input :' . $httpReplyContent);
+            } catch(Exception $e)
+            {
+                PH::disableExceptionSupport();
+                PH::print_stdout( " ***** an error occured : " . $e->getMessage() );
+                PH::print_stdout();
+                PH::print_stdout(  $httpReplyContent );
+                PH::print_stdout();
+
+                return null;
+            }
+            PH::disableExceptionSupport();
+
+
+            $firstElement = DH::firstChildElement($xmlDoc);
+            if( $firstElement === FALSE )
+                derr('cannot find any child Element in xml');
+
+            $statusAttr = DH::findAttribute('status', $firstElement);
+
+            if( $statusAttr === FALSE )
+                derr('XML response has no "status" field: ' . DH::dom_to_xml($firstElement));
+
+            if( $statusAttr != 'success' )
+                derr( 'API reported a failure: "' . $statusAttr . "\" with the following addition infos: " . $firstElement->nodeValue );
+
+
+
+            $cursor = DH::findFirstElement('result', $firstElement);
+            $cursor = DH::findFirstElement('job', $cursor);
+            $jobStatusNode = DH::findFirstElement('status', $cursor);
+
+            $jobStatus = $jobStatusNode->textContent;
+
+            $progressNode = DH::findFirstElement('progress', $cursor);
+            PH::print_stdout( "     - Progress: ".$progressNode->textContent."%");
+
+        }
+        while($jobStatus == "ACT");
+
+
+        PH::print_stdout( " - TSF final request");
+        $response = $this->sendExportRequest("tech-support", "get", $jobID);
+        PH::print_stdout( "store TSF within filename: '".$device_detail_filename."_techSupport.tgz'");
+        file_put_contents($device_detail_filename."_techSupport.tgz", $response);
+    }
+
 
     public function APIresponseValidation(DOMDocument $r)
     {

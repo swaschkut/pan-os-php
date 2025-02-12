@@ -41,6 +41,7 @@
 ## [Fortinet](vendors/fortinet.md)
 ## [Sonicwall](vendors/sonicwall.md)
 ## [Sophos](vendors/sophos.md)
+## [SophosXG](vendors/sophosxg.md)
 ## [Huawei](vendors/huawei.md)
 ## [Pfsense](vendors/pfsense.md) (only partial)
 ## [Watchguard](vendors/pfsense.md) (only partial)

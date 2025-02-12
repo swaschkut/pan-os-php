@@ -59,17 +59,24 @@ try
 catch(Exception $e)
 {
     $timezone_backward = PH::timezone_backward_migration( $timezone_name );
-    date_default_timezone_set($timezone_backward);
+    if( $timezone_backward !== null )
+    {
+        date_default_timezone_set($timezone_backward);
 
-    PH::print_stdout("   --------------");
-    PH::print_stdout( " X Timezone: $timezone_name is not supported with this PHP version. ".$timezone_backward." is used." );
-    PH::print_stdout("   - the timezone is IANA deprecated. Please change to a supported one:");
+        PH::print_stdout("   --------------");
+        PH::print_stdout( " X Timezone: $timezone_name is not supported with this PHP version. ".$timezone_backward." is used." );
+        PH::print_stdout("   - the timezone is IANA deprecated. Please change to a supported one:");
 
 
-    PH::print_stdout();
-    PH::print_stdout("   -- '".$timezone_backward."'");
-    PH::print_stdout("   --------------");
-    PH::print_stdout();
+        PH::print_stdout();
+        PH::print_stdout("   -- '".$timezone_backward."'");
+        PH::print_stdout("   --------------");
+        PH::print_stdout();
+    }
+    else
+    {
+        PH::print_stdout("timezone: '".$this->timezone."' not supported by IANA");
+    }
 }
 PH::disableExceptionSupport();
 

@@ -726,6 +726,44 @@ AddressCallContext::$supportedActions[] = array(
     'args' => array('regex' => array('type' => 'string', 'default' => '*nodefault*')),
 );
 AddressCallContext::$supportedActions[] = array(
+    'name' => 'tag-add_lower_level_object',
+    'MainFunction' => function (AddressCallContext $context)
+    {
+        $object = $context->object;
+
+        $location = PH::findLocationObjectOrDie($object);
+        if( $location->isFirewall() || $location->isVirtualSystem() )
+            return FALSE;
+
+        if( $location->isPanorama() )
+            $locations = $location->deviceGroups;
+        else
+        {
+            $locations = $location->childDeviceGroups(TRUE);
+        }
+
+        $objectFind = $object->tags->parentCentralStore->find($context->arguments['tagName']);
+        if( $objectFind === null )
+            derr("tag named '{$context->arguments['tagName']}' not found");
+        foreach( $locations as $deviceGroup )
+        {
+            $tmp_obj = $deviceGroup->addressStore->find($object->name(), null, FALSE);
+            if( $tmp_obj !== null )
+            {
+                if( $context->isAPI )
+                    $ret = $tmp_obj->tags->API_addTag($objectFind);
+                else
+                    $ret = $tmp_obj->tags->addTag($objectFind);
+
+                if( $ret )
+                    PH::print_stdout( $context->padding." * DG: '".$deviceGroup->name()."' OBJ: '".$tmp_obj->name()."' - add TAG: '".$objectFind->name()."'" );
+            }
+        }
+
+    },
+    'args' => array('tagName' => array('type' => 'string', 'default' => '*nodefault*')),
+);
+AddressCallContext::$supportedActions[] = array(
     'name' => 'z_BETA_summarize',
     'MainFunction' => function (AddressCallContext $context) {
         $object = $context->object;
@@ -2228,6 +2266,58 @@ AddressCallContext::$supportedActions[] = array(
 
         PH::print_stdout(  "" );
     },
+);
+/*
+
+ */
+AddressCallContext::$supportedActions[] = array(
+    'name' => 'display_upper_level_object',
+    'MainFunction' => function (AddressCallContext $context) {
+        $location = PH::findLocationObjectOrDie($context->object);
+        if( $location->isFirewall() || $location->isPanorama() || $location->isVirtualSystem() )
+            return FALSE;
+
+        $store = $context->object->owner;
+
+        if( isset($store->parentCentralStore) && $store->parentCentralStore !== null )
+        {
+            $store = $store->parentCentralStore;
+            $find = $store->find($context->object->name());
+
+            if( $find !== null )
+            {
+                if( get_class($store->owner) == "PanoramaConf" )
+                    PH::print_stdout( $context->padding." * DG: 'SHARED'" );
+                else
+                    PH::print_stdout( $context->padding." * DG: '".$store->owner->name()."'");
+            }
+        }
+    }
+);
+AddressCallContext::$supportedActions[] = array(
+    'name' => 'display_lower_level_object',
+    'MainFunction' => function (AddressCallContext $context) {
+        $object = $context->object;
+
+        $location = PH::findLocationObjectOrDie($object);
+        if( $location->isFirewall() || $location->isVirtualSystem() )
+            return FALSE;
+
+        if( $location->isPanorama() )
+            $locations = $location->deviceGroups;
+        else
+        {
+            $locations = $location->childDeviceGroups(TRUE);
+        }
+
+        foreach( $locations as $deviceGroup )
+        {
+            $tmp_obj = $deviceGroup->addressStore->find($object->name(), null, FALSE);
+            if( $tmp_obj !== null )
+                PH::print_stdout( $context->padding." * DG: '".$deviceGroup->name()."'");
+        }
+
+    }
 );
 
 AddressCallContext::$supportedActions[] = array(

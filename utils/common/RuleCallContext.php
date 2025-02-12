@@ -1181,7 +1181,7 @@ class RuleCallContext extends CallContext
                 return self::enclose("N/A", $wrap);
             }
 
-            if( $profType == "virus" || $profType == "spyware" || $profType == "vulnerability" )
+            if( $profType == "virus" || $profType == "spyware" || $profType == "vulnerability" || $profType == "wildfire-analysis" || $profType == "file-blocking" || $profType == "url-filtering" )
             {
                 if( is_string($profileName) )
                 {
@@ -1191,6 +1191,12 @@ class RuleCallContext extends CallContext
                         $profile = $rule->owner->owner->AntiSpywareProfileStore->find($profileName);
                     elseif( $profType == "vulnerability" )
                         $profile = $rule->owner->owner->VulnerabilityProfileStore->find($profileName);
+                    elseif( $profType == "wildfire-analysis" )
+                        $profile = $rule->owner->owner->WildfireProfileStore->find($profileName);
+                    elseif( $profType == "file-blocking" )
+                        $profile = $rule->owner->owner->FileBlockingProfileStore->find($profileName);
+                    elseif( $profType == "url-filtering" )
+                        $profile = $rule->owner->owner->URLProfileStore->find($profileName);
                 }
                 else
                     $profile = $profileName;
@@ -1202,9 +1208,9 @@ class RuleCallContext extends CallContext
                 else
                 {
 
-                    if( $profType == "virus" || $profType == "spyware" || $profType == "vulnerability" )
+                    if( $profType == "virus" || $profType == "spyware" || $profType == "vulnerability" || $profType == "wildfire-analysis" || $profType == "file-blocking" || $profType == "url-filtering" )
                     {
-                        /** @var AntiVirusProfile|AntiSpywareProfile|VulnerabilityProfile */
+                        /** @var AntiVirusProfile|AntiSpywareProfile|VulnerabilityProfile|WildfireProfile|FileBlockingProfile|URLProfile */
                         if( $sp_best_practice && $checkType == "bp" )
                         {
                             if( !$profile->is_best_practice() )

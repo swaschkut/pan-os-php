@@ -133,7 +133,7 @@ class EthernetInterface
                     if( isset( $pan_object->owner ) )
                     {
                         //Panorama Template
-                        if( get_class($pan_object->owner) == "Template" )
+                        if( get_class($pan_object->owner) == "Template" || get_class($pan_object->owner) == "TemplateStack" )
                         {
                             $template_object = $pan_object->owner;
                             $panorama_object = $template_object->owner;
@@ -181,7 +181,8 @@ class EthernetInterface
                         if( isset( $pan_object->owner ) )
                         {
                             //Panorama Template
-                            if( get_class($pan_object->owner) == "Template" )
+                            #if( get_class($pan_object->owner) == "Template" )
+                            if( get_class($pan_object->owner) == "Template" || get_class($pan_object->owner) == "TemplateStack" )
                             {
                                 $template_object = $pan_object->owner;
                                 $panorama_object = $template_object->owner;
@@ -420,6 +421,17 @@ class EthernetInterface
         $this->name = $name;
 
         $this->xmlroot->setAttribute('name', $name);
+
+        if( count( $this->subInterfaces() ) > 0 )
+        {
+            foreach($this->subInterfaces() as $sub)
+            {
+                $oldName = $sub->name();
+                $tagName = explode( ".", $oldName );
+                $sub->setName($name.".".$tagName[1]);
+            }
+        }
+
 
         return TRUE;
 
@@ -802,6 +814,13 @@ class EthernetInterface
 
     }
 
+    public function getLinkState()
+    {
+        if ($this->isSubInterface())
+            return null;
+
+        return $this->linkstate;
+    }
     //Todo: (20180722)
     //---(also needed for vlan / loopback / tunnel interface)
     //- add Virtual Router

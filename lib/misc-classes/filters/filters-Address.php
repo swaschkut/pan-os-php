@@ -125,6 +125,19 @@ RQuery::$defaultFilters['address']['object']['operators']['is.fqdn'] = array(
         'input' => 'input/panorama-8.0.xml'
     )
 );
+RQuery::$defaultFilters['address']['object']['operators']['is.edl'] = array(
+    'Function' => function (AddressRQueryContext $context) {
+        if( !$context->object->isGroup() && !$context->object->isRegion() )
+            return $context->object->isEDL() == TRUE;
+        else
+            return FALSE;
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
 RQuery::$defaultFilters['address']['object']['operators']['is.ip-wildcard'] = array(
     'Function' => function (AddressRQueryContext $context) {
         if( !$context->object->isGroup() && !$context->object->isRegion() )
@@ -143,12 +156,12 @@ RQuery::$defaultFilters['address']['object']['operators']['is.ipv4'] = Array(
     {
         $object = $context->object;
 
-        if( !$object->isGroup() && !$object->isRegion()  )
+        if( !$object->isGroup() && !$object->isRegion() && !$object->isEDL() )
         {
             if( $object->isType_FQDN() )
             {
                 #PH::print_stdout( "SKIPPED: object is FQDN");
-                return false;
+                return null;
             }
 
             if( $object->value() !== null && strpos( $object->value(), ":") !== false )
@@ -195,12 +208,12 @@ RQuery::$defaultFilters['address']['object']['operators']['is.ipv6'] = Array(
     {
         $object = $context->object;
 
-        if( !$object->isGroup() && !$object->isRegion()  )
+        if( !$object->isGroup() && !$object->isRegion() && !$object->isEDL() )
         {
             if( $object->isType_FQDN() )
             {
                 #PH::print_stdout( "SKIPPED: object is FQDN");
-                return false;
+                return null;
             }
 
             $addr_value = $object->value();
@@ -867,6 +880,31 @@ RQuery::$defaultFilters['address']['reflocationtype']['operators']['is.only.temp
         'input' => 'input/panorama-8.0.xml'
     )
 );
+RQuery::$defaultFilters['address']['reflocationtype']['operators']['is.templatestack'] = array(
+    'Function' => function (AddressRQueryContext $context) {
+        $object = $context->object;
+        $owner = $context->object->owner->owner;
+
+        #print "NAME: ".$object->name()."\n";
+        $reflocation_array = $object->getReferencesLocationType();
+        #print_r( $reflocation_array );
+
+        $return = FALSE;
+        foreach( $reflocation_array as $reflocation )
+        {
+            if( $reflocation == "TemplateStack" )
+                return TRUE;
+        }
+
+        return FALSE;
+    },
+    'arg' => FALSE,
+    'help' => 'returns TRUE if object locationtype is Template or TemplateStack',
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
 RQuery::$defaultFilters['address']['reflocationtype']['operators']['is.devicegroup'] = array(
     'Function' => function (AddressRQueryContext $context) {
         $object = $context->object;
@@ -1125,28 +1163,6 @@ RQuery::$defaultFilters['address']['refstore']['operators']['is.only.addressstor
         'input' => 'input/panorama-8.0.xml'
     )
 );
-RQuery::$defaultFilters['address']['refstore']['operators']['is.servicestore'] = array(
-    'Function' => function (AddressRQueryContext $context) {
-        #$value = $context->value;
-        #$value = strtolower($value);
-        $value = "servicestore";
-
-        $context->object->ReferencesStoreValidation($value);
-
-        $refstore = $context->object->getReferencesStore();
-
-        if( array_key_exists($value, $refstore) )
-            return TRUE;
-
-        return FALSE;
-
-    },
-    'arg' => false,
-    'ci' => array(
-        'fString' => '(%PROP%)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
 RQuery::$defaultFilters['address']['refstore']['operators']['is.logicalrouterstore'] = array(
     'Function' => function (AddressRQueryContext $context) {
         #$value = $context->value;
@@ -1240,6 +1256,138 @@ RQuery::$defaultFilters['address']['refstore']['operators']['is.ikegatewaystore'
         #$value = $context->value;
         #$value = strtolower($value);
         $value = "ikegatewaystore";
+
+        $context->object->ReferencesStoreValidation($value);
+
+        $refstore = $context->object->getReferencesStore();
+
+        if( array_key_exists($value, $refstore) )
+            return TRUE;
+
+        return FALSE;
+
+    },
+    'arg' => false,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['address']['refstore']['operators']['is.ethernetifstore'] = array(
+    'Function' => function (AddressRQueryContext $context) {
+        #$value = $context->value;
+        #$value = strtolower($value);
+        $value = "ethernetifstore";
+
+        $context->object->ReferencesStoreValidation($value);
+
+        $refstore = $context->object->getReferencesStore();
+
+        if( array_key_exists($value, $refstore) )
+            return TRUE;
+
+        return FALSE;
+
+    },
+    'arg' => false,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['address']['refstore']['operators']['is.gpportalstore'] = array(
+    'Function' => function (AddressRQueryContext $context) {
+        #$value = $context->value;
+        #$value = strtolower($value);
+        $value = "gpportalstore";
+
+        $context->object->ReferencesStoreValidation($value);
+
+        $refstore = $context->object->getReferencesStore();
+
+        if( array_key_exists($value, $refstore) )
+            return TRUE;
+
+        return FALSE;
+
+    },
+    'arg' => false,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['address']['refstore']['operators']['is.gretunnelstore'] = array(
+    'Function' => function (AddressRQueryContext $context) {
+        #$value = $context->value;
+        #$value = strtolower($value);
+        $value = "gretunnelstore";
+
+        $context->object->ReferencesStoreValidation($value);
+
+        $refstore = $context->object->getReferencesStore();
+
+        if( array_key_exists($value, $refstore) )
+            return TRUE;
+
+        return FALSE;
+
+    },
+    'arg' => false,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['address']['refstore']['operators']['is.loopbackifstore'] = array(
+    'Function' => function (AddressRQueryContext $context) {
+        #$value = $context->value;
+        #$value = strtolower($value);
+        $value = "loopbackifstore";
+
+        $context->object->ReferencesStoreValidation($value);
+
+        $refstore = $context->object->getReferencesStore();
+
+        if( array_key_exists($value, $refstore) )
+            return TRUE;
+
+        return FALSE;
+
+    },
+    'arg' => false,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['address']['refstore']['operators']['is.vlanifstore'] = array(
+    'Function' => function (AddressRQueryContext $context) {
+        #$value = $context->value;
+        #$value = strtolower($value);
+        $value = "vlanifstore";
+
+        $context->object->ReferencesStoreValidation($value);
+
+        $refstore = $context->object->getReferencesStore();
+
+        if( array_key_exists($value, $refstore) )
+            return TRUE;
+
+        return FALSE;
+
+    },
+    'arg' => false,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['address']['refstore']['operators']['is.zonestore'] = array(
+    'Function' => function (AddressRQueryContext $context) {
+        #$value = $context->value;
+        #$value = strtolower($value);
+        $value = "zonestore";
 
         $context->object->ReferencesStoreValidation($value);
 
@@ -1465,6 +1613,9 @@ RQuery::$defaultFilters['address']['value']['operators']['ip4.included-in'] = ar
     'Function' => function (AddressRQueryContext $context) {
         $object = $context->object;
 
+        if( $object->isEDL() )
+            return null;
+
         if( $object->isAddress() && ( $object->isTmpAddr() || $object->isType_FQDN() ) )
             return null;
 
@@ -1506,9 +1657,12 @@ RQuery::$defaultFilters['address']['value']['operators']['ip4.includes-full'] = 
     'Function' => function (AddressRQueryContext $context) {
         $object = $context->object;
 
+        if( $object->isEDL() )
+            return null;
+
         if( $object->isAddress() )
         {
-            if( $object->isType_FQDN()  )
+            if( $object->isType_FQDN() )
                 return null;
             elseif( $object->isTmpAddr() && $object->value() == "" )
                 return null;
@@ -1552,9 +1706,12 @@ RQuery::$defaultFilters['address']['value']['operators']['ip4.includes-full-or-p
     'Function' => function (AddressRQueryContext $context) {
         $object = $context->object;
 
+        if( $object->isEDL() )
+            return null;
+
         if( $object->isAddress() )
         {
-            if( $object->isType_FQDN()  )
+            if( $object->isType_FQDN() )
                 return null;
             elseif( $object->isTmpAddr() && $object->value() == "" )
                 return null;
@@ -1641,6 +1798,9 @@ RQuery::$defaultFilters['address']['value']['operators']['ip6.included-in.from.f
     'Function' => function (AddressRQueryContext $context) {
         $object = $context->object;
 
+        if( $object->isEDL() )
+            return null;
+
         if( $object->isAddress() && ( $object->isTmpAddr() || $object->isType_FQDN() ) )
             return null;
 
@@ -1682,9 +1842,12 @@ RQuery::$defaultFilters['address']['value']['operators']['ip6.includes-full.from
     'Function' => function (AddressRQueryContext $context) {
         $object = $context->object;
 
+        if( $object->isEDL() )
+            return null;
+
         if( $object->isAddress() )
         {
-            if( $object->isType_FQDN()  )
+            if( $object->isType_FQDN() )
                 return null;
             elseif( $object->isTmpAddr() && $object->value() == "" )
                 return null;
@@ -1731,7 +1894,7 @@ RQuery::$defaultFilters['address']['value']['operators']['ip6.includes-full-or-p
 
         if( $object->isAddress() )
         {
-            if( $object->isType_FQDN()  )
+            if( $object->isType_FQDN() || $object->isEDL() )
                 return null;
             elseif( $object->isTmpAddr() && $object->value() == "" )
                 return null;

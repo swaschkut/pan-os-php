@@ -103,20 +103,51 @@ $checkArray['vulnerability']['cloud-inline']['visibility']['inline-policy-action
 
 ######################################################################################################################
 ######## URL
-$checkArray['url']['site_access']['visibility'] = array('!allow');
-$checkArray['url']['site_access']['bp']['action'][0]['type'] = array('command-and-control','grayware', 'malware', 'phishing', 'ransamware', 'scanning-activity');
-$checkArray['url']['site_access']['bp']['action'][0]['action'] = array('block');
-$checkArray['url']['site_access']['bp']['action'][1]['type'] = array('dynamic-dns', 'hacking', 'insufficient-content', 'newly-registered-domains', 'not-resolved', 'parked', 'proxy-avoidance-and-anonymizers', 'unknown');
-$checkArray['url']['site_access']['bp']['action'][1]['action'] = array('alert');
-$checkArray['url']['site_access']['bp']['action'][1]['type'] = array('abused-drugs', 'adult', 'copyright-infringement', 'extremism', 'gambling', 'peer-to-peer', 'questionable', 'weapons');
-$checkArray['url']['site_access']['bp']['action'][1]['action'] = array('alert');
-$checkArray['url']['user_credential_submission']['visibility'] = array('!allow');
-$checkArray['url']['user_credential_submission']['bp']['action'][0]['type'] = array('command-and-control','grayware', 'malware', 'phishing', 'ransamware', 'scanning-activity');
-$checkArray['url']['user_credential_submission']['bp']['action'][0]['action'] = array('block');
-$checkArray['url']['user_credential_submission']['bp']['action'][1]['type'] = array('dynamic-dns', 'hacking', 'insufficient-content', 'newly-registered-domains', 'not-resolved', 'parked', 'proxy-avoidance-and-anonymizers', 'unknown');
-$checkArray['url']['user_credential_submission']['bp']['action'][1]['action'] = array('alert');
-$checkArray['url']['user_credential_submission']['bp']['action'][1]['type'] = array('abused-drugs', 'adult', 'copyright-infringement', 'extremism', 'gambling', 'peer-to-peer', 'questionable', 'weapons');
-$checkArray['url']['user_credential_submission']['bp']['action'][1]['action'] = array('alert');
+$checkArray['url']['site_access']['visibility'] = '!allow';
+$checkArray['url']['site_access']['bp'][0]['type'] = array('command-and-control', 'compromised-website','grayware', 'malware', 'phishing', 'ransomware', 'scanning-activity');
+$checkArray['url']['site_access']['bp'][0]['action'] = 'block';
+$checkArray['url']['site_access']['bp'][1]['type'] = array('dynamic-dns', 'hacking', 'insufficient-content', 'newly-registered-domains', 'not-resolved', 'parked', 'proxy-avoidance-and-anonymizers', 'unknown');
+$checkArray['url']['site_access']['bp'][1]['action'] = 'alert';
+$checkArray['url']['site_access']['bp'][2]['type'] = array('abused-drugs', 'adult', 'copyright-infringement', 'extremism', 'gambling', 'peer-to-peer', 'questionable', 'weapons');
+$checkArray['url']['site_access']['bp'][2]['action'] = 'alert';
+$checkArray['url']['user_credential_submission']['visibility'] = '!allow';
+$checkArray['url']['user_credential_submission']['bp'][0]['type'] = array('command-and-control', 'compromised-website','grayware', 'malware', 'phishing', 'ransomware', 'scanning-activity');
+$checkArray['url']['user_credential_submission']['bp'][0]['action'] = 'block';
+$checkArray['url']['user_credential_submission']['bp'][1]['type'] = array('dynamic-dns', 'hacking', 'insufficient-content', 'newly-registered-domains', 'not-resolved', 'parked', 'proxy-avoidance-and-anonymizers', 'unknown');
+$checkArray['url']['user_credential_submission']['bp'][1]['action'] = 'alert';
+$checkArray['url']['user_credential_submission']['bp'][2]['type'] = array('abused-drugs', 'adult', 'copyright-infringement', 'extremism', 'gambling', 'peer-to-peer', 'questionable', 'weapons');
+$checkArray['url']['user_credential_submission']['bp'][2]['action'] = 'alert';
+
+
+######################################################################################################################
+######## FB
+$checkArray['file-blocking']['rule'] = array();
+$checkArray['file-blocking']['rule']['bp'] = array();
+$checkArray['file-blocking']['rule']['visibility'] = array();
+
+$checkArray['file-blocking']['rule']['visibility']['alert']['filetype'] = array('any');
+
+$checkArray['file-blocking']['rule']['bp']['alert']['filetype'] = array('any');
+$checkArray['file-blocking']['rule']['bp']['block']['filetype'] = array('7z', 'bat','chm','class','cpl','dll','hlp','hta','jar','ocx','pif','scr','torrent','vbe','wsf');
+
+
+######################################################################################################################
+######## WF
+$checkArray['wildfire']['rule'] = array();
+$checkArray['wildfire']['rule']['bp'] = array();
+$checkArray['wildfire']['rule']['visibility'] = array();
+
+$checkArray['wildfire']['rule']['visibility'][0]['application'] = array('any');
+$checkArray['wildfire']['rule']['visibility'][0]['filetype'] = array('any');
+$checkArray['wildfire']['rule']['visibility'][0]['direction'] = 'both';
+$checkArray['wildfire']['rule']['visibility'][0]['analysis'] = 'public-cloud';
+
+$checkArray['wildfire']['rule']['bp'][0]['application'] = array('any');
+$checkArray['wildfire']['rule']['bp'][0]['filetype'] = array('any');
+$checkArray['wildfire']['rule']['bp'][0]['direction'] = 'both';
+$checkArray['wildfire']['rule']['bp'][0]['analysis'] = 'public-cloud';
+
+
 ######################################################################################################################
 
 $json = json_encode($checkArray, JSON_PRETTY_PRINT);

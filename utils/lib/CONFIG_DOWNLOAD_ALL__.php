@@ -87,12 +87,15 @@ class CONFIG_DOWNLOAD_ALL__ extends UTIL
             #print 'PANOS serial: '.$inputConnector->info_serial."\n\n";
 
             $this->downloadFWconfig( $inputConnector, $inputConnector->info_hostname );
+
+            $this->FirewallSpecificDownload( $inputConnector, $inputConnector->info_hostname );
         }
 
     }
 
     function downloadFWconfig( $fw_con, $hostname)
     {
+        /** @VAR PanAPIConnector $fw_con */
         print 'FIREWALL serial: ' . $fw_con->info_serial . "\n\n";
 
         $config_candidate = $fw_con->getCandidateConfig();
@@ -104,17 +107,60 @@ class CONFIG_DOWNLOAD_ALL__ extends UTIL
 
 
         $config_pushed = $fw_con->getPanoramaPushedConfig();
-        if( $config_pushed->nodeType == XML_DOCUMENT_NODE )
-            $found = DH::findFirstElement('config', $config_pushed);
-
-        if( $found !== false )
+        if( $config_pushed !== false )
         {
-            ##########SAVE config
-            $pan = new PANConf();
-            $pan->load_from_domxml($config_pushed);
-            $pan->save_to_file($fw_con->info_serial."_".$hostname."_FW_panorama-pushed.xml");
+            //Todo: swaschkut 20250211
+            // looks like this is no longer working - check what and with which config version this changed
+
+            #if( $config_pushed->nodeType == XML_DOCUMENT_NODE )
+            if( get_class($config_pushed) === "DOMDocument" )
+            {
+                $first_element = $config_pushed->firstElementChild;
+                #$found = DH::findFirstElement('config', $config_pushed);
+                $found = DH::findFirstElement('panorama', $first_element);
+            }
+
+            if( $found !== false )
+            {
+                ##########SAVE config
+                $pan = new PANConf();
+                $pan->load_from_domxml($config_pushed);
+                $pan->save_to_file($fw_con->info_serial."_".$hostname."_FW_panorama-pushed.xml");
+            }
         }
 
+
+        //Todo:  this is only Panorama template - merged no object/rule merged!!!!!!
+        /*
+        $config_merged = $fw_con->getMergedConfig();
+        ##########SAVE config
+        $pan = new PANConf();
+        $pan->load_from_domxml($config_merged);
+        $pan->save_to_file($fw_con->info_serial."_".$hostname."_FW_merged_network.xml");
+        */
+
+        $config_merged = $fw_con->getMergedConfigFile();
+        ##########SAVE config
+        if( $config_merged !== false )
+        {
+            PH::print_stdout("ALL SECRETS are hidden with ASTERISK *******");
+            PH::print_stdout("XPATH: /config/*/certificate");
+            PH::print_stdout("<private-key>********</private-key>");
+            PH::print_stdout("XPATH: /config/*/local-user-database/");
+            PH::print_stdout("<phash>********</phash>");
+            $pan = new PANConf();
+            $pan->load_from_domxml($config_merged);
+            $pan->save_to_file($fw_con->info_serial."_".$hostname."_FW_merged-running-config.xml");
+        }
+    }
+
+    function FirewallSpecificDownload( $directFW_con, $hostname )
+    {
+        PH::print_stdout("Now saving device-state to file '".$directFW_con->info_serial."_".$hostname."_device_state_cfg.tgz'...");
+        $directFW_con->getFirewallDeviceState($directFW_con->info_serial."_".$hostname);
+
+        PH::print_stdout("TSF");
+        $directFW_con->getFirewallTechSupportFile($directFW_con->info_serial."_".$hostname);
     }
 
 }

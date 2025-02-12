@@ -21,6 +21,8 @@ class WildfireProfile extends SecurityProfile2
 
     public $secprof_type;
 
+    public $rules_obj = array();
+
     /**
      * you should not need this one for normal use
      * @param string $name
@@ -94,132 +96,128 @@ class WildfireProfile extends SecurityProfile2
             derr("WildFire SecurityProfile name not found\n");
 
 
+
         $tmp_rule = DH::findFirstElement('rules', $xml);
         if( $tmp_rule !== FALSE )
         {
-            #$tmp_array[$this->secprof_type][$this->secprof_type][$this->name]['rules'] = array();
-            $tmp_array[$this->secprof_type][$this->name]['rules'] = array();
             foreach( $tmp_rule->childNodes as $tmp_entry1 )
             {
                 if( $tmp_entry1->nodeType != XML_ELEMENT_NODE )
                     continue;
 
-                $vb_severity = DH::findAttribute('name', $tmp_entry1);
-                if( $vb_severity === FALSE )
+                $rule_name = DH::findAttribute('name', $tmp_entry1);
+                if( $rule_name === FALSE )
                     derr("VB severity name not found\n");
 
-                $severity = DH::findFirstElement('severity', $tmp_entry1);
-                if( $severity !== FALSE )
-                {
-                    if( $severity->nodeType != XML_ELEMENT_NODE )
-                        continue;
+                $threadPolicy_obj = new ThreatPolicyWildfire( $rule_name, $this );
+                $threadPolicy_obj->wildfirepolicy_load_from_domxml( $tmp_entry1 );
+                $this->rules_obj[] = $threadPolicy_obj;
+                $threadPolicy_obj->addReference( $this );
 
-                    $tmp_array[$this->secprof_type][$this->name]['rules'][$vb_severity]['severity'] = array();
-                    foreach( $severity->childNodes as $member )
-                    {
-                        if( $member->nodeType != XML_ELEMENT_NODE )
-                            continue;
-
-                        $tmp_array[$this->secprof_type][$this->name]['rules'][$vb_severity]['severity'][$member->textContent] = $member->textContent;
-                    }
-                }
-
-                $severity = DH::findFirstElement('file-type', $tmp_entry1);
-                if( $severity !== FALSE )
-                {
-                    if( $severity->nodeType != XML_ELEMENT_NODE )
-                        continue;
-
-                    $tmp_array[$this->secprof_type][$this->name]['rules'][$vb_severity]['file-type'] = array();
-                    foreach( $severity->childNodes as $member )
-                    {
-                        if( $member->nodeType != XML_ELEMENT_NODE )
-                            continue;
-
-                        $tmp_array[$this->secprof_type][$this->name]['rules'][$vb_severity]['file-type'][$member->textContent] = $member->textContent;
-                    }
-                }
-
-                $action = DH::findFirstElement('action', $tmp_entry1);
-                if( $action !== FALSE )
-                {
-                    if( $action->nodeType != XML_ELEMENT_NODE )
-                        continue;
-
-                    $tmp_action = DH::firstChildElement($action);
-                    if( $tmp_action !== FALSE )
-                        $tmp_array[$this->secprof_type][$this->name]['rules'][$vb_severity]['action'] = $tmp_action->nodeName;
-
-                    if( $this->secprof_type == 'file-blocking' )
-                        $tmp_array[$this->secprof_type][$this->name]['rules'][$vb_severity]['action'] = $action->textContent;
-                }
-
-                $packet_capture = DH::findFirstElement('packet-capture', $tmp_entry1);
-                if( $packet_capture !== FALSE )
-                {
-                    if( $packet_capture->nodeType != XML_ELEMENT_NODE )
-                        continue;
-
-                    $tmp_array[$this->secprof_type][$this->name]['rules'][$vb_severity]['packet-capture'] = $packet_capture->textContent;
-                }
-
-                $direction = DH::findFirstElement('direction', $tmp_entry1);
-                if( $direction !== FALSE )
-                {
-                    if( $direction->nodeType != XML_ELEMENT_NODE )
-                        continue;
-
-                    $tmp_array[$this->secprof_type][$this->name]['rules'][$vb_severity]['direction'] = $direction->textContent;
-                }
-
-                $analysis = DH::findFirstElement('analysis', $tmp_entry1);
-                if( $analysis !== FALSE )
-                {
-                    if( $analysis->nodeType != XML_ELEMENT_NODE )
-                        continue;
-
-                    $tmp_array[$this->secprof_type][$this->name]['rules'][$vb_severity]['analysis'] = $analysis->textContent;
-                }
+                $this->owner->owner->ThreatPolicyStore->add($threadPolicy_obj);
             }
         }
-
-        $tmp_threat_exception = DH::findFirstElement('threat-exception', $xml);
-        if( $tmp_threat_exception !== FALSE )
-        {
-            $tmp_array[$this->secprof_type][$this->name]['threat-exception'] = array();
-            foreach( $tmp_threat_exception->childNodes as $tmp_entry1 )
-            {
-                if( $tmp_entry1->nodeType != XML_ELEMENT_NODE )
-                    continue;
-
-                $tmp_name = DH::findAttribute('name', $tmp_entry1);
-                if( $tmp_name === FALSE )
-                    derr("VB severity name not found\n");
-
-                $action = DH::findFirstElement('action', $tmp_entry1);
-                if( $action !== FALSE )
-                {
-                    if( $action->nodeType != XML_ELEMENT_NODE )
-                        continue;
-
-                    $tmp_action = DH::firstChildElement($action);
-                    $tmp_array[$this->secprof_type][$this->name]['threat-exception'][$tmp_name]['action'] = $tmp_action->nodeName;
-                }
-            }
-        }
-
-        #print_r( $tmp_array );
 
         return TRUE;
     }
 
     public function display()
     {
-        PH::print_stdout(  "     * " . get_class($this) . " '" . $this->name() . "'    " );
         PH::$JSON_TMP['sub']['object'][$this->name()]['name'] = $this->name();
         PH::$JSON_TMP['sub']['object'][$this->name()]['type'] = get_class($this);
-        //Todo: continue for PH::print_stdout( ); out
 
+
+        if( !empty( $this->rules_obj ) )
+        {
+            PH::print_stdout("        - threat-rules:");
+
+            foreach ($this->rules_obj as $rulename => $rule)
+            {
+                $rule->display();
+            }
+        }
+    }
+
+    public function wildfire_rules_best_practice()
+    {
+
+        $bp_set = null;
+        if (!empty($this->rules_obj)) {
+            $bp_set = false;
+
+            foreach ($this->rules_obj as $rulename => $rule) {
+                /** @var ThreatPolicyWildfire $rule */
+                if ($rule->wildfire_rule_best_practice())
+                    $bp_set = true;
+                else
+                    return false;
+            }
+        }
+        return $bp_set;
+    }
+
+    public function wildfire_rules_visibility()
+    {
+        $bp_set = null;
+        if (!empty($this->rules_obj)) {
+            $bp_set = false;
+
+            foreach ($this->rules_obj as $rulename => $rule) {
+                /** @var ThreatPolicyWildfire $rule */
+                if ($rule->wildfire_rule_visibility())
+                    $bp_set = true;
+                else
+                    return false;
+            }
+        }
+        return $bp_set;
+    }
+
+    public function is_best_practice()
+    {
+        if( $this->owner->owner->version >= 102 )
+        {
+            if( $this->wildfire_rules_best_practice()
+                #&& $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file)
+                #&& $this->vulnerability_exception_best_practice()
+            )
+                return TRUE;
+            else
+                return FALSE;
+        }
+        else
+        {
+            if( $this->wildfire_rules_best_practice()
+                #&& $this->spyware_dns_security_best_practice() && $this->spyware_dnslist_best_practice()
+                #&& $this->vulnerability_exception_best_practice()
+            )
+                return TRUE;
+            else
+                return FALSE;
+        }
+    }
+
+    public function is_visibility()
+    {
+        if( $this->owner->owner->version >= 102 )
+        {
+            if( $this->wildfire_rules_visibility()
+                #&& $this->cloud_inline_analysis_visibility($this->owner->bp_json_file)
+                #&& $this->spyware_dns_security_visibility() && $this->spyware_dnslist_visibility()
+            )
+                return TRUE;
+            else
+                return FALSE;
+        }
+        else
+        {
+            if( $this->wildfire_rules_visibility()
+                #&& $this->spyware_dns_security_visibility() && $this->spyware_dnslist_visibility()
+            )
+                return TRUE;
+            else
+                return FALSE;
+        }
     }
 
 

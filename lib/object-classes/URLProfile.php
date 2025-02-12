@@ -529,6 +529,199 @@ class URLProfile extends SecurityProfile2
         return $ret;
     }
 
+
+    public function url_siteaccess_bp_visibility_JSON( $checkType, $secprof_type )
+    {
+        $checkArray = array();
+
+        if( $checkType !== "bp" && $checkType !== "visibility" )
+            derr( "only 'bp' or 'visibility' argument allowed" );
+
+        ###############################
+        $details = $this->owner->getBPjsonFile();
+
+        $array_type = "site_access";
+
+        if( isset($details[$secprof_type][$array_type]) )
+        {
+            if( $checkType == "bp" )
+            {
+                if( isset($details[$secprof_type][$array_type]['bp']))
+                    $checkArray = $details[$secprof_type][$array_type]['bp'];
+                else
+                    derr( "this JSON bp/visibility JSON file does not have 'bp' -> '".$array_type."' defined correctly for: '".$secprof_type."'", null, FALSE );
+            }
+            elseif( $checkType == "visibility")
+            {
+                if( isset($details[$secprof_type][$array_type]['visibility']))
+                    $checkArray = $details[$secprof_type][$array_type]['visibility'];
+                else
+                    derr( "this JSON bp/visibility JSON file does not have 'visibility' -> '".$array_type."' defined correctly for: '".$secprof_type."'", null, FALSE );
+            }
+        }
+
+        return $checkArray;
+    }
+
+    public function url_usercredentialsubmission_bp_visibility_JSON( $checkType, $secprof_type )
+    {
+        $checkArray = array();
+
+        if( $checkType !== "bp" && $checkType !== "visibility" )
+            derr( "only 'bp' or 'visibility' argument allowed" );
+
+        ###############################
+        $details = $this->owner->getBPjsonFile();
+
+        $array_type = "user_credential_submission";
+
+        if( isset($details[$secprof_type][$array_type]) )
+        {
+            if( $checkType == "bp" )
+            {
+                if( isset($details[$secprof_type][$array_type]['bp']))
+                    $checkArray = $details[$secprof_type][$array_type]['bp'];
+                else
+                    derr( "this JSON bp/visibility JSON file does not have 'bp' -> '".$array_type."' defined correctly for: '".$secprof_type."'", null, FALSE );
+            }
+            elseif( $checkType == "visibility")
+            {
+                if( isset($details[$secprof_type][$array_type]['visibility']))
+                    $checkArray = $details[$secprof_type][$array_type]['visibility'];
+                else
+                    derr( "this JSON bp/visibility JSON file does not have 'visibility' -> '".$array_type."' defined correctly for: '".$secprof_type."'", null, FALSE );
+            }
+        }
+
+        return $checkArray;
+    }
+
+    public function check_siteaccess_bp_json( $check_array )
+    {
+        foreach( $check_array as $check )
+        {
+            $action = $check["action"];
+            $urlList = $check["type"];
+
+            foreach( $urlList as $url )
+            {
+                if( !in_array( $url, $this->$action ) )
+                    return false;
+            }
+        }
+
+        return TRUE;
+    }
+
+    public function check_siteaccess_visibility_json( $check_array )
+    {
+        $finding = $check_array;
+        if( strpos( $check_array, "!") !== FALSE )
+        {
+            $finding = str_replace("!", "", $check_array);
+            if( !empty($this->$finding) )
+                return False;
+        }
+
+        return TRUE;
+    }
+
+    public function check_usercredentialsubmission_bp_json( $check_array )
+    {
+        foreach( $check_array as $check )
+        {
+            $action = $check["action"];
+            $urlList = $check["type"];
+
+            foreach( $urlList as $url )
+            {
+                if( !in_array( $url, $this->$action ) )
+                    return false;
+            }
+        }
+
+        return TRUE;
+    }
+
+    public function check_usercredentialsubmission_visibility_json( $check_array )
+    {
+        $finding = $check_array;
+        if( strpos( $check_array, "!") !== FALSE )
+        {
+            $finding = str_replace("!", "", $check_array);
+            if( !empty($this->$finding) )
+                return False;
+        }
+
+        return TRUE;
+    }
+
+    public function url_siteaccess_best_practice()
+    {
+        $check_array = $this->url_siteaccess_bp_visibility_JSON( "bp", "url" );
+        $bestpractise = $this->check_siteaccess_bp_json( $check_array );
+
+        if ($bestpractise == FALSE)
+            return FALSE;
+        else
+            return TRUE;
+    }
+
+    public function url_siteaccess_visibility()
+    {
+        $check_array = $this->url_siteaccess_bp_visibility_JSON( "visibility", "url" );
+        $bestpractise = $this->check_siteaccess_visibility_json( $check_array );
+
+        if ($bestpractise == FALSE)
+            return FALSE;
+        else
+            return TRUE;
+    }
+
+
+    public function url_usercredentialsubmission_best_practice()
+    {
+        $check_array = $this->url_usercredentialsubmission_bp_visibility_JSON( "bp", "url" );
+        $bestpractise = $this->check_usercredentialsubmission_bp_json( $check_array );
+
+        if ($bestpractise == FALSE)
+            return FALSE;
+        else
+            return TRUE;
+    }
+
+    public function url_usercredentialsubmission_visibility()
+    {
+        $check_array = $this->url_usercredentialsubmission_bp_visibility_JSON( "visibility", "url" );
+        $bestpractise = $this->check_usercredentialsubmission_visibility_json( $check_array );
+
+        if ($bestpractise == FALSE)
+            return FALSE;
+        else
+            return TRUE;
+    }
+
+    public function is_best_practice()
+    {
+        if( $this->url_siteaccess_best_practice()
+            && $this->url_usercredentialsubmission_best_practice()
+
+        )
+            return TRUE;
+        else
+            return FALSE;
+    }
+
+    public function is_visibility()
+    {
+        if( $this->url_siteaccess_visibility()
+            && $this->url_usercredentialsubmission_visibility()
+        )
+            return TRUE;
+        else
+            return FALSE;
+    }
+
     static $templatexml = '<entry name="**temporarynamechangeme**"></entry>';
 
 }

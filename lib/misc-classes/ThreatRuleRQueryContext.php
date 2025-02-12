@@ -1,8 +1,8 @@
 <?php
 
 /**
- * Class EDLRQueryContext
- * @property EDL $object
+ * Class ThreatRuleRQueryContext
+ * @property ThreatPolicy $object
  * @ignore
  */
 class ThreatRuleRQueryContext extends RQueryContext

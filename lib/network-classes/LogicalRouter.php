@@ -66,13 +66,13 @@ class LogicalRouter
         if( $this->name === FALSE )
             derr("logical-router name not found\n");
 
-        $this->xmlroot_vrf = DH::findFirstElement('vrf', $xml);
+        $this->xmlroot_vrf = DH::findFirstElementOrCreate('vrf', $xml);
         if(  $this->xmlroot_vrf !== False )
         {
-            $entry_default = DH::findFirstElementByNameAttr( "entry", "default", $this->xmlroot_vrf);
+            $entry_default = DH::findFirstElementByNameAttrOrCreate( "entry", "default", $this->xmlroot_vrf, $this->xmlroot->ownerDocument);
 
             $node = FALSE;
-            $tmp_routing_table = DH::findFirstElement('routing-table', $entry_default);
+            $tmp_routing_table = DH::findFirstElementOrCreate('routing-table', $entry_default);
             if( $tmp_routing_table !== FALSE )
             {
                 $tmp_ip = DH::findFirstElement('ip', $tmp_routing_table);
@@ -373,16 +373,23 @@ class LogicalRouter
             if( $this->xmlroot === null )
                 $this->createXmlRoot();
 
-            $tmp_routing_table = DH::findFirstElementOrCreate('routing-table', $this->xmlroot);
-            if( $tmp_routing_table !== FALSE )
+            $this->xmlroot_vrf = DH::findFirstElementOrCreate('vrf', $this->xmlroot);
+            if(  $this->xmlroot_vrf !== False )
             {
-                $tmp_ip = DH::findFirstElementOrCreate($version, $tmp_routing_table);
-                if( $tmp_ip !== FALSE )
+                $entry_default = DH::findFirstElementByNameAttrOrCreate("entry", "default", $this->xmlroot_vrf, $this->xmlroot->ownerDocument);
+
+                $node = FALSE;
+                $tmp_routing_table = DH::findFirstElementOrCreate('routing-table', $entry_default);
+                if ($tmp_routing_table !== FALSE)
                 {
-                    $tmp_static_route = DH::findFirstElementOrCreate('static-route', $tmp_ip);
-                    if( $tmp_static_route !== FALSE )
-                        #$node = DH::findXPath('/entry', $tmp_static_route );//find routing/table -> static route
-                        $tmp_static_route->appendChild($staticRoute->xmlroot);
+                    $tmp_ip = DH::findFirstElementOrCreate('ip', $tmp_routing_table);
+                    if ($tmp_ip !== FALSE)
+                    {
+                        $tmp_static_route = DH::findFirstElementOrCreate('static-route', $tmp_ip);
+                        if ($tmp_static_route !== FALSE)
+                            #$node = DH::findXPath('/entry', $tmp_static_route );//find routing/table -> static route
+                            $tmp_static_route->appendChild($staticRoute->xmlroot);
+                    }
                 }
             }
 
@@ -419,17 +426,26 @@ class LogicalRouter
 
         $version = "ip";
 
-        $tmp_routing_table = DH::findFirstElementOrCreate('routing-table', $this->xmlroot);
-        if( $tmp_routing_table !== FALSE )
+        $this->xmlroot_vrf = DH::findFirstElementOrCreate('vrf', $this->xmlroot);
+        if(  $this->xmlroot_vrf !== False )
         {
-            $tmp_ip = DH::findFirstElementOrCreate($version, $tmp_routing_table);
-            if( $tmp_ip !== FALSE )
+            $entry_default = DH::findFirstElementByNameAttrOrCreate("entry", "default", $this->xmlroot_vrf, $this->xmlroot->ownerDocument);
+
+            $node = FALSE;
+            $tmp_routing_table = DH::findFirstElementOrCreate('routing-table', $entry_default);
+            if ($tmp_routing_table !== FALSE)
             {
-                $tmp_static_route = DH::findFirstElementOrCreate('static-route', $tmp_ip);
-                if( $tmp_static_route !== FALSE )
-                    $tmp_static_route->removeChild($staticRoute->xmlroot);
+                $tmp_ip = DH::findFirstElementOrCreate('ip', $tmp_routing_table);
+                if ($tmp_ip !== FALSE)
+                {
+                    $tmp_static_route = DH::findFirstElementOrCreate('static-route', $tmp_ip);
+                    if ($tmp_static_route !== FALSE)
+                        #$node = DH::findXPath('/entry', $tmp_static_route );//find routing/table -> static route
+                        $tmp_static_route->removeChild($staticRoute->xmlroot);
+                }
             }
         }
+
 
 
         if( $cleanInMemory )
@@ -782,7 +798,8 @@ class LogicalRouter
         $pan_object = $this->owner->owner;
         if( isset( $pan_object->owner ) )
         {
-            if( get_class($pan_object->owner) == "Template" )
+            #if( get_class($pan_object->owner) == "Template" )
+            if( get_class($pan_object->owner) == "Template" || get_class($pan_object->owner) == "TemplateStack" )
             {
                 $template_object = $pan_object->owner;
                 $panorama_object = $template_object->owner;
@@ -847,7 +864,7 @@ class LogicalRouter
         return $str;
     }
 
-    static public $templatexml = '<entry name="**temporarynamechangeme**"><routing-table></routing-table></entry>';
+    static public $templatexml = '<entry name="**temporarynamechangeme**"><vrf></vrf></entry>';
     #static public $templatexml = '<entry name="**temporarynamechangeme**"><routing-table><ip><static-route><entry></entry></static-route></ip></routing-table></entry>';
 
 }

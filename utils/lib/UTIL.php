@@ -2293,18 +2293,25 @@ class UTIL
                     catch(Exception $e)
                     {
                         $timezone_backward = PH::timezone_backward_migration( $this->timezone );
-                        $this->pan->timezone = $timezone_backward;
-                        date_default_timezone_set($timezone_backward);
+                        if( $timezone_backward !== null )
+                        {
+                            $this->pan->timezone = $timezone_backward;
+                            date_default_timezone_set($timezone_backward);
 
-                        PH::print_stdout("   --------------");
-                        PH::print_stdout( " X Timezone: $timezone->textContent is not supported with this PHP version. ".$this->timezone." is used." );
-                        PH::print_stdout("   - the timezone is IANA deprecated. Please change to a supported one:");
+                            PH::print_stdout("   --------------");
+                            PH::print_stdout( " X Timezone: $timezone->textContent is not supported with this PHP version. ".$this->timezone." is used." );
+                            PH::print_stdout("   - the timezone is IANA deprecated. Please change to a supported one:");
 
 
-                        PH::print_stdout();
-                        PH::print_stdout("   -- '".$this->timezone."'");
-                        PH::print_stdout("   --------------");
-                        PH::print_stdout();
+                            PH::print_stdout();
+                            PH::print_stdout("   -- '".$this->timezone."'");
+                            PH::print_stdout("   --------------");
+                            PH::print_stdout();
+                        }
+                        else
+                        {
+                            PH::print_stdout("timezone: '".$this->timezone."' not supported by IANA");
+                        }
                     }
                     PH::disableExceptionSupport();
                 }

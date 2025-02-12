@@ -281,7 +281,25 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
         if( $visibility )
             $headers .= '<th>visibility</th>';
 
-        $headers .= '<th>URL Filtering</th><th>File Blocking</th><th>Data Filtering</th><th>WildFire Analysis</th>';
+        $headers .= '<th>URL Filtering</th>';
+        if( $bestPractice )
+            $headers .= '<th>URL VP</th>';
+        if( $visibility )
+            $headers .= '<th>visibility</th>';
+
+        $headers .= '<th>File Blocking</th>';
+        if( $bestPractice )
+            $headers .= '<th>BP FB</th>';
+        if( $visibility )
+            $headers .= '<th>visibility</th>';
+
+        $headers .= '<th>WildFire Analysis</th>';
+        if( $bestPractice )
+            $headers .= '<th>BP WF</th>';
+        if( $visibility )
+            $headers .= '<th>visibility</th>';
+
+        $headers .= '<th>Data Filtering</th>';
 
         if( $addWhereUsed )
             $headers .= '<th>where used</th>';
@@ -462,12 +480,137 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
                 }
 
                 $lines .= $context->encloseFunction($object->secprofiles['url-filtering']);
+                if( $bestPractice || $visibility )
+                {
+                    if(isset($object->secprofiles['url-filtering']))
+                    {
+                        if( is_object($object->secprofiles['url-filtering']) )
+                            $profile = $object->secprofiles['url-filtering'];
+                        else
+                            $profile = $context->object->owner->owner->URLProfileStore->find($object->secprofiles['url-filtering']);
+                        if( is_object( $profile ) )
+                        {
+                            if( $bestPractice )
+                            {
+                                if( $profile->is_best_practice() )
+                                    $lines .= $context->encloseFunction($bp_text_yes);
+                                else
+                                    $lines .= $context->encloseFunction($bp_text_no);
+                            }
+                            if( $visibility )
+                            {
+                                if( $profile->is_visibility() )
+                                    $lines .= $context->encloseFunction($bp_text_yes);
+                                else
+                                    $lines .= $context->encloseFunction($bp_text_no);
+                            }
+                        }
+                        else
+                        {
+                            if( $bestPractice)
+                                $lines .= $context->encloseFunction("- check not possible -");
+                            if( $visibility)
+                                $lines .= $context->encloseFunction("- check not possible -");
+                        }
+                    }
+                    else
+                    {
+                        if( $bestPractice )
+                            $lines .= $context->encloseFunction($bp_text_no);
+                        if( $visibility )
+                            $lines .= $context->encloseFunction($bp_text_no);
+                    }
+                }
 
                 $lines .= $context->encloseFunction($object->secprofiles['file-blocking']);
+                if( $bestPractice || $visibility )
+                {
+                    if(isset($object->secprofiles['file-blocking']))
+                    {
+                        if( is_object($object->secprofiles['file-blocking']) )
+                            $profile = $object->secprofiles['file-blocking'];
+                        else
+                            $profile = $context->object->owner->owner->FileBlockingProfileStore->find($object->secprofiles['file-blocking']);
+                        if( is_object( $profile ) )
+                        {
+                            if( $bestPractice )
+                            {
+                                if( $profile->is_best_practice() )
+                                    $lines .= $context->encloseFunction($bp_text_yes);
+                                else
+                                    $lines .= $context->encloseFunction($bp_text_no);
+                            }
+                            if( $visibility )
+                            {
+                                if( $profile->is_visibility() )
+                                    $lines .= $context->encloseFunction($bp_text_yes);
+                                else
+                                    $lines .= $context->encloseFunction($bp_text_no);
+                            }
+                        }
+                        else
+                        {
+                            if( $bestPractice)
+                                $lines .= $context->encloseFunction("- check not possible -");
+                            if( $visibility)
+                                $lines .= $context->encloseFunction("- check not possible -");
+                        }
+                    }
+                    else
+                    {
+                        if( $bestPractice )
+                            $lines .= $context->encloseFunction($bp_text_no);
+                        if( $visibility )
+                            $lines .= $context->encloseFunction($bp_text_no);
+                    }
+                }
 
-                $lines .= $context->encloseFunction($object->secprofiles['data-filtering']);
 
                 $lines .= $context->encloseFunction($object->secprofiles['wildfire-analysis']);
+                if( $bestPractice || $visibility )
+                {
+                    if(isset($object->secprofiles['wildfire-analysis']))
+                    {
+                        if( is_object($object->secprofiles['wildfire-analysis']) )
+                            $profile = $object->secprofiles['wildfire-analysis'];
+                        else
+                            $profile = $context->object->owner->owner->WildfireProfileStore->find($object->secprofiles['wildfire-analysis']);
+                        if( is_object( $profile ) )
+                        {
+                            if( $bestPractice )
+                            {
+                                if( $profile->is_best_practice() )
+                                    $lines .= $context->encloseFunction($bp_text_yes);
+                                else
+                                    $lines .= $context->encloseFunction($bp_text_no);
+                            }
+                            if( $visibility )
+                            {
+                                if( $profile->is_visibility() )
+                                    $lines .= $context->encloseFunction($bp_text_yes);
+                                else
+                                    $lines .= $context->encloseFunction($bp_text_no);
+                            }
+                        }
+                        else
+                        {
+                            if( $bestPractice)
+                                $lines .= $context->encloseFunction("- check not possible -");
+                            if( $visibility)
+                                $lines .= $context->encloseFunction("- check not possible -");
+                        }
+                    }
+                    else
+                    {
+                        if( $bestPractice )
+                            $lines .= $context->encloseFunction($bp_text_no);
+                        if( $visibility )
+                            $lines .= $context->encloseFunction($bp_text_no);
+                    }
+                }
+
+
+                $lines .= $context->encloseFunction($object->secprofiles['data-filtering']);
 
                 if( $addWhereUsed )
                 {

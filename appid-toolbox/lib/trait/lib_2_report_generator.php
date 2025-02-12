@@ -280,11 +280,22 @@ trait lib_2_report_generator
 
             if( $oldWay )
             {
-                $reports = $rule->API_getAppContainerStats2(time() - ($logHistory * 24 * 3600), time() + 0, TRUE);
-                if( count($reports) == 0 )
+                PH::enableExceptionSupport();
+                try
                 {
-                    $reports = $rule->API_getAppContainerStats2(time() - ($logHistory * 24 * 3600), time() + 0, FALSE);
+                    $reports = $rule->API_getAppContainerStats2(time() - ($logHistory * 24 * 3600), time() + 0, TRUE);
+                    if( count($reports) == 0 )
+                    {
+                        $reports = $rule->API_getAppContainerStats2(time() - ($logHistory * 24 * 3600), time() + 0, FALSE);
+                    }
                 }
+                catch(Exception $e)
+                {
+                    PH::print_stdout("          ***** API Error occured : ".$e->getMessage() );
+                    PH::print_stdout( "NO REPORTS FOUND - for Rule: " . $rule->name() );
+                    continue;
+                }
+                PH::disableExceptionSupport();
 
 
                 $ruleStats->createRuleStats($rule->name());

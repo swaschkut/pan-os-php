@@ -193,6 +193,48 @@ class EthernetIfStore extends ObjStore
         return $ret;
     }
 
+    /**
+     * @param EthernetInterface $ethernetIf
+     * @return bool
+     */
+    public function removeEthernetIf($ethernetIf)
+    {
+        if( !is_object($ethernetIf) )
+            derr('this function only accepts EthernetInterface class objects');
+
+
+        $ser = spl_object_hash($ethernetIf);
+
+        if( isset($this->fastMemToIndex[$ser]) )
+        {
+            unset( $this->fastMemToIndex[$ser] );
+            unset ( $this->fastNameToIndex[$ethernetIf->name()] );
+            unset($this->nameIndex[$ethernetIf->name()]);
+
+            //Todo: remove it also from vsys and any other related zone/ router aso.
+            $references = $ethernetIf->getReferences();
+            foreach( $references as $ref )
+            {
+                if( get_class($ref ) == "InterfaceContainer")
+                {
+                    if( get_class($ref->owner) == "VirtualSystem" )
+                        $ref->owner->importedInterfaces->removeInterface($ethernetIf);
+                    else
+                        $ref->owner->attachedInterfaces->removeInterface($ethernetIf);
+                }
+            }
+
+
+            $this->xmlroot->removeChild($ethernetIf->xmlroot);
+
+            return TRUE;
+        }
+        else
+            derr('You cannot remove a EthernetInterface that is not available here :)');
+
+        return FALSE;
+    }
+
     public function createXmlRoot()
     {
         if( $this->xmlroot === null )

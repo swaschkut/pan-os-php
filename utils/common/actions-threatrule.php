@@ -37,7 +37,12 @@ ThreatRuleCallContext::$supportedActions[] = array(
         $threat = $context->object;
 
         PH::print_stdout( $context->padding . "* " . get_class($threat) . " '{$threat->name()}' " );
-        PH::print_stdout( "          - use in AS/VP Profile: ".$threat->owner->name() );
+        $useInLocation = $threat->owner->owner->owner;
+        if( get_class($useInLocation) == "PanoramaConf" )
+            $locationName = "shared";
+        else
+            $locationName = $useInLocation->name();
+        PH::print_stdout( "          - used in SecurityProfile: ".$threat->owner->name()." | DG: '".$locationName."'" );
         $threat->display();
     }
 );

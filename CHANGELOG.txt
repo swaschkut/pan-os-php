@@ -1,13 +1,49 @@
 CHANGELOG
 
-2.1.33
+2.1.34
+UTIL:
+* class EthernetInterface | introduce method 'getLinkState' to use it in | type=interface actions=display | to show if an interface is configured to "down"
+* type=appid-toolbox phase=phase2 | extend error handling to catch situation where PANW device is not generating response
+* type=vendor-migration | introduce vendor=sophosxg | objects / secRule / network | NATrule needs improvements
+* type=address actions=name-rename | extend for Zone references
+* type=address | new actions=tag-add_lower_level_object:{TAG}/display_upper_level_object/display_lower_level_object
+* class type FileBlockingProfile / WildfireProfile - optimise for actions=display
+* class ThreatPolicy | extend with Wildfire and FileBlocking
+* Class ThreatPolicyFileBlocking/-Wildfire | bring in bp/visibility methods
+* type=securityprofile | delete deprecated filters
+* type=rule | delete deprecated filters
+* type=securityprofile | extend bp/visibility filters for Wildfire and File-Blocking
+* type=securityprofile securityprofiletype=url-filtering | introduce new filter for url visibility/best-practice
+* type=securityprofile actions=exporttoexcel:file.html,bestpractice|visibility - extend for URL/FB/WF
+* type=rule actions=exporttoexcel:file.html,bestpractice|visibiltiy - extend with URL/WF/FB
+* type=securityprofilegroup actions=exporttoexcel:file.html,bestpractice|visibility
+* type=config-download-all | extend firewall config with merged-config download
+* type=config-download-all | extend with device-state and tsf | but until now only for direct Firewall connection
+
+BUGFIX:
+* type=address 'filter=(xyz) | related to if object isEDL() - skip filter if object is EDL
+* class Zone.php | bugfix to add References if Address Objects are used in User/Device In/Exclude List
+* type=config-download-all | bugfix to also handle Firewalls connected to Panorama but not managed by Panorama
+* timezone related part if timezone is null | bugfix
+* class TemplateStack | extend object references to TemplateStack
+* type=address 'filter=(reflocationtype is.template)' | (reflocationtype is.templatestack) | bugfix to get all references
+
+GENERAL:
+* class LogicalRouter | adjust for method create/removeStaticRoute
+* class EthernetInterface - method setName() - also set name for subinterfaces
+* class EthernetIfStore | new method removeEthernetIf
+* update to Device App-ID version: 8939-9248
+* extend bash autocompletion script with missing "shadow-xyz" commands
+
+
+2.1.33 (20250122)
 UTIL:
 * type=rule | introduce 'filter=(threat-log.occurrence.date.fast > 31-12-2024)'
 * type=rule | introduce 'filter=(threat-log.occurrence.per-rule.date.fast > 31-12-2024)'
 * class SecurityProfileGroupStore | extend method all( $withFilter = null ) - needed to get count of BP / none BP objects
 
 BUGFIX:
-* type=address/server actions=xyz-create if type is not defined
+* type=address/service actions=xyz-create if type is not defined
 * type=rule | bugfix for 'filter=(schedule.expire.in.days < -90)' - to use negative values
 * type=rule actions=schedule-set:XYZ in=api://MGMT-IP | bugfix for API mode
 * class VirtualRouter | add address object references for BGP peer-group

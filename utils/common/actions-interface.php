@@ -23,10 +23,17 @@ InterfaceCallContext::$supportedActions['display'] = Array(
     'name' => 'display',
     'MainFunction' => function ( InterfaceCallContext $context )
     {
+        /** @var EthernetInterface $object */
         $object = $context->object;
-        PH::print_stdout("     * ".get_class($object)." '{$object->name()}'" );
+
+        $linkstate = "";
+        if( method_exists($object, 'getLinkState') )
+            $linkstate = "[".$object->getLinkState()."]";
+
+        PH::print_stdout("     * ".get_class($object)." '{$object->name()}' {$linkstate}" );
         PH::$JSON_TMP['sub']['object'][$object->name()]['name'] = $object->name();
         PH::$JSON_TMP['sub']['object'][$object->name()]['type'] = get_class($object);
+        PH::$JSON_TMP['sub']['object'][$object->name()]['linkstate'] = $linkstate;
 
         //Todo: optimization needed, same process as for other utiles
 

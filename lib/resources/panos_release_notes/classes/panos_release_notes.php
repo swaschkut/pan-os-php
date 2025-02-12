@@ -7,19 +7,22 @@ class panos_release_notes
     public $version_store = array();
     public $type;
 
+    public $update = false;
+
     public $knownIssues = array();
     public $fixedIssues = array();
 
-    function __construct( $type = "known")
+    function __construct( $type = "known", $update = false )
     {
         $directory = dirname(__FILE__);
 
         $this->type = $type;
+        $this->update = $update;
 
         if( $this->type == "known" )
         {
             //list all files from known_issues/json
-            if(!file_exists($directory."/../known_issues/json") )
+            if(!file_exists($directory."/../known_issues/json") || $this->update)
             {
                 //download HTML files
                 panos_release_misc::request_html();

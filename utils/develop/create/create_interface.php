@@ -91,6 +91,7 @@ for( $i = 15; $i<18; $i++ )
 */
 
 
+print "\n\n";
 
 for( $i = 5; $i<7; $i++ )
 {
@@ -142,19 +143,22 @@ for( $i = 5; $i<7; $i++ )
 
 
 
+    if( $tmp_VirtualWireIf->type() !== "aggregate-group" )
+    {
+        if( $util->configInput['type'] == 'api' )
+        {
+            #$pan->network->ethernetIfStore->API_addEthernetIf( $tmp_VirtualWireIf );
+            if( !$sub->importedInterfaces->hasInterfaceNamed( $tmp_VirtualWireIf->name() ) )
+                $sub->importedInterfaces->API_addInterface( $tmp_VirtualWireIf );
+        }
+        else
+        {
+            #$pan->network->ethernetIfStore->addEthernetIf( $tmp_VirtualWireIf );
+            if( !$sub->importedInterfaces->hasInterfaceNamed( $tmp_VirtualWireIf->name() ) )
+                $sub->importedInterfaces->addInterface( $tmp_VirtualWireIf );
+        }
+    }
 
-    if( $util->configInput['type'] == 'api' )
-    {
-        #$pan->network->ethernetIfStore->API_addEthernetIf( $tmp_VirtualWireIf );
-        if( !$sub->importedInterfaces->hasInterfaceNamed( $tmp_VirtualWireIf->name() ) )
-            $sub->importedInterfaces->API_addInterface( $tmp_VirtualWireIf );
-    }
-    else
-    {
-        #$pan->network->ethernetIfStore->addEthernetIf( $tmp_VirtualWireIf );
-        if( !$sub->importedInterfaces->hasInterfaceNamed( $tmp_VirtualWireIf->name() ) )
-            $sub->importedInterfaces->addInterface( $tmp_VirtualWireIf );
-    }
 
     if( $tmp_VirtualWireIf->type() !== "aggregate-group" )
     {
