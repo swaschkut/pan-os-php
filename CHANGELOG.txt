@@ -26,6 +26,7 @@ BUGFIX:
 * type=config-download-all | bugfix to also handle Firewalls connected to Panorama but not managed by Panorama
 * timezone related part if timezone is null | bugfix
 * class TemplateStack | extend object references to TemplateStack
+* type=address 'filter=(reflocationtype is.template)' | (reflocationtype is.templatestack) | bugfix to get all references
 
 GENERAL:
 * class LogicalRouter | adjust for method create/removeStaticRoute

@@ -315,20 +315,45 @@ trait ReferenceableObject
         $location_array = array();
         foreach( $this->refrules as $cur )
         {
-            #print "--------------\n";
-            #print get_class( $cur)."\n";
-            #print $cur->name()."\n";
+            $debug = false;
+            if( $debug )
+            {
+                print "--------------\n";
+                print get_class( $cur)."\n";
+                print $cur->name()."\n";
+                if( isset($cur->owner->owner->owner->owner))
+                    print "owner:". get_class( $cur->owner->owner->owner->owner )."\n";
+            }
             if( isset($cur->owner->owner->owner->owner) && get_class( $cur->owner->owner->owner->owner ) == "PanoramaConf" )
             {
                 //Panorama - Rule
-                if( isset($cur->owner->owner->owner) && $cur->owner->owner->owner !== null && method_exists($cur->owner->owner->owner,'name') && $cur->owner->owner->owner->name() !== "")
+                if( isset($cur->owner->owner->owner) && $cur->owner->owner->owner !== null
+                    && method_exists($cur->owner->owner->owner,'name') && $cur->owner->owner->owner->name() !== "")
                 {
-                    #print "pan | ".$cur->owner->owner->owner->name()."\n";
-                    $location_array[ get_class($cur->owner->owner->owner)] = get_class($cur->owner->owner->owner);
-                    if( isset($counter_array[ get_class($cur->owner->owner->owner) ]))
-                        $counter_array[ get_class($cur->owner->owner->owner) ] += 1;
+                    if( $debug )
+                        print "pan | ".$cur->owner->owner->owner->name()."\n";
+                    $getClassName = get_class($cur->owner->owner->owner);
+                    $location_array[ $getClassName] = $getClassName;
+                    if( isset($counter_array[ $getClassName ]))
+                        $counter_array[ $getClassName ] += 1;
                     else
-                        $counter_array[ get_class($cur->owner->owner->owner) ] = 1;
+                        $counter_array[ $getClassName ] = 1;
+                }
+            }
+            elseif( isset($cur->owner->owner->owner->owner) && ( get_class( $cur->owner->owner->owner->owner ) == "TemplateStack" || get_class( $cur->owner->owner->owner->owner ) == "Template" ) )
+            {
+                //Panorama - Rule
+                if( isset($cur->owner->owner->owner->owner) && $cur->owner->owner->owner->owner !== null
+                    && method_exists($cur->owner->owner->owner->owner,'name') && $cur->owner->owner->owner->owner->name() !== "")
+                {
+                    if( $debug )
+                        print "pan | ".$cur->owner->owner->owner->name()."\n";
+                    $getClassName = get_class($cur->owner->owner->owner->owner);
+                    $location_array[ $getClassName] = $getClassName;
+                    if( isset($counter_array[ $getClassName ]))
+                        $counter_array[ $getClassName ] += 1;
+                    else
+                        $counter_array[ $getClassName ] = 1;
                 }
             }
             elseif( isset($cur->owner->owner->owner) && get_class( $cur->owner->owner->owner ) == "PanoramaConf" )
@@ -336,35 +361,42 @@ trait ReferenceableObject
                 #Panorama - AddressGroup
                 if( isset($cur->owner->owner) && $cur->owner->owner !== null && method_exists($cur->owner->owner,'name') && $cur->owner->owner->name() !== "")
                 {
-                    #print "pan-fw | ".$cur->owner->owner->name()."\n";
-                    $location_array[ get_class($cur->owner->owner) ] = get_class($cur->owner->owner);
-                    if( isset($counter_array[ get_class($cur->owner->owner) ]))
-                        $counter_array[ get_class($cur->owner->owner) ] += 1;
+                    if( $debug )
+                        print "pan-fw | ".$cur->owner->owner->name()."\n";
+                    $getClassName = get_class($cur->owner->owner);
+                    $location_array[ $getClassName ] = $getClassName;
+                    if( isset($counter_array[ $getClassName ]))
+                        $counter_array[ $getClassName ] += 1;
                     else
-                        $counter_array[ get_class($cur->owner->owner) ] = 1;
+                        $counter_array[ $getClassName ] = 1;
                 }
             }
             else
             {
                 //possible to be on FW?????
-                if( isset($cur->owner->owner->owner) && $cur->owner->owner->owner !== null && method_exists($cur->owner->owner->owner,'name') && $cur->owner->owner->owner->name() !== "")
+                if( isset($cur->owner->owner->owner) && $cur->owner->owner->owner !== null
+                    && method_exists($cur->owner->owner->owner,'name') && $cur->owner->owner->owner->name() !== "")
                 {
-                    #print "fw-pan | ".$cur->owner->owner->owner->name()."\n";
-                    $location_array[ get_class($cur->owner->owner->owner) ] = get_class($cur->owner->owner->owner);
-                    if( isset($counter_array[ get_class($cur->owner->owner->owner) ]))
-                        $counter_array[ get_class($cur->owner->owner->owner) ] += 1;
+                    if( $debug )
+                        print "fw-pan | ".$cur->owner->owner->owner->name()."\n";
+                    $getClassName = get_class($cur->owner->owner->owner);
+                    $location_array[ $getClassName ] = $getClassName;
+                    if( isset($counter_array[ $getClassName ]))
+                        $counter_array[ $getClassName ] += 1;
                     else
-                        $counter_array[ get_class($cur->owner->owner->owner) ] = 1;
+                        $counter_array[ $getClassName ] = 1;
                 }
                 //Firewall
                 elseif( isset($cur->owner->owner) && $cur->owner->owner !== null && method_exists($cur->owner->owner,'name') && $cur->owner->owner->name() !== "")
                 {
-                    #print "fw | ".$cur->owner->owner->name()."\n";
-                    $location_array[ get_class($cur->owner->owner) ] = get_class($cur->owner->owner);
-                    if( isset($counter_array[ get_class($cur->owner->owner) ]))
-                        $counter_array[ get_class($cur->owner->owner) ] += 1;
+                    if( $debug )
+                        print "fw | ".$cur->owner->owner->name()."\n";
+                    $getClassName = get_class($cur->owner->owner);
+                    $location_array[ $getClassName ] = $getClassName;
+                    if( isset($counter_array[ $getClassName ]))
+                        $counter_array[ $getClassName ] += 1;
                     else
-                        $counter_array[ get_class($cur->owner->owner) ] = 1;
+                        $counter_array[ $getClassName ] = 1;
                 }
             }
 
