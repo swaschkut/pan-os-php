@@ -62,6 +62,8 @@ __pan-os-php_scripts()
 		 'shadow-apikeyhidden' 'shadow-apikeynohidden' 'shadow-apikeynosave' 'shadow-disableoutputformatting' 'shadow-displaycurlrequest'
 		 'shadow-enablexmlduplicatesdeletion'
 		 'shadow-ignoreinvalidaddressobjects' 'shadow-json' 'shadow-reducexml'
+		 'shadow-bpjsonfile' 'shadow-displayxmlnode' 'shadow-loaddghierarchy'
+     'shadow-loadreduce' 'shadow-nojson' 'shadow-saseapiqa'
 		 'outputformatset='
 		 'stats' 'template=' 'version' )
 		 #'in=api://' 'in=sase-api://' )

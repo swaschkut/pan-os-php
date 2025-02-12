@@ -33,6 +33,7 @@ GENERAL:
 * class EthernetInterface - method setName() - also set name for subinterfaces
 * class EthernetIfStore | new method removeEthernetIf
 * update to Device App-ID version: 8939-9248
+* extend bash autocompletion script with missing "shadow-xyz" commands
 
 
 2.1.33 (20250122)
