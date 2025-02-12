@@ -1,6 +1,15 @@
 CHANGELOG
 
-2.1.34
+2.1.35
+UTIL:
+
+BUGFIX:
+* type=securityprofile securitprofiletype=spyware | bugfix of displaying botnet-domain if packet-capture is missing
+
+GENERAL:
+
+
+2.1.34 (20250212)
 UTIL:
 * class EthernetInterface | introduce method 'getLinkState' to use it in | type=interface actions=display | to show if an interface is configured to "down"
 * type=appid-toolbox phase=phase2 | extend error handling to catch situation where PANW device is not generating response

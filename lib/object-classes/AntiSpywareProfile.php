@@ -617,7 +617,10 @@ class AntiSpywareProfile extends SecurityProfile2
                         #print_r($this->additional['botnet-domain'][$type]);
                         foreach( $this->additional['botnet-domain']['lists'] as $name => $value )
                         {
-                            PH::print_stdout("            - ".$name." -  action: ".$value['action'] ." -  packet-capture: ".$value['packet-capture'] );
+                            $string_packetCapture = "";
+                            if( isset( $value['packet-capture'] ) )
+                                $string_packetCapture = " -  packet-capture: ".$value['packet-capture'];
+                            PH::print_stdout("            - ".$name." -  action: ".$value['action'] .$string_packetCapture );
                         }
                     }
                     elseif( $type == "sinkhole" )
