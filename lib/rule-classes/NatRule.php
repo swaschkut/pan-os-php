@@ -490,7 +490,7 @@ class NatRule extends Rule
     {
         if( $this->snattype == 'none' )
         {
-            if( $this->snatroot !== null )
+            if( $this->snatroot !== null && $this->snatroot !== false )
                 $this->xmlroot->removeChild($this->snatroot);
             $this->snatroot = null;
             return;
@@ -834,7 +834,7 @@ class NatRule extends Rule
         if( $this->snatinterface === $newSNATInterface )
             return FALSE;
 
-        $this->snatinterface = $newSNATInterface;
+        $this->snatinterface = $newSNATInterface->name();
 
         if( get_class( $this->owner->owner->owner ) != "PanoramaConf" )
         {

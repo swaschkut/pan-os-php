@@ -194,6 +194,7 @@ class DeviceGroup
     public $version = null;
 
     public $device = null;
+    public $apiCache = null;
 
 
     public function __construct($owner)
