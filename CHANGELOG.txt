@@ -6,6 +6,7 @@ UTIL:
 
 BUGFIX:
 * type=securityprofile securitprofiletype=spyware | bugfix of displaying botnet-domain if packet-capture is missing
+* type=device actions=devicegroup-create:DG-name | bugfix if no parentDG move is needed
 
 GENERAL:
 

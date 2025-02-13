@@ -106,8 +106,8 @@ class SOPHOSXG extends PARSER
 ////////////////////////////////////////////////////////////////////////////////////////////
 /// CUSTOM
 
-        $custom_xg330 = false;
-        $custom_xg650 = true;
+        $custom_xg330 = true;
+        $custom_xg650 = false;
 
         if( $custom_xg330 )
         {
@@ -175,12 +175,9 @@ class SOPHOSXG extends PARSER
             $int = $v->owner->network->ethernetIfStore->find( "ethernet1/12" );
             $int->setAE("ae1");
 
-            //find reds interfaces in staticRoute
-            //change it to something else for validation
 
-            //delete rules with
-            //pan-os-php type=rule in=xg330_migrated.xml 'filter=(src has.only T2-SSLVPN-vpn.igz.com-10.242.0.0_24)' actions=delete out=xg330_migrated_delete_src.xml
-            //pan-os-php type=rule in=xg330_migrated_delete_src.xml 'filter=(dst has.only T2-SSLVPN-vpn.igz.com-10.242.0.0_24)' actions=delete out=xg330_migrated_delete_dst.xml
+
+
 
             $rules = $v->securityRules->rules( "(src has.only T2-SSLVPN-vpn.igz.com-10.242.0.0_24)" );
             foreach( $rules as $rule )
@@ -206,7 +203,7 @@ class SOPHOSXG extends PARSER
                 if( $rule->actionIsAllow() )
                 {
                     //Outbound
-                    #$rule->setSecurityProfileGroup("Outbound");
+                    $rule->setSecurityProfileGroup("Outbound");
                     //Inbound
                     #$rule->setSecurityProfileGroup("Inbound");
                 }
@@ -293,7 +290,7 @@ class SOPHOSXG extends PARSER
                 if( $rule->actionIsAllow() )
                 {
                     //Outbound
-                    #$rule->setSecurityProfileGroup("Outbound");
+                    $rule->setSecurityProfileGroup("Outbound");
                     //Inbound
                     #$rule->setSecurityProfileGroup("Inbound");
                 }
