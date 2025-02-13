@@ -106,8 +106,8 @@ class SOPHOSXG extends PARSER
 ////////////////////////////////////////////////////////////////////////////////////////////
 /// CUSTOM
 
-        $custom_xg330 = true;
-        $custom_xg650 = false;
+        $custom_xg330 = false;
+        $custom_xg650 = true;
 
         if( $custom_xg330 )
         {
@@ -283,6 +283,21 @@ class SOPHOSXG extends PARSER
             $int->setAE("ae1");
             $int = $v->owner->network->ethernetIfStore->find( "ethernet1/12" );
             $int->setAE("ae1");
+
+
+
+            $rules = $v->securityRules->rules();
+            foreach( $rules as $rule )
+            {
+                $rule->setLogSetting("default");
+                if( $rule->actionIsAllow() )
+                {
+                    //Outbound
+                    #$rule->setSecurityProfileGroup("Outbound");
+                    //Inbound
+                    #$rule->setSecurityProfileGroup("Inbound");
+                }
+            }
         }
     }
 
