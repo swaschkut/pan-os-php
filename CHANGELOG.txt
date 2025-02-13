@@ -2,6 +2,7 @@ CHANGELOG
 
 2.1.35
 UTIL:
+* type=vendor-migration vendor=cp-r80 | fix for service objects if port defined e.g. with >1024
 
 BUGFIX:
 * type=securityprofile securitprofiletype=spyware | bugfix of displaying botnet-domain if packet-capture is missing
