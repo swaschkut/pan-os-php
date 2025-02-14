@@ -5,6 +5,7 @@ UTIL:
 * type=vendor-migration vendor=cp-r80 | fix for service objects if port defined e.g. with >1024
 * type=interface | new 'filter=(object is.layer3 / is.layer2 / is.virtual-wire / is.tunnel / is.aggregate-group)'
 * type=interface | new 'filter=(type is.ethernet / is.aggregate)'
+* type=interface | new actions=name-rename:{NEW-INTERFACE-NAME}
 
 BUGFIX:
 * type=securityprofile securitprofiletype=spyware | bugfix of displaying botnet-domain if packet-capture is missing

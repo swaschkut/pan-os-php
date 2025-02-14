@@ -214,7 +214,12 @@ class EthernetInterface
         if( $this->type == 'aggregate-group' )
         {
             $this->ae = $this->typeRoot->textContent;
-            //print "AE: ".$this->ae."\n";
+            #print "Interface: ".$this->name()."\n";
+            #print "AE: ".$this->ae."\n";
+
+            /** @var  AggregateEthernetInterface $aeInterface */
+            $aeInterface = $this->owner->owner->network->aggregateEthernetIfStore->find($this->ae);
+            $aeInterface->addReference($this);
         }
 
 
@@ -480,6 +485,10 @@ class EthernetInterface
 
         $aeNode = DH::findFirstElement('aggregate-group', $this->xmlroot);
         DH::setDomNodeText($aeNode, $ae);
+
+        $aeInterface = $this->owner->owner->network->aggregateEthernetIfStore->find($ae);
+        if( $aeInterface !== null )
+            $aeInterface->addReference($this);
 
         return TRUE;
     }
@@ -883,6 +892,10 @@ class EthernetInterface
                     }
                     $item->setAttribute('name', $h->name());
                 }
+            }
+            elseif( get_class( $h ) == "AggregateEthernetInterface" )
+            {
+                $this->setAE($h->name());
             }
 
             return;

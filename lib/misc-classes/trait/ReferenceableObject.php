@@ -85,6 +85,7 @@ trait ReferenceableObject
 
         foreach( $this->refrules as $ref )
         {
+            #print get_class($ref)."\n";
             $ref->referencedObjectRenamed($this, $oldname);
         }
 

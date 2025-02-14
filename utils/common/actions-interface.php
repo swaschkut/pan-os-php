@@ -326,3 +326,21 @@ InterfaceCallContext::$supportedActions['exportToExcel'] = array(
     )
 
 );
+
+InterfaceCallContext::$supportedActions['name-Rename'] = array(
+    'name' => 'name-Rename',
+    'MainFunction' => function (InterfaceCallContext $context) {
+        $object = $context->object;
+
+        $newName = $context->arguments['newName'];
+
+        //Todo: only working for offline config
+        if( $context->isAPI )
+            derr( "changing interface is not supported in API mode" );
+
+        /** @VAR EthernetInterface $object */
+        $object->setName($newName);
+
+    },
+    'args' => array('newName' => array('type' => 'string', 'default' => '*nodefault*') )
+);
