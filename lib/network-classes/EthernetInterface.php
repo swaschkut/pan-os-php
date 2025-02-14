@@ -33,6 +33,7 @@ class EthernetInterface
     /** @var EthernetIfStore */
     public $owner;
 
+    protected $classn = null;
 
     /** @var string */
     public $type = 'tmp';
@@ -60,6 +61,8 @@ class EthernetInterface
 
     protected $linkstate = "auto";
 
+    public static $childn = 'EthernetInterface';
+
     static public $supportedTypes = array('layer3', 'layer2', 'virtual-wire', 'tap', 'ha', 'aggregate-group', 'log-card', 'decrypt-mirror', 'empty');
 
     /**
@@ -70,6 +73,7 @@ class EthernetInterface
     {
         $this->name = $name;
         $this->owner = $owner;
+        $this->classn = &self::$childn;
     }
 
     /**
@@ -228,7 +232,8 @@ class EthernetInterface
                     if( $unitsNode->nodeType != 1 )
                         continue;
 
-                    $newInterface = new EthernetInterface('tmp', $this->owner);
+                    #$newInterface = new EthernetInterface('tmp', $this->owner);
+                    $newInterface = new $this->classn('tmp', $this->owner);
                     $newInterface->isSubInterface = TRUE;
                     $newInterface->parentInterface = $this;
                     $newInterface->type = &$this->type;
@@ -740,7 +745,8 @@ class EthernetInterface
         else
             $xmlElement = DH::importXmlStringOrDie($this->owner->owner->xmlroot->ownerDocument, EthernetInterface::$templatexmlsub);
 
-        $newInterface = new EthernetInterface('tmp', $this->owner);
+        #$newInterface = new EthernetInterface('tmp', $this->owner);
+        $newInterface = new $this->classn('tmp', $this->owner);
         $newInterface->isSubInterface = TRUE;
         $newInterface->parentInterface = $this;
         $newInterface->type = &$this->type;

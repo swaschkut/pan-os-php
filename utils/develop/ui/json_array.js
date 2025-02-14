@@ -198,6 +198,14 @@ var subjectObject =
                 "MainFunction": {},
                 "GlobalFinishFunction": {}
             },
+            "display_lower_level_object": {
+                "name": "display_lower_level_object",
+                "MainFunction": {}
+            },
+            "display_upper_level_object": {
+                "name": "display_upper_level_object",
+                "MainFunction": {}
+            },
             "displayreferences": {
                 "name": "displayReferences",
                 "MainFunction": {}
@@ -428,6 +436,16 @@ var subjectObject =
             "tag-add-force": {
                 "name": "tag-Add-Force",
                 "section": "tag",
+                "MainFunction": {},
+                "args": {
+                    "tagName": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                }
+            },
+            "tag-add_lower_level_object": {
+                "name": "tag-add_lower_level_object",
                 "MainFunction": {},
                 "args": {
                     "tagName": {
@@ -756,6 +774,14 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
+                    "is.edl": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
                     "is.ip-wildcard": {
                         "Function": {},
                         "arg": false,
@@ -876,6 +902,15 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
+                    "is.templatestack": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "returns TRUE if object locationtype is Template or TemplateStack",
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
                     "is.devicegroup": {
                         "Function": {},
                         "arg": false,
@@ -987,14 +1022,6 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
-                    "is.servicestore": {
-                        "Function": {},
-                        "arg": false,
-                        "ci": {
-                            "fString": "(%PROP%)",
-                            "input": "input\/panorama-8.0.xml"
-                        }
-                    },
                     "is.logicalrouterstore": {
                         "Function": {},
                         "arg": false,
@@ -1028,6 +1055,54 @@ var subjectObject =
                         }
                     },
                     "is.ikegatewaystore": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.ethernetifstore": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.gpportalstore": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.gretunnelstore": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.loopbackifstore": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.vlanifstore": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.zonestore": {
                         "Function": {},
                         "arg": false,
                         "ci": {
@@ -3515,6 +3590,78 @@ var subjectObject =
                         }
                     }
                 }
+            },
+            "object": {
+                "operators": {
+                    "is.subinterface": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP% ethernet1\/1)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.aggregate-group": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP% ethernet1\/1)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.layer3": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP% ethernet1\/1)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.layer2": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP% ethernet1\/1)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.tunnel": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP% ethernet1\/1)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.virtual-wire": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP% ethernet1\/1)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "type": {
+                "operators": {
+                    "is.ethernet": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP% ethernet1\/1)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.aggregate": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP% ethernet1\/1)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
             }
         }
     },
@@ -5335,12 +5482,6 @@ var subjectObject =
                         "arg": true,
                         "help": "example: 'filter=(app has.from.query subquery1)' 'subquery1=(object is.application-group)'"
                     },
-                    "has.seen.fast-api": {
-                        "Function": {},
-                        "arg": true,
-                        "deprecated": "this filter \"app has.seen.fast-api XYZ\" is deprecated, you should use \"app has.seen.fast XYZ\" instead!",
-                        "help": "example: 'filter=(app has.seen.fast-api unknown-tcp)'"
-                    },
                     "has.seen.fast": {
                         "Function": {},
                         "arg": true,
@@ -6097,27 +6238,9 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
-                    "is.profile": {
-                        "Function": {},
-                        "arg": false,
-                        "deprecated": "this filter \"secprof is.profile\" is deprecated, you should use \"secprof type.is.profile\" instead!",
-                        "ci": {
-                            "fString": "(%PROP%)",
-                            "input": "input\/panorama-8.0.xml"
-                        }
-                    },
                     "type.is.profile": {
                         "Function": {},
                         "arg": false,
-                        "ci": {
-                            "fString": "(%PROP%)",
-                            "input": "input\/panorama-8.0.xml"
-                        }
-                    },
-                    "is.group": {
-                        "Function": {},
-                        "arg": false,
-                        "deprecated": "this filter \"secprof is.group\" is deprecated, you should use \"secprof type.is.group\" instead!",
                         "ci": {
                             "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
@@ -7427,31 +7550,17 @@ var subjectObject =
             }
         },
         "filter": {
-            "action": {
-                "operators": {
-                    "eq": {
-                        "Function": {},
-                        "arg": true,
-                        "deprecated": "this filter \"action eq XYZ\" is deprecated, you should use \"filter=(threat-rule has.from.query subquery1) subquery1=(action eq XYZ)\" instead!",
-                        "ci": {
-                            "fString": "(%PROP% reset-both )",
-                            "input": "input\/panorama-8.0.xml"
-                        },
-                        "help": "'securityprofiletype=spyware,vulnerability'"
-                    }
-                }
-            },
             "as": {
                 "operators": {
                     "is.best-practice": {
                         "Function": {},
                         "arg": false,
-                        "help": "'securityprofiletype=spyware' e.g. 'filter=(vb is.best-practice)'"
+                        "help": "'securityprofiletype=spyware' e.g. 'filter=(as is.best-practice)'"
                     },
                     "is.visibility": {
                         "Function": {},
                         "arg": false,
-                        "help": "'securityprofiletype=spyware' e.g. 'filter=(vb is.visibility)'"
+                        "help": "'securityprofiletype=spyware' e.g. 'filter=(as is.visibility)'"
                     }
                 }
             },
@@ -7564,20 +7673,6 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=virus'"
-                    }
-                }
-            },
-            "category": {
-                "operators": {
-                    "eq": {
-                        "Function": {},
-                        "arg": true,
-                        "ci": {
-                            "fString": "(%PROP% brute-force )",
-                            "deprecated": "this filter \"category eq XYZ\" is deprecated, you should use \"filter=(threat-rule has.from.query subquery1) subquery1=(category eq XYZ)\" instead!",
-                            "input": "input\/panorama-8.0.xml"
-                        },
-                        "help": "'securityprofiletype=spyware,vulnerability'"
                     }
                 }
             },
@@ -7726,17 +7821,31 @@ var subjectObject =
                     }
                 }
             },
-            "host": {
+            "fb": {
                 "operators": {
-                    "eq": {
+                    "is.best-practice": {
                         "Function": {},
-                        "arg": true,
-                        "deprecated": "this filter \"host eq XYZ\" is deprecated, you should use \"filter=(threat-rule has.from.query subquery1) subquery1=(host eq XYZ)\" instead!",
-                        "ci": {
-                            "fString": "(%PROP% client )",
-                            "input": "input\/panorama-8.0.xml"
-                        },
-                        "help": "'securityprofiletype=spyware,vulnerability'"
+                        "arg": false,
+                        "help": "'securityprofiletype=file-blocking' e.g. 'filter=(fb is.best-practice)'"
+                    },
+                    "is.visibility": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=file-blocking' e.g. 'filter=(fb is.visibility)'"
+                    }
+                }
+            },
+            "fb.rules": {
+                "operators": {
+                    "is.best-practice": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=file-blocking' e.g. 'filter=(fb.rules is.best-practice)'"
+                    },
+                    "is.visibility": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=file-blocking' e.g. 'filter=(fb.rules is.visibility)'"
                     }
                 }
             },
@@ -7838,20 +7947,6 @@ var subjectObject =
                     }
                 }
             },
-            "packet-capture": {
-                "operators": {
-                    "eq": {
-                        "Function": {},
-                        "arg": true,
-                        "deprecated": "this filter \"packet-capture eq XYZ\" is deprecated, you should use \"filter=(threat-rule has.from.query subquery1) subquery1=(packet-capture eq XYZ)\" instead!",
-                        "ci": {
-                            "fString": "(%PROP% single-packet )",
-                            "input": "input\/panorama-8.0.xml"
-                        },
-                        "help": "'securityprofiletype=spyware,vulnerability'"
-                    }
-                }
-            },
             "refcount": {
                 "operators": {
                     ">,<,=,!": {
@@ -7916,26 +8011,12 @@ var subjectObject =
                     }
                 }
             },
-            "severity": {
-                "operators": {
-                    "eq": {
-                        "Function": {},
-                        "arg": true,
-                        "deprecated": "this filter \"severity eq XYZ\" is deprecated, you should use \"filter=(threat-rule has.from.query subquery1) subquery1=(severity eq XYZ)\" instead!",
-                        "ci": {
-                            "fString": "(%PROP% critical )",
-                            "input": "input\/panorama-8.0.xml"
-                        },
-                        "help": "'securityprofiletype=spyware,vulnerability'"
-                    }
-                }
-            },
             "threat-rule": {
                 "operators": {
                     "has.from.query": {
                         "Function": {},
                         "arg": true,
-                        "help": "'securityprofiletype=spyware,vulnerability' example: 'filter=(threat-rule has.from.query subquery1)' 'subquery1=(action eq alert)'"
+                        "help": "'securityprofiletype=spyware,vulnerability,file-blocking,wildfire-analysis' example: 'filter=(threat-rule has.from.query subquery1)' 'subquery1=(action eq alert)'"
                     }
                 }
             },
@@ -7985,6 +8066,16 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         },
                         "help": "'securityprofiletype=url'"
+                    },
+                    "is.visibility": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=url-filtering' e.g. 'filter=(url is.visibility)'"
+                    },
+                    "is.best-practice": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=url-filtering' e.g. 'filter=(url is.best-practice)'"
                     }
                 }
             },
@@ -7998,7 +8089,7 @@ var subjectObject =
                     "is.visibility": {
                         "Function": {},
                         "arg": false,
-                        "help": "'securityprofiletype=vulnerability' e.g. 'filter=(vb is.best-practice)'"
+                        "help": "'securityprofiletype=vulnerability' e.g. 'filter=(vb is.visibility)'"
                     }
                 }
             },
@@ -8027,6 +8118,34 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=vulnerability' e.g. 'filter=(vp.rules is.visibility)'"
+                    }
+                }
+            },
+            "wf": {
+                "operators": {
+                    "is.best-practice": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=wildfire-analysis' e.g. 'filter=(wf is.best-practice)'"
+                    },
+                    "is.visibility": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=wildfire-analysis' e.g. 'filter=(wf is.visibility)'"
+                    }
+                }
+            },
+            "wf.rules": {
+                "operators": {
+                    "is.best-practice": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=wildfire-analysis' e.g. 'filter=(wf.rules is.best-practice)'"
+                    },
+                    "is.visibility": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=wildfire-analysis' e.g. 'filter=(wf.rules is.visibility)'"
                     }
                 }
             }
@@ -10088,6 +10207,26 @@ var subjectObject =
                     }
                 }
             },
+            "application": {
+                "operators": {
+                    "is.any": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP% client )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "has": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% client )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
             "category": {
                 "operators": {
                     "eq": {
@@ -10103,6 +10242,46 @@ var subjectObject =
                         "arg": false,
                         "ci": {
                             "fString": "(%PROP% brute-force )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "direction": {
+                "operators": {
+                    "is.both": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP% client )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "eq": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% client )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "filetype": {
+                "operators": {
+                    "is.any": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP% client )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "has": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% client )",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }

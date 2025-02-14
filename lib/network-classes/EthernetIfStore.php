@@ -94,7 +94,8 @@ class EthernetIfStore extends ObjStore
                 derr("Interface: " . $name . " already available\n");
         }
 
-        $ethernetIf = new EthernetInterface($name, $this);
+        #$ethernetIf = new EthernetInterface($name, $this);
+        $ethernetIf = new $this->classn($name, $this);
         if( $ethtype == "layer3" )
             $xmlElement = DH::importXmlStringOrDie($this->owner->xmlroot->ownerDocument, EthernetInterface::$templatexml);
         elseif( $ethtype == "layer2" )
