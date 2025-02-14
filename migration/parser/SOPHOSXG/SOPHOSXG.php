@@ -106,7 +106,7 @@ class SOPHOSXG extends PARSER
 ////////////////////////////////////////////////////////////////////////////////////////////
 /// CUSTOM
 
-        $custom_xg330 = true;
+        $custom_xg330 = false;
         $custom_xg650 = false;
 
         if( $custom_xg330 )
