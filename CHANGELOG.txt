@@ -13,6 +13,7 @@ BUGFIX:
 
 GENERAL:
 * class EthernetInterface/AggregateEthernetInterface | optimisation to always define correct class
+* improve test_actions.php / test_filters.php
 
 
 2.1.34 (20250212)

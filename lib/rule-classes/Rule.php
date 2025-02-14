@@ -2571,6 +2571,9 @@ class Rule
             {
                 $d = $d_actual + ($date)*24*3600;
             }
+            $d2 = new DateTime('@' . $d);
+            #$d2 = new DateTime();
+            #$d2->setTimestamp($d);
         }
         //var_dump($d);
         //exit();

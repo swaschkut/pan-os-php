@@ -4012,10 +4012,6 @@ RQuery::$defaultFilters['rule']['threat-log.occurrence.date.fast']['operators'][
         return $return;
     },
     'arg' => true,
-    'ci' => array(
-        'fString' => '(%PROP% 5 )',
-        'input' => 'input/panorama-8.0.xml'
-    ),
     'help' => 'returns TRUE if rule name matches the specified timestamp MM/DD/YYYY [american] / DD-MM-YYYY [european]'
 );
 RQuery::$defaultFilters['rule']['threat-log.occurrence.per-rule.date.fast']['operators']['>,<,=,!'] = array(
@@ -4059,10 +4055,6 @@ RQuery::$defaultFilters['rule']['threat-log.occurrence.per-rule.date.fast']['ope
         return $return;
     },
     'arg' => true,
-    'ci' => array(
-        'fString' => '(%PROP% 5 )',
-        'input' => 'input/panorama-8.0.xml'
-    ),
     'help' => 'returns TRUE if rule name matches the specified timestamp MM/DD/YYYY [american] / DD-MM-YYYY [european]'
 );
 // </editor-fold>
