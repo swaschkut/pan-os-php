@@ -219,7 +219,8 @@ class EthernetInterface
 
             /** @var  AggregateEthernetInterface $aeInterface */
             $aeInterface = $this->owner->owner->network->aggregateEthernetIfStore->find($this->ae);
-            $aeInterface->addReference($this);
+            if( $aeInterface != NULL )
+                $aeInterface->addReference($this);
         }
 
 
@@ -486,9 +487,12 @@ class EthernetInterface
         $aeNode = DH::findFirstElement('aggregate-group', $this->xmlroot);
         DH::setDomNodeText($aeNode, $ae);
 
-        $aeInterface = $this->owner->owner->network->aggregateEthernetIfStore->find($ae);
-        if( $aeInterface !== null )
-            $aeInterface->addReference($this);
+        if( isset($this->owner) && $this->owner != null )
+        {
+            $aeInterface = $this->owner->owner->network->aggregateEthernetIfStore->find($ae);
+            if( $aeInterface !== null )
+                $aeInterface->addReference($this);
+        }
 
         return TRUE;
     }

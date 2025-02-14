@@ -1570,6 +1570,7 @@ trait SOPHOSXGfunction
 
         $counter = 1;
         $tmp_int_name = array();
+        $aggregatecounter = 1;
         foreach( $tmp_interfaces as $tmp_interface )
         {
             #if( $tmp_interface->type !== "tmp" && get_class( $tmp_interface ) == "EthernetInterface" )
@@ -1641,6 +1642,42 @@ trait SOPHOSXGfunction
                         $new_name = "tunnel." . $tunnelcounter;
 
                         $tunnelcounter++;
+
+                        $tmp_int = $template->network->findInterface($new_name);
+                        $tmp_int_name[$int_name] = $new_name;
+                    } while( $tmp_int !== null );
+
+                    /*}
+                    else
+                    {
+                        $tmp_tag = explode( ".", $int_name);
+                        $new_name = $tmp_int_name[ $tmp_tag[0] ].".". $tmp_tag[1];
+                    }
+                    */
+
+                    $addlog = "Interface: '" . $int_name . "' renamed to " . $new_name;
+                    print $padding . "X " . $addlog . "\n";
+                    #$tmp_interface->display_references();
+                    $tmp_interface->setName($new_name);
+                    $tmp_interface->set_node_attribute('warning', $addlog);
+                }
+                elseif( get_class($tmp_interface) == "AggregateEthernetInterface" )
+                {
+                    if( $tmp_interface->isSubInterface() )
+                        continue;
+
+
+
+                    $validate_name = explode( ".", $int_name);
+                    if( $validate_name[0] == "ae" &&  is_numeric( $validate_name[1] ))
+                        continue;
+
+                    #if( strpos( $int_name, "." ) === false ){
+                    do
+                    {
+                        $new_name = "ae" . $aggregatecounter;
+
+                        $counter++;
 
                         $tmp_int = $template->network->findInterface($new_name);
                         $tmp_int_name[$int_name] = $new_name;
