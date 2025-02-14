@@ -108,6 +108,25 @@ class MERGER extends UTIL
 
         }
 
+        if( isset(PH::$args['outputformatset']) )
+        {
+            PH::print_stdout(" set 'origXmlDoc' variable");
+            $this->outputformatset = TRUE;
+            $this->origXmlDoc = new DOMDocument();
+
+            if( !is_bool(PH::$args['outputformatset']) )
+            {
+                $this->outputformatsetFile = PH::$args['outputformatset'];
+
+                if( $this->projectFolder !== null )
+                {
+                    if( strpos($this->outputformatsetFile, $this->projectFolder) === FALSE )
+                        $this->outputformatsetFile = $this->projectFolder."/".$this->outputformatsetFile;
+                }
+
+            }
+        }
+
         $this->help(PH::$args);
         $this->inDebugapiArgument();
         $this->inputValidation();
