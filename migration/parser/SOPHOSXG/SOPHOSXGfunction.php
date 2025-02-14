@@ -878,25 +878,18 @@ trait SOPHOSXGfunction
             "CD" => "Congo - Kinshasa",
             "CG" => "Congo - Brazzaville",
             "IR" => "Iran",
-            "KP" => "North Korea"
+            "KP" => "North Korea",
+            "LY" => "Libya"
         );
 
         foreach( $XMLroot as $child )
         {
-            /*
-           foreach ($XMLroot->childNodes as $child)
-           {
-               /** @var DOMElement $node *//*
-            if ($child->nodeType != XML_ELEMENT_NODE)
-                continue;
-*/
-
-            #if ($child->nodeName != 'FirewallRule')
-            #    continue;
 
             $name_node = DH::findFirstElement( 'Name', $child);
             $name = $this->normalizeNames( $name_node->textContent );
-            $newRule = $v->securityRules->newSecurityRule($name);
+
+            $newName = $v->securityRules->findAvailableName($name);
+            $newRule = $v->securityRules->newSecurityRule($newName);
 
             $status_node = DH::findFirstElement( 'Status', $child);
             if( $status_node != null )
@@ -1020,6 +1013,9 @@ trait SOPHOSXGfunction
                             }
                             if( !in_array($country, $panwRegions) && !in_array($country, $sophosRegions) )
                             {
+                                $description = $newRule->description();
+                                $newDescription = $description . "| SRCobj: " . $src_name;
+                                $newRule->setDescription($newDescription);
                                 mwarning( "SRC object: '".$src_name. "' not found", null, FALSE );
                             }
 
@@ -1058,6 +1054,9 @@ trait SOPHOSXGfunction
                             }
                             if( !in_array($country, $panwRegions) && !in_array($country, $sophosRegions) )
                             {
+                                $description = $newRule->description();
+                                $newDescription = $description . "| DSTobj: " . $dst_name;
+                                $newRule->setDescription($newDescription);
                                 mwarning( "RULE: ".$newRule->name()." DST object: '".$dst_name. "' not found", null, FALSE );
                             }
                         }
@@ -1214,20 +1213,12 @@ trait SOPHOSXGfunction
 
         foreach( $XMLroot as $child )
         {
-            /*
-           foreach ($XMLroot->childNodes as $child)
-           {
-               /** @var DOMElement $node *//*
-            if ($child->nodeType != XML_ELEMENT_NODE)
-                continue;
-*/
-
-            #if ($child->nodeName != 'NATRule')
-            #    continue;
-
             $name_node = DH::findFirstElement('Name', $child);
             $name = $this->normalizeNames($name_node->textContent);
+            PH::print_stdout();
+            PH::print_stdout("create NATRule: '".$name."'");
             $newRule = $v->natRules->newNatRule($name);
+
 
             $status_node = DH::findFirstElement( 'Status', $child);
             if( $status_node != null )
@@ -1262,13 +1253,14 @@ trait SOPHOSXGfunction
             }
 
             $LinkedFirewallrule_node = DH::findFirstElement('LinkedFirewallrule', $child);
-            if($LinkedFirewallrule_node->textContent !== 'none')
+            if($LinkedFirewallrule_node->textContent !== 'None')
             {
                 $secRuleName = $this->normalizeNames($LinkedFirewallrule_node->textContent);
 
 
                 $secRule = $v->securityRules->find($secRuleName);
-                if ($secRule != null) {
+                if ($secRule != null)
+                {
                     if ($secRule->isDisabled())
                         $newRule->setDisabled(true);
 
@@ -1298,7 +1290,8 @@ trait SOPHOSXGfunction
                         $newRule->to->addZone($zone_wan);
                     }
 
-                    if (count($newRule->to->getAll()) > 1) {
+                    if (count($newRule->to->getAll()) > 1)
+                    {
                         foreach ($newRule->to->getAll() as $toZone) {
                             $newRule->to->removeZone($toZone, true, true);
                         }
@@ -1307,7 +1300,7 @@ trait SOPHOSXGfunction
 
 
                 } else {
-                    #mwarning("Secrule '".$secRuleName."' not found.", null, false);
+                    mwarning("Secrule '".$secRuleName."' not found.", null, false);
                 }
             }
             else
@@ -1316,8 +1309,122 @@ trait SOPHOSXGfunction
                 $TranslatedService_node = DH::findFirstElement('TranslatedService', $child);
                 $TranslatedSource_node = DH::findFirstElement('TranslatedSource', $child);
 
+                $TransDST_name = $this->normalizeNames($TranslatedDestination_node->textContent);
+                $TransSRC_name = $this->normalizeNames($TranslatedSource_node->textContent);
+                $TransSRV_name = $this->normalizeNames($TranslatedService_node->textContent);
+
+                if( $TransDST_name !== "Original"  )
+                {
+                    PH::print_stdout("DST: ".$TransDST_name);
+                    $tmpDNATAddrress = $v->addressStore->find($TransDST_name);
+                    if( $tmpDNATAddrress !== null )
+                    {
+                        if( $tmpDNATAddrress->isGroup() )
+                            $newRule->setDNAT($tmpDNATAddrress, null, 'dynamic', "round-robin");
+                        else
+                            $newRule->setDNAT($tmpDNATAddrress);
+
+                    }
+                }
+
+                if( $TransSRC_name !== "Original"  )
+                {
+                    PH::print_stdout("SRC: ".$TransSRC_name);
+                    $newRule->changeSourceNAT("dynamic-ip-and-port");
+                    if( $TransSRC_name !== "MASQ" )
+                    {
+                        $tmpSNATAddrress = $v->addressStore->find($TransSRC_name);
+                        if( $tmpSNATAddrress !== null )
+                            $newRule->snathosts->addObject($tmpSNATAddrress);
+                    }
+
+
+
+                    /*
+                     <OutboundInterfaces>
+                      <Interface>UplinkLAG.175</Interface>
+                    </OutboundInterfaces>
+                    <OverrideInterfaceNATPolicy>Disable</OverrideInterfaceNATPolicy>
+                     */
+                    $OutboundInterfaces_node = DH::findFirstElement('OutboundInterfaces', $child);
+                    if($OutboundInterfaces_node != null)
+                    {
+                        foreach( $OutboundInterfaces_node->childNodes as $OutboundInterface_node )
+                        {
+                            /** @var DOMElement $node */
+                            if ($OutboundInterface_node->nodeType != XML_ELEMENT_NODE)
+                                continue;
+                            #PH::print_stdout("Interface: ".$OutboundInterface_node->textContent);
+                            $intName = $this->normalizeNames($OutboundInterface_node->textContent);
+
+                            if( strpos( $intName, "LAG") === false )
+                                $tmpINT = $v->owner->network->ethernetIfStore->find($intName);
+                            else
+                                $tmpINT = $v->owner->network->aggregateEthernetIfStore->find($intName);
+                            if( $tmpINT !== null )
+                            {
+
+                                PH::print_stdout("SNAT Interface: ".$tmpINT->name());
+                                $newRule->setSNATInterface($tmpINT);
+                            }
+
+                        }
+                    }
+
+                }
+
+                if( $TransSRV_name !== "Original"  )
+                    PH::print_stdout("SRV: ".$TransSRV_name);
+
+
                 $OriginalSourceNetworks_node = DH::findFirstElement('OriginalSourceNetworks', $child);
                 $OriginalDestinationNetworks_node = DH::findFirstElement('OriginalDestinationNetworks', $child);
+
+
+                if( $OriginalSourceNetworks_node != null )
+                {
+                    foreach( $OriginalSourceNetworks_node->childNodes as $origSource )
+                    {
+                        /** @var DOMElement $node */
+                        if ($origSource->nodeType != XML_ELEMENT_NODE)
+                            continue;
+
+                        print "OriginalSourceNetworks: '" . $origSource->textContent . "'\n";
+                        $objName = $this->normalizeNames($origSource->textContent);
+                        $tmpAddress = $v->addressStore->find($objName);
+                        if ($tmpAddress != null)
+                            $newRule->source->addObject($tmpAddress);
+                        else
+                        {
+                            $description = $newRule->description();
+                            $newDescription = $description . "| origSRCobj: " . $objName;
+                            $newRule->setDescription($newDescription);
+                        }
+                    }
+                }
+                if( $OriginalDestinationNetworks_node != null )
+                {
+                    foreach( $OriginalDestinationNetworks_node->childNodes as $origDestination )
+                    {
+                        /** @var DOMElement $node */
+                        if ($origDestination->nodeType != XML_ELEMENT_NODE)
+                            continue;
+
+                        print "OriginalDestinationNetworks: '" . $origDestination->textContent . "'\n";
+                        $objName = $this->normalizeNames($origDestination->textContent);
+                        $tmpAddress = $v->addressStore->find($objName);
+                        if ($tmpAddress != null)
+                            $newRule->destination->addObject($tmpAddress);
+                        else
+                        {
+                            $description = $newRule->description();
+                            $newDescription = $description . "| origDSTobj: " . $objName;
+                            $newRule->setDescription($newDescription);
+                        }
+                    }
+                }
+
+
                 /*
                 <OriginalSourceNetworks>
                   <Network>T2-SSLVPN-vpn.igz.com-10.242.0.0_24</Network>
@@ -1326,6 +1433,17 @@ trait SOPHOSXGfunction
                   <Network>DMZ-RODCs-192.168.175.0_28</Network>
                 </OriginalDestinationNetworks>
                  */
+            }
+
+            if( $newRule->to->isAny() )
+            {
+                PH::print_stdout("create dummy zone");
+                $tmpZone = $v->zoneStore->find("dummy");
+                if($tmpZone === null)
+                    $tmpZone = $v->zoneStore->newZone("dummy", "layer3");
+                print "ZONE: ".$tmpZone->name()."\n";
+
+                $newRule->to->addZone($tmpZone);
             }
         }
     }

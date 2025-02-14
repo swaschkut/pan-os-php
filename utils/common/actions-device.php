@@ -323,7 +323,7 @@ DeviceCallContext::$supportedActions['DeviceGroup-create'] = array(
             {
                 $string = "create DeviceGroup: " . $dgName;
                 #PH::ACTIONlog($context, $string);
-                if( $parentDG === 'null' )
+                if( $parentDG == 'null' )
                     $parentDG = null;
 
                 $dg = $pan->createDeviceGroup($dgName, $parentDG);
@@ -331,7 +331,8 @@ DeviceCallContext::$supportedActions['DeviceGroup-create'] = array(
                 if( $context->isAPI )
                 {
                     $dg->API_sync();
-                    $dg->owner->API_syncDGparentEntry($dg->name(), $parentDG);
+                    if( $parentDG !== null )
+                        $dg->owner->API_syncDGparentEntry($dg->name(), $parentDG);
                 }
 
             }
@@ -583,7 +584,14 @@ DeviceCallContext::$supportedActions['Template-clone '] = array(
 
             $tmp = $pan->createTemplate($newName);
             $test = $object->xmlroot->cloneNode();
-            $tmp->xmlroot = $test;
+            //Todo: 20250115 swaschkut - not working in API mode - same for device-group
+            //missing stuff import to document
+            $node = $object->xmlroot->ownerDocument->importNode($test, true);
+            //$object->owner->xmlroot->appendChild($node);
+            //$node = DH::findFirstElementByNameAttr( "entry", $newName, $object->owner->xmlroot );
+
+            $tmp->xmlroot = $node;
+            //$tmp->owner missing
             $tmp->setName( $newName );
 
             if( $context->isAPI )

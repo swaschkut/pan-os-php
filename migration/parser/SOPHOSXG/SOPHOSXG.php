@@ -85,7 +85,7 @@ class SOPHOSXG extends PARSER
 
         if( isset( $this->data['NATRule'] ) )
         {
-            #$this->sophos_xg_rulesNAT($v, $this->data['NATRule']);
+            $this->sophos_xg_rulesNAT($v, $this->data['NATRule']);
         }
 
 
@@ -97,18 +97,23 @@ class SOPHOSXG extends PARSER
         CONVERTER::AppMigration( $v, $this->configType );
 
 
+        #$ii = 1;
+        #foreach( $v->owner->network->aggregateEthernetIfStore->getInterfaces() as $aggregateGroup )
+        #    $aggregateGroup->setName("ae".$ii);
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////
 /// CUSTOM
 
-        $custom = false;
+        $custom_xg330 = false;
+        $custom_xg650 = false;
 
-        if( $custom )
+        if( $custom_xg330 )
         {
             ////////////////////////////////////////////////////////////////////////////////////////////
             //delete unused address objects:
+            /*
             $unusedAdr_obj = $v->addressStore->all("(object is.unused)");
             foreach($unusedAdr_obj as $adr)
             {
@@ -123,7 +128,9 @@ class SOPHOSXG extends PARSER
                 $v->serviceStore->remove($srv, true);
                 $v->serviceStore->rewriteServiceStoreXML();
             }
+            */
 
+            /*
             $SRV_objs = $v->serviceStore->all("(name regex /tcp-/)");
             foreach($SRV_objs as $srv)
             {
@@ -132,6 +139,7 @@ class SOPHOSXG extends PARSER
 
                 $srv->setName($new_name);
             }
+            */
             ////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -167,8 +175,126 @@ class SOPHOSXG extends PARSER
             $int = $v->owner->network->ethernetIfStore->find( "ethernet1/12" );
             $int->setAE("ae1");
 
-            //find reds interfaces in staticRoute
-            //change it to something else for validation
+
+
+
+
+            $rules = $v->securityRules->rules( "(src has.only T2-SSLVPN-vpn.igz.com-10.242.0.0_24)" );
+            foreach( $rules as $rule )
+            {
+                $rule->owner->remove($rule);
+            }
+            $rules = $v->securityRules->rules( "(dst has.only T2-SSLVPN-vpn.igz.com-10.242.0.0_24)" );
+            foreach( $rules as $rule )
+            {
+                $rule->owner->remove($rule);
+            }
+
+            $rules = $v->natRules->rules( "(src has.only T2-SSLVPN-vpn.igz.com-10.242.0.0_24)" );
+            foreach( $rules as $rule )
+            {
+                $rule->owner->remove($rule);
+            }
+
+            $rules = $v->securityRules->rules();
+            foreach( $rules as $rule )
+            {
+                $rule->setLogSetting("default");
+                if( $rule->actionIsAllow() )
+                {
+                    //Outbound
+                    $rule->setSecurityProfileGroup("Outbound");
+                    //Inbound
+                    #$rule->setSecurityProfileGroup("Inbound");
+                }
+            }
+
+            //delete static Routing entries if interface is reds1/reds2/reds3/ethernet1/6
+        }
+
+        if( $custom_xg650 )
+        {
+
+            /*
+            ////////////////////////////////////////////////////////////////////////////////////////////
+            //delete unused address objects:
+            $unusedAdr_obj = $v->addressStore->all("(object is.unused)");
+            foreach($unusedAdr_obj as $adr)
+            {
+                $v->addressStore->remove($adr, true);
+                $v->addressStore->rewriteAddressStoreXML();
+            }
+
+            //delete unused service objects:
+            $unusedSRV_obj = $v->serviceStore->all("(object is.unused)");
+            foreach($unusedSRV_obj as $srv)
+            {
+                $v->serviceStore->remove($srv, true);
+                $v->serviceStore->rewriteServiceStoreXML();
+            }
+
+            /*
+            $SRV_objs = $v->serviceStore->all("(name regex /tcp-/)");
+            foreach($SRV_objs as $srv)
+            {
+                $name = $srv->name();
+                $new_name = str_replace("tcp-", "tcp_", $name);
+
+                $srv->setName($new_name);
+            }
+            */
+            ////////////////////////////////////////////////////////////////////////////////////////////
+
+
+/*
+            $intDelete = array();
+            $intDelete[] = $v->owner->network->ethernetIfStore->find( "ethernet1/1" );
+            $intDelete[] = $v->owner->network->ethernetIfStore->find( "ethernet1/2" );
+            $intDelete[] = $v->owner->network->ethernetIfStore->find( "ethernet1/6" );
+            $intDelete[] = $v->owner->network->ethernetIfStore->find( "ethernet1/9" );
+
+            foreach( $intDelete as $int )
+            {
+                $int->owner->removeEthernetIf($int);
+            }
+            */
+
+
+            #$int = $v->owner->network->ethernetIfStore->find( "ethernet1/5" );
+            #$int->setName("ethernet1/2");
+
+            #$int = $v->owner->network->ethernetIfStore->find( "ethernet1/3" );
+            #$int->setName("ethernet1/5");
+
+            #$int = $v->owner->network->ethernetIfStore->find( "ethernet1/7" );
+            #$int->setName("ethernet1/1");
+
+
+
+            /** @var VirtualSystem $v */
+            $int = $v->owner->network->aggregateEthernetIfStore->find( "ethernet1/13" );
+            $int->setName("ae1");
+
+
+            $int = $v->owner->network->ethernetIfStore->find( "ethernet1/11" );
+            $int->setAE("ae1");
+            $int = $v->owner->network->ethernetIfStore->find( "ethernet1/12" );
+            $int->setAE("ae1");
+
+
+
+            $rules = $v->securityRules->rules();
+            foreach( $rules as $rule )
+            {
+                $rule->setLogSetting("default");
+                if( $rule->actionIsAllow() )
+                {
+                    //Outbound
+                    $rule->setSecurityProfileGroup("Outbound");
+                    //Inbound
+                    #$rule->setSecurityProfileGroup("Inbound");
+                }
+            }
         }
     }
 

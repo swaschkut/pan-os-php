@@ -182,6 +182,19 @@ trait CP_R80_objects
                     $name = $service['name'];
                     $dport = $service['port'];
                     $description = $service['comments'];
+                    if( strpos( $dport, '<' ) !== false )
+                    {
+                        $dport = str_replace( '<', '', $dport );
+                        $dport = "0-".$dport -1;
+                    }
+                    elseif( strpos( $dport, '>' ) !== false )
+                    {
+                        $dport = str_replace( '>', '', $dport );
+                        $dport = $dport + 1 ."-65535";
+                    }
+
+                    if( $dport == "Any" )
+                        $dport = "1-65525";
 
                     $this->MainAddService( $name, 'tcp', $dport, $description);
 
@@ -210,6 +223,20 @@ trait CP_R80_objects
 
                     $name = $service['name'];
                     $dport = $service['port'];
+                    if( strpos( $dport, '<' ) !== false )
+                    {
+                        $dport = str_replace( '<', '', $dport );
+                        $dport = "0-".$dport -1;
+                    }
+                    elseif( strpos( $dport, '>' ) !== false )
+                    {
+                        $dport = str_replace( '>', '', $dport );
+                        $dport = $dport + 1 ."-65535";
+                    }
+
+                    if( $dport == "Any" )
+                        $dport = "1-65525";
+
                     $description = $service['comments'];
 
                     $this->MainAddService( $name, 'udp', $dport, $description);
