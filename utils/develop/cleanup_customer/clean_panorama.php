@@ -41,22 +41,27 @@ $supportedArguments['debugapi'] = Array('niceName' => 'DebugAPI', 'shortHelp' =>
 $supportedArguments['help'] = Array('niceName' => 'help', 'shortHelp' => 'this message');
 $supportedArguments['loadpanoramapushedconfig'] = Array('niceName' => 'loadPanoramaPushedConfig', 'shortHelp' => 'load Panorama pushed config from the firewall to take in account panorama objects and rules' );
 $supportedArguments['folder'] = Array('niceName' => 'folder', 'shortHelp' => 'specify the folder where the offline files should be saved');
+$supportedArguments['namenodelete'] = Array('niceName' => 'NameNoDelete', 'shortHelp' => 'specify all DG/Templates as string which should not delete, regex search is implemented: test is keeping DG-test and Temp-test');
 
 $usageMsg = PH::boldText("USAGE: ")."php ".basename(__FILE__)." in=inputfile.xml location=vsys1 ".
     "\n".
     "php ".basename(__FILE__)." help          : more help messages\n";
 ##############
 
-##########################################
-##########################################
-$NameNotDelete = array();
-$NameNotDelete[] = "xg330";
-$NameNotDelete[] = "xg650";
+
 ##########################################
 ##########################################
 
 $util = new UTIL( "custom", $argv, $argc, __FILE__, $supportedArguments, $usageMsg );
 $util->utilInit();
+
+
+##########################################
+##########################################
+if( !isset( PH::$args['namenodelete'] ) )
+    $util->display_error_usage_exit('"namenodelete" argument is not set');
+else
+    $NameNotDelete = explode(",", PH::$args['namenodelete']);
 
 ##########################################
 ##########################################
