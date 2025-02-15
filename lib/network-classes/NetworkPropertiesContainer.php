@@ -257,7 +257,8 @@ class NetworkPropertiesContainer
                         $staticRoute->validateIPorObject($staticRouteNextHop, 'nexthop');
                 }
 
-                $router->load_from_domxml($router->xmlroot);
+                //Todo: why are static routes added twice
+                #$router->load_from_domxml($router->xmlroot);
             }
         }
 

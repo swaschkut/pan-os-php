@@ -21,7 +21,7 @@
 
 
 /**
- * Class VirutalRouterContainer
+ * Class VirtualRouterContainer
  * @property VirtualSystem $owner
  * @property VirtualRouter[] $o
  */
@@ -53,11 +53,19 @@ class VirtualRouterContainer extends ObjRuleContainer
             if( $node->nodeType != XML_ELEMENT_NODE )
                 continue;
 
-            $interfaceString = $node->textContent;
+            #DH::DEBUGprintDOMDocument($node);
+            $routerString = $node->textContent;
 
-            $interface = $this->parentCentralStore->findInterfaceOrCreateTmp($interfaceString);
+            //Todo: how to add this, is it needed?
+            //<member">ROUTERNAME</member>
 
-            $this->add($interface);
+            $router = $this->owner->owner->network->virtualRouterStore->findVirtualRouter($routerString);
+            if( $router !== null )
+                $this->add($router);
+
+            //this is wrong, it is not an interface
+            #$interface = $this->parentCentralStore->findInterfaceOrCreateTmp($interfaceString);
+            #$this->add($interface);
         }
     }
 
