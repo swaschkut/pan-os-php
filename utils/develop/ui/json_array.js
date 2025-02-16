@@ -3556,6 +3556,16 @@ var subjectObject =
                         "help": "pipe(|) separated list of additional fields (ie: Arg1|Arg2|Arg3...) to include in the report. The following is available:\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n  - WhereUsed : list places where object is used (rules, groups ...)\n"
                     }
                 }
+            },
+            "name-rename": {
+                "name": "name-Rename",
+                "MainFunction": {},
+                "args": {
+                    "newName": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                }
             }
         },
         "filter": {
@@ -6842,10 +6852,6 @@ var subjectObject =
                     ">,<,=,!": {
                         "Function": {},
                         "arg": true,
-                        "ci": {
-                            "fString": "(%PROP% 5 )",
-                            "input": "input\/panorama-8.0.xml"
-                        },
                         "help": "returns TRUE if rule name matches the specified timestamp MM\/DD\/YYYY [american] \/ DD-MM-YYYY [european]"
                     }
                 }
@@ -6855,10 +6861,6 @@ var subjectObject =
                     ">,<,=,!": {
                         "Function": {},
                         "arg": true,
-                        "ci": {
-                            "fString": "(%PROP% 5 )",
-                            "input": "input\/panorama-8.0.xml"
-                        },
                         "help": "returns TRUE if rule name matches the specified timestamp MM\/DD\/YYYY [american] \/ DD-MM-YYYY [european]"
                     }
                 }
@@ -7531,6 +7533,28 @@ var subjectObject =
             "url.best-practice-set": {
                 "name": "url.best-practice-set",
                 "MainFunction": {}
+            },
+            "url.credential-enforcement.log-severity": {
+                "name": "url.credential-enforcement.log-severity",
+                "MainFunction": {},
+                "args": {
+                    "severity": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "\"critical\", \"high\",\"medium\",\"low\",\"informational\""
+                    }
+                }
+            },
+            "url.credential-enforcement.mode": {
+                "name": "url.credential-enforcement.mode",
+                "MainFunction": {},
+                "args": {
+                    "mode": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "\"disabled\", \"ip-user\",\"domain-credentials\",\"group-mapping\""
+                    }
+                }
             },
             "virus.alert-only-set": {
                 "name": "virus.alert-only-set",
