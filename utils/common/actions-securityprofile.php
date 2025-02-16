@@ -1283,13 +1283,10 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 {
                     if( $bestPractice )
                     {
-                        //URL BP -> yes/no
-                        $lines .= $context->encloseFunction("test");
-                    }
-                    if( $visibility )
-                    {
-                        //URL visibility -> yes/no
-                        $lines .= $context->encloseFunction("test");
+                        if( $object->is_best_practice() )
+                            $lines .= $context->encloseFunction($bp_text_yes);
+                        else
+                            $lines .= $context->encloseFunction($bp_text_no);
                     }
 
                     if( $bestPractice )
@@ -1313,6 +1310,14 @@ SecurityProfileCallContext::$supportedActions[] = array(
                             $tmp_array[] = "";
 
                         $lines .= $context->encloseFunction($tmp_array);
+                    }
+
+                    if( $visibility )
+                    {
+                        if( $object->is_visibility() )
+                            $lines .= $context->encloseFunction($bp_text_yes);
+                        else
+                            $lines .= $context->encloseFunction($bp_text_no);
                     }
 
                     if( $visibility )
@@ -1398,12 +1403,19 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 }
                 if( $addCountDisabledRules)
                 {
-                    $refCount = $object->countDisabledRefRule();
-                    if( $refCount == 0 )
-                        $refCount = "---";
+                    if( get_class($object) == "PredefinedSecurityProfileURL" )
+                    {
+                        $lines .= $context->encloseFunction( "" );
+                    }
                     else
-                        $refCount = (string)$refCount ;
-                    $lines .= $context->encloseFunction( $refCount );
+                    {
+                        $refCount = $object->countDisabledRefRule();
+                        if( $refCount == 0 )
+                            $refCount = "---";
+                        else
+                            $refCount = (string)$refCount ;
+                        $lines .= $context->encloseFunction( $refCount );
+                    }
                 }
 
                 $lines .= "</tr>\n";
