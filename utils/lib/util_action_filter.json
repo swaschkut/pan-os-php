@@ -3555,6 +3555,16 @@
                         "help": "pipe(|) separated list of additional fields (ie: Arg1|Arg2|Arg3...) to include in the report. The following is available:\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n  - WhereUsed : list places where object is used (rules, groups ...)\n"
                     }
                 }
+            },
+            "name-rename": {
+                "name": "name-Rename",
+                "MainFunction": {},
+                "args": {
+                    "newName": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                }
             }
         },
         "filter": {
@@ -6841,10 +6851,6 @@
                     ">,<,=,!": {
                         "Function": {},
                         "arg": true,
-                        "ci": {
-                            "fString": "(%PROP% 5 )",
-                            "input": "input\/panorama-8.0.xml"
-                        },
                         "help": "returns TRUE if rule name matches the specified timestamp MM\/DD\/YYYY [american] \/ DD-MM-YYYY [european]"
                     }
                 }
@@ -6854,10 +6860,6 @@
                     ">,<,=,!": {
                         "Function": {},
                         "arg": true,
-                        "ci": {
-                            "fString": "(%PROP% 5 )",
-                            "input": "input\/panorama-8.0.xml"
-                        },
                         "help": "returns TRUE if rule name matches the specified timestamp MM\/DD\/YYYY [american] \/ DD-MM-YYYY [european]"
                     }
                 }
