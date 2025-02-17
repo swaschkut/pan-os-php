@@ -7533,6 +7533,28 @@
                 "name": "url.best-practice-set",
                 "MainFunction": {}
             },
+            "url.credential-enforcement.log-severity": {
+                "name": "url.credential-enforcement.log-severity",
+                "MainFunction": {},
+                "args": {
+                    "severity": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "\"critical\", \"high\",\"medium\",\"low\",\"informational\""
+                    }
+                }
+            },
+            "url.credential-enforcement.mode": {
+                "name": "url.credential-enforcement.mode",
+                "MainFunction": {},
+                "args": {
+                    "mode": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "\"disabled\", \"ip-user\",\"domain-credentials\",\"group-mapping\""
+                    }
+                }
+            },
             "virus.alert-only-set": {
                 "name": "virus.alert-only-set",
                 "MainFunction": {}

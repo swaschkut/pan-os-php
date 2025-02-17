@@ -418,8 +418,8 @@ SecurityProfileCallContext::$supportedActions['url.action-set'] = array(
     'name' => 'url.action-set',
     'MainFunction' => function (SecurityProfileCallContext $context) {
         $object = $context->object;
-        $action = $context->action;
-        $filter = $context->filter;
+        $action = $context->arguments['action'];
+        $filter = $context->arguments['filter'];
 
         if (get_class($object) !== "URLProfile")
             return null;
@@ -1283,13 +1283,10 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 {
                     if( $bestPractice )
                     {
-                        //URL BP -> yes/no
-                        $lines .= $context->encloseFunction("test");
-                    }
-                    if( $visibility )
-                    {
-                        //URL visibility -> yes/no
-                        $lines .= $context->encloseFunction("test");
+                        if( $object->is_best_practice() )
+                            $lines .= $context->encloseFunction($bp_text_yes);
+                        else
+                            $lines .= $context->encloseFunction($bp_text_no);
                     }
 
                     if( $bestPractice )
@@ -1313,6 +1310,14 @@ SecurityProfileCallContext::$supportedActions[] = array(
                             $tmp_array[] = "";
 
                         $lines .= $context->encloseFunction($tmp_array);
+                    }
+
+                    if( $visibility )
+                    {
+                        if( $object->is_visibility() )
+                            $lines .= $context->encloseFunction($bp_text_yes);
+                        else
+                            $lines .= $context->encloseFunction($bp_text_no);
                     }
 
                     if( $visibility )
@@ -1398,12 +1403,19 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 }
                 if( $addCountDisabledRules)
                 {
-                    $refCount = $object->countDisabledRefRule();
-                    if( $refCount == 0 )
-                        $refCount = "---";
+                    if( get_class($object) == "PredefinedSecurityProfileURL" )
+                    {
+                        $lines .= $context->encloseFunction( "" );
+                    }
                     else
-                        $refCount = (string)$refCount ;
-                    $lines .= $context->encloseFunction( $refCount );
+                    {
+                        $refCount = $object->countDisabledRefRule();
+                        if( $refCount == 0 )
+                            $refCount = "---";
+                        else
+                            $refCount = (string)$refCount ;
+                        $lines .= $context->encloseFunction( $refCount );
+                    }
                 }
 
                 $lines .= "</tr>\n";
@@ -2548,4 +2560,64 @@ SecurityProfileCallContext::$supportedActions['url.best-practice-set'] = array(
             $object->API_sync();
         }
     },
+);
+SecurityProfileCallContext::$supportedActions['url.credential-enforcement.mode'] = array(
+    'name' => 'url.credential-enforcement.mode',
+    'MainFunction' => function (SecurityProfileCallContext $context) {
+        $object = $context->object;
+        $modeToSet = $context->arguments['mode'];
+
+        $modeArray = array("disabled", "ip-user","domain-credentials","group-mapping");
+        if( !in_array($modeToSet, $modeArray) )
+            derr( "mode $modeToSet is not a supported mode. supported: '".implode(",", $modeArray)."'", null, FALSE );
+
+        if (get_class($object) !== "URLProfile")
+            return null;
+
+        #$modeToSet = "ip-user";
+
+        $credentialEnforcement_Node = DH::findFirstElementOrCreate("credential-enforcement", $object->xmlroot);
+        $mode_Node = DH::findFirstElementOrCreate("mode", $credentialEnforcement_Node);
+        DH::clearDomNodeChilds($mode_Node);
+        $modeToSet_Node = DH::findFirstElementOrCreate($modeToSet, $mode_Node);
+
+        if( $modeToSet == "group-mapping" )
+        {
+            //<group-mapping>any</group-mapping>
+            $modeToSet_Node->textContent = "any";
+        }
+
+
+        if( $context->isAPI )
+            $object->api_sync();
+    },
+    'args' => array(
+        'mode' => array('type' => 'string', 'default' => '*nodefault*',
+            'help' => '"disabled", "ip-user","domain-credentials","group-mapping"'),
+    ),
+);
+SecurityProfileCallContext::$supportedActions['url.credential-enforcement.log-severity'] = array(
+    'name' => 'url.credential-enforcement.log-severity',
+    'MainFunction' => function (SecurityProfileCallContext $context) {
+        $object = $context->object;
+        $severityToSet = $context->arguments['severity'];;
+
+        $severityArray = array("critical", "high","medium","low","informational");
+        if( !in_array($severityToSet, $severityArray) )
+            derr( "severity $severityToSet is not a supported mode. supported: '".implode(",", $severityArray)."'", null, FALSE );
+
+        if (get_class($object) !== "URLProfile")
+            return null;
+
+        $credentialEnforcement_Node = DH::findFirstElementOrCreate("credential-enforcement", $object->xmlroot);
+        $severity_Node = DH::findFirstElementOrCreate("log-severity", $credentialEnforcement_Node);
+        $severity_Node->textContent = $severityToSet;
+
+        if( $context->isAPI )
+            $object->api_sync();
+    },
+    'args' => array(
+        'severity' => array('type' => 'string', 'default' => '*nodefault*',
+            'help' => '"critical", "high","medium","low","informational"'),
+    ),
 );
