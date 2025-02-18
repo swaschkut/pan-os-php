@@ -6407,6 +6407,11 @@ var subjectObject =
                             "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
+                    },
+                    "has.from.query": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "example: 'filter=(secprof has.from.query subquery1)' 'subquery1=(av is.best-practice)'"
                     }
                 }
             },

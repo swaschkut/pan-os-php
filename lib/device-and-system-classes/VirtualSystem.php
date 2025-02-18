@@ -1146,6 +1146,101 @@ class VirtualSystem
     }
 
 
+    public function display_bp_statistics()
+    {
+        $stdoutarray = array();
+
+        $stdoutarray['type'] = get_class( $this );
+
+        $header = "Statistics for VSYS '" . PH::boldText($this->name) . "' | '" . $this->toString() . "'";
+        $stdoutarray['header'] = $header;
+
+        $stdoutarray['security rules'] = $this->securityRules->count();
+
+        $stdoutarray['security rules allow'] = count( $this->securityRules->rules( "(action is.allow)" ) );
+
+        $stdoutarray['security rules deny'] = count( $this->securityRules->rules( "!(action is.allow)" ) );
+
+
+        //Logging
+        $stdoutarray['log at end'] = count( $this->securityRules->rules( "(log at.end)" ) );
+        $stdoutarray['log at start'] = count( $this->securityRules->rules( "(log at.start)" ) );
+
+        //Log Forwarding Profiles
+        //Todo: what exactly need to be set? really only a logprof
+        $stdoutarray['log prof set'] = count( $this->securityRules->rules( "(logprof is.set)" ) );
+
+        //Wildfire Analysis Profiles
+
+        //Zone Protection
+        //Todo: no valid filter yet available - also how to filter? based on from and/or to zone??
+
+        // App-ID
+        $stdoutarray['app id'] = count( $this->securityRules->rules( "!(app is.any)" ) );
+
+        //User-ID
+        $stdoutarray['user id'] = count( $this->securityRules->rules( "!(user is.any)" ) );
+
+        //Service/Port
+        $stdoutarray['service port'] = count( $this->securityRules->rules( "!(service is.any)" ) );
+
+        //Antivirus Profiles
+        $filter_array = array('query' => "secprof has.from.query subquery1", 'subquery1' => "av is.visibility" );
+        $stdoutarray['av visibility'] = count( $this->securityRules->rules( $filter_array ) );
+        $filter_array = array('query' => "secprof has.from.query subquery1", 'subquery1' => "av is.best-practice" );
+        $stdoutarray['av best-practice'] = count( $this->securityRules->rules( $filter_array ) );
+
+        //Anti-Spyware Profiles
+        $filter_array = array('query' => "secprof has.from.query subquery1", 'subquery1' => "as is.visibility" );
+        $stdoutarray['as visibility'] = count( $this->securityRules->rules( $filter_array ) );
+        $filter_array = array('query' => "secprof has.from.query subquery1", 'subquery1' => "as is.best-practice" );
+        $stdoutarray['as best-practice'] = count( $this->securityRules->rules( $filter_array ) );
+
+        //Vulnerability Profiles
+        $filter_array = array('query' => "secprof has.from.query subquery1", 'subquery1' => "vp is.visibility" );
+        $stdoutarray['vb visibility'] = count( $this->securityRules->rules( $filter_array ) );
+        $filter_array = array('query' => "secprof has.from.query subquery1", 'subquery1' => "vp is.best-practice" );
+        $stdoutarray['vb best-practice'] = count( $this->securityRules->rules( $filter_array ) );
+
+        //File Blocking Profiles
+        $filter_array = array('query' => "secprof has.from.query subquery1", 'subquery1' => "fb is.visibility" );
+        $stdoutarray['fb visibility'] = count( $this->securityRules->rules( $filter_array ) );
+        $filter_array = array('query' => "secprof has.from.query subquery1", 'subquery1' => "fb is.best-practice" );
+        $stdoutarray['fb best-practice'] = count( $this->securityRules->rules( $filter_array ) );
+
+        //Data Filtering
+        //Todo
+        $stdoutarray['data visibility'] = "NOT available";
+        $stdoutarray['data best-practice'] = "NOT available";
+
+        //URL Filtering Profiles
+        //Todo; separation needed
+        $filter_array = array('query' => "secprof has.from.query subquery1", 'subquery1' => "url is.visibility" );
+        $stdoutarray['url visibility'] = count( $this->securityRules->rules( $filter_array ) );
+        $filter_array = array('query' => "secprof has.from.query subquery1", 'subquery1' => "url is.best-practice" );
+        $stdoutarray['url best-practice'] = count( $this->securityRules->rules( $filter_array ) );
+
+        //Credential Theft Prevention
+        //Todo: no valid filter yet available
+        $stdoutarray['url credential visibility'] = "NOT available";
+        $stdoutarray['url credential best-practice'] = "NOT available";
+
+        //DNS Security
+        $filter_array = array('query' => "secprof has.from.query subquery1", 'subquery1' => "dns-list is.visibility" );
+        $stdoutarray['dns-list visibility'] = count( $this->securityRules->rules( $filter_array ) );
+        $filter_array = array('query' => "secprof has.from.query subquery1", 'subquery1' => "dns-list is.best-practice" );
+        $stdoutarray['dns-list best-practice'] = count( $this->securityRules->rules( $filter_array ) );
+
+
+        #PH::$JSON_TMP[$this->name] = $stdoutarray;
+        PH::$JSON_TMP[] = $stdoutarray;
+
+
+        if( !PH::$shadow_json )
+            PH::print_stdout( $stdoutarray, true );
+
+    }
+
     public function isVirtualSystem()
     {
         return TRUE;

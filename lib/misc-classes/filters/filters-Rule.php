@@ -2640,6 +2640,56 @@ RQuery::$defaultFilters['rule']['secprof']['operators']['data-profile.is.set'] =
         'input' => 'input/panorama-8.0.xml'
     )
 );
+RQuery::$defaultFilters['rule']['secprof']['operators']['has.from.query'] = array(
+    'Function' => function (RuleRQueryContext $context) {
+        $rule = $context->object;
+
+        if( $context->object->securityProfileIsBlank() )
+            return FALSE;
+
+        #if( $context->value === null || !isset($context->nestedQueries[$context->value]) )
+        if(  !isset($context->nestedQueries[$context->value]) )
+        {
+            print_r($context->nestedQueries);
+            derr("cannot find nested query called '{$context->value}'");
+        }
+
+
+        $errorMessage = '';
+
+        if( !isset($context->cachedSubRQuery) )
+        {
+            $rQuery = new RQuery('securityprofile');
+            if( $rQuery->parseFromString($context->nestedQueries[$context->value], $errorMessage) === FALSE )
+                derr('nested query execution error : ' . $errorMessage);
+            $context->cachedSubRQuery = $rQuery;
+        }
+        else
+            $rQuery = $context->cachedSubRQuery;
+
+        if( $rule->securityProfileType() == "group" )
+        {
+            /** @var SecurityProfileGroup $tmp_group */
+            $tmp_group =  $rule->owner->owner->securityProfileGroupStore->find( $rule->securityProfileGroup() );
+            $secprof_objects = $tmp_group->securityProfiles();
+        }
+        else
+            $secprof_objects = $rule->securityProfiles();
+
+        foreach( $secprof_objects as $key => $member )
+        {
+            if( $member !== null )
+            {
+                if( $rQuery->matchSingleObject(array('object' => $member, 'nestedQueries' => &$context->nestedQueries)) )
+                    return TRUE;
+            }
+        }
+
+        return FALSE;
+    },
+    'arg' => TRUE,
+    'help' => 'example: \'filter=(secprof has.from.query subquery1)\' \'subquery1=(av is.best-practice)\'',
+);
 
 //                                              //
 //                Other properties              //

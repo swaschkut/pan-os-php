@@ -414,6 +414,7 @@ class RQuery
      */
     public function parseFromString($text, &$errorMessage)
     {
+        $debug = false;
         $this->text = $text;
 
         $supportedFilters = &self::$defaultFilters[$this->objectType];
@@ -427,7 +428,8 @@ class RQuery
         $findOpen = strpos($text, '(', $start);
         $findClose = strpos($text, ')', $start);
 
-        //PH::print_stdout( $this->padded."Parsing \"$text\"" );
+        if( $debug )
+            PH::print_stdout( $this->padded."Parsing \"$text\"" );
 
         while( $findOpen !== FALSE && ($findClose > $findOpen) )
         {
@@ -456,12 +458,14 @@ class RQuery
 
                 $this->subQueriesOperators[] = $operator;
 
-                ////PH::print_stdout( $this->padded."raw operator found: '$operator'" );
+                if( $debug )
+                    PH::print_stdout( $this->padded."raw operator found: '$operator'" );
             }
 
 
             $previousClose = $findOpen + $res;
-            //PH::print_stdout( $this->padded.'remains to be parsed after subQ extracted: '.substr($text,$previousClose+1) );
+            if( $debug )
+                PH::print_stdout( $this->padded.'remains to be parsed after subQ extracted: '.substr($text,$previousClose+1) );
 
             $start = $findOpen + $res + 1;
             $findOpen = strpos($text, '(', $start);
@@ -474,7 +478,8 @@ class RQuery
             if( $findClose === FALSE )
             {
                 $errorMessage = 'cannot find closing )';
-                //PH::print_stdout( $this->padded."test" );
+                if( $debug )
+                    PH::print_stdout( $this->padded."test" );
                 return FALSE;
             }
             elseif( count($this->subQueries) == 0 )
@@ -499,7 +504,8 @@ class RQuery
         // here we are at top level
         if( count($this->subQueries) == 0 )
         {
-            //PH::print_stdout( $this->padded."No subquery found, this is an expression: $text" );
+            if( $debug )
+                PH::print_stdout( $this->padded."No subquery found, this is an expression: $text" );
             $this->text = $text;
             if( !$this->extractWordsFromText($this->text, $supportedFilters, $errorMessage) )
             {
@@ -508,7 +514,8 @@ class RQuery
         }
         else
         {
-            //PH::print_stdout( $this->padded . "Sub-queries found" );
+            if( $debug )
+                PH::print_stdout( $this->padded . "Sub-queries found" );
             $this->text = $text;
         }
 

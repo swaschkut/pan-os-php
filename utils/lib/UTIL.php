@@ -2110,6 +2110,7 @@ class UTIL
                     
                     $sub->display_statistics();
 
+                    $sub->display_bp_statistics();
 
                 }
             }
