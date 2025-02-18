@@ -2647,12 +2647,8 @@ RQuery::$defaultFilters['rule']['secprof']['operators']['has.from.query'] = arra
         if( $context->object->securityProfileIsBlank() )
             return FALSE;
 
-        #if( $context->value === null || !isset($context->nestedQueries[$context->value]) )
-        if(  !isset($context->nestedQueries[$context->value]) )
-        {
-            print_r($context->nestedQueries);
+        if( $context->value === null || !isset($context->nestedQueries[$context->value]) )
             derr("cannot find nested query called '{$context->value}'");
-        }
 
 
         $errorMessage = '';
