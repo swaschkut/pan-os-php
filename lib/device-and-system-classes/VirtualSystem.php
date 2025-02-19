@@ -1158,9 +1158,9 @@ class VirtualSystem
         $stdoutarray['security rules'] = $this->securityRules->count();
 
         $stdoutarray['security rules allow'] = count( $this->securityRules->rules( "(action is.allow)" ) );
-        $stdoutarray['security rules disabled'] = count( $this->securityRules->rules( "(rule is.disabled)" ) );
+        $stdoutarray['security rules allow disabled'] = count( $this->securityRules->rules( "(action is.allow) and (rule is.disabled)" ) );
         $stdoutarray['security rules deny'] = count( $this->securityRules->rules( "!(action is.allow)" ) );
-        $ruleForCalculation = $stdoutarray['security rules'] - $stdoutarray['security rules disabled'];
+        $ruleForCalculation = $stdoutarray['security rules allow'] - $stdoutarray['security rules allow disabled'];
 
         //Logging
         $stdoutarray['log at end'] = count( $this->securityRules->rules( "(log at.end)" ) );
