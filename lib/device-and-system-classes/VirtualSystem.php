@@ -1284,19 +1284,19 @@ class VirtualSystem
 
         $percentageArray_best_practice = array();
         $percentageArray_best_practice['Logging'] = $stdoutarray['log at end percentage'];
-        $percentageArray_best_practice['Log Forwarding Profiles'] = $stdoutarray['log prof set percentage'];
+        #$percentageArray_best_practice['Log Forwarding Profiles'] = $stdoutarray['log prof set percentage'];
 
         $percentageArray_best_practice['Wildfire Analysis Profiles'] = $stdoutarray['wf best-practice percentage'];
-        $percentageArray_best_practice['Zone Protection'] = '---';
-        $percentageArray_best_practice['App-ID'] = $stdoutarray['app id percentage'];
-        $percentageArray_best_practice['User-ID'] = $stdoutarray['user id percentage'];
-        $percentageArray_best_practice['Service/Port'] = $stdoutarray['service port percentage'];
+        #$percentageArray_best_practice['Zone Protection'] = '---';
+        #$percentageArray_best_practice['App-ID'] = $stdoutarray['app id percentage'];
+        #$percentageArray_best_practice['User-ID'] = $stdoutarray['user id percentage'];
+        #$percentageArray_best_practice['Service/Port'] = $stdoutarray['service port percentage'];
 
         $percentageArray_best_practice['Antivirus Profiles'] = $stdoutarray['av best-practice percentage'];
         $percentageArray_best_practice['Anti-Spyware Profiles'] = $stdoutarray['as best-practice percentage'];
         $percentageArray_best_practice['Vulnerability Profiles'] = $stdoutarray['vp best-practice percentage'];
         $percentageArray_best_practice['File Blocking Profiles'] = $stdoutarray['fb best-practice percentage'];
-        $percentageArray_best_practice['Data Filtering'] = '---';
+        #$percentageArray_best_practice['Data Filtering'] = '---';
         $percentageArray_best_practice['URL Filtering Profiles'] = $stdoutarray['url-site-access best-practice percentage'];
         $percentageArray_best_practice['Credential Theft Prevention'] = $stdoutarray['url-credential best-practice percentage'];
         $percentageArray_best_practice['DNS Security'] = $stdoutarray['dns-list best-practice percentage'];
