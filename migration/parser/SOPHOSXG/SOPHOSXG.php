@@ -178,15 +178,15 @@ class SOPHOSXG extends PARSER
             #$int->setName("ethernet1/1");
 
             /** @var VirtualSystem $v */
-            $int = $v->owner->network->aggregateEthernetIfStore->find( "ethernet1/13" );
-            $int->setName("ae1");
+            #$int = $v->owner->network->aggregateEthernetIfStore->find( "ethernet1/13" );
+            #$int->setName("ae1");
 
-
+/*
             $int = $v->owner->network->ethernetIfStore->find( "ethernet1/11" );
             $int->setAE("ae1");
             $int = $v->owner->network->ethernetIfStore->find( "ethernet1/12" );
             $int->setAE("ae1");
-
+*/
 
 
 
