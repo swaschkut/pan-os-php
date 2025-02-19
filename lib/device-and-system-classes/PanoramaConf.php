@@ -2016,6 +2016,18 @@ class PanoramaConf
             PH::print_stdout( $stdoutarray, true );
     }
 
+    public function display_bp_statistics()
+    {
+        $stdoutarray = array();
+        #PH::$JSON_TMP[$this->name] = $stdoutarray;
+        PH::$JSON_TMP[] = $stdoutarray;
+
+
+        if( !PH::$shadow_json )
+            PH::print_stdout( $stdoutarray, true );
+
+    }
+
     public function API_load_from_running(PanAPIConnector $conn)
     {
         $this->connector = $conn;

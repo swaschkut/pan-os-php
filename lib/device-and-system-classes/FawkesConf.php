@@ -915,6 +915,17 @@ class FawkesConf
         return null;
     }
 
+    public function display_bp_statistics()
+    {
+        $stdoutarray = array();
+        #PH::$JSON_TMP[$this->name] = $stdoutarray;
+        PH::$JSON_TMP[] = $stdoutarray;
+
+
+        if( !PH::$shadow_json )
+            PH::print_stdout( $stdoutarray, true );
+
+    }
 
     /**
      * Create a blank device group. Return that DV object.
