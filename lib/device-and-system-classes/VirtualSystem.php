@@ -1159,19 +1159,20 @@ class VirtualSystem
 
         $stdoutarray['security rules allow'] = count( $this->securityRules->rules( "(action is.allow)" ) );
         $stdoutarray['security rules allow disabled'] = count( $this->securityRules->rules( "(action is.allow) and (rule is.disabled)" ) );
+        $stdoutarray['security rules enabled'] = count( $this->securityRules->rules( "(rule is.enabled)" ) );
         $stdoutarray['security rules deny'] = count( $this->securityRules->rules( "!(action is.allow)" ) );
         $ruleForCalculation = $stdoutarray['security rules allow'] - $stdoutarray['security rules allow disabled'];
 
         $generalFilter = "(rule is.enabled) and ";
         //Logging
-        $stdoutarray['log at end'] = count( $this->securityRules->rules( "(log at.end)" ) );
-        $stdoutarray['log at end percentage'] = round(( $stdoutarray['log at end'] / $stdoutarray['security rules'] ) * 100, 0 );
+        $stdoutarray['log at end'] = count( $this->securityRules->rules( $generalFilter."(log at.end)" ) );
+        $stdoutarray['log at end percentage'] = round(( $stdoutarray['log at end'] / $stdoutarray['security rules enabled'] ) * 100, 0 );
         $stdoutarray['log at start'] = count( $this->securityRules->rules( "(log at.start)" ) );
 
         //Log Forwarding Profiles
         //Todo: what exactly need to be set? really only a logprof
-        $stdoutarray['log prof set'] = count( $this->securityRules->rules( "(logprof is.set)" ) );
-        $stdoutarray['log prof set percentage'] = round(( $stdoutarray['log prof set'] / $stdoutarray['security rules'] ) * 100, 0 );
+        $stdoutarray['log prof set'] = count( $this->securityRules->rules( $generalFilter."(logprof is.set)" ) );
+        $stdoutarray['log prof set percentage'] = round(( $stdoutarray['log prof set'] / $stdoutarray['security rules enabled'] ) * 100, 0 );
 
         //Wildfire Analysis Profiles
         $filter_array = array('query' => $generalFilter."(secprof has.from.query subquery1)", 'subquery1' => "wf is.visibility" );
@@ -1186,16 +1187,16 @@ class VirtualSystem
         $stdoutarray['zone protection'] = "NOT available";
 
         // App-ID
-        $stdoutarray['app id'] = count( $this->securityRules->rules( "!(app is.any)" ) );
-        $stdoutarray['app id percentage'] = round( ( $stdoutarray['app id'] / $stdoutarray['security rules'] ) * 100, 0 );
+        $stdoutarray['app id'] = count( $this->securityRules->rules( $generalFilter."!(app is.any)" ) );
+        $stdoutarray['app id percentage'] = round( ( $stdoutarray['app id'] / $stdoutarray['security rules enabled'] ) * 100, 0 );
 
         //User-ID
         $stdoutarray['user id'] = count( $this->securityRules->rules( "!(user is.any)" ) );
-        $stdoutarray['user id percentage'] = round( ( $stdoutarray['user id'] / $stdoutarray['security rules'] ) * 100, 0 );
+        $stdoutarray['user id percentage'] = round( ( $stdoutarray['user id'] / $stdoutarray['security rules enabled'] ) * 100, 0 );
 
         //Service/Port
-        $stdoutarray['service port'] = count( $this->securityRules->rules( "!(service is.any)" ) );
-        $stdoutarray['service port percentage'] = round( ( $stdoutarray['service port'] / $stdoutarray['security rules'] ) * 100, 0 );
+        $stdoutarray['service port'] = count( $this->securityRules->rules( $generalFilter."!(service is.any)" ) );
+        $stdoutarray['service port percentage'] = round( ( $stdoutarray['service port'] / $stdoutarray['security rules enabled'] ) * 100, 0 );
 
         //Antivirus Profiles
         $filter_array = array('query' => $generalFilter."(secprof has.from.query subquery1)", 'subquery1' => "av is.visibility" );
