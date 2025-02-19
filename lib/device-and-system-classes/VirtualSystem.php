@@ -1168,68 +1168,111 @@ class VirtualSystem
         $generalFilter = "(rule is.enabled) and ";
         //Logging
         $stdoutarray['log at end'] = count( $this->securityRules->rules( $generalFilter."(log at.end)" ) );
-        $stdoutarray['log at end percentage'] = round(( $stdoutarray['log at end'] / $stdoutarray['security rules enabled'] ) * 100, 0 );
+        if( $stdoutarray['security rules enabled'] !== 0 )
+            $stdoutarray['log at end percentage'] = round(( $stdoutarray['log at end'] / $stdoutarray['security rules enabled'] ) * 100, 0 );
+        else
+            $stdoutarray['log at end percentage'] = 0;
         $stdoutarray['log at start'] = count( $this->securityRules->rules( "(log at.start)" ) );
 
         //Log Forwarding Profiles
         $stdoutarray['log prof set'] = count( $this->securityRules->rules( $generalFilter."(logprof is.set)" ) );
-        $stdoutarray['log prof set percentage'] = round(( $stdoutarray['log prof set'] / $stdoutarray['security rules enabled'] ) * 100, 0 );
+        if( $stdoutarray['security rules enabled'] !== 0 )
+            $stdoutarray['log prof set percentage'] = round(( $stdoutarray['log prof set'] / $stdoutarray['security rules enabled'] ) * 100, 0 );
+        else
+            $stdoutarray['log prof set percentage'] = 0;
 
         //Wildfire Analysis Profiles
         $filter_array = array('query' => $generalFilter."(secprof has.from.query subquery1)", 'subquery1' => "wf is.visibility" );
         $stdoutarray['wf visibility'] = count( $this->securityRules->rules( $filter_array ) );
-        $stdoutarray['wf visibility percentage'] = round(( $stdoutarray['wf visibility'] / $ruleForCalculation ) * 100, 0 );
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['wf visibility percentage'] = round(( $stdoutarray['wf visibility'] / $ruleForCalculation ) * 100, 0 );
+        else
+            $stdoutarray['wf visibility percentage'] = 0;
         $filter_array = array('query' => $generalFilter."(secprof has.from.query subquery1)", 'subquery1' => "wf is.best-practice" );
         $stdoutarray['wf best-practice'] = count( $this->securityRules->rules( $filter_array ) );
-        $stdoutarray['wf best-practice percentage'] = round( ( $stdoutarray['wf best-practice'] / $ruleForCalculation ) * 100, 0 );
-
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['wf best-practice percentage'] = round( ( $stdoutarray['wf best-practice'] / $ruleForCalculation ) * 100, 0 );
+        else
+            $stdoutarray['wf best-practice percentage'] = 0;
         //Zone Protection
         //Todo: no valid filter yet available - also how to filter? based on from and/or to zone??
         $stdoutarray['zone protection'] = "NOT available";
 
         // App-ID
         $stdoutarray['app id'] = count( $this->securityRules->rules( $generalFilter."!(app is.any)" ) );
-        $stdoutarray['app id percentage'] = round( ( $stdoutarray['app id'] / $stdoutarray['security rules enabled'] ) * 100, 0 );
+        if( $stdoutarray['security rules enabled'] !== 0 )
+            $stdoutarray['app id percentage'] = round( ( $stdoutarray['app id'] / $stdoutarray['security rules enabled'] ) * 100, 0 );
+        else
+            $stdoutarray['app id percentage'] = 0;
 
         //User-ID
         $stdoutarray['user id'] = count( $this->securityRules->rules( "!(user is.any)" ) );
-        $stdoutarray['user id percentage'] = round( ( $stdoutarray['user id'] / $stdoutarray['security rules enabled'] ) * 100, 0 );
-
+        if( $stdoutarray['security rules enabled'] !== 0 )
+            $stdoutarray['user id percentage'] = round( ( $stdoutarray['user id'] / $stdoutarray['security rules enabled'] ) * 100, 0 );
+        else
+            $stdoutarray['user id percentage'] = 0;
         //Service/Port
         $stdoutarray['service port'] = count( $this->securityRules->rules( $generalFilter."!(service is.any)" ) );
-        $stdoutarray['service port percentage'] = round( ( $stdoutarray['service port'] / $stdoutarray['security rules enabled'] ) * 100, 0 );
+        if( $stdoutarray['security rules enabled'] !== 0 )
+            $stdoutarray['service port percentage'] = round( ( $stdoutarray['service port'] / $stdoutarray['security rules enabled'] ) * 100, 0 );
+        else
+            $stdoutarray['service port percentage'] = 0;
 
         //Antivirus Profiles
         $filter_array = array('query' => $generalFilter."(secprof has.from.query subquery1)", 'subquery1' => "av is.visibility" );
         $stdoutarray['av visibility'] = count( $this->securityRules->rules( $filter_array ) );
-        $stdoutarray['av visibility percentage'] = round( ( $stdoutarray['av visibility'] / $ruleForCalculation ) * 100, 0 );
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['av visibility percentage'] = round( ( $stdoutarray['av visibility'] / $ruleForCalculation ) * 100, 0 );
+        else
+            $stdoutarray['av visibility percentage'] = 0;
         $filter_array = array('query' => $generalFilter."(secprof has.from.query subquery1)", 'subquery1' => "av is.best-practice" );
         $stdoutarray['av best-practice'] = count( $this->securityRules->rules( $filter_array ) );
-        $stdoutarray['av best-practice percentage'] = round( ( $stdoutarray['av best-practice'] / $ruleForCalculation ) * 100, 0 );
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['av best-practice percentage'] = round( ( $stdoutarray['av best-practice'] / $ruleForCalculation ) * 100, 0 );
+        else
+            $stdoutarray['av best-practice percentage'] = 0;
 
         //Anti-Spyware Profiles
         $filter_array = array('query' => $generalFilter."(secprof has.from.query subquery1)", 'subquery1' => "as is.visibility" );
         $stdoutarray['as visibility'] = count( $this->securityRules->rules( $filter_array ) );
-        $stdoutarray['as visibility percentage'] = round( ( $stdoutarray['as visibility'] / $ruleForCalculation ) * 100, 0 );
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['as visibility percentage'] = round( ( $stdoutarray['as visibility'] / $ruleForCalculation ) * 100, 0 );
+        else
+            $stdoutarray['as visibility percentage'] = 0;
         $filter_array = array('query' => $generalFilter."(secprof has.from.query subquery1)", 'subquery1' => "as is.best-practice" );
         $stdoutarray['as best-practice'] = count( $this->securityRules->rules( $filter_array ) );
-        $stdoutarray['as best-practice percentage'] = round( ( $stdoutarray['as best-practice'] / $ruleForCalculation ) * 100, 0 );
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['as best-practice percentage'] = round( ( $stdoutarray['as best-practice'] / $ruleForCalculation ) * 100, 0 );
+        else
+            $stdoutarray['as best-practice percentage'] = 0;
 
         //Vulnerability Profiles
         $filter_array = array('query' => $generalFilter."(secprof has.from.query subquery1)", 'subquery1' => "vp is.visibility" );
         $stdoutarray['vp visibility'] = count( $this->securityRules->rules( $filter_array ) );
-        $stdoutarray['vp visibility percentage'] = round( ( $stdoutarray['vp visibility'] / $ruleForCalculation ) * 100, 0 );
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['vp visibility percentage'] = round( ( $stdoutarray['vp visibility'] / $ruleForCalculation ) * 100, 0 );
+        else
+            $stdoutarray['vp visibility percentage'] = 0;
         $filter_array = array('query' => $generalFilter."(secprof has.from.query subquery1)", 'subquery1' => "vp is.best-practice" );
         $stdoutarray['vp best-practice'] = count( $this->securityRules->rules( $filter_array ) );
-        $stdoutarray['vp best-practice percentage'] = round( ( $stdoutarray['vp best-practice'] / $ruleForCalculation ) * 100, 0 );
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['vp best-practice percentage'] = round( ( $stdoutarray['vp best-practice'] / $ruleForCalculation ) * 100, 0 );
+        else
+            $stdoutarray['vp best-practice percentage'] = 0;
 
         //File Blocking Profiles
         $filter_array = array('query' => $generalFilter."(secprof has.from.query subquery1)", 'subquery1' => "fb is.visibility" );
         $stdoutarray['fb visibility'] = count( $this->securityRules->rules( $filter_array ) );
-        $stdoutarray['fb visibility percentage'] = round( ( $stdoutarray['fb visibility'] / $ruleForCalculation ) * 100, 0 );
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['fb visibility percentage'] = round( ( $stdoutarray['fb visibility'] / $ruleForCalculation ) * 100, 0 );
+        else
+            $stdoutarray['fb visibility percentage'] = 0;
         $filter_array = array('query' => $generalFilter."(secprof has.from.query subquery1)", 'subquery1' => "fb is.best-practice" );
         $stdoutarray['fb best-practice'] = count( $this->securityRules->rules( $filter_array ) );
-        $stdoutarray['fb best-practice percentage'] = round( ( $stdoutarray['fb best-practice'] / $ruleForCalculation ) * 100, 0 );
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['fb best-practice percentage'] = round( ( $stdoutarray['fb best-practice'] / $ruleForCalculation ) * 100, 0 );
+        else
+            $stdoutarray['fb best-practice percentage'] = 0;
 
         //Data Filtering
         //Todo
@@ -1239,26 +1282,44 @@ class VirtualSystem
         //URL Filtering Profiles
         $filter_array = array('query' => $generalFilter."(secprof has.from.query subquery1)", 'subquery1' => "url-site-access is.visibility" );
         $stdoutarray['url-site-access visibility'] = count( $this->securityRules->rules( $filter_array ) );
-        $stdoutarray['url-site-access visibility percentage'] = round( ( $stdoutarray['url-site-access visibility'] / $ruleForCalculation ) * 100, 0 );
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['url-site-access visibility percentage'] = round( ( $stdoutarray['url-site-access visibility'] / $ruleForCalculation ) * 100, 0 );
+        else
+            $stdoutarray['url-site-access visibility percentage'] = 0;
         $filter_array = array('query' => $generalFilter."(secprof has.from.query subquery1)", 'subquery1' => "url-site-access is.best-practice" );
         $stdoutarray['url-site-access best-practice'] = count( $this->securityRules->rules( $filter_array ) );
-        $stdoutarray['url-site-access best-practice percentage'] = round( ( $stdoutarray['url-site-access best-practice'] / $ruleForCalculation ) * 100, 0 );
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['url-site-access best-practice percentage'] = round( ( $stdoutarray['url-site-access best-practice'] / $ruleForCalculation ) * 100, 0 );
+        else
+            $stdoutarray['url-site-access best-practice percentage'] = 0;
 
         //Credential Theft Prevention
         $filter_array = array('query' => $generalFilter."(secprof has.from.query subquery1)", 'subquery1' => "url-credential is.visibility" );
         $stdoutarray['url-credential visibility'] = count( $this->securityRules->rules( $filter_array ) );
-        $stdoutarray['url-credential visibility percentage'] = round( ( $stdoutarray['url-credential visibility'] / $ruleForCalculation ) * 100, 0 );
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['url-credential visibility percentage'] = round( ( $stdoutarray['url-credential visibility'] / $ruleForCalculation ) * 100, 0 );
+        else
+            $stdoutarray['url-credential visibility percentage'] = 0;
         $filter_array = array('query' => $generalFilter."(secprof has.from.query subquery1)", 'subquery1' => "url-credential is.best-practice" );
         $stdoutarray['url-credential best-practice'] = count( $this->securityRules->rules( $filter_array ) );
-        $stdoutarray['url-credential best-practice percentage'] = round( ( $stdoutarray['url-credential best-practice'] / $ruleForCalculation ) * 100, 0 );
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['url-credential best-practice percentage'] = round( ( $stdoutarray['url-credential best-practice'] / $ruleForCalculation ) * 100, 0 );
+        else
+            $stdoutarray['url-credential best-practice percentage'] = 0;
 
         //DNS Security
         $filter_array = array('query' => $generalFilter."(secprof has.from.query subquery1)", 'subquery1' => "dns-list is.visibility" );
         $stdoutarray['dns-list visibility'] = count( $this->securityRules->rules( $filter_array ) );
-        $stdoutarray['dns-list visibility percentage'] = round( ( $stdoutarray['dns-list visibility'] / $ruleForCalculation ) * 100, 0 );
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['dns-list visibility percentage'] = round( ( $stdoutarray['dns-list visibility'] / $ruleForCalculation ) * 100, 0 );
+        else
+            $stdoutarray['dns-list visibility percentage'] = 0;
         $filter_array = array('query' => $generalFilter."(secprof has.from.query subquery1)", 'subquery1' => "dns-list is.best-practice" );
         $stdoutarray['dns-list best-practice'] = count( $this->securityRules->rules( $filter_array ) );
-        $stdoutarray['dns-list best-practice percentage'] = round( ( $stdoutarray['dns-list best-practice'] / $ruleForCalculation ) * 100, 0 );
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['dns-list best-practice percentage'] = round( ( $stdoutarray['dns-list best-practice'] / $ruleForCalculation ) * 100, 0 );
+        else
+            $stdoutarray['dns-list best-practice percentage'] = 0;
 
 
         $percentageArray = array();
