@@ -1158,9 +1158,11 @@ class VirtualSystem
         $stdoutarray['security rules'] = $this->securityRules->count();
 
         $stdoutarray['security rules allow'] = count( $this->securityRules->rules( "(action is.allow)" ) );
+        $stdoutarray['security rules allow enabled'] = count( $this->securityRules->rules( "(action is.allow) and (rule is.enabled)" ) );
         $stdoutarray['security rules allow disabled'] = count( $this->securityRules->rules( "(action is.allow) and (rule is.disabled)" ) );
         $stdoutarray['security rules enabled'] = count( $this->securityRules->rules( "(rule is.enabled)" ) );
         $stdoutarray['security rules deny'] = count( $this->securityRules->rules( "!(action is.allow)" ) );
+        $stdoutarray['security rules deny enabled'] = count( $this->securityRules->rules( "!(action is.allow) and (rule is.enabled)" ) );
         $ruleForCalculation = $stdoutarray['security rules allow'] - $stdoutarray['security rules allow disabled'];
 
         $generalFilter = "(rule is.enabled) and ";
@@ -1170,7 +1172,6 @@ class VirtualSystem
         $stdoutarray['log at start'] = count( $this->securityRules->rules( "(log at.start)" ) );
 
         //Log Forwarding Profiles
-        //Todo: what exactly need to be set? really only a logprof
         $stdoutarray['log prof set'] = count( $this->securityRules->rules( $generalFilter."(logprof is.set)" ) );
         $stdoutarray['log prof set percentage'] = round(( $stdoutarray['log prof set'] / $stdoutarray['security rules enabled'] ) * 100, 0 );
 
@@ -1236,7 +1237,6 @@ class VirtualSystem
         $stdoutarray['data best-practice'] = "NOT available";
 
         //URL Filtering Profiles
-        //Todo; separation needed
         $filter_array = array('query' => $generalFilter."(secprof has.from.query subquery1)", 'subquery1' => "url-site-access is.visibility" );
         $stdoutarray['url-site-access visibility'] = count( $this->securityRules->rules( $filter_array ) );
         $stdoutarray['url-site-access visibility percentage'] = round( ( $stdoutarray['url-site-access visibility'] / $ruleForCalculation ) * 100, 0 );
@@ -1245,7 +1245,6 @@ class VirtualSystem
         $stdoutarray['url-site-access best-practice percentage'] = round( ( $stdoutarray['url-site-access best-practice'] / $ruleForCalculation ) * 100, 0 );
 
         //Credential Theft Prevention
-        //Todo: no valid filter yet available
         $filter_array = array('query' => $generalFilter."(secprof has.from.query subquery1)", 'subquery1' => "url-credential is.visibility" );
         $stdoutarray['url-credential visibility'] = count( $this->securityRules->rules( $filter_array ) );
         $stdoutarray['url-credential visibility percentage'] = round( ( $stdoutarray['url-credential visibility'] / $ruleForCalculation ) * 100, 0 );
