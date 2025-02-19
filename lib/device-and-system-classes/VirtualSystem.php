@@ -1164,14 +1164,14 @@ class VirtualSystem
 
         $generalFilter = "(rule is.enabled) and ";
         //Logging
-        $stdoutarray['log at end'] = count( $this->securityRules->rules( $generalFilter."(log at.end)" ) );
-        $stdoutarray['log at end percentage'] = round(( $stdoutarray['log at end'] / $ruleForCalculation ) * 100, 0 );
-        $stdoutarray['log at start'] = count( $this->securityRules->rules( $generalFilter."(log at.start)" ) );
+        $stdoutarray['log at end'] = count( $this->securityRules->rules( "(log at.end)" ) );
+        $stdoutarray['log at end percentage'] = round(( $stdoutarray['log at end'] / $stdoutarray['security rules'] ) * 100, 0 );
+        $stdoutarray['log at start'] = count( $this->securityRules->rules( "(log at.start)" ) );
 
         //Log Forwarding Profiles
         //Todo: what exactly need to be set? really only a logprof
-        $stdoutarray['log prof set'] = count( $this->securityRules->rules( $generalFilter."(logprof is.set)" ) );
-        $stdoutarray['log prof set percentage'] = round(( $stdoutarray['log prof set'] / $ruleForCalculation ) * 100, 0 );
+        $stdoutarray['log prof set'] = count( $this->securityRules->rules( "(logprof is.set)" ) );
+        $stdoutarray['log prof set percentage'] = round(( $stdoutarray['log prof set'] / $stdoutarray['security rules'] ) * 100, 0 );
 
         //Wildfire Analysis Profiles
         $filter_array = array('query' => $generalFilter."(secprof has.from.query subquery1)", 'subquery1' => "wf is.visibility" );
@@ -1187,15 +1187,15 @@ class VirtualSystem
 
         // App-ID
         $stdoutarray['app id'] = count( $this->securityRules->rules( "!(app is.any)" ) );
-        $stdoutarray['app id percentage'] = round( ( $stdoutarray['app id'] / $ruleForCalculation ) * 100, 0 );
+        $stdoutarray['app id percentage'] = round( ( $stdoutarray['app id'] / $stdoutarray['security rules'] ) * 100, 0 );
 
         //User-ID
         $stdoutarray['user id'] = count( $this->securityRules->rules( "!(user is.any)" ) );
-        $stdoutarray['user id percentage'] = round( ( $stdoutarray['user id'] / $ruleForCalculation ) * 100, 0 );
+        $stdoutarray['user id percentage'] = round( ( $stdoutarray['user id'] / $stdoutarray['security rules'] ) * 100, 0 );
 
         //Service/Port
         $stdoutarray['service port'] = count( $this->securityRules->rules( "!(service is.any)" ) );
-        $stdoutarray['service port percentage'] = round( ( $stdoutarray['service port'] / $ruleForCalculation ) * 100, 0 );
+        $stdoutarray['service port percentage'] = round( ( $stdoutarray['service port'] / $stdoutarray['security rules'] ) * 100, 0 );
 
         //Antivirus Profiles
         $filter_array = array('query' => $generalFilter."(secprof has.from.query subquery1)", 'subquery1' => "av is.visibility" );
@@ -1263,40 +1263,95 @@ class VirtualSystem
 
         $percentageArray = array();
         $percentageArray_visibility = array();
-        $percentageArray_visibility['log at end'] = $stdoutarray['log at end percentage'];
-        $percentageArray_visibility['log prof set'] = $stdoutarray['log prof set percentage'];
-        $percentageArray_visibility['app id'] = $stdoutarray['app id percentage'];
-        $percentageArray_visibility['user id'] = $stdoutarray['user id percentage'];
-        $percentageArray_visibility['service port'] = $stdoutarray['service port percentage'];
+        $percentageArray_visibility['Logging'] = $stdoutarray['log at end percentage'];
+        $percentageArray_visibility['Log Forwarding Profiles'] = $stdoutarray['log prof set percentage'];
+        $percentageArray_visibility['Wildfire Analysis Profiles'] = $stdoutarray['wf visibility percentage'];
+        $percentageArray_visibility['Zone Protection'] = '---';
+        $percentageArray_visibility['App-ID'] = $stdoutarray['app id percentage'];
+        $percentageArray_visibility['User-ID'] = $stdoutarray['user id percentage'];
+        $percentageArray_visibility['Service/Port'] = $stdoutarray['service port percentage'];
 
-        $percentageArray_visibility['av'] = $stdoutarray['av visibility percentage'];
-        $percentageArray_visibility['as'] = $stdoutarray['as visibility percentage'];
-        $percentageArray_visibility['vp'] = $stdoutarray['vp visibility percentage'];
-        $percentageArray_visibility['fb'] = $stdoutarray['fb visibility percentage'];
-        $percentageArray_visibility['url-site-access'] = $stdoutarray['url-site-access visibility percentage'];
-        $percentageArray_visibility['url-credential'] = $stdoutarray['url-credential visibility percentage'];
-        $percentageArray_visibility['dns-list'] = $stdoutarray['dns-list visibility percentage'];
-        $percentageArray_visibility['wf'] = $stdoutarray['wf visibility percentage'];
+        $percentageArray_visibility['Antivirus Profiles'] = $stdoutarray['av visibility percentage'];
+        $percentageArray_visibility['Anti-Spyware Profiles'] = $stdoutarray['as visibility percentage'];
+        $percentageArray_visibility['Vulnerability Profiles'] = $stdoutarray['vp visibility percentage'];
+        $percentageArray_visibility['File Blocking Profiles'] = $stdoutarray['fb visibility percentage'];
+        $percentageArray_visibility['Data Filtering'] = '---';
+        $percentageArray_visibility['URL Filtering Profiles'] = $stdoutarray['url-site-access visibility percentage'];
+        $percentageArray_visibility['Credential Theft Prevention'] = $stdoutarray['url-credential visibility percentage'];
+        $percentageArray_visibility['DNS Security'] = $stdoutarray['dns-list visibility percentage'];
+
         $percentageArray['visibility'] = $percentageArray_visibility;
 
         $percentageArray_best_practice = array();
-        $percentageArray_best_practice['log at end'] = $stdoutarray['log at end percentage'];
-        $percentageArray_best_practice['log prof set'] = $stdoutarray['log prof set percentage'];
-        $percentageArray_best_practice['app id'] = $stdoutarray['app id percentage'];
-        $percentageArray_best_practice['user id'] = $stdoutarray['user id percentage'];
-        $percentageArray_best_practice['service port'] = $stdoutarray['service port percentage'];
+        $percentageArray_best_practice['Logging'] = $stdoutarray['log at end percentage'];
+        $percentageArray_best_practice['Log Forwarding Profiles'] = $stdoutarray['log prof set percentage'];
 
-        $percentageArray_best_practice['av'] = $stdoutarray['av best-practice percentage'];
-        $percentageArray_best_practice['as'] = $stdoutarray['as best-practice percentage'];
-        $percentageArray_best_practice['vp'] = $stdoutarray['vp best-practice percentage'];
-        $percentageArray_best_practice['fb'] = $stdoutarray['fb best-practice percentage'];
-        $percentageArray_best_practice['url-site-access'] = $stdoutarray['url-site-access best-practice percentage'];
-        $percentageArray_best_practice['url-credential'] = $stdoutarray['url-credential best-practice percentage'];
-        $percentageArray_best_practice['dns-list'] = $stdoutarray['dns-list best-practice percentage'];
-        $percentageArray_best_practice['wf'] = $stdoutarray['wf best-practice percentage'];
+        $percentageArray_best_practice['Wildfire Analysis Profiles'] = $stdoutarray['wf best-practice percentage'];
+        $percentageArray_best_practice['Zone Protection'] = '---';
+        $percentageArray_best_practice['App-ID'] = $stdoutarray['app id percentage'];
+        $percentageArray_best_practice['User-ID'] = $stdoutarray['user id percentage'];
+        $percentageArray_best_practice['Service/Port'] = $stdoutarray['service port percentage'];
+
+        $percentageArray_best_practice['Antivirus Profiles'] = $stdoutarray['av best-practice percentage'];
+        $percentageArray_best_practice['Anti-Spyware Profiles'] = $stdoutarray['as best-practice percentage'];
+        $percentageArray_best_practice['Vulnerability Profiles'] = $stdoutarray['vp best-practice percentage'];
+        $percentageArray_best_practice['File Blocking Profiles'] = $stdoutarray['fb best-practice percentage'];
+        $percentageArray_best_practice['Data Filtering'] = '---';
+        $percentageArray_best_practice['URL Filtering Profiles'] = $stdoutarray['url-site-access best-practice percentage'];
+        $percentageArray_best_practice['Credential Theft Prevention'] = $stdoutarray['url-credential best-practice percentage'];
+        $percentageArray_best_practice['DNS Security'] = $stdoutarray['dns-list best-practice percentage'];
+
         $percentageArray['best-practice'] = $percentageArray_best_practice;
 
         $stdoutarray['percentage'] = $percentageArray;
+
+        if( !PH::$shadow_json )
+        {
+            PH::print_stdout("visibility");
+            $tbl = new ConsoleTable();
+            $tbl->setHeaders(
+                array('Type', 'percentage', "%")
+            );
+            foreach( $percentageArray_visibility as $key => $value )
+            {
+                if( strpos($value, "---") !== False )
+                {
+                    $string = $value;
+                }
+                else
+                {
+                    $string = "";
+                    $test = round( ($value/10) * 2 );
+                    $string = str_pad($string, $test, "*", STR_PAD_LEFT);
+                }
+                $tbl->addRow(array($key, $value, $string));
+            }
+
+            echo $tbl->getTable();
+
+            PH::print_stdout("best-practice");
+            $tbl = new ConsoleTable();
+            $tbl->setHeaders(
+                array('Type', 'percentage', "%")
+            );
+            foreach( $percentageArray_best_practice as $key => $value )
+            {
+                if( strpos($value, "---") !== False )
+                {
+                    $string = $value;
+                }
+                else
+                {
+                    $string = "";
+                    $test = round( ($value/10) * 2 );
+                    $string = str_pad($string, $test, "*", STR_PAD_LEFT);
+                }
+                $tbl->addRow(array($key, $value, $string));
+            }
+
+            echo $tbl->getTable();
+        }
+
 
         #PH::$JSON_TMP[$this->name] = $stdoutarray;
         PH::$JSON_TMP[] = $stdoutarray;
