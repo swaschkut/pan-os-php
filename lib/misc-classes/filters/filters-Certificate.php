@@ -181,6 +181,16 @@ RQuery::$defaultFilters['certificate']['expired']['operators']['>,<,=,!'] = arra
             $filter_timestamp = $context->value;
         else
             $filter_timestamp = strtotime($context->value);
+
+        if( empty($filter_timestamp) )
+        {
+            PH::print_stdout( );
+            PH::print_stdout( "Filter Input: ".$context->value);
+            PH::print_stdout("supported input: timestamp MM/DD/YYYY [american] / DD-MM-YYYY [european] / 21 September 2021 / -90 days");
+            derr( "your input is not valid", null, false );
+        }
+
+
         $operator = $context->operator;
         if( $operator == '=' )
             $operator = '==';

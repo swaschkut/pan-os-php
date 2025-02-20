@@ -281,5 +281,15 @@ class TemplateStack
         return null;
     }
 
+    public function removeDeviceAny( )
+    {
+        $this->FirewallsSerials = array();
+
+        if( $this->devicesRoot !== FALSE )
+            $this->devicesRoot->parentNode->removeChild( $this->devicesRoot );
+
+        return null;
+    }
+
 }
 

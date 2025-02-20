@@ -439,7 +439,46 @@ DeviceCallContext::$supportedActions['DeviceGroup-removeSerial'] = array(
         'serial' => array('type' => 'string', 'default' => 'null'),
     ),
 );
+DeviceCallContext::$supportedActions['DeviceGroup-removeSerial-Any'] = array(
+    'name' => 'devicegroup-removeserial-any',
+    'MainFunction' => function (DeviceCallContext $context) {
+    },
+    'GlobalFinishFunction' => function (DeviceCallContext $context) {
+        #$dgName = $context->arguments['name'];
+        #$serial = $context->arguments['serial'];
 
+        $pan = $context->subSystem;
+
+        if( !$pan->isPanorama() )
+            derr("only supported on Panorama config");
+
+        /*
+        $tmp_dg = $pan->findDeviceGroup($dgName);
+        if( $tmp_dg === null )
+        {
+            $string = "DeviceGroup with name: " . $dgName . " not available!";
+            PH::ACTIONlog( $context, $string );
+        }
+        else
+        {
+            $string = "DeviceGroup with name: " . $dgName . " got serial: ".$serial." removed!";
+            PH::ACTIONlog( $context, $string );
+            */
+            if( $context->isAPI )
+            {
+                #$con = findConnectorOrDie($tmp_dg);
+                $con = $context->connector;
+
+                $xpath = DH::elementToPanXPath($context->object->xmlroot);
+                $xpath .= '/devices';
+                #$xpath .= "/entry[@name='{$serial}']";
+
+                $con->sendDeleteRequest($xpath);
+            }
+
+        $context->object->removeDeviceAny( );
+    }
+);
 DeviceCallContext::$supportedActions['DeviceGroup-delete'] = array(
     'name' => 'devicegroup-delete',
     'MainFunction' => function (DeviceCallContext $context) {
@@ -887,7 +926,38 @@ DeviceCallContext::$supportedActions['TemplateStack-removeSerial'] = array(
         'serial' => array('type' => 'string', 'default' => 'null'),
     ),
 );
+DeviceCallContext::$supportedActions['TemplateStack-removeSerial-any'] = array(
+    'name' => 'templatestack-removeserial-any',
+    'MainFunction' => function (DeviceCallContext $context) {
+    },
+    'GlobalFinishFunction' => function (DeviceCallContext $context) {
+        if( $context->object !== null && get_class($context->object) !== "TemplateStack" )
+        {
+            $string = "devicetype=templatestack missing";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
 
+        $pan = $context->subSystem;
+
+        if( !$pan->isPanorama() )
+            derr("only supported on Panorama config");
+
+
+        if( $context->isAPI )
+        {
+            #$con = findConnectorOrDie();
+            $con = $context->connector;
+
+            $xpath = DH::elementToPanXPath($context->object->xmlroot);
+            $xpath .= '/devices';
+
+            $con->sendDeleteRequest($xpath);
+        }
+
+        $context->object->removeDeviceAny();
+    }
+);
 DeviceCallContext::$supportedActions['VirtualSystem-delete'] = array(
     'name' => 'virtualsystem-delete',
     'MainFunction' => function (DeviceCallContext $context) {
