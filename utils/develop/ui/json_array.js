@@ -8060,6 +8060,15 @@ var subjectObject =
                         },
                         "help": "'securityprofiletype=url'"
                     },
+                    "alert-credential.has": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% securityrule )",
+                            "input": "input\/panorama-8.0.xml"
+                        },
+                        "help": "'securityprofiletype=url'"
+                    },
                     "block.has": {
                         "Function": {},
                         "arg": true,
@@ -8069,7 +8078,25 @@ var subjectObject =
                         },
                         "help": "'securityprofiletype=url'"
                     },
+                    "block-credential.has": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% securityrule )",
+                            "input": "input\/panorama-8.0.xml"
+                        },
+                        "help": "'securityprofiletype=url'"
+                    },
                     "allow.has": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% securityrule )",
+                            "input": "input\/panorama-8.0.xml"
+                        },
+                        "help": "'securityprofiletype=url'"
+                    },
+                    "allow-credential.has": {
                         "Function": {},
                         "arg": true,
                         "ci": {
@@ -8105,6 +8132,34 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=url-filtering' e.g. 'filter=(url is.best-practice)'"
+                    }
+                }
+            },
+            "url-credential": {
+                "operators": {
+                    "is.visibility": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=url-filtering' e.g. 'filter=(url-credential is.visibility)'"
+                    },
+                    "is.best-practice": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=url-filtering' e.g. 'filter=(url-credential is.best-practice)'"
+                    }
+                }
+            },
+            "url-site-access": {
+                "operators": {
+                    "is.visibility": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=url-filtering' e.g. 'filter=(url-site-access is.visibility)'"
+                    },
+                    "is.best-practice": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=url-filtering' e.g. 'filter=(url-site-access is.best-practice)'"
                     }
                 }
             },
