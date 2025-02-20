@@ -9,6 +9,7 @@ UTIL:
 * class SOPHOSXG | agggregateEthernetInteface UplinkLAG not same as aggregate-group Uplink - manipulation needed
 * type=securityprofile securityprofiletype=url-filtering | new actions=(url.credential-enforcement.log-severity:medium) / (actions=url.credential-enforcement.mode:ip-user)'
 * type=stats | extend counters for bp / visibility for class VirtualSystem
+* type=certificate 'filter=(expire < 360 days)' - improve filter
 
 BUGFIX:
 * type=securityprofile securitprofiletype=spyware | bugfix of displaying botnet-domain if packet-capture is missing
