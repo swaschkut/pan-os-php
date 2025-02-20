@@ -1146,7 +1146,7 @@ class VirtualSystem
     }
 
 
-    public function display_bp_statistics()
+    public function get_bp_statistics()
     {
         $stdoutarray = array();
 
@@ -1365,6 +1365,16 @@ class VirtualSystem
         $percentageArray['best-practice'] = $percentageArray_best_practice;
 
         $stdoutarray['percentage'] = $percentageArray;
+
+        return $stdoutarray;
+    }
+
+    public function display_bp_statistics()
+    {
+        $stdoutarray = $this->get_bp_statistics();
+
+        $percentageArray_visibility = $stdoutarray['percentage']['visibility'];
+        $percentageArray_best_practice = $stdoutarray['percentage']['best-practice'];
 
         if( !PH::$shadow_json )
         {
