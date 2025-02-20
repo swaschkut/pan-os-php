@@ -10,6 +10,7 @@ UTIL:
 * type=securityprofile securityprofiletype=url-filtering | new actions=(url.credential-enforcement.log-severity:medium) / (actions=url.credential-enforcement.mode:ip-user)'
 * type=stats | extend counters for bp / visibility for class VirtualSystem
 * type=certificate 'filter=(expire < 360 days)' - improve filter
+* type=device | introduce new actions=actions=(devicegroup-removeserial-any) / (actions=templatestack-removeserial-any)
 
 BUGFIX:
 * type=securityprofile securitprofiletype=spyware | bugfix of displaying botnet-domain if packet-capture is missing
