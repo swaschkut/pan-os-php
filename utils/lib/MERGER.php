@@ -3208,13 +3208,18 @@ class MERGER extends UTIL
 
                             foreach( $upper_NamehashMap[$pickedObject->name()] as $key => $overridenOBJ )
                             {
-                                if( !$overridenOBJ->isAddress() )
+                                if( !$overridenOBJ->isService() )
                                 {
                                     $skip2 = TRUE;
                                     $skippedOBJ = $overridenOBJ;
                                     break;
                                 }
-                                if( $overridenOBJ->value() !== $object->value() )
+                                /** @var Service $object */
+                                if( !$object->dstPortMapping()->equals($overridenOBJ->dstPortMapping())
+                                    || !$object->srcPortMapping()->equals($overridenOBJ->srcPortMapping())
+                                    || $object->getOverride() != $overridenOBJ->getOverride()
+                                    || $object->protocol() != $overridenOBJ->protocol()
+                                )
                                 {
                                     $skip3 = TRUE;
                                     $skippedOBJ = $overridenOBJ;
