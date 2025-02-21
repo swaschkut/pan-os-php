@@ -398,7 +398,7 @@ class Rule
 
         if( count($this->_targets[$serialNumber]) == 0 )
         {
-            if( $vsys === null )
+            if( $vsys === null || $vsys === "ANY" )
             {
                 unset($this->_targets[$serialNumber]);
                 if( count($this->_targets) == 0 )
