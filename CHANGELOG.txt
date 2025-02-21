@@ -25,6 +25,7 @@ GENERAL:
 * class CONVERTER / SOPHOSXGfunction | method validate_interface_names() - improve for AggregateEthernetInterface rename
 * update Device App-ID to version 8945-9271
 * class PanoramaConf | introduce method findManagedDevice()
+* class VirtualSystem/DeviceGroup | correction for get_bp_visiblity()
 
 
 2.1.34 (20250212)
