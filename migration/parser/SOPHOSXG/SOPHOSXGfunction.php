@@ -336,6 +336,9 @@ trait SOPHOSXGfunction
 
         foreach( $XMLroot as $child )
         {
+            $status_node = DH::findFirstElement( 'Status', $child);
+            if( $status_node !== false )
+                break;
             /*
            foreach ($XMLroot->childNodes as $child)
            {
@@ -385,6 +388,9 @@ trait SOPHOSXGfunction
 
         foreach( $XMLroot as $child )
         {
+            $status_node = DH::findFirstElement( 'Status', $child);
+            if( $status_node !== false )
+                break;
             /*
            foreach ($XMLroot->childNodes as $child)
            {
@@ -646,6 +652,9 @@ trait SOPHOSXGfunction
 
         foreach( $XMLroot as $child )
         {
+            $status_node = DH::findFirstElement( 'Status', $child);
+            if( $status_node !== false )
+                break;
             /*
            foreach ($XMLroot->childNodes as $child)
            {
@@ -785,6 +794,9 @@ trait SOPHOSXGfunction
 
         foreach( $XMLroot as $child )
         {
+            $status_node = DH::findFirstElement( 'Status', $child);
+            if( $status_node !== false )
+                break;
             /*
            foreach ($XMLroot->childNodes as $child)
            {
@@ -884,6 +896,9 @@ trait SOPHOSXGfunction
 
         foreach( $XMLroot as $child )
         {
+            $status_node = DH::findFirstElement( 'Status', $child);
+            if( $status_node !== false )
+                break;
 
             $name_node = DH::findFirstElement( 'Name', $child);
             $name = $this->normalizeNames( $name_node->textContent );
@@ -1213,6 +1228,10 @@ trait SOPHOSXGfunction
 
         foreach( $XMLroot as $child )
         {
+            $status_node = DH::findFirstElement( 'Status', $child);
+            if( $status_node !== false )
+                break;
+
             $name_node = DH::findFirstElement('Name', $child);
             $name = $this->normalizeNames($name_node->textContent);
             PH::print_stdout();

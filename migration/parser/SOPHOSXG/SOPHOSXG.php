@@ -101,15 +101,18 @@ class SOPHOSXG extends PARSER
         #foreach( $v->owner->network->aggregateEthernetIfStore->getInterfaces() as $aggregateGroup )
         #    $aggregateGroup->setName("ae".$ii);
         $aeInterfaces = $v->owner->network->aggregateEthernetIfStore->getInterfaces();
-        $aeInt = $aeInterfaces[0];
-        foreach( $v->owner->network->ethernetIfStore->getInterfaces() as $interface )
+        if( isset($aeInterfaces[0]) )
         {
-            if( $interface->type === "aggregate-group" )
+            $aeInt = $aeInterfaces[0];
+            foreach( $v->owner->network->ethernetIfStore->getInterfaces() as $interface )
             {
-                /** @VAR EthernetInterface $interface */
-                $interface->setAE($aeInt->name());
+                if( $interface->type === "aggregate-group" )
+                {
+                    /** @VAR EthernetInterface $interface */
+                    $interface->setAE($aeInt->name());
+                }
+                #    $aggregateGroup->setName("ae".$ii);
             }
-            #    $aggregateGroup->setName("ae".$ii);
         }
 
 

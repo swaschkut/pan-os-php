@@ -12,6 +12,7 @@ UTIL:
 * type=certificate 'filter=(expire < 360 days)' - improve filter
 * type=device | introduce new actions=devicegroup-removeserial-any / templatestack-removeserial-any
 * type=device devicetype=manageddevice actions=manageddevice-delete-any | extend with LogCollectorGroup removal
+* type=vendor-migration vendor=sophosxg | optimisation
 
 BUGFIX:
 * type=securityprofile securitprofiletype=spyware | bugfix of displaying botnet-domain if packet-capture is missing
