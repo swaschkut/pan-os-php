@@ -334,7 +334,10 @@ trait SOPHOSXGfunction
         {
             $status_node = DH::findFirstElement( 'Status', $child);
             if( $status_node !== false )
-                break;
+            {
+                if( $status_node->textContent == "No. of records Zero." )
+                    break;
+            }
             /*
            foreach ($XMLroot->childNodes as $child)
            {
@@ -391,7 +394,10 @@ trait SOPHOSXGfunction
         {
             $status_node = DH::findFirstElement( 'Status', $child);
             if( $status_node !== false )
-                break;
+            {
+                if( $status_node->textContent == "No. of records Zero." )
+                    break;
+            }
             /*
            foreach ($XMLroot->childNodes as $child)
            {
@@ -657,7 +663,10 @@ trait SOPHOSXGfunction
         {
             $status_node = DH::findFirstElement( 'Status', $child);
             if( $status_node !== false )
-                break;
+            {
+                if( $status_node->textContent == "No. of records Zero." )
+                    break;
+            }
             /*
            foreach ($XMLroot->childNodes as $child)
            {
@@ -803,7 +812,10 @@ trait SOPHOSXGfunction
         {
             $status_node = DH::findFirstElement( 'Status', $child);
             if( $status_node !== false )
-                break;
+            {
+                if( $status_node->textContent == "No. of records Zero." )
+                    break;
+            }
             /*
            foreach ($XMLroot->childNodes as $child)
            {
@@ -833,7 +845,7 @@ trait SOPHOSXGfunction
             $distance_node = DH::findFirstElement( 'Distance', $child);
             $metric = $distance_node->textContent;
             if( $metric == 0 )
-                $metric = 1;
+                $metric = 10;
 
 
             if(  $this->useLogicalRouter )
@@ -910,13 +922,18 @@ trait SOPHOSXGfunction
         {
             $status_node = DH::findFirstElement( 'Status', $child);
             if( $status_node !== false )
-                break;
+            {
+                if( $status_node->textContent == "No. of records Zero." )
+                    break;
+            }
+                
 
             $name_node = DH::findFirstElement( 'Name', $child);
             $name = $this->normalizeNames( $name_node->textContent );
 
             $newName = $v->securityRules->findAvailableName($name);
             $newRule = $v->securityRules->newSecurityRule($newName);
+            PH::print_stdout( "SecurityRule: ".$newRule->name());
 
             $status_node = DH::findFirstElement( 'Status', $child);
             if( $status_node != null )
@@ -957,25 +974,16 @@ trait SOPHOSXGfunction
             elseif( $userPolicy_node !== false )
                 $Policy_node = $userPolicy_node;
 
-            if( $networkPolicy_node !== false || $userPolicy_node !== false )
-            {
+            if( $networkPolicy_node !== false || $userPolicy_node !== false ) {
                 $action_node = DH::findFirstElement('Action', $Policy_node);
-                if( $action_node->textContent === "Accept" )
-                {
+                if ($action_node->textContent === "Accept") {
                     $newRule->setAction("allow");
-                }
-                elseif( $action_node->textContent === "Drop" )
-                {
+                } elseif ($action_node->textContent === "Drop") {
                     $newRule->setAction("drop");
-                }
-                elseif( $action_node->textContent === "Reject" )
-                {
+                } elseif ($action_node->textContent === "Reject") {
                     $newRule->setAction("reset-both");
-                }
-
-                else
-                {
-                    print "ACTION: ".$action_node->textContent."\n";
+                } else {
+                    print "ACTION: " . $action_node->textContent . "\n";
                     exit();
                 }
                 $logTraffic_node = DH::findFirstElement('LogTraffic', $Policy_node);
@@ -988,7 +996,7 @@ trait SOPHOSXGfunction
                             continue;
 
                         $src_zone = $v->zoneStore->find($sourceZone->textContent);
-                        if($src_zone === null)
+                        if ($src_zone === null)
                             $src_zone = $v->zoneStore->newZone($sourceZone->textContent, "layer3");
                         $src_zone->type = "layer3";
                         $newRule->from->addZone($src_zone);
@@ -996,14 +1004,13 @@ trait SOPHOSXGfunction
 
                 $destinationZones_node = DH::findFirstElement('DestinationZones', $Policy_node);
                 if ($destinationZones_node !== false)
-                    foreach ($destinationZones_node->childNodes as $destinationZone)
-                    {
+                    foreach ($destinationZones_node->childNodes as $destinationZone) {
                         /** @var DOMElement $destinationZone */
                         if ($destinationZone->nodeType != XML_ELEMENT_NODE)
                             continue;
 
                         $dst_zone = $v->zoneStore->find($destinationZone->textContent);
-                        if($dst_zone === null)
+                        if ($dst_zone === null)
                             $dst_zone = $v->zoneStore->newZone($destinationZone->textContent, "layer3");
                         $dst_zone->type = "layer3";
                         $newRule->to->addZone($dst_zone);
@@ -1012,8 +1019,8 @@ trait SOPHOSXGfunction
 
                 $sourceNetworks_node = DH::findFirstElement('SourceNetworks', $Policy_node);
                 if ($sourceNetworks_node !== false)
-                    foreach ($sourceNetworks_node->childNodes as $sourceNetwork)
-                    {
+                {
+                    foreach ($sourceNetworks_node->childNodes as $sourceNetwork) {
                         /** @var DOMElement $sourceNetwork */
                         if ($sourceNetwork->nodeType != XML_ELEMENT_NODE)
                             continue;
@@ -1023,36 +1030,34 @@ trait SOPHOSXGfunction
                         $addr_obj = $v->addressStore->find($src_name);
                         if ($addr_obj !== null)
                             $newRule->source->addObject($addr_obj);
-                        else
-                        {
+                        else {
                             $country = $src_name;
-                            if( in_array($country, $panwRegions) )
-                            {
+                            if (in_array($country, $panwRegions)) {
                                 $key = array_search($country, $panwRegions);
                                 $tmp_adr = $v->addressStore->findOrCreate($key);
                                 $newRule->source->addObject($tmp_adr);
                             }
-                            if( in_array($country, $sophosRegions) )
-                            {
+                            if (in_array($country, $sophosRegions)) {
                                 $key = array_search($country, $sophosRegions);
                                 $tmp_adr = $v->addressStore->findOrCreate($key);
                                 $newRule->source->addObject($tmp_adr);
                             }
-                            if( !in_array($country, $panwRegions) && !in_array($country, $sophosRegions) )
-                            {
+                            if (!in_array($country, $panwRegions) && !in_array($country, $sophosRegions)) {
                                 $description = $newRule->description();
                                 $newDescription = $description . "| SRCobj: " . $src_name;
                                 $newRule->setDescription($newDescription);
-                                mwarning( "SRC object: '".$src_name. "' not found", null, FALSE );
+                                mwarning("SRC object: '" . $src_name . "' not found", null, FALSE);
                             }
 
                         }
 
                     }
+                }
 
 
                 $destinationNetworks_node = DH::findFirstElement('DestinationNetworks', $Policy_node);
                 if ($destinationNetworks_node !== false)
+                {
                     foreach ($destinationNetworks_node->childNodes as $destinationNetwork)
                     {
                         /** @var DOMElement $destinationNetwork */
@@ -1081,14 +1086,44 @@ trait SOPHOSXGfunction
                             }
                             if( !in_array($country, $panwRegions) && !in_array($country, $sophosRegions) )
                             {
-                                $description = $newRule->description();
-                                $newDescription = $description . "| DSTobj: " . $dst_name;
-                                $newRule->setDescription($newDescription);
-                                mwarning( "RULE: ".$newRule->name()." DST object: '".$dst_name. "' not found", null, FALSE );
+                                if( strpos($dst_name, "Port") !== FALSe )
+                                {
+                                    /*
+                                    $dst_name  = $destinationNetwork->textContent;
+                                    $dst_name = str_replace("#","", $dst_name);
+                                    $dst_name = explode( ":", $dst_name );
+                                    $int = $v->owner->network->ethernetIfStore->find($dst_name[0]);
+                                    if( $int !== null )
+                                    {
+                                        $ipv4Array = $int->getLayer3IPv4Addresses();
+
+                                        $address = $ipv4Array[0];
+                                        $address = explode( "/", $address );
+                                        $addr_obj = $v->addressStore->find($address[0]);
+                                        if( $addr_obj === null )
+                                            $addr_obj = $v->addressStore->newAddress($address[0], 'ip-netmask', $address[0]);
+                                        $newRule->destination->addObject($addr_obj);
+                                    }
+                                    else
+                                    {
+
+                                    }
+                                    */
+                                        mwarning( "SecRule:".$newRule->name()." - DST object INTERFACE: '".$destinationNetwork->textContent. "' not found", null, FALSE );
+                                    #}
+                                }
+                                else
+                                {
+                                    $description = $newRule->description();
+                                    $newDescription = $description . "| DSTobj: " . $dst_name;
+                                    $newRule->setDescription($newDescription);
+                                    mwarning( "RULE: ".$newRule->name()." DST object: '".$dst_name. "' not found", null, FALSE );
+                                }
                             }
                         }
-
                     }
+                }
+
 
 
                 $services_node = DH::findFirstElement('Services', $Policy_node);
@@ -1229,7 +1264,7 @@ trait SOPHOSXGfunction
                     }
                 }
             }
-            PH::print_stdout( "SecurityRule: ".$newRule->name());
+
         }
     }
 
@@ -1246,7 +1281,10 @@ trait SOPHOSXGfunction
         {
             $status_node = DH::findFirstElement( 'Status', $child);
             if( $status_node !== false )
-                break;
+            {
+                if( $status_node->textContent == "No. of records Zero." )
+                    break;
+            }
 
             $name_node = DH::findFirstElement('Name', $child);
             $name = $this->normalizeNames($name_node->textContent);

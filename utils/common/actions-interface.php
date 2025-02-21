@@ -344,3 +344,17 @@ InterfaceCallContext::$supportedActions['name-Rename'] = array(
     },
     'args' => array('newName' => array('type' => 'string', 'default' => '*nodefault*') )
 );
+
+InterfaceCallContext::$supportedActions['display-migration-warning'] = array(
+    'name' => 'display-migration-warning',
+    'MainFunction' => function (InterfaceCallContext $context) {
+        $object = $context->object;
+
+        /** @var EthernetInterface $object */
+        $int_warning = $object->xmlroot->getAttribute('warning');
+
+        PH::print_stdout( "    - ".htmlspecialchars_decode($int_warning) );
+
+
+    }
+);

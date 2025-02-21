@@ -28,6 +28,7 @@ GENERAL:
 * update Device App-ID to version 8945-9271
 * class PanoramaConf | introduce method findManagedDevice()
 * class VirtualSystem/DeviceGroup | correction for get_bp_visiblity()
+* class Template method createVsys() | Improve to validate/set default-vsys
 
 
 2.1.34 (20250212)
