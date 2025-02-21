@@ -17,6 +17,7 @@ BUGFIX:
 * type=device actions=devicegroup-create:DG-name | bugfix if no parentDG move is needed
 * class MERGER | bugfix if argument outputformatset is used
 * class NetworkPropertiesContainer | bugfix to not add StaticRoute information a second time to memory
+* type=securityprofile actions=exporttoexcel | bugfix if predefined category are used in decryption rules - wrong reference
 
 GENERAL:
 * class EthernetInterface/AggregateEthernetInterface | optimisation to always define correct class

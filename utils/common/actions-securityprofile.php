@@ -1407,6 +1407,11 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     {
                         $lines .= $context->encloseFunction( "" );
                     }
+                    elseif( get_class($object) == "SecurityProfile" )
+                    {
+                        //Todo: e.g. Decryption rule with URL category exclusion of predefined, are not found as Predefined created as new tmp
+                        $lines .= $context->encloseFunction( "" );
+                    }
                     else
                     {
                         $refCount = $object->countDisabledRefRule();
