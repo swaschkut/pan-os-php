@@ -35,7 +35,7 @@ class XPATH extends UTIL
 
     public function utilStart()
     {
-        $this->usageMsg = PH::boldText("USAGE: ")."php ".basename(__FILE__)." in=inputfile.xml ".
+        $this->usageMsg = PH::boldText("USAGE: ")."php ".basename(__FILE__)." in=inputfile.xml \n".
             "        \"filter-node=certificate\"\n".
             "        \"[filter-nameattribute=address_object_name]\"\n".
             "        \"[filter-text=xml-node-text]\"\n".
