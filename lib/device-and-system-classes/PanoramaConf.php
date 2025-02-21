@@ -1458,6 +1458,20 @@ class PanoramaConf
     }
 
     /**
+     * @param string $name
+     * @return TemplateStack|null
+     */
+    public function findManagedDevice($name)
+    {
+        foreach( $this->managedFirewallsSerials as $managedFirewall )
+        {
+            if( $managedFirewall->name() == $name )
+                return $managedFirewall;
+        }
+
+        return null;
+    }
+    /**
      * @param string $fileName
      * @param bool $printMessage
      * @param int $indentingXml
