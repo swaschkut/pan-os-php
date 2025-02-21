@@ -36,6 +36,7 @@ class TemplateStack
 
     /** @var DOMElement */
     public $devicesRoot;
+    public $userGroupSourceRoot;
 
     public $xmlroot = null;
 
@@ -99,6 +100,21 @@ class TemplateStack
                 {
                     $managedFirewall->addTemplateStack($this->name);
                     $managedFirewall->addReference( $this );
+                }
+            }
+        }
+
+        $this->userGroupSourceRoot = DH::findFirstElement('user-group-source', $xml);
+        if( $this->userGroupSourceRoot !== false )
+        {
+            $master_devide_node = DH::findFirstElement('master-device', $this->userGroupSourceRoot);
+            if( $master_devide_node !== FALSE )
+            {
+                $device_node = DH::findFirstElement('device', $master_devide_node);
+                if( $device_node !== FALSE )
+                {
+                    $serial = $device_node->textContent;
+                    //Todo: is there a need to set a references??? already done above
                 }
             }
         }
@@ -262,6 +278,18 @@ class TemplateStack
             unset( $this->FirewallsSerials[$serial] );
             //missing XML manipulation
 
+            $user_group_source_node = DH::findFirstElement("user-group-source", $this->xmlroot);
+            if( $user_group_source_node !== false )
+            {
+                $master_device_node = DH::findFirstElement("master-device", $user_group_source_node);
+                if($master_device_node !== false)
+                {
+                    $device_node = DH::findFirstElement("device", $master_device_node);
+                    if($device_node->textContent == $serial)
+                        DH::removeChild( $user_group_source_node, $master_device_node );
+                }
+            }
+
             if( $this->devicesRoot !== FALSE )
             {
                 foreach( $this->devicesRoot->childNodes as $device )
@@ -271,7 +299,10 @@ class TemplateStack
 
                     if( $devname === $serial )
                     {
-                        DH::removeChild( $this->devicesRoot, $device );
+                        if( count($this->FirewallsSerials) > 0 )
+                            DH::removeChild( $this->devicesRoot, $device );
+                        else
+                            DH::clearDomNodeChilds($this->devicesRoot);
                         return true;
                     }
                 }

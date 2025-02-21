@@ -187,6 +187,22 @@ class ManagedDeviceStore extends ObjStore
         {
             unset( $this->owner->managedFirewallsSerials[$serial] );
             $this->remove( $tmp_obj );
+
+            foreach( $this->xmlroot->childNodes as $device )
+            {
+                if( $device->nodeType != 1 ) continue;
+                $devname = DH::findAttribute('name', $device);
+
+                if( $devname === $serial )
+                {
+                    if( count($this->owner->managedFirewallsSerials) > 0 )
+                        DH::removeChild( $this->xmlroot, $device );
+                    else
+                        DH::clearDomNodeChilds($this->xmlroot);
+
+                    return true;
+                }
+            }
         }
     }
 }

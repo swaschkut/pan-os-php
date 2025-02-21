@@ -37,6 +37,8 @@ class DeviceGroup
     /** @var DOMElement */
     public $devicesRoot;
 
+    public $userGroupSourceRoot;
+
     /** @var AddressStore */
     public $addressStore = null;
     /** @var ServiceStore */
@@ -1025,6 +1027,21 @@ class DeviceGroup
             }
         }
 
+        $this->userGroupSourceRoot = DH::findFirstElement('user-group-source', $xml);
+        if( $this->userGroupSourceRoot !== false )
+        {
+            $master_devide_node = DH::findFirstElement('master-device', $this->userGroupSourceRoot);
+            if( $master_devide_node !== FALSE )
+            {
+                $device_node = DH::findFirstElement('device', $master_devide_node);
+                if( $device_node !== FALSE )
+                {
+                    $serial = $device_node->textContent;
+                    //Todo: is there a need to set a references??? already done above
+                }
+            }
+        }
+
         if( $debugLoadTime )
             PH::print_DEBUG_loadtime("nestedPointOfView");
         $this->addressStore->nestedPointOfView();
@@ -1593,6 +1610,18 @@ class DeviceGroup
             unset( $this->devices[$serial] );
             //missing XML manipulation
 
+            $user_group_source_node = DH::findFirstElement("user-group-source", $this->xmlroot);
+            if( $user_group_source_node !== false )
+            {
+                $master_device_node = DH::findFirstElement("master-device", $user_group_source_node);
+                if($master_device_node !== false)
+                {
+                    $device_node = DH::findFirstElement("device", $master_device_node);
+                    if($device_node->textContent == $serial)
+                        DH::removeChild( $user_group_source_node, $master_device_node );
+                }
+            }
+
             if( $this->devicesRoot !== FALSE )
             {
                 foreach( $this->devicesRoot->childNodes as $device )
@@ -1602,7 +1631,10 @@ class DeviceGroup
 
                     if( $devname === $serial )
                     {
-                        DH::removeChild( $this->devicesRoot, $device );
+                        if( count($this->devices) > 0 )
+                            DH::removeChild( $this->devicesRoot, $device );
+                        else
+                            DH::clearDomNodeChilds($this->devicesRoot);
                         return true;
                     }
                 }

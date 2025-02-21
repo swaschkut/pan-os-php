@@ -14,6 +14,7 @@ UTIL:
 * type=device devicetype=manageddevice actions=manageddevice-delete-any | extend with LogCollectorGroup removal
 * type=vendor-migration vendor=sophosxg | optimisation
 * type=device devicetype=manageddevice actions=manageddevice-delete-any | optimisation to remove rule target but set rule description
+* type=device devicetype=manageddevice actions=manageddevice-delete-any | also delete seriel from DG/TEMP within user-group-source
 
 BUGFIX:
 * type=securityprofile securitprofiletype=spyware | bugfix of displaying botnet-domain if packet-capture is missing
