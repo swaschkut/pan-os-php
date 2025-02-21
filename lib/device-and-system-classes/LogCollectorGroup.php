@@ -121,4 +121,31 @@ class LogCollectorGroup
             }
         }
     }
+
+    public function removeDevice( $serial )
+    {
+        if( isset( $this->devices[$serial] ) )
+        {
+            unset( $this->devices[$serial] );
+            //missing XML manipulation
+
+            if( $this->devicesRoot !== FALSE )
+            {
+                foreach( $this->devicesRoot->childNodes as $device )
+                {
+                    if( $device->nodeType != 1 ) continue;
+                    $devname = DH::findAttribute('name', $device);
+
+                    if( $devname === $serial )
+                    {
+                        DH::removeChild( $this->devicesRoot, $device );
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+
 }

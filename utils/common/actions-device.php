@@ -1277,9 +1277,20 @@ DeviceCallContext::$supportedActions['ManagedDevice-delete-any'] = array(
                 }
                 elseif( $class === "LogCollectorGroup" )
                 {
-                    $string ="force delete ManagedDevice is not yet implemented for LogCollectorGroup!";
-                    PH::ACTIONlog( $context, $string );
-                    return null;
+                    /** @var LogCollectorGroup $ref */
+                    if( $context->isAPI )
+                    {
+                        $con = findConnectorOrDie($ref);
+
+                        $xpath = DH::elementToPanXPath($ref->xmlroot);
+                        $xpath .= '/devices';
+                        $xpath .= "/entry[@name='{$serial}']";
+
+                        $con->sendDeleteRequest($xpath);
+                    }
+
+                    $ref->removeDevice( $serial );
+                    $tmp_manageddevice->removeReference( $ref );
                 }
             }
         }
