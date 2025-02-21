@@ -413,13 +413,20 @@ class Rule
         if( $vsys === null )
             derr("attempt to remove a non multi-vsys firewall ({$serialNumber}) in a target that is multi-vsys");
 
-        if( !isset($this->_targets[$serialNumber][$vsys]) )
-            return FALSE;
-
-        unset($this->_targets[$serialNumber][$vsys]);
-
-        if( count($this->_targets[$serialNumber]) == 0 )
+        if( $vsys === "ANY" )
+        {
             unset($this->_targets[$serialNumber]);
+        }
+        else
+        {
+            if( !isset($this->_targets[$serialNumber][$vsys]) )
+                return FALSE;
+
+            unset($this->_targets[$serialNumber][$vsys]);
+
+            if( count($this->_targets[$serialNumber]) == 0 )
+                unset($this->_targets[$serialNumber]);
+        }
 
         $this->target_rewriteXML();
 
