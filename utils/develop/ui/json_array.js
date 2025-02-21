@@ -2050,6 +2050,10 @@ var subjectObject =
                     }
                 }
             },
+            "devicegroup-removeserial-any": {
+                "name": "devicegroup-removeserial-any",
+                "MainFunction": {}
+            },
             "display": {
                 "name": "display",
                 "MainFunction": {}
@@ -2186,6 +2190,21 @@ var subjectObject =
                 "name": "manageddevice-delete",
                 "MainFunction": {},
                 "GlobalFinishFunction": {},
+                "args": {
+                    "serial": {
+                        "type": "string",
+                        "default": "false"
+                    },
+                    "force": {
+                        "type": "bool",
+                        "default": "false",
+                        "help": "decommission Manageddevice, also if used on Device-Group or Template-stack"
+                    }
+                }
+            },
+            "manageddevice-delete-any": {
+                "name": "manageddevice-delete-any",
+                "MainFunction": {},
                 "args": {
                     "force": {
                         "type": "bool",
@@ -2385,6 +2404,10 @@ var subjectObject =
                         "default": "null"
                     }
                 }
+            },
+            "templatestack-removeserial-any": {
+                "name": "templatestack-removeserial-any",
+                "MainFunction": {}
             },
             "virtualsystem-delete": {
                 "name": "virtualsystem-delete",
@@ -3527,6 +3550,10 @@ var subjectObject =
         "action": {
             "display": {
                 "name": "display",
+                "MainFunction": {}
+            },
+            "display-migration-warning": {
+                "name": "display-migration-warning",
                 "MainFunction": {}
             },
             "displayreferences": {
