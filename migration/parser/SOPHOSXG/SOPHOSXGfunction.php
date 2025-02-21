@@ -6,29 +6,12 @@ trait SOPHOSXGfunction
      {
         /** @var VirtualSystem $v */
 
+         PH::print_stdout("--------------------------------------------------------");
+         PH::print_stdout("objectsIP");
+         
          foreach( $XMLroot as $child )
          {
-             /*
-            foreach ($XMLroot->childNodes as $child)
-            {
-                /** @var DOMElement $node *//*
-            if ($child->nodeType != XML_ELEMENT_NODE)
-                continue;
-*/
 
-            #if( $child->nodeName != 'IPHost' )
-            #    continue;
-            //IPHost
-
-            /*
-             * <IPHost transactionid="">
-             <Name>VPN-SVA-T1-VD-10.143.65.0_24</Name>
-             <IPFamily>IPv4</IPFamily>
-             <HostType>Network</HostType>
-             <IPAddress>10.143.65.0</IPAddress>
-             <Subnet>255.255.255.0</Subnet>
-            </IPHost>
-             */
             $name_node = DH::findFirstElement( 'Name', $child);
             $name = $this->normalizeNames($name_node->textContent);
 
@@ -108,12 +91,16 @@ trait SOPHOSXGfunction
                 mwarning( "not implemented yet" );
                 #exit();
             }
+
+            PH::print_stdout( "Address: ".$new_address->name());
         }
     }
 
      function sophos_xg_objectsIPGROUP( $v, $XMLroot): void
      {
         /** @var VirtualSystem $v */
+         PH::print_stdout("--------------------------------------------------------");
+         PH::print_stdout("objectsIPGROUP");
 
          foreach( $XMLroot as $child )
          {
@@ -165,13 +152,17 @@ trait SOPHOSXGfunction
                 <IPFamily>IPv4</IPFamily>
               </IPHostGroup>
              */
+             
+             PH::print_stdout( "Address-Group: ".$tmpGroup->name());
         }
     }
 
      function sophos_xg_objectsSERVICE( $v, $XMLroot): void
      {
         /** @var VirtualSystem $v */
-
+         PH::print_stdout("--------------------------------------------------------");
+         PH::print_stdout("objectsSERVICE");
+         
          foreach( $XMLroot as $child )
          {
              /*
@@ -325,6 +316,9 @@ trait SOPHOSXGfunction
                     }
 
                 }
+
+                PH::print_stdout( "Service: ".$newService->name());
+                
             }
         }
     }
@@ -333,7 +327,9 @@ trait SOPHOSXGfunction
      function sophos_xg_objectsSERVICEGROUP( $v, $XMLroot)
     {
         /** @var VirtualSystem $v */
-
+        PH::print_stdout("--------------------------------------------------------");
+        PH::print_stdout("objectsSERVICEGROUP");
+        
         foreach( $XMLroot as $child )
         {
             $status_node = DH::findFirstElement( 'Status', $child);
@@ -380,12 +376,17 @@ trait SOPHOSXGfunction
                         $tmpGroup->addMember($tmp_srv);
                 }
             }
+
+            PH::print_stdout( "Service-Group: ".$tmpGroup->name());
+            
         }
     }
      function sophos_xg_objectsFQDN( $v, $XMLroot)
     {
         /** @var VirtualSystem $v */
 
+        PH::print_stdout("--------------------------------------------------------");
+        PH::print_stdout("objectsFQDN");
         foreach( $XMLroot as $child )
         {
             $status_node = DH::findFirstElement( 'Status', $child);
@@ -420,25 +421,19 @@ trait SOPHOSXGfunction
             $new_address = $v->addressStore->find($name);
             if( $new_address === null )
                 $new_address = $v->addressStore->newAddress( $name, "fqdn", $fqdn_Name, $description );
+
+            PH::print_stdout( "FQDN: ".$new_address->name());
         }
     }
 
      public function sophos_xg_networkINTERFACES( $v, $XMLroot): void
      {
         /** @var VirtualSystem $v */
-
+         PH::print_stdout("--------------------------------------------------------");
+         PH::print_stdout("networkINTERFACES");
+         
          foreach( $XMLroot as $child )
          {
-         /*
-        foreach ($XMLroot->childNodes as $child)
-        {
-            /** @var DOMElement $node *//*
-            if ($child->nodeType != XML_ELEMENT_NODE)
-                continue;
-*//*
-            if ($child->nodeName != 'Interface')
-                continue;
-            */
 
             $networkzone_node = DH::findFirstElement( 'NetworkZone', $child);
             $networkzone = $networkzone_node->textContent;
@@ -538,6 +533,8 @@ trait SOPHOSXGfunction
              <Netmask>255.255.255.224</Netmask>
             </Interface>
              */
+
+             PH::print_stdout( "Interface: ".$newInterface->name());
         }
     }
 
@@ -545,7 +542,9 @@ trait SOPHOSXGfunction
      {
 
         /** @var VirtualSystem $v */
-
+         PH::print_stdout("--------------------------------------------------------");
+         PH::print_stdout("networkLAGS");
+         
          foreach( $XMLroot as $child )
          {
              /*
@@ -642,6 +641,8 @@ trait SOPHOSXGfunction
              <XmitHashPolicy>Layer2</XmitHashPolicy>
             </LAG>
              */
+
+             PH::print_stdout( "LAG: ".$interfaceOBJ->name());
         }
     }
 
@@ -649,7 +650,9 @@ trait SOPHOSXGfunction
     {
 
         /** @var VirtualSystem $v */
-
+        PH::print_stdout("--------------------------------------------------------");
+        PH::print_stdout("networkVLANS");
+        
         foreach( $XMLroot as $child )
         {
             $status_node = DH::findFirstElement( 'Status', $child);
@@ -784,12 +787,16 @@ trait SOPHOSXGfunction
 
             $new_router->attachedInterfaces->addInterface($tmp_sub);
 
+            PH::print_stdout( "subinter: ".$tmp_sub->name());
+
         }
     }
 
      function sophos_xg_routeSTATIC( $v, $XMLroot)
     {
-
+        PH::print_stdout("--------------------------------------------------------");
+        PH::print_stdout("routeSTATIC");
+        
         /** @var VirtualSystem $v */
 
         foreach( $XMLroot as $child )
@@ -875,6 +882,8 @@ trait SOPHOSXGfunction
               </UnicastRoute>
              */
 
+            PH::print_stdout( "StaticRoute: ".$tmpRoute->name());
+
         }
 
     }
@@ -882,6 +891,9 @@ trait SOPHOSXGfunction
 
      function sophos_xg_rulesFIREWALL( $v, $XMLroot)
     {
+        PH::print_stdout("--------------------------------------------------------");
+        PH::print_stdout("rulesFIREWALL");
+        
         /** @var VirtualSystem $v */
 
         $panwRegions = $this->default_regions();
@@ -1217,12 +1229,16 @@ trait SOPHOSXGfunction
                     }
                 }
             }
+            PH::print_stdout( "SecurityRule: ".$newRule->name());
         }
     }
 
 
      function sophos_xg_rulesNAT( $v, $XMLroot)
     {
+        PH::print_stdout("--------------------------------------------------------");
+        PH::print_stdout("rulesNAT");
+        
         /** @var VirtualSystem $v */
 
 
@@ -1464,6 +1480,8 @@ trait SOPHOSXGfunction
 
                 $newRule->to->addZone($tmpZone);
             }
+
+            PH::print_stdout( "NATRule: ".$newRule->name());
         }
     }
 
