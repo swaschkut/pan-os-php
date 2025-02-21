@@ -1305,7 +1305,7 @@ DeviceCallContext::$supportedActions['ManagedDevice-delete-any'] = array(
                         $ref->setDescription($ref->description()."|target-serial:'".$serial."' removed|");
                         $ref->target_removeDevice($serial, "ANY");
                     }
-
+                    $tmp_manageddevice->removeReference( $ref );
                 }
             }
         }
