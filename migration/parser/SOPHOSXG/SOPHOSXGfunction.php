@@ -1046,7 +1046,7 @@ trait SOPHOSXGfunction
                                 $description = $newRule->description();
                                 $newDescription = $description . "| SRCobj: " . $src_name;
                                 $newRule->setDescription($newDescription);
-                                mwarning("SRC object: '" . $src_name . "' not found", null, FALSE);
+                                mwarning("SecRULE: ".$newRule->name()."SRC object: '" . $src_name . "' not found", null, FALSE);
                             }
 
                         }
@@ -1117,7 +1117,7 @@ trait SOPHOSXGfunction
                                     $description = $newRule->description();
                                     $newDescription = $description . "| DSTobj: " . $dst_name;
                                     $newRule->setDescription($newDescription);
-                                    mwarning( "RULE: ".$newRule->name()." DST object: '".$dst_name. "' not found", null, FALSE );
+                                    mwarning( "SecRULE: ".$newRule->name()." DST object: '".$dst_name. "' not found", null, FALSE );
                                 }
                             }
                         }
@@ -1462,8 +1462,9 @@ trait SOPHOSXGfunction
                         if ($origSource->nodeType != XML_ELEMENT_NODE)
                             continue;
 
-                        print "OriginalSourceNetworks: '" . $origSource->textContent . "'\n";
+
                         $objName = $this->normalizeNames($origSource->textContent);
+                        print "OriginalSourceNetworks: '" . $objName . "'\n";
                         $tmpAddress = $v->addressStore->find($objName);
                         if ($tmpAddress != null)
                             $newRule->source->addObject($tmpAddress);
@@ -1483,8 +1484,9 @@ trait SOPHOSXGfunction
                         if ($origDestination->nodeType != XML_ELEMENT_NODE)
                             continue;
 
-                        print "OriginalDestinationNetworks: '" . $origDestination->textContent . "'\n";
+
                         $objName = $this->normalizeNames($origDestination->textContent);
+                        print "OriginalDestinationNetworks: '" . $objName . "'\n";
                         $tmpAddress = $v->addressStore->find($objName);
                         if ($tmpAddress != null)
                             $newRule->destination->addObject($tmpAddress);
