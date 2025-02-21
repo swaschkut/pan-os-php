@@ -1152,7 +1152,8 @@ class RuleCallContext extends CallContext
 
 
         if( $rule->securityProfileType() == 'none' )
-            return self::enclose('N/A');
+            #return self::enclose('N/A');
+            return self::enclose('not set');
 
         if( $rule->securityProfileType() == 'group' ) {
             $group_name = $rule->securityProfileGroup();
@@ -1174,11 +1175,13 @@ class RuleCallContext extends CallContext
             if( isset( $rule_profiles[ $profType ] ) )
                 $profileName = $rule_profiles[ $profType ];
             else
-                return self::enclose("N/A", $wrap);
+                #return self::enclose("N/A", $wrap);
+                return self::enclose("not set", $wrap);
 
             if( empty($profileName) )
             {
-                return self::enclose("N/A", $wrap);
+                #return self::enclose("N/A", $wrap);
+                return self::enclose("not set", $wrap);
             }
 
             if( $profType == "virus" || $profType == "spyware" || $profType == "vulnerability" || $profType == "wildfire-analysis" || $profType == "file-blocking" || $profType == "url-filtering" )
@@ -1203,7 +1206,8 @@ class RuleCallContext extends CallContext
 
                 if( !isset($profile) || !is_object($profile) )
                 {
-                    return self::enclose("N/A", $wrap);
+                    #return self::enclose("N/A", $wrap);
+                    return self::enclose("not set", $wrap);
                 }
                 else
                 {
@@ -1214,7 +1218,7 @@ class RuleCallContext extends CallContext
                         if( $sp_best_practice && $checkType == "bp" )
                         {
                             if( !$profile->is_best_practice() )
-                                return self::enclose("no", $wrap);
+                                return self::enclose("N/A", $wrap);
                             else
                                 return self::enclose($profile->name(), $wrap);
                         }
@@ -1222,7 +1226,7 @@ class RuleCallContext extends CallContext
                         if( $sp_visibility && $checkType == "visible")
                         {
                             if( !$profile->is_visibility() )
-                                return self::enclose("no", $wrap);
+                                return self::enclose("N/A", $wrap);
                             else
                                 return self::enclose($profile->name(), $wrap);
                         }
