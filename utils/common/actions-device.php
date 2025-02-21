@@ -1313,6 +1313,12 @@ DeviceCallContext::$supportedActions['ManagedDevice-delete-any'] = array(
 
         if( $tmp_manageddevice->countReferences() > 0 )
         {
+            $references = $tmp_manageddevice->getReferences();
+            foreach( $references as $ref )
+            {
+                $class = get_class($ref);
+                PH::print_stdout("used in: ".$class." | name: ".$ref->name());
+            }
             $string ="ManagedDevice is used and can NOT be removed!";
             PH::ACTIONlog( $context, $string );
             return null;
