@@ -1245,7 +1245,7 @@ class Container
 
     }
 
-    public function display_bp_statistics( $precision )
+    public function display_bp_statistics(  )
     {
         $stdoutarray = array();
         #PH::$JSON_TMP[$this->name] = $stdoutarray;

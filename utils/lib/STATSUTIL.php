@@ -45,14 +45,11 @@ class STATSUTIL extends RULEUTIL
         $this->time_to_process_objects();
 
 
-        if( isset(PH::$args['precision'])  )
-            $precision = PH::$args['precision'];
-        else
-            $precision = 0;
+
 
         PH::$args['stats'] = "stats";
         PH::$JSON_TMP = array();
-        $this->stats( $precision );
+        $this->stats( );
         PH::print_stdout(PH::$JSON_TMP, false, "statistic");
 
         if( isset(PH::$args['exportcsv'])  )
@@ -110,7 +107,6 @@ class STATSUTIL extends RULEUTIL
     {
         parent::supportedArguments();
         $this->supportedArguments['exportcsv'] = array('niceName' => 'deviceType', 'shortHelp' => 'specify which type(s) of your device want to edit, (default is "dg". ie: devicetype=any  devicetype=vsys,devicegroup,templatestack,template,container,devicecloud,manageddevice,deviceonprem', 'argDesc' => 'all|any|vsys|devicegroup|templatestack|template|container|devicecloud|manageddevice|deviceonprem');
-        $this->supportedArguments['precision'] = array('niceName' => 'preciscion', 'shortHelp' => 'set precision for output of values');
     }
 
 }
