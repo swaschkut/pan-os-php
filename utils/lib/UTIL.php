@@ -2074,7 +2074,7 @@ class UTIL
         }
     }
 
-    public function stats()
+    public function stats( $precision )
     {
         if( isset(PH::$args['stats']) )
         {
@@ -2087,6 +2087,7 @@ class UTIL
 
             $pan->display_statistics( $mainConnector );
 
+            $pan->display_bp_statistics( $precision );
 
             $processedLocations = array();
             foreach( $this->objectsToProcess as &$record )
@@ -2104,13 +2105,18 @@ class UTIL
                     if( isset(PH::$args['loadpanoramapushedconfig']) && get_class( $this->pan ) != 'PanoramaConf' )
                     {
                         if( $sub->parentDeviceGroup !== null )
+                        {
                             $sub->parentDeviceGroup->display_statistics();
+
+                            $sub->parentDeviceGroup->display_bp_statistics( $precision );
+                        }
+
                     }
 
                     
                     $sub->display_statistics();
 
-                    $sub->display_bp_statistics();
+                    $sub->display_bp_statistics( $precision );
 
                 }
             }
@@ -2130,6 +2136,8 @@ class UTIL
                     $firewall->load_from_domxml( $doc );
 
                     $firewall->display_statistics( $fwconnector );
+
+                    $firewall->display_bp_statistics( $precision );
                 }
 
             }
