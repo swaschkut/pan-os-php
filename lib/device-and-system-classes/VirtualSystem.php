@@ -1379,7 +1379,11 @@ class VirtualSystem
 
         if( !PH::$shadow_json )
         {
-            PH::print_stdout("visibility");
+            PH::print_stdout("---------------------------");
+            PH::print_stdout("FEATURE ADOPTION");
+            PH::print_stdout("---------------------------");
+            PH::print_stdout();
+            PH::print_stdout("overall | visibility");
             $tbl = new ConsoleTable();
             $tbl->setHeaders(
                 array('Type', 'percentage', "%")
@@ -1401,7 +1405,9 @@ class VirtualSystem
 
             echo $tbl->getTable();
 
-            PH::print_stdout("best-practice");
+
+            PH::print_stdout();
+            PH::print_stdout("Best Practices");
             $tbl = new ConsoleTable();
             $tbl->setHeaders(
                 array('Type', 'percentage', "%")
@@ -1423,7 +1429,8 @@ class VirtualSystem
 
             echo $tbl->getTable();
         }
-
+        PH::print_stdout();
+        
 
         #PH::$JSON_TMP[$this->name] = $stdoutarray;
         PH::$JSON_TMP[] = $stdoutarray;
