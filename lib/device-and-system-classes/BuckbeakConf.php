@@ -914,7 +914,7 @@ class BuckbeakConf
     }
 
 
-    public function display_bp_statistics()
+    public function display_bp_statistics( $precision )
     {
         $stdoutarray = array();
         #PH::$JSON_TMP[$this->name] = $stdoutarray;

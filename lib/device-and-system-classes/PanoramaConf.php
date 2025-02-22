@@ -2030,7 +2030,7 @@ class PanoramaConf
             PH::print_stdout( $stdoutarray, true );
     }
 
-    public function display_bp_statistics()
+    public function display_bp_statistics( $precision )
     {
         $stdoutarray = array();
         #PH::$JSON_TMP[$this->name] = $stdoutarray;

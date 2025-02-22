@@ -1146,7 +1146,7 @@ class VirtualSystem
     }
 
 
-    public function get_bp_statistics()
+    public function get_bp_statistics($precision = 2)
     {
         $stdoutarray = array();
 
@@ -1170,7 +1170,7 @@ class VirtualSystem
         //Logging
         $stdoutarray['log at end'] = count( $this->securityRules->rules( $generalFilter."(log at.end)" ) );
         if( $stdoutarray['security rules enabled'] !== 0 )
-            $stdoutarray['log at end percentage'] = round(( $stdoutarray['log at end'] / $stdoutarray['security rules enabled'] ) * 100, 0 );
+            $stdoutarray['log at end percentage'] = round(( $stdoutarray['log at end'] / $stdoutarray['security rules enabled'] ) * 100, $precision );
         else
             $stdoutarray['log at end percentage'] = 0;
         $stdoutarray['log at start'] = count( $this->securityRules->rules( $generalFilter."(log at.start)" ) );
@@ -1178,7 +1178,7 @@ class VirtualSystem
         //Log Forwarding Profiles
         $stdoutarray['log prof set'] = count( $this->securityRules->rules( $generalFilter."(logprof is.set)" ) );
         if( $stdoutarray['security rules enabled'] !== 0 )
-            $stdoutarray['log prof set percentage'] = round(( $stdoutarray['log prof set'] / $stdoutarray['security rules enabled'] ) * 100, 0 );
+            $stdoutarray['log prof set percentage'] = round(( $stdoutarray['log prof set'] / $stdoutarray['security rules enabled'] ) * 100, $precision );
         else
             $stdoutarray['log prof set percentage'] = 0;
 
@@ -1186,13 +1186,13 @@ class VirtualSystem
         $filter_array = array('query' => $generalFilter."(secprof has.from.query subquery1)", 'subquery1' => "wf is.visibility" );
         $stdoutarray['wf visibility'] = count( $this->securityRules->rules( $filter_array ) );
         if( $ruleForCalculation !== 0 )
-            $stdoutarray['wf visibility percentage'] = round(( $stdoutarray['wf visibility'] / $ruleForCalculation ) * 100, 0 );
+            $stdoutarray['wf visibility percentage'] = round(( $stdoutarray['wf visibility'] / $ruleForCalculation ) * 100, $precision );
         else
             $stdoutarray['wf visibility percentage'] = 0;
         $filter_array = array('query' => $generalFilter."(secprof has.from.query subquery1)", 'subquery1' => "wf is.best-practice" );
         $stdoutarray['wf best-practice'] = count( $this->securityRules->rules( $filter_array ) );
         if( $ruleForCalculation !== 0 )
-            $stdoutarray['wf best-practice percentage'] = round( ( $stdoutarray['wf best-practice'] / $ruleForCalculation ) * 100, 0 );
+            $stdoutarray['wf best-practice percentage'] = round( ( $stdoutarray['wf best-practice'] / $ruleForCalculation ) * 100, $precision );
         else
             $stdoutarray['wf best-practice percentage'] = 0;
         //Zone Protection
@@ -1202,20 +1202,20 @@ class VirtualSystem
         // App-ID
         $stdoutarray['app id'] = count( $this->securityRules->rules( $generalFilter_allow."!(app is.any)" ) );
         if( $ruleForCalculation !== 0 )
-            $stdoutarray['app id percentage'] = round( ( $stdoutarray['app id'] / $ruleForCalculation ) * 100, 0 );
+            $stdoutarray['app id percentage'] = round( ( $stdoutarray['app id'] / $ruleForCalculation ) * 100, $precision );
         else
             $stdoutarray['app id percentage'] = 0;
 
         //User-ID
         $stdoutarray['user id'] = count( $this->securityRules->rules( $generalFilter_allow."!(user is.any)" ) );
         if( $ruleForCalculation !== 0 )
-            $stdoutarray['user id percentage'] = round( ( $stdoutarray['user id'] / $ruleForCalculation ) * 100, 0 );
+            $stdoutarray['user id percentage'] = round( ( $stdoutarray['user id'] / $ruleForCalculation ) * 100, $precision );
         else
             $stdoutarray['user id percentage'] = 0;
         //Service/Port
         $stdoutarray['service port'] = count( $this->securityRules->rules( $generalFilter_allow."!(service is.any)" ) );
         if( $ruleForCalculation !== 0 )
-            $stdoutarray['service port percentage'] = round( ( $stdoutarray['service port'] / $ruleForCalculation ) * 100, 0 );
+            $stdoutarray['service port percentage'] = round( ( $stdoutarray['service port'] / $ruleForCalculation ) * 100, $precision );
         else
             $stdoutarray['service port percentage'] = 0;
 
@@ -1223,13 +1223,13 @@ class VirtualSystem
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "av is.visibility" );
         $stdoutarray['av visibility'] = count( $this->securityRules->rules( $filter_array ) );
         if( $ruleForCalculation !== 0 )
-            $stdoutarray['av visibility percentage'] = round( ( $stdoutarray['av visibility'] / $ruleForCalculation ) * 100, 0 );
+            $stdoutarray['av visibility percentage'] = round( ( $stdoutarray['av visibility'] / $ruleForCalculation ) * 100, $precision );
         else
             $stdoutarray['av visibility percentage'] = 0;
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "av is.best-practice" );
         $stdoutarray['av best-practice'] = count( $this->securityRules->rules( $filter_array ) );
         if( $ruleForCalculation !== 0 )
-            $stdoutarray['av best-practice percentage'] = round( ( $stdoutarray['av best-practice'] / $ruleForCalculation ) * 100, 0 );
+            $stdoutarray['av best-practice percentage'] = round( ( $stdoutarray['av best-practice'] / $ruleForCalculation ) * 100, $precision );
         else
             $stdoutarray['av best-practice percentage'] = 0;
 
@@ -1237,13 +1237,13 @@ class VirtualSystem
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "as is.visibility" );
         $stdoutarray['as visibility'] = count( $this->securityRules->rules( $filter_array ) );
         if( $ruleForCalculation !== 0 )
-            $stdoutarray['as visibility percentage'] = round( ( $stdoutarray['as visibility'] / $ruleForCalculation ) * 100, 0 );
+            $stdoutarray['as visibility percentage'] = round( ( $stdoutarray['as visibility'] / $ruleForCalculation ) * 100, $precision );
         else
             $stdoutarray['as visibility percentage'] = 0;
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "as is.best-practice" );
         $stdoutarray['as best-practice'] = count( $this->securityRules->rules( $filter_array ) );
         if( $ruleForCalculation !== 0 )
-            $stdoutarray['as best-practice percentage'] = round( ( $stdoutarray['as best-practice'] / $ruleForCalculation ) * 100, 0 );
+            $stdoutarray['as best-practice percentage'] = round( ( $stdoutarray['as best-practice'] / $ruleForCalculation ) * 100, $precision );
         else
             $stdoutarray['as best-practice percentage'] = 0;
 
@@ -1251,13 +1251,13 @@ class VirtualSystem
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "vp is.visibility" );
         $stdoutarray['vp visibility'] = count( $this->securityRules->rules( $filter_array ) );
         if( $ruleForCalculation !== 0 )
-            $stdoutarray['vp visibility percentage'] = round( ( $stdoutarray['vp visibility'] / $ruleForCalculation ) * 100, 0 );
+            $stdoutarray['vp visibility percentage'] = round( ( $stdoutarray['vp visibility'] / $ruleForCalculation ) * 100, $precision );
         else
             $stdoutarray['vp visibility percentage'] = 0;
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "vp is.best-practice" );
         $stdoutarray['vp best-practice'] = count( $this->securityRules->rules( $filter_array ) );
         if( $ruleForCalculation !== 0 )
-            $stdoutarray['vp best-practice percentage'] = round( ( $stdoutarray['vp best-practice'] / $ruleForCalculation ) * 100, 0 );
+            $stdoutarray['vp best-practice percentage'] = round( ( $stdoutarray['vp best-practice'] / $ruleForCalculation ) * 100, $precision );
         else
             $stdoutarray['vp best-practice percentage'] = 0;
 
@@ -1265,13 +1265,13 @@ class VirtualSystem
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "fb is.visibility" );
         $stdoutarray['fb visibility'] = count( $this->securityRules->rules( $filter_array ) );
         if( $ruleForCalculation !== 0 )
-            $stdoutarray['fb visibility percentage'] = round( ( $stdoutarray['fb visibility'] / $ruleForCalculation ) * 100, 0 );
+            $stdoutarray['fb visibility percentage'] = round( ( $stdoutarray['fb visibility'] / $ruleForCalculation ) * 100, $precision );
         else
             $stdoutarray['fb visibility percentage'] = 0;
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "fb is.best-practice" );
         $stdoutarray['fb best-practice'] = count( $this->securityRules->rules( $filter_array ) );
         if( $ruleForCalculation !== 0 )
-            $stdoutarray['fb best-practice percentage'] = round( ( $stdoutarray['fb best-practice'] / $ruleForCalculation ) * 100, 0 );
+            $stdoutarray['fb best-practice percentage'] = round( ( $stdoutarray['fb best-practice'] / $ruleForCalculation ) * 100, $precision );
         else
             $stdoutarray['fb best-practice percentage'] = 0;
 
@@ -1284,13 +1284,13 @@ class VirtualSystem
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "url-site-access is.visibility" );
         $stdoutarray['url-site-access visibility'] = count( $this->securityRules->rules( $filter_array ) );
         if( $ruleForCalculation !== 0 )
-            $stdoutarray['url-site-access visibility percentage'] = round( ( $stdoutarray['url-site-access visibility'] / $ruleForCalculation ) * 100, 0 );
+            $stdoutarray['url-site-access visibility percentage'] = round( ( $stdoutarray['url-site-access visibility'] / $ruleForCalculation ) * 100, $precision );
         else
             $stdoutarray['url-site-access visibility percentage'] = 0;
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "url-site-access is.best-practice" );
         $stdoutarray['url-site-access best-practice'] = count( $this->securityRules->rules( $filter_array ) );
         if( $ruleForCalculation !== 0 )
-            $stdoutarray['url-site-access best-practice percentage'] = round( ( $stdoutarray['url-site-access best-practice'] / $ruleForCalculation ) * 100, 0 );
+            $stdoutarray['url-site-access best-practice percentage'] = round( ( $stdoutarray['url-site-access best-practice'] / $ruleForCalculation ) * 100, $precision );
         else
             $stdoutarray['url-site-access best-practice percentage'] = 0;
 
@@ -1298,13 +1298,13 @@ class VirtualSystem
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "url-credential is.visibility" );
         $stdoutarray['url-credential visibility'] = count( $this->securityRules->rules( $filter_array ) );
         if( $ruleForCalculation !== 0 )
-            $stdoutarray['url-credential visibility percentage'] = round( ( $stdoutarray['url-credential visibility'] / $ruleForCalculation ) * 100, 0 );
+            $stdoutarray['url-credential visibility percentage'] = round( ( $stdoutarray['url-credential visibility'] / $ruleForCalculation ) * 100, $precision );
         else
             $stdoutarray['url-credential visibility percentage'] = 0;
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "url-credential is.best-practice" );
         $stdoutarray['url-credential best-practice'] = count( $this->securityRules->rules( $filter_array ) );
         if( $ruleForCalculation !== 0 )
-            $stdoutarray['url-credential best-practice percentage'] = round( ( $stdoutarray['url-credential best-practice'] / $ruleForCalculation ) * 100, 0 );
+            $stdoutarray['url-credential best-practice percentage'] = round( ( $stdoutarray['url-credential best-practice'] / $ruleForCalculation ) * 100, $precision );
         else
             $stdoutarray['url-credential best-practice percentage'] = 0;
 
@@ -1312,13 +1312,13 @@ class VirtualSystem
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "dns-list is.visibility" );
         $stdoutarray['dns-list visibility'] = count( $this->securityRules->rules( $filter_array ) );
         if( $ruleForCalculation !== 0 )
-            $stdoutarray['dns-list visibility percentage'] = round( ( $stdoutarray['dns-list visibility'] / $ruleForCalculation ) * 100, 0 );
+            $stdoutarray['dns-list visibility percentage'] = round( ( $stdoutarray['dns-list visibility'] / $ruleForCalculation ) * 100, $precision );
         else
             $stdoutarray['dns-list visibility percentage'] = 0;
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "dns-list is.best-practice" );
         $stdoutarray['dns-list best-practice'] = count( $this->securityRules->rules( $filter_array ) );
         if( $ruleForCalculation !== 0 )
-            $stdoutarray['dns-list best-practice percentage'] = round( ( $stdoutarray['dns-list best-practice'] / $ruleForCalculation ) * 100, 0 );
+            $stdoutarray['dns-list best-practice percentage'] = round( ( $stdoutarray['dns-list best-practice'] / $ruleForCalculation ) * 100, $precision );
         else
             $stdoutarray['dns-list best-practice percentage'] = 0;
 
@@ -1370,9 +1370,9 @@ class VirtualSystem
         return $stdoutarray;
     }
 
-    public function display_bp_statistics()
+    public function display_bp_statistics( $precision )
     {
-        $stdoutarray = $this->get_bp_statistics();
+        $stdoutarray = $this->get_bp_statistics( $precision );
 
         $percentageArray_visibility = $stdoutarray['percentage']['visibility'];
         $percentageArray_best_practice = $stdoutarray['percentage']['best-practice'];
