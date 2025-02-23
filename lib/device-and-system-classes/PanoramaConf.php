@@ -2291,8 +2291,12 @@ class PanoramaConf
             $stdoutarray2 = $deviceGroup->get_bp_statistics();
             foreach ($stdoutarray2 as $key2 => $stdoutarray_value)
             {
-                if( strpos( $key2, "calc" ) !== FALSE || strpos( $key2, "percentage" ) !== FALSE )
+                if( strpos( $key2, "calc" ) !== FALSE || strpos( $key2, "percentage" ) !== FALSE || strpos( $key2, "type" ) !== FALSE )
+                {
+                    unset($stdoutarray[$key2]);
                     continue;
+                }
+
 
                 if (isset($stdoutarray[$key2]))
                     $stdoutarray[$key2] = intval($stdoutarray[$key2]) + intval($stdoutarray_value);
