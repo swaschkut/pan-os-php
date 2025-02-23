@@ -1310,6 +1310,9 @@ SecurityProfileCallContext::$supportedActions[] = array(
                             $lines .= $context->encloseFunction($bp_text_yes);
                         else
                             $lines .= $context->encloseFunction($bp_text_no);
+
+                        //<th>URL credentials</th>
+                        $lines .= $context->encloseFunction('---');
                     }
 
                     if( $bestPractice )
@@ -1333,6 +1336,9 @@ SecurityProfileCallContext::$supportedActions[] = array(
                             $tmp_array[] = "";
 
                         $lines .= $context->encloseFunction($tmp_array);
+
+                        //<th>URL credentials</th>
+                        $lines .= $context->encloseFunction('---');
                     }
 
                     if( $visibility )
@@ -1341,6 +1347,9 @@ SecurityProfileCallContext::$supportedActions[] = array(
                             $lines .= $context->encloseFunction($bp_text_yes);
                         else
                             $lines .= $context->encloseFunction($bp_text_no);
+
+                        //<th>URL credentials</th>
+                        $lines .= $context->encloseFunction('---');
                     }
 
                     if( $visibility )
@@ -1353,6 +1362,9 @@ SecurityProfileCallContext::$supportedActions[] = array(
                             $tmp_array[] = 'ALLOW: "set all action to alert"';
 
                         $lines .= $context->encloseFunction($tmp_array);
+
+                        //<th>URL credentials</th>
+                        $lines .= $context->encloseFunction('---');
                     }
 
                     if( $addURLmembers or ( !$bestPractice and !$visibility ) )
@@ -1394,12 +1406,6 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     }
                     if( $addURLmembers or ( !$bestPractice and !$visibility ) )
                         $lines .= $context->encloseFunction('');
-
-                    //<th>URL credentials</th>
-                    $lines .= $context->encloseFunction('---');
-                    $lines .= $context->encloseFunction('---');
-                    $lines .= $context->encloseFunction('---');
-                    $lines .= $context->encloseFunction('---');
                 }
 
                 if( $addWhereUsed )
