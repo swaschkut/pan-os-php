@@ -35,6 +35,9 @@ class URLProfile extends SecurityProfile2
 
     public $predefined = array();
 
+    public $credential_mode = null;
+    public $credential_log = null;
+
     public $tmp_url_prof_array = array('allow', 'alert', 'block', 'continue', 'override');
 
     /**
@@ -217,6 +220,12 @@ class URLProfile extends SecurityProfile2
                     }
                 }
             }
+
+            $tmp_credential_mode = DH::findFirstElement("mode", $tmp_credential_enforcement);
+            $this->credential_mode = $tmp_credential_mode->textContent;
+
+            $tmp_credential_log_severity = DH::findFirstElement("log-severity", $tmp_credential_enforcement);
+            $this->credential_log = $tmp_credential_log_severity->textContent;
         }
 
         return TRUE;
@@ -656,6 +665,31 @@ class URLProfile extends SecurityProfile2
         return TRUE;
     }
 
+    public function check_usercredentialsubmission_bp_tab_json( $check_array )
+    {
+
+        if( $check_array['tab']['mode'] !== $this->credential_mode )
+            return False;
+
+        if( $check_array['tab']['log-severity'] !== $this->credential_log )
+            return False;
+
+        return TRUE;
+    }
+
+    public function check_usercredentialsubmission_visibility_tab_json( $check_array )
+    {
+        $finding = $check_array['tab']['mode'];
+        if( strpos( $check_array['tab']['mode'], "!") !== FALSE )
+        {
+            $finding = str_replace("!", "", $check_array['tab']['mode']);
+            if( $finding === $this->credential_mode )
+                return False;
+        }
+
+        return TRUE;
+    }
+
     public function url_siteaccess_best_practice()
     {
         $check_array = $this->url_siteaccess_bp_visibility_JSON( "bp", "url" );
@@ -690,6 +724,17 @@ class URLProfile extends SecurityProfile2
             return TRUE;
     }
 
+    public function url_usercredentialsubmission_best_practice_tab()
+    {
+        $check_array = $this->url_usercredentialsubmission_bp_visibility_JSON( "bp", "url" );
+        $bestpractise = $this->check_usercredentialsubmission_bp_tab_json( $check_array );
+
+        if ($bestpractise == FALSE)
+            return FALSE;
+        else
+            return TRUE;
+    }
+
     public function url_usercredentialsubmission_visibility()
     {
         $check_array = $this->url_usercredentialsubmission_bp_visibility_JSON( "visibility", "url" );
@@ -701,11 +746,22 @@ class URLProfile extends SecurityProfile2
             return TRUE;
     }
 
+    public function url_usercredentialsubmission_visibility_tab()
+    {
+        $check_array = $this->url_usercredentialsubmission_bp_visibility_JSON( "visibility", "url" );
+        $bestpractise = $this->check_usercredentialsubmission_visibility_tab_json( $check_array );
+
+        if ($bestpractise == FALSE)
+            return FALSE;
+        else
+            return TRUE;
+    }
+
     public function is_best_practice()
     {
         if( $this->url_siteaccess_best_practice()
             && $this->url_usercredentialsubmission_best_practice()
-
+            && $this->url_usercredentialsubmission_best_practice_tab()
         )
             return TRUE;
         else
@@ -716,6 +772,7 @@ class URLProfile extends SecurityProfile2
     {
         if( $this->url_siteaccess_visibility()
             && $this->url_usercredentialsubmission_visibility()
+            && $this->url_usercredentialsubmission_visibility_tab()
         )
             return TRUE;
         else

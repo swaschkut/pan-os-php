@@ -19,6 +19,7 @@ UTIL:
 * type=stats | extend percentage bp/visiblity to PanConf/PanoramaConf
 * type=xml-issue | extend with NAT source/destination duplicate objects validation
 * type=securityprofile securityprofiletype=url-filtering | improve user-credential tab validation
+* type=securityprofile securityprofiletype=url-filtering | extend user-credential to check mode/log-severity for bp/visiblie
 
 BUGFIX:
 * type=securityprofile securitprofiletype=spyware | bugfix of displaying botnet-domain if packet-capture is missing
