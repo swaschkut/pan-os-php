@@ -546,12 +546,10 @@ SecurityProfileCallContext::$supportedActions[] = array(
 
         if( $bestPractice )
         {
-            $headers .= '<th>URL credentials BP</th>';
             $headers .= '<th>URL credentials BP details</th>';
         }
         if( $visibility )
         {
-            $headers .= '<th>URL credentials visibility</th>';
             $headers .= '<th>URL credentials visibility details</th>';
         }
         if( $addURLmembers or ( !$bestPractice and !$visibility ) )
@@ -1359,13 +1357,11 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     {
                         //<th>URL credentials</th>
                         $lines .= $context->encloseFunction('---');
-                        $lines .= $context->encloseFunction('---');
                     }
 
                     if( $bestPractice )
                     {
                         //<th>URL credentials</th>
-                        $lines .= $context->encloseFunction('---');
                         $lines .= $context->encloseFunction('---');
                     }
 
