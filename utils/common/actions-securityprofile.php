@@ -519,7 +519,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
         if( $visibility )
             $headers .= '<th>visibility</th>';
 
-        /*
+
         if( $bestPractice )
             $headers .= '<th>BP FB</th>';
         if( $visibility )
@@ -529,7 +529,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
             $headers .= '<th>BP WF</th>';
         if( $visibility )
             $headers .= '<th>visibility WF</th>';
-        */
+
         if( $bestPractice )
         {
             $headers .= '<th>URL BP</th>';
@@ -1253,6 +1253,14 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         $lines .= $context->encloseFunction('---');
                     }
                 }
+
+                //<th>WF</th>
+                $lines .= $context->encloseFunction('---');
+                $lines .= $context->encloseFunction('---');
+
+                //<th>FB</th>
+                $lines .= $context->encloseFunction('---');
+                $lines .= $context->encloseFunction('---');
 
                 if( get_class($object) == "customURLProfile" )
                 {
