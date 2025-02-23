@@ -222,10 +222,15 @@ class URLProfile extends SecurityProfile2
             }
 
             $tmp_credential_mode = DH::findFirstElement("mode", $tmp_credential_enforcement);
-            $this->credential_mode = $tmp_credential_mode->textContent;
+            if( $tmp_credential_mode != null )
+            {
+                $mode_node = DH::firstChildElement($tmp_credential_mode);
+                $this->credential_mode = $mode_node->nodeName;
+            }
 
             $tmp_credential_log_severity = DH::findFirstElement("log-severity", $tmp_credential_enforcement);
-            $this->credential_log = $tmp_credential_log_severity->textContent;
+            if( $tmp_credential_log_severity != null )
+                $this->credential_log = $tmp_credential_log_severity->textContent;
         }
 
         return TRUE;
@@ -257,6 +262,11 @@ class URLProfile extends SecurityProfile2
                 PH::$JSON_TMP['sub']['object'][$this->name()][strtoupper($url_type_credential)][] = $member;
             }
         }
+        PH::print_stdout( ) ;
+        if( $this->credential_mode !== null )
+            PH::print_stdout(  "       - mode: " . $this->credential_mode );
+        if( $this->credential_log !== null )
+            PH::print_stdout(  "       - log-severity: " . $this->credential_log );
     }
 
     public function getAllow()
