@@ -1310,9 +1310,6 @@ SecurityProfileCallContext::$supportedActions[] = array(
                             $lines .= $context->encloseFunction($bp_text_yes);
                         else
                             $lines .= $context->encloseFunction($bp_text_no);
-
-                        //<th>URL credentials</th>
-                        $lines .= $context->encloseFunction('---');
                     }
 
                     if( $bestPractice )
@@ -1336,9 +1333,6 @@ SecurityProfileCallContext::$supportedActions[] = array(
                             $tmp_array[] = "";
 
                         $lines .= $context->encloseFunction($tmp_array);
-
-                        //<th>URL credentials</th>
-                        $lines .= $context->encloseFunction('---');
                     }
 
                     if( $visibility )
@@ -1347,9 +1341,6 @@ SecurityProfileCallContext::$supportedActions[] = array(
                             $lines .= $context->encloseFunction($bp_text_yes);
                         else
                             $lines .= $context->encloseFunction($bp_text_no);
-
-                        //<th>URL credentials</th>
-                        $lines .= $context->encloseFunction('---');
                     }
 
                     if( $visibility )
@@ -1362,8 +1353,19 @@ SecurityProfileCallContext::$supportedActions[] = array(
                             $tmp_array[] = 'ALLOW: "set all action to alert"';
 
                         $lines .= $context->encloseFunction($tmp_array);
+                    }
 
+                    if( $visibility )
+                    {
                         //<th>URL credentials</th>
+                        $lines .= $context->encloseFunction('---');
+                        $lines .= $context->encloseFunction('---');
+                    }
+
+                    if( $bestPractice )
+                    {
+                        //<th>URL credentials</th>
+                        $lines .= $context->encloseFunction('---');
                         $lines .= $context->encloseFunction('---');
                     }
 
