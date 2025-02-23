@@ -1148,36 +1148,39 @@ class VirtualSystem
 
     public function get_bp_statistics()
     {
+        $sub = $this;
+        $sub_ruleStore = $sub->securityRules;
+
         $stdoutarray = array();
 
-        $stdoutarray['type'] = get_class( $this );
+        $stdoutarray['type'] = get_class( $sub );
 
-        $header = "BP/Visibility Statistics for VSYS '" . PH::boldText($this->name) . "' | '" . $this->toString() . "'";
+        $header = "BP/Visibility Statistics for VSYS '" . PH::boldText($sub->name) . "' | '" . $sub->toString() . "'";
         $stdoutarray['header'] = $header;
 
-        $stdoutarray['security rules'] = $this->securityRules->count();
+        $stdoutarray['security rules'] = $sub_ruleStore->count();
 
-        $stdoutarray['security rules allow'] = count( $this->securityRules->rules( "(action is.allow)" ) );
-        $stdoutarray['security rules allow enabled'] = count( $this->securityRules->rules( "(action is.allow) and (rule is.enabled)" ) );
-        $stdoutarray['security rules allow disabled'] = count( $this->securityRules->rules( "(action is.allow) and (rule is.disabled)" ) );
-        $stdoutarray['security rules enabled'] = count( $this->securityRules->rules( "(rule is.enabled)" ) );
-        $stdoutarray['security rules deny'] = count( $this->securityRules->rules( "!(action is.allow)" ) );
-        $stdoutarray['security rules deny enabled'] = count( $this->securityRules->rules( "!(action is.allow) and (rule is.enabled)" ) );
+        $stdoutarray['security rules allow'] = count( $sub_ruleStore->rules( "(action is.allow)" ) );
+        $stdoutarray['security rules allow enabled'] = count( $sub_ruleStore->rules( "(action is.allow) and (rule is.enabled)" ) );
+        $stdoutarray['security rules allow disabled'] = count( $sub_ruleStore->rules( "(action is.allow) and (rule is.disabled)" ) );
+        $stdoutarray['security rules enabled'] = count( $sub_ruleStore->rules( "(rule is.enabled)" ) );
+        $stdoutarray['security rules deny'] = count( $sub_ruleStore->rules( "!(action is.allow)" ) );
+        $stdoutarray['security rules deny enabled'] = count( $sub_ruleStore->rules( "!(action is.allow) and (rule is.enabled)" ) );
         $ruleForCalculation = $stdoutarray['security rules allow enabled'];
 
         $generalFilter = "(rule is.enabled) and ";
         $generalFilter_allow = "(rule is.enabled) and (action is.allow) and ";
         //Logging
-        $stdoutarray['log at end'] = count( $this->securityRules->rules( $generalFilter."(log at.end)" ) );
+        $stdoutarray['log at end'] = count( $sub_ruleStore->rules( $generalFilter."(log at.end)" ) );
         $stdoutarray['log at end calc'] = $stdoutarray['log at end']."/".$stdoutarray['security rules enabled'];
         if( $stdoutarray['security rules enabled'] !== 0 )
             $stdoutarray['log at end percentage'] = floor(( $stdoutarray['log at end'] / $stdoutarray['security rules enabled'] ) * 100 );
         else
             $stdoutarray['log at end percentage'] = 0;
-        $stdoutarray['log at start'] = count( $this->securityRules->rules( $generalFilter."(log at.start)" ) );
+        $stdoutarray['log at start'] = count( $sub_ruleStore->rules( $generalFilter."(log at.start)" ) );
 
         //Log Forwarding Profiles
-        $stdoutarray['log prof set'] = count( $this->securityRules->rules( $generalFilter."(logprof is.set)" ) );
+        $stdoutarray['log prof set'] = count( $sub_ruleStore->rules( $generalFilter."(logprof is.set)" ) );
         $stdoutarray['log prof set calc'] = $stdoutarray['log prof set']."/".$stdoutarray['security rules enabled'];
         if( $stdoutarray['security rules enabled'] !== 0 )
             $stdoutarray['log prof set percentage'] = floor(( $stdoutarray['log prof set'] / $stdoutarray['security rules enabled'] ) * 100 );
@@ -1186,14 +1189,14 @@ class VirtualSystem
 
         //Wildfire Analysis Profiles
         $filter_array = array('query' => $generalFilter."(secprof has.from.query subquery1)", 'subquery1' => "wf is.visibility" );
-        $stdoutarray['wf visibility'] = count( $this->securityRules->rules( $filter_array ) );
+        $stdoutarray['wf visibility'] = count( $sub_ruleStore->rules( $filter_array ) );
         $stdoutarray['wf visibility calc'] = $stdoutarray['wf visibility']."/".$ruleForCalculation;
         if( $ruleForCalculation !== 0 )
             $stdoutarray['wf visibility percentage'] = floor(( $stdoutarray['wf visibility'] / $ruleForCalculation ) * 100 );
         else
             $stdoutarray['wf visibility percentage'] = 0;
         $filter_array = array('query' => $generalFilter."(secprof has.from.query subquery1)", 'subquery1' => "wf is.best-practice" );
-        $stdoutarray['wf best-practice'] = count( $this->securityRules->rules( $filter_array ) );
+        $stdoutarray['wf best-practice'] = count( $sub_ruleStore->rules( $filter_array ) );
         $stdoutarray['wf best-practice calc'] = $stdoutarray['wf best-practice']."/".$ruleForCalculation;
         if( $ruleForCalculation !== 0 )
             $stdoutarray['wf best-practice percentage'] = floor( ( $stdoutarray['wf best-practice'] / $ruleForCalculation ) * 100 );
@@ -1204,7 +1207,7 @@ class VirtualSystem
         $stdoutarray['zone protection'] = "NOT available";
 
         // App-ID
-        $stdoutarray['app id'] = count( $this->securityRules->rules( $generalFilter_allow."!(app is.any)" ) );
+        $stdoutarray['app id'] = count( $sub_ruleStore->rules( $generalFilter_allow."!(app is.any)" ) );
         $stdoutarray['app id calc'] = $stdoutarray['app id']."/".$ruleForCalculation;
         if( $ruleForCalculation !== 0 )
             $stdoutarray['app id percentage'] = floor( ( $stdoutarray['app id'] / $ruleForCalculation ) * 100 );
@@ -1212,14 +1215,14 @@ class VirtualSystem
             $stdoutarray['app id percentage'] = 0;
 
         //User-ID
-        $stdoutarray['user id'] = count( $this->securityRules->rules( $generalFilter_allow."!(user is.any)" ) );
+        $stdoutarray['user id'] = count( $sub_ruleStore->rules( $generalFilter_allow."!(user is.any)" ) );
         $stdoutarray['user id calc'] = $stdoutarray['user id']."/".$ruleForCalculation;
         if( $ruleForCalculation !== 0 )
             $stdoutarray['user id percentage'] = floor( ( $stdoutarray['user id'] / $ruleForCalculation ) * 100 );
         else
             $stdoutarray['user id percentage'] = 0;
         //Service/Port
-        $stdoutarray['service port'] = count( $this->securityRules->rules( $generalFilter_allow."!(service is.any)" ) );
+        $stdoutarray['service port'] = count( $sub_ruleStore->rules( $generalFilter_allow."!(service is.any)" ) );
         $stdoutarray['service port calc'] = $stdoutarray['service port']."/".$ruleForCalculation;
         if( $ruleForCalculation !== 0 )
             $stdoutarray['service port percentage'] = floor( ( $stdoutarray['service port'] / $ruleForCalculation ) * 100 );
@@ -1228,14 +1231,14 @@ class VirtualSystem
 
         //Antivirus Profiles
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "av is.visibility" );
-        $stdoutarray['av visibility'] = count( $this->securityRules->rules( $filter_array ) );
+        $stdoutarray['av visibility'] = count( $sub_ruleStore->rules( $filter_array ) );
         $stdoutarray['av visibility calc'] = $stdoutarray['av visibility']."/".$ruleForCalculation;
         if( $ruleForCalculation !== 0 )
             $stdoutarray['av visibility percentage'] = floor( ( $stdoutarray['av visibility'] / $ruleForCalculation ) * 100 );
         else
             $stdoutarray['av visibility percentage'] = 0;
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "av is.best-practice" );
-        $stdoutarray['av best-practice'] = count( $this->securityRules->rules( $filter_array ) );
+        $stdoutarray['av best-practice'] = count( $sub_ruleStore->rules( $filter_array ) );
         $stdoutarray['av best-practice calc'] = $stdoutarray['av best-practice']."/".$ruleForCalculation;
         if( $ruleForCalculation !== 0 )
             $stdoutarray['av best-practice percentage'] = floor( ( $stdoutarray['av best-practice'] / $ruleForCalculation ) * 100 );
@@ -1244,14 +1247,14 @@ class VirtualSystem
 
         //Anti-Spyware Profiles
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "as is.visibility" );
-        $stdoutarray['as visibility'] = count( $this->securityRules->rules( $filter_array ) );
+        $stdoutarray['as visibility'] = count( $sub_ruleStore->rules( $filter_array ) );
         $stdoutarray['as visibility calc'] = $stdoutarray['as visibility']."/".$ruleForCalculation;
         if( $ruleForCalculation !== 0 )
             $stdoutarray['as visibility percentage'] = floor( ( $stdoutarray['as visibility'] / $ruleForCalculation ) * 100 );
         else
             $stdoutarray['as visibility percentage'] = 0;
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "as is.best-practice" );
-        $stdoutarray['as best-practice'] = count( $this->securityRules->rules( $filter_array ) );
+        $stdoutarray['as best-practice'] = count( $sub_ruleStore->rules( $filter_array ) );
         $stdoutarray['as best-practice calc'] = $stdoutarray['as best-practice']."/".$ruleForCalculation;
         if( $ruleForCalculation !== 0 )
             $stdoutarray['as best-practice percentage'] = floor( ( $stdoutarray['as best-practice'] / $ruleForCalculation ) * 100 );
@@ -1260,14 +1263,14 @@ class VirtualSystem
 
         //Vulnerability Profiles
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "vp is.visibility" );
-        $stdoutarray['vp visibility'] = count( $this->securityRules->rules( $filter_array ) );
+        $stdoutarray['vp visibility'] = count( $sub_ruleStore->rules( $filter_array ) );
         $stdoutarray['vp visibility calc'] = $stdoutarray['vp visibility']."/".$ruleForCalculation;
         if( $ruleForCalculation !== 0 )
             $stdoutarray['vp visibility percentage'] = floor( ( $stdoutarray['vp visibility'] / $ruleForCalculation ) * 100 );
         else
             $stdoutarray['vp visibility percentage'] = 0;
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "vp is.best-practice" );
-        $stdoutarray['vp best-practice'] = count( $this->securityRules->rules( $filter_array ) );
+        $stdoutarray['vp best-practice'] = count( $sub_ruleStore->rules( $filter_array ) );
         $stdoutarray['vp best-practice calc'] = $stdoutarray['vp best-practice']."/".$ruleForCalculation;
         if( $ruleForCalculation !== 0 )
             $stdoutarray['vp best-practice percentage'] = floor( ( $stdoutarray['vp best-practice'] / $ruleForCalculation ) * 100 );
@@ -1276,14 +1279,14 @@ class VirtualSystem
 
         //File Blocking Profiles
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "fb is.visibility" );
-        $stdoutarray['fb visibility'] = count( $this->securityRules->rules( $filter_array ) );
+        $stdoutarray['fb visibility'] = count( $sub_ruleStore->rules( $filter_array ) );
         $stdoutarray['fb visibility calc'] = $stdoutarray['fb visibility']."/".$ruleForCalculation;
         if( $ruleForCalculation !== 0 )
             $stdoutarray['fb visibility percentage'] = floor( ( $stdoutarray['fb visibility'] / $ruleForCalculation ) * 100 );
         else
             $stdoutarray['fb visibility percentage'] = 0;
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "fb is.best-practice" );
-        $stdoutarray['fb best-practice'] = count( $this->securityRules->rules( $filter_array ) );
+        $stdoutarray['fb best-practice'] = count( $sub_ruleStore->rules( $filter_array ) );
         $stdoutarray['fb best-practice calc'] = $stdoutarray['fb best-practice']."/".$ruleForCalculation;
         if( $ruleForCalculation !== 0 )
             $stdoutarray['fb best-practice percentage'] = floor( ( $stdoutarray['fb best-practice'] / $ruleForCalculation ) * 100 );
@@ -1297,14 +1300,14 @@ class VirtualSystem
 
         //URL Filtering Profiles
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "url-site-access is.visibility" );
-        $stdoutarray['url-site-access visibility'] = count( $this->securityRules->rules( $filter_array ) );
+        $stdoutarray['url-site-access visibility'] = count( $sub_ruleStore->rules( $filter_array ) );
         $stdoutarray['url-site-access visibility calc'] = $stdoutarray['url-site-access visibility']."/".$ruleForCalculation;
         if( $ruleForCalculation !== 0 )
             $stdoutarray['url-site-access visibility percentage'] = floor( ( $stdoutarray['url-site-access visibility'] / $ruleForCalculation ) * 100 );
         else
             $stdoutarray['url-site-access visibility percentage'] = 0;
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "url-site-access is.best-practice" );
-        $stdoutarray['url-site-access best-practice'] = count( $this->securityRules->rules( $filter_array ) );
+        $stdoutarray['url-site-access best-practice'] = count( $sub_ruleStore->rules( $filter_array ) );
         $stdoutarray['url-site-access best-practice calc'] = $stdoutarray['url-site-access best-practice']."/".$ruleForCalculation;
         if( $ruleForCalculation !== 0 )
             $stdoutarray['url-site-access best-practice percentage'] = floor( ( $stdoutarray['url-site-access best-practice'] / $ruleForCalculation ) * 100 );
@@ -1313,14 +1316,14 @@ class VirtualSystem
 
         //Credential Theft Prevention
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "url-credential is.visibility" );
-        $stdoutarray['url-credential visibility'] = count( $this->securityRules->rules( $filter_array ) );
+        $stdoutarray['url-credential visibility'] = count( $sub_ruleStore->rules( $filter_array ) );
         $stdoutarray['url-credential visibility calc'] = $stdoutarray['url-credential visibility']."/".$ruleForCalculation;
         if( $ruleForCalculation !== 0 )
             $stdoutarray['url-credential visibility percentage'] = floor( ( $stdoutarray['url-credential visibility'] / $ruleForCalculation ) * 100 );
         else
             $stdoutarray['url-credential visibility percentage'] = 0;
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "url-credential is.best-practice" );
-        $stdoutarray['url-credential best-practice'] = count( $this->securityRules->rules( $filter_array ) );
+        $stdoutarray['url-credential best-practice'] = count( $sub_ruleStore->rules( $filter_array ) );
         $stdoutarray['url-credential best-practice calc'] = $stdoutarray['url-credential best-practice']."/".$ruleForCalculation;
         if( $ruleForCalculation !== 0 )
             $stdoutarray['url-credential best-practice percentage'] = floor( ( $stdoutarray['url-credential best-practice'] / $ruleForCalculation ) * 100 );
@@ -1329,14 +1332,14 @@ class VirtualSystem
 
         //DNS Security
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "dns-list is.visibility" );
-        $stdoutarray['dns-list visibility'] = count( $this->securityRules->rules( $filter_array ) );
+        $stdoutarray['dns-list visibility'] = count( $sub_ruleStore->rules( $filter_array ) );
         $stdoutarray['dns-list visibility calc'] = $stdoutarray['dns-list visibility']."/".$ruleForCalculation;
         if( $ruleForCalculation !== 0 )
             $stdoutarray['dns-list visibility percentage'] = floor( ( $stdoutarray['dns-list visibility'] / $ruleForCalculation ) * 100 );
         else
             $stdoutarray['dns-list visibility percentage'] = 0;
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "dns-list is.best-practice" );
-        $stdoutarray['dns-list best-practice'] = count( $this->securityRules->rules( $filter_array ) );
+        $stdoutarray['dns-list best-practice'] = count( $sub_ruleStore->rules( $filter_array ) );
         $stdoutarray['dns-list best-practice calc'] = $stdoutarray['dns-list best-practice']."/".$ruleForCalculation;
         if( $ruleForCalculation !== 0 )
             $stdoutarray['dns-list best-practice percentage'] = floor( ( $stdoutarray['dns-list best-practice'] / $ruleForCalculation ) * 100 );
@@ -1457,8 +1460,8 @@ class VirtualSystem
         PH::$JSON_TMP[] = $stdoutarray;
 
 
-        if( !PH::$shadow_json )
-            PH::print_stdout( $stdoutarray, true );
+        #if( !PH::$shadow_json )
+        #    PH::print_stdout( $stdoutarray, true );
 
     }
 

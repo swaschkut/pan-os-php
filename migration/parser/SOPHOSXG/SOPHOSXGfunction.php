@@ -1607,6 +1607,9 @@ trait SOPHOSXGfunction
         $nameToNormalize = preg_replace("/[^a-zA-Z0-9-_. ]+/", "", $nameToNormalize);
         $nameToNormalize = preg_replace("/[\s]+/", " ", $nameToNormalize);
 
+        //&gt;
+        //&lt;
+
         $nameToNormalize = preg_replace("/^[-]+/", "", $nameToNormalize);
         $nameToNormalize = preg_replace("/^[_]+/", "", $nameToNormalize);
 

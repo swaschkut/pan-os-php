@@ -2033,8 +2033,224 @@ class PanoramaConf
     public function display_bp_statistics(  )
     {
         $stdoutarray = array();
-        #PH::$JSON_TMP[$this->name] = $stdoutarray;
         PH::$JSON_TMP[] = $stdoutarray;
+
+        foreach( $this->getDeviceGroups() as $deviceGroup )
+        {
+            $stdoutarray2 = $deviceGroup->get_bp_statistics();
+            foreach ($stdoutarray2 as $key2 => $stdoutarray_value)
+            {
+                if( strpos( $key2, "calc" ) !== FALSE || strpos( $key2, "percentage" ) !== FALSE )
+                    continue;
+
+                if (isset($stdoutarray[$key2]))
+                    $stdoutarray[$key2] += intval($stdoutarray_value);
+                else
+                    $stdoutarray[$key2] = intval($stdoutarray_value);
+            }
+        }
+
+        $percentageArray = array();
+        $percentageArray_visibility = array();
+
+        $ruleForCalculation = $stdoutarray['security rules allow enabled'];
+
+        if( $stdoutarray['security rules enabled'] !== 0 )
+            $stdoutarray['log at end percentage'] = floor(( $stdoutarray['log at end'] / $stdoutarray['security rules enabled'] ) * 100 );
+        else
+            $stdoutarray['log at end percentage'] = 0;
+        $percentageArray_visibility['Logging'] = $stdoutarray['log at end percentage'];
+
+        if( $stdoutarray['security rules enabled'] !== 0 )
+            $stdoutarray['log prof set percentage'] = floor(( $stdoutarray['log prof set'] / $stdoutarray['security rules enabled'] ) * 100 );
+        else
+            $stdoutarray['log prof set percentage'] = 0;
+        $percentageArray_visibility['Log Forwarding Profiles'] = $stdoutarray['log prof set percentage'];
+
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['wf visibility percentage'] = floor(( $stdoutarray['wf visibility'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['wf visibility percentage'] = 0;
+        $percentageArray_visibility['Wildfire Analysis Profiles'] = $stdoutarray['wf visibility percentage'];
+        $percentageArray_visibility['Zone Protection'] = '---';
+
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['app id percentage'] = floor( ( $stdoutarray['app id'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['app id percentage'] = 0;
+        $percentageArray_visibility['App-ID'] = $stdoutarray['app id percentage'];
+
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['user id percentage'] = floor( ( $stdoutarray['user id'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['user id percentage'] = 0;
+        $percentageArray_visibility['User-ID'] = $stdoutarray['user id percentage'];
+
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['service port percentage'] = floor( ( $stdoutarray['service port'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['service port percentage'] = 0;
+        $percentageArray_visibility['Service/Port'] = $stdoutarray['service port percentage'];
+
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['av visibility percentage'] = floor( ( $stdoutarray['av visibility'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['av visibility percentage'] = 0;
+        $percentageArray_visibility['Antivirus Profiles'] = $stdoutarray['av visibility percentage'];
+
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['as visibility percentage'] = floor( ( $stdoutarray['as visibility'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['as visibility percentage'] = 0;
+        $percentageArray_visibility['Anti-Spyware Profiles'] = $stdoutarray['as visibility percentage'];
+
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['vp visibility percentage'] = floor( ( $stdoutarray['vp visibility'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['vp visibility percentage'] = 0;
+        $percentageArray_visibility['Vulnerability Profiles'] = $stdoutarray['vp visibility percentage'];
+
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['fb visibility percentage'] = floor( ( $stdoutarray['fb visibility'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['fb visibility percentage'] = 0;
+        $percentageArray_visibility['File Blocking Profiles'] = $stdoutarray['fb visibility percentage'];
+        $percentageArray_visibility['Data Filtering'] = '---';
+
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['url-site-access visibility percentage'] = floor( ( $stdoutarray['url-site-access visibility'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['url-site-access visibility percentage'] = 0;
+        $percentageArray_visibility['URL Filtering Profiles'] = $stdoutarray['url-site-access visibility percentage'];
+
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['url-credential visibility percentage'] = floor( ( $stdoutarray['url-credential visibility'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['url-credential visibility percentage'] = 0;
+        $percentageArray_visibility['Credential Theft Prevention'] = $stdoutarray['url-credential visibility percentage'];
+
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['dns-list visibility percentage'] = floor( ( $stdoutarray['dns-list visibility'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['dns-list visibility percentage'] = 0;
+        $percentageArray_visibility['DNS Security'] = $stdoutarray['dns-list visibility percentage'];
+
+        $percentageArray['visibility'] = $percentageArray_visibility;
+
+
+        $percentageArray_best_practice = array();
+        $percentageArray_best_practice['Logging'] = $stdoutarray['log at end percentage'];
+        #$percentageArray_best_practice['Log Forwarding Profiles'] = $stdoutarray['log prof set percentage'];
+
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['wf best-practice percentage'] = floor( ( $stdoutarray['wf best-practice'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['wf best-practice percentage'] = 0;
+        $percentageArray_best_practice['Wildfire Analysis Profiles'] = $stdoutarray['wf best-practice percentage'];
+        #$percentageArray_best_practice['Zone Protection'] = '---';
+        #$percentageArray_best_practice['App-ID'] = $stdoutarray['app id percentage'];
+        #$percentageArray_best_practice['User-ID'] = $stdoutarray['user id percentage'];
+        #$percentageArray_best_practice['Service/Port'] = $stdoutarray['service port percentage'];
+
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['av best-practice percentage'] = floor( ( $stdoutarray['av best-practice'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['av best-practice percentage'] = 0;
+        $percentageArray_best_practice['Antivirus Profiles'] = $stdoutarray['av best-practice percentage'];
+
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['as best-practice percentage'] = floor( ( $stdoutarray['as best-practice'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['as best-practice percentage'] = 0;
+        $percentageArray_best_practice['Anti-Spyware Profiles'] = $stdoutarray['as best-practice percentage'];
+
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['vp best-practice percentage'] = floor( ( $stdoutarray['vp best-practice'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['vp best-practice percentage'] = 0;
+        $percentageArray_best_practice['Vulnerability Profiles'] = $stdoutarray['vp best-practice percentage'];
+
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['fb best-practice percentage'] = floor( ( $stdoutarray['fb best-practice'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['fb best-practice percentage'] = 0;
+        $percentageArray_best_practice['File Blocking Profiles'] = $stdoutarray['fb best-practice percentage'];
+        #$percentageArray_best_practice['Data Filtering'] = '---';
+
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['url-site-access best-practice percentage'] = floor( ( $stdoutarray['url-site-access best-practice'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['url-site-access best-practice percentage'] = 0;
+        $percentageArray_best_practice['URL Filtering Profiles'] = $stdoutarray['url-site-access best-practice percentage'];
+
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['url-credential best-practice percentage'] = floor( ( $stdoutarray['url-credential best-practice'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['url-credential best-practice percentage'] = 0;
+        $percentageArray_best_practice['Credential Theft Prevention'] = $stdoutarray['url-credential best-practice percentage'];
+
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['dns-list best-practice percentage'] = floor( ( $stdoutarray['dns-list best-practice'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['dns-list best-practice percentage'] = 0;
+        $percentageArray_best_practice['DNS Security'] = $stdoutarray['dns-list best-practice percentage'];
+
+        $percentageArray['best-practice'] = $percentageArray_best_practice;
+
+        $stdoutarray['percentage'] = $percentageArray;
+
+
+
+        $percentageArray_visibility = $stdoutarray['percentage']['visibility'];
+        $percentageArray_best_practice = $stdoutarray['percentage']['best-practice'];
+
+        if( !PH::$shadow_json )
+        {
+            PH::print_stdout("visibility");
+            $tbl = new ConsoleTable();
+            $tbl->setHeaders(
+                array('Type', 'percentage', "%")
+            );
+            foreach( $percentageArray_visibility as $key => $value )
+            {
+                if( strpos($value, "---") !== False )
+                {
+                    $string = $value;
+                }
+                else
+                {
+                    $string = "";
+                    $test = floor( ($value/10) * 2 );
+                    $string = str_pad($string, $test, "*", STR_PAD_LEFT);
+                }
+                $tbl->addRow(array($key, $value, $string));
+            }
+
+            echo $tbl->getTable();
+
+            PH::print_stdout("best-practice");
+            $tbl = new ConsoleTable();
+            $tbl->setHeaders(
+                array('Type', 'percentage', "%")
+            );
+            foreach( $percentageArray_best_practice as $key => $value )
+            {
+                if( strpos($value, "---") !== False )
+                {
+                    $string = $value;
+                }
+                else
+                {
+                    $string = "";
+                    $test = floor( ($value/10) * 2 );
+                    $string = str_pad($string, $test, "*", STR_PAD_LEFT);
+                }
+                $tbl->addRow(array($key, $value, $string));
+            }
+
+            echo $tbl->getTable();
+        }
+
 
 
         if( !PH::$shadow_json )
