@@ -544,6 +544,21 @@ SecurityProfileCallContext::$supportedActions[] = array(
             $headers .= '<th>URL members</th>';
 
 
+        if( $bestPractice )
+        {
+            $headers .= '<th>URL credentials BP</th>';
+            $headers .= '<th>URL credentials BP details</th>';
+        }
+        if( $visibility )
+        {
+            $headers .= '<th>URL credentials visibility</th>';
+            $headers .= '<th>URL credentials visibility details</th>';
+        }
+        if( $addURLmembers or ( !$bestPractice and !$visibility ) )
+            $headers .= '<th>URL credentials members</th>';
+
+
+
         if( $addWhereUsed )
             $headers .= '<th>where used</th>';
         if( $addUsedInLocation )
@@ -1254,11 +1269,11 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     }
                 }
 
-                //<th>WF</th>
+                //<th>FB</th>
                 $lines .= $context->encloseFunction('---');
                 $lines .= $context->encloseFunction('---');
 
-                //<th>FB</th>
+                //<th>WF</th>
                 $lines .= $context->encloseFunction('---');
                 $lines .= $context->encloseFunction('---');
 
@@ -1379,6 +1394,12 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     }
                     if( $addURLmembers or ( !$bestPractice and !$visibility ) )
                         $lines .= $context->encloseFunction('');
+
+                    //<th>URL credentials</th>
+                    $lines .= $context->encloseFunction('---');
+                    $lines .= $context->encloseFunction('---');
+                    $lines .= $context->encloseFunction('---');
+                    $lines .= $context->encloseFunction('---');
                 }
 
                 if( $addWhereUsed )
