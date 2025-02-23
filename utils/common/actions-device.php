@@ -1222,8 +1222,6 @@ DeviceCallContext::$supportedActions['ManagedDevice-delete-any'] = array(
 
         /** @var ManagedDevice $object */
         $object = $context->object;
-
-        #$pan = $context->subSystem
         $pan = $context->subSystem->owner;
 
         if( !$pan->isPanorama() )
@@ -1237,11 +1235,10 @@ DeviceCallContext::$supportedActions['ManagedDevice-delete-any'] = array(
         {
             $references = $tmp_manageddevice->getReferences();
             //Todo: for API this references are 0 why???
-            #print "count ref " . count($references) . "\n";
+
             foreach( $references as $ref )
             {
                 $class = get_class( $ref );
-                #print $class."\n";
                 if( $class === "DeviceGroup"  )
                 {
                     /** @var DeviceGroup $ref */
@@ -1253,8 +1250,6 @@ DeviceCallContext::$supportedActions['ManagedDevice-delete-any'] = array(
                         $xpath = DH::elementToPanXPath($ref->xmlroot);
                         $xpath .= '/devices';
                         $xpath .= "/entry[@name='{$serial}']";
-
-                        #PH::print_stdout("delelte: ".$xpath);
                         $con->sendDeleteRequest($xpath);
 
                         $user_group_source_node = DH::findFirstElement("user-group-source", $ref->xmlroot);
@@ -1269,8 +1264,6 @@ DeviceCallContext::$supportedActions['ManagedDevice-delete-any'] = array(
                                     $xpath = DH::elementToPanXPath($ref->xmlroot);
                                     $xpath .= '/user-group-source';
                                     $xpath .= "/master-device";
-
-                                    #PH::print_stdout("delelte: ".$xpath);
                                     $con->sendDeleteRequest($xpath);
                                 }
                             }
@@ -1290,7 +1283,6 @@ DeviceCallContext::$supportedActions['ManagedDevice-delete-any'] = array(
                         $xpath = DH::elementToPanXPath($ref->xmlroot);
                         $xpath .= '/devices';
                         $xpath .= "/entry[@name='{$serial}']";
-                        #PH::print_stdout("delelte: ".$xpath);
                         $con->sendDeleteRequest($xpath);
 
                         $user_group_source_node = DH::findFirstElement("user-group-source", $this->xmlroot);
@@ -1305,7 +1297,6 @@ DeviceCallContext::$supportedActions['ManagedDevice-delete-any'] = array(
                                     $xpath = DH::elementToPanXPath($ref->xmlroot);
                                     $xpath .= '/user-group-source';
                                     $xpath .= "/master-device";
-                                    #PH::print_stdout("delelte: ".$xpath);
                                     $con->sendDeleteRequest($xpath);
                                 }
                             }
@@ -1325,7 +1316,6 @@ DeviceCallContext::$supportedActions['ManagedDevice-delete-any'] = array(
                         $xpath = DH::elementToPanXPath($ref->xmlroot);
                         $xpath .= '/devices';
                         $xpath .= "/entry[@name='{$serial}']";
-                        #PH::print_stdout("delelte: ".$xpath);
                         $con->sendDeleteRequest($xpath);
                     }
 
