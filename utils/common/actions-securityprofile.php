@@ -534,27 +534,21 @@ SecurityProfileCallContext::$supportedActions[] = array(
         {
             $headers .= '<th>URL BP</th>';
             $headers .= '<th>URL BP details</th>';
+
+            $headers .= '<th>URL credentials BP details</th>';
         }
+
         if( $visibility )
         {
             $headers .= '<th>URL visibility</th>';
             $headers .= '<th>URL visibility details</th>';
-        }
-        if( $addURLmembers or ( !$bestPractice and !$visibility ) )
-            $headers .= '<th>URL members</th>';
 
-
-        if( $bestPractice )
-        {
-            $headers .= '<th>URL credentials BP details</th>';
-        }
-        if( $visibility )
-        {
             $headers .= '<th>URL credentials visibility details</th>';
         }
-        if( $addURLmembers or ( !$bestPractice and !$visibility ) )
-            $headers .= '<th>URL credentials members</th>';
 
+
+        if( $addURLmembers or ( !$bestPractice and !$visibility ) )
+            $headers .= '<th>URL members</th>';
 
 
         if( $addWhereUsed )
@@ -1332,6 +1326,12 @@ SecurityProfileCallContext::$supportedActions[] = array(
 
                         $lines .= $context->encloseFunction($tmp_array);
                     }
+                    if( $visibility )
+                    {
+                        //<th>URL credentials</th>
+                        $lines .= $context->encloseFunction('---');
+                    }
+
 
                     if( $visibility )
                     {
@@ -1353,13 +1353,8 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         $lines .= $context->encloseFunction($tmp_array);
                     }
 
-                    if( $visibility )
-                    {
-                        //<th>URL credentials</th>
-                        $lines .= $context->encloseFunction('---');
-                    }
 
-                    if( $bestPractice )
+                    if( $visibility )
                     {
                         //<th>URL credentials</th>
                         $lines .= $context->encloseFunction('---');
