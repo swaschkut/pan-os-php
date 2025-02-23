@@ -122,7 +122,7 @@ class LogCollectorGroup
         }
     }
 
-    public function removeDevice( $serial )
+    public function removeDevice( $serial, $debug = false )
     {
         if( isset( $this->devices[$serial] ) )
         {

@@ -382,7 +382,7 @@ class Rule
      * @param null|string $vsys
      * @return bool TRUE if a change was made
      */
-    public function target_removeDevice($serialNumber, $vsys = null)
+    public function target_removeDevice($serialNumber, $vsys = null, $debug = false)
     {
         if( strlen($serialNumber) < 4 )
             derr("unsupported serial number to be added in target: '{$serialNumber}'");
@@ -400,6 +400,8 @@ class Rule
         {
             if( $vsys === null || $vsys === "ANY" )
             {
+                if( $vsys === "ANY" && $debug )
+                    PH::print_stdout("DEBUG - Rule: ".$this->name()." remove Target");
                 unset($this->_targets[$serialNumber]);
                 if( count($this->_targets) == 0 )
                     $this->_targets = null;
@@ -415,6 +417,8 @@ class Rule
 
         if( $vsys === "ANY" )
         {
+            if( $debug )
+                PH::print_stdout("DEBUG - Rule: ".$this->name()." remove Target");
             unset($this->_targets[$serialNumber]);
         }
         else

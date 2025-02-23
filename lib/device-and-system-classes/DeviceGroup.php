@@ -1627,7 +1627,7 @@ class DeviceGroup
     }
 
 
-    public function removeDevice( $serial )
+    public function removeDevice( $serial, $debug = false )
     {
         if( isset( $this->devices[$serial] ) )
         {
@@ -1637,6 +1637,8 @@ class DeviceGroup
             $user_group_source_node = DH::findFirstElement("user-group-source", $this->xmlroot);
             if( $user_group_source_node !== false )
             {
+                if( $debug )
+                    DH::DEBUGprintDOMDocument($user_group_source_node);
                 $master_device_node = DH::findFirstElement("master-device", $user_group_source_node);
                 if($master_device_node !== false)
                 {

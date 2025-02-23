@@ -1218,6 +1218,7 @@ DeviceCallContext::$supportedActions['ManagedDevice-delete-any'] = array(
             return;
         }
 
+        $debug = $context->arguments['debug'];
         $force = $context->arguments['force'];
 
         /** @var ManagedDevice $object */
@@ -1270,7 +1271,7 @@ DeviceCallContext::$supportedActions['ManagedDevice-delete-any'] = array(
                         }
                     }
 
-                    $ref->removeDevice( $serial );
+                    $ref->removeDevice( $serial, $debug );
                     $tmp_manageddevice->removeReference( $ref );
                 }
                 elseif( $class === "TemplateStack" )
@@ -1303,7 +1304,7 @@ DeviceCallContext::$supportedActions['ManagedDevice-delete-any'] = array(
                         }
                     }
 
-                    $ref->removeDevice( $serial );
+                    $ref->removeDevice( $serial, $debug );
                     $tmp_manageddevice->removeReference( $ref );
                 }
                 elseif( $class === "LogCollectorGroup" )
@@ -1319,7 +1320,7 @@ DeviceCallContext::$supportedActions['ManagedDevice-delete-any'] = array(
                         $con->sendDeleteRequest($xpath);
                     }
 
-                    $ref->removeDevice( $serial );
+                    $ref->removeDevice( $serial, $debug );
                     $tmp_manageddevice->removeReference( $ref );
                 }
                 elseif( strpos( $class, "Rule" ) !== FALSE )
@@ -1333,7 +1334,7 @@ DeviceCallContext::$supportedActions['ManagedDevice-delete-any'] = array(
                     else
                     {
                         $ref->setDescription($ref->description()."|target-serial:'".$serial."' removed|");
-                        $ref->target_removeDevice($serial, "ANY");
+                        $ref->target_removeDevice($serial, "ANY", $debug);
                     }
                     $tmp_manageddevice->removeReference( $ref );
                 }
@@ -1369,10 +1370,10 @@ DeviceCallContext::$supportedActions['ManagedDevice-delete-any'] = array(
 
     },
     'args' => array(
-        #'serial' => array('type' => 'string', 'default' => 'false'),
         'force' => array('type' => 'bool', 'default' => 'false',
             'help' => "decommission Manageddevice, also if used on Device-Group or Template-stack"
-        )
+        ),
+        'debug' => array('type' => 'string', 'default' => 'false'),
     ),
 );
 
