@@ -596,6 +596,7 @@ class RuleCallContext extends CallContext
                 $sp_working_array = array( 'virus', 'spyware', 'vulnerability', 'file-blocking', 'url-filtering', 'data-filtering', 'wildfire-analysis' );
                 $group_profiles = $group->securityProfiles();
 
+                $profiles = array();
                 foreach( $sp_working_array as $profType )
                 #foreach( $group->securityProfiles() as $profType => $profile )
                 {
