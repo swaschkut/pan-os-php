@@ -18,6 +18,7 @@ UTIL:
 * type=rule 'actions=exporttoexcel:file.html,bp|visibility' | if 'not set' -> 'not set' -> if not bp/visibile -> 'N/A' | if bp/visibility -> SP name
 * type=stats | extend percentage bp/visiblity to PanConf/PanoramaConf
 * type=xml-issue | extend with NAT source/destination duplicate objects validation
+* type=securityprofile securityprofiletype=url-filtering | improve user-credential tab validation
 
 BUGFIX:
 * type=securityprofile securitprofiletype=spyware | bugfix of displaying botnet-domain if packet-capture is missing

@@ -265,47 +265,58 @@
             ]
         },
         "user_credential_submission": {
-            "visibility": "!allow",
-            "bp": [
-                {
-                    "type": [
-                        "command-and-control",
-                        "compromised-website",
-                        "grayware",
-                        "malware",
-                        "phishing",
-                        "ransomware",
-                        "scanning-activity"
-                    ],
-                    "action": "block"
-                },
-                {
-                    "type": [
-                        "dynamic-dns",
-                        "hacking",
-                        "insufficient-content",
-                        "newly-registered-domains",
-                        "not-resolved",
-                        "parked",
-                        "proxy-avoidance-and-anonymizers",
-                        "unknown"
-                    ],
-                    "action": "alert"
-                },
-                {
-                    "type": [
-                        "abused-drugs",
-                        "adult",
-                        "copyright-infringement",
-                        "extremism",
-                        "gambling",
-                        "peer-to-peer",
-                        "questionable",
-                        "weapons"
-                    ],
-                    "action": "alert"
+            "visibility": {
+                "category": "!allow",
+                "tab": {
+                    "mode": "!disabled"
                 }
-            ]
+            },
+            "bp": {
+                "category": [
+                    {
+                        "type": [
+                            "command-and-control",
+                            "compromised-website",
+                            "grayware",
+                            "malware",
+                            "phishing",
+                            "ransomware",
+                            "scanning-activity"
+                        ],
+                        "action": "block"
+                    },
+                    {
+                        "type": [
+                            "dynamic-dns",
+                            "hacking",
+                            "insufficient-content",
+                            "newly-registered-domains",
+                            "not-resolved",
+                            "parked",
+                            "proxy-avoidance-and-anonymizers",
+                            "unknown"
+                        ],
+                        "action": "alert"
+                    },
+                    {
+                        "type": [
+                            "abused-drugs",
+                            "adult",
+                            "copyright-infringement",
+                            "extremism",
+                            "gambling",
+                            "peer-to-peer",
+                            "questionable",
+                            "weapons"
+                        ],
+                        "action": "alert"
+                    }
+                ],
+                "tab": {
+                    "mode": "ip-user",
+                    "log-severity": "medium"
+                }
+            }
         }
     },
     "file-blocking": {

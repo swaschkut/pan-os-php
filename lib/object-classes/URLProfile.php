@@ -628,7 +628,7 @@ class URLProfile extends SecurityProfile2
 
     public function check_usercredentialsubmission_bp_json( $check_array )
     {
-        foreach( $check_array as $check )
+        foreach( $check_array['category'] as $check )
         {
             $action = $check["action"];
             $urlList = $check["type"];
@@ -645,10 +645,10 @@ class URLProfile extends SecurityProfile2
 
     public function check_usercredentialsubmission_visibility_json( $check_array )
     {
-        $finding = $check_array;
-        if( strpos( $check_array, "!") !== FALSE )
+        $finding = $check_array['category'];
+        if( strpos( $check_array['category'], "!") !== FALSE )
         {
-            $finding = str_replace("!", "", $check_array);
+            $finding = str_replace("!", "", $check_array['category']);
             if( !empty($this->$finding) )
                 return False;
         }

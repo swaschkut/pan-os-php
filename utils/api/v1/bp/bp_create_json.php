@@ -110,13 +110,17 @@ $checkArray['url']['site_access']['bp'][1]['type'] = array('dynamic-dns', 'hacki
 $checkArray['url']['site_access']['bp'][1]['action'] = 'alert';
 $checkArray['url']['site_access']['bp'][2]['type'] = array('abused-drugs', 'adult', 'copyright-infringement', 'extremism', 'gambling', 'peer-to-peer', 'questionable', 'weapons');
 $checkArray['url']['site_access']['bp'][2]['action'] = 'alert';
-$checkArray['url']['user_credential_submission']['visibility'] = '!allow';
-$checkArray['url']['user_credential_submission']['bp'][0]['type'] = array('command-and-control', 'compromised-website','grayware', 'malware', 'phishing', 'ransomware', 'scanning-activity');
-$checkArray['url']['user_credential_submission']['bp'][0]['action'] = 'block';
-$checkArray['url']['user_credential_submission']['bp'][1]['type'] = array('dynamic-dns', 'hacking', 'insufficient-content', 'newly-registered-domains', 'not-resolved', 'parked', 'proxy-avoidance-and-anonymizers', 'unknown');
-$checkArray['url']['user_credential_submission']['bp'][1]['action'] = 'alert';
-$checkArray['url']['user_credential_submission']['bp'][2]['type'] = array('abused-drugs', 'adult', 'copyright-infringement', 'extremism', 'gambling', 'peer-to-peer', 'questionable', 'weapons');
-$checkArray['url']['user_credential_submission']['bp'][2]['action'] = 'alert';
+
+$checkArray['url']['user_credential_submission']['visibility']['category'] = '!allow';
+$checkArray['url']['user_credential_submission']['visibility']['tab']['mode'] = '!disabled';
+$checkArray['url']['user_credential_submission']['bp']['category'][0]['type'] = array('command-and-control', 'compromised-website','grayware', 'malware', 'phishing', 'ransomware', 'scanning-activity');
+$checkArray['url']['user_credential_submission']['bp']['category'][0]['action'] = 'block';
+$checkArray['url']['user_credential_submission']['bp']['category'][1]['type'] = array('dynamic-dns', 'hacking', 'insufficient-content', 'newly-registered-domains', 'not-resolved', 'parked', 'proxy-avoidance-and-anonymizers', 'unknown');
+$checkArray['url']['user_credential_submission']['bp']['category'][1]['action'] = 'alert';
+$checkArray['url']['user_credential_submission']['bp']['category'][2]['type'] = array('abused-drugs', 'adult', 'copyright-infringement', 'extremism', 'gambling', 'peer-to-peer', 'questionable', 'weapons');
+$checkArray['url']['user_credential_submission']['bp']['category'][2]['action'] = 'alert';
+$checkArray['url']['user_credential_submission']['bp']['tab']['mode'] = 'ip-user';
+$checkArray['url']['user_credential_submission']['bp']['tab']['log-severity'] = 'medium';
 
 
 ######################################################################################################################
