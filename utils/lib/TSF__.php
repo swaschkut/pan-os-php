@@ -61,22 +61,24 @@ class TSF__
         }
 
 
-        $this->actions = 'extract-running-config';
+
         if( isset(PH::$args['actions']) )
         {
-            $actionsArray = explode( ",", $this->actions );
+            $actionsArray = explode( ",", PH::$args['actions'] );
             if( count($actionsArray) > 1 )
                 derr( "type=TSF actions= | is supporting only one argument: 'actions=extract-running-config' or 'actions=extract-candicate-config' or 'actions=extract-merged-config' or 'actions=extract-running-and-merged-config'" );
 
-            if( $actionsArray[0] === "extract-running-config")
+            if( $actionsArray[0] == "extract-running-config")
                 $this->actions = 'extract-running-config';
-            elseif( $actionsArray[0] === "extract-candidate-config")
+            elseif( $actionsArray[0] == "extract-candidate-config")
                 $this->actions = 'extract-candidate-config';
-            elseif( $actionsArray[0] === "extract-merged--config")
+            elseif( $actionsArray[0] == "extract-merged--config")
                 $this->actions = 'extract-merged-config';
-            elseif( $actionsArray[0] === "extract-running-and-merged-config")
+            elseif( $actionsArray[0] == "extract-running-and-merged-config")
                 $this->actions = 'extract-running-and-merged-config';
         }
+        else
+            $this->actions = 'extract-running-config';
 
         $this->supportedArguments = Array();
         $this->supportedArguments['in'] = Array('niceName' => 'in', 'shortHelp' => 'specifiy the TechSupportFile', 'argDesc' => 'in=[TSF.tgz]');
@@ -126,11 +128,6 @@ class TSF__
             $ext_folder = "saved-configs";
             $ext_filename_array[] = "running-config.xml";
             $ext_filename_array[] = ".merged-running-config.xml";
-        }
-        else
-        {
-            $ext_folder = "saved-configs";
-            $ext_filename_array[] = "running-config.xml";
         }
 
         $cliArray = array();
