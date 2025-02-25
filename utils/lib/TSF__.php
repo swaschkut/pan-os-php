@@ -116,7 +116,7 @@ class TSF__
             $ext_folder = "devices/localhost.localdomain";
             $ext_filename_array[] = "last-candidatecfg.xml";
         }
-        if( $this->actions == "extract-merged-config" )
+        elseif( $this->actions == "extract-merged-config" )
         {
             $ext_folder = "saved-configs";
             $ext_filename_array[] = ".merged-running-config.xml";
@@ -126,6 +126,11 @@ class TSF__
             $ext_folder = "saved-configs";
             $ext_filename_array[] = "running-config.xml";
             $ext_filename_array[] = ".merged-running-config.xml";
+        }
+        else
+        {
+            $ext_folder = "saved-configs";
+            $ext_filename_array[] = "running-config.xml";
         }
 
         $cliArray = array();
