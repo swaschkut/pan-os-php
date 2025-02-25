@@ -49,7 +49,7 @@ class STATSUTIL extends RULEUTIL
 
         PH::$args['stats'] = "stats";
         PH::$JSON_TMP = array();
-        $this->stats( );
+        $this->stats( $this->debugAPI );
         PH::print_stdout(PH::$JSON_TMP, false, "statistic");
 
         if( isset(PH::$args['exportcsv'])  )

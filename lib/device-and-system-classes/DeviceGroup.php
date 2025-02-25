@@ -1498,7 +1498,7 @@ class DeviceGroup
     }
 
 
-    public function display_bp_statistics(  )
+    public function display_bp_statistics( $debug = false )
     {
         $stdoutarray = $this->get_bp_statistics(  );
 
@@ -1557,8 +1557,8 @@ class DeviceGroup
         PH::$JSON_TMP[] = $stdoutarray;
 
 
-        #if( !PH::$shadow_json )
-        #    PH::print_stdout( $stdoutarray, true );
+        if( !PH::$shadow_json && $debug )
+            PH::print_stdout( $stdoutarray, true );
 
     }
 

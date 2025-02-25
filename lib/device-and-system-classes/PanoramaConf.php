@@ -2278,7 +2278,7 @@ class PanoramaConf
         return $stdoutarray;
     }
 
-    public function display_bp_statistics(  )
+    public function display_bp_statistics( $debug = false )
     {
         $stdoutarray = array();
         PH::$JSON_TMP[] = $stdoutarray;
@@ -2508,7 +2508,7 @@ class PanoramaConf
 
 
 
-        if( !PH::$shadow_json )
+        if( !PH::$shadow_json && $debug )
             PH::print_stdout( $stdoutarray, true );
 
     }

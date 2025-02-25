@@ -2074,7 +2074,7 @@ class UTIL
         }
     }
 
-    public function stats( )
+    public function stats( $debug = false )
     {
         if( isset(PH::$args['stats']) )
         {
@@ -2087,7 +2087,7 @@ class UTIL
 
             $pan->display_statistics( $mainConnector );
 
-            $pan->display_bp_statistics( );
+            $pan->display_bp_statistics( $debug );
 
             $processedLocations = array();
             foreach( $this->objectsToProcess as &$record )
@@ -2108,7 +2108,7 @@ class UTIL
                         {
                             $sub->parentDeviceGroup->display_statistics();
 
-                            $sub->parentDeviceGroup->display_bp_statistics( );
+                            $sub->parentDeviceGroup->display_bp_statistics( $debug );
                         }
 
                     }
@@ -2116,7 +2116,7 @@ class UTIL
                     
                     $sub->display_statistics();
 
-                    $sub->display_bp_statistics( );
+                    $sub->display_bp_statistics( $debug );
 
                 }
             }
