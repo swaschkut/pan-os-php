@@ -46,6 +46,7 @@ class SecurityProfileGroup
 
 
     public $secprofiles = array();
+    public $secprofProfiles_obj = array();
 
     /** @var string|null */
     public $comments;
@@ -172,7 +173,7 @@ class SecurityProfileGroup
                     if( $profile != false )
                     {
                         #PH::print_stdout( "SecurityProfileGroup: ".$this->name()." - proftype: ".$secprof_type." - PROFILE: ".$tmp_type->nodeValue." used");
-                        $this->secprofiles[ $secprof_type ] = $profile;
+                        $this->secprofProfiles_obj[ $secprof_type ] = $profile;
                         $profile->addReference( $this );
                     }
                     else
