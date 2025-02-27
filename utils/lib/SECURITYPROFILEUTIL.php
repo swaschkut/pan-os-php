@@ -86,28 +86,56 @@ class SECURITYPROFILEUTIL extends UTIL
                     {
                         $this->objectsToProcess[] = array('store' => $this->pan->URLProfileStore, 'rules' => $this->pan->URLProfileStore->securityProfiles());
                     }
+                    if( array_search('any', $this->securityProfileTypes) !== FALSE || array_search('predefined-url-filtering', $this->securityProfileTypes) !== FALSE )
+                    {
+                        $this->objectsToProcess[] = array('store' => $this->pan->UrlFilteringPredefinedStore, 'rules' => $this->pan->UrlFilteringPredefinedStore->securityProfiles());
+                    }
+
                     if( array_search('any', $this->securityProfileTypes) !== FALSE || array_search('virus', $this->securityProfileTypes) !== FALSE )
                     {
                         $this->objectsToProcess[] = array('store' => $this->pan->AntiVirusProfileStore, 'rules' => $this->pan->AntiVirusProfileStore->securityProfiles());
                     }
-
+                    if( array_search('any', $this->securityProfileTypes) !== FALSE || array_search('predefined-virus', $this->securityProfileTypes) !== FALSE )
+                    {
+                        $this->objectsToProcess[] = array('store' => $this->pan->AntiVirusPredefinedStore, 'rules' => $this->pan->AntiVirusPredefinedStore->securityProfiles());
+                    }
 
                     if( array_search('any', $this->securityProfileTypes) !== FALSE || array_search('vulnerability', $this->securityProfileTypes) !== FALSE )
                     {
                         $this->objectsToProcess[] = array('store' => $this->pan->VulnerabilityProfileStore, 'rules' => $this->pan->VulnerabilityProfileStore->securityProfiles());
                     }
+                    if( array_search('any', $this->securityProfileTypes) !== FALSE || array_search('predefined-vulnerability', $this->securityProfileTypes) !== FALSE )
+                    {
+                        $this->objectsToProcess[] = array('store' => $this->pan->VulnerabilityPredefinedStore, 'rules' => $this->pan->VulnerabilityPredefinedStore->securityProfiles());
+                    }
+
                     if( array_search('any', $this->securityProfileTypes) !== FALSE || array_search('file-blocking', $this->securityProfileTypes) !== FALSE )
                     {
                         $this->objectsToProcess[] = array('store' => $this->pan->FileBlockingProfileStore, 'rules' => $this->pan->FileBlockingProfileStore->securityProfiles());
                     }
+                    if( array_search('any', $this->securityProfileTypes) !== FALSE || array_search('predefined-file-blocking', $this->securityProfileTypes) !== FALSE )
+                    {
+                        $this->objectsToProcess[] = array('store' => $this->pan->FileBlockingPredefinedStore, 'rules' => $this->pan->FileBlockingPredefinedStore->securityProfiles());
+                    }
+
                     if( array_search('any', $this->securityProfileTypes) !== FALSE || array_search('spyware', $this->securityProfileTypes) !== FALSE )
                     {
                         $this->objectsToProcess[] = array('store' => $this->pan->AntiSpywareProfileStore, 'rules' => $this->pan->AntiSpywareProfileStore->securityProfiles());
                     }
+                    if( array_search('any', $this->securityProfileTypes) !== FALSE || array_search('predefined-spyware', $this->securityProfileTypes) !== FALSE )
+                    {
+                        $this->objectsToProcess[] = array('store' => $this->pan->AntiSpywarePredefinedStore, 'rules' => $this->pan->AntiSpywarePredefinedStore->securityProfiles());
+                    }
+
                     if( array_search('any', $this->securityProfileTypes) !== FALSE || array_search('wildfire-analysis', $this->securityProfileTypes) !== FALSE )
                     {
                         $this->objectsToProcess[] = array('store' => $this->pan->WildfireProfileStore, 'rules' => $this->pan->WildfireProfileStore->securityProfiles());
                     }
+                    if( array_search('any', $this->securityProfileTypes) !== FALSE || array_search('predefined-wildfire-analysis', $this->securityProfileTypes) !== FALSE )
+                    {
+                        $this->objectsToProcess[] = array('store' => $this->pan->WildfirePredefinedStore, 'rules' => $this->pan->WildfirePredefinedStore->securityProfiles());
+                    }
+
                     if( array_search('any', $this->securityProfileTypes) !== FALSE || array_search('data-filtering', $this->securityProfileTypes) !== FALSE )
                     {
                         $this->objectsToProcess[] = array('store' => $this->pan->DataFilteringProfileStore, 'rules' => $this->pan->DataFilteringProfileStore->securityProfiles());
@@ -229,6 +257,15 @@ class SECURITYPROFILEUTIL extends UTIL
                     {
                         $this->objectsToProcess[] = array('store' => $this->pan->URLProfileStore, 'rules' => $this->pan->URLProfileStore->securityProfiles());
                     }
+                    if( array_search('any', $this->securityProfileTypes) !== FALSE || array_search('predefined-url-filtering', $this->securityProfileTypes) !== FALSE )
+                    {
+                        $this->objectsToProcess[] = array('store' => $this->pan->VulnerabilityPredefinedStore, 'rules' => $this->pan->VulnerabilityPredefinedStore->securityProfiles());
+                    }
+
+                    if( array_search('any', $this->securityProfileTypes) !== FALSE || array_search('predefined-virus', $this->securityProfileTypes) !== FALSE )
+                    {
+                        $this->objectsToProcess[] = array('store' => $this->pan->AntiVirusPredefinedStore, 'rules' => $this->pan->AntiVirusPredefinedStore->securityProfiles());
+                    }
                     if( array_search('any', $this->securityProfileTypes) !== FALSE || array_search('virus', $this->securityProfileTypes) !== FALSE )
                     {
                         $this->objectsToProcess[] = array('store' => $this->pan->AntiVirusProfileStore, 'rules' => $this->pan->AntiVirusProfileStore->securityProfiles());
@@ -239,6 +276,11 @@ class SECURITYPROFILEUTIL extends UTIL
                     {
                         $this->objectsToProcess[] = array('store' => $this->pan->VulnerabilityProfileStore, 'rules' => $this->pan->VulnerabilityProfileStore->securityProfiles());
                     }
+                    if( array_search('any', $this->securityProfileTypes) !== FALSE || array_search('predefined-vulnerability', $this->securityProfileTypes) !== FALSE )
+                    {
+                        $this->objectsToProcess[] = array('store' => $this->pan->VulnerabilityPredefinedStore, 'rules' => $this->pan->VulnerabilityPredefinedStore->securityProfiles());
+                    }
+
                     if( array_search('any', $this->securityProfileTypes) !== FALSE || array_search('file-blocking', $this->securityProfileTypes) !== FALSE )
                     {
                         $this->objectsToProcess[] = array('store' => $this->pan->FileBlockingProfileStore, 'rules' => $this->pan->FileBlockingProfileStore->securityProfiles());
@@ -247,6 +289,11 @@ class SECURITYPROFILEUTIL extends UTIL
                     {
                         $this->objectsToProcess[] = array('store' => $this->pan->AntiSpywareProfileStore, 'rules' => $this->pan->AntiSpywareProfileStore->securityProfiles());
                     }
+                    if( array_search('any', $this->securityProfileTypes) !== FALSE || array_search('predefined-spyware', $this->securityProfileTypes) !== FALSE )
+                    {
+                        $this->objectsToProcess[] = array('store' => $this->pan->AntiSpywarePredefinedStore, 'rules' => $this->pan->AntiSpywarePredefinedStore->securityProfiles());
+                    }
+
                     if( array_search('any', $this->securityProfileTypes) !== FALSE || array_search('wildfire-analysis', $this->securityProfileTypes) !== FALSE )
                     {
                         $this->objectsToProcess[] = array('store' => $this->pan->WildfireProfileStore, 'rules' => $this->pan->WildfireProfileStore->securityProfiles());
@@ -365,7 +412,15 @@ class SECURITYPROFILEUTIL extends UTIL
         // Determine rule types
         //
         #$supportedSecurityProfileTypes = array('all', 'any', 'url-filtering', 'virus', 'vulnerability', 'spyware', 'file-blocking', 'wildfire-analysis', 'custom-url-category', 'predefined-url');
-        $supportedSecurityProfileTypes = array('any', 'url-filtering', 'virus', 'vulnerability', 'spyware', 'file-blocking', 'wildfire-analysis', 'custom-url-category', 'predefined-url', 'data-filtering');
+        $supportedSecurityProfileTypes = array('any', 'url-filtering', 'virus', 'vulnerability', 'spyware', 'file-blocking', 'wildfire-analysis', 'custom-url-category', 'data-filtering',
+            'predefined-url',
+            'predefined-virus',
+            'predefined-spyware',
+            'predefined-vulnerability',
+            'predefined-file-blocking',
+            'predefined-url-filtering',
+            'predefined-wildfire-analysis'
+            );
         if( !isset(PH::$args['securityprofiletype']) )
         {
             PH::print_stdout( " - No 'securityProfileType' specified, using 'any' by default" );

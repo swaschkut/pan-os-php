@@ -58,6 +58,14 @@ class SecurityProfileStore extends ObjStore
         'customURLProfile' => array('name' => 'customURL', 'varName' => 'customUrlSecProf', 'xpathRoot' => 'custom-url-category'),
         'PredefinedSecurityProfileURL' => array('name' => 'predefinedURL', 'varName' => 'predefinedUrlSecProf', 'xpathRoot' => 'predefined-url-category'),
 
+        'PredefinedSecurityProfileVirus' => array('name' => 'predefinedVirus', 'varName' => 'predefinedVirusSecProf', 'xpathRoot' => 'predefined-Virus'),
+        'PredefinedSecurityProfileSpyware' => array('name' => 'predefinedSpyware', 'varName' => 'predefinedSpywareSecProf', 'xpathRoot' => 'predefined-Spyware'),
+        'PredefinedSecurityProfileVulnerability' => array('name' => 'predefinedVulnerability', 'varName' => 'predefinedVulnerabilitySecProf', 'xpathRoot' => 'predefined-Vulnerability'),
+        'PredefinedSecurityProfileFileBlocking' => array('name' => 'predefinedFileblocking', 'varName' => 'predefinedFileblockingSecProf', 'xpathRoot' => 'predefined-Fileblocking'),
+        'PredefinedSecurityProfileWildfire' => array('name' => 'predefinedWildfire', 'varName' => 'predefinedWildfireSecProf', 'xpathRoot' => 'predefined-Wildfire'),
+        'PredefinedSecurityProfileUrlFiltering' => array('name' => 'predefinedURLProfile', 'varName' => 'predefinedUrlFilteringSecProfiles', 'xpathRoot' => 'predefined-url-filtering '),
+
+
         'DecryptionProfile' => array('name' => 'Decryption', 'varName' => 'decryptProf', 'xpathRoot' => 'decryption'),
         'HipObjectsProfile' => array('name' => 'HIP-Objects', 'varName' => 'hipObjProf', 'xpathRoot' => 'hip-objects'),
         'HipProfilesProfile' => array('name' => 'HIP-Profiles', 'varName' => 'hipProfProf', 'xpathRoot' => 'hip-profiles'),
@@ -114,41 +122,110 @@ class SecurityProfileStore extends ObjStore
     /** @var null|SecurityProfileStore */
     public static $predefinedURLStore = null;
     public static $predefinedVirusStore = null;
+    public static $predefinedSpywareStore = null;
+    public static $predefinedVulnerabilityStore = null;
+    public static $predefinedFileblockingStore = null;
+    public static $predefinedWildfireStore = null;
+    public static $predefinedUrlFitleringStore = null;
 
     /**
      * @return SecurityProfileStore|null
      */
-    public static function getURLPredefinedStore()
+    public static function getURLPredefinedStore( $owner )
     {
         if( self::$predefinedURLStore !== null )
             return self::$predefinedURLStore;
 
 
-        self::$predefinedURLStore = new SecurityProfileStore(null, "PredefinedSecurityProfileURL");
+        self::$predefinedURLStore = new SecurityProfileStore( $owner, "PredefinedSecurityProfileURL");
         self::$predefinedURLStore->setName('predefined URL');
         self::$predefinedURLStore->load_url_categories_from_predefinedfile();
 
         return self::$predefinedURLStore;
     }
 
+    public static function getUrlFilteringPredefinedStore( $owner )
+    {
+        if( self::$predefinedUrlFitleringStore !== null )
+            return self::$predefinedUrlFitleringStore;
+
+
+        self::$predefinedUrlFitleringStore = new SecurityProfileStore( $owner, "PredefinedSecurityProfileUrlFiltering");
+        self::$predefinedUrlFitleringStore->setName('predefined UrlFiltering');
+        self::$predefinedUrlFitleringStore->load_url_filtering_from_predefinedfile();
+
+        return self::$predefinedUrlFitleringStore;
+    }
+
     /**
      * @return SecurityProfileStore|null
      */
-    public static function getVirusPredefinedStore()
+    public static function getVirusPredefinedStore( $owner )
     {
         if( self::$predefinedVirusStore !== null )
             return self::$predefinedVirusStore;
 
 
-        self::$predefinedVirusStore = new SecurityProfileStore(null, "PredefinedSecurityProfileVirus");
+        self::$predefinedVirusStore = new SecurityProfileStore( $owner, "PredefinedSecurityProfileVirus");
         self::$predefinedVirusStore->setName('predefined Virus');
-        self::$predefinedVirusStore->load_virus_categories_from_predefinedfile();
+        self::$predefinedVirusStore->load_virus_rules_from_predefinedfile();
 
         return self::$predefinedVirusStore;
     }
 
+    public static function getSpywarePredefinedStore( $owner )
+    {
+        if( self::$predefinedSpywareStore !== null )
+            return self::$predefinedSpywareStore;
 
-    public function load_from_domxml(DOMElement $xml)
+
+        self::$predefinedSpywareStore = new SecurityProfileStore( $owner, "PredefinedSecurityProfileSpyware");
+        self::$predefinedSpywareStore->setName('predefined Spyware');
+        self::$predefinedSpywareStore->load_spyware_rules_from_predefinedfile();
+
+        return self::$predefinedSpywareStore;
+    }
+
+    public static function getVulnerabilityPredefinedStore( $owner )
+    {
+        if( self::$predefinedVulnerabilityStore !== null )
+            return self::$predefinedVulnerabilityStore;
+
+
+        self::$predefinedVulnerabilityStore = new SecurityProfileStore( $owner, "PredefinedSecurityProfileVulnerability");
+        self::$predefinedVulnerabilityStore->setName('predefined Vulnerability');
+        self::$predefinedVulnerabilityStore->load_vulnerability_rules_from_predefinedfile();
+
+        return self::$predefinedVulnerabilityStore;
+    }
+
+    public static function getFileBlockingPredefinedStore( $owner )
+    {
+        if( self::$predefinedFileblockingStore !== null )
+            return self::$predefinedFileblockingStore;
+
+
+        self::$predefinedFileblockingStore = new SecurityProfileStore( $owner, "PredefinedSecurityProfileFileBlocking");
+        self::$predefinedFileblockingStore->setName('predefined FileBlocking');
+        self::$predefinedFileblockingStore->load_fileblocking_rules_from_predefinedfile();
+
+        return self::$predefinedFileblockingStore;
+    }
+
+    public static function getWildfirePredefinedStore( $owner )
+    {
+        if( self::$predefinedWildfireStore !== null )
+            return self::$predefinedWildfireStore;
+
+
+        self::$predefinedWildfireStore = new SecurityProfileStore( $owner, "PredefinedSecurityProfileWildfire");
+        self::$predefinedWildfireStore->setName('predefined Wildfire');
+        self::$predefinedWildfireStore->load_wildfire_rules_from_predefinedfile();
+
+        return self::$predefinedWildfireStore;
+    }
+
+    public function load_from_domxml(DOMElement $xml )
     {
         $this->securityProfileRoot = $xml;
 
@@ -211,7 +288,7 @@ class SecurityProfileStore extends ObjStore
 
     }
 
-    public function load_virus_categories_from_predefinedfile($filename = null)
+    public function load_url_filtering_from_predefinedfile($filename = null)
     {
         if( $filename === null )
         {
@@ -222,9 +299,89 @@ class SecurityProfileStore extends ObjStore
         $xmlDoc->load($filename, XML_PARSE_BIG_LINES);
 
 
-        $cursor = DH::findXPathSingleEntryOrDie('/predefined/pan-url-categories', $xmlDoc);
-        $this->load_predefined_url_categories_from_domxml($cursor);
+        $cursor = DH::findXPathSingleEntryOrDie('/predefined/profiles/url-filtering', $xmlDoc);
+        $this->load_predefined_url_filtering_from_domxml($cursor);
 
+    }
+
+    public function load_virus_rules_from_predefinedfile($filename = null)
+    {
+        if( $filename === null )
+        {
+            $filename = dirname(__FILE__) . '/predefined.xml';
+        }
+
+        $xmlDoc = new DOMDocument();
+        $xmlDoc->load($filename, XML_PARSE_BIG_LINES);
+
+
+        $cursor = DH::findXPathSingleEntryOrDie('/predefined/profiles/virus', $xmlDoc);
+
+        $this->load_predefined_virus_rules_from_domxml( $cursor );
+    }
+
+    public function load_spyware_rules_from_predefinedfile($filename = null)
+    {
+        if( $filename === null )
+        {
+            $filename = dirname(__FILE__) . '/predefined.xml';
+        }
+
+        $xmlDoc = new DOMDocument();
+        $xmlDoc->load($filename, XML_PARSE_BIG_LINES);
+
+
+        $cursor = DH::findXPathSingleEntryOrDie('/predefined/profiles/spyware', $xmlDoc);
+
+        $this->load_predefined_spyware_rules_from_domxml( $cursor );
+    }
+
+    public function load_vulnerability_rules_from_predefinedfile($filename = null)
+    {
+        if( $filename === null )
+        {
+            $filename = dirname(__FILE__) . '/predefined.xml';
+        }
+
+        $xmlDoc = new DOMDocument();
+        $xmlDoc->load($filename, XML_PARSE_BIG_LINES);
+
+
+        $cursor = DH::findXPathSingleEntryOrDie('/predefined/profiles/vulnerability', $xmlDoc);
+
+        $this->load_predefined_vulnerability_rules_from_domxml( $cursor );
+    }
+
+    public function load_fileblocking_rules_from_predefinedfile($filename = null)
+    {
+        if( $filename === null )
+        {
+            $filename = dirname(__FILE__) . '/predefined.xml';
+        }
+
+        $xmlDoc = new DOMDocument();
+        $xmlDoc->load($filename, XML_PARSE_BIG_LINES);
+
+
+        $cursor = DH::findXPathSingleEntryOrDie('/predefined/profiles/file-blocking', $xmlDoc);
+
+        $this->load_predefined_fileblocking_rules_from_domxml( $cursor );
+    }
+
+    public function load_wildfire_rules_from_predefinedfile($filename = null)
+    {
+        if( $filename === null )
+        {
+            $filename = dirname(__FILE__) . '/predefined.xml';
+        }
+
+        $xmlDoc = new DOMDocument();
+        $xmlDoc->load($filename, XML_PARSE_BIG_LINES);
+
+
+        $cursor = DH::findXPathSingleEntryOrDie('/predefined/profiles/wildfire-analysis', $xmlDoc);
+
+        $this->load_predefined_wildfire_rules_from_domxml( $cursor );
     }
 
     /**
@@ -576,7 +733,8 @@ class SecurityProfileStore extends ObjStore
 
         return $rule;
     }
-    public function load_predefined_virus_categories_from_domxml(DOMElement $xml)
+
+    public function load_predefined_url_filtering_from_domxml(DOMElement $xml)
     {
         foreach( $xml->childNodes as $appx )
         {
@@ -590,11 +748,163 @@ class SecurityProfileStore extends ObjStore
 
             $appName = DH::findAttribute('name', $appx);
             if( $appName === FALSE )
-                derr("Predefined URL category name not found\n");
+                derr("Predefined Virus rule name not found\n");
 
-            $app = $this->newPredefinedSecurityProfileURL($appName);
-            #$app->type = 'predefined';
+            #DH::DEBUGprintDOMDocument($appx);
+            $app = new URLProfile( $appName, $this );
+            $app->load_from_domxml($appx);
 
+            #$app = $this->newPredefinedSecurityProfileURL($appName);
+            ##$app->type = 'predefined';
+
+            $this->add($app);
+        }
+
+        sort($this->o);
+    }
+
+    public function load_predefined_virus_rules_from_domxml(DOMElement $xml)
+    {
+        foreach( $xml->childNodes as $appx )
+        {
+            if( $appx->nodeType != XML_ELEMENT_NODE )
+                continue;
+
+
+            $nodeName1 = $appx->nodeName;
+            if( $nodeName1 == "hidden-entries" )
+                continue;
+
+            $appName = DH::findAttribute('name', $appx);
+            if( $appName === FALSE )
+                derr("Predefined Virus rule name not found\n");
+
+            #DH::DEBUGprintDOMDocument($appx);
+            $app = new AntiVirusProfile( $appName, $this );
+            $app->load_from_domxml($appx);
+
+            #$app = $this->newPredefinedSecurityProfileURL($appName);
+            ##$app->type = 'predefined';
+
+            $this->add($app);
+        }
+
+        sort($this->o);
+    }
+
+    public function load_predefined_spyware_rules_from_domxml(DOMElement $xml)
+    {
+        foreach( $xml->childNodes as $appx )
+        {
+            if( $appx->nodeType != XML_ELEMENT_NODE )
+                continue;
+
+
+            $nodeName1 = $appx->nodeName;
+            if( $nodeName1 == "hidden-entries" )
+                continue;
+
+            $appName = DH::findAttribute('name', $appx);
+            if( $appName === FALSE )
+                derr("Predefined Spyware rule name not found\n");
+
+            #DH::DEBUGprintDOMDocument($appx);
+            $app = new AntiSpywareProfile( $appName, $this );
+            $app->load_from_domxml($appx);
+
+            #$app = $this->newPredefinedSecurityProfileURL($appName);
+            ##$app->type = 'predefined';
+
+            $this->add($app);
+        }
+
+        sort($this->o);
+    }
+
+    public function load_predefined_vulnerability_rules_from_domxml(DOMElement $xml)
+    {
+        foreach( $xml->childNodes as $appx )
+        {
+            if( $appx->nodeType != XML_ELEMENT_NODE )
+                continue;
+
+
+            $nodeName1 = $appx->nodeName;
+            if( $nodeName1 == "hidden-entries" )
+                continue;
+
+            $appName = DH::findAttribute('name', $appx);
+            if( $appName === FALSE )
+                derr("Predefined Spyware rule name not found\n");
+
+            #DH::DEBUGprintDOMDocument($appx);
+            $app = new VulnerabilityProfile( $appName, $this );
+            $app->load_from_domxml($appx);
+
+            #$app = $this->newPredefinedSecurityProfileURL($appName);
+            ##$app->type = 'predefined';
+
+            #$app->display();
+            $this->add($app);
+        }
+
+        sort($this->o);
+    }
+
+    public function load_predefined_fileblocking_rules_from_domxml(DOMElement $xml)
+    {
+        foreach( $xml->childNodes as $appx )
+        {
+            if( $appx->nodeType != XML_ELEMENT_NODE )
+                continue;
+
+
+            $nodeName1 = $appx->nodeName;
+            if( $nodeName1 == "hidden-entries" )
+                continue;
+
+            $appName = DH::findAttribute('name', $appx);
+            if( $appName === FALSE )
+                derr("Predefined Spyware rule name not found\n");
+
+            #DH::DEBUGprintDOMDocument($appx);
+            $app = new FileBlockingProfile( $appName, $this );
+            $app->load_from_domxml($appx);
+
+            #$app = $this->newPredefinedSecurityProfileURL($appName);
+            ##$app->type = 'predefined';
+
+            #$app->display();
+            $this->add($app);
+        }
+
+        #sort($this->o);
+    }
+
+    public function load_predefined_wildfire_rules_from_domxml(DOMElement $xml)
+    {
+        foreach( $xml->childNodes as $appx )
+        {
+            if( $appx->nodeType != XML_ELEMENT_NODE )
+                continue;
+
+
+            $nodeName1 = $appx->nodeName;
+            if( $nodeName1 == "hidden-entries" )
+                continue;
+
+            $appName = DH::findAttribute('name', $appx);
+            if( $appName === FALSE )
+                derr("Predefined Spyware rule name not found\n");
+
+            #DH::DEBUGprintDOMDocument($appx);
+            $app = new WildfireProfile( $appName, $this );
+            $app->load_from_domxml($appx);
+
+            #$app = $this->newPredefinedSecurityProfileURL($appName);
+            ##$app->type = 'predefined';
+
+            #$app->display();
             $this->add($app);
         }
 

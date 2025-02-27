@@ -22,6 +22,7 @@ UTIL:
 * type=securityprofile securityprofiletype=url-filtering | extend user-credential to check mode/log-severity for bp/visiblie
 * type=stats | use argument debugapi - to display more output for bp/visibility calculation
 * type=securityprofile | introduce filter url.user-credential-detection is.disabled / is.ip-user-mapping
+* type=securityprofile | introduce securityprofiletype=predefined-/url-filtering/virus/spyware/file-blocking/wildfire-analysis
 
 BUGFIX:
 * type=securityprofile securitprofiletype=spyware | bugfix of displaying botnet-domain if packet-capture is missing

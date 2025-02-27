@@ -97,6 +97,12 @@ class PANConf
 
     /** @var SecurityProfileStore */
     public $urlStore;
+    public $AntiVirusPredefinedStore;
+    public $AntiSpywarePredefinedStore;
+    public $VulnerabilityPredefinedStore;
+    public $FileBlockingPredefinedStore;
+    public $WildfirePredefinedStore;
+    public $UrlFilteringPredefinedStore;
 
 
     protected $securityProfilebaseroot;
@@ -211,7 +217,8 @@ class PANConf
 
         $this->threatStore = ThreatStore::getPredefinedStore( $this );
 
-        $this->urlStore = SecurityProfileStore::getURLPredefinedStore();
+        $this->urlStore = SecurityProfileStore::getURLPredefinedStore( $this );
+
 
         $this->serviceStore = new ServiceStore($this);
         $this->serviceStore->name = 'services';
@@ -651,7 +658,6 @@ class PANConf
                 }
             }
 
-
             //
             // Extract SecurityProfile groups in this DV
             //
@@ -679,6 +685,12 @@ class PANConf
             }
             // End of Certificate objects extraction
         }
+        $this->AntiVirusPredefinedStore = SecurityProfileStore::getVirusPredefinedStore( $this );
+        $this->AntiSpywarePredefinedStore = SecurityProfileStore::getSpywarePredefinedStore( $this );
+        $this->VulnerabilityPredefinedStore = SecurityProfileStore::getVulnerabilityPredefinedStore( $this );
+        $this->UrlFilteringPredefinedStore = SecurityProfileStore::getUrlFilteringPredefinedStore( $this );
+        $this->FileBlockingPredefinedStore = SecurityProfileStore::getFileBlockingPredefinedStore( $this );
+        $this->WildfirePredefinedStore = SecurityProfileStore::getWildfirePredefinedStore( $this );
 
 
         //
