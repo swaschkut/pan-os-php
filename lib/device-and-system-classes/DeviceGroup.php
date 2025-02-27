@@ -1291,14 +1291,14 @@ class DeviceGroup
             $stdoutarray['log prof set percentage'] = 0;
 
         //Wildfire Analysis Profiles
-        $filter_array = array('query' => $generalFilter."(secprof has.from.query subquery1)", 'subquery1' => "wf is.visibility" );
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "wf is.visibility" );
         $stdoutarray['wf visibility'] = count( $sub_ruleStore->rules( $filter_array ) );
         $stdoutarray['wf visibility calc'] = $stdoutarray['wf visibility']."/".$ruleForCalculation;
         if( $ruleForCalculation !== 0 )
             $stdoutarray['wf visibility percentage'] = floor(( $stdoutarray['wf visibility'] / $ruleForCalculation ) * 100 );
         else
             $stdoutarray['wf visibility percentage'] = 0;
-        $filter_array = array('query' => $generalFilter."(secprof has.from.query subquery1)", 'subquery1' => "wf is.best-practice" );
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "wf is.best-practice" );
         $stdoutarray['wf best-practice'] = count( $sub_ruleStore->rules( $filter_array ) );
         $stdoutarray['wf best-practice calc'] = $stdoutarray['wf best-practice']."/".$ruleForCalculation;
         if( $ruleForCalculation !== 0 )
