@@ -1,0 +1,393 @@
+{
+    "virus": {
+        "rule": {
+            "bp": {
+                "action": {
+                    "type": [
+                        "ftp",
+                        "http",
+                        "http2",
+                        "smb"
+                    ],
+                    "action": [
+                        "reset-both",
+                        "default"
+                    ],
+                    "action-not-matching-type": [
+                        "reset-both"
+                    ]
+                },
+                "wildfire-action": {
+                    "type": [
+                        "ftp",
+                        "http",
+                        "http2",
+                        "smb"
+                    ],
+                    "action": [
+                        "reset-both",
+                        "default"
+                    ],
+                    "action-not-matching-type": [
+                        "reset-both"
+                    ]
+                },
+                "mlav-action": {
+                    "type": [
+                        "ftp",
+                        "http",
+                        "http2",
+                        "smb"
+                    ],
+                    "action": [
+                        "reset-both",
+                        "default"
+                    ],
+                    "action-not-matching-type": [
+                        "reset-both"
+                    ]
+                }
+            },
+            "visibility": {
+                "action": [
+                    "!allow"
+                ],
+                "wildfire-action": [
+                    "!allow"
+                ],
+                "mlav-action": [
+                    "!allow"
+                ]
+            }
+        },
+        "cloud-inline": {
+            "bp": {
+                "inline-policy-action": [
+                    "enable"
+                ]
+            },
+            "visibility": {
+                "inline-policy-action": [
+                    "!disable"
+                ]
+            }
+        }
+    },
+    "spyware": {
+        "rule": {
+            "bp": {
+                "severity": [
+                    "any",
+                    "critical",
+                    "high",
+                    "medium"
+                ],
+                "action": [
+                    "reset-both"
+                ],
+                "packet-capture": [
+                    "single-packet",
+                    "extended-capture"
+                ]
+            },
+            "visibility": {
+                "severity": [
+                    "any",
+                    "critical",
+                    "high",
+                    "medium",
+                    "low",
+                    "informational"
+                ],
+                "action": [
+                    "!allow"
+                ]
+            }
+        },
+        "dns": {
+            "bp": {
+                "action": [
+                    {
+                        "type": [
+                            "pan-dns-sec-adtracking",
+                            "pan-dns-sec-ddns",
+                            "pan-dns-sec-grayware",
+                            "pan-dns-sec-malware",
+                            "pan-dns-sec-parked",
+                            "pan-dns-sec-phishing",
+                            "pan-dns-sec-proxy",
+                            "pan-dns-sec-recent"
+                        ],
+                        "action": [
+                            "sinkhole"
+                        ],
+                        "packet-capture": [
+                            "single-packet"
+                        ]
+                    },
+                    {
+                        "type": [
+                            "pan-dns-sec-cc"
+                        ],
+                        "action": [
+                            "sinkhole"
+                        ],
+                        "packet-capture": [
+                            "extended-capture"
+                        ]
+                    }
+                ]
+            }
+        },
+        "lists": {
+            "bp": {
+                "action": [
+                    {
+                        "type": [
+                            "default-paloalto-dns"
+                        ],
+                        "action": [
+                            "sinkhole"
+                        ]
+                    }
+                ]
+            },
+            "visibility": {
+                "action": [
+                    {
+                        "type": [
+                            "default-paloalto-dns"
+                        ],
+                        "action": [
+                            "!allow"
+                        ]
+                    }
+                ]
+            }
+        },
+        "cloud-inline": {
+            "bp": {
+                "inline-policy-action": [
+                    "reset-both"
+                ]
+            },
+            "visibility": {
+                "inline-policy-action": [
+                    "!allow"
+                ]
+            }
+        }
+    },
+    "vulnerability": {
+        "rule": {
+            "bp": {
+                "severity": [
+                    "any",
+                    "critical",
+                    "high",
+                    "medium"
+                ],
+                "action": [
+                    "reset-both"
+                ],
+                "packet-capture": [
+                    "single-packet",
+                    "extended-capture"
+                ],
+                "category-exclude": [
+                    "brute-force",
+                    "app-id-change"
+                ]
+            },
+            "visibility": {
+                "severity": [
+                    "any",
+                    "critical",
+                    "high",
+                    "medium",
+                    "low",
+                    "informational"
+                ],
+                "action": [
+                    "!allow"
+                ]
+            }
+        },
+        "cloud-inline": {
+            "bp": {
+                "inline-policy-action": [
+                    "reset-both"
+                ]
+            },
+            "visibility": {
+                "inline-policy-action": [
+                    "!allow"
+                ]
+            }
+        }
+    },
+    "url": {
+        "site_access": {
+            "visibility": "!allow",
+            "bp": [
+                {
+                    "type": [
+                        "command-and-control",
+                        "compromised-website",
+                        "grayware",
+                        "malware",
+                        "phishing",
+                        "ransomware",
+                        "scanning-activity"
+                    ],
+                    "action": "block"
+                },
+                {
+                    "type": [
+                        "dynamic-dns",
+                        "hacking",
+                        "insufficient-content",
+                        "newly-registered-domains",
+                        "not-resolved",
+                        "parked",
+                        "proxy-avoidance-and-anonymizers",
+                        "unknown"
+                    ],
+                    "action": "alert"
+                },
+                {
+                    "type": [
+                        "abused-drugs",
+                        "adult",
+                        "copyright-infringement",
+                        "extremism",
+                        "gambling",
+                        "peer-to-peer",
+                        "questionable",
+                        "weapons"
+                    ],
+                    "action": "alert"
+                }
+            ]
+        },
+        "user_credential_submission": {
+            "visibility": {
+                "category": "!allow",
+                "tab": {
+                    "mode": "!disabled"
+                }
+            },
+            "bp": {
+                "category": [
+                    {
+                        "type": [
+                            "command-and-control",
+                            "compromised-website",
+                            "grayware",
+                            "malware",
+                            "phishing",
+                            "ransomware",
+                            "scanning-activity"
+                        ],
+                        "action": "block"
+                    },
+                    {
+                        "type": [
+                            "dynamic-dns",
+                            "hacking",
+                            "insufficient-content",
+                            "newly-registered-domains",
+                            "not-resolved",
+                            "parked",
+                            "proxy-avoidance-and-anonymizers",
+                            "unknown"
+                        ],
+                        "action": "alert"
+                    },
+                    {
+                        "type": [
+                            "abused-drugs",
+                            "adult",
+                            "copyright-infringement",
+                            "extremism",
+                            "gambling",
+                            "peer-to-peer",
+                            "questionable",
+                            "weapons"
+                        ],
+                        "action": "alert"
+                    }
+                ],
+                "tab": {
+                    "mode": "ip-user",
+                    "log-severity": "medium"
+                }
+            }
+        }
+    },
+    "file-blocking": {
+        "rule": {
+            "bp": {
+                "alert": {
+                    "filetype": [
+                        "any"
+                    ]
+                },
+                "block": {
+                    "filetype": [
+                        "7z",
+                        "bat",
+                        "chm",
+                        "class",
+                        "cpl",
+                        "dll",
+                        "hlp",
+                        "hta",
+                        "jar",
+                        "ocx",
+                        "pif",
+                        "scr",
+                        "torrent",
+                        "vbe",
+                        "wsf"
+                    ]
+                }
+            },
+            "visibility": {
+                "alert": {
+                    "filetype": [
+                        "any"
+                    ]
+                }
+            }
+        }
+    },
+    "wildfire": {
+        "rule": {
+            "bp": [
+                {
+                    "application": [
+                        "any"
+                    ],
+                    "filetype": [
+                        "any"
+                    ],
+                    "direction": "both",
+                    "analysis": "public-cloud"
+                }
+            ],
+            "visibility": [
+                {
+                    "application": [
+                        "any"
+                    ],
+                    "filetype": [
+                        "any"
+                    ],
+                    "direction": "both",
+                    "analysis": "public-cloud"
+                }
+            ]
+        }
+    }
+}
