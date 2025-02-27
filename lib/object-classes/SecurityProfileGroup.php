@@ -177,9 +177,36 @@ class SecurityProfileGroup
                     }
                     else
                     {
-                        //Todo: not a profile - default profile
-                        #PH::print_stdout( "SecurityProfileGroup: ".$this->name()." - proftype: ".$secprof_type." - PROFILE: ".$tmp_type->nodeValue." not found");
-                        $this->secprofiles[ $secprof_type ] = $tmp_type->nodeValue;
+                        if( get_class( $this->owner->owner ) == "DeviceGroup" || get_class( $this->owner->owner ) == "VirtualSystem" )
+                            $sub = $this->owner->owner->owner;
+                        elseif( get_class( $this->owner->owner ) == "PANConfig" || get_class( $this->owner->owner ) == "PanoramaConf" )
+                            $sub = $this->owner->owner;
+
+                        if( $tmp_store_name == 'AntiVirusProfileStore')
+                            $profile = $sub->AntiVirusPredefinedStore->find( $tmp_type->nodeValue );
+                        elseif( $tmp_store_name == 'AntiSpywareProfileStore')
+                            $profile = $sub->AntiSpywarePredefinedStore->find( $tmp_type->nodeValue );
+                        elseif( $tmp_store_name == 'VulnerabilityProfileStore')
+                            $profile = $sub->VulnerabilityPredefinedStore->find( $tmp_type->nodeValue );
+                        elseif( $tmp_store_name == 'FileBlockingProfileStore' )
+                            $profile = $sub->FileBlockingPredefinedStore->find( $tmp_type->nodeValue );
+                        elseif( $tmp_store_name == 'WildfireProfileStore' )
+                            $profile = $sub->WildfirePredefinedStore->find( $tmp_type->nodeValue );
+                        elseif( $tmp_store_name == 'URLProfileStore' )
+                            $profile = $sub->UrlFilteringPredefinedStore->find( $tmp_type->nodeValue );
+
+                        if( $profile != null )
+                        {
+                            $this->secprofProfiles_obj[$secprof_type] = $profile;
+
+                            $profile->addReference( $this );
+                        }
+                        else
+                        {
+                            //Todo: not a profile - default profile
+                            #PH::print_stdout( "SecurityProfileGroup: ".$this->name()." - proftype: ".$secprof_type." - PROFILE: ".$tmp_type->nodeValue." not found");
+                            $this->secprofiles[$secprof_type] = $tmp_type->nodeValue;
+                        }
                     }
 
                     $str .= $secprof_type.':'.$tmp_type->nodeValue;

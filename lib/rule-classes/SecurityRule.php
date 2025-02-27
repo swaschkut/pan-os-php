@@ -501,8 +501,35 @@ class SecurityRule extends RuleWithUserID
                     }
                     else
                     {
-                        //todo: not an object - default object not yet created
-                        $this->secprofProfiles_obj[$prof->nodeName] = $firstE->textContent;
+                        if( get_class( $this->owner->owner ) == "DeviceGroup" || get_class( $this->owner->owner ) == "VirtualSystem" )
+                            $sub = $this->owner->owner->owner;
+                        elseif( get_class( $this->owner->owner ) == "PANConfig" || get_class( $this->owner->owner ) == "PanoramaConf" )
+                            $sub = $this->owner->owner;
+
+                        if( $tmp_store_name == 'AntiVirusProfileStore')
+                            $profile = $sub->AntiVirusPredefinedStore->find( $firstE->textContent );
+                        elseif( $tmp_store_name == 'AntiSpywareProfileStore')
+                            $profile = $sub->AntiSpywarePredefinedStore->find( $firstE->textContent );
+                        elseif( $tmp_store_name == 'VulnerabilityProfileStore')
+                            $profile = $sub->VulnerabilityPredefinedStore->find( $firstE->textContent );
+                        elseif( $tmp_store_name == 'FileBlockingProfileStore' )
+                            $profile = $sub->FileBlockingPredefinedStore->find( $firstE->textContent );
+                        elseif( $tmp_store_name == 'WildfireProfileStore' )
+                            $profile = $sub->WildfirePredefinedStore->find( $firstE->textContent );
+                        elseif( $tmp_store_name == 'URLProfileStore' )
+                            $profile = $sub->UrlFilteringPredefinedStore->find( $firstE->textContent );
+
+                        if( $profile != null )
+                        {
+                            $this->secprofProfiles_obj[$prof->nodeName] = $profile;
+
+                            $profile->addReference( $this );
+                        }
+                        else
+                        {
+                            //todo: not an object - default object not yet created
+                            $this->secprofProfiles_obj[$prof->nodeName] = $firstE->textContent;
+                        }
                     }
                 }
             }

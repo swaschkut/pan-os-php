@@ -23,6 +23,7 @@ UTIL:
 * type=stats | use argument debugapi - to display more output for bp/visibility calculation
 * type=securityprofile | introduce filter url.user-credential-detection is.disabled / is.ip-user-mapping
 * type=securityprofile | introduce securityprofiletype=predefined-/url-filtering/virus/spyware/file-blocking/wildfire-analysis
+* class SecurityProfileGroup / SecurityRule | adjust to bring in predefined SecurityProfiles
 
 BUGFIX:
 * type=securityprofile securitprofiletype=spyware | bugfix of displaying botnet-domain if packet-capture is missing
