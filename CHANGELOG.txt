@@ -24,6 +24,7 @@ UTIL:
 * type=securityprofile | introduce filter url.user-credential-detection is.disabled / is.ip-user-mapping
 * type=securityprofile | introduce securityprofiletype=predefined-/url-filtering/virus/spyware/file-blocking/wildfire-analysis
 * class SecurityProfileGroup / SecurityRule | adjust to bring in predefined SecurityProfiles
+* type=rule actions=securityprofile-group-set | add additional warning if obj can not be found
 
 BUGFIX:
 * type=securityprofile securitprofiletype=spyware | bugfix of displaying botnet-domain if packet-capture is missing

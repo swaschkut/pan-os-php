@@ -2757,13 +2757,20 @@ RuleCallContext::$supportedActions[] = array(
             return;
         }
 
+        $secprofgroupName = $context->arguments['profName'];
+        $secprofgroupObject = $rule->owner->owner->securityProfileGroupStore->find( $secprofgroupName );
+        if( $secprofgroupObject === null )
+        {
+            derr( "SecurityProfileGroup: '".$secprofgroupName."' not available in this configuration", null, False );
+        }
+
         if( $context->isAPI )
             if( $rule->isDefaultSecurityRule() )
                 $rule->API_sync();
             else
-                $rule->API_setSecurityProfileGroup($context->arguments['profName']);
+                $rule->API_setSecurityProfileGroup($secprofgroupName);
         else
-            $rule->setSecurityProfileGroup($context->arguments['profName']);
+            $rule->setSecurityProfileGroup($secprofgroupName);
     },
     'args' => array('profName' => array('type' => 'string', 'default' => '*nodefault*'))
 );

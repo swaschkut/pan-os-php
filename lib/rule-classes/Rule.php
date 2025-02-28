@@ -2460,7 +2460,6 @@ class Rule
             $group_name = $this->securityProfileGroup();
             /** @var SecurityProfileGroup $group */
             $group = $this->owner->owner->securityProfileGroupStore->find($group_name);
-
             if( $group === NULL )
             {
                 mwarning( "Secrule: '".$this->name()."' has SecProfGroup: '".$group_name."' defined, but can not be found", null, false );
