@@ -974,88 +974,91 @@ class Rule
                 $res = DH::findFirstElement( "entry", $res);
             }
 
-            $latest = DH::findFirstElement( "latest", $res);
-            $hit_count = DH::findFirstElement( "hit-count", $res);
-            $last_hit_timestamp = DH::findFirstElement( "last-hit-timestamp", $res);
-            $last_reset_timestamp = DH::findFirstElement( "last-reset-timestamp", $res);
-
-            $first_hit_timestamp = DH::findFirstElement( "first-hit-timestamp", $res);
-            $rule_creation_timestamp = DH::findFirstElement( "rule-creation-timestamp", $res);
-            $rule_modification_timestamp = DH::findFirstElement( "rule-modification-timestamp", $res);
-
-            //create Array and return
-            $padding = "    * ";
-            if( $latest )
+            if( $res !== FALSE )
             {
-                if( $print )
-                    PH::print_stdout( $padding."latest: ".$latest->textContent );
-                $rule_hitcount_array['latest'] = $latest->textContent;
-            }
+                $latest = DH::findFirstElement( "latest", $res);
+                $hit_count = DH::findFirstElement( "hit-count", $res);
+                $last_hit_timestamp = DH::findFirstElement( "last-hit-timestamp", $res);
+                $last_reset_timestamp = DH::findFirstElement( "last-reset-timestamp", $res);
 
-            if( $hit_count)
-            {
-                if( $print )
-                    PH::print_stdout( $padding."hit-count: ".$hit_count->textContent );
-                $rule_hitcount_array['hit-count'] = $hit_count->textContent;
-            }
+                $first_hit_timestamp = DH::findFirstElement( "first-hit-timestamp", $res);
+                $rule_creation_timestamp = DH::findFirstElement( "rule-creation-timestamp", $res);
+                $rule_modification_timestamp = DH::findFirstElement( "rule-modification-timestamp", $res);
 
-            if( $last_hit_timestamp )
-            {
-                $unixTimestamp = $last_hit_timestamp->textContent;
-                if( $unixTimestamp === "0" || $unixTimestamp === "" )
-                    $result = "0";
-                else
-                    $result = date( 'Y-m-d H:i:s', $unixTimestamp );
-                if( $print )
-                    PH::print_stdout( $padding."last-hit: ".$result );
-                $rule_hitcount_array['last-hit'] = $result;
-            }
+                //create Array and return
+                $padding = "    * ";
+                if( $latest )
+                {
+                    if( $print )
+                        PH::print_stdout( $padding."latest: ".$latest->textContent );
+                    $rule_hitcount_array['latest'] = $latest->textContent;
+                }
 
-            if( $last_reset_timestamp )
-            {
-                $unixTimestamp = $last_reset_timestamp->textContent;
-                if( $unixTimestamp === "0" || $unixTimestamp === "" )
-                    $result = "0";
-                else
-                    $result = date( 'Y-m-d H:i:s', $unixTimestamp );
-                if( $print )
-                    PH::print_stdout( $padding."last-reset: ".$result );
-                $rule_hitcount_array['last-reset'] = $result;
-            }
+                if( $hit_count)
+                {
+                    if( $print )
+                        PH::print_stdout( $padding."hit-count: ".$hit_count->textContent );
+                    $rule_hitcount_array['hit-count'] = $hit_count->textContent;
+                }
 
-            if( $first_hit_timestamp )
-            {
-                $unixTimestamp = $first_hit_timestamp->textContent;
-                if( $unixTimestamp === "0" || $unixTimestamp === "" )
-                    $result = "0";
-                else
-                    $result = date( 'Y-m-d H:i:s', $unixTimestamp );
-                if( $print )
-                    PH::print_stdout( $padding."first-hit: ".$result );
-                $rule_hitcount_array['first-hit'] = $result;
-            }
+                if( $last_hit_timestamp )
+                {
+                    $unixTimestamp = $last_hit_timestamp->textContent;
+                    if( $unixTimestamp === "0" || $unixTimestamp === "" )
+                        $result = "0";
+                    else
+                        $result = date( 'Y-m-d H:i:s', $unixTimestamp );
+                    if( $print )
+                        PH::print_stdout( $padding."last-hit: ".$result );
+                    $rule_hitcount_array['last-hit'] = $result;
+                }
 
-            if( $rule_creation_timestamp )
-            {
-                $unixTimestamp = $rule_creation_timestamp->textContent;
-                if( $unixTimestamp === "" )
-                    $result = 0;
-                else
-                    $result = date( 'Y-m-d H:i:s', $unixTimestamp );
-                if( $print )
-                    PH::print_stdout( $padding."rule-creation: ".$result );
-                $rule_hitcount_array['rule-creation'] = $result;
-            }
-            if( $rule_modification_timestamp )
-            {
-                $unixTimestamp = $rule_modification_timestamp->textContent;
-                if( $unixTimestamp === "" )
-                    $result = 0;
-                else
-                    $result = date( 'Y-m-d H:i:s', $unixTimestamp );
-                if( $print )
-                    PH::print_stdout( $padding."rule-modification: ".$result );
-                $rule_hitcount_array['rule-modification'] = $result;
+                if( $last_reset_timestamp )
+                {
+                    $unixTimestamp = $last_reset_timestamp->textContent;
+                    if( $unixTimestamp === "0" || $unixTimestamp === "" )
+                        $result = "0";
+                    else
+                        $result = date( 'Y-m-d H:i:s', $unixTimestamp );
+                    if( $print )
+                        PH::print_stdout( $padding."last-reset: ".$result );
+                    $rule_hitcount_array['last-reset'] = $result;
+                }
+
+                if( $first_hit_timestamp )
+                {
+                    $unixTimestamp = $first_hit_timestamp->textContent;
+                    if( $unixTimestamp === "0" || $unixTimestamp === "" )
+                        $result = "0";
+                    else
+                        $result = date( 'Y-m-d H:i:s', $unixTimestamp );
+                    if( $print )
+                        PH::print_stdout( $padding."first-hit: ".$result );
+                    $rule_hitcount_array['first-hit'] = $result;
+                }
+
+                if( $rule_creation_timestamp )
+                {
+                    $unixTimestamp = $rule_creation_timestamp->textContent;
+                    if( $unixTimestamp === "" )
+                        $result = 0;
+                    else
+                        $result = date( 'Y-m-d H:i:s', $unixTimestamp );
+                    if( $print )
+                        PH::print_stdout( $padding."rule-creation: ".$result );
+                    $rule_hitcount_array['rule-creation'] = $result;
+                }
+                if( $rule_modification_timestamp )
+                {
+                    $unixTimestamp = $rule_modification_timestamp->textContent;
+                    if( $unixTimestamp === "" )
+                        $result = 0;
+                    else
+                        $result = date( 'Y-m-d H:i:s', $unixTimestamp );
+                    if( $print )
+                        PH::print_stdout( $padding."rule-modification: ".$result );
+                    $rule_hitcount_array['rule-modification'] = $result;
+                }
             }
 
         }
