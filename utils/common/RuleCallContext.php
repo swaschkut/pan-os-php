@@ -594,6 +594,12 @@ class RuleCallContext extends CallContext
                 /** @var SecurityProfileGroup $group */
                 $group = $rule->owner->owner->securityProfileGroupStore->find($group_name);
                 $sp_working_array = array( 'virus', 'spyware', 'vulnerability', 'file-blocking', 'url-filtering', 'data-filtering', 'wildfire-analysis' );
+
+                if( $group === NULL )
+                {
+                    mwarning( "Secrule: '".$rule->name()."' has SecProfGroup: '".$group_name."' defined, but can not be found", null, false );
+                    return FALSE;
+                }
                 $group_profiles = $group->securityProfiles();
 
                 $profiles = array();

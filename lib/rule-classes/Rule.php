@@ -2463,7 +2463,7 @@ class Rule
 
             if( $group === NULL )
             {
-                mwarning( "Secrule: '".$this->name()."' has SecProfGroup: '".$group_name."' defined, but can not be found" );
+                mwarning( "Secrule: '".$this->name()."' has SecProfGroup: '".$group_name."' defined, but can not be found", null, false );
                 return FALSE;
             }
 
