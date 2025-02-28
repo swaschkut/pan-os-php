@@ -506,6 +506,7 @@ class SecurityRule extends RuleWithUserID
                         elseif( get_class( $this->owner->owner ) == "PANConfig" || get_class( $this->owner->owner ) == "PanoramaConf" )
                             $sub = $this->owner->owner;
 
+                        /** @var PanoramaConf|PANConf $sub */
                         if( $tmp_store_name == 'AntiVirusProfileStore')
                             $profile = $sub->AntiVirusPredefinedStore->find( $firstE->textContent );
                         elseif( $tmp_store_name == 'AntiSpywareProfileStore')
@@ -528,6 +529,7 @@ class SecurityRule extends RuleWithUserID
                         else
                         {
                             //todo: not an object - default object not yet created
+                            mwarning( "SecRule: '".$this->name()."' SecurityProfile: '".$firstE->textContent."' of Type: '".$prof->nodeName."' not found.", null, false );
                             $this->secprofProfiles_obj[$prof->nodeName] = $firstE->textContent;
                         }
                     }

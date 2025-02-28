@@ -757,6 +757,16 @@ class SecurityProfileStore extends ObjStore
             #$app = $this->newPredefinedSecurityProfileURL($appName);
             ##$app->type = 'predefined';
 
+            $this->nameIndex[$app->name()] = $app;
+            $this->fastNameToIndex[$app->name()] = $app;
+
+            //
+            $this->_SecurityProfiles[ $app->name() ] = $app;
+            #$this->_SecurityProfiles[$this->name] = $app;
+            $this->_all[] = $app;
+            #$this->_all[$this->name] = $app;
+            $this->o[] = $app;
+
             $this->add($app);
         }
 
@@ -785,6 +795,16 @@ class SecurityProfileStore extends ObjStore
 
             #$app = $this->newPredefinedSecurityProfileURL($appName);
             ##$app->type = 'predefined';
+
+            $this->nameIndex[$app->name()] = $app;
+            $this->fastNameToIndex[$app->name()] = $app;
+
+            //
+            $this->_SecurityProfiles[ $app->name() ] = $app;
+            #$this->_SecurityProfiles[$this->name] = $app;
+            $this->_all[] = $app;
+            #$this->_all[$this->name] = $app;
+            $this->o[] = $app;
 
             $this->add($app);
         }
@@ -815,6 +835,16 @@ class SecurityProfileStore extends ObjStore
             #$app = $this->newPredefinedSecurityProfileURL($appName);
             ##$app->type = 'predefined';
 
+            $this->nameIndex[$app->name()] = $app;
+            $this->fastNameToIndex[$app->name()] = $app;
+
+            //
+            $this->_SecurityProfiles[ $app->name() ] = $app;
+            #$this->_SecurityProfiles[$this->name] = $app;
+            $this->_all[] = $app;
+            #$this->_all[$this->name] = $app;
+            $this->o[] = $app;
+
             $this->add($app);
         }
 
@@ -844,7 +874,16 @@ class SecurityProfileStore extends ObjStore
             #$app = $this->newPredefinedSecurityProfileURL($appName);
             ##$app->type = 'predefined';
 
-            #$app->display();
+            $this->nameIndex[$app->name()] = $app;
+            $this->fastNameToIndex[$app->name()] = $app;
+
+            //
+            $this->_SecurityProfiles[ $app->name() ] = $app;
+            #$this->_SecurityProfiles[$this->name] = $app;
+            $this->_all[] = $app;
+            #$this->_all[$this->name] = $app;
+            $this->o[] = $app;
+
             $this->add($app);
         }
 
@@ -874,7 +913,16 @@ class SecurityProfileStore extends ObjStore
             #$app = $this->newPredefinedSecurityProfileURL($appName);
             ##$app->type = 'predefined';
 
-            #$app->display();
+            $this->nameIndex[$app->name()] = $app;
+            $this->fastNameToIndex[$app->name()] = $app;
+
+            //
+            $this->_SecurityProfiles[ $app->name() ] = $app;
+            #$this->_SecurityProfiles[$this->name] = $app;
+            $this->_all[] = $app;
+            #$this->_all[$this->name] = $app;
+            $this->o[] = $app;
+
             $this->add($app);
         }
 
@@ -904,7 +952,16 @@ class SecurityProfileStore extends ObjStore
             #$app = $this->newPredefinedSecurityProfileURL($appName);
             ##$app->type = 'predefined';
 
-            #$app->display();
+            $this->nameIndex[$app->name()] = $app;
+            $this->fastNameToIndex[$app->name()] = $app;
+
+            //
+            $this->_SecurityProfiles[ $app->name() ] = $app;
+            #$this->_SecurityProfiles[$this->name] = $app;
+            $this->_all[] = $app;
+            #$this->_all[$this->name] = $app;
+            $this->o[] = $app;
+
             $this->add($app);
         }
 
