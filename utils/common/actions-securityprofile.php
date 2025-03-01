@@ -520,15 +520,6 @@ SecurityProfileCallContext::$supportedActions[] = array(
             $headers .= '<th>visibility</th>';
 
 
-        if( $bestPractice )
-            $headers .= '<th>BP FB</th>';
-        if( $visibility )
-            $headers .= '<th>visibility FB</th>';
-
-        if( $bestPractice )
-            $headers .= '<th>BP WF</th>';
-        if( $visibility )
-            $headers .= '<th>visibility WF</th>';
 
         if( $bestPractice )
         {
@@ -536,6 +527,8 @@ SecurityProfileCallContext::$supportedActions[] = array(
             $headers .= '<th>URL BP details</th>';
 
             $headers .= '<th>URL credentials BP details</th>';
+
+            $headers .= '<th>URL credentials BP TAB details</th>';
         }
 
         if( $visibility )
@@ -544,6 +537,8 @@ SecurityProfileCallContext::$supportedActions[] = array(
             $headers .= '<th>URL visibility details</th>';
 
             $headers .= '<th>URL credentials visibility details</th>';
+
+            $headers .= '<th>URL credentials visibility TAB details</th>';
         }
 
 
@@ -890,6 +885,40 @@ SecurityProfileCallContext::$supportedActions[] = array(
                                 $lines .= $context->encloseFunction($bp_text_yes.' Visibility VP rules set');
                             else
                                 $lines .= $context->encloseFunction($bp_text_no.' NO Visibility VP rules');
+                        }
+                    }
+                    elseif( get_class($object) == "FileBlockingProfile" )
+                    {
+                        if( $bestPractice )
+                        {
+                            if( $object->fileblocking_rules_best_practice() )
+                                $lines .= $context->encloseFunction($bp_text_yes.' BP FB rules set');
+                            else
+                                $lines .= $context->encloseFunction($bp_text_no.' NO BP FB rules');
+                        }
+                        if( $visibility )
+                        {
+                            if( $object->fileblocking_rules_visibility() )
+                                $lines .= $context->encloseFunction($bp_text_yes.' Visibility FB rules set');
+                            else
+                                $lines .= $context->encloseFunction($bp_text_no.' NO Visibility FB rules');
+                        }
+                    }
+                    elseif( get_class($object) == "WildfireProfile" )
+                    {
+                        if( $bestPractice )
+                        {
+                            if( $object->wildfire_rules_best_practice() )
+                                $lines .= $context->encloseFunction($bp_text_yes.' BP WF rules set');
+                            else
+                                $lines .= $context->encloseFunction($bp_text_no.' NO BP WF rules');
+                        }
+                        if( $visibility )
+                        {
+                            if( $object->wildfire_rules_visibility() )
+                                $lines .= $context->encloseFunction($bp_text_yes.' Visibility WF rules set');
+                            else
+                                $lines .= $context->encloseFunction($bp_text_no.' NO Visibility WF rules');
                         }
                     }
                     else
@@ -1261,13 +1290,6 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     }
                 }
 
-                //<th>FB</th>
-                $lines .= $context->encloseFunction('---');
-                $lines .= $context->encloseFunction('---');
-
-                //<th>WF</th>
-                $lines .= $context->encloseFunction('---');
-                $lines .= $context->encloseFunction('---');
 
                 if( get_class($object) == "customURLProfile" )
                 {
@@ -1310,6 +1332,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     {
                         //URL detail BP
                         $tmp_array = array();
+                        //Todo: get BP Json URL credentials BP block as Array
                         $block_categories = array('command-and-control','grayware','malware','phishing','ransomware','scanning-activity');
                         $notBlock = array();
                         foreach( $block_categories as $block_category )
@@ -1328,12 +1351,37 @@ SecurityProfileCallContext::$supportedActions[] = array(
 
                         $lines .= $context->encloseFunction($tmp_array);
                     }
-                    if( $visibility )
+                    if( $bestPractice )
                     {
                         //<th>URL credentials</th>
-                        $lines .= $context->encloseFunction('---');
-                    }
+                        $tmp_array = array();
+                        //Todo: get BP Json URL credentials BP block as Array
+                        $block_categories = array('command-and-control','grayware','malware','phishing','ransomware','scanning-activity');
+                        $notBlock = array();
+                        foreach( $block_categories as $block_category )
+                        {
+                            if( !in_array( $block_category, $object->block_credential ) )
+                                $notBlock[] = $block_category;
 
+                        }
+                        if( !empty($notBlock) )
+                        {
+                            $tmp_array[] = 'BLOCK missing: ';
+                            $tmp_array = array_merge( $tmp_array, $notBlock );
+                        }
+                        else
+                            $tmp_array[] = "";
+
+                        $lines .= $context->encloseFunction($tmp_array);
+                    }
+                    if( $bestPractice )
+                    {
+                        //<th>URL credentials TAB</th>
+                        if( $object->url_usercredentialsubmission_best_practice_tab() )
+                            $lines .= $context->encloseFunction($bp_text_yes);
+                        else
+                            $lines .= $context->encloseFunction($bp_text_no);
+                    }
 
                     if( $visibility )
                     {
@@ -1359,7 +1407,22 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     if( $visibility )
                     {
                         //<th>URL credentials</th>
-                        $lines .= $context->encloseFunction('---');
+                        $tmp_array = array();
+                        if( empty($object->allow_credential) )
+                            $tmp_array[] = "";
+                        else
+                            $tmp_array[] = 'ALLOW: "set all action to alert"';
+
+                        $lines .= $context->encloseFunction($tmp_array);
+                    }
+
+                    if( $visibility )
+                    {
+                        //<th>URL credentials TAB</th>
+                        if( $object->url_usercredentialsubmission_visibility_tab() )
+                            $lines .= $context->encloseFunction($bp_text_yes);
+                        else
+                            $lines .= $context->encloseFunction($bp_text_no);
                     }
 
                     if( $addURLmembers or ( !$bestPractice and !$visibility ) )
@@ -1394,9 +1457,11 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         $lines .= $context->encloseFunction('---');
                         $lines .= $context->encloseFunction('---');
                         $lines .= $context->encloseFunction('---');
+                        $lines .= $context->encloseFunction('---');
                     }
                     if( $visibility )
                     {
+                        $lines .= $context->encloseFunction('---');
                         $lines .= $context->encloseFunction('---');
                         $lines .= $context->encloseFunction('---');
                         $lines .= $context->encloseFunction('---');

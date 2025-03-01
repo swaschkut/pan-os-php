@@ -677,6 +677,10 @@ class URLProfile extends SecurityProfile2
 
     public function check_usercredentialsubmission_bp_tab_json( $check_array )
     {
+        if( $this->credential_mode == null)
+            return False;
+        if( $this->credential_log == null)
+            return False;
 
         if( $check_array['tab']['mode'] !== $this->credential_mode )
             return False;
@@ -689,6 +693,9 @@ class URLProfile extends SecurityProfile2
 
     public function check_usercredentialsubmission_visibility_tab_json( $check_array )
     {
+        if( $this->credential_mode == null)
+            return False;
+
         $finding = $check_array['tab']['mode'];
         if( strpos( $check_array['tab']['mode'], "!") !== FALSE )
         {
