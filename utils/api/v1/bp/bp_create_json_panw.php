@@ -63,11 +63,24 @@ $checkArray['vulnerability']['rule']['visibility']['action'] = array('!allow');
 
 
 $checkArray['spyware']['dns'] = array();
+$checkArray['spyware']['dns']['bp_custom'] = array();
+$checkArray['spyware']['dns']['bp_custom']['action'] = array();
+$checkArray['spyware']['dns']['bp_custom']['action'][0]['type'] = array('pan-dns-sec-malware','pan-dns-sec-phishing');
+$checkArray['spyware']['dns']['bp_custom']['action'][0]['action'] = array('sinkhole');
+$checkArray['spyware']['dns']['bp_custom']['action'][0]['packet-capture'] = array('single-packet');
+
 $checkArray['spyware']['dns']['bp'] = array();
 $checkArray['spyware']['dns']['bp']['action'] = array();
-$checkArray['spyware']['dns']['bp']['action'][0]['type'] = array('pan-dns-sec-malware','pan-dns-sec-phishing');
+$checkArray['spyware']['dns']['bp']['action'][0]['type'] = array('pan-dns-sec-adtracking', 'pan-dns-sec-ddns', 'pan-dns-sec-grayware', 'pan-dns-sec-malware', 'pan-dns-sec-parked', 'pan-dns-sec-phishing', 'pan-dns-sec-proxy', 'pan-dns-sec-recent');
 $checkArray['spyware']['dns']['bp']['action'][0]['action'] = array('sinkhole');
 $checkArray['spyware']['dns']['bp']['action'][0]['packet-capture'] = array('single-packet');
+
+$checkArray['spyware']['dns']['bp_panw'] = array();
+$checkArray['spyware']['dns']['bp_panw']['action'] = array();
+$checkArray['spyware']['dns']['bp_panw']['action'][0]['type'] = array('pan-dns-sec-adtracking', 'pan-dns-sec-ddns', 'pan-dns-sec-grayware', 'pan-dns-sec-malware', 'pan-dns-sec-parked', 'pan-dns-sec-phishing', 'pan-dns-sec-proxy', 'pan-dns-sec-recent');
+$checkArray['spyware']['dns']['bp_panw']['action'][0]['action'] = array('sinkhole');
+$checkArray['spyware']['dns']['bp_panw']['action'][0]['packet-capture'] = array('single-packet');
+
 
 $checkArray['spyware']['dns']['bp']['action'][1]['type'] = array('pan-dns-sec-cc');
 $checkArray['spyware']['dns']['bp']['action'][1]['action'] = array('sinkhole');
@@ -131,9 +144,14 @@ $checkArray['file-blocking']['rule']['visibility'] = array();
 
 $checkArray['file-blocking']['rule']['visibility']['alert']['filetype'] = array('any');
 
-$checkArray['file-blocking']['rule']['bp']['alert']['filetype'] = array('any');
-$checkArray['file-blocking']['rule']['bp']['block']['filetype'] = array('7z', 'bat','chm','class','cpl','dll','hlp','hta','jar','ocx','pif','scr','torrent','vbe','wsf');
+$checkArray['file-blocking']['rule']['bp_custom']['alert']['filetype'] = array('any');
+$checkArray['file-blocking']['rule']['bp_custom']['block']['filetype'] = array('7z', 'bat','chm','class','cpl','dll','hlp','hta','jar','ocx','pif','scr','torrent','vbe','wsf');
 
+$checkArray['file-blocking']['rule']['bp']['alert']['filetype'] = array('any');
+$checkArray['file-blocking']['rule']['bp']['block']['filetype'] = array('7z', 'bat','chm','class','cpl','dll','hlp','hta','jar','ocx','pif','scr','torrent','vbe','wsf', 'cab','exe','flash','msi','Multi-Level-Encoding','PE','rar','tar','encrypted-rar','encrypted-zip');
+
+$checkArray['file-blocking']['rule']['bp_panw']['alert']['filetype'] = array('any');
+$checkArray['file-blocking']['rule']['bp_panw']['block']['filetype'] = array('7z', 'bat','chm','class','cpl','dll','hlp','hta','jar','ocx','pif','scr','torrent','vbe','wsf', 'cab','exe','flash','msi','Multi-Level-Encoding','PE','rar','tar','encrypted-rar','encrypted-zip');
 
 ######################################################################################################################
 ######## WF

@@ -152,9 +152,17 @@ class FileBlockingProfile extends SecurityProfile2
             {
                 /** @var ThreatPolicyFileblocking $rule */
                 if ($rule->fileblocking_rule_best_practice())
+                {
                     $bp_set = true;
+                    #print "true\n";
+                }
                 else
-                    return false;
+                {
+                    $bp_set = false;
+                    #print "false\n";
+                }
+
+
             }
         }
         return $bp_set;

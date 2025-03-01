@@ -64,16 +64,21 @@ class ThreatPolicyFileBlocking extends ThreatPolicy
 
     public function check_bp_json( $check_array )
     {
+        $bp = false;
         foreach( $check_array as $action => $check )
         {
             if( $this->action() !== $action )
                 continue;
 
+            if( $action === "block")
+                $bp = true;
             foreach( $check as $validate => $values )
             {
+                #print "Action: ".$action."\n";
+                #print_r($check);
                 if( is_array( $values ) )
                 {
-                        //application
+                    //application
                     //filetype
                     foreach( $values as $value )
                     {
@@ -84,7 +89,7 @@ class ThreatPolicyFileBlocking extends ThreatPolicy
             }
         }
 
-        return TRUE;
+        return $bp;
     }
 
     public function check_visibility_json( $check_array )
