@@ -579,7 +579,7 @@ class SecurityRule extends RuleWithUserID
         if( $this->secproftype != 'profile' )
             return array();
 
-        return $this->secprofProfiles;
+        return $this->secprofProfiles_obj;
     }
 
     public function securityProfilHash()
@@ -1226,8 +1226,17 @@ class SecurityRule extends RuleWithUserID
                 $text = $padding . "  SecurityProfil: ";
                 foreach( $this->securityProfiles() as $id => $profile )
                 {
-                    $text .= "[" . $id . "] => '" . $profile . "'  ";
-                    PH::$JSON_TMP['sub']['object'][$this->name()]['securityprofile'][$id] = $profile;
+                    if( is_object( $profile ) )
+                    {
+                        $text .= "[" . $id . "] => '" . $profile->name() . "'  ";
+                        PH::$JSON_TMP['sub']['object'][$this->name()]['securityprofile'][$id] = $profile->name();
+                    }
+                    else
+                    {
+                        $text .= "[" . $id . "] => '" . $profile . "'  ";
+                        PH::$JSON_TMP['sub']['object'][$this->name()]['securityprofile'][$id] = $profile;
+                    }
+
                 }
 
                 PH::print_stdout( $text );

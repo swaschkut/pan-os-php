@@ -35,12 +35,12 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
     'MainFunction' => function (SecurityProfileGroupCallContext $context) {
         $object = $context->object;
 
-        PH::print_stdout( $context->padding . "* " . get_class($object) . " '{$object->name()}' (".count($object->secprofiles )." members)" );
+        PH::print_stdout( $context->padding . "* " . get_class($object) . " '{$object->name()}' (".count($object->secprofProfiles_obj )." members)" );
         PH::$JSON_TMP['sub']['object'][$object->name()]['name'] = $object->name();
         PH::$JSON_TMP['sub']['object'][$object->name()]['type'] = get_class($object);
-        PH::$JSON_TMP['sub']['object'][$object->name()]['securityprofiles']['count'] = count($object->secprofiles );
+        PH::$JSON_TMP['sub']['object'][$object->name()]['securityprofiles']['count'] = count($object->secprofProfiles_obj );
 
-        foreach( $object->secprofiles as $key => $prof )
+        foreach( $object->secprofProfiles_obj as $key => $prof )
         {
             if( is_object( $prof ) )
             {
