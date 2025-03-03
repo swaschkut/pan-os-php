@@ -1223,7 +1223,11 @@ class PANConf
 
 
         $percentageArray_best_practice = array();
-        $percentageArray_best_practice['Logging'] = $stdoutarray['log at end percentage'];
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['log at end not start percentage'] = floor(( $stdoutarray['log at end not start'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['log at end not start percentage'] = 0;
+        $percentageArray_best_practice['Logging'] = $stdoutarray['log at end not start percentage'];
         #$percentageArray_best_practice['Log Forwarding Profiles'] = $stdoutarray['log prof set percentage'];
 
         if( $ruleForCalculation !== 0 )
