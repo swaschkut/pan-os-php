@@ -614,14 +614,14 @@ class RuleCallContext extends CallContext
                     if( is_string($profile) )
                     {
                         $bp_check = "";
-                        if( $profType == "virus" || $profType == "spyware" || $profType == "vulnerability" )
+                        if( $profType == "virus" || $profType == "spyware" || $profType == "vulnerability" || $profType == "file-blocking" || $profType == "url-filtering" || $profType == "wildfire-analysis" )
                             $bp_check = " | **no check possible**";
                         $profiles[] = $profType . ':' . $profile.$bp_check;
                     }
                     elseif( $profile === null )
                     {
                         $bp_check = "";
-                        if( $profType == "virus" || $profType == "spyware" || $profType == "vulnerability" )
+                        if( $profType == "virus" || $profType == "spyware" || $profType == "vulnerability" || $profType == "file-blocking" || $profType == "url-filtering" || $profType == "wildfire-analysis" )
                         {
                             if( $sp_best_practice )
                                 $bp_check .= $bp_NOT_sign;
@@ -635,7 +635,7 @@ class RuleCallContext extends CallContext
                     else
                     {
                         $bp_check = "";
-                        if( $profType == "virus" || $profType == "spyware" || $profType == "vulnerability" )
+                        if( $profType == "virus" || $profType == "spyware" || $profType == "vulnerability" || $profType == "file-blocking" || $profType == "url-filtering" || $profType == "wildfire-analysis" )
                         {
                             /** @var AntiVirusProfile|AntiSpywareProfile|VulnerabilityProfile */
                             if( !$profile->is_best_practice() )
@@ -1107,7 +1107,8 @@ class RuleCallContext extends CallContext
                 continue;
             }
 
-            if( $profType == "virus" || $profType == "spyware" || $profType == "vulnerability" )
+            #if( $profType == "virus" || $profType == "spyware" || $profType == "vulnerability" )
+            if( $profType == "virus" || $profType == "spyware" || $profType == "vulnerability" || $profType == "wildfire-analysis" || $profType == "file-blocking" || $profType == "url-filtering" )
             {
                 if( is_string($profileName) )
                 {
@@ -1117,6 +1118,12 @@ class RuleCallContext extends CallContext
                         $profile = $rule->owner->owner->AntiSpywareProfileStore->find($profileName);
                     elseif( $profType == "vulnerability" )
                         $profile = $rule->owner->owner->VulnerabilityProfileStore->find($profileName);
+                    elseif( $profType == "wildfire-analysis" )
+                        $profile = $rule->owner->owner->WildfireProfileStore->find($profileName);
+                    elseif( $profType == "file-blocking" )
+                        $profile = $rule->owner->owner->FileBlockingProfileStore->find($profileName);
+                    elseif( $profType == "url-filtering" )
+                        $profile = $rule->owner->owner->URLProfileStore->find($profileName);
                 }
                 else
                     $profile = $profileName;
@@ -1128,7 +1135,9 @@ class RuleCallContext extends CallContext
                 else
                 {
                     $bp_check = "";
-                    if( $profType == "virus" || $profType == "spyware" || $profType == "vulnerability" )
+
+                    #if( $profType == "virus" || $profType == "spyware" || $profType == "vulnerability" )
+                    if( $profType == "virus" || $profType == "spyware" || $profType == "vulnerability" || $profType == "wildfire-analysis" || $profType == "file-blocking" || $profType == "url-filtering" )
                     {
                         /** @var AntiVirusProfile|AntiSpywareProfile|VulnerabilityProfile */
                         if( !$profile->is_best_practice() )
