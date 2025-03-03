@@ -1519,7 +1519,7 @@ class PanoramaConf
     }
 
 
-    public function display_statistics( $connector = null )
+    public function display_statistics( $connector = null, $debug = false )
     {
 
         $gpreSecRules = $this->securityRules->countPreRules();
@@ -1912,6 +1912,13 @@ class PanoramaConf
         if( !PH::$shadow_json )
             PH::print_stdout( $stdoutarray, true );
 
+        $this->display_bp_statistics( $debug );
+
+        $this->display_shared_statistics( $connector, $debug );
+    }
+
+    public function display_shared_statistics( $connector = null, $debug = false )
+    {
         //-----------------
         $stdoutarray = array();
 
@@ -2040,6 +2047,8 @@ class PanoramaConf
 
         if( !PH::$shadow_json )
             PH::print_stdout( $stdoutarray, true );
+
+        $this->display_bp_shared_statistics( $debug );
     }
 
     public function get_bp_statistics()
@@ -2411,7 +2420,11 @@ class PanoramaConf
 
 
         $percentageArray_best_practice = array();
-        $percentageArray_best_practice['Logging'] = $stdoutarray['log at end percentage'];
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['log at end not start percentage'] = floor(( $stdoutarray['log at end not start'] / $stdoutarray['security rules enabled'] ) * 100 );
+        else
+            $stdoutarray['log at end not start percentage'] = 0;
+        $percentageArray_best_practice['Logging'] = $stdoutarray['log at end not start percentage'];
         #$percentageArray_best_practice['Log Forwarding Profiles'] = $stdoutarray['log prof set percentage'];
 
         if( $ruleForCalculation !== 0 )
@@ -2523,6 +2536,69 @@ class PanoramaConf
             echo $tbl->getTable();
         }
 
+
+
+        if( !PH::$shadow_json && $debug )
+            PH::print_stdout( $stdoutarray, true );
+    }
+
+    public function display_bp_shared_statistics( $debug = false )
+    {
+        $stdoutarray = $this->get_bp_statistics(  );
+
+        $percentageArray_visibility = $stdoutarray['percentage']['visibility'];
+        $percentageArray_best_practice = $stdoutarray['percentage']['best-practice'];
+
+        if( !PH::$shadow_json )
+        {
+            PH::print_stdout("visibility");
+            $tbl = new ConsoleTable();
+            $tbl->setHeaders(
+                array('Type', 'percentage', "%")
+            );
+            foreach( $percentageArray_visibility as $key => $value )
+            {
+                if( strpos($value, "---") !== False )
+                {
+                    $string = $value;
+                }
+                else
+                {
+                    $string = "";
+                    $test = floor( ($value/10) * 2 );
+                    $string = str_pad($string, $test, "*", STR_PAD_LEFT);
+                }
+                $tbl->addRow(array($key, $value, $string));
+            }
+
+            echo $tbl->getTable();
+
+            PH::print_stdout("best-practice");
+            $tbl = new ConsoleTable();
+            $tbl->setHeaders(
+                array('Type', 'percentage', "%")
+            );
+            foreach( $percentageArray_best_practice as $key => $value )
+            {
+                if( strpos($value, "---") !== False )
+                {
+                    $string = $value;
+                }
+                else
+                {
+                    $string = "";
+                    $test = floor( ($value/10) * 2 );
+                    $string = str_pad($string, $test, "*", STR_PAD_LEFT);
+                }
+                $tbl->addRow(array($key, $value, $string));
+            }
+
+            echo $tbl->getTable();
+        }
+
+
+        #PH::$JSON_TMP[$this->name] = $stdoutarray;
+        PH::$JSON_TMP[] = $stdoutarray;
 
 
         if( !PH::$shadow_json && $debug )

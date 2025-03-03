@@ -2085,9 +2085,7 @@ class UTIL
             if( $this->configInput['type'] == 'api' )
                 $mainConnector = findConnector($pan);
 
-            $pan->display_statistics( $mainConnector );
-
-            $pan->display_bp_statistics( $debug );
+            $pan->display_statistics( $mainConnector, $debug );
 
             $processedLocations = array();
             foreach( $this->objectsToProcess as &$record )
@@ -2114,10 +2112,7 @@ class UTIL
                     }
 
                     
-                    $sub->display_statistics();
-
-                    $sub->display_bp_statistics( $debug );
-
+                    $sub->display_statistics( $debug);
                 }
             }
 

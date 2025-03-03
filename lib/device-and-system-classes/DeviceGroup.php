@@ -1112,7 +1112,7 @@ class DeviceGroup
     }
 
 
-    public function display_statistics()
+    public function display_statistics( $debug = false)
     {
         $stdoutarray = array();
 
@@ -1246,6 +1246,7 @@ class DeviceGroup
         if( !PH::$shadow_json )
             PH::print_stdout( $stdoutarray, true );
 
+        $this->display_bp_statistics( $debug );
     }
 
 

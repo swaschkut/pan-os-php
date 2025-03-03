@@ -922,7 +922,7 @@ class PANConf
         return $this->sharedGateways;
     }
 
-    public function display_statistics( $connector = null )
+    public function display_statistics( $connector = null, $debug = false )
     {
 
         $numSecRules = 0;
@@ -1111,7 +1111,7 @@ class PANConf
             PH::print_stdout( $stdoutarray, true );
 
 
-
+        $this->display_bp_statistics( $debug );
     }
 
     public function display_bp_statistics( $debug = false )
@@ -1224,7 +1224,7 @@ class PANConf
 
         $percentageArray_best_practice = array();
         if( $ruleForCalculation !== 0 )
-            $stdoutarray['log at end not start percentage'] = floor(( $stdoutarray['log at end not start'] / $ruleForCalculation ) * 100 );
+            $stdoutarray['log at end not start percentage'] = floor(( $stdoutarray['log at end not start'] / $stdoutarray['security rules enabled'] ) * 100 );
         else
             $stdoutarray['log at end not start percentage'] = 0;
         $percentageArray_best_practice['Logging'] = $stdoutarray['log at end not start percentage'];
