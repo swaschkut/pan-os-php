@@ -2334,7 +2334,10 @@ RQuery::$defaultFilters['rule']['secprof']['operators']['av-profile.is'] = array
         if( !isset($profiles['virus']) )
             return FALSE;
 
-        return $profiles['virus'] == $context->value;
+        if( is_object($profiles['virus']) )
+            return $profiles['virus']->name() == $context->value;
+        else
+            return $profiles['virus'] == $context->value;
     },
     'arg' => TRUE,
     'ci' => array(
@@ -2358,7 +2361,10 @@ RQuery::$defaultFilters['rule']['secprof']['operators']['as-profile.is'] = array
         if( !isset($profiles['spyware']) )
             return FALSE;
 
-        return $profiles['spyware'] == $context->value;
+        if( is_object($profiles['spyware']) )
+            return $profiles['spyware']->name() == $context->value;
+        else
+            return $profiles['spyware'] == $context->value;
     },
     'arg' => TRUE,
     'ci' => array(
@@ -2382,7 +2388,10 @@ RQuery::$defaultFilters['rule']['secprof']['operators']['url-profile.is'] = arra
         if( !isset($profiles['url-filtering']) )
             return FALSE;
 
-        return $profiles['url-filtering'] == $context->value;
+        if( is_object($profiles['url-filtering']) )
+            return $profiles['url-filtering']->name() == $context->value;
+        else
+            return $profiles['url-filtering'] == $context->value;
     },
     'arg' => TRUE,
     'ci' => array(
@@ -2406,7 +2415,10 @@ RQuery::$defaultFilters['rule']['secprof']['operators']['wf-profile.is'] = array
         if( !isset($profiles['wildfire-analysis']) )
             return FALSE;
 
-        return $profiles['wildfire-analysis'] == $context->value;
+        if( is_object($profiles['wildfire-analysis']) )
+            return $profiles['wildfire-analysis']->name() == $context->value;
+        else
+            return $profiles['wildfire-analysis'] == $context->value;
     },
     'arg' => TRUE,
     'ci' => array(
@@ -2430,7 +2442,10 @@ RQuery::$defaultFilters['rule']['secprof']['operators']['vuln-profile.is'] = arr
         if( !isset($profiles['vulnerability']) )
             return FALSE;
 
-        return $profiles['vulnerability'] == $context->value;
+        if( is_object($profiles['vulnerability']) )
+            return $profiles['vulnerability']->name() == $context->value;
+        else
+            return $profiles['vulnerability'] == $context->value;
     },
     'arg' => TRUE,
     'ci' => array(
@@ -2454,7 +2469,10 @@ RQuery::$defaultFilters['rule']['secprof']['operators']['file-profile.is'] = arr
         if( !isset($profiles['file-blocking']) )
             return FALSE;
 
-        return $profiles['file-blocking'] == $context->value;
+        if( is_object($profiles['file-blocking']) )
+            return $profiles['file-blocking']->name() == $context->value;
+        else
+            return $profiles['file-blocking'] == $context->value;
     },
     'arg' => TRUE,
     'ci' => array(
@@ -2478,7 +2496,10 @@ RQuery::$defaultFilters['rule']['secprof']['operators']['data-profile.is'] = arr
         if( !isset($profiles['data-filtering']) )
             return FALSE;
 
-        return $profiles['data-filtering'] == $context->value;
+        if( is_object($profiles['data-filtering']) )
+            return $profiles['data-filtering']->name() == $context->value;
+        else
+            return $profiles['data-filtering'] == $context->value;
     },
     'arg' => TRUE,
     'ci' => array(
