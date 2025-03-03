@@ -1400,7 +1400,7 @@ RQuery::$defaultFilters['securityprofile']['wf']['operators']['is.visibility'] =
     'Function' => function (SecurityProfileRQueryContext $context) {
         /** @var WildfireProfile $object */
         $object = $context->object;
-
+        
         if( $object->secprof_type != 'wildfire' )
             return null;
 

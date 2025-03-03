@@ -2210,6 +2210,10 @@ var subjectObject =
                         "type": "bool",
                         "default": "false",
                         "help": "decommission Manageddevice, also if used on Device-Group or Template-stack"
+                    },
+                    "debug": {
+                        "type": "string",
+                        "default": "false"
                     }
                 }
             },
@@ -8162,31 +8166,47 @@ var subjectObject =
                     }
                 }
             },
-            "url-credential": {
+            "url.site-access": {
                 "operators": {
                     "is.visibility": {
                         "Function": {},
                         "arg": false,
-                        "help": "'securityprofiletype=url-filtering' e.g. 'filter=(url-credential is.visibility)'"
+                        "help": "'securityprofiletype=url-filtering' e.g. 'filter=(url.site-access is.visibility)'"
                     },
                     "is.best-practice": {
                         "Function": {},
                         "arg": false,
-                        "help": "'securityprofiletype=url-filtering' e.g. 'filter=(url-credential is.best-practice)'"
+                        "help": "'securityprofiletype=url-filtering' e.g. 'filter=(url.site-access is.best-practice)'"
                     }
                 }
             },
-            "url-site-access": {
+            "url.user-credential-detection": {
                 "operators": {
+                    "is.disabled": {
+                        "Function": {},
+                        "ci": {
+                            "fString": "(%PROP% )",
+                            "input": "input\/panorama-8.0.xml"
+                        },
+                        "help": "'securityprofiletype=url'"
+                    },
+                    "is.ip-user-mapping": {
+                        "Function": {},
+                        "ci": {
+                            "fString": "(%PROP% )",
+                            "input": "input\/panorama-8.0.xml"
+                        },
+                        "help": "'securityprofiletype=url'"
+                    },
                     "is.visibility": {
                         "Function": {},
                         "arg": false,
-                        "help": "'securityprofiletype=url-filtering' e.g. 'filter=(url-site-access is.visibility)'"
+                        "help": "'securityprofiletype=url-filtering' e.g. 'filter=(url.user-credential-detection is.visibility)'"
                     },
                     "is.best-practice": {
                         "Function": {},
                         "arg": false,
-                        "help": "'securityprofiletype=url-filtering' e.g. 'filter=(url-site-access is.best-practice)'"
+                        "help": "'securityprofiletype=url-filtering' e.g. 'filter=(url.user-credential-detection is.best-practice)'"
                     }
                 }
             },

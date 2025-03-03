@@ -2195,14 +2195,14 @@ class PanoramaConf
         $stdoutarray['data best-practice'] = "NOT available";
 
         //URL Filtering Profiles
-        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "url-site-access is.visibility" );
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "url.site-access is.visibility" );
         $stdoutarray['url-site-access visibility'] = count( $sub_ruleStore->rules( $filter_array ) );
         $stdoutarray['url-site-access visibility calc'] = $stdoutarray['url-site-access visibility']."/".$ruleForCalculation;
         if( $ruleForCalculation !== 0 )
             $stdoutarray['url-site-access visibility percentage'] = floor( ( $stdoutarray['url-site-access visibility'] / $ruleForCalculation ) * 100 );
         else
             $stdoutarray['url-site-access visibility percentage'] = 0;
-        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "url-site-access is.best-practice" );
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "url.site-access is.best-practice" );
         $stdoutarray['url-site-access best-practice'] = count( $sub_ruleStore->rules( $filter_array ) );
         $stdoutarray['url-site-access best-practice calc'] = $stdoutarray['url-site-access best-practice']."/".$ruleForCalculation;
         if( $ruleForCalculation !== 0 )
@@ -2211,14 +2211,14 @@ class PanoramaConf
             $stdoutarray['url-site-access best-practice percentage'] = 0;
 
         //Credential Theft Prevention
-        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "url-credential is.visibility" );
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "url.user-credential-detection is.visibility" );
         $stdoutarray['url-credential visibility'] = count( $sub_ruleStore->rules( $filter_array ) );
         $stdoutarray['url-credential visibility calc'] = $stdoutarray['url-credential visibility']."/".$ruleForCalculation;
         if( $ruleForCalculation !== 0 )
             $stdoutarray['url-credential visibility percentage'] = floor( ( $stdoutarray['url-credential visibility'] / $ruleForCalculation ) * 100 );
         else
             $stdoutarray['url-credential visibility percentage'] = 0;
-        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "url-credential is.best-practice" );
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "url.user-credential-detection is.best-practice" );
         $stdoutarray['url-credential best-practice'] = count( $sub_ruleStore->rules( $filter_array ) );
         $stdoutarray['url-credential best-practice calc'] = $stdoutarray['url-credential best-practice']."/".$ruleForCalculation;
         if( $ruleForCalculation !== 0 )
