@@ -812,7 +812,9 @@ class URLProfile extends SecurityProfile2
     }
     public function credential_is_best_practice()
     {
-        if( $this->url_usercredentialsubmission_best_practice() )
+        if( $this->url_usercredentialsubmission_best_practice()
+            && $this->url_usercredentialsubmission_best_practice_tab()
+        )
             return TRUE;
         else
             return FALSE;
@@ -820,7 +822,9 @@ class URLProfile extends SecurityProfile2
 
     public function credential_is_visibility()
     {
-        if( $this->url_usercredentialsubmission_visibility() )
+        if( $this->url_usercredentialsubmission_visibility()
+            && $this->url_usercredentialsubmission_visibility_tab()
+        )
             return TRUE;
         else
             return FALSE;
