@@ -2312,7 +2312,7 @@ class PanoramaConf
         #$percentageArray_best_practice['Data Filtering'] = '---';
         $percentageArray_best_practice['URL Filtering Profiles'] = $stdoutarray['url-site-access best-practice percentage'];
         $percentageArray_best_practice['Credential Theft Prevention'] = $stdoutarray['url-credential best-practice percentage'];
-        $percentageArray_best_practice['DNS List'] = $stdoutarray['dns-list best-practice percentage'];
+        #$percentageArray_best_practice['DNS List'] = $stdoutarray['dns-list best-practice percentage'];
         $percentageArray_best_practice['DNS Security'] = $stdoutarray['dns-security best-practice percentage'];
 
         $percentageArray['best-practice'] = $percentageArray_best_practice;
@@ -2502,7 +2502,7 @@ class PanoramaConf
             $stdoutarray['dns-list best-practice percentage'] = floor( ( $stdoutarray['dns-list best-practice'] / $ruleForCalculation ) * 100 );
         else
             $stdoutarray['dns-list best-practice percentage'] = 0;
-        $percentageArray_best_practice['DNS List'] = $stdoutarray['dns-list best-practice percentage'];
+        #$percentageArray_best_practice['DNS List'] = $stdoutarray['dns-list best-practice percentage'];
 
         if( $ruleForCalculation !== 0 )
             $stdoutarray['dns-security best-practice percentage'] = floor( ( $stdoutarray['dns-security best-practice'] / $ruleForCalculation ) * 100 );

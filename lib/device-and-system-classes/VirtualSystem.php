@@ -1386,7 +1386,7 @@ class VirtualSystem
         $percentageArray_visibility['Data Filtering'] = '---';
         $percentageArray_visibility['URL Filtering Profiles'] = $stdoutarray['url-site-access visibility percentage'];
         $percentageArray_visibility['Credential Theft Prevention'] = $stdoutarray['url-credential visibility percentage'];
-        $percentageArray_visibility['DNS List'] = $stdoutarray['dns-list visibility percentage'];
+        #$percentageArray_visibility['DNS List'] = $stdoutarray['dns-list visibility percentage'];
         $percentageArray_visibility['DNS Security'] = $stdoutarray['dns-security visibility percentage'];
 
         $percentageArray['visibility'] = $percentageArray_visibility;
@@ -1408,7 +1408,7 @@ class VirtualSystem
         #$percentageArray_best_practice['Data Filtering'] = '---';
         $percentageArray_best_practice['URL Filtering Profiles'] = $stdoutarray['url-site-access best-practice percentage'];
         $percentageArray_best_practice['Credential Theft Prevention'] = $stdoutarray['url-credential best-practice percentage'];
-        $percentageArray_best_practice['DNS List'] = $stdoutarray['dns-list best-practice percentage'];
+        #$percentageArray_best_practice['DNS List'] = $stdoutarray['dns-list best-practice percentage'];
         $percentageArray_best_practice['DNS Security'] = $stdoutarray['dns-security best-practice percentage'];
 
         $percentageArray['best-practice'] = $percentageArray_best_practice;
