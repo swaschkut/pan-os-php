@@ -1155,7 +1155,13 @@ class RuleCallContext extends CallContext
                 }
             }
             else
-                $profiles[] = $profType . ':' . $profileName;
+            {
+                if( is_object($profileName) )
+                    $profiles[] = $profType . ':' . $profileName->name();
+                else
+                    $profiles[] = $profType . ':' . $profileName;
+            }
+
 
         }
 
