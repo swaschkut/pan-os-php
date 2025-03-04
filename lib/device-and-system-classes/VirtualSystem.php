@@ -1336,7 +1336,7 @@ class VirtualSystem
         else
             $stdoutarray['url-credential best-practice percentage'] = 0;
 
-        //DNS Security
+        //DNS List
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "dns-list is.visibility" );
         $stdoutarray['dns-list visibility'] = count( $sub_ruleStore->rules( $filter_array ) );
         $stdoutarray['dns-list visibility calc'] = $stdoutarray['dns-list visibility']."/".$ruleForCalculation;
@@ -1351,6 +1351,22 @@ class VirtualSystem
             $stdoutarray['dns-list best-practice percentage'] = floor( ( $stdoutarray['dns-list best-practice'] / $ruleForCalculation ) * 100 );
         else
             $stdoutarray['dns-list best-practice percentage'] = 0;
+
+        //DNS Security
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "dns-security is.visibility" );
+        $stdoutarray['dns-security visibility'] = count( $sub_ruleStore->rules( $filter_array ) );
+        $stdoutarray['dns-security visibility calc'] = $stdoutarray['dns-security visibility']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['dns-security visibility percentage'] = floor( ( $stdoutarray['dns-security visibility'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['dns-security visibility percentage'] = 0;
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "dns-security is.best-practice" );
+        $stdoutarray['dns-security best-practice'] = count( $sub_ruleStore->rules( $filter_array ) );
+        $stdoutarray['dns-security best-practice calc'] = $stdoutarray['dns-security best-practice']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['dns-security best-practice percentage'] = floor( ( $stdoutarray['dns-security best-practice'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['dns-security best-practice percentage'] = 0;
 
 
         $percentageArray = array();
@@ -1370,7 +1386,8 @@ class VirtualSystem
         $percentageArray_visibility['Data Filtering'] = '---';
         $percentageArray_visibility['URL Filtering Profiles'] = $stdoutarray['url-site-access visibility percentage'];
         $percentageArray_visibility['Credential Theft Prevention'] = $stdoutarray['url-credential visibility percentage'];
-        $percentageArray_visibility['DNS Security'] = $stdoutarray['dns-list visibility percentage'];
+        $percentageArray_visibility['DNS List'] = $stdoutarray['dns-list visibility percentage'];
+        $percentageArray_visibility['DNS Security'] = $stdoutarray['dns-security visibility percentage'];
 
         $percentageArray['visibility'] = $percentageArray_visibility;
 
@@ -1391,7 +1408,8 @@ class VirtualSystem
         #$percentageArray_best_practice['Data Filtering'] = '---';
         $percentageArray_best_practice['URL Filtering Profiles'] = $stdoutarray['url-site-access best-practice percentage'];
         $percentageArray_best_practice['Credential Theft Prevention'] = $stdoutarray['url-credential best-practice percentage'];
-        $percentageArray_best_practice['DNS Security'] = $stdoutarray['dns-list best-practice percentage'];
+        $percentageArray_best_practice['DNS List'] = $stdoutarray['dns-list best-practice percentage'];
+        $percentageArray_best_practice['DNS Security'] = $stdoutarray['dns-security best-practice percentage'];
 
         $percentageArray['best-practice'] = $percentageArray_best_practice;
 

@@ -62,7 +62,15 @@ class SECURITYPROFILEUTIL extends UTIL
     public function supportedArguments()
     {
         parent::supportedArguments();
-        $this->supportedArguments['securityprofiletype'] = array('niceName' => 'securityProfileType', 'shortHelp' => 'specify which type(s) of you rule want to edit, (default is "security". ie: securityprofiletype=any  securityprofiletype=url-filtering, custom-url-category', 'argDesc' => 'any|url-filtering|virus|vulnerability|spyware|file-blocking|data-filtering|wildfire-analysis|custom-url-category|predefined-url|dns-security|saas-security');
+        $supportedSP = array('any','url-filtering','virus','vulnerability','spyware','file-blocking','data-filtering','wildfire-analysis','custom-url-category',
+            'dns-security','saas-security',
+            'predefined-url','predefined-url-filtering',
+            'predefined-virus','predefined-spyware',
+            'predefined-file-blocking',
+            'predefined-vulnerability',
+            'predefined-wildfire-analysis'
+        );
+        $this->supportedArguments['securityprofiletype'] = array('niceName' => 'securityProfileType', 'shortHelp' => 'specify which type(s) of you rule want to edit, (default is "security". ie: securityprofiletype=any  securityprofiletype=url-filtering, custom-url-category', 'argDesc' => 'any|url-filtering|virus|vulnerability|spyware|file-blocking|data-filtering|wildfire-analysis|custom-url-category|dns-security|saas-security|predefined-url|predefined-url-filtering|');
     }
 
     public function location_filter_object()

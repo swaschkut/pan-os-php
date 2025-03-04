@@ -1217,7 +1217,13 @@ class PANConf
             $stdoutarray['dns-list visibility percentage'] = floor( ( $stdoutarray['dns-list visibility'] / $ruleForCalculation ) * 100 );
         else
             $stdoutarray['dns-list visibility percentage'] = 0;
-        $percentageArray_visibility['DNS Security'] = $stdoutarray['dns-list visibility percentage'];
+        $percentageArray_visibility['DNS List'] = $stdoutarray['dns-list visibility percentage'];
+
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['dns-security visibility percentage'] = floor( ( $stdoutarray['dns-security visibility'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['dns-security visibility percentage'] = 0;
+        $percentageArray_visibility['DNS Security'] = $stdoutarray['dns-security visibility percentage'];
 
         $percentageArray['visibility'] = $percentageArray_visibility;
 
@@ -1281,7 +1287,13 @@ class PANConf
             $stdoutarray['dns-list best-practice percentage'] = floor( ( $stdoutarray['dns-list best-practice'] / $ruleForCalculation ) * 100 );
         else
             $stdoutarray['dns-list best-practice percentage'] = 0;
-        $percentageArray_best_practice['DNS Security'] = $stdoutarray['dns-list best-practice percentage'];
+        $percentageArray_best_practice['DNS List'] = $stdoutarray['dns-list best-practice percentage'];
+
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['dns-security best-practice percentage'] = floor( ( $stdoutarray['dns-security best-practice'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['dns-security best-practice percentage'] = 0;
+        $percentageArray_best_practice['DNS Security'] = $stdoutarray['dns-security best-practice percentage'];
 
         $percentageArray['best-practice'] = $percentageArray_best_practice;
 

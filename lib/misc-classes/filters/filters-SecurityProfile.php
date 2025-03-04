@@ -1278,7 +1278,32 @@ RQuery::$defaultFilters['securityprofile']['dns-security.packet-capture']['opera
     ),
     'help' => "'securityprofiletype=spyware' e.g. 'filter=(dns-security.packet-capture has disable)' possible values: disable/single-packet/extended-capture"
 );
+RQuery::$defaultFilters['securityprofile']['dns-security']['operators']['is.best-practice'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var AntiSpywareProfile $object */
+        $object = $context->object;
 
+        if( $object->secprof_type != 'spyware' )
+            return null;
+
+        return $object->spyware_dns_security_best_practice();
+    },
+    'arg' => false,
+    'help' => "'securityprofiletype=spyware' e.g. 'filter=(dns-security is.best-practice)'"
+);
+RQuery::$defaultFilters['securityprofile']['dns-security']['operators']['is.visibility'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var AntiSpywareProfile $object */
+        $object = $context->object;
+
+        if( $object->secprof_type != 'spyware' )
+            return null;
+
+        return $object->spyware_dns_security_visibility();
+    },
+    'arg' => false,
+    'help' => "'securityprofiletype=spyware' e.g. 'filter=(dns-security is.visibility)'"
+);
 
 RQuery::$defaultFilters['securityprofile']['threat-rule']['operators']['has.from.query'] = array(
     'Function' => function (SecurityProfileRQueryContext $context) {

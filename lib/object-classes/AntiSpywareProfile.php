@@ -707,6 +707,7 @@ class AntiSpywareProfile extends SecurityProfile2
 
         $check_array = $this->spyware_lists_bp_visibility_JSON( "bp", "spyware");
 
+        print_r($check_array);
         if( isset($this->additional['botnet-domain']) && isset($this->additional['botnet-domain']['lists']) )
         {
             foreach( $this->additional['botnet-domain']['lists'] as $name => $array)
