@@ -29,6 +29,7 @@ UTIL:
 * type=securityprofile securityprofiletype=file-blocking/spyware 'fitler=(fb/as is.best-practice)' | adjust bp check and JSON file
 * type=securityprofile securityprofiletype=url-filtering | correction to get bp/visibile for user-credentilal for category and TAB setting
 * type=securityprofile | new 'filter=(dns-security is.best-practice/is.visibility)'
+* type=stats | introduce visibility adoption for zone protection
 
 BUGFIX:
 * type=securityprofile securitprofiletype=spyware | bugfix of displaying botnet-domain if packet-capture is missing

@@ -1311,9 +1311,17 @@ class DeviceGroup
             $stdoutarray['wf best-practice percentage'] = floor( ( $stdoutarray['wf best-practice'] / $ruleForCalculation ) * 100 );
         else
             $stdoutarray['wf best-practice percentage'] = 0;
+
         //Zone Protection
         //Todo: no valid filter yet available - also how to filter? based on from and/or to zone??
         $stdoutarray['zone protection'] = "NOT available";
+        $filter_array = array('query' => $generalFilter_allow."!(from is.any) and (from all.has.from.query subquery1)", 'subquery1' => "zpp is.set" );
+        $stdoutarray['zone protection'] = count( $sub_ruleStore->rules( $filter_array ) );
+        $stdoutarray['zone protection calc'] = $stdoutarray['zone protection']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['zone protection percentage'] = floor( ( $stdoutarray['zone protection'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['zone protection percentage'] = 0;
 
         // App-ID
         $stdoutarray['app id'] = count( $sub_ruleStore->rules( $generalFilter_allow."!(app is.any)" ) );
@@ -1477,7 +1485,7 @@ class DeviceGroup
         $percentageArray_visibility['Logging'] = $stdoutarray['log at end percentage'];
         $percentageArray_visibility['Log Forwarding Profiles'] = $stdoutarray['log prof set percentage'];
         $percentageArray_visibility['Wildfire Analysis Profiles'] = $stdoutarray['wf visibility percentage'];
-        $percentageArray_visibility['Zone Protection'] = '---';
+        $percentageArray_visibility['Zone Protection'] = $stdoutarray['zone protection percentage'];
         $percentageArray_visibility['App-ID'] = $stdoutarray['app id percentage'];
         $percentageArray_visibility['User-ID'] = $stdoutarray['user id percentage'];
         $percentageArray_visibility['Service/Port'] = $stdoutarray['service port percentage'];

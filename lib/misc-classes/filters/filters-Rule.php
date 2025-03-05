@@ -35,7 +35,83 @@ RQuery::$defaultFilters['rule']['from']['operators']['has.only'] = array(
     'arg' => TRUE,
     'argObjectFinder' => "\$objectFind=null;\n\$objectFind=\$object->from->parentCentralStore->find('!value!');"
 );
+RQuery::$defaultFilters['rule']['from']['operators']['has.from.query'] = array(
+    'Function' => function (RuleRQueryContext $context) {
+        $rule = $context->object;
 
+        if( $rule->from->isAny() )
+            return FALSE;
+
+        if( $context->value === null || !isset($context->nestedQueries[$context->value]) )
+            derr("cannot find nested query called '{$context->value}'");
+
+
+        $errorMessage = '';
+
+        if( !isset($context->cachedSubRQuery) )
+        {
+            $rQuery = new RQuery('zone');
+            if( $rQuery->parseFromString($context->nestedQueries[$context->value], $errorMessage) === FALSE )
+                derr('nested query execution error : ' . $errorMessage);
+            $context->cachedSubRQuery = $rQuery;
+        }
+        else
+            $rQuery = $context->cachedSubRQuery;
+
+        foreach( $rule->from->getAll() as $key => $zone )
+        {
+            if( $zone !== null )
+            {
+                if( $rQuery->matchSingleObject(array('object' => $zone, 'nestedQueries' => &$context->nestedQueries)) )
+                    return TRUE;
+            }
+        }
+
+        return FALSE;
+    },
+    'arg' => TRUE,
+    'help' => 'example: \'filter=(from has.from.query subquery1)\' \'subquery1=(zpp is.set)\'',
+);
+RQuery::$defaultFilters['rule']['from']['operators']['all.has.from.query'] = array(
+    'Function' => function (RuleRQueryContext $context) {
+        $rule = $context->object;
+
+        if( $rule->from->isAny() )
+            return FALSE;
+
+        if( $context->value === null || !isset($context->nestedQueries[$context->value]) )
+            derr("cannot find nested query called '{$context->value}'");
+
+
+        $errorMessage = '';
+
+        if( !isset($context->cachedSubRQuery) )
+        {
+            $rQuery = new RQuery('zone');
+            if( $rQuery->parseFromString($context->nestedQueries[$context->value], $errorMessage) === FALSE )
+                derr('nested query execution error : ' . $errorMessage);
+            $context->cachedSubRQuery = $rQuery;
+        }
+        else
+            $rQuery = $context->cachedSubRQuery;
+
+        $found = FALSE;
+        foreach( $rule->from->getAll() as $key => $zone )
+        {
+            if( $zone !== null )
+            {
+                if( $rQuery->matchSingleObject(array('object' => $zone, 'nestedQueries' => &$context->nestedQueries)) )
+                    return FALSE;
+                else
+                    $found = TRUE;
+            }
+        }
+
+        return $found;
+    },
+    'arg' => TRUE,
+    'help' => 'example: \'filter=(from all.has.from.query subquery1)\' \'subquery1=(zpp is.set)\'',
+);
 
 RQuery::$defaultFilters['rule']['to']['operators']['has'] = array(
     'eval' => function ($object, &$nestedQueries, $value) {
@@ -72,7 +148,83 @@ RQuery::$defaultFilters['rule']['to']['operators']['has.only'] = array(
     'arg' => TRUE,
     'argObjectFinder' => "\$objectFind=null;\n\$objectFind=\$object->to->parentCentralStore->find('!value!');"
 );
+RQuery::$defaultFilters['rule']['to']['operators']['has.from.query'] = array(
+    'Function' => function (RuleRQueryContext $context) {
+        $rule = $context->object;
 
+        if( $rule->to->isAny() )
+            return FALSE;
+
+        if( $context->value === null || !isset($context->nestedQueries[$context->value]) )
+            derr("cannot find nested query called '{$context->value}'");
+
+
+        $errorMessage = '';
+
+        if( !isset($context->cachedSubRQuery) )
+        {
+            $rQuery = new RQuery('zone');
+            if( $rQuery->parseFromString($context->nestedQueries[$context->value], $errorMessage) === FALSE )
+                derr('nested query execution error : ' . $errorMessage);
+            $context->cachedSubRQuery = $rQuery;
+        }
+        else
+            $rQuery = $context->cachedSubRQuery;
+
+        foreach( $rule->to->getAll() as $key => $zone )
+        {
+            if( $zone !== null )
+            {
+                if( $rQuery->matchSingleObject(array('object' => $zone, 'nestedQueries' => &$context->nestedQueries)) )
+                    return TRUE;
+            }
+        }
+
+        return FALSE;
+    },
+    'arg' => TRUE,
+    'help' => 'example: \'filter=(to has.from.query subquery1)\' \'subquery1=(zpp is.set)\'',
+);
+RQuery::$defaultFilters['rule']['to']['operators']['all.has.from.query'] = array(
+    'Function' => function (RuleRQueryContext $context) {
+        $rule = $context->object;
+
+        if( $rule->to->isAny() )
+            return FALSE;
+
+        if( $context->value === null || !isset($context->nestedQueries[$context->value]) )
+            derr("cannot find nested query called '{$context->value}'");
+
+
+        $errorMessage = '';
+
+        if( !isset($context->cachedSubRQuery) )
+        {
+            $rQuery = new RQuery('zone');
+            if( $rQuery->parseFromString($context->nestedQueries[$context->value], $errorMessage) === FALSE )
+                derr('nested query execution error : ' . $errorMessage);
+            $context->cachedSubRQuery = $rQuery;
+        }
+        else
+            $rQuery = $context->cachedSubRQuery;
+
+        $found = FALSE;
+        foreach( $rule->to->getAll() as $key => $zone )
+        {
+            if( $zone !== null )
+            {
+                if( $rQuery->matchSingleObject(array('object' => $zone, 'nestedQueries' => &$context->nestedQueries)) )
+                    return FALSE;
+                else
+                    $found = TRUE;
+            }
+        }
+
+        return $found;
+    },
+    'arg' => TRUE,
+    'help' => 'example: \'filter=(to all.has.from.query subquery1)\' \'subquery1=(zpp is.set)\'',
+);
 
 RQuery::$defaultFilters['rule']['from']['operators']['has.regex'] = array(
     'Function' => function (RuleRQueryContext $context) {
