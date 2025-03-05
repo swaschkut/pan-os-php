@@ -2669,11 +2669,15 @@ RQuery::$defaultFilters['rule']['secprof']['operators']['av-profile.is.set'] = a
             return FALSE;
 
         if( $rule->securityProfileType() == "group" )
-            return FALSE;
+        {
+            /** @var SecurityProfileGroup $tmp_group */
+            $tmp_group =  $rule->owner->owner->securityProfileGroupStore->find( $rule->securityProfileGroup() );
+            $secprof_objects = $tmp_group->securityProfiles();
+        }
+        else
+            $secprof_objects = $rule->securityProfiles();
 
-        $profiles = $rule->securityProfiles();
-
-        return isset($profiles['virus']);
+        return isset($secprof_objects['virus']);
     },
     'arg' => FALSE,
     'ci' => array(
@@ -2691,11 +2695,15 @@ RQuery::$defaultFilters['rule']['secprof']['operators']['as-profile.is.set'] = a
             return FALSE;
 
         if( $rule->securityProfileType() == "group" )
-            return FALSE;
+        {
+            /** @var SecurityProfileGroup $tmp_group */
+            $tmp_group =  $rule->owner->owner->securityProfileGroupStore->find( $rule->securityProfileGroup() );
+            $secprof_objects = $tmp_group->securityProfiles();
+        }
+        else
+            $secprof_objects = $rule->securityProfiles();
 
-        $profiles = $rule->securityProfiles();
-
-        return isset($profiles['spyware']);
+        return isset($secprof_objects['spyware']);
     },
     'arg' => FALSE,
     'ci' => array(
@@ -2713,11 +2721,15 @@ RQuery::$defaultFilters['rule']['secprof']['operators']['url-profile.is.set'] = 
             return FALSE;
 
         if( $rule->securityProfileType() == "group" )
-            return FALSE;
+        {
+            /** @var SecurityProfileGroup $tmp_group */
+            $tmp_group =  $rule->owner->owner->securityProfileGroupStore->find( $rule->securityProfileGroup() );
+            $secprof_objects = $tmp_group->securityProfiles();
+        }
+        else
+            $secprof_objects = $rule->securityProfiles();
 
-        $profiles = $rule->securityProfiles();
-
-        return isset($profiles['url-filtering']);
+        return isset($secprof_objects['url-filtering']);
     },
     'arg' => FALSE,
     'ci' => array(
@@ -2735,11 +2747,15 @@ RQuery::$defaultFilters['rule']['secprof']['operators']['wf-profile.is.set'] = a
             return FALSE;
 
         if( $rule->securityProfileType() == "group" )
-            return FALSE;
+        {
+            /** @var SecurityProfileGroup $tmp_group */
+            $tmp_group =  $rule->owner->owner->securityProfileGroupStore->find( $rule->securityProfileGroup() );
+            $secprof_objects = $tmp_group->securityProfiles();
+        }
+        else
+            $secprof_objects = $rule->securityProfiles();
 
-        $profiles = $rule->securityProfiles();
-
-        return isset($profiles['wildfire-analysis']);
+        return isset($secprof_objects['wildfire-analysis']);
     },
     'arg' => FALSE,
     'ci' => array(
@@ -2757,11 +2773,15 @@ RQuery::$defaultFilters['rule']['secprof']['operators']['vuln-profile.is.set'] =
             return FALSE;
 
         if( $rule->securityProfileType() == "group" )
-            return FALSE;
+        {
+            /** @var SecurityProfileGroup $tmp_group */
+            $tmp_group =  $rule->owner->owner->securityProfileGroupStore->find( $rule->securityProfileGroup() );
+            $secprof_objects = $tmp_group->securityProfiles();
+        }
+        else
+            $secprof_objects = $rule->securityProfiles();
 
-        $profiles = $rule->securityProfiles();
-
-        return isset($profiles['vulnerability']);
+        return isset($secprof_objects['vulnerability']);
     },
     'arg' => FALSE,
     'ci' => array(
@@ -2779,11 +2799,15 @@ RQuery::$defaultFilters['rule']['secprof']['operators']['file-profile.is.set'] =
             return FALSE;
 
         if( $rule->securityProfileType() == "group" )
-            return FALSE;
+        {
+            /** @var SecurityProfileGroup $tmp_group */
+            $tmp_group =  $rule->owner->owner->securityProfileGroupStore->find( $rule->securityProfileGroup() );
+            $secprof_objects = $tmp_group->securityProfiles();
+        }
+        else
+            $secprof_objects = $rule->securityProfiles();
 
-        $profiles = $rule->securityProfiles();
-
-        return isset($profiles['file-blocking']);
+        return isset($secprof_objects['file-blocking']);
     },
     'arg' => FALSE,
     'ci' => array(
@@ -2801,11 +2825,15 @@ RQuery::$defaultFilters['rule']['secprof']['operators']['data-profile.is.set'] =
             return FALSE;
 
         if( $rule->securityProfileType() == "group" )
-            return FALSE;
+        {
+            /** @var SecurityProfileGroup $tmp_group */
+            $tmp_group =  $rule->owner->owner->securityProfileGroupStore->find( $rule->securityProfileGroup() );
+            $secprof_objects = $tmp_group->securityProfiles();
+        }
+        else
+            $secprof_objects = $rule->securityProfiles();
 
-        $profiles = $rule->securityProfiles();
-
-        return isset($profiles['data-filtering']);
+        return isset($secprof_objects['data-filtering']);
     },
     'arg' => FALSE,
     'ci' => array(

@@ -1411,8 +1411,12 @@ class DeviceGroup
             $stdoutarray['fb best-practice percentage'] = 0;
 
         //Data Filtering
-        //Todo
-        $stdoutarray['data visibility'] = "NOT available";
+        $stdoutarray['data visibility'] = count( $sub_ruleStore->rules( $generalFilter_allow."(secprof data-profile.is.set)" ) );
+        $stdoutarray['data visibility calc'] = $stdoutarray['data visibility']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['data visibility percentage'] = floor( ( $stdoutarray['data visibility'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['data visibility percentage'] = 0;
         $stdoutarray['data best-practice'] = "NOT available";
 
         //URL Filtering Profiles
@@ -1494,7 +1498,7 @@ class DeviceGroup
         $percentageArray_visibility['Anti-Spyware Profiles'] = $stdoutarray['as visibility percentage'];
         $percentageArray_visibility['Vulnerability Profiles'] = $stdoutarray['vp visibility percentage'];
         $percentageArray_visibility['File Blocking Profiles'] = $stdoutarray['fb visibility percentage'];
-        $percentageArray_visibility['Data Filtering'] = '---';
+        $percentageArray_visibility['Data Filtering'] = $stdoutarray['data visibility percentage'];
         $percentageArray_visibility['URL Filtering Profiles'] = $stdoutarray['url-site-access visibility percentage'];
         $percentageArray_visibility['Credential Theft Prevention'] = $stdoutarray['url-credential visibility percentage'];
         $percentageArray_visibility['DNS List'] = $stdoutarray['dns-list visibility percentage'];

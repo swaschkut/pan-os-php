@@ -2114,8 +2114,6 @@ class PanoramaConf
             $stdoutarray['wf best-practice percentage'] = 0;
 
         //Zone Protection
-        //Todo: no valid filter yet available - also how to filter? based on from and/or to zone??
-        $stdoutarray['zone protection'] = "NOT available";
         $filter_array = array('query' => $generalFilter_allow."!(from is.any) and (from all.has.from.query subquery1)", 'subquery1' => "zpp is.set" );
         $stdoutarray['zone protection'] = count( $sub_ruleStore->rules( $filter_array ) );
         $stdoutarray['zone protection calc'] = $stdoutarray['zone protection']."/".$ruleForCalculation;
@@ -2212,8 +2210,13 @@ class PanoramaConf
             $stdoutarray['fb best-practice percentage'] = 0;
 
         //Data Filtering
-        //Todo
-        $stdoutarray['data visibility'] = "NOT available";
+        $stdoutarray['data visibility'] = count( $sub_ruleStore->rules( $generalFilter_allow."(secprof data-profile.is.set)" ) );
+        $stdoutarray['data visibility calc'] = $stdoutarray['data visibility']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['data visibility percentage'] = floor( ( $stdoutarray['data visibility'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['data visibility percentage'] = 0;
+
         $stdoutarray['data best-practice'] = "NOT available";
 
         //URL Filtering Profiles
@@ -2295,7 +2298,7 @@ class PanoramaConf
         $percentageArray_visibility['Anti-Spyware Profiles'] = $stdoutarray['as visibility percentage'];
         $percentageArray_visibility['Vulnerability Profiles'] = $stdoutarray['vp visibility percentage'];
         $percentageArray_visibility['File Blocking Profiles'] = $stdoutarray['fb visibility percentage'];
-        $percentageArray_visibility['Data Filtering'] = '---';
+        $percentageArray_visibility['Data Filtering'] = $stdoutarray['data visibility percentage'];
         $percentageArray_visibility['URL Filtering Profiles'] = $stdoutarray['url-site-access visibility percentage'];
         $percentageArray_visibility['Credential Theft Prevention'] = $stdoutarray['url-credential visibility percentage'];
         $percentageArray_visibility['DNS List'] = $stdoutarray['dns-list visibility percentage'];
@@ -2428,7 +2431,12 @@ class PanoramaConf
         else
             $stdoutarray['fb visibility percentage'] = 0;
         $percentageArray_visibility['File Blocking Profiles'] = $stdoutarray['fb visibility percentage'];
-        $percentageArray_visibility['Data Filtering'] = '---';
+
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['data visibility percentage'] = floor( ( $stdoutarray['data visibility'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['data visibility percentage'] = 0;
+        $percentageArray_visibility['Data Filtering'] = $stdoutarray['data visibility percentage'];
 
         if( $ruleForCalculation !== 0 )
             $stdoutarray['url-site-access visibility percentage'] = floor( ( $stdoutarray['url-site-access visibility'] / $ruleForCalculation ) * 100 );

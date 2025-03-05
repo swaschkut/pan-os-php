@@ -1205,7 +1205,12 @@ class PANConf
         else
             $stdoutarray['fb visibility percentage'] = 0;
         $percentageArray_visibility['File Blocking Profiles'] = $stdoutarray['fb visibility percentage'];
-        $percentageArray_visibility['Data Filtering'] = '---';
+
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['data visibility percentage'] = floor( ( $stdoutarray['data visibility'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['data visibility percentage'] = 0;
+        $percentageArray_visibility['Data Filtering'] = $stdoutarray['data visibility percentage'];
 
         if( $ruleForCalculation !== 0 )
             $stdoutarray['url-site-access visibility percentage'] = floor( ( $stdoutarray['url-site-access visibility'] / $ruleForCalculation ) * 100 );
