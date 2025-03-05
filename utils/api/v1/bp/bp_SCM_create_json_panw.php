@@ -71,7 +71,7 @@ $checkArray['spyware']['dns']['bp_custom']['action'][0]['packet-capture'] = arra
 
 $checkArray['spyware']['dns']['bp'] = array();
 $checkArray['spyware']['dns']['bp']['action'] = array();
-$checkArray['spyware']['dns']['bp']['action'][0]['type'] = array('pan-dns-sec-malware','pan-dns-sec-phishing');
+$checkArray['spyware']['dns']['bp']['action'][0]['type'] = array('pan-dns-sec-adtracking', 'pan-dns-sec-ddns', 'pan-dns-sec-grayware', 'pan-dns-sec-malware', 'pan-dns-sec-parked', 'pan-dns-sec-phishing', 'pan-dns-sec-proxy', 'pan-dns-sec-recent');
 $checkArray['spyware']['dns']['bp']['action'][0]['action'] = array('sinkhole');
 $checkArray['spyware']['dns']['bp']['action'][0]['packet-capture'] = array('single-packet');
 
@@ -174,6 +174,6 @@ $checkArray['wildfire']['rule']['bp'][0]['analysis'] = 'public-cloud';
 
 $json = json_encode($checkArray, JSON_PRETTY_PRINT);
 
-$fileName = "bp_sp_panw.json";
+$fileName = "scm_bp_sp_panw.json";
 file_put_contents($fileName, $json);
 echo $json;

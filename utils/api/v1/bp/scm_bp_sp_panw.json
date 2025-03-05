@@ -105,6 +105,22 @@
             }
         },
         "dns": {
+            "bp_custom": {
+                "action": [
+                    {
+                        "type": [
+                            "pan-dns-sec-malware",
+                            "pan-dns-sec-phishing"
+                        ],
+                        "action": [
+                            "sinkhole"
+                        ],
+                        "packet-capture": [
+                            "single-packet"
+                        ]
+                    }
+                ]
+            },
             "bp": {
                 "action": [
                     {
@@ -134,6 +150,28 @@
                         ],
                         "packet-capture": [
                             "extended-capture"
+                        ]
+                    }
+                ]
+            },
+            "bp_panw": {
+                "action": [
+                    {
+                        "type": [
+                            "pan-dns-sec-adtracking",
+                            "pan-dns-sec-ddns",
+                            "pan-dns-sec-grayware",
+                            "pan-dns-sec-malware",
+                            "pan-dns-sec-parked",
+                            "pan-dns-sec-phishing",
+                            "pan-dns-sec-proxy",
+                            "pan-dns-sec-recent"
+                        ],
+                        "action": [
+                            "sinkhole"
+                        ],
+                        "packet-capture": [
+                            "single-packet"
                         ]
                     }
                 ]
@@ -349,7 +387,17 @@
                         "scr",
                         "torrent",
                         "vbe",
-                        "wsf"
+                        "wsf",
+                        "cab",
+                        "exe",
+                        "flash",
+                        "msi",
+                        "Multi-Level-Encoding",
+                        "PE",
+                        "rar",
+                        "tar",
+                        "encrypted-rar",
+                        "encrypted-zip"
                     ]
                 }
             },
@@ -357,6 +405,68 @@
                 "alert": {
                     "filetype": [
                         "any"
+                    ]
+                }
+            },
+            "bp_custom": {
+                "alert": {
+                    "filetype": [
+                        "any"
+                    ]
+                },
+                "block": {
+                    "filetype": [
+                        "7z",
+                        "bat",
+                        "chm",
+                        "class",
+                        "cpl",
+                        "dll",
+                        "hlp",
+                        "hta",
+                        "jar",
+                        "ocx",
+                        "pif",
+                        "scr",
+                        "torrent",
+                        "vbe",
+                        "wsf"
+                    ]
+                }
+            },
+            "bp_panw": {
+                "alert": {
+                    "filetype": [
+                        "any"
+                    ]
+                },
+                "block": {
+                    "filetype": [
+                        "7z",
+                        "bat",
+                        "chm",
+                        "class",
+                        "cpl",
+                        "dll",
+                        "hlp",
+                        "hta",
+                        "jar",
+                        "ocx",
+                        "pif",
+                        "scr",
+                        "torrent",
+                        "vbe",
+                        "wsf",
+                        "cab",
+                        "exe",
+                        "flash",
+                        "msi",
+                        "Multi-Level-Encoding",
+                        "PE",
+                        "rar",
+                        "tar",
+                        "encrypted-rar",
+                        "encrypted-zip"
                     ]
                 }
             }
