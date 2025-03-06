@@ -2383,7 +2383,7 @@ class PanoramaConf
             $stdoutarray['wf visibility percentage'] = 0;
         $percentageArray_visibility['Wildfire Analysis Profiles'] = $stdoutarray['wf visibility percentage'];
 
-        
+
         if( $ruleForCalculation !== 0 )
             $stdoutarray['zone protection percentage'] = floor(( $stdoutarray['zone protection'] / $stdoutarray['security rules enabled'] ) * 100 );
         else
