@@ -1046,6 +1046,8 @@ class VirtualSystem
         $header = "Statistics for VSYS '" . PH::boldText($this->name) . "' | '" . $this->toString() . "'";
         $stdoutarray['header'] = $header;
 
+        $stdoutarray['model'] = "---";
+
         $stdoutarray['security rules'] = $this->securityRules->count();
 
         $stdoutarray['nat rules'] = $this->natRules->count();

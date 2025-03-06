@@ -935,6 +935,11 @@ class PANConf
         $numAuthenticationRules = 0;
         $numDosRules = 0;
 
+        $numTunnelRules = 0;
+        $numDefaultRules = 0;
+        $numNetworkBrokerRules = 0;
+        $numSDwanRules = 0;
+
 
         $gnservices = $this->serviceStore->countServices();
         $gnservicesUnused = $this->serviceStore->countUnusedServices();
@@ -970,6 +975,11 @@ class PANConf
             $numAuthenticationRules += $vsys->authenticationRules->count();
             $numDosRules += $vsys->dosRules->count();
 
+            $numTunnelRules += $vsys->tunnelInspectionRules->count();
+            $numDefaultRules += $vsys->defaultSecurityRules->count();
+            $numNetworkBrokerRules += $vsys->networkPacketBrokerRules->count();
+            $numSDwanRules += $vsys->sdWanRules->count();
+
             $gnservices += $vsys->serviceStore->countServices();
             $gnservicesUnused += $vsys->serviceStore->countUnusedServices();
             $gnserviceGs += $vsys->serviceStore->countServiceGroups();
@@ -997,6 +1007,11 @@ class PANConf
                 $numCaptivePortalRules += $vsys->parentDeviceGroup->captivePortalRules->count();
                 $numAuthenticationRules += $vsys->parentDeviceGroup->authenticationRules->count();
                 $numDosRules += $vsys->parentDeviceGroup->dosRules->count();
+
+                $numTunnelRules += $vsys->parentDeviceGroup->tunnelInspectionRules->count();
+                $numDefaultRules += $vsys->parentDeviceGroup->defaultSecurityRules->count();
+                $numNetworkBrokerRules += $vsys->parentDeviceGroup->networkPacketBrokerRules->count();
+                $numSDwanRules += $vsys->parentDeviceGroup->sdWanRules->count();
 
                 $gnservices += $vsys->parentDeviceGroup->serviceStore->countServices();
                 $gnservicesUnused += $vsys->parentDeviceGroup->serviceStore->countUnusedServices();
@@ -1052,6 +1067,11 @@ class PANConf
         $stdoutarray['authentication rules'] = $numAuthenticationRules;
 
         $stdoutarray['dos rules'] = $numDosRules;
+
+        $stdoutarray['tunnel-inspection rules'] = $numTunnelRules;
+        $stdoutarray['default-security rules'] = $numDefaultRules;
+        $stdoutarray['network-packet-broker rules'] = $numNetworkBrokerRules;
+        $stdoutarray['sdwan rules'] = $numSDwanRules;
 
 
         $stdoutarray['address objects'] = array();

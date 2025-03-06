@@ -20,6 +20,8 @@
 
 class STATSUTIL extends RULEUTIL
 {
+    public $exportcsvFile = null;
+
     function __construct($utilType, $argv, $argc, $PHP_FILE, $_supportedArguments = array(), $_usageMsg = "")
     {
         $_usageMsg =  PH::boldText('USAGE: ')."php ".basename(__FILE__)." in=api:://[MGMT-IP] [location=vsys2]";;
@@ -64,6 +66,12 @@ class STATSUTIL extends RULEUTIL
             elseif( isset(PH::$args['location']) )
             {
                 unset( PH::$JSON_TMP[0] );
+            }
+
+            foreach( PH::$JSON_TMP as $key => $stat )
+            {
+                if( $stat['statstype'] == "adoption" )
+                    unset( PH::$JSON_TMP[$key] );
             }
 
             PH::$JSON_TMP = array_values(PH::$JSON_TMP);
