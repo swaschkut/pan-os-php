@@ -1157,9 +1157,9 @@ class PANConf
             $stdoutarray['wf visibility percentage'] = 0;
         $percentageArray_visibility['Wildfire Analysis Profiles'] = $stdoutarray['wf visibility percentage'];
 
-        $percentageArray_visibility['Zone Protection'] = '---';
+
         if( $ruleForCalculation !== 0 )
-            $stdoutarray['zone protection percentage'] = floor(( $stdoutarray['zone protection'] / $ruleForCalculation ) * 100 );
+            $stdoutarray['zone protection percentage'] = floor(( $stdoutarray['zone protection'] / $stdoutarray['security rules enabled'] ) * 100 );
         else
             $stdoutarray['zone protection percentage'] = 0;
         $percentageArray_visibility['Zone Protection'] = $stdoutarray['zone protection percentage'];
