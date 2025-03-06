@@ -101,9 +101,9 @@ RQuery::$defaultFilters['rule']['from']['operators']['all.has.from.query'] = arr
             if( $zone !== null )
             {
                 if( $rQuery->matchSingleObject(array('object' => $zone, 'nestedQueries' => &$context->nestedQueries)) )
-                    return FALSE;
-                else
                     $found = TRUE;
+                else
+                    return FALSE;
             }
         }
 
