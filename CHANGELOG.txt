@@ -39,6 +39,7 @@ BUGFIX:
 * class NetworkPropertiesContainer | bugfix to not add StaticRoute information a second time to memory
 * type=securityprofile actions=exporttoexcel | bugfix if predefined category are used in decryption rules - wrong reference
 * type=tsf actions=extract-running-and-merged-config | bugfix based on wrong validation
+* Class DataFilteringProfile extends SecurityProfile2
 
 GENERAL:
 * class EthernetInterface/AggregateEthernetInterface | optimisation to always define correct class
