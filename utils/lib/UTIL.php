@@ -2104,11 +2104,8 @@ class UTIL
                     {
                         if( $sub->parentDeviceGroup !== null )
                         {
-                            $sub->parentDeviceGroup->display_statistics();
-
-                            $sub->parentDeviceGroup->display_bp_statistics( $debug );
+                            $sub->parentDeviceGroup->display_statistics( $debug );
                         }
-
                     }
 
                     

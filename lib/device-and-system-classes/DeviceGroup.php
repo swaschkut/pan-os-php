@@ -1117,6 +1117,7 @@ class DeviceGroup
         $stdoutarray = array();
 
         $stdoutarray['type'] = get_class( $this );
+        $stdoutarray['statstype'] = "objects";
 
         $header = "Statistics for DG '" . PH::boldText($this->name) . "'";
         $stdoutarray['header'] = $header;
@@ -1258,6 +1259,7 @@ class DeviceGroup
         $stdoutarray = array();
 
         $stdoutarray['type'] = get_class( $sub );
+        $stdoutarray['statstype'] = "adoption";
 
         $header = "BP/Visibility Statistics for VSYS '" . PH::boldText($sub->name) . "' | '" . $sub->toString() . "'";
         $stdoutarray['header'] = $header;
@@ -1537,6 +1539,7 @@ class DeviceGroup
     public function display_bp_statistics( $debug = false )
     {
         $stdoutarray = $this->get_bp_statistics(  );
+        PH::$JSON_TMP[] = $stdoutarray;
 
         $percentageArray_visibility = $stdoutarray['percentage']['visibility'];
         $percentageArray_best_practice = $stdoutarray['percentage']['best-practice'];

@@ -1041,6 +1041,7 @@ class VirtualSystem
         $stdoutarray = array();
 
         $stdoutarray['type'] = get_class( $this );
+        $stdoutarray['statstype'] = "objects";
 
         $header = "Statistics for VSYS '" . PH::boldText($this->name) . "' | '" . $this->toString() . "'";
         $stdoutarray['header'] = $header;
@@ -1155,6 +1156,7 @@ class VirtualSystem
         $stdoutarray = array();
 
         $stdoutarray['type'] = get_class( $sub );
+        $stdoutarray['statstype'] = "adoption";
 
         $header = "BP/Visibility Statistics for VSYS '" . PH::boldText($sub->name) . "' | '" . $sub->toString() . "'";
         $stdoutarray['header'] = $header;
@@ -1493,15 +1495,12 @@ class VirtualSystem
             echo $tbl->getTable();
         }
         PH::print_stdout();
-        
-
-        #PH::$JSON_TMP[$this->name] = $stdoutarray;
-        PH::$JSON_TMP[] = $stdoutarray;
 
 
         if( !PH::$shadow_json && $debug )
             PH::print_stdout( $stdoutarray, true );
 
+        PH::$JSON_TMP[] = $stdoutarray;
     }
 
     public function isVirtualSystem()

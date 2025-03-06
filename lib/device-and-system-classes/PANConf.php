@@ -1020,6 +1020,7 @@ class PANConf
         $stdoutarray = array();
 
         $stdoutarray['type'] = get_class( $this );
+        $stdoutarray['statstype'] = "objects";
 
         $header = "Statistics for PANConf '" . $this->name . "'";
         $stdoutarray['header'] = $header;
@@ -1117,13 +1118,20 @@ class PANConf
     public function display_bp_statistics( $debug = false )
     {
         $stdoutarray = array();
-        PH::$JSON_TMP[] = $stdoutarray;
+        $stdoutarray['type'] = get_class( $this );
+
+        $header = "Statistics for ".get_class( $this )." '" . PH::boldText('Panorama full') . "'";
+        $stdoutarray['header'] = $header;
+        $stdoutarray['statstype'] = "adoption";
 
         foreach( $this->getVirtualSystems() as $virtualSystem )
         {
             $stdoutarray2 = $virtualSystem->get_bp_statistics();
             foreach ($stdoutarray2 as $key2 => $stdoutarray_value)
             {
+                if( $key2 == "header" || $key2 == "type" || $key2 == "statstype" )
+                    continue;
+
                 if( strpos( $key2, "calc" ) !== FALSE || strpos( $key2, "percentage" ) !== FALSE )
                     continue;
 
@@ -1393,6 +1401,7 @@ class PANConf
         if( !PH::$shadow_json && $debug )
             PH::print_stdout( $stdoutarray, true );
 
+        PH::$JSON_TMP[] = $stdoutarray;
     }
 
     public function isFirewall()

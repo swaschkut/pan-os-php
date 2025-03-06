@@ -1675,6 +1675,7 @@ class PanoramaConf
         $stdoutarray = array();
 
         $stdoutarray['type'] = get_class( $this );
+        $stdoutarray['statstype'] = "objects";
 
         $header = "Statistics for PanoramaConf '" . $this->name . "'";
         $stdoutarray['header'] = $header;
@@ -1923,6 +1924,7 @@ class PanoramaConf
         $stdoutarray = array();
 
         $stdoutarray['type'] = get_class( $this );
+        $stdoutarray['statstype'] = "objects";
 
         $header = "Statistics for DG '" . PH::boldText('shared') . "'";
         $stdoutarray['header'] = $header;
@@ -2059,8 +2061,9 @@ class PanoramaConf
         $stdoutarray = array();
 
         $stdoutarray['type'] = get_class( $sub );
+        $stdoutarray['statstype'] = "adoption";
 
-        $header = "BP/Visibility Statistics for VSYS '" . PH::boldText($sub->name) . "' | '" . $sub->toString() . "'";
+        $header = "BP/Visibility Statistics for PanoramaConf '" . PH::boldText($sub->name) . "' | '" . $sub->toString() . "'";
         $stdoutarray['header'] = $header;
 
         $stdoutarray['security rules'] = $sub_ruleStore->count();
@@ -2335,17 +2338,22 @@ class PanoramaConf
 
     public function display_bp_statistics( $debug = false )
     {
-        $stdoutarray = array();
-        PH::$JSON_TMP[] = $stdoutarray;
-
-        //Todo: how to add Panorama Shared Rules BP calculation
         $stdoutarray = $this->get_bp_statistics(  );
+
+        $stdoutarray['type'] = get_class( $this );
+
+        $header = "Statistics for ".get_class( $this )." '" . PH::boldText('Panorama full') . "'";
+        $stdoutarray['header'] = $header;
+        $stdoutarray['statstype'] = "adoption";
 
         foreach( $this->getDeviceGroups() as $deviceGroup )
         {
             $stdoutarray2 = $deviceGroup->get_bp_statistics();
             foreach ($stdoutarray2 as $key2 => $stdoutarray_value)
             {
+                if( $key2 == "header" || $key2 == "type" || $key2 == "statstype" )
+                    continue;
+
                 if( strpos( $key2, "calc" ) !== FALSE || strpos( $key2, "percentage" ) !== FALSE || strpos( $key2, "type" ) !== FALSE )
                 {
                     unset($stdoutarray[$key2]);
@@ -2613,15 +2621,18 @@ class PanoramaConf
             echo $tbl->getTable();
         }
 
-
-
         if( !PH::$shadow_json && $debug )
             PH::print_stdout( $stdoutarray, true );
+
+        PH::$JSON_TMP[] = $stdoutarray;
     }
 
     public function display_bp_shared_statistics( $debug = false )
     {
         $stdoutarray = $this->get_bp_statistics(  );
+
+        $header = "BP/Visibility Statistics for PanoramaConf '" . PH::boldText("shared") . "' | ";
+        $stdoutarray['header'] = $header;
 
         $percentageArray_visibility = $stdoutarray['percentage']['visibility'];
         $percentageArray_best_practice = $stdoutarray['percentage']['best-practice'];
