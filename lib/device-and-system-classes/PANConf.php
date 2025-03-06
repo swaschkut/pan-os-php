@@ -1189,7 +1189,10 @@ class PANConf
         $percentageArray_visibility['Antivirus Profiles'] = $stdoutarray['av visibility percentage'];
 
         if( $ruleForCalculation !== 0 )
+        {
+            $stdoutarray['as visibility'] = $stdoutarray['as visibility'] . "/" . $ruleForCalculation ;
             $stdoutarray['as visibility percentage'] = floor( ( $stdoutarray['as visibility'] / $ruleForCalculation ) * 100 );
+        }
         else
             $stdoutarray['as visibility percentage'] = 0;
         $percentageArray_visibility['Anti-Spyware Profiles'] = $stdoutarray['as visibility percentage'];
@@ -1201,7 +1204,10 @@ class PANConf
         $percentageArray_visibility['Vulnerability Profiles'] = $stdoutarray['vp visibility percentage'];
 
         if( $ruleForCalculation !== 0 )
+        {
+            $stdoutarray['fb visibility calc'] = $stdoutarray['fb visibility' ]." / " . $ruleForCalculation ;
             $stdoutarray['fb visibility percentage'] = floor( ( $stdoutarray['fb visibility'] / $ruleForCalculation ) * 100 );
+        }
         else
             $stdoutarray['fb visibility percentage'] = 0;
         $percentageArray_visibility['File Blocking Profiles'] = $stdoutarray['fb visibility percentage'];
@@ -1281,10 +1287,9 @@ class PANConf
 
         if( $ruleForCalculation !== 0 )
         {
-            $stdoutarray['fb best-practice calc'] = $stdoutarray['fb best-practice' ]." \ " . $ruleForCalculation ;
+            $stdoutarray['fb best-practice calc'] = $stdoutarray['fb best-practice' ]." / " . $ruleForCalculation ;
             $stdoutarray['fb best-practice percentage'] = floor( ( $stdoutarray['fb best-practice'] / $ruleForCalculation ) * 100 );
         }
-
         else
             $stdoutarray['fb best-practice percentage'] = 0;
         $percentageArray_best_practice['File Blocking Profiles'] = $stdoutarray['fb best-practice percentage'];
