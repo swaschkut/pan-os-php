@@ -2114,7 +2114,7 @@ class PanoramaConf
             $stdoutarray['wf best-practice percentage'] = 0;
 
         //Zone Protection
-        $filter_array = array('query' => $generalFilter_allow."!(from is.any) and (from all.has.from.query subquery1)", 'subquery1' => "zpp is.set" );
+        $filter_array = array('query' => $generalFilter."!(from is.any) and (from all.has.from.query subquery1)", 'subquery1' => "zpp is.set" );
         $stdoutarray['zone protection'] = count( $sub_ruleStore->rules( $filter_array ) );
         $stdoutarray['zone protection calc'] = $stdoutarray['zone protection']."/".$ruleForCalculation;
         if( $ruleForCalculation !== 0 )
