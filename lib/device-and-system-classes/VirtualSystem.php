@@ -1036,7 +1036,7 @@ class VirtualSystem
     }
 
 
-    public function display_statistics( $debug = false )
+    public function display_statistics( $debug = false, $actions = "display" )
     {
         $stdoutarray = array();
 
@@ -1143,14 +1143,14 @@ class VirtualSystem
         PH::$JSON_TMP[] = $stdoutarray;
 
 
-        if( !PH::$shadow_json )
+        if( !PH::$shadow_json && $actions == "display" )
             PH::print_stdout( $stdoutarray, true );
 
-        $this->display_bp_statistics( $debug);
+        $this->display_bp_statistics( $debug, $actions);
     }
 
 
-    public function get_bp_statistics()
+    public function get_bp_statistics( $actions = "display")
     {
         $sub = $this;
         $sub_ruleStore = $sub->securityRules;
@@ -1437,14 +1437,14 @@ class VirtualSystem
         return $stdoutarray;
     }
 
-    public function display_bp_statistics( $debug = false )
+    public function display_bp_statistics( $debug = false, $actions = "display" )
     {
         $stdoutarray = $this->get_bp_statistics();
 
         $percentageArray_visibility = $stdoutarray['percentage']['visibility'];
         $percentageArray_best_practice = $stdoutarray['percentage']['best-practice'];
 
-        if( !PH::$shadow_json )
+        if( !PH::$shadow_json and $actions == "display" )
         {
             PH::print_stdout("---------------------------");
             PH::print_stdout("FEATURE ADOPTION");
@@ -1499,7 +1499,7 @@ class VirtualSystem
         PH::print_stdout();
 
 
-        if( !PH::$shadow_json && $debug )
+        if( !PH::$shadow_json && $debug && $actions == "display" )
             PH::print_stdout( $stdoutarray, true );
 
         PH::$JSON_TMP[] = $stdoutarray;

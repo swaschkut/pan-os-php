@@ -296,6 +296,8 @@ class URLProfile extends SecurityProfile2
 
     public function setAction($action, $category)
     {
+        #print "ACTION: $action\n";
+        #print "CATEGORY: $category\n";
         if( $category == "all" )
         {
             //Todo:
@@ -307,6 +309,26 @@ class URLProfile extends SecurityProfile2
         {
             $tmp_action = explode("all-", $category);
 
+            #print_r($tmp_action);
+            if( $tmp_action[1] == "allow" )
+            {
+                $typeFilter = $tmp_action[1];
+                foreach( $this->allow as $member )
+                {
+                    #print "found: ".$member."\n";
+                    $this->deleteMember( $member, $typeFilter );
+                    $this->addMember( $member, $action);
+                }
+            }
+            elseif( $tmp_action[0] == "alert" )
+            {
+                $typeFilter = $tmp_action[0];
+                foreach( $this->alert as $member )
+                {
+                    $this->deleteMember( $member, $typeFilter );
+                    $this->addMember( $member, $action);
+                }
+            }
         }
         else
         {

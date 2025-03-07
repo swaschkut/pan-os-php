@@ -46,13 +46,51 @@ class STATSUTIL extends RULEUTIL
         $this->location_filter_object();
         $this->time_to_process_objects();
 
-
-
-
         PH::$args['stats'] = "stats";
+
+
+
+        if( isset(PH::$args['actions']) )
+        {
+            print "ACTIONS: ".PH::$args['actions']."\n";
+            $actions = PH::$args['actions'];
+        }
+        else
+        {
+            PH::$args['actions'] = "display";
+            $actions = PH::$args['actions'];
+        }
+
+
         PH::$JSON_TMP = array();
-        $this->stats( $this->debugAPI );
-        PH::print_stdout(PH::$JSON_TMP, false, "statistic");
+        $this->stats( $this->debugAPI, $actions );
+        if( PH::$args['actions'] == "display" )
+            PH::print_stdout(PH::$JSON_TMP, false, "statistic");
+
+        if( PH::$args['actions'] == "trending" )
+        {
+            $trendingArray = array();
+            //load old file
+
+            foreach( PH::$JSON_TMP as $key => $stat )
+            {
+                if( $stat['statstype'] == "adoption" )
+                {
+                    $tmpArray = array();
+
+                    $now = new DateTime();
+                    $now->format('Y-m-d H:i:s');    // MySQL datetime format
+                    $now->getTimestamp();
+
+                    //---------------
+
+                    $tmpArray[$now->getTimestamp()] = $stat['percentage'];
+                    print_r( $tmpArray );
+
+                    break;
+                }
+            }
+        }
 
         if( isset(PH::$args['exportcsv'])  )
         {

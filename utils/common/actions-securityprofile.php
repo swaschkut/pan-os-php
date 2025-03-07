@@ -429,6 +429,9 @@ SecurityProfileCallContext::$supportedActions['url.action-set'] = array(
 
         $object->setAction($action, $filter);
 
+        if( $context->isAPI )
+            $object->API_sync();
+
         PH::print_stdout( "\n" );
     },
     'args' => array(

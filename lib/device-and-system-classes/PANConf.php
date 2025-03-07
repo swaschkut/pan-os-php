@@ -922,7 +922,7 @@ class PANConf
         return $this->sharedGateways;
     }
 
-    public function display_statistics( $connector = null, $debug = false )
+    public function display_statistics( $connector = null, $debug = false, $actions = 'display' )
     {
 
         $numSecRules = 0;
@@ -1128,14 +1128,14 @@ class PANConf
         PH::$JSON_TMP[] = $stdoutarray;
 
 
-        if( !PH::$shadow_json )
+        if( !PH::$shadow_json and $actions == "display" )
             PH::print_stdout( $stdoutarray, true );
 
 
-        $this->display_bp_statistics( $debug );
+        $this->display_bp_statistics( $debug, $actions );
     }
 
-    public function display_bp_statistics( $debug = false )
+    public function display_bp_statistics( $debug = false, $actions = "display" )
     {
         $stdoutarray = array();
         $stdoutarray['type'] = get_class( $this );
@@ -1146,7 +1146,7 @@ class PANConf
 
         foreach( $this->getVirtualSystems() as $virtualSystem )
         {
-            $stdoutarray2 = $virtualSystem->get_bp_statistics();
+            $stdoutarray2 = $virtualSystem->get_bp_statistics( $actions );
             foreach ($stdoutarray2 as $key2 => $stdoutarray_value)
             {
                 if( $key2 == "header" || $key2 == "type" || $key2 == "statstype" )
@@ -1369,7 +1369,7 @@ class PANConf
         $percentageArray_visibility = $stdoutarray['percentage']['visibility'];
         $percentageArray_best_practice = $stdoutarray['percentage']['best-practice'];
 
-        if( !PH::$shadow_json )
+        if( !PH::$shadow_json && $actions == "display")
         {
             PH::print_stdout("visibility");
             $tbl = new ConsoleTable();
@@ -1418,7 +1418,7 @@ class PANConf
 
 
 
-        if( !PH::$shadow_json && $debug )
+        if( !PH::$shadow_json && $debug && $actions == "display" )
             PH::print_stdout( $stdoutarray, true );
 
         PH::$JSON_TMP[] = $stdoutarray;

@@ -2074,7 +2074,7 @@ class UTIL
         }
     }
 
-    public function stats( $debug = false )
+    public function stats( $debug = false, $actions = "display" )
     {
         if( isset(PH::$args['stats']) )
         {
@@ -2085,7 +2085,7 @@ class UTIL
             if( $this->configInput['type'] == 'api' )
                 $mainConnector = findConnector($pan);
 
-            $pan->display_statistics( $mainConnector, $debug );
+            $pan->display_statistics( $mainConnector, $debug, $actions );
 
             $processedLocations = array();
             foreach( $this->objectsToProcess as &$record )
@@ -2104,12 +2104,12 @@ class UTIL
                     {
                         if( $sub->parentDeviceGroup !== null )
                         {
-                            $sub->parentDeviceGroup->display_statistics( $debug );
+                            $sub->parentDeviceGroup->display_statistics( $debug, $actions );
                         }
                     }
 
                     
-                    $sub->display_statistics( $debug);
+                    $sub->display_statistics( $debug, $actions );
                 }
             }
 
@@ -2127,9 +2127,9 @@ class UTIL
                     $doc = $fwconnector->getMergedConfig();
                     $firewall->load_from_domxml( $doc );
 
-                    $firewall->display_statistics( $fwconnector );
+                    $firewall->display_statistics( $fwconnector, $actions );
 
-                    $firewall->display_bp_statistics( );
+                    $firewall->display_bp_statistics( $actions );
                 }
 
             }

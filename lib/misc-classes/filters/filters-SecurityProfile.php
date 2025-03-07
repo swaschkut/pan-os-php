@@ -1540,6 +1540,19 @@ RQuery::$defaultFilters['securityprofile']['url.user-credential-detection']['ope
     'arg' => false,
     'help' => "'securityprofiletype=url-filtering' e.g. 'filter=(url.user-credential-detection is.best-practice)'"
 );
+RQuery::$defaultFilters['securityprofile']['url.user-credential-detection']['operators']['allow.is.set'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var URLProfile $object */
+        $object = $context->object;
+
+        if( $object->secprof_type != 'url-filtering' )
+            return null;
+
+        return count($object->allow_credential) > 0;
+    },
+    'arg' => false,
+    'help' => "'securityprofiletype=url-filtering' e.g. 'filter=(user-credential-detection allow.is.set)'"
+);
 RQuery::$defaultFilters['securityprofile']['url.site-access']['operators']['is.visibility'] = array(
     'Function' => function (SecurityProfileRQueryContext $context) {
         /** @var URLProfile $object */
@@ -1565,5 +1578,18 @@ RQuery::$defaultFilters['securityprofile']['url.site-access']['operators']['is.b
     },
     'arg' => false,
     'help' => "'securityprofiletype=url-filtering' e.g. 'filter=(url.site-access is.best-practice)'"
+);
+RQuery::$defaultFilters['securityprofile']['url.site-access']['operators']['allow.is.set'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var URLProfile $object */
+        $object = $context->object;
+
+        if( $object->secprof_type != 'url-filtering' )
+            return null;
+
+        return count($object->allow) > 0;
+    },
+    'arg' => false,
+    'help' => "'securityprofiletype=url-filtering' e.g. 'filter=(url.site-access allow.is.set)'"
 );
 // </editor-fold>

@@ -548,7 +548,7 @@ class FawkesConf
 
     }
 
-    public function display_statistics( $return = false )
+    public function display_statistics( $return = false, $debug = false, $actions = "display" )
     {
 
         $container_all = $this->findContainer( "All");
@@ -907,7 +907,7 @@ class FawkesConf
             return $stdoutarray;
         }
         else
-            {
+        {
             #PH::print_stdout( $return );
             PH::print_stdout( $stdoutarray, true  );
         }

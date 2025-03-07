@@ -1112,7 +1112,7 @@ class DeviceGroup
     }
 
 
-    public function display_statistics( $debug = false)
+    public function display_statistics( $debug = false, $actions = "display")
     {
         $stdoutarray = array();
 
@@ -1244,10 +1244,10 @@ class DeviceGroup
         #PH::$JSON_TMP[$this->name] = $stdoutarray;
         PH::$JSON_TMP[] = $stdoutarray;
 
-        if( !PH::$shadow_json )
+        if( !PH::$shadow_json && $actions == "display")
             PH::print_stdout( $stdoutarray, true );
 
-        $this->display_bp_statistics( $debug );
+        $this->display_bp_statistics( $debug, $acitons );
     }
 
 
@@ -1536,7 +1536,7 @@ class DeviceGroup
     }
 
 
-    public function display_bp_statistics( $debug = false )
+    public function display_bp_statistics( $debug = false, $actions = "display" )
     {
         $stdoutarray = $this->get_bp_statistics(  );
         PH::$JSON_TMP[] = $stdoutarray;
@@ -1544,7 +1544,7 @@ class DeviceGroup
         $percentageArray_visibility = $stdoutarray['percentage']['visibility'];
         $percentageArray_best_practice = $stdoutarray['percentage']['best-practice'];
 
-        if( !PH::$shadow_json )
+        if( !PH::$shadow_json && $actions == "display" )
         {
             PH::print_stdout("visibility");
             $tbl = new ConsoleTable();
@@ -1596,7 +1596,7 @@ class DeviceGroup
         PH::$JSON_TMP[] = $stdoutarray;
 
 
-        if( !PH::$shadow_json && $debug )
+        if( !PH::$shadow_json && $debug && $actions == "display" )
             PH::print_stdout( $stdoutarray, true );
 
     }

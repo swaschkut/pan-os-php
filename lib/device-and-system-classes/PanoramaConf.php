@@ -1519,7 +1519,7 @@ class PanoramaConf
     }
 
 
-    public function display_statistics( $connector = null, $debug = false )
+    public function display_statistics( $connector = null, $debug = false, $actions = "display" )
     {
 
         $gpreSecRules = $this->securityRules->countPreRules();
@@ -1910,15 +1910,15 @@ class PanoramaConf
         #PH::$JSON_TMP['all'] = $stdoutarray;
         PH::$JSON_TMP[] = $stdoutarray;
 
-        if( !PH::$shadow_json )
+        if( !PH::$shadow_json && $actions == "display")
             PH::print_stdout( $stdoutarray, true );
 
-        $this->display_bp_statistics( $debug );
+        $this->display_bp_statistics( $debug, $actions );
 
-        $this->display_shared_statistics( $connector, $debug );
+        $this->display_shared_statistics( $connector, $debug, $actions );
     }
 
-    public function display_shared_statistics( $connector = null, $debug = false )
+    public function display_shared_statistics( $connector = null, $debug = false, $actions = "display" )
     {
         //-----------------
         $stdoutarray = array();
@@ -2047,13 +2047,13 @@ class PanoramaConf
         #PH::$JSON_TMP['shared'] = $stdoutarray;
         PH::$JSON_TMP[] = $stdoutarray;
 
-        if( !PH::$shadow_json )
+        if( !PH::$shadow_json && $actions == "display")
             PH::print_stdout( $stdoutarray, true );
 
-        $this->display_bp_shared_statistics( $debug );
+        $this->display_bp_shared_statistics( $debug, $actions );
     }
 
-    public function get_bp_statistics()
+    public function get_bp_statistics( $actions = "display")
     {
         $sub = $this;
         $sub_ruleStore = $sub->securityRules;
@@ -2336,9 +2336,9 @@ class PanoramaConf
         return $stdoutarray;
     }
 
-    public function display_bp_statistics( $debug = false )
+    public function display_bp_statistics( $debug = false, $actions = "display" )
     {
-        $stdoutarray = $this->get_bp_statistics(  );
+        $stdoutarray = $this->get_bp_statistics( $actions );
 
         $stdoutarray['type'] = get_class( $this );
 
@@ -2574,7 +2574,7 @@ class PanoramaConf
         $percentageArray_visibility = $stdoutarray['percentage']['visibility'];
         $percentageArray_best_practice = $stdoutarray['percentage']['best-practice'];
 
-        if( !PH::$shadow_json )
+        if( !PH::$shadow_json && $actions == "display")
         {
             PH::print_stdout("visibility");
             $tbl = new ConsoleTable();
@@ -2621,15 +2621,15 @@ class PanoramaConf
             echo $tbl->getTable();
         }
 
-        if( !PH::$shadow_json && $debug )
+        if( !PH::$shadow_json && $debug && $actions == "display")
             PH::print_stdout( $stdoutarray, true );
 
         PH::$JSON_TMP[] = $stdoutarray;
     }
 
-    public function display_bp_shared_statistics( $debug = false )
+    public function display_bp_shared_statistics( $debug = false, $actions = "display" )
     {
-        $stdoutarray = $this->get_bp_statistics(  );
+        $stdoutarray = $this->get_bp_statistics( $actions );
 
         $header = "BP/Visibility Statistics for PanoramaConf '" . PH::boldText("shared") . "' | ";
         $stdoutarray['header'] = $header;
@@ -2637,7 +2637,7 @@ class PanoramaConf
         $percentageArray_visibility = $stdoutarray['percentage']['visibility'];
         $percentageArray_best_practice = $stdoutarray['percentage']['best-practice'];
 
-        if( !PH::$shadow_json )
+        if( !PH::$shadow_json && $actions == "display" )
         {
             PH::print_stdout("visibility");
             $tbl = new ConsoleTable();
@@ -2689,7 +2689,7 @@ class PanoramaConf
         PH::$JSON_TMP[] = $stdoutarray;
 
 
-        if( !PH::$shadow_json && $debug )
+        if( !PH::$shadow_json && $debug && $actions == "display" )
             PH::print_stdout( $stdoutarray, true );
 
     }
