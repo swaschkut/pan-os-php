@@ -85,7 +85,9 @@ if( $actions == "display" )
 
         foreach( $stringarray as $rule )
         {
-            print_r($rule);
+            #print_r($rule);
+            #print_r( array_keys( $rule ) );
+
             if( $util->configType == "panorama" )
             {
                 if( isset($rule['Name']) )
@@ -114,13 +116,21 @@ if( $actions == "display" )
             }
 
             $secrule = null;
+
             if( isset($rule['Name']) )
             {
                 $rulename = $rule['Name'];
+
+                if( $rulename == "intrazone-default" || $rulename == "interzone-default" )
+                {
+                    mwarning("SecurityRule: " . $rulename . " is a reserved name, skip adding ", null, FALSE);
+                    continue;
+                }
+
                 $secrule = $rule_location->securityRules->find($rulename);
                 if( $secrule != null )
                 {
-                    mwarning("SecurityRule: " . $rulename . " is already available, skip adding ");
+                    mwarning("SecurityRule: " . $rulename . " is already available, skip adding ", null, FALSE);
                     continue;
                 }
 
@@ -174,7 +184,7 @@ if( $actions == "display" )
                         //do nothing
                     }
                     else
-                        $rule->setType($rule['Type']);
+                        $secrule->setType($rule['Type']);
                 }
 
 
@@ -482,7 +492,7 @@ if( $actions == "display" )
 ##########################################
 
 $util->save_our_work();
-$this->endOfScript();
+$util->endOfScript();
 
 PH::print_stdout();
 PH::print_stdout("************* END OF SCRIPT " . basename(__FILE__) . " ************" );
