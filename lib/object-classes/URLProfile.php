@@ -294,7 +294,7 @@ class URLProfile extends SecurityProfile2
         return $this->override;
     }
 
-    public function setAction($action, $category)
+    public function setAction($action, $category, $type="site-access")
     {
         #print "ACTION: $action\n";
         #print "CATEGORY: $category\n";
@@ -313,20 +313,41 @@ class URLProfile extends SecurityProfile2
             if( $tmp_action[1] == "allow" )
             {
                 $typeFilter = $tmp_action[1];
-                foreach( $this->allow as $member )
+                if( $type == "site-access" )
                 {
-                    #print "found: ".$member."\n";
-                    $this->deleteMember( $member, $typeFilter );
-                    $this->addMember( $member, $action);
+                    foreach( $this->allow as $member )
+                    {
+                        $this->deleteMember( $member, $typeFilter );
+                        $this->addMember( $member, $action);
+                    }
+                }
+                else
+                {
+                    foreach( $this->allow_credential as $member )
+                    {
+                        $this->deleteMember( $member, $typeFilter );
+                        $this->addMember( $member, $action);
+                    }
                 }
             }
             elseif( $tmp_action[0] == "alert" )
             {
                 $typeFilter = $tmp_action[0];
-                foreach( $this->alert as $member )
+                if( $type == "site-access" )
                 {
-                    $this->deleteMember( $member, $typeFilter );
-                    $this->addMember( $member, $action);
+                    foreach ($this->alert as $member)
+                    {
+                        $this->deleteMember($member, $typeFilter);
+                        $this->addMember($member, $action);
+                    }
+                }
+                else
+                {
+                    foreach ($this->alert_credential as $member)
+                    {
+                        $this->deleteMember($member, $typeFilter);
+                        $this->addMember($member, $action);
+                    }
                 }
             }
         }

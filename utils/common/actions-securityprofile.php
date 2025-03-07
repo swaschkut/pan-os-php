@@ -413,7 +413,42 @@ SecurityProfileCallContext::$supportedActions['display-xml'] = array(
         DH::DEBUGprintDOMDocument($object->xmlroot);
     },
 );
+SecurityProfileCallContext::$supportedActions['url-filtering-action-set'] = array(
+    'name' => 'url-filtering-action-set',
+    'MainFunction' => function (SecurityProfileCallContext $context) {
+        $object = $context->object;
 
+        if( get_class( $object) !== "URLProfile")
+            return null;
+
+        $category = $context->arguments['url-category'];
+        $custom = $object->owner->owner->customURLProfileStore->find( $category );
+        if( !in_array( $category, $object->predefined ) and $custom == null )
+        {
+            mwarning( "url-filtering category: ".$category. " not supported", null, false );
+            return false;
+        }
+
+
+        $action = $context->arguments['action'];
+
+        if( !in_array( $action, $object->tmp_url_prof_array ) )
+        {
+            mwarning( "url-filtering action support only: ".implode($object->tmp_url_prof_array). " action: ".$action. " not supported", null, false );
+            return false;
+        }
+
+
+        $object->setAction( $action, $category );
+
+        if( $context->isAPI )
+            $object->API_sync();
+    },
+    'args' => array(
+        'action' => array('type' => 'string', 'default' => 'false'),
+        'url-category' => array('type' => 'string', 'default' => 'false'),
+    ),
+);
 SecurityProfileCallContext::$supportedActions['url.action-set'] = array(
     'name' => 'url.action-set',
     'MainFunction' => function (SecurityProfileCallContext $context) {
@@ -428,6 +463,33 @@ SecurityProfileCallContext::$supportedActions['url.action-set'] = array(
         //how to set new action
 
         $object->setAction($action, $filter);
+
+        if( $context->isAPI )
+            $object->API_sync();
+
+        PH::print_stdout( "\n" );
+    },
+    'args' => array(
+        'action' => array('type' => 'string', 'default' => '*nodefault*',
+            'help' => 'allow, alert, block, continue, override'),
+        'filter' => array('type' => 'string', 'default' => 'all',
+            'help' => "all / all-[action] / category"),
+    ),
+);
+SecurityProfileCallContext::$supportedActions['url.user-credential-detection.action-set'] = array(
+    'name' => 'url.action-set',
+    'MainFunction' => function (SecurityProfileCallContext $context) {
+        $object = $context->object;
+        $action = $context->arguments['action'];
+        $filter = $context->arguments['filter'];
+
+        if (get_class($object) !== "URLProfile")
+            return null;
+
+        //Todo:
+        //how to set new action
+
+        $object->setAction($action, $filter, "user-credential-detection");
 
         if( $context->isAPI )
             $object->API_sync();
@@ -1715,42 +1777,6 @@ SecurityProfileCallContext::$supportedActions['custom-url-category-fix-leading-d
             }
         }
     }
-);
-SecurityProfileCallContext::$supportedActions['url-filtering-action-set'] = array(
-    'name' => 'url-filtering-action-set',
-    'MainFunction' => function (SecurityProfileCallContext $context) {
-        $object = $context->object;
-
-        if( get_class( $object) !== "URLProfile")
-            return null;
-
-        $category = $context->arguments['url-category'];
-        $custom = $object->owner->owner->customURLProfileStore->find( $category );
-        if( !in_array( $category, $object->predefined ) and $custom == null )
-        {
-            mwarning( "url-filtering category: ".$category. " not supported", null, false );
-            return false;
-        }
-
-
-        $action = $context->arguments['action'];
-
-        if( !in_array( $action, $object->tmp_url_prof_array ) )
-        {
-            mwarning( "url-filtering action support only: ".implode($object->tmp_url_prof_array). " action: ".$action. " not supported", null, false );
-            return false;
-        }
-
-
-        $object->setAction( $action, $category );
-
-        if( $context->isAPI )
-            $object->API_sync();
-    },
-    'args' => array(
-        'action' => array('type' => 'string', 'default' => 'false'),
-        'url-category' => array('type' => 'string', 'default' => 'false'),
-    ),
 );
 SecurityProfileCallContext::$supportedActions['virus.best-practice-set'] = array(
     'name' => 'virus.best-practice-set',
