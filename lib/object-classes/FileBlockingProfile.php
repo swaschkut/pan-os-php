@@ -23,6 +23,7 @@ class FileBlockingProfile extends SecurityProfile2
 
     public $rules_obj = array();
 
+    public $rule_coverage = array();
 
     /**
      * you should not need this one for normal use
@@ -148,9 +149,51 @@ class FileBlockingProfile extends SecurityProfile2
         {
             $bp_set = false;
 
+            $check_array = $this->rules_obj[0]->fileblocking_rule_bp_visibility_JSON( "visibility", "file-blocking" );
+            $checkBP_array = $this->rules_obj[0]->fileblocking_rule_bp_visibility_JSON( "bp", "file-blocking" );
+            $this->fileblocking_rules_coverage();
+
+            foreach( $checkBP_array['block']['filetype'] as $bp_array )
+            {
+                if( isset($this->rule_coverage[$bp_array]) )
+                {
+                    if( $checkBP_array['block']['action'] !== $this->rule_coverage[$bp_array]['action'] )
+                        return false;
+                    else
+                        $bp_set = true;
+                }
+                else
+                    return false;
+            }
+
+            foreach( $check_array['alert']['filetype'] as $bp_array )
+            {
+                if( isset($this->rule_coverage[$bp_array]) )
+                {
+                    $checkAction = $check_array['alert']['action'][0];
+                    if( strpos( $checkAction, "!" ) !== FALSE )
+                    {
+                        $checkAction = str_replace("!", "", $checkAction);
+                        if( $checkAction === $this->rule_coverage[$bp_array]['action'] )
+                            return false;
+                        else
+                            $bp_set = true;
+                    }
+                    else
+                    {
+                        if( $checkAction !== $this->rule_coverage[$bp_array]['action'] )
+                            return false;
+                        else
+                            $bp_set = true;
+                    }
+                }
+            }
+
+            /*
             foreach ($this->rules_obj as $rulename => $rule)
             {
                 /** @var ThreatPolicyFileblocking $rule */
+                /*
                 if ($rule->fileblocking_rule_best_practice())
                 {
                     $bp_set = true;
@@ -162,6 +205,7 @@ class FileBlockingProfile extends SecurityProfile2
                     #print "false\n";
                 }
             }
+            */
         }
         return $bp_set;
     }
@@ -185,6 +229,24 @@ class FileBlockingProfile extends SecurityProfile2
             }
         }
         return $bp_set;
+    }
+
+    public function fileblocking_rules_coverage()
+    {
+        if (!empty($this->rules_obj))
+        {
+            foreach ($this->rules_obj as $rulename => $rule)
+            {
+                /** @var ThreatPolicyFileblocking $rule */
+                foreach( $rule->filetype() as $filtetype_detail )
+                {
+                    if( !isset($this->rule_coverage[$filtetype_detail]) )
+                    {
+                        $this->rule_coverage[$filtetype_detail]['action'] = $rule->action();
+                    }
+                }
+            }
+        }
     }
 
     public function is_best_practice()

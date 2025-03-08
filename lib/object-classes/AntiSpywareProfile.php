@@ -26,6 +26,8 @@ class AntiSpywareProfile extends SecurityProfile2
     public $dns_rules_obj = array();
     public $additional = array();
 
+    public $rule_coverage = array();
+
     public $cloud_inline_analysis_enabled = false;
 
     /**
@@ -663,7 +665,6 @@ class AntiSpywareProfile extends SecurityProfile2
                     PH::print_stdout("          * " . $name . " - inline-policy-action :" . $this->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action']);
             }
         }
-
         #PH::print_stdout();
     }
 
@@ -784,13 +785,50 @@ class AntiSpywareProfile extends SecurityProfile2
 
     public function spyware_rules_best_practice()
     {
-        if( $this->owner->owner->version >= 102 ) {
+        if( $this->owner->owner->version >= 102 )
+        {
             $bp_set = null;
-            if (!empty($this->rules_obj)) {
+            if (!empty($this->rules_obj))
+            {
                 $bp_set = false;
 
-                foreach ($this->rules_obj as $rulename => $rule) {
+                $check_array = $this->rules_obj[0]->spyware_rule_bp_visibility_JSON( "visibility", "spyware" );
+                $checkBP_array = $this->rules_obj[0]->spyware_rule_bp_visibility_JSON( "bp", "spyware" );
+                $this->spyware_rules_coverage();
+
+                foreach( $checkBP_array['severity'] as $bp_array )
+                {
+                    if( isset($this->rule_coverage[$bp_array]) )
+                    {
+                        if( $checkBP_array['action'][0] !== $this->rule_coverage[$bp_array]['action'] )
+                            return false;
+                        else
+                            $bp_set = true;
+                    }
+                    #else
+                    #    return false;
+                }
+
+                foreach( $check_array['severity'] as $bp_array )
+                {
+                    if( isset($this->rule_coverage[$bp_array]) )
+                    {
+                        $checkAction = $check_array['action'][0];
+                        $checkAction = str_replace("!", "", $checkAction);
+                        if( $checkAction === $this->rule_coverage[$bp_array]['action'] )
+                            return false;
+                        else
+                            $bp_set = true;
+                    }
+                }
+
+                #######################################################
+                #######################################################
+                /*
+                foreach ($this->rules_obj as $rulename => $rule)
+                {
                     /** @var ThreatPolicySpyware $rule */
+                    /*
                     if ($rule->spyware_rule_best_practice())
                         $bp_set = true;
                         #return true;
@@ -798,6 +836,7 @@ class AntiSpywareProfile extends SecurityProfile2
                         #$bp_set = false;
                         return false;
                 }
+                */
             }
             return $bp_set;
         }
@@ -825,6 +864,26 @@ class AntiSpywareProfile extends SecurityProfile2
         }
         return null;
     }
+
+    public function spyware_rules_coverage()
+    {
+        if (!empty($this->rules_obj))
+        {
+            foreach ($this->rules_obj as $rulename => $rule)
+            {
+                /** @var ThreatPolicySpyware $rule */
+                foreach( $rule->severity() as $severity_detail )
+                {
+                    if( !isset($this->rule_coverage[$severity_detail]) )
+                    {
+                        $this->rule_coverage[$severity_detail]['action'] = $rule->action();
+                        $this->rule_coverage[$severity_detail]['packetCapture'] = $rule->packetCapture();
+                    }
+                }
+            }
+        }
+    }
+
 
     //todo: 20241107 swaschkut - bring in BP
     public function spyware_exception_best_practice()

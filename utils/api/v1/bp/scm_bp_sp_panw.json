@@ -393,14 +393,16 @@
                         "tar",
                         "encrypted-rar",
                         "encrypted-zip"
-                    ]
+                    ],
+                    "action": "block"
                 }
             },
             "visibility": {
                 "alert": {
                     "filetype": [
                         "any"
-                    ]
+                    ],
+                    "action": "alert"
                 }
             },
             "bp_custom": {
@@ -421,7 +423,8 @@
                         "torrent",
                         "vbe",
                         "wsf"
-                    ]
+                    ],
+                    "action": "block"
                 }
             },
             "bp_panw": {
@@ -452,7 +455,8 @@
                         "tar",
                         "encrypted-rar",
                         "encrypted-zip"
-                    ]
+                    ],
+                    "action": "block"
                 }
             }
         }

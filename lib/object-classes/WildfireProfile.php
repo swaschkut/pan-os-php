@@ -23,6 +23,8 @@ class WildfireProfile extends SecurityProfile2
 
     public $rules_obj = array();
 
+    public $rule_coverage = array();
+
     /**
      * you should not need this one for normal use
      * @param string $name
@@ -140,13 +142,61 @@ class WildfireProfile extends SecurityProfile2
 
     public function wildfire_rules_best_practice()
     {
-
         $bp_set = null;
-        if (!empty($this->rules_obj)) {
+        if (!empty($this->rules_obj))
+        {
             $bp_set = false;
 
-            foreach ($this->rules_obj as $rulename => $rule) {
+
+            $check_array = $this->rules_obj[0]->wildfire_rule_bp_visibility_JSON( "visibility", "wildfire" );
+            $checkBP_array = $this->rules_obj[0]->wildfire_rule_bp_visibility_JSON( "bp", "wildfire" );
+            $this->wildfire_rules_coverage();
+
+
+            foreach( $checkBP_array[0]['filetype'] as $bp_array )
+            {
+                if( isset($this->rule_coverage[$bp_array]) )
+                {
+                    if( $checkBP_array[0]['analysis'] !== $this->rule_coverage[$bp_array]['analysis'] )
+                        return false;
+                    else
+                        $bp_set = true;
+                }
+                #else
+                #    return false;
+            }
+
+            foreach( $check_array[0]['filetype'] as $bp_array )
+            {
+                if( isset($this->rule_coverage[$bp_array]) )
+                {
+                    $checkAction = $check_array[0]['analysis'];
+                    if( strpos( $checkAction, "!" ) !== FALSE )
+                    {
+                        $checkAction = str_replace("!", "", $checkAction);
+                        if( $checkAction === $this->rule_coverage[$bp_array]['analysis'] )
+                            return false;
+                        else
+                            $bp_set = true;
+                    }
+                    else
+                    {
+                        if( $checkAction !== $this->rule_coverage[$bp_array]['analysis'] )
+                            return false;
+                        else
+                            $bp_set = true;
+                    }
+
+                }
+            }
+
+
+            #########################################################
+            /*
+            foreach ($this->rules_obj as $rulename => $rule)
+            {
                 /** @var ThreatPolicyWildfire $rule */
+                /*
                 if ($rule->wildfire_rule_best_practice())
                     #$bp_set = true;
                     return true;
@@ -154,6 +204,7 @@ class WildfireProfile extends SecurityProfile2
                     #return false;
                     $bp_set = false;
             }
+            */
         }
         return $bp_set;
     }
@@ -175,6 +226,25 @@ class WildfireProfile extends SecurityProfile2
             }
         }
         return $bp_set;
+    }
+
+    public function wildfire_rules_coverage()
+    {
+        if (!empty($this->rules_obj))
+        {
+            foreach ($this->rules_obj as $rulename => $rule)
+            {
+                /** @var ThreatPolicyWildfire $rule */
+                foreach( $rule->filetype as $filetype_detail )
+                {
+                    if( !isset($this->rule_coverage[$filetype_detail]) )
+                    {
+                        $this->rule_coverage[$filetype_detail]['direction'] = $rule->direction;
+                        $this->rule_coverage[$filetype_detail]['analysis'] = $rule->analysis;
+                    }
+                }
+            }
+        }
     }
 
     public function is_best_practice()

@@ -143,12 +143,16 @@ $checkArray['file-blocking']['rule']['bp'] = array();
 $checkArray['file-blocking']['rule']['visibility'] = array();
 
 $checkArray['file-blocking']['rule']['visibility']['alert']['filetype'] = array('any');
+$checkArray['file-blocking']['rule']['visibility']['alert']['action'] = 'alert';
 
 $checkArray['file-blocking']['rule']['bp_custom']['block']['filetype'] = array('7z', 'bat','chm','class','cpl','dll','hlp','hta','jar','ocx','pif','scr','torrent','vbe','wsf');
+$checkArray['file-blocking']['rule']['bp_custom']['block']['action'] = 'block';
 
 $checkArray['file-blocking']['rule']['bp']['block']['filetype'] = array('7z', 'bat','chm','class','cpl','dll','hlp','hta','jar','ocx','pif','scr','torrent','vbe','wsf', 'cab','exe','flash','msi','Multi-Level-Encoding','PE','rar','tar','encrypted-rar','encrypted-zip');
+$checkArray['file-blocking']['rule']['bp']['block']['action'] = 'block';
 
 $checkArray['file-blocking']['rule']['bp_panw']['block']['filetype'] = array('7z', 'bat','chm','class','cpl','dll','hlp','hta','jar','ocx','pif','scr','torrent','vbe','wsf', 'cab','exe','flash','msi','Multi-Level-Encoding','PE','rar','tar','encrypted-rar','encrypted-zip');
+$checkArray['file-blocking']['rule']['bp_panw']['block']['action'] = 'block';
 
 ######################################################################################################################
 ######## WF
