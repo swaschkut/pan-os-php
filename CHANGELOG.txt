@@ -33,6 +33,7 @@ UTIL:
 * type=stats | introduce percentage for Data Filtering Adoption
 * type=securityprofile securityprofiletype=url-filtering | new filter=(url.site-access allow.is.set / ur.user-credential-detection allow.is.set)'
 * develop csv_import.php | adjustments to get it working with newer PHP version
+* different SP classes | adjustment for visiblity / best-practice check | adjustment for JSON BP check
 
 BUGFIX:
 * type=securityprofile securitprofiletype=spyware | bugfix of displaying botnet-domain if packet-capture is missing

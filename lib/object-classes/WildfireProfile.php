@@ -148,9 +148,11 @@ class WildfireProfile extends SecurityProfile2
             foreach ($this->rules_obj as $rulename => $rule) {
                 /** @var ThreatPolicyWildfire $rule */
                 if ($rule->wildfire_rule_best_practice())
-                    $bp_set = true;
+                    #$bp_set = true;
+                    return true;
                 else
-                    return false;
+                    #return false;
+                    $bp_set = false;
             }
         }
         return $bp_set;
@@ -165,9 +167,11 @@ class WildfireProfile extends SecurityProfile2
             foreach ($this->rules_obj as $rulename => $rule) {
                 /** @var ThreatPolicyWildfire $rule */
                 if ($rule->wildfire_rule_visibility())
-                    $bp_set = true;
+                    #$bp_set = true;
+                    return true;
                 else
-                    return false;
+                    $bp_set = false;
+                    #return false;
             }
         }
         return $bp_set;
@@ -178,8 +182,6 @@ class WildfireProfile extends SecurityProfile2
         if( $this->owner->owner->version >= 102 )
         {
             if( $this->wildfire_rules_best_practice()
-                #&& $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file)
-                #&& $this->vulnerability_exception_best_practice()
             )
                 return TRUE;
             else
@@ -188,8 +190,6 @@ class WildfireProfile extends SecurityProfile2
         else
         {
             if( $this->wildfire_rules_best_practice()
-                #&& $this->spyware_dns_security_best_practice() && $this->spyware_dnslist_best_practice()
-                #&& $this->vulnerability_exception_best_practice()
             )
                 return TRUE;
             else

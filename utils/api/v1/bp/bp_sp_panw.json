@@ -125,14 +125,8 @@
                 "action": [
                     {
                         "type": [
-                            "pan-dns-sec-adtracking",
-                            "pan-dns-sec-ddns",
-                            "pan-dns-sec-grayware",
                             "pan-dns-sec-malware",
-                            "pan-dns-sec-parked",
-                            "pan-dns-sec-phishing",
-                            "pan-dns-sec-proxy",
-                            "pan-dns-sec-recent"
+                            "pan-dns-sec-phishing"
                         ],
                         "action": [
                             "sinkhole"
@@ -366,11 +360,6 @@
     "file-blocking": {
         "rule": {
             "bp": {
-                "alert": {
-                    "filetype": [
-                        "any"
-                    ]
-                },
                 "block": {
                     "filetype": [
                         "7z",
@@ -409,11 +398,6 @@
                 }
             },
             "bp_custom": {
-                "alert": {
-                    "filetype": [
-                        "any"
-                    ]
-                },
                 "block": {
                     "filetype": [
                         "7z",
@@ -435,11 +419,6 @@
                 }
             },
             "bp_panw": {
-                "alert": {
-                    "filetype": [
-                        "any"
-                    ]
-                },
                 "block": {
                     "filetype": [
                         "7z",

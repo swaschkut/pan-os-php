@@ -161,8 +161,6 @@ class FileBlockingProfile extends SecurityProfile2
                     $bp_set = false;
                     #print "false\n";
                 }
-
-
             }
         }
         return $bp_set;
@@ -179,9 +177,11 @@ class FileBlockingProfile extends SecurityProfile2
             {
                 /** @var ThreatPolicyFileblocking $rule */
                 if ($rule->fileblocking_rule_visibility())
-                    $bp_set = true;
+                    #$bp_set = true;
+                    return true;
                 else
-                    return false;
+                    #return false;
+                    $bp_set = false;
             }
         }
         return $bp_set;
@@ -192,6 +192,7 @@ class FileBlockingProfile extends SecurityProfile2
         if( $this->fileblocking_rules_best_practice()
             #&& $this->spyware_dns_security_best_practice() && $this->spyware_dnslist_best_practice()
             #&& $this->vulnerability_exception_best_practice()
+            && $this->fileblocking_rules_visibility()
         )
             return TRUE;
         else

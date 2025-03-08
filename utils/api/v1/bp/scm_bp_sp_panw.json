@@ -366,11 +366,6 @@
     "file-blocking": {
         "rule": {
             "bp": {
-                "alert": {
-                    "filetype": [
-                        "any"
-                    ]
-                },
                 "block": {
                     "filetype": [
                         "7z",
@@ -409,11 +404,6 @@
                 }
             },
             "bp_custom": {
-                "alert": {
-                    "filetype": [
-                        "any"
-                    ]
-                },
                 "block": {
                     "filetype": [
                         "7z",
@@ -435,11 +425,6 @@
                 }
             },
             "bp_panw": {
-                "alert": {
-                    "filetype": [
-                        "any"
-                    ]
-                },
                 "block": {
                     "filetype": [
                         "7z",
