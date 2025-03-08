@@ -792,11 +792,11 @@ class AntiSpywareProfile extends SecurityProfile2
                 foreach ($this->rules_obj as $rulename => $rule) {
                     /** @var ThreatPolicySpyware $rule */
                     if ($rule->spyware_rule_best_practice())
-                        #$bp_set = true;
-                        return true;
+                        $bp_set = true;
+                        #return true;
                     else
-                        $bp_set = false;
-                        #return false;
+                        #$bp_set = false;
+                        return false;
                 }
             }
             return $bp_set;
