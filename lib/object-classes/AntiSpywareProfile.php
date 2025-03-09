@@ -805,8 +805,8 @@ class AntiSpywareProfile extends SecurityProfile2
                         else
                             $bp_set = true;
                     }
-                    #else
-                    #    return false;
+                    elseif( $bp_array !== "any" )
+                        return false;
                 }
 
                 foreach( $check_array['severity'] as $bp_array )
