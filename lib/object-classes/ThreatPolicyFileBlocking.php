@@ -82,6 +82,8 @@ class ThreatPolicyFileBlocking extends ThreatPolicy
                     //filetype
                     foreach( $values as $value )
                     {
+                        if( in_array( "any", $this->$validate ) )
+                            return true;
                         if( !in_array( $value, $this->$validate ) )
                             return false;
                     }

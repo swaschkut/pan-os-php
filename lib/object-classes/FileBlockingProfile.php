@@ -162,6 +162,11 @@ class FileBlockingProfile extends SecurityProfile2
                     else
                         $bp_set = true;
                 }
+                elseif( isset($this->rule_coverage['any']) && $checkBP_array['block']['action'] === $this->rule_coverage['any']['action'] )
+                {
+                    $bp_set = true;
+                    break;
+                }
                 else
                     return false;
             }
@@ -181,7 +186,9 @@ class FileBlockingProfile extends SecurityProfile2
                     }
                     else
                     {
-                        if( $checkAction !== $this->rule_coverage[$bp_array]['action'] )
+                        if( isset($this->rule_coverage['any']) && $checkBP_array['block']['action'] === $this->rule_coverage['any']['action'] )
+                            $bp_set = true;
+                        elseif( $checkAction !== $this->rule_coverage[$bp_array]['action'] )
                             return false;
                         else
                             $bp_set = true;

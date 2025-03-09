@@ -785,8 +785,6 @@ class AntiSpywareProfile extends SecurityProfile2
 
     public function spyware_rules_best_practice()
     {
-        if( $this->owner->owner->version >= 102 )
-        {
             $bp_set = null;
             if (!empty($this->rules_obj))
             {
@@ -863,13 +861,11 @@ class AntiSpywareProfile extends SecurityProfile2
                 }
             }
             return $bp_set;
-        }
-        return null;
     }
 
     public function spyware_rules_visibility()
     {
-        if( $this->owner->owner->version >= 102 ) {
+
             $bp_set = null;
             if (!empty($this->rules_obj))
             {
@@ -895,6 +891,7 @@ class AntiSpywareProfile extends SecurityProfile2
                 {
                     if( isset($this->rule_coverage[$bp_array]) )
                     {
+                        print "check severity: ".$bp_array."\n";
                         $action_bp = FALSE;
                         foreach( $check_array['action'] as $action_check)
                         {
@@ -919,8 +916,6 @@ class AntiSpywareProfile extends SecurityProfile2
                 }
             }
             return $bp_set;
-        }
-        return null;
     }
 
     public function spyware_rules_coverage()
