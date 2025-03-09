@@ -871,17 +871,51 @@ class AntiSpywareProfile extends SecurityProfile2
     {
         if( $this->owner->owner->version >= 102 ) {
             $bp_set = null;
-            if (!empty($this->rules_obj)) {
+            if (!empty($this->rules_obj))
+            {
                 $bp_set = false;
 
+                $check_array = $this->rules_obj[0]->spyware_rule_bp_visibility_JSON( "visibility", "spyware" );
+                $this->spyware_rules_coverage();
+
+                /*
                 foreach ($this->rules_obj as $rulename => $rule) {
                     /** @var ThreatPolicySpyware $rule */
+                    /*
                     if ($rule->spyware_rule_visibility())
                         #$bp_set = true;
                         return true;
                     else
                         $bp_set = false;
                         #return false;
+                }
+                */
+
+                foreach( $check_array['severity'] as $bp_array )
+                {
+                    if( isset($this->rule_coverage[$bp_array]) )
+                    {
+                        $action_bp = FALSE;
+                        foreach( $check_array['action'] as $action_check)
+                        {
+                            $negate_string = "";
+                            if( strpos( $action_check, "!" ) !== FALSE )
+                                $negate_string = "!";
+                            if( $negate_string.$this->rule_coverage[$bp_array]['action'] == $action_check )
+                            {
+                                $action_bp = FALSE;
+                                break;
+                            }
+                            else
+                                $action_bp = TRUE;
+                        }
+                        if( $action_bp == FALSE )
+                            return FALSE;
+                        else
+                            $bp_set = true;
+                    }
+                    elseif( $bp_array !== "any" )
+                        return false;
                 }
             }
             return $bp_set;
