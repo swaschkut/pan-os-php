@@ -785,137 +785,135 @@ class AntiSpywareProfile extends SecurityProfile2
 
     public function spyware_rules_best_practice()
     {
-            $bp_set = null;
-            if (!empty($this->rules_obj))
+        $bp_set = null;
+        if (!empty($this->rules_obj))
+        {
+            $bp_set = false;
+
+            $check_array = $this->rules_obj[0]->spyware_rule_bp_visibility_JSON( "visibility", "spyware" );
+            $checkBP_array = $this->rules_obj[0]->spyware_rule_bp_visibility_JSON( "bp", "spyware" );
+            $this->spyware_rules_coverage();
+
+            foreach( $checkBP_array['severity'] as $bp_array )
             {
-                $bp_set = false;
-
-                $check_array = $this->rules_obj[0]->spyware_rule_bp_visibility_JSON( "visibility", "spyware" );
-                $checkBP_array = $this->rules_obj[0]->spyware_rule_bp_visibility_JSON( "bp", "spyware" );
-                $this->spyware_rules_coverage();
-
-                foreach( $checkBP_array['severity'] as $bp_array )
+                if( isset($this->rule_coverage[$bp_array]) )
                 {
-                    if( isset($this->rule_coverage[$bp_array]) )
+                    $action_bp = FALSE;
+                    foreach( $checkBP_array['action'] as $action_check)
                     {
-                        $action_bp = FALSE;
-                        foreach( $checkBP_array['action'] as $action_check)
+                        if( $action_check == $this->rule_coverage[$bp_array]['action']  )
                         {
-                            if( $action_check == $this->rule_coverage[$bp_array]['action']  )
-                            {
-                                $action_bp = TRUE;
-                                break;
-                            }
-                            else
-                                $action_bp = FALSE;
+                            $action_bp = TRUE;
+                            break;
                         }
-                        if( $action_bp == FALSE )
-                            return FALSE;
-
-                        $packet_bp = FALSE;
-                        foreach( $checkBP_array['packet-capture'] as $packet_check )
-                        {
-                            if( $packet_check == $this->rule_coverage[$bp_array]['packet-capture'] )
-                            {
-                                $packet_bp = TRUE;
-                                break;
-                            }
-                            else
-                                $packet_bp = FALSE;
-                        }
-                        if( $packet_bp == FALSE )
-                            return FALSE;
-
-                        if( $action_check && $packet_bp )
-                            $bp_set = true;
-                    }
-                    elseif( $bp_array !== "any" )
-                        return false;
-                }
-
-                foreach( $check_array['severity'] as $bp_array )
-                {
-                    if( isset($this->rule_coverage[$bp_array]) )
-                    {
-                        $action_bp = FALSE;
-                        foreach( $check_array['action'] as $action_check)
-                        {
-                            $negate_string = "";
-                            if( strpos( $action_check, "!" ) !== FALSE )
-                                $negate_string = "!";
-                            if( $negate_string.$this->rule_coverage[$bp_array]['action'] == $action_check )
-                            {
-                                $action_bp = FALSE;
-                                break;
-                            }
-                            else
-                                $action_bp = TRUE;
-                        }
-                        if( $action_bp == FALSE )
-                            return FALSE;
                         else
-                            $bp_set = true;
+                            $action_bp = FALSE;
                     }
-                    elseif( $bp_array !== "any" )
-                        return false;
+                    if( $action_bp == FALSE )
+                        return FALSE;
+
+                    $packet_bp = FALSE;
+                    foreach( $checkBP_array['packet-capture'] as $packet_check )
+                    {
+                        if( $packet_check == $this->rule_coverage[$bp_array]['packet-capture'] )
+                        {
+                            $packet_bp = TRUE;
+                            break;
+                        }
+                        else
+                            $packet_bp = FALSE;
+                    }
+                    if( $packet_bp == FALSE )
+                        return FALSE;
+
+                    if( $action_check && $packet_bp )
+                        $bp_set = true;
                 }
+                elseif( $bp_array !== "any" )
+                    return false;
             }
-            return $bp_set;
+
+            foreach( $check_array['severity'] as $bp_array )
+            {
+                if( isset($this->rule_coverage[$bp_array]) )
+                {
+                    $action_bp = FALSE;
+                    foreach( $check_array['action'] as $action_check)
+                    {
+                        $negate_string = "";
+                        if( strpos( $action_check, "!" ) !== FALSE )
+                            $negate_string = "!";
+                        if( $negate_string.$this->rule_coverage[$bp_array]['action'] == $action_check )
+                        {
+                            $action_bp = FALSE;
+                            break;
+                        }
+                        else
+                            $action_bp = TRUE;
+                    }
+                    if( $action_bp == FALSE )
+                        return FALSE;
+                    else
+                        $bp_set = true;
+                }
+                elseif( $bp_array !== "any" )
+                    return false;
+            }
+        }
+        return $bp_set;
     }
 
     public function spyware_rules_visibility()
     {
+        $bp_set = null;
+        if (!empty($this->rules_obj))
+        {
+            $bp_set = false;
 
-            $bp_set = null;
-            if (!empty($this->rules_obj))
-            {
-                $bp_set = false;
+            $check_array = $this->rules_obj[0]->spyware_rule_bp_visibility_JSON( "visibility", "spyware" );
+            $this->spyware_rules_coverage();
 
-                $check_array = $this->rules_obj[0]->spyware_rule_bp_visibility_JSON( "visibility", "spyware" );
-                $this->spyware_rules_coverage();
-
+            /*
+            foreach ($this->rules_obj as $rulename => $rule) {
+                /** @var ThreatPolicySpyware $rule */
                 /*
-                foreach ($this->rules_obj as $rulename => $rule) {
-                    /** @var ThreatPolicySpyware $rule */
-                    /*
-                    if ($rule->spyware_rule_visibility())
-                        #$bp_set = true;
-                        return true;
-                    else
-                        $bp_set = false;
-                        #return false;
-                }
-                */
-
-                foreach( $check_array['severity'] as $bp_array )
-                {
-                    if( isset($this->rule_coverage[$bp_array]) )
-                    {
-                        print "check severity: ".$bp_array."\n";
-                        $action_bp = FALSE;
-                        foreach( $check_array['action'] as $action_check)
-                        {
-                            $negate_string = "";
-                            if( strpos( $action_check, "!" ) !== FALSE )
-                                $negate_string = "!";
-                            if( $negate_string.$this->rule_coverage[$bp_array]['action'] == $action_check )
-                            {
-                                $action_bp = FALSE;
-                                break;
-                            }
-                            else
-                                $action_bp = TRUE;
-                        }
-                        if( $action_bp == FALSE )
-                            return FALSE;
-                        else
-                            $bp_set = true;
-                    }
-                    elseif( $bp_array !== "any" )
-                        return false;
-                }
+                if ($rule->spyware_rule_visibility())
+                    #$bp_set = true;
+                    return true;
+                else
+                    $bp_set = false;
+                    #return false;
             }
-            return $bp_set;
+            */
+
+            foreach( $check_array['severity'] as $bp_array )
+            {
+                if( isset($this->rule_coverage[$bp_array]) )
+                {
+                    $action_bp = FALSE;
+                    foreach( $check_array['action'] as $action_check)
+                    {
+                        $negate_string = "";
+                        if( strpos( $action_check, "!" ) !== FALSE )
+                            $negate_string = "!";
+                        if( $negate_string.$this->rule_coverage[$bp_array]['action'] == $action_check )
+                        {
+                            $action_bp = FALSE;
+                            break;
+                        }
+                        else
+                            $action_bp = TRUE;
+                    }
+                    if( $action_bp == FALSE )
+                        return FALSE;
+                    else
+                        $bp_set = true;
+                }
+                elseif( $bp_array !== "any" )
+                    return false;
+            }
+        }
+        return $bp_set;
     }
 
     public function spyware_rules_coverage()
