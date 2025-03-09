@@ -800,9 +800,35 @@ class AntiSpywareProfile extends SecurityProfile2
                 {
                     if( isset($this->rule_coverage[$bp_array]) )
                     {
-                        if( $checkBP_array['action'][0] !== $this->rule_coverage[$bp_array]['action'] )
-                            return false;
-                        else
+                        $action_bp = FALSE;
+                        foreach( $checkBP_array['action'] as $action_check)
+                        {
+                            if( $action_check == $this->rule_coverage[$bp_array]['action']  )
+                            {
+                                $action_bp = TRUE;
+                                break;
+                            }
+                            else
+                                $action_bp = FALSE;
+                        }
+                        if( $action_bp == FALSE )
+                            return FALSE;
+
+                        $packet_bp = FALSE;
+                        foreach( $checkBP_array['packet-capture'] as $packet_check )
+                        {
+                            if( $packet_check == $this->rule_coverage[$bp_array]['packet-capture'] )
+                            {
+                                $packet_bp = TRUE;
+                                break;
+                            }
+                            else
+                                $packet_bp = FALSE;
+                        }
+                        if( $packet_bp == FALSE )
+                            return FALSE;
+
+                        if( $action_check && $packet_bp )
                             $bp_set = true;
                     }
                     elseif( $bp_array !== "any" )
@@ -813,30 +839,28 @@ class AntiSpywareProfile extends SecurityProfile2
                 {
                     if( isset($this->rule_coverage[$bp_array]) )
                     {
-                        $checkAction = $check_array['action'][0];
-                        $checkAction = str_replace("!", "", $checkAction);
-                        if( $checkAction === $this->rule_coverage[$bp_array]['action'] )
-                            return false;
+                        $action_bp = FALSE;
+                        foreach( $check_array['action'] as $action_check)
+                        {
+                            $negate_string = "";
+                            if( strpos( $action_check, "!" ) !== FALSE )
+                                $negate_string = "!";
+                            if( $negate_string.$this->rule_coverage[$bp_array]['action'] == $action_check )
+                            {
+                                $action_bp = FALSE;
+                                break;
+                            }
+                            else
+                                $action_bp = TRUE;
+                        }
+                        if( $action_bp == FALSE )
+                            return FALSE;
                         else
                             $bp_set = true;
                     }
-                }
-
-                #######################################################
-                #######################################################
-                /*
-                foreach ($this->rules_obj as $rulename => $rule)
-                {
-                    /** @var ThreatPolicySpyware $rule */
-                    /*
-                    if ($rule->spyware_rule_best_practice())
-                        $bp_set = true;
-                        #return true;
-                    else
-                        #$bp_set = false;
+                    elseif( $bp_array !== "any" )
                         return false;
                 }
-                */
             }
             return $bp_set;
         }
@@ -877,7 +901,7 @@ class AntiSpywareProfile extends SecurityProfile2
                     if( !isset($this->rule_coverage[$severity_detail]) )
                     {
                         $this->rule_coverage[$severity_detail]['action'] = $rule->action();
-                        $this->rule_coverage[$severity_detail]['packetCapture'] = $rule->packetCapture();
+                        $this->rule_coverage[$severity_detail]['packet-capture'] = $rule->packetCapture();
                     }
                 }
             }
