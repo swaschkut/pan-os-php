@@ -854,7 +854,12 @@ class AntiSpywareProfile extends SecurityProfile2
                     if( $action_bp == FALSE )
                         return FALSE;
                     else
+                    {
                         $bp_set = true;
+                        if( $bp_array == "any" )
+                            break;
+                    }
+
                 }
                 elseif( $bp_array !== "any" )
                     return false;
@@ -873,19 +878,6 @@ class AntiSpywareProfile extends SecurityProfile2
             $check_array = $this->rules_obj[0]->spyware_rule_bp_visibility_JSON( "visibility", "spyware" );
             $this->spyware_rules_coverage();
 
-            /*
-            foreach ($this->rules_obj as $rulename => $rule) {
-                /** @var ThreatPolicySpyware $rule */
-                /*
-                if ($rule->spyware_rule_visibility())
-                    #$bp_set = true;
-                    return true;
-                else
-                    $bp_set = false;
-                    #return false;
-            }
-            */
-
             foreach( $check_array['severity'] as $bp_array )
             {
                 if( isset($this->rule_coverage[$bp_array]) )
@@ -902,7 +894,12 @@ class AntiSpywareProfile extends SecurityProfile2
                             break;
                         }
                         else
+                        {
                             $action_bp = TRUE;
+                            if( $bp_array == "any" )
+                                return true;
+                        }
+
                     }
                     if( $action_bp == FALSE )
                         return FALSE;
