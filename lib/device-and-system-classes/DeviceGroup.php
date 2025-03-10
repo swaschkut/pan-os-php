@@ -1320,7 +1320,7 @@ class DeviceGroup
         $filter_array = array('query' => $generalFilter."!(from is.any) and (from all.has.from.query subquery1)", 'subquery1' => "zpp is.set" );
         $stdoutarray['zone protection'] = count( $sub_ruleStore->rules( $filter_array ) );
         $stdoutarray['zone protection calc'] = $stdoutarray['zone protection']."/".$stdoutarray['security rules enabled'];
-        if( $ruleForCalculation !== 0 )
+        if( $stdoutarray['security rules enabled'] !== 0 )
             $stdoutarray['zone protection percentage'] = floor( ( $stdoutarray['zone protection'] / $stdoutarray['security rules enabled'] ) * 100 );
         else
             $stdoutarray['zone protection percentage'] = 0;

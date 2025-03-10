@@ -1140,7 +1140,7 @@ class PANConf
         $stdoutarray = array();
         $stdoutarray['type'] = get_class( $this );
 
-        $header = "Statistics for ".get_class( $this )." '" . PH::boldText('Panorama full') . "'";
+        $header = "Statistics for ".get_class( $this )." '" . PH::boldText('Firewall full') . "'";
         $stdoutarray['header'] = $header;
         $stdoutarray['statstype'] = "adoption";
 
@@ -1190,7 +1190,7 @@ class PANConf
 
 
         $stdoutarray['zone protection calc'] =  $stdoutarray['zone protection'] ."/". $stdoutarray['security rules enabled'];
-        if( $ruleForCalculation !== 0 )
+        if( $stdoutarray['security rules enabled'] !== 0 )
             $stdoutarray['zone protection percentage'] = floor(( $stdoutarray['zone protection'] / $stdoutarray['security rules enabled'] ) * 100 );
         else
             $stdoutarray['zone protection percentage'] = 0;
@@ -1285,7 +1285,7 @@ class PANConf
 
         $percentageArray_best_practice = array();
         $stdoutarray['log at end not start calc'] = $stdoutarray['log at end not start'] ."/". $stdoutarray['security rules enabled'];
-        if( $ruleForCalculation !== 0 )
+        if( $stdoutarray['security rules enabled'] !== 0 )
             $stdoutarray['log at end not start percentage'] = floor(( $stdoutarray['log at end not start'] / $stdoutarray['security rules enabled'] ) * 100 );
         else
             $stdoutarray['log at end not start percentage'] = 0;
