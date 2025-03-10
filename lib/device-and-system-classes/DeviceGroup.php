@@ -1247,7 +1247,7 @@ class DeviceGroup
         if( !PH::$shadow_json && $actions == "display")
             PH::print_stdout( $stdoutarray, true );
 
-        $this->display_bp_statistics( $debug, $acitons );
+        $this->display_bp_statistics( $debug, $actions );
     }
 
 
