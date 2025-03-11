@@ -44,6 +44,7 @@ BUGFIX:
 * type=securityprofile actions=exporttoexcel | bugfix if predefined category are used in decryption rules - wrong reference
 * type=tsf actions=extract-running-and-merged-config | bugfix based on wrong validation
 * Class DataFilteringProfile extends SecurityProfile2
+* type=securityprofilegroup actions=exporttoexcel | bugfix after move to SP objects in memory and not name string
 
 GENERAL:
 * class EthernetInterface/AggregateEthernetInterface | optimisation to always define correct class
