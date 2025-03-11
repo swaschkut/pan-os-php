@@ -348,11 +348,12 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
                 }
                 //private $secprof_array = array('virus', 'spyware', 'vulnerability', 'file-blocking', 'wildfire-analysis', 'url-filtering', 'data-filtering');
 
-                $lines .= $context->encloseFunction($object->secprofProfiles_obj['virus']);
-                if( $bestPractice || $visibility )
+                if(isset($object->secprofProfiles_obj['virus']))
                 {
-                    if(isset($object->secprofProfiles_obj['virus']))
+                    $lines .= $context->encloseFunction($object->secprofProfiles_obj['virus']);
+                    if( $bestPractice || $visibility )
                     {
+
                         if( is_object($object->secprofProfiles_obj['virus']) )
                             $profile = $object->secprofProfiles_obj['virus'];
                         else
@@ -391,11 +392,13 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
                             $lines .= $context->encloseFunction($bp_text_no);
                     }
                 }
+                else
+                    $lines .= $context->encloseFunction("---");
 
-                $lines .= $context->encloseFunction($object->secprofProfiles_obj['spyware']);
-                if( $bestPractice || $visibility)
+                if(isset($object->secprofProfiles_obj['spyware']))
                 {
-                    if(isset($object->secprofProfiles_obj['spyware']))
+                    $lines .= $context->encloseFunction($object->secprofProfiles_obj['spyware']);
+                    if( $bestPractice || $visibility)
                     {
                         if( is_object($object->secprofProfiles_obj['spyware']) )
                             $profile = $object->secprofProfiles_obj['spyware'];
@@ -435,11 +438,13 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
                             $lines .= $context->encloseFunction($bp_text_no);
                     }
                 }
+                else
+                    $lines .= $context->encloseFunction("---");
 
-                $lines .= $context->encloseFunction($object->secprofProfiles_obj['vulnerability']);
-                if( $bestPractice || $visibility )
+                if(isset($object->secprofProfiles_obj['vulnerability']))
                 {
-                    if(isset($object->secprofProfiles_obj['vulnerability']))
+                    $lines .= $context->encloseFunction($object->secprofProfiles_obj['vulnerability']);
+                    if( $bestPractice || $visibility )
                     {
                         if( is_object($object->secprofProfiles_obj['vulnerability']) )
                             $profile = $object->secprofProfiles_obj['vulnerability'];
@@ -478,11 +483,13 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
                             $lines .= $context->encloseFunction($bp_text_no);
                     }
                 }
+                else
+                    $lines .= $context->encloseFunction("---");
 
-                $lines .= $context->encloseFunction($object->secprofProfiles_obj['url-filtering']);
-                if( $bestPractice || $visibility )
+                if(isset($object->secprofProfiles_obj['url-filtering']))
                 {
-                    if(isset($object->secprofProfiles_obj['url-filtering']))
+                    $lines .= $context->encloseFunction($object->secprofProfiles_obj['url-filtering']);
+                    if( $bestPractice || $visibility )
                     {
                         if( is_object($object->secprofProfiles_obj['url-filtering']) )
                             $profile = $object->secprofProfiles_obj['url-filtering'];
@@ -521,11 +528,13 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
                             $lines .= $context->encloseFunction($bp_text_no);
                     }
                 }
+                else
+                    $lines .= $context->encloseFunction("---");
 
-                $lines .= $context->encloseFunction($object->secprofProfiles_obj['file-blocking']);
-                if( $bestPractice || $visibility )
+                if(isset($object->secprofProfiles_obj['file-blocking']))
                 {
-                    if(isset($object->secprofProfiles_obj['file-blocking']))
+                    $lines .= $context->encloseFunction($object->secprofProfiles_obj['file-blocking']);
+                    if( $bestPractice || $visibility )
                     {
                         if( is_object($object->secprofProfiles_obj['file-blocking']) )
                             $profile = $object->secprofProfiles_obj['file-blocking'];
@@ -564,6 +573,8 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
                             $lines .= $context->encloseFunction($bp_text_no);
                     }
                 }
+                else
+                    $lines .= $context->encloseFunction("---");
 
                 if(isset($object->secprofProfiles_obj['wildfire-analysis']))
                 {

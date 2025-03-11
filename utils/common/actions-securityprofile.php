@@ -1399,6 +1399,14 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     {
                         //URL detail BP
                         $tmp_array = array();
+                        $tmp_array = array();
+                        $countAllow = count( $object->allow );
+                        $countAlert = count( $object->alert );
+                        $countBlock = count( $object->block );
+                        $tmp_array[] = "Allow (".$countAllow.")";
+                        $tmp_array[] = "Alert (".$countAlert.")";
+                        $tmp_array[] = "Block (".$countBlock.")";
+                        $tmp_array[] = "------------------------";
                         //Todo: get BP Json URL credentials BP block as Array
                         $block_categories = array('command-and-control','grayware','malware','phishing','ransomware','scanning-activity');
                         $notBlock = array();
@@ -1414,7 +1422,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                             $tmp_array = array_merge( $tmp_array, $notBlock );
                         }
                         else
-                            $tmp_array[] = "";
+                            $tmp_array[] = "yes";
 
                         $lines .= $context->encloseFunction($tmp_array);
                     }
@@ -1422,6 +1430,13 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     {
                         //<th>URL credentials</th>
                         $tmp_array = array();
+                        $countAllowcredential = count( $object->allow_credential );
+                        $countAlertcredential = count( $object->alert_credential );
+                        $countBlockcredential = count( $object->block_credential );
+                        $tmp_array[] = "Allow (".$countAllowcredential.")";
+                        $tmp_array[] = "Alert (".$countAlertcredential.")";
+                        $tmp_array[] = "Block (".$countBlockcredential.")";
+                        $tmp_array[] = "------------------------";
                         //Todo: get BP Json URL credentials BP block as Array
                         $block_categories = array('command-and-control','grayware','malware','phishing','ransomware','scanning-activity');
                         $notBlock = array();
@@ -1437,7 +1452,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                             $tmp_array = array_merge( $tmp_array, $notBlock );
                         }
                         else
-                            $tmp_array[] = "";
+                            $tmp_array[] = "yes";
 
                         $lines .= $context->encloseFunction($tmp_array);
                     }
@@ -1463,7 +1478,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         //URL detail visibility
                         $tmp_array = array();
                         if( empty($object->allow) )
-                            $tmp_array[] = "";
+                            $tmp_array[] = "yes";
                         else
                             $tmp_array[] = 'ALLOW: "set all action to alert"';
 
@@ -1476,7 +1491,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         //<th>URL credentials</th>
                         $tmp_array = array();
                         if( empty($object->allow_credential) )
-                            $tmp_array[] = "";
+                            $tmp_array[] = "yes";
                         else
                             $tmp_array[] = 'ALLOW: "set all action to alert"';
 
