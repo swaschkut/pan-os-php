@@ -35,6 +35,7 @@ UTIL:
 * develop csv_import.php | adjustments to get it working with newer PHP version
 * different SP classes | adjustment for visiblity / best-practice check | adjustment for JSON BP check
 * type=securityprofile | improve BP - visibility |
+* type=stats - improve BP logging | type=securityprofile action=exporttoexcel - split AS and AS DNS Security
 
 BUGFIX:
 * type=securityprofile securitprofiletype=spyware | bugfix of displaying botnet-domain if packet-capture is missing

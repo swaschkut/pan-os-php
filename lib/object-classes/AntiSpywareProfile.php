@@ -987,8 +987,8 @@ class AntiSpywareProfile extends SecurityProfile2
         if( $this->owner->owner->version >= 102 )
         {
             if( $this->spyware_rules_best_practice() && $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file)
-                && $this->spyware_dns_security_best_practice() && $this->spyware_dnslist_best_practice()
-                #&& $this->vulnerability_exception_best_practice()
+                #this is DNS security
+                #&& $this->spyware_dns_security_best_practice() && $this->spyware_dnslist_best_practice()
                 && $this->spyware_rules_visibility()
             )
                 return TRUE;
@@ -998,7 +998,8 @@ class AntiSpywareProfile extends SecurityProfile2
         else
         {
             if( $this->spyware_rules_best_practice()
-                && $this->spyware_dns_security_best_practice() && $this->spyware_dnslist_best_practice()
+                #this is DNS security
+                #&& $this->spyware_dns_security_best_practice() && $this->spyware_dnslist_best_practice()
                 #&& $this->vulnerability_exception_best_practice()
                 && $this->spyware_rules_visibility()
             )

@@ -681,7 +681,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     {
                         if( $bestPractice )
                         {
-                            if( $object->is_best_practice() )
+                            if( $object->is_best_practice() && $object->spyware_dns_security_best_practice() && $object->spyware_dnslist_best_practice() )
                                 $lines .= $context->encloseFunction($bp_text_yes);
                             else
                                 $lines .= $context->encloseFunction($bp_text_no);
@@ -689,7 +689,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
 
                         if( $visibility )
                         {
-                            if( $object->is_visibility() )
+                            if( $object->is_visibility() && $object->spyware_dns_security_visibility() && $object->spyware_dnslist_visibility() )
                                 $lines .= $context->encloseFunction($bp_text_yes);
                             else
                                 $lines .= $context->encloseFunction($bp_text_no);
@@ -1389,7 +1389,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 {
                     if( $bestPractice )
                     {
-                        if( $object->is_best_practice() )
+                        if( $object->site_access_is_best_practice() )
                             $lines .= $context->encloseFunction($bp_text_yes);
                         else
                             $lines .= $context->encloseFunction($bp_text_no);
@@ -1467,7 +1467,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
 
                     if( $visibility )
                     {
-                        if( $object->is_visibility() )
+                        if( $object->site_access_is_visibility() )
                             $lines .= $context->encloseFunction($bp_text_yes);
                         else
                             $lines .= $context->encloseFunction($bp_text_no);
