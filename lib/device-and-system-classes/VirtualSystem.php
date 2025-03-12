@@ -1188,6 +1188,12 @@ class VirtualSystem
             $stdoutarray['log at end not start percentage'] = floor(( $stdoutarray['log at end not start'] / $stdoutarray['security rules enabled'] ) * 100 );
         else
             $stdoutarray['log at end not start percentage'] = 0;
+        $stdoutarray['log at not start'] = count( $sub_ruleStore->rules( $generalFilter."!(log at.start)" ) );
+        $stdoutarray['log at not start calc'] = $stdoutarray['log at not start']."/".$stdoutarray['security rules enabled'];
+        if( $stdoutarray['security rules enabled'] !== 0 )
+            $stdoutarray['log at not start percentage'] = floor(( $stdoutarray['log at not start'] / $stdoutarray['security rules enabled'] ) * 100 );
+        else
+            $stdoutarray['log at not start percentage'] = 0;
 
         //Log Forwarding Profiles
         $stdoutarray['log prof set'] = count( $sub_ruleStore->rules( $generalFilter."(logprof is.set)" ) );
@@ -1411,7 +1417,7 @@ class VirtualSystem
         $percentageArray['visibility'] = $percentageArray_visibility;
 
         $percentageArray_best_practice = array();
-        $percentageArray_best_practice['Logging'] = $stdoutarray['log at end not start percentage'];
+        $percentageArray_best_practice['Logging'] = $stdoutarray['log at not start percentage'];
         #$percentageArray_best_practice['Log Forwarding Profiles'] = $stdoutarray['log prof set percentage'];
 
         $percentageArray_best_practice['Wildfire Analysis Profiles'] = $stdoutarray['wf best-practice percentage'];
