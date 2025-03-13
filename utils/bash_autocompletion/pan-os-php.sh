@@ -74,7 +74,7 @@ __pan-os-php_scripts()
     arguments_appidtoolbox=('type=' 'in=' 'out=' 'help' 'phase=' )
     arguments_appidtoolbox_phase=('p1-marker' 'rule-marker' 'p2-generator' 'report-generator' 'p3-cloner' 'rule-cloner' 'p5-activation' 'rule-activation' 'p6-cleaner' 'rule-cleaner' )
 
-		vendor=('ciscoasa' 'netscreen' 'sonicwall' 'sophos' 'ciscoswitch' 'ciscoisr' 'fortinet' 'srx' 'cp-r80' 'cp' 'cp-beta' 'huawei' 'stonesoft' 'sidewinder')
+		vendor=('ciscoasa' 'netscreen' 'sonicwall' 'sophos' 'ciscoswitch' 'ciscoisr' 'fortinet' 'srx' 'cp-r80' 'cp' 'cp-beta' 'huawei' 'stonesoft' 'sidewinder' 'sophosxg')
 
     arguments_gcp=('type=' 'in=' 'out=' 'cluster=' 'project=' 'tenantid=' 'actions=' 'region=' )
     arguments_gcp_actions=('grep' 'upload' 'download' 'onboard' 'offboard' )

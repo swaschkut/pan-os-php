@@ -1261,8 +1261,10 @@ class CONVERTER extends UTIL
                     {
                         $tmp_prot = str_replace("protocol-id:{", "", $output_array[0]);
 
-                        $tmp_app = $vsys1->appStore->get_app_by_ipprotocol($tmp_prot);
-                        if( $tmp_app !==null )
+                        //a VirtualSystem does not have predfined APP-ids, search in owner
+                        $tmp_app = $vsys1->owner->appStore->get_app_by_ipprotocol($tmp_prot);
+                        #$tmp_app = $vsys1->appStore->get_app_by_ipprotocol($tmp_prot);
+                        if( $tmp_app !== null )
                             $appsToMigrate[$tmpService->name()] = array('toApp' => array($tmp_app->name()));
                         else
                             mwarning( "no app-id mapping for ".$tmpService->name() );
