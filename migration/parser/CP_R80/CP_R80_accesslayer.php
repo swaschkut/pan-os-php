@@ -133,7 +133,11 @@ trait CP_R80_accesslayer
                 $name = $this->sub->securityRules->findAvailableName($name);
 
                 if( empty( $name ) )
+                {
                     $name = "EMPTY";
+                    $name = $this->sub->securityRules->findAvailableName($name);
+                }
+
 
                 print "\ncreate Rule: " . $name . "\n";
                 $tmp_secrule = $this->sub->securityRules->newSecurityRule($name);
