@@ -93,8 +93,8 @@ class CP_R80 extends PARSER
 
         //Todo: where to place custom table for app-migration if needed
         echo PH::boldText( "\nVALIDATION - replace tmp services with APP-id if possible\n" );
+        PH::print_stdout("VSYS: ".$this->sub->name() );
         CONVERTER::AppMigration( $this->sub, $this->configType );
-
 
 
         //todo delete all created files and folders
@@ -180,11 +180,11 @@ class CP_R80 extends PARSER
         {
             print "Packages counter: ".count( $someArray['policyPackages'] )."\n";
             print "available Packages:\n";
-            foreach( $someArray['policyPackages'] as $package )
+            foreach( $someArray['policyPackages'] as $key => $package )
             {
-                print " - '".PH::boldText( $package['packageName'] )."'\n";
+                print " - KEY: '".$key."' '".PH::boldText( $package['packageName'] )."'\n";
             }
-            mwarning( "this CP R80 configuration contain multiple Policy Packages, which is not yet supported. only first is used" );
+            mwarning( "this CP R80 configuration contain multiple Policy Packages, which is not yet supported. only first is used", null, false );
         }
 
 
@@ -210,6 +210,12 @@ class CP_R80 extends PARSER
         global $debug;
         global $print;
 
+        $padding = "";
+        $this->print_array($this->data, $padding);
+
+
+        //import Interfaces
+
 
         if( $this->routetable != "" )
         {
@@ -220,8 +226,7 @@ class CP_R80 extends PARSER
         }
 
 
-        $padding = "";
-        $this->print_array($this->data, $padding);
+
 
     }
 

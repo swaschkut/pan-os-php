@@ -1371,7 +1371,7 @@ class CONVERTER extends UTIL
                         echo "  - Rule '{$rule->name()}' is using it\n";
                         foreach( $appMigrateRecord['toApp'] as $app )
                         {
-                            echo "     - adding app '$app'' to the list of apps to add\n";
+                            echo "     - adding app '$app' to the list of apps to add\n";
                             $rule->appsToAdd[$app] = TRUE;
                         }
                     }

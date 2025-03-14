@@ -92,7 +92,8 @@ trait CP_R80_objects
                 foreach( $subarray as $host_key => $host )
                 {
                     $domain = $host['domain']['name'];
-                    $this->check_vsys( $domain );
+                    //do not add to shared
+                    #$this->check_vsys( $domain );
 
                     #print_r($host);
                     $name = $host['name'];
@@ -177,7 +178,8 @@ trait CP_R80_objects
                 {
                     #print_r($service);
                     $domain = $service['domain']['name'];
-                    $this->check_vsys( $domain );
+                    //do not add to shared
+                    #$this->check_vsys( $domain );
 
                     $name = $service['name'];
                     $dport = $service['port'];
@@ -219,7 +221,8 @@ trait CP_R80_objects
                 {
                     #print_r($service);
                     $domain = $service['domain']['name'];
-                    $this->check_vsys( $domain );
+                    //do not add to shared
+                    #$this->check_vsys( $domain );
 
                     $name = $service['name'];
                     $dport = $service['port'];
@@ -260,7 +263,8 @@ trait CP_R80_objects
                 foreach( $subarray as $service_key => $service )
                 {
                     $domain = $service['domain']['name'];
-                    $this->check_vsys( $domain );
+                    //do not add to shared
+                    #$this->check_vsys( $domain );
 
                     #print_r($service);
                     //Todo: create tmp service, bring in information related to "icmp-type" which app-id will replace this service
@@ -291,7 +295,8 @@ trait CP_R80_objects
                 foreach( $subarray as $service_key => $service )
                 {
                     $domain = $service['domain']['name'];
-                    $this->check_vsys( $domain );
+                    //do not add to shared
+                    #$this->check_vsys( $domain );
 
                     #print_r($service);
                     //Todo: create tmp service, bring in information related to "ip-protocol" which app-id will replace this service
@@ -330,7 +335,8 @@ trait CP_R80_objects
                 foreach( $subarray as $host_key => $host )
                 {
                     $domain = $host['domain']['name'];
-                    $this->check_vsys( $domain );
+                    //do not add to shared
+                    #$this->check_vsys( $domain );
                     #print_r( $host );
                     #print "name: ".$host['name']. " - ip-address: ".$host['ipv4-address']." comments: ".$host['comments']."\n";
 
@@ -361,7 +367,8 @@ trait CP_R80_objects
                 foreach( $subarray as $host_key => $host )
                 {
                     $domain = $host['domain']['name'];
-                    $this->check_vsys( $domain );
+                    //do not add to shared
+                    #$this->check_vsys( $domain );
 
                     #print_r( $host );
                     #print "name: ".$host['name']. " - ip-address: ".$host['ipv4-address']." comments: ".$host['comments']."\n";
@@ -395,7 +402,8 @@ trait CP_R80_objects
                 foreach( $subarray as $host_key => $host )
                 {
                     $domain = $host['domain']['name'];
-                    $this->check_vsys( $domain );
+                    //do not add to shared
+                    // $this->check_vsys( $domain );
 
                     #print_r( $host );
                     /*
@@ -555,7 +563,7 @@ trait CP_R80_objects
                 #print_r( $host );
 
                 $domain = $host['domain']['name'];
-                $this->check_vsys( $domain );
+                #$this->check_vsys( $domain );
 
                 $name = $host['name'];
                 $name = $this->truncate_names($this->normalizeNames($name));

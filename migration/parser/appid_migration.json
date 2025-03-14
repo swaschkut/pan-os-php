@@ -460,6 +460,26 @@
           "toApp": [
             "gre"
           ]
+        },
+        "tmp-vrrp": {
+            "toApp": [
+                "vrrp"
+            ]
+        },
+        "tmp-igmp": {
+            "toApp": [
+                "igmp"
+            ]
+        },
+        "tmp-dhcp-reply": {
+            "toApp": [
+                "dhcp"
+            ]
+        },
+        "tmp-dhcp-request": {
+            "toApp": [
+                "dhcp"
+            ]
         }
     }
 }
