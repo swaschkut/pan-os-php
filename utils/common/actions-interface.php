@@ -358,3 +358,103 @@ InterfaceCallContext::$supportedActions['display-migration-warning'] = array(
 
     }
 );
+
+InterfaceCallContext::$supportedActions['custom-manipulation'] = array(
+    'name' => 'custom-manipulation',
+    'MainFunction' => function (InterfaceCallContext $context) {
+        $object = $context->object;
+
+        /** @var EthernetInterface $object */
+        if( strpos($object->name(), "ethernet1/2.") !== FALSE )
+        {
+            if( strpos($object->description(), "fixed") !== FALSE )
+                return;
+
+            PH::print_stdout( "name: ".$object->name() );
+
+            $ip4Addresses = $object->getLayer3IPv4Addresses();
+            foreach( $ip4Addresses as $ip4Address )
+            {
+                PH::print_stdout( "ip4: ".$ip4Address );
+
+                $addr_split = explode("/", $ip4Address);
+                $value = $addr_split[0];
+                $mask = $addr_split[1];
+
+                $value_split = explode(".", $value);
+
+                if( $mask == "24" )
+                {
+                    //set forth octet to 254
+                    $value_split[3] = "254";
+                }
+                elseif( $mask == "23" )
+                {
+                    //third octet +1
+                    //set forth octet to 254
+                    $value_split[2] += 1;
+                    $value_split[3] = "254";
+                }
+                elseif( $mask == "22" )
+                {
+                    //third octet +3
+                    //set forth octet to 254
+                    $value_split[2] += 3;
+                    $value_split[3] = "254";
+                }
+                elseif( $mask == "28" )
+                {
+                    //set forth octet +14
+                    $value_split[3] += 14;
+                }
+                elseif( $mask == "29" )
+                {
+                    //set forth octet +6
+                    $value_split[3] += 6;
+                }
+                else
+                {
+                    print "ELSE: ".$mask."\n";
+                    derr("else", null, false);
+                }
+
+                $ip_string = "";
+                foreach( $value_split as $value )
+                {
+                    if( empty($ip_string) )
+                        $ip_string .= $value;
+                    else
+                    {
+                        $ip_string .= ".".$value;
+                    }
+                }
+                $ip_string .= "/".$mask;
+
+                foreach( $object->refrules as $o )
+                {
+                    #print get_class($o)."\n";
+                    #print get_class($o->owner)."\n";
+                    if( get_class($o->owner) == "Zone" )
+                    {
+                        PH::print_stdout( "    " . '  - ' . $o->toString() );
+                        PH::print_stdout( "Zone: " . $o->owner->name() );
+
+                        PH::print_stdout("subintTag: ".$object->tag());
+
+                        /** @var Zone $zone */
+                        $zone = $o->owner;
+                        $zone->setName("vlan".$object->tag());
+                    }
+
+                }
+
+
+                print "final String: ".$ip_string."\n";
+                $object->removeIPv4Address($ip4Address);
+                $object->addIPv4Address($ip_string);
+
+                $object->setDescription("fixed");
+            }
+        }
+    }
+);
