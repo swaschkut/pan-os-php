@@ -46,6 +46,7 @@ BUGFIX:
 * type=tsf actions=extract-running-and-merged-config | bugfix based on wrong validation
 * Class DataFilteringProfile extends SecurityProfile2
 * type=securityprofilegroup actions=exporttoexcel | bugfix after move to SP objects in memory and not name string
+* type=address actions=replace-IP-by-MT-like-Object | bugfix for DNAT rule in API online mode
 
 GENERAL:
 * class EthernetInterface/AggregateEthernetInterface | optimisation to always define correct class
