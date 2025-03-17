@@ -73,7 +73,7 @@ $util->location_filter();
 
 $pan = $util->pan;
 
-if( $actions == "display" )
+if( $actions == "import" )
 {
     $errormsg = "";
 
