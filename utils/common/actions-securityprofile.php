@@ -1019,14 +1019,14 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     $lines .= $context->encloseFunction('');
                 if( $bestPractice || $visibility)
                 {
-                    if( get_class($object) == "AntiSpywareProfile" && $object->owner->owner->version >= 102 )
+                    if( get_class($object) == "AntiSpywareProfile" )
                     {
                         if( $bestPractice )
                             $lines .= $context->encloseFunction('BP_AS_exception_dummy');
                         if( $visibility )
                             $lines .= $context->encloseFunction('Visibility_AS_exception_dummy');
                     }
-                    elseif( get_class($object) == "VulnerabilityProfile" && $object->owner->owner->version >= 110 )
+                    elseif( get_class($object) == "VulnerabilityProfile" )
                     {
                         if( $bestPractice )
                             $lines .= $context->encloseFunction('BP_VP_exception_dummy');
@@ -1269,7 +1269,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 $lines .= $context->encloseFunction($string_dns_list);
                 if( $bestPractice || $visibility)
                 {
-                    if( get_class($object) == "AntiSpywareProfile" && $object->owner->owner->version >= 102 )
+                    if( get_class($object) == "AntiSpywareProfile" )
                     {
                         if( $bestPractice )
                         {
@@ -1285,13 +1285,6 @@ SecurityProfileCallContext::$supportedActions[] = array(
                             else
                                 $lines .= $context->encloseFunction($bp_text_no.' NO Visibility AS dns_list');
                         }
-                    }
-                    else
-                    {
-                        if ($bestPractice)
-                            $lines .= $context->encloseFunction('---');
-                        if ($visibility)
-                            $lines .= $context->encloseFunction('---');
                     }
                 }
                 //<th>DNS sinkhole</th>

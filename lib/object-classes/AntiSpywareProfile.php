@@ -936,11 +936,9 @@ class AntiSpywareProfile extends SecurityProfile2
     //todo: 20241107 swaschkut - bring in BP
     public function spyware_exception_best_practice()
     {
-        if( $this->owner->owner->version >= 102 ) {
-            if (!empty($this->threatException)) {
-                foreach ($this->threatException as $threatname => $threat) {
-                    //which check??
-                }
+        if (!empty($this->threatException)) {
+            foreach ($this->threatException as $threatname => $threat) {
+                //which check??
             }
         }
         derr( "BP AS exception check not impemented" );
