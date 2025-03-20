@@ -779,11 +779,22 @@ class Rule
         }
         elseif(  $system->isDeviceGroup() )
         {
-            $systemInfoStart = "<device-group>";
-            $systemInfoEnd = "</device-group>";
+            if( $apiType == "show" )
+            {
+                $systemInfoStart = "<device-group>";
+                $systemInfoEnd = "</device-group>";
 
-            $systemName = "<entry name='".$system->name()."'>";
-            $systemNameEnd = "</entry>";
+                $systemName = "<entry name='".$system->name()."'>";
+                $systemNameEnd = "</entry>";
+            }
+            else
+            {
+                $systemInfoStart = "";
+                $systemInfoEnd = "";
+
+                $systemName = "";
+                $systemNameEnd = "";
+            }
 
             $prepost = "pre";
             if( $this->isPostRule() )
