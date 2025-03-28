@@ -96,22 +96,23 @@ $checkArray['spyware']['lists']['visibility']['action'][0]['action'] = array('!a
 ######################################################################################################################
 ######## CLOUD INLINE
 
-$checkArray['virus']['cloud-inline'] = array();
-$checkArray['spyware']['cloud-inline'] = array();
-$checkArray['vulnerability']['cloud-inline'] = array();
-$checkArray['virus']['cloud-inline']['bp'] = array();
-$checkArray['spyware']['cloud-inline']['bp'] = array();
-$checkArray['vulnerability']['cloud-inline']['bp'] = array();
-$checkArray['virus']['cloud-inline']['bp']['inline-policy-action'] = array('enable');
-$checkArray['spyware']['cloud-inline']['bp']['inline-policy-action'] = array('reset-both');
-$checkArray['vulnerability']['cloud-inline']['bp']['inline-policy-action'] = array('reset-both');
+#SCM AIops is not checking this
+#$checkArray['virus']['cloud-inline'] = array();
+#$checkArray['spyware']['cloud-inline'] = array();
+#$checkArray['vulnerability']['cloud-inline'] = array();
+#$checkArray['virus']['cloud-inline']['bp'] = array();
+#$checkArray['spyware']['cloud-inline']['bp'] = array();
+#$checkArray['vulnerability']['cloud-inline']['bp'] = array();
+#$checkArray['virus']['cloud-inline']['bp']['inline-policy-action'] = array('enable');
+#$checkArray['spyware']['cloud-inline']['bp']['inline-policy-action'] = array('reset-both');
+#$checkArray['vulnerability']['cloud-inline']['bp']['inline-policy-action'] = array('reset-both');
 
-$checkArray['virus']['cloud-inline']['visibility'] = array();
-$checkArray['spyware']['cloud-inline']['visibility'] = array();
-$checkArray['vulnerability']['cloud-inline']['visibility'] = array();
-$checkArray['virus']['cloud-inline']['visibility']['inline-policy-action'] = array('!disable');
-$checkArray['spyware']['cloud-inline']['visibility']['inline-policy-action'] = array('!allow');
-$checkArray['vulnerability']['cloud-inline']['visibility']['inline-policy-action'] = array('!allow');
+#$checkArray['virus']['cloud-inline']['visibility'] = array();
+#$checkArray['spyware']['cloud-inline']['visibility'] = array();
+#$checkArray['vulnerability']['cloud-inline']['visibility'] = array();
+#$checkArray['virus']['cloud-inline']['visibility']['inline-policy-action'] = array('!disable');
+#$checkArray['spyware']['cloud-inline']['visibility']['inline-policy-action'] = array('!allow');
+#$checkArray['vulnerability']['cloud-inline']['visibility']['inline-policy-action'] = array('!allow');
 
 
 ######################################################################################################################

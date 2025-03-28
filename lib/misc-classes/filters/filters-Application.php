@@ -590,5 +590,17 @@ RQuery::$defaultFilters['application']['ip-protocol']['operators']['eq'] = array
         'input' => 'input/panorama-8.0.xml'
     )
 );
-//$this->proto
+RQuery::$defaultFilters['application']['alg-disable-capability']['operators']['is.available'] = array(
+    'Function' => function (ApplicationRQueryContext $context) {
+        if( $context->object->alg_disable_capability )
+            return TRUE;
+
+        return FALSE;
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
 // </editor-fold>

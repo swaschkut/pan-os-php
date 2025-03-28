@@ -706,6 +706,12 @@ class AppStore extends ObjStore
                 }
             }
 
+            $tmp = DH::findFirstElement('alg-disable-capability', $appx);
+            if( $tmp !== FALSE )
+            {
+                $app->alg_disable_capability = TRUE;
+            }
+
         }
     }
 

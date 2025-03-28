@@ -1345,6 +1345,18 @@ var subjectObject =
             }
         },
         "filter": {
+            "alg-disable-capability": {
+                "operators": {
+                    "is.available": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
             "apptag": {
                 "operators": {
                     "has": {
@@ -3552,6 +3564,10 @@ var subjectObject =
     "interface": {
         "name": "interface",
         "action": {
+            "custom-manipulation": {
+                "name": "custom-manipulation",
+                "MainFunction": {}
+            },
             "display": {
                 "name": "display",
                 "MainFunction": {}
@@ -5889,6 +5905,16 @@ var subjectObject =
                         "arg": true,
                         "argObjectFinder": "$objectFind=null;\n$objectFind=$object->from->parentCentralStore->find('!value!');"
                     },
+                    "has.from.query": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "example: 'filter=(from has.from.query subquery1)' 'subquery1=(zpp is.set)'"
+                    },
+                    "all.has.from.query": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "example: 'filter=(from all.has.from.query subquery1)' 'subquery1=(zpp is.set)'"
+                    },
                     "has.regex": {
                         "Function": {},
                         "arg": true
@@ -6950,6 +6976,16 @@ var subjectObject =
                         "arg": true,
                         "argObjectFinder": "$objectFind=null;\n$objectFind=$object->to->parentCentralStore->find('!value!');"
                     },
+                    "has.from.query": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "example: 'filter=(to has.from.query subquery1)' 'subquery1=(zpp is.set)'"
+                    },
+                    "all.has.from.query": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "example: 'filter=(to all.has.from.query subquery1)' 'subquery1=(zpp is.set)'"
+                    },
                     "has.regex": {
                         "Function": {},
                         "arg": true
@@ -7821,6 +7857,20 @@ var subjectObject =
                     }
                 }
             },
+            "dns-security": {
+                "operators": {
+                    "is.best-practice": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=spyware' e.g. 'filter=(dns-security is.best-practice)'"
+                    },
+                    "is.visibility": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=spyware' e.g. 'filter=(dns-security is.visibility)'"
+                    }
+                }
+            },
             "dns-security.action": {
                 "operators": {
                     "has": {
@@ -8177,6 +8227,11 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=url-filtering' e.g. 'filter=(url.site-access is.best-practice)'"
+                    },
+                    "allow.is.set": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=url-filtering' e.g. 'filter=(url.site-access allow.is.set)'"
                     }
                 }
             },
@@ -8207,6 +8262,11 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=url-filtering' e.g. 'filter=(url.user-credential-detection is.best-practice)'"
+                    },
+                    "allow.is.set": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=url-filtering' e.g. 'filter=(user-credential-detection allow.is.set)'"
                     }
                 }
             },
