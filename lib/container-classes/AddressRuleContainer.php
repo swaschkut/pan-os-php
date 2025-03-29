@@ -306,9 +306,11 @@ class AddressRuleContainer extends ObjRuleContainer
                 derr('this container has members with empty name!', $node);
             }
 
-            $f = $this->owner->owner->owner->EDLStore->find($content, $this);
-            if( $f === null )
-                $f = $this->parentCentralStore->findOrCreate($content, $this);
+            //Todo: 20250329 swaschkut
+            //this is now included in parentCentralStroe - which is AddressStore
+            #$f = $this->owner->owner->owner->EDLStore->find($content, $this);
+            #if( $f === null )
+            $f = $this->parentCentralStore->findOrCreate($content, $this);
             $this->o[] = $f;
             $i++;
         }
