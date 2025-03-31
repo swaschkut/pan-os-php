@@ -16,13 +16,16 @@ require_once dirname(__FILE__)."/../../../lib/resources/panos_release_notes/clas
 
 
 require_once dirname(__FILE__)."/../../../lib/resources/panos_release_notes/classes/panos_known_issue.php";
-require_once dirname(__FILE__)."/../../../lib/resources/panos_release_notes/classes/panos_fixed_issue.php";
+require_once dirname(__FILE__)."/../../../lib/resources/panos_release_notes/classes/panos_addressed_issue.php";
 require_once dirname(__FILE__)."/../../../lib/resources/panos_release_notes/classes/panos_version.php";
 
 
-$update = false;
 
-$releaseNotes = new panos_release_notes( "known", $update );
+$updateHtml = false;
+$updateJson = false;
+#$type= "known";
+#$type= "addressed";
+
 
 $filterVersion = false;
 if( isset(PH::$args['version']) )
@@ -35,48 +38,108 @@ if( isset(PH::$args['version']) )
 
 
 $filterInfo = false;
-if( isset(PH::$args['text']) )
+if( isset(PH::$args['description']) )
 {
     $filterInfo = true;
-    $filterInfoTxt = PH::$args['text'];
+    $filterInfoTxt = PH::$args['description'];
     $filterInfoTxt = strtolower($filterInfoTxt);
 }
 
-$displayCounter = 0;
-foreach($releaseNotes->knownIssues as $issue)
+$filterBugID = false;
+if( isset(PH::$args['bugid']) )
 {
-    if( $filterVersion && $filterInfo )
-    {
-        if( filterVersion($issue, $filterVersionTxt ) && filterInfo($issue, $filterInfoTxt ) )
-        {
-            display_Issue($issue);
-            $displayCounter++;
-        }
-    }
-    elseif( $filterVersion )
-    {
-        if( filterVersion($issue, $filterVersionTxt ) )
-        {
-            display_Issue($issue);
-            $displayCounter++;
-        }
-    }
-    elseif( $filterInfo )
-    {
-        if( filterInfo($issue, $filterInfoTxt ) )
-        {
-            display_Issue($issue);
-            $displayCounter++;
-        }
-    }
-    else
-    {
-        display_Issue($issue);
-        $displayCounter++;
-    }
+    $filterBugID = true;
+    $filterBugIDTxt = PH::$args['bugid'];
+    $filterBugIDTxt = strtolower($filterBugIDTxt);
 }
 
-PH::print_stdout("Counter: ".$displayCounter);
+
+$typeArray = array( "known", "addressed" );
+
+foreach( $typeArray as $type )
+{
+    $releaseNotes = new panos_release_notes($type, $updateHtml, $updateJson);
+    $displayCounter = 0;
+    PH::print_stdout("#################################################");
+    PH::print_stdout($type." Issues:");
+    if( $type == "known" )
+        $releaseNotesObjects = $releaseNotes->knownIssues;
+    elseif( $type == "addressed" )
+        $releaseNotesObjects = $releaseNotes->addressedIssues;
+
+    foreach ( $releaseNotesObjects as $issue)
+    {
+        if ($filterVersion && $filterInfo && $filterBugID)
+        {
+            if (filterVersion($issue, $filterVersionTxt) && filterInfo($issue, $filterInfoTxt) && filterBugID($issue, $filterBugIDTxt))
+            {
+                display_Issue($issue);
+                $displayCounter++;
+            }
+        }
+        elseif ($filterVersion && $filterInfo)
+        {
+            if (filterVersion($issue, $filterVersionTxt) && filterInfo($issue, $filterInfoTxt))
+            {
+                display_Issue($issue);
+                $displayCounter++;
+            }
+        }
+        elseif ($filterVersion && $filterBugID)
+        {
+            if (filterVersion($issue, $filterVersionTxt) && filterBugID($issue, $filterBugIDTxt))
+            {
+                display_Issue($issue);
+                $displayCounter++;
+            }
+        }
+        elseif ($filterInfo && $filterBugID)
+        {
+            if (filterInfo($issue, $filterInfoTxt) && filterBugID($issue, $filterBugIDTxt))
+            {
+                display_Issue($issue);
+                $displayCounter++;
+            }
+        }
+        elseif ($filterVersion)
+        {
+            if (filterVersion($issue, $filterVersionTxt))
+            {
+                display_Issue($issue);
+                $displayCounter++;
+            }
+        }
+        elseif ($filterInfo)
+        {
+            if (filterInfo($issue, $filterInfoTxt))
+            {
+                display_Issue($issue);
+                $displayCounter++;
+            }
+        }
+        elseif ($filterBugID)
+        {
+            if (filterBugID($issue, $filterBugIDTxt))
+            {
+                display_Issue($issue);
+                $displayCounter++;
+            }
+        }
+        else
+        {
+            display_Issue($issue);
+            $displayCounter++;
+        }
+    }
+
+    PH::print_stdout("Counter: " . $displayCounter);
+
+    PH::print_stdout("");
+    PH::print_stdout("");
+}
+
+####################################
+
 
 function display_Issue( $issue)
 {
@@ -114,6 +177,15 @@ function filterInfo($issue, $infoFilterTxt )
 {
     #if( str_contains($issue->info, $infoFilterTxt) )
     if( strpos($issue->info, $infoFilterTxt) !== FALSE )
+        return true;
+
+    return false;
+}
+
+function filterBugID($issue, $bugIDFilter )
+{
+    #if( str_contains($issue->info, $infoFilterTxt) )
+    if( strpos($issue->issueNumber, $bugIDFilter) !== FALSE )
         return true;
 
     return false;

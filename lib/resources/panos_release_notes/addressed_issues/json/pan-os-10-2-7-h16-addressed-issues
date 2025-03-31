@@ -1,0 +1,61 @@
+{
+    "10-2-7-h16": [
+        [],
+        {
+            "PAN-264871": {
+                "info": [
+                    " Fixed an issue on Panorama where the configd process stopped responding when viewing IP addresses on dynamic address groups with a large number of IP addresses. "
+                ]
+            }
+        },
+        {
+            "PAN-262340": {
+                "info": [
+                    " Fixed an issue where FQDN resolution failed for address objects, and all FQDN traffic was denied by the interzone-default policy rule. "
+                ]
+            }
+        },
+        {
+            "PAN-262287": {
+                "info": [
+                    " Fixed an issue where dereferencing a NULL pointer that occurred caused pan_task processes to stop responding. "
+                ]
+            }
+        },
+        {
+            "PAN-250787": {
+                "info": [
+                    " Fixed an issue where network issues between the firewall and the log collector caused logrcvr process memory exhaustion. "
+                ]
+            }
+        },
+        {
+            "PAN-242910": {
+                "info": [
+                    " Fixed an issue where a custom based non Superuser was unable to push to firewalls. "
+                ]
+            }
+        },
+        {
+            "PAN-231823": {
+                "info": [
+                    " Fixed an issue where server profile details in the configd process log were incorrectly displayed in plaintext "
+                ]
+            }
+        },
+        {
+            "PAN-230755": {
+                "info": [
+                    " Fixed an issue where the devsrvr process intermittently restarted when processing traffic with a Cloud App ID. "
+                ]
+            }
+        },
+        {
+            "PAN-226361": {
+                "info": [
+                    " Fixed an issue where sessions bypassed L7 inspection or ended unexpectedly with the error resources unavailable when the firewall incorrectly interpreted the Content and Threat Detection (CTD) global packet queue as being full. "
+                ]
+            }
+        }
+    ]
+}

@@ -1,0 +1,110 @@
+{
+    "11-1-1": [
+        [],
+        {
+            "PAN-239241": {
+                "info": [
+                    "Extended the root certificate for WildFire appliances to December 31, 2032."
+                ]
+            }
+        },
+        {
+            "PAN-238792": {
+                "info": [
+                    " Fixed the following device certificate issues: The firewall was unable to automatically renew the device certificate-Fetching device certificates failed incorrectly with the error message OTP is not valid.Firewalls disconnected from Strata Logging Service after renewing the device certificate.The device certificate was not correctly generated on the log forwarding card (LFC).WildFire cloud logs did not log thermite certificate usage status. "
+                ]
+            }
+        },
+        {
+            "PAN-237935": {
+                "info": [
+                    " Extended the offline PAN-DB, Panorama, and WildFire certificates which were previously set to expire on September 2, 2024. "
+                ]
+            }
+        },
+        {
+            "PAN-237876": {
+                "info": [
+                    "Extended the firewall Panorama root CA certificate which was previously set to expire on April 7th, 2024."
+                ]
+            }
+        },
+        {
+            "PAN-236605": {
+                "info": [
+                    " Fixed an issue where the configd process stopped responding due to a deadlock related to rule-hit-count. "
+                ]
+            }
+        },
+        {
+            "PAN-235385": {
+                "info": [
+                    " Enhanced wifclient cloud connectivity redundancy. "
+                ]
+            }
+        },
+        {
+            "PAN-234929": {
+                "info": [
+                    " Fixed an issue where tabs in the ACC such as Network Activity Threat Activity and Blocked Activity did not display data when you applied a Time filter of Last 15 Minutes, Last Hour, Last 6 Hours, or Last 12 Hours, and the data that was displayed with the Last 24 Hours filter was not accurate. Reports that were run against summary logs also did not display accurate results. "
+                ]
+            }
+        },
+        {
+            "PAN-233957": {
+                "info": [
+                    " (PA-5450 firewalls only) Fixed an issue where the NAT private pool was not used properly when enabling slot 6 DPC. "
+                ]
+            }
+        },
+        {
+            "PAN-233191": {
+                "info": [
+                    " (PA-5450 firewalls only) Fixed an issue where the Data Processing Card (DPC) restarted due to path monitor failure after QSFP28 disconnected from the Network Processing Card (NPC). "
+                ]
+            }
+        },
+        {
+            "PAN-232358": {
+                "info": [
+                    " (PA-5450 firewalls only) Fixed an issue where the interface on QSFP28 ports did not go down when the Tx cable was removed from the QSFP28 module. "
+                ]
+            }
+        },
+        {
+            "PAN-231771": {
+                "info": [
+                    " Fixed an issue where the firewall issued \/box\/getserv\/ requests with PAN-OS 7.1.0 and did not take device certificates. "
+                ]
+            }
+        },
+        {
+            "PAN-231658": {
+                "info": [
+                    " Fixed an issue where DNS resolution failed when interfaces were configured as DHCP and a DNS server was provided via DHCP while also statically configured with DNS servers. "
+                ]
+            }
+        },
+        {
+            "PAN-231194": {
+                "info": [
+                    " Fixed an issue where the firewall was unable to clear hints from the disk. "
+                ]
+            }
+        },
+        {
+            "PAN-227568": {
+                "info": [
+                    " When a device certificate is installed, renewed, or removed, the firewall will reconnect to the WildFire cloud to use the newest certificate. "
+                ]
+            }
+        },
+        {
+            "PAN-215576": {
+                "info": [
+                    " Fixed an issue where the userID-Agent and TS-Agent certificates were set to expire on November 18, 2024. With this fix, the expiration date has been extended to January 2032. "
+                ]
+            }
+        }
+    ]
+}

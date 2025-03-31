@@ -1,0 +1,61 @@
+{
+    "10-1-14-h8": [
+        [],
+        {
+            "PAN-273215": {
+                "info": [
+                    " Fixed an issue where a syntax error in the index generation script caused a high management plane CPU load after upgrading. "
+                ]
+            }
+        },
+        {
+            "PAN-268823": {
+                "info": [
+                    " Fixed an issue where Monitor > Log Display did not display all logs when you applied "
+                ]
+            }
+        },
+        {
+            "PAN-268339": {
+                "info": [
+                    " Fixed an issue where syslog-ng failed to start due to the syslog-ng.config file being corrupted when upgrading from PAN-OS 10.2.9-h1 to PAN-OS 10.2.11. "
+                ]
+            }
+        },
+        {
+            "PAN-264871": {
+                "info": [
+                    " Fixed an issue on Panorama where the configd process stopped responding when viewing IP addresses on dynamic address groups with a large number of IP addresses. "
+                ]
+            }
+        },
+        {
+            "PAN-262330": {
+                "info": [
+                    " Fixed an issue where traffic logs were not forwarded to the syslog server. "
+                ]
+            }
+        },
+        {
+            "PAN-260604": {
+                "info": [
+                    " Fixed an issue where the firewall displayed inaccurate throughput utilization stats in NetFlow analyzer tools. "
+                ]
+            }
+        },
+        {
+            "PAN-260512": {
+                "info": [
+                    " Fixed an issue where accessing the IP address of the device address group objects from the user interface caused the configd process to stop responding. "
+                ]
+            }
+        },
+        {
+            "PAN-259351": {
+                "info": [
+                    " A fix was made to address CVE-2024-3393. "
+                ]
+            }
+        }
+    ]
+}

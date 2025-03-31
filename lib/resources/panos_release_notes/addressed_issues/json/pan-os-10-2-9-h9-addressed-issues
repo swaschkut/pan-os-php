@@ -1,0 +1,201 @@
+{
+    "10-2-9-h9": [
+        [],
+        {
+            "PAN-259480": {
+                "info": [
+                    " Fixed an issue where the varrcvr process stopped responding after running out of memory due to how the process queued and dequeued files for WildFire file forwarding when a WildFire Analysis Security profile was enabled. "
+                ]
+            }
+        },
+        {
+            "PAN-259344": {
+                "info": [
+                    " Fixed an issue where performing a configuration commit on a firewall locally or from Panorama caused a memory leak related to the configd process and resulted in a out-of-memory (OOM) condition. "
+                ]
+            }
+        },
+        {
+            "PAN-258941": {
+                "info": [
+                    " Fixed an issue where some URLs were not accessible when connected to Prisma Access explicit proxy. "
+                ]
+            }
+        },
+        {
+            "PAN-258442": {
+                "info": [
+                    " Fixed an issue where changes made to the split tunnel configuration on the Prisma Access gateway were not reflected on the GlobalProtect client. "
+                ]
+            }
+        },
+        {
+            "PAN-257919": {
+                "info": [
+                    " Fixed an issue where, when using explicit proxy with SAML authentication, initiating SAML authentication with a non-GET request resulted in a 302 redirect response instead of the expected 200 ok response. "
+                ]
+            }
+        },
+        {
+            "PAN-257515": {
+                "info": [
+                    " Fixed an issue where Possible Domain Fronting Detection for HTTP\/2 generated false positives. With this change, domain fronting is limited to HTTP\/1. "
+                ]
+            }
+        },
+        {
+            "PAN-257355": {
+                "info": [
+                    " Fixed an issue where a false positive HTTP\/TLS evasion alert was generated when the domain had DNS load balance. "
+                ]
+            }
+        },
+        {
+            "PAN-257197": {
+                "info": [
+                    " Fixed an issue where ifType and ifSpeed were not populated in asynchronous mode of SNMP operations. "
+                ]
+            }
+        },
+        {
+            "PAN-256181": {
+                "info": [
+                    " Fixed an issue where the management interface and front panel port interface statistics were not populated in asynchronous mode of SNMP operations. "
+                ]
+            }
+        },
+        {
+            "PAN-254422": {
+                "info": [
+                    " Fixed an issue where the firewall required a restart when an SD-WAN policy rule was pushed from Panorama. "
+                ]
+            }
+        },
+        {
+            "PAN-254241": {
+                "info": [
+                    " Fixed an issue where the firewall stopped responding due to a high number of SD-WAN probes being sent. "
+                ]
+            }
+        },
+        {
+            "PAN-252517": {
+                "info": [
+                    " Fixed an issue where SNMP failed to respond to multiple Object Identifier (OID) queries in a single SNMP GET request. "
+                ]
+            }
+        },
+        {
+            "PAN-252214": {
+                "info": [
+                    " A fix was made to address CVE-2024-3400. "
+                ]
+            }
+        },
+        {
+            "PAN-251639": {
+                "info": [
+                    " Fixed acn issue where an out-of-memory condition occurred due to a memory leak related to the varrvcr process when a WildFire Analysis security profile was enabled. "
+                ]
+            }
+        },
+        {
+            "PAN-251013": {
+                "info": [
+                    "Fixed an issue on the web interface where the Virtual Router and Virtual System configurations for the template incorrectly showed as none."
+                ]
+            }
+        },
+        {
+            "PAN-250062": {
+                "info": [
+                    " Fixed an issue where device telemetry failed after upgrading due to bundle generation failure. "
+                ]
+            }
+        },
+        {
+            "PAN-249814": {
+                "info": [
+                    " Fixed an issue where multiple all_task processes stopped responding, which caused the dataplane to fail. "
+                ]
+            }
+        },
+        {
+            "PAN-247099": {
+                "info": [
+                    " Fixed an issue where the firewall decrypted traffic unexpectedly when the client hello was spread across multiple packets. "
+                ]
+            }
+        },
+        {
+            "PAN-246960": {
+                "info": [
+                    " Fixed an issue where firewalls failed to fetch content updates from the Wildfire Private Cloud due to an Unsupported protocol error. "
+                ]
+            }
+        },
+        {
+            "PAN-245125": {
+                "info": [
+                    " (VM-Series firewalls in Microsoft Azure environments only) Fixed an issue where file descriptors were not closed due to invalid configurations. "
+                ]
+            }
+        },
+        {
+            "PAN-244013": {
+                "info": [
+                    " Fixed an issue where the web interface did not display newly added Anti-Spyware signatures or Vulnerability Signatures until you refreshed the browser or logged out or in via the web interface. "
+                ]
+            }
+        },
+        {
+            "PAN-242309": {
+                "info": [
+                    " Fixed an issue where a higher byte count (s2c) was observed for DNS-Base application. "
+                ]
+            }
+        },
+        {
+            "PAN-239662": {
+                "info": [
+                    " Fixed an issue with firewalls in active\/passive high availability (HA) configurations where the NSSA default route from the active firewall was not generated to advertise even though the backbone area default route was advertised during a graceful restart. "
+                ]
+            }
+        },
+        {
+            "PAN-239143": {
+                "info": [
+                    " Fixed an issue with accessing websites when URL filtering profiles were configured with the block-continue action and the server used HTTP\/2. "
+                ]
+            }
+        },
+        {
+            "PAN-236909": {
+                "info": [
+                    " Fixed an issue where, when you committed the first configuration change after booting up the firewall, the external dynamic list file download failed until the list was refreshed. This occurred when the configuration was pushed with a certificate profile. "
+                ]
+            }
+        },
+        {
+            "PAN-231440": {
+                "info": [
+                    " Fixed an issue where, when a certificate profile was configured on an external dynamic list object but the profile had been deleted or did not exist, commits silently failed with the error Failed to refresh EDL config instead of showing the correct validation error message "
+                ]
+            }
+        },
+        {
+            "PAN-223418": {
+                "info": [
+                    " Fixed an issue where heartbeats to the brdagent process were lost, resultng in the process not responding, which caused the firewall to reboot. "
+                ]
+            }
+        },
+        {
+            "PAN-164885": {
+                "info": [
+                    " Fixed an issue on Panorama where Commit and Push or Push to Devices operations failed when an external dynamic list was configured to check for updates every 5 minutes due to the commit and external dynamic fetch processes overlapping. "
+                ]
+            }
+        }
+    ]
+}

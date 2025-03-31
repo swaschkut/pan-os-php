@@ -1,0 +1,19 @@
+{
+    "10-2-11-h4": [
+        [],
+        {
+            "PAN-262287": {
+                "info": [
+                    " Fixed an issue where dereferencing a NULL pointer that occurred caused pan_task processes to stop responding. "
+                ]
+            }
+        },
+        {
+            "PAN-226361": {
+                "info": [
+                    " Fixed an issue where sessions bypassed L7 inspection or ended unexpectedly with the error resources unavailable when the firewall incorrectly interpreted the Content and Threat Detection (CTD) global packet queue as being full. "
+                ]
+            }
+        }
+    ]
+}

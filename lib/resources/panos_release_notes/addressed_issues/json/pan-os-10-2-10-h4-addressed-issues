@@ -1,0 +1,145 @@
+{
+    "10-2-10-h4": [
+        [],
+        {
+            "PAN-263226": {
+                "info": [
+                    " Fixed an issue where decryption based traffic failed on Explicit Proxy nodes. "
+                ]
+            }
+        },
+        {
+            "PAN-263164": {
+                "info": [
+                    " Fixes a problem where Netflow User ID information was truncated to 31 characters. "
+                ]
+            }
+        },
+        {
+            "PAN-262287": {
+                "info": [
+                    " Fixed an issue where dereferencing a NULL pointer that occurs might cause pan_task processes to crash. "
+                ]
+            }
+        },
+        {
+            "PAN-261917": {
+                "info": [
+                    " Fixed an issue where websites with a no-decrypt policy rule were decrypted in traffic log when using a Google Chrome browser with PQC enabled "
+                ]
+            }
+        },
+        {
+            "PAN-261797": {
+                "info": [
+                    " (Firewalls and Panorama appliances in FIPS-CC mode only) Fixed an issue where the authd process restarted if RADIUS PAP\/CHAP authentication was used. "
+                ]
+            }
+        },
+        {
+            "PAN-261270": {
+                "info": [
+                    " Fixed an issue where the firewall decremented the TTL\/Hop limit for BGPv6 packets by 1 after IPSec decryption. "
+                ]
+            }
+        },
+        {
+            "PAN-260662": {
+                "info": [
+                    " Fixed an issue where large file downloads were slower than expected when private IP address visibility was enabled. "
+                ]
+            }
+        },
+        {
+            "PAN-258442": {
+                "info": [
+                    " Fixed an issue where changes made to the split tunnel configuration on the Prisma Access gateway were not reflected on the GlobalProtect client. "
+                ]
+            }
+        },
+        {
+            "PAN-257957": {
+                "info": [
+                    " (Firewalls and Panorama appliances in FIPS-CC mode only) Fixed an issue where the authd process restarted if RADIUS PAP\/CHAP authentication was used. "
+                ]
+            }
+        },
+        {
+            "PAN-257563": {
+                "info": [
+                    " Fixed an issue where the logrcvr component for SASE and MCW displayed incorrect zones in the traffic flow. "
+                ]
+            }
+        },
+        {
+            "PAN-256223": {
+                "info": [
+                    " Fixed an issue where device telemetry log collection filled the root partition. "
+                ]
+            }
+        },
+        {
+            "PAN-255619": {
+                "info": [
+                    " Fixed an intermittent issue where file downloads from websites failed. "
+                ]
+            }
+        },
+        {
+            "PAN-254826": {
+                "info": [
+                    " Fixed an issue where the firewall stopped responding when processing traffic. "
+                ]
+            }
+        },
+        {
+            "PAN-254671": {
+                "info": [
+                    " Fixed an issue where excessive Timed out while getting config lock error messages were generated when making bulk changes via XML API. "
+                ]
+            }
+        },
+        {
+            "PAN-250371": {
+                "info": [
+                    " Fixed an issue where the logrcvr process stopped responding, which caused commits to fail with the error message Management server failed to send phase 1 to client logrcvr. "
+                ]
+            }
+        },
+        {
+            "PAN-247257": {
+                "info": [
+                    " Fixed an issue where the useridd process stopped responding, which caused the firewall to reboot. "
+                ]
+            }
+        },
+        {
+            "PAN-242958": {
+                "info": [
+                    " Fixed an issue where the firewall intermittently logged connect-agent-failure messages for service connection instances due to bi-directional host ID redistribution. "
+                ]
+            }
+        },
+        {
+            "PAN-242331": {
+                "info": [
+                    " Fixed an issue where Prisma Access remote network firewalls intermittently created incorrect user-to-IP-address mappings. "
+                ]
+            }
+        },
+        {
+            "PAN-240990": {
+                "info": [
+                    " Fixed an issue where l3svc.py displayed incorrect logs. "
+                ]
+            }
+        },
+        {
+            "PAN-218873": {
+                "info": [
+                    " Fixed an issue where a HIP mask was reused when an existing IP address user mapping was updated by a new IP address user mapping that had a different username but the same IP address. "
+                ]
+            }
+        }
+    ]
+}

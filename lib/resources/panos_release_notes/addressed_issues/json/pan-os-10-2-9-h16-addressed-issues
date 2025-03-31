@@ -1,0 +1,96 @@
+{
+    "10-2-9-h16": [
+        [],
+        {
+            "PAN-272809": {
+                "info": [
+                    " A fix was made to address CVE-2024-0012 (PAN-SA-2024-0015) and CVE-2024-9474. "
+                ]
+            }
+        },
+        {
+            "PAN-268314": {
+                "info": [
+                    " Fixed an issue where new files were not sent to WildFire. With this fix, the WildFire reserved drive space has been increased for greater session caching capability. "
+                ]
+            }
+        },
+        {
+            "PAN-268002": {
+                "info": [
+                    " Fixed an issue where URL filtering response pages were not displayed for sites that were blocked as a result of SSL\/TLS handshake inspection. "
+                ]
+            }
+        },
+        {
+            "PAN-267535": {
+                "info": [
+                    " Fixed an issue on the firewall where DPDK allocated twice the amount of memory as requested for pre-allocation. "
+                ]
+            }
+        },
+        {
+            "PAN-257736": {
+                "info": [
+                    " (PA-5450 firewalls only) Fixed an issue where traffic to benign applications was was impacted by holding TCP sequential segments for MLC inspection and not releasing the full chain after a benign verdict was received. "
+                ]
+            }
+        },
+        {
+            "PAN-252036": {
+                "info": [
+                    " Fixed an issue where, when the GlobalProtect portal was not configured, accessing the GlobalProtect gateway still loaded a portal malformed page. "
+                ]
+            }
+        },
+        {
+            "PAN-250787": {
+                "info": [
+                    " Fixed an issue where network issues between the firewall and the log collector caused logrcvr process memory exhaustion. "
+                ]
+            }
+        },
+        {
+            "PAN-250394": {
+                "info": [
+                    " Fixed an issue where a large amount of group data caused serialization errors and prevented synchronization. "
+                ]
+            }
+        },
+        {
+            "PAN-240251": {
+                "info": [
+                    " Fixed an issue where the vldmgr process incorrectly restarted during an Elasticsearch restart. "
+                ]
+            }
+        },
+        {
+            "PAN-237010": {
+                "info": [
+                    " Fixed an issue on Panorama where local commits took longer than expected after an upgrade. "
+                ]
+            }
+        },
+        {
+            "PAN-229686": {
+                "info": [
+                    " Fixed an issue where eBGP remained in an idle state after disabling and enabling BGP configurations. "
+                ]
+            }
+        },
+        {
+            "PAN-226361": {
+                "info": [
+                    " an issue where sessions bypassed L7 inspection or ended unexpectedly with the error resources unavailable when the firewall incorrectly interpreted the Content and Threat Detection (CTD) global packet queue as being full. "
+                ]
+            }
+        },
+        {
+            "PAN-193285": {
+                "info": [
+                    " Fixed an issue where the policy optimizer feature did not add entries back to the mongodb database after removing them during an upgrade or downgrade. "
+                ]
+            }
+        }
+    ]
+}

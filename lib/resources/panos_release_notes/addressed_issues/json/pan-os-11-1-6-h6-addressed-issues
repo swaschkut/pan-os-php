@@ -1,0 +1,313 @@
+{
+    "11-1-6-h6": [
+        [],
+        {
+            "PAN-282022": {
+                "info": [
+                    " Fixed the support limitation for the Panorama M-600 and M-700 appliances. "
+                ]
+            }
+        },
+        {
+            "PAN-281885": {
+                "info": [
+                    " Fixed an issue where, when exporting and importing CSV files, the hash values of pre-shared key variables set at template and template stack levels changed inconsistently, which resulted in both variables displaying the same hash value. "
+                ]
+            }
+        },
+        {
+            "PAN-281269": {
+                "info": [
+                    " (PA-5220, PA-5250, and PA-5420 firewalls) Fixed an issue where the firewall management server memory usage continuously increased. "
+                ]
+            }
+        },
+        {
+            "PAN-281264": {
+                "info": [
+                    " Fixed an issue where the routed process memory usage continuously increased when Advanced Routing was enabled. "
+                ]
+            }
+        },
+        {
+            "PAN-280505": {
+                "info": [
+                    " Fixed an issue where the web interface did not display a message to commit prior changes before attempting a partial configuration load. "
+                ]
+            }
+        },
+        {
+            "PAN-280243": {
+                "info": [
+                    " Fixed an issue where the firewall lost the pre-shared key configuration assigned from a PSK variable when an unrelated device group configuration was loaded. "
+                ]
+            }
+        },
+        {
+            "PAN-279336": {
+                "info": [
+                    " Fixed an issue where the CLI did not display a message to commit prior changes before loading a partial configuration. "
+                ]
+            }
+        },
+        {
+            "PAN-279176": {
+                "info": [
+                    " Fixed an issue where the configuration audit displayed inaccurate information after partially loading the configuration via the CLI, which caused the audit to flag the configuration as deleted or changed. "
+                ]
+            }
+        },
+        {
+            "PAN-279065": {
+                "info": [
+                    " Fixed an issue where the firewall sent logs with connection succeeded to the syslog server every time a connection was established, which resulted in excessive logs. "
+                ]
+            }
+        },
+        {
+            "PAN-278296": {
+                "info": [
+                    " Fixed an issue where the system MAC address of the aggregate interface was the same on the active firewall and the passive firewall after an upgrade. "
+                ]
+            }
+        },
+        {
+            "PAN-277762": {
+                "info": [
+                    " (VM-Series firewalls only) Fixed an issue where unexpected failovers occurred on firewalls running PAN-OS 11.2.2-h2. "
+                ]
+            }
+        },
+        {
+            "PAN-277631": {
+                "info": [
+                    " Fixed an issue where the logrcvr process discarded logs due to a full queue. "
+                ]
+            }
+        },
+        {
+            "PAN-275718": {
+                "info": [
+                    " Fixed an issue where Panorama stopped forwarding logs to a Syslog server after upgrading to PAN-OS 11.1.5-h1. "
+                ]
+            }
+        },
+        {
+            "PAN-275713": {
+                "info": [
+                    " Fixed an issue where the dscd process stopped responding when Endpoint Serial Number was enabled, which resulted in the Active Directory returning a list of serial numbers for a specific firewall from the Cloud Identity Engine. "
+                ]
+            }
+        },
+        {
+            "PAN-275077": {
+                "info": [
+                    " Fixed an issue where DNS Security intermittently logs malicious domain URLs as Alert instead of taking a Sinkhole action, even when configured to Sinkhole malicious DNS domains. "
+                ]
+            }
+        },
+        {
+            "PAN-274750": {
+                "info": [
+                    " Fixed an issue where the detailed log view in Panorama did not display all packet details for traffic logs received from the cloud. "
+                ]
+            }
+        },
+        {
+            "PAN-273694": {
+                "info": [
+                    " Fixed an issue where the firewall rebooted due to an out-of-bounds memory access that occurred as a result of the SIP content length value being split across packets. "
+                ]
+            }
+        },
+        {
+            "PAN-273453": {
+                "info": [
+                    " Fixed an issue where restarting the firewall did not initiate an autocommit job, which caused the firewall to stop responding and the HA interface to go down. "
+                ]
+            }
+        },
+        {
+            "PAN-272746": {
+                "info": [
+                    " (PA-440 firewalls only) Fixed an issue where the firewall entered an unstable state after committing changes or onboarding to Panorama. "
+                ]
+            }
+        },
+        {
+            "PAN-272171": {
+                "info": [
+                    " Fixed an issue where the firewall dropped the AAAA DNS server response and caused delays in traffic from Ubuntu or Linux clients when DNS Security was enabled. "
+                ]
+            }
+        },
+        {
+            "PAN-271498": {
+                "info": [
+                    " (PA-7000 Series firewalls, PA-5200 firewalls, and PA-5400f firewalls in FIPS mode only) Fixed an issue where decrypted traffic repeatedly failed and frequent reboots were required. "
+                ]
+            }
+        },
+        {
+            "PAN-271351": {
+                "info": [
+                    " A fix was made to address CVE-2025-0116. "
+                ]
+            }
+        },
+        {
+            "PAN-270193": {
+                "info": [
+                    " Fixed an issue where the Panorama management server changed its certificate authority (CA) unexpectedly, which caused managed firewalls to disconnect. "
+                ]
+            }
+        },
+        {
+            "PAN-269052": {
+                "info": [
+                    " Fixed an issue where traffic was blocked by a URL filtering profile even though the Security policy rule did not have a URL filtering profile configured. "
+                ]
+            }
+        },
+        {
+            "PAN-268629": {
+                "info": [
+                    " Fixed an issue where traffic did not match the correct security policy when using an application-filter that references a cloud application. This occurred when a high number of cloud applications were attached with a custom tag. "
+                ]
+            }
+        },
+        {
+            "PAN-267518": {
+                "info": [
+                    " Fixed an issue where WildFire submission logs incorrectly reported allowed malicious samples even when they were blocked by threat prevention profiles. "
+                ]
+            }
+        },
+        {
+            "PAN-266695": {
+                "info": [
+                    " Fixed an issue on Panorama where a cyclic nested address group configuration caused the configd process to stop responding after a commit. "
+                ]
+            }
+        },
+        {
+            "PAN-262063": {
+                "info": [
+                    " Fixed an issue where the firewall did not display the converted configurations before a commit and reboot, and the commit failed when attempting to migrate from MS to FRR mode. "
+                ]
+            }
+        },
+        {
+            "PAN-261825": {
+                "info": [
+                    " Fixed an issue where traffic was dropped when Data Loss Prevention or Advanced URL Filtering were enabled. This occurred when the payload size was greater than 3.5 KB. "
+                ]
+            }
+        },
+        {
+            "PAN-261739": {
+                "info": [
+                    " (VM-Series firewalls in Microsoft Azure environments only) Fixed an issue where the firewall displayed 0 for the physical port counters read from MAC. "
+                ]
+            }
+        },
+        {
+            "PAN-261597": {
+                "info": [
+                    " Fixed an issue where the all_pktproc process stopped responding, which caused the firewall to become unavailable. "
+                ]
+            }
+        },
+        {
+            "PAN-261312": {
+                "info": [
+                    " Fixed an issue where a commit for a policy and configuration dump overlapped, which resulted in a null pointer exception. "
+                ]
+            }
+        },
+        {
+            "PAN-260059": {
+                "info": [
+                    " Fixed an issue where Device Telemetry Regions did not show up with the latest content due to content files not being parsed for the region list when Telemetry was turned off. "
+                ]
+            }
+        },
+        {
+            "PAN-259767": {
+                "info": [
+                    " Fixed an issue where GlobalProtect users were unable to connect when the option Block sessions if the certificate was not issued to the authenticating device was enabled in the certificate profile. "
+                ]
+            }
+        },
+        {
+            "PAN-258743": {
+                "info": [
+                    " Fixed an issue where, when you attempted to select a redistribution profile when creating a BGP Redistribute policy rule, the firewall displayed an empty dropdown. "
+                ]
+            }
+        },
+        {
+            "PAN-258680": {
+                "info": [
+                    " Fixed an issue on Panorama where, when you removed Security profile groups from a Security policy rule via the CLI and committed the change, the Security policy rule was deleted. "
+                ]
+            }
+        },
+        {
+            "PAN-257183": {
+                "info": [
+                    " Fixed an issue where the firewall dropped DNS traffic when using DNS Security. "
+                ]
+            }
+        },
+        {
+            "PAN-256904": {
+                "info": [
+                    " Fixed an issue where the firewall inconsistently blocked URLs due to intermittent URL category misidentification. "
+                ]
+            }
+        },
+        {
+            "PAN-253127": {
+                "info": [
+                    " Fixed an issue where, after upgrading to PAN-OS 11.0.2-h3, the hardware pool DFLT became highly utilized, and the packet buffer gradually increased. "
+                ]
+            }
+        },
+        {
+            "PAN-251724": {
+                "info": [
+                    " Fixed an issue where users matched incorrect Security policy rules with a HIP profile. "
+                ]
+            }
+        },
+        {
+            "PAN-235733": {
+                "info": [
+                    " Fixed an issue where the displayed NTP information was incorrect if the DNS servers timed out. "
+                ]
+            }
+        },
+        {
+            "PAN-234993": {
+                "info": [
+                    " Fixed an issue where CPU base gateway auto-scaling failed, which caused performance issues. "
+                ]
+            }
+        },
+        {
+            "PAN-233868": {
+                "info": [
+                    " Fixed an issue where the firewall took an incorrect action for overlapping custom and edl-url-categories in a policy rule. "
+                ]
+            }
+        },
+        {
+            "PAN-212889": {
+                "info": [
+                    " Fixed an issue on Panorama where different threat names were used when querying a threat under Threat Monitor (Monitor > App Scope) and the ACC. This resulted in the ACC displaying no data after clicking a threat name in Threat Monitor and filtering it in the global filters. "
+                ]
+            }
+        }
+    ]
+}

@@ -1,0 +1,75 @@
+{
+    "10-2-9-h11": [
+        [],
+        {
+            "PAN-263226": {
+                "info": [
+                    " Fixed an issue where decryption based traffic failed on Explicit Proxy nodes. "
+                ]
+            }
+        },
+        {
+            "PAN-261917": {
+                "info": [
+                    " Fixed an issue where websites with a no-decrypt policy rule were decrypted in traffic log when using a Google Chrome browser with PQC enabled "
+                ]
+            }
+        },
+        {
+            "PAN-260662": {
+                "info": [
+                    " Fixed an issue where large file downloads were slower than expected when private IP address visibility was enabled. "
+                ]
+            }
+        },
+        {
+            "PAN-260218": {
+                "info": [
+                    " Fixed an issue where BGP Aggregate Advertise filters did not work as expected when the summary option was enabled, and only summarized routes were advertised. "
+                ]
+            }
+        },
+        {
+            "PAN-258996": {
+                "info": [
+                    " Fixed an issue where the firewall displayed the SFP ports as PowerDown when the SFP transceiver was removed and reinserted or the port was shut down and brought back up on the peer device. "
+                ]
+            }
+        },
+        {
+            "PAN-251661": {
+                "info": [
+                    " Fixed an issue where a memory overwrite occurred during HTTP\/2 header inflation. "
+                ]
+            }
+        },
+        {
+            "PAN-251563": {
+                "info": [
+                    " Added CPLD enhancement to capture external power issues. "
+                ]
+            }
+        },
+        {
+            "PAN-240612": {
+                "info": [
+                    " Fixed a kernel panic caused by a third-party issue. "
+                ]
+            }
+        },
+        {
+            "PAN-233191": {
+                "info": [
+                    " (PA-5450 firewalls only) Fixed an issue where the Data Processing Card (DPC) restarted due to path monitor failure after QSFP28 disconnected from the Network Processing Card (NPC). "
+                ]
+            }
+        },
+        {
+            "PAN-226768": {
+                "info": [
+                    " Fixed an issue where, when the GlobalProtect app was installed on iOS endpoints and the gateway was configured to accept cookies, the app remained in the Connecting stage after authentication, and the GlobalProtect log displayed the error message User is not in allow list. This occurred when the app was restarted or when the app attempted to reconnect after disconnection. "
+                ]
+            }
+        }
+    ]
+}

@@ -100,6 +100,21 @@
             }
         },
         {
+            "WF500-5471": {
+                "info": [
+                    " An SSL\/TLS Client Hello may not be sent if the Client Hello arrives at the firewall in multiple TCP segments and the traffic is not subject to SSL decryption. "
+                ]
+            }
+        },
+        {
+            "PAN-279604": {
+                "solved": "(PAN-OS 10.1.14-h9 only)",
+                "info": [
+                    " The scheduled SaaS application usage reports are incorrectly generated and only the login page appears instead of the intended report content. "
+                ]
+            }
+        },
+        {
             "PAN-260851": {
                 "info": [
                     " From the NGFW or Panorama CLI, you can override the existing application tag even if Disable Override is enabled for the application (ObjectsApplications) tag. "

@@ -1,0 +1,236 @@
+{
+    "10-1-1": [
+        [],
+        {
+            "WF500-5568": {
+                "info": [
+                    "Fixed an issue where a firewall in FIPS mode running PAN-OS 8.1.18 or a later version failed to connect with a WildFire appliance in normal mode."
+                ]
+            }
+        },
+        {
+            "WF500-5559": {
+                "info": [
+                    "Fixed an issue where an intermittent error while analyzing signed PE samples on the WildFire appliance might have caused analysis failures."
+                ]
+            }
+        },
+        {
+            "WF500-5559": {
+                "info": [
+                    "Fixed an issue where SaaS Policy Recommendation didn\u00e2\u0080\u0099t work on firewalls because the SaaS Security Inline policy recommendation license check failed."
+                ]
+            }
+        },
+        {
+            "PAN-172419": {
+                "info": [
+                    "Fixed an issue where hot-swapping or hot-plugging a transceiver in the HSCI-A or HSCI-B port on the PA-5450 firewall caused the firewall to reboot unexpectedly."
+                ]
+            }
+        },
+        {
+            "PAN-172386": {
+                "info": [
+                    "(Passive PA-5450 firewalls in an HA active\/passive configuration only) Fixed an issue where, when the ports do not link up initially due to local or remote faults, the firewall continued to process traffic even when its port(s) were in a Disabled state."
+                ]
+            }
+        },
+        {
+            "PAN-172063": {
+                "info": [
+                    "Fixed an issue where the outbound\/inbound interface was not populated for session logs that were forwarded to Panorama."
+                ]
+            }
+        },
+        {
+            "PAN-171898": {
+                "info": [
+                    "(PA-5450 firewalls only) Fixed an issue where firewalls did not get full 10G throughput when traffic was sent from 100G or 40G interfaces to 10G interfaces."
+                ]
+            }
+        },
+        {
+            "PAN-171750": {
+                "info": [
+                    "(PA-5450 firewalls only) Fixed an issue where the HSCI interface didn\u00e2\u0080\u0099t recognize a hot-swapped 40G or 100G transceiver."
+                ]
+            }
+        },
+        {
+            "PAN-171703": {
+                "info": [
+                    "Fixed an issue where GlobalProtect Activity did not display when a device group was selected."
+                ]
+            }
+        },
+        {
+            "PAN-171290": {
+                "info": [
+                    "Fixed an issue where Panorama deployed in Google Cloud Platform (GCP) failed to the renew management server DHCP IP."
+                ]
+            }
+        },
+        {
+            "PAN-170936": {
+                "info": [
+                    "Fixed an issue where the firewall egressed offloaded frames out of order after an explicit commit (Commit on the firewall or Commit All Changes on Panorama) or an implicit comment such as an Antivirus update, Dynamic Update, or WildFire update.Note This issue persists for a network-related configuration and commit."
+                ]
+            }
+        },
+        {
+            "PAN-170825": {
+                "info": [
+                    "Fixed an issue where, when a partial Preview Change job failed, a process (configd) stopped responding."
+                ]
+            }
+        },
+        {
+            "PAN-170740": {
+                "info": [
+                    "Fixed an issue with the google-docs-uploading application that occurred if a Security policy rule was applied to a Security profile and traffic was decrypted."
+                ]
+            }
+        },
+        {
+            "PAN-170610": {
+                "info": [
+                    "Fixed an issue where SD-WAN SaaS monitoring traffic was incorrectly dropped by a Security policy that included a deny rule."
+                ]
+            }
+        },
+        {
+            "PAN-170473": {
+                "info": [
+                    "Fixed an issue where SSL traffic wasn\u00e2\u0080\u0099t decrypted on inbound inspection when the private key used a hardware security module (HSM)."
+                ]
+            }
+        },
+        {
+            "PAN-170314": {
+                "info": [
+                    "Fixed an issue where PAN-DB URL cloud updates failed because a process (devsrvr) did not fetch serial numbers, which prevented the PAN_DB URL cloud from connecting after first deployment."
+                ]
+            }
+        },
+        {
+            "PAN-170174": {
+                "info": [
+                    "Fixed an issue where a CN-NGFW pod repeatedly restarted due to eth0 being unavailable when kubelet ran network checks on eth0. The following error displayed in the dataplane node journalctl logs: failed to read pod IP from plugin\/docker: networkPlugin cni failed on the status hook for pod \"pan-ngfw-dep-<>_kube-system\": unexpected address output."
+                ]
+            }
+        },
+        {
+            "PAN-169064": {
+                "info": [
+                    "Fixed an issue where the management CPU remained at 100% due to a large number of configured User-ID agents."
+                ]
+            }
+        },
+        {
+            "PAN-168646": {
+                "info": [
+                    "Fixed an issue where Elasticsearch didn't start up in a new Log Collector deployment or downgrade because the Log Collector could not register the service."
+                ]
+            }
+        },
+        {
+            "PAN-168920": {
+                "info": [
+                    "(PA-5450 firewalls only) Fixed an issue where QoS didn\u00e2\u0080\u0099t honor the guaranteed bandwidth for classes set to a Priority of real-time."
+                ]
+            }
+        },
+        {
+            "PAN-168418": {
+                "info": [
+                    "Fixed an issue where, when an MLAV URL with an exception list was configured and forward proxy was enabled, a process (all_pktproc) repeatedly restarted, which resulted in the firewall rebooting."
+                ]
+            }
+        },
+        {
+            "PAN-167989": {
+                "info": [
+                    "Fixed a timing issue between downloading and installing threads that occurred when Panorama pushed content updates and the firewall fetched content updates simultaneously."
+                ]
+            }
+        },
+        {
+            "PAN-166398": {
+                "info": [
+                    "(PA-5450 firewalls only) Fixed an issue where, when you configured path or latency monitoring on the Health Monitor tab in the packet broker profile (ObjectsPacket Broker), the path health monitor was disabled due to a configuration synchronization issue after a reboot."
+                ]
+            }
+        },
+        {
+            "PAN-165025": {
+                "info": [
+                    "Fixed an issue where, when default interzone and intrazone Security policy rules were overwritten, the rules did not display hit counts."
+                ]
+            }
+        },
+        {
+            "PAN-164707 ": {
+                "info": [
+                    "(PA-7000 Series firewalls only) Fixed an issue where logs were not viewable via the web interface in the Monitor tab or via the CLI."
+                ]
+            }
+        },
+        {
+            "PAN-164392": {
+                "info": [
+                    "Fixed an issue where an out-of-memory (OOM) condition occurred due to a memory leak related to a process (logrcvr)."
+                ]
+            }
+        },
+        {
+            "PAN-163800": {
+                "info": [
+                    "Fixed an intermittent issue where the presence of an Anti-Spyware profile in a Security policy rule that matched DNS traffic caused DNS responses to be malformed in transit."
+                ]
+            }
+        },
+        {
+            "PAN-162442": {
+                "info": [
+                    "Fixed an issue in HA active\/active configurations where deleting an interface not associated with a virtual router did not sync the configuration change."
+                ]
+            }
+        },
+        {
+            "PAN-158932": {
+                "info": [
+                    "Fixed an issue where an increase was observed on spyware_state, which caused latency."
+                ]
+            }
+        },
+        {
+            "PAN-158649": {
+                "info": [
+                    "Fixed an issue where commits to the Prisma Access Remote networks from Panorama were failing when the management server on the cloud firewall failed to exit cleanly and reported the following error: pan_check_cert_status(pan_crl_ocsp.c:284): sysd write failed (TIMEOUT)"
+                ]
+            }
+        },
+        {
+            "PAN-157715": {
+                "info": [
+                    "Fixed an intermittent issue where SMB file transfer operations failed due to packet drops that were caused by the Content and Threat Detection (CTD) queue filling up quickly. This fix introduces a new CLI command which, when enabled, prevent these failures: set system setting ctd nonblocking-pattern-match-qsizecheck [enable|disable]."
+                ]
+            }
+        },
+        {
+            "PAN-156388": {
+                "info": [
+                    "Fixed an issue where a process (useridd) stopped responding while attempting to remove all HIP reports on the disk."
+                ]
+            }
+        },
+        {
+            "PAN-154053": {
+                "info": [
+                    "Fixed an issue where, when two or more PA-5450 fan assemblies failed, the firewall shut down without providing a console or CLI error message about the fan failure."
+                ]
+            }
+        }
+    ]
+}

@@ -1,0 +1,68 @@
+{
+    "11-2-1": [
+        [],
+        {
+            "PAN-257919": {
+                "info": [
+                    "Fixed an issue where, when using explicit proxy with SAML authentication, initiating SAML authentication with a non-GET request resulted in a 302 redirect response instead of the expected 200 ok response. "
+                ]
+            }
+        },
+        {
+            "PAN-256343": {
+                "info": [
+                    "Fixed an issue where, when Advanced Routing Engine was enabled and OSPFv3 was configured, the CLI command show advanced-routing ospf interface caused traffic to be disrupted, and the interface and area information did not display in CLI or the web interface. "
+                ]
+            }
+        },
+        {
+            "PAN-255868": {
+                "info": [
+                    "(PA-3400 Series firewalls only) Fixed an issue where the firewall entered maintenance mode after enabling kernel data collection during the silent reboot. "
+                ]
+            }
+        },
+        {
+            "PAN-252661": {
+                "info": [
+                    " Fixed an issue where changes to the gp-ip-mgmt service route did not take effect after a commit. "
+                ]
+            }
+        },
+        {
+            "PAN-255227": {
+                "info": [
+                    "Fixed an issue where the the MAC address was sent to the DHCP server instead of the hostname on macOS endpoints. "
+                ]
+            }
+        },
+        {
+            "PAN-254236": {
+                "info": [
+                    " Fixed an issue where Client Hello packets were dropped when SSL\/TLS handshake inspection was enabled. "
+                ]
+            }
+        },
+        {
+            "PAN-249292": {
+                "info": [
+                    "(VM-Series firewalls on Microsoft Azure environments only) Fixed an issue where CPU usage was higher than expected after a hotplug event when Accelerated Networking was enabled for the management interface. "
+                ]
+            }
+        },
+        {
+            "PAN-236909": {
+                "info": [
+                    "Fixed an issue where, when you committed the first configuration change after booting up the firewall, the external dynamic list file download failed until the list was refreshed. This occurred when the configuration was pushed with a certificate profile. "
+                ]
+            }
+        },
+        {
+            "PAN-164885": {
+                "info": [
+                    "Fixed an issue on Panorama where Commit and Push or Push to Devices operations failed when an external dynamic list was configured to check for updates every 5 minutes due to the commit and external dynamic fetch processes overlapping. "
+                ]
+            }
+        }
+    ]
+}

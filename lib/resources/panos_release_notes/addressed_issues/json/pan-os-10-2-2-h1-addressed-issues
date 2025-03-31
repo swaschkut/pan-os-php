@@ -1,0 +1,26 @@
+{
+    "10-2-2-h1": [
+        [],
+        {
+            "PAN-195517": {
+                "info": [
+                    "Fixed an issue where CommitAll operations from Panorama to Prisma Access device groups failed due to missing configuration files."
+                ]
+            }
+        },
+        {
+            "PAN-194107": {
+                "info": [
+                    "Fixed an issue where the expiry date for the Advanced Threat Protection license was incorrect for BND3 payg VM-Series firewalls on Amazon Web Services (AWS), Oracle Cloud Infrastructure (OCI), Google Cloud Platform (GCP), and Microsoft Azure."
+                ]
+            }
+        },
+        {
+            "PAN-186075": {
+                "info": [
+                    "(VM-Series firewalls only) Fixed an issue where the firewall rebooted after receiving large packets while in DPDK mode on Azure virtual machines running CX4 (MLx5) drivers."
+                ]
+            }
+        }
+    ]
+}

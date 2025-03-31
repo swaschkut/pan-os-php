@@ -1,0 +1,33 @@
+{
+    "11-1-2-h1": [
+        [],
+        {
+            "PAN-242879": {
+                "info": [
+                    " Fixed an issue where the dataplane restarted when advanced features such as Advanced Threat Protection, Advanced WildFire, and Advanced URL Filtering hit max latency under inline mode. "
+                ]
+            }
+        },
+        {
+            "PAN-242634": {
+                "info": [
+                    " (PA-1400 Series, PA-3400 Series, and PA-5400 Series firewalls only) Fixed an issue where a large packet burst from the dataplane to the management plane caused the DPDK kernel network interface to become unresponsive. "
+                ]
+            }
+        },
+        {
+            "PAN-240166": {
+                "info": [
+                    " Fixed an issue where, when explicit proxy was configured on the firewall, websites loaded more slowly than expected or did not load due to DNS using TCP. "
+                ]
+            }
+        },
+        {
+            "PAN-239279": {
+                "info": [
+                    " Fixed an issue where the proxy did not accept new connections. "
+                ]
+            }
+        }
+    ]
+}

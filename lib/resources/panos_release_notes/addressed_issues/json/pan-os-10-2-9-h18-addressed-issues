@@ -1,0 +1,159 @@
+{
+    "10-2-9-h18": [
+        [],
+        {
+            "PAN-268727": {
+                "info": [
+                    " Fixed an issue where traffic was dropped when the accumulation proxy was enabled and header insertion modified packets. "
+                ]
+            }
+        },
+        {
+            "PAN-268314": {
+                "info": [
+                    " Fixed an issue where new files were not sent to WildFire. With this fix, the WildFire reserved drive space has been increased for greater session caching capability. "
+                ]
+            }
+        },
+        {
+            "PAN-267704": {
+                "info": [
+                    " Fixed an issue where the firewall did not send an ICMP error packet to Envoy when the MSS was exceeded. "
+                ]
+            }
+        },
+        {
+            "PAN-266427": {
+                "info": [
+                    " Fixed an issue on the firewall where, when a high number of SD-WAN branch sites or interfaces were not connected, SD-WAN processes and tund processes stopped responding due to a high probing rate. "
+                ]
+            }
+        },
+        {
+            "PAN-265900": {
+                "info": [
+                    " Fixed an issue where the firewall stopped responding due to a tund process or SD-WAN process restart. "
+                ]
+            }
+        },
+        {
+            "PAN-265742": {
+                "info": [
+                    " Fixed an issue on the Panorama web interface where the OK button on the GlobalProtect gateway configuration dialog box was not clickable. "
+                ]
+            }
+        },
+        {
+            "PAN-265111": {
+                "info": [
+                    " Fixed an issue where fragmented SSL hello packets were reordered when going out of the SC\/ZTT towards the datacenter. "
+                ]
+            }
+        },
+        {
+            "PAN-264169": {
+                "info": [
+                    " (PA-5400 Series firewalls only) Fixed an issue where the firewall sent correlated event logs to the syslog server using the management interface instead of the log interface. "
+                ]
+            }
+        },
+        {
+            "PAN-263973": {
+                "info": [
+                    " Fixed an issue where log collectors had a low incoming log rate. "
+                ]
+            }
+        },
+        {
+            "PAN-262383": {
+                "info": [
+                    " Fixed an issue where the firewall was unable to decompress the HTTP2 header, which caused the session to be classified as unknown-tcp instead of web-browsing. "
+                ]
+            }
+        },
+        {
+            "PAN-261673": {
+                "info": [
+                    " (VM-Series firewalls on Microsoft Azure environments only) Fixed an issue where, when Accelerated Networking was enabled, traffic was dropped because of the flow_parse_ip_hdr counter related to an Nvidia driver issue. "
+                ]
+            }
+        },
+        {
+            "PAN-260564": {
+                "info": [
+                    " Fixed an issue on firewalls in HA configurations where a network loop was detected by switches after suspending HA on the active firewall. "
+                ]
+            }
+        },
+        {
+            "PAN-257601": {
+                "info": [
+                    " (PA-5450 firewalls only) Fixed an issue where Networking Cards (NC) experienced an internal link fault which caused path monitoring failure on the Dataplane Processing Card (DPC). "
+                ]
+            }
+        },
+        {
+            "PAN-253213": {
+                "info": [
+                    " Fixed an issue where the firewall sent HIP notifications every time it received a HIP report instead of every two hours. "
+                ]
+            }
+        },
+        {
+            "PAN-252730": {
+                "info": [
+                    " Fixed an issue where the Elasticsearch status for a log collector group changed to red or yellow after performing a collector group push. "
+                ]
+            }
+        },
+        {
+            "PAN-246699": {
+                "info": [
+                    " Fixed an issue on Panorama where the Rule Usage and Apps Seen under Security policy rules stopped incrementing. "
+                ]
+            }
+        },
+        {
+            "PAN-246420": {
+                "info": [
+                    " (PA-5450 Series firewalls only) Fixed an issue where the firewall rebooted unexpectedly during an upgrade. "
+                ]
+            }
+        },
+        {
+            "PAN-244950 and PAN-221352": {
+                "info": [
+                    " A fix was made to address CVE-2024-2550. "
+                ]
+            }
+        },
+        {
+            "PAN-235877": {
+                "info": [
+                    " (PA-400 Series firewalls only) Fixed an issue where the firewall failed to start up after upgrading PAN-OS due to system file corruption. "
+                ]
+            }
+        },
+        {
+            "PAN-226184": {
+                "info": [
+                    " Fixed an issue where push operations from Panorama were slow due to the rasmgr process taking longer than expected. "
+                ]
+            }
+        },
+        {
+            "PAN-224833": {
+                "info": [
+                    " Fixed an issue where the firewall dropped DHCPv6 relay packets if there were duplicate link-local addresses on different subinterfaces. "
+                ]
+            }
+        },
+        {
+            "PAN-216941": {
+                "info": [
+                    " (Panorama appliances in Log Collector mode only) Fixed an issue where Panorama stopped processing and saving logs. "
+                ]
+            }
+        }
+    ]
+}

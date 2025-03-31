@@ -1,0 +1,194 @@
+{
+    "10-2-7-h3": [
+        [],
+        {
+            "PAN-240197": {
+                "info": [
+                    " Fixed an issue where configuration changes made in Panorama and pushed to the firewall were not reflected on the firewall. "
+                ]
+            }
+        },
+        {
+            "PAN-239144": {
+                "info": [
+                    " Fixed an issue where the web interface was slower than expected when logging in, committing, and pushing changes after upgrading to PAN-OS 10.2.7. "
+                ]
+            }
+        },
+        {
+            "PAN-238792": {
+                "info": [
+                    " Fixed the following device certificate issues: The firewall was unable to automatically renew the device certificate-Fetching device certificates failed incorrectly with the error message OTP is not valid.Firewalls disconnected from Strata Logging Service after renewing the device certificate.The device certificate was not correctly generated on the log forwarding card (LFC).WildFire cloud logs did not log thermite certificate usage status. "
+                ]
+            }
+        },
+        {
+            "PAN-237935": {
+                "info": [
+                    " Extended the offline PAN-DB, Panorama, and WildFire certificates which were previously set to expire on September 2, 2024. "
+                ]
+            }
+        },
+        {
+            "PAN-237876": {
+                "info": [
+                    " Extended the firewall Panorama root CA certificate which was previously set to expire on April 7th, 2024. "
+                ]
+            }
+        },
+        {
+            "PAN-234929": {
+                "info": [
+                    " Fixed an issue where tabs in the ACC such as Network Activity Threat Activity and Blocked Activity did not display data when you applied a Time filter of Last 15 Minutes, Last Hour, Last 6 Hours, or Last 12 Hours, and the data that was displayed with the Last 24 Hours filter was not accurate. Reports that were run against summary logs also did not display accurate results. "
+                ]
+            }
+        },
+        {
+            "PAN-234279": {
+                "info": [
+                    " Fixed an issue where the ikemgr process crashed due to an IKEv1 timing issue, which caused commits to fail with the following error message: Client ikemgr requesting last config in the middle of a commit\/validate, aborting current commit. "
+                ]
+            }
+        },
+        {
+            "PAN-232377": {
+                "info": [
+                    " Fixed an issue where the AddrObjRefresh job failed when the useridd process restarted. "
+                ]
+            }
+        },
+        {
+            "PAN-231771": {
+                "info": [
+                    " Fixed an issue where the firewall issued \/box\/getserv\/ requests with PAN-OS 7.1.0 and did not take device certificates. "
+                ]
+            }
+        },
+        {
+            "PAN-231169": {
+                "info": [
+                    " (PA-220 firewalls only) Fixed an issue where an unused plugin incorrectly used memory. "
+                ]
+            }
+        },
+        {
+            "PAN-228273": {
+                "info": [
+                    " (Panorama appliances in FIPS-CC mode only) Fixed an issue where the Elasticsearch cluster did not come up, and the show log-collector-es-cluster health CLI command displayed the status as red. This caused log ingestion issues for Panorama appliances in Panorama mode or Log Collector mode. "
+                ]
+            }
+        },
+        {
+            "PAN-227568": {
+                "info": [
+                    " When a device certificate is installed, renewed, or removed, the firewall will reconnect to the WildFire cloud to use the newest certificate. "
+                ]
+            }
+        },
+        {
+            "PAN-224954": {
+                "info": [
+                    " Fixed an issue where, after upgrading and rebooting a Panorama appliance in Panorama or Log Collector mode, managed firewalls continuously disconnected. "
+                ]
+            }
+        },
+        {
+            "PAN-224067": {
+                "info": [
+                    " Fixed an issue where cookie authentication did not work for GlobalProtect when an authentication override domain was configured in the SAML authentication profile. "
+                ]
+            }
+        },
+        {
+            "PAN-224060": {
+                "info": [
+                    " (PA-220 Series firewalls only) Fixed an issue where multiple dataplane processes stopped responding after an upgrade. "
+                ]
+            }
+        },
+        {
+            "PAN-223652": {
+                "info": [
+                    " Fixed an issue where data was not thread safe and led to concurrent read\/write issues that caused GPSVC to stop working unexpectedly. "
+                ]
+            }
+        },
+        {
+            "PAN-223270": {
+                "info": [
+                    " Fixed an issue with Virtual Wire links on firewalls in active\/active HA configurations where the forwarding path was not preserved in HTTP\/2 cleartext traffic with asymmetric routing. "
+                ]
+            }
+        },
+        {
+            "PAN-222002": {
+                "info": [
+                    " Fixed an issue where content updates failed with the error message Unable to get key pancontent-8.0.pass from cryptod. Error -9. "
+                ]
+            }
+        },
+        {
+            "PAN-218988": {
+                "info": [
+                    " Fixed an issue in FIPS mode where, when importing a certificate with a new private key, and the certificate used the name of an existing certificate on the Panorama, the following error message was displayed: Mismatched public and private keys. "
+                ]
+            }
+        },
+        {
+            "PAN-218057": {
+                "info": [
+                    " (PA-7000 Series firewalls only) Fixed an issue where internal path monitoring failed due to a heartbeat miss. "
+                ]
+            }
+        },
+        {
+            "PAN-217289": {
+                "info": [
+                    " Fixed an intermittent issue where HTTP\/2 traffic caused buffer depletion. "
+                ]
+            }
+        },
+        {
+            "PAN-216214": {
+                "info": [
+                    " (Panorama managed firewalls in active\/active HA configurations only) Fixed an issue where the HA (high availability) status displayed as Out of Sync (Panorama > Managed Devices > Health) if local firewall configurations were made on one of the HA peers. This caused the next HA configuration sync to overwrite the local firewall configuration made on the HA peer. "
+                ]
+            }
+        },
+        {
+            "PAN-215576": {
+                "info": [
+                    " Fixed an issue where the userID-Agent and TS-Agent certificates were set to expire on November 18, 2024. With this fix, the expiration date has been extended to January 2032. "
+                ]
+            }
+        },
+        {
+            "PAN-208395": {
+                "info": [
+                    " Fixed an issue where user authentication failed in multi-vsys environments with the error message User is not in allowlist when an authentication profile was created in a shared configuration space. "
+                ]
+            }
+        },
+        {
+            "PAN-202361": {
+                "info": [
+                    " Fixed an issue where packets queued to the pan_task process were still transmitted when the process was not responding. "
+                ]
+            }
+        },
+        {
+            "PAN-189769": {
+                "info": [
+                    "Fixed an issue on Amazon Web Services (AWS) Gateway Load Balancer (GWLB) deployments with overlay routing enabled where, when a single firewall was the backend of multiple GWLBs, packets were re-encapsulated with an incorrect source IP address."
+                ]
+            }
+        },
+        {
+            "PAN-181706": {
+                "info": [
+                    " Fixed an issue where the logrcvr process stopped responding after upgrading to PAN-OS 10.1. "
+                ]
+            }
+        }
+    ]
+}

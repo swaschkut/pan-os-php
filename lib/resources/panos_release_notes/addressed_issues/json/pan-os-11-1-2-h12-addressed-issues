@@ -1,0 +1,89 @@
+{
+    "11-1-2-h12": [
+        [],
+        {
+            "PAN-264421": {
+                "info": [
+                    " Fixed an issue on Panorama where Push Scope did not populate automatically after changing the device group configuration. "
+                ]
+            }
+        },
+        {
+            "PAN-263226": {
+                "info": [
+                    " Fixed an issue where decryption based traffic failed on Explicit Proxy nodes. "
+                ]
+            }
+        },
+        {
+            "PAN-262831": {
+                "info": [
+                    " (PA-5450 firewalls only) Fixed an intermittent issue where the all_task process stopped responding, which caused the firewall to restart. "
+                ]
+            }
+        },
+        {
+            "PAN-262593": {
+                "info": [
+                    " Fixed an issue where traffic to websites failed on the Google Chrome web browser on Secure Web Gateway (SWG) nodes. "
+                ]
+            }
+        },
+        {
+            "PAN-261991": {
+                "info": [
+                    " Fixed an issue where traffic that did not match a decryption policy rule, or matched a no-decrypt policy rule, failed when accumulation proxy was enabled and a Zone Protection profile was configured with syn-cookies enabled. "
+                ]
+            }
+        },
+        {
+            "PAN-261917": {
+                "info": [
+                    " Fixed an issue where websites with a no-decrypt policy rule were decrypted in traffic log when using a Google Chrome browser with PQC enabled. "
+                ]
+            }
+        },
+        {
+            "PAN-259769": {
+                "info": [
+                    " Fixed an issue where the GlobalProtect portal was not accessible via a web browser and displayed the error ERR_EMPTY_RESPONSE. "
+                ]
+            }
+        },
+        {
+            "PAN-258736": {
+                "info": [
+                    " Fixed an issue where policy rule configurations pushed from Panorama were not reflected on the firewall if the rule had 63 characters. "
+                ]
+            }
+        },
+        {
+            "PAN-253213": {
+                "info": [
+                    " Fixed an issue where the firewall sent HIP notifications every time it received a HIP report instead of every two hours. "
+                ]
+            }
+        },
+        {
+            "PAN-252300": {
+                "info": [
+                    " Fixed an issue where you were unable to select device groups in the push scope for user accounts. "
+                ]
+            }
+        },
+        {
+            "PAN-245690": {
+                "info": [
+                    " Fixed an issue where the Managed Collectors health status on Panorama displayed as empty. "
+                ]
+            }
+        },
+        {
+            "PAN-209574": {
+                "info": [
+                    " Fixed an issue with HTTP\/2 traffic where downloading large files did not work when decryption was enabled. "
+                ]
+            }
+        }
+    ]
+}

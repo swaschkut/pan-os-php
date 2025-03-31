@@ -1,0 +1,229 @@
+{
+    "10-2-10-h14": [
+        [],
+        {
+            "PAN-279604": {
+                "info": [
+                    " Fixed an issue where scheduled SaaS application usage reports were generated incorrectly, and the login page was displayed instead of the report content. "
+                ]
+            }
+        },
+        {
+            "PAN-276822": {
+                "info": [
+                    " Fixed an issue where the packet buffer size increased significantly when WildFire File Forwarding was continued after a threat detection and then canceled. "
+                ]
+            }
+        },
+        {
+            "PAN-276177": {
+                "info": [
+                    " Fixed an issue where App Acceleration did not work with Oracle databases. "
+                ]
+            }
+        },
+        {
+            "PAN-274592": {
+                "info": [
+                    " (Firewalls in HA configurations only) Fixed an issue where the firewall did not fail over when the active firewall experienced data plane issues. "
+                ]
+            }
+        },
+        {
+            "PAN-273994": {
+                "info": [
+                    " A fix was made to address CVE-2025-0111. "
+                ]
+            }
+        },
+        {
+            "PAN-273971": {
+                "info": [
+                    " A fix was made to address CVE-2025-0108. "
+                ]
+            }
+        },
+        {
+            "PAN-273278": {
+                "info": [
+                    " A fix was made to address CVE-2025-0109. "
+                ]
+            }
+        },
+        {
+            "PAN-273153": {
+                "info": [
+                    " Fixed an issue where the Panorama web interface was slower than expected due to excessive polling of the MonitorDirect.getTasks API by the Task Manager. "
+                ]
+            }
+        },
+        {
+            "PAN-273021": {
+                "info": [
+                    " Fixed an issue where 25G port links did not come up due to a change in the handling of 25G DAC modules. "
+                ]
+            }
+        },
+        {
+            "PAN-271926": {
+                "info": [
+                    " Fixed an issue where TLS 1.3 decryption failed with a bad record MAC error when the firewall was configured to decrypt and inspect TLS traffic. "
+                ]
+            }
+        },
+        {
+            "PAN-271301": {
+                "info": [
+                    " (VM-Series firewalls on Amazon Web Services (AWS) environments with GWLB integrated only) Fixed an issue where DNS queries timed out when overlay routing was enabled. "
+                ]
+            }
+        },
+        {
+            "PAN-270549": {
+                "info": [
+                    " Fixed an issue where early TLS data was not handled correctly by the accumulation proxy. "
+                ]
+            }
+        },
+        {
+            "PAN-269899": {
+                "info": [
+                    " Fixed an issue where the Panorama web interface was slower than expected when querying for device tags. "
+                ]
+            }
+        },
+        {
+            "PAN-269731": {
+                "info": [
+                    " Fixed an issue where Panorama did not display logs from firewalls after upgrading to PAN-OS 10.2.11 on devices due to Elasticsearch (ES) getting restarted continuously. "
+                ]
+            }
+        },
+        {
+            "PAN-269027": {
+                "info": [
+                    " Fixed an issue related to external dynamic lists that caused commit times on the firewall to be higher than expected. "
+                ]
+            }
+        },
+        {
+            "PAN-268972": {
+                "info": [
+                    " Fixed an issue where Panorama was slower than expected when using a high number of device group tags in a non-shared context. "
+                ]
+            }
+        },
+        {
+            "PAN-268501": {
+                "info": [
+                    " Fixed an issue where the firewall was unable to generate a TSF file due to a full root partition. "
+                ]
+            }
+        },
+        {
+            "PAN-268489": {
+                "info": [
+                    " Fixed a Threat log PCAP ID overwrapping issue. "
+                ]
+            }
+        },
+        {
+            "PAN-268260": {
+                "info": [
+                    " Fixed an issue on hardware firewalls where, when SSL decryption was enabled and Client Hello messages spanned multiple TCP segments, some SSL decrypted sessions failed. "
+                ]
+            }
+        },
+        {
+            "PAN-267781": {
+                "info": [
+                    " Fixed an issue where Panorama did not display the Source Dynamic Address Group. "
+                ]
+            }
+        },
+        {
+            "PAN-267671": {
+                "info": [
+                    " Fixed an issue where the firewall rebooted unexpectedly due to the all_task process restarting and repeated OOM conditions occurring on the pan_task process. "
+                ]
+            }
+        },
+        {
+            "PAN-265791": {
+                "info": [
+                    " Fixed an issue where the all_task process stopped responding, which caused the dataplane to go down. "
+                ]
+            }
+        },
+        {
+            "PAN-265179": {
+                "info": [
+                    "Fixed an issue where a kernel race condition caused the firewall to reboot with a kernel panic."
+                ]
+            }
+        },
+        {
+            "PAN-262627": {
+                "info": [
+                    " Fixed an issue where the firewall rebooted into maintenance mode due to a service failure in the configd process. "
+                ]
+            }
+        },
+        {
+            "PAN-261739": {
+                "info": [
+                    " (VM-Series firewalls in Microsoft Azure environments only) Fixed an issue where the firewall displayed 0 for the physical port counters read from MAC. "
+                ]
+            }
+        },
+        {
+            "PAN-261074": {
+                "info": [
+                    " Fixed an issue where the firewall delayed video file transfers over SMB when Exclude Video Traffic from the Tunnel feature was enabled and no applications were added to the list. "
+                ]
+            }
+        },
+        {
+            "PAN-260827": {
+                "info": [
+                    " Fixed an issue where the firewall consumed excessive CPU while processing traffic for a workload running on a GKE cluster, which caused reduced throughput. "
+                ]
+            }
+        },
+        {
+            "PAN-260090": {
+                "info": [
+                    " Fixed an issue where commit all operations failed when the application openair-psa was used as a keyword on a remote network instance that was upgraded to PAN-OS 10.2.4-h20. "
+                ]
+            }
+        },
+        {
+            "PAN-259727": {
+                "info": [
+                    " (Panorama appliances in HA configurations only) Fixed an issue where Panorama became unresponsive and displayed a 504 gateway timeout error when accessing the web interface or the CLI. "
+                ]
+            }
+        },
+        {
+            "PAN-246304": {
+                "info": [
+                    " Fixed an issue on Panorama where commits failed due to a timeout in the sysd process during decryption. "
+                ]
+            }
+        },
+        {
+            "PAN-239952": {
+                "info": [
+                    " (Firewalls in active\/passive HA configurations only) Fixed an issue where HA sync messages from the active firewall took longer than expected to reach the passive firewall. "
+                ]
+            }
+        },
+        {
+            "PAN-222484": {
+                "info": [
+                    " A fix was made to address CVE-2024-5920. "
+                ]
+            }
+        }
+    ]
+}

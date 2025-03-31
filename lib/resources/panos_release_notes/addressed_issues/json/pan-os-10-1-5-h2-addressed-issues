@@ -1,0 +1,67 @@
+{
+    "10-1-5-h2": [
+        {
+            "Issue ID": {
+                "info": [
+                    "Description"
+                ]
+            }
+        },
+        {
+            "PAN-191629": {
+                "info": [
+                    "(PA-5450 firewalls only) Fixed an issue where the hourly summary log was limited to 100,001 lines when summarized, which resulted in inconsistent report results when using summary logs."
+                ]
+            }
+        },
+        {
+            "PAN-190660": {
+                "info": [
+                    "Fixed an issue where the vld process stopped responding when Elasticsearch had no data."
+                ]
+            }
+        },
+        {
+            "PAN-190644": {
+                "info": [
+                    "Fixed an issue where Elasticsearch removed indices earlier than the configured retention period."
+                ]
+            }
+        },
+        {
+            "PAN-190409": {
+                "info": [
+                    "(PA-5450 and PA-3200 Series firewalls that use an FE101 processor only) Fixed an issue where packets in the same session were forwarded through a different member of an aggregate ethernet group when the session was offloaded. The fix is that you can use the following CLI command to change the default tag setting to the tuple setting: admin@firewall> set session lag-flow-key-type ? > tag tag > tuple tuple tag is the default behavior (tag based on the CPU, tuple based on the FE). tuple is the new behavior, where both CPU and FE use the same selection algorithm. Use the following command to display the algorithm: admin@firewall> show session lag-flow-key-type dp0: tuple based on fe100 dp1: tuple based on fe100"
+                ]
+            }
+        },
+        {
+            "PAN-189375": {
+                "info": [
+                    "Fixed an issue where, when migrating the firewall, the firewall dropped packets when trying to re-use the TCP session."
+                ]
+            }
+        },
+        {
+            "PAN-188097": {
+                "info": [
+                    "Fixed an issue where the firewall stopped allocating new sessions with increments in the counter session_alloc_failure. This was caused by GPRS tunneling protocol (GTP-U) tunnel session aging processing issue."
+                ]
+            }
+        },
+        {
+            "PAN-183529": {
+                "info": [
+                    "(PA-5450 firewalls only) Fixed an issue where upgrading the firewall caused corrupted log records to be created, which caused the logrcvr process to fail. This resulted in the auto-commit process required to bring up the firewall after a reboot to fail and, subsequently, the firewall to become unresponsive."
+                ]
+            }
+        },
+        {
+            "PAN-181277": {
+                "info": [
+                    "Fixed an issue where VPN tunnels in SD-WAN flapped due to duplicate tunnel IDs."
+                ]
+            }
+        }
+    ]
+}

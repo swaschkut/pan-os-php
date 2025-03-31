@@ -37,6 +37,7 @@ UTIL:
 * type=securityprofile | improve BP - visibility |
 * type=stats - improve BP logging | type=securityprofile action=exporttoexcel - split AS and AS DNS Security
 * type=application | introduce 'filter=(alg-disable-capability is.available)' - to show all app-ids where it is possible to disable ALG
+* develop pan-os-release-notes - extend with addressed issues - bring in filter bugid=XYZ
 
 BUGFIX:
 * type=securityprofile securitprofiletype=spyware | bugfix of displaying botnet-domain if packet-capture is missing

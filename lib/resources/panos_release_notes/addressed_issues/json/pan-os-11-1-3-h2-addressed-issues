@@ -1,0 +1,47 @@
+{
+    "11-1-3-h2": [
+        [],
+        {
+            "PAN-259733": {
+                "info": [
+                    " Fixed an issue where a custom report was not deleted on Panorama when expected. "
+                ]
+            }
+        },
+        {
+            "PAN-259473": {
+                "info": [
+                    " (PA-5450 firewalls only) Fixed an issue where the chassis shut down when FAN1 was removed. "
+                ]
+            }
+        },
+        {
+            "PAN-254411": {
+                "info": [
+                    " Fixed an issue where the configd process stopped responding, which caused ERR_CONNECTION_REFUSED error messages to be displayed in admin sessions. "
+                ]
+            }
+        },
+        {
+            "PAN-253546": {
+                "info": [
+                    " Fixed an issue where a TLS client hello was split into multiple packets and arrived out of order, so the packets were dropped and the session terminated. "
+                ]
+            }
+        },
+        {
+            "PAN-249814": {
+                "info": [
+                    " Fixed an issue where multiple all_task processes stopped responding, which caused the dataplane to fail. "
+                ]
+            }
+        },
+        {
+            "PAN-247099": {
+                "info": [
+                    " Fixed an issue where the firewall decrypted traffic unexpectedly when the client hello was spread across multiple packets. "
+                ]
+            }
+        }
+    ]
+}

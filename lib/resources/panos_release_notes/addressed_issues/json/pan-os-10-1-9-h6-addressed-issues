@@ -1,0 +1,12 @@
+{
+    "10-1-9-h6": [
+        [],
+        {
+            "PAN-222712": {
+                "info": [
+                    "(PA-5450 firewalls only) Fixed a low frequency DPC restart issue."
+                ]
+            }
+        }
+    ]
+}

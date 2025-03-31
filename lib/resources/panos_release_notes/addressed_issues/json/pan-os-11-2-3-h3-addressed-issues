@@ -1,0 +1,26 @@
+{
+    "11-2-3-h3": [
+        [],
+        {
+            "PAN-272809": {
+                "info": [
+                    " A fix was made to address CVE-2024-0012 (PAN-SA-2024-0015) and CVE-2024-9474. "
+                ]
+            }
+        },
+        {
+            "PAN-247230": {
+                "info": [
+                    " Fixed an issue where the syslog forwarding configuration did not include the full path for Security policy rules. "
+                ]
+            }
+        },
+        {
+            "PAN-259997": {
+                "info": [
+                    " (PA-3410, PA-3420, and PA-3430 firewalls only) Fixed an issue where the install failed when upgrading from PAN-OS 10.2.3-h3 and later 10.2 releases to PAN-OS 10.2.10 due to the number of configured vsys zones exceeding the zone limit in PAN-OS 10.2.10. "
+                ]
+            }
+        }
+    ]
+}

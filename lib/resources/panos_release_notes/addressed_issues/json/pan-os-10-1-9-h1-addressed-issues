@@ -1,0 +1,82 @@
+{
+    "10-1-9-h1": [
+        [],
+        {
+            "PAN-213661": {
+                "info": [
+                    " Fixed an issue where memory allocation failure caused dataplane processes to restart. This issue occurred when decryption was enabled and the device is under heavy L7 usage. "
+                ]
+            }
+        },
+        {
+            "PAN-211242": {
+                "info": [
+                    " Fixed an issue where missed heartbeats caused the Data Processing Card (DPC) and its corresponding Network Processing Card (NPC) to restart due to internal packet path monitoring failure. "
+                ]
+            }
+        },
+        {
+            "PAN-210327": {
+                "info": [
+                    " (PA-5200 Series firewalls only) Fixed an issue where upgrading to PAN-OS 10.1.7, an internal loop caused an increase in the packets received per second. "
+                ]
+            }
+        },
+        {
+            "PAN-209069": {
+                "info": [
+                    " Fixed an issue where IP addresses in the X-Forwarded-For (XFF) field were not logged when the IP address contained an associated port number. "
+                ]
+            }
+        },
+        {
+            "PAN-209021": {
+                "info": [
+                    " Fixed an issue where packets were fragmented when SD-WAN VPN tunnel was configured on aggregate ethernet interfaces and sub-interfaces. "
+                ]
+            }
+        },
+        {
+            "PAN-208987": {
+                "info": [
+                    " (PA-5400 Series only) Fixed an issue where packets were not transmitted from the firewall if its fragments were received on different slots. This occurred when aggregate ethernet (AE) members in an AE interface were placed on a different slot. "
+                ]
+            }
+        },
+        {
+            "PAN-207740": {
+                "info": [
+                    " Fixed an issue that resulted in a race condition, which caused the configd process to stop responding. "
+                ]
+            }
+        },
+        {
+            "PAN-207400": {
+                "info": [
+                    " Fixed an issue on Octeon based dplatforms where fragmented VLAN tagged packets dropped on an aggregate interface. "
+                ]
+            }
+        },
+        {
+            "PAN-205255": {
+                "info": [
+                    " Fixed a rare issue that caused the dataplane to restart unexpectedly. "
+                ]
+            }
+        },
+        {
+            "PAN-203137": {
+                "info": [
+                    " (PA-5450 firewalls only) Fixed an issue where HSCI ports did not come up when QSFP DAC cables were used. "
+                ]
+            }
+        },
+        {
+            "PAN-186412": {
+                "info": [
+                    " Fixed an issue where invalid packet-ptr was seen in work entries. "
+                ]
+            }
+        }
+    ]
+}

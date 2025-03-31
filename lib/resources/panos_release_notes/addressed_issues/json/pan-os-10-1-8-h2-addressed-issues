@@ -1,0 +1,250 @@
+{
+    "10-1-8-h2": [
+        [],
+        {
+            "PAN-208724": {
+                "info": [
+                    "Fixed an issue where port pause frame settings did not work as expected and incorrect pause frames occurred."
+                ]
+            }
+        },
+        {
+            "PAN-208718": {
+                "info": [
+                    "Additional debug information was added to capture internal details during traffic congestion."
+                ]
+            }
+        },
+        {
+            "PAN-206658": {
+                "info": [
+                    "Fixed a timeout issue in the Intel ixgbe driver that resulted in internal path monitoring failure."
+                ]
+            }
+        },
+        {
+            "PAN-206251": {
+                "info": [
+                    "(PA-7000 Series firewalls with Log Forwarding Cards (LFCs) only) Fixed an issue where the logrcvr process did not send the system-start SNMP trap during startup."
+                ]
+            }
+        },
+        {
+            "PAN-205735": {
+                "info": [
+                    "Fixed an issue where the mgmtsrvr process stopped responding, which caused the Panorama web interface to become inaccessible and return a 504 Gateway Not Reachable page."
+                ]
+            }
+        },
+        {
+            "PAN-205030": {
+                "info": [
+                    "Fixed an issue where, when a session hit policy based forwarding with symmetric return enabled was not offloaded, the firewall received excessive return-mac update messages, which resulted in resource contention and traffic disruption."
+                ]
+            }
+        },
+        {
+            "PAN-204335": {
+                "info": [
+                    "Fixed an issue where Panorama became unresponsive, and when refreshed, the error 504 Gateway not Reachable was displayed."
+                ]
+            }
+        },
+        {
+            "PAN-203851": {
+                "info": [
+                    "Fixed an issue with firewalls in high availability (HA) configurations where host information profile (HIP) sync did not work between the active primary firewall and the active secondary firewall."
+                ]
+            }
+        },
+        {
+            "PAN-203653": {
+                "info": [
+                    "Fixed an issue where dynamic updates were completed even when configuration commits failed, which caused the all_task process to stop responding. "
+                ]
+            }
+        },
+        {
+            "PAN-203453": {
+                "info": [
+                    "Fixed an issue on Panorama where the log query failed due to a high number of User-ID redistribution messages."
+                ]
+            }
+        },
+        {
+            "PAN-203402": {
+                "info": [
+                    "Fixed an intermittent issue where forward session installs were delayed, which resulted in latencies."
+                ]
+            }
+        },
+        {
+            "PAN-203244": {
+                "info": [
+                    "Fixed a path monitoring issue that caused traffic degradation."
+                ]
+            }
+        },
+        {
+            "PAN-202783": {
+                "info": [
+                    "(PA-7000 Series firewalls with 100G NPC (Network Processing Cards) only) Fixed an issue where sudden, large bursts of traffic destined for an interface that was down caused packet buffers to fill, which stalled path monitor heartbeat packets."
+                ]
+            }
+        },
+        {
+            "PAN-202544": {
+                "info": [
+                    "An enhancement was made to collect CPLD register data after a path monitor failure."
+                ]
+            }
+        },
+        {
+            "PAN-202543": {
+                "info": [
+                    "An enhancement was made to improve path monitor data collection by verifying the status of the control network."
+                ]
+            }
+        },
+        {
+            "PAN-202535": {
+                "info": [
+                    "Fixed an issue where the Device Telemetry configuration for a region was unable to be set or edited via the web interface."
+                ]
+            }
+        },
+        {
+            "PAN-202361": {
+                "info": [
+                    "Fixed an issue where packets queued to the pan_task process were still transmitted when the process was not responding."
+                ]
+            }
+        },
+        {
+            "PAN-202101": {
+                "info": [
+                    "Fixed an issue where firewalls stopped responding after an upgrade due to configuration corruption."
+                ]
+            }
+        },
+        {
+            "PAN-202012": {
+                "info": [
+                    "A debug command was introduced to control Gzip encoding for the GlobalProtect Clientless VPN application."
+                ]
+            }
+        },
+        {
+            "PAN-201900": {
+                "info": [
+                    "Fixed an internal path monitoring failure issue that caused the dataplane to go down."
+                ]
+            }
+        },
+        {
+            "PAN-201858": {
+                "info": [
+                    "Fixed an issue where the SD-WAN interface Maximum Transmission Unit (MTU) led to incorrect fragmentation of IPSec traffic."
+                ]
+            }
+        },
+        {
+            "PAN-201627": {
+                "info": [
+                    "Fixed an issue in next-generation firewall deployments where, when SD-WAN was configured, the dataplane restarted if all SD-WAN member links were down due to an out-of-memory (OOM) condition or during a reboot when all SD-WAN tunnels were down."
+                ]
+            }
+        },
+        {
+            "PAN-198718": {
+                "info": [
+                    "(PA-5280 firewalls only) Fixed an issue where memory allocation failures caused increased decryption failures."
+                ]
+            }
+        },
+        {
+            "PAN-197582": {
+                "info": [
+                    "Fixed an issue where, after upgrading to PAN-OS 10.1.6, the firewall reset SSL connections that used policy-based forwarding."
+                ]
+            }
+        },
+        {
+            "PAN-196261": {
+                "info": [
+                    "Fixed an issue where inter-lc disconnected once every minute in the system logs."
+                ]
+            }
+        },
+        {
+            "PAN-194704": {
+                "info": [
+                    "Fixed an issue with SIP ALG where improper NAT was applied when Destination NAT ran out of IP addresses."
+                ]
+            }
+        },
+        {
+            "PAN-194068": {
+                "info": [
+                    "(PA-5200 Series firewalls only) Fixed an issue where the firewall unexpectedly rebooted with the log message Heartbeat failed previously."
+                ]
+            }
+        },
+        {
+            "PAN-193928": {
+                "info": [
+                    "Fixed an intermittent issue where GlobalProtect logs were not visible under device groups (Mobile_User_Device_Group)."
+                ]
+            }
+        },
+        {
+            "PAN-192456": {
+                "info": [
+                    "Fixed an issue where GlobalProtect SSL VPN processing during a high traffic load caused the dataplane to stop responding."
+                ]
+            }
+        },
+        {
+            "PAN-191408": {
+                "info": [
+                    "Fixed an issue where the firewall did not correctly receive dynamic address group information from Panorama after a reboot or initial connection."
+                ]
+            }
+        },
+        {
+            "PAN-184766": {
+                "info": [
+                    "(PA-5450 firewalls only) Fixed an issue where the control packets for BGP, OSPF, and Bidirectional Forwarding Detection (BFD) were not assigned a QoS value of 5."
+                ]
+            }
+        },
+        {
+            "PAN-183757": {
+                "info": [
+                    "(PA-5200 Series and PA-7000 Series firewalls only) Fixed an issue where uneven distribution of sessions caused packet latency."
+                ]
+            }
+        },
+        {
+            "PAN-172452": {
+                "info": [
+                    "Fixed an issue where the log file did not include all logs."
+                ]
+            }
+        },
+        {
+            "PAN-171143": {
+                "info": [
+                    "Fixed an issue where tech support files didn't collected DP3 logs."
+                ]
+            }
+        },
+        {
+            "PAN-167288": {
+                "info": [
+                    "Fixed an issue with the pan_task process that caused the queue to build up."
+                ]
+            }
+        }
+    ]
+}

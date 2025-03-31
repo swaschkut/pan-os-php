@@ -1,0 +1,313 @@
+{
+    "10-1-3": [
+        [],
+        {
+            "\u00e2\u0080\u0094": {
+                "info": [
+                    "Fixed a Denial-of-Service (DoS) vulnerability in the GlobalProtect portal and gateway (CVE-2021-3063)."
+                ]
+            }
+        },
+        {
+            "PAN-179112": {
+                "info": [
+                    "Enhancements were added to improve system stability and debuggability."
+                ]
+            }
+        },
+        {
+            "PAN-178190": {
+                "info": [
+                    "Fixed an issue where the firewall incorrectly set the disk quota cfg.diskquota.traffic to 0 after upgrading to a PAN-OS 10.0 release. With this fix, the log disk quota will be retained correctly after upgrade."
+                ]
+            }
+        },
+        {
+            "PAN-177941": {
+                "info": [
+                    "Fixed an issue where the bcm.log and brdagent_stdout.log-<datestamp> files filled up the root disk space."
+                ]
+            }
+        },
+        {
+            "PAN-177892": {
+                "info": [
+                    "Fixed a memory leak issue where panio failed to start, which resulted in dp-monitor failing to capture the complete panio output."
+                ]
+            }
+        },
+        {
+            "PAN-177881": {
+                "info": [
+                    "Fixed an issue where VLAN tags were not properly processed in Layer 2 switching mode between interfaces with different tags."
+                ]
+            }
+        },
+        {
+            "PAN-176862": {
+                "info": [
+                    "(VM-Series firewalls only) Fixed an issue where the firewall didn't attempt to connect to a log collector when the management IP address used DHCP."
+                ]
+            }
+        },
+        {
+            "PAN-176661": {
+                "info": [
+                    "Fixed an issue in Simple Certificate Enrollment Protocol (SCEP) (CVE-2021-3060)."
+                ]
+            }
+        },
+        {
+            "PAN-176655 and PAN-158334": {
+                "info": [
+                    "A fix was made to address an OS command injection vulnerability in the PAN-OS CLI that enabled an authenticated administrator with access to the CLI to execute arbitrary OS commands to escalate privileges (CVE-2021-3061)."
+                ]
+            }
+        },
+        {
+            "PAN-176653": {
+                "info": [
+                    "A fix was made to address an OS command injection vulnerability in the PAN-OS web interface that enabled an authenticated administrator with permissions to use XML API to execute arbitrary OS commands to escalate privileges (CVE-2021-3058)."
+                ]
+            }
+        },
+        {
+            "PAN-176618": {
+                "info": [
+                    "A fix was made to address an OS command injection vulnerability in PAN-OS that existed when performing dynamic updates (CVE-2021-3059)."
+                ]
+            }
+        },
+        {
+            "PAN-176433": {
+                "info": [
+                    "Fixed an issue where the Zero Touch Provisioning (ZTP) plugin on Panorama was unable to sync with the ZTP service and displayed the following error message: Failed to fetch sync status."
+                ]
+            }
+        },
+        {
+            "PAN-176277": {
+                "info": [
+                    "Fixed a timing issue that impacted tunnel renegotiation and monitoring."
+                ]
+            }
+        },
+        {
+            "PAN-176026": {
+                "info": [
+                    "Fixed an issue where connections from firewalls running PAN-OS 10.1.0 to a Panorama appliance running PAN-OS 10.1.0 broke unexpectedly."
+                ]
+            }
+        },
+        {
+            "PAN-175652": {
+                "info": [
+                    "Fixed an issue where SSL decryption failed for websites when they were accessed from Google Chrome version 92 or higher."
+                ]
+            }
+        },
+        {
+            "PAN-174843": {
+                "info": [
+                    "Fixed an issue where a process (logd) stopped responding."
+                ]
+            }
+        },
+        {
+            "PAN-174671": {
+                "info": [
+                    "Fixed an issue with incorrect measurement of packet buffer protection latency."
+                ]
+            }
+        },
+        {
+            "PAN-174587": {
+                "info": [
+                    "Fixed an issue where, in the case of multiple AWS Partner Network (APN) connections, the GPRS Tunneling Protocol (GTPv2) Create Session Requests were sent to the firewall within a short interval, which caused the firewall to create the GTP-sessions incorrectly."
+                ]
+            }
+        },
+        {
+            "PAN-174448": {
+                "info": [
+                    "Fixed an issue where ZTP configurations weren't removed after disabling them, which resulted in predefined configurations to be loaded after a reboot."
+                ]
+            }
+        },
+        {
+            "PAN-174201": {
+                "info": [
+                    "Fixed an issue where, when logs were in the burst list, the vldmgr process stopped responding after upgrading to PAN-OS 10.1.0."
+                ]
+            }
+        },
+        {
+            "PAN-174200": {
+                "info": [
+                    "Fixed an issue where a role-based admin user was unable to edit, add, or view interfaces if dashboard permissions were disabled."
+                ]
+            }
+        },
+        {
+            "PAN-173828": {
+                "info": [
+                    "(PA-7000 Series firewalls with 20GQ Network Processing Cards (NPCs) only) Fixed an issue on high availabilities active\/passive configurations where data ports on the passive firewall sent out packets, which caused a MAC flap on upstream firewalls."
+                ]
+            }
+        },
+        {
+            "PAN-173157": {
+                "info": [
+                    "Fixed an issue with the HA1 monitor hold timer where the configured value was not assigned to the HA1 backup interface, which used the default hold timer (3000 milliseconds), which resulted in failover events taking longer than expected."
+                ]
+            }
+        },
+        {
+            "PAN-173076": {
+                "info": [
+                    "(Panorama appliances in FIPS mode only) Fixed an issue where the FIPS Panorama \/ FIPS firewall schema didn't prune non-FIPS options from the Clientless VPN."
+                ]
+            }
+        },
+        {
+            "PAN-172580": {
+                "info": [
+                    "Fixed an intermittent issue where commits failed after a commit validation and were modified for custom URL category objects."
+                ]
+            }
+        },
+        {
+            "PAN-172208": {
+                "info": [
+                    "(PA-5450 firewalls only) Fixed a rare issue where the firewall reloaded while handling high stress SSL traffic when CPU utilization reached 100% or the packet broker capacity exceeded 40%."
+                ]
+            }
+        },
+        {
+            "PAN-172171": {
+                "info": [
+                    "Fixed an issue where a Passive PA-5450 firewall in an Active\/Passive HA configuration using Auto mode would get stuck in maintenance mode after receiving the slot7-path_monitor Path monitor failure system failure."
+                ]
+            }
+        },
+        {
+            "PAN-172091": {
+                "info": [
+                    "Fixed an issue where, when you configured a virtual system (vsys) as a User-ID hub, and a firewall that receives IP address-to-username mapping from the hub had a Security policy that includes a QoS policy rule, the firewall did not match the user to the QoS policy rule if the traffic attempted to access a vsys that was not the hub."
+                ]
+            }
+        },
+        {
+            "PAN-170574": {
+                "info": [
+                    "(Panorama appliances on Microsoft Azure and Amazon Web Services (AWS) only) Fixed an issue where Panorama sent 127.0.0.1 as the NAS-IP-Address in RADIUS messages."
+                ]
+            }
+        },
+        {
+            "PAN-170466": {
+                "info": [
+                    "Fixed an memory reference issue related to the devsrvr process that caused the process to stop responding."
+                ]
+            }
+        },
+        {
+            "PAN-169793": {
+                "info": [
+                    "Fixed an issue where using cookies to authenticate MacOS users didn't work due to the client agent not providing the phpsessionid set from the sent GlobalProtect messages during the connection. As a result, the firewall was unable to find and include the portal authentication cookie in the response message."
+                ]
+            }
+        },
+        {
+            "PAN-169687": {
+                "info": [
+                    "Fixed an issue where SNMP returned an improper status for an unsupported interface type."
+                ]
+            }
+        },
+        {
+            "PAN-169105": {
+                "info": [
+                    "Fixed an issue on the Panorama web interface where a Network File System (NFS) storage partition displayed the incorrect storage size."
+                ]
+            }
+        },
+        {
+            "PAN-168261": {
+                "info": [
+                    "Fixed a cosmetic issue where the WildFire submission log displayed the sha256 of the original email link."
+                ]
+            }
+        },
+        {
+            "PAN-167849": {
+                "info": [
+                    "Fixed an issue where URL-Filtering incorrectly identified the firewall serial number in the certificate Common Name field as the IP address."
+                ]
+            }
+        },
+        {
+            "PAN-167266": {
+                "info": [
+                    "Fixed an issue on multi-dataplane firewalls with high CPU use on dataplane 0 that caused an internal loop of forward\/host sessions on the firewall."
+                ]
+            }
+        },
+        {
+            "PAN-166978": {
+                "info": [
+                    "Fixed an issue where the URL-Filtering cloud connection failed with the following error message: bind failed with errno 97."
+                ]
+            }
+        },
+        {
+            "PAN-166202": {
+                "info": [
+                    "Fixed an issue with an extra character in HTTP Strict Transport Security (HSTS) regression tests when accessing the GlobalProtect gateway."
+                ]
+            }
+        },
+        {
+            "PAN-165433": {
+                "info": [
+                    "Fixed an intermittent issue where Strata Logging Service failed to reconnect after a disconnect if a management IP address used for logging had an IP address assignment type of DHCP."
+                ]
+            }
+        },
+        {
+            "PAN-163448": {
+                "info": [
+                    "Fixed an issue when using ixgb drivers with SR-IOV and DPDK that caused OSPF multicast traffic to be filtered by the physical function driver."
+                ]
+            }
+        },
+        {
+            "PAN-162936": {
+                "info": [
+                    "Fixed an issue where the all_pktproc process stopped responding on GTP-U session traffic when attempting to send out packets held in software buffers."
+                ]
+            }
+        },
+        {
+            "PAN-162374": {
+                "info": [
+                    "Fixed an issue where the firewall rebooted unexpectedly and displayed the following message: Reboot SYSTEM REBOOT Masterd Initiated."
+                ]
+            }
+        },
+        {
+            "PAN-161940": {
+                "info": [
+                    "Fixed an issue where the firewall did not honor the peer RX interval timeout in a Bidirectional Forwarding Detection (BFD) INIT state."
+                ]
+            }
+        },
+        {
+            "PAN-157962": {
+                "info": [
+                    "Fixed an issue where IPv6 prefixes were advertised via IPv4 BGP peering when MP-BGP was not enabled."
+                ]
+            }
+        }
+    ]
+}

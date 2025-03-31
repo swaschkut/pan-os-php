@@ -2,6 +2,97 @@
     "11-1-4": [
         [],
         {
+            "PAN-281885": {
+                "info": [
+                    " When exporting and importing the CSV file, the hash values of pre-shared key (PSK) variables set at template and template stack levels inconsistently change, resulting in both variables displaying the same hash value. "
+                ]
+            }
+        },
+        {
+            "PAN-280471": {
+                "info": [
+                    " When applying filters or searching for logs in the PanoramaMonitorLogssection, you might experience slow performance. "
+                ]
+            }
+        },
+        {
+            "PAN-279746": {
+                "solved": "This issue affects PAN-OS 11.1.4-h4 and PAN-OS 11.1.4-h7.",
+                "info": [
+                    " An SSL\/TLS Client Hello may not be transmitted out of the firewall if the Client Hello arrives in multiple TCP segments and the traffic is not subject to SSL decryption (for example, SMTP over SSL). "
+                ]
+            }
+        },
+        {
+            "PAN-278296": {
+                "info": [
+                    " The system MAC address of the aggregate interface is the same on both the active and the passive devices, causing some packets to be sent incorrectly to the passive device. This is causing the AE interface on the active firewall to not come up. "
+                ]
+            }
+        },
+        {
+            "PAN-278296": {
+                "info": [
+                    " A high volume of incoming logs to a Collector Group can significantly increase CPU usage on the Elasticsearch and Management Server, potentially causing process instability or crashes. "
+                ]
+            }
+        },
+        {
+            "PAN-274791": {
+                "solved": "This issue affects PAN-OS 11.1.4-h4 and PAN-OS 11.1.4-h7.",
+                "info": [
+                    " The firewall might reboot when traffic matches with certain Advanced features (such as Advanced Threat Prevention and Advanced URL Filtering with properly configured URL Filtering\/Anti-Spyware\/Vulnerability security profiles) and Shared Pool Type 32 becomes depleted. "
+                ]
+            }
+        },
+        {
+            "(This issue affects PAN-OS\n                                    11.1.4-h4 and PAN-OS 11.1.4-h7.)": {
+                "info": [
+                    " When DoH is enabled for DNS Security, multiple DoH transactions in a single HTTP\/1 connection might unexpectedly cause the firewall to crash and reboot. Workaround: Manually disable DoH support for DNS Security using the set deviceconfig setting dns-over-https enable no CLI command. Alternatively, you can remove the DNS Security configuration used to handle DoH traffic. "
+                ]
+            }
+        },
+        {
+            "PAN-270549": {
+                "solved": "This issue affects PAN-OS 11.1.4-h4 and PAN-OS 11.1.4-h7.",
+                "info": [
+                    " When a client sends a large Client Hello followed by TLS early data and the early data arrives in a separate packet from the last Client Hello packet, the accumulation proxy fails to process the record correctly. Workaround: Disable accumulation proxy using the debug dataplane set ssl-decrypt accumulate-client-hello disable yes CLI command, and then reboot the firewall. "
+                ]
+            }
+        },
+        {
+            "This issue affects PAN-OS\n                                    11.1.4-h4 and PAN-OS 11.1.4-h7.": {
+                "solved": "This issue is now resolved. See PAN-OS 11.1.4-h9 Addressed Issues.",
+                "info": [
+                    " When querying for logs in the Monitor tab in Panorama, some forwarded logs might be missing from the results. "
+                ]
+            }
+        },
+        {
+            "PAN-269106": {
+                "solved": "This issue affects PAN-OS 11.1.4-h4 and PAN-OS 11.1.4-h7.",
+                "info": [
+                    " When using a cloud-based ML detection engine (MICA), the wifclient might crash during server cert verification for MICA gRPC connections and cause the dataplane to restart. On certain platforms, this might cause the firewall to reboot. Workaround: Disable CRL using the following CLI command:debug iot eal key-value PAN_ICD_SERVER_CERT_USE_CRL=False "
+                ]
+            }
+        },
+        {
+            "PAN-267671": {
+                "solved": "This issue affects PAN-OS 11.1.4-h4 and PAN-OS 11.1.4-h7.",
+                "info": [
+                    " Exporting reports in PDF or CSV format and processing hourly scheduled report results can potentially trigger memory leaks. As a result, this can lead to process crashes and firewall reboots. "
+                ]
+            }
+        },
+        {
+            "PAN-268815": {
+                "solved": "This issue affects PAN-OS 11.1.4-h4 and PAN-OS 11.1.4-h7.",
+                "info": [
+                    " When using IoT Security, the wifclient might exit multiple times causing the firewall to reboot. Workaround: Uninstall the IoT Security license and disable Enable enhanced application logging (DeviceManagementCloud LoggingCloud Logging Settings). "
+                ]
+            }
+        },
+        {
             "PAN-263226": {
                 "solved": "This issue is now resolved. See PAN-OS 11.1.4-h4 Addressed Issues.",
                 "info": [
@@ -27,7 +118,7 @@
         {
             "PAN-262556": {
                 "info": [
-                    " The ElasticSearch cluster health status might continue to remain yellow for an extended period after upgrading to PAN-OS 11.1 "
+                    " The ElasticSearch cluster health status might continue to remain yellow for an extended period after upgrading to PAN-OS 11.1. "
                 ]
             }
         },
@@ -46,6 +137,14 @@
             }
         },
         {
+            "PAN-260512": {
+                "solved": "This issue affects PAN-OS 11.1.4-h4 and PAN-OS 11.1.4-h7.",
+                "info": [
+                    " When accessing the IP addresses of Dynamic address group objects from the Panorama user interface in a configuration with numerous Device Groups, the configd process might stop responding. "
+                ]
+            }
+        },
+        {
             "PAN-259769": {
                 "solved": "This issue is now resolved. See PAN-OS 11.1.5 Addressed Issues.",
                 "info": [
@@ -58,6 +157,14 @@
                 "solved": "This issue is now resolved. See PAN-OS 11.1.4-h1 Addressed Issues",
                 "info": [
                     " Custom reports created in PAN-OS are not deleted as expected, resulting in high memory use by the reportd process. This can lead to issues, such as out-of-memory conditions, content installation failures, and unexpected firewall reboots. "
+                ]
+            }
+        },
+        {
+            "PAN-258570": {
+                "solved": "This issue affects PAN-OS 11.1.4-h4 and PAN-OS 11.1.4-h7.",
+                "info": [
+                    " The varrcvr process might progressively use more memory resulting in unexpected reboots when WildFire file forwarding is handling PE files. "
                 ]
             }
         },

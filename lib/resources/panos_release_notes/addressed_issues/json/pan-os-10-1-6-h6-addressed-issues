@@ -1,0 +1,145 @@
+{
+    "10-1-6-h6": [
+        [],
+        {
+            "PAN-196993": {
+                "info": [
+                    "Fixed an issue where an incorrect regex key was generated to invalidate the completions cache, which caused the configd process to stop responding."
+                ]
+            }
+        },
+        {
+            "PAN-195181": {
+                "info": [
+                    "Added enhancements to improve the load on the pan_comm process during SNMP polling."
+                ]
+            }
+        },
+        {
+            "PAN-194826": {
+                "info": [
+                    "(WF-500 and WF-500-B appliances only) Fixed an issue where log system forwarding did not work over a TLS connection."
+                ]
+            }
+        },
+        {
+            "PAN-194776": {
+                "info": [
+                    "Fixed an issue on Amazon Web Services (AWS) Gateway Load Balancer (GWLB) deployments with overlay routing enabled where intra-zone packets were re-encapsulated with the incorrect source\/destination MAC address."
+                ]
+            }
+        },
+        {
+            "PAN-194721": {
+                "info": [
+                    "Fixed an issue where path monitor failure occurred, which caused slots to go down."
+                ]
+            }
+        },
+        {
+            "PAN-194694": {
+                "info": [
+                    "Fixed an issue where multiple SNMP requests being made to the firewall caused in the pan_comm process to stop responding."
+                ]
+            }
+        },
+        {
+            "PAN-194645": {
+                "info": [
+                    "(PA-5400 Series firewalls only) Fixed an issue where the Data Processing Card status was incorrectly shown as config=None"
+                ]
+            }
+        },
+        {
+            "PAN-194601": {
+                "info": [
+                    "Fixed an issue that caused the all_task process to stop responding."
+                ]
+            }
+        },
+        {
+            "PAN-194406": {
+                "info": [
+                    "Fixed an issue where the MTU from SD-WAN interfaces was recalculated after a configuration push from Panorama or a local commit, which caused traffic disruption. "
+                ]
+            }
+        },
+        {
+            "PAN-194097": {
+                "info": [
+                    "Fixed an issue on firewalls in high availability (HA) active\/passive configurations where _ha_d_session_msgbuf overflowed on the passive firewall during an upgrade, which caused the firewall to enter a non-functional state."
+                ]
+            }
+        },
+        {
+            "PAN-193732": {
+                "info": [
+                    "(PA-5400 Series firewalls only) Fixed an issue where the firewall incorrectly handled internal transactions."
+                ]
+            }
+        },
+        {
+            "PAN-193184": {
+                "info": [
+                    "Fixed an issue where IP-user-mapping disappeared when login\/logout events occurred at the same timestamp."
+                ]
+            }
+        },
+        {
+            "PAN-193132": {
+                "info": [
+                    "(PA-220 firewalls only) Fixed an issue where a commit and push from Panorama caused high dataplane CPU utilization."
+                ]
+            }
+        },
+        {
+            "PAN-192999": {
+                "info": [
+                    "A fix was made to address CVE-2022-0028."
+                ]
+            }
+        },
+        {
+            "PAN-192758": {
+                "info": [
+                    "(PA-7000 Series firewalls only) Fixed an issue where files failed to upload to the Wildfire public cloud."
+                ]
+            }
+        },
+        {
+            "PAN-192673": {
+                "info": [
+                    "(PA-7050-SMC-B firewalls only) Fixed an issue where the LFC (log forwarding card) syslog-ng service failed to start after an upgrade."
+                ]
+            }
+        },
+        {
+            "PAN-192551": {
+                "info": [
+                    "(PA-5400 Series firewalls only) Fixed an issue where the firewall incorrectly processed path monitoring packets, which caused a slot restart."
+                ]
+            }
+        },
+        {
+            "PAN-192052": {
+                "info": [
+                    "Fixed an issue where, when next hop MAC address entries weren't found on the offload processor for active traffic, update messages flooded the firewall, which caused resource contention and traffic disruption."
+                ]
+            }
+        },
+        {
+            "PAN-182951": {
+                "info": [
+                    "Fixed an issue where commits remained at 98% for an hour and then failed."
+                ]
+            }
+        },
+        {
+            "PAN-173469": {
+                "info": [
+                    "Fixed an intermittent issue where websites were blocked and categorized as not resolved."
+                ]
+            }
+        }
+    ]
+}

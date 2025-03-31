@@ -1,0 +1,110 @@
+{
+    "10-1-11-h1": [
+        [],
+        {
+            "PAN-235726": {
+                "info": [
+                    " Fixed an issue on the web interface where a pop up window did not show a success message or close after a license was successfully upgraded or deactivated. "
+                ]
+            }
+        },
+        {
+            "PAN-234962": {
+                "info": [
+                    " Fixed an issue on Panorama that caused commit operations to be slower than expected. "
+                ]
+            }
+        },
+        {
+            "PAN-233954": {
+                "info": [
+                    " Fixed an issue where the firewall was unable to retrieve correct groups from the LDAP server. "
+                ]
+            }
+        },
+        {
+            "PAN-233974": {
+                "info": [
+                    " Fixed an issue where LACP interfaces went down after an upgrade. "
+                ]
+            }
+        },
+        {
+            "PAN-232059": {
+                "info": [
+                    " Fixed an issue with memory management when processing large certificates using TLSv1.3. "
+                ]
+            }
+        },
+        {
+            "PAN-231291": {
+                "info": [
+                    " Fixed an issue where SD-WAN Adaptive SaaS path monitor went down after an upgrade. "
+                ]
+            }
+        },
+        {
+            "PAN-230039": {
+                "info": [
+                    " Fixed an issue where migrating from an Enterprise License Agreement (ELA) to a Flexible VM-Series License failed with a deactivation error message. "
+                ]
+            }
+        },
+        {
+            "PAN-227376": {
+                "info": [
+                    " Fixed an issue where a memory overrun caused the all_task process to stop responding. "
+                ]
+            }
+        },
+        {
+            "PAN-224060": {
+                "info": [
+                    "(PA-220 Series firewalls only) Fixed an issue where multiple dataplane processes stopped responding after an upgrade."
+                ]
+            }
+        },
+        {
+            "PAN-221190": {
+                "info": [
+                    " (PA-800 Series firewalls only) Fixed an issue where the firewall rebooted due to I2C errors when unsupported optics were inserted in ports 5-8. "
+                ]
+            }
+        },
+        {
+            "PAN-220659": {
+                "info": [
+                    " Fixed an issue on the firewall where scheduled Antivirus updates failed when external dynamic lists were configured on the firewall. "
+                ]
+            }
+        },
+        {
+            "PAN-218057": {
+                "info": [
+                    " (PA-7000 Series firewalls only) Fixed an issue where internal path monitoring failed due to a heartbeat miss. "
+                ]
+            }
+        },
+        {
+            "PAN-208567": {
+                "info": [
+                    " Fixed an issue with email formatting where, when a scheduled email contained two or more attachments, only one attachment was visible. "
+                ]
+            }
+        },
+        {
+            "PAN-204868": {
+                "info": [
+                    " Fixed an issue where disk utilization was continuously high due to the log purger not sufficiently reducing the utilization level. "
+                ]
+            }
+        },
+        {
+            "PAN-161373": {
+                "info": [
+                    " Fixed an issue where the SYN action field did not change as expected and the value was set to SYN cookie. "
+                ]
+            }
+        }
+    ]
+}

@@ -51,7 +51,89 @@
             }
         },
         {
-            "WF500-5632": {
+            "PAN-282236": {
+                "info": [
+                    " The firewall doesn't reassemble IPv6 packets correctly after they are fragmented. "
+                ]
+            }
+        },
+        {
+            "PAN-275077": {
+                "solved": "(PAN-OS 10.2.10-h9 only)",
+                "info": [
+                    " DNS Security intermittently logs malicious domain URLs as alert instead of taking a sinkhole action, even when configured to sinkhole malicious DNS domains. "
+                ]
+            }
+        },
+        {
+            "PAN-270549": {
+                "solved": "This issue is now resolved. See PAN-OS 10.2.10-h14 Addressed Issues.",
+                "info": [
+                    " When a client sends a large Client Hello followed by TLS early data and the early data arrives in a separate packet from the last Client Hello packet, the accumulation proxy fails to process the record correctly. Workaround: Disable accumulation proxy using the debug dataplane set ssl-decrypt accumulate-client-hello disable yes CLI command, and then reboot the firewall. "
+                ]
+            }
+        },
+        {
+            "PAN-270549": {
+                "info": [
+                    " An SSL\/TLS Client Hello may not be sent if the Client Hello arrives at the firewall in multiple TCP segments and the traffic is not subject to SSL decryption. "
+                ]
+            }
+        },
+        {
+            "PAN-269106": {
+                "info": [
+                    " When using a cloud-based ML detection engine (MICA), the wifclient might crash during server cert verification for MICA gRPC connections and cause the dataplane to restart. On certain platforms, this might cause the firewall to reboot. Workaround: Disable CRL using the following CLI command:debug iot eal key-value PAN_ICD_SERVER_CERT_USE_CRL=False "
+                ]
+            }
+        },
+        {
+            "PAN-269052": {
+                "info": [
+                    " Traffic might be blocked by a URL Filtering profile that isn't associated with the Security policy rule that the traffic matches. "
+                ]
+            }
+        },
+        {
+            "PAN-268823": {
+                "solved": "This issue is now resolved. See PAN-OS 10.2.10-h10 Addressed Issues.",
+                "info": [
+                    " (PA-5250 firewall only) Applying filters under MonitorLog Display either causes the logs to load slowly or not load at all. "
+                ]
+            }
+        },
+        {
+            "PAN-268815": {
+                "solved": "This issue is now resolved. See PAN-OS 10.2.13-h5 Addressed Issues.",
+                "info": [
+                    " When using IoT Security, the wifclient might exit multiple times causing the firewall to reboot. Workaround: Uninstall the IoT Security license and disable Enable enhanced application logging (DeviceManagementCloud LoggingCloud Logging Settings). "
+                ]
+            }
+        },
+        {
+            "PAN-268260": {
+                "info": [
+                    " On hardware firewalls where, when SSL decryption was enabled on layer 2, vwire, TAP, VLAN deployments, and Client Hello messages spanned multiple TCP segments, some SSL decryption sessions failed. "
+                ]
+            }
+        },
+        {
+            "PAN-267671": {
+                "solved": " (PAN-OS 10.2.10-h9 only)",
+                "info": [
+                    " Exporting reports in PDF or CSV format and processing hourly scheduled report results can potentially trigger memory leaks. As a result, this can lead to process crashes and firewall reboots. "
+                ]
+            }
+        },
+        {
+            "PAN-267671": {
+                "info": [
+                    " In Panorama, the OK button does not work when trying to install configurations to a managed firewall from the Managed DevicesSummaryInstall section, even after selecting the update type and file from the drop-down menu and choosing the firewall. "
+                ]
+            }
+        },
+        {
+            "PAN-267671": {
                 "info": [
                     " When SSL decryption is enabled and Client Hello messages span multiple TCP segments, elements from the proxy_l2info memory pool may not be freed properly. Memory leaks in this pool cause some SSL decryption sessions to fail. Workaround: Disable Client Hello accumulation using the debug dataplane set ssl-decrypt accumulate-client-hello disable yes CLI command. "
                 ]
@@ -100,6 +182,14 @@
                 "solved": "This issue is now resolved. See PAN-OS 10.2.10-h3 Addressed Issues.",
                 "info": [
                     " Performing a configuration commit on a firewall, either locally or from Panorama, causes a memory leak by the configd process and results in an out-of-memory (OOM) condition. "
+                ]
+            }
+        },
+        {
+            "PAN-258570": {
+                "solved": "This issue is now resolved. See PAN-OS 10.2.13 Addressed Issues.",
+                "info": [
+                    " The varrcvr process might progressively use more memory resulting in unexpected reboots when WildFire file forwarding is handling PE files. "
                 ]
             }
         },

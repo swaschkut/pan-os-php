@@ -1,0 +1,243 @@
+{
+    "10-1-2": [
+        [],
+        {
+            "PAN-175685": {
+                "info": [
+                    "(PA-7000 Series and PA-5450 firewalls only) Fixed an issue where PAN-OS displayed the incorrect chassis serial number when an MPC (Management Processor Card) or SMC (Switch Management Card) was moved from one chassis to another."
+                ]
+            }
+        },
+        {
+            "PAN-174448": {
+                "info": [
+                    "Fixed an issue where Zero-Touch Provisioning (ZTP) configuration wasn't removed after disabling it, which resulted in predefined configurations to be loaded after a reboot."
+                ]
+            }
+        },
+        {
+            "PAN-174326": {
+                "info": [
+                    "A fix was made to address an OS command injection vulnerability in the PAN-OS web interface that enabled an authenticated administrator to execute arbitrary OS commands to escalate privileges (CVE-2021-3050)."
+                ]
+            }
+        },
+        {
+            "PAN-174254": {
+                "info": [
+                    "(VM-Series firewalls deployed in Amazon Web Services (AWS) only) Fixed an issue where Gateway Load Balancer (GWLB) inspection incorrectly displayed as false after a reboot."
+                ]
+            }
+        },
+        {
+            "PAN-174244": {
+                "info": [
+                    "Fixed an issue where a sudden increase in URL data approached the maximum cache capacity of the firewall."
+                ]
+            }
+        },
+        {
+            "PAN-174049": {
+                "info": [
+                    "Fixed an issue where a process (authd) used old Thermite certificate post renewals, which caused authentication failures when using the Cloud Authentication service."
+                ]
+            }
+        },
+        {
+            "PAN-173903": {
+                "info": [
+                    "Fixed an issue where clicking a hyperlink on a web page caused the web browser to download a file instead."
+                ]
+            }
+        },
+        {
+            "PAN-172518": {
+                "info": [
+                    "Fixed an issue where a race condition occurred and caused a process (useridd) to restart."
+                ]
+            }
+        },
+        {
+            "PAN-172515": {
+                "info": [
+                    "Fixed an issue where, when downgrading from PAN-OS 10.1 to an earlier version, with Cloud Authentication Service configured in an Authentication profile, the firewall did not remove the Cloud Authentication Service from the Authentication profile and displayed the authentication method as None, and subsequent commits failed."
+                ]
+            }
+        },
+        {
+            "PAN-172490": {
+                "info": [
+                    "Fixed an issue on firewalls in HA configuration where HA-2 links continuously flapped on HSCI interfaces after upgrading to PAN-OS 8.1.19."
+                ]
+            }
+        },
+        {
+            "PAN-172454": {
+                "info": [
+                    "Fixed an issue where, when the firewall communicated with the Cloud Identity Engine before the device certificate was installed on the firewall or Panorama, subsequent queries to the Cloud Identity Engine failed."
+                ]
+            }
+        },
+        {
+            "PAN-172295": {
+                "info": [
+                    "Fixed an issue where a HIP database cache loop caused high CPU utilization on a process (useridd) and caused IP address-to-user mapping redistribution failure."
+                ]
+            }
+        },
+        {
+            "PAN-172276": {
+                "info": [
+                    "(PA-400 Series firewalls only) Fixed an intermittent issue where changing the port speed from auto-negotiate to 1G caused the dataplane port to flap, which resulted in lost traffic."
+                ]
+            }
+        },
+        {
+            "PAN-172125": {
+                "info": [
+                    "Fixed an intermittent issue where processing HIP messages in the (useridd) process caused a memory leak."
+                ]
+            }
+        },
+        {
+            "PAN-171878": {
+                "info": [
+                    "Fixed an issue with SD-WAN path selection logic that caused an all_pktproc dataplane to stop responding."
+                ]
+            }
+        },
+        {
+            "PAN-171744": {
+                "info": [
+                    "Fixed an issue where no data was displayed for the Forward Error Correction (FEC) plot for SD-WAN application performance (PanoramaSD-WANMonitoring)."
+                ]
+            }
+        },
+        {
+            "PAN-171442": {
+                "info": [
+                    "Fixed an issue on Amazon Web Services (AWS) Gateway Load Balancer (GWLB) deployments with overlay routing and cross-zone load balancing enabled where packets were forwarded to the incorrect GWLB interface."
+                ]
+            }
+        },
+        {
+            "PAN-171203": {
+                "info": [
+                    "Fixed an issue in an HA configuration where, when one firewall was active and its peer was in a suspended state, the suspended firewall continued to send traffic, which triggered the detection of duplicate MAC addresses."
+                ]
+            }
+        },
+        {
+            "PAN-170681": {
+                "info": [
+                    "Fixed an issue where the data redistribution agent and the data redistribution client failed to connect due to the agent not sending a SSL Server hello response."
+                ]
+            }
+        },
+        {
+            "PAN-170103": {
+                "info": [
+                    "Fixed an issue where a process (ikemgr) stopped responding while making configuration changes. This issue occurred if Site-to-Site IPSec was using certification-based authentication."
+                ]
+            }
+        },
+        {
+            "PAN-169566": {
+                "info": [
+                    "Fixed an issue where configuration files were not exported using the scheduled Secure Copy (SCP)."
+                ]
+            }
+        },
+        {
+            "PAN-168903": {
+                "info": [
+                    "Fixed an issue where deleting licenses on the firewall incorrectly set the GlobalProtect gateway license node to false. The firewall displayed the following error message during a GlobalProtect application connection: Could not connect to the gateway. The device or feature requires a GlobalProtect subscription license, even though the gateway firewall had a valid gateway license."
+                ]
+            }
+        },
+        {
+            "PAN-168718": {
+                "info": [
+                    "Fixed an issue where, when a client or server received partial application data, the record was partially processed by legacy code. This caused decryption to fail when a decryption profile protocol was set to a maximum of TLSv1.3."
+                ]
+            }
+        },
+        {
+            "PAN-167115": {
+                "info": [
+                    "Fixed an issue where, after upgrading to 10.0.3, admin sessions on Panorama were not logged out after the idle timeout expired."
+                ]
+            }
+        },
+        {
+            "PAN-167099": {
+                "info": [
+                    "Fixed a configuration management issue that resulted in a process (ikemgr) failing to recognize changes in subsequent commits."
+                ]
+            }
+        },
+        {
+            "PAN-109759 ": {
+                "info": [
+                    "Fixed an issue where the firewall did not generate a notification for the GlobalProtect client when the firewall denied unencrypted TLS sessions due to an authentication policy match."
+                ]
+            }
+        },
+        {
+            "PAN-165225": {
+                "info": [
+                    "Fixed an issue where hwpredict was enabled by default."
+                ]
+            }
+        },
+        {
+            "PAN-161745": {
+                "info": [
+                    "Fixed an issue where the time-to-live (TTL) value received from the DNS server reset to 0 on DNS secure TCP transactions when anti-spyware profiles were used, which caused DNS dynamic updates to fail."
+                ]
+            }
+        },
+        {
+            "PAN-158958": {
+                "info": [
+                    "Fixed an issue where the debug sslmgr view crl command failed when an ampersand (&) character was included in the URL for the certificate revocation list (CRL)."
+                ]
+            }
+        },
+        {
+            "PAN-157518": {
+                "info": [
+                    "Fixed an issue where using tags to target a device group in a Security policy rule did not work, and the rule was displayed in all device groups (Preview Rules)."
+                ]
+            }
+        },
+        {
+            "PAN-157027": {
+                "info": [
+                    "Fixed an issue where, when stateless GTP-U traffic hit a multi-dataplane firewall, an inter-dataplane fragmentation loop occurred, which caused high dataplane resource usage."
+                ]
+            }
+        },
+        {
+            "PAN-154905": {
+                "info": [
+                    "(Panorama appliances on PAN-OS 10.0 releases only) Fixed an issue with Security policy rule configuration where, in the Source and Destination tabs, the Query Traffic setting was not available for Address Groups."
+                ]
+            }
+        },
+        {
+            "PAN-138727": {
+                "info": [
+                    "A fix was made to address a time-of-check to time-of-use (TOCTOU) race condition in the PAN-OS web interface that enabled an authenticated administrator with permission to upload plugins to execute arbitrary code with root user privileges (CVE-2021-3054)."
+                ]
+            }
+        },
+        {
+            "PAN-136961": {
+                "info": [
+                    "Fixed an issue where during QoS config generation the Aggregate Ethernet (AE) subnets were incorrectly calculated cumulatively across all AEs instead of calculating just the total subnets of an AE."
+                ]
+            }
+        }
+    ]
+}

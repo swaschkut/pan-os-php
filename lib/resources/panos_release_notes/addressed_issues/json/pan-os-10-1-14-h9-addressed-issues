@@ -1,0 +1,47 @@
+{
+    "10-1-14-h9": [
+        [],
+        {
+            "PAN-276964": {
+                "info": [
+                    " Fixed an issue where the logrcvr process stopped responding when the firewall was booted up. "
+                ]
+            }
+        },
+        {
+            "PAN-273994": {
+                "info": [
+                    " A fix was made to address CVE-2025-0111. "
+                ]
+            }
+        },
+        {
+            "PAN-273971": {
+                "info": [
+                    " A fix was made to address CVE-2025-0108. "
+                ]
+            }
+        },
+        {
+            "PAN-273278": {
+                "info": [
+                    " A fix was made to address CVE-2025-0109. "
+                ]
+            }
+        },
+        {
+            "PAN-262271": {
+                "info": [
+                    " Fixed an issue where device telemetry was not sent to the cloud after upgrading to PAN-OS 10.1.14. "
+                ]
+            }
+        },
+        {
+            "PAN-230873": {
+                "info": [
+                    " (PA-7000 Series firewalls in active\/passive HA configurations only) Fixed an issue where the passive firewall was unable to send configuration and system logs. "
+                ]
+            }
+        }
+    ]
+}

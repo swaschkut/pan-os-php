@@ -1,0 +1,138 @@
+{
+    "11-1-2": [
+        [],
+        {
+            "PAN-242627": {
+                "info": [
+                    "Fixed an issue where selective push did not work. "
+                ]
+            }
+        },
+        {
+            "PAN-242561": {
+                "info": [
+                    "Fixed an issue where GlobalProtect tunnels disconnected shortly after being established when SSL was used as the transfer protocol. "
+                ]
+            }
+        },
+        {
+            "PAN-242519": {
+                "info": [
+                    "Fixed an issue where scheduled email reports failed if the @ symbol before the mail client was missing. "
+                ]
+            }
+        },
+        {
+            "PAN-241504": {
+                "info": [
+                    "Fixed an issue on the web interface where filtering logs under the Monitor tab was slower than expected. "
+                ]
+            }
+        },
+        {
+            "PAN-239769": {
+                "info": [
+                    "Fixed an issue where object references in a rule were renamed, and a selective revert of the changes with Commit changes by me caused a reference error. "
+                ]
+            }
+        },
+        {
+            "PAN-238769": {
+                "info": [
+                    "(VM-Series firewalls in FIPS-CC mode only) Fixed an issue where upgrading Panorama caused all locally created Security policy rule actions to Deny. "
+                ]
+            }
+        },
+        {
+            "PAN-238586": {
+                "info": [
+                    "Fixed an issue where DNS resolution failure from the LFC resulted in WildFire public cloud connectivity failure. "
+                ]
+            }
+        },
+        {
+            "PAN-236120": {
+                "info": [
+                    "Fixed an issue where the \/opt\/panlogs partition reached capacity due to the logdb-quota for the User-ID log folder not being matched. "
+                ]
+            }
+        },
+        {
+            "PAN-235840": {
+                "info": [
+                    "Fixed an issue where, after a configuration push from Panorama to managed firewalls, the status displayed as None and the push took longer than expected. "
+                ]
+            }
+        },
+        {
+            "PAN-235585": {
+                "info": [
+                    "Fixed an issue where, when custom signatures and predefined signatures shared the same literal pattern part, the custom signature caused an incorrect calculation for the length of the predefined signature, which resulted in App-ID not detecting correctly. "
+                ]
+            }
+        },
+        {
+            "PAN-234279": {
+                "info": [
+                    "Fixed an issue where the ikemgr process crashed due to an IKEv1 timing issue, which caused commits to fail with the following error message: Client ikemgr requesting last config in the middle of a commit\/validate, aborting current commit. "
+                ]
+            }
+        },
+        {
+            "PAN-230106": {
+                "info": [
+                    "Fixed an issue where the firewall was unable to retrieve the most current external dynamic list information from the server due to hostname resolution failure. "
+                ]
+            }
+        },
+        {
+            "PAN-227397": {
+                "info": [
+                    "Fixed an issue where selective pushes on Panorama removed a previously pushed configuration from the firewalls. "
+                ]
+            }
+        },
+        {
+            "PAN-226785": {
+                "info": [
+                    " Fixed an issue where accessing websites with HTTP to HTTPS redirect failed via explicit proxy. "
+                ]
+            }
+        },
+        {
+            "PAN-225337": {
+                "info": [
+                    " Fixed an issue on Panorama related to Shared configuration objects where configuration pushes to multi-vsys firewalls failed. "
+                ]
+            }
+        },
+        {
+            "PAN-225203": {
+                "info": [
+                    "Fixed an issue where the Log Forwarding Card (LFC) did not honor the negotiated MSS on the logging connection. "
+                ]
+            }
+        },
+        {
+            "PAN-224954": {
+                "info": [
+                    "Fixed an issue where, after upgrading and rebooting a Panorama appliance in Panorama or Log Collector mode, managed firewalls continuously disconnected. "
+                ]
+            }
+        },
+        {
+            "PAN-223259": {
+                "info": [
+                    "Fixed an issue where selective pushes failed with the error message Failed to generate selective push configuration. Unable to retrieve last in-sync configuration for the device, either a push was never done or version is too old. Please try a full push. "
+                ]
+            }
+        },
+        {
+            "PAN-216941": {
+                "info": [
+                    " (Panorama appliances in Log Collector mode only) Fixed an issue where Panorama stopped processing and saving logs. "
+                ]
+            }
+        }
+    ]
+}

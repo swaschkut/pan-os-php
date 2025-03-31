@@ -1,0 +1,257 @@
+{
+    "11-2-4-h6": [
+        [],
+        {
+            "PAN-284036": {
+                "info": [
+                    " (PA-450R and PA-450R-5G firewalls only) Fixed an issue where the maximum temperature threshold and shutdown threshold were not set correctly. "
+                ]
+            }
+        },
+        {
+            "PAN-282236": {
+                "info": [
+                    " Fixed an issue where large IPv6 packets were reassembled incorrectly on the firewall when the packets arrived fragmented over an IPv4 tunnel. "
+                ]
+            }
+        },
+        {
+            "PAN-282206": {
+                "info": [
+                    " Fixed an issue where configuring Secure Web Gateway (SWG) in no-auth mode led to latency when no decryption policy rules or No-decrypt policy rules were present. "
+                ]
+            }
+        },
+        {
+            "PAN-282022": {
+                "info": [
+                    " Fixed the support limitation for the Panorama M-600 and M-700 appliances. "
+                ]
+            }
+        },
+        {
+            "PAN-280471": {
+                "info": [
+                    " Fixed an issue where navigating Panorama > Monitor > Logs was slower than expected. "
+                ]
+            }
+        },
+        {
+            "PAN-279746": {
+                "info": [
+                    " Fixed an issue where SMTP packets were not sent out when the Client Hello arrived at the firewall in multiple out-of-order segments and the traffic was not subject to SSL decryption. "
+                ]
+            }
+        },
+        {
+            "PAN-279197": {
+                "info": [
+                    " (PA-450R-5G firewalls only) Fixed an issue where the firewall stopped responding and displayed the error message `Thermal temperature exceeds system threshold! Shutting down NOW` even when the firewall was within the threshold. "
+                ]
+            }
+        },
+        {
+            "PAN-278684": {
+                "info": [
+                    " (PA-445 firewalls only) Fixed an issue where the firewall did not properly power cycle during a reboot. "
+                ]
+            }
+        },
+        {
+            "PAN-278296": {
+                "info": [
+                    " Fixed an issue where the system MAC address of the aggregate interface was the same on the active firewall and the passive firewall after an upgrade. "
+                ]
+            }
+        },
+        {
+            "PAN-276546": {
+                "info": [
+                    " Fixed an issue where a session lost the PBF rule mapping after a configuration change or commit. "
+                ]
+            }
+        },
+        {
+            "PAN-275905": {
+                "info": [
+                    " Fixed an issue where the Panorama web interface was slower than expected and Elasticsearch CPU usage was high. "
+                ]
+            }
+        },
+        {
+            "PAN-273949": {
+                "info": [
+                    " Fixed an issue where the firewall generated the following error message in the snmpd logs: pan_get_keystr_from_cryptod(pan_snmpinterface.c:181): Key X2F1dGhfa2V5 import from cryptod failed. "
+                ]
+            }
+        },
+        {
+            "PAN-273026": {
+                "info": [
+                    " Fixed an issue where traffic logs did not display correctly when filters were applied. "
+                ]
+            }
+        },
+        {
+            "PAN-273021": {
+                "info": [
+                    " Fixed an issue where 25G port links did not come up due to a change in the handling of 25G DAC modules. "
+                ]
+            }
+        },
+        {
+            "PAN-272849": {
+                "info": [
+                    " Fixed an issue where log forwarding to a UDP syslog server stopped when an unreachable TCP syslog server was configured and applied. "
+                ]
+            }
+        },
+        {
+            "PAN-272538": {
+                "info": [
+                    " Fixed an issue where the configd process stopped responding during a commit-all validation when there were uncommitted changes and share-unused-objects-with-devices was set to off. "
+                ]
+            }
+        },
+        {
+            "PAN-272085": {
+                "info": [
+                    " Fixed an issue where the firewall might crash and reboot when DoH is enabled for DNS Security and multiple DoH transactions are sent in a single HTTP\/1 connection. "
+                ]
+            }
+        },
+        {
+            "PAN-271912": {
+                "info": [
+                    " Fixed an issue on Panorama where the configd process stopped responding when filtering in the configuration audit window after upgrading to PAN-OS 11.1.3. "
+                ]
+            }
+        },
+        {
+            "PAN-271351": {
+                "info": [
+                    " A fix was made to address CVE-2025-0116. "
+                ]
+            }
+        },
+        {
+            "PAN-270224": {
+                "info": [
+                    " Fixed an issue where indices were not opened after a query. "
+                ]
+            }
+        },
+        {
+            "PAN-269956": {
+                "info": [
+                    " Fixed an issue where the all_pktproc process stopped responding, which caused internal path monitor failures. "
+                ]
+            }
+        },
+        {
+            "PAN-269291": {
+                "info": [
+                    " Fixed an issue where the scheduled report generation script did not return debug information. "
+                ]
+            }
+        },
+        {
+            "PAN-269106": {
+                "info": [
+                    " Fixed an issue where the wifclient stopped responding during server certificate verification for MICA gRPC connections and caused the dataplane to restart when using a cloud-based ML detection engine (MICA). On certain platforms, this caused the firewall to reboot periodically. "
+                ]
+            }
+        },
+        {
+            "PAN-269091": {
+                "info": [
+                    " Fixed an issue where the varrcvr process stopped responding. "
+                ]
+            }
+        },
+        {
+            "PAN-268501": {
+                "info": [
+                    " Fixed an issue where the firewall was unable to generate a TSF file due to a full root partition. "
+                ]
+            }
+        },
+        {
+            "PAN-267430": {
+                "info": [
+                    " Fixed an issue where Panorama was unable to return logs for queries that were longer than 64,000 characters. "
+                ]
+            }
+        },
+        {
+            "PAN-265179": {
+                "info": [
+                    " Fixed an issue where a kernel race condition caused the firewall to reboot with a kernel panic. "
+                ]
+            }
+        },
+        {
+            "PAN-263208": {
+                "info": [
+                    " (PA-5440 and PA-5445 firewalls only) Fixed an issue where interrupts were generated at a certain packet rate, and dataplane processes missed heartbeats, which caused the dataplane to go down. "
+                ]
+            }
+        },
+        {
+            "PAN-262383": {
+                "info": [
+                    " Fixed an issue where the firewall was unable to decompress the HTTP2 header, which caused the session to be classified as unknown-tcp instead of web-browsing. "
+                ]
+            }
+        },
+        {
+            "PAN-261739": {
+                "info": [
+                    " (VM-Series firewalls in Microsoft Azure environments only) Fixed an issue where the firewall displayed 0 for the physical port counters read from MAC. "
+                ]
+            }
+        },
+        {
+            "PAN-261484": {
+                "info": [
+                    " Fixed an issue on the firewall where DPDK allocated twice the amount of memory as requested for pre-allocation. "
+                ]
+            }
+        },
+        {
+            "PAN-258736": {
+                "info": [
+                    " Fixed an issue where policy rule configurations pushed from Panorama were not reflected on the firewall if the rule had 63 characters. "
+                ]
+            }
+        },
+        {
+            "PAN-258570": {
+                "info": [
+                    " Fixed an issue where the firewall might reboot unexpectedly due to the varrcvr process progressively using more memory when WildFire file forwarding is handling PE files. "
+                ]
+            }
+        },
+        {
+            "PAN-257619": {
+                "info": [
+                    " Fixed an issue on Panorama where the Task Manager took longer than expected to display managed firewall report tasks. "
+                ]
+            }
+        },
+        {
+            "PAN-257028 ": {
+                "info": [
+                    " (Firewalls in active\/passive HA configurations only) Fixed an issue where firewalls entered a non-functional state and displayed the error message Dataplane down: path monitor failure during the fail-over. "
+                ]
+            }
+        },
+        {
+            "PAN-255323": {
+                "info": [
+                    " (PA-7050 firewalls only) Fixed an issue where the Network Processing Card (NPC), Data Processing Card (DPC), and Log forwarding Card (LFC) remained in a starting state after an unexpected power cycle. "
+                ]
+            }
+        }
+    ]
+}

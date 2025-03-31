@@ -73,6 +73,13 @@
             }
         },
         {
+            "PAN-229702": {
+                "info": [
+                    " After upgrading a Panorama HA pair to PAN-OS 11.1, the ElasticSearch connectivity might fail to establish. The issue occurs because the client certificate on one of the Panorama devices does not have the necessary Extended Key Usage (EKU) set for server authentication, which is required for secure TLS communication. Workaround:Contact Customer Support to renew the root client certificate. "
+                ]
+            }
+        },
+        {
             "PAN-227344": {
                 "info": [
                     " On the Panorama management server, PDF Summary Reports (MonitorPDF ReportsManage PDF Summary) display no data and are blank when predefined reports are included in the summary report. "

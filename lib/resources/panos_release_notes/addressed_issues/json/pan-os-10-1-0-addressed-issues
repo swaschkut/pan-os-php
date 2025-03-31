@@ -1,0 +1,33 @@
+{
+    "10-1-0": [
+        [],
+        {
+            "APL-14490": {
+                "info": [
+                    "Fixed an issue where the option to toggle log ingestion or storage for devices in the Strata Logging Service app did not function."
+                ]
+            }
+        },
+        {
+            "PAN-164564": {
+                "info": [
+                    "Fixed an issue where stats API attempted to get stats from an unavailable port."
+                ]
+            }
+        },
+        {
+            "PAN-146573": {
+                "info": [
+                    "(PA-7000 Series firewalls only) Fixed an issue where firewalls configured with a large number of interfaces experienced impacted performance and timeouts when performing SNMP queries."
+                ]
+            }
+        },
+        {
+            "PAN-142099": {
+                "info": [
+                    "Fixed an issue for Panorama to allow changing MTU for mgmt interface. "
+                ]
+            }
+        }
+    ]
+}

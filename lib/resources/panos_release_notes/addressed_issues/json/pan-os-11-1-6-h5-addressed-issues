@@ -1,0 +1,12 @@
+{
+    "11-1-6-h5": [
+        [],
+        {
+            "PAN-282022": {
+                "info": [
+                    " Fixed the support limitation for the Panorama M-600 and M-700 appliances. "
+                ]
+            }
+        }
+    ]
+}

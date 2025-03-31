@@ -1,0 +1,117 @@
+{
+    "10-2-3-h4": [
+        [],
+        {
+            "PAN-210513": {
+                "info": [
+                    " Fixed an issue where Captive Portal authentication via SAML did not work. "
+                ]
+            }
+        },
+        {
+            "PAN-208737": {
+                "info": [
+                    " Fixed an issue where domain information wasn't populated in IP address-to-username matching after a successful GlobalProtect authentication using an authentication override cookie. "
+                ]
+            }
+        },
+        {
+            "PAN-208079": {
+                "info": [
+                    "(VM-Series firewalls on Microsoft Azure environments only) Fixed an issue where the PAN-DB engine did not start when using a VM-Series firewall Flex based CPU."
+                ]
+            }
+        },
+        {
+            "PAN-207562": {
+                "info": [
+                    " Fixed an issue where the shard count displayed by the show log-collector-es-cluster health CLI command was higher than the recommended limit. The recommended limit can be calculated with the formula 20*heap-memory*no-of-data-nodes. "
+                ]
+            }
+        },
+        {
+            "PAN-206963": {
+                "info": [
+                    " (M-700 Appliances only) A CLI command was added to check the status of each physical port of a bond1 interface. "
+                ]
+            }
+        },
+        {
+            "PAN-206921": {
+                "info": [
+                    " Fixed an issue where the GlobalProtect client pre-login was successful, but the certificate authentication failed. "
+                ]
+            }
+        },
+        {
+            "PAN-206466": {
+                "info": [
+                    " Fixed an issue where the push scope was displaying duplicate shared objects for each device group that were listed under the shared-object group. "
+                ]
+            }
+        },
+        {
+            "PAN-206069": {
+                "info": [
+                    " Fixed an issue where the firewall was unable to boot up on older Intel CPUs. "
+                ]
+            }
+        },
+        {
+            "PAN-205698": {
+                "info": [
+                    " Fixed an issue where GlobalProtect authentication did not work on Apple MacOS devices when the authentication method used was CIE with SAML Authentication. "
+                ]
+            }
+        },
+        {
+            "PAN-204892": {
+                "info": [
+                    " Fixed an issue on Panorama where the web interface was not accessible and displayed the error 504 Gateway Not Reachable due to the mgmtsrvr process not responding. "
+                ]
+            }
+        },
+        {
+            "PAN-204838": {
+                "info": [
+                    " Fixed an issue where the dot1q VLAN tag in ARP reply packets were not displayed. "
+                ]
+            }
+        },
+        {
+            "PAN-204572": {
+                "info": [
+                    " Fixed an issue where python scripts were not working as expected. "
+                ]
+            }
+        },
+        {
+            "PAN-197339": {
+                "info": [
+                    " Fixed an issue where template configuration for the User-ID agent was not reflected on the template stack on Panorama appliances on PAN-OS 10.2.1. "
+                ]
+            }
+        },
+        {
+            "PAN-196954": {
+                "info": [
+                    " Fixed a memory leak issue related to the distributord process. "
+                ]
+            }
+        },
+        {
+            "PAN-195149": {
+                "info": [
+                    " Fixed an issue where firewall administrators were unable to log in to the web interface when RADIUS two-factor authentication was used. "
+                ]
+            }
+        },
+        {
+            "PAN-186270": {
+                "info": [
+                    " Fixed an issue where, when high availability (HA) was enabled and a dynamic update schedule was configured, the configd process unexpectedly stopped responding during configuration commits. "
+                ]
+            }
+        }
+    ]
+}

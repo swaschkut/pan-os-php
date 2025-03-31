@@ -1,0 +1,32 @@
+{
+    "10-1-5-h1": [
+        {
+            "Issue ID": {
+                "info": [
+                    "Description"
+                ]
+            }
+        },
+        {
+            "PAN-190175 and PAN-190223": {
+                "info": [
+                    "A fix was made to address an OpenSSL infinite loop vulnerability in the PAN-OS software (CVE-2022-0778)."
+                ]
+            }
+        },
+        {
+            "PAN-189643": {
+                "info": [
+                    "Fixed an issue where, when QoS was enabled on an IPSec tunnel, traffic failed due to applying the wrong tunnel QoS ID."
+                ]
+            }
+        },
+        {
+            "PAN-178450 and PAN-177905": {
+                "info": [
+                    "Fixed an issue where icons weren't displayed for clientless VPN applications."
+                ]
+            }
+        }
+    ]
+}

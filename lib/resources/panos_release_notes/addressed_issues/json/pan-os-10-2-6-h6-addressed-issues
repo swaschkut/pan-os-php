@@ -1,0 +1,40 @@
+{
+    "10-2-6-h6": [
+        [],
+        {
+            "PAN-272809": {
+                "info": [
+                    " A fix was made to address CVE-2024-0012 (PAN-SA-2024-0015) and CVE-2024-9474. "
+                ]
+            }
+        },
+        {
+            "PAN-249581": {
+                "info": [
+                    " Fixed an issue where stale BGP routes were advertised to peers even when they were not present in the local RIB table. "
+                ]
+            }
+        },
+        {
+            "PAN-228877": {
+                "info": [
+                    " (PA-5200 Series, PA-5400 Series, and PA-7000 Series firewalls only) Fixed an issue with out-of-memory (OOM) conditions that caused slot restarts due to pan_cmd consuming more than 300MB. "
+                ]
+            }
+        },
+        {
+            "PAN-223852": {
+                "info": [
+                    " Fixed an issue where all_pktproc stopped responding when network packet broker or decryption broker chains failed. "
+                ]
+            }
+        },
+        {
+            "PAN-223652": {
+                "info": [
+                    " Fixed an issue where data was not thread safe and led to concurrent read\/write issues that caused GPSVC to stop working unexpectedly. "
+                ]
+            }
+        }
+    ]
+}

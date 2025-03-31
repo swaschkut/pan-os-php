@@ -1,0 +1,138 @@
+{
+    "11-1-2-h9": [
+        [],
+        {
+            "PAN-258225": {
+                "info": [
+                    " Fixed an issue on the Panorama web interface where Security policy rules loaded more slowly than expected. "
+                ]
+            }
+        },
+        {
+            "PAN-257615": {
+                "info": [
+                    " Fixed an issue on Panorama where logs did not display or displayed intermittently on the web interface. "
+                ]
+            }
+        },
+        {
+            "PAN-256725": {
+                "info": [
+                    " Fixed an issue on the Panorama interface where Traffic and Unified event details loaded more slowly than expected. "
+                ]
+            }
+        },
+        {
+            "PAN-255868": {
+                "info": [
+                    " (PA-3400 Series firewalls only) Fixed an issue where the firewall entered maintenance mode after enabling kernel data collection during the silent reboot. "
+                ]
+            }
+        },
+        {
+            "PAN-255266": {
+                "info": [
+                    " Fixed an issue where you were unable to clone a template stack with the Pre-Shared Key variable. "
+                ]
+            }
+        },
+        {
+            "PAN-254411": {
+                "info": [
+                    " Fixed an issue where the configd process stopped responding, which caused RR_CONNECTION_REFUSED error messages to be displayed in admin sessions. "
+                ]
+            }
+        },
+        {
+            "PAN-253546": {
+                "info": [
+                    " Fixed an issue where a TLS client hello was split into multiple packets and arrived out of order, so the packets were dropped and the session terminated. "
+                ]
+            }
+        },
+        {
+            "PAN-251563": {
+                "info": [
+                    " Added CPLD enhancement to capture external power issues. "
+                ]
+            }
+        },
+        {
+            "PAN-247099": {
+                "info": [
+                    " Fixed an issue where the firewall decrypted traffic unexpectedly when the client hello was spread across multiple packets. "
+                ]
+            }
+        },
+        {
+            "PAN-246772": {
+                "info": [
+                    " Fixed an issue on the firewall where the dataplane went down due to a path monitor failure caused by an OOM condition related to the pan_task process. "
+                ]
+            }
+        },
+        {
+            "PAN-246059": {
+                "info": [
+                    " Fixed an issue where forwarded logs were not visible on Panorama due to the Elasticsearch service not starting when it encountered old and unsupported indices. "
+                ]
+            }
+        },
+        {
+            "PAN-245428": {
+                "info": [
+                    " Fixed an issue where FIB entries aged out and were incorrectly removed after an HA failover event. "
+                ]
+            }
+        },
+        {
+            "PAN-244548": {
+                "info": [
+                    " Fixed an issue where ECMP sessions changed destination MAC addresses mid-session, which caused connections to be reset. "
+                ]
+            }
+        },
+        {
+            "PAN-243098": {
+                "info": [
+                    " Fixed an issue with corrupted images when SSL decryption and Security profiles were configured. "
+                ]
+            }
+        },
+        {
+            "PAN-240739": {
+                "info": [
+                    " Fixed an issue where the ECMP FIB update on the dataplane didn't clear the pending change flag, which caused the next non-ECMP FIB update to miss the latest generation ID and age out after 5 minutes. "
+                ]
+            }
+        },
+        {
+            "PAN-240612": {
+                "info": [
+                    " Fixed a kernel panic caused by a third-party issue. "
+                ]
+            }
+        },
+        {
+            "PAN-240596": {
+                "info": [
+                    " Fixed an issue where the all_task process stopped responding due to an invalid memory address. "
+                ]
+            }
+        },
+        {
+            "PAN-236133": {
+                "info": [
+                    " Fixed an issue where SSL traffic was impacted when SSL Command and Control detector for Incline Cloud Analysis was set to reset-both, reset-client, reset-server, or drop. "
+                ]
+            }
+        },
+        {
+            "PAN-234560": {
+                "info": [
+                    " Fixed an issue where the daily summary report displayed IPv6 addresses instead of IPv4 addresses. "
+                ]
+            }
+        }
+    ]
+}

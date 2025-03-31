@@ -1,0 +1,47 @@
+{
+    "11-2-3-h5": [
+        [],
+        {
+            "PAN-273215": {
+                "info": [
+                    " Fixed an issue where a syntax error in the index generation script caused a high management plane CPU load after upgrading. "
+                ]
+            }
+        },
+        {
+            "PAN-271613": {
+                "info": [
+                    " Fixed an issue where configuration pushes from Panorama to the firewall failed due to an OOXML commit error. "
+                ]
+            }
+        },
+        {
+            "PAN-269404": {
+                "info": [
+                    " Fixed an issue where the firewall did not reset the maximum latency timer for hold mode. "
+                ]
+            }
+        },
+        {
+            "PAN-268823": {
+                "info": [
+                    " Fixed an issue where Monitor > Log Display did not display all logs when you applied a filter. "
+                ]
+            }
+        },
+        {
+            "PAN-264549": {
+                "info": [
+                    " Fixed an issue where, after modifying a policy rule on Panorama, pushes to the Cloud NGFW failed with the error saas-user-list unexpected here. "
+                ]
+            }
+        },
+        {
+            "PAN-259078": {
+                "info": [
+                    " Fixed an issue where WildFire Analysis reports were not generated and the following error message was displayed: Error 500: Internal Server Error. "
+                ]
+            }
+        }
+    ]
+}

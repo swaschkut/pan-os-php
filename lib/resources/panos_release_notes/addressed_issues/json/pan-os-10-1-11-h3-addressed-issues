@@ -1,0 +1,12 @@
+{
+    "10-1-11-h3": [
+        [],
+        {
+            "PAN-237871": {
+                "info": [
+                    " (WF-500 appliances and PAN-DB private cloud deployments only) Fixed an issue where the root-cert was set to expire on December 31, 2023. With this fix, the expiration date has been extended. "
+                ]
+            }
+        }
+    ]
+}

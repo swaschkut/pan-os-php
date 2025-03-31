@@ -1,0 +1,54 @@
+{
+    "10-1-9-h14": [
+        [],
+        {
+            "PAN-272809": {
+                "info": [
+                    " A fix was made to address CVE-2024-9474. "
+                ]
+            }
+        },
+        {
+            "PAN-259910": {
+                "info": [
+                    " Fixed an issue where the firewall reported the same value over consecutive SNMP polls when asynchronous mode was enabled. "
+                ]
+            }
+        },
+        {
+            "PAN-257197": {
+                "info": [
+                    " Fixed an issue where ifType and ifSpeed were not populated in asynchronous mode of SNMP operations. "
+                ]
+            }
+        },
+        {
+            "PAN-256181": {
+                "info": [
+                    " Fixed an issue where the management interface and front panel port interface statistics were not populated in asynchronous mode of SNMP operations. "
+                ]
+            }
+        },
+        {
+            "PAN-252517": {
+                "info": [
+                    " Fixed an issue where SNMP failed to respond to multiple Object Identifier (OID) queries in a single SNMP GET request. "
+                ]
+            }
+        },
+        {
+            "PAN-220767": {
+                "info": [
+                    " Fixed an issue where, at the beginning of a session, out of order packets with a TCP payload were truncated with a non-zero trailer. "
+                ]
+            }
+        },
+        {
+            "PAN-208240": {
+                "info": [
+                    " Fixed an issue where, when attempting to replace an existing certificate, importing a new certificate with the same name as the existing certificate failed due to mismatched public and private keys. "
+                ]
+            }
+        }
+    ]
+}

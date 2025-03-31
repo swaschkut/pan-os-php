@@ -1,0 +1,866 @@
+{
+    "10-2-3": [
+        [],
+        {
+            "PAN-231823": {
+                "info": [
+                    " A fix was made to address CVE-2024-5916. "
+                ]
+            }
+        },
+        {
+            "PAN-209275": {
+                "info": [
+                    " Fixed an issue where Override cookie authentication into the GlobalProtect gateway failed when an allow list was configured under the authentication profile. "
+                ]
+            }
+        },
+        {
+            "PAN-201627": {
+                "info": [
+                    "Fixed an issue in next-generation firewall deployments where, when SD-WAN was configured, the dataplane restarted if all SD-WAN member links were down due to an out-of-memory (OOM) condition or during a reboot when all SD-WAN tunnels were down."
+                ]
+            }
+        },
+        {
+            "PAN-200771": {
+                "info": [
+                    "Fixed an issue where syslog-ng was unable to start due to a design change in the syslog configuration file."
+                ]
+            }
+        },
+        {
+            "PAN-199654": {
+                "info": [
+                    "Fixed an issue where ACC reports did not work for custom RBAC users when more than 12 access domains were associated with the username."
+                ]
+            }
+        },
+        {
+            "PAN-199311": {
+                "info": [
+                    "Fixed an issue where the Log Forwarding Card (LFC) failed to forward logs to the syslog server."
+                ]
+            }
+        },
+        {
+            "PAN-199099": {
+                "info": [
+                    "Fixed an issue where, when decryption was enabled, Safari and Google Chrome browsers on Apple Mac computers rejected the server certificate created by the firewall because the Authority Key Identifier was copied from the original server certificate and did not match the Subject Key Identifier on the forward trust certificate."
+                ]
+            }
+        },
+        {
+            "PAN-198733": {
+                "info": [
+                    "(PA-5450 firewalls only) Fixed an issue where dmin tcpdump was hardcoded to eth0 instead of bond0."
+                ]
+            }
+        },
+        {
+            "PAN-198332": {
+                "info": [
+                    "(PA-5400 Series only) Fixed an issue where swapping Network Processing Cards (NPCs) caused high root partition use."
+                ]
+            }
+        },
+        {
+            "PAN-198266": {
+                "info": [
+                    "Fixed an issue where, when predicts for UDP packets were created, a configuration change occurred that triggered a new policy lookup, which caused the dataplane stopped responding when converting the predict. This resulted in a dataplane restart."
+                ]
+            }
+        },
+        {
+            "PAN-198244": {
+                "info": [
+                    "Fixed an issue where using the load config partial CLI command to x-paths removed address object entries from address groups."
+                ]
+            }
+        },
+        {
+            "PAN-197576": {
+                "info": [
+                    " Fixed an issue where commits pushed from Panorama caused a memory leak related to the mgmtsrvr process. "
+                ]
+            }
+        },
+        {
+            "PAN-197484": {
+                "info": [
+                    "(PA-5400 Series firewalls) Fixed an issue where the firewall forwarded packets to the incorrect aggregate ethernet interface when Policy Based Forwarding (PBF) was used."
+                ]
+            }
+        },
+        {
+            "PAN-197383": {
+                "info": [
+                    "Fixed an issue where, after upgrading to PAN-OS 10.2 release, the firewall ran a RAID rebuild for the log disk after ever every reboot."
+                ]
+            }
+        },
+        {
+            "PAN-197244": {
+                "info": [
+                    "Fixed an issue on firewalls with Forward Proxy enabled where the all_pktproc process stopped responding due to missed heartbeats."
+                ]
+            }
+        },
+        {
+            "PAN-196993": {
+                "info": [
+                    "Fixed an issue where an incorrect regex key was generated to invalidate the completions cache, which caused the configd process to stop responding."
+                ]
+            }
+        },
+        {
+            "PAN-196953": {
+                "info": [
+                    "(PA-5450 firewalls only) Fixed an issue where jumbo frames were dropped."
+                ]
+            }
+        },
+        {
+            "PAN-196445": {
+                "info": [
+                    "Fixed an issue where restarting the Network Processing Card (NPC) or the Data Processing Card (DPC) did not bring up all the network interfaces."
+                ]
+            }
+        },
+        {
+            "PAN-196398": {
+                "info": [
+                    "(PA-7000 Series SMC-B firewalls only) Fixed an issue where the firewall did not capture data when the active management interface was MGT-B."
+                ]
+            }
+        },
+        {
+            "PAN-196227": {
+                "info": [
+                    "Fixed an issue where the logd process stopped responding, which caused Panorama to reboot into maintenance mode."
+                ]
+            }
+        },
+        {
+            "PAN-196005": {
+                "info": [
+                    "(PA-3200 Series, PA-5200 Series, and PA-5400 Series firewalls only) Fixed an issue where GlobalProtect IPSec tunnels disconnected at half the inactivity logout timer value."
+                ]
+            }
+        },
+        {
+            "PAN-195707": {
+                "info": [
+                    "Fixed an issue on Panorama appliances configured as log collectors where Panorama repeatedly rebooted into maintenance mode."
+                ]
+            }
+        },
+        {
+            "PAN-195689": {
+                "info": [
+                    "Fixed an issue where WildFire submission logs did not load on the firewall web interface."
+                ]
+            }
+        },
+        {
+            "PAN-195628": {
+                "info": [
+                    "Fixed an issue that caused the pan_task process to miss heartbeats and stop responding."
+                ]
+            }
+        },
+        {
+            "PAN-195625": {
+                "info": [
+                    "Fixed an issue where authd frequently created SSL sessions, which resulted in an OOM condition."
+                ]
+            }
+        },
+        {
+            "PAN-195360": {
+                "info": [
+                    "Fixed an issue with firewalls in Microsoft Azure environments where BGP flapping occurred due to the firewall incorrectly treating capability from BGP peering as unsupported."
+                ]
+            }
+        },
+        {
+            "PAN-195223": {
+                "info": [
+                    "Fixed an issue where the all_pktproc process restarted when receiving a GTPv2 Modify Bearer Request packet if the Serving GPRS Support Node (SGSN) used the same key as the Serving Gateway (SGW)."
+                ]
+            }
+        },
+        {
+            "PAN-195181": {
+                "info": [
+                    "Added enhancements to improve the load on the pan_comm process during SNMP polling."
+                ]
+            }
+        },
+        {
+            "PAN-194993": {
+                "info": [
+                    " Fixed an issue that occurred when authenticating into GlobalProtect with authentication override cookies and SAML where, if the cookie was invalid, authentication did not fall back to SAML. "
+                ]
+            }
+        },
+        {
+            "PAN-194826": {
+                "info": [
+                    "(WF-500 and WF-500-B appliances only) Fixed an issue where log system forwarding did not work over a TLS connection."
+                ]
+            }
+        },
+        {
+            "PAN-194782": {
+                "info": [
+                    "Fixed an issue on Panorama where, if you added a new local or non-local administrator account or an admin user to a template, authentication profiles were incorrectly referenced."
+                ]
+            }
+        },
+        {
+            "PAN-194708": {
+                "info": [
+                    "Fixed an issue where URL filtering logs (MonitorLogsURL Filtering) incorrectly truncated a 16KB Header value and did not display the Header values that followed the truncated 16KB header."
+                ]
+            }
+        },
+        {
+            "PAN-194694": {
+                "info": [
+                    "Fixed an issue where multiple SNMP requests being made to the firewall caused in the pan_comm process to stop responding."
+                ]
+            }
+        },
+        {
+            "PAN-194601": {
+                "info": [
+                    "Fixed an issue that caused the all_task process to stop responding."
+                ]
+            }
+        },
+        {
+            "PAN-194588": {
+                "info": [
+                    "(PA-7000 Series firewalls with LFCs (Log Forwarding Cards), PA-7050 firewalls with SMC-B (Switch Management Cards), and PA-7080 firewalls only) Fixed an issue where the logrcvr_statistics output was not recorded in mp-monitor.log."
+                ]
+            }
+        },
+        {
+            "PAN-194481": {
+                "info": [
+                    "Fixed an issue in ESXi where the bootstrapped VM-Series firewalls with the Software Licensing Plugin had :xxx appended to their hostnames."
+                ]
+            }
+        },
+        {
+            "PAN-194408": {
+                "info": [
+                    "Fixed an issue where, when policy rules had the apps that implicitly depended on web browsing configured with the service application default, traffic did not match the rule correctly."
+                ]
+            }
+        },
+        {
+            "PAN-194406": {
+                "info": [
+                    "Fixed an issue where the MTU from SD-WAN interfaces was recalculated after a configuration push from Panorama or a local commit, which caused traffic disruption."
+                ]
+            }
+        },
+        {
+            "PAN-194262": {
+                "info": [
+                    "Fixed an issue where the GlobalProtect application failed to connect when a user or group was configured under the portal Config Selection Criteria."
+                ]
+            }
+        },
+        {
+            "PAN-194152": {
+                "info": [
+                    "(PA-5410, PA-5420, PA-5430, and PA-5440 firewalls in HA configurations only) Fixed an issue where HA1-A and HA1-B port information didn't match to front panel mappings and, when one firewall was on PAN-OS 10.2.3 or a later release and the other was on PAN-OS 10.2.2 or an earlier release, a split-brain situation occurred."
+                ]
+            }
+        },
+        {
+            "PAN-194129": {
+                "info": [
+                    "(PA-5450 firewalls only) Fixed an issue where slot 2 did not use all features correctly if a DPC was used instead of an NPC."
+                ]
+            }
+        },
+        {
+            "PAN-194097": {
+                "info": [
+                    "Fixed an issue on firewalls in high availability (HA) active\/passive configurations where _ha_d_session_msgbuf overflowed on the passive firewall during an upgrade, which caused the firewall to enter a non-functional state."
+                ]
+            }
+        },
+        {
+            "PAN-193981": {
+                "info": [
+                    "(VM-Series firewalls in Microsoft Azure environments only) Fixed an issue where the firewall stopped monitoring HA failure and floating IP addresses did not get moved to the newly active firewall."
+                ]
+            }
+        },
+        {
+            "PAN-193899": {
+                "info": [
+                    "Fixed an issue where advanced mode factory reset (Maintenance ModeFactory ResetAdvancedselect a specific image) was only compatible with PAN-OS 10.1.3 or later version images."
+                ]
+            }
+        },
+        {
+            "PAN-193818": {
+                "info": [
+                    "Fixed an issue where the firewall device server failed to resolve URL cloud FQDNs, which interrupted URL category lookup."
+                ]
+            }
+        },
+        {
+            "PAN-193766": {
+                "info": [
+                    "(VM-Series firewalls only) Fixed an issue where the GlobalProtect portal was not accessible."
+                ]
+            }
+        },
+        {
+            "PAN-193765": {
+                "info": [
+                    "Fixed an issue where commits failed the following error displayed in the configd log: Unable to populate ids into candidate config: Error: Error populating id for 'sg2+DMZ to FirstAM Scanner-1."
+                ]
+            }
+        },
+        {
+            "PAN-193763": {
+                "info": [
+                    "Fixed an issue on the firewall where the dataplane CPU spiked, which caused traffic to be affected during commits or content updates."
+                ]
+            }
+        },
+        {
+            "PAN-193744": {
+                "info": [
+                    "(PA-3200 Series firewalls only) Fixed an issue where, when the HA2 HSCI connection was down, the system log displayed Port HA1-b: down instead of Port HSCI: Down."
+                ]
+            }
+        },
+        {
+            "PAN-193732": {
+                "info": [
+                    "(PA-5400 Series firewalls only) Fixed an issue where the firewall incorrectly handled internal transactions."
+                ]
+            }
+        },
+        {
+            "PAN-193707": {
+                "info": [
+                    "Fixed an issue where SAML authentication failed during commits with the following error message: revocation status could not be verified (reason: )."
+                ]
+            }
+        },
+        {
+            "PAN-193483": {
+                "info": [
+                    "(VM-Series firewalls only) Fixed an issue where, during Layer-7 packet inspection where traffic was being inspected for threat signature and data patterns, multiple processes stopped responding."
+                ]
+            }
+        },
+        {
+            "PAN-193392": {
+                "info": [
+                    "Fixed an issue where RTP packets dropped due to conflicting duplicate flows."
+                ]
+            }
+        },
+        {
+            "PAN-193251": {
+                "info": [
+                    "Fixed an issue where, when SAML was configured as the authentication method for GlobalProtect, the SAML page did not load when using a browser."
+                ]
+            }
+        },
+        {
+            "PAN-193235": {
+                "info": [
+                    "Fixed an issue where duplicate log entries were displayed on Panorama."
+                ]
+            }
+        },
+        {
+            "PAN-193201": {
+                "info": [
+                    "Fixed an issue where auto-commits failed after an upgrade if an imported certificate size was greater than the size of a buffer."
+                ]
+            }
+        },
+        {
+            "PAN-193132": {
+                "info": [
+                    "(PA-220 firewalls only) Fixed an issue where a commit and push from Panorama caused high dataplane CPU utilization."
+                ]
+            }
+        },
+        {
+            "PAN-192944": {
+                "info": [
+                    "Fixed an issue where the logrcvr process caused an OOM condition."
+                ]
+            }
+        },
+        {
+            "PAN-192739": {
+                "info": [
+                    "Fixed an issue where the error message Machine Learning found virus was displayed in threat CSV logs as Threat ID\/Name when WildFire Inline ML detected malware."
+                ]
+            }
+        },
+        {
+            "PAN-192726": {
+                "info": [
+                    "Fixed an issue where the firewall dropped TCP traffic inside IPSec tunnels."
+                ]
+            }
+        },
+        {
+            "PAN-192673": {
+                "info": [
+                    "(PA-7050-SMC-B firewalls only) Fixed an issue where the LFC syslog-ng service failed to start after an upgrade."
+                ]
+            }
+        },
+        {
+            "PAN-192666": {
+                "info": [
+                    "(VM-Series firewalls only) Fixed an issue where uploading certificates via API failed within the first 30 minutes of a bootstrap."
+                ]
+            }
+        },
+        {
+            "PAN-192551": {
+                "info": [
+                    "(PA-5400 Series firewalls only) Fixed an issue where the firewall incorrectly processed path monitoring packets."
+                ]
+            }
+        },
+        {
+            "PAN-192404": {
+                "info": [
+                    "Fixed an issue where ARP broadcasts occurring in the same time interval and network segment as HA path monitoring pings triggered an ARP cache request, which prevented the firewall from sending ICMP echo requests to the monitored destination IP address and caused an HA path monitoring failover."
+                ]
+            }
+        },
+        {
+            "PAN-192330": {
+                "info": [
+                    "(Bootstrapped VM-Series firewalls in Microsoft Azure environments only) Fixed an issue where the firewall did not automatically receive the Strata Logging Service license."
+                ]
+            }
+        },
+        {
+            "PAN-192052": {
+                "info": [
+                    "Fixed an issue where, when next hop MAC address entries weren't found on the offload processor for active traffic, update messages flooded the firewall, which caused resource contention and traffic disruption."
+                ]
+            }
+        },
+        {
+            "PAN-191874": {
+                "info": [
+                    "Fixed an issue where monthly scheduled reports did not display information after upgrading to PAN-OS 10.2.0."
+                ]
+            }
+        },
+        {
+            "PAN-191847": {
+                "info": [
+                    "Fixed an issue where the Panorama appliance was unable to generate scheduled custom reports due to the large number of files stored in the opt\/pancfg\/mgmt\/custom-reports directory."
+                ]
+            }
+        },
+        {
+            "PAN-191726": {
+                "info": [
+                    "Fixed an issue where an SCP export of the device state from the firewall added single quotes ( ' ) to the filename."
+                ]
+            }
+        },
+        {
+            "PAN-191558": {
+                "info": [
+                    "Fixed an issue where, after an upgrade to PAN-OS 10.1.5, Global Find did not display all results related to a searched item."
+                ]
+            }
+        },
+        {
+            "PAN-191269": {
+                "info": [
+                    "Fixed an issue where the NAT pool leaked for passive mode FTP predict sessions."
+                ]
+            }
+        },
+        {
+            "PAN-191222": {
+                "info": [
+                    "Fixed an issue where Panorama became inaccessible when after a push to the collector group."
+                ]
+            }
+        },
+        {
+            "PAN-191218": {
+                "info": [
+                    "(PA-5400 Series firewalls only) Fixed an issue where the session log storage quota could not be changed via the web interface."
+                ]
+            }
+        },
+        {
+            "PAN-191216": {
+                "info": [
+                    "Fixed an issue where, on Apple iOS devices, SAML authentication did not connect to the GlobalProtect portal."
+                ]
+            }
+        },
+        {
+            "PAN-191214": {
+                "info": [
+                    "Fixed an issue where the Elasticsearch process stopped responding, which caused an OOM condition."
+                ]
+            }
+        },
+        {
+            "PAN-190657": {
+                "info": [
+                    " Fixed an issue where IPSec tunnels did not rekey due to the security association being deleted too early. "
+                ]
+            }
+        },
+        {
+            "PAN-190448": {
+                "info": [
+                    "Fixed an issue in ACC reports where IPv6 addresses were displayed instead of IPv4 addresses."
+                ]
+            }
+        },
+        {
+            "PAN-189894": {
+                "info": [
+                    "Fixed an issue with the web interface where the template stack didn't show inherited values of Template > Authentication Portal Settings."
+                ]
+            }
+        },
+        {
+            "PAN-189861": {
+                "info": [
+                    "Fixed an issue on firewalls in HA configurations where intermittent system alerts on the active firewall caused the pan_comm process to restart continuously."
+                ]
+            }
+        },
+        {
+            "PAN-189859": {
+                "info": [
+                    "Fixed an issue on the firewall where an administrator was unable to Import Custom URL Category Content."
+                ]
+            }
+        },
+        {
+            "PAN-189762": {
+                "info": [
+                    "Fixed an issue where a predict session didn't match with the traffic when both source NAT and destination NAT were enabled."
+                ]
+            }
+        },
+        {
+            "PAN-189723": {
+                "info": [
+                    "Fixed an issue where you were unable to configure dynamic address groups to use more than 64,000 IP addresses in a Security policy."
+                ]
+            }
+        },
+        {
+            "PAN-189414": {
+                "info": [
+                    "Fixed an issue where TCP packets were dropped during the first zone transfer when DNS security was enabled."
+                ]
+            }
+        },
+        {
+            "PAN-189304": {
+                "info": [
+                    "Fixed an issue where the Panorama appliance didn't display logs or generate reports for a device group containing MIPs platform that forwarded logs to Strata Logging Service."
+                ]
+            }
+        },
+        {
+            "PAN-189270": {
+                "info": [
+                    "Fixed an issue that caused a memory leak on the reportd process."
+                ]
+            }
+        },
+        {
+            "PAN-189225": {
+                "info": [
+                    "Fixed an issue where BGP routes were lost or uninstalled after disabling jumbo frames on the firewall."
+                ]
+            }
+        },
+        {
+            "PAN-189114": {
+                "info": [
+                    "Fixed an issue where the dataplane went down, which caused an HA failover."
+                ]
+            }
+        },
+        {
+            "PAN-188867": {
+                "info": [
+                    "Fixed an issue where the firewall dropped packets when the session payload was too large."
+                ]
+            }
+        },
+        {
+            "PAN-188489": {
+                "info": [
+                    "(VM-Series firewalls only) Fixed an issue where dynamic content updates weren't automatically pushed to the firewall licensed using the Panorama Software Firewall License plugin when Automatically push content when software device registers to Panorama (PanoramaTemplatesAdd Stack) was enabled."
+                ]
+            }
+        },
+        {
+            "PAN-188338": {
+                "info": [
+                    "Fixed an issue where canceling a commit caused the commit process to remain at 70% and the firewall had to be rebooted."
+                ]
+            }
+        },
+        {
+            "PAN-188303": {
+                "info": [
+                    "Fixed an issue where the serial number displayed as unknown after running the show system state CLI command."
+                ]
+            }
+        },
+        {
+            "PAN-188096": {
+                "info": [
+                    "(VM-Series firewalls only) Fixed an issue where, on firewalls licensed with Software NGFW Credit (VM-FLEX-4 and higher), HA clustering was unable to be established."
+                ]
+            }
+        },
+        {
+            "PAN-187985": {
+                "info": [
+                    "Fixed an issue where you were unable to configure a QoS Profile as percentage for Clear Text Traffic."
+                ]
+            }
+        },
+        {
+            "PAN-187890": {
+                "info": [
+                    "Fixed an issue where the Strata Logging Service connection incorrectly displayed as disconnected when a service route was in use."
+                ]
+            }
+        },
+        {
+            "PAN-187805": {
+                "info": [
+                    "Fixed an issue where a process (all_pktproc) stopped responding and the dataplane restarted during certificate construction or destruction."
+                ]
+            }
+        },
+        {
+            "PAN-187476": {
+                "info": [
+                    "Fixed an issue where, when hip-redistribution is enabled, Panorama doesn't display a part of HIP information."
+                ]
+            }
+        },
+        {
+            "PAN-187234": {
+                "info": [
+                    " Fixed an intermittent issue where web pages submitted for analysis by Advanced URL Filtering cloud inline categorization experienced high latency. "
+                ]
+            }
+        },
+        {
+            "PAN-186891": {
+                "info": [
+                    "Fixed an issue where NetFlow packets contained incorrect octet counts."
+                ]
+            }
+        },
+        {
+            "PAN-186418": {
+                "info": [
+                    "Fixed an issue where Panorama displayed a discrepancy in RAM configured on the VMware host."
+                ]
+            }
+        },
+        {
+            "PAN-186134": {
+                "info": [
+                    "Fixed an issue on Panorama where performing a commit and push intermittently failed to push the committed configuration to managed firewalls."
+                ]
+            }
+        },
+        {
+            "PAN-186075": {
+                "info": [
+                    "(VM-Series firewalls only) Fixed an issue where the firewall rebooted after receiving large packets while in DPDK mode on Azure virtual machines running CX4 (MLx5) drivers."
+                ]
+            }
+        },
+        {
+            "PAN-185787": {
+                "info": [
+                    "Fixed an issue where logging in to the Panorama web interface did not work and the following error message displayed: Timed out while getting config lock. Please try again."
+                ]
+            }
+        },
+        {
+            "PAN-185283": {
+                "info": [
+                    "Fixed an issue on Panorama where using the name-of-threatid contains log4j filter didn't produce expected results."
+                ]
+            }
+        },
+        {
+            "PAN-184702": {
+                "info": [
+                    "(M-700 appliances in Log Collector mode only) Fixed an issue on the Panorama management server where the Panorama appliance failed to connect to Panorama when added as a managed log collector."
+                ]
+            }
+        },
+        {
+            "PAN-184068": {
+                "info": [
+                    "(PA-5200 Series firewalls only) Fixed an issue where the firewall generated pause frames, which caused network latency."
+                ]
+            }
+        },
+        {
+            "PAN-183788": {
+                "info": [
+                    "Fixed an issue with SCEP certificate enrollment where the incorrect Registration Authority (RA) certificate was chosen to encrypt the enrollment request."
+                ]
+            }
+        },
+        {
+            "PAN-185750": {
+                "info": [
+                    "Updated an issue to eliminate failed pan_comm software issues that caused the dataplane to restart unexpectedly"
+                ]
+            }
+        },
+        {
+            "PAN-183270": {
+                "info": [
+                    "Fixed an issue where a bootstrapped firewall connected only to the first log collector in a log collector group."
+                ]
+            }
+        },
+        {
+            "PAN-183184": {
+                "info": [
+                    "Fixed an issue where enabling SSL decryption with a Hardware Security Model (HSM) caused a dataplane restart."
+                ]
+            }
+        },
+        {
+            "PAN-183166": {
+                "info": [
+                    "Fixed an issue where system, configuration, and alarm logs were queued up on the logrcvr process and were not forwarded out or written to disk until an autocommit was passed."
+                ]
+            }
+        },
+        {
+            "PAN-182689": {
+                "info": [
+                    " Fixed an issue where a signature from a previous WildFire package triggered virus detection even though the signature was no longer present in the current WildFire package. "
+                ]
+            }
+        },
+        {
+            "PAN-182539": {
+                "info": [
+                    "Fixed an issue with Panorama appliances in HA configurations where dedicated log collectors did not send local system or configuration logs to both Panorama appliances."
+                ]
+            }
+        },
+        {
+            "PAN-182212": {
+                "info": [
+                    "Fixed an issue where SNMP reported the panVsysActiveTcpCps and panVsysActiveUdpCps value to be 0."
+                ]
+            }
+        },
+        {
+            "PAN-181277": {
+                "info": [
+                    "Fixed an issue where VPN tunnels in SD-WAN flapped due to duplicate tunnel IDs."
+                ]
+            }
+        },
+        {
+            "PAN-179543": {
+                "info": [
+                    "Fixed an issue where the flow_mgmt process stopped responding when attempting to clear the session table, which caused the dataplane to restart."
+                ]
+            }
+        },
+        {
+            "PAN-179258": {
+                "info": [
+                    "Fixed an issue where system disk migration failed."
+                ]
+            }
+        },
+        {
+            "PAN-178243": {
+                "info": [
+                    "Fixed an issue where Shared Gateway was not visible in the Virtual System drop down when configuring a Layer3 aggregate subinterface."
+                ]
+            }
+        },
+        {
+            "PAN-178194": {
+                "info": [
+                    "Fixed an issue with the web interface where, when only the Advanced URL Filtering license was activated, the message License required for URL filtering to function was incorrectly displayed and the URL Filtering Profile > Inline ML section was disabled."
+                ]
+            }
+        },
+        {
+            "PAN-177482": {
+                "info": [
+                    "Fixed an issue where ACC > App Scope > Threat Monitor showed NO DATA TO DISPLAY."
+                ]
+            }
+        },
+        {
+            "PAN-172501": {
+                "info": [
+                    "Fixed an issue where you were unable to revert HA mode settings to the default values from the web interface."
+                ]
+            }
+        },
+        {
+            "PAN-171714": {
+                "info": [
+                    "Fixed an issue where, when NetBIOS format (domain\\user) was used for the IP address-to-username mapping and the firewall received the group mapping information from the Cloud Identity Engine, the firewall did not match the user to the correct group."
+                ]
+            }
+        },
+        {
+            "PAN-157215": {
+                "info": [
+                    "Fixed an issue that occurred when two FQDNs were resolved to the same IP address and were configured as the same src\/dst of the same rule. If one FQDN was later resolved to a different IP address, the IP address resolved for the second FQDN was also changed, which caused traffic with the original IP address to hit the incorrect rule."
+                ]
+            }
+        },
+        {
+            "PAN-151469": {
+                "info": [
+                    "Fixed an issue where packets were dropped unexpectedly due to errors parsing the IP version field."
+                ]
+            }
+        }
+    ]
+}

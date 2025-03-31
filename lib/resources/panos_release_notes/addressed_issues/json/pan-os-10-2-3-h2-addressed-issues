@@ -1,0 +1,103 @@
+{
+    "10-2-3-h2": [
+        [],
+        {
+            "PAN-205830": {
+                "info": [
+                    "Fixed an issue with multi-vsys firewalls where custom applications and shared objects pushed from Panorama did not populate in their respective lists on the firewall."
+                ]
+            }
+        },
+        {
+            "PAN-205805": {
+                "info": [
+                    "Fixed an issue where Generic routing encapsulation (GRE) traffic was only allowed in one direction when tunnel content inspection (TCI) was enabled."
+                ]
+            }
+        },
+        {
+            "PAN-205231": {
+                "info": [
+                    "Fixed an issue where a commit operation remained at 55% for longer than expected if more than 7,500 Security policy rules were configured."
+                ]
+            }
+        },
+        {
+            "PAN-202795": {
+                "info": [
+                    "Fixed an issue where file identification failed for files with minimal data with large headers."
+                ]
+            }
+        },
+        {
+            "PAN-202535": {
+                "info": [
+                    "Fixed an issue where the Device Telemetry configuration for a region was unable to be set or edited via the web interface."
+                ]
+            }
+        },
+        {
+            "PAN-201872": {
+                "info": [
+                    "Fixed an issue where SMB performance caused overall network latency after an upgrade."
+                ]
+            }
+        },
+        {
+            "PAN-201714": {
+                "info": [
+                    "Fixed an issue with GlobalProtect where attempting to authenticate with the GlobalProtect gateway returned a 502 error code."
+                ]
+            }
+        },
+        {
+            "PAN-201357": {
+                "info": [
+                    "The CLI command debug dataplane set pow no-desched yes was added to address an issue where the all_pktproc process stopped responding and caused traffic issues."
+                ]
+            }
+        },
+        {
+            "PAN-200946": {
+                "info": [
+                    "Fixed an issue with firewalls in active\/passive HA configurations where GRE tunnels went down due to recursive routing when the passive firewall was booting up. When the passive firewall became active and no recursive routing was configured, the GRE tunnel remained down."
+                ]
+            }
+        },
+        {
+            "PAN-198718": {
+                "info": [
+                    "(PA-5280 firewalls only) Fixed an issue where memory allocation failures caused increased decryption failures."
+                ]
+            }
+        },
+        {
+            "PAN-196583": {
+                "info": [
+                    "Fixed an issue where the Cisco TrustSEc plugin triggered a flood of redundant register\/unregister messages due to a failed IP address tag database search."
+                ]
+            }
+        },
+        {
+            "PAN-195756": {
+                "info": [
+                    " Fixed an issue that caused an API request timeout when parsing requests using large header buffers. "
+                ]
+            }
+        },
+        {
+            "PAN-195713": {
+                "info": [
+                    "Fixed an issue where clientless VPN applications were not displayed in the GlobalProtect portal page."
+                ]
+            }
+        },
+        {
+            "PAN-182732": {
+                "info": [
+                    "Fixed an issue where the GlobalProtect gateway inactivity timer wasn't refreshed even though traffic was passing through the tunnel."
+                ]
+            }
+        }
+    ]
+}

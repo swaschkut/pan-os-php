@@ -1,0 +1,96 @@
+{
+    "11-1-2-h16": [
+        [],
+        {
+            "PAN-272809": {
+                "info": [
+                    " A fix was made to address CVE-2024-0012 (PAN-SA-2024-0015) and CVE-2024-9474. "
+                ]
+            }
+        },
+        {
+            "PAN-269000": {
+                "info": [
+                    " Fixed an issue where the firewall stopped responding due to a NULL pointer dereference when path monitoring failed. "
+                ]
+            }
+        },
+        {
+            "PAN-265785": {
+                "info": [
+                    " Fixed an issue where the firewall rebooted due to a sysd variable being modified before it was created. "
+                ]
+            }
+        },
+        {
+            "PAN-265179": {
+                "info": [
+                    " Fixed an issue where a kernel race condition caused the firewall to reboot with a kernel panic. "
+                ]
+            }
+        },
+        {
+            "PAN-263973": {
+                "info": [
+                    " Fixed an issue where log collectors had a low incoming log rate. "
+                ]
+            }
+        },
+        {
+            "PAN-263208": {
+                "info": [
+                    " (PA-5440 and PA-5445 firewalls only) Fixed an issue where interrupts were generated at a certain packet rate, and dataplane processes missed heartbeats, which caused the dataplane to go down. "
+                ]
+            }
+        },
+        {
+            "PAN-259881": {
+                "info": [
+                    " Fixed an issue on Panorama where traffic log details were not displayed under detailed log view. "
+                ]
+            }
+        },
+        {
+            "PAN-259351": {
+                "info": [
+                    " A fix was made to address CVE-2024-3393. "
+                ]
+            }
+        },
+        {
+            "PAN-256223": {
+                "info": [
+                    " Fixed an issue where device telemetry log collection filled the root partition. "
+                ]
+            }
+        },
+        {
+            "PAN-255747": {
+                "info": [
+                    " Fixed an issue on the firewall where CLI commands returned Server error: op command for client dagger timed out as client is not available. "
+                ]
+            }
+        },
+        {
+            "PAN-253485": {
+                "info": [
+                    " (Firewalls in active\/passive HA configurations only) Fixed an issue where dataplane packet capture filter configuration failed on the active firewall with the error op command for client dagger timed out as client is not available. "
+                ]
+            }
+        },
+        {
+            "PAN-249300": {
+                "info": [
+                    " Fixed an issue where, when CUID was enabled, the CUID firewall pub node was slower than expected when processing incoming traffic and User-ID mapping redistribution between PAN-OS nodes was impacted. "
+                ]
+            }
+        },
+        {
+            "PAN-219805": {
+                "info": [
+                    " Fixed an issue where the reportd process stopped responding due to a race condition. "
+                ]
+            }
+        }
+    ]
+}

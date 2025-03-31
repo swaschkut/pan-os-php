@@ -1,0 +1,68 @@
+{
+    "11-1-4-h1": [
+        [],
+        {
+            "PAN-245690": {
+                "info": [
+                    " Fixed an issue where the Managed Collectors health status on Panorama displayed as empty. "
+                ]
+            }
+        },
+        {
+            "PAN-259733": {
+                "info": [
+                    " Fixed an issue where a custom report was not deleted on Panorama when expected. "
+                ]
+            }
+        },
+        {
+            "PAN-259480": {
+                "info": [
+                    " Fixed an issue where the varrcvr process stopped responding after running out of memory due to how the process queued and dequeued files for WildFire file forwarding when a WildFire Analysis Security profile was enabled. "
+                ]
+            }
+        },
+        {
+            "PAN-257615": {
+                "info": [
+                    " Fixed an issue on Panorama where logs did not display or displayed intermittently on the web interface. "
+                ]
+            }
+        },
+        {
+            "PAN-257462": {
+                "info": [
+                    " Fixed an issue related to the varrcvr process where the management plane CPU was higher than expected during WildFire updates. "
+                ]
+            }
+        },
+        {
+            "PAN-257028": {
+                "info": [
+                    " (Firewalls in active\/passive HA configurations only) Fixed an issue where firewalls entered a non-functional state and displayed the error message Dataplane down: path monitor failure during the fail-over. "
+                ]
+            }
+        },
+        {
+            "PAN-255711": {
+                "info": [
+                    " Fixed an issue where the firewall displayed a malformed request error when selecting a custom format and clicking OK on the configuration window due to the log type Correlation incorrectly being displayed (Device > Log Setting - Correlation > Syslog Server Profile > Custom Log Format > Correlation). "
+                ]
+            }
+        },
+        {
+            "PAN-254373": {
+                "info": [
+                    " Fixed an issue where the firewall did not handle error code 500 responses from the WildFire cloud correctly. "
+                ]
+            }
+        },
+        {
+            "PAN-225213": {
+                "info": [
+                    " Fixed an issue where Push All Changes displayed changes that were already committed in the push scope for another device group after performing a selective commit and selective push to the first device group. "
+                ]
+            }
+        }
+    ]
+}

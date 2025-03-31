@@ -1,0 +1,40 @@
+{
+    "10-1-12-h3": [
+        [],
+        {
+            "PAN-272809": {
+                "info": [
+                    " A fix was made to address CVE-2024-9474. "
+                ]
+            }
+        },
+        {
+            "PAN-242561": {
+                "info": [
+                    " Fixed an issue where GlobalProtect tunnels disconnected shortly after being established when SSL was used as the transfer protocol. "
+                ]
+            }
+        },
+        {
+            "PAN-241018": {
+                "info": [
+                    " (VM-Series firewalls in Microsoft Azure environments only) Fixed a Dataplane Development Kit (DPDK) issue where interfaces remained in a link-down stage after an Azure hot plug event. "
+                ]
+            }
+        },
+        {
+            "PAN-238949": {
+                "info": [
+                    " Fixed a memory corruption issue where multiple processes stopped responding. "
+                ]
+            }
+        },
+        {
+            "PAN-205482": {
+                "info": [
+                    " Fixed an issue related to the configd process where Panorama displayed the error Server not responding when editing policies. "
+                ]
+            }
+        }
+    ]
+}

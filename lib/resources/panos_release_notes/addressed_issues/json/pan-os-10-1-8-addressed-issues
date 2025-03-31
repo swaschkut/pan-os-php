@@ -1,0 +1,215 @@
+{
+    "10-1-8": [
+        [],
+        {
+            "PAN-204830 ": {
+                "info": [
+                    "Fixed an issue where logging in via the web interface or CLI did not work until an auto-commit was complete."
+                ]
+            }
+        },
+        {
+            "PAN-203598": {
+                "info": [
+                    "Fixed an issue where, when tunnel content inspection was enabled for VXLAN, ARP over VXLAN packets were dropped."
+                ]
+            }
+        },
+        {
+            "PAN-201872": {
+                "info": [
+                    "Fixed an issue where SMB performance caused overall network latency after an upgrade."
+                ]
+            }
+        },
+        {
+            "PAN-201818": {
+                "info": [
+                    "Fixed an issue where INIT SCTP packets were dropped after being processed by the CTD, and silent drops occurred even with SCTP no-drop function enabled."
+                ]
+            }
+        },
+        {
+            "PAN-201627": {
+                "info": [
+                    "Fixed an issue in next-generation firewall deployments where, when SD-WAN was configured, the dataplane restarted if all SD-WAN member links were down due to an out-of-memory (OOM) condition or during a reboot when all SD-WAN tunnels were down."
+                ]
+            }
+        },
+        {
+            "PAN-201357": {
+                "info": [
+                    "The CLI command debug dataplane set pow no-desched yes was added to address an issue where the all_pktproc process stopped responding and caused traffic issues."
+                ]
+            }
+        },
+        {
+            "PAN-199726": {
+                "info": [
+                    "Fixed an issue with firewalls in HA configurations where both firewalls responded with gARP messages after a switchover."
+                ]
+            }
+        },
+        {
+            "PAN-199570": {
+                "info": [
+                    "Fixed an issue where uploading certificates using a custom admin role did not work as expected after a context switch."
+                ]
+            }
+        },
+        {
+            "PAN-199099": {
+                "info": [
+                    "Fixed an issue where, when decryption was enabled, Safari and Google Chrome browsers on Apple Mac computers rejected the server certificate created by the firewall because the Authority Key Identifier was copied from the original server certificate and did not match the Subject Key Identifier on the forward trust certificate."
+                ]
+            }
+        },
+        {
+            "PAN-198871": {
+                "info": [
+                    " Fixed an issue when both URL and Advanced URL licenses were installed, the expiry date was not correctly checked. "
+                ]
+            }
+        },
+        {
+            "PAN-198733": {
+                "info": [
+                    "(PA-5450 firewalls only) Fixed an issue where tcpdump was hardcoded to eth0 instead of bond0."
+                ]
+            }
+        },
+        {
+            "PAN-198266": {
+                "info": [
+                    "Fixed an issue where, when predicts for UDP packets were created, a configuration change occurred that triggered a new policy lookup, which caused the dataplane stopped responding when converting the predict. This resulted in a dataplane restart."
+                ]
+            }
+        },
+        {
+            "PAN-198078": {
+                "info": [
+                    "Fixed an issue where VXLAN keepalive packets were dropped randomly."
+                ]
+            }
+        },
+        {
+            "PAN-197576": {
+                "info": [
+                    "Fixed an issue where commits pushed from Panorama caused a memory leak related to the mgmtsrvr process."
+                ]
+            }
+        },
+        {
+            "PAN-197386": {
+                "info": [
+                    "Fixed an issue where traffic that was subject to network packet broker inspection entered a looping state due to incorrect session offload."
+                ]
+            }
+        },
+        {
+            "PAN-196704": {
+                "info": [
+                    "Fixed an issue where Preview Changes on Panorama Push to Devices incorrectly displayed changes to encrypted entries."
+                ]
+            }
+        },
+        {
+            "PAN-196583": {
+                "info": [
+                    "Fixed an issue where the Cisco TrustSEc plugin triggered a flood of redundant register\/unregister messages due to a failed IP address tag database search."
+                ]
+            }
+        },
+        {
+            "PAN-196558": {
+                "info": [
+                    "Fixed an issue where IP address tag policy updates were delayed."
+                ]
+            }
+        },
+        {
+            "PAN-196131": {
+                "info": [
+                    "Fixed an issue where the comm process stopped responding when a show command was executed in two sessions."
+                ]
+            }
+        },
+        {
+            "PAN-195107": {
+                "info": [
+                    "(PA-7000s Series firewalls with LFCs only) Fixed an issue where the IP address of the LFC displayed as unknown."
+                ]
+            }
+        },
+        {
+            "PAN-194795": {
+                "info": [
+                    "Fixed an issue where a dataplane 1 VCCIO voltage fluctuation triggered the chassis master alarm."
+                ]
+            }
+        },
+        {
+            "PAN-194615": {
+                "info": [
+                    "Fixed an issue where the packet broker session timeout value did not match the master sessions timeout value after the firewall received a TCP FIN or RST packet. The fix ensures that Broker session times out within 1 second after the master session timed out."
+                ]
+            }
+        },
+        {
+            "PAN-194441": {
+                "info": [
+                    "Fixed an issue where the dataplane CPU usage was higher than expected due to packet looping in the broker session when the network packet broker was enabled."
+                ]
+            }
+        },
+        {
+            "PAN-189720": {
+                "info": [
+                    "Fixed an issue where commits failed when downgrading a Panorama appliance running a PAN-OS 10.1 release to a PAN-OS 10.0 release."
+                ]
+            }
+        },
+        {
+            "PAN-189429": {
+                "info": [
+                    "Fixed a memory leak that occurred when enabling XFF (x-forwarded-for) logging in a Security policy."
+                ]
+            }
+        },
+        {
+            "PAN-189270": {
+                "info": [
+                    "Fixed an issue that caused a memory leak on the reportd process."
+                ]
+            }
+        },
+        {
+            "PAN-188118": {
+                "info": [
+                    "Fixed an issue with firewalls in FIPS mode that prevented device telemetry from connecting."
+                ]
+            }
+        },
+        {
+            "PAN-181759": {
+                "info": [
+                    "(Firewalls in active\/active HA configurations only) Fixed an issue where firewall configuration files were not synced."
+                ]
+            }
+        },
+        {
+            "PAN-180039": {
+                "info": [
+                    "Fixed an issue in 10.0.9, where executing the CLI command show transceiver-detail all resulted in the following error message: An error occurred. See dagger.log for information.."
+                ]
+            }
+        },
+        {
+            "PAN-178613": {
+                "info": [
+                    "(PA-400 Series firewalls only) Fixed an issue where multiple restarts related to the all_task process occurred."
+                ]
+            }
+        }
+    ]
+}

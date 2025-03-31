@@ -1,0 +1,166 @@
+{
+    "10-1-10-h1": [
+        [],
+        {
+            "PAN-223317": {
+                "info": [
+                    " Fixed an issue where SSL traffic failed with the error message: Error: General TLS protocol error. "
+                ]
+            }
+        },
+        {
+            "PAN-219659": {
+                "info": [
+                    " Fixed an issue where root partition frequently filled up and the following error message was displayed: Disk usage for \/ exceeds limit, xx percent in use, cleaning filesystem. "
+                ]
+            }
+        },
+        {
+            "PAN-218947": {
+                "info": [
+                    " Fixed an issue where logs were not displayed in Elasticsearch under ingestion load. "
+                ]
+            }
+        },
+        {
+            "PAN-218335": {
+                "info": [
+                    " Fixed an issue with hardware destination MAC filtering on the Log Processing Card (LPC) that caused the logging card interface to be susceptible to unicast flooding. "
+                ]
+            }
+        },
+        {
+            "PAN-218001": {
+                "info": [
+                    " (PA-400 Series firewalls only) Fixed an issue where shutdown commands rebooted the system instead of correctly triggering a shutdown. "
+                ]
+            }
+        },
+        {
+            "PAN-217681": {
+                "info": [
+                    " Fixed an issue caused by out of order TCP segments where the FIN flag and TCP data was truncated in a packet, which resulted in retransmission failure. "
+                ]
+            }
+        },
+        {
+            "PAN-217477": {
+                "info": [
+                    " Fixed an issue where the drop counter was incremented incorrectly. Drop counter calculations did not account for failures to send out logs from logrcvr\/logd to syslog-ng. "
+                ]
+            }
+        },
+        {
+            "PAN-217169": {
+                "info": [
+                    " Fixed an issue where the logrcvr stopped forwarding logs to the syslog server after a restart or crash. "
+                ]
+            }
+        },
+        {
+            "PAN-216984": {
+                "info": [
+                    " Fixed an issue where internal path monitoring failed due to the sysdagent not responding. "
+                ]
+            }
+        },
+        {
+            "PAN-215911": {
+                "info": [
+                    " Fixed an issue that resulted in a race condition, which caused the configd process to stop responding. "
+                ]
+            }
+        },
+        {
+            "PAN-215808": {
+                "info": [
+                    " Fixed an issue where, after upgrading to PAN-OS 10.1, the log forwarding rate towards the syslog server was reduced. With this fix, the overall log-forwarding rate has also been improved. "
+                ]
+            }
+        },
+        {
+            "PAN-215315": {
+                "info": [
+                    " Fixed an issue where the dataplane stopped responding due to ager and inline packet processing occurring concurrently on different cores for the same session. "
+                ]
+            }
+        },
+        {
+            "PAN-214990": {
+                "info": [
+                    " Fixed an issue where firewall copper ports flapped intermittently when device telemetry was enabled. "
+                ]
+            }
+        },
+        {
+            "PAN-214815": {
+                "info": [
+                    " Fixed an issue where SNMP queries were not replied to due to an internal process timeout. "
+                ]
+            }
+        },
+        {
+            "PAN-214187": {
+                "info": [
+                    " Fixed an issue where superreaders were able to execute the request restart system CLI command. "
+                ]
+            }
+        },
+        {
+            "PAN-214026": {
+                "info": [
+                    " Fixed an issue where, when using an ECMP weighted-round-robin algorithm, traffic was not redistributed among the links proportionally as expected from the configuration. "
+                ]
+            }
+        },
+        {
+            "PAN-212877": {
+                "info": [
+                    " Fixed an issue where a race condition caused log flooding, which caused the firewall to go into an unresponsive state. "
+                ]
+            }
+        },
+        {
+            "PAN-211887": {
+                "info": [
+                    " Fixed an issue on Panorama that caused recently committed changes to not be displayed when previewing the changes to push to device groups. "
+                ]
+            }
+        },
+        {
+            "PAN-210740": {
+                "info": [
+                    " Fixed a memory leak issue related to the slotd process. "
+                ]
+            }
+        },
+        {
+            "PAN-196116": {
+                "info": [
+                    " A new CLI command debug log-receiver param-tuning syslog-threads to increase the number of processing threads for syslog forwarding up to 16 was added to address an issue where the syslog forwarding queue depth approached its limit and the drop count increased. "
+                ]
+            }
+        },
+        {
+            "PAN-186579": {
+                "info": [
+                    " Fixed an issue where, after a hardware failure, the system log did not include information about the failure. "
+                ]
+            }
+        },
+        {
+            "PAN-181724": {
+                "info": [
+                    " Fixed an issue where the Panorama or firewall page remained open after the session expired and you were unable to perform additional actions. "
+                ]
+            }
+        },
+        {
+            "PAN-172853": {
+                "info": [
+                    " Fixed an issue where Panorama appliances running a PAN-OS 10.0 release did not push the Security policy options no-hip and quarantine to firewalls running PAN-OS 9.1. "
+                ]
+            }
+        }
+    ]
+}

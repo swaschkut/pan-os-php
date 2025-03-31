@@ -1,0 +1,26 @@
+{
+    "10-2-11-h1": [
+        [],
+        {
+            "PAN-263226": {
+                "info": [
+                    " Fixed an issue where decryption based traffic failed on Explicit Proxy nodes. "
+                ]
+            }
+        },
+        {
+            "PAN-261917": {
+                "info": [
+                    " Fixed an issue where websites with a no-decrypt policy rule were decrypted in traffic log when using a Google Chrome browser with PQC enabled. "
+                ]
+            }
+        },
+        {
+            "PAN-257957": {
+                "info": [
+                    " (Firewalls and Panorama appliances in FIPS-CC mode only) Fixed an issue where the authd process restarted if RADIUS PAP\/CHAP authentication was used. "
+                ]
+            }
+        }
+    ]
+}

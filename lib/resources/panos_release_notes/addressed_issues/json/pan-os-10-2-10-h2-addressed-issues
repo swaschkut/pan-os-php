@@ -1,0 +1,47 @@
+{
+    "10-2-10-h2": [
+        [],
+        {
+            "PAN-259733": {
+                "info": [
+                    " Fixed an issue where a custom report was not deleted on Panorama when expected. "
+                ]
+            }
+        },
+        {
+            "PAN-259344": {
+                "info": [
+                    " Fixed an issue where performing a configuration commit on a firewall locally or from Panorama caused a memory leak related to the configd process and resulted in a out-of-memory (OOM) condition. "
+                ]
+            }
+        },
+        {
+            "PAN-258941": {
+                "info": [
+                    " Fixed an issue where some URLs were not accessible when connected to Prisma Access explicit proxy. "
+                ]
+            }
+        },
+        {
+            "PAN-249266": {
+                "info": [
+                    " Fixed an issue where the config process virtual memory was exceeded due to delays in post-commit processing. "
+                ]
+            }
+        },
+        {
+            "PAN-247099": {
+                "info": [
+                    " Fixed an issue where the firewall decrypted traffic unexpectedly when the client hello was spread across multiple packets. "
+                ]
+            }
+        },
+        {
+            "PAN-225087": {
+                "info": [
+                    " Fixed an issue where the dataplane logs were corrupted with unexpected IPv6 addresses. "
+                ]
+            }
+        }
+    ]
+}

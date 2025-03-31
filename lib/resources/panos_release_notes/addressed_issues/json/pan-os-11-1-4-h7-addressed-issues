@@ -1,0 +1,145 @@
+{
+    "11-1-4-h7": [
+        [],
+        {
+            "PAN-272809": {
+                "info": [
+                    " A fix was made to address CVE-2024-0012 (PAN-SA-2024-0015) and CVE-2024-9474. "
+                ]
+            }
+        },
+        {
+            "PAN-268823": {
+                "info": [
+                    " Fixed an issue where MonitorLog Display did not display all logs when you applied a filter. "
+                ]
+            }
+        },
+        {
+            "PAN-265785": {
+                "info": [
+                    " Fixed an issue where the firewall rebooted due to a sysd variable being modified before it was created. "
+                ]
+            }
+        },
+        {
+            "PAN-264883": {
+                "info": [
+                    " (PA-7080 appliances with LPCs only) Fixed an issue where syslog forwarding over TCP stopped after upgrading. "
+                ]
+            }
+        },
+        {
+            "PAN-263369": {
+                "info": [
+                    " Fixed an issue where commits from Panorama to Panorama virtual appliances failed with the error message Internal error during commit processing. Commit\/Validate failed after upgrading Panorama. "
+                ]
+            }
+        },
+        {
+            "PAN-261673": {
+                "info": [
+                    " (VM-Series firewalls on Microsoft Azure environments only) Fixed an issue where, when Accelerated Networking was enabled, traffic was dropped because of the flow_parse_ip_hdr counter related to an Nvidia driver issue. "
+                ]
+            }
+        },
+        {
+            "PAN-261371": {
+                "info": [
+                    " (PA-5410 firewalls in active\/passive high availability (HA) configurations only) Fixed an issue where the reportd process restarted, which caused the firewall to reboot. "
+                ]
+            }
+        },
+        {
+            "PAN-261209": {
+                "info": [
+                    " (Firewalls in active\/active HA configuration only) Fixed an issue where the firewall displayed the HA2 status as down when the HSCI port was used for both HA2 and HA3. "
+                ]
+            }
+        },
+        {
+            "PAN-260905": {
+                "info": [
+                    " Fixed an issue where the HS: Fiber Port Eth1\/2 did not come up on a cold boot and remained in an incorrect state. "
+                ]
+            }
+        },
+        {
+            "PAN-260316": {
+                "info": [
+                    " Fixed an issue where the all_task process stopped responding and the firewall rebooted. "
+                ]
+            }
+        },
+        {
+            "PAN-259351": {
+                "info": [
+                    " A fix was made to address CVE-2024-3393. "
+                ]
+            }
+        },
+        {
+            "PAN-259002": {
+                "info": [
+                    " Fixed an issue where frequent external dynamic list updates caused the configd process to restart. "
+                ]
+            }
+        },
+        {
+            "PAN-257601": {
+                "info": [
+                    " (PA-5450 firewalls only) Fixed an issue where Networking Cards (NC) experienced an internal link fault which caused path monitoring failure on the Dataplane Processing Card (DPC). "
+                ]
+            }
+        },
+        {
+            "PAN-257327": {
+                "info": [
+                    " Fixed an issue where a failover event occurred unexpectedly on the firewall. "
+                ]
+            }
+        },
+        {
+            "PAN-256223": {
+                "info": [
+                    " Fixed an issue where device telemetry log collection filled the root partition. "
+                ]
+            }
+        },
+        {
+            "PAN-254794": {
+                "info": [
+                    " Fixed an issue where the Panorama management server stopped responding. "
+                ]
+            }
+        },
+        {
+            "PAN-249384": {
+                "info": [
+                    " Fixed an issue on Panorama where configuration locks were observed during a partial rulebase commit. "
+                ]
+            }
+        },
+        {
+            "PAN-243240": {
+                "info": [
+                    " Fixed an issue where the using QoS caused packet buffer utilization to increase exponentially and the PKI POOL DFLT pool depleted until a reboot was performed. "
+                ]
+            }
+        },
+        {
+            "PAN-242479": {
+                "info": [
+                    " Fixed an issue where a high number of packets caused high packet descriptors on the firewall when handling EtherIP traffic. "
+                ]
+            }
+        },
+        {
+            "PAN-230893": {
+                "info": [
+                    " Added a CLI command to address an issue where system lock files blocked authentication. "
+                ]
+            }
+        }
+    ]
+}

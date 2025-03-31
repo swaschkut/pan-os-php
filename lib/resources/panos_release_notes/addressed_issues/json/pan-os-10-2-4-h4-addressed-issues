@@ -1,0 +1,110 @@
+{
+    "10-2-4-h4": [
+        [],
+        {
+            "PAN-223501": {
+                "info": [
+                    " Fixed an issue where diagnostic information for the dataplane in the dp-monitor.log file was not complete. "
+                ]
+            }
+        },
+        {
+            "PAN-222712": {
+                "info": [
+                    " (PA-5450 firewalls only) Fixed a low frequency DPC restart issue. "
+                ]
+            }
+        },
+        {
+            "PAN-221984": {
+                "info": [
+                    " (VM-Series firewalls in Microsoft Azure environments only) Fixed an issue where an interface went down after a hotplug event and was only recoverable by restarting the firewall. "
+                ]
+            }
+        },
+        {
+            "PAN-221836": {
+                "info": [
+                    " Fixed an issue where improper SNI detection caused incorrect URL categorization. "
+                ]
+            }
+        },
+        {
+            "PAN-219508": {
+                "info": [
+                    " (VM-Series, PA-400 Series, PA-1400, PA-3400, and PA-5400 Series firewalls only) Fixed an issue where Bidirectional Forwarding Detection (BFD) packets experienced a delay in processing, which caused the BFD connection to flap. "
+                ]
+            }
+        },
+        {
+            "PAN-217489": {
+                "info": [
+                    "Fixed an issue with firewalls in active\/passive high availability (HA) configurations where the passive firewall MAC flapping occurred when the passive firewall was rebooted."
+                ]
+            }
+        },
+        {
+            "PAN-216043": {
+                "info": [
+                    " Fixed an issue where wifclient stopped responding due to shared memory corruption. "
+                ]
+            }
+        },
+        {
+            "PAN-215655": {
+                "info": [
+                    " Fixed an issue where, after a multi-dynamic group push, Security policies with the target device tag was added to a firewall that did not have the tag. "
+                ]
+            }
+        },
+        {
+            "PAN-215066": {
+                "info": [
+                    " Fixed an issue on Panorama where push scope rendering caused the commit and push or push operation window to hang for several minutes. "
+                ]
+            }
+        },
+        {
+            "PAN-214187": {
+                "info": [
+                    " Fixed an issue where superreaders were able to execute the request restart system CLI command. "
+                ]
+            }
+        },
+        {
+            "PAN-211191": {
+                "info": [
+                    " Fixed an issue where the firewall restarted after initiating a mgmtsrvr process restart. "
+                ]
+            }
+        },
+        {
+            "PAN-210661": {
+                "info": [
+                    " Fixed an issue where firewalls disconnected from Strata Logging Service after renewing the device certificate. "
+                ]
+            }
+        },
+        {
+            "PAN-210429": {
+                "info": [
+                    " (VM-Series firewalls only) Fixed an issue where the HTTP service failed to come up on DHCP dataplane interfaces after rebooting the firewall, which resulted in health-check failure on HTTP\/80 with a 503 error code on the public load balancer. "
+                ]
+            }
+        },
+        {
+            "PAN-195439": {
+                "info": [
+                    " (VM-Series firewalls in Microsoft Azure environments only) Fixed an issue where the dataplane interface status went down after a hotplug event triggered by Azure infrastructure. "
+                ]
+            }
+        },
+        {
+            "PAN-169586": {
+                "info": [
+                    " Fixed an issue where scheduled log view reports in emails didn't match the monitor page query result for the same time interval. "
+                ]
+            }
+        }
+    ]
+}

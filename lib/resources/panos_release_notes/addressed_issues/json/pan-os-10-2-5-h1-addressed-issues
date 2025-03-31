@@ -1,0 +1,12 @@
+{
+    "10-2-5-h1": [
+        [],
+        {
+            "PAN-229705": {
+                "info": [
+                    " Fixed an issue where running the show rule-hit-count CLI command on Panorama displayed the error message Server error : Timed out while getting config lock. Please try again. when attempting to log in or run CLI commands. "
+                ]
+            }
+        }
+    ]
+}

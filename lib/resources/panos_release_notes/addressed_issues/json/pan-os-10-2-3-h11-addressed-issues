@@ -1,0 +1,40 @@
+{
+    "10-2-3-h11": [
+        [],
+        {
+            "PAN-238792": {
+                "info": [
+                    " Fixed the following device certificate issues: The firewall was unable to automatically renew the device certificate-Fetching device certificates failed incorrectly with the error message OTP is not valid.Firewalls disconnected from Strata Logging Service after renewing the device certificate.The device certificate was not correctly generated on the log forwarding card (LFC).WildFire cloud logs did not log thermite certificate usage status. "
+                ]
+            }
+        },
+        {
+            "PAN-237876": {
+                "info": [
+                    " Extended the firewall Panorama root CA certificate which was previously set to expire on April 7th, 2024. "
+                ]
+            }
+        },
+        {
+            "PAN-231771": {
+                "info": [
+                    " Fixed an issue where the firewall issued \/box\/getserv\/ requests with PAN-OS 7.1.0 and did not take device certificates. "
+                ]
+            }
+        },
+        {
+            "PAN-227568": {
+                "info": [
+                    " When a device certificate is installed, renewed, or removed, the firewall will reconnect to the WildFire cloud to use the newest certificate. "
+                ]
+            }
+        },
+        {
+            "PAN-215576": {
+                "info": [
+                    " Fixed an issue where the userID-Agent and TS-Agent certificates were set to expire on November 18, 2024. With this fix, the expiration date has been extended to January 2032. "
+                ]
+            }
+        }
+    ]
+}

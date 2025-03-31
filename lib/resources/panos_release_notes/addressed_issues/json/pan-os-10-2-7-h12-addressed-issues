@@ -1,0 +1,131 @@
+{
+    "10-2-7-h12": [
+        [],
+        {
+            "PAN-263226": {
+                "info": [
+                    " Fixed an issue where decryption based traffic failed on Explicit Proxy nodes. "
+                ]
+            }
+        },
+        {
+            "PAN-261917": {
+                "info": [
+                    " Fixed an issue where websites with a no-decrypt policy rule were decrypted in traffic log when using a Google Chrome browser with PQC enabled "
+                ]
+            }
+        },
+        {
+            "PAN-258996": {
+                "info": [
+                    " Fixed an issue where the firewall displayed the SFP ports as PowerDown when the SFP transceiver was removed and reinserted or the port was shut down and brought back up on the peer device. "
+                ]
+            }
+        },
+        {
+            "PAN-255868": {
+                "info": [
+                    " (PA-3400 Series firewalls only) Fixed an issue where the firewall entered maintenance mode after enabling kernel data collection during the silent reboot. "
+                ]
+            }
+        },
+        {
+            "PAN-253546": {
+                "info": [
+                    " Fixed an issue where a TLS client hello was split into multiple packets and arrived out of order, so the packets were dropped and the session terminated. "
+                ]
+            }
+        },
+        {
+            "PAN-252214": {
+                "info": [
+                    " A fix was made to address CVE-2024-3400. "
+                ]
+            }
+        },
+        {
+            "PAN-251661": {
+                "info": [
+                    " Fixed an issue where a memory overwrite occurred during HTTP\/2 header inflation. "
+                ]
+            }
+        },
+        {
+            "PAN-251563": {
+                "info": [
+                    " Added CPLD enhancement to capture external power issues. "
+                ]
+            }
+        },
+        {
+            "PAN-250152": {
+                "info": [
+                    " Fixed an issue related to shared-to-shared optimization. To utilize this fix, contact Palo Alto Networks Tech Support. "
+                ]
+            }
+        },
+        {
+            "PAN-249814": {
+                "info": [
+                    " Fixed an issue where multiple all_task processes stopped responding, which caused the dataplane to fail. "
+                ]
+            }
+        },
+        {
+            "PAN-247257": {
+                "info": [
+                    " Fixed an issue where the useridd process stopped responding, which caused the firewall to reboot. "
+                ]
+            }
+        },
+        {
+            "PAN-244648": {
+                "info": [
+                    " Fixed an issue where, when FIPS was enabled in maintenance mode, the firewall rebooted and returned to maintenance mode. "
+                ]
+            }
+        },
+        {
+            "PAN-240612": {
+                "info": [
+                    " Fixed a kernel panic caused by a third-party issue. "
+                ]
+            }
+        },
+        {
+            "PAN-244013": {
+                "info": [
+                    " Fixed an issue where the web interface did not display newly added Anti-Spyware signatures or Vulnerability Signatures. "
+                ]
+            }
+        },
+        {
+            "PAN-239662": {
+                "info": [
+                    " Fixed an issue with firewalls in active\/passive HA configurations where the NSSA default route from the active firewall was not generated to advertise even though the backbone area default route was advertised during a graceful restart. "
+                ]
+            }
+        },
+        {
+            "PAN-238625": {
+                "info": [
+                    " Fixed an issue where, when the physical interface went down, the SD-WAN ethernet connection state still showed UP\/path-monitor due to the Active URL SaaS monitor connection state remaining UP\/path-monitor. "
+                ]
+            }
+        },
+        {
+            "PAN-233191": {
+                "info": [
+                    " (PA-5450 firewalls only) Fixed an issue where the Data Processing Card (DPC) restarted due to path monitor failure after QSFP28 disconnected from the Network Processing Card (NPC). "
+                ]
+            }
+        },
+        {
+            "PAN-226768": {
+                "info": [
+                    " Fixed an issue where, when the GlobalProtect app was installed on iOS endpoints and the gateway was configured to accept cookies, the app remained in the Connecting stage after authentication, and the GlobalProtect log displayed the error message User is not in allow list. This occurred when the app was restarted or when the app attempted to reconnect after disconnection. "
+                ]
+            }
+        }
+    ]
+}
