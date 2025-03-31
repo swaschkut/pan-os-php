@@ -76,7 +76,7 @@
             }
         },
         {
-            " PAN-242561": {
+            "PAN-242561": {
                 "info": [
                     " GlobalProtect tunnel might disconnect shortly after being established when SSL is used as a transport protocol. Workaround: Disable Internet Protocol version 6 (TCP\/IPv6) on the PANGP Virtual Network Adapter. "
                 ]

@@ -870,7 +870,7 @@
             }
         },
         {
-            "PAN-223365 ": {
+            "PAN-223365": {
                 "info": [
                     " Fixed an issue where Panorama was unable to query any logs if the Elasticsearch health status for any log collector was degraded. "
                 ]

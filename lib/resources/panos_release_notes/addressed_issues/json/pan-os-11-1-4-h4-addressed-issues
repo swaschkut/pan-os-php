@@ -30,7 +30,7 @@
             }
         },
         {
-            "PAN-263559 ": {
+            "PAN-263559": {
                 "info": [
                     " Fixed an issue where the dataplane stopped responding and the firewall unexpectedly rebooted due to multiple process restarts. "
                 ]
@@ -128,7 +128,7 @@
             }
         },
         {
-            "PAN-259151 ": {
+            "PAN-259151": {
                 "info": [
                     " Fixed an issue where unused objects were pushed to the firewall, which caused configuration pushes to fail with the error Number of address groups exceed platform capacity. "
                 ]
@@ -149,7 +149,7 @@
             }
         },
         {
-            "PAN-257957 ": {
+            "PAN-257957": {
                 "info": [
                     " (Firewalls and Panorama appliances in FIPS-CC mode only) Fixed an issue where the authd process restarted if RADIUS PAP\/CHAP authentication was used. "
                 ]
@@ -170,7 +170,7 @@
             }
         },
         {
-            "PAN-256666 ": {
+            "PAN-256666": {
                 "info": [
                     " Fixed an issue where the configdprocess stopped responding when Commit and Push operations were performed on multiple device groups. "
                 ]
@@ -184,14 +184,14 @@
             }
         },
         {
-            "PAN-256350 ": {
+            "PAN-256350": {
                 "info": [
                     " Fixed an issue where, when you cloned an admin role or an LDAP server profile and then changed the name of the clone, the configuration change was not reflected on the managed firewall after pushing the configuration from Panorama. "
                 ]
             }
         },
         {
-            "PAN-256320 ": {
+            "PAN-256320": {
                 "info": [
                     " (Firewalls in active\/passive HA configurations only) Fixed an issue where GTP sessions remained as allocated sessions on the passive firewall even when there were no active sessions. "
                 ]
@@ -233,7 +233,7 @@
             }
         },
         {
-            "PAN-253626 ": {
+            "PAN-253626": {
                 "info": [
                     " Fixed an issue on Panorama where unused objects were pushed to the firewall, which caused the push operations to intermittently fail. "
                 ]
@@ -247,7 +247,7 @@
             }
         },
         {
-            "PAN-252300 ": {
+            "PAN-252300": {
                 "info": [
                     " Fixed an issue where you were unable to select device groups in the push scope for user accounts. "
                 ]
@@ -261,7 +261,7 @@
             }
         },
         {
-            "PAN-251655 ": {
+            "PAN-251655": {
                 "info": [
                     " Fixed an issue where the firewall stopped forwarding files to the WildFire cloud and a restart of the varrcvr process was required. "
                 ]
@@ -296,7 +296,7 @@
             }
         },
         {
-            "PAN-249011 ": {
+            "PAN-249011": {
                 "info": [
                     " Fixed an issue where the firewall became unresponsive when committing a configuration change with a large number of uncommitted changes in the replay database. "
                 ]
@@ -310,14 +310,14 @@
             }
         },
         {
-            "PAN-246304 ": {
+            "PAN-246304": {
                 "info": [
                     " Fixed an issue on Panorama where commits failed due to a timeout in the sysd process during decryption. "
                 ]
             }
         },
         {
-            "PAN-246220 ": {
+            "PAN-246220": {
                 "info": [
                     " Fixed an issue where a dynamic peer connection was rejected when using an FQDN for the peer address. "
                 ]
@@ -366,21 +366,21 @@
             }
         },
         {
-            "PAN-237582 ": {
+            "PAN-237582": {
                 "info": [
                     " Fixed an issue where logs were intermittently missing on the log collector due to missing aliases for some indices "
                 ]
             }
         },
         {
-            "PAN-234094 ": {
+            "PAN-234094": {
                 "info": [
                     " Fixed an issue on Panorama where Deploy Master Keyresulted in the error message Failed to communicate with device due to a low connection timeout value. "
                 ]
             }
         },
         {
-            "PAN-232214 ": {
+            "PAN-232214": {
                 "info": [
                     " Fixed an issue where GlobalProtect clients remained in the connecting state during portal pre-login when Kerberos single sign-on (SSO) was enabled. "
                 ]

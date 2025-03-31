@@ -800,7 +800,7 @@
             }
         },
         {
-            "PAN-218663 and PAN-181876 ": {
+            "PAN-218663 and PAN-181876": {
                 "info": [
                     "A fix was made to address CVE-2024-2433."
                 ]

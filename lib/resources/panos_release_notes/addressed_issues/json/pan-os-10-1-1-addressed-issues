@@ -170,7 +170,7 @@
             }
         },
         {
-            "PAN-164707 ": {
+            "PAN-164707": {
                 "info": [
                     "(PA-7000 Series firewalls only) Fixed an issue where logs were not viewable via the web interface in the Monitor tab or via the CLI."
                 ]

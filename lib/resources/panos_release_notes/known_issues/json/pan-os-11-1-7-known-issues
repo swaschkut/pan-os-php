@@ -24,7 +24,7 @@
             }
         },
         {
-            "PAN-272085 ": {
+            "PAN-272085": {
                 "solved": "This issue is now resolved. See PAN-OS 11.1.8 Addressed Issues.",
                 "info": [
                     " When DoH is enabled for DNS Security, multiple DoH transactions in a single HTTP\/1 connection might unexpectedly cause the firewall to crash and reboot. Workaround: Manually disable DoH support for DNS Security using the following CLI command: set deviceconfig setting dns-over-https enable no. Alternatively, you can remove the DNS Security configuration used to handle DoH traffic. "

@@ -2,7 +2,7 @@
     "10-1-8": [
         [],
         {
-            "PAN-204830 ": {
+            "PAN-204830": {
                 "info": [
                     "Fixed an issue where logging in via the web interface or CLI did not work until an auto-commit was complete."
                 ]

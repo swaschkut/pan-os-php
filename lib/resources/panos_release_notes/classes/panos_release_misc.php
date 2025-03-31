@@ -278,7 +278,8 @@ class panos_release_misc
             $tableData[$panOSVersion] = array();
             $data = &$tableData[$panOSVersion];
 
-            foreach ($nodeArray as $item) {
+            foreach ($nodeArray as $item)
+            {
                 $XMLnameAttribute = DH::findAttribute("class", $item);
                 if ($XMLnameAttribute === false)
                     continue;
@@ -293,7 +294,8 @@ class panos_release_misc
                 $nodeList = $newdoc->getElementsByTagName("tr");
                 $nodeArray1 = iterator_to_array($nodeList);
 
-                foreach ($nodeArray1 as $item1) {
+                foreach ($nodeArray1 as $item1)
+                {
                     $newdoc2 = new DOMDocument;
                     $node2 = $newdoc2->importNode($item1, true);
                     $newdoc2->appendChild($node2);
@@ -301,26 +303,41 @@ class panos_release_misc
                     $nodeArray2 = iterator_to_array($nodeList2);
 
                     $entryArray = array();
-                    foreach ($nodeArray2 as $key => $item2) {
-                        if ($key == 0) {
+                    foreach ($nodeArray2 as $key => $item2)
+                    {
+                        if ($key == 0)
+                        {
                             #DH::DEBUGprintDOMDocument($item2);
                             $nodeListDIV = $item2->getElementsByTagName("div");
                             #$tmp_div_node = DH::findFirstElement("div", $item2);
                             $tmp_div_node = $nodeListDIV->item(0);
-                            if ($tmp_div_node !== false and $tmp_div_node !== null) {
+                            if ($tmp_div_node !== false and $tmp_div_node !== null)
+                            {
                                 $tmp_b_node = DH::findFirstElement("b", $tmp_div_node);
                                 if ($tmp_b_node !== false)
+                                {
                                     $header = $tmp_b_node->textContent;
-                                else {
+                                    $header = trim($header);
+                                }
+                                else
+                                {
                                     $header = $tmp_div_node->textContent;
+                                    $header = trim($header);
                                 }
 
-                            } elseif ($tmp_div_node !== false) {
+                            }
+                            elseif ($tmp_div_node !== false)
+                            {
                                 #print "EMPTY!!!!\n";
                                 #DH::DEBUGprintDOMDocument($item2);
 
-                            } elseif (!empty($item2->textContent))
+                            }
+                            elseif (!empty($item2->textContent))
+                            {
                                 $header = $item2->textContent;
+                                $header = trim($header);
+                            }
+
 
                             //search second DIV
                             $tmp_seconddiv_node = $nodeListDIV->item(1);

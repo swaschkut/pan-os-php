@@ -20,7 +20,12 @@ class panos_version
 
         $this->type = $type;
         $tmp_version_string = $version_string;
+
+        $tmp_version_string = str_replace("-h", "_h", $tmp_version_string);
         $tmp_version_string = str_replace("-", ".", $tmp_version_string);
+        $tmp_version_string = str_replace("_h", "-h", $tmp_version_string);
+
+
         $this->version = $tmp_version_string;
         $this->directory = $directory;
 
@@ -44,7 +49,11 @@ class panos_version
                     {
                         //add Version
                         $tmp_version_string = $version_string;
+
+                        $tmp_version_string = str_replace("-h", "_h", $tmp_version_string);
                         $tmp_version_string = str_replace("-", ".", $tmp_version_string);
+                        $tmp_version_string = str_replace("_h", "-h", $tmp_version_string);
+
                         $this->owner->knownIssues[$issueNumber]->version_listed[$tmp_version_string] = $tmp_version_string;
 
 
@@ -76,7 +85,11 @@ class panos_version
                     {
                         //add Version
                         $tmp_version_string = $version_string;
+
+                        $tmp_version_string = str_replace("-h", "_h", $tmp_version_string);
                         $tmp_version_string = str_replace("-", ".", $tmp_version_string);
+                        $tmp_version_string = str_replace("_h", "-h", $tmp_version_string);
+
                         $this->owner->addressedIssues[$issueNumber]->version_listed[$tmp_version_string] = $tmp_version_string;
 
 

@@ -58,7 +58,7 @@
             }
         },
         {
-            " PAN-269899": {
+            "PAN-269899": {
                 "info": [
                     " Fixed an issue where the Panorama web interface was slower than expected when querying for device tags. "
                 ]

@@ -240,7 +240,7 @@
             }
         },
         {
-            "PAN-257028 ": {
+            "PAN-257028": {
                 "info": [
                     " (Firewalls in active\/passive HA configurations only) Fixed an issue where firewalls entered a non-functional state and displayed the error message Dataplane down: path monitor failure during the fail-over. "
                 ]

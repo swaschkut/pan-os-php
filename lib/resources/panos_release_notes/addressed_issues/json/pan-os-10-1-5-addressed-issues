@@ -576,7 +576,7 @@
             }
         },
         {
-            " PAN-175717": {
+            "PAN-175717": {
                 "info": [
                     " Fixed an issue where firewalls managed by a Panorama management server entered maintenance mode if: Panorama was running PAN-OS 10.2 and managed firewalls were downgraded from PAN-OS 10.2 to PAN-OS 10.1.4 or earlier PAN-OS releasePanorama was upgraded from PAN-OS 10.1 to PAN-OS 10.2 and managed firewalls were running PAN-OS 10.1.4 or earlier PAN-OS 10.1 release. "
                 ]

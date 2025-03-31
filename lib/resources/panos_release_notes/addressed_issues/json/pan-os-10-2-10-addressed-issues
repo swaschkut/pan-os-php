@@ -296,7 +296,7 @@
             }
         },
         {
-            "PAN-232550 ": {
+            "PAN-232550": {
                 "info": [
                     " Fixed an issue where SNMPv3 authentication failed when using SHA-512 Auth protocol. "
                 ]

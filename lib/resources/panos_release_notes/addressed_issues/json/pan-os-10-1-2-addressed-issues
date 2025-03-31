@@ -177,7 +177,7 @@
             }
         },
         {
-            "PAN-109759 ": {
+            "PAN-109759": {
                 "info": [
                     "Fixed an issue where the firewall did not generate a notification for the GlobalProtect client when the firewall denied unencrypted TLS sessions due to an authentication policy match."
                 ]
