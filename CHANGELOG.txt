@@ -51,6 +51,7 @@ BUGFIX:
 * type=address actions=replace-IP-by-MT-like-Object | bugfix for DNAT rule in API online mode
 * type=rule actions=rule-hit-count-clear | bugfix for Panorama DeviceGroup
 * type=rule 'filter=(src/dst has {EDL object NAME})' | bugfix if object name is EDL
+* type=rule actions=src/dst-add:EDLOBJECT | bugfix to correctly add EDL object without error out
 
 GENERAL:
 * class EthernetInterface/AggregateEthernetInterface | optimisation to always define correct class

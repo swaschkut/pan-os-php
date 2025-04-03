@@ -45,10 +45,10 @@ class AddressRuleContainer extends ObjRuleContainer
 
 
     /**
-     * @param Address|AddressGroup $Obj
+     * @param Address|AddressGroup|EDL $Obj
      * @return bool
      */
-    public function addObject(Address|AddressGroup $Obj): bool
+    public function addObject(Address|AddressGroup|EDL $Obj): bool
     {
         $this->fasthashcomp = null;
 
@@ -59,7 +59,11 @@ class AddressRuleContainer extends ObjRuleContainer
             if( count($this->o) > 1 )
             {
                 if( $this->name == 'snathosts' && $this->owner->sourceNatTypeIs_Static() )
+                {
+                    if( $Obj->isEDL() )
+                        return FALSE;
                     DH::createElement($this->xmlroot, 'translated-address', $Obj->name());
+                }
                 else
                     DH::createElement($this->xmlroot, 'member', $Obj->name());
             }
@@ -70,6 +74,9 @@ class AddressRuleContainer extends ObjRuleContainer
 
             if( $this->name == 'snathosts' )
             {
+                if( $Obj->isEDL() )
+                    return FALSE;
+
                 $this->owner->rewriteSNAT_XML();
 
                 //what else need to be done?????
@@ -82,11 +89,11 @@ class AddressRuleContainer extends ObjRuleContainer
     }
 
     /**
-     * @param Address|AddressGroup $Obj
+     * @param Address|AddressGroup|EDL $Obj
      * @return bool
      * @throws Exception
      */
-    public function API_add(Address|AddressGroup $Obj): bool
+    public function API_add(Address|AddressGroup|EDL $Obj): bool
     {
         if( $this->addObject($Obj) )
         {
