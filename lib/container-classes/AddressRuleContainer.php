@@ -128,7 +128,7 @@ class AddressRuleContainer extends ObjRuleContainer
 
 
     /**
-     * @param Address|AddressGroup $Obj
+     * @param Address|AddressGroup|EDL $Obj
      * @param bool $rewriteXml
      * @param bool $forceAny
      * @param null $context
@@ -161,13 +161,13 @@ class AddressRuleContainer extends ObjRuleContainer
     }
 
     /**
-     * @param Address|AddressGroup $Obj
+     * @param Address|AddressGroup|EDL $Obj
      * @param bool $forceAny
      * @param null $context
      * @return bool
      * @throws Exception
      */
-    public function API_remove(Address|AddressGroup $Obj, bool $forceAny = FALSE, $context = null): bool
+    public function API_remove(Address|AddressGroup|EDL $Obj, bool $forceAny = FALSE, $context = null): bool
     {
         if( $this->remove($Obj, TRUE, $forceAny, $context) )
         {
@@ -175,6 +175,9 @@ class AddressRuleContainer extends ObjRuleContainer
 
             if( $this->name == 'snathosts' )
             {
+                if( $Obj->isEDL() )
+                    return FALSE;
+                
                 $xpath = $this->owner->getXPath() . '/source-translation';
                 $sourceNatRoot = DH::findFirstElementOrDie('source-translation', $this->owner->xmlroot);
                 if( $con->isAPI() )
@@ -643,12 +646,12 @@ class AddressRuleContainer extends ObjRuleContainer
 
 
     /**
-     * @param Address|AddressGroup $object
+     * @param Address|AddressGroup|EDL $object
      * @param bool $anyIsAcceptable
      * @return bool
      * @throws Exception
      */
-    public function hasObjectRecursive(Address|AddressGroup $object, bool $anyIsAcceptable = FALSE): bool
+    public function hasObjectRecursive(Address|AddressGroup|EDL $object, bool $anyIsAcceptable = FALSE): bool
     {
         if( $object === null )
             derr('cannot work with null objects');
