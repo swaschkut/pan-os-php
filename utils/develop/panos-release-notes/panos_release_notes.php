@@ -23,6 +23,8 @@ require_once dirname(__FILE__)."/../../../lib/resources/panos_release_notes/clas
 
 $updateHtml = false;
 $updateJson = false;
+$updateMissing = true;
+
 #$type= "known";
 #$type= "addressed";
 

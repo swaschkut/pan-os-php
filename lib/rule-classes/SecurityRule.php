@@ -598,13 +598,16 @@ class SecurityRule extends RuleWithUserID
 
     public function securityProfiles_obj()
     {
+        if( $this->secproftype == 'none' )
+            return array();
+
         if( $this->secproftype != 'profile' )
         {
             $secprofgroup_obj = $this->owner->owner->securityProfileGroupStore->find( $this->secprofgroup );
-            return $secprofgroup_obj->secprofProfiles_obj;
-            #return array();
-        }
 
+            if( $secprofgroup_obj != null )
+                return $secprofgroup_obj->secprofProfiles_obj;
+        }
 
         return $this->secprofProfiles_obj;
     }

@@ -17,6 +17,7 @@ class panos_release_misc
         PH::print_stdout( "Download HTML files" );
         $panOSversion_array = array();
 
+        //todo: update this stupid approach -
         //-------------------------------------
         $panOSversion_array[10] = array();
         $panOSversion_array[10][1] = array();
