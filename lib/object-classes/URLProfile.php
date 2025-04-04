@@ -23,9 +23,12 @@ class URLProfile extends SecurityProfile2
     public $secprof_type;
 
     public $allow = array();
+    public $allow_wo_custom = array();
     public $allow_credential = array();
+    public $allow_credential_wo_custom = array();
     public $alert = array();
     public $alert_credential = array();
+    public $alert_credential_wo_custom = array();
     public $block = array();
     public $block_credential = array();
     public $continue = array();
