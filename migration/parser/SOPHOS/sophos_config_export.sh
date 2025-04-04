@@ -26,7 +26,7 @@ urlbase="https://$fqdn:4444/api/objects/"
 # the temp directory used
 TEMP_DIR=$(mktemp -d -p ./)
 
-OUTPUT_FILE="merged output.txt"
+OUTPUT_FILE="merged_output.txt"
 
 j=0
 err=0
