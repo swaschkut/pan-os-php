@@ -4,6 +4,7 @@ CHANGELOG
 UTIL:
 
 BUGFIX:
+* filters-Address.php for all kind of EDL objects
 
 GENERAL:
 

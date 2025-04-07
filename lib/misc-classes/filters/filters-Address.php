@@ -404,7 +404,7 @@ RQuery::$defaultFilters['address']['name']['operators']['regex'] = array(
         if( strpos($value, '$$value$$') !== FALSE )
         {
             $replace = '%%%INVALID\.FOR\.THIS\.TYPE\.OF\.OBJECT%%%';
-            if( !$object->isGroup() && !$object->isRegion() && $object->value() !== null  )
+            if( !$object->isGroup() && !$object->isRegion() && !$object->isEDL() && $object->value() !== null  )
                 $replace = str_replace(array('.', '/'), array('\.', '\/'), $object->value());
 
             $value = str_replace('$$value$$', $replace, $value);
@@ -427,7 +427,7 @@ RQuery::$defaultFilters['address']['name']['operators']['regex'] = array(
         if( strpos($value, '$$value.no-netmask$$') !== FALSE )
         {
             $replace = '%%%INVALID\.FOR\.THIS\.TYPE\.OF\.OBJECT%%%';
-            if( !$object->isGroup() && !$object->isRegion() && $object->isType_ipNetmask() )
+            if( !$object->isGroup() && !$object->isRegion() && !$object->isEDL() && $object->isType_ipNetmask() )
             {
                 $replace = str_replace('.', '\.', $object->getNetworkValue());
                 #PH::print_stdout( "|".$object->getNetworkValue()."|name:".$object->name() );
@@ -439,7 +439,7 @@ RQuery::$defaultFilters['address']['name']['operators']['regex'] = array(
         if( strpos($value, '$$netmask$$') !== FALSE )
         {
             $replace = '%%%INVALID\.FOR\.THIS\.TYPE\.OF\.OBJECT%%%';
-            if( !$object->isGroup() && !$object->isRegion() && $object->isType_ipNetmask() )
+            if( !$object->isGroup() && !$object->isRegion() && !$object->isEDL() && $object->isType_ipNetmask() )
                 $replace = $object->getNetworkMask();
 
             $value = str_replace('$$netmask$$', $replace, $value);
@@ -447,7 +447,7 @@ RQuery::$defaultFilters['address']['name']['operators']['regex'] = array(
         if( strpos($value, '$$netmask.blank32$$') !== FALSE )
         {
             $replace = '%%%INVALID\.FOR\.THIS\.TYPE\.OF\.OBJECT%%%';
-            if( !$object->isGroup() && !$object->isRegion() && $object->isType_ipNetmask() )
+            if( !$object->isGroup() && !$object->isRegion() && !$object->isEDL() && $object->isType_ipNetmask() )
             {
                 $netmask = $object->getNetworkMask();
                 if( $netmask != 32 )
@@ -462,7 +462,7 @@ RQuery::$defaultFilters['address']['name']['operators']['regex'] = array(
         #if( strpos($value, '//') !== FALSE )
         #    return FALSE;
 
-        if( !$object->isGroup() && !$object->isRegion() && $object->isType_TMP() )
+        if( !$object->isGroup() && !$object->isRegion() && !$object->isEDL() && $object->isType_TMP() )
             return FALSE;
 
         $matching = preg_match($value, $object->name());
@@ -564,7 +564,7 @@ RQuery::$defaultFilters['address']['name']['operators']['has.wrong.characters'] 
     )
 );
 RQuery::$defaultFilters['address']['netmask']['operators']['>,<,=,!'] = array(
-    'eval' => '!$object->isGroup() && !$object->isRegion() && $object->isType_ipNetmask() && $object->getNetworkMask() !operator! !value!',
+    'eval' => '!$object->isGroup() && !$object->isRegion() && !\$object->isEDL() && $object->isType_ipNetmask() && $object->getNetworkMask() !operator! !value!',
     'arg' => TRUE,
     'ci' => array(
         'fString' => '(%PROP% 1)',
@@ -580,7 +580,7 @@ RQuery::$defaultFilters['address']['members.count']['operators']['>,<,=,!'] = ar
     )
 );
 RQuery::$defaultFilters['address']['tag.count']['operators']['>,<,=,!'] = array(
-    'eval' => "!\$object->isRegion() && \$object->tags->count() !operator! !value!",
+    'eval' => "!\$object->isRegion() && !\$object->isEDL() && \$object->tags->count() !operator! !value!",
     'arg' => TRUE,
     'ci' => array(
         'fString' => '(%PROP% 1)',
@@ -1514,7 +1514,7 @@ RQuery::$defaultFilters['address']['value']['operators']['string.eq'] = array(
         if( $object->isGroup() )
             return null;
 
-        if( $object->isRegion() )
+        if( $object->isRegion() || $object->isEDL())
             return null;
 
         if( $object->isAddress() )
@@ -1944,7 +1944,7 @@ RQuery::$defaultFilters['address']['value']['operators']['string.regex'] = array
         if( $object->isGroup() )
             return null;
 
-        if( $object->isRegion() )
+        if( $object->isRegion() || $object->isEDL())
             return null;
 
         if( $object->isAddress() )
@@ -2041,7 +2041,7 @@ RQuery::$defaultFilters['address']['value']['operators']['is.in.file'] = Array(
         else
             $list = &$context->cachedList;
 
-        if( !$object->isGroup() && !$object->isRegion()  )
+        if( !$object->isGroup() && !$object->isRegion() && !$object->isEDL() )
         {
             //TODO: if not IPv4 -  return false
             if( $object->getNetworkMask() == '32' )
@@ -2066,7 +2066,7 @@ RQuery::$defaultFilters['address']['value']['operators']['has.wrong.network'] = 
         if( $object->isGroup() )
             return null;
 
-        if( $object->isRegion() )
+        if( $object->isRegion() || $object->isEDL())
             return null;
 
         if( !$object->isType_ipNetmask() )
@@ -2095,7 +2095,7 @@ RQuery::$defaultFilters['address']['value']['operators']['netmask.blank32'] = Ar
         if( $object->isGroup() )
             return null;
 
-        if( $object->isRegion() )
+        if( $object->isRegion() || $object->isEDL())
             return null;
 
         if( !$object->isType_ipNetmask() )
@@ -2117,7 +2117,7 @@ RQuery::$defaultFilters['address']['description']['operators']['regex'] = array(
         $object = $context->object;
         $value = $context->value;
 
-        if( $object->isRegion() )
+        if( $object->isRegion() || $object->isEDL() )
             return FALSE;
 
         if( strlen($value) > 0 && $value[0] == '%' )
@@ -2147,7 +2147,7 @@ RQuery::$defaultFilters['address']['description']['operators']['is.empty'] = arr
         $object = $context->object;
         $value = $context->value;
 
-        if( $object->isRegion() )
+        if( $object->isRegion() || $object->isEDL() )
             return FALSE;
 
         if( strlen($object->description()) == 0 )
@@ -2171,7 +2171,7 @@ RQuery::$defaultFilters['address']['ip.count']['operators']['>,<,=,!'] = array(
         if( $operator == '=' )
             $operator = '==';
 
-        if( $object->isRegion() )
+        if( $object->isRegion() || $object->isEDL() )
         {
             //count IP addresses
             return false;
