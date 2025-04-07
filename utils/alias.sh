@@ -30,9 +30,3 @@ alias pa_ike='php -r "require_once '"'"'utils/develop/ike.php'"'"';" $@'
 
 alias pa_config-reset='php -r "require_once '"'"'utils/develop/reset-config.php'"'"';" $@'
 alias pa_get-system-user-info='php -r "require_once '"'"'utils/develop/pan_get_user_info.php'"'"';" $@'
-
-pan-os-php () {
-
-	#php -r "require_once 'utils/pan-os-php.php';" "$@"
-	php -r "require_once '"'"'utils/pan-os-php.php'"'"';" $@
-}
