@@ -1,6 +1,14 @@
 CHANGELOG
 
-2.1.35
+2.1.36
+UTIL:
+
+BUGFIX:
+
+GENERAL:
+
+
+2.1.35 (20250407)
 UTIL:
 * type=vendor-migration vendor=cp-r80 | fix for service objects if port defined e.g. with >1024
 * type=interface | new 'filter=(object is.layer3 / is.layer2 / is.virtual-wire / is.tunnel / is.aggregate-group)'
