@@ -44,6 +44,7 @@ arrapi=(
 		"network/interface_network/" \
 		"network/multicast/" \
 		"network/aaa/" \
+
 		"service/ah/" \
 		"service/esp/" \
 		"service/any/" \
@@ -54,6 +55,7 @@ arrapi=(
 		"service/tcp/" \
 		"service/udp/" \
 		"service/tcpudp/" \
+
 		"packetfilter/packetfilter/" \
 		"packetfilter/nat/" \
 		"packetfilter/1to1nat/" \
@@ -69,15 +71,35 @@ arrapi=(
 		"geoip/srcexception/" \
 		"geoip/group/" \
 
+
 		"interface/bridge/" \
 		"interface/ethernet/" \
 		"interface/group/" \
 		"interface/tunnel/" \
 		"interface/vlan/" \
+		"interface/pppoe/" \
+
+
+		"itfparams/primary/" \
+		"itfparams/secondary/" \
+		"itfparams/link_aggregation_group/" \
+		"itfparams/group/" \
+		"itfparams/bridge_port/" \
+
 
 		"ipsec/group/" \
 		"ipsec/policy/" \
 		"ipsec/remote_gateway/" \
+
+		"ipsec_connection/group/" \
+		"ipsec_connection/site_to_site/" \
+
+		"ipsec_remote_auth/ca/" \
+		"ipsec_remote_auth/group/" \
+		"ipsec_remote_auth/psk/" \
+		"ipsec_remote_auth/rsa/" \
+		"ipsec_remote_auth/x509/" \
+
 
 		"route/group/" \
 		"route/policy/" \
