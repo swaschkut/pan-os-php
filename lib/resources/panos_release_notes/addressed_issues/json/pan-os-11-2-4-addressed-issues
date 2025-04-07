@@ -1,0 +1,257 @@
+{
+    "11-2-4": [
+        [],
+        {
+            "PAN-270802": {
+                "info": [
+                    "Fixed an issue where, after modifying a policy rule on Panorama, pushes to the Cloud NGFW failed with the error saas-user-list unexpected here. "
+                ]
+            }
+        },
+        {
+            "PAN-268823": {
+                "info": [
+                    "Fixed an issue where Monitor > Log Display did not display all logs when you applied a filter. "
+                ]
+            }
+        },
+        {
+            "PAN-267386": {
+                "info": [
+                    "Fixed an issue where VPC IDs and Security keys were not mapped to the correct interfaces for Google IPS. "
+                ]
+            }
+        },
+        {
+            "PAN-266769": {
+                "info": [
+                    "Fixed an issue where the GlobalProtect gateway did not handle IP address changes of the inner gateway when the NGPA new protocol was enabled. "
+                ]
+            }
+        },
+        {
+            "PAN-266581": {
+                "info": [
+                    "Fixed an issue where a failed SSL connection to a syslog server resulted in a \/tmp\/srvr.crt.xxxxxx file not being removed, which caused index node (inode) exhaustion. "
+                ]
+            }
+        },
+        {
+            "PAN-266114": {
+                "info": [
+                    "Fixed an issue where, when a new set of URL logs came in, the content of the earlier URL and traffic logs were lost. "
+                ]
+            }
+        },
+        {
+            "PAN-265785": {
+                "info": [
+                    "Fixed an issue where the firewall rebooted due to a sysd variable being modified before it was created. "
+                ]
+            }
+        },
+        {
+            "PAN-264249": {
+                "info": [
+                    "Fixed an issue on the firewall where SNMP queries timed out when using SNMP. "
+                ]
+            }
+        },
+        {
+            "PAN-264246": {
+                "info": [
+                    "Fixed an issue where the Authentication Portal did not work properly with session cookies when the request to the portal contained the header Sec-Fetch-Site=cross-site. "
+                ]
+            }
+        },
+        {
+            "PAN-263680": {
+                "info": [
+                    "Fixed an issue where Prisma Access gateways consistently stopped responding with process restarts. "
+                ]
+            }
+        },
+        {
+            "PAN-263559": {
+                "info": [
+                    "Fixed an issue where the dataplane stopped responding and the firewall unexpectedly rebooted due to multiple process restarts. "
+                ]
+            }
+        },
+        {
+            "PAN-263287": {
+                "info": [
+                    "The PAN-COMMON-MIB.my file was updated to support new object identifiers (OID) to poll interface use via SNMP with table identifiers. "
+                ]
+            }
+        },
+        {
+            "PAN-262340": {
+                "info": [
+                    "Fixed an issue where FQDN resolution failed for address objects, and all FQDN traffic was denied by the interzone-default policy rule. "
+                ]
+            }
+        },
+        {
+            "PAN-262254": {
+                "info": [
+                    "Fixed an issue where the firewall experienced an OOM condition and the useridd process stopped responding, which caused the firewall to drop interfaces from their respective aggregate groups. "
+                ]
+            }
+        },
+        {
+            "PAN-261489": {
+                "info": [
+                    "Fixed an issue where an out-of-memory (OOM) condition caused a firewall outage. "
+                ]
+            }
+        },
+        {
+            "PAN-260662": {
+                "info": [
+                    "Fixed an issue where large file downloads were slower than expected when private IP address visibility was enabled. "
+                ]
+            }
+        },
+        {
+            "PAN-260512": {
+                "info": [
+                    "Fixed an issue where accessing the IP address of the device address group objects from the user interface caused the configd process to stop responding. "
+                ]
+            }
+        },
+        {
+            "PAN-260316": {
+                "info": [
+                    "Fixed an issue where the all_task process stopped responding and the firewall rebooted. "
+                ]
+            }
+        },
+        {
+            "PAN-259910": {
+                "info": [
+                    "Fixed an issue where the firewall reported the same value over consecutive SNMP polls when asynchronous mode was enabled. "
+                ]
+            }
+        },
+        {
+            "PAN-259767": {
+                "info": [
+                    "Fixed an issue where GlobalProtect users were unable to connect when the option Block sessions if the certificate was not issued to the authenticating device was enabled in the certificate profile. "
+                ]
+            }
+        },
+        {
+            "PAN-259002": {
+                "info": [
+                    "Fixed an issue where frequent external dynamic list updates caused the configd process to restart. "
+                ]
+            }
+        },
+        {
+            "PAN-257736": {
+                "info": [
+                    "(PA-5450 firewalls only) Fixed an issue where traffic to benign applications was was impacted by holding TCP sequential segments for MLC inspection and not releasing the full chain after a benign verdict was received. "
+                ]
+            }
+        },
+        {
+            "PAN-257601": {
+                "info": [
+                    "(PA-5450 firewalls only) Fixed an issue where Networking Cards (NC) experienced an internal link fault which caused path monitoring failure on the Dataplane Processing Card (DPC). "
+                ]
+            }
+        },
+        {
+            "PAN-257327": {
+                "info": [
+                    "(PA-5440 firewalls only) Fixed an issue where a failover event occurred unexpectedly on the firewall. "
+                ]
+            }
+        },
+        {
+            "PAN-256077": {
+                "info": [
+                    "Fixed an issue where the GlobalProtect client would disconnect consistently due to keep-alive timeouts when using an SSL-only tunnel. "
+                ]
+            }
+        },
+        {
+            "PAN-254704": {
+                "info": [
+                    "(LSVPN Portal firewalls in active\/passive HA configurations only) Fixed an issue where the satellite cookie key did not sync between LSVPN portal HA firewalls, which resulted in re-authentication of satellites with the portal during the event of HA failover. "
+                ]
+            }
+        },
+        {
+            "PAN-251973": {
+                "info": [
+                    "Fixed an issue where the firewall did not detect evasions due to TCP checksum offloading not being enabled. "
+                ]
+            }
+        },
+        {
+            "PAN-250394": {
+                "info": [
+                    "Fixed an issue where a large amount of group data caused serialization errors and prevented synchronization. "
+                ]
+            }
+        },
+        {
+            "PAN-250371": {
+                "info": [
+                    "Fixed an issue where the logrcvr process stopped responding, which caused commits to fail with the error message Management server failed to send phase 1 to client logrcvr. "
+                ]
+            }
+        },
+        {
+            "PAN-240990": {
+                "info": [
+                    "Fixed an issue where l3svc.py displayed incorrect logs. "
+                ]
+            }
+        },
+        {
+            "PAN-239952": {
+                "info": [
+                    "(Firewalls in active\/passive HA configurations only) Fixed an issue where HA sync messages from the active firewall took longer than expected to reach the passive firewall. "
+                ]
+            }
+        },
+        {
+            "PAN-230893": {
+                "info": [
+                    "Added a CLI command to address an issue where system lock files blocked authentication. "
+                ]
+            }
+        },
+        {
+            "PAN-230825": {
+                "info": [
+                    "Fixed an issue where link flaps occurred on Panorama appliances in HA configurations. "
+                ]
+            }
+        },
+        {
+            "PAN-225213": {
+                "info": [
+                    "Fixed an issue where Push All Changes displayed changes that were already committed in the push scope for another device group after performing a selective commit and selective push to the first device group. "
+                ]
+            }
+        },
+        {
+            "PAN-222542": {
+                "info": [
+                    "(PA-7000 Series firewalls only) Fixed an issue where Log Forward Cards (LFC) were incorrectly identified as distribution policies, which caused packet loss due to traffic, BFD, and other control packets being forwarded to the LFC. "
+                ]
+            }
+        },
+        {
+            "PAN-214773": {
+                "info": [
+                    "Fixed an issue where RTP packets traversing inter-vsys were dropped on the outgoing vsys. "
+                ]
+            }
+        }
+    ]
+}

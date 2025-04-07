@@ -1,0 +1,138 @@
+{
+    "10-1-10-h5": [
+        [],
+        {
+            "PAN-237935": {
+                "info": [
+                    " Extended the offline PAN-DB, Panorama, and WildFire certificates which were previously set to expire on September 2, 2024. "
+                ]
+            }
+        },
+        {
+            "PAN-237876": {
+                "info": [
+                    " Extended the firewall Panorama root CA certificate which was previously set to expire on April 7th, 2024. "
+                ]
+            }
+        },
+        {
+            "PAN-236605": {
+                "info": [
+                    " Fixed an issue where the configd process stopped responding due to a deadlock related to rule-hit-count. "
+                ]
+            }
+        },
+        {
+            "PAN-234962": {
+                "info": [
+                    " Fixed an issue on Panorama that caused commit operations to be slower than expected. "
+                ]
+            }
+        },
+        {
+            "PAN-231771": {
+                "info": [
+                    " Fixed an issue where the firewall issued \/box\/getserv\/ requests with PAN-OS 7.1.0 and did not take device certificates. "
+                ]
+            }
+        },
+        {
+            "PAN-227568": {
+                "info": [
+                    " When a device certificate is installed, renewed, or removed, the firewall will reconnect to the WildFire cloud to use the newest certificate. "
+                ]
+            }
+        },
+        {
+            "PAN-226418": {
+                "info": [
+                    " A CLI command was added to address an issue where long-lived sessions aged out even when there was ongoing traffic. "
+                ]
+            }
+        },
+        {
+            "PAN-225920": {
+                "info": [
+                    " Fixed an issue where duplicate predict sessions didn't release NAT resources. "
+                ]
+            }
+        },
+        {
+            "PAN-223852": {
+                "info": [
+                    " Fixed an issue where all_pktproc stopped responding when network packet broker or decryption broker chains failed. "
+                ]
+            }
+        },
+        {
+            "PAN-223741": {
+                "info": [
+                    " Fixed an issue where the mprelay process stopped responding, which caused a slot restart when another slot rebooted. "
+                ]
+            }
+        },
+        {
+            "PAN-220712": {
+                "info": [
+                    " Fixed an issue where retransmitted DNS requests made by the firewall did not follow the Policy Based Forwarding (PBF) rule. With this fix, both original and retransmitted DNS requests follow the PBF rule. "
+                ]
+            }
+        },
+        {
+            "PAN-219643": {
+                "info": [
+                    " (VM-Series firewalls in Microsoft Azure environments only) Fixed an issue where the dataplane interface status went down due to a DPDK driver issue. "
+                ]
+            }
+        },
+        {
+            "PAN-218555": {
+                "info": [
+                    " Fixed an issue where the firewall did not receive dynamic address updates pushed from Panorama during initial registration to Panorama. "
+                ]
+            }
+        },
+        {
+            "PAN-218404": {
+                "info": [
+                    " Fixed an issue where ikemgr stopped responding due to receiving CREATE_CHILD messages with a malformed SA payload. "
+                ]
+            }
+        },
+        {
+            "PAN-217484": {
+                "info": [
+                    " Fixed an issue where the rasmgr process used 100% CPU due to a maximum duration timer not being set, which caused the GlobalProtect gateway to be unavailable. "
+                ]
+            }
+        },
+        {
+            "PAN-217208": {
+                "info": [
+                    " Fixed an issue where a memory leak related to the snmpd process caused an out-of-memory (OOM) condition or caused the process to restart when using SNMPv3. "
+                ]
+            }
+        },
+        {
+            "PAN-216043": {
+                "info": [
+                    " Fixed an issue where wifclient stopped responding due to shared memory corruption. "
+                ]
+            }
+        },
+        {
+            "PAN-215767": {
+                "info": [
+                    " Fixed an issue where, after a high availability failover, IKE SA negotiation failed with the error message INVALID_SPI, which resulted in temporary loss of traffic over some proxy IDs. "
+                ]
+            }
+        },
+        {
+            "PAN-215576": {
+                "info": [
+                    " Fixed an issue where the userID-Agent and TS-Agent certificates were set to expire on November 18, 2024. With this fix, the expiration date has been extended to January 2032. "
+                ]
+            }
+        }
+    ]
+}

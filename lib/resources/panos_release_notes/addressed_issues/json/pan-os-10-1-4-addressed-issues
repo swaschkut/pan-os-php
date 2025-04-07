@@ -1,0 +1,278 @@
+{
+    "10-1-4": [
+        [],
+        {
+            "PAN-183767": {
+                "info": [
+                    "Fixed an issue where downloading Dynamic Updates files failed when connected to the static update server at us-static.updates.paloaltonetworks.com."
+                ]
+            }
+        },
+        {
+            "PAN-183274": {
+                "info": [
+                    "(PA-400 Series firewalls only) Fixed a rare issue where abnormal power downs occurred. "
+                ]
+            }
+        },
+        {
+            "PAN-181309": {
+                "info": [
+                    "Fixed an issue where Panorama was inaccessible due to the configd process not responding."
+                ]
+            }
+        },
+        {
+            "PAN-180511": {
+                "info": [
+                    "(PA-400 Series and PA-5400 Series firewalls only) Fixed an issue where technical support file generation restarted the firewall."
+                ]
+            }
+        },
+        {
+            "PAN-180402": {
+                "info": [
+                    "Fixed an issue where a null tunnel configuration pointer caused a process (tund) to stop responding."
+                ]
+            }
+        },
+        {
+            "PAN-178953": {
+                "info": [
+                    "Fixed an issue with the GlobalProtect Clientless VPN where, when an application sent a negative max age value on a cookie, part of the cookie was retained by PAN-OS and used for the subsequent connection on the user session."
+                ]
+            }
+        },
+        {
+            "PAN-178190": {
+                "info": [
+                    "Fixed an issue where the firewall incorrectly set the disk quota cfg.diskquota.traffic to 0 after upgrading to a PAN-OS 10.0 release. With this fix, the log disk quota will be retained correctly after upgrade."
+                ]
+            }
+        },
+        {
+            "PAN-178047": {
+                "info": [
+                    "(CN-Series firewalls only) Fixed an issue where propagating IP address tag mappings to the firewall took longer than expected, which resulted in traffic not matching Security policy rules with Dynamic Address Groups."
+                ]
+            }
+        },
+        {
+            "PAN-177119": {
+                "info": [
+                    "Fixed an issue with the GlobalProtect gateway where SMS-message-based multi-factor authentication (MFA) did not display a prompt to enter the authentication code."
+                ]
+            }
+        },
+        {
+            "PAN-176983": {
+                "info": [
+                    "(Panorama management server on PAN-OS 10.1.3 or a later release only) Fixed an issue where adding a firewall on PAN-OS 10.1.3 or a later release to Panorama management was only supported from the firewall CLI."
+                ]
+            }
+        },
+        {
+            "PAN-176392": {
+                "info": [
+                    "(PA-7000 Series firewall only) Fixed a an issue where persistent sessions did not properly age out when removing a Data Processing Card (DPC)."
+                ]
+            }
+        },
+        {
+            "PAN-176341": {
+                "info": [
+                    "Fixed an issue where a delay to detect when an interface was down after a cable pull caused traffic to be black-holed to the downed link for 10 or more seconds."
+                ]
+            }
+        },
+        {
+            "PAN-176283": {
+                "info": [
+                    "(PA-7000 Series firewalls with Data Processing Cards (DPCs) only) Fixed an issue where packet loss occurred when quality of service was enabled on an aggregate interface."
+                ]
+            }
+        },
+        {
+            "PAN-176118": {
+                "info": [
+                    "Fixed an issue where firewalls configured with a mixed mode of interfaces stopped processing Layer-3-tagged traffic."
+                ]
+            }
+        },
+        {
+            "PAN-176054": {
+                "info": [
+                    "Fixed an intermittent issue where users did not have access to resources due to a HIP check failure that was caused by the HIP data not being synced between the management plane and the dataplane."
+                ]
+            }
+        },
+        {
+            "PAN-175923": {
+                "info": [
+                    "Fixed an issue where a process (tund) stopped responding when enabling IPSec tunnel monitoring."
+                ]
+            }
+        },
+        {
+            "PAN-174886": {
+                "info": [
+                    "Fixed an issue where scheduled customer reports displayed as empty when the configured destination was an address group."
+                ]
+            }
+        },
+        {
+            "PAN-174345": {
+                "info": [
+                    "Fixed an issue where a process all_pktproc stopped responding after upgrading the firewall."
+                ]
+            }
+        },
+        {
+            "PAN-174055": {
+                "info": [
+                    "Fixed an issue where SNMP readings reported as 0 for dataplane interface packet statistics for Amazon Web Services (AWS) m5n.4xlarge instance types. This issue occurred because the physical port counters read from MAC addresses were reported as 0."
+                ]
+            }
+        },
+        {
+            "PAN-173978": {
+                "info": [
+                    "Fixed an issue where the Elasticsearch process continuously restarted if zero-length files were present."
+                ]
+            }
+        },
+        {
+            "PAN-173973": {
+                "info": [
+                    "(PA-7000 Series firewalls only) Fixed an issue where flaps occurred when Link State Pass Through was enabled."
+                ]
+            }
+        },
+        {
+            "PAN-173216": {
+                "info": [
+                    "Fixed an issue where the firewall incorrectly handled HTML pages when accessed via the GlobalProtect Clientless VPN."
+                ]
+            }
+        },
+        {
+            "PAN-172464": {
+                "info": [
+                    "Fixed an issue where unicast DHCP discover or request packets were silently dropped."
+                ]
+            }
+        },
+        {
+            "PAN-172200": {
+                "info": [
+                    "Fixed an issue where a process (configd) restarted due to memory corruption in the show dynamic-address-group CLI command during commits, commit and push operations, and high availability Panorama syncs."
+                ]
+            }
+        },
+        {
+            "PAN-172179": {
+                "info": [
+                    "(PA-7000b firewalls only) Fixed an issue where, when GTP-U tunnel acceleration was enabled but Mobile Network Protection was not enabled on the corresponding policy, GPRS tunneling protocol (GTP-U) traffic was dropped."
+                ]
+            }
+        },
+        {
+            "PAN-171696": {
+                "info": [
+                    "(PA-800 and PA-400 Series firewalls and PA-220 firewalls only) Fixed an issue where the management plane CPU was incorrectly reported to be high."
+                ]
+            }
+        },
+        {
+            "PAN-171380": {
+                "info": [
+                    "Fixed an issue where loading configuration versions in Panorama added unnecessary IDs to the configuration."
+                ]
+            }
+        },
+        {
+            "PAN-171174": {
+                "info": [
+                    "Console debug output was enhanced to address issues that led to a loss of SSH and web interface access."
+                ]
+            }
+        },
+        {
+            "PAN-171127": {
+                "info": [
+                    "Fixed an issue on Panorama where custom reports (MonitorManage Custom Reports) for Device Application Statistics and Device Traffic Summary databases displayed null for the Application field."
+                ]
+            }
+        },
+        {
+            "PAN-171104": {
+                "info": [
+                    "Fixed an issue where a race-condition check returned a false negative, which caused a process (all_task) to stop responding and generate a core file."
+                ]
+            }
+        },
+        {
+            "PAN-170997": {
+                "info": [
+                    "Fixed an issue where FQDN service routes were not installed after a system reboot."
+                ]
+            }
+        },
+        {
+            "PAN-169300": {
+                "info": [
+                    "Debug logs were added to troubleshoot WildFire submission issues."
+                ]
+            }
+        },
+        {
+            "PAN-169173": {
+                "info": [
+                    "Fixed an issue where, if you continuously performed partial commits of a configuration with a high number of Dynamic Address Groups, Panorama became unresponsive and commits were slower than expected."
+                ]
+            }
+        },
+        {
+            "PAN-165235": {
+                "info": [
+                    "Fixed an issue where the handover handling between LTE and 3G on S5 and S8 to Gn\/Gp was not working properly and led to stateful inspection failures."
+                ]
+            }
+        },
+        {
+            "PAN-164450": {
+                "info": [
+                    "Fixed an intermittent issue where the firewall dropped GTPv2 Create Session Response packets with the cause Partially Accepted."
+                ]
+            }
+        },
+        {
+            "PAN-164335": {
+                "info": [
+                    "Fixed an issue that caused false positives on GTPv2 vulnerability signatures."
+                ]
+            }
+        },
+        {
+            "PAN-163692": {
+                "info": [
+                    "Fixed an issue where the firewall did not create new GTP-C sessions when a Create Session Request message was retransmitted and a completely new Create Session Response message was returned."
+                ]
+            }
+        },
+        {
+            "PAN-163261": {
+                "info": [
+                    "Fixed an intermittent issue where the firewall dropped GTPv2 Modify Bearer Request packets with the following error message: Abnormal GTPv2-C message with missing mandatory IE."
+                ]
+            }
+        },
+        {
+            "PAN-161496": {
+                "info": [
+                    "Fixed an issue when calculating the incremental checksum after a post-NAT translation where the arguments to pan_in_cksm32_diff overflowed the 32-bit integer."
+                ]
+            }
+        }
+    ]
+}

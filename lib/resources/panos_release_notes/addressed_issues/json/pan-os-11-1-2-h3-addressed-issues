@@ -1,0 +1,33 @@
+{
+    "11-1-2-h3": [
+        [],
+        {
+            "PAN-252214": {
+                "info": [
+                    " A fix was made to address CVE-2024-3400. "
+                ]
+            }
+        },
+        {
+            "PAN-246949": {
+                "info": [
+                    " Fixed an issue where custom admin users were not able to click OK in the push scope selection window when device group or template were disabled under commit in the admin roles. "
+                ]
+            }
+        },
+        {
+            "PAN-244013": {
+                "info": [
+                    " Fixed an issue on the Panorama web interface where, when a new content package was installed, new Anti-Spyware Signatures and new Vulnerability Signatures were not visible in their respective profiles. "
+                ]
+            }
+        },
+        {
+            "PAN-243951": {
+                "info": [
+                    " Fixed an issue on Panorama appliances in active\/passive HA configurations where managed devices displayed as out-of-sync on the passive appliance when peer configuration changes were made to the SD-WAN configuration on the active peer. "
+                ]
+            }
+        }
+    ]
+}

@@ -77,6 +77,8 @@ class UPLOAD extends UTIL
         $configPartOfTemplate[] = "report-group";
         $configPartOfTemplate[] = "display-name";
         $configPartOfTemplate[] = "botnet";
+        $configPartOfTemplate[] = "content-preview";
+
 
         $configPartOfTemplate[] = "import";
         $configPartOfTemplate[] = "zone";
@@ -404,7 +406,7 @@ class UPLOAD extends UTIL
                             mwarning("import into Panorama Template not possible - XMLnode '" . $variable . "' found. DeviceGroup relevant", null, FALSE);
                             continue;
                         }
-                        elseif( $variable == "botnet" || $variable == "alg-override" || $variable == "reports" || $variable == "report-group" || $variable == "display-name" )
+                        elseif( $variable == "botnet" || $variable == "alg-override" || $variable == "reports" || $variable == "report-group" || $variable == "display-name" || $variable == "content-preview" )
                         {
                             mwarning("import into Panorama Template not possible - XMLnode '" . $variable . "' found. where to import???", null, FALSE);
                             continue;

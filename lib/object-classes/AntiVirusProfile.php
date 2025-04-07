@@ -639,7 +639,6 @@ class AntiVirusProfile extends SecurityProfile2
         {
             if ($this->av_action_best_practice() && $this->av_wildfireaction_best_practice() && $this->av_mlavaction_best_practice()
                 && $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file)
-                #&& $this->vulnerability_exception_best_practice()
             )
                 return TRUE;
             else
@@ -648,7 +647,6 @@ class AntiVirusProfile extends SecurityProfile2
         else
         {
             if ($this->av_action_best_practice() && $this->av_wildfireaction_best_practice() && $this->av_mlavaction_best_practice()
-                #&& $this->vulnerability_exception_best_practice()
             )
                 return TRUE;
             else

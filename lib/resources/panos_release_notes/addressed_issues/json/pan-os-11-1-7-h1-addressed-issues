@@ -1,0 +1,12 @@
+{
+    "11-1-7-h1": [
+        [],
+        {
+            "PAN-279604": {
+                "info": [
+                    " Fixed an issue where scheduled SaaS application usage reports were generated incorrectly, and the login page was displayed instead of the report content. "
+                ]
+            }
+        }
+    ]
+}

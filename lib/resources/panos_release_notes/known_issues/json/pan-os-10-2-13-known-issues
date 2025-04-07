@@ -51,6 +51,66 @@
             }
         },
         {
+            "PAN-282236": {
+                "info": [
+                    " The firewall doesn't reassemble IPv6 packets correctly after they are fragmented. "
+                ]
+            }
+        },
+        {
+            "PAN-279746": {
+                "solved": "This issue is now resolved. See PAN-OS 10.2.13-h5 Addressed Issues.",
+                "info": [
+                    " An SSL\/TLS Client Hello may not be transmitted out of the firewall if the Client Hello arrives in multiple TCP segments and the traffic is not subject to SSL decryption (for example, SMTP over SSL). "
+                ]
+            }
+        },
+        {
+            "PAN-279604": {
+                "solved": "(PAN-OS 10.2.13-h3 only)",
+                "info": [
+                    " The scheduled SaaS application usage reports are incorrectly generated and only the login page appears instead of the intended report content. "
+                ]
+            }
+        },
+        {
+            "PAN-275077": {
+                "solved": "(PAN-OS 10.2.13-h4 only)",
+                "info": [
+                    " DNS Security intermittently logs malicious domain URLs as alert instead of taking a sinkhole action, even when configured to sinkhole malicious DNS domains. "
+                ]
+            }
+        },
+        {
+            "PAN-269106": {
+                "info": [
+                    " When using a cloud-based ML detection engine (MICA), the wifclient might crash during server cert verification for MICA gRPC connections and cause the dataplane to restart. On certain platforms, this might cause the firewall to reboot. Workaround: Disable CRL using the following CLI command:debug iot eal key-value PAN_ICD_SERVER_CERT_USE_CRL=False "
+                ]
+            }
+        },
+        {
+            "PAN-269052": {
+                "info": [
+                    " Traffic might be blocked by a URL Filtering profile that isn't associated with the Security policy rule that the traffic matches. "
+                ]
+            }
+        },
+        {
+            "PAN-268815": {
+                "solved": "This issue is now resolved. See PAN-OS 10.2.13-h5 Addressed Issues.",
+                "info": [
+                    " When using IoT Security, the wifclient might exit multiple times causing the firewall to reboot. Workaround: Uninstall the IoT Security license and disable Enable enhanced application logging (DeviceManagementCloud LoggingCloud Logging Settings). "
+                ]
+            }
+        },
+        {
+            "PAN-268815": {
+                "info": [
+                    " In Panorama, the OK button does not work when trying to install configurations to a managed firewall from the Managed DevicesSummaryInstall section, even after selecting the update type and file from the drop-down menu and choosing the firewall. "
+                ]
+            }
+        },
+        {
             "PAN-262287": {
                 "solved": "This issue is now resolved. See PAN-OS 10.2.12-h1 Addressed Issues.",
                 "info": [
@@ -264,7 +324,7 @@
         {
             "PAN-187612": {
                 "info": [
-                    "On the Panorama management server, not all data profiles (ObjectsDLP Data Filtering Profiles) are displayed after you:Upgrade Panorama to PAN-OS 10.2 and upgrade the Enterprise DLP plugin to version 3.0.Downgrade Panorama to PAN-OS 10.1 and downgrade the Enterprise DLP plugin to version 1.0.Workaround: Log in to the Panorama CLI and reset the DLP plugin.admin > request plugins dlp reset"
+                    "On the Panorama management server, not all data profiles (ObjectsDLP Data Filtering Profiles) are displayed after you:Upgrade Panorama to PAN-OS 10.2 and upgrade the Enterprise DLP plugin to version 3.0.Downgrade Panorama to PAN-OS 10.1 and downgrade the Enterprise DLP plugin to version 1.0.Workaround: Log in to the Panorama CLI and reset the DLP plugin.admin > request plugins dlp reset."
                 ]
             }
         },

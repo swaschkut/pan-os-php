@@ -1,0 +1,131 @@
+{
+    "10-1-11-h4": [
+        [],
+        {
+            "PAN-237935": {
+                "info": [
+                    " Extended the offline PAN-DB, Panorama, and WildFire certificates which were previously set to expire on September 2, 2024. "
+                ]
+            }
+        },
+        {
+            "PAN-237876": {
+                "info": [
+                    " Extended the firewall Panorama root CA certificate which was previously set to expire on April 7th, 2024. "
+                ]
+            }
+        },
+        {
+            "PAN-235585": {
+                "info": [
+                    " Fixed an issue where, when custom signatures and predefined signatures shared the same literal pattern part, the custom signature caused an incorrect calculation for the length of the predefined signature, which resulted in App-ID not detected correctly. "
+                ]
+            }
+        },
+        {
+            "PAN-234929": {
+                "info": [
+                    "Fixed an issue where tabs in the ACC such as Network Activity Threat Activity and Blocked Activity did not display data when you applied a Time filter of Last 15 Minutes, Last Hour, Last 6 Hours, or Last 12 Hours, and the data that was displayed with the Last 24 Hours filter was not accurate. Reports that were run against summary logs also did not display accurate results."
+                ]
+            }
+        },
+        {
+            "PAN-234238": {
+                "info": [
+                    " Fixed an issue where a Security policy that referenced more than 30 HIP profiles caused buffer overflow, which caused other Security policies with HIP profiles to misidentified users and traffic was denied. "
+                ]
+            }
+        },
+        {
+            "PAN-232132": {
+                "info": [
+                    " Fixed an issue where DNS response packets were malformed when an Anti-Spyware Security Profile was enabled. "
+                ]
+            }
+        },
+        {
+            "PAN-231658": {
+                "info": [
+                    " Fixed an issue where DNS resolution failed when interfaces were configured as DHCP and a DNS server was provided via DHCP while also statically configured with DNS servers. "
+                ]
+            }
+        },
+        {
+            "PAN-231658": {
+                "info": [
+                    " Fixed an issue where traffic returning from a third-party Security chain was dropped. "
+                ]
+            }
+        },
+        {
+            "PAN-230106": {
+                "info": [
+                    " Fixed an issue where the firewall was unable to retrieve the most current external dynamic list information from the server due to hostname resolution failure. "
+                ]
+            }
+        },
+        {
+            "PAN-228877": {
+                "info": [
+                    " (PA-7050 firewalls only) Fixed an issue with out-of-memory (OOM) conditions which caused slot restarts due to pan_cmd consuming more than 300MB. "
+                ]
+            }
+        },
+        {
+            "PAN-227539": {
+                "info": [
+                    " Fixed an issue where excess WIF process memory use caused processes to restart due to OOM conditions. "
+                ]
+            }
+        },
+        {
+            "PAN-226792": {
+                "info": [
+                    " Fixed an issue where the logrcvr process stored older content versions in the shared memory even when newer content updates were installed. "
+                ]
+            }
+        },
+        {
+            "PAN-224954": {
+                "info": [
+                    " Fixed an issue where, after upgrading and rebooting a Panorama appliance in Panorama or Log Collector mode, managed firewalls continuously disconnected. "
+                ]
+            }
+        },
+        {
+            "PAN-222002": {
+                "info": [
+                    " Fixed an issue where content updates failed with the error message Unable to get key pancontent-8.0.pass from cryptod. Error -9. "
+                ]
+            }
+        },
+        {
+            "PAN-221881": {
+                "info": [
+                    " Fixed an issue where log ingestion to Panorama failed, which resulted in missing logs under the Monitor tab. "
+                ]
+            }
+        },
+        {
+            "PAN-220790": {
+                "info": [
+                    " Fixed an issue where the reportd process stopped responding, which caused Panorama to restart. "
+                ]
+            }
+        },
+        {
+            "PAN-215576": {
+                "info": [
+                    " Fixed an issue where the userID-Agent and TS-Agent certificates were set to expire on November 18, 2024. With this fix, the expiration date has been extended to January 2032. "
+                ]
+            }
+        },
+        {
+            "PAN-208400": {
+                "info": [
+                    " Fixed an issue where pushing dynamic objects to the firewall did not send all Panorama objects that matched the dynamic object filter when Share Unused Address and Service Objects with Device was selected on Panorama. "
+                ]
+            }
+        }
+    ]
+}

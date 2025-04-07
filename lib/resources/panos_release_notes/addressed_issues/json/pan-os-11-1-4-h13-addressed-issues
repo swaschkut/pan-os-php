@@ -1,0 +1,488 @@
+{
+    "11-1-4-h13": [
+        [],
+        {
+            "PAN-279604": {
+                "info": [
+                    " Fixed an issue where scheduled SaaS application usage reports were generated incorrectly, and the login page was displayed instead of the report content. "
+                ]
+            }
+        },
+        {
+            "PAN-278088": {
+                "info": [
+                    " Fixed an issue where the show system resources follow CLI command was not available. "
+                ]
+            }
+        },
+        {
+            "PAN-274791": {
+                "info": [
+                    " Fixed an issue where the firewall rebooted when Shared Pool Type 32 was depleted and traffic matched advanced features. "
+                ]
+            }
+        },
+        {
+            "PAN-274592": {
+                "info": [
+                    " (Firewalls in HA configurations only) Fixed an issue where the firewall did not fail over when the active firewall experienced data plane issues. "
+                ]
+            }
+        },
+        {
+            "PAN-273994": {
+                "info": [
+                    " A fix was made to address CVE-2025-0111. "
+                ]
+            }
+        },
+        {
+            "PAN-273971": {
+                "info": [
+                    "A fix was made to address CVE-2025-0108."
+                ]
+            }
+        },
+        {
+            "PAN-273278": {
+                "info": [
+                    "A fix was made to address CVE-2025-0109."
+                ]
+            }
+        },
+        {
+            "PAN-273129": {
+                "info": [
+                    " Fixed an issue on the web interface where the negate option was visible when you clicked on the rule name, but not when you viewed the target options from the rulebase attribute. "
+                ]
+            }
+        },
+        {
+            "PAN-273085": {
+                "info": [
+                    " Fixed an issue on the web interface where you were unable to edit or create policy rules. "
+                ]
+            }
+        },
+        {
+            "PAN-273026": {
+                "info": [
+                    " Fixed an issue where traffic logs did not display correctly when filters were applied. "
+                ]
+            }
+        },
+        {
+            "PAN-273019": {
+                "info": [
+                    " Fixed an intermittent issue where SSL decryption failed. "
+                ]
+            }
+        },
+        {
+            "PAN-272959": {
+                "info": [
+                    " Fixed an issue where the firewall generated BGP update packets larger than 1500 bytes when the interface MTU was 1500 bytes and jumbo frames were enabled globally. "
+                ]
+            }
+        },
+        {
+            "PAN-272006": {
+                "info": [
+                    " Fixed an issue where the firewall did not trigger a kernel core dump as a large core when the CPLD (Complex Programmable Logic Device) sent a Non-Maskable Interrupt (NMI) to the CPU. "
+                ]
+            }
+        },
+        {
+            "PAN-271937": {
+                "info": [
+                    " (PA-5450 firewalls only) Fixed an issue where the logrcvr process stopped responding when processing logs from a large number of sources. "
+                ]
+            }
+        },
+        {
+            "PAN-271926": {
+                "info": [
+                    " Fixed an issue where TLS 1.3 decryption failed with a bad record MAC error when the firewall was configured to decrypt and inspect TLS traffic. "
+                ]
+            }
+        },
+        {
+            "PAN-270549": {
+                "info": [
+                    " Fixed an issue where early TLS data was not handled correctly by the accumulation proxy. "
+                ]
+            }
+        },
+        {
+            "PAN-270471": {
+                "info": [
+                    " (Firewalls in active\/active configurations only) Fixed an issue where the firewall did not detect configuration changes when only the interface of an IKE gateway was changed, which caused IPSec tunnels to not come up after migrating the IKE gateway IP address from a subinterface to a physical interface. "
+                ]
+            }
+        },
+        {
+            "PAN-270077": {
+                "info": [
+                    " (VM-Series firewalls in Amazon Web Services (AWS) environments only) Fixed an issue template values were missing in newly spun firewalls in auto scale deployments without an explicit push with forced template values from Panorama. "
+                ]
+            }
+        },
+        {
+            "PAN-269731": {
+                "info": [
+                    " Fixed an issue where Panorama did not display logs from firewalls after upgrading to PAN-OS 10.2.11 on devices due to Elasticsearch (ES) getting restarted continuously. "
+                ]
+            }
+        },
+        {
+            "PAN-269539": {
+                "info": [
+                    " Fixed an issue where whitespace was added before the timestamp in syslog logs forwarded from Panorama. "
+                ]
+            }
+        },
+        {
+            "PAN-269499": {
+                "info": [
+                    " Fixed an issue where the firewall stopped responding when receiving a high number of logs. "
+                ]
+            }
+        },
+        {
+            "PAN-269106": {
+                "info": [
+                    " Fixed issue where the wifclient restarted and multiple processes stopped responding. "
+                ]
+            }
+        },
+        {
+            "PAN-268909": {
+                "info": [
+                    " Fixed an issue where IP address tags were removed from firewalls after a management server or useridd process restart. This occurred when a Panorama serial-number based configuration was used for User-ID redistribution. "
+                ]
+            }
+        },
+        {
+            "PAN-268815": {
+                "info": [
+                    " Fixed an issue where the firewall entered a non-functional state due to duplicate entries in the shared memory. "
+                ]
+            }
+        },
+        {
+            "PAN-268727": {
+                "info": [
+                    " Fixed an issue where traffic was dropped when the accumulation proxy was enabled and header insertion modified packets. "
+                ]
+            }
+        },
+        {
+            "PAN-267781": {
+                "info": [
+                    " Fixed an issue where Panorama did not display the Source Dynamic Address Group. "
+                ]
+            }
+        },
+        {
+            "PAN-267762": {
+                "info": [
+                    " (Panorama virtual appliances in Management-Only mode) Fixed a issue where the maximum configuration size was lower than expected. "
+                ]
+            }
+        },
+        {
+            "PAN-267671": {
+                "info": [
+                    "Fixed an issue where the firewall rebooted unexpectedly due to the all_task process restarting with an OOM condition due to a memory leak on the reportd process."
+                ]
+            }
+        },
+        {
+            "PAN-267430": {
+                "info": [
+                    " Fixed an issue where Panorama was unable to return logs for queries that were longer than 64,000 characters. "
+                ]
+            }
+        },
+        {
+            "PAN-267097": {
+                "info": [
+                    " Fixed an issue where the replay database size increased significantly due to local and special configurations not being purged after commits. "
+                ]
+            }
+        },
+        {
+            "PAN-266581": {
+                "info": [
+                    " Fixed an issue where a failed SSL connection to a syslog server resulted in a \/tmp\/srvr.crt.xxxxxx file not being removed, which caused index node (inode) exhaustion. "
+                ]
+            }
+        },
+        {
+            "PAN-266559": {
+                "info": [
+                    " Fixed an issue where partial commits failed when objects that were referenced in a high number of Security policy rules were renamed. "
+                ]
+            }
+        },
+        {
+            "PAN-266354": {
+                "info": [
+                    " Fixed an issue where Hybrid-SWG explicit proxy connections failed when the number of destination domains exceeded 1024. "
+                ]
+            }
+        },
+        {
+            "PAN-265745": {
+                "info": [
+                    " Fixed an issue where the firewall displayed incorrect MAC receive error counters for VMWare devices hosted in ESXi. "
+                ]
+            }
+        },
+        {
+            "PAN-265179": {
+                "info": [
+                    " Fixed an issue where a kernel race condition caused the firewall to reboot with a kernel panic. "
+                ]
+            }
+        },
+        {
+            "PAN-265160": {
+                "info": [
+                    " Fixed an issue where the firewall created multiple connections to a syslog server and remained in the FINWAIT1 state, which caused logs to drop while being forwarded to the syslog server. "
+                ]
+            }
+        },
+        {
+            "PAN-264369": {
+                "info": [
+                    " Fixed an issue where the 7 Day Threat Report was empty in the scheduled reports sent via email. "
+                ]
+            }
+        },
+        {
+            "PAN-263291": {
+                "info": [
+                    " Fixed an issue where Microsoft Outlook did not work as expected when the GlobalProtect clientless VPN was configured. "
+                ]
+            }
+        },
+        {
+            "PAN-262627": {
+                "info": [
+                    " Fixed an issue where the firewall rebooted into maintenance mode due to a service failure in the configd process. "
+                ]
+            }
+        },
+        {
+            "PAN-262383": {
+                "info": [
+                    " Fixed an issue where the firewall was unable to decompress the HTTP2 header, which caused the session to be classified as unknown-tcp instead of web-browsing. "
+                ]
+            }
+        },
+        {
+            "PAN-262254": {
+                "info": [
+                    " Fixed an issue where the firewall experienced an OOM condition and the useridd process stopped responding, which caused the firewall to drop interfaces from their respective aggregate groups. "
+                ]
+            }
+        },
+        {
+            "PAN-261998": {
+                "info": [
+                    " Fixed an issue where the firewall configuration process restarted during an External Dynamic List refresh or a commit and push operation. "
+                ]
+            }
+        },
+        {
+            "PAN-260290": {
+                "info": [
+                    " Fixed an issue for fixed model licenses to support new content size requirements by reducing the total sessions supported to be equivalent to their flex memory counterpart "
+                ]
+            }
+        },
+        {
+            "PAN-260149": {
+                "info": [
+                    " Fixed an issue where the management plane DNS cache size was lower than expected. "
+                ]
+            }
+        },
+        {
+            "PAN-259055": {
+                "info": [
+                    " Fixed an issue where the firewall stopped responding when receiving SNMPv3 traps. "
+                ]
+            }
+        },
+        {
+            "PAN-258996": {
+                "info": [
+                    " Fixed an issue where the firewall displayed the SFP ports as PowerDown when the SFP transceiver was removed and reinserted or the port was shut down and brought back up on the peer device. "
+                ]
+            }
+        },
+        {
+            "PAN-257390": {
+                "info": [
+                    " (PA-5250 firewalls only) Fixed an issue where the logrcvr process stopped responding due to a segmentation fault. "
+                ]
+            }
+        },
+        {
+            "PAN-256669": {
+                "info": [
+                    " Fixed an issue where the memory usage reported by SNMP did not match the memory usage reported by the top command. "
+                ]
+            }
+        },
+        {
+            "PAN-255773": {
+                "info": [
+                    " Fixed an issue where errors related to applications in Content-preview caused commit failures. "
+                ]
+            }
+        },
+        {
+            "PAN-255747": {
+                "info": [
+                    " Fixed an issue on the firewall where CLI commands returned Server error: op command for client dagger timed out as client is not available. "
+                ]
+            }
+        },
+        {
+            "PAN-255653": {
+                "info": [
+                    " Fixed an HA failover issue where, when Management Processing Card (MPC) or Base Card (BC) failures occurred, the HA link went down, which caused fpp-down events on one firewall. "
+                ]
+            }
+        },
+        {
+            "PAN-253485": {
+                "info": [
+                    " (Firewalls in active\/passive HA configurations only) Fixed an issue where dataplane packet capture filter configuration failed on the active firewall with the error op command for client dagger timed out as client is not available. "
+                ]
+            }
+        },
+        {
+            "PAN-252669": {
+                "info": [
+                    " Fixed an issue where the ikemgr process stopped responding with a SIGSEGV error. "
+                ]
+            }
+        },
+        {
+            "PAN-252036": {
+                "info": [
+                    " Fixed an issue where, when the GlobalProtect portal was not configured, accessing the GlobalProtect gateway still loaded a portal malformed page. "
+                ]
+            }
+        },
+        {
+            "PAN-252224": {
+                "info": [
+                    " Fixed an issue where Panorama did not forward logs to a syslog server over an SSL connection using CRL as a revocation verification method. "
+                ]
+            }
+        },
+        {
+            "PAN-250585": {
+                "info": [
+                    " Fixed an issue where the firewall CPU use increased after upgrading from PAN-OS 10.2.4-h4 to PAN-OS 10.2.8 due to a change in system resource reporting by the REST API. "
+                ]
+            }
+        },
+        {
+            "PAN-246209": {
+                "info": [
+                    " Fixed an issue where IPSec VPN tunnels went down after receiving a DHCP server message that the DHCP client cleared the IP address on the interface. "
+                ]
+            }
+        },
+        {
+            "PAN-242739": {
+                "info": [
+                    " Fixed an issue on the firewall where the dataplane repeatedly restarted. "
+                ]
+            }
+        },
+        {
+            "PAN-240225": {
+                "info": [
+                    " Fixed an issue where authentication failed on web-based GlobalProtect portal. "
+                ]
+            }
+        },
+        {
+            "PAN-238594": {
+                "info": [
+                    " Fixed an issue where the firewall rebooted when a QSFP28 cable was removed from the port while the port was passing traffic. "
+                ]
+            }
+        },
+        {
+            "PAN-232833": {
+                "info": [
+                    " Fixed an issue where the following error message displayed for IoT trial licenses: IoT Security license is required for the feature to function. "
+                ]
+            }
+        },
+        {
+            "PAN-232550": {
+                "info": [
+                    " Fixed an issue where SNMPv3 authentication failed when using SHA-512 Auth protocol. "
+                ]
+            }
+        },
+        {
+            "PAN-225228": {
+                "info": [
+                    " Fixed an issue where filtering threat logs using any value under THREAT ID\/NAME displayed the error Invalid term. "
+                ]
+            }
+        },
+        {
+            "PAN-218873": {
+                "info": [
+                    " Fixed an issue where a HIP mask was reused when an existing IP address user mapping was updated by a new IP address user mapping that had a different username but the same IP address. "
+                ]
+            }
+        },
+        {
+            "PAN-216054": {
+                "info": [
+                    " Fixed an issue that caused the firewall's fan speed to increase while it was idle. "
+                ]
+            }
+        },
+        {
+            "PAN-214430": {
+                "info": [
+                    " Fixed an issue where some commands did not have executable permissions. "
+                ]
+            }
+        },
+        {
+            "PAN-212197": {
+                "info": [
+                    " Fixed an issue where you were able to create local administrator usernames that contained only numbers. "
+                ]
+            }
+        },
+        {
+            "PAN-207972": {
+                "info": [
+                    " Fixed an issue on the web interface where the BGP routing table did not display advertised routes. "
+                ]
+            }
+        },
+        {
+            "PAN-193285": {
+                "info": [
+                    " Fixed an issue where the policy optimizer feature did not add entries back to the mongodb database after removing them during an upgrade or downgrade. "
+                ]
+            }
+        }
+    ]
+}

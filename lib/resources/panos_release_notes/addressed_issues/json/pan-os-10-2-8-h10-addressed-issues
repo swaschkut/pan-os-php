@@ -1,0 +1,236 @@
+{
+    "10-2-8-h10": [
+        [],
+        {
+            "PAN-263226": {
+                "info": [
+                    " Fixed an issue where decryption based traffic failed on Explicit Proxy nodes. "
+                ]
+            }
+        },
+        {
+            "PAN-261917": {
+                "info": [
+                    " Fixed an issue where websites with a no-decrypt policy rule were decrypted in traffic logs when using a Google Chrome browser with PQC enabled. "
+                ]
+            }
+        },
+        {
+            "PAN-257624": {
+                "info": [
+                    " Fixed an issue where the firewall web interface was blank after logging in. "
+                ]
+            }
+        },
+        {
+            "PAN-256738": {
+                "info": [
+                    " (VM-Series firewalls in HA configurations only) Fixed an issue where BGP routes from the active firewall were lost when the passive firewall was rebooted. "
+                ]
+            }
+        },
+        {
+            "PAN-255868": {
+                "info": [
+                    " (PA-3400 Series firewalls only) Fixed an issue where the firewall entered maintenance mode after enabling kernel data collection during the silent reboot. "
+                ]
+            }
+        },
+        {
+            "PAN-254826": {
+                "info": [
+                    " Fixed an issue where the firewall stopped responding when processing traffic. "
+                ]
+            }
+        },
+        {
+            "PAN-254524": {
+                "info": [
+                    " Fixed an issue on Panorama where, when the Commit and Push button was clicked during a selective Commit and Push operation, the window stopped responding, which caused the operation to be delayed. "
+                ]
+            }
+        },
+        {
+            "PAN-253584": {
+                "info": [
+                    " Fixed an issue fixed where a process unexpectedly stopped due to a memory mapping in an incorrect location. "
+                ]
+            }
+        },
+        {
+            "PAN-253546": {
+                "info": [
+                    " Fixed an issue where a TLS client hello was split into multiple packets and arrived out of order, so the packets were dropped and the session terminated. "
+                ]
+            }
+        },
+        {
+            "PAN-251047": {
+                "info": [
+                    " Fixed an issue where the useridd process logs were flooded with an error message related to service profiles. "
+                ]
+            }
+        },
+        {
+            "PAN-250686": {
+                "info": [
+                    " Fixed an issue where selective push operations did not work when more than one admin user simultaneously performed changes and partial commits on Panorama. "
+                ]
+            }
+        },
+        {
+            "PAN-250083": {
+                "info": [
+                    " Fixed an issue on firewalls in HA configurations where packets were dropped over HA3 HSCI due to the default MRU being incorrect. "
+                ]
+            }
+        },
+        {
+            "PAN-250062": {
+                "info": [
+                    " Fixed an issue where device telemetry failed after upgrading due to bundle generation failure. "
+                ]
+            }
+        },
+        {
+            "PAN-249814": {
+                "info": [
+                    " Fixed an issue where multiple all_task processes stopped responding, which caused the dataplane to fail. "
+                ]
+            }
+        },
+        {
+            "PAN-249292": {
+                "info": [
+                    " (VM-Series firewalls on Microsoft Azure environments only) Fixed an issue where CPU usage was higher than expected after a hotplug event when Accelerated Networking was enabled for the management interface. "
+                ]
+            }
+        },
+        {
+            "PAN-248975": {
+                "info": [
+                    " Fixed an issue on the Panorama web interface where no content was displayed after logging in. "
+                ]
+            }
+        },
+        {
+            "PAN-247496": {
+                "info": [
+                    " Fixed an issue where the snmpd process stopped responding. "
+                ]
+            }
+        },
+        {
+            "PAN-247099": {
+                "info": [
+                    " Fixed an issue where the firewall decrypted traffic unexpectedly when the client hello was spread across multiple packets. "
+                ]
+            }
+        },
+        {
+            "PAN-246772": {
+                "info": [
+                    " Fixed an issue on the firewall where the dataplane went down due to a path monitor failure caused by an out-of-memory (OOM) condition related to the pan_task process. "
+                ]
+            }
+        },
+        {
+            "PAN-246431": {
+                "info": [
+                    " Fixed an issue where a Push to Device operation remained at the state None when performing a selective push to device groups and templates that included both connected and disconnected firewalls. "
+                ]
+            }
+        },
+        {
+            "PAN-244907": {
+                "info": [
+                    " (PA-3400, PA-5400, and PA-1400 Series firewalls only) Fixed an issue where virtual wire ports did not go down when moving from an active state to a suspended state. "
+                ]
+            }
+        },
+        {
+            "PAN-244746": {
+                "info": [
+                    " Fixed an issue where changes committed on Panorama were not reflected on the firewall after a successful push. "
+                ]
+            }
+        },
+        {
+            "PAN-243814": {
+                "info": [
+                    " Fixed an issue related to continuous interface flapping. "
+                ]
+            }
+        },
+        {
+            "PAN-243333": {
+                "info": [
+                    " Fixed an issue where selective push operations failed with the following error message SelPush:Base config is invalid! invalid configuration. Schema verification failed. This occurred when a policy rule was moved from the post-rule base to the pre-rule base. "
+                ]
+            }
+        },
+        {
+            "PAN-243240": {
+                "info": [
+                    " Fixed an issue where the using QoS caused packet buffer utilization to increase exponentially and the PKI POOL DFLT pool depleted until a reboot was performed. "
+                ]
+            }
+        },
+        {
+            "PAN-241022": {
+                "info": [
+                    " Fixed an issue where rib-out routes were not displayed due to the next hop of BGP local routes not getting matched with export filters. "
+                ]
+            }
+        },
+        {
+            "PAN-241018": {
+                "info": [
+                    " (VM-Series firewalls in Microsoft Azure environments only) Fixed a Dataplane Development Kit (DPDK) issue where interfaces remained in a link-down stage after an Azure hot plug event. "
+                ]
+            }
+        },
+        {
+            "PAN-239256": {
+                "info": [
+                    " Fixed an issue where ARP entries were unable to be completed for subinterfaces with SNAT configured. "
+                ]
+            }
+        },
+        {
+            "PAN-224195": {
+                "info": [
+                    " Fixed an issue where Authentication Portal redirects failed with a 500 Internal error when the Authentication Portal token was disabled. "
+                ]
+            }
+        },
+        {
+            "PAN-223418": {
+                "info": [
+                    " Fixed an issue where heartbeats to the brdagent process were lost and the process stopped responding, which caused the firewall to reboot. "
+                ]
+            }
+        },
+        {
+            "PAN-217198": {
+                "info": [
+                    " Fixed an issue where Security policy rules did not display values for FQDN. "
+                ]
+            }
+        },
+        {
+            "PAN-214177": {
+                "info": [
+                    " Fixed an issue where template configurations were not properly pushed to the firewall during an export or push of the device configuration bundle. "
+                ]
+            }
+        },
+        {
+            "PAN-164885": {
+                "info": [
+                    " Fixed an issue on Panorama where Commit and Push or Push to Devices operations failed when an external dynamic list was configured to check for updates every 5 minutes due to the commit and external dynamic fetch processes overlapping. "
+                ]
+            }
+        }
+    ]
+}

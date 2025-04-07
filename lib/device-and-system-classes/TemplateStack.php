@@ -36,6 +36,7 @@ class TemplateStack
 
     /** @var DOMElement */
     public $devicesRoot;
+    public $userGroupSourceRoot;
 
     public $xmlroot = null;
 
@@ -99,6 +100,21 @@ class TemplateStack
                 {
                     $managedFirewall->addTemplateStack($this->name);
                     $managedFirewall->addReference( $this );
+                }
+            }
+        }
+
+        $this->userGroupSourceRoot = DH::findFirstElement('user-group-source', $xml);
+        if( $this->userGroupSourceRoot !== false )
+        {
+            $master_devide_node = DH::findFirstElement('master-device', $this->userGroupSourceRoot);
+            if( $master_devide_node !== FALSE )
+            {
+                $device_node = DH::findFirstElement('device', $master_devide_node);
+                if( $device_node !== FALSE )
+                {
+                    $serial = $device_node->textContent;
+                    //Todo: is there a need to set a references??? already done above
                 }
             }
         }
@@ -255,12 +271,26 @@ class TemplateStack
     }
 
 
-    public function removeDevice( $serial )
+    public function removeDevice( $serial, $debug = false )
     {
         if( isset( $this->FirewallsSerials[$serial] ) )
         {
             unset( $this->FirewallsSerials[$serial] );
             //missing XML manipulation
+
+            $user_group_source_node = DH::findFirstElement("user-group-source", $this->xmlroot);
+            if( $user_group_source_node !== false )
+            {
+                if( $debug )
+                    DH::DEBUGprintDOMDocument($user_group_source_node);
+                $master_device_node = DH::findFirstElement("master-device", $user_group_source_node);
+                if($master_device_node !== false)
+                {
+                    $device_node = DH::findFirstElement("device", $master_device_node);
+                    if($device_node->textContent == $serial)
+                        DH::removeChild( $user_group_source_node, $master_device_node );
+                }
+            }
 
             if( $this->devicesRoot !== FALSE )
             {
@@ -271,12 +301,25 @@ class TemplateStack
 
                     if( $devname === $serial )
                     {
-                        DH::removeChild( $this->devicesRoot, $device );
+                        if( count($this->FirewallsSerials) > 0 )
+                            DH::removeChild( $this->devicesRoot, $device );
+                        else
+                            DH::clearDomNodeChilds($this->devicesRoot);
                         return true;
                     }
                 }
             }
         }
+
+        return null;
+    }
+
+    public function removeDeviceAny( )
+    {
+        $this->FirewallsSerials = array();
+
+        if( $this->devicesRoot !== FALSE )
+            $this->devicesRoot->parentNode->removeChild( $this->devicesRoot );
 
         return null;
     }

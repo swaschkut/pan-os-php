@@ -1,0 +1,124 @@
+{
+    "10-2-8-h18": [
+        [],
+        {
+            "PAN-273215": {
+                "info": [
+                    " Fixed an issue where a syntax error in the index generation script caused a high management plane CPU load after upgrading. "
+                ]
+            }
+        },
+        {
+            "PAN-272809": {
+                "info": [
+                    " A fix was made to address CVE-2024-0012 (PAN-SA-2024-0015) and CVE-2024-9474. "
+                ]
+            }
+        },
+        {
+            "PAN-269624": {
+                "info": [
+                    " Fixed an issue where GlobalProtect clients failed to connect with the error message The device or feature requires a GlobalProtect subscription license. "
+                ]
+            }
+        },
+        {
+            "PAN-268909": {
+                "info": [
+                    " Fixed an issue where IP address tags were removed from firewalls after a management server or useridd process restart. This occurred when a Panorama serial-number based configuration was used for User-ID redistribution. "
+                ]
+            }
+        },
+        {
+            "PAN-264249": {
+                "info": [
+                    " Fixed an issue on the firewall where SNMP queries timed out when using SNMP. "
+                ]
+            }
+        },
+        {
+            "PAN-263973": {
+                "info": [
+                    " Fixed an issue where log collectors had a low incoming log rate. "
+                ]
+            }
+        },
+        {
+            "PAN-261673": {
+                "info": [
+                    " (VM-Series firewalls on Microsoft Azure environments only) Fixed an issue where, when Accelerated Networking was enabled, traffic was dropped because of the flow_parse_ip_hdr counter related to an Nvidia driver issue. "
+                ]
+            }
+        },
+        {
+            "PAN-257601": {
+                "info": [
+                    " (PA-5450 firewalls only) Fixed an issue where Networking Cards (NC) experienced an internal link fault which caused path monitoring failure on the Dataplane Processing Card (DPC). "
+                ]
+            }
+        },
+        {
+            "PAN-252974": {
+                "info": [
+                    " (PA-450 firewalls only) Fixed an issue where specific routes were not advertised when BGP Aggregate was configured with the advertise filter. "
+                ]
+            }
+        },
+        {
+            "PAN-246699": {
+                "info": [
+                    " Fixed an issue on Panorama where Rule Usage and Apps Seen under Security policy rules stopped incrementing. "
+                ]
+            }
+        },
+        {
+            "PAN-246420": {
+                "info": [
+                    " (PA-5450 Series firewalls only) Fixed an issue where the firewall rebooted unexpectedly during an upgrade. "
+                ]
+            }
+        },
+        {
+            "PAN-244950 and PAN-221352": {
+                "info": [
+                    " A fix was made to address CVE-2024-2550. "
+                ]
+            }
+        },
+        {
+            "PAN-240251": {
+                "info": [
+                    " Fixed an issue where the vldmgr process incorrectly restarted during an Elasticsearch restart. "
+                ]
+            }
+        },
+        {
+            "PAN-230825": {
+                "info": [
+                    " Fixed an issue where link flaps occurred on Panorama appliances in high availability (HA) configurations. "
+                ]
+            }
+        },
+        {
+            "PAN-228515": {
+                "info": [
+                    " Fixed an issue where the Elasticsearch cluster health status displayed as yellow or red due to Elasticsearch SSH tunnel flaps. "
+                ]
+            }
+        },
+        {
+            "PAN-222579": {
+                "info": [
+                    " Fixed an issue where the useridd and distd process restarted, which resulted in missing mappings. "
+                ]
+            }
+        },
+        {
+            "PAN-216941": {
+                "info": [
+                    " (Panorama appliances in Log Collector mode only) Fixed an issue where Panorama stopped processing and saving logs. "
+                ]
+            }
+        }
+    ]
+}

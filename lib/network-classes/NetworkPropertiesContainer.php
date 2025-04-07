@@ -100,13 +100,13 @@ class NetworkPropertiesContainer
         $xmlInterface = DH::findFirstElement('interface', $this->xmlroot);
         if( $xmlInterface !== FALSE )
         {
-            $tmp = DH::findFirstElement('ethernet', $xmlInterface);
-            if( $tmp !== FALSE )
-                $this->ethernetIfStore->load_from_domxml($tmp);
-
             $tmp = DH::findFirstElement('aggregate-ethernet', $xmlInterface);
             if( $tmp !== FALSE )
                 $this->aggregateEthernetIfStore->load_from_domxml($tmp);
+
+            $tmp = DH::findFirstElement('ethernet', $xmlInterface);
+            if( $tmp !== FALSE )
+                $this->ethernetIfStore->load_from_domxml($tmp);
 
             $tmp = DH::findFirstElement('loopback', $xmlInterface);
             if( $tmp !== FALSE )
@@ -257,7 +257,8 @@ class NetworkPropertiesContainer
                         $staticRoute->validateIPorObject($staticRouteNextHop, 'nexthop');
                 }
 
-                $router->load_from_domxml($router->xmlroot);
+                //Todo: why are static routes added twice
+                #$router->load_from_domxml($router->xmlroot);
             }
         }
 

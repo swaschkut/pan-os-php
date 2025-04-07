@@ -1,0 +1,47 @@
+{
+    "10-1-13-h5": [
+        [],
+        {
+            "PAN-272809": {
+                "info": [
+                    " A fix was made to address CVE-2024-9474. "
+                ]
+            }
+        },
+        {
+            "PAN-262340": {
+                "info": [
+                    " Fixed an issue where FQDN resolution failed for address objects, and all FQDN traffic was denied by the interzone-default policy rule. "
+                ]
+            }
+        },
+        {
+            "PAN-262287": {
+                "info": [
+                    " Fixed an issue where dereferencing a NULL pointer that occurred caused pan_task processes to stop responding. "
+                ]
+            }
+        },
+        {
+            "PAN-260842": {
+                "info": [
+                    " A CLI command was introduced to address an issue where TCP packets were out of order. "
+                ]
+            }
+        },
+        {
+            "PAN-230755": {
+                "info": [
+                    " Fixed an issue where the devsrvr process intermittently restarted when processing traffic with a Cloud App ID. "
+                ]
+            }
+        },
+        {
+            "PAN-216368": {
+                "info": [
+                    " Fixed an issue where the configuration commit process on chassis based platforms did not recognize load failures on the dataplane. "
+                ]
+            }
+        }
+    ]
+}

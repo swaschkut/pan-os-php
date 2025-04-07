@@ -33,6 +33,7 @@ class EthernetInterface
     /** @var EthernetIfStore */
     public $owner;
 
+    protected $classn = null;
 
     /** @var string */
     public $type = 'tmp';
@@ -60,6 +61,8 @@ class EthernetInterface
 
     protected $linkstate = "auto";
 
+    public static $childn = 'EthernetInterface';
+
     static public $supportedTypes = array('layer3', 'layer2', 'virtual-wire', 'tap', 'ha', 'aggregate-group', 'log-card', 'decrypt-mirror', 'empty');
 
     /**
@@ -70,6 +73,7 @@ class EthernetInterface
     {
         $this->name = $name;
         $this->owner = $owner;
+        $this->classn = &self::$childn;
     }
 
     /**
@@ -210,7 +214,13 @@ class EthernetInterface
         if( $this->type == 'aggregate-group' )
         {
             $this->ae = $this->typeRoot->textContent;
-            //print "AE: ".$this->ae."\n";
+            #print "Interface: ".$this->name()."\n";
+            #print "AE: ".$this->ae."\n";
+
+            /** @var  AggregateEthernetInterface $aeInterface */
+            $aeInterface = $this->owner->owner->network->aggregateEthernetIfStore->find($this->ae);
+            if( $aeInterface != NULL )
+                $aeInterface->addReference($this);
         }
 
 
@@ -228,7 +238,8 @@ class EthernetInterface
                     if( $unitsNode->nodeType != 1 )
                         continue;
 
-                    $newInterface = new EthernetInterface('tmp', $this->owner);
+                    #$newInterface = new EthernetInterface('tmp', $this->owner);
+                    $newInterface = new $this->classn('tmp', $this->owner);
                     $newInterface->isSubInterface = TRUE;
                     $newInterface->parentInterface = $this;
                     $newInterface->type = &$this->type;
@@ -475,6 +486,13 @@ class EthernetInterface
 
         $aeNode = DH::findFirstElement('aggregate-group', $this->xmlroot);
         DH::setDomNodeText($aeNode, $ae);
+
+        if( isset($this->owner) && $this->owner != null )
+        {
+            $aeInterface = $this->owner->owner->network->aggregateEthernetIfStore->find($ae);
+            if( $aeInterface !== null )
+                $aeInterface->addReference($this);
+        }
 
         return TRUE;
     }
@@ -740,7 +758,8 @@ class EthernetInterface
         else
             $xmlElement = DH::importXmlStringOrDie($this->owner->owner->xmlroot->ownerDocument, EthernetInterface::$templatexmlsub);
 
-        $newInterface = new EthernetInterface('tmp', $this->owner);
+        #$newInterface = new EthernetInterface('tmp', $this->owner);
+        $newInterface = new $this->classn('tmp', $this->owner);
         $newInterface->isSubInterface = TRUE;
         $newInterface->parentInterface = $this;
         $newInterface->type = &$this->type;
@@ -877,6 +896,10 @@ class EthernetInterface
                     }
                     $item->setAttribute('name', $h->name());
                 }
+            }
+            elseif( get_class( $h ) == "AggregateEthernetInterface" )
+            {
+                $this->setAE($h->name());
             }
 
             return;

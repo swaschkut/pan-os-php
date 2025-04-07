@@ -1,0 +1,138 @@
+{
+    "10-2-4-h3": [
+        [],
+        {
+            "PAN-222035": {
+                "info": [
+                    " Fixed an issue where when multiple portals were configured in Prisma Access deployments, CIE SAML authentication failed on the secondary portal. "
+                ]
+            }
+        },
+        {
+            "PAN-221068": {
+                "info": [
+                    " Fixed an issue where the firewall restarted after a failed push from Panorama, which resulted in autocommit failures. "
+                ]
+            }
+        },
+        {
+            "PAN-219355": {
+                "info": [
+                    " Fixed an issue where disk space became full due to a GPSVC FD leak. "
+                ]
+            }
+        },
+        {
+            "PAN-219333": {
+                "info": [
+                    " Fixed an issue where a secondary Prisma Access Portal address with port 8443 did not work. "
+                ]
+            }
+        },
+        {
+            "PAN-218620": {
+                "info": [
+                    " Fixed an issue where scheduled configuration exports and SCP server connection testing failed. "
+                ]
+            }
+        },
+        {
+            "PAN-218368": {
+                "info": [
+                    " Fixed an issue with incorrect VLAN tagging on Intel based platforms that occurred when opening a response page from a virtual-wire subinterface. "
+                ]
+            }
+        },
+        {
+            "PAN-218340": {
+                "info": [
+                    " Fixed a memory leak issue related to the configd process that affected selective pushes on Panorama. "
+                ]
+            }
+        },
+        {
+            "PAN-218267": {
+                "info": [
+                    " Fixed an issue where a partial commit and push operation from Panorama to managed firewalls did not work as expected. "
+                ]
+            }
+        },
+        {
+            "PAN-218046": {
+                "info": [
+                    " Fixed an issue where the Virtual Routers (NetworkVirtual Routers) setting was not available when configuring a custom admin role DeviceAdmin Roles. "
+                ]
+            }
+        },
+        {
+            "PAN-217053": {
+                "info": [
+                    " Fixed an issue where the configd process stopped responding after a selective push to multiple device groups failed. "
+                ]
+            }
+        },
+        {
+            "PAN-215899": {
+                "info": [
+                    " Fixed an issue with Panorama appliances in high availability (HA) configurations where configuration synchronization between the HA peers failed. "
+                ]
+            }
+        },
+        {
+            "PAN-215767": {
+                "info": [
+                    " Fixed an issue where, after a high availability failover, IKE SA negotiation failed with the error message INVALID_SPI, which resulted in temporary loss of traffic over some proxy IDs. "
+                ]
+            }
+        },
+        {
+            "PAN-215324": {
+                "info": [
+                    "(PA-5400 Series firewalls with Jumbo Frames enabled only) Fixed an issue with CPU throttling and buffer depletion."
+                ]
+            }
+        },
+        {
+            "PAN-215315": {
+                "info": [
+                    " Fixed an issue where the dataplane stopped responding due to ager and inline packet processing occurring concurrently on different cores for the same session. "
+                ]
+            }
+        },
+        {
+            "PAN-214463": {
+                "info": [
+                    " Fixed an issue where IKE rekey negotiation failed with a third-party vendor and the firewall acting as the initiator received a response with the VENDOR_ID payload and the error message unexpected critical payload (type 43). "
+                ]
+            }
+        },
+        {
+            "PAN-213973": {
+                "info": [
+                    " Fixed an issue where the authd process stopped responding during a cleanup of authentication server context. "
+                ]
+            }
+        },
+        {
+            "PAN-212978": {
+                "info": [
+                    " Fixed an issue where the firewall stopped responding when executing an SD-WAN configuration or operational CLI command. "
+                ]
+            }
+        },
+        {
+            "PAN-210366": {
+                "info": [
+                    " Fixed an issue where deleting a device group when a selective configuration push was in progress caused the configd process to stop responding. "
+                ]
+            }
+        },
+        {
+            "PAN-208240": {
+                "info": [
+                    " Fixed an issue where, when attempting to replace an existing certificate, importing a new certificate with the same name as the existing certificate failed due to mismatched public and private keys. "
+                ]
+            }
+        }
+    ]
+}

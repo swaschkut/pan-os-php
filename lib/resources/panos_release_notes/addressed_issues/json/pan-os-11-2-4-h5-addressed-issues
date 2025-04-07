@@ -1,0 +1,54 @@
+{
+    "11-2-4-h5": [
+        [],
+        {
+            "PAN-279604": {
+                "info": [
+                    " Fixed an issue where scheduled SaaS application usage reports were generated incorrectly, and the login page was displayed instead of the report content. "
+                ]
+            }
+        },
+        {
+            "PAN-276177": {
+                "info": [
+                    " Fixed an issue where App Acceleration did not work with Oracle databases. "
+                ]
+            }
+        },
+        {
+            "PAN-274791": {
+                "info": [
+                    " Fixed an issue where the firewall rebooted when Shared Pool Type 32 was depleted and traffic matched advanced features. "
+                ]
+            }
+        },
+        {
+            "PAN-269499": {
+                "info": [
+                    " Fixed an issue where the firewall stopped responding when receiving a high number of logs. "
+                ]
+            }
+        },
+        {
+            "PAN-252224": {
+                "info": [
+                    " Fixed an issue where Panorama did not forward logs to a syslog server over an SSL connection using CRL as a revocation verification method. "
+                ]
+            }
+        },
+        {
+            "PAN-234082": {
+                "info": [
+                    " (Panorama virtual appliances only) Fixed an issue where Saas reports were generated with a report period of 0 days. "
+                ]
+            }
+        },
+        {
+            "PAN-216054": {
+                "info": [
+                    " Fixed an issue that caused the firewall's fan speed to increase while it was idle. "
+                ]
+            }
+        }
+    ]
+}

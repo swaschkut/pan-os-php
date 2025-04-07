@@ -1,0 +1,271 @@
+{
+    "10-2-2": [
+        [],
+        {
+            "PAN-231823": {
+                "info": [
+                    " A fix was made to address CVE-2024-5916. "
+                ]
+            }
+        },
+        {
+            "PAN-193579": {
+                "info": [
+                    "Fixed an issue where new logs viewed from the CLI (show log <log_type>) and new syslogs forwarded to a syslog server contained additional, erroneous entries."
+                ]
+            }
+        },
+        {
+            "PAN-192930": {
+                "info": [
+                    "Fixed an issue where, when the default port was not TCP\/443, implicitly used SSL applications were blocked by the Security policy as an SSL application and did not shift to the correct application."
+                ]
+            }
+        },
+        {
+            "PAN-192880": {
+                "info": [
+                    "Fixed an issue where, when the firewall was configured for jumbo frames, an internal interface was not set with the correct MTU, which caused byte frames larger than 1500 to be dropped when a DF bit was set."
+                ]
+            }
+        },
+        {
+            "PAN-192725": {
+                "info": [
+                    "Fixed an issue where the firewall failed to forward logs to Panorama when configured with IPv6 addressing only."
+                ]
+            }
+        },
+        {
+            "PAN-192089": {
+                "info": [
+                    "Fixed an issue on the web interface where the IPSec tunnel did not gray out after disabling it."
+                ]
+            }
+        },
+        {
+            "PAN-191629": {
+                "info": [
+                    "(PA-5450 firewalls only) Fixed an issue where the hourly summary log was limited to 100,001 lines when summarized, which resulted in inconsistent report results when using summary logs."
+                ]
+            }
+        },
+        {
+            "PAN-191513": {
+                "info": [
+                    "Fixed an issue on multi-vsys firewalls where the DLP cloud service continued to exclude an application added to a shared application group (ObjectsApplication Filters) from non-file traffic inspection. This issue occurred when the application was removed from the application group or filter that was added to the App Exclusion List (ObjectsDLPData Filtering Profiles)."
+                ]
+            }
+        },
+        {
+            "PAN-191470": {
+                "info": [
+                    "Fixed an issue on Panorama where encrypted passwords were sent to firewalls on PAN-OS 10.1 releases during a multi-device group push, which caused client-based External Dynamic Lists (EDL) to fail."
+                ]
+            }
+        },
+        {
+            "PAN-191466": {
+                "info": [
+                    "Fixed an issue where you were unable to use the web interface to override IPsec tunnels pushed from Panorama"
+                ]
+            }
+        },
+        {
+            "PAN-191288": {
+                "info": [
+                    "Fixed an issue where the firewall restarted due to a dnsproxy process crash."
+                ]
+            }
+        },
+        {
+            "PAN-190811": {
+                "info": [
+                    "(PA-5450 firewalls only) Fixed an issue where logs were forwarded through the management interface instead of the configured log interface to be used for forwarding."
+                ]
+            }
+        },
+        {
+            "PAN-190675": {
+                "info": [
+                    "Fixed an IoT cloud connectivity issue with the firewall dataplane when the Data Services service route was used and the egress interface had VLAN tagging."
+                ]
+            }
+        },
+        {
+            "PAN-190492": {
+                "info": [
+                    "Fixed an issue where the Panorama log collector group level SSH settings were not migrated to the new format when upgrading from a PAN-OS 9.1 release to a PAN-OS 10.0 release."
+                ]
+            }
+        },
+        {
+            "PAN-189429": {
+                "info": [
+                    "Fixed a memory leak that occurred when enabling XFF (x-forwarded-for) logging in a Security policy."
+                ]
+            }
+        },
+        {
+            "PAN-189395": {
+                "info": [
+                    "(PA-400 Series firewalls only) Fixed an issue where running a PAN-OS 10.2 release caused dataplane processes to restart unexpectedly."
+                ]
+            }
+        },
+        {
+            "PAN-189010": {
+                "info": [
+                    "Fixed an issue on Panorama where a deadlock in the configd process caused both the web interface and the CLI to be inaccessible."
+                ]
+            }
+        },
+        {
+            "PAN-188872": {
+                "info": [
+                    "Fixed an OOM condition caused by a memory leak issue on the useridd process."
+                ]
+            }
+        },
+        {
+            "PAN-188833": {
+                "info": [
+                    "Fixed an issue where shared address objects used as a source or destination in policies were cloned but not freed back after configuration commits."
+                ]
+            }
+        },
+        {
+            "PAN-188097": {
+                "info": [
+                    "Fixed an issue where the firewall stopped allocating new sessions with increments in the counter session_alloc_failure. This was caused by GPRS tunneling protocol (GTP-U) tunnel session aging processing issue."
+                ]
+            }
+        },
+        {
+            "PAN-187558": {
+                "info": [
+                    "Fixed an issue where the following error message flooded the system log: Incremental update to DP failed."
+                ]
+            }
+        },
+        {
+            "PAN-187429": {
+                "info": [
+                    "(PA-3400 Series firewalls and PA-5410, PA-5420, and PA-5430 firewalls only) Fixed an issue where the CLI and SNMP MIB walk did not display the model and serial number of the fan tray and PSUs."
+                ]
+            }
+        },
+        {
+            "PAN-187151": {
+                "info": [
+                    "Fixed an issue where tunnel-monitoring interface was incorrectly shown as up instead of down."
+                ]
+            }
+        },
+        {
+            "PAN-186913": {
+                "info": [
+                    "Fixed an issue on Panorama where Validate Device Group (CommitCommit and Push) incorrectly issued a commit all operation instead of a validate all operation. This issue occurred when multiple device groups were included in the push. "
+                ]
+            }
+        },
+        {
+            "PAN-186750": {
+                "info": [
+                    "Fixed an issue where, after upgrading to a PAN-OS 10.1 release, SaaS reports generated on Panorama did not display Applications at a glance and most charts were missing data on the right side of the chart."
+                ]
+            }
+        },
+        {
+            "PAN-185844": {
+                "info": [
+                    "Fixed an issue where Decryption Log entries were associated with the wrong Security policy rule."
+                ]
+            }
+        },
+        {
+            "PAN-185558": {
+                "info": [
+                    "Fixed an issue where Panorama log migration failed when old logs migrated to a newer format. This was due to older indices failing to close."
+                ]
+            }
+        },
+        {
+            "PAN-184474": {
+                "info": [
+                    "Fixed an issue where, when the firewall had Advanced Routing enabled, a static route remained active after an interface went down."
+                ]
+            }
+        },
+        {
+            "PAN-183579": {
+                "info": [
+                    "Fixed an issue where SD-WAN path monitoring failed over the interface directly connected to the ISP due to an unsupported ICMP probe format."
+                ]
+            }
+        },
+        {
+            "PAN-183319": {
+                "info": [
+                    "Fixed an issue on Panorama where commits remained at 99% due to multiple firewalls sending out CSR singing requests every 10 minutes."
+                ]
+            }
+        },
+        {
+            "PAN-182087": {
+                "info": [
+                    "Fixed an issue where commit failures occurred due to validity checks performed against self-signing certificates not evaluating Authentication Key Identifier and Subject Key Identifier fields were present."
+                ]
+            }
+        },
+        {
+            "PAN-180396": {
+                "info": [
+                    "Fixed an issue where Panorama displayed an error when generating a ticket to disable GlobalProtect for Prisma Access."
+                ]
+            }
+        },
+        {
+            "PAN-180147": {
+                "info": [
+                    "Fixed an issue where the bcm.log and brdagent_stdout.log-<datestamp> files filled up the root disk space."
+                ]
+            }
+        },
+        {
+            "PAN-178450": {
+                "info": [
+                    "Fixed an issue where icons weren't displayed for clientless VPN applications."
+                ]
+            }
+        },
+        {
+            "PAN-177671": {
+                "info": [
+                    "Fixed an issue where, when SIP traffic traversing the firewall was sent with a high Quality of Service (QoS) differentiated service code (DSCP) value, the DSCP value was reset to the default setting (CS0) for the first data packet."
+                ]
+            }
+        },
+        {
+            "PAN-177455": {
+                "info": [
+                    "(PA-7000 Series firewalls with HA clustering enabled and using HA4 communication links only) Fixed an issue where loading PAN-OS 10.2.0 on the firewall caused the PA-7000 100G NPC (Network Processing Card) to go offline. As a result, the firewall failed to boot normally and entered maintenance."
+                ]
+            }
+        },
+        {
+            "PAN-176156": {
+                "info": [
+                    " Fixed an issue where executing the show running resource-monitor with the ingress-backlogs option enabled displayed the error message `Dataplane is not up or invalid target-dp(*.dp*)`. "
+                ]
+            }
+        },
+        {
+            "PAN-174345": {
+                "info": [
+                    "Fixed an issue where a process all_pktproc stopped responding after upgrading the firewall."
+                ]
+            }
+        }
+    ]
+}

@@ -2757,13 +2757,20 @@ RuleCallContext::$supportedActions[] = array(
             return;
         }
 
+        $secprofgroupName = $context->arguments['profName'];
+        $secprofgroupObject = $rule->owner->owner->securityProfileGroupStore->find( $secprofgroupName );
+        if( $secprofgroupObject === null )
+        {
+            derr( "SecurityProfileGroup: '".$secprofgroupName."' not available in this configuration", null, False );
+        }
+
         if( $context->isAPI )
             if( $rule->isDefaultSecurityRule() )
                 $rule->API_sync();
             else
-                $rule->API_setSecurityProfileGroup($context->arguments['profName']);
+                $rule->API_setSecurityProfileGroup($secprofgroupName);
         else
-            $rule->setSecurityProfileGroup($context->arguments['profName']);
+            $rule->setSecurityProfileGroup($secprofgroupName);
     },
     'args' => array('profName' => array('type' => 'string', 'default' => '*nodefault*'))
 );
@@ -3951,7 +3958,7 @@ RuleCallContext::$supportedActions[] = array(
         }
     },
     'GlobalFinishFunction' => function (RuleCallContext $context) {
-        if( $context->object->owner->owner->version > 80 && !$context->object->owner->owner->isFirewall() && $context->arguments['accept63characters'] )
+        if( isset($context->object->owner->owner) && $context->object->owner->owner->version > 80 && !$context->object->owner->owner->isFirewall() && $context->arguments['accept63characters'] )
         {
             $string = PH::boldText("Panorama PAN-OS version 8.1 allow rule name >31 and <63 characters.\n" .
                 "Please be aware that there is no validation available if DeviceGroup is connected to a firewall running PAN-OS <8.1.\n" .

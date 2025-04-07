@@ -1,0 +1,159 @@
+{
+    "10-2-7": [
+        [],
+        {
+            "PAN-236605": {
+                "info": [
+                    "Fixed an issue where the configd process stopped responding due to a deadlock related to rule-hit-count. "
+                ]
+            }
+        },
+        {
+            "PAN-232800": {
+                "info": [
+                    " Fixed an issue where critical disk usage for \/opt\/pancfg increased continuously and the system logs displayed the following message: Disk usage for \/opt\/pancfg exceeds limit, <value> percent in use. "
+                ]
+            }
+        },
+        {
+            "PAN-232132": {
+                "info": [
+                    " Fixed an issue where DNS response packets were malformed when an Anti-Spyware Security Profile was enabled. "
+                ]
+            }
+        },
+        {
+            "PAN-232059": {
+                "info": [
+                    "Fixed an issue with memory management when processing large certificates using TLSv1.3. "
+                ]
+            }
+        },
+        {
+            "PAN-231823": {
+                "info": [
+                    " A fix was made to address CVE-2024-5916. "
+                ]
+            }
+        },
+        {
+            "PAN-231043": {
+                "info": [
+                    " Fixed an issue where websites were not able to be opened via GlobalProtect with SSL-VPN when software cut through was enabled. "
+                ]
+            }
+        },
+        {
+            "PAN-229691": {
+                "info": [
+                    "Fixed an issue on Panorama where configuration lock timeout errors were observed during normal operational commands by increasing thread stack size on Panorama. "
+                ]
+            }
+        },
+        {
+            "PAN-228998": {
+                "info": [
+                    " Fixed an issue where multiple license status checks caused an internal process to stop responding. "
+                ]
+            }
+        },
+        {
+            "PAN-228877": {
+                "info": [
+                    "(PA-7050 firewalls only) Fixed an issue with OOM conditions that caused slot restarts due to pan_cmd consuming more than 300 MB. "
+                ]
+            }
+        },
+        {
+            "PAN-227539": {
+                "info": [
+                    " Fixed an issue where excess WIF process memory use caused processes to restart due to OOM conditions. "
+                ]
+            }
+        },
+        {
+            "PAN-227368": {
+                "info": [
+                    " Fixed an issue where the GlobalProtect app was unable to connect to a portal or gateway and GlobalProtect Clientless VPN users were unable to access applications if authentication took more than 20 seconds. "
+                ]
+            }
+        },
+        {
+            "PAN-225337": {
+                "info": [
+                    " Fixed an issue on Panorama related to Shared configuration objects where configuration pushes to multi-vsys firewalls when authentication took longer than 20 seconds. "
+                ]
+            }
+        },
+        {
+            "PAN-224145": {
+                "info": [
+                    "Fixed an issue in multi-vsys environments where, when Panorama was on a PAN-OS 10.2 release and the firewall was on a PAN-OS 10.1 release, commits failed on the firewall when inbound inspection mode was configured in the decryption policy rule. "
+                ]
+            }
+        },
+        {
+            "PAN-223488": {
+                "info": [
+                    "Fixed an issue where closed ElasticSearch shards were not deleted, which resulted in shard purging not working as expected. "
+                ]
+            }
+        },
+        {
+            "PAN-221190": {
+                "info": [
+                    "(PA-800 Series firewalls only) Fixed an issue where the firewall rebooted due to I2C errors when unsupported optics were inserted in ports 5-8. "
+                ]
+            }
+        },
+        {
+            "PAN-221126": {
+                "info": [
+                    "Fixed an issue where Email server profiles (Device > Server Profiles > Email and Panorama > Server Profiles > Email) to forward logs as email notifications were not forwarded in a readable format. "
+                ]
+            }
+        },
+        {
+            "PAN-221015": {
+                "info": [
+                    "(M-600 Appliances only) Fixed an issue where ElasticSearch processes did not restart when the appliance was rebooted, which caused the Managed Collector ES health status to be downgraded."
+                ]
+            }
+        },
+        {
+            "PAN-218521": {
+                "info": [
+                    " (M-600 Appliances in Log Collector mode only) Fixed an issue where Panorama continuously rebooted and became unresponsive, which consumed excessive logging disk space and prevented new log ingestion. "
+                ]
+            }
+        },
+        {
+            "PAN-215268": {
+                "info": [
+                    "Fixed an issue where selective push did not work for firewalls on PAN-OS 9.1 or an earlier release. "
+                ]
+            }
+        },
+        {
+            "PAN-214186": {
+                "info": [
+                    " Fixed an issue where category length was incorrect, which caused the dataplane to restart. "
+                ]
+            }
+        },
+        {
+            "PAN-212761": {
+                "info": [
+                    "Fixed an issue where the all_pktproc process stopped responding, which caused the dataplane to go down and caused HA failover. "
+                ]
+            }
+        },
+        {
+            "PAN-193004": {
+                "info": [
+                    " Fixed an issue where \/opt\/pancfg partition utilization reached 100%, which caused access to the Panorama web interface to fail. "
+                ]
+            }
+        }
+    ]
+}

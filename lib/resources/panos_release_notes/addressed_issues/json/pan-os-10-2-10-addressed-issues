@@ -1,0 +1,369 @@
+{
+    "10-2-10": [
+        [],
+        {
+            "PAN-257197": {
+                "info": [
+                    "Fixed an issue where ifType and ifSpeed were not populated in asynchronous mode of SNMP operations. "
+                ]
+            }
+        },
+        {
+            "PAN-256181": {
+                "info": [
+                    "Fixed an issue where the management interface and front panel port interface statistics were not populated in asynchronous mode of SNMP operations. "
+                ]
+            }
+        },
+        {
+            "PAN-255868": {
+                "info": [
+                    "(PA-3400 Series firewalls only) Fixed an issue where the firewall entered maintenance mode after enabling kernel data collection during the silent reboot. "
+                ]
+            }
+        },
+        {
+            "PAN-255396": {
+                "info": [
+                    "Fixed an issue where, when using serial number and IP address authentication, and multiple gateways were configured, the portal returned the last gateway in the list and disregarded the satellite assignment by serial number. "
+                ]
+            }
+        },
+        {
+            "PAN-253546": {
+                "info": [
+                    " Fixed an issue where a TLS client hello was split into multiple packets and arrived out of order, so the packets were dropped and the session terminated. "
+                ]
+            }
+        },
+        {
+            "PAN-253317": {
+                "info": [
+                    "(VM-Series firewalls on Microsoft Azure environments only) Fixed an issue where you were unable to log in to the firewall after a private data reset. "
+                ]
+            }
+        },
+        {
+            "PAN-252730": {
+                "info": [
+                    " Fixed an issue where the Elasticsearch status for a log collector group changed to red or yellow after performing a collector group push. "
+                ]
+            }
+        },
+        {
+            "PAN-252517": {
+                "info": [
+                    "Fixed an issue where SNMP failed to respond to multiple Object Identifier (OID) queries in a single SNMP GET request. "
+                ]
+            }
+        },
+        {
+            "PAN-251895": {
+                "info": [
+                    "Fixed an issue where enabling inline Cloud Analysis features caused a slow packet buffer leak, which resulted in performance issues and dropped traffic. "
+                ]
+            }
+        },
+        {
+            "PAN-251639": {
+                "info": [
+                    " Fixed an issue where an out of memory condition might occur due to a memory leak in the varrcvr process when a Wildfire Analysis security profile is enabled. "
+                ]
+            }
+        },
+        {
+            "PAN-251563": {
+                "info": [
+                    "Added CPLD enhancement to capture external power issues. "
+                ]
+            }
+        },
+        {
+            "PAN-251013": {
+                "info": [
+                    "Fixed an issue on the web interface where the Virtual Router and Virtual System configurations for the template incorrectly showed as none. "
+                ]
+            }
+        },
+        {
+            "PAN-250083": {
+                "info": [
+                    " Fixed an issue on firewalls in HA configurations where packets were dropped over HA3 HSCI due to the default MRU being incorrect. "
+                ]
+            }
+        },
+        {
+            "PAN-250020": {
+                "info": [
+                    "Fixed an issue where MLC2 verdict retrieval failed due to a regression in loopback data flag handling. "
+                ]
+            }
+        },
+        {
+            "PAN-248130": {
+                "info": [
+                    "Fixed an issue where the AND operation under a Dynamic Address Group comparison did not work after upgrading the AWS plugin to 3.0.1. "
+                ]
+            }
+        },
+        {
+            "PAN-248105": {
+                "info": [
+                    "Fixed an issue where the GlobalProtect SSL VPN tunnel immediately disconnected due to a keep-alive timeout. "
+                ]
+            }
+        },
+        {
+            "PAN-246976": {
+                "info": [
+                    "Fixed an issue with unbalanced NAT session distribution with multidataplane firewalls when persistent-dipp was enabled. "
+                ]
+            }
+        },
+        {
+            "PAN-246960": {
+                "info": [
+                    "Fixed an issue where firewalls failed to fetch content updates from the WildFire private cloud due to an Unsupported protocol error. "
+                ]
+            }
+        },
+        {
+            "PAN-245850": {
+                "info": [
+                    "Fixed an issue on Panorama appliances in active\/passive HA configurations where the firewalls entered an HA out-of-sync status and jobs failed on the passive appliance with the error message Could not merged running config from file. "
+                ]
+            }
+        },
+        {
+            "PAN-245842": {
+                "info": [
+                    "Fixed an issue with the syn-cookie option where traffic unexpectedly stopped during packet exchange. "
+                ]
+            }
+        },
+        {
+            "PAN-245690": {
+                "info": [
+                    "Fixed an issue where the managed collectors health status on Panorama displayed as empty. "
+                ]
+            }
+        },
+        {
+            "PAN-245125": {
+                "info": [
+                    "(VM-Series firewalls in Microsoft Azure environments only) Fixed an issue where file descriptors were not closed due to invalid configurations. "
+                ]
+            }
+        },
+        {
+            "PAN-244907": {
+                "info": [
+                    "Fixed an issue where ports did not go down when moving from an active state to a suspended state. "
+                ]
+            }
+        },
+        {
+            "PAN-244746": {
+                "info": [
+                    "Fixed an issue where changes committed on Panorama were not reflected on the firewall after a successful push. "
+                ]
+            }
+        },
+        {
+            "PAN-244648": {
+                "info": [
+                    "(PA-5200 Series only) Fixed an issue where the firewall did not boot up after a factory reset, and, with FIPS mode enabled, the firewall rebooted into maintenance mode. "
+                ]
+            }
+        },
+        {
+            "PAN-244622": {
+                "info": [
+                    "Fixed an issue where FIB repush did not work with Advanced Routing enabled. "
+                ]
+            }
+        },
+        {
+            "PAN-244013": {
+                "info": [
+                    "Fixed an issue where the web interface did not display newly added antispyware signatures or Vulnerability signatures. "
+                ]
+            }
+        },
+        {
+            "PAN-243240": {
+                "info": [
+                    " Fixed an issue where the using QoS caused packet buffer utilization to increase exponentially and the PKI POOL DFLT pool depleted until a reboot was performed. "
+                ]
+            }
+        },
+        {
+            "PAN-242893": {
+                "info": [
+                    "Fixed an issue where the verdict for www.googleapis.com displayed the message not-resolved. "
+                ]
+            }
+        },
+        {
+            "PAN-242309": {
+                "info": [
+                    "Fixed an issue where a higher byte count (s2c) was observed for DNS-Base application. "
+                ]
+            }
+        },
+        {
+            "PAN-241230": {
+                "info": [
+                    "Fixed an issue where the SNMP get request status value for Panorama connections was incorrect. "
+                ]
+            }
+        },
+        {
+            "PAN-241192": {
+                "info": [
+                    " Fixed an issue where HIP reports did not match HIP objects configured with certificate check. "
+                ]
+            }
+        },
+        {
+            "PAN-240786": {
+                "info": [
+                    "Fixed an issue on firewalls in HA configurations where VXLAN sessions were allocated, but not installed or freed, which resulted in a constant high session table usage that was not synced between the firewalls. This resulted in a session count mismatch. "
+                ]
+            }
+        },
+        {
+            "PAN-240612": {
+                "info": [
+                    "Fixed a kernel panic caused by a third-party issue "
+                ]
+            }
+        },
+        {
+            "PAN-240368": {
+                "info": [
+                    "Fixed an issue where Authentication Portal redirection for HTTPS websites did not work when Enhanced Handling of SSL\/TLS Handshakes for Decrypted Traffic was enabled. "
+                ]
+            }
+        },
+        {
+            "PAN-240347": {
+                "info": [
+                    "Fixed an issue with the web interface where the Dashboard and a Device Group policy rule took longer than expected to load. "
+                ]
+            }
+        },
+        {
+            "PAN-240225": {
+                "info": [
+                    "Fixed an issue where authentication failed on web-based GlobalProtect portal. "
+                ]
+            }
+        },
+        {
+            "PAN-239662": {
+                "info": [
+                    "Fixed an issue where the NSSA default route from the firewall was not generated to advertise even though the backbone area default route was advertised during a graceful restart. "
+                ]
+            }
+        },
+        {
+            "PAN-239354": {
+                "info": [
+                    "Fixed an issue where DNS resolution was delayed when an antispyware policy rule was applied to both client to firewall and firewall to internal DNS server legs of a connection. "
+                ]
+            }
+        },
+        {
+            "PAN-238625": {
+                "info": [
+                    "Fixed an issue where, when the physical interface went down, the SD-WAN Ethernet connection state still showed UP\/path-monitor due to the Active URL SaaS monitor connection state remaining UP\/path-monitor. "
+                ]
+            }
+        },
+        {
+            "PAN-237608": {
+                "info": [
+                    "Fixed an issue where a NetFlow export truncated the source username. "
+                ]
+            }
+        },
+        {
+            "PAN-236133": {
+                "info": [
+                    "Fixed an issue where SSL traffic was impacted when SSL Command and Control detector for Incline Cloud Analysis was set to reset-both, reset-client, reset-server, or drop. "
+                ]
+            }
+        },
+        {
+            "PAN-232550": {
+                "info": [
+                    " Fixed an issue where SNMPv3 authentication failed when using SHA-512 Auth protocol. "
+                ]
+            }
+        },
+        {
+            "PAN-231642": {
+                "info": [
+                    "Fixed an issue on the Panorama web interface where users who were logged in through multiple sessions were able to see an active lock on only one session. "
+                ]
+            }
+        },
+        {
+            "PAN-229115": {
+                "info": [
+                    "Fixed an issue on the web interface where the screen was blank after logging in to Panorama. "
+                ]
+            }
+        },
+        {
+            "PAN-226108": {
+                "info": [
+                    "Fixed an issue where the masterd process was unable to start or stop the sysd process. "
+                ]
+            }
+        },
+        {
+            "PAN-225394": {
+                "info": [
+                    "Fixed an issue on the firewall where SNMP incorrectly reported high packet descriptor usage. "
+                ]
+            }
+        },
+        {
+            "PAN-223914": {
+                "info": [
+                    "Fixed an issue on Panorama where the reportd process unexpectedly stopped responding. "
+                ]
+            }
+        },
+        {
+            "PAN-223418": {
+                "info": [
+                    "Fixed an issue where heartbeats to the brdagent process were lost, resulting in the process not responding, which caused the firewall to reboot. "
+                ]
+            }
+        },
+        {
+            "PAN-221041": {
+                "info": [
+                    "Fixed an issue where the following error message was seen frequently in the system logs: Clearing snmpd.log due to log overflow. "
+                ]
+            }
+        },
+        {
+            "PAN-216941": {
+                "info": [
+                    "(Panorama appliances in Log Collector mode only) Fixed an issue where Panorama stopped processing and saving logs. "
+                ]
+            }
+        },
+        {
+            "PAN-164885": {
+                "info": [
+                    " Fixed an issue on Panorama where Commit and Push or Push to Devices operations failed when an external dynamic list was configured to check for updates every 5 minutes due to the commit and external dynamic fetch processes overlapping. "
+                ]
+            }
+        }
+    ]
+}

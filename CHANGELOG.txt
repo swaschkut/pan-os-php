@@ -1,6 +1,71 @@
 CHANGELOG
 
-2.1.34
+2.1.35
+UTIL:
+* type=vendor-migration vendor=cp-r80 | fix for service objects if port defined e.g. with >1024
+* type=interface | new 'filter=(object is.layer3 / is.layer2 / is.virtual-wire / is.tunnel / is.aggregate-group)'
+* type=interface | new 'filter=(type is.ethernet / is.aggregate)'
+* type=interface | new actions=name-rename:{NEW-INTERFACE-NAME}
+* class SOPHOSXG | agggregateEthernetInteface UplinkLAG not same as aggregate-group Uplink - manipulation needed
+* type=securityprofile securityprofiletype=url-filtering | new actions=(url.credential-enforcement.log-severity:medium) / (actions=url.credential-enforcement.mode:ip-user)'
+* type=stats | extend counters for bp / visibility for class VirtualSystem
+* type=certificate 'filter=(expire < 360 days)' - improve filter
+* type=device | introduce new actions=devicegroup-removeserial-any / templatestack-removeserial-any
+* type=device devicetype=manageddevice actions=manageddevice-delete-any | extend with LogCollectorGroup removal
+* type=vendor-migration vendor=sophosxg | optimisation
+* type=device devicetype=manageddevice actions=manageddevice-delete-any | optimisation to remove rule target but set rule description
+* type=device devicetype=manageddevice actions=manageddevice-delete-any | also delete seriel from DG/TEMP within user-group-source
+* type=rule 'actions=exporttoexcel:file.html,bp|visibility' | if 'not set' -> 'not set' -> if not bp/visibile -> 'N/A' | if bp/visibility -> SP name
+* type=stats | extend percentage bp/visiblity to PanConf/PanoramaConf
+* type=xml-issue | extend with NAT source/destination duplicate objects validation
+* type=securityprofile securityprofiletype=url-filtering | improve user-credential tab validation
+* type=securityprofile securityprofiletype=url-filtering | extend user-credential to check mode/log-severity for bp/visiblie
+* type=stats | use argument debugapi - to display more output for bp/visibility calculation
+* type=securityprofile | introduce filter url.user-credential-detection is.disabled / is.ip-user-mapping
+* type=securityprofile | introduce securityprofiletype=predefined-/url-filtering/virus/spyware/file-blocking/wildfire-analysis
+* class SecurityProfileGroup / SecurityRule | adjust to bring in predefined SecurityProfiles
+* type=rule actions=securityprofile-group-set | add additional warning if obj can not be found
+* type=upload | exclude XMLnode "content-preview" from uploading to DG/Template
+* type=securityprofile securityprofiletype=file-blocking/spyware 'fitler=(fb/as is.best-practice)' | adjust bp check and JSON file
+* type=securityprofile securityprofiletype=url-filtering | correction to get bp/visibile for user-credentilal for category and TAB setting
+* type=securityprofile | new 'filter=(dns-security is.best-practice/is.visibility)'
+* type=stats | introduce visibility adoption for zone protection
+* type=stats | introduce percentage for Data Filtering Adoption
+* type=securityprofile securityprofiletype=url-filtering | new filter=(url.site-access allow.is.set / ur.user-credential-detection allow.is.set)'
+* develop csv_import.php | adjustments to get it working with newer PHP version
+* different SP classes | adjustment for visiblity / best-practice check | adjustment for JSON BP check
+* type=securityprofile | improve BP - visibility |
+* type=stats - improve BP logging | type=securityprofile action=exporttoexcel - split AS and AS DNS Security
+* type=application | introduce 'filter=(alg-disable-capability is.available)' - to show all app-ids where it is possible to disable ALG
+* develop pan-os-release-notes - extend with addressed issues - bring in filter bugid=XYZ
+
+BUGFIX:
+* type=securityprofile securitprofiletype=spyware | bugfix of displaying botnet-domain if packet-capture is missing
+* type=device actions=devicegroup-create:DG-name | bugfix if no parentDG move is needed
+* class MERGER | bugfix if argument outputformatset is used
+* class NetworkPropertiesContainer | bugfix to not add StaticRoute information a second time to memory
+* type=securityprofile actions=exporttoexcel | bugfix if predefined category are used in decryption rules - wrong reference
+* type=tsf actions=extract-running-and-merged-config | bugfix based on wrong validation
+* Class DataFilteringProfile extends SecurityProfile2
+* type=securityprofilegroup actions=exporttoexcel | bugfix after move to SP objects in memory and not name string
+* type=address actions=replace-IP-by-MT-like-Object | bugfix for DNAT rule in API online mode
+* type=rule actions=rule-hit-count-clear | bugfix for Panorama DeviceGroup
+* type=rule 'filter=(src/dst has {EDL object NAME})' | bugfix if object name is EDL
+* type=rule actions=src/dst-add:EDLOBJECT | bugfix to correctly add EDL object without error out
+* type=rule | bugfix for Secprof/SecprofGroup if None ist set
+
+GENERAL:
+* class EthernetInterface/AggregateEthernetInterface | optimisation to always define correct class
+* improve test_actions.php / test_filters.php
+* class CONVERTER / SOPHOSXGfunction | method validate_interface_names() - improve for AggregateEthernetInterface rename
+* update Device App-ID to version 8945-9271
+* class PanoramaConf | introduce method findManagedDevice()
+* class VirtualSystem/DeviceGroup | correction for get_bp_visiblity()
+* class Template method createVsys() | Improve to validate/set default-vsys
+* update Device App-ID to version: 8959-9357
+
+
+2.1.34 (20250212)
 UTIL:
 * class EthernetInterface | introduce method 'getLinkState' to use it in | type=interface actions=display | to show if an interface is configured to "down"
 * type=appid-toolbox phase=phase2 | extend error handling to catch situation where PANW device is not generating response

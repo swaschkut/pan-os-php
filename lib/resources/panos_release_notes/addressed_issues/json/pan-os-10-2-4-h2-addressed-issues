@@ -1,0 +1,89 @@
+{
+    "10-2-4-h2": [
+        [],
+        {
+            "PAN-252214": {
+                "info": [
+                    "Fixed an issue where after switching the SPN by suspending the active SPN, the forwarding rule was not correctly pointing to the new active node when moved from 3 rules (TCP\/UDP\/ICMP) to 1 Layer 3 default rule in GCP."
+                ]
+            }
+        },
+        {
+            "PAN-217484": {
+                "info": [
+                    " Fixed an issue where the rasmgr process used 100% CPU due to a maximum duration timer not being set, which caused the GlobalProtect gateway to be unavailable. "
+                ]
+            }
+        },
+        {
+            "PAN-217484": {
+                "info": [
+                    "Fixed an issue with slot 2 DPCs where URL Filtering did not work as expected after upgrading to PAN-OS 10.1.9."
+                ]
+            }
+        },
+        {
+            "PAN-217484": {
+                "info": [
+                    "Fixed an issue with firewalls in active\/active HA configurations where GlobalProtect disconnected when the original suspected active-primary firewall became active-secondary."
+                ]
+            }
+        },
+        {
+            "PAN-217484": {
+                "info": [
+                    "Fixed an issue where the all_pktproc process stopped responding, which caused the firewall to enter a nonfunctional state."
+                ]
+            }
+        },
+        {
+            "PAN-217484": {
+                "info": [
+                    "Fixed an issue on log collectors where the reportd process stopped responding."
+                ]
+            }
+        },
+        {
+            "PAN-217484": {
+                "info": [
+                    "Fixed an issue where 100G ports did not come up with BIDI QSFP modules."
+                ]
+            }
+        },
+        {
+            "PAN-217484": {
+                "info": [
+                    "Fixed an issue with Elasticsearch where ES tunnels weren\u00e2\u0080\u0099t started and were forked incorrectly, which caused them to fail."
+                ]
+            }
+        },
+        {
+            "PAN-217484": {
+                "info": [
+                    "Fixed an issue with Captive Portal SAML authentication by increasing the number of retries in the Nginx configuration."
+                ]
+            }
+        },
+        {
+            "PAN-211519": {
+                "info": [
+                    "Fixed an issue where RTP\/RTCP packets were dropped for SIP calls by SIP ALG when the source NAT translation type was persistent Dynamic IP And Port."
+                ]
+            }
+        },
+        {
+            "PAN-211519": {
+                "info": [
+                    "Fixed an issue where path monitoring failure occurred, which caused high availability failover."
+                ]
+            }
+        },
+        {
+            "PAN-211519": {
+                "info": [
+                    "Fixed an issue where connections from the firewall to Strata Logging Service failed."
+                ]
+            }
+        }
+    ]
+}

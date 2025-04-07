@@ -51,6 +51,13 @@
             }
         },
         {
+            "WF500-5632": {
+                "info": [
+                    " An SSL\/TLS Client Hello may not be sent if the Client Hello arrives at the firewall in multiple TCP segments and the traffic is not subject to SSL decryption. "
+                ]
+            }
+        },
+        {
             "PAN-265336": {
                 "solved": "This issue is now resolved. See PAN-OS 10.2.11-h2 Addressed Issues.",
                 "info": [

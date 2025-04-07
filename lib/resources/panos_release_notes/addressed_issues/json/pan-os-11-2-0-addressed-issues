@@ -1,0 +1,180 @@
+{
+    "11-2-0": [
+        [],
+        {
+            "PLUG-16383": {
+                "info": [
+                    " (VM-Series firewalls only) Fixed an issue where the PAN_NET_FILE_TMP was not found after an upgrade, which caused the firewall to enter maintenance mode. "
+                ]
+            }
+        },
+        {
+            "PAN-240174": {
+                "info": [
+                    "Fixed an issue where, when LSVPN serial numbers and IP address authentication were enabled, IPv6 address ranges and complete IPv6 addresses that were manually added to the IP address allow or exclude list were not usable after a restart of the gp_broker process or the firewall. "
+                ]
+            }
+        },
+        {
+            "PAN-230362": {
+                "info": [
+                    "Fixed an issue where the firewall truncated the payload of a TCP Out of Order segment with a FIN flag. "
+                ]
+            }
+        },
+        {
+            "PAN-228386": {
+                "info": [
+                    "Fixed an issue with session caching where the reportd process stopped responding due to null values. "
+                ]
+            }
+        },
+        {
+            "PAN-227344": {
+                "info": [
+                    "Fixed an issue on Panorama where PDF Summary Reports (Monitor > PDF Reports > Manage PDF Summary) displayed no data and were blank when predefined widgets were included in the summary report. "
+                ]
+            }
+        },
+        {
+            "PAN-227305": {
+                "info": [
+                    "Fixed an issue where SCEP certificate generation failed when a service route was used to reach the SCEP server. "
+                ]
+            }
+        },
+        {
+            "PAN-227224": {
+                "info": [
+                    "(PA-1400 Series firewalls) Fixed an issue where the firewall was unable to handle GRE packets for Point-to-Point Tunneling Protocol (PPTP) connections. "
+                ]
+            }
+        },
+        {
+            "PAN-226626": {
+                "info": [
+                    "Fixed an issue where the firewall generated numerous logrcvr error messages related to netflow. "
+                ]
+            }
+        },
+        {
+            "PAN-225394": {
+                "info": [
+                    "Fixed an issue on the firewall where SNMP incorrectly reported high packet descriptor usage. "
+                ]
+            }
+        },
+        {
+            "PAN-225240": {
+                "info": [
+                    "Fixed an issue where the OSPF neighbor state remained in exstart when the OSPF network had more than 40 routes. "
+                ]
+            }
+        },
+        {
+            "PAN-225183": {
+                "info": [
+                    "Fixed an issue where SSH tunnels were unstable due to ciphers used as part of the high availability SSH configuration. "
+                ]
+            }
+        },
+        {
+            "PAN-224772": {
+                "info": [
+                    "Fixed a high memory usage issue with the mongodb process that caused an OOM condition. "
+                ]
+            }
+        },
+        {
+            "PAN-224365": {
+                "info": [
+                    "Fixed an issue where excessive network path monitoring messages were generated in the system logs. "
+                ]
+            }
+        },
+        {
+            "PAN-224067": {
+                "info": [
+                    "Fixed an issue where cookie authentication did not work for GlobalProtect when an authentication override domain was configured in the SAML authentication profile. "
+                ]
+            }
+        },
+        {
+            "PAN-223501": {
+                "info": [
+                    "Fixed an issue where diagnostic information for the dataplane in the dp-monitor.log file was not complete. "
+                ]
+            }
+        },
+        {
+            "PAN-223365": {
+                "info": [
+                    "Fixed an issue where Panorama was unbale to query any logs if the Elasticsearch health status for any log collector was degraded. "
+                ]
+            }
+        },
+        {
+            "PAN-220881": {
+                "info": [
+                    "Fixed an issue where the CLI command show logging-status did not correctly display the last log created and forwarded timestamps. "
+                ]
+            }
+        },
+        {
+            "PAN-220640": {
+                "info": [
+                    "(PA-220 firewalls only) Fixed an issue where the firewall CPU percentage was miscalculated, and the values that were displayed were incorrect. "
+                ]
+            }
+        },
+        {
+            "PAN-219768": {
+                "info": [
+                    "Fixed an issue where you were unable to filter Data Filtering logs with Threat ID\/NAME for custom data patterns created over Panorama. "
+                ]
+            }
+        },
+        {
+            "PAN-219585": {
+                "info": [
+                    "Fixed an issue where enabling syslog-ng debugs from the root caused 100% disk utilization. "
+                ]
+            }
+        },
+        {
+            "PAN-217510": {
+                "info": [
+                    "Fixed an issue where inbound DHCP packets received by a DHCP client interface that were not addressed to itself were silently dropped instead of forwarded. "
+                ]
+            }
+        },
+        {
+            "PAN-208567": {
+                "info": [
+                    "Fixed an issue with email formatting where, when a scheduled email contained two or more attachments, only one attachment was visible. "
+                ]
+            }
+        },
+        {
+            "PAN-207003": {
+                "info": [
+                    "Fixed an issue where the logrcvr process netflow buffer was not reset which resulted in duplicate netflow records. "
+                ]
+            }
+        },
+        {
+            "PAN-202095": {
+                "info": [
+                    "Fixed an issue on the web interface where the language setting is not retained. "
+                ]
+            }
+        },
+        {
+            "PLUG-16385": {
+                "info": [
+                    " Fixed an issue where the file PAN_NET_FILE_TMP was missing after the upgrade causing the VM-Series firewall to go into maintenance mode. "
+                ]
+            }
+        }
+    ]
+}

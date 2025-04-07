@@ -548,7 +548,7 @@ class FawkesConf
 
     }
 
-    public function display_statistics( $return = false )
+    public function display_statistics( $return = false, $debug = false, $actions = "display" )
     {
 
         $container_all = $this->findContainer( "All");
@@ -907,7 +907,7 @@ class FawkesConf
             return $stdoutarray;
         }
         else
-            {
+        {
             #PH::print_stdout( $return );
             PH::print_stdout( $stdoutarray, true  );
         }
@@ -915,6 +915,17 @@ class FawkesConf
         return null;
     }
 
+    public function display_bp_statistics( $debug = false )
+    {
+        $stdoutarray = array();
+        #PH::$JSON_TMP[$this->name] = $stdoutarray;
+        PH::$JSON_TMP[] = $stdoutarray;
+
+
+        if( !PH::$shadow_json && $debug )
+            PH::print_stdout( $stdoutarray, true );
+
+    }
 
     /**
      * Create a blank device group. Return that DV object.

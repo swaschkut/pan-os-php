@@ -1,0 +1,19 @@
+{
+    "10-1-6-h7": [
+        [],
+        {
+            "PAN-202450": {
+                "info": [
+                    " Fixed an issue where the device-client-cert was set to expire on December 31, 2023. With this fix, the expiration date has been extended. "
+                ]
+            }
+        },
+        {
+            "PAN-198372": {
+                "info": [
+                    " Fixed an issue where the root-cert was set to expire on December 31, 2023. With this fix, the expiration date has been extended. "
+                ]
+            }
+        }
+    ]
+}

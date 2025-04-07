@@ -1,0 +1,82 @@
+{
+    "10-2-10-h10": [
+        [],
+        {
+            "PAN-268823": {
+                "info": [
+                    " Fixed an issue where Monitor > Log Display did not display all logs when you applied a filter. "
+                ]
+            }
+        },
+        {
+            "PAN-268727": {
+                "info": [
+                    " Fixed an issue where traffic was dropped when the accumulation proxy was enabled and header insertion modified packets. "
+                ]
+            }
+        },
+        {
+            "PAN-268314": {
+                "info": [
+                    " Fixed an issue where new files were not sent to WildFire. With this fix, the WildFire reserved drive space has been increased for greater session caching capability. "
+                ]
+            }
+        },
+        {
+            "PAN-268002": {
+                "info": [
+                    " Fixed an issue where URL filtering response pages were not displayed for sites that were blocked as a result of SSL\/TLS handshake inspection. "
+                ]
+            }
+        },
+        {
+            "PAN-267704": {
+                "info": [
+                    " Fixed an issue where the firewall did not send an ICMP error packet to Envoy when the MSS was exceeded. "
+                ]
+            }
+        },
+        {
+            "PAN-263973": {
+                "info": [
+                    " Fixed an issue where log collectors had a low incoming log rate. "
+                ]
+            }
+        },
+        {
+            "PAN-261673": {
+                "info": [
+                    " (VM-Series firewalls on Microsoft Azure environments only) Fixed an issue where, when Accelerated Networking was enabled, traffic was dropped because of the flow_parse_ip_hdr counter related to an Nvidia driver issue. "
+                ]
+            }
+        },
+        {
+            "PAN-257601": {
+                "info": [
+                    " (PA-5450 firewalls only) Fixed an issue where Networking Cards (NC) experienced an internal link fault which caused path monitoring failure on the Dataplane Processing Card (DPC). "
+                ]
+            }
+        },
+        {
+            "PAN-253213": {
+                "info": [
+                    " Fixed an issue where the firewall sent HIP notifications every time it received a HIP report instead of every two hours. "
+                ]
+            }
+        },
+        {
+            "PAN-246699": {
+                "info": [
+                    " Fixed an issue on Panorama where Rule Usage and Apps Seen under Security policy rules stopped incrementing. "
+                ]
+            }
+        },
+        {
+            "PAN-233195": {
+                "info": [
+                    " Fixed an issue where logs continued to be ingested when the vldmgr process was restarted. "
+                ]
+            }
+        }
+    ]
+}

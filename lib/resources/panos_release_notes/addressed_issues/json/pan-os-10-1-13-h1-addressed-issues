@@ -1,0 +1,61 @@
+{
+    "10-1-13-h1": [
+        [],
+        {
+            "PAN-248651": {
+                "info": [
+                    " Fixed a GlobalProtect issue that prevented the firewall from sending authentication cookies. "
+                ]
+            }
+        },
+        {
+            "PAN-248105": {
+                "info": [
+                    " Fixed an issue where the GlobalProtect SSL VPN tunnel immediately disconnected due to a keep-alive timeout. "
+                ]
+            }
+        },
+        {
+            "PAN-246960": {
+                "info": [
+                    " Fixed an issue where firewalls failed to fetch content updates from the Wildfire Private Cloud due to an Unsupported protocol error. "
+                ]
+            }
+        },
+        {
+            "PAN-246215": {
+                "info": [
+                    " Fixed an issue where the sleep time for a suspended pan_task process caused configuration and policy updates to be blocked. "
+                ]
+            }
+        },
+        {
+            "PAN-243463": {
+                "info": [
+                    " Fixed an issue where high Enhanced Application Log traffic used excess system resources and caused processes to not work. "
+                ]
+            }
+        },
+        {
+            "PAN-239354": {
+                "info": [
+                    " Fixed an issue where DNS resolution was delayed when an Antispyware policy rule was applied to both client to firewall and firewall to internal DNS server legs of a connection. "
+                ]
+            }
+        },
+        {
+            "PAN-225963": {
+                "info": [
+                    " Fixed an issue where the IP address-to-user mapping was not correct. "
+                ]
+            }
+        },
+        {
+            "PAN-220907": {
+                "info": [
+                    " (VM-Series firewalls only) Fixed an issue where large packets were dropped from the dataplane to the management plane, which caused OSPF neighborship to fail. "
+                ]
+            }
+        }
+    ]
+}

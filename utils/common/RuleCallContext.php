@@ -594,8 +594,15 @@ class RuleCallContext extends CallContext
                 /** @var SecurityProfileGroup $group */
                 $group = $rule->owner->owner->securityProfileGroupStore->find($group_name);
                 $sp_working_array = array( 'virus', 'spyware', 'vulnerability', 'file-blocking', 'url-filtering', 'data-filtering', 'wildfire-analysis' );
+
+                if( $group === NULL )
+                {
+                    mwarning( "Secrule: '".$rule->name()."' has SecProfGroup: '".$group_name."' defined, but can not be found", null, false );
+                    return FALSE;
+                }
                 $group_profiles = $group->securityProfiles();
 
+                $profiles = array();
                 foreach( $sp_working_array as $profType )
                 #foreach( $group->securityProfiles() as $profType => $profile )
                 {
@@ -607,14 +614,14 @@ class RuleCallContext extends CallContext
                     if( is_string($profile) )
                     {
                         $bp_check = "";
-                        if( $profType == "virus" || $profType == "spyware" || $profType == "vulnerability" )
+                        if( $profType == "virus" || $profType == "spyware" || $profType == "vulnerability" || $profType == "file-blocking" || $profType == "url-filtering" || $profType == "wildfire-analysis" )
                             $bp_check = " | **no check possible**";
                         $profiles[] = $profType . ':' . $profile.$bp_check;
                     }
                     elseif( $profile === null )
                     {
                         $bp_check = "";
-                        if( $profType == "virus" || $profType == "spyware" || $profType == "vulnerability" )
+                        if( $profType == "virus" || $profType == "spyware" || $profType == "vulnerability" || $profType == "file-blocking" || $profType == "url-filtering" || $profType == "wildfire-analysis" )
                         {
                             if( $sp_best_practice )
                                 $bp_check .= $bp_NOT_sign;
@@ -628,7 +635,7 @@ class RuleCallContext extends CallContext
                     else
                     {
                         $bp_check = "";
-                        if( $profType == "virus" || $profType == "spyware" || $profType == "vulnerability" )
+                        if( $profType == "virus" || $profType == "spyware" || $profType == "vulnerability" || $profType == "file-blocking" || $profType == "url-filtering" || $profType == "wildfire-analysis" )
                         {
                             /** @var AntiVirusProfile|AntiSpywareProfile|VulnerabilityProfile */
                             if( !$profile->is_best_practice() )
@@ -1100,7 +1107,8 @@ class RuleCallContext extends CallContext
                 continue;
             }
 
-            if( $profType == "virus" || $profType == "spyware" || $profType == "vulnerability" )
+            #if( $profType == "virus" || $profType == "spyware" || $profType == "vulnerability" )
+            if( $profType == "virus" || $profType == "spyware" || $profType == "vulnerability" || $profType == "wildfire-analysis" || $profType == "file-blocking" || $profType == "url-filtering" )
             {
                 if( is_string($profileName) )
                 {
@@ -1110,6 +1118,12 @@ class RuleCallContext extends CallContext
                         $profile = $rule->owner->owner->AntiSpywareProfileStore->find($profileName);
                     elseif( $profType == "vulnerability" )
                         $profile = $rule->owner->owner->VulnerabilityProfileStore->find($profileName);
+                    elseif( $profType == "wildfire-analysis" )
+                        $profile = $rule->owner->owner->WildfireProfileStore->find($profileName);
+                    elseif( $profType == "file-blocking" )
+                        $profile = $rule->owner->owner->FileBlockingProfileStore->find($profileName);
+                    elseif( $profType == "url-filtering" )
+                        $profile = $rule->owner->owner->URLProfileStore->find($profileName);
                 }
                 else
                     $profile = $profileName;
@@ -1121,7 +1135,9 @@ class RuleCallContext extends CallContext
                 else
                 {
                     $bp_check = "";
-                    if( $profType == "virus" || $profType == "spyware" || $profType == "vulnerability" )
+
+                    #if( $profType == "virus" || $profType == "spyware" || $profType == "vulnerability" )
+                    if( $profType == "virus" || $profType == "spyware" || $profType == "vulnerability" || $profType == "wildfire-analysis" || $profType == "file-blocking" || $profType == "url-filtering" )
                     {
                         /** @var AntiVirusProfile|AntiSpywareProfile|VulnerabilityProfile */
                         if( !$profile->is_best_practice() )
@@ -1139,7 +1155,13 @@ class RuleCallContext extends CallContext
                 }
             }
             else
-                $profiles[] = $profType . ':' . $profileName;
+            {
+                if( is_object($profileName) )
+                    $profiles[] = $profType . ':' . $profileName->name();
+                else
+                    $profiles[] = $profType . ':' . $profileName;
+            }
+
 
         }
 
@@ -1152,7 +1174,8 @@ class RuleCallContext extends CallContext
 
 
         if( $rule->securityProfileType() == 'none' )
-            return self::enclose('N/A');
+            #return self::enclose('N/A');
+            return self::enclose('not set');
 
         if( $rule->securityProfileType() == 'group' ) {
             $group_name = $rule->securityProfileGroup();
@@ -1174,11 +1197,13 @@ class RuleCallContext extends CallContext
             if( isset( $rule_profiles[ $profType ] ) )
                 $profileName = $rule_profiles[ $profType ];
             else
-                return self::enclose("N/A", $wrap);
+                #return self::enclose("N/A", $wrap);
+                return self::enclose("not set", $wrap);
 
             if( empty($profileName) )
             {
-                return self::enclose("N/A", $wrap);
+                #return self::enclose("N/A", $wrap);
+                return self::enclose("not set", $wrap);
             }
 
             if( $profType == "virus" || $profType == "spyware" || $profType == "vulnerability" || $profType == "wildfire-analysis" || $profType == "file-blocking" || $profType == "url-filtering" )
@@ -1203,7 +1228,8 @@ class RuleCallContext extends CallContext
 
                 if( !isset($profile) || !is_object($profile) )
                 {
-                    return self::enclose("N/A", $wrap);
+                    #return self::enclose("N/A", $wrap);
+                    return self::enclose("not set", $wrap);
                 }
                 else
                 {
@@ -1214,7 +1240,7 @@ class RuleCallContext extends CallContext
                         if( $sp_best_practice && $checkType == "bp" )
                         {
                             if( !$profile->is_best_practice() )
-                                return self::enclose("no", $wrap);
+                                return self::enclose("N/A", $wrap);
                             else
                                 return self::enclose($profile->name(), $wrap);
                         }
@@ -1222,7 +1248,7 @@ class RuleCallContext extends CallContext
                         if( $sp_visibility && $checkType == "visible")
                         {
                             if( !$profile->is_visibility() )
-                                return self::enclose("no", $wrap);
+                                return self::enclose("N/A", $wrap);
                             else
                                 return self::enclose($profile->name(), $wrap);
                         }

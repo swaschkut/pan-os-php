@@ -419,6 +419,10 @@ class AddressStore
     {
         $f = null;
 
+        $foundObject = $this->owner->EDLStore->find($objectName, $ref, $nested);
+        if( $foundObject !== null )
+            return $foundObject;
+
         if( isset($this->_all[$objectName]) )
         {
             $foundObject = $this->_all[$objectName];

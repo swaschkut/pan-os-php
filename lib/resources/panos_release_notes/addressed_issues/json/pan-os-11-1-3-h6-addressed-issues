@@ -1,0 +1,61 @@
+{
+    "11-1-3-h6": [
+        [],
+        {
+            "PAN-263226": {
+                "info": [
+                    " Fixed an issue where decryption based traffic failed on Explicit Proxy nodes. "
+                ]
+            }
+        },
+        {
+            "PAN-262593": {
+                "info": [
+                    " Fixed an issue where traffic to websites failed on the Google Chrome web browser on Secure Web Gateway (SWG) nodes. "
+                ]
+            }
+        },
+        {
+            "PAN-261991": {
+                "info": [
+                    " Fixed an issue where traffic that did not match a decryption policy rule, or matched a no-decrypt policy rule, failed when accumulation proxy was enabled and a Zone Protection profile was configured with syn-cookies enabled. "
+                ]
+            }
+        },
+        {
+            "PAN-261917": {
+                "info": [
+                    " Fixed an issue where websites with a no-decrypt policy rule were decrypted in traffic log when using a Google Chrome browser with PQC enabled. "
+                ]
+            }
+        },
+        {
+            "PAN-259769": {
+                "info": [
+                    " Fixed an issue where the GlobalProtect portal was not accessible via a web browser and displayed the error ERR_EMPTY_RESPONSE. "
+                ]
+            }
+        },
+        {
+            "PAN-257957": {
+                "info": [
+                    " (Firewalls and Panorama appliances in FIPS-CC mode only) Fixed an issue where the authd process restarted if RADIUS PAP\/CHAP authentication was used. "
+                ]
+            }
+        },
+        {
+            "PAN-242331": {
+                "info": [
+                    " Fixed an issue where Prisma Access remote network firewalls intermittently created incorrect user-to-IP-address mappings. "
+                ]
+            }
+        },
+        {
+            "PAN-232214": {
+                "info": [
+                    " Fixed an issue where GlobalProtect clients remained in the connecting state during portal pre-login when Kerberos single sign-on (SSO) was enabled. "
+                ]
+            }
+        }
+    ]
+}

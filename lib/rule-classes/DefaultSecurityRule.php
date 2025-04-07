@@ -447,9 +447,9 @@ class DefaultSecurityRule extends Rule
         $this->secproftype = 'profile';
         $this->secprofgroup = null;
         if( $newAVprof == "null" )
-            unset($this->secprofProfiles['virus']);
+            unset($this->secprofProfiles_obj['virus']);
         else
-            $this->secprofProfiles['virus'] = $newAVprof;
+            $this->secprofProfiles_obj['virus'] = $newAVprof;
 
         $this->rewriteSecProfXML();
 
@@ -461,9 +461,9 @@ class DefaultSecurityRule extends Rule
         $this->secproftype = 'profile';
         $this->secprofgroup = null;
         if( $newAVprof == "null" )
-            unset($this->secprofProfiles['vulnerability']);
+            unset($this->secprofProfiles_obj['vulnerability']);
         else
-            $this->secprofProfiles['vulnerability'] = $newAVprof;
+            $this->secprofProfiles_obj['vulnerability'] = $newAVprof;
 
         $this->rewriteSecProfXML();
 
@@ -475,9 +475,9 @@ class DefaultSecurityRule extends Rule
         $this->secproftype = 'profile';
         $this->secprofgroup = null;
         if( $newAVprof == "null" )
-            unset($this->secprofProfiles['url-filtering']);
+            unset($this->secprofProfiles_obj['url-filtering']);
         else
-            $this->secprofProfiles['url-filtering'] = $newAVprof;
+            $this->secprofProfiles_obj['url-filtering'] = $newAVprof;
 
         $this->rewriteSecProfXML();
 
@@ -489,9 +489,9 @@ class DefaultSecurityRule extends Rule
         $this->secproftype = 'profile';
         $this->secprofgroup = null;
         if( $newAVprof == "null" )
-            unset($this->secprofProfiles['data-filtering']);
+            unset($this->secprofProfiles_obj['data-filtering']);
         else
-            $this->secprofProfiles['data-filtering'] = $newAVprof;
+            $this->secprofProfiles_obj['data-filtering'] = $newAVprof;
 
         $this->rewriteSecProfXML();
 
@@ -504,9 +504,9 @@ class DefaultSecurityRule extends Rule
         $this->secprofgroup = null;
 
         if( $newAVprof == "null" )
-            unset($this->secprofProfiles['file-blocking']);
+            unset($this->secprofProfiles_obj['file-blocking']);
         else
-            $this->secprofProfiles['file-blocking'] = $newAVprof;
+            $this->secprofProfiles_obj['file-blocking'] = $newAVprof;
 
         $this->rewriteSecProfXML();
 
@@ -518,9 +518,9 @@ class DefaultSecurityRule extends Rule
         $this->secproftype = 'profile';
         $this->secprofgroup = null;
         if( $newAVprof == "null" )
-            unset($this->secprofProfiles['spyware']);
+            unset($this->secprofProfiles_obj['spyware']);
         else
-            $this->secprofProfiles['spyware'] = $newAVprof;
+            $this->secprofProfiles_obj['spyware'] = $newAVprof;
 
         $this->rewriteSecProfXML();
 
@@ -532,9 +532,9 @@ class DefaultSecurityRule extends Rule
         $this->secproftype = 'profile';
         $this->secprofgroup = null;
         if( $newAVprof == "null" )
-            unset($this->secprofProfiles['wildfire-analysis']);
+            unset($this->secprofProfiles_obj['wildfire-analysis']);
         else
-            $this->secprofProfiles['wildfire-analysis'] = $newAVprof;
+            $this->secprofProfiles_obj['wildfire-analysis'] = $newAVprof;
 
         $this->rewriteSecProfXML();
 

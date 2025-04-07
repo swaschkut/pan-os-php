@@ -1,0 +1,122 @@
+{
+    "10-2-7-h6": [
+        [],
+        {
+            "PAN-246431": {
+                "solved": "This issue is resolved in this hotfix but not in PAN-OS 10.2.8.",
+                "info": [
+                    " Fixed an issue where a Push to Device operation remained at the state None when performing a selective push to device groups and templates that included both connected and disconnected firewalls. "
+                ]
+            }
+        },
+        {
+            "PAN-242910": {
+                "solved": "This issue is resolved in this hotfix but not in PAN-OS 10.2.8.",
+                "info": [
+                    " Fixed an issue where a custom based non Superuser was unable to push to firewalls. "
+                ]
+            }
+        },
+        {
+            "PAN-242627": {
+                "solved": "This issue is resolved in this hotfix but not in PAN-OS 10.2.8.",
+                "info": [
+                    " Fixed an issue where selective push did not work. "
+                ]
+            }
+        },
+        {
+            "PAN-242561": {
+                "info": [
+                    " Fixed an issue where GlobalProtect tunnels disconnected shortly after being established when SSL was used as the transfer protocol. "
+                ]
+            }
+        },
+        {
+            "PAN-242027": {
+                "info": [
+                    " Fixed an issue where the all-task process repeatedly restarted during memory allocation failures. "
+                ]
+            }
+        },
+        {
+            "PAN-239367": {
+                "info": [
+                    " Fixed an issue on the firewall where a memory leak associated with the logrcvr process occurred. "
+                ]
+            }
+        },
+        {
+            "PAN-238643": {
+                "solved": "This issue is resolved in this hotfix but not in PAN-OS 10.2.8.",
+                "info": [
+                    " Fixed an issue where a memory leak caused multiple processes to stop responding when VM Information Sources was configured. "
+                ]
+            }
+        },
+        {
+            "PAN-237208": {
+                "info": [
+                    " Fixed an issue where the reportd process stopped and the firewall rebooted. "
+                ]
+            }
+        },
+        {
+            "PAN-235840": {
+                "info": [
+                    " Fixed an issue where, after a configuration push from Panorama to managed firewalls, the status displayed as None and the push took longer than expected. "
+                ]
+            }
+        },
+        {
+            "PAN-233789": {
+                "info": [
+                    " Fixed an issue with commit and push and push operations where the user was not correctly bound to the scope, which caused all device groups to be selected for a selective push. "
+                ]
+            }
+        },
+        {
+            "PAN-231148": {
+                "info": [
+                    " Fixed an issue where no DHCP option list was defined when using GlobalProtect. "
+                ]
+            }
+        },
+        {
+            "PAN-229090": {
+                "info": [
+                    " Fixed an issue where the logrcvr process stopped responding during memory allocation failures. "
+                ]
+            }
+        },
+        {
+            "PAN-228515": {
+                "solved": "This issue is resolved in this hotfix but not in PAN-OS 10.2.8.",
+                "info": [
+                    " Fixed an issue where the Elasticsearch cluster health status displayed as yellow or red due to Elasticsearch SSH tunnel flaps. "
+                ]
+            }
+        },
+        {
+            "PAN-223259": {
+                "info": [
+                    " Fixed an issue where selective pushes failed with the error message Failed to generate selective push configuration. Unable to retrieve last in-sync configuration for the device, either a push was never done or version is too old. Please try a full push. "
+                ]
+            }
+        },
+        {
+            "PAN-217293": {
+                "info": [
+                    " Fixed a rare issue where URLs were not accessible when the header length was greater than 16,000 over HTTP\/2. "
+                ]
+            }
+        },
+        {
+            "PAN-199070": {
+                "info": [
+                    " Fixed an issue where the all_task and pan_task processes stopped responding, which impacted traffic. "
+                ]
+            }
+        }
+    ]
+}

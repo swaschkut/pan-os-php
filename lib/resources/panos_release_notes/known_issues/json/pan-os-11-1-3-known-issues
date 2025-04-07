@@ -2,6 +2,27 @@
     "11-1-3": [
         [],
         {
+            "PAN-281885": {
+                "info": [
+                    " When exporting and importing the CSV file, the hash values of pre-shared key (PSK) variables set at template and template stack levels inconsistently change, resulting in both variables displaying the same hash value. "
+                ]
+            }
+        },
+        {
+            "PAN-280471": {
+                "info": [
+                    " When applying filters or searching for logs in the PanoramaMonitorLogssection, you might experience slow performance. "
+                ]
+            }
+        },
+        {
+            "PAN-278296": {
+                "info": [
+                    " The system MAC address of the aggregate interface is the same on both the active and the passive devices, causing some packets to be sent incorrectly to the passive device. This is causing the AE interface on the active firewall to not come up. "
+                ]
+            }
+        },
+        {
             "PAN-265336": {
                 "solved": "(PAN-OS 11.1.3-h6 only)",
                 "info": [

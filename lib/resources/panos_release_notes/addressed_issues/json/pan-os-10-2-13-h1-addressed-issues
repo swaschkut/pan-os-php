@@ -1,0 +1,12 @@
+{
+    "10-2-13-h1": [
+        [],
+        {
+            "PAN-272413": {
+                "info": [
+                    " Fixed an issue where device telemetry did not generate logs after upgrading the firewall. "
+                ]
+            }
+        }
+    ]
+}

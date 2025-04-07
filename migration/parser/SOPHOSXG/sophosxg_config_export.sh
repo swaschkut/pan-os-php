@@ -32,6 +32,7 @@ arrapi=(
   "GatewayConfiguration" \
   "Zone"
   "FQDNHost" \
+  "FQDNHostGroup" \
   "IPHost" \
   "IPHostGroup" \
   "MACHost" \

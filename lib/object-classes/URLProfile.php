@@ -23,9 +23,12 @@ class URLProfile extends SecurityProfile2
     public $secprof_type;
 
     public $allow = array();
+    public $allow_wo_custom = array();
     public $allow_credential = array();
+    public $allow_credential_wo_custom = array();
     public $alert = array();
     public $alert_credential = array();
+    public $alert_credential_wo_custom = array();
     public $block = array();
     public $block_credential = array();
     public $continue = array();
@@ -34,6 +37,9 @@ class URLProfile extends SecurityProfile2
     public $override_credential = array();
 
     public $predefined = array();
+
+    public $credential_mode = null;
+    public $credential_log = null;
 
     public $tmp_url_prof_array = array('allow', 'alert', 'block', 'continue', 'override');
 
@@ -217,6 +223,17 @@ class URLProfile extends SecurityProfile2
                     }
                 }
             }
+
+            $tmp_credential_mode = DH::findFirstElement("mode", $tmp_credential_enforcement);
+            if( $tmp_credential_mode != null )
+            {
+                $mode_node = DH::firstChildElement($tmp_credential_mode);
+                $this->credential_mode = $mode_node->nodeName;
+            }
+
+            $tmp_credential_log_severity = DH::findFirstElement("log-severity", $tmp_credential_enforcement);
+            if( $tmp_credential_log_severity != null )
+                $this->credential_log = $tmp_credential_log_severity->textContent;
         }
 
         return TRUE;
@@ -248,6 +265,11 @@ class URLProfile extends SecurityProfile2
                 PH::$JSON_TMP['sub']['object'][$this->name()][strtoupper($url_type_credential)][] = $member;
             }
         }
+        PH::print_stdout( ) ;
+        if( $this->credential_mode !== null )
+            PH::print_stdout(  "       - mode: " . $this->credential_mode );
+        if( $this->credential_log !== null )
+            PH::print_stdout(  "       - log-severity: " . $this->credential_log );
     }
 
     public function getAllow()
@@ -275,8 +297,10 @@ class URLProfile extends SecurityProfile2
         return $this->override;
     }
 
-    public function setAction($action, $category)
+    public function setAction($action, $category, $type="site-access")
     {
+        #print "ACTION: $action\n";
+        #print "CATEGORY: $category\n";
         if( $category == "all" )
         {
             //Todo:
@@ -288,6 +312,47 @@ class URLProfile extends SecurityProfile2
         {
             $tmp_action = explode("all-", $category);
 
+            #print_r($tmp_action);
+            if( $tmp_action[1] == "allow" )
+            {
+                $typeFilter = $tmp_action[1];
+                if( $type == "site-access" )
+                {
+                    foreach( $this->allow as $member )
+                    {
+                        $this->deleteMember( $member, $typeFilter );
+                        $this->addMember( $member, $action);
+                    }
+                }
+                else
+                {
+                    foreach( $this->allow_credential as $member )
+                    {
+                        $this->deleteMember( $member, $typeFilter );
+                        $this->addMember( $member, $action);
+                    }
+                }
+            }
+            elseif( $tmp_action[0] == "alert" )
+            {
+                $typeFilter = $tmp_action[0];
+                if( $type == "site-access" )
+                {
+                    foreach ($this->alert as $member)
+                    {
+                        $this->deleteMember($member, $typeFilter);
+                        $this->addMember($member, $action);
+                    }
+                }
+                else
+                {
+                    foreach ($this->alert_credential as $member)
+                    {
+                        $this->deleteMember($member, $typeFilter);
+                        $this->addMember($member, $action);
+                    }
+                }
+            }
         }
         else
         {
@@ -628,7 +693,7 @@ class URLProfile extends SecurityProfile2
 
     public function check_usercredentialsubmission_bp_json( $check_array )
     {
-        foreach( $check_array as $check )
+        foreach( $check_array['category'] as $check )
         {
             $action = $check["action"];
             $urlList = $check["type"];
@@ -645,11 +710,43 @@ class URLProfile extends SecurityProfile2
 
     public function check_usercredentialsubmission_visibility_json( $check_array )
     {
-        $finding = $check_array;
-        if( strpos( $check_array, "!") !== FALSE )
+        $finding = $check_array['category'];
+        if( strpos( $check_array['category'], "!") !== FALSE )
         {
-            $finding = str_replace("!", "", $check_array);
+            $finding = str_replace("!", "", $check_array['category']);
             if( !empty($this->$finding) )
+                return False;
+        }
+
+        return TRUE;
+    }
+
+    public function check_usercredentialsubmission_bp_tab_json( $check_array )
+    {
+        if( $this->credential_mode == null)
+            return False;
+        if( $this->credential_log == null)
+            return False;
+
+        if( $check_array['tab']['mode'] !== $this->credential_mode )
+            return False;
+
+        if( $check_array['tab']['log-severity'] !== $this->credential_log )
+            return False;
+
+        return TRUE;
+    }
+
+    public function check_usercredentialsubmission_visibility_tab_json( $check_array )
+    {
+        if( $this->credential_mode == null)
+            return False;
+
+        $finding = $check_array['tab']['mode'];
+        if( strpos( $check_array['tab']['mode'], "!") !== FALSE )
+        {
+            $finding = str_replace("!", "", $check_array['tab']['mode']);
+            if( $finding === $this->credential_mode )
                 return False;
         }
 
@@ -690,6 +787,17 @@ class URLProfile extends SecurityProfile2
             return TRUE;
     }
 
+    public function url_usercredentialsubmission_best_practice_tab()
+    {
+        $check_array = $this->url_usercredentialsubmission_bp_visibility_JSON( "bp", "url" );
+        $bestpractise = $this->check_usercredentialsubmission_bp_tab_json( $check_array );
+
+        if ($bestpractise == FALSE)
+            return FALSE;
+        else
+            return TRUE;
+    }
+
     public function url_usercredentialsubmission_visibility()
     {
         $check_array = $this->url_usercredentialsubmission_bp_visibility_JSON( "visibility", "url" );
@@ -701,11 +809,22 @@ class URLProfile extends SecurityProfile2
             return TRUE;
     }
 
+    public function url_usercredentialsubmission_visibility_tab()
+    {
+        $check_array = $this->url_usercredentialsubmission_bp_visibility_JSON( "visibility", "url" );
+        $bestpractise = $this->check_usercredentialsubmission_visibility_tab_json( $check_array );
+
+        if ($bestpractise == FALSE)
+            return FALSE;
+        else
+            return TRUE;
+    }
+
     public function is_best_practice()
     {
         if( $this->url_siteaccess_best_practice()
             && $this->url_usercredentialsubmission_best_practice()
-
+            && $this->url_usercredentialsubmission_best_practice_tab()
         )
             return TRUE;
         else
@@ -716,6 +835,41 @@ class URLProfile extends SecurityProfile2
     {
         if( $this->url_siteaccess_visibility()
             && $this->url_usercredentialsubmission_visibility()
+            && $this->url_usercredentialsubmission_visibility_tab()
+        )
+            return TRUE;
+        else
+            return FALSE;
+    }
+    public function site_access_is_best_practice()
+    {
+        if( $this->url_siteaccess_best_practice() )
+            return TRUE;
+        else
+            return FALSE;
+    }
+
+    public function site_access_is_visibility()
+    {
+        if( $this->url_siteaccess_visibility() )
+            return TRUE;
+        else
+            return FALSE;
+    }
+    public function credential_is_best_practice()
+    {
+        if( $this->url_usercredentialsubmission_best_practice()
+            && $this->url_usercredentialsubmission_best_practice_tab()
+        )
+            return TRUE;
+        else
+            return FALSE;
+    }
+
+    public function credential_is_visibility()
+    {
+        if( $this->url_usercredentialsubmission_visibility()
+            && $this->url_usercredentialsubmission_visibility_tab()
         )
             return TRUE;
         else

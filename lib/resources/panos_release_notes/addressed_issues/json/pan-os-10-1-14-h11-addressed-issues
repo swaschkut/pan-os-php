@@ -1,0 +1,26 @@
+{
+    "10-1-14-h11": [
+        [],
+        {
+            "PAN-262383": {
+                "info": [
+                    " Fixed an issue where the firewall was unable to decompress the HTTP2 header, which caused the session to be classified as unknown-tcp instead of web-browsing. "
+                ]
+            }
+        },
+        {
+            "PAN-232530": {
+                "info": [
+                    " Fixed an issue where the useridd process ran out of memory and restarted when the number of user or user groups exceeded the threshold. "
+                ]
+            }
+        },
+        {
+            "PAN-227368": {
+                "info": [
+                    " Fixed an issue where the GlobalProtect app was unable to connect to a portal or gateway and GlobalProtect Clientless VPN users were unable to access applications if authentication took more than 20 seconds. "
+                ]
+            }
+        }
+    ]
+}

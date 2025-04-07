@@ -41,6 +41,7 @@ class GARPSEND extends UTIL
         $this->supportedArguments['test'] = array('niceName' => 'test', 'shortHelp' => 'command to test against offline config file');
         $this->supportedArguments['user'] = array('niceName' => 'user', 'shortHelp' => 'must be set to trigger sendGARP via SSH', 'argDesc' => '[USERNAME]');
         $this->supportedArguments['pw'] = array('niceName' => 'pw', 'shortHelp' => 'must be set to trigger sendGARP via SSH', 'argDesc' => '[PASSWORD]');
+        $this->supportedArguments['loadpanoramapushedconfig'] = array('niceName' => 'loadpanoramapushedconfig', 'shortHelp' => 'must be set to trigger sendGARP via SSH', 'argDesc' => '[PASSWORD]');
 
         $this->usageMsg = PH::boldText('USAGE: ')."php ".basename(__FILE__)." in=api:://[MGMT-IP] [test] [user=SSHuser] [pw=SSHpw]" .
             "
@@ -156,7 +157,7 @@ class GARPSEND extends UTIL
             /** @var EthernetInterface $int */
             $name = $int->name();
 
-            if( get_class($int) !== "EthernetInterface" )
+            if( get_class($int) !== "EthernetInterface" && get_class($int) !== "AggregateEthernetInterface" )
                 continue;
 
             if( $int->type() === "layer3" )

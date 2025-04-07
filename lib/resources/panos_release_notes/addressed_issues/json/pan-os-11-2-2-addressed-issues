@@ -1,0 +1,40 @@
+{
+    "11-2-2": [
+        [],
+        {
+            "PAN-258702": {
+                "info": [
+                    " (WF-500 appliances only) Fixed an issue where the varrcvr process stopped responding when files were being forwarded to the WildFire cloud. "
+                ]
+            }
+        },
+        {
+            "PAN-255773": {
+                "info": [
+                    " Fixed an issue where errors related to applications in Content-preview caused commit failures. "
+                ]
+            }
+        },
+        {
+            "PAN-248508": {
+                "info": [
+                    " (VM-Series firewalls on Amazon Web Services (AWS) environments only) Fixed an issue where the firewall did not perform MSS clamping when GWLB endpoints were mapped to static subinterfaces. "
+                ]
+            }
+        },
+        {
+            "PAN-247099": {
+                "info": [
+                    " Fixed an issue where the firewall decrypted traffic unexpectedly when the client hello was spread across multiple packets. "
+                ]
+            }
+        },
+        {
+            "PAN-251929": {
+                "info": [
+                    " Fixed an issue where inbound decryption did not work when FIPS self tests were turned on. "
+                ]
+            }
+        }
+    ]
+}

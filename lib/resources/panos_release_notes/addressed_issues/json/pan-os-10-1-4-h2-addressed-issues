@@ -1,0 +1,25 @@
+{
+    "10-1-4-h2": [
+        {
+            "Issue ID": {
+                "info": [
+                    "Description"
+                ]
+            }
+        },
+        {
+            "PAN-184445": {
+                "info": [
+                    "Fixed an issue where, after upgrading Panorama and enabling Share Unused Address and Service Objects with Devices, address objects using tags to dynamic address groups were removed after a full commit."
+                ]
+            }
+        },
+        {
+            "PAN-178381": {
+                "info": [
+                    "Fixed an issue on Panorama where logs didn't display under the Monitor tab and the Elasticsearch process did not work after upgrading to a PAN-OS 10.1 release."
+                ]
+            }
+        }
+    ]
+}

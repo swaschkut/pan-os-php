@@ -2,6 +2,20 @@
     "11-1-0": [
         [],
         {
+            "PAN-281885": {
+                "info": [
+                    " When exporting and importing the CSV file, the hash values of pre-shared key (PSK) variables set at template and template stack levels inconsistently change, resulting in both variables displaying the same hash value. "
+                ]
+            }
+        },
+        {
+            "PAN-280471": {
+                "info": [
+                    " When applying filters or searching for logs in the PanoramaMonitorLogssection, you might experience slow performance. "
+                ]
+            }
+        },
+        {
             "PAN-262556": {
                 "info": [
                     " The ElasticSearch cluster health status might continue to remain yellow for an extended period after upgrading to PAN-OS 11.1.0. "
@@ -62,7 +76,7 @@
             }
         },
         {
-            " PAN-242561": {
+            "PAN-242561": {
                 "info": [
                     " GlobalProtect tunnel might disconnect shortly after being established when SSL is used as a transport protocol. Workaround: Disable Internet Protocol version 6 (TCP\/IPv6) on the PANGP Virtual Network Adapter. "
                 ]
@@ -108,6 +122,13 @@
             "PAN-224502": {
                 "info": [
                     " The autocommit time of the VM-Series firewall running PAN-OS 11.1.0 might take longer than expected. "
+                ]
+            }
+        },
+        {
+            "PAN-222805": {
+                "info": [
+                    " (PA-7500 firewall only) The CLI command show running resource-monitor ingress-backlogs does not display the correct usage values. "
                 ]
             }
         },

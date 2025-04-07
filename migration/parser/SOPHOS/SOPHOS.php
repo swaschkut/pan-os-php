@@ -119,6 +119,73 @@ class SOPHOS extends PARSER
         $master_array = $this->parserNEW($this->data);
 
 
+        $array_keys = array_keys($master_array);
+        print_r( $array_keys );
+        /*
+           [0] => network
+                [network/aaa] => network/aaa
+                [network/dns_host] => network/dns_host
+                [network/dns_group] => network/dns_group
+                [network/group] => network/group
+                [network/range] => network/range
+                [network/network] => network/network
+                [network/interface_address] => network/interface_address
+                [network/interface_broadcast] => network/interface_broadcast
+                [network/interface_network] => network/interface_network
+            [1] => service
+                [service/any] => service/any
+                [service/icmp] => service/icmp
+                [service/icmpv6] => service/icmpv6
+                [service/ip] => service/ip
+                [service/group] => service/group
+                [service/tcp] => service/tcp
+                [service/udp] => service/udp
+                [service/tcpudp] => service/tcpudp
+            [2] => packetfilter
+                 [packetfilter/packetfilter] => packetfilter/packetfilter
+                [packetfilter/nat] => packetfilter/nat
+                [packetfilter/1to1nat] => packetfilter/1to1nat
+                [packetfilter/masq] => packetfilter/masq
+            [3] => geoip
+                   [geoip/geoipgroup] => geoip/geoipgroup
+            [4] => interface
+               [interface/ethernet] => interface/ethernet
+                [interface/group] => interface/group
+            [5] => ipsec
+                [ipsec/policy] => ipsec/policy
+                [ipsec/remote_gateway] => ipsec/remote_gateway
+            [6] => route
+                [route/policy] => route/policy
+                [route/static] => route/static
+         */
+        foreach( $array_keys as $key )
+        {
+            /*
+            if(
+                #$key == "route"
+                #||
+                $key == "ipsec"
+                || $key == "interface"
+                || $key == "geoip"
+                || $key == "packetfilter"
+                || $key == "service"
+                || $key == "network"
+            )
+                continue;
+            */
+
+            $subarray_value = array();
+            #print_r( array_keys($master_array[$key]) );
+            foreach( $master_array[$key] as $value )
+            {
+                #print_r( $value );
+                $subarray_value[$value['_type']] = $value['_type'];
+            }
+            print_r($subarray_value);
+        }
+
+        #exit();
+
         ////////////////////////////////////////////////////////////////
         //
         //generate network objects based on information in array $master_array['network']
@@ -159,6 +226,131 @@ class SOPHOS extends PARSER
         $this->rule($master_array, $rulesort);
 
 
+        //Todo: route
+        //route policy
+        //route static
+        /*
+         * Array
+        (
+            [_locked] =>
+            [_ref] => REF_RouPolAnyFromReds1
+            [_type] => route/policy
+            [comment] =>
+            [destination] => REF_NetNetNetgnvlan13
+            [interface] =>
+            [name] => Any from REDS14-EXT-phone01 (Network) to NET-GN-VLAN122-HT-PBX
+            [service] => REF_ServiceAny
+            [source] => REF_NetIntPhoneNetwo
+            [status] => true
+            [target] => REF_NetHosAstaroasg2
+            [type] => host
+        )
+        Array
+        (
+            [_locked] =>
+            [_ref] => REF_RouStaToNetextph
+            [_type] => route/static
+            [comment] => 2024-10-15 MM Statische Route zum Philips Remotewartung
+            [metric] => 5
+            [name] => to NET-EXT-PhilipsWireguard
+            [network] => REF_NetNetNetextphil3
+            [status] => true
+            [target] => REF_NetHosHstdmzphil
+            [type] => host
+        )
+
+         */
+
+
+//Todo: ipsec
+
+        /*
+         * Array
+        (
+            [_locked] =>
+            [_ref] => REF_IpsPolAes256Agfa
+            [_type] => ipsec/policy
+            [comment] =>
+            [ike_auth_alg] => sha1
+            [ike_dh_group] => modp1024
+            [ike_enc_alg] => aes256
+            [ike_sa_lifetime] => 28800
+            [ipsec_auth_alg] => md5
+            [ipsec_compression] => false
+            [ipsec_enc_alg] => aes256
+            [ipsec_pfs_group] => modp1024
+            [ipsec_sa_lifetime] => 3600
+            [ipsec_strict_policy] => true
+            [name] => AES-256 - AGFA
+        )
+        Array
+        (
+            [_locked] =>
+            [_ref] => REF_IpsRemSinntal
+            [_type] => ipsec/remote_gateway
+            [authentication] => REF_IpsPsk16
+            [comment] =>
+            [ecn] => false
+            [host] => REF_NetworkAny
+            [name] => Pflegedienst Sinntal
+            [networks] => [
+            [pmtu_discovery] => false
+            [xauth] => false
+            [xauth_password] =>
+            [xauth_username] =>
+        )
+
+         */
+
+
+        //Todo: interface:
+        /*
+         * Array
+        (
+            [_locked] =>
+            [_ref] => REF_IntEthN0000392
+            [_type] => interface/ethernet
+            [additional_addresses] => []
+            [bandwidth] => 0
+            [comment] => Auto-created by RED
+            [inbandwidth] => 0
+            [itfhw] => REF_ItfRedReds2N00005
+            [link] => true
+            [mtu] => 1500
+            [mtu_auto_discovery] => true
+            [name] => REDS25-EXT-N0000392
+            [outbandwidth] => 0
+            [primary_address] => REF_ItfPri192168180114
+            [proxyarp] => false
+            [proxyndp] => false
+            [status] => true
+        )
+        Array
+        (
+            [_locked] => user
+            [_ref] => REF_UplinkPassive
+            [_type] => interface/group
+            [comment] =>
+            [link] => true
+            [members] => []
+            [name] => Standby Uplink Interfaces
+            [primary_addresses] =>
+        )
+
+         */
+        //Todo: geoip
+        /*
+         * Array
+        (
+            [_locked] => global
+            [_ref] => REF_GeoIPRegionSAmerica
+            [_type] => geoip/geoipgroup
+            [comment] =>
+            [countries] => [
+            [name] => South America
+        )
+
+         */
     }
 
     function clean_config()
@@ -276,7 +468,9 @@ class SOPHOS extends PARSER
             $line = $this->strip_hidden_chars($line);
             $line = str_replace(" \\", "", $line);    #|-> \
             $line = str_replace("\\\"", "", $line);   #|->\"
+            #$line = str_replace("\",", "", $line);     #|->"
             $line = str_replace("\"", "", $line);     #|->"
+            #$line = str_replace(",", "", $line);     #|->"
             $line = str_replace("\\'", "", $line);    #|->\'
 
 

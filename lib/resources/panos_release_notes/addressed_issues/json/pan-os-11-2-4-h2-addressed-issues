@@ -1,0 +1,33 @@
+{
+    "11-2-4-h2": [
+        [],
+        {
+            "PAN-273215": {
+                "info": [
+                    " Fixed an issue where a syntax error in the index generation script caused a high management plane CPU load after upgrading. "
+                ]
+            }
+        },
+        {
+            "PAN-271613": {
+                "info": [
+                    " Fixed an issue where configuration pushes from Panorama to the firewall failed due to an OOXML commit error. "
+                ]
+            }
+        },
+        {
+            "PAN-269404": {
+                "info": [
+                    " Fixed an issue where the firewall did not reset the maximum latency timer for hold mode. "
+                ]
+            }
+        },
+        {
+            "PAN-259078": {
+                "info": [
+                    " Fixed an issue where WildFire Analysis reports were not generated and the following error message was displayed: Error 500: Internal Server Error. "
+                ]
+            }
+        }
+    ]
+}

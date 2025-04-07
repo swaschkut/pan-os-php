@@ -1,0 +1,40 @@
+{
+    "10-2-10-h5": [
+        [],
+        {
+            "PAN-256077": {
+                "info": [
+                    " Fixed an issue where the GlobalProtect client would disconnect consistently due to keep-alive timeouts when using an SSL-only tunnel. "
+                ]
+            }
+        },
+        {
+            "PAN-241044": {
+                "info": [
+                    " Fixed an issue where traffic was denied by the interzone-default policy rule when a Security policy rule with an FQDN destination was configured. "
+                ]
+            }
+        },
+        {
+            "PAN-222590": {
+                "info": [
+                    " Fixed an issue where a semicolon appeared at the end of file names of data filtering logs. "
+                ]
+            }
+        },
+        {
+            "PAN-217198": {
+                "info": [
+                    " Fixed an issue where Security policy rules did not display values for FQDN. "
+                ]
+            }
+        },
+        {
+            "PAN-203231": {
+                "info": [
+                    " Fixed an issue where Software Version in the device summary report exported from Panorama included HTML tags. "
+                ]
+            }
+        }
+    ]
+}

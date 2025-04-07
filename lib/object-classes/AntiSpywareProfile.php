@@ -26,6 +26,8 @@ class AntiSpywareProfile extends SecurityProfile2
     public $dns_rules_obj = array();
     public $additional = array();
 
+    public $rule_coverage = array();
+
     public $cloud_inline_analysis_enabled = false;
 
     /**
@@ -617,7 +619,10 @@ class AntiSpywareProfile extends SecurityProfile2
                         #print_r($this->additional['botnet-domain'][$type]);
                         foreach( $this->additional['botnet-domain']['lists'] as $name => $value )
                         {
-                            PH::print_stdout("            - ".$name." -  action: ".$value['action'] ." -  packet-capture: ".$value['packet-capture'] );
+                            $string_packetCapture = "";
+                            if( isset( $value['packet-capture'] ) )
+                                $string_packetCapture = " -  packet-capture: ".$value['packet-capture'];
+                            PH::print_stdout("            - ".$name." -  action: ".$value['action'] .$string_packetCapture );
                         }
                     }
                     elseif( $type == "sinkhole" )
@@ -660,7 +665,6 @@ class AntiSpywareProfile extends SecurityProfile2
                     PH::print_stdout("          * " . $name . " - inline-policy-action :" . $this->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action']);
             }
         }
-
         #PH::print_stdout();
     }
 
@@ -781,52 +785,160 @@ class AntiSpywareProfile extends SecurityProfile2
 
     public function spyware_rules_best_practice()
     {
-        if( $this->owner->owner->version >= 102 ) {
-            $bp_set = null;
-            if (!empty($this->rules_obj)) {
-                $bp_set = false;
+        $bp_set = null;
+        if (!empty($this->rules_obj))
+        {
+            $bp_set = false;
 
-                foreach ($this->rules_obj as $rulename => $rule) {
-                    /** @var ThreatPolicySpyware $rule */
-                    if ($rule->spyware_rule_best_practice())
+            $check_array = $this->rules_obj[0]->spyware_rule_bp_visibility_JSON( "visibility", "spyware" );
+            $checkBP_array = $this->rules_obj[0]->spyware_rule_bp_visibility_JSON( "bp", "spyware" );
+            $this->spyware_rules_coverage();
+
+            foreach( $checkBP_array['severity'] as $bp_array )
+            {
+                if( isset($this->rule_coverage[$bp_array]) )
+                {
+                    $action_bp = FALSE;
+                    foreach( $checkBP_array['action'] as $action_check)
+                    {
+                        if( $action_check == $this->rule_coverage[$bp_array]['action']  )
+                        {
+                            $action_bp = TRUE;
+                            break;
+                        }
+                        else
+                            $action_bp = FALSE;
+                    }
+                    if( $action_bp == FALSE )
+                        return FALSE;
+
+                    $packet_bp = FALSE;
+                    foreach( $checkBP_array['packet-capture'] as $packet_check )
+                    {
+                        if( $packet_check == $this->rule_coverage[$bp_array]['packet-capture'] )
+                        {
+                            $packet_bp = TRUE;
+                            break;
+                        }
+                        else
+                            $packet_bp = FALSE;
+                    }
+                    if( $packet_bp == FALSE )
+                        return FALSE;
+
+                    if( $action_check && $packet_bp )
                         $bp_set = true;
-                    else
-                        return false;
                 }
+                elseif( $bp_array !== "any" )
+                    return false;
             }
-            return $bp_set;
+
+            foreach( $check_array['severity'] as $bp_array )
+            {
+                if( isset($this->rule_coverage[$bp_array]) )
+                {
+                    $action_bp = FALSE;
+                    foreach( $check_array['action'] as $action_check)
+                    {
+                        $negate_string = "";
+                        if( strpos( $action_check, "!" ) !== FALSE )
+                            $negate_string = "!";
+                        if( $negate_string.$this->rule_coverage[$bp_array]['action'] == $action_check )
+                        {
+                            $action_bp = FALSE;
+                            break;
+                        }
+                        else
+                            $action_bp = TRUE;
+                    }
+                    if( $action_bp == FALSE )
+                        return FALSE;
+                    else
+                    {
+                        $bp_set = true;
+                        if( $bp_array == "any" )
+                            break;
+                    }
+
+                }
+                elseif( $bp_array !== "any" )
+                    return false;
+            }
         }
-        return null;
+        return $bp_set;
     }
 
     public function spyware_rules_visibility()
     {
-        if( $this->owner->owner->version >= 102 ) {
-            $bp_set = null;
-            if (!empty($this->rules_obj)) {
-                $bp_set = false;
+        $bp_set = null;
+        if (!empty($this->rules_obj))
+        {
+            $bp_set = false;
 
-                foreach ($this->rules_obj as $rulename => $rule) {
-                    /** @var ThreatPolicySpyware $rule */
-                    if ($rule->spyware_rule_visibility())
-                        $bp_set = true;
+            $check_array = $this->rules_obj[0]->spyware_rule_bp_visibility_JSON( "visibility", "spyware" );
+            $this->spyware_rules_coverage();
+
+            foreach( $check_array['severity'] as $bp_array )
+            {
+                if( isset($this->rule_coverage[$bp_array]) )
+                {
+                    $action_bp = FALSE;
+                    foreach( $check_array['action'] as $action_check)
+                    {
+                        $negate_string = "";
+                        if( strpos( $action_check, "!" ) !== FALSE )
+                            $negate_string = "!";
+                        if( $negate_string.$this->rule_coverage[$bp_array]['action'] == $action_check )
+                        {
+                            $action_bp = FALSE;
+                            break;
+                        }
+                        else
+                        {
+                            $action_bp = TRUE;
+                            if( $bp_array == "any" )
+                                return true;
+                        }
+
+                    }
+                    if( $action_bp == FALSE )
+                        return FALSE;
                     else
-                        return false;
+                        $bp_set = true;
+                }
+                elseif( $bp_array !== "any" )
+                    return false;
+            }
+        }
+        return $bp_set;
+    }
+
+    public function spyware_rules_coverage()
+    {
+        if (!empty($this->rules_obj))
+        {
+            foreach ($this->rules_obj as $rulename => $rule)
+            {
+                /** @var ThreatPolicySpyware $rule */
+                foreach( $rule->severity() as $severity_detail )
+                {
+                    if( !isset($this->rule_coverage[$severity_detail]) )
+                    {
+                        $this->rule_coverage[$severity_detail]['action'] = $rule->action();
+                        $this->rule_coverage[$severity_detail]['packet-capture'] = $rule->packetCapture();
+                    }
                 }
             }
-            return $bp_set;
         }
-        return null;
     }
+
 
     //todo: 20241107 swaschkut - bring in BP
     public function spyware_exception_best_practice()
     {
-        if( $this->owner->owner->version >= 102 ) {
-            if (!empty($this->threatException)) {
-                foreach ($this->threatException as $threatname => $threat) {
-                    //which check??
-                }
+        if (!empty($this->threatException)) {
+            foreach ($this->threatException as $threatname => $threat) {
+                //which check??
             }
         }
         derr( "BP AS exception check not impemented" );
@@ -873,8 +985,9 @@ class AntiSpywareProfile extends SecurityProfile2
         if( $this->owner->owner->version >= 102 )
         {
             if( $this->spyware_rules_best_practice() && $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file)
-                && $this->spyware_dns_security_best_practice() && $this->spyware_dnslist_best_practice()
-                #&& $this->vulnerability_exception_best_practice()
+                #this is DNS security
+                #&& $this->spyware_dns_security_best_practice() && $this->spyware_dnslist_best_practice()
+                && $this->spyware_rules_visibility()
             )
                 return TRUE;
             else
@@ -883,8 +996,10 @@ class AntiSpywareProfile extends SecurityProfile2
         else
         {
             if( $this->spyware_rules_best_practice()
-                && $this->spyware_dns_security_best_practice() && $this->spyware_dnslist_best_practice()
+                #this is DNS security
+                #&& $this->spyware_dns_security_best_practice() && $this->spyware_dnslist_best_practice()
                 #&& $this->vulnerability_exception_best_practice()
+                && $this->spyware_rules_visibility()
             )
                 return TRUE;
             else

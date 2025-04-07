@@ -1,0 +1,145 @@
+{
+    "10-2-8-h13": [
+        [],
+        {
+            "PAN-264883": {
+                "info": [
+                    " (PA-7080 appliances with LPCs only) Fixed an issue where syslog forwarding over TCP stopped after upgrading. "
+                ]
+            }
+        },
+        {
+            "PAN-262946": {
+                "info": [
+                    " Fixed an issue on the firewall where logging in via the CLI or web interface did not work due to increased memory usage. "
+                ]
+            }
+        },
+        {
+            "PAN-262340": {
+                "info": [
+                    " Fixed an issue where FQDN resolution failed for address objects, and all FQDN traffic was denied by the interzone-default policy rule. "
+                ]
+            }
+        },
+        {
+            "PAN-262287": {
+                "info": [
+                    " Fixed an issue where dereferencing a NULL pointer that occurred caused pan_task processes to stop responding. "
+                ]
+            }
+        },
+        {
+            "PAN-261484": {
+                "info": [
+                    " Fixed an issue on the firewall where DPDK allocated twice the amount of memory as requested for pre-allocation. "
+                ]
+            }
+        },
+        {
+            "PAN-259727": {
+                "info": [
+                    " (Panorama appliances in HA configurations only) Fixed an issue where Panorama became unresponsive and displayed a 504 gateway timeout error when accessing the web interface or the CLI. "
+                ]
+            }
+        },
+        {
+            "PAN-257736": {
+                "info": [
+                    " (PA-5450 firewalls only) Fixed an issue where traffic to benign applications was was impacted by holding TCP sequential segments for MLC inspection and not releasing the full chain after a benign verdict was received. "
+                ]
+            }
+        },
+        {
+            "PAN-257462": {
+                "info": [
+                    " Fixed an issue related to the varrcvr process where the management plane CPU was higher than expected. "
+                ]
+            }
+        },
+        {
+            "PAN-255509": {
+                "info": [
+                    " (PA-5450 firewalls only) Fixed an issue where BFD sessions flapped intermittently. "
+                ]
+            }
+        },
+        {
+            "PAN-253829": {
+                "info": [
+                    " Fixed an issue where the CLI command show running security-policy timed out when the Security policy was large. "
+                ]
+            }
+        },
+        {
+            "PAN-252270": {
+                "info": [
+                    " Fixed an issue on the firewall where changes were incorrectly applied after a reboot or a restart of the configd process. "
+                ]
+            }
+        },
+        {
+            "PAN-252036": {
+                "info": [
+                    " Fixed an issue where, when the GlobalProtect portal was not configured, accessing the GlobalProtect gateway still loaded a portal malformed page. "
+                ]
+            }
+        },
+        {
+            "PAN-250787": {
+                "info": [
+                    " Fixed an issue where network issues between the firewall and the log collector caused logrcvr process memory exhaustion. "
+                ]
+            }
+        },
+        {
+            "PAN-246708": {
+                "info": [
+                    " Fixed an issue where the firewall stopped responding when the all_pktproc repeatedly restarted. "
+                ]
+            }
+        },
+        {
+            "PAN-242910": {
+                "info": [
+                    " Fixed an issue where a custom based non Superuser was unable to push to firewalls. "
+                ]
+            }
+        },
+        {
+            "PAN-241044": {
+                "info": [
+                    " Fixed an issue where traffic was denied by the interzone-default policy rule when a Security policy rule with an FQDN destination was configured. "
+                ]
+            }
+        },
+        {
+            "PAN-240066": {
+                "info": [
+                    " Fixed a duplicate MAC address issue where an ethernet interface sent out Gratuitous ARP (GARP) messages for an IP address that was not configured on it. "
+                ]
+            }
+        },
+        {
+            "PAN-240001": {
+                "info": [
+                    " Fixed an issue where the pan_task process restarted due to configd and devsrvr process memory requirements. "
+                ]
+            }
+        },
+        {
+            "PAN-239354": {
+                "info": [
+                    " Fixed an issue where DNS resolution was delayed when an Antispyware policy rule was applied to both client to firewall and firewall to internal DNS server legs of a connection. "
+                ]
+            }
+        },
+        {
+            "PAN-226361": {
+                "info": [
+                    " Fixed an issue where sessions bypassed L7 inspection or ended unexpectedly with the error resources unavailable when the firewall incorrectly interpreted the Content and Threat Detection (CTD) global packet queue as being full. "
+                ]
+            }
+        }
+    ]
+}

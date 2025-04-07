@@ -92,7 +92,8 @@ trait CP_R80_objects
                 foreach( $subarray as $host_key => $host )
                 {
                     $domain = $host['domain']['name'];
-                    $this->check_vsys( $domain );
+                    //do not add to shared
+                    #$this->check_vsys( $domain );
 
                     #print_r($host);
                     $name = $host['name'];
@@ -177,11 +178,25 @@ trait CP_R80_objects
                 {
                     #print_r($service);
                     $domain = $service['domain']['name'];
-                    $this->check_vsys( $domain );
+                    //do not add to shared
+                    #$this->check_vsys( $domain );
 
                     $name = $service['name'];
                     $dport = $service['port'];
                     $description = $service['comments'];
+                    if( strpos( $dport, '<' ) !== false )
+                    {
+                        $dport = str_replace( '<', '', $dport );
+                        $dport = "0-".$dport -1;
+                    }
+                    elseif( strpos( $dport, '>' ) !== false )
+                    {
+                        $dport = str_replace( '>', '', $dport );
+                        $dport = $dport + 1 ."-65535";
+                    }
+
+                    if( $dport == "Any" )
+                        $dport = "1-65525";
 
                     $this->MainAddService( $name, 'tcp', $dport, $description);
 
@@ -206,10 +221,25 @@ trait CP_R80_objects
                 {
                     #print_r($service);
                     $domain = $service['domain']['name'];
-                    $this->check_vsys( $domain );
+                    //do not add to shared
+                    #$this->check_vsys( $domain );
 
                     $name = $service['name'];
                     $dport = $service['port'];
+                    if( strpos( $dport, '<' ) !== false )
+                    {
+                        $dport = str_replace( '<', '', $dport );
+                        $dport = "0-".$dport -1;
+                    }
+                    elseif( strpos( $dport, '>' ) !== false )
+                    {
+                        $dport = str_replace( '>', '', $dport );
+                        $dport = $dport + 1 ."-65535";
+                    }
+
+                    if( $dport == "Any" )
+                        $dport = "1-65525";
+
                     $description = $service['comments'];
 
                     $this->MainAddService( $name, 'udp', $dport, $description);
@@ -233,7 +263,8 @@ trait CP_R80_objects
                 foreach( $subarray as $service_key => $service )
                 {
                     $domain = $service['domain']['name'];
-                    $this->check_vsys( $domain );
+                    //do not add to shared
+                    #$this->check_vsys( $domain );
 
                     #print_r($service);
                     //Todo: create tmp service, bring in information related to "icmp-type" which app-id will replace this service
@@ -264,7 +295,8 @@ trait CP_R80_objects
                 foreach( $subarray as $service_key => $service )
                 {
                     $domain = $service['domain']['name'];
-                    $this->check_vsys( $domain );
+                    //do not add to shared
+                    #$this->check_vsys( $domain );
 
                     #print_r($service);
                     //Todo: create tmp service, bring in information related to "ip-protocol" which app-id will replace this service
@@ -303,7 +335,8 @@ trait CP_R80_objects
                 foreach( $subarray as $host_key => $host )
                 {
                     $domain = $host['domain']['name'];
-                    $this->check_vsys( $domain );
+                    //do not add to shared
+                    #$this->check_vsys( $domain );
                     #print_r( $host );
                     #print "name: ".$host['name']. " - ip-address: ".$host['ipv4-address']." comments: ".$host['comments']."\n";
 
@@ -334,7 +367,8 @@ trait CP_R80_objects
                 foreach( $subarray as $host_key => $host )
                 {
                     $domain = $host['domain']['name'];
-                    $this->check_vsys( $domain );
+                    //do not add to shared
+                    #$this->check_vsys( $domain );
 
                     #print_r( $host );
                     #print "name: ".$host['name']. " - ip-address: ".$host['ipv4-address']." comments: ".$host['comments']."\n";
@@ -368,7 +402,8 @@ trait CP_R80_objects
                 foreach( $subarray as $host_key => $host )
                 {
                     $domain = $host['domain']['name'];
-                    $this->check_vsys( $domain );
+                    //do not add to shared
+                    // $this->check_vsys( $domain );
 
                     #print_r( $host );
                     /*
@@ -528,7 +563,7 @@ trait CP_R80_objects
                 #print_r( $host );
 
                 $domain = $host['domain']['name'];
-                $this->check_vsys( $domain );
+                #$this->check_vsys( $domain );
 
                 $name = $host['name'];
                 $name = $this->truncate_names($this->normalizeNames($name));

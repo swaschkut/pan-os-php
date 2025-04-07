@@ -1,0 +1,152 @@
+{
+    "10-2-9-h14": [
+        [],
+        {
+            "PAN-264871": {
+                "info": [
+                    " Fixed an issue on Panorama where the configd process stopped responding when viewing IP addresses on dynamic address groups with a large number of IP addresses. "
+                ]
+            }
+        },
+        {
+            "PAN-263226": {
+                "info": [
+                    " Fixed an issue where decryption based traffic failed on Explicit Proxy nodes. "
+                ]
+            }
+        },
+        {
+            "PAN-262340": {
+                "info": [
+                    " Fixed an issue where FQDN resolution failed for address objects, and all FQDN traffic was denied by the interzone-default policy rule. "
+                ]
+            }
+        },
+        {
+            "PAN-262287": {
+                "info": [
+                    " Fixed an issue where dereferencing a NULL pointer that occurred caused pan_task processes to stop responding. "
+                ]
+            }
+        },
+        {
+            "PAN-260928": {
+                "info": [
+                    " Fixed an issue where GlobalProtect failed to connect when using LDAP authentication with machine certificates with the error message You are not authorized to connect to GlobalProtect portal. "
+                ]
+            }
+        },
+        {
+            "PAN-260512": {
+                "info": [
+                    " Fixed an issue where accessing the IP address of the device address group objects from the user interface caused the configd process to stop responding. "
+                ]
+            }
+        },
+        {
+            "PAN-259769": {
+                "info": [
+                    " Fixed an issue where the GlobalProtect portal was not accessible via a web browser and displayed the error ERR_EMPTY_RESPONSE. "
+                ]
+            }
+        },
+        {
+            "PAN-259002": {
+                "info": [
+                    " Fixed an issue where frequent external dynamic list updates caused the configd process to restart. "
+                ]
+            }
+        },
+        {
+            "PAN-256077": {
+                "info": [
+                    " Fixed an issue where the GlobalProtect client would disconnect consistently due to keep-alive timeouts when using an SSL-only tunnel. "
+                ]
+            }
+        },
+        {
+            "PAN-255619": {
+                "info": [
+                    " Fixed an intermittent issue where file downloads from websites failed. "
+                ]
+            }
+        },
+        {
+            "PAN-255323": {
+                "info": [
+                    " (PA-7050 firewalls only) Fixed an issue where the Network Processing Card (NPC), Data Processing Card (DPC), and Log forwarding Card (LFC) remained in a starting state after an unexpected power cycle. "
+                ]
+            }
+        },
+        {
+            "PAN-252669": {
+                "info": [
+                    " Fixed an issue where the ikemgr process stopped responding with a SIGSEGV error. "
+                ]
+            }
+        },
+        {
+            "PAN-251929": {
+                "info": [
+                    " Fixed an issue where inbound decryption did not work when FIPS self tests were turned on. "
+                ]
+            }
+        },
+        {
+            "PAN-250020": {
+                "info": [
+                    " Fixed an issue where MLC2 verdict retrieval failed due to a regression in loopback data flag handling. "
+                ]
+            }
+        },
+        {
+            "PAN-248130": {
+                "info": [
+                    " Fixed an issue where the AND operation under a Dynamic Address Group comparison did not work after upgrading the AWS plugin to 3.0.1. "
+                ]
+            }
+        },
+        {
+            "PAN-241044": {
+                "info": [
+                    " Fixed an issue where traffic was denied by the interzone-default policy rule when a Security policy rule with an FQDN destination was configured. "
+                ]
+            }
+        },
+        {
+            "PAN-236133": {
+                "info": [
+                    " Fixed an issue where SSL traffic was impacted when SSL Command and Control detector for Incline Cloud Analysis was set to reset-both, reset-client, reset-server, or drop. "
+                ]
+            }
+        },
+        {
+            "PAN-233681": {
+                "info": [
+                    " Fixed an issue where the authd process on Prisma Access firewalls stopped responding after receiving the SIGUSR1 signal. "
+                ]
+            }
+        },
+        {
+            "PAN-226361": {
+                "info": [
+                    " Fixed an issue where sessions bypassed L7 inspection or ended unexpectedly with the error resources unavailable when the firewall incorrectly interpreted the Content and Threat Detection (CTD) global packet queue as being full. "
+                ]
+            }
+        },
+        {
+            "PAN-222590": {
+                "info": [
+                    " Fixed an issue where a semicolon appeared at the end of file names of data filtering logs. "
+                ]
+            }
+        },
+        {
+            "PAN-217198": {
+                "info": [
+                    " Fixed an issue where Security policy rules did not display values for FQDN. "
+                ]
+            }
+        }
+    ]
+}

@@ -1,0 +1,68 @@
+{
+    "10-2-10-h9": [
+        [],
+        {
+            "PAN-272809": {
+                "info": [
+                    " A fix was made to address CVE-2024-0012 (PAN-SA-2024-0015) and CVE-2024-9474. "
+                ]
+            }
+        },
+        {
+            "PAN-268314": {
+                "info": [
+                    " Fixed an issue where new files were not sent to WildFire. With this fix, the WildFire reserved drive space has been increased for greater session caching capability. "
+                ]
+            }
+        },
+        {
+            "PAN-267535": {
+                "info": [
+                    " Fixed an issue where all_task processes stopped responding on the remote network firewall, which caused tunnels to go down and the pan_task CPU usage to approach 100%. "
+                ]
+            }
+        },
+        {
+            "PAN-265778": {
+                "info": [
+                    " Fixed an issue where the GlobalProtect client failed to connect after an upgrade due to the group names not being retrieved on time. "
+                ]
+            }
+        },
+        {
+            "PAN-265399": {
+                "info": [
+                    " Fixed an issue where DNS queries for uppercase internal domain (SRV record) timed out when DNS Security was enabled. "
+                ]
+            }
+        },
+        {
+            "PAN-255915": {
+                "info": [
+                    " Fixed an issue where a memory leak in the sslmgr process caused the firewall to restart. "
+                ]
+            }
+        },
+        {
+            "PAN-240251": {
+                "info": [
+                    " Fixed an issue where the vldmgr process incorrectly restarted during an Elasticsearch restart. "
+                ]
+            }
+        },
+        {
+            "PAN-232368": {
+                "info": [
+                    " Fixed an issue where commits failed with the error message Error: Max. user groups used in policy 1389 exceed capacity (1000). "
+                ]
+            }
+        },
+        {
+            "PAN-218279": {
+                "info": [
+                    " Fixed an issue on Panorama where hostname variables displayed as unknown when exporting template or template stack variables in CSV format. "
+                ]
+            }
+        }
+    ]
+}

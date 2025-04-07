@@ -1,0 +1,40 @@
+{
+    "10-2-7-h19": [
+        [],
+        {
+            "PAN-273730": {
+                "info": [
+                    " (PA-7000 Series firewalls only) Fixed an issue where the web interface became unresponsive after upgrading to PAN-OS 10.2.7-h8. "
+                ]
+            }
+        },
+        {
+            "PAN-268727": {
+                "info": [
+                    " Fixed an issue where traffic was dropped when the accumulation proxy was enabled and header insertion modified packets. "
+                ]
+            }
+        },
+        {
+            "PAN-260131": {
+                "info": [
+                    " Fixed an issue where the firewall consumed a large amount of memory when forwarding raw logs. "
+                ]
+            }
+        },
+        {
+            "PAN-248752": {
+                "info": [
+                    " (PA-3200 Series, PA-5200 Series, and PA-850 firewalls only) Fixed an issue where the firewall did not have enough Linux memory on the dataplane, which caused the firewall to restart. "
+                ]
+            }
+        },
+        {
+            "PAN-246772": {
+                "info": [
+                    " Fixed an issue on the firewall where the dataplane went down due to a path monitor failure caused by an out-of-memory (OOM) condition related to the pan_task process. "
+                ]
+            }
+        }
+    ]
+}

@@ -93,6 +93,8 @@ class App
     public $obsolete = array();
     public $subapps = array();
 
+    public $alg_disable_capability = FALSE;
+
 
     //Todo: new dynamic content contains SAAS appid-saas-risk-fields
     static public $_supportedCharacteristics = array(

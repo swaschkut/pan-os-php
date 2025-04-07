@@ -1,0 +1,131 @@
+{
+    "11-1-4": [
+        [],
+        {
+            "PAN-256181": {
+                "info": [
+                    "Fixed an issue where the management interface and front panel port interface statistics were not populated in asynchronous mode of SNMP operations. "
+                ]
+            }
+        },
+        {
+            "PAN-255868": {
+                "info": [
+                    "(PA-3400 Series firewalls only) Fixed an issue where the firewall entered maintenance mode after enabling kernel data collection during the silent reboot. "
+                ]
+            }
+        },
+        {
+            "PAN-253317": {
+                "info": [
+                    "(VM-Series firewalls on Microsoft Azure environments only) Fixed an issue where you were unable to log in to the firewall after a private data reset. "
+                ]
+            }
+        },
+        {
+            "PAN-252517": {
+                "info": [
+                    "Fixed an issue where SNMP failed to respond to multiple Object Identifier (OID) queries in a single SNMP GET request. "
+                ]
+            }
+        },
+        {
+            "PAN-251639": {
+                "info": [
+                    " Fixed an issue where an out of memory condition might occur due to a memory leak in the varrcvr process when a Wildfire Analysis security profile is enabled. "
+                ]
+            }
+        },
+        {
+            "PAN-250597": {
+                "info": [
+                    "Fixed an issue where Global Find for a Panorama pushed shared address object displayed Others in the results. "
+                ]
+            }
+        },
+        {
+            "PAN-250270": {
+                "info": [
+                    "Fixed an issue where partial commits did not merge changes when the complete rule base was updated with edit operations via XML API. "
+                ]
+            }
+        },
+        {
+            "PAN-249814": {
+                "info": [
+                    "Fixed an issue where multiple all_task processes stopped responding, which caused the dataplane to fail. "
+                ]
+            }
+        },
+        {
+            "PAN-249292": {
+                "info": [
+                    " (VM-Series firewalls on Microsoft Azure environments only) Fixed an issue where CPU usage was higher than expected after a hotplug event when Accelerated Networking was enabled for the management interface. "
+                ]
+            }
+        },
+        {
+            "PAN-245157": {
+                "info": [
+                    "(VM-Series firewalls in Microsoft Azure environments only) Fixed an issue where the firewall restarted after an HA failover when DPDK was enabled. "
+                ]
+            }
+        },
+        {
+            "PAN-245125": {
+                "info": [
+                    "(VM-Series firewalls in Microsoft Azure environments only) Fixed an issue where file descriptors were not closed due to invalid configurations. "
+                ]
+            }
+        },
+        {
+            "PAN-244746": {
+                "info": [
+                    "Fixed an issue where changes committed on Panorama were not reflected on the firewall after a successful push. "
+                ]
+            }
+        },
+        {
+            "PAN-238183": {
+                "info": [
+                    "Fixed an issue where Panorama displayed deviating device system logs for non-connected interfaces. "
+                ]
+            }
+        },
+        {
+            "PAN-236497": {
+                "info": [
+                    "Fixed an issue where the firewall was unable to purge expired GTP-U sessions that remained as allocated sessions even after the TTL was expired. "
+                ]
+            }
+        },
+        {
+            "PAN-234977": {
+                "info": [
+                    "Fixed an issue where, when a Layer 2 interface that was a member of a VLAN was down, all traffic transmitted over the VLAN was dropped. "
+                ]
+            }
+        },
+        {
+            "PAN-231642": {
+                "info": [
+                    "Fixed an issue on the Panorama web interface where users that were logged in through multiple sessions were able to see an active lock on only one session. "
+                ]
+            }
+        },
+        {
+            "PAN-214773": {
+                "info": [
+                    "Fixed an issue where RTP packets traversing inter-vsys were dropped on the outgoing vsys. "
+                ]
+            }
+        },
+        {
+            "PAN-202095": {
+                "info": [
+                    "Fixed an issue on the web interface where the language setting was not retained. "
+                ]
+            }
+        }
+    ]
+}

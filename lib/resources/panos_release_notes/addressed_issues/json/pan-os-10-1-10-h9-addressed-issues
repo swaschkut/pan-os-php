@@ -1,0 +1,26 @@
+{
+    "10-1-10-h9": [
+        [],
+        {
+            "PAN-272809": {
+                "info": [
+                    " A fix was made to address CVE-2024-9474. "
+                ]
+            }
+        },
+        {
+            "PAN-267338": {
+                "info": [
+                    " Fixed an issue where GlobalProtect logs were not available after a tunnel teardown between the satellite and the gateway. "
+                ]
+            }
+        },
+        {
+            "PAN-167662": {
+                "info": [
+                    " Fixed an issue where the rasmgr process stopped responding when it was processing a large number of messages. "
+                ]
+            }
+        }
+    ]
+}

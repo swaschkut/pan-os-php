@@ -615,6 +615,24 @@ class Zone
         mwarning("object is not part of this Zone : {$h->toString()}");
     }
 
+    public function replaceReferencedObject($old, $new)
+    {
+        $this->referencedObjectRenamed($new, $old->name());
+        return true;
+    }
+
+    public function API_replaceReferencedObject($old, $new)
+    {
+        $ret = $this->replaceReferencedObject($old, $new);
+
+        if( $ret )
+        {
+            $this->API_sync();
+        }
+
+        return $ret;
+    }
+
     public function &getXPath()
     {
         if( $this->isTmp() )

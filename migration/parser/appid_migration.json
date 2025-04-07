@@ -29,6 +29,13 @@
                 "traceroute"
             ]
         },
+        "tmp-ICMP": {
+            "toApp": [
+                "icmp",
+                "ping",
+                "traceroute"
+            ]
+        },
         "tmp-icmp_8_0": {
             "toApp": [
                 "icmp_echo"
@@ -453,6 +460,26 @@
           "toApp": [
             "gre"
           ]
+        },
+        "tmp-vrrp": {
+            "toApp": [
+                "vrrp"
+            ]
+        },
+        "tmp-igmp": {
+            "toApp": [
+                "igmp"
+            ]
+        },
+        "tmp-dhcp-reply": {
+            "toApp": [
+                "dhcp"
+            ]
+        },
+        "tmp-dhcp-request": {
+            "toApp": [
+                "dhcp"
+            ]
         }
     }
 }

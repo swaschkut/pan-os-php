@@ -1,0 +1,68 @@
+{
+    "10-1-14-h6": [
+        [],
+        {
+            "PAN-272809": {
+                "info": [
+                    " A fix was made to address CVE-2024-9474. "
+                ]
+            }
+        },
+        {
+            "PAN-264883": {
+                "info": [
+                    " (PA-7080 appliances with Log Forwarding Cards (LPCs) only) Fixed an issue where syslog forwarding over TCP stopped after upgrading. "
+                ]
+            }
+        },
+        {
+            "PAN-264249": {
+                "info": [
+                    " Fixed an issue on the firewall where SNMP queries timed out when using SNMP. "
+                ]
+            }
+        },
+        {
+            "PAN-263287": {
+                "info": [
+                    " The PAN-COMMON-MIB.my file was updated to support new object identifiers (OID) to poll interface use via SNMP with table identifiers. "
+                ]
+            }
+        },
+        {
+            "PAN-262340": {
+                "info": [
+                    " Fixed an issue where FQDN resolution failed for address objects, and all FQDN traffic was denied by the interzone-default policy rule. "
+                ]
+            }
+        },
+        {
+            "PAN-259910": {
+                "info": [
+                    " Fixed an issue where the firewall reported the same value over consecutive SNMP polls when asynchronous mode was enabled. "
+                ]
+            }
+        },
+        {
+            "PAN-257601": {
+                "info": [
+                    " (PA-5450 firewalls only) Fixed an issue where Networking Cards (NC) experienced an internal link fault which caused path monitoring failure on the Dataplane Processing Card (DPC). "
+                ]
+            }
+        },
+        {
+            "PAN-241044": {
+                "info": [
+                    " Fixed an issue where traffic was denied by the interzone-default policy rule when a Security policy rule with an FQDN destination was configured. "
+                ]
+            }
+        },
+        {
+            "PAN-164885": {
+                "info": [
+                    " Fixed an issue on Panorama where Commit and Push or Push to Devices operations failed when an external dynamic list was configured to check for updates every 5 minutes due to the commit and external dynamic fetch processes overlapping. "
+                ]
+            }
+        }
+    ]
+}

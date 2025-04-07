@@ -1,0 +1,12 @@
+{
+    "10-2-0-h1": [
+        [],
+        {
+            "PAN-190311": {
+                "info": [
+                    "(PA-220 and PA-220R firewalls and PA-800 Series firewalls only) Fixed an issue where management connectivity to the firewall was lost due to the expiration of the DHCP lease, which caused the IP configuration on the management port to be purged in PAN-OS 10.2.0. To upgrade, download PAN-OS 10.2.0 (no installation), then download and install PAN-OS 10.2.0-h1."
+                ]
+            }
+        }
+    ]
+}

@@ -168,14 +168,15 @@ class CsvParser
                 return $ret;
             }
 
-            $explodedLine = str_getcsv($line);
+            $explodedLine = str_getcsv($line, ",", '"', "\\");
 
 
             for( $i = 0; $i < count($explodedLine); $i++ )
             {
                 if( isset($headers[$i]) )
                 {
-                    $csvRecord[$headers[$i]] = $explodedLine[$i];
+                    $header = str_replace('"', "", $headers[$i]);
+                    $csvRecord[$header] = $explodedLine[$i];
                 }
                 else
                 {

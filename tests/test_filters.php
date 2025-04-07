@@ -139,6 +139,14 @@ foreach( RQuery::$defaultFilters as $type => &$filtersByField )
             #elseif( $type == 'application' )
             #    $util = '../utils/application-edit.php';
 
+            /*
+            if( $type == 'rule' ){ continue; }
+            elseif( $type == 'address' ){ continue; }
+            elseif( $type == 'service' ) { continue; }
+            elseif( $type == 'tag' ) { continue; }
+            elseif( $type == 'zone' ) { continue; }
+            elseif( $type == 'schedule' ) { continue; }
+            */
             elseif( $type == 'securityprofile' )
             {
                 PH::print_stdout( "******* SKIPPED for now *******" );
@@ -214,6 +222,41 @@ foreach( RQuery::$defaultFilters as $type => &$filtersByField )
                 continue;
             }
             elseif( $type == 'dns-rule' )
+            {
+                PH::print_stdout("******* SKIPPED for now *******");
+                continue;
+            }
+            elseif( $type == 'gp-gateway' )
+            {
+                PH::print_stdout("******* SKIPPED for now *******");
+                continue;
+            }
+            elseif( $type == 'gp-portal' )
+            {
+                PH::print_stdout("******* SKIPPED for now *******");
+                continue;
+            }
+            elseif( $type == 'ike-gateway' )
+            {
+                PH::print_stdout("******* SKIPPED for now *******");
+                continue;
+            }
+            elseif( $type == 'ike-profile' )
+            {
+                PH::print_stdout("******* SKIPPED for now *******");
+                continue;
+            }
+            elseif( $type == 'ipsec-tunnel' )
+            {
+                PH::print_stdout("******* SKIPPED for now *******");
+                continue;
+            }
+            elseif( $type == 'ipsec-profile' )
+            {
+                PH::print_stdout("******* SKIPPED for now *******");
+                continue;
+            }
+            elseif( $type == 'gre-tunnel' )
             {
                 PH::print_stdout("******* SKIPPED for now *******");
                 continue;

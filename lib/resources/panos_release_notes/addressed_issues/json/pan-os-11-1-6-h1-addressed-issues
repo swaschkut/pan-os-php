@@ -1,0 +1,432 @@
+{
+    "11-1-6-h1": [
+        [],
+        {
+            "PAN-278088": {
+                "info": [
+                    " Fixed an issue where the show system resources follow CLI command was not available. "
+                ]
+            }
+        },
+        {
+            "PAN-276546": {
+                "info": [
+                    " Fixed an issue where a session lost the PBF rule mapping after a configuration change or commit. "
+                ]
+            }
+        },
+        {
+            "PAN-273994": {
+                "info": [
+                    " A fix was made to address CVE-2025-0111. "
+                ]
+            }
+        },
+        {
+            "PAN-273971": {
+                "info": [
+                    " A fix was made to address CVE-2025-0108. "
+                ]
+            }
+        },
+        {
+            "PAN-273300": {
+                "info": [
+                    " Fixed an issue on Panorama where upgrading to PAN-OS 11.0.4-h2 failed with a validation error. "
+                ]
+            }
+        },
+        {
+            "PAN-273278": {
+                "info": [
+                    " A fix was made to address CVE-2025-0109. "
+                ]
+            }
+        },
+        {
+            "PAN-273245": {
+                "info": [
+                    " (Firewalls in HA configurations only) Fixed an issue where upgrading an HA firewall pair from PAN-OS 10.2.11-h1 to PAN-OS 11.1.5 caused the firewalls to enter a nonfunctional loop due to repeated HA path monitoring failures. "
+                ]
+            }
+        },
+        {
+            "PAN-273129": {
+                "info": [
+                    " Fixed an issue on the web interface where the negate option was visible when you clicked on the rule name, but not when you viewed the target options from the rulebase attribute. "
+                ]
+            }
+        },
+        {
+            "PAN-273085": {
+                "info": [
+                    " Fixed an issue on the web interface where you were unable to edit or create policy rules. "
+                ]
+            }
+        },
+        {
+            "PAN-273026": {
+                "info": [
+                    " Fixed an issue where traffic logs did not display correctly when filters were applied. "
+                ]
+            }
+        },
+        {
+            "PAN-273021": {
+                "info": [
+                    " Fixed an issue where 25G port links did not come up due to a change in the handling of 25G DAC modules. "
+                ]
+            }
+        },
+        {
+            "PAN-272959": {
+                "info": [
+                    "Fixed an issue where the firewall generated BGP update packets larger than 1500 bytes when the interface MTU was 1500 bytes and jumbo frames were enabled globally."
+                ]
+            }
+        },
+        {
+            "PAN-272849": {
+                "info": [
+                    " Fixed an issue where log forwarding to a UDP syslog server stopped when an unreachable TCP syslog server was configured and applied. "
+                ]
+            }
+        },
+        {
+            "PAN-272538": {
+                "info": [
+                    " Fixed an issue where the configd process stopped responding during a commit-all validation when there were uncommitted changes and share-unused-objects-with-devices was set to off. "
+                ]
+            }
+        },
+        {
+            "PAN-272006": {
+                "info": [
+                    " Fixed an issue where the firewall did not trigger a kernel core dump as a large core when the CPLD (Complex Programmable Logic Device) sent a Non-Maskable Interrupt (NMI) to the CPU. "
+                ]
+            }
+        },
+        {
+            "PAN-271926": {
+                "info": [
+                    " Fixed an issue where TLS 1.3 decryption failed with a bad record MAC error when the firewall was configured to decrypt and inspect TLS traffic. "
+                ]
+            }
+        },
+        {
+            "PAN-271912": {
+                "info": [
+                    " Fixed an issue on Panorama where the configd process stopped responding when filtering in the configuration audit window after upgrading to PAN-OS 11.1.3. "
+                ]
+            }
+        },
+        {
+            "PAN-271613": {
+                "info": [
+                    " Fixed an issue where configuration pushes from Panorama to the firewall failed due to an OOXML commit error. "
+                ]
+            }
+        },
+        {
+            "PAN-271314": {
+                "info": [
+                    " Fixed an issue where pushing changes to a prefix list used for BGP from Panorama affected OSPF routes. "
+                ]
+            }
+        },
+        {
+            "PAN-270607": {
+                "info": [
+                    " (Firewalls in active\/passive HA configurations only) Fixed an issue where OSPF failed to establish after a failover from the active firewall to the passive firewall. "
+                ]
+            }
+        },
+        {
+            "PAN-270549": {
+                "info": [
+                    " Fixed an issue where early TLS data was not handled correctly by the accumulation proxy. "
+                ]
+            }
+        },
+        {
+            "PAN-270471": {
+                "info": [
+                    " (Firewalls in active\/active configurations only) Fixed an issue where the firewall did not detect configuration changes when only the interface of an IKE gateway was changed, which caused IPSec tunnels to not come up after migrating the IKE gateway IP address from a subinterface to a physical interface. "
+                ]
+            }
+        },
+        {
+            "PAN-269956": {
+                "info": [
+                    " Fixed an issue where the all_pktproc process stopped responding, which caused internal path monitor failures. "
+                ]
+            }
+        },
+        {
+            "PAN-269899": {
+                "info": [
+                    " Fixed an issue where the Panorama web interface was slower than expected when querying for device tags. "
+                ]
+            }
+        },
+        {
+            "PAN-269737": {
+                "info": [
+                    " Fixed an issue where the followig critical error displayed repeatedly: \/mnt\/cdrom is mounted as Read-Only. "
+                ]
+            }
+        },
+        {
+            "PAN-269731": {
+                "info": [
+                    " Fixed an issue where Panorama did not display logs from firewalls after upgrading to PAN-OS 10.2.11 on devices due to Elasticsearch (ES) getting restarted continuously. "
+                ]
+            }
+        },
+        {
+            "PAN-269499": {
+                "info": [
+                    " Fixed an issue where the firewall stopped responding when receiving a high number of logs. "
+                ]
+            }
+        },
+        {
+            "PAN-269106": {
+                "info": [
+                    " Fixed an issue where the wifclient might crash during server cert verification for MICA gRPC connections and cause the dataplane to restart when using a cloud-based ML detection engine (MICA). On certain platforms, this caused the firewall to reboot periodically. "
+                ]
+            }
+        },
+        {
+            "PAN-268972": {
+                "info": [
+                    " Fixed an issue where Panorama was slower than expected when using a high number of device group tags in a non-shared context. "
+                ]
+            }
+        },
+        {
+            "PAN-268815": {
+                "info": [
+                    " Fixed an issue that caused the firewall to reboot due to the wifclient exiting multiple times when using IoT Security. "
+                ]
+            }
+        },
+        {
+            "PAN-268465": {
+                "info": [
+                    " Fixed an issue with firewalls in active\/passive HA configurations where the the total user count in the registered users was different between the active and passive firewall. "
+                ]
+            }
+        },
+        {
+            "PAN-267781": {
+                "info": [
+                    " Fixed an issue where Panorama did not display the Source Dynamic Address Group. "
+                ]
+            }
+        },
+        {
+            "PAN-267762": {
+                "info": [
+                    " (Panorama virtual appliances in Management-Only mode) Fixed a issue where the maximum configuration size was lower than expected. "
+                ]
+            }
+        },
+        {
+            "PAN-267671": {
+                "info": [
+                    " Fixed an issue where the firewall rebooted unexpectedly due to the all_task process restarting with an OOM condition due to a memory leak on the reportd process. "
+                ]
+            }
+        },
+        {
+            "PAN-267662": {
+                "info": [
+                    " Fixed an issue where the firewall experienced a memory out-of-bounds access when the firewall was configured with SD-WAN and the SD-WAN plugin was loading, which caused the firewall to stop responding and drop VPN tunnels. "
+                ]
+            }
+        },
+        {
+            "PAN-267097": {
+                "info": [
+                    " Fixed an issue where the replay database size increased significantly due to local and special configurations not being purged after commits. "
+                ]
+            }
+        },
+        {
+            "PAN-266354": {
+                "info": [
+                    " Fixed an issue where Hybrid-SWG explicit proxy connections failed when the number of destination domains exceeded 1024. "
+                ]
+            }
+        },
+        {
+            "PAN-265745": {
+                "info": [
+                    " Fixed an issue where the firewall displayed incorrect MAC receive error counters for VMWare devices hosted in ESXi. "
+                ]
+            }
+        },
+        {
+            "PAN-265219": {
+                "info": [
+                    " (VM-Series firewalls only) Fixed an issue where GRE traffic did not work properly. "
+                ]
+            }
+        },
+        {
+            "PAN-265179": {
+                "info": [
+                    " Fixed an issue where a kernel race condition caused the firewall to reboot with a kernel panic. "
+                ]
+            }
+        },
+        {
+            "PAN-264423": {
+                "info": [
+                    " Fixed an issue where the firewall sent a 503 response when a client connected to a web server when the firewall was configured as a web proxy and authentication bypass for Kerberos was enabled. "
+                ]
+            }
+        },
+        {
+            "PAN-262946": {
+                "info": [
+                    " Fixed an issue on the firewall where logging in via the CLI or web interface did not work due to increased memory usage. "
+                ]
+            }
+        },
+        {
+            "PAN-262383": {
+                "info": [
+                    " Fixed an issue where the firewall was unable to decompress the HTTP2 header, which caused the session to be classified as unknown-tcp instead of web-browsing. "
+                ]
+            }
+        },
+        {
+            "PAN-260461": {
+                "info": [
+                    " Fixed an issue where traffic logs showed a non-zero destination port number on ICMP echo sessions through the firewall. "
+                ]
+            }
+        },
+        {
+            "PAN-260290": {
+                "info": [
+                    " Fixed an issue for fixed model licenses to support new content size requirements by reducing the total sessions supported to be equivalent to their flex memory counterpart. "
+                ]
+            }
+        },
+        {
+            "PAN-260235": {
+                "info": [
+                    " Fixed an issue where the firewall sent Threat logs and URL logs to an external syslog server without Security profile settings when Enhanced Application Logging was enabled. "
+                ]
+            }
+        },
+        {
+            "PAN-260149": {
+                "info": [
+                    " Fixed an issue where the management plane DNS cache size was lower than expected. "
+                ]
+            }
+        },
+        {
+            "PAN-259078": {
+                "info": [
+                    " Fixed an issue where WildFire Analysis reports were not generated and the following error message was displayed: Error 500: Internal Server Error. "
+                ]
+            }
+        },
+        {
+            "PAN-258149": {
+                "info": [
+                    " Fixed an issue where the firewall dropped the SYN-ACK when using the TCP Fast Open option. "
+                ]
+            }
+        },
+        {
+            "PAN-255323": {
+                "info": [
+                    " (PA-7050 firewalls only) Fixed an issue where the Network Processing Card (NPC), Data Processing Card (DPC), and Log forwarding Card (LFC) remained in a starting state after an unexpected power cycle. "
+                ]
+            }
+        },
+        {
+            "PAN-254904": {
+                "info": [
+                    " Fixed an issue on Panorama where a core file was generated by \/usr\/local\/bin\/logd during a restart. "
+                ]
+            }
+        },
+        {
+            "PAN-254293": {
+                "info": [
+                    " Fixed an issue where an explicit proxy caused intermittent SSL handshake failures to SAP applications accessing public URLs. "
+                ]
+            }
+        },
+        {
+            "PAN-252381": {
+                "info": [
+                    " Fixed an issue where the Panorama web interface was slower than expected when opening interfaces, virtual routers, and zones in a template or template stack. "
+                ]
+            }
+        },
+        {
+            "PAN-251484": {
+                "info": [
+                    " Fixed an issue where the firewall web interface displayed incorrect PPPoE configuration options under the subinterface of an Aggregate Ethernet interface. "
+                ]
+            }
+        },
+        {
+            "PAN-250585": {
+                "info": [
+                    " Fixed an issue where the firewall CPU use increased after upgrading from PAN-OS 10.2.4-h4 to PAN-OS 10.2.8 due to a change in system resource reporting by the REST API. "
+                ]
+            }
+        },
+        {
+            "PAN-248508": {
+                "info": [
+                    " (VM-Series firewalls on Amazon Web Services (AWS) environments only) Fixed an issue where the firewall did not perform MSS clamping when GWLB endpoints were mapped to static subinterfaces. "
+                ]
+            }
+        },
+        {
+            "PAN-246699": {
+                "info": [
+                    " Fixed an issue on Panorama where Rule Usage and Apps Seen under Security policy rules stopped incrementing. "
+                ]
+            }
+        },
+        {
+            "PAN-233647": {
+                "info": [
+                    " Fixed an issue where Panorama management servers generated duplicate configuration logs. "
+                ]
+            }
+        },
+        {
+            "PAN-233581": {
+                "info": [
+                    " Fixed an issue on firewalls in active\/active HA configurations where SYN+ACK packets of asymmetric TCP sessions were dropped because of a session synchronization issue. "
+                ]
+            }
+        },
+        {
+            "PAN-224152": {
+                "info": [
+                    " Fixed an issue where device tags for devices in a child device group were not available in the parent shared device group. "
+                ]
+            }
+        },
+        {
+            "PAN-216054": {
+                "info": [
+                    " Fixed an issue that caused the firewall's fan speed to increase while it was idle. "
+                ]
+            }
+        }
+    ]
+}

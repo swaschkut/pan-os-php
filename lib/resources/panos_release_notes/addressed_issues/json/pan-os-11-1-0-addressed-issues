@@ -1,0 +1,117 @@
+{
+    "11-1-0": [
+        [],
+        {
+            "PAN-233557": {
+                "info": [
+                    " Fixed an issue where, after using Panorama to configure per policy persistent DIPP, downgrading the firewall using Panorama and then upgrading the firewall back to a later PAN-OS release, the global DIPP configuration was not successfully converted b ack to the per policy persistent DIPP rules. "
+                ]
+            }
+        },
+        {
+            "PAN-227639": {
+                "info": [
+                    "Fixed an issue where the ACC displayed an incorrect DNS-base application traffic byte count. "
+                ]
+            }
+        },
+        {
+            "PAN-227376": {
+                "info": [
+                    "Fixed an issue where a memory overrun caused the all_task process to stop responding. "
+                ]
+            }
+        },
+        {
+            "PAN-227368": {
+                "info": [
+                    " Fixed an issue where GlobalProtect users could not connect the app to a portal or gateway and GlobalProtect Clientless VPN users were unable to access applications when authentication took longer than 20 seconds. "
+                ]
+            }
+        },
+        {
+            "PAN-226418": {
+                "info": [
+                    "A CLI command was added to address an issue where long-lived sessions aged out even when there was ongoing traffic. "
+                ]
+            }
+        },
+        {
+            "PAN-226198": {
+                "info": [
+                    "Fixed an issue on Panorama where the configd process repeatedly restarted when attempting to make configuration changes. "
+                ]
+            }
+        },
+        {
+            "PAN-225920": {
+                "info": [
+                    "Fixed an issue where duplicate predict sessions didn't release NAT resources. "
+                ]
+            }
+        },
+        {
+            "PAN-225886": {
+                "info": [
+                    " Fixed an issue where if you enabled explicit proxy mode for the web proxy, intermittent errors and unexpected TCP reconnections may have occurred. "
+                ]
+            }
+        },
+        {
+            "PAN-225169": {
+                "info": [
+                    "Added a CLI command to view Strata Logging Service queue usage. "
+                ]
+            }
+        },
+        {
+            "PAN-224772": {
+                "info": [
+                    "Fixed a high memory usage issue with the mongodb process that caused an OOM condition. "
+                ]
+            }
+        },
+        {
+            "PAN-224145": {
+                "info": [
+                    "Fixed an issue in multi-vsys environments where, when Panorama was on a PAN-OS 10.2 release and the firewall was on a PAN-OS 10.1 release, commits failed on the firewall when inbound inspection mode was configured in the decryption policy rule. "
+                ]
+            }
+        },
+        {
+            "PAN-223457": {
+                "info": [
+                    "Fixed an issue where, if the number of group queries exceeded the Okta rate limit threshold, the firewall cleared the cache for the groups. "
+                ]
+            }
+        },
+        {
+            "PAN-221126": {
+                "info": [
+                    " Fixed an issue where email server profiles (Device > Server Profiles > Email and Panorama > Server Profiles > Email) to forward logs as email notifications were not forwarded in a readable format. "
+                ]
+            }
+        },
+        {
+            "PAN-218555": {
+                "info": [
+                    "Fixed an issue where the firewall did not receive dynamic address updates pushed from Panorama during initial registration to Panorama. "
+                ]
+            }
+        },
+        {
+            "PAN-213931": {
+                "info": [
+                    "Fixed an issue where the logrcvr process cache was not in sync with the mapping on the firewall. "
+                ]
+            }
+        },
+        {
+            "PAN-206913": {
+                "info": [
+                    "Fixed an issue where, when DHCPv6 client was configured on firewalls in active\/passive HA configurations, releasing the IPv6 address from the client released the IPv6 address from only the active firewall."
+                ]
+            }
+        }
+    ]
+}

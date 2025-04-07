@@ -1,0 +1,40 @@
+{
+    "10-1-4-h6": [
+        [],
+        {
+            "PAN-237935": {
+                "info": [
+                    " Extended the offline PAN-DB, Panorama, and WildFire certificates which were previously set to expire on September 2, 2024. "
+                ]
+            }
+        },
+        {
+            "PAN-237876": {
+                "info": [
+                    " Extended the firewall Panorama root CA certificate which was previously set to expire on April 7th, 2024. "
+                ]
+            }
+        },
+        {
+            "PAN-231771": {
+                "info": [
+                    " Fixed an issue where the firewall issued \/box\/getserv\/ requests with PAN-OS 7.1.0 and did not take device certificates. "
+                ]
+            }
+        },
+        {
+            "PAN-227568": {
+                "info": [
+                    " When a device certificate is installed, renewed, or removed, the firewall will reconnect to the WildFire cloud to use the newest certificate. "
+                ]
+            }
+        },
+        {
+            "PAN-215576": {
+                "info": [
+                    " Fixed an issue where the userID-Agent and TS-Agent certificates were set to expire on November 18, 2024. With this fix, the expiration date has been extended to January 2032. "
+                ]
+            }
+        }
+    ]
+}

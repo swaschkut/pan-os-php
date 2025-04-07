@@ -1,0 +1,89 @@
+{
+    "10-1-9-h3": [
+        [],
+        {
+            "PAN-217431": {
+                "info": [
+                    " (PA-5400 Series firewalls with DPC (Data Processing Cards) only) Fixed an issue with slot 2 DPCs where URL filtering did not work as expected after upgrading to PAN-OS 10.1.9. "
+                ]
+            }
+        },
+        {
+            "PAN-216710": {
+                "info": [
+                    " Fixed an issue with firewalls in active\/active high availability configurations where GlobalProtect disconnected when the original suspected Active-Primary firewall became Active-Secondary. "
+                ]
+            }
+        },
+        {
+            "PAN-216656": {
+                "info": [
+                    " Fixed an issue where the firewall was unable to fully process the user list from a child group when the child group contained more than 1,500 users. "
+                ]
+            }
+        },
+        {
+            "PAN-216314": {
+                "info": [
+                    " (PA-3200 Series firewalls only) Fixed an issue where, after upgrading to or from PAN-OS 10.1.9 or PAN-OS 10.1.9-h1, offloaded application traffic sessions disconnected even when a session was active. This occurred due to the application default session timeout value being exceeded. "
+                ]
+            }
+        },
+        {
+            "PAN-216036": {
+                "info": [
+                    " Fixed an issue where the all_pktproc process stopped responding, which caused the firewall to enter a nonfunctional state. "
+                ]
+            }
+        },
+        {
+            "PAN-215488": {
+                "info": [
+                    " Fixed an issue where an expired Trusted Root CA was used to sign the forward proxy leaf certificate during SSL Decryption. "
+                ]
+            }
+        },
+        {
+            "PAN-215461": {
+                "info": [
+                    " Fixed an issue where the packet descriptor leaked over time with GRE tunnels and keepalives. "
+                ]
+            }
+        },
+        {
+            "PAN-214331": {
+                "info": [
+                    " Fixed an issue on Panorama where the configd process stopped responding when a content update for a managed firewall was run using the scheduler. "
+                ]
+            }
+        },
+        {
+            "PAN-211870": {
+                "info": [
+                    " Fixed an issue where path monitoring failure occurred, which caused high availability failover. "
+                ]
+            }
+        },
+        {
+            "PAN-211519": {
+                "info": [
+                    " Fixed an issue where RTP\/RTCP packets were dropped for SIP calls by SIP ALG when the source NAT translation type was persistent Dynamic IP And Port. "
+                ]
+            }
+        },
+        {
+            "PAN-208189": {
+                "info": [
+                    "Fixed an issue when traffic failed to match and reach all destinations if a Security policy rule includes FQDN objects that resolve to two or more IP addresses."
+                ]
+            }
+        },
+        {
+            "PAN-207455": {
+                "info": [
+                    " Fixed an issue where the pan_task process stopped responding when processing client certificate requests from the server in TLS1.3. "
+                ]
+            }
+        }
+    ]
+}

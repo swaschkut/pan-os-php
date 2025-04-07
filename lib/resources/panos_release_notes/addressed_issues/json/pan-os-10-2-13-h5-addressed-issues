@@ -1,0 +1,33 @@
+{
+    "10-2-13-h5": [
+        [],
+        {
+            "PAN-279746": {
+                "info": [
+                    " Fixed an issue where SMTP packets were not sent out when the Client Hello arrived at the firewall in multiple out-of-order segments and the traffic was not subject to SSL decryption. "
+                ]
+            }
+        },
+        {
+            "PAN-268815": {
+                "info": [
+                    " Fixed an issue that caused the firewall to reboot due to the wifclient exiting multiple times when using IoT Security. "
+                ]
+            }
+        },
+        {
+            "PAN-268800": {
+                "info": [
+                    " Fixed an issue where a large number of logs caused the logrcvr process to stop responding. "
+                ]
+            }
+        },
+        {
+            "PAN-268705": {
+                "info": [
+                    " Fixed an intermittent issue where the firewall failed to process FTP traffic after upgrading to PAN-OS 10.1.14. "
+                ]
+            }
+        }
+    ]
+}

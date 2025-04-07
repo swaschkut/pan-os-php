@@ -1,0 +1,292 @@
+{
+    "10-2-10-h17": [
+        [],
+        {
+            "PAN-282236": {
+                "info": [
+                    "Fixed an issue where large IPv6 packets were reassembled incorrectly on the firewall when the packets arrived fragmented over an IPv4 tunnel. "
+                ]
+            }
+        },
+        {
+            "PAN-277234": {
+                "info": [
+                    " Fixed an issue where a device group import resulted in a Security policy rule being created with Application set to none. "
+                ]
+            }
+        },
+        {
+            "PAN-277135": {
+                "info": [
+                    " Fixed an issue where the firewall stopped responding when a DNS client closed or reset a TCP connection while the firewall was sending a response. "
+                ]
+            }
+        },
+        {
+            "PAN-276607": {
+                "info": [
+                    " Fixed an issue where GlobalProtect users experienced DNS resolution timeouts when using Prisma Access. "
+                ]
+            }
+        },
+        {
+            "PAN-274570": {
+                "info": [
+                    " Fixed an issue where the devsrvr process restarted after a failed commit due to an invalid memory access. "
+                ]
+            }
+        },
+        {
+            "PAN-273453": {
+                "info": [
+                    " Fixed an issue where restarting the firewall did not initiate an autocommit job, which caused the firewall to stop responding and the HA interface to go down. "
+                ]
+            }
+        },
+        {
+            "PAN-272395": {
+                "info": [
+                    " Fixed an issue where informational logs caused the distributord process log file to be frequently overwritten. "
+                ]
+            }
+        },
+        {
+            "PAN-271507": {
+                "info": [
+                    " (PA-5450 firewalls only) Fixed an issue where the DPC on slot 3 intermittently stopped responding due an all_pktproc restart. "
+                ]
+            }
+        },
+        {
+            "PAN-271351": {
+                "info": [
+                    " A fix was made to address CVE-2025-0116. "
+                ]
+            }
+        },
+        {
+            "PAN-271184": {
+                "info": [
+                    " Fixed an issue where Device Telemetry failed due to an issue with the encoding of characters in the log file path. "
+                ]
+            }
+        },
+        {
+            "PAN-269677": {
+                "info": [
+                    " Fixed an issue where Panorama did not check for a NULL pointer when querying logs, which caused logs to not display on the web interface. "
+                ]
+            }
+        },
+        {
+            "PAN-269106": {
+                "info": [
+                    " Fixed an issue where the wifclient stopped responding during server certificate verification for MICA gRPC connections and caused the dataplane to restart when using a cloud-based ML detection engine (MICA). On certain platforms, this caused the firewall to reboot periodically. "
+                ]
+            }
+        },
+        {
+            "PAN-268823": {
+                "info": [
+                    " Fixed an issue where Monitor > Log Display did not display all logs when you applied a filter. "
+                ]
+            }
+        },
+        {
+            "PAN-267097": {
+                "info": [
+                    " Fixed an issue where the replay database size increased significantly due to local and special configurations not being purged after commits. "
+                ]
+            }
+        },
+        {
+            "PAN-266695": {
+                "info": [
+                    " Fixed an issue on Panorama where a cyclic nested address group configuration caused the configd process to stop responding after a commit. "
+                ]
+            }
+        },
+        {
+            "PAN-266427": {
+                "info": [
+                    " Fixed an issue on the firewall where, when a high number of SD-WAN branch sites or interfaces were not connected, SD-WAN processes and tund processes stopped responding due to a high probing rate. "
+                ]
+            }
+        },
+        {
+            "PAN-265900": {
+                "info": [
+                    " Fixed an issue where the firewall stopped responding due to a tund process or SD-WAN process restart. "
+                ]
+            }
+        },
+        {
+            "PAN-264883": {
+                "info": [
+                    " (PA-7080 appliances with LPCs only) Fixed an issue where syslog forwarding over TCP stopped after upgrading. "
+                ]
+            }
+        },
+        {
+            "PAN-264708": {
+                "info": [
+                    " Fixed an issue where a selective push was blocked when a configuration load was done. "
+                ]
+            }
+        },
+        {
+            "PAN-264678": {
+                "info": [
+                    " Fixed an issue where Preview Changes did not display configuration changes in Commit and pushPush Scope. "
+                ]
+            }
+        },
+        {
+            "PAN-263369": {
+                "info": [
+                    " Fixed an issue where commits from Panorama to Panorama virtual appliances failed with the error message Internal error during commit processing. Commit\/Validate failed after upgrading Panorama. "
+                ]
+            }
+        },
+        {
+            "PAN-262831": {
+                "info": [
+                    " (PA-5400f Series firewalls only) Fixed an intermittent issue where the all_task process stopped responding, which caused the firewall to restart. "
+                ]
+            }
+        },
+        {
+            "PAN-262540": {
+                "info": [
+                    " Fixed an issue where application traffic transactions that reused TCP ports did not work with decryption. "
+                ]
+            }
+        },
+        {
+            "PAN-261673": {
+                "info": [
+                    " (VM-Series firewalls on Microsoft Azure environments only) Fixed an issue where, when Accelerated Networking was enabled, traffic was dropped because of the flow_parse_ip_hdr counter related to an Nvidia driver issue. "
+                ]
+            }
+        },
+        {
+            "PAN-260218": {
+                "info": [
+                    " Fixed an issue where BGP Aggregate Advertise filters did not work as expected when the summary option was enabled, and only summarized routes were advertised. "
+                ]
+            }
+        },
+        {
+            "PAN-259351": {
+                "info": [
+                    " A fix was made to address CVE-2024-3393. "
+                ]
+            }
+        },
+        {
+            "PAN-257601": {
+                "info": [
+                    " (PA-5450 firewalls only) Fixed an issue where Networking Cards (NC) experienced an internal link fault which caused path monitoring failure on the Dataplane Processing Card (DPC). "
+                ]
+            }
+        },
+        {
+            "PAN-256738": {
+                "info": [
+                    " (VM-Series firewalls in HA configurations only) Fixed an issue where BGP routes from the active firewall were lost when the passive firewall was rebooted. "
+                ]
+            }
+        },
+        {
+            "PAN-256223": {
+                "info": [
+                    " Fixed an issue where device telemetry log collection filled the root partition. "
+                ]
+            }
+        },
+        {
+            "PAN-255323": {
+                "info": [
+                    " (PA-7050 firewalls only) Fixed an issue where the Network Processing Card (NPC), Data Processing Card (DPC), and Log forwarding Card (LFC) remained in a starting state after an unexpected power cycle. "
+                ]
+            }
+        },
+        {
+            "PAN-254422": {
+                "info": [
+                    " Fixed an issue where the firewall required a restart when an SD-WAN policy rule was pushed from Panorama. "
+                ]
+            }
+        },
+        {
+            "PAN-254403": {
+                "info": [
+                    " Fixed an issue where not all syslog logs were displayed in MonitorMonitorSystem when FIPS mode was enabled. "
+                ]
+            }
+        },
+        {
+            "PAN-254241": {
+                "info": [
+                    " Fixed an issue where the firewall stopped responding due to a high number of SD-WAN probes being sent. "
+                ]
+            }
+        },
+        {
+            "PAN-252300": {
+                "info": [
+                    " Fixed an issue where you were unable to select device groups in the push scope for user accounts. "
+                ]
+            }
+        },
+        {
+            "PAN-249384": {
+                "info": [
+                    " Fixed an issue on Panorama where configuration locks were observed during a partial rulebase commit. "
+                ]
+            }
+        },
+        {
+            "PAN-249011": {
+                "info": [
+                    " Fixed an issue where the firewall became unresponsive when committing a configuration change with a large number of uncommitted changes in the replay database. "
+                ]
+            }
+        },
+        {
+            "PAN-243240": {
+                "info": [
+                    " Fixed an issue where the using QoS caused packet buffer utilization to increase exponentially and the PKI POOL DFLT pool depleted until a reboot was performed. "
+                ]
+            }
+        },
+        {
+            "PAN-242479": {
+                "info": [
+                    " Fixed an issue where a high number of packets caused high packet descriptors on the firewall when handling EtherIP traffic. "
+                ]
+            }
+        },
+        {
+            "PAN-238286": {
+                "info": [
+                    " Fixed an issue where FTP control connections were lost after an HA failover event. "
+                ]
+            }
+        },
+        {
+            "PAN-230893": {
+                "info": [
+                    " Added a CLI command to address an issue where system lock files blocked authentication. "
+                ]
+            }
+        },
+        {
+            "PAN-193285": {
+                "info": [
+                    " Fixed an issue where the policy optimizer feature did not add entries back to the mongodb database after removing them during an upgrade or downgrade. "
+                ]
+            }
+        }
+    ]
+}

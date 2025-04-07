@@ -1,0 +1,47 @@
+{
+    "10-1-14-h2": [
+        [],
+        {
+            "PAN-258702": {
+                "info": [
+                    " (WF-500 appliances only) Fixed an issue where the varrcvr process stopped responding when files were being forwarded to the WildFire cloud. "
+                ]
+            }
+        },
+        {
+            "PAN-257197": {
+                "info": [
+                    " Fixed an issue where ifType and ifSpeed were not populated in asynchronous mode of SNMP operations. "
+                ]
+            }
+        },
+        {
+            "PAN-251847": {
+                "info": [
+                    " Fixed an issue on log collectors where the incoming log rate was lower than expected. "
+                ]
+            }
+        },
+        {
+            "PAN-255163": {
+                "info": [
+                    " (CN-Series firewalls only) Fixed an issue where the system database key that stored the configuration status of the dataplane pod was not updated frequently. "
+                ]
+            }
+        },
+        {
+            "PAN-248130": {
+                "info": [
+                    " Fixed an issue where the AND operation under a Dynamic Address Group comparison did not work after upgrading the AWS plugin to 3.0.1. "
+                ]
+            }
+        },
+        {
+            "PAN-247257": {
+                "info": [
+                    " Fixed an issue where the useridd process stopped responding, which caused the firewall to reboot. "
+                ]
+            }
+        }
+    ]
+}

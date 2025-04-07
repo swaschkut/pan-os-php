@@ -1,0 +1,40 @@
+{
+    "10-2-0": [
+        [],
+        {
+            "PAN-231823": {
+                "info": [
+                    " A fix was made to address CVE-2024-5916. "
+                ]
+            }
+        },
+        {
+            "PAN-186143": {
+                "info": [
+                    "Fixed an issue where no local changes could be made on a ZTP-enabled device after an upgrade to PAN-OS 10.1.x."
+                ]
+            }
+        },
+        {
+            "PAN-182634": {
+                "info": [
+                    "(PA-400 series firewalls only) Fixed an issue where the firewall detected a Power Supply Unit (PSU) failure for the opposite side when disconnecting a PSU from the device. This issue occurred when redundant PSUs were connected."
+                ]
+            }
+        },
+        {
+            "PAN-178165": {
+                "info": [
+                    "Fixed an issue where the CLI command set system setting ctd ctd-agent-assigned-cores 0 to change assigned cores for the ctd-agent failed."
+                ]
+            }
+        },
+        {
+            "PAN-175950": {
+                "info": [
+                    "Fixed an issue where IoT Security (without Strata Logging Service) onboarding failed."
+                ]
+            }
+        }
+    ]
+}

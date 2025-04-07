@@ -1,0 +1,12 @@
+{
+    "11-2-2-h1": [
+        [],
+        {
+            "PAN-263349": {
+                "info": [
+                    " Fixed an error in the bundling of software components. "
+                ]
+            }
+        }
+    ]
+}

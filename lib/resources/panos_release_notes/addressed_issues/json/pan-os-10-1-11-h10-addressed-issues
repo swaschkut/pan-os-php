@@ -1,0 +1,68 @@
+{
+    "10-1-11-h10": [
+        [],
+        {
+            "PAN-272809": {
+                "info": [
+                    " A fix was made to address CVE-2024-9474. "
+                ]
+            }
+        },
+        {
+            "PAN-260796": {
+                "info": [
+                    " Fixed an issue where servers were not accessible through an active SSL GlobalProtect VPN tunnel until a new connection was established or the session was cleared on the firewall. "
+                ]
+            }
+        },
+        {
+            "PAN-254704": {
+                "info": [
+                    " (LSVPN Portal firewalls in active\/passive HA configurations only) Fixed an issue where the satellite cookie key did not sync between LSVPN portal high availability (HA) firewalls, which resulted in re-authentication of satellites with the portal during an HA failover. "
+                ]
+            }
+        },
+        {
+            "PAN-248748": {
+                "info": [
+                    " Fixed an issue that caused the dataplane to stop responding when running a packet diagnostic with Jumbo frames enabled. "
+                ]
+            }
+        },
+        {
+            "PAN-242561": {
+                "info": [
+                    " Fixed an issue where GlobalProtect tunnels disconnected shortly after being established when SSL was used as the transfer protocol. "
+                ]
+            }
+        },
+        {
+            "PAN-239952": {
+                "info": [
+                    " (Firewalls in active\/passive HA configurations only) Fixed an issue where HA sync messages from the active firewall took longer than expected to reach the passive firewall. "
+                ]
+            }
+        },
+        {
+            "PAN-225969": {
+                "info": [
+                    " Fixed an issue where some traffic was not correctly identified for data filtering. "
+                ]
+            }
+        },
+        {
+            "PAN-217147": {
+                "info": [
+                    " Fixed an issue where commits took longer than expected when a large number of Security policy rules were configured. "
+                ]
+            }
+        },
+        {
+            "PAN-210260": {
+                "info": [
+                    " Fixed an issue on firewalls in HA configurations where the peer satellite firewall was able to connect to the GlobalProtect portal without username and password authentication. "
+                ]
+            }
+        }
+    ]
+}

@@ -6,29 +6,12 @@ trait SOPHOSXGfunction
      {
         /** @var VirtualSystem $v */
 
+         PH::print_stdout("--------------------------------------------------------");
+         PH::print_stdout("objectsIP");
+         
          foreach( $XMLroot as $child )
          {
-             /*
-            foreach ($XMLroot->childNodes as $child)
-            {
-                /** @var DOMElement $node *//*
-            if ($child->nodeType != XML_ELEMENT_NODE)
-                continue;
-*/
 
-            #if( $child->nodeName != 'IPHost' )
-            #    continue;
-            //IPHost
-
-            /*
-             * <IPHost transactionid="">
-             <Name>VPN-SVA-T1-VD-10.143.65.0_24</Name>
-             <IPFamily>IPv4</IPFamily>
-             <HostType>Network</HostType>
-             <IPAddress>10.143.65.0</IPAddress>
-             <Subnet>255.255.255.0</Subnet>
-            </IPHost>
-             */
             $name_node = DH::findFirstElement( 'Name', $child);
             $name = $this->normalizeNames($name_node->textContent);
 
@@ -108,12 +91,16 @@ trait SOPHOSXGfunction
                 mwarning( "not implemented yet" );
                 #exit();
             }
+
+            PH::print_stdout( "Address: ".$new_address->name());
         }
     }
 
      function sophos_xg_objectsIPGROUP( $v, $XMLroot): void
      {
         /** @var VirtualSystem $v */
+         PH::print_stdout("--------------------------------------------------------");
+         PH::print_stdout("objectsIPGROUP");
 
          foreach( $XMLroot as $child )
          {
@@ -165,13 +152,17 @@ trait SOPHOSXGfunction
                 <IPFamily>IPv4</IPFamily>
               </IPHostGroup>
              */
+             
+             PH::print_stdout( "Address-Group: ".$tmpGroup->name());
         }
     }
 
      function sophos_xg_objectsSERVICE( $v, $XMLroot): void
      {
         /** @var VirtualSystem $v */
-
+         PH::print_stdout("--------------------------------------------------------");
+         PH::print_stdout("objectsSERVICE");
+         
          foreach( $XMLroot as $child )
          {
              /*
@@ -325,6 +316,9 @@ trait SOPHOSXGfunction
                     }
 
                 }
+
+                PH::print_stdout( "Service: ".$newService->name());
+                
             }
         }
     }
@@ -333,9 +327,17 @@ trait SOPHOSXGfunction
      function sophos_xg_objectsSERVICEGROUP( $v, $XMLroot)
     {
         /** @var VirtualSystem $v */
-
+        PH::print_stdout("--------------------------------------------------------");
+        PH::print_stdout("objectsSERVICEGROUP");
+        
         foreach( $XMLroot as $child )
         {
+            $status_node = DH::findFirstElement( 'Status', $child);
+            if( $status_node !== false )
+            {
+                if( $status_node->textContent == "No. of records Zero." )
+                    break;
+            }
             /*
            foreach ($XMLroot->childNodes as $child)
            {
@@ -377,14 +379,25 @@ trait SOPHOSXGfunction
                         $tmpGroup->addMember($tmp_srv);
                 }
             }
+
+            PH::print_stdout( "Service-Group: ".$tmpGroup->name());
+            
         }
     }
      function sophos_xg_objectsFQDN( $v, $XMLroot)
     {
         /** @var VirtualSystem $v */
 
+        PH::print_stdout("--------------------------------------------------------");
+        PH::print_stdout("objectsFQDN");
         foreach( $XMLroot as $child )
         {
+            $status_node = DH::findFirstElement( 'Status', $child);
+            if( $status_node !== false )
+            {
+                if( $status_node->textContent == "No. of records Zero." )
+                    break;
+            }
             /*
            foreach ($XMLroot->childNodes as $child)
            {
@@ -414,25 +427,19 @@ trait SOPHOSXGfunction
             $new_address = $v->addressStore->find($name);
             if( $new_address === null )
                 $new_address = $v->addressStore->newAddress( $name, "fqdn", $fqdn_Name, $description );
+
+            PH::print_stdout( "FQDN: ".$new_address->name());
         }
     }
 
      public function sophos_xg_networkINTERFACES( $v, $XMLroot): void
      {
         /** @var VirtualSystem $v */
-
+         PH::print_stdout("--------------------------------------------------------");
+         PH::print_stdout("networkINTERFACES");
+         
          foreach( $XMLroot as $child )
          {
-         /*
-        foreach ($XMLroot->childNodes as $child)
-        {
-            /** @var DOMElement $node *//*
-            if ($child->nodeType != XML_ELEMENT_NODE)
-                continue;
-*//*
-            if ($child->nodeName != 'Interface')
-                continue;
-            */
 
             $networkzone_node = DH::findFirstElement( 'NetworkZone', $child);
             $networkzone = $networkzone_node->textContent;
@@ -532,6 +539,8 @@ trait SOPHOSXGfunction
              <Netmask>255.255.255.224</Netmask>
             </Interface>
              */
+
+             PH::print_stdout( "Interface: ".$newInterface->name());
         }
     }
 
@@ -539,7 +548,9 @@ trait SOPHOSXGfunction
      {
 
         /** @var VirtualSystem $v */
-
+         PH::print_stdout("--------------------------------------------------------");
+         PH::print_stdout("networkLAGS");
+         
          foreach( $XMLroot as $child )
          {
              /*
@@ -636,6 +647,8 @@ trait SOPHOSXGfunction
              <XmitHashPolicy>Layer2</XmitHashPolicy>
             </LAG>
              */
+
+             PH::print_stdout( "LAG: ".$interfaceOBJ->name());
         }
     }
 
@@ -643,9 +656,17 @@ trait SOPHOSXGfunction
     {
 
         /** @var VirtualSystem $v */
-
+        PH::print_stdout("--------------------------------------------------------");
+        PH::print_stdout("networkVLANS");
+        
         foreach( $XMLroot as $child )
         {
+            $status_node = DH::findFirstElement( 'Status', $child);
+            if( $status_node !== false )
+            {
+                if( $status_node->textContent == "No. of records Zero." )
+                    break;
+            }
             /*
            foreach ($XMLroot->childNodes as $child)
            {
@@ -775,16 +796,26 @@ trait SOPHOSXGfunction
 
             $new_router->attachedInterfaces->addInterface($tmp_sub);
 
+            PH::print_stdout( "subinter: ".$tmp_sub->name());
+
         }
     }
 
      function sophos_xg_routeSTATIC( $v, $XMLroot)
     {
-
+        PH::print_stdout("--------------------------------------------------------");
+        PH::print_stdout("routeSTATIC");
+        
         /** @var VirtualSystem $v */
 
         foreach( $XMLroot as $child )
         {
+            $status_node = DH::findFirstElement( 'Status', $child);
+            if( $status_node !== false )
+            {
+                if( $status_node->textContent == "No. of records Zero." )
+                    break;
+            }
             /*
            foreach ($XMLroot->childNodes as $child)
            {
@@ -814,7 +845,7 @@ trait SOPHOSXGfunction
             $distance_node = DH::findFirstElement( 'Distance', $child);
             $metric = $distance_node->textContent;
             if( $metric == 0 )
-                $metric = 1;
+                $metric = 10;
 
 
             if(  $this->useLogicalRouter )
@@ -863,6 +894,8 @@ trait SOPHOSXGfunction
               </UnicastRoute>
              */
 
+            PH::print_stdout( "StaticRoute: ".$tmpRoute->name());
+
         }
 
     }
@@ -870,6 +903,9 @@ trait SOPHOSXGfunction
 
      function sophos_xg_rulesFIREWALL( $v, $XMLroot)
     {
+        PH::print_stdout("--------------------------------------------------------");
+        PH::print_stdout("rulesFIREWALL");
+        
         /** @var VirtualSystem $v */
 
         $panwRegions = $this->default_regions();
@@ -878,25 +914,26 @@ trait SOPHOSXGfunction
             "CD" => "Congo - Kinshasa",
             "CG" => "Congo - Brazzaville",
             "IR" => "Iran",
-            "KP" => "North Korea"
+            "KP" => "North Korea",
+            "LY" => "Libya"
         );
 
         foreach( $XMLroot as $child )
         {
-            /*
-           foreach ($XMLroot->childNodes as $child)
-           {
-               /** @var DOMElement $node *//*
-            if ($child->nodeType != XML_ELEMENT_NODE)
-                continue;
-*/
-
-            #if ($child->nodeName != 'FirewallRule')
-            #    continue;
+            $status_node = DH::findFirstElement( 'Status', $child);
+            if( $status_node !== false )
+            {
+                if( $status_node->textContent == "No. of records Zero." )
+                    break;
+            }
+                
 
             $name_node = DH::findFirstElement( 'Name', $child);
             $name = $this->normalizeNames( $name_node->textContent );
-            $newRule = $v->securityRules->newSecurityRule($name);
+
+            $newName = $v->securityRules->findAvailableName($name);
+            $newRule = $v->securityRules->newSecurityRule($newName);
+            PH::print_stdout( "SecurityRule: ".$newRule->name());
 
             $status_node = DH::findFirstElement( 'Status', $child);
             if( $status_node != null )
@@ -937,25 +974,16 @@ trait SOPHOSXGfunction
             elseif( $userPolicy_node !== false )
                 $Policy_node = $userPolicy_node;
 
-            if( $networkPolicy_node !== false || $userPolicy_node !== false )
-            {
+            if( $networkPolicy_node !== false || $userPolicy_node !== false ) {
                 $action_node = DH::findFirstElement('Action', $Policy_node);
-                if( $action_node->textContent === "Accept" )
-                {
+                if ($action_node->textContent === "Accept") {
                     $newRule->setAction("allow");
-                }
-                elseif( $action_node->textContent === "Drop" )
-                {
+                } elseif ($action_node->textContent === "Drop") {
                     $newRule->setAction("drop");
-                }
-                elseif( $action_node->textContent === "Reject" )
-                {
+                } elseif ($action_node->textContent === "Reject") {
                     $newRule->setAction("reset-both");
-                }
-
-                else
-                {
-                    print "ACTION: ".$action_node->textContent."\n";
+                } else {
+                    print "ACTION: " . $action_node->textContent . "\n";
                     exit();
                 }
                 $logTraffic_node = DH::findFirstElement('LogTraffic', $Policy_node);
@@ -968,7 +996,7 @@ trait SOPHOSXGfunction
                             continue;
 
                         $src_zone = $v->zoneStore->find($sourceZone->textContent);
-                        if($src_zone === null)
+                        if ($src_zone === null)
                             $src_zone = $v->zoneStore->newZone($sourceZone->textContent, "layer3");
                         $src_zone->type = "layer3";
                         $newRule->from->addZone($src_zone);
@@ -976,14 +1004,13 @@ trait SOPHOSXGfunction
 
                 $destinationZones_node = DH::findFirstElement('DestinationZones', $Policy_node);
                 if ($destinationZones_node !== false)
-                    foreach ($destinationZones_node->childNodes as $destinationZone)
-                    {
+                    foreach ($destinationZones_node->childNodes as $destinationZone) {
                         /** @var DOMElement $destinationZone */
                         if ($destinationZone->nodeType != XML_ELEMENT_NODE)
                             continue;
 
                         $dst_zone = $v->zoneStore->find($destinationZone->textContent);
-                        if($dst_zone === null)
+                        if ($dst_zone === null)
                             $dst_zone = $v->zoneStore->newZone($destinationZone->textContent, "layer3");
                         $dst_zone->type = "layer3";
                         $newRule->to->addZone($dst_zone);
@@ -992,8 +1019,8 @@ trait SOPHOSXGfunction
 
                 $sourceNetworks_node = DH::findFirstElement('SourceNetworks', $Policy_node);
                 if ($sourceNetworks_node !== false)
-                    foreach ($sourceNetworks_node->childNodes as $sourceNetwork)
-                    {
+                {
+                    foreach ($sourceNetworks_node->childNodes as $sourceNetwork) {
                         /** @var DOMElement $sourceNetwork */
                         if ($sourceNetwork->nodeType != XML_ELEMENT_NODE)
                             continue;
@@ -1003,33 +1030,34 @@ trait SOPHOSXGfunction
                         $addr_obj = $v->addressStore->find($src_name);
                         if ($addr_obj !== null)
                             $newRule->source->addObject($addr_obj);
-                        else
-                        {
+                        else {
                             $country = $src_name;
-                            if( in_array($country, $panwRegions) )
-                            {
+                            if (in_array($country, $panwRegions)) {
                                 $key = array_search($country, $panwRegions);
                                 $tmp_adr = $v->addressStore->findOrCreate($key);
                                 $newRule->source->addObject($tmp_adr);
                             }
-                            if( in_array($country, $sophosRegions) )
-                            {
+                            if (in_array($country, $sophosRegions)) {
                                 $key = array_search($country, $sophosRegions);
                                 $tmp_adr = $v->addressStore->findOrCreate($key);
                                 $newRule->source->addObject($tmp_adr);
                             }
-                            if( !in_array($country, $panwRegions) && !in_array($country, $sophosRegions) )
-                            {
-                                mwarning( "SRC object: '".$src_name. "' not found", null, FALSE );
+                            if (!in_array($country, $panwRegions) && !in_array($country, $sophosRegions)) {
+                                $description = $newRule->description();
+                                $newDescription = $description . "| SRCobj: " . $src_name;
+                                $newRule->setDescription($newDescription);
+                                mwarning("SecRULE: ".$newRule->name()."SRC object: '" . $src_name . "' not found", null, FALSE);
                             }
 
                         }
 
                     }
+                }
 
 
                 $destinationNetworks_node = DH::findFirstElement('DestinationNetworks', $Policy_node);
                 if ($destinationNetworks_node !== false)
+                {
                     foreach ($destinationNetworks_node->childNodes as $destinationNetwork)
                     {
                         /** @var DOMElement $destinationNetwork */
@@ -1058,11 +1086,44 @@ trait SOPHOSXGfunction
                             }
                             if( !in_array($country, $panwRegions) && !in_array($country, $sophosRegions) )
                             {
-                                mwarning( "RULE: ".$newRule->name()." DST object: '".$dst_name. "' not found", null, FALSE );
+                                if( strpos($dst_name, "Port") !== FALSe )
+                                {
+                                    /*
+                                    $dst_name  = $destinationNetwork->textContent;
+                                    $dst_name = str_replace("#","", $dst_name);
+                                    $dst_name = explode( ":", $dst_name );
+                                    $int = $v->owner->network->ethernetIfStore->find($dst_name[0]);
+                                    if( $int !== null )
+                                    {
+                                        $ipv4Array = $int->getLayer3IPv4Addresses();
+
+                                        $address = $ipv4Array[0];
+                                        $address = explode( "/", $address );
+                                        $addr_obj = $v->addressStore->find($address[0]);
+                                        if( $addr_obj === null )
+                                            $addr_obj = $v->addressStore->newAddress($address[0], 'ip-netmask', $address[0]);
+                                        $newRule->destination->addObject($addr_obj);
+                                    }
+                                    else
+                                    {
+
+                                    }
+                                    */
+                                        mwarning( "SecRule:".$newRule->name()." - DST object INTERFACE: '".$destinationNetwork->textContent. "' not found", null, FALSE );
+                                    #}
+                                }
+                                else
+                                {
+                                    $description = $newRule->description();
+                                    $newDescription = $description . "| DSTobj: " . $dst_name;
+                                    $newRule->setDescription($newDescription);
+                                    mwarning( "SecRULE: ".$newRule->name()." DST object: '".$dst_name. "' not found", null, FALSE );
+                                }
                             }
                         }
-
                     }
+                }
+
 
 
                 $services_node = DH::findFirstElement('Services', $Policy_node);
@@ -1203,31 +1264,34 @@ trait SOPHOSXGfunction
                     }
                 }
             }
+
         }
     }
 
 
      function sophos_xg_rulesNAT( $v, $XMLroot)
     {
+        PH::print_stdout("--------------------------------------------------------");
+        PH::print_stdout("rulesNAT");
+        
         /** @var VirtualSystem $v */
 
 
         foreach( $XMLroot as $child )
         {
-            /*
-           foreach ($XMLroot->childNodes as $child)
-           {
-               /** @var DOMElement $node *//*
-            if ($child->nodeType != XML_ELEMENT_NODE)
-                continue;
-*/
-
-            #if ($child->nodeName != 'NATRule')
-            #    continue;
+            $status_node = DH::findFirstElement( 'Status', $child);
+            if( $status_node !== false )
+            {
+                if( $status_node->textContent == "No. of records Zero." )
+                    break;
+            }
 
             $name_node = DH::findFirstElement('Name', $child);
             $name = $this->normalizeNames($name_node->textContent);
+            PH::print_stdout();
+            PH::print_stdout("create NATRule: '".$name."'");
             $newRule = $v->natRules->newNatRule($name);
+
 
             $status_node = DH::findFirstElement( 'Status', $child);
             if( $status_node != null )
@@ -1262,13 +1326,14 @@ trait SOPHOSXGfunction
             }
 
             $LinkedFirewallrule_node = DH::findFirstElement('LinkedFirewallrule', $child);
-            if($LinkedFirewallrule_node->textContent !== 'none')
+            if($LinkedFirewallrule_node->textContent !== 'None')
             {
                 $secRuleName = $this->normalizeNames($LinkedFirewallrule_node->textContent);
 
 
                 $secRule = $v->securityRules->find($secRuleName);
-                if ($secRule != null) {
+                if ($secRule != null)
+                {
                     if ($secRule->isDisabled())
                         $newRule->setDisabled(true);
 
@@ -1298,7 +1363,8 @@ trait SOPHOSXGfunction
                         $newRule->to->addZone($zone_wan);
                     }
 
-                    if (count($newRule->to->getAll()) > 1) {
+                    if (count($newRule->to->getAll()) > 1)
+                    {
                         foreach ($newRule->to->getAll() as $toZone) {
                             $newRule->to->removeZone($toZone, true, true);
                         }
@@ -1307,7 +1373,7 @@ trait SOPHOSXGfunction
 
 
                 } else {
-                    #mwarning("Secrule '".$secRuleName."' not found.", null, false);
+                    mwarning("Secrule '".$secRuleName."' not found.", null, false);
                 }
             }
             else
@@ -1316,8 +1382,124 @@ trait SOPHOSXGfunction
                 $TranslatedService_node = DH::findFirstElement('TranslatedService', $child);
                 $TranslatedSource_node = DH::findFirstElement('TranslatedSource', $child);
 
+                $TransDST_name = $this->normalizeNames($TranslatedDestination_node->textContent);
+                $TransSRC_name = $this->normalizeNames($TranslatedSource_node->textContent);
+                $TransSRV_name = $this->normalizeNames($TranslatedService_node->textContent);
+
+                if( $TransDST_name !== "Original"  )
+                {
+                    PH::print_stdout("DST: ".$TransDST_name);
+                    $tmpDNATAddrress = $v->addressStore->find($TransDST_name);
+                    if( $tmpDNATAddrress !== null )
+                    {
+                        if( $tmpDNATAddrress->isGroup() )
+                            $newRule->setDNAT($tmpDNATAddrress, null, 'dynamic', "round-robin");
+                        else
+                            $newRule->setDNAT($tmpDNATAddrress);
+
+                    }
+                }
+
+                if( $TransSRC_name !== "Original"  )
+                {
+                    PH::print_stdout("SRC: ".$TransSRC_name);
+                    $newRule->changeSourceNAT("dynamic-ip-and-port");
+                    if( $TransSRC_name !== "MASQ" )
+                    {
+                        $tmpSNATAddrress = $v->addressStore->find($TransSRC_name);
+                        if( $tmpSNATAddrress !== null )
+                            $newRule->snathosts->addObject($tmpSNATAddrress);
+                    }
+
+
+
+                    /*
+                     <OutboundInterfaces>
+                      <Interface>UplinkLAG.175</Interface>
+                    </OutboundInterfaces>
+                    <OverrideInterfaceNATPolicy>Disable</OverrideInterfaceNATPolicy>
+                     */
+                    $OutboundInterfaces_node = DH::findFirstElement('OutboundInterfaces', $child);
+                    if($OutboundInterfaces_node != null)
+                    {
+                        foreach( $OutboundInterfaces_node->childNodes as $OutboundInterface_node )
+                        {
+                            /** @var DOMElement $node */
+                            if ($OutboundInterface_node->nodeType != XML_ELEMENT_NODE)
+                                continue;
+                            #PH::print_stdout("Interface: ".$OutboundInterface_node->textContent);
+                            $intName = $this->normalizeNames($OutboundInterface_node->textContent);
+
+                            if( strpos( $intName, "LAG") === false )
+                                $tmpINT = $v->owner->network->ethernetIfStore->find($intName);
+                            else
+                                $tmpINT = $v->owner->network->aggregateEthernetIfStore->find($intName);
+                            if( $tmpINT !== null )
+                            {
+
+                                PH::print_stdout("SNAT Interface: ".$tmpINT->name());
+                                $newRule->setSNATInterface($tmpINT);
+                            }
+
+                        }
+                    }
+
+                }
+
+                if( $TransSRV_name !== "Original"  )
+                    PH::print_stdout("SRV: ".$TransSRV_name);
+
+
                 $OriginalSourceNetworks_node = DH::findFirstElement('OriginalSourceNetworks', $child);
                 $OriginalDestinationNetworks_node = DH::findFirstElement('OriginalDestinationNetworks', $child);
+
+
+                if( $OriginalSourceNetworks_node != null )
+                {
+                    foreach( $OriginalSourceNetworks_node->childNodes as $origSource )
+                    {
+                        /** @var DOMElement $node */
+                        if ($origSource->nodeType != XML_ELEMENT_NODE)
+                            continue;
+
+
+                        $objName = $this->normalizeNames($origSource->textContent);
+                        print "OriginalSourceNetworks: '" . $objName . "'\n";
+                        $tmpAddress = $v->addressStore->find($objName);
+                        if ($tmpAddress != null)
+                            $newRule->source->addObject($tmpAddress);
+                        else
+                        {
+                            $description = $newRule->description();
+                            $newDescription = $description . "| origSRCobj: " . $objName;
+                            $newRule->setDescription($newDescription);
+                        }
+                    }
+                }
+                if( $OriginalDestinationNetworks_node != null )
+                {
+                    foreach( $OriginalDestinationNetworks_node->childNodes as $origDestination )
+                    {
+                        /** @var DOMElement $node */
+                        if ($origDestination->nodeType != XML_ELEMENT_NODE)
+                            continue;
+
+
+                        $objName = $this->normalizeNames($origDestination->textContent);
+                        print "OriginalDestinationNetworks: '" . $objName . "'\n";
+                        $tmpAddress = $v->addressStore->find($objName);
+                        if ($tmpAddress != null)
+                            $newRule->destination->addObject($tmpAddress);
+                        else
+                        {
+                            $description = $newRule->description();
+                            $newDescription = $description . "| origDSTobj: " . $objName;
+                            $newRule->setDescription($newDescription);
+                        }
+                    }
+                }
+
+
                 /*
                 <OriginalSourceNetworks>
                   <Network>T2-SSLVPN-vpn.igz.com-10.242.0.0_24</Network>
@@ -1327,6 +1509,19 @@ trait SOPHOSXGfunction
                 </OriginalDestinationNetworks>
                  */
             }
+
+            if( $newRule->to->isAny() )
+            {
+                PH::print_stdout("create dummy zone");
+                $tmpZone = $v->zoneStore->find("dummy");
+                if($tmpZone === null)
+                    $tmpZone = $v->zoneStore->newZone("dummy", "layer3");
+                print "ZONE: ".$tmpZone->name()."\n";
+
+                $newRule->to->addZone($tmpZone);
+            }
+
+            PH::print_stdout( "NATRule: ".$newRule->name());
         }
     }
 
@@ -1412,6 +1607,9 @@ trait SOPHOSXGfunction
         $nameToNormalize = preg_replace("/[^a-zA-Z0-9-_. ]+/", "", $nameToNormalize);
         $nameToNormalize = preg_replace("/[\s]+/", " ", $nameToNormalize);
 
+        //&gt;
+        //&lt;
+
         $nameToNormalize = preg_replace("/^[-]+/", "", $nameToNormalize);
         $nameToNormalize = preg_replace("/^[_]+/", "", $nameToNormalize);
 
@@ -1452,6 +1650,7 @@ trait SOPHOSXGfunction
 
         $counter = 1;
         $tmp_int_name = array();
+        $aggregatecounter = 1;
         foreach( $tmp_interfaces as $tmp_interface )
         {
             #if( $tmp_interface->type !== "tmp" && get_class( $tmp_interface ) == "EthernetInterface" )
@@ -1523,6 +1722,42 @@ trait SOPHOSXGfunction
                         $new_name = "tunnel." . $tunnelcounter;
 
                         $tunnelcounter++;
+
+                        $tmp_int = $template->network->findInterface($new_name);
+                        $tmp_int_name[$int_name] = $new_name;
+                    } while( $tmp_int !== null );
+
+                    /*}
+                    else
+                    {
+                        $tmp_tag = explode( ".", $int_name);
+                        $new_name = $tmp_int_name[ $tmp_tag[0] ].".". $tmp_tag[1];
+                    }
+                    */
+
+                    $addlog = "Interface: '" . $int_name . "' renamed to " . $new_name;
+                    print $padding . "X " . $addlog . "\n";
+                    #$tmp_interface->display_references();
+                    $tmp_interface->setName($new_name);
+                    $tmp_interface->set_node_attribute('warning', $addlog);
+                }
+                elseif( get_class($tmp_interface) == "AggregateEthernetInterface" )
+                {
+                    if( $tmp_interface->isSubInterface() )
+                        continue;
+
+
+
+                    $validate_name = explode( ".", $int_name);
+                    if( $validate_name[0] == "ae" &&  is_numeric( $validate_name[1] ))
+                        continue;
+
+                    #if( strpos( $int_name, "." ) === false ){
+                    do
+                    {
+                        $new_name = "ae" . $aggregatecounter;
+
+                        $counter++;
 
                         $tmp_int = $template->network->findInterface($new_name);
                         $tmp_int_name[$int_name] = $new_name;

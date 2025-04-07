@@ -45,10 +45,10 @@ class AddressRuleContainer extends ObjRuleContainer
 
 
     /**
-     * @param Address|AddressGroup $Obj
+     * @param Address|AddressGroup|EDL $Obj
      * @return bool
      */
-    public function addObject(Address|AddressGroup $Obj): bool
+    public function addObject(Address|AddressGroup|EDL $Obj): bool
     {
         $this->fasthashcomp = null;
 
@@ -59,7 +59,11 @@ class AddressRuleContainer extends ObjRuleContainer
             if( count($this->o) > 1 )
             {
                 if( $this->name == 'snathosts' && $this->owner->sourceNatTypeIs_Static() )
+                {
+                    if( $Obj->isEDL() )
+                        return FALSE;
                     DH::createElement($this->xmlroot, 'translated-address', $Obj->name());
+                }
                 else
                     DH::createElement($this->xmlroot, 'member', $Obj->name());
             }
@@ -70,6 +74,9 @@ class AddressRuleContainer extends ObjRuleContainer
 
             if( $this->name == 'snathosts' )
             {
+                if( $Obj->isEDL() )
+                    return FALSE;
+
                 $this->owner->rewriteSNAT_XML();
 
                 //what else need to be done?????
@@ -82,11 +89,11 @@ class AddressRuleContainer extends ObjRuleContainer
     }
 
     /**
-     * @param Address|AddressGroup $Obj
+     * @param Address|AddressGroup|EDL $Obj
      * @return bool
      * @throws Exception
      */
-    public function API_add(Address|AddressGroup $Obj): bool
+    public function API_add(Address|AddressGroup|EDL $Obj): bool
     {
         if( $this->addObject($Obj) )
         {
@@ -121,7 +128,7 @@ class AddressRuleContainer extends ObjRuleContainer
 
 
     /**
-     * @param Address|AddressGroup $Obj
+     * @param Address|AddressGroup|EDL $Obj
      * @param bool $rewriteXml
      * @param bool $forceAny
      * @param null $context
@@ -154,13 +161,13 @@ class AddressRuleContainer extends ObjRuleContainer
     }
 
     /**
-     * @param Address|AddressGroup $Obj
+     * @param Address|AddressGroup|EDL $Obj
      * @param bool $forceAny
      * @param null $context
      * @return bool
      * @throws Exception
      */
-    public function API_remove(Address|AddressGroup $Obj, bool $forceAny = FALSE, $context = null): bool
+    public function API_remove(Address|AddressGroup|EDL $Obj, bool $forceAny = FALSE, $context = null): bool
     {
         if( $this->remove($Obj, TRUE, $forceAny, $context) )
         {
@@ -168,6 +175,9 @@ class AddressRuleContainer extends ObjRuleContainer
 
             if( $this->name == 'snathosts' )
             {
+                if( $Obj->isEDL() )
+                    return FALSE;
+                
                 $xpath = $this->owner->getXPath() . '/source-translation';
                 $sourceNatRoot = DH::findFirstElementOrDie('source-translation', $this->owner->xmlroot);
                 if( $con->isAPI() )
@@ -306,9 +316,11 @@ class AddressRuleContainer extends ObjRuleContainer
                 derr('this container has members with empty name!', $node);
             }
 
-            $f = $this->owner->owner->owner->EDLStore->find($content, $this);
-            if( $f === null )
-                $f = $this->parentCentralStore->findOrCreate($content, $this);
+            //Todo: 20250329 swaschkut
+            //this is now included in parentCentralStroe - which is AddressStore
+            #$f = $this->owner->owner->owner->EDLStore->find($content, $this);
+            #if( $f === null )
+            $f = $this->parentCentralStore->findOrCreate($content, $this);
             $this->o[] = $f;
             $i++;
         }
@@ -634,12 +646,12 @@ class AddressRuleContainer extends ObjRuleContainer
 
 
     /**
-     * @param Address|AddressGroup $object
+     * @param Address|AddressGroup|EDL $object
      * @param bool $anyIsAcceptable
      * @return bool
      * @throws Exception
      */
-    public function hasObjectRecursive(Address|AddressGroup $object, bool $anyIsAcceptable = FALSE): bool
+    public function hasObjectRecursive(Address|AddressGroup|EDL $object, bool $anyIsAcceptable = FALSE): bool
     {
         if( $object === null )
             derr('cannot work with null objects');

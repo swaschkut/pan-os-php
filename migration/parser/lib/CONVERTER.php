@@ -833,6 +833,7 @@ class CONVERTER extends UTIL
 
         $counter = 1;
         $tmp_int_name = array();
+        $aggregatecounter = 1;
         foreach( $tmp_interfaces as $tmp_interface )
         {
             #if( $tmp_interface->type !== "tmp" && get_class( $tmp_interface ) == "EthernetInterface" )
@@ -904,6 +905,42 @@ class CONVERTER extends UTIL
                         $new_name = "tunnel." . $tunnelcounter;
 
                         $tunnelcounter++;
+
+                        $tmp_int = $template->network->findInterface($new_name);
+                        $tmp_int_name[$int_name] = $new_name;
+                    } while( $tmp_int !== null );
+
+                    /*}
+                    else
+                    {
+                        $tmp_tag = explode( ".", $int_name);
+                        $new_name = $tmp_int_name[ $tmp_tag[0] ].".". $tmp_tag[1];
+                    }
+                    */
+
+                    $addlog = "Interface: '" . $int_name . "' renamed to " . $new_name;
+                    print $padding . "X " . $addlog . "\n";
+                    #$tmp_interface->display_references();
+                    $tmp_interface->setName($new_name);
+                    $tmp_interface->set_node_attribute('warning', $addlog);
+                }
+                elseif( get_class($tmp_interface) == "AggregateEthernetInterface" )
+                {
+                    if( $tmp_interface->isSubInterface() )
+                        continue;
+
+
+
+                    $validate_name = explode( ".", $int_name);
+                    if( $validate_name[0] == "ae" &&  is_numeric( $validate_name[1] ))
+                        continue;
+
+                    #if( strpos( $int_name, "." ) === false ){
+                    do
+                    {
+                        $new_name = "ae" . $aggregatecounter;
+
+                        $counter++;
 
                         $tmp_int = $template->network->findInterface($new_name);
                         $tmp_int_name[$int_name] = $new_name;
@@ -1224,8 +1261,10 @@ class CONVERTER extends UTIL
                     {
                         $tmp_prot = str_replace("protocol-id:{", "", $output_array[0]);
 
-                        $tmp_app = $vsys1->appStore->get_app_by_ipprotocol($tmp_prot);
-                        if( $tmp_app !==null )
+                        //a VirtualSystem does not have predfined APP-ids, search in owner
+                        $tmp_app = $vsys1->owner->appStore->get_app_by_ipprotocol($tmp_prot);
+                        #$tmp_app = $vsys1->appStore->get_app_by_ipprotocol($tmp_prot);
+                        if( $tmp_app !== null )
                             $appsToMigrate[$tmpService->name()] = array('toApp' => array($tmp_app->name()));
                         else
                             mwarning( "no app-id mapping for ".$tmpService->name() );
@@ -1332,7 +1371,7 @@ class CONVERTER extends UTIL
                         echo "  - Rule '{$rule->name()}' is using it\n";
                         foreach( $appMigrateRecord['toApp'] as $app )
                         {
-                            echo "     - adding app '$app'' to the list of apps to add\n";
+                            echo "     - adding app '$app' to the list of apps to add\n";
                             $rule->appsToAdd[$app] = TRUE;
                         }
                     }

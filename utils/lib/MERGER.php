@@ -108,6 +108,25 @@ class MERGER extends UTIL
 
         }
 
+        if( isset(PH::$args['outputformatset']) )
+        {
+            PH::print_stdout(" set 'origXmlDoc' variable");
+            $this->outputformatset = TRUE;
+            $this->origXmlDoc = new DOMDocument();
+
+            if( !is_bool(PH::$args['outputformatset']) )
+            {
+                $this->outputformatsetFile = PH::$args['outputformatset'];
+
+                if( $this->projectFolder !== null )
+                {
+                    if( strpos($this->outputformatsetFile, $this->projectFolder) === FALSE )
+                        $this->outputformatsetFile = $this->projectFolder."/".$this->outputformatsetFile;
+                }
+
+            }
+        }
+
         $this->help(PH::$args);
         $this->inDebugapiArgument();
         $this->inputValidation();
@@ -3189,13 +3208,18 @@ class MERGER extends UTIL
 
                             foreach( $upper_NamehashMap[$pickedObject->name()] as $key => $overridenOBJ )
                             {
-                                if( !$overridenOBJ->isAddress() )
+                                if( !$overridenOBJ->isService() )
                                 {
                                     $skip2 = TRUE;
                                     $skippedOBJ = $overridenOBJ;
                                     break;
                                 }
-                                if( $overridenOBJ->value() !== $object->value() )
+                                /** @var Service $object */
+                                if( !$object->dstPortMapping()->equals($overridenOBJ->dstPortMapping())
+                                    || !$object->srcPortMapping()->equals($overridenOBJ->srcPortMapping())
+                                    || $object->getOverride() != $overridenOBJ->getOverride()
+                                    || $object->protocol() != $overridenOBJ->protocol()
+                                )
                                 {
                                     $skip3 = TRUE;
                                     $skippedOBJ = $overridenOBJ;

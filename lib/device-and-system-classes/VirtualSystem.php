@@ -1036,14 +1036,17 @@ class VirtualSystem
     }
 
 
-    public function display_statistics()
+    public function display_statistics( $debug = false, $actions = "display" )
     {
         $stdoutarray = array();
 
         $stdoutarray['type'] = get_class( $this );
+        $stdoutarray['statstype'] = "objects";
 
         $header = "Statistics for VSYS '" . PH::boldText($this->name) . "' | '" . $this->toString() . "'";
         $stdoutarray['header'] = $header;
+
+        $stdoutarray['model'] = "---";
 
         $stdoutarray['security rules'] = $this->securityRules->count();
 
@@ -1140,11 +1143,373 @@ class VirtualSystem
         PH::$JSON_TMP[] = $stdoutarray;
 
 
-        if( !PH::$shadow_json )
+        if( !PH::$shadow_json && $actions == "display" )
             PH::print_stdout( $stdoutarray, true );
 
+        $this->display_bp_statistics( $debug, $actions);
     }
 
+
+    public function get_bp_statistics( $actions = "display")
+    {
+        $sub = $this;
+        $sub_ruleStore = $sub->securityRules;
+
+        $stdoutarray = array();
+
+        $stdoutarray['type'] = get_class( $sub );
+        $stdoutarray['statstype'] = "adoption";
+
+        $header = "BP/Visibility Statistics for VSYS '" . PH::boldText($sub->name) . "' | '" . $sub->toString() . "'";
+        $stdoutarray['header'] = $header;
+
+        $stdoutarray['security rules'] = $sub_ruleStore->count();
+
+        $stdoutarray['security rules allow'] = count( $sub_ruleStore->rules( "(action is.allow)" ) );
+        $stdoutarray['security rules allow enabled'] = count( $sub_ruleStore->rules( "(action is.allow) and (rule is.enabled)" ) );
+        $stdoutarray['security rules allow disabled'] = count( $sub_ruleStore->rules( "(action is.allow) and (rule is.disabled)" ) );
+        $stdoutarray['security rules enabled'] = count( $sub_ruleStore->rules( "(rule is.enabled)" ) );
+        $stdoutarray['security rules deny'] = count( $sub_ruleStore->rules( "!(action is.allow)" ) );
+        $stdoutarray['security rules deny enabled'] = count( $sub_ruleStore->rules( "!(action is.allow) and (rule is.enabled)" ) );
+        $ruleForCalculation = $stdoutarray['security rules allow enabled'];
+
+        $generalFilter = "(rule is.enabled) and ";
+        $generalFilter_allow = "(rule is.enabled) and (action is.allow) and ";
+        //Logging
+        $stdoutarray['log at end'] = count( $sub_ruleStore->rules( $generalFilter."(log at.end)" ) );
+        $stdoutarray['log at end calc'] = $stdoutarray['log at end']."/".$stdoutarray['security rules enabled'];
+        if( $stdoutarray['security rules enabled'] !== 0 )
+            $stdoutarray['log at end percentage'] = floor(( $stdoutarray['log at end'] / $stdoutarray['security rules enabled'] ) * 100 );
+        else
+            $stdoutarray['log at end percentage'] = 0;
+        $stdoutarray['log at end not start'] = count( $sub_ruleStore->rules( $generalFilter."(log at.end) and !(log at.start)" ) );
+        $stdoutarray['log at end not start calc'] = $stdoutarray['log at end not start']."/".$stdoutarray['security rules enabled'];
+        if( $stdoutarray['security rules enabled'] !== 0 )
+            $stdoutarray['log at end not start percentage'] = floor(( $stdoutarray['log at end not start'] / $stdoutarray['security rules enabled'] ) * 100 );
+        else
+            $stdoutarray['log at end not start percentage'] = 0;
+        $stdoutarray['log at not start'] = count( $sub_ruleStore->rules( $generalFilter."!(log at.start)" ) );
+        $stdoutarray['log at not start calc'] = $stdoutarray['log at not start']."/".$stdoutarray['security rules enabled'];
+        if( $stdoutarray['security rules enabled'] !== 0 )
+            $stdoutarray['log at not start percentage'] = floor(( $stdoutarray['log at not start'] / $stdoutarray['security rules enabled'] ) * 100 );
+        else
+            $stdoutarray['log at not start percentage'] = 0;
+
+        //Log Forwarding Profiles
+        $stdoutarray['log prof set'] = count( $sub_ruleStore->rules( $generalFilter."(logprof is.set)" ) );
+        $stdoutarray['log prof set calc'] = $stdoutarray['log prof set']."/".$stdoutarray['security rules enabled'];
+        if( $stdoutarray['security rules enabled'] !== 0 )
+            $stdoutarray['log prof set percentage'] = floor(( $stdoutarray['log prof set'] / $stdoutarray['security rules enabled'] ) * 100 );
+        else
+            $stdoutarray['log prof set percentage'] = 0;
+
+        //Wildfire Analysis Profiles
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "wf is.visibility" );
+        $stdoutarray['wf visibility'] = count( $sub_ruleStore->rules( $filter_array ) );
+        $stdoutarray['wf visibility calc'] = $stdoutarray['wf visibility']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['wf visibility percentage'] = floor(( $stdoutarray['wf visibility'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['wf visibility percentage'] = 0;
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "wf is.best-practice" );
+        $stdoutarray['wf best-practice'] = count( $sub_ruleStore->rules( $filter_array ) );
+        $stdoutarray['wf best-practice calc'] = $stdoutarray['wf best-practice']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['wf best-practice percentage'] = floor( ( $stdoutarray['wf best-practice'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['wf best-practice percentage'] = 0;
+
+        //Zone Protection
+        //Todo: no valid filter yet available - also how to filter? based on from and/or to zone??
+        $stdoutarray['zone protection'] = "NOT available";
+        $filter_array = array('query' => $generalFilter."!(from is.any) and (from all.has.from.query subquery1)", 'subquery1' => "zpp is.set" );
+        $stdoutarray['zone protection'] = count( $sub_ruleStore->rules( $filter_array ) );
+        $stdoutarray['zone protection calc'] = $stdoutarray['zone protection']."/".$stdoutarray['security rules enabled'];
+        if( $stdoutarray['security rules enabled'] !== 0 )
+            $stdoutarray['zone protection percentage'] = floor( ( $stdoutarray['zone protection'] / $stdoutarray['security rules enabled'] ) * 100 );
+        else
+            $stdoutarray['zone protection percentage'] = 0;
+
+
+
+        // App-ID
+        $stdoutarray['app id'] = count( $sub_ruleStore->rules( $generalFilter_allow."!(app is.any)" ) );
+        $stdoutarray['app id calc'] = $stdoutarray['app id']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['app id percentage'] = floor( ( $stdoutarray['app id'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['app id percentage'] = 0;
+
+        //User-ID
+        $stdoutarray['user id'] = count( $sub_ruleStore->rules( $generalFilter_allow."!(user is.any)" ) );
+        $stdoutarray['user id calc'] = $stdoutarray['user id']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['user id percentage'] = floor( ( $stdoutarray['user id'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['user id percentage'] = 0;
+        //Service/Port
+        $stdoutarray['service port'] = count( $sub_ruleStore->rules( $generalFilter_allow."!(service is.any)" ) );
+        $stdoutarray['service port calc'] = $stdoutarray['service port']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['service port percentage'] = floor( ( $stdoutarray['service port'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['service port percentage'] = 0;
+
+        //Antivirus Profiles
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "av is.visibility" );
+        $stdoutarray['av visibility'] = count( $sub_ruleStore->rules( $filter_array ) );
+        $stdoutarray['av visibility calc'] = $stdoutarray['av visibility']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['av visibility percentage'] = floor( ( $stdoutarray['av visibility'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['av visibility percentage'] = 0;
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "av is.best-practice" );
+        $stdoutarray['av best-practice'] = count( $sub_ruleStore->rules( $filter_array ) );
+        $stdoutarray['av best-practice calc'] = $stdoutarray['av best-practice']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['av best-practice percentage'] = floor( ( $stdoutarray['av best-practice'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['av best-practice percentage'] = 0;
+
+        //Anti-Spyware Profiles
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "as is.visibility" );
+        $stdoutarray['as visibility'] = count( $sub_ruleStore->rules( $filter_array ) );
+        $stdoutarray['as visibility calc'] = $stdoutarray['as visibility']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['as visibility percentage'] = floor( ( $stdoutarray['as visibility'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['as visibility percentage'] = 0;
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "as is.best-practice" );
+        $stdoutarray['as best-practice'] = count( $sub_ruleStore->rules( $filter_array ) );
+        $stdoutarray['as best-practice calc'] = $stdoutarray['as best-practice']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['as best-practice percentage'] = floor( ( $stdoutarray['as best-practice'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['as best-practice percentage'] = 0;
+
+        //Vulnerability Profiles
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "vp is.visibility" );
+        $stdoutarray['vp visibility'] = count( $sub_ruleStore->rules( $filter_array ) );
+        $stdoutarray['vp visibility calc'] = $stdoutarray['vp visibility']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['vp visibility percentage'] = floor( ( $stdoutarray['vp visibility'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['vp visibility percentage'] = 0;
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "vp is.best-practice" );
+        $stdoutarray['vp best-practice'] = count( $sub_ruleStore->rules( $filter_array ) );
+        $stdoutarray['vp best-practice calc'] = $stdoutarray['vp best-practice']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['vp best-practice percentage'] = floor( ( $stdoutarray['vp best-practice'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['vp best-practice percentage'] = 0;
+
+        //File Blocking Profiles
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "fb is.visibility" );
+        $stdoutarray['fb visibility'] = count( $sub_ruleStore->rules( $filter_array ) );
+        $stdoutarray['fb visibility calc'] = $stdoutarray['fb visibility']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['fb visibility percentage'] = floor( ( $stdoutarray['fb visibility'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['fb visibility percentage'] = 0;
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "fb is.best-practice" );
+        $stdoutarray['fb best-practice'] = count( $sub_ruleStore->rules( $filter_array ) );
+        $stdoutarray['fb best-practice calc'] = $stdoutarray['fb best-practice']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['fb best-practice percentage'] = floor( ( $stdoutarray['fb best-practice'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['fb best-practice percentage'] = 0;
+
+        //Data Filtering
+        $stdoutarray['data visibility'] = "NOT available";
+        $stdoutarray['data visibility'] = count( $sub_ruleStore->rules( $generalFilter_allow."(secprof data-profile.is.set)" ) );
+        $stdoutarray['data visibility calc'] = $stdoutarray['data visibility']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['data visibility percentage'] = floor( ( $stdoutarray['data visibility'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['data visibility percentage'] = 0;
+
+
+        //URL Filtering Profiles
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "url.site-access is.visibility" );
+        $stdoutarray['url-site-access visibility'] = count( $sub_ruleStore->rules( $filter_array ) );
+        $stdoutarray['url-site-access visibility calc'] = $stdoutarray['url-site-access visibility']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['url-site-access visibility percentage'] = floor( ( $stdoutarray['url-site-access visibility'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['url-site-access visibility percentage'] = 0;
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "url.site-access is.best-practice" );
+        $stdoutarray['url-site-access best-practice'] = count( $sub_ruleStore->rules( $filter_array ) );
+        $stdoutarray['url-site-access best-practice calc'] = $stdoutarray['url-site-access best-practice']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['url-site-access best-practice percentage'] = floor( ( $stdoutarray['url-site-access best-practice'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['url-site-access best-practice percentage'] = 0;
+
+        //Credential Theft Prevention
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "url.user-credential-detection is.visibility" );
+        $stdoutarray['url-credential visibility'] = count( $sub_ruleStore->rules( $filter_array ) );
+        $stdoutarray['url-credential visibility calc'] = $stdoutarray['url-credential visibility']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['url-credential visibility percentage'] = floor( ( $stdoutarray['url-credential visibility'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['url-credential visibility percentage'] = 0;
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "url.user-credential-detection is.best-practice" );
+        $stdoutarray['url-credential best-practice'] = count( $sub_ruleStore->rules( $filter_array ) );
+        $stdoutarray['url-credential best-practice calc'] = $stdoutarray['url-credential best-practice']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['url-credential best-practice percentage'] = floor( ( $stdoutarray['url-credential best-practice'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['url-credential best-practice percentage'] = 0;
+
+        //DNS List
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "dns-list is.visibility" );
+        $stdoutarray['dns-list visibility'] = count( $sub_ruleStore->rules( $filter_array ) );
+        $stdoutarray['dns-list visibility calc'] = $stdoutarray['dns-list visibility']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['dns-list visibility percentage'] = floor( ( $stdoutarray['dns-list visibility'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['dns-list visibility percentage'] = 0;
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "dns-list is.best-practice" );
+        $stdoutarray['dns-list best-practice'] = count( $sub_ruleStore->rules( $filter_array ) );
+        $stdoutarray['dns-list best-practice calc'] = $stdoutarray['dns-list best-practice']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['dns-list best-practice percentage'] = floor( ( $stdoutarray['dns-list best-practice'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['dns-list best-practice percentage'] = 0;
+
+        //DNS Security
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "dns-security is.visibility" );
+        $stdoutarray['dns-security visibility'] = count( $sub_ruleStore->rules( $filter_array ) );
+        $stdoutarray['dns-security visibility calc'] = $stdoutarray['dns-security visibility']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['dns-security visibility percentage'] = floor( ( $stdoutarray['dns-security visibility'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['dns-security visibility percentage'] = 0;
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "dns-security is.best-practice" );
+        $stdoutarray['dns-security best-practice'] = count( $sub_ruleStore->rules( $filter_array ) );
+        $stdoutarray['dns-security best-practice calc'] = $stdoutarray['dns-security best-practice']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['dns-security best-practice percentage'] = floor( ( $stdoutarray['dns-security best-practice'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['dns-security best-practice percentage'] = 0;
+
+
+        $percentageArray = array();
+        $percentageArray_visibility = array();
+        $percentageArray_visibility['Logging'] = $stdoutarray['log at end percentage'];
+        $percentageArray_visibility['Log Forwarding Profiles'] = $stdoutarray['log prof set percentage'];
+        $percentageArray_visibility['Wildfire Analysis Profiles'] = $stdoutarray['wf visibility percentage'];
+        $percentageArray_visibility['Zone Protection'] = $stdoutarray['zone protection percentage'];
+        $percentageArray_visibility['App-ID'] = $stdoutarray['app id percentage'];
+        $percentageArray_visibility['User-ID'] = $stdoutarray['user id percentage'];
+        $percentageArray_visibility['Service/Port'] = $stdoutarray['service port percentage'];
+
+        $percentageArray_visibility['Antivirus Profiles'] = $stdoutarray['av visibility percentage'];
+        $percentageArray_visibility['Anti-Spyware Profiles'] = $stdoutarray['as visibility percentage'];
+        $percentageArray_visibility['Vulnerability Profiles'] = $stdoutarray['vp visibility percentage'];
+        $percentageArray_visibility['File Blocking Profiles'] = $stdoutarray['fb visibility percentage'];
+        $percentageArray_visibility['Data Filtering'] = $stdoutarray['data visibility percentage'];
+        $percentageArray_visibility['URL Filtering Profiles'] = $stdoutarray['url-site-access visibility percentage'];
+        $percentageArray_visibility['Credential Theft Prevention'] = $stdoutarray['url-credential visibility percentage'];
+        #$percentageArray_visibility['DNS List'] = $stdoutarray['dns-list visibility percentage'];
+        $percentageArray_visibility['DNS Security'] = $stdoutarray['dns-security visibility percentage'];
+
+        $percentageArray['visibility'] = $percentageArray_visibility;
+
+        $percentageArray_best_practice = array();
+        $percentageArray_best_practice['Logging'] = $stdoutarray['log at not start percentage'];
+        #$percentageArray_best_practice['Log Forwarding Profiles'] = $stdoutarray['log prof set percentage'];
+
+        $percentageArray_best_practice['Wildfire Analysis Profiles'] = $stdoutarray['wf best-practice percentage'];
+        #$percentageArray_best_practice['Zone Protection'] = '---';
+        #$percentageArray_best_practice['App-ID'] = $stdoutarray['app id percentage'];
+        #$percentageArray_best_practice['User-ID'] = $stdoutarray['user id percentage'];
+        #$percentageArray_best_practice['Service/Port'] = $stdoutarray['service port percentage'];
+
+        $percentageArray_best_practice['Antivirus Profiles'] = $stdoutarray['av best-practice percentage'];
+        $percentageArray_best_practice['Anti-Spyware Profiles'] = $stdoutarray['as best-practice percentage'];
+        $percentageArray_best_practice['Vulnerability Profiles'] = $stdoutarray['vp best-practice percentage'];
+        $percentageArray_best_practice['File Blocking Profiles'] = $stdoutarray['fb best-practice percentage'];
+        #$percentageArray_best_practice['Data Filtering'] = '---';
+        $percentageArray_best_practice['URL Filtering Profiles'] = $stdoutarray['url-site-access best-practice percentage'];
+        $percentageArray_best_practice['Credential Theft Prevention'] = $stdoutarray['url-credential best-practice percentage'];
+        #$percentageArray_best_practice['DNS List'] = $stdoutarray['dns-list best-practice percentage'];
+        $percentageArray_best_practice['DNS Security'] = $stdoutarray['dns-security best-practice percentage'];
+
+        $percentageArray['best-practice'] = $percentageArray_best_practice;
+
+        $stdoutarray['percentage'] = $percentageArray;
+
+        return $stdoutarray;
+    }
+
+    public function display_bp_statistics( $debug = false, $actions = "display" )
+    {
+        $stdoutarray = $this->get_bp_statistics();
+
+        $percentageArray_visibility = $stdoutarray['percentage']['visibility'];
+        $percentageArray_best_practice = $stdoutarray['percentage']['best-practice'];
+
+        if( !PH::$shadow_json and $actions == "display" )
+        {
+            PH::print_stdout("---------------------------");
+            PH::print_stdout("FEATURE ADOPTION");
+            PH::print_stdout("---------------------------");
+            PH::print_stdout();
+            PH::print_stdout("overall | visibility");
+            $tbl = new ConsoleTable();
+            $tbl->setHeaders(
+                array('Type', 'percentage', "%")
+            );
+            foreach( $percentageArray_visibility as $key => $value )
+            {
+                if( strpos($value, "---") !== False )
+                {
+                    $string = $value;
+                }
+                else
+                {
+                    $string = "";
+                    $test = floor( ($value/10) * 2 );
+                    $string = str_pad($string, $test, "*", STR_PAD_LEFT);
+                }
+                $tbl->addRow(array($key, $value, $string));
+            }
+
+            echo $tbl->getTable();
+
+
+            PH::print_stdout();
+            PH::print_stdout("Best Practices");
+            $tbl = new ConsoleTable();
+            $tbl->setHeaders(
+                array('Type', 'percentage', "%")
+            );
+            foreach( $percentageArray_best_practice as $key => $value )
+            {
+                if( strpos($value, "---") !== False )
+                {
+                    $string = $value;
+                }
+                else
+                {
+                    $string = "";
+                    $test = floor( ($value/10) * 2 );
+                    $string = str_pad($string, $test, "*", STR_PAD_LEFT);
+                }
+                $tbl->addRow(array($key, $value, $string));
+            }
+
+            echo $tbl->getTable();
+        }
+        PH::print_stdout();
+
+
+        if( !PH::$shadow_json && $debug && $actions == "display" )
+            PH::print_stdout( $stdoutarray, true );
+
+        PH::$JSON_TMP[] = $stdoutarray;
+    }
 
     public function isVirtualSystem()
     {

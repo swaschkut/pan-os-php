@@ -1,0 +1,54 @@
+{
+    "10-2-7-h18": [
+        [],
+        {
+            "PAN-272809": {
+                "info": [
+                    " A fix was made to address CVE-2024-0012 (PAN-SA-2024-0015) and CVE-2024-9474. "
+                ]
+            }
+        },
+        {
+            "PAN-262287": {
+                "info": [
+                    " Fixed an issue where dereferencing a NULL pointer that occurred caused pan_task processes to stop responding. "
+                ]
+            }
+        },
+        {
+            "PAN-255653": {
+                "info": [
+                    " Fixed a high availability (HA) failover issue where, when Management Processing Card (MPC) or Base Card (BC) failures occurred, the HA link went down, which caused fpp-down events on one firewall. "
+                ]
+            }
+        },
+        {
+            "PAN-240450": {
+                "info": [
+                    " Fixed an issue where commits failed when pushing a configuration to a large number of device groups (vsys) on a firewall. "
+                ]
+            }
+        },
+        {
+            "PAN-234560": {
+                "info": [
+                    " Fixed an issue where the daily summary report displayed IPv6 addresses instead of IPv4 addresses. "
+                ]
+            }
+        },
+        {
+            "PAN-226361": {
+                "info": [
+                    " Fixed an issue where sessions bypassed L7 inspection or ended unexpectedly with the error resources unavailable when the firewall incorrectly interpreted the Content and Threat Detection (CTD) global packet queue as being full. "
+                ]
+            }
+        },
+        {
+            "PAN-219805": {
+                "info": [
+                    " Fixed an issue where the reportd process stopped responding due to a race condition. "
+                ]
+            }
+        }
+    ]
+}

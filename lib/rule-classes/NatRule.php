@@ -490,7 +490,7 @@ class NatRule extends Rule
     {
         if( $this->snattype == 'none' )
         {
-            if( $this->snatroot !== null )
+            if( $this->snatroot !== null && $this->snatroot !== false )
                 $this->xmlroot->removeChild($this->snatroot);
             $this->snatroot = null;
             return;
@@ -715,6 +715,7 @@ class NatRule extends Rule
     public function API_setDNAT($host, $ports = null, $type = 'static')
     {
         $ret = $this->setDNAT($host, $ports, $type);
+
         if( $ret )
         {
             $connector = findConnectorOrDie($this);
@@ -724,12 +725,19 @@ class NatRule extends Rule
                 $xpath = $this->getXPath() . '/destination-translation';
 
             if( $host === null && ($ports === null | $ports == '') || $type == 'none' )
+            {
                 if( $connector->isAPI() )
+                {
                     $connector->sendDeleteRequest($xpath);
+                }
+            }
             else
+            {
                 if( $connector->isAPI() )
+                {
                     $connector->sendEditRequest($xpath, $this->dnatroot);
-
+                }
+            }
         }
 
         return $ret;
@@ -834,7 +842,7 @@ class NatRule extends Rule
         if( $this->snatinterface === $newSNATInterface )
             return FALSE;
 
-        $this->snatinterface = $newSNATInterface;
+        $this->snatinterface = $newSNATInterface->name();
 
         if( get_class( $this->owner->owner->owner ) != "PanoramaConf" )
         {

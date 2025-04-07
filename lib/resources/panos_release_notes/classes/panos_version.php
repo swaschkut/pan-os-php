@@ -20,7 +20,12 @@ class panos_version
 
         $this->type = $type;
         $tmp_version_string = $version_string;
+
+        $tmp_version_string = str_replace("-h", "_h", $tmp_version_string);
         $tmp_version_string = str_replace("-", ".", $tmp_version_string);
+        $tmp_version_string = str_replace("_h", "-h", $tmp_version_string);
+
+
         $this->version = $tmp_version_string;
         $this->directory = $directory;
 
@@ -32,7 +37,7 @@ class panos_version
 
         if( $this->type == "known" )
         {
-            $known_file = file_get_contents( $directory."pan-os-".$version_string."-known-issues" );
+            $known_file = file_get_contents( $directory."pan-os-".$version_string."-".$this->type."-issues" );
 
             $data = json_decode($known_file, TRUE);
 
@@ -44,7 +49,11 @@ class panos_version
                     {
                         //add Version
                         $tmp_version_string = $version_string;
+
+                        $tmp_version_string = str_replace("-h", "_h", $tmp_version_string);
                         $tmp_version_string = str_replace("-", ".", $tmp_version_string);
+                        $tmp_version_string = str_replace("_h", "-h", $tmp_version_string);
+
                         $this->owner->knownIssues[$issueNumber]->version_listed[$tmp_version_string] = $tmp_version_string;
 
 
@@ -60,8 +69,40 @@ class panos_version
                     }
                 }
             }
+        }
+        elseif( $this->type == "addressed" )
+        {
+            $known_file = file_get_contents( $directory."pan-os-".$version_string."-".$this->type."-issues" );
+
+            $data = json_decode($known_file, TRUE);
+
+            foreach( $data[$version_string] as $issue )
+            {
+                foreach( $issue as $issueNumber => $issue_details )
+                {
+
+                    if( isset($this->owner->addressedIssues[$issueNumber]) )
+                    {
+                        //add Version
+                        $tmp_version_string = $version_string;
+
+                        $tmp_version_string = str_replace("-h", "_h", $tmp_version_string);
+                        $tmp_version_string = str_replace("-", ".", $tmp_version_string);
+                        $tmp_version_string = str_replace("_h", "-h", $tmp_version_string);
+
+                        $this->owner->addressedIssues[$issueNumber]->version_listed[$tmp_version_string] = $tmp_version_string;
 
 
+                        if( isset($issueDetails['solved']) )
+                            $this->owner->addressedIssues[$issueNumber]->solved = $issueDetails['solved'];
+                    }
+                    else
+                    {
+                        $addressed_issue_obj = new panos_addressed_issue( $this, $issueNumber, $issue_details );
+                        $this->owner->addressedIssues[$issueNumber] = $addressed_issue_obj;
+                    }
+                }
+            }
         }
 
 

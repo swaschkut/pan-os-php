@@ -1,0 +1,61 @@
+{
+    "10-2-5-h9": [
+        [],
+        {
+            "PAN-272809": {
+                "info": [
+                    " A fix was made to address CVE-2024-0012 (PAN-SA-2024-0015) and CVE-2024-9474. "
+                ]
+            }
+        },
+        {
+            "PAN-248427": {
+                "info": [
+                    " Fixed an issue where push operations took longer than expected to complete. "
+                ]
+            }
+        },
+        {
+            "PAN-247403": {
+                "info": [
+                    " (Panorama virtual appliances only) Fixed an issue where the push scope CLI command took longer than expected, which caused the web interface to be slow. "
+                ]
+            }
+        },
+        {
+            "PAN-245850": {
+                "info": [
+                    " Fixed an issue on Panorama appliances in active\/passive HA configurations where the firewalls entered an HA out-of-sync status and jobs failed on the passive appliance with the error message Could not merged running config from file. "
+                ]
+            }
+        },
+        {
+            "PAN-244746": {
+                "info": [
+                    " Fixed an issue where changes committed on Panorama were not reflected on the firewall after a successful push. "
+                ]
+            }
+        },
+        {
+            "PAN-235840": {
+                "info": [
+                    " Fixed an issue where, after a configuration push from Panorama to managed firewalls, the status displayed as None and the push took longer than expected. "
+                ]
+            }
+        },
+        {
+            "PAN-228515": {
+                "info": [
+                    " Fixed an issue where the Elasticsearch cluster health status displayed as yellow or red due to Elasticsearch SSH tunnel flaps. "
+                ]
+            }
+        },
+        {
+            "PAN-216941": {
+                "info": [
+                    " (M-700 Appliances in Log Collector mode only) Fixed an issue where Panorama stopped processing and saving logs. "
+                ]
+            }
+        }
+    ]
+}

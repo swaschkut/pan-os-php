@@ -501,8 +501,37 @@ class SecurityRule extends RuleWithUserID
                     }
                     else
                     {
-                        //todo: not an object - default object not yet created
-                        $this->secprofProfiles_obj[$prof->nodeName] = $firstE->textContent;
+                        if( get_class( $this->owner->owner ) == "DeviceGroup" || get_class( $this->owner->owner ) == "VirtualSystem" )
+                            $sub = $this->owner->owner->owner;
+                        elseif( get_class( $this->owner->owner ) == "PANConfig" || get_class( $this->owner->owner ) == "PanoramaConf" )
+                            $sub = $this->owner->owner;
+
+                        /** @var PanoramaConf|PANConf $sub */
+                        if( $tmp_store_name == 'AntiVirusProfileStore')
+                            $profile = $sub->AntiVirusPredefinedStore->find( $firstE->textContent );
+                        elseif( $tmp_store_name == 'AntiSpywareProfileStore')
+                            $profile = $sub->AntiSpywarePredefinedStore->find( $firstE->textContent );
+                        elseif( $tmp_store_name == 'VulnerabilityProfileStore')
+                            $profile = $sub->VulnerabilityPredefinedStore->find( $firstE->textContent );
+                        elseif( $tmp_store_name == 'FileBlockingProfileStore' )
+                            $profile = $sub->FileBlockingPredefinedStore->find( $firstE->textContent );
+                        elseif( $tmp_store_name == 'WildfireProfileStore' )
+                            $profile = $sub->WildfirePredefinedStore->find( $firstE->textContent );
+                        elseif( $tmp_store_name == 'URLProfileStore' )
+                            $profile = $sub->UrlFilteringPredefinedStore->find( $firstE->textContent );
+
+                        if( $profile != null )
+                        {
+                            $this->secprofProfiles_obj[$prof->nodeName] = $profile;
+
+                            $profile->addReference( $this );
+                        }
+                        else
+                        {
+                            //todo: not an object - default object not yet created
+                            mwarning( "SecRule: '".$this->name()."' SecurityProfile: '".$firstE->textContent."' of Type: '".$prof->nodeName."' not found.", null, false );
+                            $this->secprofProfiles_obj[$prof->nodeName] = $firstE->textContent;
+                        }
                     }
                 }
             }
@@ -550,7 +579,7 @@ class SecurityRule extends RuleWithUserID
         if( $this->secproftype != 'profile' )
             return array();
 
-        return $this->secprofProfiles;
+        return $this->secprofProfiles_obj;
     }
 
     public function securityProfilHash()
@@ -569,8 +598,16 @@ class SecurityRule extends RuleWithUserID
 
     public function securityProfiles_obj()
     {
-        if( $this->secproftype != 'profile' )
+        if( $this->secproftype == 'none' )
             return array();
+
+        if( $this->secproftype != 'profile' )
+        {
+            $secprofgroup_obj = $this->owner->owner->securityProfileGroupStore->find( $this->secprofgroup );
+
+            if( $secprofgroup_obj != null )
+                return $secprofgroup_obj->secprofProfiles_obj;
+        }
 
         return $this->secprofProfiles_obj;
     }
@@ -639,9 +676,9 @@ class SecurityRule extends RuleWithUserID
         $this->secproftype = 'profile';
         $this->secprofgroup = null;
         if( $newAVprof == "null" )
-            unset($this->secprofProfiles['virus']);
+            unset($this->secprofProfiles_obj['virus']);
         else
-            $this->secprofProfiles['virus'] = $newAVprof;
+            $this->secprofProfiles_obj['virus'] = $newAVprof;
 
         $this->rewriteSecProfXML();
 
@@ -653,9 +690,9 @@ class SecurityRule extends RuleWithUserID
         $this->secproftype = 'profile';
         $this->secprofgroup = null;
         if( $newAVprof == "null" )
-            unset($this->secprofProfiles['vulnerability']);
+            unset($this->secprofProfiles_obj['vulnerability']);
         else
-            $this->secprofProfiles['vulnerability'] = $newAVprof;
+            $this->secprofProfiles_obj['vulnerability'] = $newAVprof;
 
         $this->rewriteSecProfXML();
 
@@ -667,9 +704,9 @@ class SecurityRule extends RuleWithUserID
         $this->secproftype = 'profile';
         $this->secprofgroup = null;
         if( $newAVprof == "null" )
-            unset($this->secprofProfiles['url-filtering']);
+            unset($this->secprofProfiles_obj['url-filtering']);
         else
-            $this->secprofProfiles['url-filtering'] = $newAVprof;
+            $this->secprofProfiles_obj['url-filtering'] = $newAVprof;
 
         $this->rewriteSecProfXML();
 
@@ -681,9 +718,9 @@ class SecurityRule extends RuleWithUserID
         $this->secproftype = 'profile';
         $this->secprofgroup = null;
         if( $newAVprof == "null" )
-            unset($this->secprofProfiles['data-filtering']);
+            unset($this->secprofProfiles_obj['data-filtering']);
         else
-            $this->secprofProfiles['data-filtering'] = $newAVprof;
+            $this->secprofProfiles_obj['data-filtering'] = $newAVprof;
 
         $this->rewriteSecProfXML();
 
@@ -696,9 +733,9 @@ class SecurityRule extends RuleWithUserID
         $this->secprofgroup = null;
 
         if( $newAVprof == "null" )
-            unset($this->secprofProfiles['file-blocking']);
+            unset($this->secprofProfiles_obj['file-blocking']);
         else
-            $this->secprofProfiles['file-blocking'] = $newAVprof;
+            $this->secprofProfiles_obj['file-blocking'] = $newAVprof;
 
         $this->rewriteSecProfXML();
 
@@ -710,9 +747,9 @@ class SecurityRule extends RuleWithUserID
         $this->secproftype = 'profile';
         $this->secprofgroup = null;
         if( $newAVprof == "null" )
-            unset($this->secprofProfiles['spyware']);
+            unset($this->secprofProfiles_obj['spyware']);
         else
-            $this->secprofProfiles['spyware'] = $newAVprof;
+            $this->secprofProfiles_obj['spyware'] = $newAVprof;
 
         $this->rewriteSecProfXML();
 
@@ -724,9 +761,9 @@ class SecurityRule extends RuleWithUserID
         $this->secproftype = 'profile';
         $this->secprofgroup = null;
         if( $newAVprof == "null" )
-            unset($this->secprofProfiles['wildfire-analysis']);
+            unset($this->secprofProfiles_obj['wildfire-analysis']);
         else
-            $this->secprofProfiles['wildfire-analysis'] = $newAVprof;
+            $this->secprofProfiles_obj['wildfire-analysis'] = $newAVprof;
 
         $this->rewriteSecProfXML();
 
@@ -1192,8 +1229,17 @@ class SecurityRule extends RuleWithUserID
                 $text = $padding . "  SecurityProfil: ";
                 foreach( $this->securityProfiles() as $id => $profile )
                 {
-                    $text .= "[" . $id . "] => '" . $profile . "'  ";
-                    PH::$JSON_TMP['sub']['object'][$this->name()]['securityprofile'][$id] = $profile;
+                    if( is_object( $profile ) )
+                    {
+                        $text .= "[" . $id . "] => '" . $profile->name() . "'  ";
+                        PH::$JSON_TMP['sub']['object'][$this->name()]['securityprofile'][$id] = $profile->name();
+                    }
+                    else
+                    {
+                        $text .= "[" . $id . "] => '" . $profile . "'  ";
+                        PH::$JSON_TMP['sub']['object'][$this->name()]['securityprofile'][$id] = $profile;
+                    }
+
                 }
 
                 PH::print_stdout( $text );

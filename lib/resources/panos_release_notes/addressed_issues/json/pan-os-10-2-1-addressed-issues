@@ -1,0 +1,334 @@
+{
+    "10-2-1": [
+        [],
+        {
+            "WIF-495": {
+                "info": [
+                    "Fixed an issue on Panorama where edits made to an existing data filtering profile resulted in matching traffic not being detected by Enterprise DLP."
+                ]
+            }
+        },
+        {
+            "PAN-231823": {
+                "info": [
+                    " A fix was made to address CVE-2024-5916. "
+                ]
+            }
+        },
+        {
+            "PAN-190311": {
+                "info": [
+                    "(PA-220 and PA-220R firewalls and PA-800 Series firewalls only) Fixed an issue where management connectivity to the firewall was lost due to the expiration of the DHCP lease, which caused the IP configuration on the management port to be purged in PAN-OS 10.2.0. To upgrade, download PAN-OS 10.2.0 (no installation), then download and install PAN-OS 10.2.0-h1."
+                ]
+            }
+        },
+        {
+            "PAN-190175 and PAN-190223": {
+                "info": [
+                    "A fix was made to address an OpenSSL infinite loop vulnerability in the PAN-OS software (CVE-2022-0778)."
+                ]
+            }
+        },
+        {
+            "PAN-189665": {
+                "info": [
+                    "(FIPS-CC enabled firewalls only) Fixed an issue where the firewall was unable to connect to log collectors after an upgrade due to missing cipher suites."
+                ]
+            }
+        },
+        {
+            "PAN-189565": {
+                "info": [
+                    " Fixed an issue after upgrading to PAN-OS 10.2 where the tund process stopped responding on multiple GlobalProtect clients. "
+                ]
+            }
+        },
+        {
+            "PAN-189468": {
+                "info": [
+                    "Fixed an issue where the firewall onboard packet processor used by the PAN-OS content-inspection (CTD) engine can generate high dataplane resource usage when overwhelmed by a session with an unusually high number of packets. This can result in resource-unavailable messages due to the content inspection queue filling up. Factors related to the likelihood of an occurrence include enablement of content-inspection based features that are configured in such a way that might process thousands of packets in rapid succession (such as SMB file transfers). This can cause poor performance for the affected session and other sessions using the same packet processor. PA-3000 series and VM-Series firewalls are not impacted."
+                ]
+            }
+        },
+        {
+            "PAN-189361": {
+                "info": [
+                    "Fixed an issue where Panorama was unable to distribute antivirus signature updates to firewalls with an Advanced Threat Prevention license only. "
+                ]
+            }
+        },
+        {
+            "PAN-189298": {
+                "info": [
+                    "Fixed an issue where existing traffic sessions were not synced after restarting the active dataplane when it became passive."
+                ]
+            }
+        },
+        {
+            "PAN-189230": {
+                "info": [
+                    "(VM-Series firewalls only) Fixed an issue that caused the pan_task process to stop responding with floating point exception (FPE) when there was a module of 0 on the queue number."
+                ]
+            }
+        },
+        {
+            "PAN-189214": {
+                "info": [
+                    "Fixed an issue that prevented antivirus signature update packages that are normally available to install from displaying properly on the firewall when the Advanced Threat Prevention license is present on a firewall without a Threat Prevention license."
+                ]
+            }
+        },
+        {
+            "PAN-189206": {
+                "info": [
+                    "Fixed an issue where Device Group and Template administrator roles didn't support a context switch between the Panorama and firewall web interfaces."
+                ]
+            }
+        },
+        {
+            "PAN-189106": {
+                "info": [
+                    "Fixed an issue on Panorama where you were unable to successfully downgrade to a PAN-OS 10.1 release unless you uninstalled the ZTP Plugin 2.0."
+                ]
+            }
+        },
+        {
+            "PAN-189094": {
+                "info": [
+                    "Fixed an issue where, after upgrading a CN-Series firewall from a PAN-OS 10.1 release to PAN-OS 10.2.0, show session commands did not return output."
+                ]
+            }
+        },
+        {
+            "PAN-189032": {
+                "info": [
+                    "Fixed an issue where, when Advanced Routing was enabled on the firewall, an OSPFv3 interface configured with the p2mp link type caused commits to fail."
+                ]
+            }
+        },
+        {
+            "PAN-188956": {
+                "info": [
+                    "Fixed an issue where, after a successful upgrade to PAN-OS 10.2, logging into the firewall or Panorama web interface from the same internet browser window or session from which the firewall or Panorama was upgraded did not work."
+                ]
+            }
+        },
+        {
+            "PAN-188883": {
+                "info": [
+                    "Fixed an issue where, when pre-generated license key files were manually uploaded via the web interface, they weren't properly recognized by PAN-OS and didn't display a serial number or initiate a reboot."
+                ]
+            }
+        },
+        {
+            "PAN-188828": {
+                "info": [
+                    "Fixed an intermittent issue where web pages and web page contents did not properly load when cloud inline categorization was enabled."
+                ]
+            }
+        },
+        {
+            "PAN-188009": {
+                "info": [
+                    "Fixed an issue where a firewall import to Panorama running a PAN-OS 10.1 release or a PAN-OS 10.2 release resulted in corrupted private information when the master key was not used."
+                ]
+            }
+        },
+        {
+            "PAN-187846": {
+                "info": [
+                    "Fixed an issue on Panorama where a selective push pushed an incorrect configuration to the managed firewalls, which caused the firewalls to display as out of sync. This issue occurred if the Panorama-pushed version for the Shared Policy and Template configuration were 20 or more versions older than the current local running configuration on Panorama."
+                ]
+            }
+        },
+        {
+            "PAN-187769": {
+                "info": [
+                    "(VM-Series firewalls in Microsoft Azure environments only) Fixed a Data Plane Development Kit (DPDK) issue where interfaces remained in a link-down state after an Azure hot plug event. This issue occurred due to a hot plug of Accelerated Networking interfaces on the Azure backend caused by host updates, which led to Virtual Function unregister\/Register messages on the VM side."
+                ]
+            }
+        },
+        {
+            "PAN-186886": {
+                "info": [
+                    "Fixed an issue where individual configuration objects were not viewable after committing selective configuration changes on a multi-vsys firewall."
+                ]
+            }
+        },
+        {
+            "PAN-186785": {
+                "info": [
+                    "Fixed an issue where, after logging in, Panorama displayed a 500 error page after five minutes of logging for dynamic group template admin types with access to approximately 115 managed devices or 120 dynamic groups."
+                ]
+            }
+        },
+        {
+            "PAN-186516": {
+                "info": [
+                    "Fixed an issue where log queries that included WildFire submission logs returned more slowly than expected."
+                ]
+            }
+        },
+        {
+            "PAN-186487": {
+                "info": [
+                    " Fixed an issue with snmpd.log overflow caused by continuous hourly repeating errors. "
+                ]
+            }
+        },
+        {
+            "PAN-186402": {
+                "info": [
+                    "(PA-440 Series firewalls only) Fixed an issue where the firewall's maximum tunnel limit was incorrect."
+                ]
+            }
+        },
+        {
+            "PAN-186137": {
+                "info": [
+                    "(PA-3400 Series firewalls only) Fixed an issue where the firewall management interface incorrectly displayed 10G port speed as an option even though 10G speed is not supported and can't be configured."
+                ]
+            }
+        },
+        {
+            "PAN-185616": {
+                "info": [
+                    "Fixed an issue where the firewall sent fewer logs to the system log server than expected. With this fix, the firewall accommodates a larger send queue for syslog forwarding to TCP syslog receivers."
+                ]
+            }
+        },
+        {
+            "PAN-185164": {
+                "info": [
+                    "Fixed an issue where processing corrupted IoT messages caused the wificlient process to restart."
+                ]
+            }
+        },
+        {
+            "PAN-184224": {
+                "info": [
+                    "Fixed an issue on Panorama where you were unable to select a template variable in Templates > Device > Log Forwarding Card > Log Forwarding Card Interface > Network > IP address location."
+                ]
+            }
+        },
+        {
+            "PAN-183826": {
+                "info": [
+                    "Fixed an issue where, after clicking WildFire Analysis Report, the web interface failed to display the report with the following error message: refused to connect."
+                ]
+            }
+        },
+        {
+            "PAN-183567": {
+                "info": [
+                    "Fixed an issue on Panorama where ZTP Plugin 2.0 was not available for download before upgrading Panorama to PAN-OS 10.2."
+                ]
+            }
+        },
+        {
+            "PAN-182492": {
+                "info": [
+                    "Fixed an issue where the WildFire analysis report was not viewable from the firewall WildFire submission log entry page."
+                ]
+            }
+        },
+        {
+            "PAN-181839": {
+                "info": [
+                    "Fixed an issue where Panorama Global Search reported No Matches found while still returning results for matching entries on large configurations."
+                ]
+            }
+        },
+        {
+            "PAN-181039": {
+                "info": [
+                    "Fixed an issue with DNS cache depletion that caused continuous DNS retries."
+                ]
+            }
+        },
+        {
+            "PAN-181031": {
+                "info": [
+                    "Fixed an issue where the CN-NGFW (DP) folder on the CN-MGMT pod eventually consumed a large amount of space in the \/var\/log\/pan because the old registered stale next-generation firewall logs were not being cleared."
+                ]
+            }
+        },
+        {
+            "PAN-180338": {
+                "info": [
+                    "Fixed an issue where the CTD loop count wasn't accurately incremented."
+                ]
+            }
+        },
+        {
+            "PAN-180095": {
+                "info": [
+                    "Fixed an issue where Panorama serial-number-based redistribution agents did not redistribute HIP reports."
+                ]
+            }
+        },
+        {
+            "PAN-179966": {
+                "info": [
+                    "Fixed an issue where, after upgrading to a PAN-OS 8.1 release, the port on the firewall stayed up, but the port on the connected device reported down. This occurred because, on force mode, autoneg was disabled by default. With this fix, autoneg is enabled by default on force mode."
+                ]
+            }
+        },
+        {
+            "PAN-179420": {
+                "info": [
+                    "Fixed an issue on Panorama where a selective push to managed firewalls failed after renaming an existing device group, template, or template stack that was already pushed to the managed firewalls and you selectively committed specific configuration objects from the renamed device group, template, or template stack."
+                ]
+            }
+        },
+        {
+            "PAN-179321": {
+                "info": [
+                    "A validation error was added to inform an administrator when a policy field contained the value any."
+                ]
+            }
+        },
+        {
+            "PAN-178195": {
+                "info": [
+                    "Fixed an issue where the URL filtering logs generated by traffic analyzed by Advanced URL filtering cloud inline categorization didn't display the URL name."
+                ]
+            }
+        },
+        {
+            "PAN-177072": {
+                "info": [
+                    "Fixed an intermittent issue where Panorama did not show new logs from firewalls."
+                ]
+            }
+        },
+        {
+            "PAN-176889": {
+                "info": [
+                    "Fixed an issue where the log collector continuously disconnected from Panorama due to high latency and a high number of packets in Send-Q."
+                ]
+            }
+        },
+        {
+            "PAN-176693": {
+                "info": [
+                    "(M-300 and M-700 appliances only) Fixed an issue where the Activity (ACT) LEDs on the RJ-45 ports did not blink when processing network traffic."
+                ]
+            }
+        },
+        {
+            "PAN-174607": {
+                "info": [
+                    "Fixed an intermittent issue where, when Security profiles were attached to a policy, files that were downloaded across TLS sessions decrypted by the firewall were malformed."
+                ]
+            }
+        },
+        {
+            "PAN-145833": {
+                "info": [
+                    "(PA-3200 Series firewalls only) Fixed an issue where the firewall stopped recording dataplane diagnostic data in dp-monitor.log after a few hours of uptime."
+                ]
+            }
+        }
+    ]
+}

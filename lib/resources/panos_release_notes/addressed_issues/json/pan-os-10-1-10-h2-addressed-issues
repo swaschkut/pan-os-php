@@ -1,0 +1,89 @@
+{
+    "10-1-10-h2": [
+        [],
+        {
+            "PAN-225169": {
+                "info": [
+                    " Added a CLI command to view Strata Logging Service queue usage. "
+                ]
+            }
+        },
+        {
+            "PAN-223501": {
+                "info": [
+                    " Fixed an issue where diagnostic information for the dataplane in the dp-monitor.log file was not complete. "
+                ]
+            }
+        },
+        {
+            "PAN-222712": {
+                "info": [
+                    " (PA-5450 firewalls only) Fixed a low frequency DPC restart issue. "
+                ]
+            }
+        },
+        {
+            "PAN-221984": {
+                "info": [
+                    " (VM-Series firewalls in Microsoft Azure environments only) Fixed an issue where an interface went down after a hotplug event and was only recoverable by restarting the firewall. "
+                ]
+            }
+        },
+        {
+            "PAN-219508": {
+                "info": [
+                    " (VM-Series, PA-400 Series, PA-1400, PA-3400, and PA-5400 Series firewalls only) Fixed an issue where Bidirectional Forwarding Detection (BFD) packets experienced a delay in processing, which caused the BFD connection to flap. "
+                ]
+            }
+        },
+        {
+            "PAN-215436": {
+                "info": [
+                    " Fixed an issue with the web interface where the latest logs took longer than expected to display under Monitor. "
+                ]
+            }
+        },
+        {
+            "PAN-215317": {
+                "info": [
+                    " Fixed an issue where the dataplane stopped responding unexpectedly with the error message comm exited with signal of 10. "
+                ]
+            }
+        },
+        {
+            "PAN-210875": {
+                "info": [
+                    " Fixed an issue where the pan_task process stopped responding due to software packet buffer 3 trailer corruption, which caused the firewall to restart. "
+                ]
+            }
+        },
+        {
+            "PAN-195439": {
+                "info": [
+                    " (VM-Series firewalls in Microsoft Azure environments only) Fixed an issue where the dataplane interface status went down after a hotplug event triggered by Azure infrastructure. "
+                ]
+            }
+        },
+        {
+            "PAN-184630": {
+                "info": [
+                    " Fixed an issue where TLS clients, such as those using OpenSSL 3.0, enforced the TLS renegotiation extension (RFC 5746). "
+                ]
+            }
+        },
+        {
+            "PAN-180082": {
+                "info": [
+                    " Fixed an issue where errors in brdagent logs caused dataplane path monitoring failure. "
+                ]
+            }
+        },
+        {
+            "PAN-160633": {
+                "info": [
+                    " (PA-3200 Series, PA-5200 Series, and PA-7000 Series firewalls only) Fixed an issue where the dataplane restarted repeatedly due to an internal path monitoring failures until a power cycle. "
+                ]
+            }
+        }
+    ]
+}

@@ -413,13 +413,48 @@ SecurityProfileCallContext::$supportedActions['display-xml'] = array(
         DH::DEBUGprintDOMDocument($object->xmlroot);
     },
 );
+SecurityProfileCallContext::$supportedActions['url-filtering-action-set'] = array(
+    'name' => 'url-filtering-action-set',
+    'MainFunction' => function (SecurityProfileCallContext $context) {
+        $object = $context->object;
 
+        if( get_class( $object) !== "URLProfile")
+            return null;
+
+        $category = $context->arguments['url-category'];
+        $custom = $object->owner->owner->customURLProfileStore->find( $category );
+        if( !in_array( $category, $object->predefined ) and $custom == null )
+        {
+            mwarning( "url-filtering category: ".$category. " not supported", null, false );
+            return false;
+        }
+
+
+        $action = $context->arguments['action'];
+
+        if( !in_array( $action, $object->tmp_url_prof_array ) )
+        {
+            mwarning( "url-filtering action support only: ".implode($object->tmp_url_prof_array). " action: ".$action. " not supported", null, false );
+            return false;
+        }
+
+
+        $object->setAction( $action, $category );
+
+        if( $context->isAPI )
+            $object->API_sync();
+    },
+    'args' => array(
+        'action' => array('type' => 'string', 'default' => 'false'),
+        'url-category' => array('type' => 'string', 'default' => 'false'),
+    ),
+);
 SecurityProfileCallContext::$supportedActions['url.action-set'] = array(
     'name' => 'url.action-set',
     'MainFunction' => function (SecurityProfileCallContext $context) {
         $object = $context->object;
-        $action = $context->action;
-        $filter = $context->filter;
+        $action = $context->arguments['action'];
+        $filter = $context->arguments['filter'];
 
         if (get_class($object) !== "URLProfile")
             return null;
@@ -428,6 +463,36 @@ SecurityProfileCallContext::$supportedActions['url.action-set'] = array(
         //how to set new action
 
         $object->setAction($action, $filter);
+
+        if( $context->isAPI )
+            $object->API_sync();
+
+        PH::print_stdout( "\n" );
+    },
+    'args' => array(
+        'action' => array('type' => 'string', 'default' => '*nodefault*',
+            'help' => 'allow, alert, block, continue, override'),
+        'filter' => array('type' => 'string', 'default' => 'all',
+            'help' => "all / all-[action] / category"),
+    ),
+);
+SecurityProfileCallContext::$supportedActions['url.user-credential-detection.action-set'] = array(
+    'name' => 'url.action-set',
+    'MainFunction' => function (SecurityProfileCallContext $context) {
+        $object = $context->object;
+        $action = $context->arguments['action'];
+        $filter = $context->arguments['filter'];
+
+        if (get_class($object) !== "URLProfile")
+            return null;
+
+        //Todo:
+        //how to set new action
+
+        $object->setAction($action, $filter, "user-credential-detection");
+
+        if( $context->isAPI )
+            $object->API_sync();
 
         PH::print_stdout( "\n" );
     },
@@ -519,27 +584,29 @@ SecurityProfileCallContext::$supportedActions[] = array(
         if( $visibility )
             $headers .= '<th>visibility</th>';
 
-        /*
-        if( $bestPractice )
-            $headers .= '<th>BP FB</th>';
-        if( $visibility )
-            $headers .= '<th>visibility FB</th>';
 
-        if( $bestPractice )
-            $headers .= '<th>BP WF</th>';
-        if( $visibility )
-            $headers .= '<th>visibility WF</th>';
-        */
+
         if( $bestPractice )
         {
             $headers .= '<th>URL BP</th>';
             $headers .= '<th>URL BP details</th>';
+
+            $headers .= '<th>URL credentials BP details</th>';
+
+            $headers .= '<th>URL credentials BP TAB details</th>';
         }
+
         if( $visibility )
         {
             $headers .= '<th>URL visibility</th>';
             $headers .= '<th>URL visibility details</th>';
+
+            $headers .= '<th>URL credentials visibility details</th>';
+
+            $headers .= '<th>URL credentials visibility TAB details</th>';
         }
+
+
         if( $addURLmembers or ( !$bestPractice and !$visibility ) )
             $headers .= '<th>URL members</th>';
 
@@ -614,7 +681,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     {
                         if( $bestPractice )
                         {
-                            if( $object->is_best_practice() )
+                            if( $object->is_best_practice() && $object->spyware_dns_security_best_practice() && $object->spyware_dnslist_best_practice() )
                                 $lines .= $context->encloseFunction($bp_text_yes);
                             else
                                 $lines .= $context->encloseFunction($bp_text_no);
@@ -622,7 +689,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
 
                         if( $visibility )
                         {
-                            if( $object->is_visibility() )
+                            if( $object->is_visibility() && $object->spyware_dns_security_visibility() && $object->spyware_dnslist_visibility() )
                                 $lines .= $context->encloseFunction($bp_text_yes);
                             else
                                 $lines .= $context->encloseFunction($bp_text_no);
@@ -885,6 +952,40 @@ SecurityProfileCallContext::$supportedActions[] = array(
                                 $lines .= $context->encloseFunction($bp_text_no.' NO Visibility VP rules');
                         }
                     }
+                    elseif( get_class($object) == "FileBlockingProfile" )
+                    {
+                        if( $bestPractice )
+                        {
+                            if( $object->fileblocking_rules_best_practice() )
+                                $lines .= $context->encloseFunction($bp_text_yes.' BP FB rules set');
+                            else
+                                $lines .= $context->encloseFunction($bp_text_no.' NO BP FB rules');
+                        }
+                        if( $visibility )
+                        {
+                            if( $object->fileblocking_rules_visibility() )
+                                $lines .= $context->encloseFunction($bp_text_yes.' Visibility FB rules set');
+                            else
+                                $lines .= $context->encloseFunction($bp_text_no.' NO Visibility FB rules');
+                        }
+                    }
+                    elseif( get_class($object) == "WildfireProfile" )
+                    {
+                        if( $bestPractice )
+                        {
+                            if( $object->wildfire_rules_best_practice() )
+                                $lines .= $context->encloseFunction($bp_text_yes.' BP WF rules set');
+                            else
+                                $lines .= $context->encloseFunction($bp_text_no.' NO BP WF rules');
+                        }
+                        if( $visibility )
+                        {
+                            if( $object->wildfire_rules_visibility() )
+                                $lines .= $context->encloseFunction($bp_text_yes.' Visibility WF rules set');
+                            else
+                                $lines .= $context->encloseFunction($bp_text_no.' NO Visibility WF rules');
+                        }
+                    }
                     else
                     {
                         if( $bestPractice )
@@ -918,14 +1019,14 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     $lines .= $context->encloseFunction('');
                 if( $bestPractice || $visibility)
                 {
-                    if( get_class($object) == "AntiSpywareProfile" && $object->owner->owner->version >= 102 )
+                    if( get_class($object) == "AntiSpywareProfile" )
                     {
                         if( $bestPractice )
                             $lines .= $context->encloseFunction('BP_AS_exception_dummy');
                         if( $visibility )
                             $lines .= $context->encloseFunction('Visibility_AS_exception_dummy');
                     }
-                    elseif( get_class($object) == "VulnerabilityProfile" && $object->owner->owner->version >= 110 )
+                    elseif( get_class($object) == "VulnerabilityProfile" )
                     {
                         if( $bestPractice )
                             $lines .= $context->encloseFunction('BP_VP_exception_dummy');
@@ -1168,7 +1269,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 $lines .= $context->encloseFunction($string_dns_list);
                 if( $bestPractice || $visibility)
                 {
-                    if( get_class($object) == "AntiSpywareProfile" && $object->owner->owner->version >= 102 )
+                    if( get_class($object) == "AntiSpywareProfile" )
                     {
                         if( $bestPractice )
                         {
@@ -1184,13 +1285,6 @@ SecurityProfileCallContext::$supportedActions[] = array(
                             else
                                 $lines .= $context->encloseFunction($bp_text_no.' NO Visibility AS dns_list');
                         }
-                    }
-                    else
-                    {
-                        if ($bestPractice)
-                            $lines .= $context->encloseFunction('---');
-                        if ($visibility)
-                            $lines .= $context->encloseFunction('---');
                     }
                 }
                 //<th>DNS sinkhole</th>
@@ -1254,15 +1348,20 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     }
                 }
 
+
                 if( get_class($object) == "customURLProfile" )
                 {
                     if( $bestPractice )
                     {
                         $lines .= $context->encloseFunction('---');
                         $lines .= $context->encloseFunction('---');
+                        $lines .= $context->encloseFunction('---');
+                        $lines .= $context->encloseFunction('---');
                     }
                     if( $visibility )
                     {
+                        $lines .= $context->encloseFunction('---');
+                        $lines .= $context->encloseFunction('---');
                         $lines .= $context->encloseFunction('---');
                         $lines .= $context->encloseFunction('---');
                     }
@@ -1283,19 +1382,25 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 {
                     if( $bestPractice )
                     {
-                        //URL BP -> yes/no
-                        $lines .= $context->encloseFunction("test");
-                    }
-                    if( $visibility )
-                    {
-                        //URL visibility -> yes/no
-                        $lines .= $context->encloseFunction("test");
+                        if( $object->site_access_is_best_practice() )
+                            $lines .= $context->encloseFunction($bp_text_yes);
+                        else
+                            $lines .= $context->encloseFunction($bp_text_no);
                     }
 
                     if( $bestPractice )
                     {
                         //URL detail BP
                         $tmp_array = array();
+                        $tmp_array = array();
+                        $countAllow = count( $object->allow );
+                        $countAlert = count( $object->alert );
+                        $countBlock = count( $object->block );
+                        $tmp_array[] = "Allow (".$countAllow.")";
+                        $tmp_array[] = "Alert (".$countAlert.")";
+                        $tmp_array[] = "Block (".$countBlock.")";
+                        $tmp_array[] = "------------------------";
+                        //Todo: get BP Json URL credentials BP block as Array
                         $block_categories = array('command-and-control','grayware','malware','phishing','ransomware','scanning-activity');
                         $notBlock = array();
                         foreach( $block_categories as $block_category )
@@ -1310,9 +1415,55 @@ SecurityProfileCallContext::$supportedActions[] = array(
                             $tmp_array = array_merge( $tmp_array, $notBlock );
                         }
                         else
-                            $tmp_array[] = "";
+                            $tmp_array[] = "yes";
 
                         $lines .= $context->encloseFunction($tmp_array);
+                    }
+                    if( $bestPractice )
+                    {
+                        //<th>URL credentials</th>
+                        $tmp_array = array();
+                        $countAllowcredential = count( $object->allow_credential );
+                        $countAlertcredential = count( $object->alert_credential );
+                        $countBlockcredential = count( $object->block_credential );
+                        $tmp_array[] = "Allow (".$countAllowcredential.")";
+                        $tmp_array[] = "Alert (".$countAlertcredential.")";
+                        $tmp_array[] = "Block (".$countBlockcredential.")";
+                        $tmp_array[] = "------------------------";
+                        //Todo: get BP Json URL credentials BP block as Array
+                        $block_categories = array('command-and-control','grayware','malware','phishing','ransomware','scanning-activity');
+                        $notBlock = array();
+                        foreach( $block_categories as $block_category )
+                        {
+                            if( !in_array( $block_category, $object->block_credential ) )
+                                $notBlock[] = $block_category;
+
+                        }
+                        if( !empty($notBlock) )
+                        {
+                            $tmp_array[] = 'BLOCK missing: ';
+                            $tmp_array = array_merge( $tmp_array, $notBlock );
+                        }
+                        else
+                            $tmp_array[] = "yes";
+
+                        $lines .= $context->encloseFunction($tmp_array);
+                    }
+                    if( $bestPractice )
+                    {
+                        //<th>URL credentials TAB</th>
+                        if( $object->url_usercredentialsubmission_best_practice_tab() )
+                            $lines .= $context->encloseFunction($bp_text_yes);
+                        else
+                            $lines .= $context->encloseFunction($bp_text_no);
+                    }
+
+                    if( $visibility )
+                    {
+                        if( $object->site_access_is_visibility() )
+                            $lines .= $context->encloseFunction($bp_text_yes);
+                        else
+                            $lines .= $context->encloseFunction($bp_text_no);
                     }
 
                     if( $visibility )
@@ -1320,11 +1471,33 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         //URL detail visibility
                         $tmp_array = array();
                         if( empty($object->allow) )
-                            $tmp_array[] = "";
+                            $tmp_array[] = "yes";
                         else
                             $tmp_array[] = 'ALLOW: "set all action to alert"';
 
                         $lines .= $context->encloseFunction($tmp_array);
+                    }
+
+
+                    if( $visibility )
+                    {
+                        //<th>URL credentials</th>
+                        $tmp_array = array();
+                        if( empty($object->allow_credential) )
+                            $tmp_array[] = "yes";
+                        else
+                            $tmp_array[] = 'ALLOW: "set all action to alert"';
+
+                        $lines .= $context->encloseFunction($tmp_array);
+                    }
+
+                    if( $visibility )
+                    {
+                        //<th>URL credentials TAB</th>
+                        if( $object->url_usercredentialsubmission_visibility_tab() )
+                            $lines .= $context->encloseFunction($bp_text_yes);
+                        else
+                            $lines .= $context->encloseFunction($bp_text_no);
                     }
 
                     if( $addURLmembers or ( !$bestPractice and !$visibility ) )
@@ -1358,9 +1531,13 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     {
                         $lines .= $context->encloseFunction('---');
                         $lines .= $context->encloseFunction('---');
+                        $lines .= $context->encloseFunction('---');
+                        $lines .= $context->encloseFunction('---');
                     }
                     if( $visibility )
                     {
+                        $lines .= $context->encloseFunction('---');
+                        $lines .= $context->encloseFunction('---');
                         $lines .= $context->encloseFunction('---');
                         $lines .= $context->encloseFunction('---');
                     }
@@ -1398,12 +1575,24 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 }
                 if( $addCountDisabledRules)
                 {
-                    $refCount = $object->countDisabledRefRule();
-                    if( $refCount == 0 )
-                        $refCount = "---";
+                    if( get_class($object) == "PredefinedSecurityProfileURL" )
+                    {
+                        $lines .= $context->encloseFunction( "" );
+                    }
+                    elseif( get_class($object) == "SecurityProfile" )
+                    {
+                        //Todo: e.g. Decryption rule with URL category exclusion of predefined, are not found as Predefined created as new tmp
+                        $lines .= $context->encloseFunction( "" );
+                    }
                     else
-                        $refCount = (string)$refCount ;
-                    $lines .= $context->encloseFunction( $refCount );
+                    {
+                        $refCount = $object->countDisabledRefRule();
+                        if( $refCount == 0 )
+                            $refCount = "---";
+                        else
+                            $refCount = (string)$refCount ;
+                        $lines .= $context->encloseFunction( $refCount );
+                    }
                 }
 
                 $lines .= "</tr>\n";
@@ -1598,42 +1787,6 @@ SecurityProfileCallContext::$supportedActions['custom-url-category-fix-leading-d
             }
         }
     }
-);
-SecurityProfileCallContext::$supportedActions['url-filtering-action-set'] = array(
-    'name' => 'url-filtering-action-set',
-    'MainFunction' => function (SecurityProfileCallContext $context) {
-        $object = $context->object;
-
-        if( get_class( $object) !== "URLProfile")
-            return null;
-
-        $category = $context->arguments['url-category'];
-        $custom = $object->owner->owner->customURLProfileStore->find( $category );
-        if( !in_array( $category, $object->predefined ) and $custom == null )
-        {
-            mwarning( "url-filtering category: ".$category. " not supported", null, false );
-            return false;
-        }
-
-
-        $action = $context->arguments['action'];
-
-        if( !in_array( $action, $object->tmp_url_prof_array ) )
-        {
-            mwarning( "url-filtering action support only: ".implode($object->tmp_url_prof_array). " action: ".$action. " not supported", null, false );
-            return false;
-        }
-
-
-        $object->setAction( $action, $category );
-
-        if( $context->isAPI )
-            $object->API_sync();
-    },
-    'args' => array(
-        'action' => array('type' => 'string', 'default' => 'false'),
-        'url-category' => array('type' => 'string', 'default' => 'false'),
-    ),
 );
 SecurityProfileCallContext::$supportedActions['virus.best-practice-set'] = array(
     'name' => 'virus.best-practice-set',
@@ -2548,4 +2701,64 @@ SecurityProfileCallContext::$supportedActions['url.best-practice-set'] = array(
             $object->API_sync();
         }
     },
+);
+SecurityProfileCallContext::$supportedActions['url.credential-enforcement.mode'] = array(
+    'name' => 'url.credential-enforcement.mode',
+    'MainFunction' => function (SecurityProfileCallContext $context) {
+        $object = $context->object;
+        $modeToSet = $context->arguments['mode'];
+
+        $modeArray = array("disabled", "ip-user","domain-credentials","group-mapping");
+        if( !in_array($modeToSet, $modeArray) )
+            derr( "mode $modeToSet is not a supported mode. supported: '".implode(",", $modeArray)."'", null, FALSE );
+
+        if (get_class($object) !== "URLProfile")
+            return null;
+
+        #$modeToSet = "ip-user";
+
+        $credentialEnforcement_Node = DH::findFirstElementOrCreate("credential-enforcement", $object->xmlroot);
+        $mode_Node = DH::findFirstElementOrCreate("mode", $credentialEnforcement_Node);
+        DH::clearDomNodeChilds($mode_Node);
+        $modeToSet_Node = DH::findFirstElementOrCreate($modeToSet, $mode_Node);
+
+        if( $modeToSet == "group-mapping" )
+        {
+            //<group-mapping>any</group-mapping>
+            $modeToSet_Node->textContent = "any";
+        }
+
+
+        if( $context->isAPI )
+            $object->api_sync();
+    },
+    'args' => array(
+        'mode' => array('type' => 'string', 'default' => '*nodefault*',
+            'help' => '"disabled", "ip-user","domain-credentials","group-mapping"'),
+    ),
+);
+SecurityProfileCallContext::$supportedActions['url.credential-enforcement.log-severity'] = array(
+    'name' => 'url.credential-enforcement.log-severity',
+    'MainFunction' => function (SecurityProfileCallContext $context) {
+        $object = $context->object;
+        $severityToSet = $context->arguments['severity'];;
+
+        $severityArray = array("critical", "high","medium","low","informational");
+        if( !in_array($severityToSet, $severityArray) )
+            derr( "severity $severityToSet is not a supported mode. supported: '".implode(",", $severityArray)."'", null, FALSE );
+
+        if (get_class($object) !== "URLProfile")
+            return null;
+
+        $credentialEnforcement_Node = DH::findFirstElementOrCreate("credential-enforcement", $object->xmlroot);
+        $severity_Node = DH::findFirstElementOrCreate("log-severity", $credentialEnforcement_Node);
+        $severity_Node->textContent = $severityToSet;
+
+        if( $context->isAPI )
+            $object->api_sync();
+    },
+    'args' => array(
+        'severity' => array('type' => 'string', 'default' => '*nodefault*',
+            'help' => '"critical", "high","medium","low","informational"'),
+    ),
 );

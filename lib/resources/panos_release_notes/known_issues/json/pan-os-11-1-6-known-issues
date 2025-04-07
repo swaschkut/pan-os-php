@@ -2,6 +2,72 @@
     "11-1-6": [
         [],
         {
+            "PAN-282236": {
+                "solved": "(PAN-OS 11.1.6-h3 only)",
+                "info": [
+                    " The firewall doesn't reassemble IPv6 packets correctly after they are fragmented. IPv6 SSL sessions may not be established if the client hello arrives in multiple segments. "
+                ]
+            }
+        },
+        {
+            "PAN-281885": {
+                "info": [
+                    " When exporting and importing the CSV file, the hash values of pre-shared key (PSK) variables set at template and template stack levels inconsistently change, resulting in both variables displaying the same hash value. "
+                ]
+            }
+        },
+        {
+            "PAN-280471": {
+                "info": [
+                    " When applying filters or searching for logs in the PanoramaMonitorLogssection, you might experience slow performance. "
+                ]
+            }
+        },
+        {
+            "PAN-279746": {
+                "solved": "(PAN-OS 11.1.6-h3 only)",
+                "info": [
+                    " An SSL\/TLS Client Hello may not be transmitted out of the firewall if the Client Hello arrives in multiple TCP segments and the traffic is not subject to SSL decryption (for example, SMTP over SSL). "
+                ]
+            }
+        },
+        {
+            "PAN-279604": {
+                "solved": "(PAN-OS 11.1.6-h1 only)",
+                "info": [
+                    " The scheduled SaaS application usage reports are incorrectly generated and only the login page appears instead of the intended report content. "
+                ]
+            }
+        },
+        {
+            "PAN-278296": {
+                "info": [
+                    " The system MAC address of the aggregate interface is the same on both the active and the passive devices, causing some packets to be sent incorrectly to the passive device. This is causing the AE interface on the active firewall to not come up. "
+                ]
+            }
+        },
+        {
+            "PAN-277090": {
+                "info": [
+                    " When you enable Advanced Routing and configure a BGP Authentication profile, if you configure a Secret that includes any special characters apart from these seven special characters !@#%^_-, an error message displays, indicating that The value in this field is invalid. Workaround: Don't include any special character apart from the !@#%^_- characters in the Secret for a BGP Authentication profile. "
+                ]
+            }
+        },
+        {
+            "(PAN-OS 11.1.6-h3\n                            only)": {
+                "info": [
+                    " A high volume of incoming logs to a Collector Group can significantly increase CPU usage on the Elasticsearch and Management Server, potentially causing process instability or crashes. "
+                ]
+            }
+        },
+        {
+            "(This issue affects PAN-OS\n                                    11.1.6-h3.)": {
+                "info": [
+                    " When DoH is enabled for DNS Security, multiple DoH transactions in a single HTTP\/1 connection might unexpectedly cause the firewall to crash and reboot. Workaround: Manually disable DoH support for DNS Security using the set deviceconfig setting dns-over-https enable no CLI command. Alternatively, you can remove the DNS Security configuration used to handle DoH traffic. "
+                ]
+            }
+        },
+        {
             "PAN-262556": {
                 "info": [
                     " The ElasticSearch cluster health status might continue to remain yellow for an extended period after upgrading to PAN-OS 11.1 "
@@ -12,22 +78,6 @@
             "PAN-260851": {
                 "info": [
                     " From the NGFW or Panorama CLI, you can override the existing application tag even if Disable Override is enabled for the application (ObjectsApplications) tag. "
-                ]
-            }
-        },
-        {
-            "PAN-259733": {
-                "solved": "This issue is now resolved. See PAN-OS 11.1.4-h1 Addressed Issues",
-                "info": [
-                    " Custom reports created in PAN-OS are not deleted as expected, resulting in high memory use by the reportd process. This can lead to issues, such as out-of-memory conditions, content installation failures, and unexpected firewall reboots. "
-                ]
-            }
-        },
-        {
-            "PAN-257615": {
-                "solved": "This issue is now resolved. See PAN-OS 11.1.4-h1 Addressed Issues.",
-                "info": [
-                    " The Panorama web interface intermittently displays logs or fails to display logs completely. "
                 ]
             }
         },

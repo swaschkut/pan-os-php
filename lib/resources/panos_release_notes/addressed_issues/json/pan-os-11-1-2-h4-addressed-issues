@@ -1,0 +1,187 @@
+{
+    "11-1-2-h4": [
+        [],
+        {
+            "PAN-252214": {
+                "info": [
+                    " A fix was made to address CVE-2024-3400. "
+                ]
+            }
+        },
+        {
+            "PAN-251013": {
+                "info": [
+                    " Fixed an issue on the web interface where the Virtual Router and Virtual System configurations for the template incorrectly showed as none. "
+                ]
+            }
+        },
+        {
+            "PAN-250686": {
+                "info": [
+                    " Fixed an issue where selective push operations did not work when more than one admin user simultaneously performed changes and partial commits on Panorama. "
+                ]
+            }
+        },
+        {
+            "PAN-249931": {
+                "info": [
+                    " Fixed an issue where configuration pushes from Panorama on PAN-OS 11.1.1 to a firewall on a PAN-OS 10.2 release failed. "
+                ]
+            }
+        },
+        {
+            "PAN-249808": {
+                "info": [
+                    " Fixed an issue where the configd process stopped responding when performing multi-device group pushes via XML API. "
+                ]
+            }
+        },
+        {
+            "PAN-247403": {
+                "info": [
+                    " (VM-Series firewalls only) Fixed an issue where the push scope CLI command took longer than expected, which caused the web interface to be slow. "
+                ]
+            }
+        },
+        {
+            "PAN-247403": {
+                "info": [
+                    " Fixed an issue where firewalls failed to fetch content updates from the Wildfire Private Cloud due to an Unsupported protocol error. "
+                ]
+            }
+        },
+        {
+            "PAN-244894": {
+                "info": [
+                    " Fixed an issue where turning off mprelay logging caused *mprelay* heartbeat failure. "
+                ]
+            }
+        },
+        {
+            "PAN-244622": {
+                "info": [
+                    " Fixed an issue where FIB re-push did not work with Advanced Routing enabled. "
+                ]
+            }
+        },
+        {
+            "PAN-244227": {
+                "info": [
+                    " Fixed an issue where inconsistent FIB entries across the dataplane were not detected. "
+                ]
+            }
+        },
+        {
+            "PAN-242309": {
+                "info": [
+                    " Fixed an issue where a higher byte count (s2c) was observed for DNS-Base application. "
+                ]
+            }
+        },
+        {
+            "PAN-242027": {
+                "info": [
+                    " Fixed an issue where the all-task process repeatedly restarted during memory allocation failures. "
+                ]
+            }
+        },
+        {
+            "PAN-241141": {
+                "info": [
+                    " Fixed an issue where creating more than one address object in the same XML API request resulted in a commit error. "
+                ]
+            }
+        },
+        {
+            "PAN-240477": {
+                "info": [
+                    " Fixed a temporary hardware issue that caused PAN-SFP-PLUS-CU-5M to not be able to link up on PA-3400 and PA-1400 Series firewalls. "
+                ]
+            }
+        },
+        {
+            "PAN-240308": {
+                "info": [
+                    " Fixed an issue where ElasticSearch did not work as expected when raid-mounts were not fully ready after a reboot. "
+                ]
+            }
+        },
+        {
+            "PAN-239367": {
+                "info": [
+                    " Fixed an issue on the firewall where a memory leak associated with the logrcvr process occurred. "
+                ]
+            }
+        },
+        {
+            "PAN-239354": {
+                "info": [
+                    " Fixed an issue where DNS resolution was delayed when an Antispyware policy rule was applied to both client to firewall and firewall to internal DNS server legs of a connection. "
+                ]
+            }
+        },
+        {
+            "PAN-238643": {
+                "info": [
+                    "Fixed an issue where a memory leak caused multiple processes to stop responding when VM Information Sources was configured"
+                ]
+            }
+        },
+        {
+            "PAN-237537": {
+                "info": [
+                    " Fixed an issue where, when deleting CTD entries, the all_pktproc process stopped responding which resulted in dataplane failure. "
+                ]
+            }
+        },
+        {
+            "PAN-237208": {
+                "info": [
+                    " Fixed an issue where the reportd process stopped and the firewall rebooted. "
+                ]
+            }
+        },
+        {
+            "PAN-233789": {
+                "info": [
+                    " Fixed an issue with push and commit and push operations where the user was not correctly bound to the scope, which caused all device groups to be selected for a selective push. "
+                ]
+            }
+        },
+        {
+            "PAN-233692": {
+                "info": [
+                    " Fixed an issue on Panorama where the configd process stopped, which caused performance issues. "
+                ]
+            }
+        },
+        {
+            "PAN-233684": {
+                "info": [
+                    "Fixed an issue on Panorama where Push to Devices or Commit and Push operations took longer than expected on the web interface."
+                ]
+            }
+        },
+        {
+            "PAN-231148": {
+                "info": [
+                    " Fixed an issue where no DHCP option list was defined when using GlobalProtect. "
+                ]
+            }
+        },
+        {
+            "PAN-230746": {
+                "info": [
+                    " Fixed an issue on the web interface where device groups with a large number of managed firewalls displayed the Policy page more slowly than expected. "
+                ]
+            }
+        },
+        {
+            "PAN-205482": {
+                "info": [
+                    " Fixed an issue related to the configd process where Panorama displayed the error Server not responding when editing policies. "
+                ]
+            }
+        }
+    ]
+}

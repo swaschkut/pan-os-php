@@ -52,5 +52,118 @@ RQuery::$defaultFilters['interface']['ipv4']['operators']['includes'] = Array(
     )
 );
 
+RQuery::$defaultFilters['interface']['object']['operators']['is.subinterface'] = Array(
+    'Function' => function(InterfaceRQueryContext $context )
+    {
+        $object = $context->object;
+
+        if( $object->type == "layer3" || $object->type == "virtual-wire" || $object->type == "layer2" ) {
+            if ($object->isSubInterface())
+                return TRUE;
+        }
+
+        return FALSE;
+    },
+    'arg' => false,
+    'ci' => Array(
+        'fString' => '(%PROP% ethernet1/1)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+
+RQuery::$defaultFilters['interface']['object']['operators']['is.aggregate-group'] = Array(
+    'Function' => function(InterfaceRQueryContext $context )
+    {
+        $object = $context->object;
+
+        return $object->type == "aggregate-group";
+    },
+    'arg' => false,
+    'ci' => Array(
+        'fString' => '(%PROP% ethernet1/1)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+
+RQuery::$defaultFilters['interface']['object']['operators']['is.layer3'] = Array(
+    'Function' => function(InterfaceRQueryContext $context )
+    {
+        $object = $context->object;
+
+        return $object->type == "layer3";
+    },
+    'arg' => false,
+    'ci' => Array(
+        'fString' => '(%PROP% ethernet1/1)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+
+RQuery::$defaultFilters['interface']['object']['operators']['is.layer2'] = Array(
+    'Function' => function(InterfaceRQueryContext $context )
+    {
+        $object = $context->object;
+
+        return $object->type == "layer2";
+    },
+    'arg' => false,
+    'ci' => Array(
+        'fString' => '(%PROP% ethernet1/1)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+
+RQuery::$defaultFilters['interface']['object']['operators']['is.tunnel'] = Array(
+    'Function' => function(InterfaceRQueryContext $context )
+    {
+        $object = $context->object;
+
+        return $object->type == "tunnel";
+    },
+    'arg' => false,
+    'ci' => Array(
+        'fString' => '(%PROP% ethernet1/1)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['interface']['object']['operators']['is.virtual-wire'] = Array(
+    'Function' => function(InterfaceRQueryContext $context )
+    {
+        $object = $context->object;
+
+        return $object->type == "virtual-wire";
+    },
+    'arg' => false,
+    'ci' => Array(
+        'fString' => '(%PROP% ethernet1/1)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['interface']['type']['operators']['is.ethernet'] = Array(
+    'Function' => function(InterfaceRQueryContext $context )
+    {
+        $object = $context->object;
+
+        return $object->isEthernetType();
+    },
+    'arg' => false,
+    'ci' => Array(
+        'fString' => '(%PROP% ethernet1/1)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['interface']['type']['operators']['is.aggregate'] = Array(
+    'Function' => function(InterfaceRQueryContext $context )
+    {
+        $object = $context->object;
+
+        return $object->isAggregateType();
+    },
+    'arg' => false,
+    'ci' => Array(
+        'fString' => '(%PROP% ethernet1/1)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
 
 // </editor-fold>

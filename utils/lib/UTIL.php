@@ -2074,7 +2074,7 @@ class UTIL
         }
     }
 
-    public function stats()
+    public function stats( $debug = false, $actions = "display" )
     {
         if( isset(PH::$args['stats']) )
         {
@@ -2085,8 +2085,7 @@ class UTIL
             if( $this->configInput['type'] == 'api' )
                 $mainConnector = findConnector($pan);
 
-            $pan->display_statistics( $mainConnector );
-
+            $pan->display_statistics( $mainConnector, $debug, $actions );
 
             $processedLocations = array();
             foreach( $this->objectsToProcess as &$record )
@@ -2104,13 +2103,13 @@ class UTIL
                     if( isset(PH::$args['loadpanoramapushedconfig']) && get_class( $this->pan ) != 'PanoramaConf' )
                     {
                         if( $sub->parentDeviceGroup !== null )
-                            $sub->parentDeviceGroup->display_statistics();
+                        {
+                            $sub->parentDeviceGroup->display_statistics( $debug, $actions );
+                        }
                     }
 
                     
-                    $sub->display_statistics();
-
-
+                    $sub->display_statistics( $debug, $actions );
                 }
             }
 
@@ -2128,7 +2127,9 @@ class UTIL
                     $doc = $fwconnector->getMergedConfig();
                     $firewall->load_from_domxml( $doc );
 
-                    $firewall->display_statistics( $fwconnector );
+                    $firewall->display_statistics( $fwconnector, $actions );
+
+                    $firewall->display_bp_statistics( $actions );
                 }
 
             }

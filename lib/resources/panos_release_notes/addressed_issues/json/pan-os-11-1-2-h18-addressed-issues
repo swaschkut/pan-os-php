@@ -1,0 +1,47 @@
+{
+    "11-1-2-h18": [
+        [],
+        {
+            "PAN-279604": {
+                "info": [
+                    " Fixed an issue where scheduled SaaS application usage reports were generated incorrectly, and the login page was displayed instead of the report content. "
+                ]
+            }
+        },
+        {
+            "PAN-273085": {
+                "info": [
+                    " Fixed an issue on the web interface where you were unable to edit or create policy rules. "
+                ]
+            }
+        },
+        {
+            "PAN-272006": {
+                "info": [
+                    " Fixed an issue where the firewall did not trigger a kernel core dump as a large core when the CPLD (Complex Programmable Logic Device) sent a Non-Maskable Interrupt (NMI) to the CPU. "
+                ]
+            }
+        },
+        {
+            "PAN-271926": {
+                "info": [
+                    " Fixed an issue where TLS 1.3 decryption failed with a bad record MAC error when the firewall was configured to decrypt and inspect TLS traffic. "
+                ]
+            }
+        },
+        {
+            "PAN-270549": {
+                "info": [
+                    " Fixed an issue where early TLS data was not handled correctly by the accumulation proxy. "
+                ]
+            }
+        },
+        {
+            "PAN-268727": {
+                "info": [
+                    " Fixed an issue where traffic was dropped when the accumulation proxy was enabled and header insertion modified packets. "
+                ]
+            }
+        }
+    ]
+}

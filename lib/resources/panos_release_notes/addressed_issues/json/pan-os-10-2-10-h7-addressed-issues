@@ -1,0 +1,173 @@
+{
+    "10-2-10-h7": [
+        [],
+        {
+            "PAN-267662": {
+                "info": [
+                    " Fixed an issue where the firewall experienced a memory out-of-bounds access when the firewall was configured with SD-WAN and the SD-WAN plugin was loading, which caused the firewall to stop responding and drop VPN tunnels. "
+                ]
+            }
+        },
+        {
+            "PAN-266769": {
+                "info": [
+                    " Fixed an issue where the GlobalProtect gateway did not handle IP address changes of the inner gateway when the NGPA new protocol enabled. "
+                ]
+            }
+        },
+        {
+            "PAN-265742": {
+                "info": [
+                    " Fixed an issue on the Panorama web interface where the OK button on the GlobalProtect gateway configuration dialog box was not clickable. "
+                ]
+            }
+        },
+        {
+            "PAN-265462": {
+                "info": [
+                    " Fixed an issue where you were unable to download PDFs when connected via Clientless VPN. "
+                ]
+            }
+        },
+        {
+            "PAN-264871": {
+                "info": [
+                    " Fixed an issue on Panorama where the configd process stopped responding when viewing IP addresses on dynamic address groups with a large number of IP addresses. "
+                ]
+            }
+        },
+        {
+            "PAN-264246": {
+                "info": [
+                    " Fixed an issue where the Authentication Portal did not work properly with session cookies when the request to the portal contained the header Sec-Fetch-Site=cross-site. "
+                ]
+            }
+        },
+        {
+            "PAN-263680": {
+                "info": [
+                    " Fixed an issue where Prisma Access gateways consistently stopped responding with process restarts. "
+                ]
+            }
+        },
+        {
+            "PAN-262340": {
+                "info": [
+                    " Fixed an issue where FQDN resolution failed for address objects, and all FQDN traffic was denied by the interzone-default policy rule. "
+                ]
+            }
+        },
+        {
+            "PAN-261484": {
+                "info": [
+                    " Fixed an issue on the firewall where DPDK allocated twice the amount of memory as requested for pre-allocation. "
+                ]
+            }
+        },
+        {
+            "PAN-260928": {
+                "info": [
+                    " Fixed an issue where GlobalProtect failed to connect connect when using LDAP authentication with machine certificates with the error message You are not authorized to connect to GlobalProtect portal. "
+                ]
+            }
+        },
+        {
+            "PAN-260512": {
+                "info": [
+                    " Fixed an issue where accessing the IP address of the device address group objects from the user interface caused the configd process to stop responding. "
+                ]
+            }
+        },
+        {
+            "PAN-259002": {
+                "info": [
+                    " Fixed an issue where frequent external dynamic list updates caused the configd process to restart. "
+                ]
+            }
+        },
+        {
+            "PAN-257736": {
+                "info": [
+                    " (PA-5450 firewalls only) Fixed an issue where traffic to benign applications was was impacted by holding TCP sequential segments for MLC inspection and not releasing the full chain after a benign verdict was received. "
+                ]
+            }
+        },
+        {
+            "PAN-256077": {
+                "info": [
+                    " Fixed an issue where the GlobalProtect client would disconnect consistently due to keep-alive timeouts when using an SSL-only tunnel. "
+                ]
+            }
+        },
+        {
+            "PAN-255619": {
+                "info": [
+                    " Fixed an intermittent issue where file downloads from websites failed. "
+                ]
+            }
+        },
+        {
+            "PAN-255509": {
+                "info": [
+                    " (PA-5450 firewalls only) Fixed an issue where BFD sessions flapped intermittently. "
+                ]
+            }
+        },
+        {
+            "PAN-250787": {
+                "info": [
+                    " Fixed an issue where network issues between the firewall and the log collector caused logrcvr process memory exhaustion. "
+                ]
+            }
+        },
+        {
+            "PAN-250394": {
+                "info": [
+                    " Fixed an issue where a large amount of group data caused serialization errors and prevented synchronization. "
+                ]
+            }
+        },
+        {
+            "PAN-241044": {
+                "info": [
+                    " Fixed an issue where traffic was denied by the interzone-default policy rule when a Security policy rule with an FQDN destination was configured. "
+                ]
+            }
+        },
+        {
+            "PAN-233681": {
+                "info": [
+                    " Fixed an issue where the authd process on Prisma Access firewalls stopped responding after receiving the SIGUSR1 signal. "
+                ]
+            }
+        },
+        {
+            "PAN-226361": {
+                "info": [
+                    " Fixed an issue where sessions might end unexpectedly with the error resources-unavailable when the firewall incorrectly interprets the Content and Threat Detection (CTD) global packet queue as being full. "
+                ]
+            }
+        },
+        {
+            "PAN-222590": {
+                "info": [
+                    " Fixed an issue where a semicolon appeared at the end of file names of data filtering logs. "
+                ]
+            }
+        },
+        {
+            "PAN-217198": {
+                "info": [
+                    " Fixed an issue where Security policy rules did not display values for FQDN. "
+                ]
+            }
+        },
+        {
+            "PAN-203231": {
+                "info": [
+                    " Fixed an issue where Software Version in the device summary report exported from Panorama included HTML tags. "
+                ]
+            }
+        }
+    ]
+}

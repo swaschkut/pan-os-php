@@ -1,0 +1,145 @@
+{
+    "11-1-6-h3": [
+        [],
+        {
+            "PAN-279604": {
+                "info": [
+                    " Fixed an issue where scheduled SaaS application usage reports were generated incorrectly, and the login page was displayed instead of the report content. "
+                ]
+            }
+        },
+        {
+            "PAN-274791": {
+                "info": [
+                    " Fixed an issue where the firewall might reboot when traffic matches with certain Advanced features (such as Advanced Threat Prevention and Advanced URL Filtering with properly configured URL Filtering\/Anti-Spyware\/Vulnerability security profiles) and Shared Pool Type 32 becomes depleted. "
+                ]
+            }
+        },
+        {
+            "PAN-274592": {
+                "info": [
+                    " (Firewalls in HA configurations only) Fixed an issue where the firewall did not fail over when the active firewall experienced data plane issues. "
+                ]
+            }
+        },
+        {
+            "PAN-273949": {
+                "info": [
+                    " Fixed an issue where the firewall generated the following error message in the snmpd logs: pan_get_keystr_from_cryptod(pan_snmpinterface.c:181): Key X2F1dGhfa2V5 import from cryptod failed. "
+                ]
+            }
+        },
+        {
+            "PAN-273019": {
+                "info": [
+                    " Fixed an intermittent issue where SSL decryption failed. "
+                ]
+            }
+        },
+        {
+            "PAN-271723": {
+                "info": [
+                    " (Firewalls in HA configurations only) Fixed an issue where the all_task process stopped responding, which caused the passive firewall to repeatedly reboot. "
+                ]
+            }
+        },
+        {
+            "PAN-270248": {
+                "info": [
+                    " Fixed an issue where the firewall failed to forward logs to a SNMP trap server if the SNMP manager IP address was unable to be resolved. "
+                ]
+            }
+        },
+        {
+            "PAN-269091": {
+                "info": [
+                    " Fixed an issue where the varrcvr process stopped responding. "
+                ]
+            }
+        },
+        {
+            "PAN-268909": {
+                "info": [
+                    " Fixed an issue where IP address tags were removed from firewalls after a management server or useridd process restart. This occurred when a Panorama serial-number based configuration was used for User-ID redistribution. "
+                ]
+            }
+        },
+        {
+            "PAN-268800": {
+                "info": [
+                    " Fixed an issue where a large number of logs caused the logrcvr process to stop responding. "
+                ]
+            }
+        },
+        {
+            "PAN-267995": {
+                "info": [
+                    " Fixed an issue where after migrating to a new platform, DLP verdicts were not displayed in the Cloud Manager or logs. "
+                ]
+            }
+        },
+        {
+            "PAN-267204": {
+                "info": [
+                    " Fixed an issue where Panorama port 9300 did not adhere to restricted TLS versions and ciphers. "
+                ]
+            }
+        },
+        {
+            "PAN-266559": {
+                "info": [
+                    " Fixed an issue where partial commits failed when objects that were referenced in a high number of Security policy rules were renamed. "
+                ]
+            }
+        },
+        {
+            "PAN-266116": {
+                "info": [
+                    " Fixed an issue where URLs did not work due to certificate revocation list (CRL) requests failing. "
+                ]
+            }
+        },
+        {
+            "PAN-263291": {
+                "info": [
+                    " Fixed an issue where Microsoft Outlook did not work as expected when the GlobalProtect clientless VPN was configured. "
+                ]
+            }
+        },
+        {
+            "PAN-261998": {
+                "info": [
+                    " Fixed an issue where the firewall configuration process restarted during an External Dynamic List refresh or a commit and push operation. "
+                ]
+            }
+        },
+        {
+            "PAN-260300": {
+                "info": [
+                    " (PA-5410, PA-5420, PA-5430, PA-5440 and PA-5445 firewalls only) Fixed an issue related to the all_pktproc process where DPC slot 3 stopped responding. "
+                ]
+            }
+        },
+        {
+            "PAN-259076": {
+                "info": [
+                    " Fixed an issue where the firewall displayed an OCSP\/CRL check failure when accessing websites. "
+                ]
+            }
+        },
+        {
+            "PAN-258570": {
+                "info": [
+                    " Fixed an issue where the firewall might reboot unexpectedly due to the varrcvr process progressively using more memory when WildFire file forwarding is handling PE files. "
+                ]
+            }
+        },
+        {
+            "PAN-255619": {
+                "info": [
+                    " Fixed an intermittent issue where file downloads from websites failed when decrypting HTTP\/2 traffic. "
+                ]
+            }
+        }
+    ]
+}

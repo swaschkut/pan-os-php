@@ -1,0 +1,33 @@
+{
+    "10-2-11-h2": [
+        [],
+        {
+            "PAN-265438": {
+                "info": [
+                    " Fixed an issue where the firewall did not update the Nicafe firmware from 2.110 to 2.111. "
+                ]
+            }
+        },
+        {
+            "PAN-265336": {
+                "info": [
+                    " Fixed an issue where the copper ports flapped when generating a technical support file, executing telemetry, or retrieving port status using a Management Data Input\/Output (MDIO) read. "
+                ]
+            }
+        },
+        {
+            "PAN-264871": {
+                "info": [
+                    " Fixed an issue on Panorama where the configd process stopped responding when viewing IP addresses on dynamic address groups with a large number of IP addresses. "
+                ]
+            }
+        },
+        {
+            "PAN-260512": {
+                "info": [
+                    " Fixed an issue where accessing the IP address of the device address group objects from the user interface caused the configd process to stop responding. "
+                ]
+            }
+        }
+    ]
+}

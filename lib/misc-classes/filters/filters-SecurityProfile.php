@@ -439,6 +439,28 @@ RQuery::$defaultFilters['securityprofile']['url']['operators']['alert.has'] = ar
     ),
     'help' => "'securityprofiletype=url'"
 );
+RQuery::$defaultFilters['securityprofile']['url']['operators']['alert-credential.has'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        $object = $context->object;
+        $value = $context->value;
+        $value = strtolower($value);
+
+        if( !$object->secprof_type == 'url-filtering'  )
+            return null;
+
+        if( array_key_exists($value, $object->alert_credential) )
+            return TRUE;
+
+        return FALSE;
+
+    },
+    'arg' => TRUE,
+    'ci' => array(
+        'fString' => '(%PROP% securityrule )',
+        'input' => 'input/panorama-8.0.xml'
+    ),
+    'help' => "'securityprofiletype=url'"
+);
 
 RQuery::$defaultFilters['securityprofile']['url']['operators']['block.has'] = array(
     'Function' => function (SecurityProfileRQueryContext $context) {
@@ -462,6 +484,28 @@ RQuery::$defaultFilters['securityprofile']['url']['operators']['block.has'] = ar
     ),
     'help' => "'securityprofiletype=url'"
 );
+RQuery::$defaultFilters['securityprofile']['url']['operators']['block-credential.has'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        $object = $context->object;
+        $value = $context->value;
+        $value = strtolower($value);
+
+        if( !$object->secprof_type == 'url-filtering'  )
+            return null;
+
+        if( array_key_exists($value, $object->block_credential) )
+            return TRUE;
+
+        return FALSE;
+
+    },
+    'arg' => TRUE,
+    'ci' => array(
+        'fString' => '(%PROP% securityrule )',
+        'input' => 'input/panorama-8.0.xml'
+    ),
+    'help' => "'securityprofiletype=url'"
+);
 
 RQuery::$defaultFilters['securityprofile']['url']['operators']['allow.has'] = array(
     'Function' => function (SecurityProfileRQueryContext $context) {
@@ -473,6 +517,28 @@ RQuery::$defaultFilters['securityprofile']['url']['operators']['allow.has'] = ar
             return null;
 
         if( array_key_exists($value, $object->allow) )
+            return TRUE;
+
+        return FALSE;
+
+    },
+    'arg' => TRUE,
+    'ci' => array(
+        'fString' => '(%PROP% securityrule )',
+        'input' => 'input/panorama-8.0.xml'
+    ),
+    'help' => "'securityprofiletype=url'"
+);
+RQuery::$defaultFilters['securityprofile']['url']['operators']['allow-credential.has'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        $object = $context->object;
+        $value = $context->value;
+        $value = strtolower($value);
+
+        if( !$object->secprof_type == 'url-filtering'  )
+            return null;
+
+        if( array_key_exists($value, $object->allow_credential) )
             return TRUE;
 
         return FALSE;
@@ -528,6 +594,47 @@ RQuery::$defaultFilters['securityprofile']['url']['operators']['override.has'] =
     'arg' => TRUE,
     'ci' => array(
         'fString' => '(%PROP% securityrule )',
+        'input' => 'input/panorama-8.0.xml'
+    ),
+    'help' => "'securityprofiletype=url'"
+);
+RQuery::$defaultFilters['securityprofile']['url.user-credential-detection']['operators']['is.disabled'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        $object = $context->object;
+
+        if( !$object->secprof_type == 'url-filtering'  )
+            return null;
+
+        if( $object->credential_mode == "disabled")
+            return TRUE;
+
+        return FALSE;
+
+    },
+    'ci' => array(
+        'fString' => '(%PROP% )',
+        'input' => 'input/panorama-8.0.xml'
+    ),
+    'help' => "'securityprofiletype=url'"
+);
+
+RQuery::$defaultFilters['securityprofile']['url.user-credential-detection']['operators']['is.ip-user-mapping'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        $object = $context->object;
+        $value = $context->value;
+        $value = strtolower($value);
+
+        if( !$object->secprof_type == 'url-filtering'  )
+            return null;
+
+        if( $object->credential_mode == "ip-user")
+            return TRUE;
+
+        return FALSE;
+
+    },
+    'ci' => array(
+        'fString' => '(%PROP% )',
         'input' => 'input/panorama-8.0.xml'
     ),
     'help' => "'securityprofiletype=url'"
@@ -1171,7 +1278,32 @@ RQuery::$defaultFilters['securityprofile']['dns-security.packet-capture']['opera
     ),
     'help' => "'securityprofiletype=spyware' e.g. 'filter=(dns-security.packet-capture has disable)' possible values: disable/single-packet/extended-capture"
 );
+RQuery::$defaultFilters['securityprofile']['dns-security']['operators']['is.best-practice'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var AntiSpywareProfile $object */
+        $object = $context->object;
 
+        if( $object->secprof_type != 'spyware' )
+            return null;
+
+        return $object->spyware_dns_security_best_practice();
+    },
+    'arg' => false,
+    'help' => "'securityprofiletype=spyware' e.g. 'filter=(dns-security is.best-practice)'"
+);
+RQuery::$defaultFilters['securityprofile']['dns-security']['operators']['is.visibility'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var AntiSpywareProfile $object */
+        $object = $context->object;
+
+        if( $object->secprof_type != 'spyware' )
+            return null;
+
+        return $object->spyware_dns_security_visibility();
+    },
+    'arg' => false,
+    'help' => "'securityprofiletype=spyware' e.g. 'filter=(dns-security is.visibility)'"
+);
 
 RQuery::$defaultFilters['securityprofile']['threat-rule']['operators']['has.from.query'] = array(
     'Function' => function (SecurityProfileRQueryContext $context) {
@@ -1252,6 +1384,9 @@ RQuery::$defaultFilters['securityprofile']['wf.rules']['operators']['is.best-pra
         /** @var WildfireProfile $object */
         $object = $context->object;
 
+        //Todo:
+        //why could $object be a string?????
+
         if( $object->secprof_type != 'wildfire' )
             return null;
 
@@ -1290,7 +1425,7 @@ RQuery::$defaultFilters['securityprofile']['wf']['operators']['is.visibility'] =
     'Function' => function (SecurityProfileRQueryContext $context) {
         /** @var WildfireProfile $object */
         $object = $context->object;
-
+        
         if( $object->secprof_type != 'wildfire' )
             return null;
 
@@ -1378,5 +1513,83 @@ RQuery::$defaultFilters['securityprofile']['url']['operators']['is.best-practice
     },
     'arg' => false,
     'help' => "'securityprofiletype=url-filtering' e.g. 'filter=(url is.best-practice)'"
+);
+RQuery::$defaultFilters['securityprofile']['url.user-credential-detection']['operators']['is.visibility'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var URLProfile $object */
+        $object = $context->object;
+
+        if( $object->secprof_type != 'url-filtering' )
+            return null;
+
+        return $object->credential_is_visibility();
+    },
+    'arg' => false,
+    'help' => "'securityprofiletype=url-filtering' e.g. 'filter=(url.user-credential-detection is.visibility)'"
+);
+RQuery::$defaultFilters['securityprofile']['url.user-credential-detection']['operators']['is.best-practice'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var URLProfile $object */
+        $object = $context->object;
+
+        if( $object->secprof_type != 'url-filtering' )
+            return null;
+
+        return $object->credential_is_best_practice();
+    },
+    'arg' => false,
+    'help' => "'securityprofiletype=url-filtering' e.g. 'filter=(url.user-credential-detection is.best-practice)'"
+);
+RQuery::$defaultFilters['securityprofile']['url.user-credential-detection']['operators']['allow.is.set'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var URLProfile $object */
+        $object = $context->object;
+
+        if( $object->secprof_type != 'url-filtering' )
+            return null;
+
+        return count($object->allow_credential) > 0;
+    },
+    'arg' => false,
+    'help' => "'securityprofiletype=url-filtering' e.g. 'filter=(user-credential-detection allow.is.set)'"
+);
+RQuery::$defaultFilters['securityprofile']['url.site-access']['operators']['is.visibility'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var URLProfile $object */
+        $object = $context->object;
+
+        if( $object->secprof_type != 'url-filtering' )
+            return null;
+
+        return $object->site_access_is_visibility();
+    },
+    'arg' => false,
+    'help' => "'securityprofiletype=url-filtering' e.g. 'filter=(url.site-access is.visibility)'"
+);
+RQuery::$defaultFilters['securityprofile']['url.site-access']['operators']['is.best-practice'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var URLProfile $object */
+        $object = $context->object;
+
+        if( $object->secprof_type != 'url-filtering' )
+            return null;
+
+        return $object->site_access_is_best_practice();
+    },
+    'arg' => false,
+    'help' => "'securityprofiletype=url-filtering' e.g. 'filter=(url.site-access is.best-practice)'"
+);
+RQuery::$defaultFilters['securityprofile']['url.site-access']['operators']['allow.is.set'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var URLProfile $object */
+        $object = $context->object;
+
+        if( $object->secprof_type != 'url-filtering' )
+            return null;
+
+        return count($object->allow) > 0;
+    },
+    'arg' => false,
+    'help' => "'securityprofiletype=url-filtering' e.g. 'filter=(url.site-access allow.is.set)'"
 );
 // </editor-fold>

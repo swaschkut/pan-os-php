@@ -1,0 +1,19 @@
+{
+    "10-2-11-h3": [
+        [],
+        {
+            "PAN-264680": {
+                "info": [
+                    " (PA-220 firewalls only) Fixed an issue where Device > Setup was not displayed on the web interface. "
+                ]
+            }
+        },
+        {
+            "PAN-262340": {
+                "info": [
+                    " Fixed an issue where FQDN resolution failed for address objects, and all FQDN traffic was denied by the interzone-default policy rule. "
+                ]
+            }
+        }
+    ]
+}

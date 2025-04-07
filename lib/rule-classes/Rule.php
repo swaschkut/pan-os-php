@@ -382,7 +382,7 @@ class Rule
      * @param null|string $vsys
      * @return bool TRUE if a change was made
      */
-    public function target_removeDevice($serialNumber, $vsys = null)
+    public function target_removeDevice($serialNumber, $vsys = null, $debug = false)
     {
         if( strlen($serialNumber) < 4 )
             derr("unsupported serial number to be added in target: '{$serialNumber}'");
@@ -398,8 +398,10 @@ class Rule
 
         if( count($this->_targets[$serialNumber]) == 0 )
         {
-            if( $vsys === null )
+            if( $vsys === null || $vsys === "ANY" )
             {
+                if( $vsys === "ANY" && $debug )
+                    PH::print_stdout("DEBUG - Rule: ".$this->name()." remove Target");
                 unset($this->_targets[$serialNumber]);
                 if( count($this->_targets) == 0 )
                     $this->_targets = null;
@@ -413,13 +415,22 @@ class Rule
         if( $vsys === null )
             derr("attempt to remove a non multi-vsys firewall ({$serialNumber}) in a target that is multi-vsys");
 
-        if( !isset($this->_targets[$serialNumber][$vsys]) )
-            return FALSE;
-
-        unset($this->_targets[$serialNumber][$vsys]);
-
-        if( count($this->_targets[$serialNumber]) == 0 )
+        if( $vsys === "ANY" )
+        {
+            if( $debug )
+                PH::print_stdout("DEBUG - Rule: ".$this->name()." remove Target");
             unset($this->_targets[$serialNumber]);
+        }
+        else
+        {
+            if( !isset($this->_targets[$serialNumber][$vsys]) )
+                return FALSE;
+
+            unset($this->_targets[$serialNumber][$vsys]);
+
+            if( count($this->_targets[$serialNumber]) == 0 )
+                unset($this->_targets[$serialNumber]);
+        }
 
         $this->target_rewriteXML();
 
@@ -768,11 +779,22 @@ class Rule
         }
         elseif(  $system->isDeviceGroup() )
         {
-            $systemInfoStart = "<device-group>";
-            $systemInfoEnd = "</device-group>";
+            if( $apiType == "show" )
+            {
+                $systemInfoStart = "<device-group>";
+                $systemInfoEnd = "</device-group>";
 
-            $systemName = "<entry name='".$system->name()."'>";
-            $systemNameEnd = "</entry>";
+                $systemName = "<entry name='".$system->name()."'>";
+                $systemNameEnd = "</entry>";
+            }
+            else
+            {
+                $systemInfoStart = "";
+                $systemInfoEnd = "";
+
+                $systemName = "";
+                $systemNameEnd = "";
+            }
 
             $prepost = "pre";
             if( $this->isPostRule() )
@@ -963,88 +985,91 @@ class Rule
                 $res = DH::findFirstElement( "entry", $res);
             }
 
-            $latest = DH::findFirstElement( "latest", $res);
-            $hit_count = DH::findFirstElement( "hit-count", $res);
-            $last_hit_timestamp = DH::findFirstElement( "last-hit-timestamp", $res);
-            $last_reset_timestamp = DH::findFirstElement( "last-reset-timestamp", $res);
-
-            $first_hit_timestamp = DH::findFirstElement( "first-hit-timestamp", $res);
-            $rule_creation_timestamp = DH::findFirstElement( "rule-creation-timestamp", $res);
-            $rule_modification_timestamp = DH::findFirstElement( "rule-modification-timestamp", $res);
-
-            //create Array and return
-            $padding = "    * ";
-            if( $latest )
+            if( $res !== FALSE )
             {
-                if( $print )
-                    PH::print_stdout( $padding."latest: ".$latest->textContent );
-                $rule_hitcount_array['latest'] = $latest->textContent;
-            }
+                $latest = DH::findFirstElement( "latest", $res);
+                $hit_count = DH::findFirstElement( "hit-count", $res);
+                $last_hit_timestamp = DH::findFirstElement( "last-hit-timestamp", $res);
+                $last_reset_timestamp = DH::findFirstElement( "last-reset-timestamp", $res);
 
-            if( $hit_count)
-            {
-                if( $print )
-                    PH::print_stdout( $padding."hit-count: ".$hit_count->textContent );
-                $rule_hitcount_array['hit-count'] = $hit_count->textContent;
-            }
+                $first_hit_timestamp = DH::findFirstElement( "first-hit-timestamp", $res);
+                $rule_creation_timestamp = DH::findFirstElement( "rule-creation-timestamp", $res);
+                $rule_modification_timestamp = DH::findFirstElement( "rule-modification-timestamp", $res);
 
-            if( $last_hit_timestamp )
-            {
-                $unixTimestamp = $last_hit_timestamp->textContent;
-                if( $unixTimestamp === "0" || $unixTimestamp === "" )
-                    $result = "0";
-                else
-                    $result = date( 'Y-m-d H:i:s', $unixTimestamp );
-                if( $print )
-                    PH::print_stdout( $padding."last-hit: ".$result );
-                $rule_hitcount_array['last-hit'] = $result;
-            }
+                //create Array and return
+                $padding = "    * ";
+                if( $latest )
+                {
+                    if( $print )
+                        PH::print_stdout( $padding."latest: ".$latest->textContent );
+                    $rule_hitcount_array['latest'] = $latest->textContent;
+                }
 
-            if( $last_reset_timestamp )
-            {
-                $unixTimestamp = $last_reset_timestamp->textContent;
-                if( $unixTimestamp === "0" || $unixTimestamp === "" )
-                    $result = "0";
-                else
-                    $result = date( 'Y-m-d H:i:s', $unixTimestamp );
-                if( $print )
-                    PH::print_stdout( $padding."last-reset: ".$result );
-                $rule_hitcount_array['last-reset'] = $result;
-            }
+                if( $hit_count)
+                {
+                    if( $print )
+                        PH::print_stdout( $padding."hit-count: ".$hit_count->textContent );
+                    $rule_hitcount_array['hit-count'] = $hit_count->textContent;
+                }
 
-            if( $first_hit_timestamp )
-            {
-                $unixTimestamp = $first_hit_timestamp->textContent;
-                if( $unixTimestamp === "0" || $unixTimestamp === "" )
-                    $result = "0";
-                else
-                    $result = date( 'Y-m-d H:i:s', $unixTimestamp );
-                if( $print )
-                    PH::print_stdout( $padding."first-hit: ".$result );
-                $rule_hitcount_array['first-hit'] = $result;
-            }
+                if( $last_hit_timestamp )
+                {
+                    $unixTimestamp = $last_hit_timestamp->textContent;
+                    if( $unixTimestamp === "0" || $unixTimestamp === "" )
+                        $result = "0";
+                    else
+                        $result = date( 'Y-m-d H:i:s', $unixTimestamp );
+                    if( $print )
+                        PH::print_stdout( $padding."last-hit: ".$result );
+                    $rule_hitcount_array['last-hit'] = $result;
+                }
 
-            if( $rule_creation_timestamp )
-            {
-                $unixTimestamp = $rule_creation_timestamp->textContent;
-                if( $unixTimestamp === "" )
-                    $result = 0;
-                else
-                    $result = date( 'Y-m-d H:i:s', $unixTimestamp );
-                if( $print )
-                    PH::print_stdout( $padding."rule-creation: ".$result );
-                $rule_hitcount_array['rule-creation'] = $result;
-            }
-            if( $rule_modification_timestamp )
-            {
-                $unixTimestamp = $rule_modification_timestamp->textContent;
-                if( $unixTimestamp === "" )
-                    $result = 0;
-                else
-                    $result = date( 'Y-m-d H:i:s', $unixTimestamp );
-                if( $print )
-                    PH::print_stdout( $padding."rule-modification: ".$result );
-                $rule_hitcount_array['rule-modification'] = $result;
+                if( $last_reset_timestamp )
+                {
+                    $unixTimestamp = $last_reset_timestamp->textContent;
+                    if( $unixTimestamp === "0" || $unixTimestamp === "" )
+                        $result = "0";
+                    else
+                        $result = date( 'Y-m-d H:i:s', $unixTimestamp );
+                    if( $print )
+                        PH::print_stdout( $padding."last-reset: ".$result );
+                    $rule_hitcount_array['last-reset'] = $result;
+                }
+
+                if( $first_hit_timestamp )
+                {
+                    $unixTimestamp = $first_hit_timestamp->textContent;
+                    if( $unixTimestamp === "0" || $unixTimestamp === "" )
+                        $result = "0";
+                    else
+                        $result = date( 'Y-m-d H:i:s', $unixTimestamp );
+                    if( $print )
+                        PH::print_stdout( $padding."first-hit: ".$result );
+                    $rule_hitcount_array['first-hit'] = $result;
+                }
+
+                if( $rule_creation_timestamp )
+                {
+                    $unixTimestamp = $rule_creation_timestamp->textContent;
+                    if( $unixTimestamp === "" )
+                        $result = 0;
+                    else
+                        $result = date( 'Y-m-d H:i:s', $unixTimestamp );
+                    if( $print )
+                        PH::print_stdout( $padding."rule-creation: ".$result );
+                    $rule_hitcount_array['rule-creation'] = $result;
+                }
+                if( $rule_modification_timestamp )
+                {
+                    $unixTimestamp = $rule_modification_timestamp->textContent;
+                    if( $unixTimestamp === "" )
+                        $result = 0;
+                    else
+                        $result = date( 'Y-m-d H:i:s', $unixTimestamp );
+                    if( $print )
+                        PH::print_stdout( $padding."rule-modification: ".$result );
+                    $rule_hitcount_array['rule-modification'] = $result;
+                }
             }
 
         }
@@ -2449,6 +2474,11 @@ class Rule
             $group_name = $this->securityProfileGroup();
             /** @var SecurityProfileGroup $group */
             $group = $this->owner->owner->securityProfileGroupStore->find($group_name);
+            if( $group === NULL )
+            {
+                mwarning( "Secrule: '".$this->name()."' has SecProfGroup: '".$group_name."' defined, but can not be found", null, false );
+                return FALSE;
+            }
 
             if( $group->is_best_practice() )
                 return TRUE;
@@ -2462,15 +2492,19 @@ class Rule
             {
                 $bp_set = FALSE;
                 foreach ($profiles as $type => $profile) {
-                    if ($type == "virus" || $type == "spyware" || $type == "vulnerability") {
+                    if ($type == "virus" || $type == "spyware" || $type == "vulnerability")
+                    {
                         /** @var AntiVirusProfile $profile */
-                        if (is_object($profile)) {
+                        if (is_object($profile))
+                        {
                             if ($profile->is_best_practice())
                                 $bp_set = TRUE;
                             else
                                 return FALSE;
-                        } else {
-                            mwarning("BP SPG check not possible - SecurityProfile type: " . $type . " name '" . $profile . "' not found", null, false);
+                        }
+                        else
+                        {
+                            mwarning("BP SPG check1 not possible - SecurityProfile type: " . $type . " name '" . $profile . "' not found", null, false);
                             return FALSE;
                         }
                     }
@@ -2513,16 +2547,21 @@ class Rule
             if( count($profiles) > 0 )
             {
                 $bp_set = FALSE;
-                foreach ($profiles as $type => $profile) {
-                    if ($type == "virus" || $type == "spyware" || $type == "vulnerability") {
+                foreach ($profiles as $type => $profile)
+                {
+                    if ($type == "virus" || $type == "spyware" || $type == "vulnerability")
+                    {
                         /** @var AntiVirusProfile $profile */
-                        if (is_object($profile)) {
+                        if (is_object($profile))
+                        {
                             if ($profile->is_visibility())
                                 $bp_set = TRUE;
                             else
                                 return FALSE;
-                        } else {
-                            mwarning("BP SPG check not possible - SecurityProfile type: " . $type . " name '" . $profile . "' not found", null, false);
+                        }
+                        else
+                        {
+                            mwarning("BP SPG check2 not possible - SecurityProfile type: " . $type . " name '" . $profile . "' not found", null, false);
                             return FALSE;
                         }
                     }
@@ -2571,6 +2610,9 @@ class Rule
             {
                 $d = $d_actual + ($date)*24*3600;
             }
+            $d2 = new DateTime('@' . $d);
+            #$d2 = new DateTime();
+            #$d2->setTimestamp($d);
         }
         //var_dump($d);
         //exit();

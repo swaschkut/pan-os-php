@@ -1,0 +1,68 @@
+{
+    "10-1-14-h4": [
+        [],
+        {
+            "PAN-259480": {
+                "info": [
+                    " Fixed an issue where the varrcvr process stopped responding after running out of memory due to how the process queued and dequeued files for WildFire file forwarding when a WildFire Analysis Security profile was enabled. "
+                ]
+            }
+        },
+        {
+            "PAN-257957": {
+                "info": [
+                    " (Firewalls and Panorama appliances in FIPS-CC mode only) Fixed an issue where the authd process restarted if RADIUS PAP\/CHAP authentication was used. "
+                ]
+            }
+        },
+        {
+            "PAN-256136": {
+                "info": [
+                    " Fixed an issue where traffic logs were not forwarded to an external system log server. "
+                ]
+            }
+        },
+        {
+            "PAN-259480": {
+                "info": [
+                    " Fixed an issue where the varrcvr process stopped responding after running out of memory due to how the process queued and dequeued files for WildFire file forwarding when a WildFire Analysis Security profile was enabled. "
+                ]
+            }
+        },
+        {
+            "PAN-257462": {
+                "info": [
+                    " Fixed an issue related to the varrcvr process where the management plane CPU was higher than expected. "
+                ]
+            }
+        },
+        {
+            "PAN-254373": {
+                "info": [
+                    " Fixed an issue where the firewall did not handle error code 500 responses from the WildFire cloud correctly. "
+                ]
+            }
+        },
+        {
+            "PAN-233129": {
+                "info": [
+                    " Fixed an issue where the firewall sent duplicate logs to syslog server when the log forwarding profile was configured with Shared enabled and was used in a Security policy rule. "
+                ]
+            }
+        },
+        {
+            "PAN-226769": {
+                "info": [
+                    " Fixed an issue where ElasticSearch used more memory than expected. "
+                ]
+            }
+        },
+        {
+            "PAN-216368": {
+                "info": [
+                    " Fixed an issue where the configuration commit process on chassis based platforms did not recognize load failures on the dataplane. "
+                ]
+            }
+        }
+    ]
+}

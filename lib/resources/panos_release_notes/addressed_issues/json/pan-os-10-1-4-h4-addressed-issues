@@ -1,0 +1,32 @@
+{
+    "10-1-4-h4": [
+        {
+            "Issue ID": {
+                "info": [
+                    "Description"
+                ]
+            }
+        },
+        {
+            "PAN-187438": {
+                "info": [
+                    "(PA-5400 Series firewalls only) Fixed an issue where HSCI interfaces didn\u00e2\u0080\u0099t come up when using BiDi transceivers."
+                ]
+            }
+        },
+        {
+            "PAN-185750": {
+                "info": [
+                    "Updated an issue to eliminate failed pan_comm software issues that caused the dataplane to restart unexpectedly."
+                ]
+            }
+        },
+        {
+            "PAN-181116": {
+                "info": [
+                    "Fixed an issue where, after upgrading to a PAN-OS 10.1 release, GlobalProtect tunnels fell back to SSL instead of IPSec due to the inadvertent encapsulation of the ICMP keepalive response from the firewall."
+                ]
+            }
+        }
+    ]
+}

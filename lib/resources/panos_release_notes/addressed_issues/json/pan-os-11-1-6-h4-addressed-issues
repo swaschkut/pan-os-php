@@ -1,0 +1,117 @@
+{
+    "11-1-6-h4": [
+        [],
+        {
+            "PAN-282236": {
+                "info": [
+                    " Fixed an issue where large IPv6 packets were reassembled on the firewall when the packets arrived fragmented over an IPv4 tunnel. "
+                ]
+            }
+        },
+        {
+            "PAN-280471": {
+                "info": [
+                    " Fixed an issue where navigating PanoramaMonitorLogs was slower than expected. "
+                ]
+            }
+        },
+        {
+            "PAN-279746": {
+                "info": [
+                    " Fixed an issue where SMTP packets were not sent out when the Client Hello arrived at the firewall in multiple out-of-order segments and the traffic was not subject to SSL decryption. "
+                ]
+            }
+        },
+        {
+            "PAN-279191": {
+                "info": [
+                    " Fixed an issue where a GlobalProtect gateway stopped responding when handling HTTP\/1.1 traffic with web inspection enabled. "
+                ]
+            }
+        },
+        {
+            "PAN-278684": {
+                "info": [
+                    " (PA-445 firewalls only) Fixed an issue where the firewall did not properly power cycle during a reboot. "
+                ]
+            }
+        },
+        {
+            "PAN-277147": {
+                "info": [
+                    " Fixed an issue where daily scheduled reports were not generated and emailed. "
+                ]
+            }
+        },
+        {
+            "PAN-276062": {
+                "info": [
+                    " Fixed an issue where importing a firewall with a large number of address objects into Panorama did not work and remained at 99% completion. "
+                ]
+            }
+        },
+        {
+            "PAN-275905": {
+                "info": [
+                    " Fixed an issue where the Panorama web interface was slower than expected and Elasticsearch CPU usage was high. "
+                ]
+            }
+        },
+        {
+            "PAN-275754": {
+                "info": [
+                    " Added support for bootstrapping Panorama virtual appliances on ESXi. "
+                ]
+            }
+        },
+        {
+            "PAN-275032": {
+                "info": [
+                    " (M-600 appliances only) Fixed an issue where the Elasticsearch cluster certificate (CC) status displayed with a past expiration date, which caused all shards to be unassigned. "
+                ]
+            }
+        },
+        {
+            "PAN-273141": {
+                "info": [
+                    " Fixed an issue where GlobalProtect clients experienced slow file transfer download throughput when passing through an IPSec tunnel. "
+                ]
+            }
+        },
+        {
+            "PAN-272085": {
+                "info": [
+                    " Fixed an issue where the firewall might crash and reboot when DoH is enabled for DNS Security and multiple DoH transactions are sent in a single HTTP\/1 connection. "
+                ]
+            }
+        },
+        {
+            "PAN-270744": {
+                "info": [
+                    " Fixed an issue where API calls to Panorama failed with the error Server error : Timed out while getting config lock. Please try again. "
+                ]
+            }
+        },
+        {
+            "PAN-269291": {
+                "info": [
+                    "Fixed an issue where the scheduled report generation script did not return debug information."
+                ]
+            }
+        },
+        {
+            "PAN-268279": {
+                "info": [
+                    " Fixed an issue where autocommits failed if the management IPv6 gateway was the same as the dataplane interface IP address. "
+                ]
+            }
+        },
+        {
+            "PAN-267650": {
+                "info": [
+                    " Fixed an issue where the firewall did not detect the eth1\/1 and eth1\/2 interfaces when you created a firewall on an ESXi 8 server. "
+                ]
+            }
+        }
+    ]
+}

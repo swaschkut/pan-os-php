@@ -35,7 +35,83 @@ RQuery::$defaultFilters['rule']['from']['operators']['has.only'] = array(
     'arg' => TRUE,
     'argObjectFinder' => "\$objectFind=null;\n\$objectFind=\$object->from->parentCentralStore->find('!value!');"
 );
+RQuery::$defaultFilters['rule']['from']['operators']['has.from.query'] = array(
+    'Function' => function (RuleRQueryContext $context) {
+        $rule = $context->object;
 
+        if( $rule->from->isAny() )
+            return FALSE;
+
+        if( $context->value === null || !isset($context->nestedQueries[$context->value]) )
+            derr("cannot find nested query called '{$context->value}'");
+
+
+        $errorMessage = '';
+
+        if( !isset($context->cachedSubRQuery) )
+        {
+            $rQuery = new RQuery('zone');
+            if( $rQuery->parseFromString($context->nestedQueries[$context->value], $errorMessage) === FALSE )
+                derr('nested query execution error : ' . $errorMessage);
+            $context->cachedSubRQuery = $rQuery;
+        }
+        else
+            $rQuery = $context->cachedSubRQuery;
+
+        foreach( $rule->from->getAll() as $key => $zone )
+        {
+            if( $zone !== null )
+            {
+                if( $rQuery->matchSingleObject(array('object' => $zone, 'nestedQueries' => &$context->nestedQueries)) )
+                    return TRUE;
+            }
+        }
+
+        return FALSE;
+    },
+    'arg' => TRUE,
+    'help' => 'example: \'filter=(from has.from.query subquery1)\' \'subquery1=(zpp is.set)\'',
+);
+RQuery::$defaultFilters['rule']['from']['operators']['all.has.from.query'] = array(
+    'Function' => function (RuleRQueryContext $context) {
+        $rule = $context->object;
+
+        if( $rule->from->isAny() )
+            return FALSE;
+
+        if( $context->value === null || !isset($context->nestedQueries[$context->value]) )
+            derr("cannot find nested query called '{$context->value}'");
+
+
+        $errorMessage = '';
+
+        if( !isset($context->cachedSubRQuery) )
+        {
+            $rQuery = new RQuery('zone');
+            if( $rQuery->parseFromString($context->nestedQueries[$context->value], $errorMessage) === FALSE )
+                derr('nested query execution error : ' . $errorMessage);
+            $context->cachedSubRQuery = $rQuery;
+        }
+        else
+            $rQuery = $context->cachedSubRQuery;
+
+        $found = FALSE;
+        foreach( $rule->from->getAll() as $key => $zone )
+        {
+            if( $zone !== null )
+            {
+                if( $rQuery->matchSingleObject(array('object' => $zone, 'nestedQueries' => &$context->nestedQueries)) )
+                    $found = TRUE;
+                else
+                    return FALSE;
+            }
+        }
+
+        return $found;
+    },
+    'arg' => TRUE,
+    'help' => 'example: \'filter=(from all.has.from.query subquery1)\' \'subquery1=(zpp is.set)\'',
+);
 
 RQuery::$defaultFilters['rule']['to']['operators']['has'] = array(
     'eval' => function ($object, &$nestedQueries, $value) {
@@ -72,7 +148,83 @@ RQuery::$defaultFilters['rule']['to']['operators']['has.only'] = array(
     'arg' => TRUE,
     'argObjectFinder' => "\$objectFind=null;\n\$objectFind=\$object->to->parentCentralStore->find('!value!');"
 );
+RQuery::$defaultFilters['rule']['to']['operators']['has.from.query'] = array(
+    'Function' => function (RuleRQueryContext $context) {
+        $rule = $context->object;
 
+        if( $rule->to->isAny() )
+            return FALSE;
+
+        if( $context->value === null || !isset($context->nestedQueries[$context->value]) )
+            derr("cannot find nested query called '{$context->value}'");
+
+
+        $errorMessage = '';
+
+        if( !isset($context->cachedSubRQuery) )
+        {
+            $rQuery = new RQuery('zone');
+            if( $rQuery->parseFromString($context->nestedQueries[$context->value], $errorMessage) === FALSE )
+                derr('nested query execution error : ' . $errorMessage);
+            $context->cachedSubRQuery = $rQuery;
+        }
+        else
+            $rQuery = $context->cachedSubRQuery;
+
+        foreach( $rule->to->getAll() as $key => $zone )
+        {
+            if( $zone !== null )
+            {
+                if( $rQuery->matchSingleObject(array('object' => $zone, 'nestedQueries' => &$context->nestedQueries)) )
+                    return TRUE;
+            }
+        }
+
+        return FALSE;
+    },
+    'arg' => TRUE,
+    'help' => 'example: \'filter=(to has.from.query subquery1)\' \'subquery1=(zpp is.set)\'',
+);
+RQuery::$defaultFilters['rule']['to']['operators']['all.has.from.query'] = array(
+    'Function' => function (RuleRQueryContext $context) {
+        $rule = $context->object;
+
+        if( $rule->to->isAny() )
+            return FALSE;
+
+        if( $context->value === null || !isset($context->nestedQueries[$context->value]) )
+            derr("cannot find nested query called '{$context->value}'");
+
+
+        $errorMessage = '';
+
+        if( !isset($context->cachedSubRQuery) )
+        {
+            $rQuery = new RQuery('zone');
+            if( $rQuery->parseFromString($context->nestedQueries[$context->value], $errorMessage) === FALSE )
+                derr('nested query execution error : ' . $errorMessage);
+            $context->cachedSubRQuery = $rQuery;
+        }
+        else
+            $rQuery = $context->cachedSubRQuery;
+
+        $found = FALSE;
+        foreach( $rule->to->getAll() as $key => $zone )
+        {
+            if( $zone !== null )
+            {
+                if( $rQuery->matchSingleObject(array('object' => $zone, 'nestedQueries' => &$context->nestedQueries)) )
+                    return FALSE;
+                else
+                    $found = TRUE;
+            }
+        }
+
+        return $found;
+    },
+    'arg' => TRUE,
+    'help' => 'example: \'filter=(to all.has.from.query subquery1)\' \'subquery1=(zpp is.set)\'',
+);
 
 RQuery::$defaultFilters['rule']['from']['operators']['has.regex'] = array(
     'Function' => function (RuleRQueryContext $context) {
@@ -2334,7 +2486,10 @@ RQuery::$defaultFilters['rule']['secprof']['operators']['av-profile.is'] = array
         if( !isset($profiles['virus']) )
             return FALSE;
 
-        return $profiles['virus'] == $context->value;
+        if( is_object($profiles['virus']) )
+            return $profiles['virus']->name() == $context->value;
+        else
+            return $profiles['virus'] == $context->value;
     },
     'arg' => TRUE,
     'ci' => array(
@@ -2358,7 +2513,10 @@ RQuery::$defaultFilters['rule']['secprof']['operators']['as-profile.is'] = array
         if( !isset($profiles['spyware']) )
             return FALSE;
 
-        return $profiles['spyware'] == $context->value;
+        if( is_object($profiles['spyware']) )
+            return $profiles['spyware']->name() == $context->value;
+        else
+            return $profiles['spyware'] == $context->value;
     },
     'arg' => TRUE,
     'ci' => array(
@@ -2382,7 +2540,10 @@ RQuery::$defaultFilters['rule']['secprof']['operators']['url-profile.is'] = arra
         if( !isset($profiles['url-filtering']) )
             return FALSE;
 
-        return $profiles['url-filtering'] == $context->value;
+        if( is_object($profiles['url-filtering']) )
+            return $profiles['url-filtering']->name() == $context->value;
+        else
+            return $profiles['url-filtering'] == $context->value;
     },
     'arg' => TRUE,
     'ci' => array(
@@ -2406,7 +2567,10 @@ RQuery::$defaultFilters['rule']['secprof']['operators']['wf-profile.is'] = array
         if( !isset($profiles['wildfire-analysis']) )
             return FALSE;
 
-        return $profiles['wildfire-analysis'] == $context->value;
+        if( is_object($profiles['wildfire-analysis']) )
+            return $profiles['wildfire-analysis']->name() == $context->value;
+        else
+            return $profiles['wildfire-analysis'] == $context->value;
     },
     'arg' => TRUE,
     'ci' => array(
@@ -2430,7 +2594,10 @@ RQuery::$defaultFilters['rule']['secprof']['operators']['vuln-profile.is'] = arr
         if( !isset($profiles['vulnerability']) )
             return FALSE;
 
-        return $profiles['vulnerability'] == $context->value;
+        if( is_object($profiles['vulnerability']) )
+            return $profiles['vulnerability']->name() == $context->value;
+        else
+            return $profiles['vulnerability'] == $context->value;
     },
     'arg' => TRUE,
     'ci' => array(
@@ -2454,7 +2621,10 @@ RQuery::$defaultFilters['rule']['secprof']['operators']['file-profile.is'] = arr
         if( !isset($profiles['file-blocking']) )
             return FALSE;
 
-        return $profiles['file-blocking'] == $context->value;
+        if( is_object($profiles['file-blocking']) )
+            return $profiles['file-blocking']->name() == $context->value;
+        else
+            return $profiles['file-blocking'] == $context->value;
     },
     'arg' => TRUE,
     'ci' => array(
@@ -2478,7 +2648,10 @@ RQuery::$defaultFilters['rule']['secprof']['operators']['data-profile.is'] = arr
         if( !isset($profiles['data-filtering']) )
             return FALSE;
 
-        return $profiles['data-filtering'] == $context->value;
+        if( is_object($profiles['data-filtering']) )
+            return $profiles['data-filtering']->name() == $context->value;
+        else
+            return $profiles['data-filtering'] == $context->value;
     },
     'arg' => TRUE,
     'ci' => array(
@@ -2496,11 +2669,15 @@ RQuery::$defaultFilters['rule']['secprof']['operators']['av-profile.is.set'] = a
             return FALSE;
 
         if( $rule->securityProfileType() == "group" )
-            return FALSE;
+        {
+            /** @var SecurityProfileGroup $tmp_group */
+            $tmp_group =  $rule->owner->owner->securityProfileGroupStore->find( $rule->securityProfileGroup() );
+            $secprof_objects = $tmp_group->securityProfiles();
+        }
+        else
+            $secprof_objects = $rule->securityProfiles();
 
-        $profiles = $rule->securityProfiles();
-
-        return isset($profiles['virus']);
+        return isset($secprof_objects['virus']);
     },
     'arg' => FALSE,
     'ci' => array(
@@ -2518,11 +2695,15 @@ RQuery::$defaultFilters['rule']['secprof']['operators']['as-profile.is.set'] = a
             return FALSE;
 
         if( $rule->securityProfileType() == "group" )
-            return FALSE;
+        {
+            /** @var SecurityProfileGroup $tmp_group */
+            $tmp_group =  $rule->owner->owner->securityProfileGroupStore->find( $rule->securityProfileGroup() );
+            $secprof_objects = $tmp_group->securityProfiles();
+        }
+        else
+            $secprof_objects = $rule->securityProfiles();
 
-        $profiles = $rule->securityProfiles();
-
-        return isset($profiles['spyware']);
+        return isset($secprof_objects['spyware']);
     },
     'arg' => FALSE,
     'ci' => array(
@@ -2540,11 +2721,15 @@ RQuery::$defaultFilters['rule']['secprof']['operators']['url-profile.is.set'] = 
             return FALSE;
 
         if( $rule->securityProfileType() == "group" )
-            return FALSE;
+        {
+            /** @var SecurityProfileGroup $tmp_group */
+            $tmp_group =  $rule->owner->owner->securityProfileGroupStore->find( $rule->securityProfileGroup() );
+            $secprof_objects = $tmp_group->securityProfiles();
+        }
+        else
+            $secprof_objects = $rule->securityProfiles();
 
-        $profiles = $rule->securityProfiles();
-
-        return isset($profiles['url-filtering']);
+        return isset($secprof_objects['url-filtering']);
     },
     'arg' => FALSE,
     'ci' => array(
@@ -2562,11 +2747,15 @@ RQuery::$defaultFilters['rule']['secprof']['operators']['wf-profile.is.set'] = a
             return FALSE;
 
         if( $rule->securityProfileType() == "group" )
-            return FALSE;
+        {
+            /** @var SecurityProfileGroup $tmp_group */
+            $tmp_group =  $rule->owner->owner->securityProfileGroupStore->find( $rule->securityProfileGroup() );
+            $secprof_objects = $tmp_group->securityProfiles();
+        }
+        else
+            $secprof_objects = $rule->securityProfiles();
 
-        $profiles = $rule->securityProfiles();
-
-        return isset($profiles['wildfire-analysis']);
+        return isset($secprof_objects['wildfire-analysis']);
     },
     'arg' => FALSE,
     'ci' => array(
@@ -2584,11 +2773,15 @@ RQuery::$defaultFilters['rule']['secprof']['operators']['vuln-profile.is.set'] =
             return FALSE;
 
         if( $rule->securityProfileType() == "group" )
-            return FALSE;
+        {
+            /** @var SecurityProfileGroup $tmp_group */
+            $tmp_group =  $rule->owner->owner->securityProfileGroupStore->find( $rule->securityProfileGroup() );
+            $secprof_objects = $tmp_group->securityProfiles();
+        }
+        else
+            $secprof_objects = $rule->securityProfiles();
 
-        $profiles = $rule->securityProfiles();
-
-        return isset($profiles['vulnerability']);
+        return isset($secprof_objects['vulnerability']);
     },
     'arg' => FALSE,
     'ci' => array(
@@ -2606,11 +2799,15 @@ RQuery::$defaultFilters['rule']['secprof']['operators']['file-profile.is.set'] =
             return FALSE;
 
         if( $rule->securityProfileType() == "group" )
-            return FALSE;
+        {
+            /** @var SecurityProfileGroup $tmp_group */
+            $tmp_group =  $rule->owner->owner->securityProfileGroupStore->find( $rule->securityProfileGroup() );
+            $secprof_objects = $tmp_group->securityProfiles();
+        }
+        else
+            $secprof_objects = $rule->securityProfiles();
 
-        $profiles = $rule->securityProfiles();
-
-        return isset($profiles['file-blocking']);
+        return isset($secprof_objects['file-blocking']);
     },
     'arg' => FALSE,
     'ci' => array(
@@ -2628,17 +2825,67 @@ RQuery::$defaultFilters['rule']['secprof']['operators']['data-profile.is.set'] =
             return FALSE;
 
         if( $rule->securityProfileType() == "group" )
-            return FALSE;
+        {
+            /** @var SecurityProfileGroup $tmp_group */
+            $tmp_group =  $rule->owner->owner->securityProfileGroupStore->find( $rule->securityProfileGroup() );
+            $secprof_objects = $tmp_group->securityProfiles();
+        }
+        else
+            $secprof_objects = $rule->securityProfiles();
 
-        $profiles = $rule->securityProfiles();
-
-        return isset($profiles['data-filtering']);
+        return isset($secprof_objects['data-filtering']);
     },
     'arg' => FALSE,
     'ci' => array(
         'fString' => '(%PROP%)',
         'input' => 'input/panorama-8.0.xml'
     )
+);
+RQuery::$defaultFilters['rule']['secprof']['operators']['has.from.query'] = array(
+    'Function' => function (RuleRQueryContext $context) {
+        $rule = $context->object;
+
+        if( $context->object->securityProfileIsBlank() )
+            return FALSE;
+
+        if( $context->value === null || !isset($context->nestedQueries[$context->value]) )
+            derr("cannot find nested query called '{$context->value}'");
+
+
+        $errorMessage = '';
+
+        if( !isset($context->cachedSubRQuery) )
+        {
+            $rQuery = new RQuery('securityprofile');
+            if( $rQuery->parseFromString($context->nestedQueries[$context->value], $errorMessage) === FALSE )
+                derr('nested query execution error : ' . $errorMessage);
+            $context->cachedSubRQuery = $rQuery;
+        }
+        else
+            $rQuery = $context->cachedSubRQuery;
+
+        if( $rule->securityProfileType() == "group" )
+        {
+            /** @var SecurityProfileGroup $tmp_group */
+            $tmp_group =  $rule->owner->owner->securityProfileGroupStore->find( $rule->securityProfileGroup() );
+            $secprof_objects = $tmp_group->securityProfiles();
+        }
+        else
+            $secprof_objects = $rule->securityProfiles();
+
+        foreach( $secprof_objects as $key => $member )
+        {
+            if( $member !== null )
+            {
+                if( $rQuery->matchSingleObject(array('object' => $member, 'nestedQueries' => &$context->nestedQueries)) )
+                    return TRUE;
+            }
+        }
+
+        return FALSE;
+    },
+    'arg' => TRUE,
+    'help' => 'example: \'filter=(secprof has.from.query subquery1)\' \'subquery1=(av is.best-practice)\'',
 );
 
 //                                              //
@@ -4012,10 +4259,6 @@ RQuery::$defaultFilters['rule']['threat-log.occurrence.date.fast']['operators'][
         return $return;
     },
     'arg' => true,
-    'ci' => array(
-        'fString' => '(%PROP% 5 )',
-        'input' => 'input/panorama-8.0.xml'
-    ),
     'help' => 'returns TRUE if rule name matches the specified timestamp MM/DD/YYYY [american] / DD-MM-YYYY [european]'
 );
 RQuery::$defaultFilters['rule']['threat-log.occurrence.per-rule.date.fast']['operators']['>,<,=,!'] = array(
@@ -4059,10 +4302,6 @@ RQuery::$defaultFilters['rule']['threat-log.occurrence.per-rule.date.fast']['ope
         return $return;
     },
     'arg' => true,
-    'ci' => array(
-        'fString' => '(%PROP% 5 )',
-        'input' => 'input/panorama-8.0.xml'
-    ),
     'help' => 'returns TRUE if rule name matches the specified timestamp MM/DD/YYYY [american] / DD-MM-YYYY [european]'
 );
 // </editor-fold>

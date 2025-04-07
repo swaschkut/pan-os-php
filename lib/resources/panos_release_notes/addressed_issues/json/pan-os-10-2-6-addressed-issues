@@ -1,0 +1,110 @@
+{
+    "10-2-6": [
+        [],
+        {
+            "PAN-231823": {
+                "info": [
+                    " A fix was made to address CVE-2024-5916. "
+                ]
+            }
+        },
+        {
+            "PAN-229865": {
+                "info": [
+                    " (PA-220 firewalls only) Fixed an issue where upgrading to PAN-OS 10.2.5 failed if the firewall was on a PAN-OS 10.1 release. "
+                ]
+            }
+        },
+        {
+            "PAN-229705": {
+                "info": [
+                    "Fixed an issue where running the show rule-hit-count CLI command on Panorama displayed the error message Server error : Timed out while getting config lock. Please try again. when attempting to log in or run CLI commands. "
+                ]
+            }
+        },
+        {
+            "PAN-227639": {
+                "info": [
+                    "Fixed an issue where the ACC displayed an incorrect DNS-base application traffic byte count. "
+                ]
+            }
+        },
+        {
+            "PAN-227523": {
+                "info": [
+                    " A fix was made to address customer and internal bugs (CVE-2023-38802). "
+                ]
+            }
+        },
+        {
+            "PAN-227376": {
+                "info": [
+                    " Fixed an issue where a memory overrun caused the all_task process to stop responding. "
+                ]
+            }
+        },
+        {
+            "PAN-225240": {
+                "info": [
+                    "Fixed an issue where the OSPF neighbor state remained in exstart when the OSPF network had more than 40 routes. "
+                ]
+            }
+        },
+        {
+            "PAN-223787": {
+                "info": [
+                    "(PA-400 Series and PA-1400 Series firewalls only) Fixed an issue where commits failed with the error message Error unserializing profile objects failed to handle CONFIG_UPDATE_START. "
+                ]
+            }
+        },
+        {
+            "PAN-221728": {
+                "info": [
+                    " Fixed an issue where selective pushes did not work after upgrading to PAN-OS 10.2.4. "
+                ]
+            }
+        },
+        {
+            "PAN-216775": {
+                "info": [
+                    "Fixed an issue where the devsrvr process stopped responding at pan_cloud_agent_get_curl_connection() and the URL cloud could not be connected. "
+                ]
+            }
+        },
+        {
+            "PAN-214273": {
+                "info": [
+                    "Fixed an issue where Elasticsearch logs were not cleared, which caused the root partition to fill up. "
+                ]
+            }
+        },
+        {
+            "PAN-205015": {
+                "info": [
+                    " Fixed an issue where not all users were included in the user group after an incremental sync between the firewall and the Cloud Identity Engine. "
+                ]
+            }
+        },
+        {
+            "PAN-204868": {
+                "info": [
+                    "Fixed an issue where disk utilization was continuously high due to the log purger not sufficiently reducing the utilization level. "
+                ]
+            }
+        },
+        {
+            "PAN-198509": {
+                "info": [
+                    "Fixed an issue where commits failed due to insufficient CFG memory. "
+                ]
+            }
+        },
+        {
+            "PAN-198043": {
+                "info": [
+                    "Fixed a rare issue where aBuildXmlCache job failed on the firewall. "
+                ]
+            }
+        }
+    ]
+}

@@ -26,7 +26,7 @@ urlbase="https://$fqdn:4444/api/objects/"
 # the temp directory used
 TEMP_DIR=$(mktemp -d -p ./)
 
-OUTPUT_FILE="merged output.txt"
+OUTPUT_FILE="merged_output.txt"
 
 j=0
 err=0
@@ -63,22 +63,31 @@ arrapi=(
 		"packetfilter/mangle/" \
 		"packetfilter/masq/" \
 		"packetfilter/ruleset/" \
-
 		"geoip/geoipgroup/" \
 		"geoip/dstexception/" \
 		"geoip/srcexception/" \
 		"geoip/group/" \
-
 		"interface/bridge/" \
 		"interface/ethernet/" \
 		"interface/group/" \
 		"interface/tunnel/" \
 		"interface/vlan/" \
-
+		"interface/pppoe/" \
+		"itfparams/primary/" \
+		"itfparams/secondary/" \
+		"itfparams/link_aggregation_group/" \
+		"itfparams/group/" \
+		"itfparams/bridge_port/" \
 		"ipsec/group/" \
 		"ipsec/policy/" \
 		"ipsec/remote_gateway/" \
-
+		"ipsec_connection/group/" \
+		"ipsec_connection/site_to_site/" \
+		"ipsec_remote_auth/ca/" \
+		"ipsec_remote_auth/group/" \
+		"ipsec_remote_auth/psk/" \
+		"ipsec_remote_auth/rsa/" \
+		"ipsec_remote_auth/x509/" \
 		"route/group/" \
 		"route/policy/" \
 		"route/static/" \

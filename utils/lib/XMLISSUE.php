@@ -146,6 +146,11 @@ class XMLISSUE extends UTIL
         $countMissconfiguredSecRuleCategoryObjects=0;
         $fixedSecRuleCategoryObjects=0;
 
+        $countMissconfiguredNatRuleSourceObjects=0;
+        $fixedNatRuleSourceObjects=0;
+        $countMissconfiguredNatRuleDestinationObjects=0;
+        $fixedNatRuleDestinationObjects=0;
+
         $countMissconfiguredAddressObjects = 0;
         $countMissconfiguredAddressRegionObjects = 0;
         $countAddressObjectsWithDoubleSpaces = 0;
@@ -1075,6 +1080,9 @@ class XMLISSUE extends UTIL
                 $secRuleFromIndex = array();
                 $secRuleToIndex = array();
 
+                $natRuleSourceIndex = array();
+                $natRuleDestinationIndex = array();
+
                 if( $objectTypeNode_rulebase !== FALSE )
                 {
                     PH::print_stdout( "");
@@ -1379,6 +1387,9 @@ class XMLISSUE extends UTIL
                             {
                                 foreach( $objectTypeNode->childNodes as $objectNode )
                                 {
+                                    $natRuleSource = array();
+                                    $natRuleDestination = array();
+
                                     /** @var DOMElement $objectNode */
                                     if( $objectNode->nodeType != XML_ELEMENT_NODE )
                                         continue;
@@ -1394,6 +1405,68 @@ class XMLISSUE extends UTIL
                                         $natRuleIndex[$objectName] = array('regular' => array(), 'group' => array());
 
                                     $natRuleIndex[$objectName]['regular'][] = $objectNode;
+
+
+                                    //check if source has 'any' and additional
+                                    $objectNode_sources = DH::findFirstElement('source', $objectNode);
+                                    $demo = iterator_to_array($objectNode_sources->childNodes);
+                                    foreach( $demo as $objectSource )
+                                    {
+                                        /** @var DOMElement $objectSource */
+                                        if( $objectSource->nodeType != XML_ELEMENT_NODE )
+                                            continue;
+
+                                        $objectSourceName = $objectSource->textContent;
+                                        if( isset($natRuleSource[$objectSourceName]) )
+                                        {
+                                            $text = "     - Secrule: ".$objectName." has same source defined twice: ".$objectSourceName;
+                                            $objectNode_sources->removeChild($objectSource);
+                                            $text .=PH::boldText(" (removed)");
+                                            PH::print_stdout( $text );
+                                            $fixedNatRuleSourceObjects++;
+                                        }
+                                        else
+                                        {
+                                            $natRuleSource[$objectSourceName] = $objectSource;
+                                            #PH::print_stdout( $objectName.'add to array: '.$objectSourceName );
+                                        }
+
+                                    }
+                                    if( isset($natRuleSource['any']) and count($natRuleSource) > 1 )
+                                    {
+                                        $natRuleSourceIndex[$objectName] = $natRuleSource['any'];
+                                        PH::print_stdout( "     - Rule: '".$objectName."' has source 'any' + something else defined." );
+                                    }
+
+                                    //check if destination has 'any' and additional
+                                    $objectNode_destinations = DH::findFirstElement('destination', $objectNode);
+                                    $demo = iterator_to_array($objectNode_destinations->childNodes);
+                                    foreach( $demo as $objectDestination )
+                                    {
+                                        /** @var DOMElement $objectDestination */
+                                        if( $objectDestination->nodeType != XML_ELEMENT_NODE )
+                                            continue;
+
+                                        $objectDestinationName = $objectDestination->textContent;
+                                        #PH::print_stdout( "rule: ".$objectName." name: ".$objectDestinationName);
+                                        if( isset($natRuleDestination[$objectDestinationName]) )
+                                        {
+                                            $text = "     - Secrule: ".$objectName." has same destination defined twice: ".$objectDestinationName;
+                                            $objectNode_destinations->removeChild($objectDestination);
+                                            $text .= PH::boldText(" (removed)")."\n";
+                                            PH::print_stdout( $text );
+                                            $fixedNatRuleDestinationObjects++;
+                                        }
+                                        else
+                                            $natRuleDestination[$objectDestinationName] = $objectDestination;
+                                    }
+
+                                    if( isset($natRuleDestination['any']) and count($natRuleDestination) > 1 )
+                                    {
+                                        $natRuleDestinationIndex[$objectName] = $natRuleDestination['any'];
+                                        #PH::print_stdout( "     - Rule: '".$objectName."' has application 'any' + something else defined.") ;
+                                    }
+
                                 }
 
                             }
@@ -1557,6 +1630,20 @@ class XMLISSUE extends UTIL
                         #PH::print_stdout( "   - found Security Rule named '{$objectName}' that has XML element 'category' but not child element 'member' configured at XML line #{$objectNode->getLineNo()}");
                         PH::print_stdout( "   - found Security Rule named '{$objectName}' that has category 'any' and additional category configured at XML line #{$objectNode->getLineNo()}");
                         $countMissconfiguredSecRuleCategoryObjects++;
+                    }
+
+                    PH::print_stdout( "\n - Scanning for missconfigured Source Field in NAT Rules...");
+                    foreach( $natRuleSourceIndex as $objectName => $objectNode )
+                    {
+                        PH::print_stdout( "   - found NAT Rule named '{$objectName}' that has source 'any' and additional source configured at XML line #{$objectNode->getLineNo()}");
+                        $countMissconfiguredNatRuleSourceObjects++;
+                    }
+
+                    PH::print_stdout( " - Scanning for missconfigured Destination Field in NAT Rules...");
+                    foreach( $natRuleDestinationIndex as $objectName => $objectNode )
+                    {
+                        PH::print_stdout( "   - found NAT Rule named '{$objectName}' that has destination 'any' and additional destination configured at XML line #{$objectNode->getLineNo()}");
+                        $countMissconfiguredNatRuleDestinationObjects++;
                     }
 
                     if( $service_app_default_available )
@@ -1930,6 +2017,8 @@ class XMLISSUE extends UTIL
         if( $totalCustomUrlCategoryFixed > 0 )
             PH::print_stdout( " - FIXED: duplicate custom-url-category members: {$totalCustomUrlCategoryFixed}");
 
+        PH::print_stdout();
+
         if( $fixedSecRuleFromObjects > 0 )
             PH::print_stdout( "\n - FIXED: SecRule with duplicate from members: {$fixedSecRuleFromObjects}");
         if( $fixedSecRuleToObjects > 0 )
@@ -1946,6 +2035,15 @@ class XMLISSUE extends UTIL
             PH::print_stdout( " - FIXED: SecRule with duplicate category members: {$fixedSecRuleCategoryObjects}");
         if( $fixedSecRuleTagObjects > 0 )
             PH::print_stdout( " - FIXED: SecRule with duplicate tag members: {$fixedSecRuleTagObjects}");
+
+        PH::print_stdout();
+
+        if( $fixedNatRuleSourceObjects > 0 )
+            PH::print_stdout( " - FIXED: NatRule with duplicate source members: {$fixedNatRuleSourceObjects}");
+        if( $fixedNatRuleDestinationObjects > 0 )
+            PH::print_stdout( " - FIXED: NatRule with duplicate destination members: {$fixedNatRuleDestinationObjects}");
+
+        PH::print_stdout();
 
         if( $fixedReadOnlyAddressGroupobjects > 0 )
             PH::print_stdout( "\n - FIXED: ReadOnly duplicate AddressGroup : {$fixedReadOnlyAddressGroupobjects}");
@@ -2021,6 +2119,11 @@ class XMLISSUE extends UTIL
             PH::print_stdout( " - FIX_MANUALLY: missconfigured Application Field in Security Rules: {$countMissconfiguredSecRuleApplicationObjects} (look in the logs )");
         if( $countMissconfiguredSecRuleCategoryObjects > 0 )
             PH::print_stdout( " - FIX_MANUALLY: missconfigured Category Field in Security Rules: {$countMissconfiguredSecRuleCategoryObjects} (look in the logs )");
+        PH::print_stdout();
+        if( $countMissconfiguredNatRuleSourceObjects > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: missconfigured Source Field in NAT Rules: {$countMissconfiguredNatRuleSourceObjects} (look in the logs )");
+        if( $countMissconfiguredNatRuleDestinationObjects > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: missconfigured Destination Field in NAT Rules: {$countMissconfiguredNatRuleDestinationObjects} (look in the logs )");
         PH::print_stdout();
 
         if( $service_app_default_available )

@@ -58,6 +58,13 @@
             }
         },
         {
+            "PAN-262263": {
+                "info": [
+                    " (PA-3400 and PA-5400 Series firewalls) The links on the firewall's RJ-45 ports may go up and down additional times during a reboot, causing unexpected downtime. "
+                ]
+            }
+        },
+        {
             "PAN-260851": {
                 "info": [
                     " From the NGFW or Panorama CLI, you can override the existing application tag even if Disable Override is enabled for the application (ObjectsApplications) tag. "
@@ -242,6 +249,7 @@
         },
         {
             "PAN-221033": {
+                "solved": "This issue is now resolved. See PAN-OS 10.2.8 Addressed Issues.",
                 "info": [
                     " The firewall is responding to an ARP request for an IP address in the firewall's NAT address pool when that IP address isn't in the same subnet as the IP address of the ingress interface. "
                 ]

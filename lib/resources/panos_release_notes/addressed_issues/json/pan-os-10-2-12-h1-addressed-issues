@@ -1,0 +1,12 @@
+{
+    "10-2-12-h1": [
+        [],
+        {
+            "PAN-262287": {
+                "info": [
+                    " Fixed an issue where dereferencing a NULL pointer that occurred caused pan_task processes to stop responding. "
+                ]
+            }
+        }
+    ]
+}

@@ -1,0 +1,103 @@
+{
+    "10-1-6-h3": [
+        [],
+        {
+            "PAN-194408": {
+                "info": [
+                    "Fixed an issue where, when policy rules had the apps that implicitly depended on web browsing configured with the service application default, traffic did not match the rule correctly."
+                ]
+            }
+        },
+        {
+            "PAN-194325": {
+                "info": [
+                    "(PA-5450 firewalls only) Fixed an issue where the logging interface configuration was not correctly written to the syslog-ng configuration file."
+                ]
+            }
+        },
+        {
+            "PAN-192880": {
+                "info": [
+                    "Fixed an issue where, when the firewall was configured for jumbo frames, an internal interface was not set with the correct MTU, which caused byte frames larger than 1500 to be dropped when a DF bit was set."
+                ]
+            }
+        },
+        {
+            "PAN-192403": {
+                "info": [
+                    "(PA-5450 firewalls only) Fixed an issue on the web interface where, when configuring the management interface and logging interface in the same subnetwork, a commit warning was not displayed even though the configuration caused routing and connectivity issues."
+                ]
+            }
+        },
+        {
+            "PAN-191558": {
+                "info": [
+                    "Fixed an issue where, after an upgrade to PAN-OS 10.1.5, Global Find did not display all results related to a searched item."
+                ]
+            }
+        },
+        {
+            "PAN-191257": {
+                "info": [
+                    "Fixed an issue on the firewall where the useridd process stopped responding after a commit from Panorama. This occurred due to a timing issue where a HIP query from the dataplane was initiated before the process had finished initialization. "
+                ]
+            }
+        },
+        {
+            "PAN-190811": {
+                "info": [
+                    "(PA-5450 firewalls only) Fixed an issue where logs were forwarded through the management interface instead of the configured log interface to be used for forwarding."
+                ]
+            }
+        },
+        {
+            "PAN-190292": {
+                "info": [
+                    "Fixed an issue where you could not configure a log interface as a service route (DeviceSetupServicesService Route)"
+                ]
+            }
+        },
+        {
+            "PAN-189762": {
+                "info": [
+                    "Fixed an issue where a predict session didn't match with the traffic when both source NAT and destination NAT were enabled."
+                ]
+            }
+        },
+        {
+            "PAN-188833": {
+                "info": [
+                    "Fixed an issue where shared address objects used as a source or destination in policies were cloned but not freed back after configuration commits."
+                ]
+            }
+        },
+        {
+            "PAN-187126": {
+                "info": [
+                    "Fixed an issue where enabling DPDK mode on the dataplane interfaces of a Microsoft Azure instance caused the brdagent process to stop responding."
+                ]
+            }
+        },
+        {
+            "PAN-186075": {
+                "info": [
+                    "(VM-Series firewalls only) Fixed an issue where the firewall rebooted after receiving large packets while in DPDK mode on Azure virtual machines running CX4 (MLx5) drivers."
+                ]
+            }
+        },
+        {
+            "PAN-186024": {
+                "info": [
+                    "Fixed an issue where URL category match did not work for External Dynamic List URLS due to a leak related to the devsrvr process."
+                ]
+            }
+        },
+        {
+            "PAN-183166": {
+                "info": [
+                    "Fixed an issue where system, configuration, and alarm logs were queued up on the logrcvr process and were not forwarded out or written to disk until an autocommit was passed."
+                ]
+            }
+        }
+    ]
+}

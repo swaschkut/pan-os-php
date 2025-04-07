@@ -1,0 +1,68 @@
+{
+    "10-2-12-h3": [
+        [],
+        {
+            "PAN-273215": {
+                "info": [
+                    " Fixed an issue where a syntax error in the index generation script caused a high management plane CPU load after upgrading. "
+                ]
+            }
+        },
+        {
+            "PAN-272413": {
+                "info": [
+                    " Fixed an issue where device telemetry did not generate logs after upgrading the firewall. "
+                ]
+            }
+        },
+        {
+            "PAN-268823": {
+                "info": [
+                    " Fixed an issue where Monitor > Log Display did not display all logs when you applied a filter. "
+                ]
+            }
+        },
+        {
+            "PAN-268339": {
+                "info": [
+                    " Fixed an issue where syslog-ng failed to start due to the syslog-ng.config file being corrupted when upgrading from PAN-OS 10.2.9-h1 to PAN-OS 10.2.11. "
+                ]
+            }
+        },
+        {
+            "PAN-264249": {
+                "info": [
+                    " Fixed an issue on the firewall where SNMP queries timed out when using SNMP. "
+                ]
+            }
+        },
+        {
+            "PAN-263973": {
+                "info": [
+                    " Fixed an issue where log collectors had a low incoming log rate. "
+                ]
+            }
+        },
+        {
+            "PAN-263287": {
+                "info": [
+                    " The PAN-COMMON-MIB.my file was updated to support new object identifiers (OID) to poll interface use via SNMP with table identifiers. "
+                ]
+            }
+        },
+        {
+            "PAN-259910": {
+                "info": [
+                    " Fixed an issue where the firewall reported the same value over consecutive SNMP polls when asynchronous mode was enabled. "
+                ]
+            }
+        },
+        {
+            "PAN-246699": {
+                "info": [
+                    " Fixed an issue on Panorama where Rule Usage and Apps Seen under Security policy rules stopped incrementing. "
+                ]
+            }
+        }
+    ]
+}
