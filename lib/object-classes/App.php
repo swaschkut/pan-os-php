@@ -119,7 +119,7 @@ class App
         'scada' => 'scada',
         'telnet' => 'telnet',
         'dns' => 'dns',
-        'ssh' => 'v',
+        'ssh' => 'ssh',
         'nntp' => 'nntp',
         'jabber' => 'jabber',
         'unknown-tcp' => 'unknown-tcp',
