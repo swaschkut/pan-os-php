@@ -2,6 +2,7 @@ CHANGELOG
 
 2.1.36
 UTIL:
+* type=application | introduce 'filter=(tunnelapps is.set / tunnelapps has XYZ)'
 
 BUGFIX:
 * filters-Address.php for all kind of EDL objects

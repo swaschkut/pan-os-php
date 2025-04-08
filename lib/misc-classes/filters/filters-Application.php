@@ -81,7 +81,7 @@ RQuery::$defaultFilters['application']['characteristic']['operators']['has'] = a
             return null;
 
         $sanitizedValue = strtolower($context->value);
-        if( $app->_characteristics[$sanitizedValue] === TRUE )
+        if( isset($app->_characteristics[$sanitizedValue]) && $app->_characteristics[$sanitizedValue] === TRUE )
             return TRUE;
 
         return FALSE;
@@ -598,6 +598,41 @@ RQuery::$defaultFilters['application']['alg-disable-capability']['operators']['i
         return FALSE;
     },
     'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+
+RQuery::$defaultFilters['application']['tunnelapps']['operators']['is.set'] = array(
+    'Function' => function (ApplicationRQueryContext $context) {
+        if( count( $context->object->tunnelApp) > 0 )
+            return TRUE;
+
+        return FALSE;
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['application']['tunnelapps']['operators']['has'] = array(
+    'Function' => function (ApplicationRQueryContext $context) {
+        $sanitizedValue = strtolower($context->value);
+        if( count( $context->object->tunnelApp) > 0 )
+        {
+            foreach( $context->object->tunnelApp as $tunnelApp )
+            {
+                if( $tunnelApp->name() === $context->value )
+                    return TRUE;
+            }
+        }
+
+
+        return FALSE;
+    },
+    'arg' => TRUE,
     'ci' => array(
         'fString' => '(%PROP%)',
         'input' => 'input/panorama-8.0.xml'
