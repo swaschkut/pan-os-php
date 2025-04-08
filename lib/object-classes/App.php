@@ -110,22 +110,22 @@ class App
     );
 
     static public $_supportedDecoders = array(
-        'http' => 'http',
-        'ssl' => 'ssl',
         'cotp' => 'cotp',
-        'vnc' => 'vnc',
+        'dns' => 'dns',
         'generic' => 'generic',
+        'http' => 'http',
+        'jabber' => 'jabber',
+        'nntp' => 'nntp',
         'open-vpn' => 'open-vpn',
         'scada' => 'scada',
-        'telnet' => 'telnet',
-        'dns' => 'dns',
-        'ssh' => 'ssh',
-        'nntp' => 'nntp',
-        'jabber' => 'jabber',
-        'unknown-tcp' => 'unknown-tcp',
-        'snmp' => 'snmp',
+        'sip' => 'sip',
         'smtp' => 'smtp',
-        'sip' => 'sip'
+        'snmp' => 'snmp',
+        'ssh' => 'ssh',
+        'ssl' => 'ssl',
+        'telnet' => 'telnet',
+        'unknown-tcp' => 'unknown-tcp',
+        'vnc' => 'vnc'
     );
 
     //public $type = 'notfound';
