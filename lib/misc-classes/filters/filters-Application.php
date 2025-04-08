@@ -81,6 +81,9 @@ RQuery::$defaultFilters['application']['characteristic']['operators']['has'] = a
             return null;
 
         $sanitizedValue = strtolower($context->value);
+        if( !isset(App::$_supportedCharacteristics[$sanitizedValue]) )
+            derr("supported characteristics: ".implode(",", App::$_supportedCharacteristics), null, false);
+
         if( isset($app->_characteristics[$sanitizedValue]) && $app->_characteristics[$sanitizedValue] === TRUE )
             return TRUE;
 
@@ -519,6 +522,8 @@ RQuery::$defaultFilters['application']['decoder']['operators']['has'] = array(
             return null;
 
         $sanitizedValue = strtolower($context->value);
+        if( !isset(App::$_supportedDecoders[$sanitizedValue]) )
+            derr("supported decoders: ".implode(",", App::$_supportedDecoders), null, false);
         if( isset( $app->decoder[$sanitizedValue] ) )
             return TRUE;
 
@@ -604,7 +609,7 @@ RQuery::$defaultFilters['application']['alg-disable-capability']['operators']['i
     )
 );
 
-RQuery::$defaultFilters['application']['tunnelapps']['operators']['is.set'] = array(
+RQuery::$defaultFilters['application']['tunnelapp']['operators']['is.set'] = array(
     'Function' => function (ApplicationRQueryContext $context) {
         if( count( $context->object->tunnelApp) > 0 )
             return TRUE;
@@ -617,7 +622,7 @@ RQuery::$defaultFilters['application']['tunnelapps']['operators']['is.set'] = ar
         'input' => 'input/panorama-8.0.xml'
     )
 );
-RQuery::$defaultFilters['application']['tunnelapps']['operators']['has'] = array(
+RQuery::$defaultFilters['application']['tunnelapp']['operators']['has'] = array(
     'Function' => function (ApplicationRQueryContext $context) {
         $sanitizedValue = strtolower($context->value);
         if( count( $context->object->tunnelApp) > 0 )

@@ -109,6 +109,25 @@ class App
         'widely-used' => 'widely-used'
     );
 
+    static public $_supportedDecoders = array(
+        'http' => 'http',
+        'ssl' => 'ssl',
+        'cotp' => 'cotp',
+        'vnc' => 'vnc',
+        'generic' => 'generic',
+        'open-vpn' => 'open-vpn',
+        'scada' => 'scada',
+        'telnet' => 'telnet',
+        'dns' => 'dns',
+        'ssh' => 'v',
+        'nntp' => 'nntp',
+        'jabber' => 'jabber',
+        'unknown-tcp' => 'unknown-tcp',
+        'snmp' => 'snmp',
+        'smtp' => 'smtp',
+        'sip' => 'sip'
+    );
+
     //public $type = 'notfound';
 
     public function __construct($name, $owner)
