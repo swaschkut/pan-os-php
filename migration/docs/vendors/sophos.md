@@ -3,7 +3,7 @@
 SOPHOS UTM
 
 //USAGE:
-//php SOPHOS_parser.php
+////pan-os-php type=vendor-migration vendor=sophos
 //  file=/Users/swaschkut/Documents/Expedition_config/XYZ output\ DMZ.txt
 //  out=/tmp/sophos.xml in=/Users/swaschkut/Documents/VM300-Baseline.xml
 //  ruleorder=/Users/swaschkut/Documents/Expedition_config/XYZ/packetfilter\ order.txt
