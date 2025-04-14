@@ -949,13 +949,16 @@ class AntiSpywareProfile extends SecurityProfile2
         if( $this->owner->owner->version >= 102 )
         {
             $bp_set = false;
-            foreach ($this->additional['botnet-domain']['dns-security-categories'] as $name => $value)
+            if( isset($this->additional['botnet-domain']['dns-security-categories']) )
             {
-                /** @var DNSPolicy $value */
-                if ($value->spyware_dns_security_rule_bestpractice())
-                    $bp_set = true;
-                else
-                    return false;
+                foreach ($this->additional['botnet-domain']['dns-security-categories'] as $name => $value)
+                {
+                    /** @var DNSPolicy $value */
+                    if ($value->spyware_dns_security_rule_bestpractice())
+                        $bp_set = true;
+                    else
+                        return false;
+                }
             }
             return $bp_set;
         }
