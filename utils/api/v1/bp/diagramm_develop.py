@@ -43,13 +43,13 @@ for v in values:
         ampel_colors.append("rgba(255,165,0,0.2)")     # leichtes Orange
     elif v < 75:
         ampel_colors.append("rgba(255,255,0,0.2)")     # leichtes Gelb
-    elif v < 100:
+    elif v <= 100:
         ampel_colors.append("rgba(0,255,0,0.2)")       # leichtes Grün
     else:
         ampel_colors.append("rgba(0,0,0,0)")           # vollständig = unsichtbar
 
 # Werte skalieren
-scaled_values = [0 + (v / 100) * 100 for v in values]
+scaled_values = [0 + (v / 100) * 80 for v in values]
 
 # Plot starten
 fig = go.Figure()
@@ -60,7 +60,7 @@ fig = go.Figure()
 fig.add_trace(go.Barpolar(
     r=scaled_values,
     theta=theta,
-    text=[f"{cat} {val}%" for cat, val in zip(categories, values)],
+    text=[f"{cat}<br>{val}%" for cat, val in zip(categories, values)],
     marker=dict(
         color=ampel_colors_full,
         line_color='white',
@@ -71,10 +71,10 @@ fig.add_trace(go.Barpolar(
 ))
 
 
-
 # 2️⃣ Basisschicht (immer 100%)
 fig.add_trace(go.Barpolar(
-    r=[100] * len(values),
+    base=0,
+    r=[80] * 15,
     theta=theta,
     marker=dict(
         color=ampel_colors,
@@ -87,15 +87,28 @@ fig.add_trace(go.Barpolar(
 
 
 
+
 circle_points = 200
 theta_circle = np.linspace(0, 360, circle_points)
 
-for r_val in [20, 40, 60, 80, 100]:
+#for r_val in [20, 40, 60, 80, 100]:
+for r_val in [20, 40, 60, 80]:
     fig.add_trace(go.Scatterpolar(
         r=[r_val] * circle_points,
         theta=theta_circle,
         mode='lines',
         line=dict(color='lightgray', width=1),  # oder 'gray', 'white', etc.
+        hoverinfo='skip',
+        showlegend=False
+    ))
+
+#for r_val in [20, 40, 60, 80, 100]:
+for r_val in [80,99]:
+    fig.add_trace(go.Scatterpolar(
+        r=[r_val] * circle_points,
+        theta=theta_circle,
+        mode='lines',
+        line=dict(color='black', width=1),  # oder 'gray', 'white', etc.
         hoverinfo='skip',
         showlegend=False
     ))
@@ -110,7 +123,8 @@ fig.add_trace(go.Scatterpolar(
     mode='lines',
     fill='toself',
     fillcolor='white',
-    line_color='black',
+    #line_color='black',
+    line=dict(color='black', width=1),  # oder 'gray', 'white', etc.
     hoverinfo='skip',
     showlegend=False
 ))
@@ -147,7 +161,7 @@ fig.update_layout(
         angularaxis=dict(
             tickmode='array',
             tickvals=theta,
-            ticktext=[f"{cat} ({val}%)" for cat, val in zip(categories, values)],
+            ticktext=[f"<b>{cat}</b><br>({val}%)" for cat, val in zip(categories, values)],
             direction='clockwise',
             rotation=78,
             gridcolor='rgba(0,0,0,0)',   # <- entfernt die „Tortenstücke“-Linien
