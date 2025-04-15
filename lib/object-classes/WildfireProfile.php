@@ -290,6 +290,14 @@ class WildfireProfile extends SecurityProfile2
         }
     }
 
+    public function is_adoption()
+    {
+        #if at least one spyware rule is set -> adoption, if not false
+        if( count($this->rules_obj) > 0 )
+            return true;
+        else
+            return false;
+    }
 
     static $templatexml = '<entry name="**temporarynamechangeme**"></entry>';
 

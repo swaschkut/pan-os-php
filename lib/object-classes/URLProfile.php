@@ -841,6 +841,12 @@ class URLProfile extends SecurityProfile2
         else
             return FALSE;
     }
+
+    public function is_adoption()
+    {
+        return true;
+    }
+
     public function site_access_is_best_practice()
     {
         if( $this->url_siteaccess_best_practice() )
