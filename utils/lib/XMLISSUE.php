@@ -1379,31 +1379,35 @@ class XMLISSUE extends UTIL
 
                                     //check if source-user has 'any' and additional
                                     $objectNode_source_users = DH::findFirstElement('source-user', $objectNode);
-                                    $demo = iterator_to_array($objectNode_source_users->childNodes);
-                                    foreach( $demo as $objectSourceUser )
+                                    if( $objectNode_source_users !== False )
                                     {
-                                        /** @var DOMElement $objectSourceUser */
-                                        if( $objectSourceUser->nodeType != XML_ELEMENT_NODE )
-                                            continue;
-
-                                        $objectSourceUserName = $objectSourceUser->textContent;
-                                        #PH::print_stdout( "rule: ".$objectName." name: ".$objectDestinationName);
-                                        if( isset($secRuleSourceUser[$objectSourceUserName]) )
+                                        $demo = iterator_to_array($objectNode_source_users->childNodes);
+                                        foreach( $demo as $objectSourceUser )
                                         {
-                                            $text = "     - Secrule: ".$objectName." has same source-user defined twice: ".$objectSourceUserName;
-                                            $objectNode_source_users->removeChild($objectSourceUser);
-                                            $text .= PH::boldText(" (removed)")."\n";
-                                            PH::print_stdout( $text );
-                                            $fixedSecruleSourceUserObjects++;
+                                            /** @var DOMElement $objectSourceUser */
+                                            if( $objectSourceUser->nodeType != XML_ELEMENT_NODE )
+                                                continue;
+
+                                            $objectSourceUserName = $objectSourceUser->textContent;
+                                            #PH::print_stdout( "rule: ".$objectName." name: ".$objectDestinationName);
+                                            if( isset($secRuleSourceUser[$objectSourceUserName]) )
+                                            {
+                                                $text = "     - Secrule: ".$objectName." has same source-user defined twice: ".$objectSourceUserName;
+                                                $objectNode_source_users->removeChild($objectSourceUser);
+                                                $text .= PH::boldText(" (removed)")."\n";
+                                                PH::print_stdout( $text );
+                                                $fixedSecruleSourceUserObjects++;
+                                            }
+                                            else
+                                                $secRuleSourceUser[$objectSourceUserName] = $objectSourceUser;
                                         }
-                                        else
-                                            $secRuleSourceUser[$objectSourceUserName] = $objectSourceUser;
+
+                                        if( isset($secRuleSourceUser['any']) and count($secRuleSourceUser) > 1 )
+                                        {
+                                            $secRuleSourceUserIndex[$objectName] = $secRuleSourceUser['any'];
+                                        }
                                     }
 
-                                    if( isset($secRuleSourceUser['any']) and count($secRuleSourceUser) > 1 )
-                                    {
-                                        $secRuleSourceUserIndex[$objectName] = $secRuleSourceUser['any'];
-                                    }
                                 }
 
                             }
