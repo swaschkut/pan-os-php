@@ -162,6 +162,8 @@ class XMLISSUE extends UTIL
         $countServiceObjectsWithNameappdefault = 0;
         $fixedServiceObjectsWithSameTag = 0;
 
+        $countMissconfiguredSecruleSourceUserObjects = 0;
+        $fixedSecruleSourceUserObjects = 0;
 
         $countEmptyAddressGroup = 0;
         $countEmptyServiceGroup = 0;
@@ -1080,6 +1082,8 @@ class XMLISSUE extends UTIL
                 $secRuleFromIndex = array();
                 $secRuleToIndex = array();
 
+                $secRuleSourceUserIndex = array();
+
                 $natRuleSourceIndex = array();
                 $natRuleDestinationIndex = array();
 
@@ -1107,6 +1111,7 @@ class XMLISSUE extends UTIL
                                     $secRuleTo = array();
                                     $secRuleCategory = array();
                                     $secRuleTags = array();
+                                    $secRuleSourceUser = array();
 
                                     /** @var DOMElement $objectNode */
                                     if( $objectNode->nodeType != XML_ELEMENT_NODE )
@@ -1371,6 +1376,34 @@ class XMLISSUE extends UTIL
                                         $secRuleToIndex[$objectName] = $secRuleTo['any'];
                                         #PH::print_stdout( "     - Rule: '".$objectName."' has application 'any' + something else defined.") ;
                                     }
+
+                                    //check if source-user has 'any' and additional
+                                    $objectNode_source_users = DH::findFirstElement('source-user', $objectNode);
+                                    $demo = iterator_to_array($objectNode_source_users->childNodes);
+                                    foreach( $demo as $objectSourceUser )
+                                    {
+                                        /** @var DOMElement $objectSourceUser */
+                                        if( $objectSourceUser->nodeType != XML_ELEMENT_NODE )
+                                            continue;
+
+                                        $objectSourceUserName = $objectSourceUser->textContent;
+                                        #PH::print_stdout( "rule: ".$objectName." name: ".$objectDestinationName);
+                                        if( isset($secRuleSourceUser[$objectSourceUserName]) )
+                                        {
+                                            $text = "     - Secrule: ".$objectName." has same source-user defined twice: ".$objectSourceUserName;
+                                            $objectNode_source_users->removeChild($objectSourceUser);
+                                            $text .= PH::boldText(" (removed)")."\n";
+                                            PH::print_stdout( $text );
+                                            $fixedSecruleSourceUserObjects++;
+                                        }
+                                        else
+                                            $secRuleSourceUser[$objectSourceUserName] = $objectSourceUser;
+                                    }
+
+                                    if( isset($secRuleSourceUser['any']) and count($secRuleSourceUser) > 1 )
+                                    {
+                                        $secRuleSourceUserIndex[$objectName] = $secRuleSourceUser['any'];
+                                    }
                                 }
 
                             }
@@ -1630,6 +1663,13 @@ class XMLISSUE extends UTIL
                         #PH::print_stdout( "   - found Security Rule named '{$objectName}' that has XML element 'category' but not child element 'member' configured at XML line #{$objectNode->getLineNo()}");
                         PH::print_stdout( "   - found Security Rule named '{$objectName}' that has category 'any' and additional category configured at XML line #{$objectNode->getLineNo()}");
                         $countMissconfiguredSecRuleCategoryObjects++;
+                    }
+
+                    PH::print_stdout( " - Scanning for missconfigured SourceUser Field in Security Rules...");
+                    foreach( $secRuleSourceUserIndex as $objectName => $objectNode )
+                    {
+                        PH::print_stdout( "   - found Security Rule named '{$objectName}' that has source-user 'any' and additional source-user configured at XML line #{$objectNode->getLineNo()}");
+                        $countMissconfiguredSecruleSourceUserObjects++;
                     }
 
                     PH::print_stdout( "\n - Scanning for missconfigured Source Field in NAT Rules...");
@@ -2035,6 +2075,8 @@ class XMLISSUE extends UTIL
             PH::print_stdout( " - FIXED: SecRule with duplicate category members: {$fixedSecRuleCategoryObjects}");
         if( $fixedSecRuleTagObjects > 0 )
             PH::print_stdout( " - FIXED: SecRule with duplicate tag members: {$fixedSecRuleTagObjects}");
+        if( $fixedSecruleSourceUserObjects > 0 )
+            PH::print_stdout( " - FIXED: SecRule with duplicate source-user members: {$fixedSecruleSourceUserObjects}");
 
         PH::print_stdout();
 
@@ -2119,6 +2161,8 @@ class XMLISSUE extends UTIL
             PH::print_stdout( " - FIX_MANUALLY: missconfigured Application Field in Security Rules: {$countMissconfiguredSecRuleApplicationObjects} (look in the logs )");
         if( $countMissconfiguredSecRuleCategoryObjects > 0 )
             PH::print_stdout( " - FIX_MANUALLY: missconfigured Category Field in Security Rules: {$countMissconfiguredSecRuleCategoryObjects} (look in the logs )");
+        if( $countMissconfiguredSecruleSourceUserObjects > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: missconfigured SourceUser Field in Security Rules: {$countMissconfiguredSecruleSourceUserObjects} (look in the logs )");
         PH::print_stdout();
         if( $countMissconfiguredNatRuleSourceObjects > 0 )
             PH::print_stdout( " - FIX_MANUALLY: missconfigured Source Field in NAT Rules: {$countMissconfiguredNatRuleSourceObjects} (look in the logs )");
