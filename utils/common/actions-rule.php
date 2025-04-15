@@ -4853,6 +4853,7 @@ RuleCallContext::$supportedActions[] = array(
         $addHitCountSummary = FALSE;
         $bestPractice = FALSE;
         $visibility = FALSE;
+        $adoption = FALSE;
 
         $optionalFields = &$context->arguments['additionalFields'];
 
@@ -4874,6 +4875,8 @@ RuleCallContext::$supportedActions[] = array(
             $bestPractice = TRUE;
         if( isset($optionalFields['Visibility']) )
             $visibility = TRUE;
+        if( isset($optionalFields['Adoption']) )
+            $adoption = TRUE;
 
         $fields = array(
             'ID' => 'ID',
@@ -4921,6 +4924,7 @@ RuleCallContext::$supportedActions[] = array(
             'sp_best_practice' => 'sp_best_practice',
             'sp_best_practice_details' => 'sp_best_practice_details',
             'sp_visibility' => 'sp_visibility',
+            'sp_adoption' => 'sp_adoption',
             'sp_av_bp' => 'sp_av_bp',
             'sp_as_bp' => 'sp_as_bp',
             'sp_vp_bp' => 'sp_vp_bp',
@@ -4935,6 +4939,13 @@ RuleCallContext::$supportedActions[] = array(
             'sp_file_visible' => 'sp_file_visible',
             'sp_data_visible' => 'sp_data_visible',
             'sp_wf_visible' => 'sp_wf_visible',
+            'sp_av_adoption' => 'sp_av_adoption',
+            'sp_as_adoption' => 'sp_as_adoption',
+            'sp_vp_adoption' => 'sp_vp_adoption',
+            'sp_url_adoption' => 'sp_url_adoption',
+            'sp_file_adoption' => 'sp_file_adoption',
+            'sp_data_adoption' => 'sp_data_adoption',
+            'sp_wf_adoption' => 'sp_wf_adoption',
             'disabled' => 'disabled',
             'src_user' => 'src-user',
             'url_category' => 'url-category',
@@ -5008,18 +5019,26 @@ RuleCallContext::$supportedActions[] = array(
                             && get_class($rule) !== "NatRule") ||
                         (($fieldName == 'sp_best_practice' ) && !$bestPractice ) ||
                         (($fieldName == 'sp_best_practice_details'
-                                || $fieldName == 'sp_av_bp' || $fieldName == 'sp_as_bp' || $fieldName == 'sp_vp_bp' || $fieldName == 'sp_url_bp' || $fieldName == 'sp_file_bp' || $fieldName == 'sp_data_bp' || $fieldName == 'sp_wf_bp'
-                                || $fieldName == 'sp_av_visible' || $fieldName == 'sp_as_visible' || $fieldName == 'sp_vp_visible' || $fieldName == 'sp_url_visible' || $fieldName == 'sp_file_visible' || $fieldName == 'sp_data_visible' || $fieldName == 'sp_wf_visible'
                             )
-                            && (!$bestPractice && !$visibility) ) ||
-                        (($fieldName == 'sp_visibility' ) && !$visibility )
+                            && (!$bestPractice && !$visibility && !$adoption) ) ||
+                        (($fieldName == 'sp_av_bp' || $fieldName == 'sp_as_bp' || $fieldName == 'sp_vp_bp' || $fieldName == 'sp_url_bp' || $fieldName == 'sp_file_bp' || $fieldName == 'sp_data_bp' || $fieldName == 'sp_wf_bp'
+                            )
+                            && (!$bestPractice ) ) ||
+                        (($fieldName == 'sp_av_visible' || $fieldName == 'sp_as_visible' || $fieldName == 'sp_vp_visible' || $fieldName == 'sp_url_visible' || $fieldName == 'sp_file_visible' || $fieldName == 'sp_data_visible' || $fieldName == 'sp_wf_visible'
+                            )
+                            && (!$visibility) ) ||
+                        (($fieldName == 'sp_av_adoption' || $fieldName == 'sp_as_adoption' || $fieldName == 'sp_vp_adoption' || $fieldName == 'sp_url_adoption' || $fieldName == 'sp_file_adoption' || $fieldName == 'sp_data_adoption' || $fieldName == 'sp_wf_adoption'
+                            )
+                            && (!$adoption) ) ||
+                        (($fieldName == 'sp_visibility' ) && !$visibility )  ||
+                        (($fieldName == 'sp_adoption' ) && !$adoption )
                     )
                         continue;
                     $rule_hitcount_array = array();
                     if(($fieldName == 'first-hit' || $fieldName == 'last-hit' || $fieldName == 'hit-count' || $fieldName == 'rule-creation')
                         && $addHitCountSummary && $context->isAPI )
                         $rule_hitcount_array = $rule->API_showRuleHitCount( false, false );
-                    $lines .= $context->ruleFieldHtmlExport($rule, $fieldID, TRUE, $rule_hitcount_array, $bestPractice, $visibility);
+                    $lines .= $context->ruleFieldHtmlExport($rule, $fieldID, TRUE, $rule_hitcount_array, $bestPractice, $visibility, $adoption);
                 }
 
 
@@ -5059,11 +5078,19 @@ RuleCallContext::$supportedActions[] = array(
                     && get_class($rule) !== "NatRule") ||
                 (($fieldName == 'sp_best_practice' ) && !$bestPractice ) ||
                 (($fieldName == 'sp_best_practice_details'
-                        || $fieldName == 'sp_av_bp' || $fieldName == 'sp_as_bp' || $fieldName == 'sp_vp_bp' || $fieldName == 'sp_url_bp' || $fieldName == 'sp_file_bp' || $fieldName == 'sp_data_bp' || $fieldName == 'sp_wf_bp'
-                        || $fieldName == 'sp_av_visible' || $fieldName == 'sp_as_visible' || $fieldName == 'sp_vp_visible' || $fieldName == 'sp_url_visible' || $fieldName == 'sp_file_visible' || $fieldName == 'sp_data_visible' || $fieldName == 'sp_wf_visible'
                     )
-                    && (!$bestPractice && !$visibility) ) ||
-                (($fieldName == 'sp_visibility' ) && !$visibility )
+                    && (!$bestPractice && !$visibility && !$adoption) ) ||
+                (($fieldName == 'sp_av_bp' || $fieldName == 'sp_as_bp' || $fieldName == 'sp_vp_bp' || $fieldName == 'sp_url_bp' || $fieldName == 'sp_file_bp' || $fieldName == 'sp_data_bp' || $fieldName == 'sp_wf_bp'
+                    )
+                    && (!$bestPractice ) ) ||
+                (($fieldName == 'sp_av_visible' || $fieldName == 'sp_as_visible' || $fieldName == 'sp_vp_visible' || $fieldName == 'sp_url_visible' || $fieldName == 'sp_file_visible' || $fieldName == 'sp_data_visible' || $fieldName == 'sp_wf_visible'
+                    )
+                    && (!$visibility) ) ||
+                (($fieldName == 'sp_av_adoption' || $fieldName == 'sp_as_adoption' || $fieldName == 'sp_vp_adoption' || $fieldName == 'sp_url_adoption' || $fieldName == 'sp_file_adoption' || $fieldName == 'sp_data_adoption' || $fieldName == 'sp_wf_adoption'
+                    )
+                    && (!$adoption) ) ||
+                (($fieldName == 'sp_visibility' ) && !$visibility ) ||
+                (($fieldName == 'sp_adoption' ) && !$adoption )
             )
                 continue;
             $tableHeaders .= "<th>{$fieldName}</th>\n";
@@ -5090,7 +5117,7 @@ RuleCallContext::$supportedActions[] = array(
             array('type' => 'pipeSeparatedList',
                 'subtype' => 'string',
                 'default' => '*NONE*',
-                'choices' => array('ResolveAddressSummary', 'ResolveServiceSummary', 'ResolveServiceAppDefaultSummary', 'ResolveApplicationSummary', 'ResolveScheduleSummary', 'ApplicationSeen', 'HitCount', 'BestPractice', 'Visibility'),
+                'choices' => array('ResolveAddressSummary', 'ResolveServiceSummary', 'ResolveServiceAppDefaultSummary', 'ResolveApplicationSummary', 'ResolveScheduleSummary', 'ApplicationSeen', 'HitCount', 'BestPractice', 'Visibility', 'Adoption'),
                 'help' => "example: 'actions=exporttoexcel:file.html,HitCount|ApplicationSeen'\n" .
                     "pipe(|) separated list of additional field to include in the report. The following is available:\n" .
                     "  - ResolveAddressSummary : fields with address objects will be resolved to IP addressed and summarized in a new column\n" .
@@ -5100,7 +5127,9 @@ RuleCallContext::$supportedActions[] = array(
                     "  - ResolveScheduleSummary : fields with schedule objects will be resolved to their expire time\n" .
                     "  - ApplicationSeen : all App-ID seen on the Device SecurityRule will be listed\n" .
                     "  - HitCount : Rule - 'first-hit' - 'last-hit' - 'hit-count' - 'rule-creation will be listed\n" .
-                    "  - BestPractice : show if BestPractice is configured\n"
+                    "  - BestPractice : show if BestPractice is configured\n" .
+                    "  - Visibility : show if Visibility is configured\n" .
+                    "  - Adoption : show if Adoption is configured\n"
             )
     )
 );

@@ -296,12 +296,13 @@ class RuleCallContext extends CallContext
      * @param $fieldName
      * @return string
      */
-    public function ruleFieldHtmlExport($rule, $fieldName, $wrap = TRUE, $rule_hitcount_array = array(), $sp_best_practice = false, $sp_visibility = false)
+    public function ruleFieldHtmlExport($rule, $fieldName, $wrap = TRUE, $rule_hitcount_array = array(), $sp_best_practice = false, $sp_visibility = false, $sp_adoption = false)
     {
         $bp_text_yes = "yes";
         $bp_text_no = "no";
         $bp_NOT_sign = " | **NOT BP**";
         $visibility_NOT_sign = " | **NOT VISIBILITY**";
+        $adoption_NOT_sign = " | **NOT ADOPTION**";
 
         if( $fieldName == 'ID' )
         {
@@ -549,7 +550,7 @@ class RuleCallContext extends CallContext
                 return self::enclose('group:' . $rule->securityProfileGroup(), $wrap);
 
 
-            return self::display_SP_details( $rule, $wrap, $sp_best_practice, $sp_visibility, $bp_NOT_sign, $visibility_NOT_sign );
+            return self::display_SP_details( $rule, $wrap, $sp_best_practice, $sp_visibility, $sp_adoption, $bp_NOT_sign, $visibility_NOT_sign, $adoption_NOT_sign );
         }
 
         if($fieldName == 'sp_best_practice' )
@@ -627,6 +628,8 @@ class RuleCallContext extends CallContext
                                 $bp_check .= $bp_NOT_sign;
                             if( $sp_visibility )
                                 $bp_check .= $visibility_NOT_sign;
+                            if( $sp_adoption )
+                                $bp_check .= $adoption_NOT_sign;
                         }
 
                         $profiles[] = $profType . ':---'.$bp_check;
@@ -648,6 +651,11 @@ class RuleCallContext extends CallContext
                                 if( $sp_visibility )
                                     $bp_check .= $visibility_NOT_sign;
                             }
+                            if( !$profile->is_adoption() )
+                            {
+                                if( $sp_adoption )
+                                    $bp_check .= $adoption_NOT_sign;
+                            }
                         }
                         $profiles[] = $profType . ':' . $profile->name().$bp_check;
                     }
@@ -660,7 +668,7 @@ class RuleCallContext extends CallContext
             }
             else
             {
-                return self::display_SP_details( $rule, $wrap, $sp_best_practice, $sp_visibility, $bp_NOT_sign, $visibility_NOT_sign );
+                return self::display_SP_details( $rule, $wrap, $sp_best_practice, $sp_visibility, $sp_adoption, $bp_NOT_sign, $visibility_NOT_sign, $adoption_NOT_sign );
             }
         }
 
@@ -692,6 +700,34 @@ class RuleCallContext extends CallContext
                 return self::enclose($bp_text_no);
         }
 
+        if($fieldName == 'sp_adoption' )
+        {
+            if( !$rule->isSecurityRule() && !$rule->isDefaultSecurityRule() )
+                return self::enclose('');
+
+            if( $rule->securityProfileType() == 'none' )
+            {
+                if( $rule->action() == "allow" )
+                    return self::enclose($bp_text_no);
+                else
+                    return self::enclose('');
+            }
+
+            if( $rule->SP_isAdoption() === null )
+            {
+                if( $rule->action() == "allow" )
+                    return self::enclose($bp_text_no);
+                else
+                    return self::enclose('');
+            }
+            elseif( $rule->SP_isAdoption() )
+            {
+                return self::enclose($bp_text_yes);
+            }
+            else
+                return self::enclose($bp_text_no);
+        }
+
         if($fieldName == 'sp_av_bp' )
         {
             $sp_type = "virus";
@@ -699,7 +735,7 @@ class RuleCallContext extends CallContext
             if (!$rule->isSecurityRule() && !$rule->isDefaultSecurityRule())
                 return self::enclose('');
 
-            return self::display_SP_details_Y_N( $rule, $wrap, $sp_best_practice, $sp_visibility, $sp_type, $check_type);
+            return self::display_SP_details_Y_N( $rule, $wrap, $sp_best_practice, $sp_visibility, $sp_adoption, $sp_type, $check_type);
         }
         if($fieldName == 'sp_av_visible' )
         {
@@ -708,7 +744,16 @@ class RuleCallContext extends CallContext
             if (!$rule->isSecurityRule() && !$rule->isDefaultSecurityRule())
                 return self::enclose('');
 
-            return self::display_SP_details_Y_N( $rule, $wrap, $sp_best_practice, $sp_visibility, $sp_type, $check_type);
+            return self::display_SP_details_Y_N( $rule, $wrap, $sp_best_practice, $sp_visibility, $sp_adoption, $sp_type, $check_type);
+        }
+        if($fieldName == 'sp_av_adoption' )
+        {
+            $sp_type = "virus";
+            $check_type = "adoption";
+            if (!$rule->isSecurityRule() && !$rule->isDefaultSecurityRule())
+                return self::enclose('');
+
+            return self::display_SP_details_Y_N( $rule, $wrap, $sp_best_practice, $sp_visibility, $sp_adoption, $sp_type, $check_type);
         }
         if($fieldName == 'sp_as_bp' )
         {
@@ -717,7 +762,7 @@ class RuleCallContext extends CallContext
             if (!$rule->isSecurityRule() && !$rule->isDefaultSecurityRule())
                 return self::enclose('');
 
-            return self::display_SP_details_Y_N( $rule, $wrap, $sp_best_practice, $sp_visibility, $sp_type, $check_type);
+            return self::display_SP_details_Y_N( $rule, $wrap, $sp_best_practice, $sp_visibility, $sp_adoption, $sp_type, $check_type);
         }
         if($fieldName == 'sp_as_visible' )
         {
@@ -726,7 +771,16 @@ class RuleCallContext extends CallContext
             if (!$rule->isSecurityRule() && !$rule->isDefaultSecurityRule())
                 return self::enclose('');
 
-            return self::display_SP_details_Y_N( $rule, $wrap, $sp_best_practice, $sp_visibility, $sp_type, $check_type);
+            return self::display_SP_details_Y_N( $rule, $wrap, $sp_best_practice, $sp_visibility, $sp_adoption, $sp_type, $check_type);
+        }
+        if($fieldName == 'sp_as_adoption' )
+        {
+            $sp_type = "spyware";
+            $check_type = "adoption";
+            if (!$rule->isSecurityRule() && !$rule->isDefaultSecurityRule())
+                return self::enclose('');
+
+            return self::display_SP_details_Y_N( $rule, $wrap, $sp_best_practice, $sp_visibility, $sp_adoption, $sp_type, $check_type);
         }
         if($fieldName == 'sp_vp_bp' )
         {
@@ -735,7 +789,7 @@ class RuleCallContext extends CallContext
             if (!$rule->isSecurityRule() && !$rule->isDefaultSecurityRule())
                 return self::enclose('');
 
-            return self::display_SP_details_Y_N( $rule, $wrap, $sp_best_practice, $sp_visibility, $sp_type, $check_type);
+            return self::display_SP_details_Y_N( $rule, $wrap, $sp_best_practice, $sp_visibility, $sp_adoption, $sp_type, $check_type);
         }
         if($fieldName == 'sp_vp_visible' )
         {
@@ -744,7 +798,16 @@ class RuleCallContext extends CallContext
             if (!$rule->isSecurityRule() && !$rule->isDefaultSecurityRule())
                 return self::enclose('');
 
-            return self::display_SP_details_Y_N( $rule, $wrap, $sp_best_practice, $sp_visibility, $sp_type, $check_type);
+            return self::display_SP_details_Y_N( $rule, $wrap, $sp_best_practice, $sp_visibility, $sp_adoption, $sp_type, $check_type);
+        }
+        if($fieldName == 'sp_vp_adoption' )
+        {
+            $sp_type = "vulnerability";
+            $check_type = "adoption";
+            if (!$rule->isSecurityRule() && !$rule->isDefaultSecurityRule())
+                return self::enclose('');
+
+            return self::display_SP_details_Y_N( $rule, $wrap, $sp_best_practice, $sp_visibility, $sp_adoption, $sp_type, $check_type);
         }
         if($fieldName == 'sp_url_bp' )
         {
@@ -753,7 +816,7 @@ class RuleCallContext extends CallContext
             if (!$rule->isSecurityRule() && !$rule->isDefaultSecurityRule())
                 return self::enclose('');
 
-            return self::display_SP_details_Y_N( $rule, $wrap, $sp_best_practice, $sp_visibility, $sp_type, $check_type);
+            return self::display_SP_details_Y_N( $rule, $wrap, $sp_best_practice, $sp_visibility, $sp_adoption, $sp_type, $check_type);
         }
         if($fieldName == 'sp_url_visible' )
         {
@@ -762,7 +825,16 @@ class RuleCallContext extends CallContext
             if (!$rule->isSecurityRule() && !$rule->isDefaultSecurityRule())
                 return self::enclose('');
 
-            return self::display_SP_details_Y_N( $rule, $wrap, $sp_best_practice, $sp_visibility, $sp_type, $check_type);
+            return self::display_SP_details_Y_N( $rule, $wrap, $sp_best_practice, $sp_visibility, $sp_adoption, $sp_type, $check_type);
+        }
+        if($fieldName == 'sp_url_adoption' )
+        {
+            $sp_type = "url-filtering";
+            $check_type = "adoption";
+            if (!$rule->isSecurityRule() && !$rule->isDefaultSecurityRule())
+                return self::enclose('');
+
+            return self::display_SP_details_Y_N( $rule, $wrap, $sp_best_practice, $sp_visibility, $sp_adoption, $sp_type, $check_type);
         }
         if($fieldName == 'sp_file_bp' )
         {
@@ -771,7 +843,7 @@ class RuleCallContext extends CallContext
             if (!$rule->isSecurityRule() && !$rule->isDefaultSecurityRule())
                 return self::enclose('');
 
-            return self::display_SP_details_Y_N( $rule, $wrap, $sp_best_practice, $sp_visibility, $sp_type, $check_type);
+            return self::display_SP_details_Y_N( $rule, $wrap, $sp_best_practice, $sp_visibility, $sp_adoption, $sp_type, $check_type);
         }
         if($fieldName == 'sp_file_visible' )
         {
@@ -780,7 +852,16 @@ class RuleCallContext extends CallContext
             if (!$rule->isSecurityRule() && !$rule->isDefaultSecurityRule())
                 return self::enclose('');
 
-            return self::display_SP_details_Y_N( $rule, $wrap, $sp_best_practice, $sp_visibility, $sp_type, $check_type);
+            return self::display_SP_details_Y_N( $rule, $wrap, $sp_best_practice, $sp_visibility, $sp_adoption, $sp_type, $check_type);
+        }
+        if($fieldName == 'sp_file_adoption' )
+        {
+            $sp_type = "file-blocking";
+            $check_type = "adoption";
+            if (!$rule->isSecurityRule() && !$rule->isDefaultSecurityRule())
+                return self::enclose('');
+
+            return self::display_SP_details_Y_N( $rule, $wrap, $sp_best_practice, $sp_visibility, $sp_adoption, $sp_type, $check_type);
         }
         if($fieldName == 'sp_data_bp' )
         {
@@ -788,7 +869,7 @@ class RuleCallContext extends CallContext
             $check_type = "bp";
             if (!$rule->isSecurityRule() && !$rule->isDefaultSecurityRule())
                 return self::enclose('');
-            return self::display_SP_details_Y_N( $rule, $wrap, $sp_best_practice, $sp_visibility, $sp_type, $check_type);
+            return self::display_SP_details_Y_N( $rule, $wrap, $sp_best_practice, $sp_visibility, $sp_adoption, $sp_type, $check_type);
         }
         if($fieldName == 'sp_data_visible' )
         {
@@ -796,7 +877,15 @@ class RuleCallContext extends CallContext
             $check_type = "visible";
             if (!$rule->isSecurityRule() && !$rule->isDefaultSecurityRule())
                 return self::enclose('');
-            return self::display_SP_details_Y_N( $rule, $wrap, $sp_best_practice, $sp_visibility, $sp_type, $check_type);
+            return self::display_SP_details_Y_N( $rule, $wrap, $sp_best_practice, $sp_visibility, $sp_adoption, $sp_type, $check_type);
+        }
+        if($fieldName == 'sp_data_adoption' )
+        {
+            $sp_type = "data-filtering";
+            $check_type = "adoption";
+            if (!$rule->isSecurityRule() && !$rule->isDefaultSecurityRule())
+                return self::enclose('');
+            return self::display_SP_details_Y_N( $rule, $wrap, $sp_best_practice, $sp_visibility, $sp_adoption, $sp_type, $check_type);
         }
         if($fieldName == 'sp_wf_bp' )
         {
@@ -804,7 +893,7 @@ class RuleCallContext extends CallContext
             $check_type = "bp";
             if (!$rule->isSecurityRule() && !$rule->isDefaultSecurityRule())
                 return self::enclose('');
-            return self::display_SP_details_Y_N( $rule, $wrap, $sp_best_practice, $sp_visibility, $sp_type, $check_type);
+            return self::display_SP_details_Y_N( $rule, $wrap, $sp_best_practice, $sp_visibility, $sp_adoption, $sp_type, $check_type);
         }
         if($fieldName == 'sp_wf_visible' )
         {
@@ -812,7 +901,15 @@ class RuleCallContext extends CallContext
             $check_type = "visible";
             if (!$rule->isSecurityRule() && !$rule->isDefaultSecurityRule())
                 return self::enclose('');
-            return self::display_SP_details_Y_N( $rule, $wrap, $sp_best_practice, $sp_visibility, $sp_type, $check_type);
+            return self::display_SP_details_Y_N( $rule, $wrap, $sp_best_practice, $sp_visibility, $sp_adoption, $sp_type, $check_type);
+        }
+        if($fieldName == 'sp_wf_adoption' )
+        {
+            $sp_type = "wildfire-analysis";
+            $check_type = "adoption";
+            if (!$rule->isSecurityRule() && !$rule->isDefaultSecurityRule())
+                return self::enclose('');
+            return self::display_SP_details_Y_N( $rule, $wrap, $sp_best_practice, $sp_visibility, $sp_adoption, $sp_type, $check_type);
         }
         if( $fieldName == 'action' )
         {
@@ -1087,7 +1184,7 @@ class RuleCallContext extends CallContext
 
     }
 
-    public function display_SP_details( $rule, $wrap, $sp_best_practice, $sp_visibility, $bp_NOT_sign, $visibility_NOT_sign)
+    public function display_SP_details( $rule, $wrap, $sp_best_practice, $sp_visibility, $sp_adoption, $bp_NOT_sign, $visibility_NOT_sign, $adoption_NOT_sign)
     {
         $profiles = array();
 
@@ -1150,6 +1247,11 @@ class RuleCallContext extends CallContext
                             if( $sp_visibility )
                                 $bp_check .= $visibility_NOT_sign;
                         }
+                        if( !$profile->is_adoption() )
+                        {
+                            if( $sp_adoption )
+                                $bp_check .= $adoption_NOT_sign;
+                        }
                     }
                     $profiles[] = $profType . ':' . $profile->name().$bp_check;
                 }
@@ -1168,7 +1270,7 @@ class RuleCallContext extends CallContext
         return self::enclose($profiles, $wrap);
     }
 
-    public function display_SP_details_Y_N( $rule, $wrap, $sp_best_practice, $sp_visibility, $sp_Type, $checkType)
+    public function display_SP_details_Y_N( $rule, $wrap, $sp_best_practice, $sp_visibility, $sp_adoption, $sp_Type, $checkType)
     {
         $profiles = array();
 
@@ -1248,6 +1350,14 @@ class RuleCallContext extends CallContext
                         if( $sp_visibility && $checkType == "visible")
                         {
                             if( !$profile->is_visibility() )
+                                return self::enclose("N/A", $wrap);
+                            else
+                                return self::enclose($profile->name(), $wrap);
+                        }
+
+                        if( $sp_adoption && $checkType == "adoption")
+                        {
+                            if( !$profile->is_adoption() )
                                 return self::enclose("N/A", $wrap);
                             else
                                 return self::enclose($profile->name(), $wrap);
