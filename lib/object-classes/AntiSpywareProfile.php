@@ -708,7 +708,7 @@ class AntiSpywareProfile extends SecurityProfile2
 
         $check_array = $this->spyware_lists_bp_visibility_JSON( "bp", "spyware");
 
-        if( isset($this->additional['botnet-domain']) && isset($this->additional['botnet-domain']['lists']) )
+        if( isset($this->additional['botnet-domain']['lists']) )
         {
             foreach( $this->additional['botnet-domain']['lists'] as $name => $array)
             {
@@ -745,7 +745,7 @@ class AntiSpywareProfile extends SecurityProfile2
 
         $check_array = $this->spyware_lists_bp_visibility_JSON( "visibility", "spyware");
 
-        if( isset($this->additional['botnet-domain']) && isset($this->additional['botnet-domain']['lists']) )
+        if( isset($this->additional['botnet-domain']['lists']) )
         {
             foreach( $this->additional['botnet-domain']['lists'] as $name => $array)
             {
@@ -970,13 +970,16 @@ class AntiSpywareProfile extends SecurityProfile2
         if( $this->owner->owner->version >= 102 )
         {
             $bp_set = false;
-            foreach ($this->additional['botnet-domain']['dns-security-categories'] as $name => $value)
+            if( isset($this->additional['botnet-domain']['dns-security-categories']) )
             {
-                /** @var DNSPolicy $value */
-                if ($value->spyware_dns_security_rule_visibility())
-                    $bp_set = true;
-                else
-                    return false;
+                foreach ($this->additional['botnet-domain']['dns-security-categories'] as $name => $value)
+                {
+                    /** @var DNSPolicy $value */
+                    if ($value->spyware_dns_security_rule_visibility())
+                        $bp_set = true;
+                    else
+                        return false;
+                }
             }
             return $bp_set;
         }
