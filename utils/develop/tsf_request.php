@@ -80,6 +80,7 @@ if(  $util->pan->isPanorama() )
 
         PH::print_stdout( "--------------------------------------------------------------------------------" );
 
+
         try
         {
             #PH::resetCliArgs( $argv );
@@ -99,6 +100,7 @@ if(  $util->pan->isPanorama() )
             PH::print_stdout( $fw['serial'].",error,connection" );
             PH::print_stdout( "--------------------------------------------------------------------------------" );
         }
+        $util2->disableExceptionSupport();
     }
 }
 elseif( $util->pan->isFirewall() )

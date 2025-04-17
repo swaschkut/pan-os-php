@@ -657,7 +657,7 @@ catch(Exception $e)
         }
     }
 }
-
+$util->disableExceptionSupport();
 ##############################################
 
 print "\n\n\n";

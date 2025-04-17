@@ -9,6 +9,7 @@ UTIL:
 
 BUGFIX:
 * filters-Address.php for all kind of EDL objects
+* bugfix for type=iron-skillet | to also disable exception support
 
 GENERAL:
 

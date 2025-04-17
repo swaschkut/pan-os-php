@@ -351,10 +351,10 @@ class IRONSKILLET_UPDATE__
                     //catch exception
                 catch(Error $e)
                 {
-                    PH::disableExceptionSupport();
                     PH::print_stdout( " ***** an error occured : " . $e->getMessage() );
                     PH::print_stdout();
                 }
+                PH::disableExceptionSupport();
             }
         }
 
