@@ -1603,6 +1603,14 @@ SecurityProfileCallContext::$supportedActions[] = array(
                             $lines .= $context->encloseFunction($bp_text_no);
                     }
 
+                    if( $adoption )
+                    {
+                        if( $object->is_adoption() )
+                            $lines .= $context->encloseFunction($bp_text_yes.' Adoption URL set');
+                        else
+                            $lines .= $context->encloseFunction($bp_text_no.' NO Adoption URL set');
+                    }
+
                     if( $addURLmembers or ( !$bestPractice and !$visibility ) )
                     {
                         /**
@@ -1644,6 +1652,8 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         $lines .= $context->encloseFunction('---');
                         $lines .= $context->encloseFunction('---');
                     }
+                    if( $adoption )
+                        $lines .= $context->encloseFunction('---');
                     if( $addURLmembers or ( !$bestPractice and !$visibility ) )
                         $lines .= $context->encloseFunction('');
                 }
