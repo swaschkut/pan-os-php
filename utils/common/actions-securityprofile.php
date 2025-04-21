@@ -1112,6 +1112,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 }
                 else
                     $lines .= $context->encloseFunction('');
+
                 if( $bestPractice || $visibility)
                 {
                     if( get_class($object) == "AntiSpywareProfile" )
@@ -1380,6 +1381,13 @@ SecurityProfileCallContext::$supportedActions[] = array(
                             else
                                 $lines .= $context->encloseFunction($bp_text_no.' NO Visibility AS dns_list');
                         }
+                    }
+                    else
+                    {
+                        if( $bestPractice )
+                            $lines .= $context->encloseFunction('---');
+                        if( $visibility )
+                            $lines .= $context->encloseFunction('---');
                     }
                 }
                 //<th>DNS sinkhole</th>
