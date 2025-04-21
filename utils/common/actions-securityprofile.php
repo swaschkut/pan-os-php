@@ -2240,7 +2240,11 @@ SecurityProfileCallContext::$supportedActions['spyware.alert-only-set'] = array(
         $object = $context->object;
 
         if (get_class($object) !== "AntiSpywareProfile")
+        {
+            PH::print_stdout("skipped");
             return null;
+        }
+
 
         $tmp_mlav_engine = DH::findFirstElement('mica-engine-spyware-enabled', $object->xmlroot);
         if( $tmp_mlav_engine !== False )
@@ -2314,8 +2318,12 @@ SecurityProfileCallContext::$supportedActions['spyware.alert-only-set'] = array(
             }
         }
 
+        $sp_severity = array();
         foreach( $object->rules_obj as $rule )
         {
+            /** @var ThreatPolicySpyware $rule */
+            $sp_severity = array_merge( $sp_severity, $rule->severity());
+
             /** @var ThreatPolicy $rule */
             if( $rule->action() == "allow" )
             {
@@ -2335,6 +2343,26 @@ SecurityProfileCallContext::$supportedActions['spyware.alert-only-set'] = array(
                         $tmp->appendChild($xmlElement);
                     }
                 }
+            }
+        }
+        $sp_severity_default = array( "critical", "high", "medium", "low", "informational" );
+        $result = array_diff($sp_severity_default, $sp_severity);
+
+        if( !empty($result) )
+        {
+            foreach( $result as $rule )
+            {
+                $threadPolicy_obj = new ThreatPolicySpyware( $rule, $object);
+                $threadPolicy_obj->type = "ThreatPolicySpyware";
+
+                $threadPolicy_obj->action = "alert";
+
+                $object->rules_obj[] = $threadPolicy_obj;
+                $threadPolicy_obj->addReference( $object );
+
+                $object->owner->owner->ThreatPolicyStore->add($threadPolicy_obj);
+
+                $threadPolicy_obj->newThreatPolicyXML($object->xmlroot, $rule, $rule, "alert");
             }
         }
 
@@ -2615,10 +2643,12 @@ SecurityProfileCallContext::$supportedActions['vulnerability.alert-only-set'] = 
             }
         }
 
-
+        $sp_severity = array();
         foreach( $object->rules_obj as $rule )
         {
             /** @var ThreatPolicy $rule */
+            $sp_severity = array_merge( $sp_severity, $rule->severity());
+
             if( $rule->action() == "allow" )
             {
                 $rule->action = "alert";
@@ -2637,6 +2667,26 @@ SecurityProfileCallContext::$supportedActions['vulnerability.alert-only-set'] = 
                         $tmp->appendChild($xmlElement);
                     }
                 }
+            }
+        }
+        $sp_severity_default = array( "critical", "high", "medium", "low", "informational" );
+        $result = array_diff($sp_severity_default, $sp_severity);
+
+        if( !empty($result) )
+        {
+            foreach( $result as $rule )
+            {
+                $threadPolicy_obj = new ThreatPolicySpyware( $rule, $object);
+                $threadPolicy_obj->type = "ThreatPolicySpyware";
+
+                $threadPolicy_obj->action = "alert";
+
+                $object->rules_obj[] = $threadPolicy_obj;
+                $threadPolicy_obj->addReference( $object );
+
+                $object->owner->owner->ThreatPolicyStore->add($threadPolicy_obj);
+
+                $threadPolicy_obj->newThreatPolicyXML($object->xmlroot, $rule, $rule, "alert");
             }
         }
 
