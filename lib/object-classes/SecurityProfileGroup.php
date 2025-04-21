@@ -353,14 +353,17 @@ class SecurityProfileGroup
 
     public function setSecProf_AV($newAVprof)
     {
-        if( $newAVprof == "null" )
+        if( $newAVprof == null )
+        {
             unset($this->secprofiles['virus']);
+            unset($this->secprofProfiles_obj['virus']);
+        }
         else
         {
             $newAVproftxt = $newAVprof;
             $newAVprof = $this->owner->owner->AntiVirusProfileStore->find( $newAVproftxt );
-            if( $newAVprof !== "null" )
-                $this->secprofiles['virus'] = $newAVprof;
+            if( $newAVprof !== null )
+                $this->secprofProfiles_obj['virus'] = $newAVprof;
             else
                 $this->secprofiles['virus'] = $newAVproftxt;
         }
@@ -373,14 +376,17 @@ class SecurityProfileGroup
 
     public function setSecProf_Vuln($newAVprof)
     {
-        if( $newAVprof == "null" )
+        if( $newAVprof == null )
+        {
             unset($this->secprofiles['vulnerability']);
+            unset($this->secprofiles_obj['vulnerability']);
+        }
         else
         {
             $newAVproftxt = $newAVprof;
             $newAVprof = $this->owner->owner->VulnerabilityProfileStore->find( $newAVproftxt );
-            if( $newAVprof !== "null" )
-                $this->secprofiles['vulnerability'] = $newAVprof;
+            if( $newAVprof !== null )
+                $this->secprofiles_obj['vulnerability'] = $newAVprof;
             else
                 $this->secprofiles['vulnerability'] = $newAVproftxt;
         }
@@ -393,14 +399,17 @@ class SecurityProfileGroup
 
     public function setSecProf_URL($newAVprof)
     {
-        if( $newAVprof == "null" )
+        if( $newAVprof == null )
+        {
             unset($this->secprofiles['url-filtering']);
+            unset($this->secprofiles_obj['url-filtering']);
+        }
         else
         {
             $newAVproftxt = $newAVprof;
             $newAVprof = $this->owner->owner->URLProfileStore->find( $newAVproftxt );
-            if( $newAVprof !== "null" )
-                $this->secprofiles['url-filtering'] = $newAVprof;
+            if( $newAVprof !== null )
+                $this->secprofiles_obj['url-filtering'] = $newAVprof;
             else
                 $this->secprofiles['url-filtering'] = $newAVproftxt;
         }
@@ -413,15 +422,18 @@ class SecurityProfileGroup
 
     public function setSecProf_DataFilt($newAVprof)
     {
-        if( $newAVprof == "null" )
+        if( $newAVprof == null )
+        {
             unset($this->secprofiles['data-filtering']);
+            unset($this->secprofProfiles_obj['data-filtering']);
+        }
         else
         {
             $newAVproftxt = $newAVprof;
             #$newAVprof = $this->owner->owner->DataProfileStore->find( $newAVproftxt );
             $newAVprof = null;
-            if( $newAVprof !== "null" )
-                $this->secprofiles['data-filtering'] = $newAVprof;
+            if( $newAVprof !== null )
+                $this->secprofProfiles_obj['data-filtering'] = $newAVprof;
             else
                 $this->secprofiles['data-filtering'] = $newAVproftxt;
         }
@@ -434,14 +446,17 @@ class SecurityProfileGroup
 
     public function setSecProf_FileBlock($newAVprof)
     {
-        if( $newAVprof == "null" )
+        if( $newAVprof == null )
+        {
             unset($this->secprofiles['file-blocking']);
+            unset($this->secprofProfiles_obj['file-blocking']);
+        }
         else
         {
             $newAVproftxt = $newAVprof;
             $newAVprof = $this->owner->owner->FileBlockingProfileStore->find( $newAVproftxt );
-            if( $newAVprof !== "null" )
-                $this->secprofiles['file-blocking'] = $newAVprof;
+            if( $newAVprof !== null )
+                $this->secprofProfiles_obj['file-blocking'] = $newAVprof;
             else
                 $this->secprofiles['file-blocking'] = $newAVproftxt;
         }
@@ -454,14 +469,17 @@ class SecurityProfileGroup
 
     public function setSecProf_Spyware($newAVprof)
     {
-        if( $newAVprof == "null" )
+        if( $newAVprof == null )
+        {
             unset($this->secprofiles['spyware']);
+            unset($this->secprofProfiles_obj['spyware']);
+        }
         else
         {
             $newAVproftxt = $newAVprof;
             $newAVprof = $this->owner->owner->AntiSpywareProfileStore->find( $newAVproftxt );
-            if( $newAVprof !== "null" )
-                $this->secprofiles['spyware'] = $newAVprof;
+            if( $newAVprof !== null )
+                $this->secprofProfiles_obj['spyware'] = $newAVprof;
             else
                 $this->secprofiles['spyware'] = $newAVproftxt;
         }
@@ -475,14 +493,17 @@ class SecurityProfileGroup
     public function setSecProf_Wildfire($newAVprof)
     {
        
-        if( $newAVprof == "null" )
+        if( $newAVprof == null )
+        {
             unset($this->secprofiles['wildfire-analysis']);
+            unset($this->secprofProfiles_obj['wildfire-analysis']);
+        }
         else
         {
             $newAVproftxt = $newAVprof;
             $newAVprof = $this->owner->owner->WildfireProfileStore->find( $newAVproftxt );
-            if( $newAVprof !== "null" )
-                $this->secprofiles['wildfire-analysis'] = $newAVprof;
+            if( $newAVprof !== null )
+                $this->secprofProfiles_obj['wildfire-analysis'] = $newAVprof;
             else
                 $this->secprofiles['wildfire-analysis'] = $newAVproftxt;
         }
@@ -957,7 +978,7 @@ class SecurityProfileGroup
         if( $this->xmlroot !== null )
             DH::clearDomNodeChilds($this->xmlroot);
 
-        foreach( $this->secprofiles as $key => $secprof)
+        foreach( $this->secprofProfiles_obj as $key => $secprof)
         {
             if( $secprof != null )
             {
