@@ -1611,7 +1611,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                             $lines .= $context->encloseFunction($bp_text_no.' NO Adoption URL set');
                     }
 
-                    if( $addURLmembers or ( !$bestPractice and !$visibility ) )
+                    if( $addURLmembers or ( !$bestPractice and !$visibility and !$adoption ) )
                     {
                         /**
                          * @var $object URLProfile
