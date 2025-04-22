@@ -379,14 +379,14 @@ class SecurityProfileGroup
         if( $newAVprof == null )
         {
             unset($this->secprofiles['vulnerability']);
-            unset($this->secprofiles_obj['vulnerability']);
+            unset($this->secprofProfiles_obj['vulnerability']);
         }
         else
         {
             $newAVproftxt = $newAVprof;
             $newAVprof = $this->owner->owner->VulnerabilityProfileStore->find( $newAVproftxt );
             if( $newAVprof !== null )
-                $this->secprofiles_obj['vulnerability'] = $newAVprof;
+                $this->secprofProfiles_obj['vulnerability'] = $newAVprof;
             else
                 $this->secprofiles['vulnerability'] = $newAVproftxt;
         }
@@ -402,14 +402,14 @@ class SecurityProfileGroup
         if( $newAVprof == null )
         {
             unset($this->secprofiles['url-filtering']);
-            unset($this->secprofiles_obj['url-filtering']);
+            unset($this->secprofProfiles_obj['url-filtering']);
         }
         else
         {
             $newAVproftxt = $newAVprof;
             $newAVprof = $this->owner->owner->URLProfileStore->find( $newAVproftxt );
             if( $newAVprof !== null )
-                $this->secprofiles_obj['url-filtering'] = $newAVprof;
+                $this->secprofProfiles_obj['url-filtering'] = $newAVprof;
             else
                 $this->secprofiles['url-filtering'] = $newAVproftxt;
         }
