@@ -2108,6 +2108,7 @@ class PanoramaConf
             $stdoutarray['wf visibility percentage'] = floor(( $stdoutarray['wf visibility'] / $ruleForCalculation ) * 100 );
         else
             $stdoutarray['wf visibility percentage'] = 0;
+        //--
         $filter_array = array('query' => $generalFilter."(secprof has.from.query subquery1)", 'subquery1' => "wf is.best-practice" );
         $stdoutarray['wf best-practice'] = count( $sub_ruleStore->rules( $filter_array ) );
         $stdoutarray['wf best-practice calc'] = $stdoutarray['wf best-practice']."/".$ruleForCalculation;
@@ -2115,6 +2116,14 @@ class PanoramaConf
             $stdoutarray['wf best-practice percentage'] = floor( ( $stdoutarray['wf best-practice'] / $ruleForCalculation ) * 100 );
         else
             $stdoutarray['wf best-practice percentage'] = 0;
+        //--
+        $filter_array = array('query' => $generalFilter."(secprof has.from.query subquery1)", 'subquery1' => "wf is.adoption" );
+        $stdoutarray['wf adoption'] = count( $sub_ruleStore->rules( $filter_array ) );
+        $stdoutarray['wf adoption calc'] = $stdoutarray['wf adoption']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['wf adoption percentage'] = floor(( $stdoutarray['wf adoption'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['wf adoption percentage'] = 0;
 
         //Zone Protection
         $filter_array = array('query' => $generalFilter."!(from is.any) and (from all.has.from.query subquery1)", 'subquery1' => "zpp is.set" );
@@ -2156,6 +2165,7 @@ class PanoramaConf
             $stdoutarray['av visibility percentage'] = floor( ( $stdoutarray['av visibility'] / $ruleForCalculation ) * 100 );
         else
             $stdoutarray['av visibility percentage'] = 0;
+        //--
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "av is.best-practice" );
         $stdoutarray['av best-practice'] = count( $sub_ruleStore->rules( $filter_array ) );
         $stdoutarray['av best-practice calc'] = $stdoutarray['av best-practice']."/".$ruleForCalculation;
@@ -2163,6 +2173,14 @@ class PanoramaConf
             $stdoutarray['av best-practice percentage'] = floor( ( $stdoutarray['av best-practice'] / $ruleForCalculation ) * 100 );
         else
             $stdoutarray['av best-practice percentage'] = 0;
+        //--
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "av is.adoption" );
+        $stdoutarray['av adoption'] = count( $sub_ruleStore->rules( $filter_array ) );
+        $stdoutarray['av adoption calc'] = $stdoutarray['av adoption']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['av adoption percentage'] = floor( ( $stdoutarray['av adoption'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['av adoption percentage'] = 0;
 
         //Anti-Spyware Profiles
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "as is.visibility" );
@@ -2172,6 +2190,7 @@ class PanoramaConf
             $stdoutarray['as visibility percentage'] = floor( ( $stdoutarray['as visibility'] / $ruleForCalculation ) * 100 );
         else
             $stdoutarray['as visibility percentage'] = 0;
+        //--
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "as is.best-practice" );
         $stdoutarray['as best-practice'] = count( $sub_ruleStore->rules( $filter_array ) );
         $stdoutarray['as best-practice calc'] = $stdoutarray['as best-practice']."/".$ruleForCalculation;
@@ -2179,6 +2198,14 @@ class PanoramaConf
             $stdoutarray['as best-practice percentage'] = floor( ( $stdoutarray['as best-practice'] / $ruleForCalculation ) * 100 );
         else
             $stdoutarray['as best-practice percentage'] = 0;
+        //--
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "as is.adoption" );
+        $stdoutarray['as adoption'] = count( $sub_ruleStore->rules( $filter_array ) );
+        $stdoutarray['as adoption calc'] = $stdoutarray['as adoption']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['as adoption percentage'] = floor( ( $stdoutarray['as adoption'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['as adoption percentage'] = 0;
 
         //Vulnerability Profiles
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "vp is.visibility" );
@@ -2188,6 +2215,7 @@ class PanoramaConf
             $stdoutarray['vp visibility percentage'] = floor( ( $stdoutarray['vp visibility'] / $ruleForCalculation ) * 100 );
         else
             $stdoutarray['vp visibility percentage'] = 0;
+        //--
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "vp is.best-practice" );
         $stdoutarray['vp best-practice'] = count( $sub_ruleStore->rules( $filter_array ) );
         $stdoutarray['vp best-practice calc'] = $stdoutarray['vp best-practice']."/".$ruleForCalculation;
@@ -2195,6 +2223,14 @@ class PanoramaConf
             $stdoutarray['vp best-practice percentage'] = floor( ( $stdoutarray['vp best-practice'] / $ruleForCalculation ) * 100 );
         else
             $stdoutarray['vp best-practice percentage'] = 0;
+        //--
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "vp is.adoption" );
+        $stdoutarray['vp adoption'] = count( $sub_ruleStore->rules( $filter_array ) );
+        $stdoutarray['vp adoption calc'] = $stdoutarray['vp adoption']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['vp adoption percentage'] = floor( ( $stdoutarray['vp adoption'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['vp adoption percentage'] = 0;
 
         //File Blocking Profiles
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "fb is.visibility" );
@@ -2204,6 +2240,7 @@ class PanoramaConf
             $stdoutarray['fb visibility percentage'] = floor( ( $stdoutarray['fb visibility'] / $ruleForCalculation ) * 100 );
         else
             $stdoutarray['fb visibility percentage'] = 0;
+        //--
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "fb is.best-practice" );
         $stdoutarray['fb best-practice'] = count( $sub_ruleStore->rules( $filter_array ) );
         $stdoutarray['fb best-practice calc'] = $stdoutarray['fb best-practice']."/".$ruleForCalculation;
@@ -2211,6 +2248,14 @@ class PanoramaConf
             $stdoutarray['fb best-practice percentage'] = floor( ( $stdoutarray['fb best-practice'] / $ruleForCalculation ) * 100 );
         else
             $stdoutarray['fb best-practice percentage'] = 0;
+        //--
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "fb is.adoption" );
+        $stdoutarray['fb adoption'] = count( $sub_ruleStore->rules( $filter_array ) );
+        $stdoutarray['fb adoption calc'] = $stdoutarray['fb adoption']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['fb adoption percentage'] = floor( ( $stdoutarray['fb adoption'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['fb adoption percentage'] = 0;
 
         //Data Filtering
         $stdoutarray['data visibility'] = count( $sub_ruleStore->rules( $generalFilter_allow."(secprof data-profile.is.set)" ) );
@@ -2221,6 +2266,13 @@ class PanoramaConf
             $stdoutarray['data visibility percentage'] = 0;
 
         $stdoutarray['data best-practice'] = "NOT available";
+        //--
+        $stdoutarray['data adoption'] = count( $sub_ruleStore->rules( $generalFilter_allow."(secprof data-profile.is.set)" ) );
+        $stdoutarray['data adoption calc'] = $stdoutarray['data adoption']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['data adoption percentage'] = floor( ( $stdoutarray['data adoption'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['data adoption percentage'] = 0;
 
         //URL Filtering Profiles
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "url.site-access is.visibility" );
@@ -2230,6 +2282,7 @@ class PanoramaConf
             $stdoutarray['url-site-access visibility percentage'] = floor( ( $stdoutarray['url-site-access visibility'] / $ruleForCalculation ) * 100 );
         else
             $stdoutarray['url-site-access visibility percentage'] = 0;
+        //--
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "url.site-access is.best-practice" );
         $stdoutarray['url-site-access best-practice'] = count( $sub_ruleStore->rules( $filter_array ) );
         $stdoutarray['url-site-access best-practice calc'] = $stdoutarray['url-site-access best-practice']."/".$ruleForCalculation;
@@ -2237,6 +2290,14 @@ class PanoramaConf
             $stdoutarray['url-site-access best-practice percentage'] = floor( ( $stdoutarray['url-site-access best-practice'] / $ruleForCalculation ) * 100 );
         else
             $stdoutarray['url-site-access best-practice percentage'] = 0;
+        //--
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "url.site-access is.adoption" );
+        $stdoutarray['url-site-access adoption'] = count( $sub_ruleStore->rules( $filter_array ) );
+        $stdoutarray['url-site-access adoption calc'] = $stdoutarray['url-site-access adoption']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['url-site-access adoption percentage'] = floor( ( $stdoutarray['url-site-access adoption'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['url-site-access adoption percentage'] = 0;
 
         //Credential Theft Prevention
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "url.user-credential-detection is.visibility" );
@@ -2246,6 +2307,7 @@ class PanoramaConf
             $stdoutarray['url-credential visibility percentage'] = floor( ( $stdoutarray['url-credential visibility'] / $ruleForCalculation ) * 100 );
         else
             $stdoutarray['url-credential visibility percentage'] = 0;
+        //--
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "url.user-credential-detection is.best-practice" );
         $stdoutarray['url-credential best-practice'] = count( $sub_ruleStore->rules( $filter_array ) );
         $stdoutarray['url-credential best-practice calc'] = $stdoutarray['url-credential best-practice']."/".$ruleForCalculation;
@@ -2253,6 +2315,14 @@ class PanoramaConf
             $stdoutarray['url-credential best-practice percentage'] = floor( ( $stdoutarray['url-credential best-practice'] / $ruleForCalculation ) * 100 );
         else
             $stdoutarray['url-credential best-practice percentage'] = 0;
+        //--
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "url.user-credential-detection is.adoption" );
+        $stdoutarray['url-credential adoption'] = count( $sub_ruleStore->rules( $filter_array ) );
+        $stdoutarray['url-credential adoption calc'] = $stdoutarray['url-credential adoption']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['url-credential adoption percentage'] = floor( ( $stdoutarray['url-credential adoption'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['url-credential adoption percentage'] = 0;
 
         //DNS List
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "dns-list is.visibility" );
@@ -2262,6 +2332,7 @@ class PanoramaConf
             $stdoutarray['dns-list visibility percentage'] = floor( ( $stdoutarray['dns-list visibility'] / $ruleForCalculation ) * 100 );
         else
             $stdoutarray['dns-list visibility percentage'] = 0;
+        //--
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "dns-list is.best-practice" );
         $stdoutarray['dns-list best-practice'] = count( $sub_ruleStore->rules( $filter_array ) );
         $stdoutarray['dns-list best-practice calc'] = $stdoutarray['dns-list best-practice']."/".$ruleForCalculation;
@@ -2269,6 +2340,14 @@ class PanoramaConf
             $stdoutarray['dns-list best-practice percentage'] = floor( ( $stdoutarray['dns-list best-practice'] / $ruleForCalculation ) * 100 );
         else
             $stdoutarray['dns-list best-practice percentage'] = 0;
+        //--
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "dns-list is.adoption" );
+        $stdoutarray['dns-list adoption'] = count( $sub_ruleStore->rules( $filter_array ) );
+        $stdoutarray['dns-list adoption calc'] = $stdoutarray['dns-list adoption']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['dns-list adoption percentage'] = floor( ( $stdoutarray['dns-list adoption'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['dns-list adoption percentage'] = 0;
 
         //DNS Security
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "dns-security is.visibility" );
@@ -2278,6 +2357,7 @@ class PanoramaConf
             $stdoutarray['dns-security visibility percentage'] = floor( ( $stdoutarray['dns-security visibility'] / $ruleForCalculation ) * 100 );
         else
             $stdoutarray['dns-security visibility percentage'] = 0;
+        //--
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "dns-security is.best-practice" );
         $stdoutarray['dns-security best-practice'] = count( $sub_ruleStore->rules( $filter_array ) );
         $stdoutarray['dns-security best-practice calc'] = $stdoutarray['dns-security best-practice']."/".$ruleForCalculation;
@@ -2285,9 +2365,39 @@ class PanoramaConf
             $stdoutarray['dns-security best-practice percentage'] = floor( ( $stdoutarray['dns-security best-practice'] / $ruleForCalculation ) * 100 );
         else
             $stdoutarray['dns-security best-practice percentage'] = 0;
+        //--
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "dns-security is.adoption" );
+        $stdoutarray['dns-security adoption'] = count( $sub_ruleStore->rules( $filter_array ) );
+        $stdoutarray['dns-security adoption calc'] = $stdoutarray['dns-security adoption']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['dns-security adoption percentage'] = floor( ( $stdoutarray['dns-security adoption'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['dns-security adoption percentage'] = 0;
 
 
         $percentageArray = array();
+
+        $percentageArray_adoption = array();
+        $percentageArray_adoption['Logging'] = $stdoutarray['log at end percentage'];
+        $percentageArray_adoption['Log Forwarding Profiles'] = $stdoutarray['log prof set percentage'];
+        $percentageArray_adoption['Wildfire Analysis Profiles'] = $stdoutarray['wf visibility percentage'];
+        $percentageArray_adoption['Zone Protection'] = $stdoutarray['zone protection percentage'];
+        $percentageArray_adoption['App-ID'] = $stdoutarray['app id percentage'];
+        $percentageArray_adoption['User-ID'] = $stdoutarray['user id percentage'];
+        $percentageArray_adoption['Service/Port'] = $stdoutarray['service port percentage'];
+
+        $percentageArray_adoption['Antivirus Profiles'] = $stdoutarray['av adoption percentage'];
+        $percentageArray_adoption['Anti-Spyware Profiles'] = $stdoutarray['as adoption percentage'];
+        $percentageArray_adoption['Vulnerability Profiles'] = $stdoutarray['vp adoption percentage'];
+        $percentageArray_adoption['File Blocking Profiles'] = $stdoutarray['fb adoption percentage'];
+        $percentageArray_adoption['Data Filtering'] = $stdoutarray['data adoption percentage'];
+        $percentageArray_adoption['URL Filtering Profiles'] = $stdoutarray['url-site-access adoption percentage'];
+        $percentageArray_adoption['Credential Theft Prevention'] = $stdoutarray['url-credential adoption percentage'];
+        #$percentageArray_adoption['DNS List'] = $stdoutarray['dns-list adoption percentage'];
+        $percentageArray_adoption['DNS Security'] = $stdoutarray['dns-security adoption percentage'];
+
+        $percentageArray['adoption'] = $percentageArray_adoption;
+
         $percentageArray_visibility = array();
         $percentageArray_visibility['Logging'] = $stdoutarray['log at end percentage'];
         $percentageArray_visibility['Log Forwarding Profiles'] = $stdoutarray['log prof set percentage'];
@@ -2369,6 +2479,127 @@ class PanoramaConf
         }
 
         $percentageArray = array();
+
+        $percentageArray_adoption = array();
+
+        $ruleForCalculation = $stdoutarray['security rules allow enabled'];
+
+        $stdoutarray['log at end calc'] =  $stdoutarray['log at end'] ."/". $stdoutarray['security rules enabled'];
+        if( $stdoutarray['security rules enabled'] !== 0 )
+            $stdoutarray['log at end percentage'] = floor(( $stdoutarray['log at end'] / $stdoutarray['security rules enabled'] ) * 100 );
+        else
+            $stdoutarray['log at end percentage'] = 0;
+        $percentageArray_adoption['Logging'] = $stdoutarray['log at end percentage'];
+
+        $stdoutarray['log prof set calc'] =  $stdoutarray['log prof set'] ."/". $stdoutarray['security rules enabled'];
+        if( $stdoutarray['security rules enabled'] !== 0 )
+            $stdoutarray['log prof set percentage'] = floor(( $stdoutarray['log prof set'] / $stdoutarray['security rules enabled'] ) * 100 );
+        else
+            $stdoutarray['log prof set percentage'] = 0;
+        $percentageArray_adoption['Log Forwarding Profiles'] = $stdoutarray['log prof set percentage'];
+
+        $stdoutarray['wf adoption calc'] =  $stdoutarray['wf adoption'] ."/". $ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['wf adoption percentage'] = floor(( $stdoutarray['wf adoption'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['wf adoption percentage'] = 0;
+        $percentageArray_adoption['Wildfire Analysis Profiles'] = $stdoutarray['wf adoption percentage'];
+
+
+        $stdoutarray['zone protection calc'] =  $stdoutarray['zone protection'] ."/". $stdoutarray['security rules enabled'];
+        if( $stdoutarray['security rules enabled'] !== 0 )
+            $stdoutarray['zone protection percentage'] = floor(( $stdoutarray['zone protection'] / $stdoutarray['security rules enabled'] ) * 100 );
+        else
+            $stdoutarray['zone protection percentage'] = 0;
+        $percentageArray_adoption['Zone Protection'] = $stdoutarray['zone protection percentage'];
+
+        $stdoutarray['app id calc'] =  $stdoutarray['app id'] ."/". $ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['app id percentage'] = floor( ( $stdoutarray['app id'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['app id percentage'] = 0;
+        $percentageArray_adoption['App-ID'] = $stdoutarray['app id percentage'];
+
+        $stdoutarray['user id calc'] =  $stdoutarray['user id'] ."/". $ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['user id percentage'] = floor( ( $stdoutarray['user id'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['user id percentage'] = 0;
+        $percentageArray_adoption['User-ID'] = $stdoutarray['user id percentage'];
+
+        $stdoutarray['service port calc'] = $stdoutarray['service port'] ."/". $ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['service port percentage'] = floor( ( $stdoutarray['service port'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['service port percentage'] = 0;
+        $percentageArray_adoption['Service/Port'] = $stdoutarray['service port percentage'];
+
+        $stdoutarray['av adoption calc'] = $stdoutarray['av adoption'] ."/". $ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['av adoption percentage'] = floor( ( $stdoutarray['av adoption'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['av adoption percentage'] = 0;
+        $percentageArray_adoption['Antivirus Profiles'] = $stdoutarray['av adoption percentage'];
+
+        $stdoutarray['as adoption calc'] = $stdoutarray['as adoption'] . "/" . $ruleForCalculation ;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['as adoption percentage'] = floor( ( $stdoutarray['as adoption'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['as adoption percentage'] = 0;
+        $percentageArray_adoption['Anti-Spyware Profiles'] = $stdoutarray['as adoption percentage'];
+
+        $stdoutarray['vp adoption calc'] = $stdoutarray['vp adoption'] ."/". $ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['vp adoption percentage'] = floor( ( $stdoutarray['vp adoption'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['vp adoption percentage'] = 0;
+        $percentageArray_adoption['Vulnerability Profiles'] = $stdoutarray['vp adoption percentage'];
+
+        $stdoutarray['fb adoption calc'] = $stdoutarray['fb adoption' ]." / " . $ruleForCalculation ;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['fb adoption percentage'] = floor( ( $stdoutarray['fb adoption'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['fb adoption percentage'] = 0;
+        $percentageArray_adoption['File Blocking Profiles'] = $stdoutarray['fb adoption percentage'];
+
+        $stdoutarray['data adoption calc'] = $stdoutarray['data adoption'] ."/". $ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['data adoption percentage'] = floor( ( $stdoutarray['data adoption'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['data adoption percentage'] = 0;
+        $percentageArray_adoption['Data Filtering'] = $stdoutarray['data adoption percentage'];
+
+        $stdoutarray['url-site-access adoption calc'] = $stdoutarray['url-site-access adoption'] ."/". $ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['url-site-access adoption percentage'] = floor( ( $stdoutarray['url-site-access adoption'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['url-site-access adoption percentage'] = 0;
+        $percentageArray_adoption['URL Filtering Profiles'] = $stdoutarray['url-site-access adoption percentage'];
+
+        $stdoutarray['url-credential adoption calc'] =  $stdoutarray['url-credential visibility'] ."/". $ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['url-credential adoption percentage'] = floor( ( $stdoutarray['url-credential adoption'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['url-credential adoption percentage'] = 0;
+        $percentageArray_adoption['Credential Theft Prevention'] = $stdoutarray['url-credential adoption percentage'];
+
+        $stdoutarray['dns-list adoption calc'] = $stdoutarray['dns-list adoption'] ."/". $ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['dns-list adoption percentage'] = floor( ( $stdoutarray['dns-list adoption'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['dns-list adoption percentage'] = 0;
+        #$percentageArray_adoption['DNS List'] = $stdoutarray['dns-list adoption percentage'];
+
+        $stdoutarray['dns-security adoption calc'] =  $stdoutarray['dns-security adoption'] ."/". $ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['dns-security adoption percentage'] = floor( ( $stdoutarray['dns-security adoption'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['dns-security adoption percentage'] = 0;
+        $percentageArray_adoption['DNS Security'] = $stdoutarray['dns-security adoption percentage'];
+
+        $percentageArray['adoption'] = $percentageArray_adoption;
+
+//-------------
         $percentageArray_visibility = array();
 
         $ruleForCalculation = $stdoutarray['security rules allow enabled'];
@@ -2571,11 +2802,35 @@ class PanoramaConf
         $stdoutarray['percentage'] = $percentageArray;
 
 
+        $percentageArray_adoption = $stdoutarray['percentage']['adoption'];
         $percentageArray_visibility = $stdoutarray['percentage']['visibility'];
         $percentageArray_best_practice = $stdoutarray['percentage']['best-practice'];
 
         if( !PH::$shadow_json && $actions == "display")
         {
+            PH::print_stdout("adoption");
+            $tbl = new ConsoleTable();
+            $tbl->setHeaders(
+                array('Type', 'percentage', "%")
+            );
+            foreach( $percentageArray_adoption as $key => $value )
+            {
+                if( strpos($value, "---") !== False )
+                {
+                    $string = $value;
+                }
+                else
+                {
+                    $string = "";
+                    $test = floor( ($value/10) * 2 );
+                    $string = str_pad($string, $test, "*", STR_PAD_LEFT);
+                }
+                $tbl->addRow(array($key, $value, $string));
+            }
+
+            echo $tbl->getTable();
+
+
             PH::print_stdout("visibility");
             $tbl = new ConsoleTable();
             $tbl->setHeaders(
@@ -2634,11 +2889,35 @@ class PanoramaConf
         $header = "BP/Visibility Statistics for PanoramaConf '" . PH::boldText("shared") . "' | ";
         $stdoutarray['header'] = $header;
 
+        $percentageArray_adoption = $stdoutarray['percentage']['adoption'];
         $percentageArray_visibility = $stdoutarray['percentage']['visibility'];
         $percentageArray_best_practice = $stdoutarray['percentage']['best-practice'];
 
         if( !PH::$shadow_json && $actions == "display" )
         {
+            PH::print_stdout("adoption");
+            $tbl = new ConsoleTable();
+            $tbl->setHeaders(
+                array('Type', 'percentage', "%")
+            );
+            foreach( $percentageArray_adoption as $key => $value )
+            {
+                if( strpos($value, "---") !== False )
+                {
+                    $string = $value;
+                }
+                else
+                {
+                    $string = "";
+                    $test = floor( ($value/10) * 2 );
+                    $string = str_pad($string, $test, "*", STR_PAD_LEFT);
+                }
+                $tbl->addRow(array($key, $value, $string));
+            }
+
+            echo $tbl->getTable();
+
+
             PH::print_stdout("visibility");
             $tbl = new ConsoleTable();
             $tbl->setHeaders(
