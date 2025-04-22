@@ -691,7 +691,7 @@ var subjectObject =
             "netmask": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "!$object->isGroup() && !$object->isRegion() && $object->isType_ipNetmask() && $object->getNetworkMask() !operator! !value!",
+                        "eval": "!$object->isGroup() && !$object->isRegion() && !\\$object->isEDL() && $object->isType_ipNetmask() && $object->getNetworkMask() !operator! !value!",
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -1165,7 +1165,7 @@ var subjectObject =
             "tag.count": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "!$object->isRegion() && $object->tags->count() !operator! !value!",
+                        "eval": "!$object->isRegion() && !$object->isEDL() && $object->tags->count() !operator! !value!",
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% 1)",
@@ -1630,6 +1630,26 @@ var subjectObject =
                     "is.set": {
                         "Function": {},
                         "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "tunnelapp": {
+                "operators": {
+                    "is.set": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "has": {
+                        "Function": {},
+                        "arg": true,
                         "ci": {
                             "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
@@ -4318,9 +4338,10 @@ var subjectObject =
                             "ApplicationSeen",
                             "HitCount",
                             "BestPractice",
-                            "Visibility"
+                            "Visibility",
+                            "Adoption"
                         ],
-                        "help": "example: 'actions=exporttoexcel:file.html,HitCount|ApplicationSeen'\npipe(|) separated list of additional field to include in the report. The following is available:\n  - ResolveAddressSummary : fields with address objects will be resolved to IP addressed and summarized in a new column\n  - ResolveServiceSummary : fields with service objects will be resolved to their value and summarized in a new column\n  - ResolveServiceAppDefaultSummary : fields with application objects will be resolved to their service default value and summarized in a new column\n  - ResolveApplicationSummary : fields with application objects will be resolved to their category and risk\n  - ResolveScheduleSummary : fields with schedule objects will be resolved to their expire time\n  - ApplicationSeen : all App-ID seen on the Device SecurityRule will be listed\n  - HitCount : Rule - 'first-hit' - 'last-hit' - 'hit-count' - 'rule-creation will be listed\n  - BestPractice : show if BestPractice is configured\n"
+                        "help": "example: 'actions=exporttoexcel:file.html,HitCount|ApplicationSeen'\npipe(|) separated list of additional field to include in the report. The following is available:\n  - ResolveAddressSummary : fields with address objects will be resolved to IP addressed and summarized in a new column\n  - ResolveServiceSummary : fields with service objects will be resolved to their value and summarized in a new column\n  - ResolveServiceAppDefaultSummary : fields with application objects will be resolved to their service default value and summarized in a new column\n  - ResolveApplicationSummary : fields with application objects will be resolved to their category and risk\n  - ResolveScheduleSummary : fields with schedule objects will be resolved to their expire time\n  - ApplicationSeen : all App-ID seen on the Device SecurityRule will be listed\n  - HitCount : Rule - 'first-hit' - 'last-hit' - 'hit-count' - 'rule-creation will be listed\n  - BestPractice : show if BestPractice is configured\n  - Visibility : show if Visibility is configured\n  - Adoption : show if Adoption is configured\n"
                     }
                 }
             },
@@ -7488,9 +7509,10 @@ var subjectObject =
                             "TotalUse",
                             "BestPractice",
                             "Visibility",
+                            "Adoption",
                             "URLmembers"
                         ],
-                        "help": "pipe(|) separated list of additional fields (ie: Arg1|Arg2|Arg3...) to include in the report. The following is available:\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n  - WhereUsed : list places where object is used (rules, groups ...)\n  - TotalUse : list a counter how often this object is used\n  - BestPractice : show if BestPractice is configured\n  - Visibility : show if SP log is configured\n  - URLmembers : add URL members also if bestpractice or visibility is added\n"
+                        "help": "pipe(|) separated list of additional fields (ie: Arg1|Arg2|Arg3...) to include in the report. The following is available:\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n  - WhereUsed : list places where object is used (rules, groups ...)\n  - TotalUse : list a counter how often this object is used\n  - BestPractice : show if BestPractice is configured\n  - Visibility : show if SP log is configured\n  - Adoption : show if SP log is used\n  - URLmembers : add URL members also if bestpractice or visibility is added\n"
                     }
                 }
             },
@@ -7657,6 +7679,11 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=spyware' e.g. 'filter=(as is.visibility)'"
+                    },
+                    "is.adoption": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=spyware' e.g. 'filter=(as is.adoption)'"
                     }
                 }
             },
@@ -7698,7 +7725,12 @@ var subjectObject =
                     "is.visibility": {
                         "Function": {},
                         "arg": false,
-                        "help": "'securityprofiletype=virus' e.g. 'filter=(av is.best-practice)'"
+                        "help": "'securityprofiletype=virus' e.g. 'filter=(av is.vis)'"
+                    },
+                    "is.adoption": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=virus' e.g. 'filter=(av is.adoption)'"
                     }
                 }
             },
@@ -7819,6 +7851,11 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=spyware' e.g. 'filter=(dns-list is.visibility)'"
+                    },
+                    "is.adoption": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=spyware' e.g. 'filter=(dns-list is.adoption)'"
                     }
                 }
             },
@@ -7868,6 +7905,11 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=spyware' e.g. 'filter=(dns-security is.visibility)'"
+                    },
+                    "is.adoption": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=spyware' e.g. 'filter=(dns-security is.adoption)'"
                     }
                 }
             },
@@ -7942,6 +7984,11 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=file-blocking' e.g. 'filter=(fb is.visibility)'"
+                    },
+                    "is.adoption": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=file-blocking' e.g. 'filter=(fb is.adoption)'"
                     }
                 }
             },
@@ -8209,6 +8256,11 @@ var subjectObject =
                         "arg": false,
                         "help": "'securityprofiletype=url-filtering' e.g. 'filter=(url is.visibility)'"
                     },
+                    "is.adoption": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=url-filtering' e.g. 'filter=(url is.adoption)'"
+                    },
                     "is.best-practice": {
                         "Function": {},
                         "arg": false,
@@ -8222,6 +8274,11 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=url-filtering' e.g. 'filter=(url.site-access is.visibility)'"
+                    },
+                    "is.adoption": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=url-filtering' e.g. 'filter=(url.site-access is.adoption)'"
                     },
                     "is.best-practice": {
                         "Function": {},
@@ -8258,6 +8315,11 @@ var subjectObject =
                         "arg": false,
                         "help": "'securityprofiletype=url-filtering' e.g. 'filter=(url.user-credential-detection is.visibility)'"
                     },
+                    "is.adoption": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=url-filtering' e.g. 'filter=(url.user-credential-detection is.adoption)'"
+                    },
                     "is.best-practice": {
                         "Function": {},
                         "arg": false,
@@ -8281,6 +8343,11 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=vulnerability' e.g. 'filter=(vb is.visibility)'"
+                    },
+                    "is.adoption": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=vulnerability' e.g. 'filter=(vb is.adoption)'"
                     }
                 }
             },
@@ -8323,6 +8390,11 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=wildfire-analysis' e.g. 'filter=(wf is.visibility)'"
+                    },
+                    "is.adoption": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=wildfire-analysis' e.g. 'filter=(wf is.adoption)'"
                     }
                 }
             },
@@ -8372,9 +8444,10 @@ var subjectObject =
                             "UsedInLocation",
                             "TotalUse",
                             "BestPractice",
-                            "Visibility"
+                            "Visibility",
+                            "Adoption"
                         ],
-                        "help": "pipe(|) separated list of additional field to include in the report. The following is available:\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n  - WhereUsed : list places where object is used (rules, groups ...)\n  - TotalUse : list a counter how often this object is used\n  - BestPractice : show if BestPractice is configured\n  - Visibility : show if SP log is configured\n"
+                        "help": "pipe(|) separated list of additional field to include in the report. The following is available:\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n  - WhereUsed : list places where object is used (rules, groups ...)\n  - TotalUse : list a counter how often this object is used\n  - BestPractice : show if BestPractice is configured\n  - Visibility : show if SP log is configured\n  - Adoption : show if SP log is used\n"
                     }
                 }
             },
@@ -8528,6 +8601,14 @@ var subjectObject =
                         }
                     },
                     "is.visibility": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.adoption": {
                         "Function": {},
                         "arg": false,
                         "ci": {
@@ -8902,7 +8983,7 @@ var subjectObject =
                     "stringFormula": {
                         "type": "string",
                         "default": "*nodefault*",
-                        "help": "This string is used to compose a name. You can use the following aliases :\n  - $$current.name$$ : current name of the object\n  - $$destinationport$$ : destination Port\n  - $$protocol$$ : service protocol\n  - $$sourceport$$ : source Port\n  - $$value$$ : value of the object\n  - $$timeout$$ : timeout value of the object\n"
+                        "help": "This string is used to compose a name. You can use the following aliases :\n  - $$current.name$$ : current name of the object\n  - $$destinationport$$ : destination Port\n  - $$protocol$$ : service protocol\n  - $$sourceport$$ : source Port\n  - $$timeout$$ : timeout value of the object\n"
                     }
                 },
                 "help": ""

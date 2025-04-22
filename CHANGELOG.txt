@@ -6,6 +6,7 @@ UTIL:
 * type=xml-issue | extend with secRule source-user check and fix
 * type=securityprofile/securityprofilegroup | actions=exporttoexcel:file.html,adoption | extend with argument adoption
 * type=rule actions=exporttoexcel:file.html,adoption | extend with adoption
+* type=stats | extend VirtualSystem and DeviceGroup with adoption feature - missing part full Firewall and Panorama
 
 BUGFIX:
 * filters-Address.php for all kind of EDL objects

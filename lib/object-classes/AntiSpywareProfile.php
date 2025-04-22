@@ -783,6 +783,13 @@ class AntiSpywareProfile extends SecurityProfile2
         return FALSE;
     }
 
+    public function spyware_dnslist_adoption()
+    {
+        if ($this->secprof_type != 'spyware')
+            return null;
+
+        return TRUE;
+    }
     public function spyware_rules_best_practice()
     {
         $bp_set = null;
@@ -982,6 +989,15 @@ class AntiSpywareProfile extends SecurityProfile2
                 }
             }
             return $bp_set;
+        }
+        return null;
+    }
+
+    public function spyware_dns_security_adoption()
+    {
+        if( $this->owner->owner->version >= 102 )
+        {
+            return TRUE;
         }
         return null;
     }

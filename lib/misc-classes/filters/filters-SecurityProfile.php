@@ -965,7 +965,20 @@ RQuery::$defaultFilters['securityprofile']['av']['operators']['is.visibility'] =
         return $object->is_visibility();
     },
     'arg' => false,
-    'help' => "'securityprofiletype=virus' e.g. 'filter=(av is.best-practice)'"
+    'help' => "'securityprofiletype=virus' e.g. 'filter=(av is.vis)'"
+);
+RQuery::$defaultFilters['securityprofile']['av']['operators']['is.adoption'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var AntiVirusProfile $object */
+        $object = $context->object;
+
+        if( $object->secprof_type != 'virus' )
+            return null;
+
+        return $object->is_adoption();
+    },
+    'arg' => false,
+    'help' => "'securityprofiletype=virus' e.g. 'filter=(av is.adoption)'"
 );
 RQuery::$defaultFilters['securityprofile']['as.mica-engine']['operators']['is.best-practice'] = array(
     'Function' => function (SecurityProfileRQueryContext $context) {
@@ -1045,6 +1058,19 @@ RQuery::$defaultFilters['securityprofile']['as']['operators']['is.visibility'] =
     'arg' => false,
     'help' => "'securityprofiletype=spyware' e.g. 'filter=(as is.visibility)'"
 );
+RQuery::$defaultFilters['securityprofile']['as']['operators']['is.adoption'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var AntiSpywareProfile $object */
+        $object = $context->object;
+
+        if( $object->secprof_type != 'spyware' )
+            return null;
+
+        return $object->is_adoption();
+    },
+    'arg' => false,
+    'help' => "'securityprofiletype=spyware' e.g. 'filter=(as is.adoption)'"
+);
 RQuery::$defaultFilters['securityprofile']['vp.mica-engine']['operators']['is.best-practice'] = array(
     'Function' => function (SecurityProfileRQueryContext $context) {
         /** @var VulnerabilityProfile $object */
@@ -1123,6 +1149,19 @@ RQuery::$defaultFilters['securityprofile']['vp']['operators']['is.visibility'] =
     'arg' => false,
     'help' => "'securityprofiletype=vulnerability' e.g. 'filter=(vb is.visibility)'"
 );
+RQuery::$defaultFilters['securityprofile']['vp']['operators']['is.adoption'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var VulnerabilityProfile $object */
+        $object = $context->object;
+
+        if( $object->secprof_type != 'vulnerability' )
+            return null;
+
+        return $object->is_adoption();
+    },
+    'arg' => false,
+    'help' => "'securityprofiletype=vulnerability' e.g. 'filter=(vb is.adoption)'"
+);
 RQuery::$defaultFilters['securityprofile']['dns-list.action']['operators']['has'] = array(
     'Function' => function (SecurityProfileRQueryContext $context) {
         /** @var AntiSpywareProfile $object */
@@ -1180,6 +1219,19 @@ RQuery::$defaultFilters['securityprofile']['dns-list']['operators']['is.visibili
     },
     'arg' => false,
     'help' => "'securityprofiletype=spyware' e.g. 'filter=(dns-list is.visibility)'"
+);
+RQuery::$defaultFilters['securityprofile']['dns-list']['operators']['is.adoption'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var AntiSpywareProfile $object */
+        $object = $context->object;
+
+        if( $object->secprof_type != 'spyware' )
+            return null;
+
+        return $object->spyware_dnslist_adoption();
+    },
+    'arg' => false,
+    'help' => "'securityprofiletype=spyware' e.g. 'filter=(dns-list is.adoption)'"
 );
 RQuery::$defaultFilters['securityprofile']['dns-list.packet-capture']['operators']['has'] = array(
     'Function' => function (SecurityProfileRQueryContext $context) {
@@ -1303,6 +1355,19 @@ RQuery::$defaultFilters['securityprofile']['dns-security']['operators']['is.visi
     },
     'arg' => false,
     'help' => "'securityprofiletype=spyware' e.g. 'filter=(dns-security is.visibility)'"
+);
+RQuery::$defaultFilters['securityprofile']['dns-security']['operators']['is.adoption'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var AntiSpywareProfile $object */
+        $object = $context->object;
+
+        if( $object->secprof_type != 'spyware' )
+            return null;
+
+        return $object->spyware_dns_security_adoption();
+    },
+    'arg' => false,
+    'help' => "'securityprofiletype=spyware' e.g. 'filter=(dns-security is.adoption)'"
 );
 
 RQuery::$defaultFilters['securityprofile']['threat-rule']['operators']['has.from.query'] = array(
@@ -1434,7 +1499,19 @@ RQuery::$defaultFilters['securityprofile']['wf']['operators']['is.visibility'] =
     'arg' => false,
     'help' => "'securityprofiletype=wildfire-analysis' e.g. 'filter=(wf is.visibility)'"
 );
+RQuery::$defaultFilters['securityprofile']['wf']['operators']['is.adoption'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var WildfireProfile $object */
+        $object = $context->object;
 
+        if( $object->secprof_type != 'wildfire' )
+            return null;
+
+        return $object->is_adoption();
+    },
+    'arg' => false,
+    'help' => "'securityprofiletype=wildfire-analysis' e.g. 'filter=(wf is.adoption)'"
+);
 
 RQuery::$defaultFilters['securityprofile']['fb.rules']['operators']['is.best-practice'] = array(
     'Function' => function (SecurityProfileRQueryContext $context) {
@@ -1488,6 +1565,19 @@ RQuery::$defaultFilters['securityprofile']['fb']['operators']['is.visibility'] =
     'arg' => false,
     'help' => "'securityprofiletype=file-blocking' e.g. 'filter=(fb is.visibility)'"
 );
+RQuery::$defaultFilters['securityprofile']['fb']['operators']['is.adoption'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var FileBlockingProfile $object */
+        $object = $context->object;
+
+        if( $object->secprof_type != 'file-blocking' )
+            return null;
+
+        return $object->is_adoption();
+    },
+    'arg' => false,
+    'help' => "'securityprofiletype=file-blocking' e.g. 'filter=(fb is.adoption)'"
+);
 RQuery::$defaultFilters['securityprofile']['url']['operators']['is.visibility'] = array(
     'Function' => function (SecurityProfileRQueryContext $context) {
         /** @var URLProfile $object */
@@ -1500,6 +1590,19 @@ RQuery::$defaultFilters['securityprofile']['url']['operators']['is.visibility'] 
     },
     'arg' => false,
     'help' => "'securityprofiletype=url-filtering' e.g. 'filter=(url is.visibility)'"
+);
+RQuery::$defaultFilters['securityprofile']['url']['operators']['is.adoption'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var URLProfile $object */
+        $object = $context->object;
+
+        if( $object->secprof_type != 'url-filtering' )
+            return null;
+
+        return $object->is_adoption();
+    },
+    'arg' => false,
+    'help' => "'securityprofiletype=url-filtering' e.g. 'filter=(url is.adoption)'"
 );
 RQuery::$defaultFilters['securityprofile']['url']['operators']['is.best-practice'] = array(
     'Function' => function (SecurityProfileRQueryContext $context) {
@@ -1526,6 +1629,19 @@ RQuery::$defaultFilters['securityprofile']['url.user-credential-detection']['ope
     },
     'arg' => false,
     'help' => "'securityprofiletype=url-filtering' e.g. 'filter=(url.user-credential-detection is.visibility)'"
+);
+RQuery::$defaultFilters['securityprofile']['url.user-credential-detection']['operators']['is.adoption'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var URLProfile $object */
+        $object = $context->object;
+
+        if( $object->secprof_type != 'url-filtering' )
+            return null;
+
+        return $object->credential_is_adoption();
+    },
+    'arg' => false,
+    'help' => "'securityprofiletype=url-filtering' e.g. 'filter=(url.user-credential-detection is.adoption)'"
 );
 RQuery::$defaultFilters['securityprofile']['url.user-credential-detection']['operators']['is.best-practice'] = array(
     'Function' => function (SecurityProfileRQueryContext $context) {
@@ -1565,6 +1681,19 @@ RQuery::$defaultFilters['securityprofile']['url.site-access']['operators']['is.v
     },
     'arg' => false,
     'help' => "'securityprofiletype=url-filtering' e.g. 'filter=(url.site-access is.visibility)'"
+);
+RQuery::$defaultFilters['securityprofile']['url.site-access']['operators']['is.adoption'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var URLProfile $object */
+        $object = $context->object;
+
+        if( $object->secprof_type != 'url-filtering' )
+            return null;
+
+        return $object->site_access_is_adoption();
+    },
+    'arg' => false,
+    'help' => "'securityprofiletype=url-filtering' e.g. 'filter=(url.site-access is.adoption)'"
 );
 RQuery::$defaultFilters['securityprofile']['url.site-access']['operators']['is.best-practice'] = array(
     'Function' => function (SecurityProfileRQueryContext $context) {
