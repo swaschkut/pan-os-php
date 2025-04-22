@@ -164,4 +164,4 @@ fig.update_layout(
 fig.write_image("radial_adoption_chart.png", width=1000, height=1000)
 
 # Vorschau
-fig.show()
+#fig.show()

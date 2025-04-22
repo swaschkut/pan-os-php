@@ -52,7 +52,7 @@ class STATSUTIL extends RULEUTIL
 
         if( isset(PH::$args['actions']) )
         {
-            print "ACTIONS: ".PH::$args['actions']."\n";
+            PH::print_stdout( "ACTIONS: ".PH::$args['actions'] );
             $actions = PH::$args['actions'];
         }
         else
