@@ -290,6 +290,12 @@ class ThreatPolicy
 
         $tmp_packet_capture = DH::findFirstElementOrCreate('packet-capture', $tmp_entry);
         $tmp_packet_capture->textContent = "disable";
+
+        if( $this->type == "ThreatPolicyVulnerability" )
+        {
+            $tmp_cve = DH::findFirstElementOrCreate('cve', $tmp_entry);
+            $tmp_cve->textContent = "any";
+        }
     }
 }
 

@@ -2864,19 +2864,61 @@ RuleCallContext::$supportedActions[] = array(
         $ret = TRUE;
 
         if( $type == 'virus' )
-            $ret = $rule->setSecProf_AV($profName);
+        {
+            $profName_obj = $rule->owner->owner->AntiVirusProfileStore->find($profName);
+            if( $profName_obj !== null )
+                $ret = $rule->setSecProf_AV($profName_obj);
+            else
+                $ret = $rule->setSecProf_AV($profName);
+        }
         elseif( $type == 'vulnerability' )
-            $ret = $rule->setSecProf_Vuln($profName);
+        {
+            $profName_obj = $rule->owner->owner->VulnerabilityProfileStore->find($profName);
+            if( $profName_obj !== null )
+                $ret = $rule->setSecProf_Vuln($profName_obj);
+            else
+                $ret = $rule->setSecProf_Vuln($profName);
+        }
         elseif( $type == 'url-filtering' )
-            $ret = $rule->setSecProf_URL($profName);
+        {
+            $profName_obj = $rule->owner->owner->URLProfileStore->find($profName);
+            if( $profName_obj !== null )
+                $ret = $rule->setSecProf_URL($profName_obj);
+            else
+                $ret = $rule->setSecProf_URL($profName);
+        }
         elseif( $type == 'data-filtering' )
-            $ret = $rule->setSecProf_DataFilt($profName);
+        {
+            $profName_obj = $rule->owner->owner->DataObjectsProfileStore->find($profName);
+            if( $profName_obj !== null )
+                $ret = $rule->setSecProf_DataFilt($profName_obj);
+            else
+                $ret = $rule->setSecProf_DataFilt($profName);
+        }
         elseif( $type == 'file-blocking' )
-            $ret = $rule->setSecProf_FileBlock($profName);
+        {
+            $profName_obj = $rule->owner->owner->FileBlockingProfileStore->find($profName);
+            if( $profName_obj !== null )
+                $ret = $rule->setSecProf_FileBlock($profName_obj);
+            else
+                $ret = $rule->setSecProf_FileBlock($profName);
+        }
         elseif( $type == 'spyware' )
-            $ret = $rule->setSecProf_Spyware($profName);
+        {
+            $profName_obj = $rule->owner->owner->AntiSpywareProfileStore->find($profName);
+            if( $profName_obj !== null )
+                $ret = $rule->setSecProf_Spyware($profName_obj);
+            else
+                $ret = $rule->setSecProf_Spyware($profName);
+        }
         elseif( $type == 'wildfire' )
-            $ret = $rule->setSecProf_Wildfire($profName);
+        {
+            $profName_obj = $rule->owner->owner->WildfireProfileStore->find($profName);
+            if( $profName_obj !== null )
+                $ret = $rule->setSecProf_Wildfire($profName_obj);
+            else
+                $ret = $rule->setSecProf_Wildfire($profName);
+        }
         else
             derr("unsupported profile type '{$type}'");
 
@@ -2916,7 +2958,7 @@ RuleCallContext::$supportedActions[] = array(
         }
 
         $ret = TRUE;
-        $profName = "null";
+        $profName = null;
 
         if( $type == "any" )
         {

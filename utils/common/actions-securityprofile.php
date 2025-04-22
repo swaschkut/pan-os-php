@@ -2345,24 +2345,31 @@ SecurityProfileCallContext::$supportedActions['spyware.alert-only-set'] = array(
                 }
             }
         }
-        $sp_severity_default = array( "critical", "high", "medium", "low", "informational" );
+        $sp_severity_default = array( "any", "critical", "high", "medium", "low", "informational" );
         $result = array_diff($sp_severity_default, $sp_severity);
 
         if( !empty($result) )
         {
-            foreach( $result as $rule )
+            if( in_array("any", $result) )
             {
-                $threadPolicy_obj = new ThreatPolicySpyware( $rule, $object);
-                $threadPolicy_obj->type = "ThreatPolicySpyware";
+                foreach( $result as $rule )
+                {
+                    if( $rule == "any" )
+                        continue;
 
-                $threadPolicy_obj->action = "alert";
 
-                $object->rules_obj[] = $threadPolicy_obj;
-                $threadPolicy_obj->addReference( $object );
+                    $threadPolicy_obj = new ThreatPolicySpyware( $rule, $object);
+                    $threadPolicy_obj->type = "ThreatPolicySpyware";
 
-                $object->owner->owner->ThreatPolicyStore->add($threadPolicy_obj);
+                    $threadPolicy_obj->action = "alert";
 
-                $threadPolicy_obj->newThreatPolicyXML($object->xmlroot, $rule, $rule, "alert");
+                    $object->rules_obj[] = $threadPolicy_obj;
+                    $threadPolicy_obj->addReference( $object );
+
+                    $object->owner->owner->ThreatPolicyStore->add($threadPolicy_obj);
+
+                    $threadPolicy_obj->newThreatPolicyXML($object->xmlroot, $rule, $rule, "alert");
+                }
             }
         }
 
@@ -2669,24 +2676,30 @@ SecurityProfileCallContext::$supportedActions['vulnerability.alert-only-set'] = 
                 }
             }
         }
-        $sp_severity_default = array( "critical", "high", "medium", "low", "informational" );
+        $sp_severity_default = array( "any", "critical", "high", "medium", "low", "informational" );
         $result = array_diff($sp_severity_default, $sp_severity);
 
         if( !empty($result) )
         {
-            foreach( $result as $rule )
+            if( in_array("any", $result) )
             {
-                $threadPolicy_obj = new ThreatPolicySpyware( $rule, $object);
-                $threadPolicy_obj->type = "ThreatPolicySpyware";
+                foreach ($result as $rule)
+                {
+                    if ($rule == "any")
+                        continue;
 
-                $threadPolicy_obj->action = "alert";
+                    $threadPolicy_obj = new ThreatPolicyVulnerability($rule, $object);
+                    $threadPolicy_obj->type = "ThreatPolicyVulnerability";
 
-                $object->rules_obj[] = $threadPolicy_obj;
-                $threadPolicy_obj->addReference( $object );
+                    $threadPolicy_obj->action = "alert";
 
-                $object->owner->owner->ThreatPolicyStore->add($threadPolicy_obj);
+                    $object->rules_obj[] = $threadPolicy_obj;
+                    $threadPolicy_obj->addReference($object);
 
-                $threadPolicy_obj->newThreatPolicyXML($object->xmlroot, $rule, $rule, "alert");
+                    $object->owner->owner->ThreatPolicyStore->add($threadPolicy_obj);
+
+                    $threadPolicy_obj->newThreatPolicyXML($object->xmlroot, $rule, $rule, "alert");
+                }
             }
         }
 

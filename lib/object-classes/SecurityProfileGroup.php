@@ -994,6 +994,7 @@ class SecurityProfileGroup
                 }
                 else
                 {
+                    mwarning("SecurityProfileGroup contains a string in a variable which should be an object");
                     $tmp = $this->owner->xmlroot->ownerDocument->createTextNode( $secprof );
                 }
 
