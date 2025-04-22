@@ -34,6 +34,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt update --fix-missing \
     python3-xlsxwriter \
     python3-netaddr \
     python3-requests \
+    python3-plotly \
 	jq
 
 WORKDIR /tools/pan-os-php
