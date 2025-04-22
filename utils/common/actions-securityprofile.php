@@ -2361,14 +2361,17 @@ SecurityProfileCallContext::$supportedActions['spyware.alert-only-set'] = array(
                     $threadPolicy_obj = new ThreatPolicySpyware( $rule, $object);
                     $threadPolicy_obj->type = "ThreatPolicySpyware";
 
-                    $threadPolicy_obj->action = "alert";
+                    if( $rule == "critical" || $rule == "high" || $rule == "medium" )
+                        $threadPolicy_obj->action = "alert";
+                    elseif( $rule == "low" || $rule == "informational" )
+                        $threadPolicy_obj->action = "default";
 
                     $object->rules_obj[] = $threadPolicy_obj;
                     $threadPolicy_obj->addReference( $object );
 
                     $object->owner->owner->ThreatPolicyStore->add($threadPolicy_obj);
 
-                    $threadPolicy_obj->newThreatPolicyXML($object->xmlroot, $rule, $rule, "alert");
+                    $threadPolicy_obj->newThreatPolicyXML($object->xmlroot, $rule, $rule, $threadPolicy_obj->action);
                 }
             }
         }
@@ -2691,14 +2694,17 @@ SecurityProfileCallContext::$supportedActions['vulnerability.alert-only-set'] = 
                     $threadPolicy_obj = new ThreatPolicyVulnerability($rule, $object);
                     $threadPolicy_obj->type = "ThreatPolicyVulnerability";
 
-                    $threadPolicy_obj->action = "alert";
+                    if( $rule == "critical" || $rule == "high" || $rule == "medium" )
+                        $threadPolicy_obj->action = "alert";
+                    elseif( $rule == "low" || $rule == "informational" )
+                        $threadPolicy_obj->action = "default";
 
                     $object->rules_obj[] = $threadPolicy_obj;
                     $threadPolicy_obj->addReference($object);
 
                     $object->owner->owner->ThreatPolicyStore->add($threadPolicy_obj);
 
-                    $threadPolicy_obj->newThreatPolicyXML($object->xmlroot, $rule, $rule, "alert");
+                    $threadPolicy_obj->newThreatPolicyXML($object->xmlroot, $rule, $rule, $threadPolicy_obj->action);
                 }
             }
         }
