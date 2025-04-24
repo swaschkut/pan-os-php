@@ -249,6 +249,8 @@ class PH
     public static $loadStartTime;
     public static $loadStartMem;
 
+    public static $loadArrayMem = array( "0", "b");
+
     static public function decrypt($ciphertext, $key)
     {
         $c = base64_decode($ciphertext);
@@ -740,10 +742,11 @@ class PH
         $loadEndTime = microtime(TRUE);
         $loadEndMem = memory_get_usage(TRUE);
         $loadElapsedTime = number_format(($loadEndTime - PH::$loadStartTime), 2, '.', '');
-        #$loadUsedMem = convert($loadEndMem - PH::$loadStartMem, PH::$loadArrayMem);
+        $loadUsedMem = convert($loadEndMem - PH::$loadStartMem, PH::$loadArrayMem);
 
         PH::print_stdout( "debugLoadTime - start ". $type);
         PH::print_stdout( "runtime: ".$loadElapsedTime );
+        PH::print_stdout( "memory allocated: ".$loadUsedMem );
     }
 
     static public function ACTIONstatus( $context, $status, $string )
