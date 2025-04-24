@@ -1405,6 +1405,42 @@ RQuery::$defaultFilters['address']['refstore']['operators']['is.zonestore'] = ar
         'input' => 'input/panorama-8.0.xml'
     )
 );
+RQuery::$defaultFilters['address']['refstore']['operators']['all.interfacestore'] = array(
+    'Function' => function (AddressRQueryContext $context) {
+        #$value = $context->value;
+        #$value = strtolower($value);
+        $value = "tunnelifstore";
+        $array_value[] = $value;
+        $value = "vlanifstore";
+        $array_value[] = $value;
+        $value = "loopbackifstore";
+        $array_value[] = $value;
+        $value = "gretunnelstore";
+        $array_value[] = $value;
+        $value = "ethernetifstore";
+        $array_value[] = $value;
+        $value = "tunnelifstore";
+
+        $context->object->ReferencesStoreValidation($value);
+
+        $refstore = $context->object->getReferencesStore();
+
+        foreach( $array_value as $value )
+        {
+            if( array_key_exists($value, $refstore) )
+                return TRUE;
+        }
+
+
+        return FALSE;
+
+    },
+    'arg' => false,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
 RQuery::$defaultFilters['address']['reftype']['operators']['is'] = array(
     'Function' => function (AddressRQueryContext $context) {
         $value = $context->value;
