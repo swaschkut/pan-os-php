@@ -39,6 +39,8 @@ class MERGER extends UTIL
     public $exportcsvFile = null;
     public $exportcsvSkippedFile = null;
 
+    public bool $allowMergingObjectWith_m32 = true;
+
     public function utilStart()
     {
         $this->usageMsg = PH::boldText('USAGE: ') . "php " . basename(__FILE__) . " in=inputfile.xml [out=outputfile.xml] location=shared [DupAlgorithm=XYZ] [MergeCountLimit=100] ['pickFilter=(name regex /^H-/)'] ...";
@@ -1625,7 +1627,7 @@ class MERGER extends UTIL
                             /** @var Address $pickedObject */
                             if( (!$obj->isType_FQDN() && !$pickedObject->isType_FQDN()) && $obj->getNetworkMask() == '32' && $pickedObject->getNetworkMask() == '32' )
                             {
-                                if( ($obj->getNetworkMask() == $pickedObject->getNetworkMask()) && $obj->getNetworkValue() == $pickedObject->getNetworkValue() )
+                                if( $this->allowMergingObjectWith_m32 && ($obj->getNetworkValue() == $pickedObject->getNetworkValue()) )
                                     $exit = FALSE;
                                 else
                                 {
@@ -1647,7 +1649,7 @@ class MERGER extends UTIL
                                 {
                                     if( (!$tmp_obj->isType_FQDN() && !$pickedObject->isType_FQDN()) && $tmp_obj->getNetworkMask() == '32' && $pickedObject->getNetworkMask() == '32' )
                                     {
-                                        if( ($tmp_obj->getNetworkMask() == $pickedObject->getNetworkMask()) && $tmp_obj->getNetworkValue() == $pickedObject->getNetworkValue() )
+                                        if(  $this->allowMergingObjectWith_m32 && ($tmp_obj->getNetworkValue() == $pickedObject->getNetworkValue()) )
                                             $exit = FALSE;
                                         else
                                         {
@@ -2031,7 +2033,16 @@ class MERGER extends UTIL
                             $skippedOBJ = $overridenOBJ;
                             break;
                         }
-                        if ($overridenOBJ->value() !== $object->value())
+                        if( $this->allowMergingObjectWith_m32 && ($overridenOBJ->getNetworkMask() == '32' && $object->getNetworkMask() == '32') )
+                        {
+                            if( $overridenOBJ->getNetworkValue() !== $object->getNetworkValue())
+                            {
+                                $skip3 = TRUE;
+                                $skippedOBJ = $overridenOBJ;
+                                break;
+                            }
+                        }
+                        elseif ($overridenOBJ->value() !== $object->value())
                         {
                             $skip3 = TRUE;
                             $skippedOBJ = $overridenOBJ;
@@ -2066,7 +2077,7 @@ class MERGER extends UTIL
                 }
                 if ($skip3)
                 {
-                    PH::print_stdout("    - SKIP: object name '{$object->_PANC_shortName()}' as one ancestor has same name, but different value");
+                    PH::print_stdout("    - SKIP3: object name '{$object->_PANC_shortName()}' as one ancestor has same name, but different value");
                     $this->skippedObject($index, $object, $skippedOBJ, " ancestor has same name, but different value");
                     return FALSE;//continue
                 }
