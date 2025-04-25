@@ -2861,13 +2861,14 @@ DeviceCallContext::$commonActionFunctions['zpp-create'] = array(
         if( $context->first )
         {
             $pathString = dirname(__FILE__) . "/../../iron-skillet";
-            $zpp_bp_xmlstring = file_get_contents($pathString . "/panos_v10.0/templates/panorama/snippets/zone_protection_profile.xml");
-            if( $context->util->pan->version >= 100 )
-            {
-                $f = DeviceCallContext::$commonActionFunctions['sp_spg-create']['function_panVersion'];
-                $panVersion = $f($context);
+
+            $f = DeviceCallContext::$commonActionFunctions['sp_spg-create']['function_panVersion'];
+            $panVersion = $f($context);
+
+            if( $context->object->owner->version < 100 )
+                $zpp_bp_xmlstring = file_get_contents($pathString . "/panos_v10.0/templates/panorama/snippets/zone_protection_profile.xml");
+            elseif( $context->util->pan->version >= 100 )
                 $zpp_bp_xmlstring = file_get_contents($pathString . "/panos_v" . $panVersion . "/templates/panorama/snippets/zone_protection_profile.xml");
-            }
 
             if( $classtype == "VirtualSystem" || $classtype == "Template" )
             {

@@ -458,3 +458,85 @@ InterfaceCallContext::$supportedActions['custom-manipulation'] = array(
         }
     }
 );
+
+InterfaceCallContext::$supportedActions['replace_IPv4_objects_by_value'] = Array(
+    'name' => 'replace_IPv4_objects_by_value',
+    'MainFunction' => function ( InterfaceCallContext $context )
+    {
+        /** @var EthernetInterface|VlanInterface|TunnelInterface|LoopbackInterface $object */
+        $object = $context->object;
+
+        PH::print_stdout( "type: ".$object->type() );
+
+        if( $object->type == "layer3" )
+        {
+            foreach( $object->getLayer3IPv4Addresses() as $ip_address )
+            {
+                PH::print_stdout( "    - ".htmlspecialchars_decode($ip_address) );
+                if( strpos( $ip_address, "/" ) === FALSE )
+                {
+                    PH::print_stdout( "object name ".$ip_address." must be found and replace by value" );
+                }
+                else
+                {
+                    //valid IPv4 Interface address - nothing to replace
+                }
+            }
+        }
+        elseif( $object->type == "tunnel" || $object->type == "loopback" || $object->type == "vlan"  )
+        {
+            foreach( $object->getIPv4Addresses() as $ip_address )
+            {
+                PH::print_stdout( "    - ".htmlspecialchars_decode($ip_address) );
+                if( strpos( $ip_address, "/" ) === FALSE )
+                {
+                    #$object->removeIPv4Address($ip_address);
+                    PH::print_stdout( "object name ".$ip_address." must be found and replace by value" );
+                }
+                else
+                {
+                    //valid IPv4 Interface address - nothing to replace
+                }
+            }
+        }
+    }
+);
+
+InterfaceCallContext::$supportedActions['replace_IPv6_objects_by_value'] = Array(
+    'name' => 'replace_IPv4_objects_by_value',
+    'MainFunction' => function ( InterfaceCallContext $context )
+    {
+        /** @var EthernetInterface|VlanInterface|TunnelInterface|LoopbackInterface $object */
+        $object = $context->object;
+
+
+        if( $object->type == "layer3" )
+        {
+            foreach( $object->getLayer3IPv6Addresses() as $ip_address )
+            {
+                if( strpos( $ip_address, ":" ) !== false )
+                {
+                    PH::$JSON_TMP['sub']['object'][$object->name()][$object->type]['ipaddress'][] = $ip_address;
+                }
+                else
+                {
+                    PH::$JSON_TMP['sub']['object'][$object->name()][$object->type]['ipaddress'][] = $ip_address;
+                }
+            }
+        }
+        elseif( $object->type == "tunnel" || $object->type == "loopback" || $object->type == "vlan"  )
+        {
+            foreach( $object->getIPv6Addresses() as $ip_address )
+            {
+                if( strpos( $ip_address, ":" ) !== false )
+                {
+                    PH::$JSON_TMP['sub']['object'][$object->name()][$object->type]['ipaddress'][] = $ip_address;
+                }
+                else
+                {
+                    PH::$JSON_TMP['sub']['object'][$object->name()][$object->type]['ipaddress'][] = $ip_address;
+                }
+            }
+        }
+    }
+);

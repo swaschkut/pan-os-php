@@ -278,6 +278,13 @@ class FileBlockingProfile extends SecurityProfile2
             return FALSE;
     }
 
+    public function is_adoption()
+    {
+        if( count($this->rules_obj) > 0 )
+            return true;
+        else
+            return false;
+    }
 
     static $templatexml = '<entry name="**temporarynamechangeme**"></entry>';
 

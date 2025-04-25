@@ -34,7 +34,11 @@ RUN DEBIAN_FRONTEND=noninteractive apt update --fix-missing \
     python3-xlsxwriter \
     python3-netaddr \
     python3-requests \
+    python3-plotly \
+    python3-pip \
 	jq
+
+RUN pip3 install kaleido
 
 WORKDIR /tools/pan-os-php
 

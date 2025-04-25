@@ -269,6 +269,34 @@ class ThreatPolicy
         }
         PH::print_stdout( $string );
     }
+
+    public function newThreatPolicyXML( $xmlroot, $name, $severity, $action )
+    {
+        $tmp_rules_xmlroot = DH::findFirstElement('rules', $xmlroot);
+        $tmp_entry = DH::findFirstElementByNameAttrOrCreate("entry", $name, $tmp_rules_xmlroot, $xmlroot->ownerDocument);
+
+        $tmp_severity = DH::findFirstElementOrCreate('severity', $tmp_entry);
+        $tmp_severity_member = DH::findFirstElementOrCreate('member', $tmp_severity);
+        $tmp_severity_member->textContent = $severity;
+
+        $tmp_action = DH::findFirstElementOrCreate('action', $tmp_entry);
+        $tmp_action_node = DH::findFirstElementOrCreate($action, $tmp_action);
+
+        $tmp_threat_name = DH::findFirstElementOrCreate('threat-name', $tmp_entry);
+        $tmp_threat_name->textContent = "any";
+
+        $tmp_category = DH::findFirstElementOrCreate('category', $tmp_entry);
+        $tmp_category->textContent = "any";
+
+        $tmp_packet_capture = DH::findFirstElementOrCreate('packet-capture', $tmp_entry);
+        $tmp_packet_capture->textContent = "disable";
+
+        if( $this->type == "ThreatPolicyVulnerability" )
+        {
+            $tmp_cve = DH::findFirstElementOrCreate('cve', $tmp_entry);
+            $tmp_cve->textContent = "any";
+        }
+    }
 }
 
 

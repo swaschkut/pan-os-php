@@ -391,6 +391,7 @@ class DefaultSecurityRule extends Rule
         $this->secproftype = 'none';
         $this->secprofgroup = null;
         $this->secprofProfiles = array();
+        $this->secprofProfiles_obj = array();
 
         $this->rewriteSecProfXML();
 
@@ -419,6 +420,7 @@ class DefaultSecurityRule extends Rule
         $this->secproftype = 'group';
         $this->secprofgroup = $newgroup;
         $this->secprofProfiles = array();
+        $this->secprofProfiles_obj = array();
 
         $this->rewriteSecProfXML();
 
@@ -568,7 +570,7 @@ class DefaultSecurityRule extends Rule
             $tmp = $this->secprofroot->ownerDocument->createElement('profiles');
             $tmp = $this->secprofroot->appendChild($tmp);
 
-            foreach( $this->secprofProfiles as $index => $value )
+            foreach( $this->secprofProfiles_obj as $index => $value )
             {
                 $type = $tmp->appendChild($this->secprofroot->ownerDocument->createElement($index));
                 $ntmp = $type->appendChild($this->secprofroot->ownerDocument->createElement('member'));

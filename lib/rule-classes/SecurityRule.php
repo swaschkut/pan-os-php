@@ -620,6 +620,7 @@ class SecurityRule extends RuleWithUserID
         $this->secproftype = 'none';
         $this->secprofgroup = null;
         $this->secprofProfiles = array();
+        $this->secprofProfiles_obj = array();
 
         $this->rewriteSecProfXML();
 
@@ -648,6 +649,7 @@ class SecurityRule extends RuleWithUserID
         $this->secproftype = 'group';
         $this->secprofgroup = $newgroup;
         $this->secprofProfiles = array();
+        $this->secprofProfiles_obj = array();
 
         $this->rewriteSecProfXML();
 
@@ -675,7 +677,7 @@ class SecurityRule extends RuleWithUserID
     {
         $this->secproftype = 'profile';
         $this->secprofgroup = null;
-        if( $newAVprof == "null" )
+        if( $newAVprof == null )
             unset($this->secprofProfiles_obj['virus']);
         else
             $this->secprofProfiles_obj['virus'] = $newAVprof;
@@ -689,7 +691,7 @@ class SecurityRule extends RuleWithUserID
     {
         $this->secproftype = 'profile';
         $this->secprofgroup = null;
-        if( $newAVprof == "null" )
+        if( $newAVprof == null )
             unset($this->secprofProfiles_obj['vulnerability']);
         else
             $this->secprofProfiles_obj['vulnerability'] = $newAVprof;
@@ -703,7 +705,7 @@ class SecurityRule extends RuleWithUserID
     {
         $this->secproftype = 'profile';
         $this->secprofgroup = null;
-        if( $newAVprof == "null" )
+        if( $newAVprof == null )
             unset($this->secprofProfiles_obj['url-filtering']);
         else
             $this->secprofProfiles_obj['url-filtering'] = $newAVprof;
@@ -717,7 +719,7 @@ class SecurityRule extends RuleWithUserID
     {
         $this->secproftype = 'profile';
         $this->secprofgroup = null;
-        if( $newAVprof == "null" )
+        if( $newAVprof == null )
             unset($this->secprofProfiles_obj['data-filtering']);
         else
             $this->secprofProfiles_obj['data-filtering'] = $newAVprof;
@@ -732,7 +734,7 @@ class SecurityRule extends RuleWithUserID
         $this->secproftype = 'profile';
         $this->secprofgroup = null;
 
-        if( $newAVprof == "null" )
+        if( $newAVprof == null )
             unset($this->secprofProfiles_obj['file-blocking']);
         else
             $this->secprofProfiles_obj['file-blocking'] = $newAVprof;
@@ -746,7 +748,7 @@ class SecurityRule extends RuleWithUserID
     {
         $this->secproftype = 'profile';
         $this->secprofgroup = null;
-        if( $newAVprof == "null" )
+        if( $newAVprof == null )
             unset($this->secprofProfiles_obj['spyware']);
         else
             $this->secprofProfiles_obj['spyware'] = $newAVprof;
@@ -760,7 +762,7 @@ class SecurityRule extends RuleWithUserID
     {
         $this->secproftype = 'profile';
         $this->secprofgroup = null;
-        if( $newAVprof == "null" )
+        if( $newAVprof == null )
             unset($this->secprofProfiles_obj['wildfire-analysis']);
         else
             $this->secprofProfiles_obj['wildfire-analysis'] = $newAVprof;
@@ -797,11 +799,20 @@ class SecurityRule extends RuleWithUserID
             $tmp = $this->secprofroot->ownerDocument->createElement('profiles');
             $tmp = $this->secprofroot->appendChild($tmp);
 
-            foreach( $this->secprofProfiles as $index => $value )
+            foreach( $this->secprofProfiles_obj as $index => $value )
             {
                 $type = $tmp->appendChild($this->secprofroot->ownerDocument->createElement($index));
                 $ntmp = $type->appendChild($this->secprofroot->ownerDocument->createElement('member'));
-                $ntmp->appendChild($this->secprofroot->ownerDocument->createTextNode($value));
+                //todo: 20250422 why are there still object names available as string
+                if( is_object($value) )
+                {
+                    $ntmp->appendChild($this->secprofroot->ownerDocument->createTextNode($value->name()));
+                }
+                else
+                {
+                    mwarning("SecurityRule SecurityProfileGroup contains a string in a variable which should be an object");
+                    $ntmp->appendChild($this->secprofroot->ownerDocument->createTextNode($value));
+                }
             }
         }
         elseif( $this->secproftype == 'none' )

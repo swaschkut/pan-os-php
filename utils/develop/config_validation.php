@@ -55,7 +55,7 @@ catch(Exception $e)
     PH::print_stdout("          ***** API Error occured : ".$e->getMessage() );
     exit();
 }
-
+$util->disableExceptionSupport();
 
 
 #if( $util->pan->isFirewall() )
@@ -154,6 +154,7 @@ if( $cycleConnectedFirewalls && $util->pan->isPanorama() )
             PH::print_stdout( $fw['serial'].",error,connection" );
             PH::print_stdout( "--------------------------------------------------------------------------------" );
         }
+        $util2->disableExceptionSupport();
     }
 }
 elseif( $util->pan->isFirewall() )

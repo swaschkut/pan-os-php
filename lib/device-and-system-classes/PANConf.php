@@ -1163,6 +1163,127 @@ class PANConf
         }
 
         $percentageArray = array();
+
+        $percentageArray_visibility = array();
+
+        $ruleForCalculation = $stdoutarray['security rules allow enabled'];
+
+        $stdoutarray['log at end calc'] =  $stdoutarray['log at end'] ."/". $stdoutarray['security rules enabled'];
+        if( $stdoutarray['security rules enabled'] !== 0 )
+            $stdoutarray['log at end percentage'] = floor(( $stdoutarray['log at end'] / $stdoutarray['security rules enabled'] ) * 100 );
+        else
+            $stdoutarray['log at end percentage'] = 0;
+        $percentageArray_adoption['Logging'] = $stdoutarray['log at end percentage'];
+
+        $stdoutarray['log prof set calc'] =  $stdoutarray['log prof set'] ."/". $stdoutarray['security rules enabled'];
+        if( $stdoutarray['security rules enabled'] !== 0 )
+            $stdoutarray['log prof set percentage'] = floor(( $stdoutarray['log prof set'] / $stdoutarray['security rules enabled'] ) * 100 );
+        else
+            $stdoutarray['log prof set percentage'] = 0;
+        $percentageArray_adoption['Log Forwarding Profiles'] = $stdoutarray['log prof set percentage'];
+
+        $stdoutarray['wf adoption calc'] =  $stdoutarray['wf adoption'] ."/". $ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['wf adoption percentage'] = floor(( $stdoutarray['wf adoption'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['wf adoption percentage'] = 0;
+        $percentageArray_adoption['Wildfire Analysis Profiles'] = $stdoutarray['wf adoption percentage'];
+
+
+        $stdoutarray['zone protection calc'] =  $stdoutarray['zone protection'] ."/". $stdoutarray['security rules enabled'];
+        if( $stdoutarray['security rules enabled'] !== 0 )
+            $stdoutarray['zone protection percentage'] = floor(( $stdoutarray['zone protection'] / $stdoutarray['security rules enabled'] ) * 100 );
+        else
+            $stdoutarray['zone protection percentage'] = 0;
+        $percentageArray_adoption['Zone Protection'] = $stdoutarray['zone protection percentage'];
+
+        $stdoutarray['app id calc'] =  $stdoutarray['app id'] ."/". $ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['app id percentage'] = floor( ( $stdoutarray['app id'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['app id percentage'] = 0;
+        $percentageArray_adoption['App-ID'] = $stdoutarray['app id percentage'];
+
+        $stdoutarray['user id calc'] =  $stdoutarray['user id'] ."/". $ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['user id percentage'] = floor( ( $stdoutarray['user id'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['user id percentage'] = 0;
+        $percentageArray_adoption['User-ID'] = $stdoutarray['user id percentage'];
+
+        $stdoutarray['service port calc'] = $stdoutarray['service port'] ."/". $ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['service port percentage'] = floor( ( $stdoutarray['service port'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['service port percentage'] = 0;
+        $percentageArray_adoption['Service/Port'] = $stdoutarray['service port percentage'];
+
+        $stdoutarray['av adoption calc'] = $stdoutarray['av adoption'] ."/". $ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['av adoption percentage'] = floor( ( $stdoutarray['av adoption'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['av adoption percentage'] = 0;
+        $percentageArray_adoption['Antivirus Profiles'] = $stdoutarray['av adoption percentage'];
+
+        $stdoutarray['as adoption calc'] = $stdoutarray['as adoption'] . "/" . $ruleForCalculation ;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['as adoption percentage'] = floor( ( $stdoutarray['as adoption'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['as adoption percentage'] = 0;
+        $percentageArray_adoption['Anti-Spyware Profiles'] = $stdoutarray['as adoption percentage'];
+
+        $stdoutarray['vp adoption calc'] = $stdoutarray['vp adoption'] ."/". $ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['vp adoption percentage'] = floor( ( $stdoutarray['vp adoption'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['vp adoption percentage'] = 0;
+        $percentageArray_adoption['Vulnerability Profiles'] = $stdoutarray['vp adoption percentage'];
+
+        $stdoutarray['fb adoption calc'] = $stdoutarray['fb adoption' ]." / " . $ruleForCalculation ;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['fb adoption percentage'] = floor( ( $stdoutarray['fb adoption'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['fb adoption percentage'] = 0;
+        $percentageArray_adoption['File Blocking Profiles'] = $stdoutarray['fb adoption percentage'];
+
+        $stdoutarray['data adoption calc'] = $stdoutarray['data adoption'] ."/". $ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['data adoption percentage'] = floor( ( $stdoutarray['data adoption'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['data adoption percentage'] = 0;
+        $percentageArray_adoption['Data Filtering'] = $stdoutarray['data adoption percentage'];
+
+        $stdoutarray['url-site-access adoption calc'] = $stdoutarray['url-site-access adoption'] ."/". $ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['url-site-access adoption percentage'] = floor( ( $stdoutarray['url-site-access adoption'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['url-site-access adoption percentage'] = 0;
+        $percentageArray_adoption['URL Filtering Profiles'] = $stdoutarray['url-site-access adoption percentage'];
+
+        $stdoutarray['url-credential adoption calc'] =  $stdoutarray['url-credential adoption'] ."/". $ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['url-credential adoption percentage'] = floor( ( $stdoutarray['url-credential adoption'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['url-credential adoption percentage'] = 0;
+        $percentageArray_adoption['Credential Theft Prevention'] = $stdoutarray['url-credential adoption percentage'];
+
+        $stdoutarray['dns-list adoption calc'] = $stdoutarray['dns-list adoption'] ."/". $ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['dns-list adoption percentage'] = floor( ( $stdoutarray['dns-list adoption'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['dns-list adoption percentage'] = 0;
+        #$percentageArray_adoption['DNS List'] = $stdoutarray['dns-list adoption percentage'];
+
+        $stdoutarray['dns-security adoption calc'] =  $stdoutarray['dns-security adoption'] ."/". $ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['dns-security adoption percentage'] = floor( ( $stdoutarray['dns-security adoption'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['dns-security adoption percentage'] = 0;
+        $percentageArray_adoption['DNS Security'] = $stdoutarray['dns-security adoption percentage'];
+
+        $percentageArray['adoption'] = $percentageArray_adoption;
+
+        //----------
         $percentageArray_visibility = array();
 
         $ruleForCalculation = $stdoutarray['security rules allow enabled'];
@@ -1366,11 +1487,36 @@ class PANConf
 
 
 
+        $percentageArray_adoption = $stdoutarray['percentage']['adoption'];
         $percentageArray_visibility = $stdoutarray['percentage']['visibility'];
         $percentageArray_best_practice = $stdoutarray['percentage']['best-practice'];
 
         if( !PH::$shadow_json && $actions == "display")
         {
+
+            PH::print_stdout("adoption");
+            $tbl = new ConsoleTable();
+            $tbl->setHeaders(
+                array('Type', 'percentage', "%")
+            );
+            foreach( $percentageArray_adoption as $key => $value )
+            {
+                if( strpos($value, "---") !== False )
+                {
+                    $string = $value;
+                }
+                else
+                {
+                    $string = "";
+                    $test = floor( ($value/10) * 2 );
+                    $string = str_pad($string, $test, "*", STR_PAD_LEFT);
+                }
+                $tbl->addRow(array($key, $value, $string));
+            }
+
+            echo $tbl->getTable();
+
+
             PH::print_stdout("visibility");
             $tbl = new ConsoleTable();
             $tbl->setHeaders(

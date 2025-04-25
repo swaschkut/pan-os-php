@@ -841,6 +841,12 @@ class URLProfile extends SecurityProfile2
         else
             return FALSE;
     }
+
+    public function is_adoption()
+    {
+        return true;
+    }
+
     public function site_access_is_best_practice()
     {
         if( $this->url_siteaccess_best_practice() )
@@ -856,6 +862,12 @@ class URLProfile extends SecurityProfile2
         else
             return FALSE;
     }
+
+    public function site_access_is_adoption()
+    {
+        return TRUE;
+    }
+
     public function credential_is_best_practice()
     {
         if( $this->url_usercredentialsubmission_best_practice()
@@ -874,6 +886,11 @@ class URLProfile extends SecurityProfile2
             return TRUE;
         else
             return FALSE;
+    }
+
+    public function credential_is_adoption()
+    {
+        return TRUE;
     }
 
     static $templatexml = '<entry name="**temporarynamechangeme**"></entry>';

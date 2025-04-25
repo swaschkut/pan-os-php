@@ -26,7 +26,29 @@
 //https://www.sonicwall.com/support/knowledge-base/how-to-get-the-configurations-of-the-firewall-based-on-the-exporting-exp-file/170503330364045/
 
 //base64 -d -i SonicWall-TZ_400-6_2_3_0-10n.exp | sed 's/&/\n/g' > config.txt
-//cat NA-sonicwall-NSa_2650-6_5_5_1-6n-1739377515.exp | base64 -d | sed 's/&/\n/g'
+//cat NA-sonicwall-NSa_2650-6_5_5_1-6n-1739377515.exp | base64 -d | sed 's/&/\n/g' | tee config.txt
+
+//schedObj
+//sched_
+//zoneObj
+//addrObj
+//addro_
+//svcObj
+//so_
+//userObj
+//uo_
+//bwObj
+//cfs
+//lldpProf
+//dns
+//dhcp
+//ldap
+//ipsec
+//policy
+//iface
+//eth
+//linkAggr
+
 
 require_once('SONICWALLaddress.php');
 require_once('SONICWALLaddressgroup.php');

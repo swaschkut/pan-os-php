@@ -526,6 +526,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
         $addCountDisabledRules = FALSE;
         $bestPractice = FALSE;
         $visibility = FALSE;
+        $adoption = FALSE;
         $addURLmembers = FALSE;
 
         $optionalFields = &$context->arguments['additionalFields'];
@@ -548,17 +549,24 @@ SecurityProfileCallContext::$supportedActions[] = array(
         if( isset($optionalFields['Visibility']) )
             $visibility = TRUE;
 
+        if( isset($optionalFields['Adoption']) )
+            $adoption = TRUE;
+
         $headers = '<th>ID</th><th>location</th><th>name</th>';
         if( $bestPractice )
             $headers .= '<th>BP SP</th>';
         if( $visibility )
             $headers .= '<th>visibility SP</th>';
+        if( $adoption )
+            $headers .= '<th>adoption SP</th>';
 
         $headers .= '<th>store</th><th>type</th><th>rules</th>';
         if( $bestPractice )
             $headers .= '<th>BP</th>';
         if( $visibility )
             $headers .= '<th>visibility</th>';
+        if( $adoption )
+            $headers .= '<th>adoption</th>';
 
         $headers .= '<th>exception</th>';
         if( $bestPractice )
@@ -605,7 +613,10 @@ SecurityProfileCallContext::$supportedActions[] = array(
 
             $headers .= '<th>URL credentials visibility TAB details</th>';
         }
-
+        if( $adoption )
+        {
+            $headers .= '<th>URL adoption</th>';
+        }
 
         if( $addURLmembers or ( !$bestPractice and !$visibility ) )
             $headers .= '<th>URL members</th>';
@@ -656,7 +667,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
 
 
                 $lines .= $context->encloseFunction($object->name());
-                if( $bestPractice || $visibility )
+                if( $bestPractice || $visibility || $adoption )
                 {
                     if( get_class($object) == "AntiVirusProfile" )
                     {
@@ -671,6 +682,14 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         if( $visibility )
                         {
                             if( $object->is_visibility() )
+                                $lines .= $context->encloseFunction($bp_text_yes);
+                            else
+                                $lines .= $context->encloseFunction($bp_text_no);
+                        }
+
+                        if( $adoption )
+                        {
+                            if( $object->is_adoption() )
                                 $lines .= $context->encloseFunction($bp_text_yes);
                             else
                                 $lines .= $context->encloseFunction($bp_text_no);
@@ -694,6 +713,14 @@ SecurityProfileCallContext::$supportedActions[] = array(
                             else
                                 $lines .= $context->encloseFunction($bp_text_no);
                         }
+
+                        if( $adoption )
+                        {
+                            if( $object->is_adoption() )
+                                $lines .= $context->encloseFunction($bp_text_yes);
+                            else
+                                $lines .= $context->encloseFunction($bp_text_no);
+                        }
                     }
                     elseif( get_class($object) == "VulnerabilityProfile")
                     {
@@ -708,6 +735,14 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         if( $visibility )
                         {
                             if( $object->is_visibility() )
+                                $lines .= $context->encloseFunction($bp_text_yes);
+                            else
+                                $lines .= $context->encloseFunction($bp_text_no);
+                        }
+
+                        if( $adoption )
+                        {
+                            if( $object->is_adoption() )
                                 $lines .= $context->encloseFunction($bp_text_yes);
                             else
                                 $lines .= $context->encloseFunction($bp_text_no);
@@ -730,6 +765,14 @@ SecurityProfileCallContext::$supportedActions[] = array(
                             else
                                 $lines .= $context->encloseFunction($bp_text_no);
                         }
+
+                        if( $adoption )
+                        {
+                            if( $object->is_adoption() )
+                                $lines .= $context->encloseFunction($bp_text_yes);
+                            else
+                                $lines .= $context->encloseFunction($bp_text_no);
+                        }
                     }
                     elseif( get_class($object) == "FileBlockingProfile")
                     {
@@ -744,6 +787,14 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         if( $visibility )
                         {
                             if( $object->is_visibility() )
+                                $lines .= $context->encloseFunction($bp_text_yes);
+                            else
+                                $lines .= $context->encloseFunction($bp_text_no);
+                        }
+
+                        if( $adoption )
+                        {
+                            if( $object->is_adoption() )
                                 $lines .= $context->encloseFunction($bp_text_yes);
                             else
                                 $lines .= $context->encloseFunction($bp_text_no);
@@ -766,12 +817,22 @@ SecurityProfileCallContext::$supportedActions[] = array(
                             else
                                 $lines .= $context->encloseFunction($bp_text_no);
                         }
+
+                        if( $adoption )
+                        {
+                            if( $object->is_adoption() )
+                                $lines .= $context->encloseFunction($bp_text_yes);
+                            else
+                                $lines .= $context->encloseFunction($bp_text_no);
+                        }
                     }
                     else
                     {
                         if( $bestPractice )
                             $lines .= $context->encloseFunction('---');
                         if( $visibility )
+                            $lines .= $context->encloseFunction('---');
+                        if( $adoption )
                             $lines .= $context->encloseFunction('---');
                     }
 
@@ -898,7 +959,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 else
                     $lines .= $context->encloseFunction('');
 
-                if( $bestPractice || $visibility)
+                if( $bestPractice || $visibility || $adoption )
                 {
 
                     if( get_class($object) == "AntiVirusProfile" )
@@ -917,6 +978,10 @@ SecurityProfileCallContext::$supportedActions[] = array(
                             else
                                 $lines .= $context->encloseFunction($bp_text_no.' NO Visibility AV actions');
                         }
+                        if( $adoption )
+                        {
+                            $lines .= $context->encloseFunction($bp_text_yes.' Adoption AV set');
+                        }
                     }
                     elseif( get_class($object) == "AntiSpywareProfile" )
                     {
@@ -933,6 +998,13 @@ SecurityProfileCallContext::$supportedActions[] = array(
                                 $lines .= $context->encloseFunction($bp_text_yes.' Visibility AS rules set');
                             else
                                 $lines .= $context->encloseFunction($bp_text_no.' NO Visibility AS rules');
+                        }
+                        if( $adoption )
+                        {
+                            if( $object->is_adoption() )
+                                $lines .= $context->encloseFunction($bp_text_yes.' Adoption AS set');
+                            else
+                                $lines .= $context->encloseFunction($bp_text_no.' NO Adoption AS set');
                         }
                     }
                     elseif( get_class($object) == "VulnerabilityProfile" )
@@ -951,6 +1023,13 @@ SecurityProfileCallContext::$supportedActions[] = array(
                             else
                                 $lines .= $context->encloseFunction($bp_text_no.' NO Visibility VP rules');
                         }
+                        if( $adoption )
+                        {
+                            if( $object->is_adoption() )
+                                $lines .= $context->encloseFunction($bp_text_yes.' Adoption VP set');
+                            else
+                                $lines .= $context->encloseFunction($bp_text_no.' NO Adoption VP set');
+                        }
                     }
                     elseif( get_class($object) == "FileBlockingProfile" )
                     {
@@ -967,6 +1046,13 @@ SecurityProfileCallContext::$supportedActions[] = array(
                                 $lines .= $context->encloseFunction($bp_text_yes.' Visibility FB rules set');
                             else
                                 $lines .= $context->encloseFunction($bp_text_no.' NO Visibility FB rules');
+                        }
+                        if( $adoption )
+                        {
+                            if( $object->is_adoption() )
+                                $lines .= $context->encloseFunction($bp_text_yes.' Adoption FB set');
+                            else
+                                $lines .= $context->encloseFunction($bp_text_no.' NO Adoption FB set');
                         }
                     }
                     elseif( get_class($object) == "WildfireProfile" )
@@ -985,12 +1071,21 @@ SecurityProfileCallContext::$supportedActions[] = array(
                             else
                                 $lines .= $context->encloseFunction($bp_text_no.' NO Visibility WF rules');
                         }
+                        if( $adoption )
+                        {
+                            if( $object->is_adoption() )
+                                $lines .= $context->encloseFunction($bp_text_yes.' Adoption WF set');
+                            else
+                                $lines .= $context->encloseFunction($bp_text_no.' NO Adoption WF set');
+                        }
                     }
                     else
                     {
                         if( $bestPractice )
                             $lines .= $context->encloseFunction('---');
                         if( $visibility )
+                            $lines .= $context->encloseFunction('---');
+                        if( $adoption )
                             $lines .= $context->encloseFunction('---');
                     }
                 }
@@ -1017,6 +1112,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 }
                 else
                     $lines .= $context->encloseFunction('');
+
                 if( $bestPractice || $visibility)
                 {
                     if( get_class($object) == "AntiSpywareProfile" )
@@ -1286,6 +1382,13 @@ SecurityProfileCallContext::$supportedActions[] = array(
                                 $lines .= $context->encloseFunction($bp_text_no.' NO Visibility AS dns_list');
                         }
                     }
+                    else
+                    {
+                        if( $bestPractice )
+                            $lines .= $context->encloseFunction('---');
+                        if( $visibility )
+                            $lines .= $context->encloseFunction('---');
+                    }
                 }
                 //<th>DNS sinkhole</th>
                 $lines .= $context->encloseFunction($string_dns_sinkhole);
@@ -1500,7 +1603,15 @@ SecurityProfileCallContext::$supportedActions[] = array(
                             $lines .= $context->encloseFunction($bp_text_no);
                     }
 
-                    if( $addURLmembers or ( !$bestPractice and !$visibility ) )
+                    if( $adoption )
+                    {
+                        if( $object->is_adoption() )
+                            $lines .= $context->encloseFunction($bp_text_yes.' Adoption URL set');
+                        else
+                            $lines .= $context->encloseFunction($bp_text_no.' NO Adoption URL set');
+                    }
+
+                    if( $addURLmembers or ( !$bestPractice and !$visibility and !$adoption ) )
                     {
                         /**
                          * @var $object URLProfile
@@ -1541,6 +1652,8 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         $lines .= $context->encloseFunction('---');
                         $lines .= $context->encloseFunction('---');
                     }
+                    if( $adoption )
+                        $lines .= $context->encloseFunction('---');
                     if( $addURLmembers or ( !$bestPractice and !$visibility ) )
                         $lines .= $context->encloseFunction('');
                 }
@@ -1622,7 +1735,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
             array('type' => 'pipeSeparatedList',
                 'subtype' => 'string',
                 'default' => '*NONE*',
-                'choices' => array('WhereUsed', 'UsedInLocation', 'TotalUse', 'BestPractice', 'Visibility', 'URLmembers'),
+                'choices' => array('WhereUsed', 'UsedInLocation', 'TotalUse', 'BestPractice', 'Visibility', 'Adoption', 'URLmembers'),
                 'help' =>
                     "pipe(|) separated list of additional fields (ie: Arg1|Arg2|Arg3...) to include in the report. The following is available:\n" .
                     "  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n" .
@@ -1630,6 +1743,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     "  - TotalUse : list a counter how often this object is used\n" .
                     "  - BestPractice : show if BestPractice is configured\n" .
                     "  - Visibility : show if SP log is configured\n" .
+                    "  - Adoption : show if SP log is used\n" .
                     "  - URLmembers : add URL members also if bestpractice or visibility is added\n"
             )
     )
@@ -2126,7 +2240,11 @@ SecurityProfileCallContext::$supportedActions['spyware.alert-only-set'] = array(
         $object = $context->object;
 
         if (get_class($object) !== "AntiSpywareProfile")
+        {
+            PH::print_stdout("skipped");
             return null;
+        }
+
 
         $tmp_mlav_engine = DH::findFirstElement('mica-engine-spyware-enabled', $object->xmlroot);
         if( $tmp_mlav_engine !== False )
@@ -2200,8 +2318,12 @@ SecurityProfileCallContext::$supportedActions['spyware.alert-only-set'] = array(
             }
         }
 
+        $sp_severity = array();
         foreach( $object->rules_obj as $rule )
         {
+            /** @var ThreatPolicySpyware $rule */
+            $sp_severity = array_merge( $sp_severity, $rule->severity());
+
             /** @var ThreatPolicy $rule */
             if( $rule->action() == "allow" )
             {
@@ -2220,6 +2342,36 @@ SecurityProfileCallContext::$supportedActions['spyware.alert-only-set'] = array(
                         $xmlElement = DH::importXmlStringOrDie($rule->xmlroot->ownerDocument, $xmlString);
                         $tmp->appendChild($xmlElement);
                     }
+                }
+            }
+        }
+        $sp_severity_default = array( "any", "critical", "high", "medium", "low", "informational" );
+        $result = array_diff($sp_severity_default, $sp_severity);
+
+        if( !empty($result) )
+        {
+            if( in_array("any", $result) )
+            {
+                foreach( $result as $rule )
+                {
+                    if( $rule == "any" )
+                        continue;
+
+
+                    $threadPolicy_obj = new ThreatPolicySpyware( $rule, $object);
+                    $threadPolicy_obj->type = "ThreatPolicySpyware";
+
+                    if( $rule == "critical" || $rule == "high" || $rule == "medium" )
+                        $threadPolicy_obj->action = "alert";
+                    elseif( $rule == "low" || $rule == "informational" )
+                        $threadPolicy_obj->action = "default";
+
+                    $object->rules_obj[] = $threadPolicy_obj;
+                    $threadPolicy_obj->addReference( $object );
+
+                    $object->owner->owner->ThreatPolicyStore->add($threadPolicy_obj);
+
+                    $threadPolicy_obj->newThreatPolicyXML($object->xmlroot, $rule, $rule, $threadPolicy_obj->action);
                 }
             }
         }
@@ -2501,10 +2653,12 @@ SecurityProfileCallContext::$supportedActions['vulnerability.alert-only-set'] = 
             }
         }
 
-
+        $sp_severity = array();
         foreach( $object->rules_obj as $rule )
         {
             /** @var ThreatPolicy $rule */
+            $sp_severity = array_merge( $sp_severity, $rule->severity());
+
             if( $rule->action() == "allow" )
             {
                 $rule->action = "alert";
@@ -2522,6 +2676,35 @@ SecurityProfileCallContext::$supportedActions['vulnerability.alert-only-set'] = 
                         $xmlElement = DH::importXmlStringOrDie($rule->xmlroot->ownerDocument, $xmlString);
                         $tmp->appendChild($xmlElement);
                     }
+                }
+            }
+        }
+        $sp_severity_default = array( "any", "critical", "high", "medium", "low", "informational" );
+        $result = array_diff($sp_severity_default, $sp_severity);
+
+        if( !empty($result) )
+        {
+            if( in_array("any", $result) )
+            {
+                foreach ($result as $rule)
+                {
+                    if ($rule == "any")
+                        continue;
+
+                    $threadPolicy_obj = new ThreatPolicyVulnerability($rule, $object);
+                    $threadPolicy_obj->type = "ThreatPolicyVulnerability";
+
+                    if( $rule == "critical" || $rule == "high" || $rule == "medium" )
+                        $threadPolicy_obj->action = "alert";
+                    elseif( $rule == "low" || $rule == "informational" )
+                        $threadPolicy_obj->action = "default";
+
+                    $object->rules_obj[] = $threadPolicy_obj;
+                    $threadPolicy_obj->addReference($object);
+
+                    $object->owner->owner->ThreatPolicyStore->add($threadPolicy_obj);
+
+                    $threadPolicy_obj->newThreatPolicyXML($object->xmlroot, $rule, $rule, $threadPolicy_obj->action);
                 }
             }
         }

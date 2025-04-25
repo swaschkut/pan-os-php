@@ -139,6 +139,19 @@ RQuery::$defaultFilters['interface']['object']['operators']['is.virtual-wire'] =
         'input' => 'input/panorama-8.0.xml'
     )
 );
+RQuery::$defaultFilters['interface']['object']['operators']['is.vlan'] = Array(
+    'Function' => function(InterfaceRQueryContext $context )
+    {
+        $object = $context->object;
+
+        return $object->type == "vlan";
+    },
+    'arg' => false,
+    'ci' => Array(
+        'fString' => '(%PROP% ethernet1/1)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
 RQuery::$defaultFilters['interface']['type']['operators']['is.ethernet'] = Array(
     'Function' => function(InterfaceRQueryContext $context )
     {

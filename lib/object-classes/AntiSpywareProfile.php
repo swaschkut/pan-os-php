@@ -708,7 +708,7 @@ class AntiSpywareProfile extends SecurityProfile2
 
         $check_array = $this->spyware_lists_bp_visibility_JSON( "bp", "spyware");
 
-        if( isset($this->additional['botnet-domain']) && isset($this->additional['botnet-domain']['lists']) )
+        if( isset($this->additional['botnet-domain']['lists']) )
         {
             foreach( $this->additional['botnet-domain']['lists'] as $name => $array)
             {
@@ -745,7 +745,7 @@ class AntiSpywareProfile extends SecurityProfile2
 
         $check_array = $this->spyware_lists_bp_visibility_JSON( "visibility", "spyware");
 
-        if( isset($this->additional['botnet-domain']) && isset($this->additional['botnet-domain']['lists']) )
+        if( isset($this->additional['botnet-domain']['lists']) )
         {
             foreach( $this->additional['botnet-domain']['lists'] as $name => $array)
             {
@@ -783,6 +783,13 @@ class AntiSpywareProfile extends SecurityProfile2
         return FALSE;
     }
 
+    public function spyware_dnslist_adoption()
+    {
+        if ($this->secprof_type != 'spyware')
+            return null;
+
+        return TRUE;
+    }
     public function spyware_rules_best_practice()
     {
         $bp_set = null;
@@ -949,13 +956,16 @@ class AntiSpywareProfile extends SecurityProfile2
         if( $this->owner->owner->version >= 102 )
         {
             $bp_set = false;
-            foreach ($this->additional['botnet-domain']['dns-security-categories'] as $name => $value)
+            if( isset($this->additional['botnet-domain']['dns-security-categories']) )
             {
-                /** @var DNSPolicy $value */
-                if ($value->spyware_dns_security_rule_bestpractice())
-                    $bp_set = true;
-                else
-                    return false;
+                foreach ($this->additional['botnet-domain']['dns-security-categories'] as $name => $value)
+                {
+                    /** @var DNSPolicy $value */
+                    if ($value->spyware_dns_security_rule_bestpractice())
+                        $bp_set = true;
+                    else
+                        return false;
+                }
             }
             return $bp_set;
         }
@@ -967,15 +977,27 @@ class AntiSpywareProfile extends SecurityProfile2
         if( $this->owner->owner->version >= 102 )
         {
             $bp_set = false;
-            foreach ($this->additional['botnet-domain']['dns-security-categories'] as $name => $value)
+            if( isset($this->additional['botnet-domain']['dns-security-categories']) )
             {
-                /** @var DNSPolicy $value */
-                if ($value->spyware_dns_security_rule_visibility())
-                    $bp_set = true;
-                else
-                    return false;
+                foreach ($this->additional['botnet-domain']['dns-security-categories'] as $name => $value)
+                {
+                    /** @var DNSPolicy $value */
+                    if ($value->spyware_dns_security_rule_visibility())
+                        $bp_set = true;
+                    else
+                        return false;
+                }
             }
             return $bp_set;
+        }
+        return null;
+    }
+
+    public function spyware_dns_security_adoption()
+    {
+        if( $this->owner->owner->version >= 102 )
+        {
+            return TRUE;
         }
         return null;
     }
@@ -1027,6 +1049,15 @@ class AntiSpywareProfile extends SecurityProfile2
             else
                 return FALSE;
         }
+    }
+
+    public function is_adoption()
+    {
+        #if at least one spyware rule is set -> adoption, if not false
+        if( count($this->rules_obj) > 0 )
+            return true;
+        else
+            return false;
     }
 
     static $templatexml = '<entry name="**temporarynamechangeme**"></entry>';

@@ -2374,4 +2374,19 @@ class UTIL
     {
         PH::$useExceptions = TRUE;
     }
+
+    public function enableExceptionSupport()
+    {
+        PH::$doNotDisableExceptions = FALSE;
+        if( PH::$useExceptions )
+            PH::$doNotDisableExceptions = TRUE;
+
+        PH::$useExceptions = TRUE;
+    }
+
+    public function disableExceptionSupport()
+    {
+        if( !PH::$doNotDisableExceptions )
+            PH::$useExceptions = FALSE;
+    }
 }

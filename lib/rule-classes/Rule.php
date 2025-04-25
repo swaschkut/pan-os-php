@@ -2582,6 +2582,63 @@ class Rule
         }
     }
 
+    public function SP_isAdoption()
+    {
+        if( !$this->isSecurityRule() && !$this->isDefaultSecurityRule() )
+            return FALSE;
+        if( !$this->securityProfileIsBlank()
+            && $this->securityProfileType() == "group" )
+        {
+            $group_name = $this->securityProfileGroup();
+            /** @var SecurityProfileGroup $group */
+            $group = $this->owner->owner->securityProfileGroupStore->find($group_name);
+
+            if( $group->is_adoption() )
+                return TRUE;
+            else
+                return FALSE;
+        }
+        else
+        {
+            $profiles = $this->securityProfiles_obj();
+            if( count($profiles) > 0 )
+            {
+                $bp_set = FALSE;
+                foreach ($profiles as $type => $profile)
+                {
+                    if ($type == "virus" || $type == "spyware" || $type == "vulnerability")
+                    {
+                        /** @var AntiVirusProfile $profile */
+                        if (is_object($profile))
+                        {
+                            if ($profile->is_adoption())
+                                $bp_set = TRUE;
+                            else
+                                return FALSE;
+                        }
+                        else
+                        {
+                            mwarning("BP SPG check2 not possible - SecurityProfile type: " . $type . " name '" . $profile . "' not found", null, false);
+                            return FALSE;
+                        }
+                    }
+                }
+                if( !isset($profiles['virus']) )
+                    return FALSE;
+                if( !isset($profiles['spyware']) )
+                    return FALSE;
+                if( !isset($profiles['vulnerability']) )
+                    return FALSE;
+
+                if ($bp_set)
+                    return TRUE;
+                else
+                    return FALSE;
+            }
+            return null;
+        }
+    }
+
     public function getRuleThreatLog( $date, $context, $operator, $perRule = false )
     {
         if( !$this->isSecurityRule() && !$this->isDoSRule() &&  !$this->isPbfRule() && !$this->isQoSRule() )

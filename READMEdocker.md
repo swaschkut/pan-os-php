@@ -51,6 +51,16 @@ Windows Docker WSL installation check
 ["<a href='https://docs.microsoft.com/en-gb/windows/wsl/install-manual#step-5---set-wsl-2-as-your-default-version' target='_blank' rel='noopener noreferrer'>Step 5 - Set WSL 2 as your default version</a>"]
 
 
+Installation without Docker Desktop
+============
+- MacOS:
+  - https://dev.to/mochafreddo/running-docker-on-macos-without-docker-desktop-64o
+  - if you also need homebrew:
+    - https://docs.brew.sh/Installation
+- Windows:
+  - https://dev.to/bowmanjd/install-docker-on-windows-wsl-without-docker-desktop-34m9
+
+
 Update your Docker PAN-OS-PHP container
 ============
 - Pull last docker image

@@ -170,5 +170,6 @@ function ssh_connector($fw, $user, $password, $outputfile)
         PH::print_stdout();
         PH::print_stdout( "--------------------------------------------------------------------------------" );
     }
+    $util2->disableExceptionSupport();
 }
 

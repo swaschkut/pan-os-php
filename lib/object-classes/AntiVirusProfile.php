@@ -675,6 +675,14 @@ class AntiVirusProfile extends SecurityProfile2
         }
     }
 
+    public function is_adoption()
+    {
+        #each Anti-Virus Profile is adoption -> it must be used in SecRule
+
+        return true;
+    }
+
+
     static $templatexml = '<entry name="**temporarynamechangeme**"></entry>';
 
     static $templatexml_100 = '<entry name="**temporarynamechangeme**">

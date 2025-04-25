@@ -63,6 +63,13 @@
       <interval>2</interval>
       <threshold>100</threshold>
     </entry>
+    <entry name="8006">
+      <action>
+        <alert/>
+      </action>
+      <interval>2</interval>
+      <threshold>4</threshold>
+    </entry>
   </scan>
   <discard-ip-spoof>yes</discard-ip-spoof>
   <discard-malformed-option>yes</discard-malformed-option>
@@ -109,6 +116,13 @@
       </action>
       <interval>2</interval>
       <threshold>100</threshold>
+    </entry>
+    <entry name="8006">
+      <action>
+        <alert/>
+      </action>
+      <interval>2</interval>
+      <threshold>4</threshold>
     </entry>
   </scan>
 </entry></root>

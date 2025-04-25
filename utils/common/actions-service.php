@@ -1175,7 +1175,6 @@ ServiceCallContext::$supportedActions[] = array(
             "  - \$\$destinationport\$\$ : destination Port\n" .
             "  - \$\$protocol\$\$ : service protocol\n" .
             "  - \$\$sourceport\$\$ : source Port\n" .
-            "  - \$\$value\$\$ : value of the object\n" .
             "  - \$\$timeout\$\$ : timeout value of the object\n"
     )
     ),
