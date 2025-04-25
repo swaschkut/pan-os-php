@@ -19,6 +19,7 @@ BUGFIX:
 * type=securityprofile actions=exporttoexcel:file.html | bugfix if not AntiSpyware, to correctly add column if visibility|bestpractice is used
 * type=securityprofil actions=xyz.alert-only-set | bugfix to also add missing severity
 * type=address-merger | bugfix to allow merging host objects with/without netmask /32 - validation if an object is used at interface still missing
+* class AddressGroup | likely a bugfix to avoid memory leak, if a subgroup somewhere contains the original AddressGroup to avoid a loop
 
 GENERAL:
 
