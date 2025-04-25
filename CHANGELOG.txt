@@ -1,6 +1,14 @@
 CHANGELOG
 
-2.1.36
+2.1.37
+UTIL:
+
+BUGFIX:
+
+GENERAL:
+
+
+2.1.36 (20250425)
 UTIL:
 * type=application | introduce 'filter=(tunnelapp is.set / tunnelapp has XYZ)'
 * type=xml-issue | extend with secRule source-user check and fix
@@ -22,6 +30,7 @@ BUGFIX:
 * class AddressGroup | likely a bugfix to avoid memory leak, if a subgroup somewhere contains the original AddressGroup to avoid a loop
 
 GENERAL:
+* Device App-ID to version: 8970-9413
 
 
 2.1.35 (20250407)
