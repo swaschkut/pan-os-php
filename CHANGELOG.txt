@@ -17,7 +17,7 @@ UTIL:
 * type=stats | extend VirtualSystem and DeviceGroup with adoption feature - missing part full Firewall and Panorama
 * type=stats | extend adoption for Panorama and Firewall
 * type=securityprofile actions=spyware/vulnerability.alert-only-set | for missing severity if low/informational set action to default - not alert
-* type=address | introduce new 'filter=(restore all.interfacestore)'
+* type=address | introduce new 'filter=(refstore all.interfacestore)'
 * type=interface 'filter=(interface is.vlan)'
 
 BUGFIX:
