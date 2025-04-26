@@ -1109,6 +1109,14 @@ var subjectObject =
                             "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
+                    },
+                    "all.interfacestore": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
                     }
                 }
             },
@@ -3633,6 +3641,14 @@ var subjectObject =
                         "default": "*nodefault*"
                     }
                 }
+            },
+            "replace_ipv4_objects_by_value": {
+                "name": "replace_IPv4_objects_by_value",
+                "MainFunction": {}
+            },
+            "replace_ipv6_objects_by_value": {
+                "name": "replace_IPv6_objects_by_value",
+                "MainFunction": {}
             }
         },
         "filter": {
@@ -3711,6 +3727,14 @@ var subjectObject =
                         }
                     },
                     "is.virtual-wire": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP% ethernet1\/1)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.vlan": {
                         "Function": {},
                         "arg": false,
                         "ci": {
