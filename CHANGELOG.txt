@@ -5,6 +5,7 @@ UTIL:
 * type=interface | new actions=replace_IPv4_objects_by_value | IPv6 not yet finalised
 
 BUGFIX:
+* type=diff outputformatset=file.txt | bugfix to keep korrekt interface name, especially for ethernetX/Y
 
 GENERAL:
 * multiple Interface class optimisation

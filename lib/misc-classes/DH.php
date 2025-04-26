@@ -592,9 +592,11 @@ class DH
             $fullpath = str_replace($replace, "", $fullpath);
         }
 
+        $fullpath = preg_replace("/(\d+)\/(\d+)/", "$1_$2", $fullpath);
         $fullpath = str_replace("/", " ", $fullpath);
         $fullpath = str_replace("entry[@name='", '"', $fullpath);
         $fullpath = str_replace("']", '"', $fullpath);
+        $fullpath = preg_replace("/(\d+)_(\d+)/", "$1/$2", $fullpath);
 
         $xpath = $type . $fullpath;
 

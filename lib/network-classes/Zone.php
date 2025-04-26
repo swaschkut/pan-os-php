@@ -586,7 +586,12 @@ class Zone
                 $qualifiedNodeName = '//*[text()="'.$old.'"]';
                 $xpathResult = DH::findXPath( $qualifiedNodeName, $this->xmlroot);
                 foreach( $xpathResult as $node )
-                    $node->textContent = $h->name();
+                {
+                    if( is_object($h) )
+                        $node->textContent = $h->name();
+                    elseif( is_string($h) )
+                        $node->textContent = $h;
+                }
 
 
                 //attribute replace

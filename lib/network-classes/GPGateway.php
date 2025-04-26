@@ -351,15 +351,20 @@ class GPGateway
 
     public function referencedObjectRenamed($h, $old)
     {
-        if( is_object($h) )
+        if( is_object($h) || is_string($h) )
         {
-            if( get_class( $h ) == "Address" )
+            if( (is_string($h) && strpos($h, ".") !== FALSE ) || get_class( $h ) == "Address"  )
             {
                 //Text replace
                 $qualifiedNodeName = '//*[text()="'.$old.'"]';
                 $xpathResult = DH::findXPath( $qualifiedNodeName, $this->xmlroot);
                 foreach( $xpathResult as $node )
-                    $node->textContent = $h->name();
+                {
+                    if( is_object($h) )
+                        $node->textContent = $h->name();
+                    elseif( is_string($h) )
+                        $node->textContent = $h;
+                }
 
 
                 //attribute replace
@@ -378,7 +383,10 @@ class GPGateway
                         if ($XMLnameAttribute !== $nameattribute)
                             continue;
                     }
-                    $item->setAttribute('name', $h->name());
+                    if( is_object($h) )
+                        $item->setAttribute('name', $h->name());
+                    elseif( is_string($h) )
+                        $item->setAttribute('name', $h);
                 }
             }
 

@@ -463,6 +463,10 @@ InterfaceCallContext::$supportedActions['replace_IPv4_objects_by_value'] = Array
     'name' => 'replace_IPv4_objects_by_value',
     'MainFunction' => function ( InterfaceCallContext $context )
     {
+        //Todo: 20250426 - XML looks like is update but outputformatset is only display delete but not generate XML parts
+        //??? missing update in memory???
+        //type=diff comparing to XML files and generate outputformatset is working fine
+
         /** @var EthernetInterface|VlanInterface|TunnelInterface|LoopbackInterface $object */
         $object = $context->object;
 
@@ -498,6 +502,18 @@ InterfaceCallContext::$supportedActions['replace_IPv4_objects_by_value'] = Array
                                 $object->removeIPv4Address($ip_address);
                                 $object->addIPv4Address($address->value());
 
+                                PH::print_stdout("-----------------------------------");
+                                foreach( $address->refrules as $o )
+                                {
+                                    if( $o->name() !== $object->name() )
+                                    {
+                                        PH::print_stdout( '  - ' . $o->toString() );
+
+                                        $o->referencedObjectRenamed($address->value(), $address->name());
+                                    }
+                                }
+                                PH::print_stdout("-----------------------------------");
+
                                 if( $context->isAPI )
                                 {
                                     //Todo: API sync
@@ -527,6 +543,18 @@ InterfaceCallContext::$supportedActions['replace_IPv4_objects_by_value'] = Array
 
                             $object->removeIPv4Address($ip_address);
                             $object->addIPv4Address($address->value());
+
+                            PH::print_stdout("-----------------------------------");
+                            foreach( $address->refrules as $o )
+                            {
+                                if( $o->name() !== $object->name() )
+                                {
+                                    PH::print_stdout( '  - ' . $o->toString() );
+
+                                    $o->referencedObjectRenamed($address->value(), $address->name());
+                                }
+                            }
+                            PH::print_stdout("-----------------------------------");
 
                             if( $context->isAPI )
                             {
@@ -574,6 +602,18 @@ InterfaceCallContext::$supportedActions['replace_IPv4_objects_by_value'] = Array
                                 $object->removeIPv4Address($ip_address);
                                 $object->addIPv4Address($address->value());
 
+                                PH::print_stdout("-----------------------------------");
+                                foreach( $address->refrules as $o )
+                                {
+                                    if( $o->name() !== $object->name() )
+                                    {
+                                        PH::print_stdout( '  - ' . $o->toString() );
+
+                                        $o->referencedObjectRenamed($address->value(), $address->name());
+                                    }
+                                }
+                                PH::print_stdout("-----------------------------------");
+
                                 if( $context->isAPI )
                                 {
                                     //Todo: API sync
@@ -603,6 +643,17 @@ InterfaceCallContext::$supportedActions['replace_IPv4_objects_by_value'] = Array
                             $object->removeIPv4Address($ip_address);
                             $object->addIPv4Address($address->value());
 
+                            PH::print_stdout("-----------------------------------");
+                            foreach( $address->refrules as $o )
+                            {
+                                if( $o->name() !== $object->name() )
+                                {
+                                    PH::print_stdout( '  - ' . $o->toString() );
+
+                                    $o->referencedObjectRenamed($address->value(), $address->name());
+                                }
+                            }
+                            PH::print_stdout("-----------------------------------");
 
                             if( $context->isAPI )
                             {
