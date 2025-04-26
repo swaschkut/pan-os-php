@@ -240,12 +240,17 @@ class EthernetIfStore extends ObjStore
     {
         if( $this->xmlroot === null )
         {
-            //TODO: 20180331 why I need to create full path? why it is not set before???
             $xml = DH::findFirstElementOrCreate('devices', $this->owner->xmlroot);
             $xml = DH::findFirstElementOrCreate('entry', $xml);
             $xml = DH::findFirstElementOrCreate('network', $xml);
             $xml = DH::findFirstElementOrCreate('interface', $xml);
-            $this->xmlroot = DH::findFirstElementOrCreate('ethernet', $xml);
+
+            if( get_class($this) == "EthernetIfStore" )
+                $xml = DH::findFirstElementOrCreate('ethernet', $xml);
+            elseif( get_class($this) == "AggregateEthernetIfStore" )
+                $xml = DH::findFirstElementOrCreate('aggregate-ethernet', $xml);
+
+            $this->xmlroot = $xml;
         }
     }
 
@@ -305,27 +310,13 @@ class EthernetIfStore extends ObjStore
         if( $this->xmlroot === null )
         {
             if( count($this->o) > 0 )
-            {
-                $xml = DH::findFirstElementOrCreate('devices', $this->owner->xmlroot);
-                $xml = DH::findFirstElementOrCreate('entry', $xml);
-                $xml = DH::findFirstElementOrCreate('network', $xml);
-                $xml = DH::findFirstElementOrCreate('interface', $xml);
-
-                if( get_class($this) == "EthernetIfStore" )
-                    $xml = DH::findFirstElementOrCreate('ethernet', $xml);
-                elseif( get_class($this) == "AggregateEthernetIfStore" )
-                    $xml = DH::findFirstElementOrCreate('aggregate-ethernet', $xml);
-
-                DH::findFirstElementOrCreate('units', $xml);
-                #DH::findFirstElementOrCreate('tag', $this->owner->xmlroot);
-            }
-
+                $this->createXmlRoot();
         }
 
         DH::clearDomNodeChilds($this->xmlroot);
         foreach( $this->o as $o )
         {
-            if( !$o->isTmp() )
+            if( !$o->isTmpType() )
                 $this->xmlroot->appendChild($o->xmlroot);
         }
     }

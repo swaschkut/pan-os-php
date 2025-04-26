@@ -7,6 +7,7 @@ UTIL:
 BUGFIX:
 
 GENERAL:
+* multiple Interface class optimisation
 
 
 2.1.36 (20250425)

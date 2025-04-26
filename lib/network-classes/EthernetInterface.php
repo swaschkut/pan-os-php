@@ -203,7 +203,7 @@ class EthernetInterface
                         else
                         {
                             //NGFW
-                            $this->l3ipv4Addresses[] = $tmpIP;
+                            $this->l3ipv6Addresses[] = $tmpIP;
                         }
 
                     }

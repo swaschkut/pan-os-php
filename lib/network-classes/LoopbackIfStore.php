@@ -134,7 +134,6 @@ class LoopbackIfStore extends ObjStore
     {
         if( $this->xmlroot === null )
         {
-            //TODO: 20180331 why I need to create full path? why it is not set before???
             $xml = DH::findFirstElementOrCreate('devices', $this->owner->xmlroot);
             $xml = DH::findFirstElementOrCreate('entry', $xml);
             $xml = DH::findFirstElementOrCreate('network', $xml);
@@ -200,23 +199,13 @@ class LoopbackIfStore extends ObjStore
         if( $this->xmlroot === null )
         {
             if( count($this->o) > 0 )
-            {
-                $xml = DH::findFirstElementOrCreate('devices', $this->owner->xmlroot);
-                $xml = DH::findFirstElementOrCreate('entry', $xml);
-                $xml = DH::findFirstElementOrCreate('network', $xml);
-                $xml = DH::findFirstElementOrCreate('interface', $xml);
-                $xml = DH::findFirstElementOrCreate('loopback', $xml);
-
-                DH::findFirstElementOrCreate('units', $xml);
-                #DH::findFirstElementOrCreate('tag', $this->owner->xmlroot);
-            }
-
+                $this->createXmlRoot();
         }
 
         DH::clearDomNodeChilds($this->xmlroot);
         foreach( $this->o as $o )
         {
-            if( !$o->isTmp() )
+            if( !$o->isTmpType() )
                 $this->xmlroot->appendChild($o->xmlroot);
         }
     }
