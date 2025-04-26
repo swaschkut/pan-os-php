@@ -930,6 +930,7 @@ class AddressStore
             if( $loopCount > 40 )
             {
                 print_r( $sortingArray );
+                PH::print_stdout("AddressGroup LOOP detected | please manual manipulate your configuration file, check the output above!!");
                 derr("cannot determine groups dependencies after 40 loops iterations: are there too many nested groups for '".get_class($this->owner)."': '".$this->owner->name()."' ?", NULL, FALSE);
             }
             /*

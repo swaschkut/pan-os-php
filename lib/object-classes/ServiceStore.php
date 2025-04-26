@@ -226,6 +226,7 @@ class ServiceStore
             $loopCount++;
             if( $loopCount > 40 )
             {
+                print_r( $sortingArray );
                 PH::print_stdout("ServiceGroup LOOP detected | please manual manipulate your configuration file, check the output above!!");
                 derr("cannot determine groups dependencies after 40 loops iterations: is there too many nested groups?", null, False);
             }
