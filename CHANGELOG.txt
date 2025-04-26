@@ -2,6 +2,7 @@ CHANGELOG
 
 2.1.37
 UTIL:
+* type=interface | new actions=replace_IPv4_objects_by_value | IPv6 not yet finalised
 
 BUGFIX:
 
