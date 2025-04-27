@@ -670,6 +670,95 @@ class EthernetInterface
     }
 
 
+
+
+    /**
+     * return true if change was successful false if not (duplicate ipaddress?)
+     * @param string $ip
+     * @return bool
+     */
+    public function removeIPv6Address($ip)
+    {
+        if( $this->type != 'layer3' )
+            derr('cannot be requested from a non Layer3 Interface');
+
+        if( is_object($ip) )
+            derr( "removing address object from Interface not implemented yet", null, False );
+
+        $tmp_IPv6 = array();
+        foreach( $this->getLayer3IPv6Addresses() as $key => $IPv6Address )
+        {
+            $tmp_IPv6[$IPv6Address] = $IPv6Address;
+            if( $IPv6Address == $ip )
+                unset($this->l3ipv6Addresses[$key]);
+        }
+
+
+        if( !array_key_exists($ip, $tmp_IPv6) )
+        {
+            PH::print_stdout( " ** skipped ** IP Address: " . $ip . " is not set on interface: " . $this->name() );
+            return FALSE;
+        }
+
+        $this->removeAddressObjectReference( $ip );
+
+        if( $this->isSubInterface() )
+            $tmp_xmlroot = $this->parentInterface->xmlroot;
+        else
+            $tmp_xmlroot = $this->xmlroot;
+
+        $layer3Node = DH::findFirstElementOrCreate('layer3', $tmp_xmlroot);
+
+        if( $this->isSubInterface() )
+        {
+            $tmp_units = DH::findFirstElementOrCreate('units', $layer3Node);
+            $tmp_entry = DH::findFirstElementByNameAttrOrDie('entry', $this->name(), $tmp_units);
+            $ipv6Node = DH::findFirstElementOrCreate('ipv6', $tmp_entry);
+            $ipNode = DH::findFirstElementOrCreate('address', $ipv6Node);
+        }
+        else
+        {
+            $ipv6Node = DH::findFirstElementOrCreate('ipv6', $layer3Node);
+            $ipNode = DH::findFirstElementOrCreate('address', $ipv6Node);
+        }
+
+
+
+        $tmp_ipaddress = DH::findFirstElementByNameAttrOrDie('entry', $ip, $ipNode);
+        $ipNode->removeChild($tmp_ipaddress);
+
+        return TRUE;
+    }
+
+    /**
+     * remove a ip address to this interface, it must be passed as an object or string
+     * @param Address $ip Object to be added, or String
+     * @return bool
+     */
+    public function API_removeIPv6Address($ip)
+    {
+        $ret = $this->removeIPv6Address($ip);
+
+        if( $ret )
+        {
+            $con = findConnector($this);
+            $xpath = $this->getXPath();
+
+            if( $this->isSubInterface() )
+            {
+                $xpath = $this->parentInterface->getXPath();
+                $xpath .= "/layer3/units/entry[@name='" . $this->name . "']/ipv6/address";
+            }
+            else
+                $xpath .= '/layer3/ipv6/address';
+
+            $con->sendDeleteRequest($xpath . "/entry[@name='{$ip}']");
+        }
+
+        return $ret;
+    }
+
+
     /**
      * return true if change was successful false if not (duplicate ipaddress?)
      * @param string $ip
@@ -735,6 +824,34 @@ class EthernetInterface
         $ipNode->appendChild($tmp_ipaddress);
 
         return TRUE;
+    }
+
+    /**
+     * Add a ip to this interface, it must be passed as an object or string
+     * @param Address $ip Object to be added, or String
+     * @return bool
+     */
+    public function API_addIPv6Address($ip)
+    {
+        $ret = $this->addIPv6Address($ip);
+
+        if( $ret )
+        {
+            $con = findConnector($this);
+            $xpath = $this->getXPath();
+
+            if( $this->isSubInterface() )
+            {
+                $xpath = $this->parentInterface->getXPath();
+                $xpath .= "/layer3/units/entry[@name='" . $this->name . "']/ipv6/address";
+            }
+            else
+                $xpath .= '/layer3/ipv6/address';
+
+            $con->sendSetRequest($xpath, "<entry name='{$ip}'/>");
+        }
+
+        return $ret;
     }
 
     /**

@@ -173,6 +173,141 @@ trait InterfaceType
         return $ret;
     }
 
+    /**
+     * return true if change was successful false if not (duplicate ipaddress?)
+     * @param string $ip
+     * @return bool
+     */
+    public function addIPv6Address($ip)
+    {
+        foreach( $this->getIPv6Addresses() as $IPv6Address )
+        {
+            if( $IPv6Address == $ip )
+                return TRUE;
+        }
+
+        if( strpos($ip, ":") === FALSE )
+        {
+            $tmp_vsys = $this->owner->owner->network->findVsysInterfaceOwner($this->name());
+
+            if( is_object($tmp_vsys) )
+                $object = $tmp_vsys->addressStore->find($ip);
+            else
+                return FALSE;
+
+            if( is_object($object) )
+                $object->addReference($this);
+            else
+                derr("objectname: " . $ip . " not found. Can not be added to interface.\n", $this);
+        }
+
+
+        $this->_ipv6Addresses[] = $ip;
+
+        $tmp_xmlroot = $this->xmlroot;
+
+        $ipv6Node = DH::findFirstElementOrCreate('ipv6', $tmp_xmlroot);
+        $ipNode = DH::findFirstElementOrCreate('address', $ipv6Node);
+
+        $tmp_ipaddress = DH::createElement($ipNode, 'entry', "");
+        $tmp_ipaddress->setAttribute('name', $ip);
+
+        $ipNode->appendChild($tmp_ipaddress);
+
+        return TRUE;
+    }
+
+    /**
+     * Add a ip to this interface, it must be passed as an object or string
+     * @param Address $ip Object to be added, or String
+     * @return bool
+     */
+    public function API_addIPv6Address($ip)
+    {
+        $ret = $this->addIPv6Address($ip);
+
+        if( $ret )
+        {
+            $con = findConnector($this);
+            $xpath = $this->getXPath();
+
+            $xpath .= '/ipv6/address';
+
+            $con->sendSetRequest($xpath, "<entry name='{$ip}'/>");
+        }
+
+        return $ret;
+    }
+
+    /**
+     * return true if change was successful false if not (duplicate ipaddress?)
+     * @param string $ip
+     * @return bool
+     */
+    public function removeIPv6Address($ip)
+    {
+        $tmp_IPv4 = array();
+        foreach( $this->getIPv6Addresses() as $key => $IPv6Address )
+        {
+            $tmp_IPv6[$IPv6Address] = $IPv6Address;
+            if( $IPv6Address == $ip )
+                unset($this->_ipv6Addresses[$key]);
+        }
+
+        if( !array_key_exists($ip, $tmp_IPv6) )
+        {
+            PH::print_stdout(  " ** skipped ** IPv6 Address: " . $ip . " is not set on interface: " . $this->name() );
+            return FALSE;
+        }
+
+        if( strpos($ip, "/") === FALSE )
+        {
+            $tmp_vsys = $this->owner->owner->network->findVsysInterfaceOwner($this->name());
+
+            if( is_object($tmp_vsys) )
+                $object = $tmp_vsys->addressStore->find($ip);
+            else
+                return FALSE;
+
+            if( is_object($object) )
+                $object->removeReference($this);
+            else
+                mwarning("objectname: " . $ip . " not found. Can not be removed from interface.\n", $this);
+        }
+
+        $tmp_xmlroot = $this->xmlroot;
+
+        $ipv6Node = DH::findFirstElementOrCreate('ipv6', $tmp_xmlroot);
+        $ipNode = DH::findFirstElementOrCreate('address', $ipv6Node);
+
+        $tmp_ipaddress = DH::findFirstElementByNameAttrOrDie('entry', $ip, $ipNode);
+        $ipNode->removeChild($tmp_ipaddress);
+
+        return TRUE;
+    }
+
+    /**
+     * remove a ip address to this interface, it must be passed as an object or string
+     * @param Address $ip Object to be added, or String
+     * @return bool
+     */
+    public function API_removeIPv6Address($ip)
+    {
+        $ret = $this->removeIPv6Address($ip);
+
+        if( $ret )
+        {
+            $con = findConnector($this);
+            $xpath = $this->getXPath();
+
+            $xpath .= '/ipv6/address';
+
+            $con->sendDeleteRequest($xpath . "/entry[@name='{$ip}']");
+        }
+
+        return $ret;
+    }
+
     public function display()
     {
         $object = $this;

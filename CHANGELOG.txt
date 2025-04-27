@@ -2,8 +2,10 @@ CHANGELOG
 
 2.1.37
 UTIL:
-* type=interface | new actions=replace_IPv4_objects_by_value | IPv6 not yet finalised
+* type=interface | new actions=replace_IPv4_objects_by_value
 * type=gpgateway-tunnel | introduce new util - to extend the reading of each XML part
+* extend interfaces classes with addIPv6Address / removeIPv6Address | for usage in type=interface actions=replace_IPv6_objects_by_value
+* type=interface | new actions=replace_IPv6_objects_by_value
 
 BUGFIX:
 * type=diff outputformatset=file.txt | bugfix to keep korrekt interface name, especially for ethernetX/Y
