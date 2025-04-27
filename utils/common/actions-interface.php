@@ -517,7 +517,7 @@ InterfaceCallContext::$supportedActions['replace_IPv4_objects_by_value'] = Array
                                 if( $context->isAPI )
                                 {
                                     //Todo: API sync
-                                    mwarning( "      - API sync not yet implemented", false, false );
+                                    mwarning( "      - API sync not yet implemented", null, false );
                                 }
                             }
 
@@ -559,7 +559,7 @@ InterfaceCallContext::$supportedActions['replace_IPv4_objects_by_value'] = Array
                             if( $context->isAPI )
                             {
                                 //Todo: API sync
-                                mwarning( "      - API sync not yet implemented", false, false );
+                                mwarning( "      - API sync not yet implemented", null, false );
                             }
                         }
 
@@ -617,7 +617,7 @@ InterfaceCallContext::$supportedActions['replace_IPv4_objects_by_value'] = Array
                                 if( $context->isAPI )
                                 {
                                     //Todo: API sync
-                                    mwarning( "      - API sync not yet implemented", false, false );
+                                    mwarning( "      - API sync not yet implemented", null, false );
                                 }
                             }
                             else
@@ -658,7 +658,7 @@ InterfaceCallContext::$supportedActions['replace_IPv4_objects_by_value'] = Array
                             if( $context->isAPI )
                             {
                                 //Todo: API sync
-                                mwarning( "      - API sync not yet implemented", false, false );
+                                mwarning( "      - API sync not yet implemented", null, false );
                             }
                         }
                         else
@@ -710,14 +710,14 @@ InterfaceCallContext::$supportedActions['replace_IPv6_objects_by_value'] = Array
                                 PH::print_stdout( "      - remove object: ".$address->name() );
                                 PH::print_stdout( "      - add value: ".$address->value() );
 
-                                mwarning( "      - not yet implemented", false, false );
+                                mwarning( "      - not yet implemented", null, false );
                                 #$object->removeIPv4Address($ip_address);
                                 #$object->addIPv4Address($address->value());
 
                                 if( $context->isAPI )
                                 {
                                     //Todo: API sync
-                                    mwarning( "      - API sync not yet implemented", false, false );
+                                    mwarning( "      - API sync not yet implemented", null, false );
                                 }
                             }
 
@@ -741,14 +741,14 @@ InterfaceCallContext::$supportedActions['replace_IPv6_objects_by_value'] = Array
                             PH::print_stdout( "      - remove object: ".$address->name() );
                             PH::print_stdout( "      - add value: ".$address->value() );
 
-                            mwarning( "      - not yet implemented", false, false );
+                            mwarning( "      - not yet implemented", null, false );
                             #$object->removeIPv4Address($ip_address);
                             #$object->addIPv4Address($address->value());
 
                             if( $context->isAPI )
                             {
                                 //Todo: API sync
-                                mwarning( "      - API sync not yet implemented", false, false );
+                                mwarning( "      - API sync not yet implemented", null, false );
                             }
                         }
 
@@ -788,14 +788,14 @@ InterfaceCallContext::$supportedActions['replace_IPv6_objects_by_value'] = Array
                                 PH::print_stdout( "      - remove object: ".$address->name() );
                                 PH::print_stdout( "      - add value: ".$address->value() );
 
-                                mwarning( "      - not yet implemented", false, false );
+                                mwarning( "      - not yet implemented", null, false );
                                 #$object->removeIPv4Address($ip_address);
                                 #$object->addIPv4Address($address->value());
 
                                 if( $context->isAPI )
                                 {
                                     //Todo: API sync
-                                    mwarning( "      - API sync not yet implemented", false, false );
+                                    mwarning( "      - API sync not yet implemented", null, false );
                                 }
                             }
                             else
@@ -818,14 +818,14 @@ InterfaceCallContext::$supportedActions['replace_IPv6_objects_by_value'] = Array
                             PH::print_stdout( "      - remove object: ".$address->name() );
                             PH::print_stdout( "      - add value: ".$address->value() );
 
-                            mwarning( "      - not yet implemented", false, false );
+                            mwarning( "      - not yet implemented", null, false );
                             #$object->removeIPv4Address($ip_address);
                             #$object->addIPv4Address($address->value());
 
                             if( $context->isAPI )
                             {
                                 //Todo: API sync
-                                mwarning( "      - API sync not yet implemented", false, false );
+                                mwarning( "      - API sync not yet implemented", null, false );
                             }
                         }
                         else
