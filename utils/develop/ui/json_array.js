@@ -3510,6 +3510,16 @@ var subjectObject =
             }
         }
     },
+    "gpgateway-tunnel": {
+        "name": "gpgateway-tunnel",
+        "action": {
+            "display": {
+                "name": "display",
+                "MainFunction": {}
+            }
+        },
+        "filter": []
+    },
     "gratuitous-arp": {
         "name": "gratuitous-arp",
         "action": [],
