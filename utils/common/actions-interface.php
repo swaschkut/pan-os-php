@@ -711,8 +711,22 @@ InterfaceCallContext::$supportedActions['replace_IPv6_objects_by_value'] = Array
                                 PH::print_stdout( "      - add value: ".$address->value() );
 
                                 mwarning( "      - not yet implemented", null, false );
-                                #$object->removeIPv4Address($ip_address);
-                                #$object->addIPv4Address($address->value());
+                                /*
+                                $object->removeIPv4Address($ip_address);
+                                $object->addIPv4Address($address->value());
+
+                                PH::print_stdout("-----------------------------------");
+                                foreach( $address->refrules as $o )
+                                {
+                                    if( $o->name() !== $object->name() )
+                                    {
+                                        PH::print_stdout( '  - ' . $o->toString() );
+
+                                        $o->referencedObjectRenamed($address, $address->name(), "value");
+                                    }
+                                }
+                                PH::print_stdout("-----------------------------------");
+                                */
 
                                 if( $context->isAPI )
                                 {
@@ -742,8 +756,22 @@ InterfaceCallContext::$supportedActions['replace_IPv6_objects_by_value'] = Array
                             PH::print_stdout( "      - add value: ".$address->value() );
 
                             mwarning( "      - not yet implemented", null, false );
-                            #$object->removeIPv4Address($ip_address);
-                            #$object->addIPv4Address($address->value());
+                            /*
+                            $object->removeIPv4Address($ip_address);
+                            $object->addIPv4Address($address->value());
+
+                            PH::print_stdout("-----------------------------------");
+                            foreach( $address->refrules as $o )
+                            {
+                                if( $o->name() !== $object->name() )
+                                {
+                                    PH::print_stdout( '  - ' . $o->toString() );
+
+                                    $o->referencedObjectRenamed($address, $address->name(), "value");
+                                }
+                            }
+                            PH::print_stdout("-----------------------------------");
+                            */
 
                             if( $context->isAPI )
                             {
@@ -789,8 +817,22 @@ InterfaceCallContext::$supportedActions['replace_IPv6_objects_by_value'] = Array
                                 PH::print_stdout( "      - add value: ".$address->value() );
 
                                 mwarning( "      - not yet implemented", null, false );
-                                #$object->removeIPv4Address($ip_address);
-                                #$object->addIPv4Address($address->value());
+                                /*
+                                $object->removeIPv4Address($ip_address);
+                                $object->addIPv4Address($address->value());
+
+                                PH::print_stdout("-----------------------------------");
+                                foreach( $address->refrules as $o )
+                                {
+                                    if( $o->name() !== $object->name() )
+                                    {
+                                        PH::print_stdout( '  - ' . $o->toString() );
+
+                                        $o->referencedObjectRenamed($address, $address->name(), "value");
+                                    }
+                                }
+                                PH::print_stdout("-----------------------------------");
+                                */
 
                                 if( $context->isAPI )
                                 {
@@ -819,8 +861,22 @@ InterfaceCallContext::$supportedActions['replace_IPv6_objects_by_value'] = Array
                             PH::print_stdout( "      - add value: ".$address->value() );
 
                             mwarning( "      - not yet implemented", null, false );
-                            #$object->removeIPv4Address($ip_address);
-                            #$object->addIPv4Address($address->value());
+                            /*
+                            $object->removeIPv4Address($ip_address);
+                            $object->addIPv4Address($address->value());
+
+                            PH::print_stdout("-----------------------------------");
+                            foreach( $address->refrules as $o )
+                            {
+                                if( $o->name() !== $object->name() )
+                                {
+                                    PH::print_stdout( '  - ' . $o->toString() );
+
+                                    $o->referencedObjectRenamed($address, $address->name(), "value");
+                                }
+                            }
+                            PH::print_stdout("-----------------------------------");
+                            */
 
                             if( $context->isAPI )
                             {
