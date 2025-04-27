@@ -42,7 +42,8 @@ class GPGatewayTunnel
 
     public $proposal = null;
     public $interface = null;
-    public $localIP = null;
+    public $localIPv4 = null;
+    public $localIPv6 = null;
 
     public $disabled = "no";
 
@@ -90,8 +91,6 @@ class GPGatewayTunnel
                 $tmp = DH::findFirstElement('ip', $node);
                 if( $tmp !== FALSE )
                 {
-                    $this->localIP = $tmp->textContent;
-
                     $tmp_interfaces = $this->localInterface->interfaces();
 
                     /** @var EthernetInterface $tmp_usedInterface */
@@ -100,9 +99,26 @@ class GPGatewayTunnel
                     /** @var VirtualSystem $tmp_vsys */
                     $tmp_vsys = $tmp_usedInterface->importedByVSYS;
 
-                    $tmp_address = $tmp_vsys->addressStore->find($tmp->textContent);
-                    if( $tmp_address !== FALSE && $tmp_address !== NULL )
-                        $tmp_address->addReference( $this );
+                    $tmp_ip = DH::findFirstElement('ipv4', $tmp);
+                    if( $tmp_ip !== FALSE )
+                    {
+                        $this->localIPv4 = $tmp_ip->textContent;
+
+                        $tmp_address = $tmp_vsys->addressStore->find($this->localIPv4);
+                        if( $tmp_address !== FALSE && $tmp_address !== NULL )
+                            $tmp_address->addReference( $this );
+                    }
+
+
+                    $tmp_ip = DH::findFirstElement('ipv6', $tmp);
+                    if( $tmp_ip !== FALSE )
+                    {
+                        $this->localIPv6 = $tmp_ip->textContent;
+
+                        $tmp_address = $tmp_vsys->addressStore->find($this->localIPv4);
+                        if( $tmp_address !== FALSE && $tmp_address !== NULL )
+                            $tmp_address->addReference( $this );
+                    }
                 }
             }
 

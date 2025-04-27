@@ -33,6 +33,9 @@ GPGatewaytunnelCallContext::$supportedActions['display'] = Array(
         foreach( $object->localInterface->interfaces() as $interface )
             $text .= " - localinterface: " .$interface->name() ;
 
+        $text .= " - localIPv4: " .$object->localIPv4 ;
+        $text .= " - localIPv6: " .$object->localIPv6 ;
+
         PH::print_stdout($text);
 
 

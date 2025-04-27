@@ -1263,6 +1263,8 @@ class DIFF extends UTIL
                     else
                         $this->$type['profiles'][] = $entry;
                 }
+                elseif( strpos( $entry, " network tunnel" ) !== false )
+                    $this->$type['network-tunnel'][] = $entry;
                 elseif( strpos( $entry, " network " ) !== false )
                     $this->$type['network'][] = $entry;
                 else
@@ -2017,7 +2019,7 @@ class DIFF extends UTIL
         ####################################
         ####################################
         //this is the order how delete commands are displayed
-        $deleteArray = array( "rulebase", "address-group", "address", "service-group", "service", "profile-group", "profiles", "profiles-custom-url-category", "misc", "network" );
+        $deleteArray = array( "rulebase", "address-group", "address", "service-group", "service", "profile-group", "profiles", "profiles-custom-url-category", "misc", "network-tunnel", "network" );
         $tmp_string = "";
         foreach( $deleteArray as $item )
         {
@@ -2055,7 +2057,7 @@ class DIFF extends UTIL
 
         ####################################
         ####################################
-        $setArray = array( "address", "address-group", "service", "service-group", "profiles-custom-url-category","profiles", "profile-group", "network", "misc", "rulebase" );
+        $setArray = array( "address", "address-group", "service", "service-group", "profiles-custom-url-category","profiles", "profile-group", "network", "network-tunnel", "misc", "rulebase" );
         $tmp_string = "";
         foreach( $setArray as $item )
         {
