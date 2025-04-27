@@ -8,6 +8,7 @@ UTIL:
 BUGFIX:
 * type=diff outputformatset=file.txt | bugfix to keep korrekt interface name, especially for ethernetX/Y
 * type=diff outputformatset=file.txt | bugfix to display correct command order if network related
+* type=diff | bugfix for none correct delete commands for local-address ip
 
 GENERAL:
 * multiple Interface class optimisation
