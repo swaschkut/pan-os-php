@@ -145,7 +145,7 @@ class EthernetInterface
                             if( $shared_object != null )
                             {
                                 $shared_object->addReference($this);
-                                $this->l3ipv4Addresses[] = $shared_object->value();
+                                $this->l3ipv4Addresses[] = $shared_object->name();
                             }
                             else
                                 $this->l3ipv4Addresses[] = $tmpIP;
@@ -194,7 +194,7 @@ class EthernetInterface
                                 if( $shared_object != null )
                                 {
                                     $shared_object->addReference($this);
-                                    $this->l3ipv6Addresses[] = $shared_object->value();
+                                    $this->l3ipv6Addresses[] = $shared_object->name();
                                 }
                                 else
                                     $this->l3ipv6Addresses[] = $tmpIP;
