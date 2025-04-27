@@ -212,21 +212,21 @@ class GPPortal
         return $this->localAddress_ipv6;
     }
 
-    public function referencedObjectRenamed($h, $old)
+    public function referencedObjectRenamed($h, $old, $replaceType = 'name')
     {
-        if( is_object($h) || is_string($h) )
+        if( is_object($h))
         {
-            if( (is_string($h) && strpos($h, ".") !== FALSE ) || get_class( $h ) == "Address"  )
+            if( get_class( $h ) == "Address"  )
             {
                 //Text replace
                 $qualifiedNodeName = '//*[text()="'.$old.'"]';
                 $xpathResult = DH::findXPath( $qualifiedNodeName, $this->xmlroot);
                 foreach( $xpathResult as $node )
                 {
-                    if( is_object($h) )
+                    if( $replaceType == "name" )
                         $node->textContent = $h->name();
-                    elseif( is_string($h) )
-                        $node->textContent = $h;
+                    elseif( $replaceType == "value" )
+                        $node->textContent = $h->value();
                 }
 
 
@@ -247,10 +247,10 @@ class GPPortal
                         if ($XMLnameAttribute !== $nameattribute)
                             continue;
                     }
-                    if( is_object($h) )
+                    if( $replaceType == "name" )
                         $item->setAttribute('name', $h->name());
-                    elseif( is_string($h) )
-                        $item->setAttribute('name', $h);
+                    elseif( $replaceType == "value" )
+                        $item->setAttribute('name', $h->value());
                 }
             }
 

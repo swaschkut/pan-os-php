@@ -509,7 +509,7 @@ InterfaceCallContext::$supportedActions['replace_IPv4_objects_by_value'] = Array
                                     {
                                         PH::print_stdout( '  - ' . $o->toString() );
 
-                                        $o->referencedObjectRenamed($address->value(), $address->name());
+                                        $o->referencedObjectRenamed($address, $address->name(), "value");
                                     }
                                 }
                                 PH::print_stdout("-----------------------------------");
@@ -551,7 +551,7 @@ InterfaceCallContext::$supportedActions['replace_IPv4_objects_by_value'] = Array
                                 {
                                     PH::print_stdout( '  - ' . $o->toString() );
 
-                                    $o->referencedObjectRenamed($address->value(), $address->name());
+                                    $o->referencedObjectRenamed($address, $address->name(), "value");
                                 }
                             }
                             PH::print_stdout("-----------------------------------");
@@ -609,7 +609,7 @@ InterfaceCallContext::$supportedActions['replace_IPv4_objects_by_value'] = Array
                                     {
                                         PH::print_stdout( '  - ' . $o->toString() );
 
-                                        $o->referencedObjectRenamed($address->value(), $address->name());
+                                        $o->referencedObjectRenamed($address, $address->name(), "value");
                                     }
                                 }
                                 PH::print_stdout("-----------------------------------");
@@ -650,7 +650,7 @@ InterfaceCallContext::$supportedActions['replace_IPv4_objects_by_value'] = Array
                                 {
                                     PH::print_stdout( '  - ' . $o->toString() );
 
-                                    $o->referencedObjectRenamed($address->value(), $address->name());
+                                    $o->referencedObjectRenamed($address, $address->name(), "value");
                                 }
                             }
                             PH::print_stdout("-----------------------------------");

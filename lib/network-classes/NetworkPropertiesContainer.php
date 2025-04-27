@@ -223,6 +223,14 @@ class NetworkPropertiesContainer
             $tmp1 = DH::findFirstElement('gre', $tmp);
             if( $tmp1 !== FALSE )
                 $this->greTunnelStore->load_from_domxml($tmp1);
+
+            //Todo missing
+            //global-protect-gateway
+            $tmp1 = DH::findFirstElement('global-protect-gateway', $tmp);
+            if( $tmp1 !== FALSE )
+            {
+                #$this->ipsecTunnelStore->load_from_domxml($tmp1);
+            }
         }
 
         if( $this->owner->_advance_routing_enabled )

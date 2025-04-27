@@ -156,7 +156,7 @@ class VlanInterface
 
     }
 
-    public function referencedObjectRenamed($h, $old)
+    public function referencedObjectRenamed($h, $old, $replaceType = 'name')
     {
         if( is_object($h) )
         {
@@ -167,10 +167,10 @@ class VlanInterface
                 $xpathResult = DH::findXPath( $qualifiedNodeName, $this->xmlroot);
                 foreach( $xpathResult as $node )
                 {
-                    if( is_object($h) )
+                    if( $replaceType == "name" )
                         $node->textContent = $h->name();
-                    elseif( is_string($h) )
-                        $node->textContent = $h;
+                    elseif( $replaceType == "value" )
+                        $node->textContent = $h->value();
                 }
 
 
@@ -192,7 +192,10 @@ class VlanInterface
                         if ($XMLnameAttribute !== $nameattribute)
                             continue;
                     }
-                    $item->setAttribute('name', $h->name());
+                    if( $replaceType == "name" )
+                        $item->setAttribute('name', $h->name());
+                    elseif( $replaceType == "value" )
+                        $item->setAttribute('name', $h->value());
                 }
             }
 
