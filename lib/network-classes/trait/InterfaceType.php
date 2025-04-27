@@ -53,7 +53,7 @@ trait InterfaceType
                 return TRUE;
         }
 
-        if( strpos($ip, "/") === FALSE )
+        if( strpos($ip, ".") === FALSE )
         {
             $tmp_vsys = $this->owner->owner->network->findVsysInterfaceOwner($this->name());
 
@@ -146,7 +146,8 @@ trait InterfaceType
         $ipNode = DH::findFirstElementOrCreate('ip', $tmp_xmlroot);
 
         $tmp_ipaddress = DH::findFirstElementByNameAttrOrDie('entry', $ip, $ipNode);
-        $ipNode->removeChild($tmp_ipaddress);
+        if( $tmp_ipaddress !== False )
+            $ipNode->removeChild($tmp_ipaddress);
 
         return TRUE;
     }
@@ -281,7 +282,8 @@ trait InterfaceType
         $ipNode = DH::findFirstElementOrCreate('address', $ipv6Node);
 
         $tmp_ipaddress = DH::findFirstElementByNameAttrOrDie('entry', $ip, $ipNode);
-        $ipNode->removeChild($tmp_ipaddress);
+        if( $tmp_ipaddress !== False )
+            $ipNode->removeChild($tmp_ipaddress);
 
         return TRUE;
     }

@@ -636,7 +636,8 @@ class EthernetInterface
 
 
         $tmp_ipaddress = DH::findFirstElementByNameAttrOrDie('entry', $ip, $ipNode);
-        $ipNode->removeChild($tmp_ipaddress);
+        if( $tmp_ipaddress !== False )
+            $ipNode->removeChild($tmp_ipaddress);
 
         return TRUE;
     }
@@ -725,7 +726,8 @@ class EthernetInterface
 
 
         $tmp_ipaddress = DH::findFirstElementByNameAttrOrDie('entry', $ip, $ipNode);
-        $ipNode->removeChild($tmp_ipaddress);
+        if( $tmp_ipaddress !== False )
+            $ipNode->removeChild($tmp_ipaddress);
 
         return TRUE;
     }
