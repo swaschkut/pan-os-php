@@ -41,6 +41,9 @@ class NetworkPropertiesContainer
     /** @var greTunnelStore */
     public $greTunnelStore;
 
+    /** @var gpGatewayTunnelStore */
+    public $gpGatewayTunnelStore;
+
     /** @var DHCPStore */
     public $dhcpStore;
 
@@ -76,6 +79,7 @@ class NetworkPropertiesContainer
         $this->loopbackIfStore = new LoopbackIfStore('LoopbackIfaces', $owner);
         $this->ipsecTunnelStore = new IPsecTunnelStore('IPsecTunnels', $owner);
         $this->greTunnelStore = new GreTunnelStore('GreTunnels', $owner);
+        $this->gpGatewayTunnelStore = new GPGatewayTunnelStore('GPGatewayTunnels', $owner);
         $this->tmpInterfaceStore = new TmpInterfaceStore('TmpIfaces', $owner);
         $this->virtualRouterStore = new VirtualRouterStore('', $owner);
         $this->logicalRouterStore = new LogicalRouterStore('', $owner);
@@ -224,12 +228,10 @@ class NetworkPropertiesContainer
             if( $tmp1 !== FALSE )
                 $this->greTunnelStore->load_from_domxml($tmp1);
 
-            //Todo missing
-            //global-protect-gateway
             $tmp1 = DH::findFirstElement('global-protect-gateway', $tmp);
             if( $tmp1 !== FALSE )
             {
-                #$this->ipsecTunnelStore->load_from_domxml($tmp1);
+                $this->gpGatewayTunnelStore->load_from_domxml($tmp1);
             }
         }
 
@@ -297,6 +299,9 @@ class NetworkPropertiesContainer
             $ifs[$if->name()] = $if;
 
         foreach( $this->greTunnelStore->getInterfaces() as $if )
+            $ifs[$if->name()] = $if;
+
+        foreach( $this->gpGatewayTunnelStore->getInterfaces() as $if )
             $ifs[$if->name()] = $if;
 
         foreach( $this->vlanIfStore->getInterfaces() as $if )

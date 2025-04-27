@@ -461,6 +461,8 @@ class UTIL
             $tmp_array = &IPsectunnelCallContext::$supportedActions;
         elseif( $this->utilType == 'gre-tunnel' )
             $tmp_array = &GREtunnelCallContext::$supportedActions;
+        elseif( $this->utilType == 'gpgateway-tunnel' )
+            $tmp_array = &GPGatewaytunnelCallContext::$supportedActions;
 
         return $tmp_array;
     }
@@ -1312,6 +1314,8 @@ class UTIL
                 $context = new IPsectunnelCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'gre-tunnel' )
                 $context = new GREtunnelCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+            elseif( $this->utilType == 'gpgateway-tunnel' )
+                $context = new GPGatewaytunnelCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
 
             $context->baseObject = $this->pan;
             if( isset($this->configInput['type'])  )

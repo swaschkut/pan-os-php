@@ -331,6 +331,8 @@ require_once $basedir . '/network-classes/IPsecTunnelStore.php';
 require_once $basedir . '/network-classes/IPsecTunnel.php';
 require_once $basedir . '/network-classes/GreTunnelStore.php';
 require_once $basedir . '/network-classes/GreTunnel.php';
+require_once $basedir . '/network-classes/GPGatewayTunnelStore.php';
+require_once $basedir . '/network-classes/GPGatewayTunnel.php';
 require_once $basedir . '/network-classes/LoopbackIfStore.php';
 require_once $basedir . '/network-classes/LoopbackInterface.php';
 require_once $basedir . '/network-classes/EthernetInterface.php';

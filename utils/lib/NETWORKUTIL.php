@@ -124,6 +124,10 @@ class NETWORKUTIL extends UTIL
                     {
                         $this->objectsToProcess[] = Array('store' => $this->pan->network->greTunnelStore, 'objects' => $this->pan->network->greTunnelStore->tunnels());
                     }
+                    elseif( $this->utilType == 'gpgateway-tunnel' )
+                    {
+                        $this->objectsToProcess[] = Array('store' => $this->pan->network->gpGatewayTunnelStore, 'objects' => $this->pan->network->gpGatewayTunnelStore->tunnels());
+                    }
 
                     $locationFound = TRUE;
                 }
@@ -313,6 +317,10 @@ class NETWORKUTIL extends UTIL
                                 elseif( $this->utilType == 'gre-tunnel' )
                                 {
                                     $this->objectsToProcess[] = Array('store' => $template->deviceConfiguration->network->greTunnelStore, 'objects' => $template->deviceConfiguration->network->greTunnelStore->tunnels());
+                                }
+                                elseif( $this->utilType == 'gpgateway-tunnel' )
+                                {
+                                    $this->objectsToProcess[] = Array('store' => $template->deviceConfiguration->network->gpGatewayTunnelStore, 'objects' => $template->deviceConfiguration->network->gpGatewayTunnelStore->tunnels());
                                 }
 
                                 $locationFound = true;

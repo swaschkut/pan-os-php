@@ -135,6 +135,8 @@ class RQuery
             $this->contextObject = new IPSECtunnelRQueryContext($this);
         elseif( $this->objectType == 'gre-tunnel' )
             $this->contextObject = new GREtunnelRQueryContext($this);
+        elseif( $this->objectType == 'gpgateway-tunnel' )
+            $this->contextObject = new GPGatewaytunnelRQueryContext($this);
 
         else
             derr("unsupported object type '$objectType'");
