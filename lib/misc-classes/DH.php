@@ -782,6 +782,25 @@ class DH
                     print "finalstring: ".$finalstring."\n";
 
                 self::setCommandvalidation( $finalstring, $array, $debug);
+
+                return;
+            }
+
+            if( $element->nodeName == "#text" && strpos( $xpath, "set" ) !== FALSE )
+            {
+                if( $debug )
+                {
+                    print "2-3\n";
+                }
+
+                $finalstring = $xpath.$string;
+
+                if( $debug )
+                    print "finalstring: ".$finalstring."\n";
+
+                self::setCommandvalidation( $finalstring, $array, $debug);
+
+                return;
             }
         }
     }
