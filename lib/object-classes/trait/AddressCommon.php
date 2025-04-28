@@ -584,7 +584,8 @@ trait AddressCommon
                         PH::print_stdout( "- SKIP: not yet possible on ".get_class($objectRef) );
                         $success = false;
                         $success2 = false;
-                        exit();
+                        #exit();
+                        continue;
                     }
                 }
 
