@@ -749,19 +749,16 @@ class DH
             if( $debug )
                 print "2\n";
 
-            if( $element->nodeName == "#text" && strpos( $xpath, "delete" ) !== FALSE )
+            if( strpos( $xpath, "delete" ) !== FALSE && strpos( $xpath, " local-address ip" ) !== FALSE )
             {
-                if( strpos( $xpath, " local-address ip " ) !== FALSE )
-                {
-                    if( $debug )
-                        print "2-1\n";
+                if( $debug )
+                    print "2-1\n";
 
-                    $finalstring = $xpath;
+                $finalstring = $xpath;
 
-                    self::setCommandvalidation( $finalstring, $array, $debug);
+                self::setCommandvalidation( $finalstring, $array, $debug);
 
-                    return;
-                }
+                return;
             }
 
             if( trim($element->nodeValue) !== '')
