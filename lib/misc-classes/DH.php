@@ -751,7 +751,7 @@ class DH
 
             if( $element->nodeName == "#text" && strpos( $xpath, "delete" ) !== FALSE )
             {
-                if( strpos( $xpath, " local-address ip ipv4" ) !== FALSE || strpos( $xpath, " local-address ip ipv6" ) !== FALSE )
+                if( strpos( $xpath, " local-address ip " ) !== FALSE )
                 {
                     if( $debug )
                         print "2-1\n";

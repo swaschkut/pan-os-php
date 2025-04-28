@@ -15,7 +15,7 @@ BUGFIX:
 * class EthernetInterface - store object name as configured not object value
 * type=securityprofile actions=vulnerability.alert-only-set | bugfix to also add XML node vendor-id and host
 * type=vendor-migration vendor=fortinet
-* type=address-merger do not solve error out if object can not be merged, like it is used in VirtualRouter
+* type=address-merger | extend functionality to replace/rename address-object in class Virtual/LogicalRouter
 
 GENERAL:
 * multiple Interface class optimisation

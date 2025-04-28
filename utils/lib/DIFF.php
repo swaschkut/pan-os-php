@@ -253,7 +253,7 @@ class DIFF extends UTIL
                 }
             }
             else
-                false('only API is supported', null, false);
+                derr('only API is supported', null, false);
         }
         else
         {

@@ -551,7 +551,10 @@ trait AddressCommon
                     (get_class($objectRef) == "IKEGateway") or
                     (get_class($objectRef) == "GPPortal") or
                     (get_class($objectRef) == "GPGateway") or
-                    (get_class($objectRef) == "StaticRoute")
+                    (get_class($objectRef) == "StaticRoute") or
+
+                    (get_class($objectRef) == "VirtualRouter") or
+                    (get_class($objectRef) == "LogicalRouter")
                 )
                 {
 
@@ -581,11 +584,10 @@ trait AddressCommon
                         $tmp_store = $objectRef->owner->owner->owner->addressStore;
                     else
                     {
-                        PH::print_stdout( "- SKIP: not yet possible on ".get_class($objectRef) );
+                        PH::print_stdout( "- SKIP: not yet implemented on ".get_class($objectRef) );
                         $success = false;
                         $success2 = false;
-                        #exit();
-                        continue;
+                        exit();
                     }
                 }
 
@@ -632,6 +634,7 @@ trait AddressCommon
 
             if( $success2 )
             {
+                #DH::DEBUGprintDOMDocument($objectRef->xmlroot);
                 if( $displayOutput )
                     PH::print_stdout( $outputPadding . "- replacing in {$objectRef->toString()}" );
                 if( $apiMode )
