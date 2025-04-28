@@ -295,6 +295,12 @@ class ThreatPolicy
         {
             $tmp_cve = DH::findFirstElementOrCreate('cve', $tmp_entry);
             $tmp_cve->textContent = "any";
+
+            $tmp_vendorID = DH::findFirstElementOrCreate('vendor-id', $tmp_entry);
+            $tmp_vendorID->textContent = "any";
+
+            $tmp_host = DH::findFirstElementOrCreate('host', $tmp_entry);
+            $tmp_host->textContent = "any";
         }
     }
 }
