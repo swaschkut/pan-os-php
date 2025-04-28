@@ -873,6 +873,7 @@ class EthernetInterface
             $this->addIPv4Address($address_obj->value());
 
             PH::print_stdout("-----------------------------------");
+            //Todo: interface reference are better to work on | validation needed
             foreach( $address_obj->refrules as $o )
             {
                 if( $o->name() !== $this->name() )
@@ -913,6 +914,7 @@ class EthernetInterface
             $this->addIPv6Address($address_obj->value());
 
             PH::print_stdout("-----------------------------------");
+            //Todo: interface reference are better to work on | validation needed
             foreach( $address_obj->refrules as $o )
             {
                 if( $o->name() !== $this->name() )
