@@ -463,10 +463,6 @@ InterfaceCallContext::$supportedActions['replace_IPv4_objects_by_value'] = Array
     'name' => 'replace_IPv4_objects_by_value',
     'MainFunction' => function ( InterfaceCallContext $context )
     {
-        //Todo: 20250426 - XML looks like is update but outputformatset is only display delete but not generate XML parts
-        //??? missing update in memory???
-        //type=diff comparing to XML files and generate outputformatset is working fine
-
         /** @var EthernetInterface|VlanInterface|TunnelInterface|LoopbackInterface $object */
         $object = $context->object;
 
@@ -487,84 +483,18 @@ InterfaceCallContext::$supportedActions['replace_IPv4_objects_by_value'] = Array
                         {
                             $template_object = $pan_object->owner;
                             $panorama_object = $template_object->owner;
-                            $address = $panorama_object->addressStore->find($ip_address);
+                            $address_obj = $panorama_object->addressStore->find($ip_address);
 
-                            if( strpos( $address->value(), ":" ) !== FALSE )
-                            {
-                                PH::print_stdout( "      - value: ".$address->value() );
-                                PH::print_stdout( "    - only IPv4 Address can be added with this function" );
-                            }
-                            elseif( strpos( $address->value(), "." ) !== FALSE )
-                            {
-                                PH::print_stdout( "      - remove object: ".$address->name() );
-                                PH::print_stdout( "      - add value: ".$address->value() );
-
-                                $object->removeIPv4Address($ip_address);
-                                $object->addIPv4Address($address->value());
-
-                                PH::print_stdout("-----------------------------------");
-                                foreach( $address->refrules as $o )
-                                {
-                                    if( $o->name() !== $object->name() )
-                                    {
-                                        PH::print_stdout( '  - ' . $o->toString() );
-
-                                        $o->referencedObjectRenamed($address, $address->name(), "value");
-                                    }
-                                }
-                                PH::print_stdout("-----------------------------------");
-
-                                if( $context->isAPI )
-                                {
-                                    //Todo: API sync
-                                    mwarning( "      - API sync not yet implemented", null, false );
-                                }
-                            }
-
-                            else
-                                mwarning( "      - unknown address ".$address->value() );
+                            $object->replaceIPv4ObjectByValue($context, $address_obj);
                         }
                     }
                     else
                     {
                         //NGFW
                         /** @var Address $address */
-                        $address = $vsys->addressStore->find($ip_address);
+                        $address_obj = $vsys->addressStore->find($ip_address);
 
-                        if( strpos( $address->value(), ":" ) !== FALSE )
-                        {
-                            PH::print_stdout( "      - value: ".$address->value() );
-                            PH::print_stdout( "    - only IPv4 Address can be added with this function" );
-                        }
-                        elseif( strpos( $address->value(), "." ) !== FALSE )
-                        {
-                            PH::print_stdout( "      - remove object: ".$address->name() );
-                            PH::print_stdout( "      - add value: ".$address->value() );
-
-                            $object->removeIPv4Address($ip_address);
-                            $object->addIPv4Address($address->value());
-
-                            PH::print_stdout("-----------------------------------");
-                            foreach( $address->refrules as $o )
-                            {
-                                if( $o->name() !== $object->name() )
-                                {
-                                    PH::print_stdout( '  - ' . $o->toString() );
-
-                                    $o->referencedObjectRenamed($address, $address->name(), "value");
-                                }
-                            }
-                            PH::print_stdout("-----------------------------------");
-
-                            if( $context->isAPI )
-                            {
-                                //Todo: API sync
-                                mwarning( "      - API sync not yet implemented", null, false );
-                            }
-                        }
-
-                        else
-                            mwarning( "      - unknown address ".$address->value() );
+                        $object->replaceIPv4ObjectByValue($context, $address_obj);
                     }
                 }
                 else
@@ -587,82 +517,18 @@ InterfaceCallContext::$supportedActions['replace_IPv4_objects_by_value'] = Array
                         {
                             $template_object = $pan_object->owner;
                             $panorama_object = $template_object->owner;
-                            $address = $panorama_object->addressStore->find($ip_address);
+                            $address_obj = $panorama_object->addressStore->find($ip_address);
 
-                            if( strpos( $address->value(), ":" ) !== FALSE )
-                            {
-                                PH::print_stdout( "      - value: ".$address->value() );
-                                PH::print_stdout( "      - only IPv4 Address can be added with this function" );
-                            }
-                            elseif( strpos( $address->value(), "." ) !== FALSE )
-                            {
-                                PH::print_stdout( "      - remove object: ".$address->name() );
-                                PH::print_stdout( "      - add value: ".$address->value() );
-
-                                $object->removeIPv4Address($ip_address);
-                                $object->addIPv4Address($address->value());
-
-                                PH::print_stdout("-----------------------------------");
-                                foreach( $address->refrules as $o )
-                                {
-                                    if( $o->name() !== $object->name() )
-                                    {
-                                        PH::print_stdout( '  - ' . $o->toString() );
-
-                                        $o->referencedObjectRenamed($address, $address->name(), "value");
-                                    }
-                                }
-                                PH::print_stdout("-----------------------------------");
-
-                                if( $context->isAPI )
-                                {
-                                    //Todo: API sync
-                                    mwarning( "      - API sync not yet implemented", null, false );
-                                }
-                            }
-                            else
-                                mwarning( "      - unknown address ".$address->value() );
+                            $object->replaceIPv4ObjectByValue( $context, $address_obj );
                         }
                     }
                     else
                     {
                         //NGFW
                         /** @var Address $address */
-                        $address = $vsys->addressStore->find($ip_address);
+                        $address_obj = $vsys->addressStore->find($ip_address);
 
-                        if( strpos( $address->value(), ":" ) !== FALSE )
-                        {
-                            PH::print_stdout( "      - value: ".$address->value() );
-                            PH::print_stdout( "      - only IPv4 Address can be added with this function" );
-                        }
-                        elseif( strpos( $address->value(), "." ) !== FALSE )
-                        {
-                            PH::print_stdout( "      - remove object: ".$address->name() );
-                            PH::print_stdout( "      - add value: ".$address->value() );
-
-                            $object->removeIPv4Address($ip_address);
-                            $object->addIPv4Address($address->value());
-
-                            PH::print_stdout("-----------------------------------");
-                            foreach( $address->refrules as $o )
-                            {
-                                if( $o->name() !== $object->name() )
-                                {
-                                    PH::print_stdout( '  - ' . $o->toString() );
-
-                                    $o->referencedObjectRenamed($address, $address->name(), "value");
-                                }
-                            }
-                            PH::print_stdout("-----------------------------------");
-
-                            if( $context->isAPI )
-                            {
-                                //Todo: API sync
-                                mwarning( "      - API sync not yet implemented", null, false );
-                            }
-                        }
-                        else
-                            mwarning( "      - unknown address ".$address->value() );
+                        $object->replaceIPv4ObjectByValue( $context, $address_obj );
                     }
                 }
                 else
@@ -698,90 +564,18 @@ InterfaceCallContext::$supportedActions['replace_IPv6_objects_by_value'] = Array
                         {
                             $template_object = $pan_object->owner;
                             $panorama_object = $template_object->owner;
-                            $address = $panorama_object->addressStore->find($ip_address);
+                            $address_obj = $panorama_object->addressStore->find($ip_address);
 
-                            if( strpos( $address->value(), "." ) !== FALSE )
-                            {
-                                PH::print_stdout( "      - value: ".$address->value() );
-                                PH::print_stdout( "      - only IPv6 Address can be added with this function" );
-                            }
-                            elseif( strpos( $address->value(), ":" ) !== FALSE )
-                            {
-                                PH::print_stdout( "      - remove object: ".$address->name() );
-                                PH::print_stdout( "      - add value: ".$address->value() );
-
-                                #mwarning( "      - not yet implemented", null, false );
-
-                                $object->removeIPv6Address($ip_address);
-                                $object->addIPv6Address($address->value());
-
-                                PH::print_stdout("-----------------------------------");
-                                foreach( $address->refrules as $o )
-                                {
-                                    if( $o->name() !== $object->name() )
-                                    {
-                                        PH::print_stdout( '  - ' . $o->toString() );
-
-                                        $o->referencedObjectRenamed($address, $address->name(), "value");
-                                    }
-                                }
-                                PH::print_stdout("-----------------------------------");
-
-
-                                if( $context->isAPI )
-                                {
-                                    //Todo: API sync
-                                    mwarning( "      - API sync not yet implemented", null, false );
-                                }
-                            }
-
-                            else
-                                mwarning( "      - unknown address ".$address->value() );
+                            $object->replaceIPv6ObjectByValue($context, $address_obj);
                         }
                     }
                     else
                     {
                         //NGFW
                         /** @var Address $address */
-                        $address = $vsys->addressStore->find($ip_address);
+                        $address_obj = $vsys->addressStore->find($ip_address);
 
-                        if( strpos( $address->value(), "." ) !== FALSE )
-                        {
-                            PH::print_stdout( "      - value: ".$address->value() );
-                            PH::print_stdout( "      - only IPv6 Address can be added with this function" );
-                        }
-                        elseif( strpos( $address->value(), ":" ) !== FALSE )
-                        {
-                            PH::print_stdout( "      - remove object: ".$address->name() );
-                            PH::print_stdout( "      - add value: ".$address->value() );
-
-                            #mwarning( "      - not yet implemented", null, false );
-
-                            $object->removeIPv6Address($ip_address);
-                            $object->addIPv6Address($address->value());
-
-                            PH::print_stdout("-----------------------------------");
-                            foreach( $address->refrules as $o )
-                            {
-                                if( $o->name() !== $object->name() )
-                                {
-                                    PH::print_stdout( '  - ' . $o->toString() );
-
-                                    $o->referencedObjectRenamed($address, $address->name(), "value");
-                                }
-                            }
-                            PH::print_stdout("-----------------------------------");
-
-
-                            if( $context->isAPI )
-                            {
-                                //Todo: API sync
-                                mwarning( "      - API sync not yet implemented", null, false );
-                            }
-                        }
-
-                        else
-                            mwarning( "      - unknown address ".$address->value() );
+                        $object->replaceIPv6ObjectByValue( $context, $address_obj );
                     }
                 }
                 else
@@ -804,88 +598,18 @@ InterfaceCallContext::$supportedActions['replace_IPv6_objects_by_value'] = Array
                         {
                             $template_object = $pan_object->owner;
                             $panorama_object = $template_object->owner;
-                            $address = $panorama_object->addressStore->find($ip_address);
+                            $address_obj = $panorama_object->addressStore->find($ip_address);
 
-                            if( strpos( $address->value(), "." ) !== FALSE )
-                            {
-                                PH::print_stdout( "      - value: ".$address->value() );
-                                PH::print_stdout( "      - only IPv6 Address can be added with this function" );
-                            }
-                            elseif( strpos( $address->value(), ":" ) !== FALSE )
-                            {
-                                PH::print_stdout( "      - remove object: ".$address->name() );
-                                PH::print_stdout( "      - add value: ".$address->value() );
-
-                                #mwarning( "      - not yet implemented", null, false );
-
-                                $object->removeIPv6Address($ip_address);
-                                $object->addIPv6Address($address->value());
-
-                                PH::print_stdout("-----------------------------------");
-                                foreach( $address->refrules as $o )
-                                {
-                                    if( $o->name() !== $object->name() )
-                                    {
-                                        PH::print_stdout( '  - ' . $o->toString() );
-
-                                        $o->referencedObjectRenamed($address, $address->name(), "value");
-                                    }
-                                }
-                                PH::print_stdout("-----------------------------------");
-
-
-                                if( $context->isAPI )
-                                {
-                                    //Todo: API sync
-                                    mwarning( "      - API sync not yet implemented", null, false );
-                                }
-                            }
-                            else
-                                mwarning( "      - unknown address ".$address->value() );
+                            $object->replaceIPv6ObjectByValue( $context, $address_obj );
                         }
                     }
                     else
                     {
                         //NGFW
                         /** @var Address $address */
-                        $address = $vsys->addressStore->find($ip_address);
+                        $address_obj = $vsys->addressStore->find($ip_address);
 
-                        if( strpos( $address->value(), "." ) !== FALSE )
-                        {
-                            PH::print_stdout( "      - value: ".$address->value() );
-                            PH::print_stdout( "      - only IPv6 Address can be added with this function" );
-                        }
-                        elseif( strpos( $address->value(), ":" ) !== FALSE )
-                        {
-                            PH::print_stdout( "      - remove object: ".$address->name() );
-                            PH::print_stdout( "      - add value: ".$address->value() );
-
-                            #mwarning( "      - not yet implemented", null, false );
-
-                            $object->removeIPv6Address($ip_address);
-                            $object->addIPv6Address($address->value());
-
-                            PH::print_stdout("-----------------------------------");
-                            foreach( $address->refrules as $o )
-                            {
-                                if( $o->name() !== $object->name() )
-                                {
-                                    PH::print_stdout( '  - ' . $o->toString() );
-
-                                    $o->referencedObjectRenamed($address, $address->name(), "value");
-                                }
-                            }
-                            PH::print_stdout("-----------------------------------");
-
-
-                            if( $context->isAPI )
-                            {
-                                //Todo: API sync
-                                mwarning( "      - API sync not yet implemented", null, false );
-                            }
-                        }
-                        else
-                            mwarning( "      - unknown address ".$address->value() );
+                        $object->replaceIPv6ObjectByValue( $context, $address_obj );
                     }
                 }
                 else

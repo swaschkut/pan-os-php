@@ -248,7 +248,7 @@ class GPGatewayTunnel
             }
         }
 
-        mwarning("object is not part of this object : {$h->toString()}");
+        mwarning("object is not part of this object : {$h->toString()}", null, false);
     }
 
     public function rewriteInterface_XML()
