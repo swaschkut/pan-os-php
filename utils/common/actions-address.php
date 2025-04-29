@@ -1118,6 +1118,76 @@ AddressCallContext::$supportedActions[] = array(
                 $newName = str_replace('$$tag$$', "", $newName);
 
         }
+
+        if( $object->name() == $newName )
+        {
+            $string = "new name and old name are the same";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
+        $max_length = 63;
+        if( strlen($newName) > $max_length )
+        {
+            $string = "resulting name is too long";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
+        $string = "new name will be '{$newName}'";
+        PH::ACTIONlog( $context, $string );
+
+        $findObject = $object->owner->find($newName, null, false);
+        if( $findObject !== null )
+        {
+            $string = "an object with same name already exists";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+        else
+        {
+            $text = $context->padding . " - renaming object... ";
+            if( $context->isAPI )
+                $object->API_setName($newName);
+            else
+                $object->setName($newName);
+
+            PH::ACTIONlog( $context, $text );
+        }
+
+    },
+    'args' => array('stringFormula' => array(
+        'type' => 'string',
+        'default' => '*nodefault*',
+        'help' =>
+            "This string is used to compose a name. You can use the following aliases :\n" .
+            "  - \$\$current.name\$\$ : current name of the object\n" .
+            "  - \$\$netmask\$\$ : netmask\n" .
+            "  - \$\$netmask.blank32\$\$ : netmask or nothing if 32\n" .
+            "  - \$\$reverse-dns\$\$ : value truncated of netmask if any\n" .
+            "  - \$\$value\$\$ : value of the object\n" .
+            "  - \$\$value.no-netmask\$\$ : value truncated of netmask if any\n" .
+            "  - \$\$tag\$\$ : name of first tag object - if no tag attached '' blank\n")
+    ),
+    'help' => ''
+);
+AddressCallContext::$supportedActions[] = array(
+    'name' => 'name-Rename-location',
+    'MainFunction' => function (AddressCallContext $context) {
+        $object = $context->object;
+
+        if( $object->isTmpAddr() )
+        {
+            $string = "not applicable to TMP objects";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+        $newName = $context->arguments['stringFormula'];
+
+        if( strpos($newName, '$$current.name$$') !== FALSE )
+        {
+            $newName = str_replace('$$current.name$$', $object->name(), $newName);
+        }
         if( strpos($newName, '$$location$$') !== FALSE )
         {
             $location_class = $object->owner->owner;
@@ -1171,12 +1241,6 @@ AddressCallContext::$supportedActions[] = array(
         'help' =>
             "This string is used to compose a name. You can use the following aliases :\n" .
             "  - \$\$current.name\$\$ : current name of the object\n" .
-            "  - \$\$netmask\$\$ : netmask\n" .
-            "  - \$\$netmask.blank32\$\$ : netmask or nothing if 32\n" .
-            "  - \$\$reverse-dns\$\$ : value truncated of netmask if any\n" .
-            "  - \$\$value\$\$ : value of the object\n" .
-            "  - \$\$value.no-netmask\$\$ : value truncated of netmask if any\n" .
-            "  - \$\$tag\$\$ : name of first tag object - if no tag attached '' blank\n" .
             "  - \$\$location\$\$ : name of the location where this object is based\n")
     ),
     'help' => ''

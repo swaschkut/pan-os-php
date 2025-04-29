@@ -1189,6 +1189,85 @@ ServiceCallContext::$supportedActions[] = array(
     ),
     'help' => ''
 );
+ServiceCallContext::$supportedActions[] = array(
+    'name' => 'name-Rename-location',
+    'MainFunction' => function (ServiceCallContext $context) {
+        $object = $context->object;
+
+        if( $object->isTmpSrv() )
+        {
+            $string = "not applicable to TMP objects";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
+        $newName = $context->arguments['stringFormula'];
+
+        if( strpos($newName, '$$current.name$$') !== FALSE )
+        {
+            $newName = str_replace('$$current.name$$', $object->name(), $newName);
+        }
+
+        if( strpos($newName, '$$location$$') !== FALSE )
+        {
+            $location_class = $object->owner->owner;
+            if( get_class($location_class) == 'PanoramaConf' || get_class($location_class) == 'PANConf' )
+                $location = "shared";
+            else
+                $location = $object->owner->owner->name();
+            $newName = str_replace('$$location$$', $location, $newName);
+        }
+
+        if( $object->name() == $newName )
+        {
+            $string = "new name and old name are the same";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
+        $max_length = 63;
+        if( strlen($newName) > $max_length )
+        {
+            $string = "resulting name is too long";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
+        $newName = str_replace(",", "_", $newName);
+
+        $string = "new name will be '{$newName}'";
+        PH::ACTIONlog( $context, $string );
+
+        $findObject = $object->owner->find($newName, null, false);
+        if( $findObject !== null )
+        {
+            $string = "an object with same name already exists";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+        else
+        {
+            $string = $context->padding . " - renaming object... ";
+            if( $context->isAPI )
+                $object->API_setName($newName);
+            else
+                $object->setName($newName);
+
+            PH::ACTIONlog( $context, $string );
+        }
+
+    },
+    'args' => array('stringFormula' => array(
+        'type' => 'string',
+        'default' => '*nodefault*',
+        'help' =>
+            "This string is used to compose a name. You can use the following aliases :\n" .
+            "  - \$\$current.name\$\$ : current name of the object\n" .
+            "  - \$\$location\$\$ : name of the location where this object is based\n"
+    )
+    ),
+    'help' => ''
+);
 
 ServiceCallContext::$supportedActions[] = array(
     'name' => 'name-Rename-wrong-characters',
