@@ -17,6 +17,7 @@ BUGFIX:
 * type=vendor-migration vendor=fortinet
 * type=address-merger | extend functionality to replace/rename address-object in class Virtual/LogicalRouter
 * type=securityprofile actions=url.alert-only-set | extend with credential-enforcement/mode/ip-user
+* class PANConf/PanoramaConf | if shared xmlnode address / addressgroup not exist - create it
 
 GENERAL:
 * multiple Interface class optimisation

@@ -506,7 +506,7 @@ class PanoramaConf
         //
         // Shared address objects extraction
         //
-        $tmp = DH::findFirstElement('address', $this->sharedroot);
+        $tmp = DH::findFirstElementorCreate('address', $this->sharedroot);
         if( $tmp !== FALSE )
             $this->addressStore->load_addresses_from_domxml($tmp);
         // end of address extraction
@@ -514,7 +514,7 @@ class PanoramaConf
         //
         // Extract address groups
         //
-        $tmp = DH::findFirstElement('address-group', $this->sharedroot);
+        $tmp = DH::findFirstElementorCreate('address-group', $this->sharedroot);
         if( $tmp !== FALSE )
             $this->addressStore->load_addressgroups_from_domxml($tmp);
         // End of address groups extraction
