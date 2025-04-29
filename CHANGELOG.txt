@@ -7,6 +7,7 @@ UTIL:
 * extend interfaces classes with addIPv6Address / removeIPv6Address | for usage in type=interface actions=replace_IPv6_objects_by_value
 * type=interface | new actions=replace_IPv6_objects_by_value
 * type=interface actions=replace_ipv4_objects_by_value | optimisation for Panorama Template
+* type=service actions=display | move to class Service method display()
 
 BUGFIX:
 * type=diff outputformatset=file.txt | bugfix to keep korrekt interface name, especially for ethernetX/Y
