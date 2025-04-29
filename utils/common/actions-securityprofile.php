@@ -2793,6 +2793,17 @@ SecurityProfileCallContext::$supportedActions['url.alert-only-set'] = array(
             $xmlnode->textContent = "yes";
         }
 
+        $credential_xmlnode = DH::findFirstElementOrCreate("credential-enforcement", $object->xmlroot);
+        $mode_credential_xmlnode = DH::findFirstElementOrCreate("mode", $credential_xmlnode);
+        $mode_child_xmlnode = DH::firstChildElement($mode_credential_xmlnode);
+        if( $mode_child_xmlnode->nodeName == "disabled" )
+        {
+            DH::findFirstElementOrCreate("ip-user", $mode_credential_xmlnode);
+            $logseverity_credential_xmlnode = DH::findFirstElementOrCreate("log-severity", $credential_xmlnode);
+            $logseverity_credential_xmlnode->textContent = "medium";
+            $mode_credential_xmlnode->removeChild($mode_child_xmlnode);
+        }
+
         if( $context->isAPI )
         {
             $object->API_sync();

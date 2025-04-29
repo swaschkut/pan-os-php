@@ -571,8 +571,8 @@ trait FORTINETsecurityrules
                             }
 
 
-                            $lid++;
-                            $position++;
+                            #$lid++;
+                            #$position++;
                             $RuleName = "";
                             $addressNamePan = "";
                             $addressName = "";
