@@ -8,6 +8,7 @@ UTIL:
 * type=interface | new actions=replace_IPv6_objects_by_value
 * type=interface actions=replace_ipv4_objects_by_value | optimisation for Panorama Template
 * type=service actions=display | move to class Service method display()
+* type=address/service actions=name-rename:$$location$$ | introduce new variable - to be flexible to add e.g. leading DeviceGroup Name
 
 BUGFIX:
 * type=diff outputformatset=file.txt | bugfix to keep korrekt interface name, especially for ethernetX/Y

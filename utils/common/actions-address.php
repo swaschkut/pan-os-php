@@ -1118,6 +1118,15 @@ AddressCallContext::$supportedActions[] = array(
                 $newName = str_replace('$$tag$$', "", $newName);
 
         }
+        if( strpos($newName, '$$location$$') !== FALSE )
+        {
+            $location_class = $object->owner->owner;
+            if( get_class($location_class) == 'PanoramaConf' || get_class($location_class) == 'PANConf' )
+                $location = "shared";
+            else
+                $location = $object->owner->owner->name();
+            $newName = str_replace('$$location$$', $location, $newName);
+        }
 
         if( $object->name() == $newName )
         {
@@ -1167,7 +1176,8 @@ AddressCallContext::$supportedActions[] = array(
             "  - \$\$reverse-dns\$\$ : value truncated of netmask if any\n" .
             "  - \$\$value\$\$ : value of the object\n" .
             "  - \$\$value.no-netmask\$\$ : value truncated of netmask if any\n" .
-            "  - \$\$tag\$\$ : name of first tag object - if no tag attached '' blank\n")
+            "  - \$\$tag\$\$ : name of first tag object - if no tag attached '' blank\n" .
+            "  - \$\$location\$\$ : name of the location where this object is based\n")
     ),
     'help' => ''
 );

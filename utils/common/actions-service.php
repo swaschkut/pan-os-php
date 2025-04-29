@@ -1125,7 +1125,15 @@ ServiceCallContext::$supportedActions[] = array(
         {
             $newName = str_replace('$$timeout$$', $object->getTimeout(), $newName);
         }
-
+        if( strpos($newName, '$$location$$') !== FALSE )
+        {
+            $location_class = $object->owner->owner;
+            if( get_class($location_class) == 'PanoramaConf' || get_class($location_class) == 'PANConf' )
+                $location = "shared";
+            else
+                $location = $object->owner->owner->name();
+            $newName = str_replace('$$location$$', $location, $newName);
+        }
 
         if( $object->name() == $newName )
         {
@@ -1175,8 +1183,9 @@ ServiceCallContext::$supportedActions[] = array(
             "  - \$\$destinationport\$\$ : destination Port\n" .
             "  - \$\$protocol\$\$ : service protocol\n" .
             "  - \$\$sourceport\$\$ : source Port\n" .
-            "  - \$\$timeout\$\$ : timeout value of the object\n"
-    )
+            "  - \$\$timeout\$\$ : timeout value of the object\n" .
+            "  - \$\$location\$\$ : name of the location where this object is based\n"
+        )
     ),
     'help' => ''
 );
@@ -1499,33 +1508,8 @@ ServiceCallContext::$supportedActions[] = array(
         }
         else
         {
-            $tmp_txt = "     * " . get_class($object) . " '{$object->name()}'     value: '{$object->protocol()}/{$object->getDestPort()}'";
-            PH::$JSON_TMP['sub']['object'][$object->name()]['value'] = "{$object->protocol()}/{$object->getDestPort()}";
-
-            if( $object->description() != "" )
-                $tmp_txt .= "    desc: '{$object->description()}'";
-            PH::$JSON_TMP['sub']['object'][$object->name()]['description'] = $object->description();
-
-            if( $object->getSourcePort() != "" )
-                $tmp_txt .= "    sourceport: '" . $object->getSourcePort() . "'";
-            PH::$JSON_TMP['sub']['object'][$object->name()]['sourceport'] = $object->getSourcePort();
-
-            if( $object->getTimeout() != "" )
-                $tmp_txt .= "    timeout: '" . $object->getTimeout() . "'";
-            PH::$JSON_TMP['sub']['object'][$object->name()]['timeout'] = $object->getTimeout();
-
-            if( $object->getHalfcloseTimeout() != "" )
-                $tmp_txt .= "    HalfcloseTimeout: '" . $object->getHalfcloseTimeout() . "'";
-            PH::$JSON_TMP['sub']['object'][$object->name()]['halfclosetimeout'] = $object->getHalfcloseTimeout();
-
-            if( $object->getTimewaitTimeout() != "" )
-                $tmp_txt .= "    TimewaitTimeout: '" . $object->getTimewaitTimeout() . "'";
-            PH::$JSON_TMP['sub']['object'][$object->name()]['timewaittimeout'] = $object->getTimewaitTimeout();
-
-            if( strpos($object->getDestPort(), ",") !== FALSE )
-                $tmp_txt .= "    count values: '" . (substr_count($object->getDestPort(), ",") + 1) . "' length: " . strlen($object->getDestPort());
-            PH::$JSON_TMP['sub']['object'][$object->name()]['count values'] = (substr_count($object->getDestPort(), ",") + 1);
-            PH::$JSON_TMP['sub']['object'][$object->name()]['string legth'] = strlen($object->getDestPort());
+            $tmp_txt = "";
+            $object->display($tmp_txt);
 
             PH::print_stdout( $tmp_txt );
         }
