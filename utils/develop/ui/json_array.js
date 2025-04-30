@@ -313,6 +313,18 @@ var subjectObject =
                 },
                 "help": ""
             },
+            "name-rename-location": {
+                "name": "name-Rename-location",
+                "MainFunction": {},
+                "args": {
+                    "stringFormula": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "This string is used to compose a name. You can use the following aliases :\n  - $$current.name$$ : current name of the object\n  - $$location$$ : name of the location where this object is based\n"
+                    }
+                },
+                "help": ""
+            },
             "name-rename-wrong-characters": {
                 "name": "name-rename-wrong-characters",
                 "MainFunction": {},
@@ -4718,7 +4730,7 @@ var subjectObject =
                     "stringFormula": {
                         "type": "string",
                         "default": "*nodefault*",
-                        "help": "This string is used to compose a name. You can use the following aliases :\n  - $$current.name$$ : current name of the object\n  - $$sequential.number$$ : sequential number - starting with 1\n  - $$uuid$$ : rule uuid\n"
+                        "help": "This string is used to compose a name. You can use the following aliases :\n  - $$current.name$$ : current name of the object\n  - $$sequential.number$$ : sequential number - starting with 1\n  - $$uuid$$ : rule uuid\n  - $$location$$ : DeviceGroup \/ vsys name\n"
                     },
                     "accept63characters": {
                         "type": "bool",
@@ -9017,7 +9029,19 @@ var subjectObject =
                     "stringFormula": {
                         "type": "string",
                         "default": "*nodefault*",
-                        "help": "This string is used to compose a name. You can use the following aliases :\n  - $$current.name$$ : current name of the object\n  - $$destinationport$$ : destination Port\n  - $$protocol$$ : service protocol\n  - $$sourceport$$ : source Port\n  - $$timeout$$ : timeout value of the object\n"
+                        "help": "This string is used to compose a name. You can use the following aliases :\n  - $$current.name$$ : current name of the object\n  - $$destinationport$$ : destination Port\n  - $$protocol$$ : service protocol\n  - $$sourceport$$ : source Port\n  - $$timeout$$ : timeout value of the object\n  - $$location$$ : name of the location where this object is based\n"
+                    }
+                },
+                "help": ""
+            },
+            "name-rename-location": {
+                "name": "name-Rename-location",
+                "MainFunction": {},
+                "args": {
+                    "stringFormula": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "This string is used to compose a name. You can use the following aliases :\n  - $$current.name$$ : current name of the object\n  - $$location$$ : name of the location where this object is based\n"
                     }
                 },
                 "help": ""

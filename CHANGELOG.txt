@@ -24,6 +24,7 @@ BUGFIX:
 
 GENERAL:
 * multiple Interface class optimisation
+* update Device App-ID to version: 8971-9419
 
 
 2.1.36 (20250425)
