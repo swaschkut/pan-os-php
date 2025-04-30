@@ -3962,6 +3962,13 @@ RuleCallContext::$supportedActions[] = array(
         if( strpos($newName, '$$uuid$$') !== FALSE )
             $newName = str_replace('$$uuid$$', $rule->uuid(), $newName);
 
+        if( strpos($newName, '$$location$$') !== FALSE )
+        {
+            $location = $rule->owner->owner->name();
+            $newName = str_replace('$$location$$', $location, $newName);
+        }
+
+
         if( strlen($newName) > 31 )
         {
             if( isset($context->object->owner->owner) && $context->object->owner->owner->version > 80 && strlen($newName) <= 63 )
@@ -4016,7 +4023,8 @@ RuleCallContext::$supportedActions[] = array(
             "This string is used to compose a name. You can use the following aliases :\n" .
             "  - \$\$current.name\$\$ : current name of the object\n" .
             "  - \$\$sequential.number\$\$ : sequential number - starting with 1\n" .
-            "  - \$\$uuid\$\$ : rule uuid\n"
+            "  - \$\$uuid\$\$ : rule uuid\n" .
+            "  - \$\$location\$\$ : DeviceGroup / vsys name\n"
     ),
         'accept63characters' => array(
             'type' => 'bool',
