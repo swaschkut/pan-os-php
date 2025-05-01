@@ -2589,6 +2589,8 @@ SecurityProfileCallContext::$supportedActions['vulnerability.alert-only-set'] = 
         if (get_class($object) !== "VulnerabilityProfile")
             return null;
 
+        $sendAPI = false;
+
         $tmp_mlav_engine = DH::findFirstElement('cloud-inline-analysis', $object->xmlroot);
         if( $object->owner->owner->version >= 110 )
         {
@@ -2596,6 +2598,7 @@ SecurityProfileCallContext::$supportedActions['vulnerability.alert-only-set'] = 
                 $tmp_mlav_engine = DH::findFirstElementOrCreate('cloud-inline-analysis', $object->xmlroot);
 
             $tmp_mlav_engine->textContent = "yes";
+            $sendAPI = true;
         }
 
 
@@ -2620,6 +2623,8 @@ SecurityProfileCallContext::$supportedActions['vulnerability.alert-only-set'] = 
 
                 $xmlElement = DH::importXmlStringOrDie($object->xmlroot->ownerDocument, $xmlString2);
                 $tmp_mlav_engine->appendChild($xmlElement);
+
+                $sendAPI = true;
             }
 
             $action_other_then_allow_alert = false;
@@ -2635,6 +2640,8 @@ SecurityProfileCallContext::$supportedActions['vulnerability.alert-only-set'] = 
                 {
                     $action_xmlNode->textContent = "alert";
                     $object->additional['mica-engine-vulnerability-enabled'][$name]['inline-policy-action'] = "alert";
+
+                    $sendAPI = true;
                 }
                 elseif( $action_xmlNode->textContent == "alert" )
                 {
@@ -2650,6 +2657,8 @@ SecurityProfileCallContext::$supportedActions['vulnerability.alert-only-set'] = 
             {
                 $tmp_mlav_engine = DH::findFirstElementOrCreate('cloud-inline-analysis', $object->xmlroot);
                 $tmp_mlav_engine->textContent = "yes";
+
+                $sendAPI = true;
             }
         }
 
@@ -2675,6 +2684,8 @@ SecurityProfileCallContext::$supportedActions['vulnerability.alert-only-set'] = 
                         $xmlString = '<alert/>';
                         $xmlElement = DH::importXmlStringOrDie($rule->xmlroot->ownerDocument, $xmlString);
                         $tmp->appendChild($xmlElement);
+
+                        $sendAPI = true;
                     }
                 }
             }
@@ -2705,11 +2716,49 @@ SecurityProfileCallContext::$supportedActions['vulnerability.alert-only-set'] = 
                     $object->owner->owner->ThreatPolicyStore->add($threadPolicy_obj);
 
                     $threadPolicy_obj->newThreatPolicyXML($object->xmlroot, $rule, $rule, $threadPolicy_obj->action);
+
+                    $sendAPI = true;
+                }
+            }
+        }
+        foreach( $sp_severity_default as $severity )
+        {
+            if ($severity == "any")
+                continue;
+
+            $object->vulnerability_rules_coverage();
+            if( !isset($object->rule_coverage[$severity]['any']) )
+            {
+                $host_types = array("client", "server");
+                foreach($host_types as $host_type)
+                {
+                    if( !isset($object->rule_coverage[$severity][$host_type]))
+                    {
+                        $threadPolicy_obj = new ThreatPolicyVulnerability($severity."_".$host_type, $object);
+                        $threadPolicy_obj->type = "ThreatPolicyVulnerability";
+
+                        if( $severity == "critical" || $severity == "high" || $severity == "medium" )
+                            $threadPolicy_obj->action = "alert";
+                        elseif( $severity == "low" || $severity == "informational" )
+                            $threadPolicy_obj->action = "default";
+
+                        $threadPolicy_obj->host = $host_type;
+
+                        $object->rules_obj[] = $threadPolicy_obj;
+                        $threadPolicy_obj->addReference($object);
+
+                        $object->owner->owner->ThreatPolicyStore->add($threadPolicy_obj);
+
+                        $threadPolicy_obj->newThreatPolicyXML($object->xmlroot, $severity."_".$host_type, $severity, $threadPolicy_obj->action, $threadPolicy_obj->host);
+
+                        $sendAPI = true;
+                        DH::DEBUGprintDOMDocument($threadPolicy_obj->xmlroot);
+                    }
                 }
             }
         }
 
-        if( $context->isAPI )
+        if( $sendAPI && $context->isAPI )
         {
             $object->API_sync();
         }

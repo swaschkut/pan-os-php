@@ -22,6 +22,8 @@ BUGFIX:
 * type=securityprofile actions=url.alert-only-set | extend with credential-enforcement/mode/ip-user
 * class PANConf/PanoramaConf | if shared xmlnode address / addressgroup not exist - create it
 * type=rule ruletype=nat | fix to only display these columns which are needed for NAT
+* type=securityprofile actions=vulnerability.alert-only-set | take host type in consideration
+* type=securityprofile filter=(vb is.visibility) | take host type in consideration
 
 GENERAL:
 * multiple Interface class optimisation
