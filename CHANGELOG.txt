@@ -21,6 +21,7 @@ BUGFIX:
 * type=address-merger | extend functionality to replace/rename address-object in class Virtual/LogicalRouter
 * type=securityprofile actions=url.alert-only-set | extend with credential-enforcement/mode/ip-user
 * class PANConf/PanoramaConf | if shared xmlnode address / addressgroup not exist - create it
+* type=rule ruletype=nat | fix to only display these columns which are needed for NAT
 
 GENERAL:
 * multiple Interface class optimisation
