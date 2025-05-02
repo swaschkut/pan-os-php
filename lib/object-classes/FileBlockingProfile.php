@@ -144,11 +144,9 @@ class FileBlockingProfile extends SecurityProfile2
 
     public function fileblocking_rules_best_practice()
     {
-        $bp_set = null;
+        $bp_set = false;
         if (!empty($this->rules_obj))
         {
-            $bp_set = false;
-
             $check_array = $this->rules_obj[0]->fileblocking_rule_bp_visibility_JSON( "visibility", "file-blocking" );
             $checkBP_array = $this->rules_obj[0]->fileblocking_rule_bp_visibility_JSON( "bp", "file-blocking" );
             $this->fileblocking_rules_coverage();
@@ -219,7 +217,7 @@ class FileBlockingProfile extends SecurityProfile2
 
     public function fileblocking_rules_visibility()
     {
-        $bp_set = null;
+        $bp_set = false;
         if (!empty($this->rules_obj))
         {
             $bp_set = false;

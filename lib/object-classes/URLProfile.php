@@ -863,7 +863,10 @@ class URLProfile extends SecurityProfile2
 
     public function is_adoption()
     {
-        return true;
+        if( $this->site_access_is_adoption() && $this->credential_is_adoption() )
+            return true;
+        else
+            return false;
     }
 
     public function site_access_is_best_practice()
@@ -909,7 +912,9 @@ class URLProfile extends SecurityProfile2
 
     public function credential_is_adoption()
     {
-        return TRUE;
+        if( $this->credential_mode !== null && $this->credential_mode !== "disabled")
+            return TRUE;
+        return False;
     }
 
     static $templatexml = '<entry name="**temporarynamechangeme**"></entry>';
