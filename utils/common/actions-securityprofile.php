@@ -2752,7 +2752,6 @@ SecurityProfileCallContext::$supportedActions['vulnerability.alert-only-set'] = 
                         $threadPolicy_obj->newThreatPolicyXML($object->xmlroot, $severity."_".$host_type, $severity, $threadPolicy_obj->action, $threadPolicy_obj->host);
 
                         $sendAPI = true;
-                        DH::DEBUGprintDOMDocument($threadPolicy_obj->xmlroot);
                     }
                 }
             }

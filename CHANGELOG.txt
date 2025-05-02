@@ -12,7 +12,7 @@ UTIL:
 * type=rule 'actions=name-rename:$$location$$-$$current.name$$' - introduce new actions variable
 
 BUGFIX:
-* type=diff outputformatset=file.txt | bugfix to keep korrekt interface name, especially for ethernetX/Y
+* type=diff outputformatset=file.txt | bugfix to keep correct interface name, especially for ethernetX/Y
 * type=diff outputformatset=file.txt | bugfix to display correct command order if network related
 * type=diff | bugfix for none correct delete commands for local-address ip
 * class EthernetInterface - store object name as configured not object value
@@ -24,6 +24,7 @@ BUGFIX:
 * type=rule ruletype=nat | fix to only display these columns which are needed for NAT
 * type=securityprofile actions=vulnerability.alert-only-set | take host type in consideration
 * type=securityprofile filter=(vb is.visibility) | take host type in consideration
+* type=securityprofile filter=(as is.visibility) | remove check for dns-security
 
 GENERAL:
 * multiple Interface class optimisation
@@ -47,7 +48,7 @@ BUGFIX:
 * bugfix for type=iron-skillet | to also disable exception support
 * bugfix for SecurityProfileGroup manipulation | use secprofProfiles_obj instead of the old secprofProfiles which were only Txt
 * type=securityprofile actions=exporttoexcel:file.html | bugfix if not AntiSpyware, to correctly add column if visibility|bestpractice is used
-* type=securityprofil actions=xyz.alert-only-set | bugfix to also add missing severity
+* type=securityprofile actions=xyz.alert-only-set | bugfix to also add missing severity
 * type=address-merger | bugfix to allow merging host objects with/without netmask /32 - validation if an object is used at interface still missing
 * class AddressGroup | likely a bugfix to avoid memory leak, if a subgroup somewhere contains the original AddressGroup to avoid a loop
 
