@@ -21,6 +21,8 @@ class DataFilteringProfile extends SecurityProfile2
 
     public $secprof_type;
 
+    public $rules_obj = array();
+
     /**
      * you should not need this one for normal use
      * @param string $name
@@ -86,12 +88,33 @@ class DataFilteringProfile extends SecurityProfile2
      */
     public function load_from_domxml(DOMElement $xml)
     {
-        $secprof_type = "data-filtering";
+        $this->secprof_type = "data-filtering";
         $this->xmlroot = $xml;
 
         $this->name = DH::findAttribute('name', $xml);
         if( $this->name === FALSE )
             derr("DataFiltering SecurityProfile name not found\n");
+
+        $tmp_rule = DH::findFirstElement('rules', $xml);
+        if( $tmp_rule !== FALSE )
+        {
+            foreach( $tmp_rule->childNodes as $tmp_entry1 )
+            {
+                if( $tmp_entry1->nodeType != XML_ELEMENT_NODE )
+                    continue;
+
+                $rule_name = DH::findAttribute('name', $tmp_entry1);
+                if( $rule_name === FALSE )
+                    derr("FileBlocking Rule name not found\n");
+
+                $threadPolicy_obj = new ThreatPolicyDataFiltering( $rule_name, $this );
+                $threadPolicy_obj->datafilteringpolicy_load_from_domxml( $tmp_entry1 );
+                $this->rules_obj[] = $threadPolicy_obj;
+                $threadPolicy_obj->addReference( $this );
+
+                $this->owner->owner->ThreatPolicyStore->add($threadPolicy_obj);
+            }
+        }
 
         return TRUE;
     }
@@ -102,10 +125,33 @@ class DataFilteringProfile extends SecurityProfile2
         PH::$JSON_TMP['sub']['object'][$this->name()]['name'] = $this->name();
         PH::$JSON_TMP['sub']['object'][$this->name()]['type'] = get_class($this);
 
-        //Todo: continue for PH::print_stdout( ); out
+        if( !empty( $this->rules_obj ) )
+        {
+            PH::print_stdout("        - threat-rules:");
+
+            foreach ($this->rules_obj as $rulename => $rule)
+            {
+                $rule->display();
+            }
+        }
 
     }
 
+    public function is_adoption()
+    {
+        if( count($this->rules_obj) > 0 )
+            return true;
+        else
+            return false;
+    }
+
+    public function is_visibility()
+    {
+        if( count($this->rules_obj) > 0 )
+            return true;
+        else
+            return false;
+    }
 
     static $templatexml = '<entry name="**temporarynamechangeme**"></entry>';
 

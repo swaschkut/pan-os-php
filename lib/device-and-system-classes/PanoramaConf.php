@@ -2085,12 +2085,12 @@ class PanoramaConf
             $stdoutarray['log at end percentage'] = floor(( $stdoutarray['log at end'] / $stdoutarray['security rules enabled'] ) * 100 );
         else
             $stdoutarray['log at end percentage'] = 0;
-        $stdoutarray['log at end not start'] = count( $sub_ruleStore->rules( $generalFilter."(log at.end) and !(log at.start)" ) );
-        $stdoutarray['log at end not start calc'] = $stdoutarray['log at end not start']."/".$stdoutarray['security rules enabled'];
+        $stdoutarray['log at not start'] = count( $sub_ruleStore->rules( $generalFilter." !(log at.start)" ) );
+        $stdoutarray['log at not start calc'] = $stdoutarray['log at not start']."/".$stdoutarray['security rules enabled'];
         if( $stdoutarray['security rules enabled'] !== 0 )
-            $stdoutarray['log at end not start percentage'] = floor(( $stdoutarray['log at end not start'] / $stdoutarray['security rules enabled'] ) * 100 );
+            $stdoutarray['log at not start percentage'] = floor(( $stdoutarray['log at not start'] / $stdoutarray['security rules enabled'] ) * 100 );
         else
-            $stdoutarray['log at end not start percentage'] = 0;
+            $stdoutarray['log at not start percentage'] = 0;
 
         //Log Forwarding Profiles
         $stdoutarray['log prof set'] = count( $sub_ruleStore->rules( $generalFilter."(logprof is.set)" ) );
@@ -2258,16 +2258,16 @@ class PanoramaConf
             $stdoutarray['fb adoption percentage'] = 0;
 
         //Data Filtering
-        $stdoutarray['data visibility'] = count( $sub_ruleStore->rules( $generalFilter_allow."(secprof data-profile.is.set)" ) );
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "df is.visiblity" );
+        $stdoutarray['data visibility'] = count( $sub_ruleStore->rules( $filter_array ) );
         $stdoutarray['data visibility calc'] = $stdoutarray['data visibility']."/".$ruleForCalculation;
         if( $ruleForCalculation !== 0 )
             $stdoutarray['data visibility percentage'] = floor( ( $stdoutarray['data visibility'] / $ruleForCalculation ) * 100 );
         else
             $stdoutarray['data visibility percentage'] = 0;
 
-        $stdoutarray['data best-practice'] = "NOT available";
-        //--
-        $stdoutarray['data adoption'] = count( $sub_ruleStore->rules( $generalFilter_allow."(secprof data-profile.is.set)" ) );
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "df is.adoption" );
+        $stdoutarray['data adoption'] = count( $sub_ruleStore->rules( $filter_array ) );
         $stdoutarray['data adoption calc'] = $stdoutarray['data adoption']."/".$ruleForCalculation;
         if( $ruleForCalculation !== 0 )
             $stdoutarray['data adoption percentage'] = floor( ( $stdoutarray['data adoption'] / $ruleForCalculation ) * 100 );
@@ -2420,7 +2420,7 @@ class PanoramaConf
         $percentageArray['visibility'] = $percentageArray_visibility;
 
         $percentageArray_best_practice = array();
-        $percentageArray_best_practice['Logging'] = $stdoutarray['log at end not start percentage'];
+        $percentageArray_best_practice['Logging'] = $stdoutarray['log at not start percentage'];
         #$percentageArray_best_practice['Log Forwarding Profiles'] = $stdoutarray['log prof set percentage'];
 
         $percentageArray_best_practice['Wildfire Analysis Profiles'] = $stdoutarray['wf best-practice percentage'];

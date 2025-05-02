@@ -27,6 +27,7 @@ BUGFIX:
 * type=securityprofile filter=(as is.visibility) | remove check for dns-security
 * bugfix type=securityprofile securityprofiletype=url-filtering 'filter=(url is.visibility)' also for actions=url.alert-only-set | custom-url-category are not in scope
 * bugfix type=securityprofile | credential_is_adoption -> check if mode is set and not disabled | antispyware - again use dnslist
+* bugfix type=securityprofile | spyware / url credential improvements
 
 GENERAL:
 * multiple Interface class optimisation

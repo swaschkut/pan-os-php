@@ -264,6 +264,7 @@ require_once $basedir . '/object-classes/ThreatPolicySpyware.php';
 require_once $basedir . '/object-classes/ThreatPolicyVulnerability.php';
 require_once $basedir . '/object-classes/ThreatPolicyWildfire.php';
 require_once $basedir . '/object-classes/ThreatPolicyFileBlocking.php';
+require_once $basedir . '/object-classes/ThreatPolicyDataFiltering.php';
 require_once $basedir . '/object-classes/DNSPolicyStore.php';
 require_once $basedir . '/object-classes/DNSPolicy.php';
 require_once $basedir . '/object-classes/VulnerabilityProfile.php';

@@ -1405,12 +1405,12 @@ class PANConf
 
 
         $percentageArray_best_practice = array();
-        $stdoutarray['log at end not start calc'] = $stdoutarray['log at end not start'] ."/". $stdoutarray['security rules enabled'];
+        $stdoutarray['log at not start calc'] = $stdoutarray['log at not start'] ."/". $stdoutarray['security rules enabled'];
         if( $stdoutarray['security rules enabled'] !== 0 )
-            $stdoutarray['log at end not start percentage'] = floor(( $stdoutarray['log at end not start'] / $stdoutarray['security rules enabled'] ) * 100 );
+            $stdoutarray['log at not start percentage'] = floor(( $stdoutarray['log at not start'] / $stdoutarray['security rules enabled'] ) * 100 );
         else
-            $stdoutarray['log at end not start percentage'] = 0;
-        $percentageArray_best_practice['Logging'] = $stdoutarray['log at end not start percentage'];
+            $stdoutarray['log at not start percentage'] = 0;
+        $percentageArray_best_practice['Logging'] = $stdoutarray['log at not start percentage'];
         #$percentageArray_best_practice['Log Forwarding Profiles'] = $stdoutarray['log prof set percentage'];
 
         $stdoutarray['wf best-practice calc'] = $stdoutarray['wf best-practice'] ."/". $ruleForCalculation;
