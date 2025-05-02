@@ -25,6 +25,7 @@ BUGFIX:
 * type=securityprofile actions=vulnerability.alert-only-set | take host type in consideration
 * type=securityprofile filter=(vb is.visibility) | take host type in consideration
 * type=securityprofile filter=(as is.visibility) | remove check for dns-security
+* bugfix type=securityprofile securityprofiletype=url-filtering 'filter=(url is.visibility)' also for actions=url.alert-only-set | custom-url-category are not in scope
 
 GENERAL:
 * multiple Interface class optimisation

@@ -1573,10 +1573,19 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     {
                         //URL detail visibility
                         $tmp_array = array();
-                        if( empty($object->allow) )
+
+                        $sanitized_action = $object->allow;
+                        foreach( $sanitized_action as $key => $url_category)
+                        {
+                            $custom_url_category_obj = $object->owner->owner->customURLProfileStore->find($url_category);
+                            if( $custom_url_category_obj !== NULL )
+                                unset( $sanitized_action[$key] );
+                        }
+
+                        if( empty($sanitized_action) )
                             $tmp_array[] = "yes";
                         else
-                            $tmp_array[] = 'ALLOW: "set all action to alert"';
+                            $tmp_array[] = 'ALLOW: "set all pre-defined URL-category action to alert"';
 
                         $lines .= $context->encloseFunction($tmp_array);
                     }
@@ -1586,10 +1595,19 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     {
                         //<th>URL credentials</th>
                         $tmp_array = array();
-                        if( empty($object->allow_credential) )
+
+                        $sanitized_action = $object->allow_credential;
+                        foreach( $sanitized_action as $key => $url_category)
+                        {
+                            $custom_url_category_obj = $object->owner->owner->customURLProfileStore->find($url_category);
+                            if( $custom_url_category_obj !== NULL )
+                                unset( $sanitized_action[$key] );
+                        }
+
+                        if( empty($sanitized_action) )
                             $tmp_array[] = "yes";
                         else
-                            $tmp_array[] = 'ALLOW: "set all action to alert"';
+                            $tmp_array[] = 'ALLOW: "set all pre-defined URL-category action to alert"';
 
                         $lines .= $context->encloseFunction($tmp_array);
                     }
@@ -2780,19 +2798,32 @@ SecurityProfileCallContext::$supportedActions['url.alert-only-set'] = array(
                 if( $allow_node->nodeType != XML_ELEMENT_NODE )
                     continue;
 
+                $tmp_name = $allow_node->textContent;
+
+                $custom_url_category_obj = $object->owner->owner->customURLProfileStore->find($tmp_name);
+                if( $custom_url_category_obj !== NULL )
+                    continue;
+
+
                 $clone_node = $allow_node->cloneNode(true);
                 $alert_xmlnode->appendChild($clone_node);
                 $allow_xmlnode->removeChild($allow_node);
-                $tmp_name = $allow_node->textContent;
+
 
                 $key = array_search ($tmp_name, $object->allow);
                 unset($object->allow[$key]);
             }
-            $object->xmlroot->removeChild($allow_xmlnode);
+            if( empty($object->allow) )
+                $object->xmlroot->removeChild($allow_xmlnode);
         }
 
         foreach( $object->allow as $allow )
         {
+            $custom_url_category_obj = $object->owner->owner->customURLProfileStore->find($allow);
+            if( $custom_url_category_obj !== NULL )
+                continue;
+
+
             $object->alert[] = $allow;
 
             $xmlString = '<member>'.$allow.'</member>';
@@ -2811,19 +2842,29 @@ SecurityProfileCallContext::$supportedActions['url.alert-only-set'] = array(
                 if( $allow_node->nodeType != XML_ELEMENT_NODE )
                     continue;
 
+                $tmp_name = $allow_node->textContent;
+
+                $custom_url_category_obj = $object->owner->owner->customURLProfileStore->find($tmp_name);
+                if( $custom_url_category_obj !== NULL )
+                    continue;
+
                 $clone_node = $allow_node->cloneNode(true);
                 $alert_credential_xmlnode->appendChild($clone_node);
                 $allow_credential_xmlnode->removeChild($allow_node);
-                $tmp_name = $allow_node->textContent;
 
                 $key = array_search ($tmp_name, $object->allow_credential);
                 unset($object->allow_credential[$key]);
             }
-            $credential_xmlnode->removeChild($allow_credential_xmlnode);
+            if( empty($object->allow_credential) )
+                $credential_xmlnode->removeChild($allow_credential_xmlnode);
         }
 
         foreach( $object->allow_credential as $allow )
         {
+            $custom_url_category_obj = $object->owner->owner->customURLProfileStore->find($allow);
+            if( $custom_url_category_obj !== NULL )
+                continue;
+
             $object->alert_credential[] = $allow;
 
             $xmlString = '<member>'.$allow.'</member>';

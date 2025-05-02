@@ -23,16 +23,17 @@ class URLProfile extends SecurityProfile2
     public $secprof_type;
 
     public $allow = array();
-    public $allow_wo_custom = array();
     public $allow_credential = array();
-    public $allow_credential_wo_custom = array();
+
     public $alert = array();
     public $alert_credential = array();
-    public $alert_credential_wo_custom = array();
+
     public $block = array();
     public $block_credential = array();
+
     public $continue = array();
     public $continue_credential = array();
+
     public $override = array();
     public $override_credential = array();
 
@@ -684,7 +685,16 @@ class URLProfile extends SecurityProfile2
         if( strpos( $check_array, "!") !== FALSE )
         {
             $finding = str_replace("!", "", $check_array);
-            if( !empty($this->$finding) )
+
+            $sanitized_action = $this->$finding;
+            foreach( $sanitized_action as $key => $url_category)
+            {
+                $custom_url_category_obj = $this->owner->owner->customURLProfileStore->find($url_category);
+                if( $custom_url_category_obj !== NULL )
+                    unset( $sanitized_action[$key] );
+            }
+
+            if( !empty($sanitized_action) )
                 return False;
         }
 
@@ -714,7 +724,16 @@ class URLProfile extends SecurityProfile2
         if( strpos( $check_array['category'], "!") !== FALSE )
         {
             $finding = str_replace("!", "", $check_array['category']);
-            if( !empty($this->$finding) )
+
+            $sanitized_action = $this->$finding;
+            foreach( $sanitized_action as $key => $url_category)
+            {
+                $custom_url_category_obj = $this->owner->owner->customURLProfileStore->find($url_category);
+                if( $custom_url_category_obj !== NULL )
+                    unset( $sanitized_action[$key] );
+            }
+
+            if( !empty($sanitized_action) )
                 return False;
         }
 
