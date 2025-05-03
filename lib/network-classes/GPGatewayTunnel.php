@@ -90,7 +90,17 @@ class GPGatewayTunnel
                         $this->localInterface->addInterface( $tmpInterface );
                     }
                     else
-                        mwarning( "Interface: ".$tmp->textContent." not found for GPGatewayTunnel: ".$this->name(), null, false );
+                    {
+                        if( isset($this->owner->owner->owner)
+                            && get_class($this->owner->owner->owner) == 'Template' || get_class($this->owner->owner->owner) == 'TemplateStack'
+                        )
+                            $tmp_owner = get_class($this->owner->owner->owner). " name: ".$this->owner->owner->owner->name();
+                        else
+                            $tmp_owner = get_class($this->owner->owner). " name: ".$this->owner->owner->name();
+
+                        mwarning( "Interface: ".$tmp->textContent." not found for GPGatewayTunnel: ".$this->name()." in owner: ".$tmp_owner, null, false );
+                    }
+
                 }
 
                 $tmp = DH::findFirstElement('ip', $node);

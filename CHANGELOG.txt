@@ -29,6 +29,7 @@ BUGFIX:
 * bugfix type=securityprofile | credential_is_adoption -> check if mode is set and not disabled | antispyware - again use dnslist
 * bugfix type=securityprofile | spyware / url credential improvements
 * bugfix - Class GPGatewayTunnel | class Panoramaconf type=stats
+* type=gpgateway-tunnel | improvements to handle interface references without error out
 
 GENERAL:
 * multiple Interface class optimisation

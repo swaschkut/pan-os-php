@@ -196,3 +196,17 @@ local Development Container:
    ```bash
    docker run -d -p 8082:80 --mount type=bind,source="[absolute_ROOTFOLDER]/pan-os-php",target=/var/www/html -v [absolute_ROOTFOLDER]/pan-os-php/var/docker/uploads.ini:/usr/local/etc/php/conf.d/uploads.ini php:apache
    ```
+
+-----------------
+Docker clean-up
+
+
+To delete all containers including its volumes use,
+```bash
+docker rm -vf $(docker ps -aq)
+```
+
+To delete all the images,
+```bash
+docker rmi -f $(docker images -aq)
+```
