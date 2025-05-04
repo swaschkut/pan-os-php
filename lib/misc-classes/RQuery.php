@@ -176,11 +176,13 @@ class RQuery
             // PH::print_stdout( $this->padded."about to eval" );
             if( isset($this->refOperator['Function']) )
             {
+                #PH::print_stdout("1");
                 $boolReturn = $this->contextObject->execute($object, $nestedQueries);
                 if( $boolReturn === null )
                     if( $this->level == 0 )
                         return FALSE;
-                    else return null;
+                    else
+                        return null;
 
                 if( $this->inverted )
                     return !$boolReturn;
@@ -188,6 +190,7 @@ class RQuery
             }
             else
             {
+                #PH::print_stdout("2");
                 if( $this->refOperator['arg'] == TRUE )
                 {
                     if( isset($this->refOperator['argObjectFinder']) )

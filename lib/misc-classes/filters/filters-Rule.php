@@ -82,7 +82,6 @@ RQuery::$defaultFilters['rule']['from']['operators']['all.has.from.query'] = arr
         if( $context->value === null || !isset($context->nestedQueries[$context->value]) )
             derr("cannot find nested query called '{$context->value}'");
 
-
         $errorMessage = '';
 
         if( !isset($context->cachedSubRQuery) )
@@ -98,6 +97,7 @@ RQuery::$defaultFilters['rule']['from']['operators']['all.has.from.query'] = arr
         $found = FALSE;
         foreach( $rule->from->getAll() as $key => $zone )
         {
+            /** @var Zone $zone */
             if( $zone !== null )
             {
                 if( $rQuery->matchSingleObject(array('object' => $zone, 'nestedQueries' => &$context->nestedQueries)) )

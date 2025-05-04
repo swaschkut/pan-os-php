@@ -198,8 +198,77 @@ class ZoneRuleContainer extends ObjRuleContainer
                 derr('this container has members with empty name!', $node);
             }
 
-            $f = $this->parentCentralStore->findOrCreate($node->textContent, $this);
-            $this->o[] = $f;
+            if( isset( $this->owner->owner->owner ) && get_class($this->owner->owner->owner) == 'DeviceGroup' )
+            {
+                #$f = $this->parentCentralStore->findOrCreate($node->textContent, $this);
+                #$f = $this->parentCentralStore->find($node->textContent, $this);
+
+                $tmp_devicegroup = $this->owner->owner->owner;
+                $tmp_panorama = $tmp_devicegroup->owner;
+                $all_Templates = $tmp_panorama->getTemplates();
+                $all_TemplateStacks = $tmp_panorama->getTemplatesStacks();
+
+                $all = array_merge($all_Templates, $all_TemplateStacks);
+
+                $break_found = FALSE;
+                foreach( $all as $template )
+                {
+                    /** @var Template|TemplateStack $template */
+                    $all_vsys = $template->deviceConfiguration->getVirtualSystems();
+                    foreach( $all_vsys as $vsys )
+                    {
+                        /** @var VirtualSystem $vsys */
+                        $tmp_zone = $vsys->zoneStore->find( $node->textContent, $this );
+
+                        //Todo: validate if correct Template / TemplateStack
+
+                        /*
+                        $childDGS = array();
+                        $childDGS[] = $tmp_devicegroup;
+                        $tmp_childDGS = $tmp_devicegroup->childDeviceGroups(true);
+                        $childDGS = array_merge($childDGS, $tmp_childDGS);
+                        foreach( $childDGS as $child )
+                        {
+                            #PH::print_stdout("DG: ".$child->name());
+
+                            if( count($child->getDevicesInGroup()) == 0)
+                                continue;
+
+                            #PH::print_stdout( count($child->getDevicesInGroup()) );
+
+                            foreach( $child->getDevicesInGroup() as $key => $device )
+                            {
+                                /** @var ManagedDevice $device */
+/*                                PH::print_stdout( $device->template_stack->name() );
+                                break;
+                            }
+                        }
+                        */
+
+
+
+                        /////////////////////////////////////
+
+                        if( $tmp_zone !== null )
+                        {
+                            #PH::print_stdout( $tmp_zone->name()." added" );
+                            $this->o[] = $tmp_zone;
+                            $break_found = TRUE;
+                            break;
+                        }
+                    }
+
+                    if($break_found)
+                        break;
+                }
+            }
+            else
+            {
+                $f = $this->parentCentralStore->findOrCreate($node->textContent, $this);
+                $this->o[] = $f;
+            }
+
+
             $i++;
         }
     }

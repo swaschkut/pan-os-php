@@ -36,7 +36,7 @@ class RQueryContext
     }
 
     /**
-     * @param $object Tag
+     * @param $object Tag|Address|Service|Zone
      * @return bool
      */
     function execute($object, $nestedQueries = null)
