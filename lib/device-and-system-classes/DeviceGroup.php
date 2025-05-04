@@ -1324,8 +1324,6 @@ class DeviceGroup
             $stdoutarray['wf adoption percentage'] = 0;
 
         //Zone Protection
-        //Todo: no valid filter yet available - also how to filter? based on from and/or to zone??
-        $stdoutarray['zone protection'] = "NOT available";
         $filter_array = array('query' => $generalFilter."!(from is.any) and (from all.has.from.query subquery1)", 'subquery1' => "zpp is.set" );
         $stdoutarray['zone protection'] = count( $sub_ruleStore->rules( $filter_array ) );
         $stdoutarray['zone protection calc'] = $stdoutarray['zone protection']."/".$stdoutarray['security rules enabled'];

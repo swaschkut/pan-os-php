@@ -10,6 +10,7 @@ UTIL:
 * type=service actions=display | move to class Service method display()
 * type=address/service actions=name-rename-location:$$location$$-$$current.name$$
 * type=rule 'actions=name-rename:$$location$$-$$current.name$$' - introduce new actions variable
+* type=stats | extends json file bp action for AS/VP allow block-ip
 
 BUGFIX:
 * type=diff outputformatset=file.txt | bugfix to keep correct interface name, especially for ethernetX/Y

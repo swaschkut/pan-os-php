@@ -83,7 +83,8 @@
                     "medium"
                 ],
                 "action": [
-                    "reset-both"
+                    "reset-both",
+                    "block-ip"
                 ],
                 "packet-capture": [
                     "single-packet",
@@ -220,7 +221,8 @@
                     "medium"
                 ],
                 "action": [
-                    "reset-both"
+                    "reset-both",
+                    "block-ip"
                 ],
                 "packet-capture": [
                     "single-packet",
