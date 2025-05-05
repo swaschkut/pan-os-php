@@ -33,6 +33,7 @@ BUGFIX:
 * type=gpgateway-tunnel | improvements to handle interface references without error out
 * bugfix class PanoramaConf for type=stats | this is based on wf adoption/visibility/best-practice
 * class ZoneRuleContainer | bugfix to add zones from Panorama Template - validation. needed if this is totally correct
+* type=stats | correction for user-id adoption/visibility calculation | use all security Rules
 
 GENERAL:
 * multiple Interface class optimisation

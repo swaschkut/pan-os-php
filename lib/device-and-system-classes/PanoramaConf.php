@@ -2144,9 +2144,9 @@ class PanoramaConf
 
         //User-ID
         $stdoutarray['user id'] = count( $sub_ruleStore->rules( $generalFilter_allow."!(user is.any)" ) );
-        $stdoutarray['user id calc'] = $stdoutarray['user id']."/".$ruleForCalculation;
+        $stdoutarray['user id calc'] = $stdoutarray['user id']."/".$stdoutarray['security rules'];
         if( $ruleForCalculation !== 0 )
-            $stdoutarray['user id percentage'] = floor( ( $stdoutarray['user id'] / $ruleForCalculation ) * 100 );
+            $stdoutarray['user id percentage'] = floor( ( $stdoutarray['user id'] / $stdoutarray['security rules'] ) * 100 );
         else
             $stdoutarray['user id percentage'] = 0;
         //Service/Port
@@ -2520,9 +2520,9 @@ class PanoramaConf
             $stdoutarray['app id percentage'] = 0;
         $percentageArray_adoption['App-ID'] = $stdoutarray['app id percentage'];
 
-        $stdoutarray['user id calc'] =  $stdoutarray['user id'] ."/". $ruleForCalculation;
+        $stdoutarray['user id calc'] =  $stdoutarray['user id'] ."/". $stdoutarray['security rules'];
         if( $ruleForCalculation !== 0 )
-            $stdoutarray['user id percentage'] = floor( ( $stdoutarray['user id'] / $ruleForCalculation ) * 100 );
+            $stdoutarray['user id percentage'] = floor( ( $stdoutarray['user id'] / $stdoutarray['security rules'] ) * 100 );
         else
             $stdoutarray['user id percentage'] = 0;
         $percentageArray_adoption['User-ID'] = $stdoutarray['user id percentage'];
