@@ -703,17 +703,46 @@ class URLProfile extends SecurityProfile2
 
     public function check_usercredentialsubmission_bp_json( $check_array )
     {
-        foreach( $check_array['category'] as $check )
+        if( is_array( $check_array['category'] ) )
         {
-            $action = $check["action"];
-            $urlList = $check["type"];
-
-            foreach( $urlList as $url )
+            foreach( $check_array['category'] as $check )
             {
-                if( !in_array( $url, $this->$action ) )
-                    return false;
+                $action = $check["action"]."_credential";
+                $urlList = $check["type"];
+
+                foreach( $urlList as $url )
+                {
+                    if( !isset($this->$action[$url]) )
+                    {
+                        print $url." NOT in array\n";
+                        return false;
+                    }
+
+                    #if( !in_array( $url, $this->$action ) )
+                    #    return false;
+                }
             }
         }
+        else
+        {
+            if( strpos( $check_array['category'], "!") !== FALSE )
+            {
+                $finding = str_replace("!", "", $check_array['category']);
+
+                $sanitized_action = $this->$finding;
+                foreach( $sanitized_action as $key => $url_category)
+                {
+                    $custom_url_category_obj = $this->owner->owner->customURLProfileStore->find($url_category);
+                    if( $custom_url_category_obj !== NULL )
+                        unset( $sanitized_action[$key] );
+                }
+
+                if( !empty($sanitized_action) )
+                    return False;
+            }
+        }
+
+
 
         return TRUE;
     }
@@ -743,15 +772,29 @@ class URLProfile extends SecurityProfile2
     public function check_usercredentialsubmission_bp_tab_json( $check_array )
     {
         if( $this->credential_mode == null)
+        {
+            PH::print_stdout("no credential mode");
             return False;
+        }
+
         if( $this->credential_log == null)
+        {
+            PH::print_stdout("no credential log");
             return False;
+        }
+
 
         if( $check_array['tab']['mode'] !== $this->credential_mode )
+        {
+            PH::print_stdout("wrong credential mode");
             return False;
+        }
 
-        if( $check_array['tab']['log-severity'] !== $this->credential_log )
-            return False;
+        #if( isset($check_array['tab']['log-severity']) && $check_array['tab']['log-severity'] !== $this->credential_log )
+        #{
+        #    PH::print_stdout("wrong log-severity");
+        #    return False;
+        #}
 
         return TRUE;
     }

@@ -34,6 +34,7 @@ BUGFIX:
 * bugfix class PanoramaConf for type=stats | this is based on wf adoption/visibility/best-practice
 * class ZoneRuleContainer | bugfix to add zones from Panorama Template - validation. needed if this is totally correct
 * type=stats | correction for user-id adoption/visibility calculation | use all security Rules
+* bugfix type=stats | BP credential theft - fit to SCM BP
 
 GENERAL:
 * multiple Interface class optimisation
