@@ -45,7 +45,7 @@ if( $retValue != 0 )
 
 
 //Todo: to migrate all existing vsys, parse inputfile; get all virtualSystems in array, go to each array entry
-for( $i = 1; $i < 29; $i++ )
+for( $i = 1; $i <= 29; $i++ )
 {
     $location_name = "vsys".$i;
 

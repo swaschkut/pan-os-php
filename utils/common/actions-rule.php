@@ -5029,6 +5029,9 @@ RuleCallContext::$supportedActions[] = array(
         {
             foreach( $context->ruleList as $rule )
             {
+                if( $rule === null )
+                    continue;
+
                 $count++;
 
                 /** @var SecurityRule|NatRule $rule */

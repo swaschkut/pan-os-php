@@ -51,7 +51,7 @@ if( $retValue != 0 )
 //Task2 - move for DG name vsys{X}, to DG $final_DG_name
 
 //Todo: parse input Panorama config -> get all Devicegroups, use these DeviceGroups as $locationname
-for( $i = 1; $i < 29; $i++ )
+for( $i = 1; $i <= 29; $i++ )
 {
     $locationname = "vsys".$i;
 

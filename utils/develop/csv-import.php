@@ -19,6 +19,14 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+
+/*
+example CSV File:
+"","Name","Tags","Type","Source Zone","Source Address","Source User","Source Device","Destination Zone","Destination Address","Destination Device","Application","Service","Action","Profile","Options","Rule Usage Hit Count","Rule Usage Last Hit","Rule Usage First Hit","Rule Usage Apps Seen","Days With No New Apps","Modified","Created"
+"1","test","none","universal","any","1.2.3.4","any","any","any","5.6.7.8","any","any","tcp_443","Allow","Profile Group: Alert-Only","Traffic log sent at session end;Log Forwarding Profile setting: default-1","0","-","-","-","-","0","0"
+"2","intrazone-default","none","intrazone","any","any","any","any","(intrazone)","any","any","any","any","Allow","Profile Group: Alert-Only","Traffic log sent at session end;Log Forwarding Profile setting: default-1","0","-","-","-","-","-","-"
+"3","interzone-default","none","interzone","any","any","any","any","any","any","any","any","any","Deny","none","Traffic log sent at session end;Log Forwarding Profile setting: default-1","0","-","-","-","-","-","-"
+ */
 //Todo:
 //until now only working for importing Security Rule
 //define CSV info to correctly import
