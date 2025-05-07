@@ -4880,7 +4880,13 @@ RuleCallContext::$supportedActions[] = array(
     'MainFunction' => function (RuleCallContext $context) {
         $rule = $context->object;
 
-        $context->ruleList[] = $rule;
+        if( is_object( $rule ) )
+            $context->ruleList[] = $rule;
+        else
+        {
+            mwarning( "something strange with this Rule, it is NULL", null, false );
+            var_dump( $rule );
+        }
     },
     'GlobalInitFunction' => function (RuleCallContext $context) {
         $context->ruleList = array();
@@ -5029,9 +5035,6 @@ RuleCallContext::$supportedActions[] = array(
         {
             foreach( $context->ruleList as $rule )
             {
-                if( $rule === null )
-                    continue;
-
                 $count++;
 
                 /** @var SecurityRule|NatRule $rule */
