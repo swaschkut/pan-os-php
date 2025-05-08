@@ -1,0 +1,11 @@
+[
+  { "category": "Logging", "value": 8 },
+  { "category": "Wildfire Analysis Profile", "value": 6 },
+  { "category": "Antivirus Profile", "value": 9 },
+  { "category": "Anti-Spyware Profiles", "value": 5 },
+  { "category": "Vulnerability Profiles", "value": 7 },
+  { "category": "File Blocking Profiles", "value": 4 },
+  { "category": "URL-Filtering Profiles", "value": 6 },
+  { "category": "Credential Theft Prevention", "value": 3 },
+  { "category": "DNS Security", "value": 7 }
+]

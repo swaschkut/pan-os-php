@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Security Profile Radar</title>
+  <!-- Chart.js v4 with built-in polarArea chart support -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <h2>Security Profile Radar</h2>
+  <canvas id="polarChart" width="500" height="500"></canvas>
+
+  <script>
+    fetch('profiledata.json')
+      .then(response => response.json())
+      .then(data => {
+        const labels = data.map(item => item.category);
+        const values = data.map(item => item.value);
+
+        const ctx = document.getElementById('polarChart').getContext('2d');
+        new Chart(ctx, {
+          type: 'polarArea',
+          data: {
+            labels: labels,
+            datasets: [{
+              label: 'Profile Intensity',
+              data: values,
+              backgroundColor: data.map((_, i) => `hsl(${i * 40}, 70%, 60%)`)
+            }]
+          },
+          options: {
+            responsive: true,
+            scales: {
+              r: {
+                beginAtZero: true,
+                max: 10
+              }
+            }
+          }
+        });
+      })
+      .catch(error => console.error('Error loading JSON data:', error));
+  </script>
+</body>
+</html>
