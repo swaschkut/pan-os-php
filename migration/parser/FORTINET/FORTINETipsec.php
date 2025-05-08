@@ -373,7 +373,7 @@ trait FORTINETipsec
                 $name = str_replace( '"', "", $name );
                 $array[ $name ]['name'] = $name;
             }
-            elseif( preg_match("/    next/i", $line) )
+            elseif( preg_match("/[    ]next/i", $line) )
             {
                 $start = false;
             }

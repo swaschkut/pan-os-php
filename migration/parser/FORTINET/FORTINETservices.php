@@ -155,7 +155,7 @@ trait FORTINETservices
 
                     if( $isAddress )
                     {
-                        if( preg_match("/next/i", $names_line) )
+                        if( preg_match("/next/", $names_line) )
                         {
                             $isAddress = FALSE;
                             if( (preg_match("/TCP\/UDP/i", $protocol)) or preg_match("/TCP/i", $protocol) or preg_match("/UDP/i", $protocol) )
@@ -726,7 +726,7 @@ trait FORTINETservices
                         if( $tmp_service === null )
                         {
                             if( $print )
-                                print " * create service 'tmp-" . $ObjectServiceNamePan . "' with dummy -dport '6500' and -proto 'TCP' because no information is available\n";
+                                print " X create service 'tmp-" . $ObjectServiceNamePan . "' with dummy -dport '6500' and -proto 'TCP' because no information is available\n";
 
                             $tmp_service = $this->sub->serviceStore->newService("tmp-" . $ObjectServiceNamePan, "tcp", "6500", '', '');
                         }
@@ -822,7 +822,7 @@ trait FORTINETservices
 
                     if( $isAddress )
                     {
-                        if( preg_match("/next/i", $names_line) )
+                        if( preg_match("/next/", $names_line) )
                         {
                             $isAddress = FALSE;
                             if( (preg_match("/TCP\/UDP/i", $protocol)) or preg_match("/TCP/i", $protocol) or preg_match("/UDP/i", $protocol) )
@@ -1224,7 +1224,9 @@ trait FORTINETservices
 
                     if( $isAddress )
                     {
-                        if( preg_match("/\bnext\b/i", $names_line) )
+                        #if( preg_match("/\bnext\b/i", $names_line) )
+                        #if( preg_match("/\bnext\b/i", $names_line) && strpos( $names_line, ".next" ) === FALSE )
+                        if( preg_match("/[    ]next/i", $names_line) )
                         {
                             $isAddress = FALSE;
                             $lid = "";

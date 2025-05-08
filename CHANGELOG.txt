@@ -36,6 +36,7 @@ BUGFIX:
 * type=stats | correction for user-id adoption/visibility calculation | use all security Rules
 * bugfix type=stats | BP credential theft - fit to SCM BP
 * bugfix | type=rule actions=exporttoexcel | validate that $rule is NOT null
+* bugfix type=vendor-migration vendor=fortinet | fix if string 'next' is not correct validate for object speration - do not skip if next is found in object name
 
 GENERAL:
 * multiple Interface class optimisation

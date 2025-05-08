@@ -628,7 +628,9 @@ trait FORTINETnatrules
                             $meta = preg_split("/[\s ]*\\\"([^\\\"]+)\\\"[\s,]*|[\s,]+/", $names_line, 0, PREG_SPLIT_NO_EMPTY | PREG_SPLIT_DELIM_CAPTURE);
                             $endip = trim($meta[2]);
                         }
-                        if( preg_match("/\bnext\b/i", $names_line) )
+                        #if( preg_match("/\bnext\b/i", $names_line) )
+                        #if( preg_match("/\bnext\b/i", $names_line) && strpos( $names_line, ".next" ) === FALSE )
+                        if( preg_match("/[    ]next/i", $names_line) )
                         {
 
                             $addVIP[] = array($addressName, $source, $vsys, $endip, $startip);
@@ -852,7 +854,7 @@ trait FORTINETnatrules
                             $isFake = FALSE;
                         }
 
-                        if( preg_match("/\bnext\b/i", $names_line) and ($isFake == FALSE) )
+                        if( preg_match("/\bnext\b/", $names_line) and ($isFake == FALSE) )
                         {
 
                             if( $addressName != "" )
@@ -1028,7 +1030,9 @@ trait FORTINETnatrules
                             $members = $meta;
                         }
 
-                        if( preg_match("/\bnext\b/i", $names_line) )
+                        #if( preg_match("/\bnext\b/i", $names_line) )
+                        #if( preg_match("/\bnext\b/i", $names_line) && strpos( $names_line, ".next" ) === FALSE )
+                        if( preg_match("/[    ]next/i", $names_line) )
                         {
                             $membersExtended = implode(",", $members);
                             $addVIP[] = array($addressName_ext, $source, $vsys, $interface, $membersExtended);

@@ -342,7 +342,9 @@ trait FORTINETsecurityrules
 
                     if( $isAddress )
                     {
-                        if( preg_match("/\bnext\b/i", $names_line) )
+                        #if( preg_match("/\bnext\b/i", $names_line) )
+                        #if( preg_match("/\bnext\b/i", $names_line) && strpos( $names_line, ".next" ) === FALSE )
+                        if( preg_match("/[    ]next/i", $names_line) )
                         {
                             $isAddress = FALSE;
 

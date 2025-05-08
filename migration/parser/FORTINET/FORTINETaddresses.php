@@ -122,7 +122,9 @@ trait FORTINETaddresses
 
                     if( $isAddress )
                     {
-                        if( preg_match("/\bnext\b/i", $names_line) )
+                        #if( preg_match("/    next/i", $line) )
+                        #if( preg_match("/\bnext\b/i", $names_line) && strpos( $names_line, ".next" ) === FALSE )
+                        if( preg_match("/[    ]next/i", $line) )
                         {
                             $isAddress = FALSE;
 
@@ -241,7 +243,6 @@ trait FORTINETaddresses
 
                         if( preg_match("/set subnet /i", $names_line) )
                         {
-                            #print "Es RED: $routes_line\n";
                             $type = "ip-netmask";
                             $data1 = preg_split("/[\s ]*\\\"([^\\\"]+)\\\"[\s,]*|[\s,]+/", $names_line, 0, PREG_SPLIT_NO_EMPTY | PREG_SPLIT_DELIM_CAPTURE);
                             $ipaddress = $data1[2];
@@ -391,7 +392,9 @@ trait FORTINETaddresses
 
                     if( $isAddress )
                     {
-                        if( preg_match("/\bnext\b/i", $names_line) )
+                        #if( preg_match("/\bnext\b/i", $names_line) )
+                        #if( preg_match("/\bnext\b/", $names_line) && strpos( $names_line, ".next" ) === FALSE )
+                        if( preg_match("/[    ]next/i", $names_line) )
                         {
                             $isAddress = FALSE;
 
@@ -727,7 +730,9 @@ trait FORTINETaddresses
                                 $description = addslashes(trim($match[1]));
                             }
                         }
-                        if( preg_match("/\bnext\b/i", $names_line) )
+                        #if( preg_match("/\bnext\b/i", $names_line) )
+                        #if( preg_match("/\bnext\b/i", $names_line) && strpos( $names_line, ".next" ) === FALSE )
+                        if( preg_match("/[    ]next/i", $names_line) )
                         {
                             $isAddress = FALSE;
                             $addressGroup[] = array($lid, $addressName, $addressNamePan, $source, $vsys, $description, 'static');
