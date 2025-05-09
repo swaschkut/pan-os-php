@@ -26,17 +26,18 @@ BUGFIX:
 * type=securityprofile actions=vulnerability.alert-only-set | take host type in consideration
 * type=securityprofile filter=(vb is.visibility) | take host type in consideration
 * type=securityprofile filter=(as is.visibility) | remove check for dns-security
-* bugfix type=securityprofile securityprofiletype=url-filtering 'filter=(url is.visibility)' also for actions=url.alert-only-set | custom-url-category are not in scope
-* bugfix type=securityprofile | credential_is_adoption -> check if mode is set and not disabled | antispyware - again use dnslist
-* bugfix type=securityprofile | spyware / url credential improvements
-* bugfix - Class GPGatewayTunnel | class Panoramaconf type=stats
+* type=securityprofile securityprofiletype=url-filtering 'filter=(url is.visibility)' also for actions=url.alert-only-set | custom-url-category are not in scope
+* type=securityprofile | credential_is_adoption -> check if mode is set and not disabled | antispyware - again use dnslist
+* type=securityprofile | spyware / url credential improvements
+* Class GPGatewayTunnel | class Panoramaconf type=stats
 * type=gpgateway-tunnel | improvements to handle interface references without error out
-* bugfix class PanoramaConf for type=stats | this is based on wf adoption/visibility/best-practice
+* class PanoramaConf for type=stats | this is based on wf adoption/visibility/best-practice
 * class ZoneRuleContainer | bugfix to add zones from Panorama Template - validation. needed if this is totally correct
 * type=stats | correction for user-id adoption/visibility calculation | use all security Rules
-* bugfix type=stats | BP credential theft - fit to SCM BP
-* bugfix | type=rule actions=exporttoexcel | validate that $rule is NOT null
-* bugfix type=vendor-migration vendor=fortinet | fix if string 'next' is not correct validate for object speration - do not skip if next is found in object name
+* type=stats | BP credential theft - fit to SCM BP
+* type=rule actions=exporttoexcel | validate that $rule is NOT null
+* type=vendor-migration vendor=fortinet | fix if string 'next' is not correct validate for object speration - do not skip if next is found in object name
+* type=vendor-migration vendor=fortinet | optimisation
 
 GENERAL:
 * multiple Interface class optimisation

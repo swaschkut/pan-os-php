@@ -608,7 +608,8 @@ trait FORTINETnatrules
                         $isAddress = TRUE;
                         if( preg_match('/"([^"]+)"/', $names_line, $match) )
                         {
-                            $newname = str_replace('/', '-', $match[1]);
+                            #$newname = str_replace('/', '-', $match[1]);
+                            $newname = $match[1];
                             $addressNamePan = $this->truncate_names($this->normalizeNames($newname));
                             $addressName = trim($match[1]);
                         }
@@ -629,8 +630,8 @@ trait FORTINETnatrules
                             $endip = trim($meta[2]);
                         }
                         #if( preg_match("/\bnext\b/i", $names_line) )
-                        #if( preg_match("/\bnext\b/i", $names_line) && strpos( $names_line, ".next" ) === FALSE )
-                        if( preg_match("/[    ]next/i", $names_line) )
+                        if( preg_match("/\bnext\b/i", $names_line) && strpos( $names_line, "  next" ) !== FALSE )
+                        #if( preg_match("/[    ]next/i", $names_line) )
                         {
 
                             $addVIP[] = array($addressName, $source, $vsys, $endip, $startip);
@@ -776,7 +777,8 @@ trait FORTINETnatrules
                         $isAddress = TRUE;
                         if( preg_match('/"([^"]+)"/', $names_line, $match) )
                         {
-                            $newname = str_replace('/', '-', $match[1]);
+                            #$newname = str_replace('/', '-', $match[1]);
+                            $newname = $match[1];
                             $addressNamePan = $this->truncate_names($this->normalizeNames($newname));
                             $addressName = trim($match[1]);
                             $type = "";
@@ -1010,7 +1012,8 @@ trait FORTINETnatrules
                     {
                         $isAddress = TRUE;
                         $meta = preg_split("/[\s ]*\\\"([^\\\"]+)\\\"[\s,]*|[\s,]+/", $names_line, 0, PREG_SPLIT_NO_EMPTY | PREG_SPLIT_DELIM_CAPTURE);
-                        $newname = str_replace('/', '-', $meta[1]);
+                        #$newname = str_replace('/', '-', $meta[1]);
+                        $newname = $meta[1];
                         $addressName_int = $this->truncate_names($this->normalizeNames($newname));
                         $addressName_ext = trim($meta[1]);
                     }
@@ -1031,8 +1034,8 @@ trait FORTINETnatrules
                         }
 
                         #if( preg_match("/\bnext\b/i", $names_line) )
-                        #if( preg_match("/\bnext\b/i", $names_line) && strpos( $names_line, ".next" ) === FALSE )
-                        if( preg_match("/[    ]next/i", $names_line) )
+                        if( preg_match("/\bnext\b/i", $names_line) && strpos( $names_line, "  next" ) !== FALSE )
+                        #if( preg_match("/[    ]next/i", $names_line) )
                         {
                             $membersExtended = implode(",", $members);
                             $addVIP[] = array($addressName_ext, $source, $vsys, $interface, $membersExtended);

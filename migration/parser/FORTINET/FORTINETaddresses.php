@@ -123,8 +123,8 @@ trait FORTINETaddresses
                     if( $isAddress )
                     {
                         #if( preg_match("/    next/i", $line) )
-                        #if( preg_match("/\bnext\b/i", $names_line) && strpos( $names_line, ".next" ) === FALSE )
-                        if( preg_match("/[    ]next/i", $line) )
+                        if( preg_match("/\bnext\b/i", $names_line) && strpos( $names_line, "  next" ) !== FALSE )
+                        #if( preg_match("/\b[  ]next\b/i", $line) )
                         {
                             $isAddress = FALSE;
 
@@ -380,7 +380,8 @@ trait FORTINETaddresses
                     {
                         $isAddress = TRUE;
                         $meta = preg_split("/[\s ]*\\\"([^\\\"]+)\\\"[\s,]*|[\s,]+/", $names_line, 0, PREG_SPLIT_NO_EMPTY | PREG_SPLIT_DELIM_CAPTURE);
-                        $newname = str_replace('/', '-', $meta[1]);
+                        #$newname = str_replace('/', '-', $meta[1]);
+                        $newname = $meta[1];
                         $addressNamePan = $this->truncate_names($this->normalizeNames($newname));
                         $addressName = trim($meta[1]);
 
@@ -393,8 +394,9 @@ trait FORTINETaddresses
                     if( $isAddress )
                     {
                         #if( preg_match("/\bnext\b/i", $names_line) )
-                        #if( preg_match("/\bnext\b/", $names_line) && strpos( $names_line, ".next" ) === FALSE )
-                        if( preg_match("/[    ]next/i", $names_line) )
+                        if( preg_match("/\bnext\b/", $names_line) && strpos( $names_line, "  next" ) !== FALSE )
+                        #if( preg_match("/[    ]next/i", $names_line) )
+                        #if( preg_match("/\b[  ]next\b/i", $line) )
                         {
                             $isAddress = FALSE;
 
@@ -684,7 +686,8 @@ trait FORTINETaddresses
                     {
                         $isAddress = TRUE;
                         $meta = preg_split("/[\s ]*\\\"([^\\\"]+)\\\"[\s,]*|[\s,]+/", $names_line, 0, PREG_SPLIT_NO_EMPTY | PREG_SPLIT_DELIM_CAPTURE);
-                        $newname = str_replace('/', '-', $meta[1]);
+                        #$newname = str_replace('/', '-', $meta[1]);
+                        $newname = $meta[1];
                         $addressNamePan = $this->truncate_names($this->normalizeNames($newname));
                         $addressName = $meta[1];
                     }
@@ -731,8 +734,9 @@ trait FORTINETaddresses
                             }
                         }
                         #if( preg_match("/\bnext\b/i", $names_line) )
-                        #if( preg_match("/\bnext\b/i", $names_line) && strpos( $names_line, ".next" ) === FALSE )
-                        if( preg_match("/[    ]next/i", $names_line) )
+                        if( preg_match("/\bnext\b/i", $names_line) && strpos( $names_line, "   next" ) !== FALSE )
+                        #if( preg_match("/[    ]next/i", $names_line) )
+                        #if( preg_match("/\b[  ]next\b/i", $line) )
                         {
                             $isAddress = FALSE;
                             $addressGroup[] = array($lid, $addressName, $addressNamePan, $source, $vsys, $description, 'static');
