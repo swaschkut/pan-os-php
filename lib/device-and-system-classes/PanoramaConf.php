@@ -2813,6 +2813,19 @@ class PanoramaConf
             $tbl->setHeaders(
                 array('Type', 'percentage', "%")
             );
+
+            $tpl = new Smarty\Smarty;
+            $tpl->setTemplateDir(dirname(__FILE__).'/../../smarty/templates');
+            $tpl->setCompileDir(dirname(__FILE__).'/../../smarty/templates_c');
+            $tpl->setCacheDir(dirname(__FILE__).'/../..smarty/cache');
+            $tpl->setConfigDir(dirname(__FILE__).'/../../smarty/configs');
+
+            $tpl->assign('title','Adoption Report');
+            $tpl->assign('adoption',$percentageArray_adoption);
+            $output = $tpl->fetch('report_template.tpl');
+
+            file_put_contents(dirname(__FILE__).'/../../smarty/generated/adoption.html',$output);
+
             foreach( $percentageArray_adoption as $key => $value )
             {
                 if( strpos($value, "---") !== False )
@@ -2836,6 +2849,19 @@ class PanoramaConf
             $tbl->setHeaders(
                 array('Type', 'percentage', "%")
             );
+
+            $tpl = new Smarty\Smarty;
+            $tpl->setTemplateDir(dirname(__FILE__).'/../../smarty/templates');
+            $tpl->setCompileDir(dirname(__FILE__).'/../../smarty/templates_c');
+            $tpl->setCacheDir(dirname(__FILE__).'/../..smarty/cache');
+            $tpl->setConfigDir(dirname(__FILE__).'/../../smarty/configs');
+
+            $tpl->assign('title','Visibility Report');
+            $tpl->assign('visibility',$percentageArray_visibility);
+            $output = $tpl->fetch('report_template.tpl');
+
+            file_put_contents(dirname(__FILE__).'/../../smarty/generated/visibility.html',$output);
+
             foreach( $percentageArray_visibility as $key => $value )
             {
                 if( strpos($value, "---") !== False )
@@ -2858,6 +2884,20 @@ class PanoramaConf
             $tbl->setHeaders(
                 array('Type', 'percentage', "%")
             );
+
+            $tpl = new Smarty\Smarty;
+            $tpl->setTemplateDir(dirname(__FILE__).'/../../smarty/templates');
+            $tpl->setCompileDir(dirname(__FILE__).'/../../smarty/templates_c');
+            $tpl->setCacheDir(dirname(__FILE__).'/../..smarty/cache');
+            $tpl->setConfigDir(dirname(__FILE__).'/../../smarty/configs');
+
+            $tpl->assign('title','Best-Practice Report');
+            $tpl->assign('bestpractice',$percentageArray_best_practice);
+
+            $output = $tpl->fetch('report_template.tpl');
+
+            file_put_contents(dirname(__FILE__).'/../../smarty/generated/best-practice.html',$output);
+
             foreach( $percentageArray_best_practice as $key => $value )
             {
                 if( strpos($value, "---") !== False )
