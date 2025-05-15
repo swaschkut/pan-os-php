@@ -2821,7 +2821,7 @@ class PanoramaConf
             $tpl->setConfigDir(dirname(__FILE__).'/../../smarty/configs');
 
             $tpl->assign('title','Adoption Report');
-            $tpl->assign('adoption',$percentageArray_adoption);
+            $tpl->assign('tabledata',$percentageArray_adoption);
             $output = $tpl->fetch('report_template.tpl');
 
             file_put_contents(dirname(__FILE__).'/../../smarty/generated/adoption.html',$output);
@@ -2857,7 +2857,7 @@ class PanoramaConf
             $tpl->setConfigDir(dirname(__FILE__).'/../../smarty/configs');
 
             $tpl->assign('title','Visibility Report');
-            $tpl->assign('visibility',$percentageArray_visibility);
+            $tpl->assign('tabledata',$percentageArray_visibility);
             $output = $tpl->fetch('report_template.tpl');
 
             file_put_contents(dirname(__FILE__).'/../../smarty/generated/visibility.html',$output);
@@ -2892,7 +2892,7 @@ class PanoramaConf
             $tpl->setConfigDir(dirname(__FILE__).'/../../smarty/configs');
 
             $tpl->assign('title','Best-Practice Report');
-            $tpl->assign('bestpractice',$percentageArray_best_practice);
+            $tpl->assign('tabledata',$percentageArray_best_practice);
 
             $output = $tpl->fetch('report_template.tpl');
 
