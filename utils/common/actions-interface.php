@@ -620,3 +620,182 @@ InterfaceCallContext::$supportedActions['replace_IPv6_objects_by_value'] = Array
         }
     }
 );
+
+InterfaceCallContext::$supportedActions['ae-group-set'] = array(
+    'name' => 'ae-group-set',
+    'MainFunction' => function (InterfaceCallContext $context) {
+        $object = $context->object;
+
+        if( get_class($object) !== "EthernetInterface" )
+        {
+            mwarning( "SKIPPED: set AE number is only working Interface of type EthernetInterface. provided: ".get_class($object), null, false );
+            return false;
+        }
+
+        $newAE = $context->arguments['newAE'];
+
+        //Todo: only working for offline config
+        if( $context->isAPI )
+            derr( "changing AE is not supported in API mode" );
+
+        if( $object->type != 'aggregate-group' )
+        {
+            //Todo: swaschkut 20250512
+            //validate if references are available which can cause issues,
+            //there should be no references available, then change type
+            if( count($object->refrules) > 0 )
+            {
+                foreach( $object->refrules as $rule )
+                {
+                    if( get_class($rule) !== "InterfaceContainer" )
+                    {
+                        PH::print_stdout( "    " . '  - ' . $rule->toString() );
+                        mwarning( "SKIPPED: interface Type EthernetInterface found, but change to 'aggreagte-group not possible due to references.", null, false );
+                        return false;
+                    }
+                }
+            }
+
+            if( count( $object->subInterfaces()) > 0 )
+            {
+                mwarning( "SKIPPED: interface Type EthernetInterface found, but interface has sub-interfaces", null, false );
+                return false;
+            }
+
+            $object->type = 'aggregate-group';
+        }
+
+        $tmp_description = $object->description();
+        foreach( $object->xmlroot->childNodes as $child )
+            $object->xmlroot->removeChild($child);
+
+        /** @VAR EthernetInterface $object */
+        $object->setAE($newAE);
+        $object->setDescription( $tmp_description );
+
+    },
+    'args' => array('newAE' => array('type' => 'string', 'default' => '*nodefault*') )
+);
+
+InterfaceCallContext::$supportedActions['type-aggregate-ethernet-set'] = array(
+    'name' => 'type-aggregate-ethernet-set',
+    'MainFunction' => function (InterfaceCallContext $context) {
+        $object = $context->object;
+
+        /** @var EthernetInterface $object */
+
+        /*
+        PH::print_stdout( "    " . '  - ' . $object->toString() );
+        PH::print_stdout( "    " . '  - ' . $object->type() );
+        PH::print_stdout( "    " . '  - ' . get_class($object) );
+        */
+
+        if( get_class($object) !== "EthernetInterface" )
+        {
+            mwarning( "SKIPPED: Interface of type NOT EthernetInterface. provided: ".get_class($object), null, false );
+            return false;
+        }
+
+
+        $newName = $context->arguments['name'];
+        //Todo: validate name - only allowed 'ae' followed by a one or two digit number [1-32]
+
+        $newMainInterface = $object->owner->owner->network->aggregateEthernetIfStore->find($newName);
+        if( $newMainInterface !== null )
+        {
+            mwarning( "Interface: ".$newName." already exists", null, false );
+            return false;
+        }
+
+        //Todo: only working for offline config
+        if( $context->isAPI )
+            derr( "changing to class AggregateEthernetInterface is not supported in API mode" );
+
+
+
+        $vsys_obj = $object->importedByVSYS;
+
+        $newMainInterface = $object->owner->owner->network->aggregateEthernetIfStore->newEthernetIf( $newName );
+        $vsys_obj->importedInterfaces->addInterface($newMainInterface);
+
+        foreach( $object->getLayer3IPv4Addresses() as $ip_address )
+            $newMainInterface->addIPv4Address($ip_address);
+
+        //Todo: update reference of old Main Interface
+
+        if( count($object->refrules) > 0 )
+        {
+            foreach( $object->refrules as $rule )
+            {
+                if( get_class($rule) !== "InterfaceContainer" )
+                    $rule->referencedObjectRenamed( $newMainInterface, $object);
+            }
+        }
+        $vsys_obj->importedInterfaces->removeInterface($object);
+        $object->owner->owner->network->ethernetIfStore->removeEthernetIf($object);
+
+
+        if( count( $object->subInterfaces()) > 0 )
+        {
+            foreach( $object->subInterfaces() as $subinterface )
+            {
+                $newSubInterface = $newMainInterface->addSubInterface($subinterface->tag());
+
+                $vsys_obj->importedInterfaces->addInterface($newSubInterface);
+                $vsys_obj->importedInterfaces->removeInterface($subinterface);
+                foreach( $subinterface->getLayer3IPv4Addresses() as $ip_address )
+                    $newSubInterface->addIPv4Address($ip_address);
+
+                //Todo: update references of old Main subinterfaces
+                if( count($subinterface->refrules) > 0 )
+                {
+                    foreach( $subinterface->refrules as $rule )
+                    {
+                        /** @var StaticRoute $rule */
+                        if( get_class($rule) !== "InterfaceContainer" )
+                            $rule->referencedObjectRenamed( $newSubInterface, $subinterface);
+                    }
+                }
+            }
+        }
+    },
+    'args' => array('name' => array('type' => 'string', 'default' => '*nodefault*') )
+);
+
+InterfaceCallContext::$supportedActions['remove'] = array(
+    'name' => 'remove',
+    'MainFunction' => function (InterfaceCallContext $context) {
+        $object = $context->object;
+
+        /** @var EthernetInterface $object */
+
+        //Todo: only working for offline config
+        if( $context->isAPI )
+            derr( "changing to class AggregateEthernetInterface is not supported in API mode" );
+
+        $newMainInterface = $object->owner->owner->network->ethernetIfStore->find($object->name());
+        if( $newMainInterface === null )
+        {
+            mwarning( "Interface: ".$object->name()." not/no longer available", null, false );
+            return false;
+        }
+
+        $vsys_obj = $object->importedByVSYS;
+
+        if( count($object->refrules) > 0 )
+        {
+            foreach( $object->refrules as $rule )
+            {
+                if( get_class($rule) !== "InterfaceContainer" )
+                {
+                    PH::print_stdout( "    " . '  - ' . $rule->toString() );
+                    mwarning( "SKIPPED: interface can not be removed, because it has references", null, false );
+                    return false;
+                }
+            }
+        }
+
+        $vsys_obj->importedInterfaces->removeInterface($object);
+        $object->owner->owner->network->ethernetIfStore->removeEthernetIf($object);
+    }
+);

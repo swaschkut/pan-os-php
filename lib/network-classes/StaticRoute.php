@@ -332,7 +332,7 @@ class StaticRoute
 
     public function referencedObjectRenamed($h, $old)
     {
-        if( get_class($h) == "EthernetInterface" )
+        if( get_class($h) == "EthernetInterface" || get_class($h) == "AggregateEthernetInterface" )
         {
             if( $this->_interface !== $h )
             {
@@ -350,6 +350,9 @@ class StaticRoute
                 $this->rewriteInterface_XML();
                 return;
             }
+
+            $this->owner->attachedInterfaces->removeInterface($old);
+            $this->owner->attachedInterfaces->addInterface($h);
         }
         elseif( get_class($h) == "Address" )
         {

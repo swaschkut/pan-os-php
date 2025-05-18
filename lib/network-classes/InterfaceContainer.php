@@ -92,8 +92,8 @@ class InterfaceContainer extends ObjRuleContainer
         {
             $tmp = DH::createElement($this->xmlroot, "member", $entry->name());
         }
-
-
+        #PH::print_stdout(get_class($this->owner));
+        #PH::print_stdout($this->owner->name());
     }
 
     /**

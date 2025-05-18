@@ -484,7 +484,7 @@ class EthernetInterface
 
         $this->ae = $ae;
 
-        $aeNode = DH::findFirstElement('aggregate-group', $this->xmlroot);
+        $aeNode = DH::findFirstElementOrCreate('aggregate-group', $this->xmlroot);
         DH::setDomNodeText($aeNode, $ae);
 
         if( isset($this->owner) && $this->owner != null )

@@ -71,6 +71,9 @@ class EthernetIfStore extends ObjStore
         parent::load_from_domxml($xml);
         foreach( $this->o as $o )
         {
+            $this->add($o);
+            $o->owner = null;
+            $this->addEthernetIf($o);
             foreach( $o->subInterfaces() as $sub )
             {
                 $this->add($sub);

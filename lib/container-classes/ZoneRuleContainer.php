@@ -198,10 +198,14 @@ class ZoneRuleContainer extends ObjRuleContainer
                 derr('this container has members with empty name!', $node);
             }
 
+            ////////////////////////////////////////////////////
+            ////////////////////////////////////////////////////
+            /// Todo: possible issue starting with 2.1.37 develop
+            ////////////////////////////////////////////////////
             if( isset( $this->owner->owner->owner ) && get_class($this->owner->owner->owner) == 'DeviceGroup' )
             {
-                #$f = $this->parentCentralStore->findOrCreate($node->textContent, $this);
-                #$f = $this->parentCentralStore->find($node->textContent, $this);
+                                #$f = $this->parentCentralStore->findOrCreate($node->textContent, $this);
+                                #$f = $this->parentCentralStore->find($node->textContent, $this);
 
                 $tmp_devicegroup = $this->owner->owner->owner;
                 $tmp_panorama = $tmp_devicegroup->owner;
@@ -213,41 +217,38 @@ class ZoneRuleContainer extends ObjRuleContainer
                 $break_found = FALSE;
                 foreach( $all as $template )
                 {
-                    /** @var Template|TemplateStack $template */
+                    // /** @var Template|TemplateStack $template */
                     $all_vsys = $template->deviceConfiguration->getVirtualSystems();
                     foreach( $all_vsys as $vsys )
                     {
-                        /** @var VirtualSystem $vsys */
+                        // /** @var VirtualSystem $vsys */
                         $tmp_zone = $vsys->zoneStore->find( $node->textContent, $this );
 
-                        //Todo: validate if correct Template / TemplateStack
+                                //Todo: validate if correct Template / TemplateStack
 
-                        /*
-                        $childDGS = array();
-                        $childDGS[] = $tmp_devicegroup;
-                        $tmp_childDGS = $tmp_devicegroup->childDeviceGroups(true);
-                        $childDGS = array_merge($childDGS, $tmp_childDGS);
-                        foreach( $childDGS as $child )
-                        {
-                            #PH::print_stdout("DG: ".$child->name());
+                                /*
+                                $childDGS = array();
+                                $childDGS[] = $tmp_devicegroup;
+                                $tmp_childDGS = $tmp_devicegroup->childDeviceGroups(true);
+                                $childDGS = array_merge($childDGS, $tmp_childDGS);
+                                foreach( $childDGS as $child )
+                                {
+                                    #PH::print_stdout("DG: ".$child->name());
 
-                            if( count($child->getDevicesInGroup()) == 0)
-                                continue;
+                                    if( count($child->getDevicesInGroup()) == 0)
+                                        continue;
 
-                            #PH::print_stdout( count($child->getDevicesInGroup()) );
+                                    #PH::print_stdout( count($child->getDevicesInGroup()) );
 
-                            foreach( $child->getDevicesInGroup() as $key => $device )
-                            {
-                                /** @var ManagedDevice $device */
-/*                                PH::print_stdout( $device->template_stack->name() );
-                                break;
-                            }
-                        }
-                        */
-
-
-
-                        /////////////////////////////////////
+                                    foreach( $child->getDevicesInGroup() as $key => $device )
+                                    {
+                                        // /** @var ManagedDevice $device */
+                                    /*  PH::print_stdout( $device->template_stack->name() );
+                                        break;
+                                    }
+                                }
+                                */
+                                /////////////////////////////////////
 
                         if( $tmp_zone !== null )
                         {
@@ -267,6 +268,10 @@ class ZoneRuleContainer extends ObjRuleContainer
                 $f = $this->parentCentralStore->findOrCreate($node->textContent, $this);
                 $this->o[] = $f;
             }
+
+            /// Todo: END possible issue starting with 2.1.37 develop
+            ////////////////////////////////////////////////////
+            ////////////////////////////////////////////////////
 
 
             $i++;
