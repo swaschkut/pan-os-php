@@ -783,7 +783,8 @@ class DH
                 return;
             }
 
-            if( $element->nodeName == "#text" && strpos( $xpath, "set" ) !== FALSE )
+            //Todo: swaschkut 20250518 | is this validation enough??
+            if( $element->nodeName == "#text" && strpos( $xpath, "set" ) !== FALSE && strpos( $xpath, " interface" ) !== FALSE )
             {
                 if( $debug )
                 {

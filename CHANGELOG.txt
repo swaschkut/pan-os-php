@@ -38,6 +38,7 @@ BUGFIX:
 * type=rule actions=exporttoexcel | validate that $rule is NOT null
 * type=vendor-migration vendor=fortinet | fix if string 'next' is not correct validate for object speration - do not skip if next is found in object name
 * type=vendor-migration vendor=fortinet | optimisation
+* type=diff || argument outputformatset= | bugfix to again correctly produce set commands
 
 GENERAL:
 * multiple Interface class optimisation
