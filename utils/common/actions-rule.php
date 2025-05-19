@@ -5047,58 +5047,99 @@ RuleCallContext::$supportedActions[] = array(
 
                 foreach( $fields as $fieldName => $fieldID )
                 {
-                        if(
-                        ((
-                            $fieldName == 'src_resolved_sum' || $fieldName == 'src_resolved_sumOLD' || $fieldName == 'src_resolved_value' ||
-                            $fieldName == 'src_resolved_nested_name' || $fieldName == 'src_resolved_nested_value' || $fieldName == 'src_resolved_nested_location' ||
-                            $fieldName == 'dst_resolved_sum' || $fieldName == 'dst_resolved_sumOLD' || $fieldName == 'dst_resolved_value' ||
-                            $fieldName == 'dst_resolved_nested_name' || $fieldName == 'dst_resolved_nested_value' || $fieldName == 'dst_resolved_nested_location' ||
-                            $fieldName == 'dnat_host_resolved_sum' ||
-                            $fieldName == 'snat_address_resolved_sum')
-                            && !$addResolvedAddressSummary) ||
-                        (($fieldName == 'service_resolved_sum' ||
-                                $fieldName == 'service_resolved_nested_name' || $fieldName == 'service_resolved_nested_value' || $fieldName == 'service_resolved_nested_location' ||
+                    if(
+                        (
+                            ($fieldName == 'src_resolved_sum' || $fieldName == 'src_resolved_sumOLD' || $fieldName == 'src_resolved_value'
+                            || $fieldName == 'src_resolved_nested_name' || $fieldName == 'src_resolved_nested_value'
+                            || $fieldName == 'src_resolved_nested_location'
+                            || $fieldName == 'dst_resolved_sum' || $fieldName == 'dst_resolved_sumOLD' || $fieldName == 'dst_resolved_value'
+                            || $fieldName == 'dst_resolved_nested_name' || $fieldName == 'dst_resolved_nested_value'
+                            || $fieldName == 'dst_resolved_nested_location' || $fieldName == 'dnat_host_resolved_sum'
+                            || $fieldName == 'snat_address_resolved_sum')
+                            && !$addResolvedAddressSummary
+                        )
+                        || (
+                            ($fieldName == 'service_resolved_sum'
+                                || $fieldName == 'service_resolved_nested_name' || $fieldName == 'service_resolved_nested_value'
+                                || $fieldName == 'service_resolved_nested_location' ||
                                 $fieldName == 'service_count' || $fieldName == 'service_count_tcp' || $fieldName == 'service_count_udp')
-                            && !$addResolvedServiceSummary) ||
-                        (($fieldName == 'service_appdefault_resolved_sum') && !$addResolvedServiceAppDefaultSummary) ||
-                        (($fieldName == 'application_resolved_sum') && !$addResolvedApplicationSummary) ||
-                        (($fieldName == 'schedule_resolved_sum' ) && !$addResolvedScheduleSummary) ||
-                        (($fieldName == 'application_seen') && (!$addAppSeenSummary || !$context->isAPI) ) ||
-                        (($fieldName == 'first-hit' || $fieldName == 'last-hit' || $fieldName == 'hit-count' || $fieldName == 'rule-creation')
-                            && (!$addHitCountSummary || !$context->isAPI) ) ||
-                        (($fieldName == 'sec_rule_type' )
-                            && get_class($rule) !== "SecurityRule") ||
-                        (($fieldName == 'nat_rule_type' || $fieldName == 'snat_type' || $fieldName == 'snat_address' ||
+                            && !$addResolvedServiceSummary
+                        )
+                        || (
+                            ($fieldName == 'service_appdefault_resolved_sum') && !$addResolvedServiceAppDefaultSummary
+                        )
+                        || (
+                            ($fieldName == 'application_resolved_sum') && !$addResolvedApplicationSummary
+                        )
+                        || (
+                            ($fieldName == 'schedule_resolved_sum' ) && !$addResolvedScheduleSummary
+                        )
+                        || (
+                            ($fieldName == 'application_seen') && (!$addAppSeenSummary || !$context->isAPI)
+                        )
+                        || (
+                            ($fieldName == 'first-hit' || $fieldName == 'last-hit' || $fieldName == 'hit-count'
+                                || $fieldName == 'rule-creation')
+                            && (!$addHitCountSummary || !$context->isAPI)
+                        )
+                        || (
+                            ($fieldName == 'sec_rule_type' )
+                            && get_class($rule) !== "SecurityRule"
+                        )
+                        || (
+                            ($fieldName == 'nat_rule_type' || $fieldName == 'snat_type' || $fieldName == 'snat_address' ||
                                 $fieldName == 'snat_address_resovled_sum' || $fieldName == "dnat_type" || $fieldName == 'dnat_host' ||
                                 $fieldName == 'dnat_host_resovled_sum' || $fieldName == 'dnat_port' || $fieldName == 'dnat_distribution' ||
                                 $fieldName == "dst_interface" || $fieldName == "snat_interface" )
-                            && get_class($rule) !== "NatRule") ||
-                        (($fieldName == 'sp_best_practice' ) && !$bestPractice || get_class($rule) !== "SecurityRule" ) ||
-                        (($fieldName == 'sp_best_practice_details'
-                            )
-                            && (!$bestPractice && !$visibility && !$adoption) || get_class($rule) !== "SecurityRule" ) ||
-                        (($fieldName == 'sp_av_bp' || $fieldName == 'sp_as_bp' || $fieldName == 'sp_vp_bp' || $fieldName == 'sp_url_bp' || $fieldName == 'sp_file_bp' || $fieldName == 'sp_data_bp' || $fieldName == 'sp_wf_bp'
-                            )
-                            && (!$bestPractice ) || get_class($rule) !== "SecurityRule") ||
-                        (($fieldName == 'sp_av_visible' || $fieldName == 'sp_as_visible' || $fieldName == 'sp_vp_visible' || $fieldName == 'sp_url_visible' || $fieldName == 'sp_file_visible' || $fieldName == 'sp_data_visible' || $fieldName == 'sp_wf_visible'
-                            )
-                            && (!$visibility) || get_class($rule) !== "SecurityRule") ||
-                        (($fieldName == 'sp_av_adoption' || $fieldName == 'sp_as_adoption' || $fieldName == 'sp_vp_adoption' || $fieldName == 'sp_url_adoption' || $fieldName == 'sp_file_adoption' || $fieldName == 'sp_data_adoption' || $fieldName == 'sp_wf_adoption'
-                            )
-                            && (!$adoption) || get_class($rule) !== "SecurityRule") ||
-                        (($fieldName == 'sp_visibility' ) && !$visibility || get_class($rule) !== "SecurityRule")  ||
-                        (($fieldName == 'sp_adoption' ) && !$adoption || get_class($rule) !== "SecurityRule") ||
-                        ( (($fieldName == 'application') || ($fieldName == 'action') ||
+                            && get_class($rule) !== "NatRule"
+                        )
+                        || (
+                            ($fieldName == 'sp_best_practice' ) && !$bestPractice || get_class($rule) !== "SecurityRule"
+                        )
+                        || (
+                            ($fieldName == 'sp_best_practice_details')
+                            && (!$bestPractice && !$visibility && !$adoption) || get_class($rule) !== "SecurityRule"
+                        )
+                        || (
+                            ($fieldName == 'sp_av_bp' || $fieldName == 'sp_as_bp' || $fieldName == 'sp_vp_bp' || $fieldName == 'sp_url_bp'
+                                || $fieldName == 'sp_file_bp' || $fieldName == 'sp_data_bp' || $fieldName == 'sp_wf_bp')
+                            && (!$bestPractice ) || get_class($rule) !== "SecurityRule"
+                        )
+                        || (
+                            ($fieldName == 'sp_av_visible' || $fieldName == 'sp_as_visible' || $fieldName == 'sp_vp_visible'
+                                || $fieldName == 'sp_url_visible' || $fieldName == 'sp_file_visible' || $fieldName == 'sp_data_visible'
+                                || $fieldName == 'sp_wf_visible')
+                            && (!$visibility) || get_class($rule) !== "SecurityRule"
+                        )
+                        || (
+                            ($fieldName == 'sp_av_adoption' || $fieldName == 'sp_as_adoption' || $fieldName == 'sp_vp_adoption'
+                                || $fieldName == 'sp_url_adoption' || $fieldName == 'sp_file_adoption' || $fieldName == 'sp_data_adoption'
+                                || $fieldName == 'sp_wf_adoption')
+                            && (!$adoption) || get_class($rule) !== "SecurityRule"
+                        )
+                        || (
+                            ($fieldName == 'sp_visibility' ) && !$visibility || get_class($rule) !== "SecurityRule"
+                        )
+                        || (
+                            ($fieldName == 'sp_adoption' ) && !$adoption || get_class($rule) !== "SecurityRule"
+                        )
+                        || (
+                            (
+                                ($fieldName == 'application') || ($fieldName == 'action') ||
                                 ($fieldName == 'security-profile') || ($fieldName == 'url_category') || ($fieldName == 'log_start') ||
                                 ($fieldName == 'log_end') || ($fieldName == 'log_prof') || ($fieldName == 'log_prof_name') ||
-                                ($fieldName == 'schedule') || ($fieldName == 'src_user') )
+                                ($fieldName == 'schedule') || ($fieldName == 'src_user')
+                            )
                             && get_class($rule) !== "SecurityRule"
                         )
                     )
                         continue;
+
                     $rule_hitcount_array = array();
-                    if(($fieldName == 'first-hit' || $fieldName == 'last-hit' || $fieldName == 'hit-count' || $fieldName == 'rule-creation')
-                        && $addHitCountSummary && $context->isAPI )
+                    if(
+                        ($fieldName == 'first-hit' || $fieldName == 'last-hit' || $fieldName == 'hit-count' || $fieldName == 'rule-creation')
+                        && $addHitCountSummary && $context->isAPI
+                    )
                         $rule_hitcount_array = $rule->API_showRuleHitCount( false, false );
                     $lines .= $context->ruleFieldHtmlExport($rule, $fieldID, TRUE, $rule_hitcount_array, $bestPractice, $visibility, $adoption);
                 }
@@ -5113,54 +5154,94 @@ RuleCallContext::$supportedActions[] = array(
         $tableHeaders = '';
         foreach( $fields as $fieldName => $value )
         {
-            if( ((
-                        $fieldName == 'src_resolved_sum' || $fieldName == 'src_resolved_sumOLD' || $fieldName == 'src_resolved_value' ||
-                        $fieldName == 'src_resolved_nested_name' || $fieldName == 'src_resolved_nested_value' || $fieldName == 'src_resolved_nested_location' ||
-                        $fieldName == 'dst_resolved_sum' || $fieldName == 'dst_resolved_sumOLD' || $fieldName == 'dst_resolved_value' ||
-                        $fieldName == 'dst_resolved_nested_name' || $fieldName == 'dst_resolved_nested_value' || $fieldName == 'dst_resolved_nested_location' ||
-                        $fieldName == 'dnat_host_resolved_sum' ||
-                        $fieldName == 'snat_address_resolved_sum')
-                    && !$addResolvedAddressSummary) ||
-                (($fieldName == 'service_resolved_sum' ||
-                        $fieldName == 'service_resolved_nested_name' || $fieldName == 'service_resolved_nested_value' || $fieldName == 'service_resolved_nested_location' ||
-                        $fieldName == 'service_count' || $fieldName == 'service_count_tcp' || $fieldName == 'service_count_udp')
-                    && !$addResolvedServiceSummary) ||
-                (($fieldName == 'service_appdefault_resolved_sum') && !$addResolvedServiceAppDefaultSummary) ||
-                (($fieldName == 'application_resolved_sum') && !$addResolvedApplicationSummary) ||
-                (($fieldName == 'schedule_resolved_sum') && !$addResolvedScheduleSummary) ||
-                (($fieldName == 'application_seen') && (!$addAppSeenSummary || !$context->isAPI) ) ||
-                (($fieldName == 'first-hit' || $fieldName == 'last-hit' || $fieldName == 'hit-count' || $fieldName == 'rule-creation' )
-                    && (!$addHitCountSummary || !$context->isAPI) ) ||
-                (($fieldName == 'sec_rule_type' ) && $rule !== null
-                    && get_class($rule) !== "SecurityRule") ||
-                (($fieldName == 'nat_rule_type' || $fieldName == 'snat_type' || $fieldName == 'snat_address' ||
+            if(
+                (
+                    ($fieldName == 'src_resolved_sum' || $fieldName == 'src_resolved_sumOLD' || $fieldName == 'src_resolved_value'
+                        || $fieldName == 'src_resolved_nested_name' || $fieldName == 'src_resolved_nested_value' || $fieldName == 'src_resolved_nested_location'
+                        || $fieldName == 'dst_resolved_sum' || $fieldName == 'dst_resolved_sumOLD' || $fieldName == 'dst_resolved_value'
+                        || $fieldName == 'dst_resolved_nested_name' || $fieldName == 'dst_resolved_nested_value' || $fieldName == 'dst_resolved_nested_location'
+                        || $fieldName == 'dnat_host_resolved_sum'
+                        || $fieldName == 'snat_address_resolved_sum'
+                    )
+                    && !$addResolvedAddressSummary
+                )
+                || (
+                    ($fieldName == 'service_resolved_sum'
+                        || $fieldName == 'service_resolved_nested_name' || $fieldName == 'service_resolved_nested_value'
+                        || $fieldName == 'service_resolved_nested_location'
+                        || $fieldName == 'service_count' || $fieldName == 'service_count_tcp'
+                        || $fieldName == 'service_count_udp')
+                    && !$addResolvedServiceSummary
+                )
+                || (
+                    ($fieldName == 'service_appdefault_resolved_sum') && !$addResolvedServiceAppDefaultSummary
+                )
+                || (
+                    ($fieldName == 'application_resolved_sum') && !$addResolvedApplicationSummary
+                )
+                || (
+                    ($fieldName == 'schedule_resolved_sum') && !$addResolvedScheduleSummary
+                )
+                || (
+                    ($fieldName == 'application_seen') && (!$addAppSeenSummary || !$context->isAPI)
+                )
+                || (
+                    ($fieldName == 'first-hit' || $fieldName == 'last-hit' || $fieldName == 'hit-count' || $fieldName == 'rule-creation' )
+                    && (!$addHitCountSummary || !$context->isAPI)
+                )
+                || (
+                    ($fieldName == 'sec_rule_type' )
+                    && get_class($rule) !== "SecurityRule"
+                )
+                || (
+                    ($fieldName == 'nat_rule_type' || $fieldName == 'snat_type' || $fieldName == 'snat_address' ||
                         $fieldName == 'snat_address_resovled_sum' || $fieldName == "dnat_type" || $fieldName == 'dnat_host' ||
                         $fieldName == 'dnat_host_resovled_sum' || $fieldName == 'dnat_port' || $fieldName == 'dnat_distribution'  ||
-                        $fieldName == "dst_interface" || $fieldName == "snat_interface" )  && $rule !== null
-                    && get_class($rule) !== "NatRule") ||
-                (($fieldName == 'sp_best_practice' ) && !$bestPractice || get_class($rule) !== "SecurityRule") ||
-                (($fieldName == 'sp_best_practice_details'
+                        $fieldName == "dst_interface" || $fieldName == "snat_interface" )
+                    && get_class($rule) !== "NatRule"
+                )
+                || (
+                    ($fieldName == 'sp_best_practice' ) && !$bestPractice || get_class($rule) !== "SecurityRule"
+                )
+                || (
+                    ($fieldName == 'sp_best_practice_details')
+                    && (!$bestPractice && !$visibility && !$adoption) || get_class($rule) !== "SecurityRule"
+                )
+                || (
+                    ($fieldName == 'sp_av_bp' || $fieldName == 'sp_as_bp' || $fieldName == 'sp_vp_bp' || $fieldName == 'sp_url_bp'
+                        || $fieldName == 'sp_file_bp' || $fieldName == 'sp_data_bp' || $fieldName == 'sp_wf_bp')
+                    && (!$bestPractice ) || get_class($rule) !== "SecurityRule"
+                )
+                || (
+                    ($fieldName == 'sp_av_visible' || $fieldName == 'sp_as_visible' || $fieldName == 'sp_vp_visible'
+                        || $fieldName == 'sp_url_visible' || $fieldName == 'sp_file_visible' || $fieldName == 'sp_data_visible'
+                        || $fieldName == 'sp_wf_visible')
+                    && (!$visibility) || get_class($rule) !== "SecurityRule"
+                )
+                || (
+                    ($fieldName == 'sp_av_adoption' || $fieldName == 'sp_as_adoption' || $fieldName == 'sp_vp_adoption'
+                        || $fieldName == 'sp_url_adoption' || $fieldName == 'sp_file_adoption' || $fieldName == 'sp_data_adoption'
+                        || $fieldName == 'sp_wf_adoption')
+                    && (!$adoption) || get_class($rule) !== "SecurityRule"
+                )
+                || (
+                    ($fieldName == 'sp_visibility' ) && !$visibility || get_class($rule) !== "SecurityRule"
+                )
+                || (
+                    ($fieldName == 'sp_adoption' ) && !$adoption || get_class($rule) !== "SecurityRule"
+                )
+                || (
+                    (
+                        ($fieldName == 'application') || ($fieldName == 'action')
+                        || ($fieldName == 'security-profile') || ($fieldName == 'url_category') || ($fieldName == 'log_start')
+                        || ($fieldName == 'log_end') || ($fieldName == 'log_prof') || ($fieldName == 'log_prof_name')
+                        || ($fieldName == 'schedule') || ($fieldName == 'src_user')
                     )
-                    && (!$bestPractice && !$visibility && !$adoption) || get_class($rule) !== "SecurityRule") ||
-                (($fieldName == 'sp_av_bp' || $fieldName == 'sp_as_bp' || $fieldName == 'sp_vp_bp' || $fieldName == 'sp_url_bp' || $fieldName == 'sp_file_bp' || $fieldName == 'sp_data_bp' || $fieldName == 'sp_wf_bp'
-                    )
-                    && (!$bestPractice ) || get_class($rule) !== "SecurityRule") ||
-                (($fieldName == 'sp_av_visible' || $fieldName == 'sp_as_visible' || $fieldName == 'sp_vp_visible' || $fieldName == 'sp_url_visible' || $fieldName == 'sp_file_visible' || $fieldName == 'sp_data_visible' || $fieldName == 'sp_wf_visible'
-                    )
-                    && (!$visibility) || get_class($rule) !== "SecurityRule") ||
-                (($fieldName == 'sp_av_adoption' || $fieldName == 'sp_as_adoption' || $fieldName == 'sp_vp_adoption' || $fieldName == 'sp_url_adoption' || $fieldName == 'sp_file_adoption' || $fieldName == 'sp_data_adoption' || $fieldName == 'sp_wf_adoption'
-                    )
-                    && (!$adoption) || get_class($rule) !== "SecurityRule") ||
-                (($fieldName == 'sp_visibility' ) && !$visibility || get_class($rule) !== "SecurityRule") ||
-                (($fieldName == 'sp_adoption' ) && !$adoption || get_class($rule) !== "SecurityRule")  ||
-                ( (($fieldName == 'application') || ($fieldName == 'action') ||
-                        ($fieldName == 'security-profile') || ($fieldName == 'url_category') || ($fieldName == 'log_start') ||
-                        ($fieldName == 'log_end') || ($fieldName == 'log_prof') || ($fieldName == 'log_prof_name') ||
-                        ($fieldName == 'schedule') || ($fieldName == 'src_user') )
                     && get_class($rule) !== "SecurityRule"
                 )
             )
                 continue;
+
             $tableHeaders .= "<th>{$fieldName}</th>\n";
         }
 

@@ -773,20 +773,20 @@ class URLProfile extends SecurityProfile2
     {
         if( $this->credential_mode == null)
         {
-            PH::print_stdout("no credential mode");
+            #PH::print_stdout("no credential mode");
             return False;
         }
 
         if( $this->credential_log == null)
         {
-            PH::print_stdout("no credential log");
+            #PH::print_stdout("no credential log");
             return False;
         }
 
 
         if( $check_array['tab']['mode'] !== $this->credential_mode )
         {
-            PH::print_stdout("wrong credential mode");
+            #PH::print_stdout("wrong credential mode");
             return False;
         }
 
