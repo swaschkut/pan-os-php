@@ -150,61 +150,68 @@ trait CP_R80_natlayer
 
                 $source = $access['original-source'];
 
-                $source_name = $this->find_address_uid($source);
-
-                if( $source_name == null )
+                $source_name = $this->find_address_uid($source, "src");
+                if( is_array($source_name) )
                 {
-                    //CpmiAnyObject
-                    if( isset($this->objectArray['CpmiAnyObject'][$source]) )
-                    {
-                        print "    - original-source: ANY\n";
-                    }
-                    else
-                        print "check again: " . $source . "\n";
+
                 }
                 else
                 {
-                    $tmp_address = $this->sub->addressStore->find($source_name);
-                    if( $tmp_address != null )
+                    if( $source_name == null )
                     {
-                        print "    - original-source add: " . $source_name . "\n";
-                        $tmp_natrule->source->addObject($tmp_address);
+                        //CpmiAnyObject
+                        if( isset($this->objectArray['CpmiAnyObject'][$source]) )
+                        {
+                            print "    - original-source: ANY\n";
+                        }
+                        else
+                            print "check again: " . $source . "\n";
                     }
                     else
                     {
-                        mwarning("address object ".$source_name." not found");
+                        $tmp_address = $this->sub->addressStore->find($source_name);
+                        if( $tmp_address != null )
+                        {
+                            print "    - original-source add: " . $source_name . "\n";
+                            $tmp_natrule->source->addObject($tmp_address);
+                        }
+                        else
+                        {
+                            mwarning("address object ".$source_name." not found", null, false);
+                        }
                     }
                 }
+
 
 
                 //add DESTINATION
                 $destination = $access['original-destination'];
-                $destination_name = $this->find_address_uid($destination);
-
-                if( $destination_name == null )
+                $destination_name = $this->find_address_uid($destination, "dst");
+                if( is_array($source_name) )
                 {
-                    //CpmiAnyObject
-                    if( isset($this->objectArray['CpmiAnyObject'][$destination]) )
-                    {
-                        print "    - original-destination: ANY\n";
-                    }
-                    else
-                        print "check again: " . $destination . "\n";
+
                 }
                 else
                 {
-                    $tmp_address = $this->sub->addressStore->find($destination_name);
-                    if( $tmp_address != null )
+                    if ($destination_name == null)
                     {
-                        print "    - original-destination add: " . $destination_name . "\n";
-                        $tmp_natrule->destination->addObject($tmp_address);
+                        //CpmiAnyObject
+                        if (isset($this->objectArray['CpmiAnyObject'][$destination])) {
+                            print "    - original-destination: ANY\n";
+                        } else
+                            print "check again: " . $destination . "\n";
                     }
                     else
                     {
-                        mwarning("address object ".$destination_name." not found");
+                        $tmp_address = $this->sub->addressStore->find($destination_name);
+                        if ($tmp_address != null) {
+                            print "    - original-destination add: " . $destination_name . "\n";
+                            $tmp_natrule->destination->addObject($tmp_address);
+                        } else {
+                            mwarning("address object " . $destination_name . " not found", null, false);
+                        }
                     }
                 }
-
 
                 //add SERVICES
                 $service = $access['original-service'];
@@ -232,7 +239,7 @@ trait CP_R80_natlayer
                     }
                     else
                     {
-                        mwarning("service object not found");
+                        mwarning("service object not found", null, false);
                     }
                 }
 
@@ -245,45 +252,41 @@ trait CP_R80_natlayer
                     #print "SNAT: ".$check."\n";
 
                     $translated_source = $check;
-                    $translated_source_name = $this->find_address_uid($translated_source);
-
-                    if( $translated_source_name == null )
+                    $translated_source_name = $this->find_address_uid($translated_source, "src-translated");
+                    if( is_array($translated_source_name) )
                     {
-                        //CpmiAnyObject
-                        if( isset($this->objectArray['Global'][$translated_source]) )
-                        {
-                            print "    - translated-source: ANY\n";
 
-                            $tmp_address = $this->sub->addressStore->find($source_name . "-hidenat");
-                            if( $tmp_address != null )
-                            {
-                                print "    - translated-source add: " . $source_name . "-hidenat\n";
+                    }
+                    else {
+                        if ($translated_source_name == null) {
+                            //CpmiAnyObject
+                            if (isset($this->objectArray['Global'][$translated_source])) {
+                                print "    - translated-source: ANY\n";
+
+                                $tmp_address = $this->sub->addressStore->find($source_name . "-hidenat");
+                                if ($tmp_address != null) {
+                                    print "    - translated-source add: " . $source_name . "-hidenat\n";
+                                    $tmp_natrule->snathosts->addObject($tmp_address);
+
+                                    print "    * snat type: 'dynamic-ip-and-port'\n";
+                                    $tmp_natrule->changeSourceNAT('dynamic-ip-and-port');
+                                }
+
+                            } else
+                                print "check again: " . $translated_source . "\n";
+                        } else {
+                            $tmp_address = $this->sub->addressStore->find($translated_source_name);
+                            if ($tmp_address != null) {
+                                print "    - translated-source add: " . $translated_source_name . "\n";
+                                ###$tmp_natrule->destination->addObject( $tmp_address );
+
                                 $tmp_natrule->snathosts->addObject($tmp_address);
 
                                 print "    * snat type: 'dynamic-ip-and-port'\n";
                                 $tmp_natrule->changeSourceNAT('dynamic-ip-and-port');
+                            } else {
+                                mwarning("address object " . $translated_source_name . " not found", null, false);
                             }
-
-                        }
-                        else
-                            print "check again: " . $translated_source . "\n";
-                    }
-                    else
-                    {
-                        $tmp_address = $this->sub->addressStore->find($translated_source_name);
-                        if( $tmp_address != null )
-                        {
-                            print "    - translated-source add: " . $translated_source_name . "\n";
-                            ###$tmp_natrule->destination->addObject( $tmp_address );
-
-                            $tmp_natrule->snathosts->addObject($tmp_address);
-
-                            print "    * snat type: 'dynamic-ip-and-port'\n";
-                            $tmp_natrule->changeSourceNAT('dynamic-ip-and-port');
-                        }
-                        else
-                        {
-                            mwarning("address object ".$translated_source_name." not found");
                         }
                     }
                 }
@@ -316,7 +319,7 @@ trait CP_R80_natlayer
                         }
                         else
                         {
-                            mwarning("service object not found");
+                            mwarning("service object not found", null, false);
                         }
                     }
                 }
@@ -329,38 +332,44 @@ trait CP_R80_natlayer
                     #print "DNAT: ".$check."\n";
 
                     $translated_destination = $check;
-                    $translated_destination_name = $this->find_address_uid($translated_destination);
-
-                    if( $translated_destination_name == null )
+                    $translated_destination_name = $this->find_address_uid($translated_destination, "dst-translated");
+                    if( is_array($translated_destination_name) )
                     {
-                        //CpmiAnyObject
-                        if( isset($this->objectArray['Global'][$translated_destination]) )
-                        {
-                            print "    - translated-destination: ANY\n";
-                        }
-                        else
-                            print "check again: " . $translated_destination . "\n";
+
                     }
                     else
                     {
-                        $tmp_address = $this->sub->addressStore->find($translated_destination_name);
-                        if( $tmp_address != null )
+                        if( $translated_destination_name == null )
                         {
-                            print "    - translated-destination add: " . $translated_destination_name . "\n";
-                            ###$tmp_natrule->destination->addObject( $tmp_address );
-                            if( $tmp_service != null )
+                            //CpmiAnyObject
+                            if( isset($this->objectArray['Global'][$translated_destination]) )
                             {
-                                print "    - translated-service add: " . $tmp_service->name() . "\n";
-                                $tmp_natrule->setDNAT($tmp_address, $tmp_service->getDestPort() );
+                                print "    - translated-destination: ANY\n";
                             }
                             else
-                                $tmp_natrule->setDNAT($tmp_address);
-
-
+                                print "check again: " . $translated_destination . "\n";
                         }
                         else
                         {
-                            mwarning("address object ".$translated_destination_name." not found");
+                            $tmp_address = $this->sub->addressStore->find($translated_destination_name);
+                            if( $tmp_address != null )
+                            {
+                                print "    - translated-destination add: " . $translated_destination_name . "\n";
+                                ###$tmp_natrule->destination->addObject( $tmp_address );
+                                if( $tmp_service != null )
+                                {
+                                    print "    - translated-service add: " . $tmp_service->name() . "\n";
+                                    $tmp_natrule->setDNAT($tmp_address, $tmp_service->getDestPort() );
+                                }
+                                else
+                                    $tmp_natrule->setDNAT($tmp_address);
+
+
+                            }
+                            else
+                            {
+                                mwarning("address object ".$translated_destination_name." not found", null, false);
+                            }
                         }
                     }
                 }

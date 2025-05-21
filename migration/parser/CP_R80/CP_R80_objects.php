@@ -3,6 +3,7 @@
 
 trait CP_R80_objects
 {
+
     //##########################################################################
 //print out all available ARRAY information from JSON
     function print_object_array($array, $padding)
@@ -506,7 +507,7 @@ trait CP_R80_objects
             {
                 print "   - group-with-exclusion is done later\n";
             }
-            elseif( $key == "checkpoint-host" || $key == "simple-cluster" || $key == "CpmiClusterMember" )
+            elseif( $key == "checkpoint-host" || $key == "simple-cluster" || $key == "CpmiClusterMember" || $key == "cluster-member" )
             {
                 $this->add_host_objects($subarray);
             }
@@ -583,22 +584,29 @@ trait CP_R80_objects
                     {
                         if( !is_array($member_uid) )
                         {
-                            $member_name = $this->find_address_uid($member_uid);
-                            $member_name = $this->truncate_names($this->normalizeNames($member_name));
-                            if( $member_name != null )
+                            $member_name = $this->find_address_uid($member_uid, "grp");
+                            if( is_array($member_name) )
                             {
-                                $tmp_address = $this->sub->addressStore->find($member_name);
-                                if( $tmp_address != null )
+
+                            }
+                            else
+                            {
+                                $member_name = $this->truncate_names($this->normalizeNames($member_name));
+                                if( $member_name != null )
                                 {
-                                    print "    - add member: " . $member_name . "\n";
-                                    $tmp_addressgroup->addMember($tmp_address);
-                                }
-                                else
-                                {
-                                    $group_missing_members[$name][$member_name] = $member_name;
-                                    $group_missing_members[$name]['domain'] = $domain;
-                                    print "     - missing addressgroup: " . $member_name . " try to fix it later\n";
-                                    #mwarning( "addressgroup: '".$name ."' | member: '".$member_name."' not found" );
+                                    $tmp_address = $this->sub->addressStore->find($member_name);
+                                    if( $tmp_address != null )
+                                    {
+                                        print "    - add member: " . $member_name . "\n";
+                                        $tmp_addressgroup->addMember($tmp_address);
+                                    }
+                                    else
+                                    {
+                                        $group_missing_members[$name][$member_name] = $member_name;
+                                        $group_missing_members[$name]['domain'] = $domain;
+                                        print "     - missing addressgroup: " . $member_name . " try to fix it later\n";
+                                        #mwarning( "addressgroup: '".$name ."' | member: '".$member_name."' not found" );
+                                    }
                                 }
                             }
                         }
@@ -691,22 +699,29 @@ trait CP_R80_objects
                     {
                         if( !is_array($member_uid) )
                         {
-                            $member_name = $this->find_address_uid($member_uid);
-                            $member_name = $this->truncate_names($this->normalizeNames($member_name));
-                            if( $member_name != null )
+                            $member_name = $this->find_address_uid($member_uid, "grp");
+                            if( is_array($member_name) )
                             {
-                                $tmp_address = $this->sub->addressStore->find($member_name);
-                                if( $tmp_address != null )
+
+                            }
+                            else
+                            {
+                                $member_name = $this->truncate_names($this->normalizeNames($member_name));
+                                if( $member_name != null )
                                 {
-                                    print "    - add member: " . $member_name . "\n";
-                                    $tmp_addressgroup->addMember($tmp_address);
-                                }
-                                else
-                                {
-                                    $group_missing_members[$name][$member_name] = $member_name;
-                                    $group_missing_members[$name]['domain'] = $domain;
-                                    print "     - missing addressgroup: " . $member_name . " try to fix it later\n";
-                                    #mwarning( "addressgroup: '".$name ."' | member: '".$member_name."' not found" );
+                                    $tmp_address = $this->sub->addressStore->find($member_name);
+                                    if( $tmp_address != null )
+                                    {
+                                        print "    - add member: " . $member_name . "\n";
+                                        $tmp_addressgroup->addMember($tmp_address);
+                                    }
+                                    else
+                                    {
+                                        $group_missing_members[$name][$member_name] = $member_name;
+                                        $group_missing_members[$name]['domain'] = $domain;
+                                        print "     - missing addressgroup: " . $member_name . " try to fix it later\n";
+                                        #mwarning( "addressgroup: '".$name ."' | member: '".$member_name."' not found" );
+                                    }
                                 }
                             }
                         }
@@ -785,7 +800,7 @@ trait CP_R80_objects
                     $tmp_addressgroup->addMember($tmp_address);
                 }
                 else
-                    mwarning("addressgroup: '" . $groupname . "' | member: '" . $member . "' not found");
+                    mwarning("addressgroup: '" . $groupname . "' | member: '" . $member . "' not found", null, false);
             }
         }
 
@@ -868,12 +883,12 @@ trait CP_R80_objects
                     $tmp_servicegroup->addMember($tmp_service);
                 }
                 else
-                    mwarning("servicegroup: '" . $groupname . "' | member: '" . $member . "' not found");
+                    mwarning("servicegroup: '" . $groupname . "' | member: '" . $member . "' not found", null, false);
             }
         }
     }
 
-    public function find_address_uid($member_uid)
+    public function find_address_uid($member_uid, $type = "---")
     {
         $member_name = null;
 
@@ -925,6 +940,11 @@ trait CP_R80_objects
             $member_name = $this->objectArray['simple-cluster'][$member_uid]['name'];
             #print "  1-".$member_name."\n";
         }
+        elseif( isset($this->objectArray['cluster-member'][$member_uid]) )
+        {
+            $member_name = $this->objectArray['cluster-member'][$member_uid]['name'];
+            #print "  1-".$member_name."\n";
+        }
         elseif( isset($this->objectArray['group-with-exclusion'][$member_uid]) )
         {
             $member_name = $this->objectArray['group-with-exclusion'][$member_uid]['name'];
@@ -957,11 +977,11 @@ trait CP_R80_objects
             }
             else
             {
-                print "     X not found: " . $member_uid . " check where it is defined\n";
-                mwarning("not found: " . $member_uid . "\n", null, FALSE);
+                $this->missing_objects_uid[$member_uid] = $member_uid;
+                print "     X not found: " . $type. " - " . $member_uid . " check where it is defined\n";
+                mwarning("not found: " . $type. " - " . $member_uid . "\n", null, FALSE);
+                return array( false, $member_uid );
             }
-
-
         }
 
         return $member_name;
@@ -1005,7 +1025,7 @@ trait CP_R80_objects
     {
         foreach( $subarray as $host_key => $host )
         {
-            if( $host['type'] != 'host' && $host['type'] != 'checkpoint-host' && $host['type'] !=  "simple-cluster" && $host['type'] != "CpmiClusterMember" )
+            if( $host['type'] != 'host' && $host['type'] != 'checkpoint-host' && $host['type'] !=  "simple-cluster" && $host['type'] != "CpmiClusterMember" && $host['type'] != "cluster-member" )
             {
                 print_r($host);
                 mwarning("no type host");
@@ -1027,10 +1047,15 @@ trait CP_R80_objects
                 $value = $host['ipv4-address'];
             elseif( isset($host['ipv6-address']) )
                 $value = $host['ipv6-address'];
+            else
+                $value = "1.2.3.4";
 
             $type = "ip-netmask";
 
-            $description = $host['comments'];
+            if( isset($host['comments']) )
+                $description = $host['comments'];
+            else
+                $description = "";
 
             #$host['domain']['domain-type']
             #$host['domain']['name']

@@ -706,13 +706,13 @@ class AntiSpywareProfile extends SecurityProfile2
         if( $this->secprof_type != 'spyware' )
             return null;
 
-        $check_array = $this->spyware_lists_bp_visibility_JSON( "bp", "spyware");
+        $checkBP_array = $this->spyware_lists_bp_visibility_JSON( "bp", "spyware");
 
         if( isset($this->additional['botnet-domain']['lists']) )
         {
             foreach( $this->additional['botnet-domain']['lists'] as $name => $array)
             {
-                foreach( $check_array['action'] as $validation )
+                foreach( $checkBP_array['action'] as $validation )
                 {
                     foreach( $validation['type'] as $check_type )
                     {

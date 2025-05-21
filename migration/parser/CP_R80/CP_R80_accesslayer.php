@@ -79,7 +79,7 @@ trait CP_R80_accesslayer
                     $tmp_tag = $this->sub->tagStore->findOrCreate($tagname);
                 }
                 else
-                    mwarning( "access-section - array['name] - not found" );
+                    mwarning( "access-section - array['name] - not found" , null, false);
 
             }
             elseif( $type == "access-rule" )
@@ -186,44 +186,51 @@ trait CP_R80_accesslayer
                 //add SOURCE
                 foreach( $access['source'] as $source )
                 {
-                    $source_name = $this->find_address_uid($source);
-                    $source_name = $this->truncate_names($this->normalizeNames($source_name));
-                    if( $source_name == null )
+                    $source_name = $this->find_address_uid($source, "src");
+                    if( is_array($source_name) )
                     {
-                        //CpmiAnyObject
-                        if( isset($this->objectArray['CpmiAnyObject'][$source]) )
-                        {
-                            print "    - source: ANY\n";
-                        }
-                        else
-                            print "check again: " . $source . "\n";
+                        PH::print_stdout("rule tag - src: ".$source);
+                        $tmp_tag_uid = $this->sub->tagStore->findOrCreate("src-".$source);
+                        $tmp_secrule->tags->addTag($tmp_tag_uid);
                     }
                     else
                     {
-                        $tmp_address = $this->sub->addressStore->find($source_name);
-                        if( $tmp_address != null )
+                        $source_name = $this->truncate_names($this->normalizeNames($source_name));
+                        if ($source_name == null)
                         {
-                            print "    - source add: " . $source_name . "\n";
-                            $tmp_secrule->source->addObject($tmp_address);
+                            //CpmiAnyObject
+                            if (isset($this->objectArray['CpmiAnyObject'][$source]))
+                                print "    - source: ANY\n";
+                            else
+                                print "check again: " . $source . "\n";
                         }
                         else
                         {
-                            if( $domainType === "global domain" )
+                            $tmp_address = $this->sub->addressStore->find($source_name);
+                            if ($tmp_address != null)
                             {
-                                $tagname_overwrite = "planned to be overwritten";
-                                print "create dummy object: ".$source_name." tag it with '".$tagname_overwrite."'\n";
-                                /** @var AddressGroup $tmp_addressgroup */
-                                $tmp_addressgroup = $this->sub->addressStore->newAddressGroup($source_name);
-
-                                $tmp_tag_grp = $this->sub->tagStore->findOrCreate( $tagname_overwrite );
-                                $tmp_addressgroup->tags->addTag( $tmp_tag_grp );
-                                //if global create empty address-group - tag it with planned to be overwritten
-
-                                $tmp_secrule->source->addObject($tmp_addressgroup);
+                                print "    - source add: " . $source_name . "\n";
+                                $tmp_secrule->source->addObject($tmp_address);
                             }
                             else
                             {
-                                mwarning("address object ".$source_name." not found");
+                                if ($domainType === "global domain")
+                                {
+                                    $tagname_overwrite = "planned to be overwritten";
+                                    print "create dummy object: " . $source_name . " tag it with '" . $tagname_overwrite . "'\n";
+                                    /** @var AddressGroup $tmp_addressgroup */
+                                    $tmp_addressgroup = $this->sub->addressStore->newAddressGroup($source_name);
+
+                                    $tmp_tag_grp = $this->sub->tagStore->findOrCreate($tagname_overwrite);
+                                    $tmp_addressgroup->tags->addTag($tmp_tag_grp);
+                                    //if global create empty address-group - tag it with planned to be overwritten
+
+                                    $tmp_secrule->source->addObject($tmp_addressgroup);
+                                }
+                                else
+                                {
+                                    mwarning("address object " . $source_name . " not found", null, false);
+                                }
                             }
                         }
                     }
@@ -233,46 +240,54 @@ trait CP_R80_accesslayer
                 //add DESTINATION
                 foreach( $access['destination'] as $destination )
                 {
-                    $destination_name = $this->find_address_uid($destination);
-                    $destination_name = $this->truncate_names($this->normalizeNames($destination_name));
-                    if( $destination_name == null )
+                    $destination_name = $this->find_address_uid($destination, "dst");
+                    if( is_array($destination_name) )
                     {
-                        //CpmiAnyObject
-                        if( isset($this->objectArray['CpmiAnyObject'][$destination]) )
-                        {
-                            print "    - destination: ANY\n";
-                        }
-                        else
-                            print "check again: " . $destination . "\n";
+                        PH::print_stdout("rule tag - dst: ".$destination);
+                        $tmp_tag_uid = $this->sub->tagStore->findOrCreate("dst-".$destination);
+                        $tmp_secrule->tags->addTag($tmp_tag_uid);
                     }
                     else
                     {
-                        $tmp_address = $this->sub->addressStore->find($destination_name);
-                        if( $tmp_address != null )
+                        $destination_name = $this->truncate_names($this->normalizeNames($destination_name));
+                        if ($destination_name == null)
                         {
-                            print "    - destination add: " . $destination_name . "\n";
-                            $tmp_secrule->destination->addObject($tmp_address);
+                            //CpmiAnyObject
+                            if (isset($this->objectArray['CpmiAnyObject'][$destination]))
+                            {
+                                print "    - destination: ANY\n";
+                            }
+                            else
+                                print "check again: " . $destination . "\n";
                         }
                         else
                         {
-                            if( $domainType === "global domain" )
+                            $tmp_address = $this->sub->addressStore->find($destination_name);
+                            if ($tmp_address != null)
                             {
-                                $tagname_overwrite = "planned to be overwritten";
-                                print "create dummy object: ".$destination_name." tag it with '".$tagname_overwrite."'\n";
-                                /** @var AddressGroup $tmp_addressgroup */
-                                $tmp_addressgroup = $this->sub->addressStore->newAddressGroup($destination_name);
-
-                                $tmp_tag = $this->sub->tagStore->findOrCreate( $tagname_overwrite );
-                                $tmp_addressgroup->tags->addTag( $tmp_tag );
-                                //if global create empty address-group - tag it with planned to be overwritten
-
-                                $tmp_secrule->destination->addObject($tmp_addressgroup);
+                                print "    - destination add: " . $destination_name . "\n";
+                                $tmp_secrule->destination->addObject($tmp_address);
                             }
                             else
                             {
-                                mwarning("address object ".$destination_name." not found");
-                            }
+                                if ($domainType === "global domain")
+                                {
+                                    $tagname_overwrite = "planned to be overwritten";
+                                    print "create dummy object: " . $destination_name . " tag it with '" . $tagname_overwrite . "'\n";
+                                    /** @var AddressGroup $tmp_addressgroup */
+                                    $tmp_addressgroup = $this->sub->addressStore->newAddressGroup($destination_name);
 
+                                    $tmp_tag = $this->sub->tagStore->findOrCreate($tagname_overwrite);
+                                    $tmp_addressgroup->tags->addTag($tmp_tag);
+                                    //if global create empty address-group - tag it with planned to be overwritten
+
+                                    $tmp_secrule->destination->addObject($tmp_addressgroup);
+                                }
+                                else
+                                {
+                                    mwarning("address object " . $destination_name . " not found", null, false);
+                                }
+                            }
                         }
                     }
                 }
@@ -303,7 +318,7 @@ trait CP_R80_accesslayer
                         }
                         else
                         {
-                            mwarning("service object not found");
+                            mwarning("service object not found", null, false);
                         }
                     }
                 }

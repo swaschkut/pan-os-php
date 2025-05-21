@@ -40,6 +40,7 @@ BUGFIX:
 * type=vendor-migration vendor=fortinet | fix if string 'next' is not correct validate for object speration - do not skip if next is found in object name
 * type=vendor-migration vendor=fortinet | optimisation
 * type=diff || argument outputformatset= | bugfix to again correctly produce set commands
+* type=vendor-migration vendor=cp-r80 | extend for cluster-member and display missing uid
 
 GENERAL:
 * multiple Interface class optimisation
