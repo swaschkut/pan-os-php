@@ -186,12 +186,24 @@ trait CP_R80_accesslayer
                 //add SOURCE
                 foreach( $access['source'] as $source )
                 {
-                    $source_name = $this->find_address_uid($source, "src");
+                    $source_name = $this->find_address_uid($source, "src", $tmp_secrule);
                     if( is_array($source_name) )
                     {
-                        PH::print_stdout("rule tag - src: ".$source);
-                        $tmp_tag_uid = $this->sub->tagStore->findOrCreate("src-".$source);
-                        $tmp_secrule->tags->addTag($tmp_tag_uid);
+                        if( isset( $this->user_objects_uid[$source] ) and isset($this->user_objects_uid[$source]['entry']) )
+                        {
+                            /** @var SecurityRule $tmp_secrule */
+                            foreach( $this->user_objects_uid[$source]['entry'] as $user_entry )
+                                $tmp_secrule->userID_addUser($user_entry);
+                            $tmp_secrule->userID_removeUser('any');
+                        }
+                        else
+                        {
+                            PH::print_stdout("rule tag - src: ".$source);
+                            $tmp_tag_uid = $this->sub->tagStore->findOrCreate("src-".$source);
+                            $tmp_secrule->tags->addTag($tmp_tag_uid);
+                            if( $access['enabled'] !== "0" )
+                                $this->missing_objects_uid[$source] = $source;
+                        }
                     }
                     else
                     {
@@ -240,12 +252,14 @@ trait CP_R80_accesslayer
                 //add DESTINATION
                 foreach( $access['destination'] as $destination )
                 {
-                    $destination_name = $this->find_address_uid($destination, "dst");
+                    $destination_name = $this->find_address_uid($destination, "dst", $tmp_secrule);
                     if( is_array($destination_name) )
                     {
-                        PH::print_stdout("rule tag - dst: ".$destination);
-                        $tmp_tag_uid = $this->sub->tagStore->findOrCreate("dst-".$destination);
+                        PH::print_stdout("rule tag - dst: " . $destination);
+                        $tmp_tag_uid = $this->sub->tagStore->findOrCreate("dst-" . $destination);
                         $tmp_secrule->tags->addTag($tmp_tag_uid);
+                        if( $access['enabled'] !== "0" )
+                            $this->missing_objects_uid[$destination] = $destination;
                     }
                     else
                     {

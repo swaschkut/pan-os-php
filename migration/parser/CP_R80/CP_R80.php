@@ -35,6 +35,10 @@ class CP_R80 extends PARSER
     public $v = null;
 
     public $missing_objects_uid = array();
+    public $region_objects_uid = array();
+    public $user_objects_uid = array();
+
+    public $panw_regions = array();
 
     use CPtest;
     use CP_R80_objects;
@@ -103,7 +107,6 @@ class CP_R80 extends PARSER
         CONVERTER::deleteDirectory( );
 
         print_r( $this->missing_objects_uid );
-
         PH::print_stdout( "\nCount Missing objects:". count( $this->missing_objects_uid ) );
     }
 
@@ -277,7 +280,19 @@ class CP_R80 extends PARSER
     }
 
 
+    function default_regions()
+    {
+        if( empty($this->panw_regions) )
+        {
+            $JSON_filename = dirname(__FILE__)."/../../../migration/parser/region.json";
+            $JSON_string = file_get_contents($JSON_filename);
 
+            $someArray = json_decode($JSON_string, TRUE);
+            $this->panw_regions = $someArray['region'];
+        }
+
+        return $this->panw_regions;
+    }
 }
 
 
