@@ -5084,44 +5084,51 @@ RuleCallContext::$supportedActions[] = array(
                         )
                         || (
                             ($fieldName == 'sec_rule_type' )
-                            && get_class($rule) !== "SecurityRule"
+                            #&& get_class($rule) !== "SecurityRule"
                         )
                         || (
                             ($fieldName == 'nat_rule_type' || $fieldName == 'snat_type' || $fieldName == 'snat_address' ||
                                 $fieldName == 'snat_address_resovled_sum' || $fieldName == "dnat_type" || $fieldName == 'dnat_host' ||
                                 $fieldName == 'dnat_host_resovled_sum' || $fieldName == 'dnat_port' || $fieldName == 'dnat_distribution' ||
                                 $fieldName == "dst_interface" || $fieldName == "snat_interface" )
-                            && get_class($rule) !== "NatRule"
+                            #&& get_class($rule) !== "NatRule"
                         )
                         || (
-                            ($fieldName == 'sp_best_practice' ) && !$bestPractice || get_class($rule) !== "SecurityRule"
+                            ($fieldName == 'sp_best_practice' ) && !$bestPractice
+                            #|| get_class($rule) !== "SecurityRule"
                         )
                         || (
                             ($fieldName == 'sp_best_practice_details')
-                            && (!$bestPractice && !$visibility && !$adoption) || get_class($rule) !== "SecurityRule"
+                            && (!$bestPractice && !$visibility && !$adoption)
+                            #|| get_class($rule) !== "SecurityRule"
                         )
                         || (
                             ($fieldName == 'sp_av_bp' || $fieldName == 'sp_as_bp' || $fieldName == 'sp_vp_bp' || $fieldName == 'sp_url_bp'
                                 || $fieldName == 'sp_file_bp' || $fieldName == 'sp_data_bp' || $fieldName == 'sp_wf_bp')
-                            && (!$bestPractice ) || get_class($rule) !== "SecurityRule"
+                            && (!$bestPractice )
+                            #|| get_class($rule) !== "SecurityRule"
                         )
                         || (
                             ($fieldName == 'sp_av_visible' || $fieldName == 'sp_as_visible' || $fieldName == 'sp_vp_visible'
                                 || $fieldName == 'sp_url_visible' || $fieldName == 'sp_file_visible' || $fieldName == 'sp_data_visible'
                                 || $fieldName == 'sp_wf_visible')
-                            && (!$visibility) || get_class($rule) !== "SecurityRule"
+                            && (!$visibility)
+                            #|| get_class($rule) !== "SecurityRule"
                         )
                         || (
                             ($fieldName == 'sp_av_adoption' || $fieldName == 'sp_as_adoption' || $fieldName == 'sp_vp_adoption'
                                 || $fieldName == 'sp_url_adoption' || $fieldName == 'sp_file_adoption' || $fieldName == 'sp_data_adoption'
                                 || $fieldName == 'sp_wf_adoption')
-                            && (!$adoption) || get_class($rule) !== "SecurityRule"
+                            && (!$adoption)
+                            #|| get_class($rule) !== "SecurityRule"
                         )
                         || (
-                            ($fieldName == 'sp_visibility' ) && !$visibility || get_class($rule) !== "SecurityRule"
+                            ($fieldName == 'sp_visibility' ) && !$visibility
+                            #|| get_class($rule) !== "SecurityRule"
                         )
                         || (
-                            ($fieldName == 'sp_adoption' ) && !$adoption || get_class($rule) !== "SecurityRule"
+                            ($fieldName == 'sp_adoption' ) && !$adoption
+                            #|| get_class($rule) !== "SecurityRule"
                         )
                         || (
                             (
@@ -5130,7 +5137,7 @@ RuleCallContext::$supportedActions[] = array(
                                 ($fieldName == 'log_end') || ($fieldName == 'log_prof') || ($fieldName == 'log_prof_name') ||
                                 ($fieldName == 'schedule') || ($fieldName == 'src_user')
                             )
-                            && get_class($rule) !== "SecurityRule"
+                            #&& get_class($rule) !== "SecurityRule"
                         )
                     )
                         continue;
@@ -5191,44 +5198,51 @@ RuleCallContext::$supportedActions[] = array(
                 )
                 || (
                     ($fieldName == 'sec_rule_type' )
-                    && get_class($rule) !== "SecurityRule"
+                    #&& get_class($rule) !== "SecurityRule"
                 )
                 || (
                     ($fieldName == 'nat_rule_type' || $fieldName == 'snat_type' || $fieldName == 'snat_address' ||
                         $fieldName == 'snat_address_resovled_sum' || $fieldName == "dnat_type" || $fieldName == 'dnat_host' ||
                         $fieldName == 'dnat_host_resovled_sum' || $fieldName == 'dnat_port' || $fieldName == 'dnat_distribution'  ||
                         $fieldName == "dst_interface" || $fieldName == "snat_interface" )
-                    && get_class($rule) !== "NatRule"
+                    #&& get_class($rule) !== "NatRule"
                 )
                 || (
-                    ($fieldName == 'sp_best_practice' ) && !$bestPractice || get_class($rule) !== "SecurityRule"
+                    ($fieldName == 'sp_best_practice' ) && !$bestPractice
+                    #|| get_class($rule) !== "SecurityRule"
                 )
                 || (
                     ($fieldName == 'sp_best_practice_details')
-                    && (!$bestPractice && !$visibility && !$adoption) || get_class($rule) !== "SecurityRule"
+                    && (!$bestPractice && !$visibility && !$adoption)
+                    #|| get_class($rule) !== "SecurityRule"
                 )
                 || (
                     ($fieldName == 'sp_av_bp' || $fieldName == 'sp_as_bp' || $fieldName == 'sp_vp_bp' || $fieldName == 'sp_url_bp'
                         || $fieldName == 'sp_file_bp' || $fieldName == 'sp_data_bp' || $fieldName == 'sp_wf_bp')
-                    && (!$bestPractice ) || get_class($rule) !== "SecurityRule"
+                    && (!$bestPractice )
+                    #|| get_class($rule) !== "SecurityRule"
                 )
                 || (
                     ($fieldName == 'sp_av_visible' || $fieldName == 'sp_as_visible' || $fieldName == 'sp_vp_visible'
                         || $fieldName == 'sp_url_visible' || $fieldName == 'sp_file_visible' || $fieldName == 'sp_data_visible'
                         || $fieldName == 'sp_wf_visible')
-                    && (!$visibility) || get_class($rule) !== "SecurityRule"
+                    && (!$visibility)
+                    #|| get_class($rule) !== "SecurityRule"
                 )
                 || (
                     ($fieldName == 'sp_av_adoption' || $fieldName == 'sp_as_adoption' || $fieldName == 'sp_vp_adoption'
                         || $fieldName == 'sp_url_adoption' || $fieldName == 'sp_file_adoption' || $fieldName == 'sp_data_adoption'
                         || $fieldName == 'sp_wf_adoption')
-                    && (!$adoption) || get_class($rule) !== "SecurityRule"
+                    && (!$adoption)
+                    #|| get_class($rule) !== "SecurityRule"
                 )
                 || (
-                    ($fieldName == 'sp_visibility' ) && !$visibility || get_class($rule) !== "SecurityRule"
+                    ($fieldName == 'sp_visibility' ) && !$visibility
+                    #|| get_class($rule) !== "SecurityRule"
                 )
                 || (
-                    ($fieldName == 'sp_adoption' ) && !$adoption || get_class($rule) !== "SecurityRule"
+                    ($fieldName == 'sp_adoption' ) && !$adoption
+                    #|| get_class($rule) !== "SecurityRule"
                 )
                 || (
                     (
@@ -5237,7 +5251,7 @@ RuleCallContext::$supportedActions[] = array(
                         || ($fieldName == 'log_end') || ($fieldName == 'log_prof') || ($fieldName == 'log_prof_name')
                         || ($fieldName == 'schedule') || ($fieldName == 'src_user')
                     )
-                    && get_class($rule) !== "SecurityRule"
+                    #&& get_class($rule) !== "SecurityRule"
                 )
             )
                 continue;
