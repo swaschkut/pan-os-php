@@ -714,7 +714,7 @@ class URLProfile extends SecurityProfile2
                 {
                     if( !isset($this->$action[$url]) )
                     {
-                        print $url." NOT in array\n";
+                        #print $url." NOT in array\n";
                         return false;
                     }
 
