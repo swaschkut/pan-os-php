@@ -13,6 +13,9 @@ UTIL:
 * type=stats | extends json file bp action for AS/VP allow block-ip
 * type=interface | introduce actions=type-aggregate-ethernet-set / ae-group-set:aeX - not finalised as interface info are not updated in XML
 * type=vendor-migration vendor=cp-r80 | extend with region object migration
+* type=service/tag | introduce 'filter=(refstore is.rulestore)'
+* type=address/service/tag | introduce 'filter=(refobject tag.has XYZ)' - to filter based on usage within a specific rule
+* type=address/service actions=move:DG_xyz | migrated to a method within relevant Store class  - introduce argument 'recursive' to also move group members
 
 BUGFIX:
 * type=diff outputformatset=file.txt | bugfix to keep correct interface name, especially for ethernetX/Y

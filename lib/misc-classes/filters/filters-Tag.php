@@ -353,6 +353,28 @@ RQuery::$defaultFilters['tag']['refstore']['operators']['is'] = array(
         'input' => 'input/panorama-8.0.xml'
     )
 );
+RQuery::$defaultFilters['tag']['refstore']['operators']['is.rulestore'] = array(
+    'Function' => function (TagRQueryContext $context) {
+        #$value = $context->value;
+        #$value = strtolower($value);
+        $value = "rulestore";
+
+        $context->object->ReferencesStoreValidation($value);
+
+        $refstore = $context->object->getReferencesStore();
+
+        if( array_key_exists($value, $refstore) )
+            return TRUE;
+
+        return FALSE;
+
+    },
+    'arg' => false,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
 RQuery::$defaultFilters['tag']['reftype']['operators']['is'] = array(
     'Function' => function (TagRQueryContext $context) {
         $value = $context->value;
@@ -371,6 +393,35 @@ RQuery::$defaultFilters['tag']['reftype']['operators']['is'] = array(
     'arg' => TRUE,
     'ci' => array(
         'fString' => '(%PROP% securityrule )',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['tag']['refobject']['operators']['tag.has'] = array(
+    'Function' => function (TagRQueryContext $context) {
+        $object = $context->object;
+
+        $reference_array = $object->getReferences();
+
+        foreach( $reference_array as $refobject )
+        {
+            if( get_class( $refobject ) == "TagRuleContainer" )
+            {
+                /** @var TagRuleContainer $refobject */
+                $tmpTag = $refobject->owner->owner->owner->tagStore->find($context->value);
+                if( $tmpTag == null )
+                    return FALSE;
+                if( $refobject->owner->tags->hasTag($tmpTag) )
+                    return TRUE;
+            }
+        }
+
+
+        return FALSE;
+    },
+    'arg' => TRUE,
+    'help' => 'returns TRUE if object name matches refobjectname',
+    'ci' => array(
+        'fString' => '(%PROP% shared )',
         'input' => 'input/panorama-8.0.xml'
     )
 );
