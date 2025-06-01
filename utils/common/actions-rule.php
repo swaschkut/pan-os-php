@@ -4877,19 +4877,23 @@ RuleCallContext::$supportedActions[] = array(
 
 RuleCallContext::$supportedActions[] = array(
     'name' => 'exportToExcel',
+    'GlobalInitFunction' => function (RuleCallContext $context) {
+        $context->ruleList = array();
+        $context->arguments['tmp_secrule'] = false;
+        $context->arguments['tmp_natrule'] = false;
+    },
     'MainFunction' => function (RuleCallContext $context) {
         $rule = $context->object;
 
         if( is_object( $rule ) )
-            $context->ruleList[] = $rule;
-        else
         {
-            mwarning( "something strange with this Rule, it is NULL", null, false );
-            var_dump( $rule );
+            if( $rule->isSecurityRule() )
+                $context->arguments['tmp_secrule'] = true;
+            elseif( $rule->isNatRule() )
+                $context->arguments['tmp_natrule'] = true;
+            $context->ruleList[] = $rule;
         }
-    },
-    'GlobalInitFunction' => function (RuleCallContext $context) {
-        $context->ruleList = array();
+
     },
     'GlobalFinishFunction' => function (RuleCallContext $context) {
         $rule = $context->object;
@@ -5084,51 +5088,51 @@ RuleCallContext::$supportedActions[] = array(
                         )
                         || (
                             ($fieldName == 'sec_rule_type' )
-                            #&& get_class($rule) !== "SecurityRule"
+                            && !$context->arguments['tmp_secrule']
                         )
                         || (
                             ($fieldName == 'nat_rule_type' || $fieldName == 'snat_type' || $fieldName == 'snat_address' ||
                                 $fieldName == 'snat_address_resovled_sum' || $fieldName == "dnat_type" || $fieldName == 'dnat_host' ||
                                 $fieldName == 'dnat_host_resovled_sum' || $fieldName == 'dnat_port' || $fieldName == 'dnat_distribution' ||
                                 $fieldName == "dst_interface" || $fieldName == "snat_interface" )
-                            #&& get_class($rule) !== "NatRule"
+                            && !$context->arguments['tmp_natrule']
                         )
                         || (
                             ($fieldName == 'sp_best_practice' ) && !$bestPractice
-                            #|| get_class($rule) !== "SecurityRule"
+                            || !$context->arguments['tmp_secrule']
                         )
                         || (
                             ($fieldName == 'sp_best_practice_details')
                             && (!$bestPractice && !$visibility && !$adoption)
-                            #|| get_class($rule) !== "SecurityRule"
+                            || !$context->arguments['tmp_secrule']
                         )
                         || (
                             ($fieldName == 'sp_av_bp' || $fieldName == 'sp_as_bp' || $fieldName == 'sp_vp_bp' || $fieldName == 'sp_url_bp'
                                 || $fieldName == 'sp_file_bp' || $fieldName == 'sp_data_bp' || $fieldName == 'sp_wf_bp')
                             && (!$bestPractice )
-                            #|| get_class($rule) !== "SecurityRule"
+                            || !$context->arguments['tmp_secrule']
                         )
                         || (
                             ($fieldName == 'sp_av_visible' || $fieldName == 'sp_as_visible' || $fieldName == 'sp_vp_visible'
                                 || $fieldName == 'sp_url_visible' || $fieldName == 'sp_file_visible' || $fieldName == 'sp_data_visible'
                                 || $fieldName == 'sp_wf_visible')
                             && (!$visibility)
-                            #|| get_class($rule) !== "SecurityRule"
+                            || !$context->arguments['tmp_secrule']
                         )
                         || (
                             ($fieldName == 'sp_av_adoption' || $fieldName == 'sp_as_adoption' || $fieldName == 'sp_vp_adoption'
                                 || $fieldName == 'sp_url_adoption' || $fieldName == 'sp_file_adoption' || $fieldName == 'sp_data_adoption'
                                 || $fieldName == 'sp_wf_adoption')
                             && (!$adoption)
-                            #|| get_class($rule) !== "SecurityRule"
+                            || !$context->arguments['tmp_secrule']
                         )
                         || (
                             ($fieldName == 'sp_visibility' ) && !$visibility
-                            #|| get_class($rule) !== "SecurityRule"
+                            || !$context->arguments['tmp_secrule']
                         )
                         || (
                             ($fieldName == 'sp_adoption' ) && !$adoption
-                            #|| get_class($rule) !== "SecurityRule"
+                            || !$context->arguments['tmp_secrule']
                         )
                         || (
                             (
@@ -5137,7 +5141,7 @@ RuleCallContext::$supportedActions[] = array(
                                 ($fieldName == 'log_end') || ($fieldName == 'log_prof') || ($fieldName == 'log_prof_name') ||
                                 ($fieldName == 'schedule') || ($fieldName == 'src_user')
                             )
-                            #&& get_class($rule) !== "SecurityRule"
+                            && !$context->arguments['tmp_secrule']
                         )
                     )
                         continue;
@@ -5199,6 +5203,7 @@ RuleCallContext::$supportedActions[] = array(
                 || (
                     ($fieldName == 'sec_rule_type' )
                     #&& get_class($rule) !== "SecurityRule"
+                    && !$context->arguments['tmp_secrule']
                 )
                 || (
                     ($fieldName == 'nat_rule_type' || $fieldName == 'snat_type' || $fieldName == 'snat_address' ||
@@ -5206,21 +5211,24 @@ RuleCallContext::$supportedActions[] = array(
                         $fieldName == 'dnat_host_resovled_sum' || $fieldName == 'dnat_port' || $fieldName == 'dnat_distribution'  ||
                         $fieldName == "dst_interface" || $fieldName == "snat_interface" )
                     #&& get_class($rule) !== "NatRule"
+                    && !$context->arguments['tmp_natrule']
                 )
                 || (
                     ($fieldName == 'sp_best_practice' ) && !$bestPractice
                     #|| get_class($rule) !== "SecurityRule"
+                    || !$context->arguments['tmp_secrule']
                 )
                 || (
                     ($fieldName == 'sp_best_practice_details')
                     && (!$bestPractice && !$visibility && !$adoption)
-                    #|| get_class($rule) !== "SecurityRule"
+                    || !$context->arguments['tmp_secrule']
                 )
                 || (
                     ($fieldName == 'sp_av_bp' || $fieldName == 'sp_as_bp' || $fieldName == 'sp_vp_bp' || $fieldName == 'sp_url_bp'
                         || $fieldName == 'sp_file_bp' || $fieldName == 'sp_data_bp' || $fieldName == 'sp_wf_bp')
                     && (!$bestPractice )
                     #|| get_class($rule) !== "SecurityRule"
+                    || !$context->arguments['tmp_secrule']
                 )
                 || (
                     ($fieldName == 'sp_av_visible' || $fieldName == 'sp_as_visible' || $fieldName == 'sp_vp_visible'
@@ -5228,6 +5236,7 @@ RuleCallContext::$supportedActions[] = array(
                         || $fieldName == 'sp_wf_visible')
                     && (!$visibility)
                     #|| get_class($rule) !== "SecurityRule"
+                    || !$context->arguments['tmp_secrule']
                 )
                 || (
                     ($fieldName == 'sp_av_adoption' || $fieldName == 'sp_as_adoption' || $fieldName == 'sp_vp_adoption'
@@ -5235,14 +5244,17 @@ RuleCallContext::$supportedActions[] = array(
                         || $fieldName == 'sp_wf_adoption')
                     && (!$adoption)
                     #|| get_class($rule) !== "SecurityRule"
+                    || !$context->arguments['tmp_secrule']
                 )
                 || (
                     ($fieldName == 'sp_visibility' ) && !$visibility
                     #|| get_class($rule) !== "SecurityRule"
+                    || !$context->arguments['tmp_secrule']
                 )
                 || (
                     ($fieldName == 'sp_adoption' ) && !$adoption
                     #|| get_class($rule) !== "SecurityRule"
+                    || !$context->arguments['tmp_secrule']
                 )
                 || (
                     (
@@ -5252,6 +5264,7 @@ RuleCallContext::$supportedActions[] = array(
                         || ($fieldName == 'schedule') || ($fieldName == 'src_user')
                     )
                     #&& get_class($rule) !== "SecurityRule"
+                    && !$context->arguments['tmp_secrule']
                 )
             )
                 continue;

@@ -24,7 +24,6 @@ BUGFIX:
 * type=address-merger | extend functionality to replace/rename address-object in class Virtual/LogicalRouter
 * type=securityprofile actions=url.alert-only-set | extend with credential-enforcement/mode/ip-user
 * class PANConf/PanoramaConf | if shared xmlnode address / addressgroup not exist - create it
-* type=rule ruletype=nat | fix to only display these columns which are needed for NAT <- not possible, regression bug <-
 * type=securityprofile actions=vulnerability.alert-only-set | take host type in consideration
 * type=securityprofile filter=(vb is.visibility) | take host type in consideration
 * type=securityprofile filter=(as is.visibility) | remove check for dns-security
@@ -42,7 +41,7 @@ BUGFIX:
 * type=vendor-migration vendor=fortinet | optimisation
 * type=diff || argument outputformatset= | bugfix to again correctly produce set commands
 * type=vendor-migration vendor=cp-r80 | extend for cluster-member and display missing uid
-* type=rule actions=exporttoexcel | bugfix to NOT error out - actions GlobalFinishFunction can not validate get_class single rule objectb
+* type=rule ruletype=nat actions=exporttoexcel | FINAL - fix to only display these columns which are needed for NAT
 
 GENERAL:
 * multiple Interface class optimisation
