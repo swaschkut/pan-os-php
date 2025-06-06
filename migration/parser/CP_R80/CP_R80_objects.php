@@ -599,6 +599,34 @@ trait CP_R80_objects
                     }
                 }
             }
+            elseif( $key == "application-site" )
+            {
+                $array_validate = array( '*', '.' );
+                foreach( $subarray as $host_key => $host )
+                {
+
+                    if( isset($host['url-list']) )
+                    {
+                        #print "NAME: ".$host['name']."\n";
+                        #print_r( $host['url-list'] );
+                        foreach( $host['url-list'] as $url )
+                        {
+                            if( in_array($url[0], $array_validate) )
+                            {
+                                $check = false;
+                            }
+                            //
+                        }
+                        #print_r( $host );
+                    }
+                    else
+                    {
+                        PH::print_stdout( "NO url-list");
+                        print "NAME: ".$host['name']."\n";
+                        #print_r( $host );
+                    }
+                }
+            }
             elseif(
                 $key == "vpn-community-meshed"
                 || $key == "vpn-community-star"
@@ -606,7 +634,7 @@ trait CP_R80_objects
                 || $key == "CpmiGatewayCluster"
                 || $key == "Track"
                 || $key == "Global"
-                || $key == "application-site"
+                #|| $key == "application-site"
                 || $key == "DropUserCheckInteractionScheme"
                 || $key == "Internet"
                 || $key == "application-site-category"

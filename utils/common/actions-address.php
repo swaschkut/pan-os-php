@@ -1668,6 +1668,7 @@ AddressCallContext::$supportedActions[] = array(
 
         if( $object->isGroup() && $context->arguments['recursive'] )
         {
+            /** @var AddressGroup $member */
             foreach( $object->members() as $member )
             {
                 PH::print_stdout( "      - member name: ".$member->name());
