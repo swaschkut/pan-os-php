@@ -60,14 +60,12 @@ class STATSUTIL extends RULEUTIL
             PH::$args['actions'] = "display";
             $actions = PH::$args['actions'];
         }
-        
+
 
         PH::$JSON_TMP = array();
         $this->stats( $this->debugAPI, $actions );
         if( PH::$args['actions'] == "display" )
             PH::print_stdout(PH::$JSON_TMP, false, "statistic");
-
-        
 
         if( PH::$args['actions'] == "trending" )
         {
@@ -93,7 +91,7 @@ class STATSUTIL extends RULEUTIL
                 }
             }
         }
-        
+
         if( isset(PH::$args['exportcsv'])  )
         {
             $this->exportcsvFile = PH::$args['exportcsv'];
