@@ -560,8 +560,16 @@ trait AddressCommon
 
                     if( isset($objectRef->owner->owner) && $objectRef->owner->owner !== null )
                     {
-                        $class = $objectRef->owner->owner;
-                        $classTxt = get_class($class);
+                        if( get_class($objectRef) == "StaticRoute" )
+                        {
+                            $class = $objectRef->owner->owner->owner;
+                            $classTxt = get_class($class);
+                        }
+                        else
+                        {
+                            $class = $objectRef->owner->owner;
+                            $classTxt = get_class($class);
+                        }
 
                         if( $classTxt == "PANConf" )
                         {

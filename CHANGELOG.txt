@@ -45,6 +45,7 @@ BUGFIX:
 * type=diff || argument outputformatset= | bugfix to again correctly produce set commands
 * type=vendor-migration vendor=cp-r80 | extend for cluster-member and display missing uid
 * type=rule ruletype=nat actions=exporttoexcel | FINAL - fix to only display these columns which are needed for NAT
+* class AddressCommon | bugfix for type=address-merger if address object is used in StaticRoute
 
 GENERAL:
 * multiple Interface class optimisation
