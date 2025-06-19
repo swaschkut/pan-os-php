@@ -16,6 +16,7 @@ UTIL:
 * type=service/tag | introduce 'filter=(refstore is.rulestore)'
 * type=address/service/tag | introduce 'filter=(refobject tag.has XYZ)' - to filter based on usage within a specific rule
 * type=address/service actions=move:DG_xyz | migrated to a method within relevant Store class  - introduce argument 'recursive' to also move group members
+* class PbfRule - extend to add address object reference for type=address-merger
 
 BUGFIX:
 * type=diff outputformatset=file.txt | bugfix to keep correct interface name, especially for ethernetX/Y
