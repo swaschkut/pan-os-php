@@ -2366,33 +2366,37 @@ SecurityProfileCallContext::$supportedActions['spyware.alert-only-set'] = array(
         $sp_severity_default = array( "any", "critical", "high", "medium", "low", "informational" );
         $result = array_diff($sp_severity_default, $sp_severity);
 
-        if( !empty($result) )
+        if( !in_array("any", $sp_severity) )
         {
-            if( in_array("any", $result) )
+            if( !empty($result) )
             {
-                foreach( $result as $rule )
+                if( in_array("any", $result) )
                 {
-                    if( $rule == "any" )
-                        continue;
+                    foreach( $result as $rule )
+                    {
+                        if( $rule == "any" )
+                            continue;
 
 
-                    $threadPolicy_obj = new ThreatPolicySpyware( $rule, $object);
-                    $threadPolicy_obj->type = "ThreatPolicySpyware";
+                        $threadPolicy_obj = new ThreatPolicySpyware( $rule, $object);
+                        $threadPolicy_obj->type = "ThreatPolicySpyware";
 
-                    if( $rule == "critical" || $rule == "high" || $rule == "medium" )
-                        $threadPolicy_obj->action = "alert";
-                    elseif( $rule == "low" || $rule == "informational" )
-                        $threadPolicy_obj->action = "default";
+                        if( $rule == "critical" || $rule == "high" || $rule == "medium" )
+                            $threadPolicy_obj->action = "alert";
+                        elseif( $rule == "low" || $rule == "informational" )
+                            $threadPolicy_obj->action = "default";
 
-                    $object->rules_obj[] = $threadPolicy_obj;
-                    $threadPolicy_obj->addReference( $object );
+                        $object->rules_obj[] = $threadPolicy_obj;
+                        $threadPolicy_obj->addReference( $object );
 
-                    $object->owner->owner->ThreatPolicyStore->add($threadPolicy_obj);
+                        $object->owner->owner->ThreatPolicyStore->add($threadPolicy_obj);
 
-                    $threadPolicy_obj->newThreatPolicyXML($object->xmlroot, $rule, $rule, $threadPolicy_obj->action);
+                        $threadPolicy_obj->newThreatPolicyXML($object->xmlroot, $rule, $rule, $threadPolicy_obj->action);
+                    }
                 }
             }
         }
+
 
         $hasDNSlicense = $context->arguments['has-DNS-license'];
         foreach( $object->dns_rules_obj as $rule )
@@ -2711,69 +2715,73 @@ SecurityProfileCallContext::$supportedActions['vulnerability.alert-only-set'] = 
         $sp_severity_default = array( "any", "critical", "high", "medium", "low", "informational" );
         $result = array_diff($sp_severity_default, $sp_severity);
 
-        if( !empty($result) )
+        if( !in_array("any", $sp_severity) )
         {
-            if( in_array("any", $result) )
+            if( !empty($result) )
             {
-                foreach ($result as $rule)
+                if( in_array("any", $result) )
                 {
-                    if ($rule == "any")
-                        continue;
-
-                    $threadPolicy_obj = new ThreatPolicyVulnerability($rule, $object);
-                    $threadPolicy_obj->type = "ThreatPolicyVulnerability";
-
-                    if( $rule == "critical" || $rule == "high" || $rule == "medium" )
-                        $threadPolicy_obj->action = "alert";
-                    elseif( $rule == "low" || $rule == "informational" )
-                        $threadPolicy_obj->action = "default";
-
-                    $object->rules_obj[] = $threadPolicy_obj;
-                    $threadPolicy_obj->addReference($object);
-
-                    $object->owner->owner->ThreatPolicyStore->add($threadPolicy_obj);
-
-                    $threadPolicy_obj->newThreatPolicyXML($object->xmlroot, $rule, $rule, $threadPolicy_obj->action);
-
-                    $sendAPI = true;
-                }
-            }
-        }
-        foreach( $sp_severity_default as $severity )
-        {
-            if ($severity == "any")
-                continue;
-
-            $object->vulnerability_rules_coverage();
-            if( !isset($object->rule_coverage[$severity]['any']) )
-            {
-                $host_types = array("client", "server");
-                foreach($host_types as $host_type)
-                {
-                    if( !isset($object->rule_coverage[$severity][$host_type]))
+                    foreach ($result as $rule)
                     {
-                        $threadPolicy_obj = new ThreatPolicyVulnerability($severity."_".$host_type, $object);
+                        if ($rule == "any")
+                            continue;
+
+                        $threadPolicy_obj = new ThreatPolicyVulnerability($rule, $object);
                         $threadPolicy_obj->type = "ThreatPolicyVulnerability";
 
-                        if( $severity == "critical" || $severity == "high" || $severity == "medium" )
+                        if( $rule == "critical" || $rule == "high" || $rule == "medium" )
                             $threadPolicy_obj->action = "alert";
-                        elseif( $severity == "low" || $severity == "informational" )
+                        elseif( $rule == "low" || $rule == "informational" )
                             $threadPolicy_obj->action = "default";
-
-                        $threadPolicy_obj->host = $host_type;
 
                         $object->rules_obj[] = $threadPolicy_obj;
                         $threadPolicy_obj->addReference($object);
 
                         $object->owner->owner->ThreatPolicyStore->add($threadPolicy_obj);
 
-                        $threadPolicy_obj->newThreatPolicyXML($object->xmlroot, $severity."_".$host_type, $severity, $threadPolicy_obj->action, $threadPolicy_obj->host);
+                        $threadPolicy_obj->newThreatPolicyXML($object->xmlroot, $rule, $rule, $threadPolicy_obj->action);
 
                         $sendAPI = true;
                     }
                 }
             }
+            foreach( $sp_severity_default as $severity )
+            {
+                if ($severity == "any")
+                    continue;
+
+                $object->vulnerability_rules_coverage();
+                if( !isset($object->rule_coverage[$severity]['any']) )
+                {
+                    $host_types = array("client", "server");
+                    foreach($host_types as $host_type)
+                    {
+                        if( !isset($object->rule_coverage[$severity][$host_type]))
+                        {
+                            $threadPolicy_obj = new ThreatPolicyVulnerability($severity."_".$host_type, $object);
+                            $threadPolicy_obj->type = "ThreatPolicyVulnerability";
+
+                            if( $severity == "critical" || $severity == "high" || $severity == "medium" )
+                                $threadPolicy_obj->action = "alert";
+                            elseif( $severity == "low" || $severity == "informational" )
+                                $threadPolicy_obj->action = "default";
+
+                            $threadPolicy_obj->host = $host_type;
+
+                            $object->rules_obj[] = $threadPolicy_obj;
+                            $threadPolicy_obj->addReference($object);
+
+                            $object->owner->owner->ThreatPolicyStore->add($threadPolicy_obj);
+
+                            $threadPolicy_obj->newThreatPolicyXML($object->xmlroot, $severity."_".$host_type, $severity, $threadPolicy_obj->action, $threadPolicy_obj->host);
+
+                            $sendAPI = true;
+                        }
+                    }
+                }
+            }
         }
+
 
         if( $sendAPI && $context->isAPI )
         {

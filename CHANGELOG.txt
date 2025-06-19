@@ -47,6 +47,7 @@ BUGFIX:
 * type=vendor-migration vendor=cp-r80 | extend for cluster-member and display missing uid
 * type=rule ruletype=nat actions=exporttoexcel | FINAL - fix to only display these columns which are needed for NAT
 * class AddressCommon | bugfix for type=address-merger if address object is used in StaticRoute
+* type=securityprofile securityprofiletype=vulnerablity/spyware actions=xyz.alert-only-set
 
 GENERAL:
 * multiple Interface class optimisation
