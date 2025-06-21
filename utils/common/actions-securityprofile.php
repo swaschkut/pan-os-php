@@ -861,7 +861,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                             $stringFileType = " - filetype:'". implode( ",", $rule->filetype )."'";
                         $stringPacketCapture = "";
                         if( $rule->packetCapture() !== null )
-                            $stringPacketCapture = " - packetCapture:'".$rule->packetCapture();
+                            $stringPacketCapture = " - packetCapture:'".$rule->packetCapture()."'";
                         $stringCategory = "";
                         if( $rule->category() !== null )
                             $stringCategory = " - category:'".$rule->category()."'";
