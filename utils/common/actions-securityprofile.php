@@ -1504,7 +1504,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         $tmp_array[] = "Block (".$countBlock.")";
                         $tmp_array[] = "------------------------";
                         //Todo: get BP Json URL credentials BP block as Array
-                        $block_categories = array('command-and-control','grayware','malware','phishing','ransomware','scanning-activity');
+                        $block_categories = array('command-and-control','compromised-website','grayware','malware','phishing','ransomware','scanning-activity');
                         $notBlock = array();
                         foreach( $block_categories as $block_category )
                         {
@@ -1534,7 +1534,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         $tmp_array[] = "Block (".$countBlockcredential.")";
                         $tmp_array[] = "------------------------";
                         //Todo: get BP Json URL credentials BP block as Array
-                        $block_categories = array('command-and-control','grayware','malware','phishing','ransomware','scanning-activity');
+                        $block_categories = array('command-and-control','compromised-website','grayware','malware','phishing','ransomware','scanning-activity');
                         $notBlock = array();
                         foreach( $block_categories as $block_category )
                         {
@@ -2920,7 +2920,7 @@ SecurityProfileCallContext::$supportedActions['url.best-practice-set'] = array(
 
 
         $alert_xmlnode = DH::findFirstElementOrCreate("alert", $object->xmlroot);
-        $block_categories = array('command-and-control','grayware','malware','phishing','ransomware','scanning-activity');
+        $block_categories = array('command-and-control','compromised-website','grayware','malware','phishing','ransomware','scanning-activity');
         $block_xmlnode = DH::findFirstElementOrCreate("block", $object->xmlroot);
         foreach( $block_categories as $block_category )
         {
