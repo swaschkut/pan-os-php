@@ -718,6 +718,7 @@ class AntiSpywareProfile extends SecurityProfile2
                     {
                         if( $name == $check_type )
                         {
+                            $checkBP_value = false;
                             if( isset($array['action']) )
                             {
                                 foreach( $validation['action'] as $check_action)
@@ -726,9 +727,28 @@ class AntiSpywareProfile extends SecurityProfile2
                                     if( strpos( $check_action, "!" ) !== FALSE )
                                         $negate_string = "!";
                                     if ( $negate_string.$array['action'] == $check_action )
-                                        return TRUE;
+                                        $checkBP_value = TRUE;
+                                    else
+                                        $checkBP_value = FALSE;
                                 }
                             }
+
+                            if( isset($array['packet-capture']) )
+                            {
+                                foreach( $validation['packet-capture'] as $check_action)
+                                {
+                                    $negate_string = "";
+                                    if( strpos( $check_action, "!" ) !== FALSE )
+                                        $negate_string = "!";
+                                    if ( $negate_string.$array['packet-capture'] == $check_action )
+                                        $checkBP_value = TRUE;
+                                    else
+                                        $checkBP_value = FALSE;
+                                }
+                            }
+
+                            if( $checkBP_value )
+                                return TRUE;
                         }
                     }
                 }

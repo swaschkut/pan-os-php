@@ -2231,7 +2231,8 @@ SecurityProfileCallContext::$supportedActions['spyware.best-practice-set'] = arr
                         if ($tmp !== FALSE)
                         {
                             if( $hasDNSlicense )
-                                $tmp->textContent = "single-packet";
+                                #$tmp->textContent = "single-packet";
+                                $tmp->textContent = "extended-packet";
                             else
                                 $tmp->textContent = "disable";
                         }

@@ -187,6 +187,9 @@
                         ],
                         "action": [
                             "sinkhole"
+                        ],
+                        "packet-capture": [
+                            "extended-capture"
                         ]
                     }
                 ]
@@ -322,10 +325,12 @@
                     {
                         "type": [
                             "command-and-control",
+                            "compromised-website",
                             "grayware",
                             "malware",
                             "phishing",
-                            "ransomware"
+                            "ransomware",
+                            "scanning-activity"
                         ],
                         "action": "block"
                     }
