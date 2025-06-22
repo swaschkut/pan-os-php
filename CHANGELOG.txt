@@ -19,6 +19,7 @@ UTIL:
 * class PbfRule - extend to add address object reference for type=address-merger
 * type=securityprofile securityprofiletype=spyware actions=exporttoexcel/spyware.best-practice-set | extend for default-paloalto-dns packet-caputure best-practice to extended-capture
 * type=securityprofile securityprofiletype=url-filtering actions=exporttoexcel:file.html,bestpractice | validate also compromised-website category
+* class VulnerabilityProfile | visibility check extended if severity any and threat-name !any -> pass
 
 BUGFIX:
 * type=diff outputformatset=file.txt | bugfix to keep correct interface name, especially for ethernetX/Y

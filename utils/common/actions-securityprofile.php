@@ -868,6 +868,9 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         $stringHost = "";
                         if( $rule->host() !== null )
                             $stringHost = " - host:'".$rule->host()."'";
+                        $stringThreatName = "";
+                        if( $rule->threatname !== null )
+                            $stringThreatName = " - threat-name:'".$rule->threatName()."'";
                         $stringAction = "";
                         if( $rule->action() !== null )
                             $stringAction = " - action:'".$rule->action()."'";
@@ -878,7 +881,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         if( $rule->analysis() !== null )
                             $stringAnalysis = " - analysis:'".$rule->analysis()."'";
 
-                        $tmp_string = "'".$rule->name()."' | ".$stringSeverity.$stringAction.$stringApplication.$stringFileType.$stringPacketCapture.$stringCategory.$stringHost.$stringDirection.$stringAnalysis;
+                        $tmp_string = "'".$rule->name()."' | ".$stringSeverity.$stringThreatName.$stringAction.$stringApplication.$stringFileType.$stringPacketCapture.$stringCategory.$stringHost.$stringDirection.$stringAnalysis;
                         if( get_class($rule ) == "ThreatPolicySpyware" )
                         {
                             if( !$rule->spyware_rule_best_practice() && $bestPractice )
