@@ -250,6 +250,10 @@ var subjectObject =
                             "removeIfMatch",
                             "removeIfNumericalMatch"
                         ]
+                    },
+                    "recursive": {
+                        "type": "bool",
+                        "default": false
                     }
                 }
             },
@@ -956,6 +960,19 @@ var subjectObject =
                         "help": "returns TRUE if object locationtype is Template or TemplateStack",
                         "ci": {
                             "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "refobject": {
+                "operators": {
+                    "tag.has": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if object name matches refobjectname",
+                        "ci": {
+                            "fString": "(%PROP% shared )",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -3614,9 +3631,15 @@ var subjectObject =
     "interface": {
         "name": "interface",
         "action": {
-            "custom-manipulation": {
-                "name": "custom-manipulation",
-                "MainFunction": {}
+            "ae-group-set": {
+                "name": "ae-group-set",
+                "MainFunction": {},
+                "args": {
+                    "newAE": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                }
             },
             "display": {
                 "name": "display",
@@ -3664,6 +3687,10 @@ var subjectObject =
                     }
                 }
             },
+            "remove": {
+                "name": "remove",
+                "MainFunction": {}
+            },
             "replace_ipv4_objects_by_value": {
                 "name": "replace_IPv4_objects_by_value",
                 "MainFunction": {}
@@ -3671,6 +3698,16 @@ var subjectObject =
             "replace_ipv6_objects_by_value": {
                 "name": "replace_IPv6_objects_by_value",
                 "MainFunction": {}
+            },
+            "type-aggregate-ethernet-set": {
+                "name": "type-aggregate-ethernet-set",
+                "MainFunction": {},
+                "args": {
+                    "name": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                }
             }
         },
         "filter": {
@@ -4363,8 +4400,8 @@ var subjectObject =
             },
             "exporttoexcel": {
                 "name": "exportToExcel",
-                "MainFunction": {},
                 "GlobalInitFunction": {},
+                "MainFunction": {},
                 "GlobalFinishFunction": {},
                 "args": {
                     "filename": {
@@ -7886,6 +7923,20 @@ var subjectObject =
                     }
                 }
             },
+            "df": {
+                "operators": {
+                    "is.visibility": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=data-filtering' e.g. 'filter=(df is.visibility)'"
+                    },
+                    "is.adoption": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=data-filtering' e.g. 'filter=(df is.adoption)'"
+                    }
+                }
+            },
             "dns-list": {
                 "operators": {
                     "is.best-practice": {
@@ -8979,6 +9030,10 @@ var subjectObject =
                             "removeIfMatch",
                             "removeIfNumericalMatch"
                         ]
+                    },
+                    "recursive": {
+                        "type": "bool",
+                        "default": false
                     }
                 }
             },
@@ -9519,6 +9574,19 @@ var subjectObject =
                     }
                 }
             },
+            "refobject": {
+                "operators": {
+                    "tag.has": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if object name matches refobjectname",
+                        "ci": {
+                            "fString": "(%PROP% shared )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
             "refstore": {
                 "operators": {
                     "is": {
@@ -9526,6 +9594,14 @@ var subjectObject =
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% rulestore )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.rulestore": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -10235,6 +10311,19 @@ var subjectObject =
                     }
                 }
             },
+            "refobject": {
+                "operators": {
+                    "tag.has": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if object name matches refobjectname",
+                        "ci": {
+                            "fString": "(%PROP% shared )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
             "refstore": {
                 "operators": {
                     "is": {
@@ -10242,6 +10331,14 @@ var subjectObject =
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% rulestore )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.rulestore": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
