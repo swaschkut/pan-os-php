@@ -18,7 +18,7 @@
     "xpath": "deviceconfig/setting/management/auto-acquire-commit-lock",
     "value": "no",
     "variable-name": "{{ COMMIT-LOCK }}",
-    "comment": ""
+    "comment": "Iron Skillet used 'yes' for this. Since we ran into several issues, we prefer a default of 'no'."
   },
   {
     "check": "true",
