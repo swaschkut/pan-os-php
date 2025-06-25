@@ -23,7 +23,7 @@
   {
     "check": "true",
     "xpath": "deviceconfig/setting/management/idle-timeout",
-    "value": "30",
+    "value": "60",
     "variable-name": "{{ IDLE-TIMEOUT }}",
     "comment": ""
   },
@@ -32,14 +32,14 @@
     "xpath": "deviceconfig/setting/management/api/key/lifetime",
     "value": "0",
     "variable-name": "{{ API_KEY_LIFETIME }}",
-    "comment": ""
+    "comment": "It depends. While a lifetime of 0 (=never) might be a security issue, it helps with long-term scripts and monitoring tools."
   },
   {
     "check": "true",
     "xpath": "deviceconfig/setting/management/api/key/certificate",
     "value": "api_key_cert",
     "variable-name": "{{ API_KEY_CERT }}",
-    "comment": ""
+    "comment": "Must be with a keysize > 2048 bits to omit any warning after the commit."
   },
   {
     "check": "true",
@@ -81,7 +81,7 @@
     "xpath": "deviceconfig/setting/management/wildcard-topdown-match-mode",
     "value": "yes",
     "variable-name": "{{ POLICY-WILDCARD-TOP-DOWN-MATCH }}",
-    "comment": ""
+    "comment": "The default is 'no', but a 'yes' behaves more 'policy-like' aka first-match-out rather than 'routing-like' aka longest-match. Note: Currently IPv4-only as of PAN-OS 11.2."
   },
   {
     "check": "true",
@@ -109,7 +109,7 @@
     "xpath": "deviceconfig/setting/management/log-revert-operations",
     "value": "yes",
     "variable-name": "{{ CONFIG-LOG-FOR-REVERT-OPERATIONS }}",
-    "comment": ""
+    "comment": "If this is set to 'no' (default), reverts of the configuration are NOT logged within the 'configuration logs'. Hence: 'yes'."
   },
   {
     "check": "true",
@@ -161,11 +161,11 @@
     "comment": ""
   },
   {
-    "check": "true",
+    "check": "false",
     "xpath": "deviceconfig/system/motd-and-banner/motd-enable",
     "value": "no",
-    "variable-name": "{{ LOGIN-BANNER-ENABLE }}",
-    "comment": ""
+    "variable-name": "{{ MOTD-ENABLE }}",
+    "comment": "If no MOTD is set at all, there is no need to have the MOTD enabled. Don't confuse this with the 'Login Banner'."
   },
   {
     "check": "true",
@@ -242,7 +242,7 @@
     "xpath": "mgt-config/password-complexity/password-history-count",
     "value": "24",
     "variable-name": "{{ PW-PREVENT-REUSE-LIMIT }}",
-    "comment": ""
+    "comment": "Historically grown value from Iron Skillet, for whatever reason."
   },
   {
     "check": "true",
