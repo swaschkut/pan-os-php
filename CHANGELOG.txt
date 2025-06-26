@@ -1,6 +1,64 @@
 CHANGELOG
 
-2.1.36
+2.1.37
+UTIL:
+* type=interface | new actions=replace_IPv4_objects_by_value
+* type=gpgateway-tunnel | introduce new util - to extend the reading of each XML part
+* extend interfaces classes with addIPv6Address / removeIPv6Address | for usage in type=interface actions=replace_IPv6_objects_by_value
+* type=interface | new actions=replace_IPv6_objects_by_value
+* type=interface actions=replace_ipv4_objects_by_value | optimisation for Panorama Template
+* type=service actions=display | move to class Service method display()
+* type=address/service actions=name-rename-location:$$location$$-$$current.name$$
+* type=rule 'actions=name-rename:$$location$$-$$current.name$$' - introduce new actions variable
+* type=stats | extends json file bp action for AS/VP allow block-ip
+* type=interface | introduce actions=type-aggregate-ethernet-set / ae-group-set:aeX - not finalised as interface info are not updated in XML
+* type=vendor-migration vendor=cp-r80 | extend with region object migration
+* type=service/tag | introduce 'filter=(refstore is.rulestore)'
+* type=address/service/tag | introduce 'filter=(refobject tag.has XYZ)' - to filter based on usage within a specific rule
+* type=address/service actions=move:DG_xyz | migrated to a method within relevant Store class  - introduce argument 'recursive' to also move group members
+* class PbfRule - extend to add address object reference for type=address-merger
+* type=securityprofile securityprofiletype=spyware actions=exporttoexcel/spyware.best-practice-set | extend for default-paloalto-dns packet-caputure best-practice to extended-capture
+* type=securityprofile securityprofiletype=url-filtering actions=exporttoexcel:file.html,bestpractice | validate also compromised-website category
+* class VulnerabilityProfile | visibility check extended if severity any and threat-name !any -> pass
+
+BUGFIX:
+* type=diff outputformatset=file.txt | bugfix to keep correct interface name, especially for ethernetX/Y
+* type=diff outputformatset=file.txt | bugfix to display correct command order if network related
+* type=diff | bugfix for none correct delete commands for local-address ip
+* class EthernetInterface - store object name as configured not object value
+* type=securityprofile actions=vulnerability.alert-only-set | bugfix to also add XML node vendor-id and host
+* type=vendor-migration vendor=fortinet
+* type=address-merger | extend functionality to replace/rename address-object in class Virtual/LogicalRouter
+* type=securityprofile actions=url.alert-only-set | extend with credential-enforcement/mode/ip-user
+* class PANConf/PanoramaConf | if shared xmlnode address / addressgroup not exist - create it
+* type=securityprofile actions=vulnerability.alert-only-set | take host type in consideration
+* type=securityprofile filter=(vb is.visibility) | take host type in consideration
+* type=securityprofile filter=(as is.visibility) | remove check for dns-security
+* type=securityprofile securityprofiletype=url-filtering 'filter=(url is.visibility)' also for actions=url.alert-only-set | custom-url-category are not in scope
+* type=securityprofile | credential_is_adoption -> check if mode is set and not disabled | antispyware - again use dnslist
+* type=securityprofile | spyware / url credential improvements
+* Class GPGatewayTunnel | class Panoramaconf type=stats
+* type=gpgateway-tunnel | improvements to handle interface references without error out
+* class PanoramaConf for type=stats | this is based on wf adoption/visibility/best-practice
+* class ZoneRuleContainer | bugfix to add zones from Panorama Template - validation. needed if this is totally correct
+* type=stats | correction for user-id adoption/visibility calculation | use all security Rules
+* type=stats | BP credential theft - fit to SCM BP
+* type=rule actions=exporttoexcel | validate that $rule is NOT null
+* type=vendor-migration vendor=fortinet | fix if string 'next' is not correct validate for object speration - do not skip if next is found in object name
+* type=vendor-migration vendor=fortinet | optimisation
+* type=diff || argument outputformatset= | bugfix to again correctly produce set commands
+* type=vendor-migration vendor=cp-r80 | extend for cluster-member and display missing uid
+* type=rule ruletype=nat actions=exporttoexcel | FINAL - fix to only display these columns which are needed for NAT
+* class AddressCommon | bugfix for type=address-merger if address object is used in StaticRoute
+* type=securityprofile securityprofiletype=vulnerablity/spyware actions=xyz.alert-only-set
+
+GENERAL:
+* multiple Interface class optimisation
+* update Device App-ID to version: 8971-9419
+* update Device App-ID to version: 8992-9498
+
+
+2.1.36 (20250425)
 UTIL:
 * type=application | introduce 'filter=(tunnelapp is.set / tunnelapp has XYZ)'
 * type=xml-issue | extend with secRule source-user check and fix
@@ -9,7 +67,7 @@ UTIL:
 * type=stats | extend VirtualSystem and DeviceGroup with adoption feature - missing part full Firewall and Panorama
 * type=stats | extend adoption for Panorama and Firewall
 * type=securityprofile actions=spyware/vulnerability.alert-only-set | for missing severity if low/informational set action to default - not alert
-* type=address | introduce new 'filter=(restore all.interfacestore)'
+* type=address | introduce new 'filter=(refstore all.interfacestore)'
 * type=interface 'filter=(interface is.vlan)'
 
 BUGFIX:
@@ -17,11 +75,12 @@ BUGFIX:
 * bugfix for type=iron-skillet | to also disable exception support
 * bugfix for SecurityProfileGroup manipulation | use secprofProfiles_obj instead of the old secprofProfiles which were only Txt
 * type=securityprofile actions=exporttoexcel:file.html | bugfix if not AntiSpyware, to correctly add column if visibility|bestpractice is used
-* type=securityprofil actions=xyz.alert-only-set | bugfix to also add missing severity
+* type=securityprofile actions=xyz.alert-only-set | bugfix to also add missing severity
 * type=address-merger | bugfix to allow merging host objects with/without netmask /32 - validation if an object is used at interface still missing
 * class AddressGroup | likely a bugfix to avoid memory leak, if a subgroup somewhere contains the original AddressGroup to avoid a loop
 
 GENERAL:
+* Device App-ID to version: 8970-9413
 
 
 2.1.35 (20250407)

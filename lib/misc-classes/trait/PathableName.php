@@ -76,7 +76,9 @@ trait PathableName
 
             if( !isset($owner->owner) )
                 break;
-            if( get_class($owner) == 'DeviceGroup' || get_class($owner) == 'VirtualSystem' )
+            if( get_class($owner) == 'DeviceGroup' )
+                break;
+            if( get_class($owner) == 'VirtualSystem' )
                 break;
             $owner = $owner->owner;
         }

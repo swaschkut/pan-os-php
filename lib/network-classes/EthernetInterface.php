@@ -145,7 +145,7 @@ class EthernetInterface
                             if( $shared_object != null )
                             {
                                 $shared_object->addReference($this);
-                                $this->l3ipv4Addresses[] = $shared_object->value();
+                                $this->l3ipv4Addresses[] = $shared_object->name();
                             }
                             else
                                 $this->l3ipv4Addresses[] = $tmpIP;
@@ -194,7 +194,7 @@ class EthernetInterface
                                 if( $shared_object != null )
                                 {
                                     $shared_object->addReference($this);
-                                    $this->l3ipv6Addresses[] = $shared_object->value();
+                                    $this->l3ipv6Addresses[] = $shared_object->name();
                                 }
                                 else
                                     $this->l3ipv6Addresses[] = $tmpIP;
@@ -203,7 +203,7 @@ class EthernetInterface
                         else
                         {
                             //NGFW
-                            $this->l3ipv4Addresses[] = $tmpIP;
+                            $this->l3ipv6Addresses[] = $tmpIP;
                         }
 
                     }
@@ -484,7 +484,7 @@ class EthernetInterface
 
         $this->ae = $ae;
 
-        $aeNode = DH::findFirstElement('aggregate-group', $this->xmlroot);
+        $aeNode = DH::findFirstElementOrCreate('aggregate-group', $this->xmlroot);
         DH::setDomNodeText($aeNode, $ae);
 
         if( isset($this->owner) && $this->owner != null )
@@ -636,7 +636,8 @@ class EthernetInterface
 
 
         $tmp_ipaddress = DH::findFirstElementByNameAttrOrDie('entry', $ip, $ipNode);
-        $ipNode->removeChild($tmp_ipaddress);
+        if( $tmp_ipaddress !== False )
+            $ipNode->removeChild($tmp_ipaddress);
 
         return TRUE;
     }
@@ -662,6 +663,96 @@ class EthernetInterface
             }
             else
                 $xpath .= '/layer3/ip';
+
+            $con->sendDeleteRequest($xpath . "/entry[@name='{$ip}']");
+        }
+
+        return $ret;
+    }
+
+
+
+
+    /**
+     * return true if change was successful false if not (duplicate ipaddress?)
+     * @param string $ip
+     * @return bool
+     */
+    public function removeIPv6Address($ip)
+    {
+        if( $this->type != 'layer3' )
+            derr('cannot be requested from a non Layer3 Interface');
+
+        if( is_object($ip) )
+            derr( "removing address object from Interface not implemented yet", null, False );
+
+        $tmp_IPv6 = array();
+        foreach( $this->getLayer3IPv6Addresses() as $key => $IPv6Address )
+        {
+            $tmp_IPv6[$IPv6Address] = $IPv6Address;
+            if( $IPv6Address == $ip )
+                unset($this->l3ipv6Addresses[$key]);
+        }
+
+
+        if( !array_key_exists($ip, $tmp_IPv6) )
+        {
+            PH::print_stdout( " ** skipped ** IP Address: " . $ip . " is not set on interface: " . $this->name() );
+            return FALSE;
+        }
+
+        $this->removeAddressObjectReference( $ip );
+
+        if( $this->isSubInterface() )
+            $tmp_xmlroot = $this->parentInterface->xmlroot;
+        else
+            $tmp_xmlroot = $this->xmlroot;
+
+        $layer3Node = DH::findFirstElementOrCreate('layer3', $tmp_xmlroot);
+
+        if( $this->isSubInterface() )
+        {
+            $tmp_units = DH::findFirstElementOrCreate('units', $layer3Node);
+            $tmp_entry = DH::findFirstElementByNameAttrOrDie('entry', $this->name(), $tmp_units);
+            $ipv6Node = DH::findFirstElementOrCreate('ipv6', $tmp_entry);
+            $ipNode = DH::findFirstElementOrCreate('address', $ipv6Node);
+        }
+        else
+        {
+            $ipv6Node = DH::findFirstElementOrCreate('ipv6', $layer3Node);
+            $ipNode = DH::findFirstElementOrCreate('address', $ipv6Node);
+        }
+
+
+
+        $tmp_ipaddress = DH::findFirstElementByNameAttrOrDie('entry', $ip, $ipNode);
+        if( $tmp_ipaddress !== False )
+            $ipNode->removeChild($tmp_ipaddress);
+
+        return TRUE;
+    }
+
+    /**
+     * remove a ip address to this interface, it must be passed as an object or string
+     * @param Address $ip Object to be added, or String
+     * @return bool
+     */
+    public function API_removeIPv6Address($ip)
+    {
+        $ret = $this->removeIPv6Address($ip);
+
+        if( $ret )
+        {
+            $con = findConnector($this);
+            $xpath = $this->getXPath();
+
+            if( $this->isSubInterface() )
+            {
+                $xpath = $this->parentInterface->getXPath();
+                $xpath .= "/layer3/units/entry[@name='" . $this->name . "']/ipv6/address";
+            }
+            else
+                $xpath .= '/layer3/ipv6/address';
 
             $con->sendDeleteRequest($xpath . "/entry[@name='{$ip}']");
         }
@@ -736,6 +827,117 @@ class EthernetInterface
 
         return TRUE;
     }
+
+    /**
+     * Add a ip to this interface, it must be passed as an object or string
+     * @param Address $ip Object to be added, or String
+     * @return bool
+     */
+    public function API_addIPv6Address($ip)
+    {
+        $ret = $this->addIPv6Address($ip);
+
+        if( $ret )
+        {
+            $con = findConnector($this);
+            $xpath = $this->getXPath();
+
+            if( $this->isSubInterface() )
+            {
+                $xpath = $this->parentInterface->getXPath();
+                $xpath .= "/layer3/units/entry[@name='" . $this->name . "']/ipv6/address";
+            }
+            else
+                $xpath .= '/layer3/ipv6/address';
+
+            $con->sendSetRequest($xpath, "<entry name='{$ip}'/>");
+        }
+
+        return $ret;
+    }
+
+
+    public function replaceIPv4ObjectByValue( $context, $address_obj )
+    {
+        if( strpos( $address_obj->value(), ":" ) !== FALSE )
+        {
+            PH::print_stdout( "      - value: ".$address_obj->value() );
+            PH::print_stdout( "    - only IPv4 Address can be added with this function" );
+        }
+        elseif( strpos( $address_obj->value(), "." ) !== FALSE )
+        {
+            PH::print_stdout( "      - remove object: ".$address_obj->name() );
+            PH::print_stdout( "      - add value: ".$address_obj->value() );
+
+            $this->removeIPv4Address($address_obj->name());
+            $this->addIPv4Address($address_obj->value());
+
+            PH::print_stdout("-----------------------------------");
+            //Todo: interface reference are better to work on | validation needed
+            foreach( $address_obj->refrules as $o )
+            {
+                if( $o->name() !== $this->name() )
+                {
+                    PH::print_stdout( '  - ' . $o->toString() );
+
+                    $o->referencedObjectRenamed($address_obj, $address_obj->name(), "value");
+                }
+            }
+            PH::print_stdout("-----------------------------------");
+
+            if( $context->isAPI )
+            {
+                //Todo: API sync
+                mwarning( "      - API sync not yet implemented", null, false );
+            }
+        }
+
+        else
+            mwarning( "      - unknown address ".$address_obj->value() );
+    }
+
+    public function replaceIPv6ObjectByValue( $context, $address_obj )
+    {
+        if( strpos( $address_obj->value(), "." ) !== FALSE )
+        {
+            PH::print_stdout( "      - value: ".$address_obj->value() );
+            PH::print_stdout( "      - only IPv6 Address can be added with this function" );
+        }
+        elseif( strpos( $address_obj->value(), ":" ) !== FALSE )
+        {
+            PH::print_stdout( "      - remove object: ".$address_obj->name() );
+            PH::print_stdout( "      - add value: ".$address_obj->value() );
+
+            #mwarning( "      - not yet implemented", null, false );
+
+            $this->removeIPv6Address($address_obj->name());
+            $this->addIPv6Address($address_obj->value());
+
+            PH::print_stdout("-----------------------------------");
+            //Todo: interface reference are better to work on | validation needed
+            foreach( $address_obj->refrules as $o )
+            {
+                if( $o->name() !== $this->name() )
+                {
+                    PH::print_stdout( '  - ' . $o->toString() );
+
+                    $o->referencedObjectRenamed($address_obj, $address_obj->name(), "value");
+                }
+            }
+            PH::print_stdout("-----------------------------------");
+
+
+            if( $context->isAPI )
+            {
+                //Todo: API sync
+                mwarning( "      - API sync not yet implemented", null, false );
+            }
+        }
+
+        else
+            mwarning( "      - unknown address ".$address_obj->value() );
+    }
+
 
     /**
      * return true if change was successful false if not (duplicate ipaddress?)
@@ -865,7 +1067,7 @@ class EthernetInterface
         return $str;
     }
 
-    public function referencedObjectRenamed($h, $old)
+    public function referencedObjectRenamed($h, $old, $replaceType = 'name')
     {
         if( is_object($h) )
         {
@@ -875,7 +1077,12 @@ class EthernetInterface
                 $qualifiedNodeName = '//*[text()="'.$old.'"]';
                 $xpathResult = DH::findXPath( $qualifiedNodeName, $this->xmlroot);
                 foreach( $xpathResult as $node )
-                    $node->textContent = $h->name();
+                {
+                    if( $replaceType == "name" )
+                        $node->textContent = $h->name();
+                    elseif( $replaceType == "value" )
+                        $node->textContent = $h->value();
+                }
 
 
                 //attribute replace
@@ -891,10 +1098,13 @@ class EthernetInterface
                         if ($XMLnameAttribute === FALSE)
                             continue;
 
-                        if ($XMLnameAttribute !== $nameattribute)
-                            continue;
-                    }
+                    if ($XMLnameAttribute !== $nameattribute)
+                        continue;
+                }
+                if( $replaceType == "name" )
                     $item->setAttribute('name', $h->name());
+                elseif( $replaceType == "value" )
+                    $item->setAttribute('name', $h->value());
                 }
             }
             elseif( get_class( $h ) == "AggregateEthernetInterface" )

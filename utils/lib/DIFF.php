@@ -253,7 +253,7 @@ class DIFF extends UTIL
                 }
             }
             else
-                false('only API is supported', null, false);
+                derr('only API is supported', null, false);
         }
         else
         {
@@ -1263,6 +1263,10 @@ class DIFF extends UTIL
                     else
                         $this->$type['profiles'][] = $entry;
                 }
+                elseif( strpos( $entry, " network tunnel" ) !== false )
+                    $this->$type['network-tunnel'][] = $entry;
+                elseif( strpos( $entry, " network " ) !== false )
+                    $this->$type['network'][] = $entry;
                 else
                     $this->$type['misc'][] = $entry;
             }
@@ -2014,7 +2018,8 @@ class DIFF extends UTIL
 
         ####################################
         ####################################
-        $deleteArray = array( "rulebase", "address-group", "address", "service-group", "service", "profile-group", "profiles", "profiles-custom-url-category", "misc" );
+        //this is the order how delete commands are displayed
+        $deleteArray = array( "rulebase", "address-group", "address", "service-group", "service", "profile-group", "profiles", "profiles-custom-url-category", "misc", "network-tunnel", "network" );
         $tmp_string = "";
         foreach( $deleteArray as $item )
         {
@@ -2052,7 +2057,7 @@ class DIFF extends UTIL
 
         ####################################
         ####################################
-        $setArray = array( "address", "address-group", "service", "service-group", "profiles-custom-url-category","profiles", "profile-group", "misc", "rulebase" );
+        $setArray = array( "address", "address-group", "service", "service-group", "profiles-custom-url-category","profiles", "profile-group", "network", "network-tunnel", "misc", "rulebase" );
         $tmp_string = "";
         foreach( $setArray as $item )
         {

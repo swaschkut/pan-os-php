@@ -163,6 +163,37 @@ class Service
         }
     }
 
+    public function display(&$tmp_txt)
+    {
+        $tmp_txt = "     * " . get_class($this) . " '{$this->name()}'     value: '{$this->protocol()}/{$this->getDestPort()}'";
+        PH::$JSON_TMP['sub']['object'][$this->name()]['value'] = "{$this->protocol()}/{$this->getDestPort()}";
+
+        if( $this->description() != "" )
+            $tmp_txt .= "    desc: '{$this->description()}'";
+        PH::$JSON_TMP['sub']['object'][$this->name()]['description'] = $this->description();
+
+        if( $this->getSourcePort() != "" )
+            $tmp_txt .= "    sourceport: '" . $this->getSourcePort() . "'";
+        PH::$JSON_TMP['sub']['object'][$this->name()]['sourceport'] = $this->getSourcePort();
+
+        if( $this->getTimeout() != "" )
+            $tmp_txt .= "    timeout: '" . $this->getTimeout() . "'";
+        PH::$JSON_TMP['sub']['object'][$this->name()]['timeout'] = $this->getTimeout();
+
+        if( $this->getHalfcloseTimeout() != "" )
+            $tmp_txt .= "    HalfcloseTimeout: '" . $this->getHalfcloseTimeout() . "'";
+        PH::$JSON_TMP['sub']['object'][$this->name()]['halfclosetimeout'] = $this->getHalfcloseTimeout();
+
+        if( $this->getTimewaitTimeout() != "" )
+            $tmp_txt .= "    TimewaitTimeout: '" . $this->getTimewaitTimeout() . "'";
+        PH::$JSON_TMP['sub']['object'][$this->name()]['timewaittimeout'] = $this->getTimewaitTimeout();
+
+        if( strpos($this->getDestPort(), ",") !== FALSE )
+            $tmp_txt .= "    count values: '" . (substr_count($this->getDestPort(), ",") + 1) . "' length: " . strlen($this->getDestPort());
+        PH::$JSON_TMP['sub']['object'][$this->name()]['count values'] = (substr_count($this->getDestPort(), ",") + 1);
+        PH::$JSON_TMP['sub']['object'][$this->name()]['string legth'] = strlen($this->getDestPort());
+    }
+
     /**
      * @param string $newPorts
      * @return bool

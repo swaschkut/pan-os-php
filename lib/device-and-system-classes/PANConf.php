@@ -480,7 +480,7 @@ class PANConf
             //
             // Shared address objects extraction
             //
-            $tmp = DH::findFirstElement('address', $this->sharedroot);
+            $tmp = DH::findFirstElementorCreate('address', $this->sharedroot);
             if( $tmp !== FALSE )
                 $this->addressStore->load_addresses_from_domxml($tmp);
             // end of address extraction
@@ -488,7 +488,7 @@ class PANConf
             //
             // Extract address groups
             //
-            $tmp = DH::findFirstElement('address-group', $this->sharedroot);
+            $tmp = DH::findFirstElementorCreate('address-group', $this->sharedroot);
             if( $tmp !== FALSE )
                 $this->addressStore->load_addressgroups_from_domxml($tmp);
             // End of address groups extraction
@@ -1204,9 +1204,9 @@ class PANConf
             $stdoutarray['app id percentage'] = 0;
         $percentageArray_adoption['App-ID'] = $stdoutarray['app id percentage'];
 
-        $stdoutarray['user id calc'] =  $stdoutarray['user id'] ."/". $ruleForCalculation;
+        $stdoutarray['user id calc'] =  $stdoutarray['user id'] ."/". $stdoutarray['security rules'];
         if( $ruleForCalculation !== 0 )
-            $stdoutarray['user id percentage'] = floor( ( $stdoutarray['user id'] / $ruleForCalculation ) * 100 );
+            $stdoutarray['user id percentage'] = floor( ( $stdoutarray['user id'] / $stdoutarray['security rules'] ) * 100 );
         else
             $stdoutarray['user id percentage'] = 0;
         $percentageArray_adoption['User-ID'] = $stdoutarray['user id percentage'];
@@ -1324,9 +1324,9 @@ class PANConf
             $stdoutarray['app id percentage'] = 0;
         $percentageArray_visibility['App-ID'] = $stdoutarray['app id percentage'];
 
-        $stdoutarray['user id calc'] =  $stdoutarray['user id'] ."/". $ruleForCalculation;
+        $stdoutarray['user id calc'] =  $stdoutarray['user id'] ."/". $stdoutarray['security rules'];
         if( $ruleForCalculation !== 0 )
-            $stdoutarray['user id percentage'] = floor( ( $stdoutarray['user id'] / $ruleForCalculation ) * 100 );
+            $stdoutarray['user id percentage'] = floor( ( $stdoutarray['user id'] / $stdoutarray['security rules'] ) * 100 );
         else
             $stdoutarray['user id percentage'] = 0;
         $percentageArray_visibility['User-ID'] = $stdoutarray['user id percentage'];
@@ -1405,12 +1405,12 @@ class PANConf
 
 
         $percentageArray_best_practice = array();
-        $stdoutarray['log at end not start calc'] = $stdoutarray['log at end not start'] ."/". $stdoutarray['security rules enabled'];
+        $stdoutarray['log at not start calc'] = $stdoutarray['log at not start'] ."/". $stdoutarray['security rules enabled'];
         if( $stdoutarray['security rules enabled'] !== 0 )
-            $stdoutarray['log at end not start percentage'] = floor(( $stdoutarray['log at end not start'] / $stdoutarray['security rules enabled'] ) * 100 );
+            $stdoutarray['log at not start percentage'] = floor(( $stdoutarray['log at not start'] / $stdoutarray['security rules enabled'] ) * 100 );
         else
-            $stdoutarray['log at end not start percentage'] = 0;
-        $percentageArray_best_practice['Logging'] = $stdoutarray['log at end not start percentage'];
+            $stdoutarray['log at not start percentage'] = 0;
+        $percentageArray_best_practice['Logging'] = $stdoutarray['log at not start percentage'];
         #$percentageArray_best_practice['Log Forwarding Profiles'] = $stdoutarray['log prof set percentage'];
 
         $stdoutarray['wf best-practice calc'] = $stdoutarray['wf best-practice'] ."/". $ruleForCalculation;

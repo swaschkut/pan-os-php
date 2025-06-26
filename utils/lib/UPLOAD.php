@@ -356,8 +356,9 @@ class UPLOAD extends UTIL
                             $newDG->xmlroot->removeChild($mainNode);
 
 
-                        if ($variable == "rulebase") {
-                            DH::DEBUGprintDOMDocument($node);
+                        if ($variable == "rulebase")
+                        {
+                            #DH::DEBUGprintDOMDocument($node);
                             mwarning("import into Panorama DeviceGroup but XMLnode 'rulebase' found. renamed to 'pre-rulebase'", null, FALSE);
 
                             $mainNode = DH::findFirstElement("pre-rulebase", $newDG->xmlroot);
@@ -370,7 +371,7 @@ class UPLOAD extends UTIL
                                     continue;
 
                                 if ($childNode->nodeName != "default-security-rules") {
-                                    DH::DEBUGprintDOMDocument($childNode);
+                                    #DH::DEBUGprintDOMDocument($childNode);
                                     $node2 = $util2->xmlDoc->importNode($childNode, TRUE);
 
                                     $mainNode->appendChild($node2);

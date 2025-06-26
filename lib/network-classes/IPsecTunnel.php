@@ -562,7 +562,7 @@ class IPsecTunnel
         return TRUE;
     }
 
-    public function referencedObjectRenamed($h, $old)
+    public function referencedObjectRenamed($h, $old, $replaceType = 'name')
     {
         if( is_object($h) )
         {
@@ -572,7 +572,12 @@ class IPsecTunnel
                 $qualifiedNodeName = '//*[text()="'.$old.'"]';
                 $xpathResult = DH::findXPath( $qualifiedNodeName, $this->xmlroot);
                 foreach( $xpathResult as $node )
-                    $node->textContent = $h->name();
+                {
+                    if( $replaceType == "name" )
+                        $node->textContent = $h->name();
+                    elseif( $replaceType == "value" )
+                        $node->textContent = $h->value();
+                }
 
 
                 //attribute replace
@@ -593,7 +598,10 @@ class IPsecTunnel
                         if ($XMLnameAttribute !== $nameattribute)
                             continue;
                     }
-                    $item->setAttribute('name', $h->name());
+                    if( $replaceType == "name" )
+                        $item->setAttribute('name', $h->name());
+                    elseif( $replaceType == "value" )
+                        $item->setAttribute('name', $h->value());
                 }
             }
 

@@ -128,7 +128,6 @@ class GreTunnelStore extends ObjStore
     {
         if( $this->xmlroot === null )
         {
-            //TODO: 20180331 why I need to create full path? why it is not set before???
             $xml = DH::findFirstElementOrCreate('devices', $this->owner->xmlroot);
             $xml = DH::findFirstElementOrCreate('entry', $xml);
             $xml = DH::findFirstElementOrCreate('network', $xml);

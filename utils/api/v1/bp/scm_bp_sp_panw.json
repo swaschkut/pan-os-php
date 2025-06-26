@@ -83,7 +83,8 @@
                     "medium"
                 ],
                 "action": [
-                    "reset-both"
+                    "reset-both",
+                    "block-ip"
                 ],
                 "packet-capture": [
                     "single-packet",
@@ -186,6 +187,9 @@
                         ],
                         "action": [
                             "sinkhole"
+                        ],
+                        "packet-capture": [
+                            "extended-capture"
                         ]
                     }
                 ]
@@ -226,7 +230,8 @@
                     "medium"
                 ],
                 "action": [
-                    "reset-both"
+                    "reset-both",
+                    "block-ip"
                 ],
                 "packet-capture": [
                     "single-packet",
@@ -285,7 +290,7 @@
                         "dynamic-dns",
                         "hacking",
                         "insufficient-content",
-                        "newly-registered-domains",
+                        "newly-registered-domain",
                         "not-resolved",
                         "parked",
                         "proxy-avoidance-and-anonymizers",
@@ -328,37 +333,10 @@
                             "scanning-activity"
                         ],
                         "action": "block"
-                    },
-                    {
-                        "type": [
-                            "dynamic-dns",
-                            "hacking",
-                            "insufficient-content",
-                            "newly-registered-domains",
-                            "not-resolved",
-                            "parked",
-                            "proxy-avoidance-and-anonymizers",
-                            "unknown"
-                        ],
-                        "action": "alert"
-                    },
-                    {
-                        "type": [
-                            "abused-drugs",
-                            "adult",
-                            "copyright-infringement",
-                            "extremism",
-                            "gambling",
-                            "peer-to-peer",
-                            "questionable",
-                            "weapons"
-                        ],
-                        "action": "alert"
                     }
                 ],
                 "tab": {
-                    "mode": "ip-user",
-                    "log-severity": "medium"
+                    "mode": "ip-user"
                 }
             }
         }

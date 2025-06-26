@@ -1578,6 +1578,32 @@ RQuery::$defaultFilters['securityprofile']['fb']['operators']['is.adoption'] = a
     'arg' => false,
     'help' => "'securityprofiletype=file-blocking' e.g. 'filter=(fb is.adoption)'"
 );
+RQuery::$defaultFilters['securityprofile']['df']['operators']['is.visibility'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var DataFilteringProfile $object */
+        $object = $context->object;
+
+        if( $object->secprof_type != 'data-filtering' )
+            return null;
+
+        return $object->is_visibility();
+    },
+    'arg' => false,
+    'help' => "'securityprofiletype=data-filtering' e.g. 'filter=(df is.visibility)'"
+);
+RQuery::$defaultFilters['securityprofile']['df']['operators']['is.adoption'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var DataFilteringProfile $object */
+        $object = $context->object;
+
+        if( $object->secprof_type != 'data-filtering' )
+            return null;
+
+        return $object->is_adoption();
+    },
+    'arg' => false,
+    'help' => "'securityprofiletype=data-filtering' e.g. 'filter=(df is.adoption)'"
+);
 RQuery::$defaultFilters['securityprofile']['url']['operators']['is.visibility'] = array(
     'Function' => function (SecurityProfileRQueryContext $context) {
         /** @var URLProfile $object */

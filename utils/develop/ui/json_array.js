@@ -250,6 +250,10 @@ var subjectObject =
                             "removeIfMatch",
                             "removeIfNumericalMatch"
                         ]
+                    },
+                    "recursive": {
+                        "type": "bool",
+                        "default": false
                     }
                 }
             },
@@ -309,6 +313,18 @@ var subjectObject =
                         "type": "string",
                         "default": "*nodefault*",
                         "help": "This string is used to compose a name. You can use the following aliases :\n  - $$current.name$$ : current name of the object\n  - $$netmask$$ : netmask\n  - $$netmask.blank32$$ : netmask or nothing if 32\n  - $$reverse-dns$$ : value truncated of netmask if any\n  - $$value$$ : value of the object\n  - $$value.no-netmask$$ : value truncated of netmask if any\n  - $$tag$$ : name of first tag object - if no tag attached '' blank\n"
+                    }
+                },
+                "help": ""
+            },
+            "name-rename-location": {
+                "name": "name-Rename-location",
+                "MainFunction": {},
+                "args": {
+                    "stringFormula": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "This string is used to compose a name. You can use the following aliases :\n  - $$current.name$$ : current name of the object\n  - $$location$$ : name of the location where this object is based\n"
                     }
                 },
                 "help": ""
@@ -949,6 +965,19 @@ var subjectObject =
                     }
                 }
             },
+            "refobject": {
+                "operators": {
+                    "tag.has": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if object name matches refobjectname",
+                        "ci": {
+                            "fString": "(%PROP% shared )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
             "refobjectname": {
                 "operators": {
                     "is": {
@@ -1103,6 +1132,14 @@ var subjectObject =
                         }
                     },
                     "is.zonestore": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "all.interfacestore": {
                         "Function": {},
                         "arg": false,
                         "ci": {
@@ -3502,6 +3539,16 @@ var subjectObject =
             }
         }
     },
+    "gpgateway-tunnel": {
+        "name": "gpgateway-tunnel",
+        "action": {
+            "display": {
+                "name": "display",
+                "MainFunction": {}
+            }
+        },
+        "filter": []
+    },
     "gratuitous-arp": {
         "name": "gratuitous-arp",
         "action": [],
@@ -3584,9 +3631,15 @@ var subjectObject =
     "interface": {
         "name": "interface",
         "action": {
-            "custom-manipulation": {
-                "name": "custom-manipulation",
-                "MainFunction": {}
+            "ae-group-set": {
+                "name": "ae-group-set",
+                "MainFunction": {},
+                "args": {
+                    "newAE": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                }
             },
             "display": {
                 "name": "display",
@@ -3629,6 +3682,28 @@ var subjectObject =
                 "MainFunction": {},
                 "args": {
                     "newName": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                }
+            },
+            "remove": {
+                "name": "remove",
+                "MainFunction": {}
+            },
+            "replace_ipv4_objects_by_value": {
+                "name": "replace_IPv4_objects_by_value",
+                "MainFunction": {}
+            },
+            "replace_ipv6_objects_by_value": {
+                "name": "replace_IPv6_objects_by_value",
+                "MainFunction": {}
+            },
+            "type-aggregate-ethernet-set": {
+                "name": "type-aggregate-ethernet-set",
+                "MainFunction": {},
+                "args": {
+                    "name": {
                         "type": "string",
                         "default": "*nodefault*"
                     }
@@ -3711,6 +3786,14 @@ var subjectObject =
                         }
                     },
                     "is.virtual-wire": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP% ethernet1\/1)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.vlan": {
                         "Function": {},
                         "arg": false,
                         "ci": {
@@ -4317,8 +4400,8 @@ var subjectObject =
             },
             "exporttoexcel": {
                 "name": "exportToExcel",
-                "MainFunction": {},
                 "GlobalInitFunction": {},
+                "MainFunction": {},
                 "GlobalFinishFunction": {},
                 "args": {
                     "filename": {
@@ -4684,7 +4767,7 @@ var subjectObject =
                     "stringFormula": {
                         "type": "string",
                         "default": "*nodefault*",
-                        "help": "This string is used to compose a name. You can use the following aliases :\n  - $$current.name$$ : current name of the object\n  - $$sequential.number$$ : sequential number - starting with 1\n  - $$uuid$$ : rule uuid\n"
+                        "help": "This string is used to compose a name. You can use the following aliases :\n  - $$current.name$$ : current name of the object\n  - $$sequential.number$$ : sequential number - starting with 1\n  - $$uuid$$ : rule uuid\n  - $$location$$ : DeviceGroup \/ vsys name\n"
                     },
                     "accept63characters": {
                         "type": "bool",
@@ -7840,6 +7923,20 @@ var subjectObject =
                     }
                 }
             },
+            "df": {
+                "operators": {
+                    "is.visibility": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=data-filtering' e.g. 'filter=(df is.visibility)'"
+                    },
+                    "is.adoption": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=data-filtering' e.g. 'filter=(df is.adoption)'"
+                    }
+                }
+            },
             "dns-list": {
                 "operators": {
                     "is.best-practice": {
@@ -8933,6 +9030,10 @@ var subjectObject =
                             "removeIfMatch",
                             "removeIfNumericalMatch"
                         ]
+                    },
+                    "recursive": {
+                        "type": "bool",
+                        "default": false
                     }
                 }
             },
@@ -8983,7 +9084,19 @@ var subjectObject =
                     "stringFormula": {
                         "type": "string",
                         "default": "*nodefault*",
-                        "help": "This string is used to compose a name. You can use the following aliases :\n  - $$current.name$$ : current name of the object\n  - $$destinationport$$ : destination Port\n  - $$protocol$$ : service protocol\n  - $$sourceport$$ : source Port\n  - $$timeout$$ : timeout value of the object\n"
+                        "help": "This string is used to compose a name. You can use the following aliases :\n  - $$current.name$$ : current name of the object\n  - $$destinationport$$ : destination Port\n  - $$protocol$$ : service protocol\n  - $$sourceport$$ : source Port\n  - $$timeout$$ : timeout value of the object\n  - $$location$$ : name of the location where this object is based\n"
+                    }
+                },
+                "help": ""
+            },
+            "name-rename-location": {
+                "name": "name-Rename-location",
+                "MainFunction": {},
+                "args": {
+                    "stringFormula": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "This string is used to compose a name. You can use the following aliases :\n  - $$current.name$$ : current name of the object\n  - $$location$$ : name of the location where this object is based\n"
                     }
                 },
                 "help": ""
@@ -9461,6 +9574,19 @@ var subjectObject =
                     }
                 }
             },
+            "refobject": {
+                "operators": {
+                    "tag.has": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if object name matches refobjectname",
+                        "ci": {
+                            "fString": "(%PROP% shared )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
             "refstore": {
                 "operators": {
                     "is": {
@@ -9468,6 +9594,14 @@ var subjectObject =
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% rulestore )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.rulestore": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -10177,6 +10311,19 @@ var subjectObject =
                     }
                 }
             },
+            "refobject": {
+                "operators": {
+                    "tag.has": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if object name matches refobjectname",
+                        "ci": {
+                            "fString": "(%PROP% shared )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
             "refstore": {
                 "operators": {
                     "is": {
@@ -10184,6 +10331,14 @@ var subjectObject =
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% rulestore )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.rulestore": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }

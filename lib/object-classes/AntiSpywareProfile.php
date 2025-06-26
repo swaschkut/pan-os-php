@@ -706,18 +706,19 @@ class AntiSpywareProfile extends SecurityProfile2
         if( $this->secprof_type != 'spyware' )
             return null;
 
-        $check_array = $this->spyware_lists_bp_visibility_JSON( "bp", "spyware");
+        $checkBP_array = $this->spyware_lists_bp_visibility_JSON( "bp", "spyware");
 
         if( isset($this->additional['botnet-domain']['lists']) )
         {
             foreach( $this->additional['botnet-domain']['lists'] as $name => $array)
             {
-                foreach( $check_array['action'] as $validation )
+                foreach( $checkBP_array['action'] as $validation )
                 {
                     foreach( $validation['type'] as $check_type )
                     {
                         if( $name == $check_type )
                         {
+                            $checkBP_value = false;
                             if( isset($array['action']) )
                             {
                                 foreach( $validation['action'] as $check_action)
@@ -726,9 +727,28 @@ class AntiSpywareProfile extends SecurityProfile2
                                     if( strpos( $check_action, "!" ) !== FALSE )
                                         $negate_string = "!";
                                     if ( $negate_string.$array['action'] == $check_action )
-                                        return TRUE;
+                                        $checkBP_value = TRUE;
+                                    else
+                                        $checkBP_value = FALSE;
                                 }
                             }
+
+                            if( isset($array['packet-capture']) )
+                            {
+                                foreach( $validation['packet-capture'] as $check_action)
+                                {
+                                    $negate_string = "";
+                                    if( strpos( $check_action, "!" ) !== FALSE )
+                                        $negate_string = "!";
+                                    if ( $negate_string.$array['packet-capture'] == $check_action )
+                                        $checkBP_value = TRUE;
+                                    else
+                                        $checkBP_value = FALSE;
+                                }
+                            }
+
+                            if( $checkBP_value )
+                                return TRUE;
                         }
                     }
                 }
@@ -1007,8 +1027,9 @@ class AntiSpywareProfile extends SecurityProfile2
         if( $this->owner->owner->version >= 102 )
         {
             if( $this->spyware_rules_best_practice() && $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file)
+                && $this->spyware_dnslist_best_practice()
                 #this is DNS security
-                #&& $this->spyware_dns_security_best_practice() && $this->spyware_dnslist_best_practice()
+                && $this->spyware_dns_security_best_practice()
                 && $this->spyware_rules_visibility()
             )
                 return TRUE;
@@ -1018,8 +1039,9 @@ class AntiSpywareProfile extends SecurityProfile2
         else
         {
             if( $this->spyware_rules_best_practice()
+                && $this->spyware_dnslist_best_practice()
                 #this is DNS security
-                #&& $this->spyware_dns_security_best_practice() && $this->spyware_dnslist_best_practice()
+                && $this->spyware_dns_security_best_practice()
                 #&& $this->vulnerability_exception_best_practice()
                 && $this->spyware_rules_visibility()
             )
@@ -1034,7 +1056,9 @@ class AntiSpywareProfile extends SecurityProfile2
         if( $this->owner->owner->version >= 102 )
         {
             if( $this->spyware_rules_visibility() && $this->cloud_inline_analysis_visibility($this->owner->bp_json_file)
-                && $this->spyware_dns_security_visibility() && $this->spyware_dnslist_visibility()
+                && $this->spyware_dnslist_visibility()
+                #this is DNS Security
+                #&& $this->spyware_dns_security_visibility()
             )
                 return TRUE;
             else
@@ -1043,7 +1067,9 @@ class AntiSpywareProfile extends SecurityProfile2
         else
         {
             if( $this->spyware_rules_visibility()
-                && $this->spyware_dns_security_visibility() && $this->spyware_dnslist_visibility()
+                && $this->spyware_dnslist_visibility()
+                #this is DNS Security
+                #&& $this->spyware_dns_security_visibility()
             )
                 return TRUE;
             else

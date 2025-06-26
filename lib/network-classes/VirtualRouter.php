@@ -846,6 +846,73 @@ class VirtualRouter
     }
 
 
+    public function referencedObjectRenamed($h, $old, $replaceType = 'name')
+    {
+        if( is_object($h) )
+        {
+            if( get_class( $h ) == "Address" )
+            {
+                //Text replace
+                $qualifiedNodeName = '//*[text()="'.$old.'"]';
+                $xpathResult = DH::findXPath( $qualifiedNodeName, $this->xmlroot);
+                foreach( $xpathResult as $node )
+                {
+                    if( $replaceType == "name" )
+                        $node->textContent = $h->name();
+                    elseif( $replaceType == "value" )
+                        $node->textContent = $h->value();
+                }
+
+
+                //attribute replace
+                $nameattribute = $old;
+                $qualifiedNodeName = "entry";
+                $nodeList = $this->xmlroot->getElementsByTagName($qualifiedNodeName);
+                $nodeArray = iterator_to_array($nodeList);
+
+                $templateEntryArray = array();
+                foreach( $nodeArray as $item )
+                {
+                    if ($nameattribute !== null)
+                    {
+                        $XMLnameAttribute = DH::findAttribute("name", $item);
+                        if ($XMLnameAttribute === FALSE)
+                            continue;
+
+                        if ($XMLnameAttribute !== $nameattribute)
+                            continue;
+                    }
+                    if( $replaceType == "name" )
+                        $item->setAttribute('name', $h->name());
+                    elseif( $replaceType == "value" )
+                        $item->setAttribute('name', $h->value());
+                }
+            }
+
+            return;
+        }
+
+        mwarning("object is not part of this VirtualRouter : {$h->toString()}");
+    }
+
+    public function replaceReferencedObject($old, $new)
+    {
+        $this->referencedObjectRenamed($new, $old->name());
+        return true;
+    }
+
+    public function API_replaceReferencedObject($old, $new)
+    {
+        $ret = $this->replaceReferencedObject($old, $new);
+
+        if( $ret )
+        {
+            $this->API_sync();
+        }
+
+        return $ret;
+    }
+
     /**
      * @return string
      */

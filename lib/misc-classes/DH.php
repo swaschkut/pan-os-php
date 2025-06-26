@@ -592,9 +592,11 @@ class DH
             $fullpath = str_replace($replace, "", $fullpath);
         }
 
+        $fullpath = preg_replace("/(\d+)\/(\d+)/", "$1_$2", $fullpath);
         $fullpath = str_replace("/", " ", $fullpath);
         $fullpath = str_replace("entry[@name='", '"', $fullpath);
         $fullpath = str_replace("']", '"', $fullpath);
+        $fullpath = preg_replace("/(\d+)_(\d+)/", "$1/$2", $fullpath);
 
         $xpath = $type . $fullpath;
 
@@ -627,14 +629,22 @@ class DH
      */
     static public function CHILDelementToPanSetCommand( $type, $element, &$array, $xpath, $string, $debug = false )
     {
-        #print "---------------\n";
-        #print "nodename: ".$element->nodeName."\n";
-        #print "xpath: ".$xpath."\n";
-        #print "string: ".$string."\n";
+        if( $debug )
+        {
+            print "---------------\n";
+            print "0-0\n";
+            print "nodename: ".$element->nodeName."\n";
+            print "xpath: ".$xpath."\n";
+            print "string: ".$string."\n";
+        }
 
         if( $element->nodeType == XML_ELEMENT_NODE )
         {
-            #print "1\n";
+            if( $debug )
+            {
+                print "1\n";
+            }
+
             if( $element->nodeName == "entry" )
             {
                 if( strpos( $xpath, ' "'.$element->getAttribute('name').'"' ) === FALSE )
@@ -653,9 +663,13 @@ class DH
             {
                 if( strpos( $xpath, " ".$element->nodeName ) === FALSE )
                 {
-                    #print "nodename: ".$element->nodeName."\n";
-                    #print "xpath: ".$xpath."\n";
-                    #print "string: ".$string."\n";
+                    if( $debug )
+                    {
+                        print "1-1\n";
+                        print "nodename: ".$element->nodeName."\n";
+                        print "xpath: ".$xpath."\n";
+                        print "string: ".$string."\n";
+                    }
 
                     if( $element->nodeName !== "member" )
                         $string .= " ".$element->nodeName;
@@ -665,10 +679,13 @@ class DH
                     }
                     else
                     {
-                        #print "1-1\n";
-                        #print "nodename: ".$element->nodeName."\n";
-                        #print "xpath: ".$xpath."\n";
-                        #print "string: ".$string."\n";
+                        if( $debug )
+                        {
+                            print "1-1\n";
+                            print "nodename: ".$element->nodeName."\n";
+                            print "xpath: ".$xpath."\n";
+                            print "string: ".$string."\n";
+                        }
 
                         if( strpos( $xpath, "delete" ) !== FALSE
                             &&(
@@ -693,8 +710,13 @@ class DH
                             )
                         )
                         {
-                            #print "1-2\n";
                             $finalstring = $xpath.$string;
+
+                            if( $debug )
+                            {
+                                print "1-2\n";
+                                print "finalstring: ".$finalstring."\n";
+                            }
 
                             self::setCommandvalidation( $finalstring, $array, $debug);
 
@@ -716,14 +738,34 @@ class DH
             {
                 $finalstring = $xpath.$string;
 
+                if( $debug )
+                    print "1-3\n";
+
                 self::setCommandvalidation( $finalstring, $array, $debug);
             }
         }
         else
         {
-            #print "2\n";
+            if( $debug )
+                print "2\n";
+
+            if( strpos( $xpath, "delete" ) !== FALSE && strpos( $xpath, " local-address ip" ) !== FALSE )
+            {
+                if( $debug )
+                    print "2-1\n";
+
+                $finalstring = $xpath;
+
+                self::setCommandvalidation( $finalstring, $array, $debug);
+
+                return;
+            }
+
             if( trim($element->nodeValue) !== '')
             {
+                if( $debug )
+                    print "2-2\n";
+
                 $value = $element->nodeValue;
                 if(strstr($value, PHP_EOL))
                     $value = str_replace(PHP_EOL,"^M",$value);
@@ -733,9 +775,30 @@ class DH
                 else
                     $finalstring = $xpath.$string.' '.$value;
 
-                #print "final: ".$finalstring."\n";
+                if( $debug )
+                    print "finalstring: ".$finalstring."\n";
 
                 self::setCommandvalidation( $finalstring, $array, $debug);
+
+                return;
+            }
+
+            //Todo: swaschkut 20250518 | is this validation enough??
+            if( $element->nodeName == "#text" && strpos( $xpath, "set" ) !== FALSE && strpos( $xpath, " interface" ) !== FALSE )
+            {
+                if( $debug )
+                {
+                    print "2-3\n";
+                }
+
+                $finalstring = $xpath.$string;
+
+                if( $debug )
+                    print "finalstring: ".$finalstring."\n";
+
+                self::setCommandvalidation( $finalstring, $array, $debug);
+
+                return;
             }
         }
     }

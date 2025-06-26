@@ -119,6 +119,27 @@
     "comment": ""
   },
   {
+    "check": "false",
+    "xpath": "deviceconfig/setting/management/audit-tracking/op-commands",
+    "value": "yes",
+    "variable-name": "{{ AUDIT-OP-COMMANDS }}",
+    "comment": ""
+  },
+  {
+    "check": "false",
+    "xpath": "deviceconfig/setting/management/audit-tracking/ui-actions",
+    "value": "yes",
+    "variable-name": "{{ AUDIT-UI-ACTIONS }}",
+    "comment": ""
+  },
+  {
+    "check": "false",
+    "xpath": "deviceconfig/setting/management/audit-tracking/send-syslog",
+    "value": "SERVER",
+    "variable-name": "{{ AUDIT-SEND-SYSLOG }}",
+    "comment": ""
+  },
+  {
     "check": "true",
     "xpath": "deviceconfig/system/panorama/local-panorama/panorama-server",
     "value": "1.2.3.4",

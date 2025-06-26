@@ -461,6 +461,8 @@ class UTIL
             $tmp_array = &IPsectunnelCallContext::$supportedActions;
         elseif( $this->utilType == 'gre-tunnel' )
             $tmp_array = &GREtunnelCallContext::$supportedActions;
+        elseif( $this->utilType == 'gpgateway-tunnel' )
+            $tmp_array = &GPGatewaytunnelCallContext::$supportedActions;
 
         return $tmp_array;
     }
@@ -586,74 +588,164 @@ class UTIL
     {
         if( isset(PH::$args['help']) )
         {
-            $tmp_array = self::supportedActions();
-
-            $pos = array_search('help', PH::$args);
-
-            if( $pos === FALSE )
-                $this->display_usage_and_exit(FALSE);
-
-            $keys = array_keys(PH::$args);
-
-            if( $pos == end($keys) )
-                $this->display_usage_and_exit(FALSE);
-
-            $key_search = array_search($pos, $keys);
-            #$action = PH::$args[(array_search($pos, $keys) +1)];
-            $action = $keys[($key_search + 1)];
-
-            if( !isset($tmp_array[strtolower($action)]) )
-                derr("request help for action '{$action}' but it does not exist");
-
-            $action = &$tmp_array[strtolower($action)];
-
-            $args = array();
-            if( isset($action['args']) )
+            if( isset(PH::$args['filter']) )
             {
-                foreach( $action['args'] as $argName => &$argDetails )
+                $tmp_utilType = $this->utilType;
+                if( $tmp_utilType == "address-merger" || $tmp_utilType == "addressgroup-merger"  )
+                    $tmp_utilType = "address";
+                elseif( $tmp_utilType == "service-merger" || $tmp_utilType == "servicegroup-merger"  )
+                    $tmp_utilType = "service";
+                elseif( $tmp_utilType == "tag-merger" )
+                    $tmp_utilType = "tag";
+                elseif( $tmp_utilType == "custom-url-category-merger" )
+                    $tmp_utilType = "securityprofile";
+                elseif( $tmp_utilType == "rule-merger" )
+                    $tmp_utilType = "rule";
+
+
+                ksort(RQuery::$defaultFilters[$tmp_utilType]);
+
+
+                $pos = array_search('help', PH::$args);
+
+                if( $pos === FALSE )
+                    $this->display_usage_and_exit(FALSE);
+
+                $keys = array_keys(PH::$args);
+
+                if( $pos == end($keys) )
+                    $this->display_usage_and_exit(FALSE);
+
+                $key_search = array_search($pos, $keys);
+                #$action = PH::$args[(array_search($pos, $keys) +1)];
+                $filter = $keys[($key_search + 2)];
+
+                if( !isset(RQuery::$defaultFilters[$tmp_utilType][$filter]) )
                 {
-                    if( $argDetails['default'] == '*nodefault*' )
-                        $args[] = "{$argName}";
-                    else
-                        $args[] = "[{$argName}]";
+                    mwarning("request help for filter '{$filter}' but it does not exist", null, false);
+
+                    PH::$args['listfilters'] = "listfilters";
+                    $this->listfilters();
                 }
-            }
 
-            $args = PH::list_to_string($args);
-            PH::print_stdout( "*** help for Action " . PH::boldText($action['name']) . ":" . $args );
 
-            if( isset($action['help']) )
-                PH::print_stdout( $action['help'] );
+                $args = array();
+                if( isset($filter['args']) )
+                {
+                    foreach( $filter['args'] as $argName => &$argDetails )
+                    {
+                        if( $argDetails['default'] == '*nodefault*' )
+                            $args[] = "{$argName}";
+                        else
+                            $args[] = "[{$argName}]";
+                    }
+                }
 
-            if( !isset($args) || !isset($action['args']) )
-            {
-                PH::print_stdout( "\n\n**No arguments required**" );
+                $args = PH::list_to_string($args);
+                PH::print_stdout( "*** help for Filter " . PH::boldText($filter) . ":" . $args );
+                PH::print_stdout();
+
+                foreach( RQuery::$defaultFilters[$tmp_utilType] as $index => &$filter_name )
+                {
+                    if($filter !== $index)
+                        continue;
+
+                    PH::print_stdout( "* " . $index . "" );
+                    PH::$JSON_TMP[$index]['name'] = $index;
+
+                    ksort($filter_name['operators']);
+
+                    foreach( $filter_name['operators'] as $oindex => &$operator )
+                    {
+                        //if( $operator['arg'] )
+                        $output = "    - $oindex";
+                        $output = str_pad($output, 40);
+                        if( isset($operator['help']) )
+                            $output .= ": ".$operator['help'];
+
+                        PH::print_stdout( $output . "" );
+                        PH::$JSON_TMP[$index]['operators'][$oindex]['name'] = $oindex;
+                        PH::$JSON_TMP[$index]['operators'][$oindex]['operator'] = $operator;
+                    }
+                    PH::print_stdout();
+                }
             }
             else
             {
-                PH::print_stdout( "\nListing arguments:" );
-                PH::print_stdout();
-                PH::print_stdout();
-                foreach( $action['args'] as $argName => &$argDetails )
+                $tmp_array = self::supportedActions();
+
+                $pos = array_search('help', PH::$args);
+
+                if( $pos === FALSE )
+                    $this->display_usage_and_exit(FALSE);
+
+                $keys = array_keys(PH::$args);
+
+                if( $pos == end($keys) )
+                    $this->display_usage_and_exit(FALSE);
+
+                $key_search = array_search($pos, $keys);
+                #$action = PH::$args[(array_search($pos, $keys) +1)];
+                $action = $keys[($key_search + 1)];
+
+                if( !isset($tmp_array[strtolower($action)]) )
                 {
-                    PH::print_stdout( "-- " . PH::boldText($argName) . " :" );
-                    if( $argDetails['default'] != "*nodefault" )
-                        PH::print_stdout( " OPTIONAL" );
-                    PH::print_stdout( " type={$argDetails['type']}" );
-                    if( isset($argDetails['choices']) )
-                    {
-                        PH::print_stdout( "     choices: " . PH::list_to_string($argDetails['choices']) );
-                    }
-                    PH::print_stdout();
-                    if( isset($argDetails['help']) )
-                        PH::print_stdout( " " . str_replace("\n", "\n ", $argDetails['help']) );
-                    else
-                        PH::print_stdout( "  *no help available*" );
-                    PH::print_stdout();
-                    PH::print_stdout();
+                    $this->listactions();
+                    derr("request help for action '{$action}' but it does not exist", null, false);
                 }
 
+
+                $action = &$tmp_array[strtolower($action)];
+
+                $args = array();
+                if( isset($action['args']) )
+                {
+                    foreach( $action['args'] as $argName => &$argDetails )
+                    {
+                        if( $argDetails['default'] == '*nodefault*' )
+                            $args[] = "{$argName}";
+                        else
+                            $args[] = "[{$argName}]";
+                    }
+                }
+
+                $args = PH::list_to_string($args);
+                PH::print_stdout( "*** help for Action " . PH::boldText($action['name']) . ":" . $args );
+
+                if( isset($action['help']) )
+                    PH::print_stdout( $action['help'] );
+
+                if( !isset($args) || !isset($action['args']) )
+                {
+                    PH::print_stdout( "\n\n**No arguments required**" );
+                }
+                else
+                {
+                    PH::print_stdout( "\nListing arguments:" );
+                    PH::print_stdout();
+                    PH::print_stdout();
+                    foreach( $action['args'] as $argName => &$argDetails )
+                    {
+                        PH::print_stdout( "-- " . PH::boldText($argName) . " :" );
+                        if( $argDetails['default'] != "*nodefault" )
+                            PH::print_stdout( " OPTIONAL" );
+                        PH::print_stdout( " type={$argDetails['type']}" );
+                        if( isset($argDetails['choices']) )
+                        {
+                            PH::print_stdout( "     choices: " . PH::list_to_string($argDetails['choices']) );
+                        }
+                        PH::print_stdout();
+                        if( isset($argDetails['help']) )
+                            PH::print_stdout( " " . str_replace("\n", "\n ", $argDetails['help']) );
+                        else
+                            PH::print_stdout( "  *no help available*" );
+                        PH::print_stdout();
+                        PH::print_stdout();
+                    }
+
+                }
             }
+
 
 
             PH::print_stdout();
@@ -1312,6 +1404,8 @@ class UTIL
                 $context = new IPsectunnelCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'gre-tunnel' )
                 $context = new GREtunnelCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+            elseif( $this->utilType == 'gpgateway-tunnel' )
+                $context = new GPGatewaytunnelCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
 
             $context->baseObject = $this->pan;
             if( isset($this->configInput['type'])  )

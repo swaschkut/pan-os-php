@@ -3,6 +3,7 @@
 
 trait CP_R80_objects
 {
+
     //##########################################################################
 //print out all available ARRAY information from JSON
     function print_object_array($array, $padding)
@@ -506,9 +507,125 @@ trait CP_R80_objects
             {
                 print "   - group-with-exclusion is done later\n";
             }
-            elseif( $key == "checkpoint-host" || $key == "simple-cluster" || $key == "CpmiClusterMember" )
+            elseif( $key == "checkpoint-host" || $key == "simple-cluster" || $key == "CpmiClusterMember" || $key == "cluster-member" || $key == "interop" )
             {
                 $this->add_host_objects($subarray);
+            }
+            elseif( $key == "updatable-object" )
+            {
+                mwarning( "KEY: ".$key." not supported yet", null, false );
+
+                foreach( $subarray as $host_key => $host )
+                {
+                    if( strpos( $host['icon'], '@app/cp_geo' ) !== false )
+                    {
+                        //Region
+                        if( $host['name'] == "Russia" )
+                            $host['name'] = "Russian Federation";
+                        elseif( $host['name'] == "South Korea" )
+                            $host['name'] = "Korea Republic Of";
+                        elseif( $host['name'] == "Federated States of Micronesia" )
+                            $host['name'] = "Micronesia Federated States Of";
+                        elseif( $host['name'] == "Pitcairn Islands" )
+                            $host['name'] = "Pitcairn";
+                        elseif( $host['name'] == "Wallis and Futuna" )
+                            $host['name'] = "Wallis And Futuna";
+                        elseif( $host['name'] == "Antigua and Barbuda" )
+                            $host['name'] = "Antigua And Barbuda";
+                        elseif( $host['name'] == "Bonaire, Sint Eustatius, and Saba" )
+                            $host['name'] = "Bonaire Saint Eustatius And Saba";
+                        elseif( $host['name'] == "British Virgin Islands" )
+                            $host['name'] = "Virgin Islands British";
+                        elseif( $host['name'] == "Curacao" )
+                            $host['name'] = "CuraAo";
+                        elseif( $host['name'] == "Saint Barthelemy" )
+                            $host['name'] = "Saint BarthLemy";
+                        elseif( $host['name'] == "Saint Martin" )
+                            $host['name'] = "Saint Martin (French Part)";
+                        elseif( $host['name'] == "Saint Pierre and Miquelon" )
+                            $host['name'] = "Saint Pierre And Miquelon";
+                        elseif( $host['name'] == "Sint Maarten" )
+                            $host['name'] = "Sint Maarten (Dutch Part)";
+                        elseif( $host['name'] == "St Kitts and Nevis" )
+                            $host['name'] = "Saint Kitts And Nevis";
+                        elseif( $host['name'] == "St Vincent and Grenadines" )
+                            $host['name'] = "Saint Vincent And The Grenadines";
+                        elseif( $host['name'] == "Trinidad and Tobago" )
+                            $host['name'] = "Trinidad And Tobago";
+                        elseif( $host['name'] == "Turks and Caicos Islands" )
+                            $host['name'] = "Turks And Caicos Islands";
+                        elseif( $host['name'] == "U.S. Virgin Islands" )
+                            $host['name'] = "Virgin Islands U.S.";
+
+                        //////////
+
+                        elseif( $host['name'] == "Curacao" )
+                            $host['name'] = "CuraAo";
+                        elseif( $host['name'] == "Curacao" )
+                            $host['name'] = "CuraAo";
+
+
+
+                        $this->region_objects_uid[$host['uid']] = $host['name'];
+                        continue;
+                    }
+                    //
+                    elseif( strpos( $host['icon'], '@app/cp_wb_webex' ) !== false )
+                    {
+                        continue;
+                    }
+
+                }
+            }
+            elseif( $key == "access-role" )
+            {
+                foreach( $subarray as $host_key => $host )
+                {
+                    if( isset($host['users']) and is_array($host['users']) )
+                    {
+                        $tmp_array = array();
+                        $tmp_array['name'] = $host['name'];
+                        foreach( $host['users'] as $user )
+                        {
+                            if( isset($user['dn'])  )
+                                $tmp_array['entry'][] = $user['dn'];
+                            else
+                            {
+                                //only test Objects/UsersGroup
+                                continue;
+                            }
+                        }
+                        $this->user_objects_uid[$host['uid']] = $tmp_array;
+                    }
+                }
+            }
+            elseif( $key == "application-site" )
+            {
+                $array_validate = array( '*', '.' );
+                foreach( $subarray as $host_key => $host )
+                {
+
+                    if( isset($host['url-list']) )
+                    {
+                        #print "NAME: ".$host['name']."\n";
+                        #print_r( $host['url-list'] );
+                        foreach( $host['url-list'] as $url )
+                        {
+                            if( in_array($url[0], $array_validate) )
+                            {
+                                $check = false;
+                            }
+                            //
+                        }
+                        #print_r( $host );
+                    }
+                    else
+                    {
+                        PH::print_stdout( "NO url-list");
+                        print "NAME: ".$host['name']."\n";
+                        #print_r( $host );
+                    }
+                }
             }
             elseif(
                 $key == "vpn-community-meshed"
@@ -517,18 +634,18 @@ trait CP_R80_objects
                 || $key == "CpmiGatewayCluster"
                 || $key == "Track"
                 || $key == "Global"
-                || $key == "application-site"
+                #|| $key == "application-site"
                 || $key == "DropUserCheckInteractionScheme"
                 || $key == "Internet"
                 || $key == "application-site-category"
-                || $key == "access-role"
+                #|| $key == "access-role"
                 || $key == "application-site-group"
                 || $key == "AskUserCheckInteractionScheme"
                 || $key == "threat-profile"
                 || $key == "ThreatExceptionRulebase"
                 || $key == "ThreatBladeException"
 
-                || $key == "updatable-object"
+                #|| $key == "updatable-object"
 
                 || $key == "CpmiAntimalwareAction"
                 || $key == "CpmiSdTopicPerProfileDynamic"
@@ -583,22 +700,29 @@ trait CP_R80_objects
                     {
                         if( !is_array($member_uid) )
                         {
-                            $member_name = $this->find_address_uid($member_uid);
-                            $member_name = $this->truncate_names($this->normalizeNames($member_name));
-                            if( $member_name != null )
+                            $member_name = $this->find_address_uid($member_uid, "grp");
+                            if( is_array($member_name) )
                             {
-                                $tmp_address = $this->sub->addressStore->find($member_name);
-                                if( $tmp_address != null )
+
+                            }
+                            else
+                            {
+                                $member_name = $this->truncate_names($this->normalizeNames($member_name));
+                                if( $member_name != null )
                                 {
-                                    print "    - add member: " . $member_name . "\n";
-                                    $tmp_addressgroup->addMember($tmp_address);
-                                }
-                                else
-                                {
-                                    $group_missing_members[$name][$member_name] = $member_name;
-                                    $group_missing_members[$name]['domain'] = $domain;
-                                    print "     - missing addressgroup: " . $member_name . " try to fix it later\n";
-                                    #mwarning( "addressgroup: '".$name ."' | member: '".$member_name."' not found" );
+                                    $tmp_address = $this->sub->addressStore->find($member_name);
+                                    if( $tmp_address != null )
+                                    {
+                                        print "    - add member: " . $member_name . "\n";
+                                        $tmp_addressgroup->addMember($tmp_address);
+                                    }
+                                    else
+                                    {
+                                        $group_missing_members[$name][$member_name] = $member_name;
+                                        $group_missing_members[$name]['domain'] = $domain;
+                                        print "     - missing addressgroup: " . $member_name . " try to fix it later\n";
+                                        #mwarning( "addressgroup: '".$name ."' | member: '".$member_name."' not found" );
+                                    }
                                 }
                             }
                         }
@@ -691,22 +815,29 @@ trait CP_R80_objects
                     {
                         if( !is_array($member_uid) )
                         {
-                            $member_name = $this->find_address_uid($member_uid);
-                            $member_name = $this->truncate_names($this->normalizeNames($member_name));
-                            if( $member_name != null )
+                            $member_name = $this->find_address_uid($member_uid, "grp");
+                            if( is_array($member_name) )
                             {
-                                $tmp_address = $this->sub->addressStore->find($member_name);
-                                if( $tmp_address != null )
+
+                            }
+                            else
+                            {
+                                $member_name = $this->truncate_names($this->normalizeNames($member_name));
+                                if( $member_name != null )
                                 {
-                                    print "    - add member: " . $member_name . "\n";
-                                    $tmp_addressgroup->addMember($tmp_address);
-                                }
-                                else
-                                {
-                                    $group_missing_members[$name][$member_name] = $member_name;
-                                    $group_missing_members[$name]['domain'] = $domain;
-                                    print "     - missing addressgroup: " . $member_name . " try to fix it later\n";
-                                    #mwarning( "addressgroup: '".$name ."' | member: '".$member_name."' not found" );
+                                    $tmp_address = $this->sub->addressStore->find($member_name);
+                                    if( $tmp_address != null )
+                                    {
+                                        print "    - add member: " . $member_name . "\n";
+                                        $tmp_addressgroup->addMember($tmp_address);
+                                    }
+                                    else
+                                    {
+                                        $group_missing_members[$name][$member_name] = $member_name;
+                                        $group_missing_members[$name]['domain'] = $domain;
+                                        print "     - missing addressgroup: " . $member_name . " try to fix it later\n";
+                                        #mwarning( "addressgroup: '".$name ."' | member: '".$member_name."' not found" );
+                                    }
                                 }
                             }
                         }
@@ -785,7 +916,7 @@ trait CP_R80_objects
                     $tmp_addressgroup->addMember($tmp_address);
                 }
                 else
-                    mwarning("addressgroup: '" . $groupname . "' | member: '" . $member . "' not found");
+                    mwarning("addressgroup: '" . $groupname . "' | member: '" . $member . "' not found", null, false);
             }
         }
 
@@ -811,6 +942,8 @@ trait CP_R80_objects
                 if( $tmp_servicegroup === null )
                 {
 
+                    #$this->MainAddServiceGroup($name, $members, $description, &$missingMembers, $find_tmp = FALSE)
+                    PH::print_stdout("create ServiceGroup: ".$name." | location: ".$this->sub->name());
                     $tmp_servicegroup = $this->sub->serviceStore->newServiceGroup($name);
                     #$tmp_servicegroup->setDescription( $description );
 
@@ -831,7 +964,7 @@ trait CP_R80_objects
                             {
                                 $group_missing_members[$name][$member_name] = $member_name;
                                 $group_missing_members[$name]['domain'] = $domain;
-                                print "     - missing servicegroup: " . $member_name . " try to fix it later\n";
+                                print "     - missing service/service-group: " . $member_name . " try to fix it later\n";
                                 #mwarning( "servicegroup: '".$name ."' | member: '".$member_name."' not found" );
                             }
                         }
@@ -868,12 +1001,12 @@ trait CP_R80_objects
                     $tmp_servicegroup->addMember($tmp_service);
                 }
                 else
-                    mwarning("servicegroup: '" . $groupname . "' | member: '" . $member . "' not found");
+                    mwarning("servicegroup: '" . $groupname . "' | member: '" . $member . "' not found", null, false);
             }
         }
     }
 
-    public function find_address_uid($member_uid)
+    public function find_address_uid($member_uid, $type = "---", $rule = null)
     {
         $member_name = null;
 
@@ -925,6 +1058,16 @@ trait CP_R80_objects
             $member_name = $this->objectArray['simple-cluster'][$member_uid]['name'];
             #print "  1-".$member_name."\n";
         }
+        elseif( isset($this->objectArray['cluster-member'][$member_uid]) )
+        {
+            $member_name = $this->objectArray['cluster-member'][$member_uid]['name'];
+            #print "  1-".$member_name."\n";
+        }
+        elseif( isset($this->objectArray['interop'][$member_uid]) )
+        {
+            $member_name = $this->objectArray['interop'][$member_uid]['name'];
+            #print "  1-".$member_name."\n";
+        }
         elseif( isset($this->objectArray['group-with-exclusion'][$member_uid]) )
         {
             $member_name = $this->objectArray['group-with-exclusion'][$member_uid]['name'];
@@ -945,6 +1088,234 @@ trait CP_R80_objects
             $member_name = $this->objectArray['CpmiHostCkp'][$member_uid]['name'];
             #print "  4-".$member_name."\n";
         }
+        elseif( isset($this->region_objects_uid[$member_uid]) )
+        {
+            $chkp_region = $this->region_objects_uid[$member_uid];
+
+            $this->default_regions();
+
+            if( in_array($chkp_region, $this->panw_regions) )
+            {
+                /** @var SecurityRule $rule */
+                $key = array_search($chkp_region, $this->panw_regions);
+                $tmp_adr = $rule->owner->owner->addressStore->findOrCreate($key);
+                if($type == "src")
+                    $rule->source->addObject($tmp_adr);
+                elseif($type == "dst")
+                    $rule->destination->addObject($tmp_adr);
+            }
+            elseif( $chkp_region == "South America" )
+            {
+                $region_array = array(
+                    'AR',
+'AW',
+'BZ',
+'BO',
+'BR',
+'CL',
+'CO',
+'CR',
+'CU',
+'DO',
+'EC',
+'SV',
+'FK',
+'GF',
+'GT',
+'GY',
+'HT',
+'HN',
+'MX',
+'AN',
+'NI',
+'PA',
+'PY',
+'PE',
+'GS',
+'SR',
+'TT',
+'UY',
+'VE',
+);
+                foreach( $region_array as $key )
+                {
+                    if(isset( $this->panw_regions[$key] ) )
+                    {
+                        $tmp_adr = $rule->owner->owner->addressStore->findOrCreate($key);
+                        if($type == "src")
+                            $rule->source->addObject($tmp_adr);
+                        elseif($type == "dst")
+                            $rule->destination->addObject($tmp_adr);
+                    }
+                    else
+                    {
+                        PH::print_stdout("region2: ".$key." not found", null, false);
+                        exit;
+                    }
+                }
+            }
+            elseif( $chkp_region == "Africa" )
+            {
+                $region_array = array('DZ',
+'AO',
+'BJ',
+'BW',
+'BF',
+'BI',
+'CM',
+'CV',
+'CF',
+'TD',
+'KM',
+'CG',
+'CD',
+'CI',
+'DJ',
+'EG',
+'GQ',
+'ER',
+'ET',
+'GA',
+'GM',
+'GH',
+'GN',
+'GW',
+'KE',
+'LS',
+'LR',
+'LY',
+'MG',
+'ML',
+'MW',
+'MR',
+'MU',
+'YT',
+'MA',
+'MZ',
+'NA',
+'NE',
+'NG',
+'RE',
+'RW',
+'ST',
+'SN',
+'SC',
+'SL',
+'SO',
+'ZA',
+'SS',
+'SD',
+'SZ',
+'TZ',
+'TG',
+'TN',
+'UG',
+'EH',
+'ZM',
+'ZW');
+                foreach( $region_array as $key )
+                {
+                    if(isset( $this->panw_regions[$key] ) )
+                    {
+                        $tmp_adr = $rule->owner->owner->addressStore->findOrCreate($key);
+                        if($type == "src")
+                            $rule->source->addObject($tmp_adr);
+                        elseif($type == "dst")
+                            $rule->destination->addObject($tmp_adr);
+                    }
+                    else
+                    {
+                        PH::print_stdout("region2: ".$key." not found", null, false);
+                        exit;
+                    }
+                }
+            }
+            elseif( $chkp_region == "Asia" )
+            {
+                $region_array = array(
+'AF',
+'AS',
+'AU',
+'BD',
+'BT',
+'IO',
+'BN',
+'KH',
+'CN',
+'CX',
+'CC',
+'CK',
+'TL',
+'FJ',
+'PF',
+'TF',
+'GU',
+'HK',
+'IN',
+'ID',
+'JP',
+'KI',
+'KP',
+'KR',
+'LA',
+'MO',
+'MY',
+'MV',
+'MH',
+'FM',
+'MN',
+'MM',
+'NR',
+'NP',
+'NC',
+'NZ',
+'NU',
+'NF',
+'MP',
+'PK',
+'PW',
+'PG',
+'PH',
+'PN',
+'WS',
+'SG',
+'SB',
+'LK',
+'TW',
+'TH',
+'TK',
+'TO',
+'TV',
+'VU',
+'VN',
+'WF'
+                );
+                foreach( $region_array as $key )
+                {
+                    if(isset( $this->panw_regions[$key] ) )
+                    {
+                        $tmp_adr = $rule->owner->owner->addressStore->findOrCreate($key);
+                        if($type == "src")
+                            $rule->source->addObject($tmp_adr);
+                        elseif($type == "dst")
+                            $rule->destination->addObject($tmp_adr);
+                    }
+                    else
+                    {
+                        PH::print_stdout("region2: ".$key." not found", null, false);
+                        exit;
+                    }
+
+                }
+            }
+            else
+            {
+                PH::print_stdout("region: ".$chkp_region." not found", null, false);
+                exit;
+            }
+
+            return null;
+        }
         //
         else
         {
@@ -957,11 +1328,10 @@ trait CP_R80_objects
             }
             else
             {
-                print "     X not found: " . $member_uid . " check where it is defined\n";
-                mwarning("not found: " . $member_uid . "\n", null, FALSE);
+                print "     X not found: " . $type. " - " . $member_uid . " check where it is defined\n";
+                mwarning("not found: " . $type. " - " . $member_uid . "\n", null, FALSE);
+                return array( false, $member_uid );
             }
-
-
         }
 
         return $member_name;
@@ -1005,7 +1375,7 @@ trait CP_R80_objects
     {
         foreach( $subarray as $host_key => $host )
         {
-            if( $host['type'] != 'host' && $host['type'] != 'checkpoint-host' && $host['type'] !=  "simple-cluster" && $host['type'] != "CpmiClusterMember" )
+            if( $host['type'] != 'host' && $host['type'] != 'checkpoint-host' && $host['type'] !=  "simple-cluster" && $host['type'] != "CpmiClusterMember" && $host['type'] != "cluster-member" && $host['type'] != "interop" )
             {
                 print_r($host);
                 mwarning("no type host");
@@ -1025,12 +1395,19 @@ trait CP_R80_objects
 
             if( isset($host['ipv4-address']) )
                 $value = $host['ipv4-address'];
-            elseif( isset($host['ipv6-address']) )
+            elseif( isset($host['ip-address']) )
+                $value = $host['ip-address'];
+            elseif( isset($host['ipv6-address']) && !empty($host['ipv6-address']) )
                 $value = $host['ipv6-address'];
+            else
+                $value = "1.2.3.4";
 
             $type = "ip-netmask";
 
-            $description = $host['comments'];
+            if( isset($host['comments']) )
+                $description = $host['comments'];
+            else
+                $description = "";
 
             #$host['domain']['domain-type']
             #$host['domain']['name']

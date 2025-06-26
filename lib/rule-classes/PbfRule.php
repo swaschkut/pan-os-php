@@ -118,6 +118,26 @@ class PbfRule extends RuleWithUserID
         // end of <service> zone extraction
 
         $this->schedule_loadFromXml();
+
+        //										//
+        // Begin <action> extraction			//
+        //										//
+        $tmp_action = DH::findFirstElement('action', $xml);
+        if( $tmp_action !== FALSE )
+        {
+            $tmp = DH::findFirstElement('forward', $tmp_action);
+            if( $tmp !== FALSE )
+            {
+                $tmp = DH::findFirstElement('nexthop', $tmp);
+                if( $tmp !== FALSE )
+                {
+                    $tmp = DH::findFirstElement('ip-address', $tmp);
+                    if( $tmp !== FALSE )
+                        $tmp_address = $this->owner->owner->addressStore->findOrCreate($tmp->textContent, $this);
+                }
+            }
+        }
+        // end of <action> zone extraction
     }
 
     /**
@@ -264,5 +284,44 @@ class PbfRule extends RuleWithUserID
         return "pbfRules";
     }
 
+    public function replaceReferencedObject($old, $new )
+    {
+        if( get_class($new) == "Address" )
+        {
+            if( is_object($old) )
+                $old = $old->name();
+
+            //Text replace
+            $qualifiedNodeName = '//*[text()="'.$old.'"]';
+            $xpathResult = DH::findXPath( $qualifiedNodeName, $this->xmlroot);
+            foreach( $xpathResult as $node )
+                $node->textContent = $new->name();
+
+
+            //attribute replace
+            $nameattribute = $old;
+            $qualifiedNodeName = "entry";
+            $nodeList = $this->xmlroot->getElementsByTagName($qualifiedNodeName);
+            $nodeArray = iterator_to_array($nodeList);
+            foreach( $nodeArray as $item )
+            {
+                if ($nameattribute !== null)
+                {
+                    $XMLnameAttribute = DH::findAttribute("name", $item);
+                    if ($XMLnameAttribute === FALSE)
+                        continue;
+
+                    if ($XMLnameAttribute !== $nameattribute)
+                        continue;
+                }
+                $item->setAttribute('name', $new->name());
+            }
+
+            return;
+        }
+
+        print get_class($new)."\n";
+        mwarning("object is not part of this static route : {$new->toString()}", null, false);
+    }
 
 }

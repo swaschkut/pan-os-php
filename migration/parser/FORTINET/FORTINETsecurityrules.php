@@ -342,7 +342,9 @@ trait FORTINETsecurityrules
 
                     if( $isAddress )
                     {
-                        if( preg_match("/\bnext\b/i", $names_line) )
+                        #if( preg_match("/\bnext\b/i", $names_line) )
+                        if( preg_match("/\bnext\b/i", $names_line) && strpos( $names_line, "  next" ) !== FALSE )
+                        #if( preg_match("/[    ]next/i", $names_line) )
                         {
                             $isAddress = FALSE;
 
@@ -571,8 +573,8 @@ trait FORTINETsecurityrules
                             }
 
 
-                            $lid++;
-                            $position++;
+                            #$lid++;
+                            #$position++;
                             $RuleName = "";
                             $addressNamePan = "";
                             $addressName = "";
@@ -681,6 +683,8 @@ trait FORTINETsecurityrules
 
                                     $tmp_address = $this->sub->addressStore->find($name);
                                     if( $tmp_address === null )
+                                        $tmp_address = $this->sub->addressStore->find("region-" . $name);
+                                    if( $tmp_address === null )
                                         $tmp_address = $this->sub->addressStore->find("tmp-" . $name);
 
                                     if( $tmp_address !== null )
@@ -772,6 +776,8 @@ trait FORTINETsecurityrules
                                     $name = $this->truncate_names($this->normalizeNames($name));
 
                                     $tmp_address = $this->sub->addressStore->find($name);
+                                    if( $tmp_address === null )
+                                        $tmp_address = $this->sub->addressStore->find("region-" . $name);
                                     if( $tmp_address === null )
                                         $tmp_address = $this->sub->addressStore->find("tmp-" . $name);
 

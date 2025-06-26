@@ -226,6 +226,7 @@ class ServiceStore
             $loopCount++;
             if( $loopCount > 40 )
             {
+                print_r( $sortingArray );
                 PH::print_stdout("ServiceGroup LOOP detected | please manual manipulate your configuration file, check the output above!!");
                 derr("cannot determine groups dependencies after 40 loops iterations: is there too many nested groups?", null, False);
             }
@@ -1068,4 +1069,299 @@ class ServiceStore
 
         return $res;
     }
+
+    public function move( $context, $object)
+    {
+        if( $object->isTmpSrv() )
+        {
+            $string = "because this object is Tmp";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
+        $localLocation = 'shared';
+
+        if( !$object->owner->owner->isPanorama() && !$object->owner->owner->isFirewall() )
+            $localLocation = $object->owner->owner->name();
+
+        $targetLocation = $context->arguments['location'];
+        $targetStore = null;
+
+        if( $localLocation == $targetLocation )
+        {
+            $string = "because original and target destinations are the same: $targetLocation";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
+        $rootObject = PH::findRootObjectOrDie($object->owner->owner);
+
+        if( $targetLocation == 'shared' )
+        {
+            $findSubSystem = $rootObject;
+            $targetStore = $rootObject->serviceStore;
+        }
+        else
+        {
+            $findSubSystem = $rootObject->findSubSystemByName($targetLocation);
+            if( $findSubSystem === null )
+                derr("cannot find VSYS/DG named '$targetLocation'");
+
+            $targetStore = $findSubSystem->serviceStore;
+        }
+
+        if( $localLocation == 'shared' )
+        {
+            $reflocations = $object->getReferencesLocation();
+
+            foreach( $object->getReferences() as $ref )
+            {
+                if( PH::getLocationString($ref) != $targetLocation )
+                {
+                    $skipped = TRUE;
+                    //check if targetLocation is parent of reflocation
+                    $locations = $findSubSystem->childDeviceGroups(TRUE);
+                    foreach( $locations as $childloc )
+                    {
+                        if( PH::getLocationString($ref) == $childloc->name() )
+                            $skipped = FALSE;
+                    }
+
+                    if( $skipped )
+                    {
+                        $string = "moving from SHARED to sub-level is NOT possible because of references";
+                        PH::ACTIONstatus( $context, "SKIPPED", $string );
+                        return;
+                    }
+                }
+            }
+        }
+
+        if( $localLocation != 'shared' && $targetLocation != 'shared' )
+        {
+            if( $context->baseObject->isFirewall() )
+            {
+                $string = "moving between VSYS is not supported";
+                PH::ACTIONstatus( $context, "SKIPPED", $string );
+                return;
+            }
+
+            foreach( $object->getReferences() as $ref )
+            {
+                if( PH::getLocationString($ref) != $targetLocation )
+                {
+                    $skipped = TRUE;
+                    //check if targetLocation is parent of reflocation
+                    $locations = $findSubSystem->childDeviceGroups(TRUE);
+                    foreach( $locations as $childloc )
+                    {
+                        if( PH::getLocationString($ref) == $childloc->name() )
+                            $skipped = FALSE;
+                    }
+
+                    if( $skipped )
+                    {
+                        $string = "moving between 2 VSYS/DG is not possible because of references on higher DG level";
+                        PH::ACTIONstatus( $context, "SKIPPED", $string );
+                        return;
+                    }
+                }
+            }
+        }
+
+        $conflictObject = $targetStore->find($object->name(), null, FALSE);
+        if( $conflictObject === null )
+        {
+            if( $object->isGroup() )
+            {
+                foreach( $object->members() as $memberObject )
+                    if( $targetStore->find($memberObject->name(), null, true) === null )
+                    {
+                        $string = "this group has an object named '{$memberObject->name()} that does not exist in target location '{$targetLocation}'";
+                        PH::ACTIONstatus( $context, "SKIPPED", $string );
+                        return;
+                    }
+            }
+
+            if( !$context->subSystem->isFirewall() && !$context->subSystem->isVirtualSystem() )
+            {
+                //validation if upper/lower level is not changed
+                $tmplocalSub = $rootObject->findSubSystemByName($localLocation);
+                if( $tmplocalSub->isPanorama() )
+                {
+                    /** @var PanoramaConf $tmplocalSub */
+                    $tmpChildSubs = $tmplocalSub->deviceGroups;
+                }
+                else
+                    $tmpChildSubs = $tmplocalSub->childDeviceGroups();
+
+                $lowerLevelMove = FALSE;
+                foreach( $tmpChildSubs as $childDG )
+                {
+                    if( $targetLocation == $childDG->name() )
+                        $lowerLevelMove = TRUE;
+                }
+
+                if( !$lowerLevelMove )
+                {
+                    $startLocation = $tmplocalSub;
+                    $endLocation = $findSubSystem;
+                }
+                else
+                {
+                    $endLocation = $tmplocalSub;
+                    $startLocation = $findSubSystem;
+                }
+                $skipped = FALSE;
+                do
+                {
+                    if( !isset($startLocation->parentDeviceGroup->serviceStore) )
+                        break;
+
+                    $tmpObject = $startLocation->parentDeviceGroup->serviceStore->find($object->name(), null, FALSE);
+                    if( $tmpObject != null )
+                    {
+                        if( ($object->isGroup() and $tmpObject->isGroup()) || ($object->isGroup() and !$tmpObject->isGroup()) || (!$object->isGroup() and $tmpObject->isGroup()) )
+                            $skipped = TRUE;
+                        elseif( $object->protocol() != $tmpObject->protocol() )
+                            $skipped = TRUE;
+                        elseif( $object->getDestPort() != $tmpObject->getDestPort() || $object->getSourcePort() != $tmpObject->getSourcePort() )
+                            $skipped = TRUE;
+                    }
+
+                    if( !$skipped )
+                        $startLocation = $startLocation->parentDeviceGroup;
+                    else
+                    {
+                        if( !$lowerLevelMove )
+                            $string = "moving to upper level DG is not possible because of object available at lower DG level with same name but different object type or value";
+                        else
+                            $string = "moving to lower level DG is not possible because of object available at upper DG level with same name but different object type or value";
+                        PH::ACTIONstatus($context, "SKIPPED", $string);
+                        return;
+                    }
+                } while( $startLocation != $endLocation );
+            }
+            ///////////////////////////////
+
+
+            $string =  "   * moved, no conflict";
+            PH::ACTIONlog( $context, $string );
+
+            if( $context->isAPI )
+            {
+                $oldXpath = $object->getXPath();
+                $object->owner->remove($object);
+                $targetStore->add($object);
+                $object->API_sync();
+                $context->connector->sendDeleteRequest($oldXpath);
+            }
+            else
+            {
+                $object->owner->remove($object);
+                $targetStore->add($object);
+            }
+            return;
+        }
+
+        if( $context->arguments['mode'] == 'skipifconflict' )
+        {
+            $string = "there is an object with same name. Choose another mode to to resolve this conflict";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
+        $text = $context->padding . "   - there is a conflict with an object of same name and type. Please use service-merger.php script with argument 'allowmergingwithupperlevel'";
+        if( $conflictObject->isGroup() )
+            $text .= "Group";
+        else
+            $text .= "Service";
+        PH::ACTIONlog( $context, $text );
+
+        if( $conflictObject->isGroup() && !$object->isGroup() || !$conflictObject->isGroup() && $object->isGroup() )
+        {
+            $string = "because conflict has mismatching types";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
+        if( $conflictObject->isTmpSrv() && !$object->isTmpSrv() )
+        {
+            mwarning("unsupported situation with a temporary object", null, FALSE);
+            $string = "unsupported situation with a temporary object";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
+        if( $object->isGroup() )
+        {
+            $localMap = $object->dstPortMapping();
+            $targetMap = $conflictObject->dstPortMapping();
+
+            if( $object->equals($conflictObject) && $localMap->equals($targetMap) )
+            {
+                $string = "Removed because target has same content";
+                PH::ACTIONlog( $context, $string );
+
+                goto do_replace;
+            }
+            else
+            {
+                $object->displayValueDiff($conflictObject, 9);
+                if( $context->arguments['mode'] == 'removeifmatch' )
+                {
+                    $string = "because of mismatching group content";
+                    PH::ACTIONstatus( $context, "SKIPPED", $string );
+                    return;
+                }
+
+                if( !$localMap->equals($targetMap) )
+                {
+                    $string = "because of mismatching group content and numerical values";
+                    PH::ACTIONstatus( $context, "SKIPPED", $string );
+                    return;
+                }
+
+                $string = "Removed because it has same numerical value";
+                PH::ACTIONlog( $context, $string );
+
+                goto do_replace;
+
+            }
+            return;
+        }
+
+        if( $object->equals($conflictObject) )
+        {
+            $string = "Removed because target has same content";
+            PH::ACTIONlog( $context, $string );
+
+            goto do_replace;
+        }
+
+        if( $context->arguments['mode'] == 'removeifmatch' )
+            return;
+
+        $localMap = $object->dstPortMapping();
+        $targetMap = $conflictObject->dstPortMapping();
+
+        if( !$localMap->equals($targetMap) )
+        {
+            $string = "because of mismatching content and numerical values";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
+        $string = "Removed because target has same numerical value";
+        PH::ACTIONlog( $context, $string );
+
+        do_replace:
+
+        $object->replaceMeGlobally($conflictObject);
+        if( $context->isAPI )
+            $object->owner->API_remove($object);
+        else
+            $object->owner->remove($object);
+    }
+
 }

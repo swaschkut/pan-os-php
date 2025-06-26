@@ -23,16 +23,17 @@ class URLProfile extends SecurityProfile2
     public $secprof_type;
 
     public $allow = array();
-    public $allow_wo_custom = array();
     public $allow_credential = array();
-    public $allow_credential_wo_custom = array();
+
     public $alert = array();
     public $alert_credential = array();
-    public $alert_credential_wo_custom = array();
+
     public $block = array();
     public $block_credential = array();
+
     public $continue = array();
     public $continue_credential = array();
+
     public $override = array();
     public $override_credential = array();
 
@@ -684,7 +685,16 @@ class URLProfile extends SecurityProfile2
         if( strpos( $check_array, "!") !== FALSE )
         {
             $finding = str_replace("!", "", $check_array);
-            if( !empty($this->$finding) )
+
+            $sanitized_action = $this->$finding;
+            foreach( $sanitized_action as $key => $url_category)
+            {
+                $custom_url_category_obj = $this->owner->owner->customURLProfileStore->find($url_category);
+                if( $custom_url_category_obj !== NULL )
+                    unset( $sanitized_action[$key] );
+            }
+
+            if( !empty($sanitized_action) )
                 return False;
         }
 
@@ -693,17 +703,46 @@ class URLProfile extends SecurityProfile2
 
     public function check_usercredentialsubmission_bp_json( $check_array )
     {
-        foreach( $check_array['category'] as $check )
+        if( is_array( $check_array['category'] ) )
         {
-            $action = $check["action"];
-            $urlList = $check["type"];
-
-            foreach( $urlList as $url )
+            foreach( $check_array['category'] as $check )
             {
-                if( !in_array( $url, $this->$action ) )
-                    return false;
+                $action = $check["action"]."_credential";
+                $urlList = $check["type"];
+
+                foreach( $urlList as $url )
+                {
+                    if( !isset($this->$action[$url]) )
+                    {
+                        #print $url." NOT in array\n";
+                        return false;
+                    }
+
+                    #if( !in_array( $url, $this->$action ) )
+                    #    return false;
+                }
             }
         }
+        else
+        {
+            if( strpos( $check_array['category'], "!") !== FALSE )
+            {
+                $finding = str_replace("!", "", $check_array['category']);
+
+                $sanitized_action = $this->$finding;
+                foreach( $sanitized_action as $key => $url_category)
+                {
+                    $custom_url_category_obj = $this->owner->owner->customURLProfileStore->find($url_category);
+                    if( $custom_url_category_obj !== NULL )
+                        unset( $sanitized_action[$key] );
+                }
+
+                if( !empty($sanitized_action) )
+                    return False;
+            }
+        }
+
+
 
         return TRUE;
     }
@@ -714,7 +753,16 @@ class URLProfile extends SecurityProfile2
         if( strpos( $check_array['category'], "!") !== FALSE )
         {
             $finding = str_replace("!", "", $check_array['category']);
-            if( !empty($this->$finding) )
+
+            $sanitized_action = $this->$finding;
+            foreach( $sanitized_action as $key => $url_category)
+            {
+                $custom_url_category_obj = $this->owner->owner->customURLProfileStore->find($url_category);
+                if( $custom_url_category_obj !== NULL )
+                    unset( $sanitized_action[$key] );
+            }
+
+            if( !empty($sanitized_action) )
                 return False;
         }
 
@@ -724,15 +772,29 @@ class URLProfile extends SecurityProfile2
     public function check_usercredentialsubmission_bp_tab_json( $check_array )
     {
         if( $this->credential_mode == null)
+        {
+            #PH::print_stdout("no credential mode");
             return False;
+        }
+
         if( $this->credential_log == null)
+        {
+            #PH::print_stdout("no credential log");
             return False;
+        }
+
 
         if( $check_array['tab']['mode'] !== $this->credential_mode )
+        {
+            #PH::print_stdout("wrong credential mode");
             return False;
+        }
 
-        if( $check_array['tab']['log-severity'] !== $this->credential_log )
-            return False;
+        #if( isset($check_array['tab']['log-severity']) && $check_array['tab']['log-severity'] !== $this->credential_log )
+        #{
+        #    PH::print_stdout("wrong log-severity");
+        #    return False;
+        #}
 
         return TRUE;
     }
@@ -844,7 +906,10 @@ class URLProfile extends SecurityProfile2
 
     public function is_adoption()
     {
-        return true;
+        if( $this->site_access_is_adoption() && $this->credential_is_adoption() )
+            return true;
+        else
+            return false;
     }
 
     public function site_access_is_best_practice()
@@ -890,7 +955,9 @@ class URLProfile extends SecurityProfile2
 
     public function credential_is_adoption()
     {
-        return TRUE;
+        if( $this->credential_mode !== null && $this->credential_mode !== "disabled")
+            return TRUE;
+        return False;
     }
 
     static $templatexml = '<entry name="**temporarynamechangeme**"></entry>';

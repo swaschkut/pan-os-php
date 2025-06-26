@@ -1283,12 +1283,6 @@ class DeviceGroup
             $stdoutarray['log at end percentage'] = floor(( $stdoutarray['log at end'] / $stdoutarray['security rules enabled'] ) * 100 );
         else
             $stdoutarray['log at end percentage'] = 0;
-        $stdoutarray['log at end not start'] = count( $sub_ruleStore->rules( $generalFilter."(log at.end) and !(log at.start)" ) );
-        $stdoutarray['log at end not start calc'] = $stdoutarray['log at end not start']."/".$stdoutarray['security rules enabled'];
-        if( $stdoutarray['security rules enabled'] !== 0 )
-            $stdoutarray['log at end not start percentage'] = floor(( $stdoutarray['log at end not start'] / $stdoutarray['security rules enabled'] ) * 100 );
-        else
-            $stdoutarray['log at end not start percentage'] = 0;
         $stdoutarray['log at not start'] = count( $sub_ruleStore->rules( $generalFilter."!(log at.start)" ) );
         $stdoutarray['log at not start calc'] = $stdoutarray['log at not start']."/".$stdoutarray['security rules enabled'];
         if( $stdoutarray['security rules enabled'] !== 0 )
@@ -1330,8 +1324,6 @@ class DeviceGroup
             $stdoutarray['wf adoption percentage'] = 0;
 
         //Zone Protection
-        //Todo: no valid filter yet available - also how to filter? based on from and/or to zone??
-        $stdoutarray['zone protection'] = "NOT available";
         $filter_array = array('query' => $generalFilter."!(from is.any) and (from all.has.from.query subquery1)", 'subquery1' => "zpp is.set" );
         $stdoutarray['zone protection'] = count( $sub_ruleStore->rules( $filter_array ) );
         $stdoutarray['zone protection calc'] = $stdoutarray['zone protection']."/".$stdoutarray['security rules enabled'];
@@ -1350,9 +1342,9 @@ class DeviceGroup
 
         //User-ID
         $stdoutarray['user id'] = count( $sub_ruleStore->rules( $generalFilter_allow."!(user is.any)" ) );
-        $stdoutarray['user id calc'] = $stdoutarray['user id']."/".$ruleForCalculation;
+        $stdoutarray['user id calc'] = $stdoutarray['user id']."/".$stdoutarray['security rules'];
         if( $ruleForCalculation !== 0 )
-            $stdoutarray['user id percentage'] = floor( ( $stdoutarray['user id'] / $ruleForCalculation ) * 100 );
+            $stdoutarray['user id percentage'] = floor( ( $stdoutarray['user id'] / $stdoutarray['security rules'] ) * 100 );
         else
             $stdoutarray['user id percentage'] = 0;
         //Service/Port
@@ -1464,7 +1456,8 @@ class DeviceGroup
             $stdoutarray['fb adoption percentage'] = 0;
 
         //Data Filtering
-        $stdoutarray['data visibility'] = count( $sub_ruleStore->rules( $generalFilter_allow."(secprof data-profile.is.set)" ) );
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "df is.visibility" );
+        $stdoutarray['data visibility'] = count( $sub_ruleStore->rules( $filter_array ) );
         $stdoutarray['data visibility calc'] = $stdoutarray['data visibility']."/".$ruleForCalculation;
         if( $ruleForCalculation !== 0 )
             $stdoutarray['data visibility percentage'] = floor( ( $stdoutarray['data visibility'] / $ruleForCalculation ) * 100 );
@@ -1473,8 +1466,8 @@ class DeviceGroup
         $stdoutarray['data best-practice'] = "NOT available";
         //--
         //--
-        $stdoutarray['data adoption'] = "NOT available";
-        $stdoutarray['data adoption'] = count( $sub_ruleStore->rules( $generalFilter_allow."(secprof data-profile.is.set)" ) );
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "df is.adoption" );
+        $stdoutarray['data adoption'] = count( $sub_ruleStore->rules( $filter_array ) );
         $stdoutarray['data adoption calc'] = $stdoutarray['data adoption']."/".$ruleForCalculation;
         if( $ruleForCalculation !== 0 )
             $stdoutarray['data adoption percentage'] = floor( ( $stdoutarray['data adoption'] / $ruleForCalculation ) * 100 );

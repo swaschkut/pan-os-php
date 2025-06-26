@@ -678,7 +678,11 @@ class ServiceGroup
             {
                 if( array_key_exists($serial, $grpArray) )
                 {
-                    #mwarning("servicegroup with name: " . $object->name() . " is added as subgroup to servicegroup: " . $this->name() . ", you should review your XML config file", $object->xmlroot, false);
+                    mwarning("servicegroup with name: " . $this->name() . " is added as subgroup to itself, you should review your XML config file", $this->xmlroot, false, false);
+                    mwarning("servicegroup with name: " . $object->name() . " is added as subgroup to servicegroup: " . $this->name() . ", you should review your XML config file", $object->xmlroot, false, false);
+                    PH::print_stdout( "-------------");
+
+                    continue;
                     #return $ret;
                 }
                 else

@@ -506,7 +506,7 @@ class PanoramaConf
         //
         // Shared address objects extraction
         //
-        $tmp = DH::findFirstElement('address', $this->sharedroot);
+        $tmp = DH::findFirstElementorCreate('address', $this->sharedroot);
         if( $tmp !== FALSE )
             $this->addressStore->load_addresses_from_domxml($tmp);
         // end of address extraction
@@ -514,7 +514,7 @@ class PanoramaConf
         //
         // Extract address groups
         //
-        $tmp = DH::findFirstElement('address-group', $this->sharedroot);
+        $tmp = DH::findFirstElementorCreate('address-group', $this->sharedroot);
         if( $tmp !== FALSE )
             $this->addressStore->load_addressgroups_from_domxml($tmp);
         // End of address groups extraction
@@ -2085,12 +2085,12 @@ class PanoramaConf
             $stdoutarray['log at end percentage'] = floor(( $stdoutarray['log at end'] / $stdoutarray['security rules enabled'] ) * 100 );
         else
             $stdoutarray['log at end percentage'] = 0;
-        $stdoutarray['log at end not start'] = count( $sub_ruleStore->rules( $generalFilter."(log at.end) and !(log at.start)" ) );
-        $stdoutarray['log at end not start calc'] = $stdoutarray['log at end not start']."/".$stdoutarray['security rules enabled'];
+        $stdoutarray['log at not start'] = count( $sub_ruleStore->rules( $generalFilter." !(log at.start)" ) );
+        $stdoutarray['log at not start calc'] = $stdoutarray['log at not start']."/".$stdoutarray['security rules enabled'];
         if( $stdoutarray['security rules enabled'] !== 0 )
-            $stdoutarray['log at end not start percentage'] = floor(( $stdoutarray['log at end not start'] / $stdoutarray['security rules enabled'] ) * 100 );
+            $stdoutarray['log at not start percentage'] = floor(( $stdoutarray['log at not start'] / $stdoutarray['security rules enabled'] ) * 100 );
         else
-            $stdoutarray['log at end not start percentage'] = 0;
+            $stdoutarray['log at not start percentage'] = 0;
 
         //Log Forwarding Profiles
         $stdoutarray['log prof set'] = count( $sub_ruleStore->rules( $generalFilter."(logprof is.set)" ) );
@@ -2101,7 +2101,7 @@ class PanoramaConf
             $stdoutarray['log prof set percentage'] = 0;
 
         //Wildfire Analysis Profiles
-        $filter_array = array('query' => $generalFilter."(secprof has.from.query subquery1)", 'subquery1' => "wf is.visibility" );
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "wf is.visibility" );
         $stdoutarray['wf visibility'] = count( $sub_ruleStore->rules( $filter_array ) );
         $stdoutarray['wf visibility calc'] = $stdoutarray['wf visibility']."/".$ruleForCalculation;
         if( $ruleForCalculation !== 0 )
@@ -2109,7 +2109,7 @@ class PanoramaConf
         else
             $stdoutarray['wf visibility percentage'] = 0;
         //--
-        $filter_array = array('query' => $generalFilter."(secprof has.from.query subquery1)", 'subquery1' => "wf is.best-practice" );
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "wf is.best-practice" );
         $stdoutarray['wf best-practice'] = count( $sub_ruleStore->rules( $filter_array ) );
         $stdoutarray['wf best-practice calc'] = $stdoutarray['wf best-practice']."/".$ruleForCalculation;
         if( $ruleForCalculation !== 0 )
@@ -2117,7 +2117,7 @@ class PanoramaConf
         else
             $stdoutarray['wf best-practice percentage'] = 0;
         //--
-        $filter_array = array('query' => $generalFilter."(secprof has.from.query subquery1)", 'subquery1' => "wf is.adoption" );
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "wf is.adoption" );
         $stdoutarray['wf adoption'] = count( $sub_ruleStore->rules( $filter_array ) );
         $stdoutarray['wf adoption calc'] = $stdoutarray['wf adoption']."/".$ruleForCalculation;
         if( $ruleForCalculation !== 0 )
@@ -2144,9 +2144,9 @@ class PanoramaConf
 
         //User-ID
         $stdoutarray['user id'] = count( $sub_ruleStore->rules( $generalFilter_allow."!(user is.any)" ) );
-        $stdoutarray['user id calc'] = $stdoutarray['user id']."/".$ruleForCalculation;
+        $stdoutarray['user id calc'] = $stdoutarray['user id']."/".$stdoutarray['security rules'];
         if( $ruleForCalculation !== 0 )
-            $stdoutarray['user id percentage'] = floor( ( $stdoutarray['user id'] / $ruleForCalculation ) * 100 );
+            $stdoutarray['user id percentage'] = floor( ( $stdoutarray['user id'] / $stdoutarray['security rules'] ) * 100 );
         else
             $stdoutarray['user id percentage'] = 0;
         //Service/Port
@@ -2258,16 +2258,16 @@ class PanoramaConf
             $stdoutarray['fb adoption percentage'] = 0;
 
         //Data Filtering
-        $stdoutarray['data visibility'] = count( $sub_ruleStore->rules( $generalFilter_allow."(secprof data-profile.is.set)" ) );
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "df is.visibility" );
+        $stdoutarray['data visibility'] = count( $sub_ruleStore->rules( $filter_array ) );
         $stdoutarray['data visibility calc'] = $stdoutarray['data visibility']."/".$ruleForCalculation;
         if( $ruleForCalculation !== 0 )
             $stdoutarray['data visibility percentage'] = floor( ( $stdoutarray['data visibility'] / $ruleForCalculation ) * 100 );
         else
             $stdoutarray['data visibility percentage'] = 0;
 
-        $stdoutarray['data best-practice'] = "NOT available";
-        //--
-        $stdoutarray['data adoption'] = count( $sub_ruleStore->rules( $generalFilter_allow."(secprof data-profile.is.set)" ) );
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "df is.adoption" );
+        $stdoutarray['data adoption'] = count( $sub_ruleStore->rules( $filter_array ) );
         $stdoutarray['data adoption calc'] = $stdoutarray['data adoption']."/".$ruleForCalculation;
         if( $ruleForCalculation !== 0 )
             $stdoutarray['data adoption percentage'] = floor( ( $stdoutarray['data adoption'] / $ruleForCalculation ) * 100 );
@@ -2420,7 +2420,7 @@ class PanoramaConf
         $percentageArray['visibility'] = $percentageArray_visibility;
 
         $percentageArray_best_practice = array();
-        $percentageArray_best_practice['Logging'] = $stdoutarray['log at end not start percentage'];
+        $percentageArray_best_practice['Logging'] = $stdoutarray['log at not start percentage'];
         #$percentageArray_best_practice['Log Forwarding Profiles'] = $stdoutarray['log prof set percentage'];
 
         $percentageArray_best_practice['Wildfire Analysis Profiles'] = $stdoutarray['wf best-practice percentage'];
@@ -2520,9 +2520,9 @@ class PanoramaConf
             $stdoutarray['app id percentage'] = 0;
         $percentageArray_adoption['App-ID'] = $stdoutarray['app id percentage'];
 
-        $stdoutarray['user id calc'] =  $stdoutarray['user id'] ."/". $ruleForCalculation;
+        $stdoutarray['user id calc'] =  $stdoutarray['user id'] ."/". $stdoutarray['security rules'];
         if( $ruleForCalculation !== 0 )
-            $stdoutarray['user id percentage'] = floor( ( $stdoutarray['user id'] / $ruleForCalculation ) * 100 );
+            $stdoutarray['user id percentage'] = floor( ( $stdoutarray['user id'] / $stdoutarray['security rules'] ) * 100 );
         else
             $stdoutarray['user id percentage'] = 0;
         $percentageArray_adoption['User-ID'] = $stdoutarray['user id percentage'];
@@ -2721,12 +2721,12 @@ class PanoramaConf
 
 
         $percentageArray_best_practice = array();
-        $stdoutarray['log at end not start calc'] = $stdoutarray['log at end not start'] ."/". $stdoutarray['security rules enabled'];
+        $stdoutarray['log at not start calc'] = $stdoutarray['log at not start'] ."/". $stdoutarray['security rules enabled'];
         if( $stdoutarray['security rules enabled'] !== 0 )
-            $stdoutarray['log at end not start percentage'] = floor(( $stdoutarray['log at end not start'] / $stdoutarray['security rules enabled'] ) * 100 );
+            $stdoutarray['log at not start percentage'] = floor(( $stdoutarray['log at not start'] / $stdoutarray['security rules enabled'] ) * 100 );
         else
-            $stdoutarray['log at end not start percentage'] = 0;
-        $percentageArray_best_practice['Logging'] = $stdoutarray['log at end not start percentage'];
+            $stdoutarray['log at not start percentage'] = 0;
+        $percentageArray_best_practice['Logging'] = $stdoutarray['log at not start percentage'];
         #$percentageArray_best_practice['Log Forwarding Profiles'] = $stdoutarray['log prof set percentage'];
 
         $stdoutarray['wf best-practice calc'] = $stdoutarray['wf best-practice'] ."/". $ruleForCalculation;

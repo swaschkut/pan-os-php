@@ -861,13 +861,16 @@ SecurityProfileCallContext::$supportedActions[] = array(
                             $stringFileType = " - filetype:'". implode( ",", $rule->filetype )."'";
                         $stringPacketCapture = "";
                         if( $rule->packetCapture() !== null )
-                            $stringPacketCapture = " - packetCapture:'".$rule->packetCapture();
+                            $stringPacketCapture = " - packetCapture:'".$rule->packetCapture()."'";
                         $stringCategory = "";
                         if( $rule->category() !== null )
                             $stringCategory = " - category:'".$rule->category()."'";
                         $stringHost = "";
                         if( $rule->host() !== null )
                             $stringHost = " - host:'".$rule->host()."'";
+                        $stringThreatName = "";
+                        if( $rule->threatname !== null )
+                            $stringThreatName = " - threat-name:'".$rule->threatName()."'";
                         $stringAction = "";
                         if( $rule->action() !== null )
                             $stringAction = " - action:'".$rule->action()."'";
@@ -878,7 +881,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         if( $rule->analysis() !== null )
                             $stringAnalysis = " - analysis:'".$rule->analysis()."'";
 
-                        $tmp_string = "'".$rule->name()."' | ".$stringSeverity.$stringAction.$stringApplication.$stringFileType.$stringPacketCapture.$stringCategory.$stringHost.$stringDirection.$stringAnalysis;
+                        $tmp_string = "'".$rule->name()."' | ".$stringSeverity.$stringThreatName.$stringAction.$stringApplication.$stringFileType.$stringPacketCapture.$stringCategory.$stringHost.$stringDirection.$stringAnalysis;
                         if( get_class($rule ) == "ThreatPolicySpyware" )
                         {
                             if( !$rule->spyware_rule_best_practice() && $bestPractice )
@@ -1503,8 +1506,13 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         $tmp_array[] = "Alert (".$countAlert.")";
                         $tmp_array[] = "Block (".$countBlock.")";
                         $tmp_array[] = "------------------------";
-                        //Todo: get BP Json URL credentials BP block as Array
-                        $block_categories = array('command-and-control','grayware','malware','phishing','ransomware','scanning-activity');
+
+                        $check_array = $object->url_siteaccess_bp_visibility_JSON( "bp", "url" );
+                        if( isset($check_array[0]['type']) )
+                            $block_categories = $check_array[0]['type'];
+                        else
+                            $block_categories = array('command-and-control','compromised-website','grayware','malware','phishing','ransomware','scanning-activity');
+
                         $notBlock = array();
                         foreach( $block_categories as $block_category )
                         {
@@ -1533,8 +1541,13 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         $tmp_array[] = "Alert (".$countAlertcredential.")";
                         $tmp_array[] = "Block (".$countBlockcredential.")";
                         $tmp_array[] = "------------------------";
-                        //Todo: get BP Json URL credentials BP block as Array
-                        $block_categories = array('command-and-control','grayware','malware','phishing','ransomware','scanning-activity');
+
+                        $check_array = $object->url_siteaccess_bp_visibility_JSON( "bp", "url" );
+                        if( isset($check_array[0]['type']) )
+                            $block_categories = $check_array[0]['type'];
+                        else
+                            $block_categories = array('command-and-control','compromised-website','grayware','malware','phishing','ransomware','scanning-activity');
+
                         $notBlock = array();
                         foreach( $block_categories as $block_category )
                         {
@@ -1573,10 +1586,19 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     {
                         //URL detail visibility
                         $tmp_array = array();
-                        if( empty($object->allow) )
+
+                        $sanitized_action = $object->allow;
+                        foreach( $sanitized_action as $key => $url_category)
+                        {
+                            $custom_url_category_obj = $object->owner->owner->customURLProfileStore->find($url_category);
+                            if( $custom_url_category_obj !== NULL )
+                                unset( $sanitized_action[$key] );
+                        }
+
+                        if( empty($sanitized_action) )
                             $tmp_array[] = "yes";
                         else
-                            $tmp_array[] = 'ALLOW: "set all action to alert"';
+                            $tmp_array[] = 'ALLOW: "set all pre-defined URL-category action to alert"';
 
                         $lines .= $context->encloseFunction($tmp_array);
                     }
@@ -1586,10 +1608,19 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     {
                         //<th>URL credentials</th>
                         $tmp_array = array();
-                        if( empty($object->allow_credential) )
+
+                        $sanitized_action = $object->allow_credential;
+                        foreach( $sanitized_action as $key => $url_category)
+                        {
+                            $custom_url_category_obj = $object->owner->owner->customURLProfileStore->find($url_category);
+                            if( $custom_url_category_obj !== NULL )
+                                unset( $sanitized_action[$key] );
+                        }
+
+                        if( empty($sanitized_action) )
                             $tmp_array[] = "yes";
                         else
-                            $tmp_array[] = 'ALLOW: "set all action to alert"';
+                            $tmp_array[] = 'ALLOW: "set all pre-defined URL-category action to alert"';
 
                         $lines .= $context->encloseFunction($tmp_array);
                     }
@@ -2213,7 +2244,8 @@ SecurityProfileCallContext::$supportedActions['spyware.best-practice-set'] = arr
                         if ($tmp !== FALSE)
                         {
                             if( $hasDNSlicense )
-                                $tmp->textContent = "single-packet";
+                                #$tmp->textContent = "single-packet";
+                                $tmp->textContent = "extended-packet";
                             else
                                 $tmp->textContent = "disable";
                         }
@@ -2348,33 +2380,37 @@ SecurityProfileCallContext::$supportedActions['spyware.alert-only-set'] = array(
         $sp_severity_default = array( "any", "critical", "high", "medium", "low", "informational" );
         $result = array_diff($sp_severity_default, $sp_severity);
 
-        if( !empty($result) )
+        if( !in_array("any", $sp_severity) )
         {
-            if( in_array("any", $result) )
+            if( !empty($result) )
             {
-                foreach( $result as $rule )
+                if( in_array("any", $result) )
                 {
-                    if( $rule == "any" )
-                        continue;
+                    foreach( $result as $rule )
+                    {
+                        if( $rule == "any" )
+                            continue;
 
 
-                    $threadPolicy_obj = new ThreatPolicySpyware( $rule, $object);
-                    $threadPolicy_obj->type = "ThreatPolicySpyware";
+                        $threadPolicy_obj = new ThreatPolicySpyware( $rule, $object);
+                        $threadPolicy_obj->type = "ThreatPolicySpyware";
 
-                    if( $rule == "critical" || $rule == "high" || $rule == "medium" )
-                        $threadPolicy_obj->action = "alert";
-                    elseif( $rule == "low" || $rule == "informational" )
-                        $threadPolicy_obj->action = "default";
+                        if( $rule == "critical" || $rule == "high" || $rule == "medium" )
+                            $threadPolicy_obj->action = "alert";
+                        elseif( $rule == "low" || $rule == "informational" )
+                            $threadPolicy_obj->action = "default";
 
-                    $object->rules_obj[] = $threadPolicy_obj;
-                    $threadPolicy_obj->addReference( $object );
+                        $object->rules_obj[] = $threadPolicy_obj;
+                        $threadPolicy_obj->addReference( $object );
 
-                    $object->owner->owner->ThreatPolicyStore->add($threadPolicy_obj);
+                        $object->owner->owner->ThreatPolicyStore->add($threadPolicy_obj);
 
-                    $threadPolicy_obj->newThreatPolicyXML($object->xmlroot, $rule, $rule, $threadPolicy_obj->action);
+                        $threadPolicy_obj->newThreatPolicyXML($object->xmlroot, $rule, $rule, $threadPolicy_obj->action);
+                    }
                 }
             }
         }
+
 
         $hasDNSlicense = $context->arguments['has-DNS-license'];
         foreach( $object->dns_rules_obj as $rule )
@@ -2589,6 +2625,8 @@ SecurityProfileCallContext::$supportedActions['vulnerability.alert-only-set'] = 
         if (get_class($object) !== "VulnerabilityProfile")
             return null;
 
+        $sendAPI = false;
+
         $tmp_mlav_engine = DH::findFirstElement('cloud-inline-analysis', $object->xmlroot);
         if( $object->owner->owner->version >= 110 )
         {
@@ -2596,6 +2634,7 @@ SecurityProfileCallContext::$supportedActions['vulnerability.alert-only-set'] = 
                 $tmp_mlav_engine = DH::findFirstElementOrCreate('cloud-inline-analysis', $object->xmlroot);
 
             $tmp_mlav_engine->textContent = "yes";
+            $sendAPI = true;
         }
 
 
@@ -2620,6 +2659,8 @@ SecurityProfileCallContext::$supportedActions['vulnerability.alert-only-set'] = 
 
                 $xmlElement = DH::importXmlStringOrDie($object->xmlroot->ownerDocument, $xmlString2);
                 $tmp_mlav_engine->appendChild($xmlElement);
+
+                $sendAPI = true;
             }
 
             $action_other_then_allow_alert = false;
@@ -2635,6 +2676,8 @@ SecurityProfileCallContext::$supportedActions['vulnerability.alert-only-set'] = 
                 {
                     $action_xmlNode->textContent = "alert";
                     $object->additional['mica-engine-vulnerability-enabled'][$name]['inline-policy-action'] = "alert";
+
+                    $sendAPI = true;
                 }
                 elseif( $action_xmlNode->textContent == "alert" )
                 {
@@ -2650,6 +2693,8 @@ SecurityProfileCallContext::$supportedActions['vulnerability.alert-only-set'] = 
             {
                 $tmp_mlav_engine = DH::findFirstElementOrCreate('cloud-inline-analysis', $object->xmlroot);
                 $tmp_mlav_engine->textContent = "yes";
+
+                $sendAPI = true;
             }
         }
 
@@ -2675,6 +2720,8 @@ SecurityProfileCallContext::$supportedActions['vulnerability.alert-only-set'] = 
                         $xmlString = '<alert/>';
                         $xmlElement = DH::importXmlStringOrDie($rule->xmlroot->ownerDocument, $xmlString);
                         $tmp->appendChild($xmlElement);
+
+                        $sendAPI = true;
                     }
                 }
             }
@@ -2682,34 +2729,75 @@ SecurityProfileCallContext::$supportedActions['vulnerability.alert-only-set'] = 
         $sp_severity_default = array( "any", "critical", "high", "medium", "low", "informational" );
         $result = array_diff($sp_severity_default, $sp_severity);
 
-        if( !empty($result) )
+        if( !in_array("any", $sp_severity) )
         {
-            if( in_array("any", $result) )
+            if( !empty($result) )
             {
-                foreach ($result as $rule)
+                if( in_array("any", $result) )
                 {
-                    if ($rule == "any")
-                        continue;
+                    foreach ($result as $rule)
+                    {
+                        if ($rule == "any")
+                            continue;
 
-                    $threadPolicy_obj = new ThreatPolicyVulnerability($rule, $object);
-                    $threadPolicy_obj->type = "ThreatPolicyVulnerability";
+                        $threadPolicy_obj = new ThreatPolicyVulnerability($rule, $object);
+                        $threadPolicy_obj->type = "ThreatPolicyVulnerability";
 
-                    if( $rule == "critical" || $rule == "high" || $rule == "medium" )
-                        $threadPolicy_obj->action = "alert";
-                    elseif( $rule == "low" || $rule == "informational" )
-                        $threadPolicy_obj->action = "default";
+                        if( $rule == "critical" || $rule == "high" || $rule == "medium" )
+                            $threadPolicy_obj->action = "alert";
+                        elseif( $rule == "low" || $rule == "informational" )
+                            $threadPolicy_obj->action = "default";
 
-                    $object->rules_obj[] = $threadPolicy_obj;
-                    $threadPolicy_obj->addReference($object);
+                        $object->rules_obj[] = $threadPolicy_obj;
+                        $threadPolicy_obj->addReference($object);
 
-                    $object->owner->owner->ThreatPolicyStore->add($threadPolicy_obj);
+                        $object->owner->owner->ThreatPolicyStore->add($threadPolicy_obj);
 
-                    $threadPolicy_obj->newThreatPolicyXML($object->xmlroot, $rule, $rule, $threadPolicy_obj->action);
+                        $threadPolicy_obj->newThreatPolicyXML($object->xmlroot, $rule, $rule, $threadPolicy_obj->action);
+
+                        $sendAPI = true;
+                    }
+                }
+            }
+            foreach( $sp_severity_default as $severity )
+            {
+                if ($severity == "any")
+                    continue;
+
+                $object->vulnerability_rules_coverage();
+                if( !isset($object->rule_coverage[$severity]['any']) )
+                {
+                    $host_types = array("client", "server");
+                    foreach($host_types as $host_type)
+                    {
+                        if( !isset($object->rule_coverage[$severity][$host_type]))
+                        {
+                            $threadPolicy_obj = new ThreatPolicyVulnerability($severity."_".$host_type, $object);
+                            $threadPolicy_obj->type = "ThreatPolicyVulnerability";
+
+                            if( $severity == "critical" || $severity == "high" || $severity == "medium" )
+                                $threadPolicy_obj->action = "alert";
+                            elseif( $severity == "low" || $severity == "informational" )
+                                $threadPolicy_obj->action = "default";
+
+                            $threadPolicy_obj->host = $host_type;
+
+                            $object->rules_obj[] = $threadPolicy_obj;
+                            $threadPolicy_obj->addReference($object);
+
+                            $object->owner->owner->ThreatPolicyStore->add($threadPolicy_obj);
+
+                            $threadPolicy_obj->newThreatPolicyXML($object->xmlroot, $severity."_".$host_type, $severity, $threadPolicy_obj->action, $threadPolicy_obj->host);
+
+                            $sendAPI = true;
+                        }
+                    }
                 }
             }
         }
 
-        if( $context->isAPI )
+
+        if( $sendAPI && $context->isAPI )
         {
             $object->API_sync();
         }
@@ -2732,19 +2820,32 @@ SecurityProfileCallContext::$supportedActions['url.alert-only-set'] = array(
                 if( $allow_node->nodeType != XML_ELEMENT_NODE )
                     continue;
 
+                $tmp_name = $allow_node->textContent;
+
+                $custom_url_category_obj = $object->owner->owner->customURLProfileStore->find($tmp_name);
+                if( $custom_url_category_obj !== NULL )
+                    continue;
+
+
                 $clone_node = $allow_node->cloneNode(true);
                 $alert_xmlnode->appendChild($clone_node);
                 $allow_xmlnode->removeChild($allow_node);
-                $tmp_name = $allow_node->textContent;
+
 
                 $key = array_search ($tmp_name, $object->allow);
                 unset($object->allow[$key]);
             }
-            $object->xmlroot->removeChild($allow_xmlnode);
+            if( empty($object->allow) )
+                $object->xmlroot->removeChild($allow_xmlnode);
         }
 
         foreach( $object->allow as $allow )
         {
+            $custom_url_category_obj = $object->owner->owner->customURLProfileStore->find($allow);
+            if( $custom_url_category_obj !== NULL )
+                continue;
+
+
             $object->alert[] = $allow;
 
             $xmlString = '<member>'.$allow.'</member>';
@@ -2763,19 +2864,29 @@ SecurityProfileCallContext::$supportedActions['url.alert-only-set'] = array(
                 if( $allow_node->nodeType != XML_ELEMENT_NODE )
                     continue;
 
+                $tmp_name = $allow_node->textContent;
+
+                $custom_url_category_obj = $object->owner->owner->customURLProfileStore->find($tmp_name);
+                if( $custom_url_category_obj !== NULL )
+                    continue;
+
                 $clone_node = $allow_node->cloneNode(true);
                 $alert_credential_xmlnode->appendChild($clone_node);
                 $allow_credential_xmlnode->removeChild($allow_node);
-                $tmp_name = $allow_node->textContent;
 
                 $key = array_search ($tmp_name, $object->allow_credential);
                 unset($object->allow_credential[$key]);
             }
-            $credential_xmlnode->removeChild($allow_credential_xmlnode);
+            if( empty($object->allow_credential) )
+                $credential_xmlnode->removeChild($allow_credential_xmlnode);
         }
 
         foreach( $object->allow_credential as $allow )
         {
+            $custom_url_category_obj = $object->owner->owner->customURLProfileStore->find($allow);
+            if( $custom_url_category_obj !== NULL )
+                continue;
+
             $object->alert_credential[] = $allow;
 
             $xmlString = '<member>'.$allow.'</member>';
@@ -2791,6 +2902,17 @@ SecurityProfileCallContext::$supportedActions['url.alert-only-set'] = array(
 
             $xmlnode = DH::findFirstElementOrCreate("cloud-inline-cat", $object->xmlroot);
             $xmlnode->textContent = "yes";
+        }
+
+        $credential_xmlnode = DH::findFirstElementOrCreate("credential-enforcement", $object->xmlroot);
+        $mode_credential_xmlnode = DH::findFirstElementOrCreate("mode", $credential_xmlnode);
+        $mode_child_xmlnode = DH::firstChildElement($mode_credential_xmlnode);
+        if( $mode_child_xmlnode->nodeName == "disabled" )
+        {
+            DH::findFirstElementOrCreate("ip-user", $mode_credential_xmlnode);
+            $logseverity_credential_xmlnode = DH::findFirstElementOrCreate("log-severity", $credential_xmlnode);
+            $logseverity_credential_xmlnode->textContent = "medium";
+            $mode_credential_xmlnode->removeChild($mode_child_xmlnode);
         }
 
         if( $context->isAPI )
@@ -2811,7 +2933,13 @@ SecurityProfileCallContext::$supportedActions['url.best-practice-set'] = array(
 
 
         $alert_xmlnode = DH::findFirstElementOrCreate("alert", $object->xmlroot);
-        $block_categories = array('command-and-control','grayware','malware','phishing','ransomware','scanning-activity');
+
+        $check_array = $object->url_siteaccess_bp_visibility_JSON( "bp", "url" );
+        if( isset($check_array[0]['type']) )
+            $block_categories = $check_array[0]['type'];
+        else
+            $block_categories = array('command-and-control','compromised-website','grayware','malware','phishing','ransomware','scanning-activity');
+
         $block_xmlnode = DH::findFirstElementOrCreate("block", $object->xmlroot);
         foreach( $block_categories as $block_category )
         {

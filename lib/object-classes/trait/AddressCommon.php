@@ -551,14 +551,25 @@ trait AddressCommon
                     (get_class($objectRef) == "IKEGateway") or
                     (get_class($objectRef) == "GPPortal") or
                     (get_class($objectRef) == "GPGateway") or
-                    (get_class($objectRef) == "StaticRoute")
+                    (get_class($objectRef) == "StaticRoute") or
+
+                    (get_class($objectRef) == "VirtualRouter") or
+                    (get_class($objectRef) == "LogicalRouter")
                 )
                 {
 
                     if( isset($objectRef->owner->owner) && $objectRef->owner->owner !== null )
                     {
-                        $class = $objectRef->owner->owner;
-                        $classTxt = get_class($class);
+                        if( get_class($objectRef) == "StaticRoute" )
+                        {
+                            $class = $objectRef->owner->owner->owner;
+                            $classTxt = get_class($class);
+                        }
+                        else
+                        {
+                            $class = $objectRef->owner->owner;
+                            $classTxt = get_class($class);
+                        }
 
                         if( $classTxt == "PANConf" )
                         {
@@ -581,7 +592,7 @@ trait AddressCommon
                         $tmp_store = $objectRef->owner->owner->owner->addressStore;
                     else
                     {
-                        PH::print_stdout( "- SKIP: not yet possible on ".get_class($objectRef) );
+                        PH::print_stdout( "- SKIP: not yet implemented on ".get_class($objectRef) );
                         $success = false;
                         $success2 = false;
                         exit();
@@ -631,6 +642,7 @@ trait AddressCommon
 
             if( $success2 )
             {
+                #DH::DEBUGprintDOMDocument($objectRef->xmlroot);
                 if( $displayOutput )
                     PH::print_stdout( $outputPadding . "- replacing in {$objectRef->toString()}" );
                 if( $apiMode )

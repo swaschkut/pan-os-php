@@ -94,6 +94,9 @@ trait SHAREDNEW
     public function truncate_names($longString)
     {
         global $source;
+        if( $longString == null )
+            return $longString;
+
         $variable = strlen($longString);
 
         if( $variable < 63 )
@@ -120,21 +123,23 @@ trait SHAREDNEW
 
     public function normalizeNames($nameToNormalize)
     {
-        $nameToNormalize = trim($nameToNormalize);
-        //$nameToNormalize = preg_replace('/(.*) (&#x2013;) (.*)/i', '$0 --> $1 - $3', $nameToNormalize);
-        //$nameToNormalize = preg_replace("/&#x2013;/", "-", $nameToNormalize);
-        $nameToNormalize = preg_replace("/[\/]+/", "_", $nameToNormalize);
-        $nameToNormalize = preg_replace("/[,]+/", "_", $nameToNormalize);
-        $nameToNormalize = preg_replace("/[^a-zA-Z0-9-_. *]+/", "", $nameToNormalize);
-        $nameToNormalize = preg_replace("/[\s]+/", " ", $nameToNormalize);
+        if( $nameToNormalize !== null )
+        {
+            $nameToNormalize = trim($nameToNormalize);
+            //$nameToNormalize = preg_replace('/(.*) (&#x2013;) (.*)/i', '$0 --> $1 - $3', $nameToNormalize);
+            //$nameToNormalize = preg_replace("/&#x2013;/", "-", $nameToNormalize);
+            $nameToNormalize = preg_replace("/[\/]+/", "_", $nameToNormalize);$nameToNormalize = preg_replace("/[,]+/", "_", $nameToNormalize);
+            $nameToNormalize = preg_replace("/[^a-zA-Z0-9-_. *]+/", "", $nameToNormalize);
+            $nameToNormalize = preg_replace("/[\s]+/", " ", $nameToNormalize);
 
-        $nameToNormalize = preg_replace("/^[-]+/", "", $nameToNormalize);
-        $nameToNormalize = preg_replace("/^[_]+/", "", $nameToNormalize);
+            $nameToNormalize = preg_replace("/^[-]+/", "", $nameToNormalize);
+            $nameToNormalize = preg_replace("/^[_]+/", "", $nameToNormalize);
 
-        $nameToNormalize = preg_replace('/\(|\)/', '', $nameToNormalize);
-        $nameToNormalize = preg_replace("/[\*]+/", "", $nameToNormalize);
+            $nameToNormalize = preg_replace('/\(|\)/', '', $nameToNormalize);
+            $nameToNormalize = preg_replace("/[\*]+/", "", $nameToNormalize);
 
-        $nameToNormalize = trim( $nameToNormalize );
+            $nameToNormalize = trim( $nameToNormalize );
+        }
 
         return $nameToNormalize;
     }

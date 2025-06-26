@@ -141,3 +141,7 @@ IPsectunnelCallContext::prepareSupportedActions();
 require_once("GREtunnelCallContext.php");
 require_once "actions-gretunnel.php";
 GREtunnelCallContext::prepareSupportedActions();
+
+require_once("GPGatewaytunnelCallContext.php");
+require_once "actions-gpgatewaytunnel.php";
+GPGatewaytunnelCallContext::prepareSupportedActions();

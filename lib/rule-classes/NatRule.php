@@ -842,7 +842,11 @@ class NatRule extends Rule
         if( $this->snatinterface === $newSNATInterface )
             return FALSE;
 
-        $this->snatinterface = $newSNATInterface->name();
+        if( is_object($newSNATInterface) )
+            $this->snatinterface = $newSNATInterface->name();
+        else
+            $this->snatinterface = $newSNATInterface;
+
 
         if( get_class( $this->owner->owner->owner ) != "PanoramaConf" )
         {

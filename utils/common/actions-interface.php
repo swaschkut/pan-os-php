@@ -359,106 +359,6 @@ InterfaceCallContext::$supportedActions['display-migration-warning'] = array(
     }
 );
 
-InterfaceCallContext::$supportedActions['custom-manipulation'] = array(
-    'name' => 'custom-manipulation',
-    'MainFunction' => function (InterfaceCallContext $context) {
-        $object = $context->object;
-
-        /** @var EthernetInterface $object */
-        if( strpos($object->name(), "ethernet1/2.") !== FALSE )
-        {
-            if( strpos($object->description(), "fixed") !== FALSE )
-                return;
-
-            PH::print_stdout( "name: ".$object->name() );
-
-            $ip4Addresses = $object->getLayer3IPv4Addresses();
-            foreach( $ip4Addresses as $ip4Address )
-            {
-                PH::print_stdout( "ip4: ".$ip4Address );
-
-                $addr_split = explode("/", $ip4Address);
-                $value = $addr_split[0];
-                $mask = $addr_split[1];
-
-                $value_split = explode(".", $value);
-
-                if( $mask == "24" )
-                {
-                    //set forth octet to 254
-                    $value_split[3] = "254";
-                }
-                elseif( $mask == "23" )
-                {
-                    //third octet +1
-                    //set forth octet to 254
-                    $value_split[2] += 1;
-                    $value_split[3] = "254";
-                }
-                elseif( $mask == "22" )
-                {
-                    //third octet +3
-                    //set forth octet to 254
-                    $value_split[2] += 3;
-                    $value_split[3] = "254";
-                }
-                elseif( $mask == "28" )
-                {
-                    //set forth octet +14
-                    $value_split[3] += 14;
-                }
-                elseif( $mask == "29" )
-                {
-                    //set forth octet +6
-                    $value_split[3] += 6;
-                }
-                else
-                {
-                    print "ELSE: ".$mask."\n";
-                    derr("else", null, false);
-                }
-
-                $ip_string = "";
-                foreach( $value_split as $value )
-                {
-                    if( empty($ip_string) )
-                        $ip_string .= $value;
-                    else
-                    {
-                        $ip_string .= ".".$value;
-                    }
-                }
-                $ip_string .= "/".$mask;
-
-                foreach( $object->refrules as $o )
-                {
-                    #print get_class($o)."\n";
-                    #print get_class($o->owner)."\n";
-                    if( get_class($o->owner) == "Zone" )
-                    {
-                        PH::print_stdout( "    " . '  - ' . $o->toString() );
-                        PH::print_stdout( "Zone: " . $o->owner->name() );
-
-                        PH::print_stdout("subintTag: ".$object->tag());
-
-                        /** @var Zone $zone */
-                        $zone = $o->owner;
-                        $zone->setName("vlan".$object->tag());
-                    }
-
-                }
-
-
-                print "final String: ".$ip_string."\n";
-                $object->removeIPv4Address($ip4Address);
-                $object->addIPv4Address($ip_string);
-
-                $object->setDescription("fixed");
-            }
-        }
-    }
-);
-
 InterfaceCallContext::$supportedActions['replace_IPv4_objects_by_value'] = Array(
     'name' => 'replace_IPv4_objects_by_value',
     'MainFunction' => function ( InterfaceCallContext $context )
@@ -466,16 +366,36 @@ InterfaceCallContext::$supportedActions['replace_IPv4_objects_by_value'] = Array
         /** @var EthernetInterface|VlanInterface|TunnelInterface|LoopbackInterface $object */
         $object = $context->object;
 
-        PH::print_stdout( "type: ".$object->type() );
+        /** @var VirtualSystem $vsys */
+        $vsys = $object->importedByVSYS;
 
         if( $object->type == "layer3" )
         {
             foreach( $object->getLayer3IPv4Addresses() as $ip_address )
             {
-                PH::print_stdout( "    - ".htmlspecialchars_decode($ip_address) );
-                if( strpos( $ip_address, "/" ) === FALSE )
+                if( strpos( $ip_address, "." ) === FALSE )
                 {
-                    PH::print_stdout( "object name ".$ip_address." must be found and replace by value" );
+                    $pan_object = $object->owner->owner;
+                    if( isset( $pan_object->owner ) )
+                    {
+                        //Panorama Template
+                        if( get_class($pan_object->owner) == "Template" || get_class($pan_object->owner) == "TemplateStack" )
+                        {
+                            $template_object = $pan_object->owner;
+                            $panorama_object = $template_object->owner;
+                            $address_obj = $panorama_object->addressStore->find($ip_address);
+
+                            $object->replaceIPv4ObjectByValue($context, $address_obj);
+                        }
+                    }
+                    else
+                    {
+                        //NGFW
+                        /** @var Address $address */
+                        $address_obj = $vsys->addressStore->find($ip_address);
+
+                        $object->replaceIPv4ObjectByValue($context, $address_obj);
+                    }
                 }
                 else
                 {
@@ -487,11 +407,29 @@ InterfaceCallContext::$supportedActions['replace_IPv4_objects_by_value'] = Array
         {
             foreach( $object->getIPv4Addresses() as $ip_address )
             {
-                PH::print_stdout( "    - ".htmlspecialchars_decode($ip_address) );
-                if( strpos( $ip_address, "/" ) === FALSE )
+                if( strpos( $ip_address, "." ) === FALSE )
                 {
-                    #$object->removeIPv4Address($ip_address);
-                    PH::print_stdout( "object name ".$ip_address." must be found and replace by value" );
+                    $pan_object = $object->owner->owner;
+                    if( isset( $pan_object->owner ) )
+                    {
+                        //Panorama Template
+                        if( get_class($pan_object->owner) == "Template" || get_class($pan_object->owner) == "TemplateStack" )
+                        {
+                            $template_object = $pan_object->owner;
+                            $panorama_object = $template_object->owner;
+                            $address_obj = $panorama_object->addressStore->find($ip_address);
+
+                            $object->replaceIPv4ObjectByValue( $context, $address_obj );
+                        }
+                    }
+                    else
+                    {
+                        //NGFW
+                        /** @var Address $address */
+                        $address_obj = $vsys->addressStore->find($ip_address);
+
+                        $object->replaceIPv4ObjectByValue( $context, $address_obj );
+                    }
                 }
                 else
                 {
@@ -503,24 +441,46 @@ InterfaceCallContext::$supportedActions['replace_IPv4_objects_by_value'] = Array
 );
 
 InterfaceCallContext::$supportedActions['replace_IPv6_objects_by_value'] = Array(
-    'name' => 'replace_IPv4_objects_by_value',
+    'name' => 'replace_IPv6_objects_by_value',
     'MainFunction' => function ( InterfaceCallContext $context )
     {
         /** @var EthernetInterface|VlanInterface|TunnelInterface|LoopbackInterface $object */
         $object = $context->object;
 
+        /** @var VirtualSystem $vsys */
+        $vsys = $object->importedByVSYS;
 
         if( $object->type == "layer3" )
         {
             foreach( $object->getLayer3IPv6Addresses() as $ip_address )
             {
-                if( strpos( $ip_address, ":" ) !== false )
+                if( strpos( $ip_address, ":" ) === false )
                 {
-                    PH::$JSON_TMP['sub']['object'][$object->name()][$object->type]['ipaddress'][] = $ip_address;
+                    $pan_object = $object->owner->owner;
+                    if( isset( $pan_object->owner ) )
+                    {
+                        //Panorama Template
+                        if( get_class($pan_object->owner) == "Template" || get_class($pan_object->owner) == "TemplateStack" )
+                        {
+                            $template_object = $pan_object->owner;
+                            $panorama_object = $template_object->owner;
+                            $address_obj = $panorama_object->addressStore->find($ip_address);
+
+                            $object->replaceIPv6ObjectByValue($context, $address_obj);
+                        }
+                    }
+                    else
+                    {
+                        //NGFW
+                        /** @var Address $address */
+                        $address_obj = $vsys->addressStore->find($ip_address);
+
+                        $object->replaceIPv6ObjectByValue( $context, $address_obj );
+                    }
                 }
                 else
                 {
-                    PH::$JSON_TMP['sub']['object'][$object->name()][$object->type]['ipaddress'][] = $ip_address;
+                    //valid IPv6 Interface address - nothing to replace
                 }
             }
         }
@@ -528,15 +488,214 @@ InterfaceCallContext::$supportedActions['replace_IPv6_objects_by_value'] = Array
         {
             foreach( $object->getIPv6Addresses() as $ip_address )
             {
-                if( strpos( $ip_address, ":" ) !== false )
+                if( strpos( $ip_address, ":" ) === false )
                 {
-                    PH::$JSON_TMP['sub']['object'][$object->name()][$object->type]['ipaddress'][] = $ip_address;
+                    $pan_object = $object->owner->owner;
+                    if( isset( $pan_object->owner ) )
+                    {
+                        //Panorama Template
+                        if( get_class($pan_object->owner) == "Template" || get_class($pan_object->owner) == "TemplateStack" )
+                        {
+                            $template_object = $pan_object->owner;
+                            $panorama_object = $template_object->owner;
+                            $address_obj = $panorama_object->addressStore->find($ip_address);
+
+                            $object->replaceIPv6ObjectByValue( $context, $address_obj );
+                        }
+                    }
+                    else
+                    {
+                        //NGFW
+                        /** @var Address $address */
+                        $address_obj = $vsys->addressStore->find($ip_address);
+
+                        $object->replaceIPv6ObjectByValue( $context, $address_obj );
+                    }
                 }
                 else
                 {
-                    PH::$JSON_TMP['sub']['object'][$object->name()][$object->type]['ipaddress'][] = $ip_address;
+                    //valid IPv6 Interface address - nothing to replace
                 }
             }
         }
+    }
+);
+
+InterfaceCallContext::$supportedActions['ae-group-set'] = array(
+    'name' => 'ae-group-set',
+    'MainFunction' => function (InterfaceCallContext $context) {
+        $object = $context->object;
+
+        if( get_class($object) !== "EthernetInterface" )
+        {
+            mwarning( "SKIPPED: set AE number is only working Interface of type EthernetInterface. provided: ".get_class($object), null, false );
+            return false;
+        }
+
+        $newAE = $context->arguments['newAE'];
+
+        //Todo: only working for offline config
+        if( $context->isAPI )
+            derr( "changing AE is not supported in API mode" );
+
+        if( $object->type != 'aggregate-group' )
+        {
+            //Todo: swaschkut 20250512
+            //validate if references are available which can cause issues,
+            //there should be no references available, then change type
+            if( count($object->refrules) > 0 )
+            {
+                foreach( $object->refrules as $rule )
+                {
+                    if( get_class($rule) !== "InterfaceContainer" )
+                    {
+                        PH::print_stdout( "    " . '  - ' . $rule->toString() );
+                        mwarning( "SKIPPED: interface Type EthernetInterface found, but change to 'aggreagte-group not possible due to references.", null, false );
+                        return false;
+                    }
+                }
+            }
+
+            if( count( $object->subInterfaces()) > 0 )
+            {
+                mwarning( "SKIPPED: interface Type EthernetInterface found, but interface has sub-interfaces", null, false );
+                return false;
+            }
+
+            $object->type = 'aggregate-group';
+        }
+
+        $tmp_description = $object->description();
+        foreach( $object->xmlroot->childNodes as $child )
+            $object->xmlroot->removeChild($child);
+
+        /** @VAR EthernetInterface $object */
+        $object->setAE($newAE);
+        $object->setDescription( $tmp_description );
+
+    },
+    'args' => array('newAE' => array('type' => 'string', 'default' => '*nodefault*') )
+);
+
+InterfaceCallContext::$supportedActions['type-aggregate-ethernet-set'] = array(
+    'name' => 'type-aggregate-ethernet-set',
+    'MainFunction' => function (InterfaceCallContext $context) {
+        $object = $context->object;
+
+        /** @var EthernetInterface $object */
+
+        /*
+        PH::print_stdout( "    " . '  - ' . $object->toString() );
+        PH::print_stdout( "    " . '  - ' . $object->type() );
+        PH::print_stdout( "    " . '  - ' . get_class($object) );
+        */
+
+        if( get_class($object) !== "EthernetInterface" )
+        {
+            mwarning( "SKIPPED: Interface of type NOT EthernetInterface. provided: ".get_class($object), null, false );
+            return false;
+        }
+
+
+        $newName = $context->arguments['name'];
+        //Todo: validate name - only allowed 'ae' followed by a one or two digit number [1-32]
+
+        $newMainInterface = $object->owner->owner->network->aggregateEthernetIfStore->find($newName);
+        if( $newMainInterface !== null )
+        {
+            mwarning( "Interface: ".$newName." already exists", null, false );
+            return false;
+        }
+
+        //Todo: only working for offline config
+        if( $context->isAPI )
+            derr( "changing to class AggregateEthernetInterface is not supported in API mode" );
+
+
+
+        $vsys_obj = $object->importedByVSYS;
+
+        $newMainInterface = $object->owner->owner->network->aggregateEthernetIfStore->newEthernetIf( $newName );
+        $vsys_obj->importedInterfaces->addInterface($newMainInterface);
+
+        foreach( $object->getLayer3IPv4Addresses() as $ip_address )
+            $newMainInterface->addIPv4Address($ip_address);
+
+        //Todo: update reference of old Main Interface
+
+        if( count($object->refrules) > 0 )
+        {
+            foreach( $object->refrules as $rule )
+            {
+                if( get_class($rule) !== "InterfaceContainer" )
+                    $rule->referencedObjectRenamed( $newMainInterface, $object);
+            }
+        }
+        $vsys_obj->importedInterfaces->removeInterface($object);
+        $object->owner->owner->network->ethernetIfStore->removeEthernetIf($object);
+
+
+        if( count( $object->subInterfaces()) > 0 )
+        {
+            foreach( $object->subInterfaces() as $subinterface )
+            {
+                $newSubInterface = $newMainInterface->addSubInterface($subinterface->tag());
+
+                $vsys_obj->importedInterfaces->addInterface($newSubInterface);
+                $vsys_obj->importedInterfaces->removeInterface($subinterface);
+                foreach( $subinterface->getLayer3IPv4Addresses() as $ip_address )
+                    $newSubInterface->addIPv4Address($ip_address);
+
+                //Todo: update references of old Main subinterfaces
+                if( count($subinterface->refrules) > 0 )
+                {
+                    foreach( $subinterface->refrules as $rule )
+                    {
+                        /** @var StaticRoute $rule */
+                        if( get_class($rule) !== "InterfaceContainer" )
+                            $rule->referencedObjectRenamed( $newSubInterface, $subinterface);
+                    }
+                }
+            }
+        }
+    },
+    'args' => array('name' => array('type' => 'string', 'default' => '*nodefault*') )
+);
+
+InterfaceCallContext::$supportedActions['remove'] = array(
+    'name' => 'remove',
+    'MainFunction' => function (InterfaceCallContext $context) {
+        $object = $context->object;
+
+        /** @var EthernetInterface $object */
+
+        //Todo: only working for offline config
+        if( $context->isAPI )
+            derr( "changing to class AggregateEthernetInterface is not supported in API mode" );
+
+        $newMainInterface = $object->owner->owner->network->ethernetIfStore->find($object->name());
+        if( $newMainInterface === null )
+        {
+            mwarning( "Interface: ".$object->name()." not/no longer available", null, false );
+            return false;
+        }
+
+        $vsys_obj = $object->importedByVSYS;
+
+        if( count($object->refrules) > 0 )
+        {
+            foreach( $object->refrules as $rule )
+            {
+                if( get_class($rule) !== "InterfaceContainer" )
+                {
+                    PH::print_stdout( "    " . '  - ' . $rule->toString() );
+                    mwarning( "SKIPPED: interface can not be removed, because it has references", null, false );
+                    return false;
+                }
+            }
+        }
+
+        $vsys_obj->importedInterfaces->removeInterface($object);
+        $object->owner->owner->network->ethernetIfStore->removeEthernetIf($object);
     }
 );

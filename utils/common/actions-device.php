@@ -2482,7 +2482,7 @@ DeviceCallContext::$supportedActions['sp_spg-create-alert-only-BP'] = array(
             if( $countDG == 0  )
             {
                 #$dg = $context->subSystem->createDeviceGroup( "alert-only" );
-                derr( "NO DG available; please run 'pa_device-edit in=InputConfig.xml out=OutputConfig.xml actions=devicegroup-create:DG-NAME' first", null, false );
+                derr( "NO DG available; please run 'pan-os-php type=device in=InputConfig.xml out=OutputConfig.xml actions=devicegroup-create:DG-NAME' first", null, false );
             }
         }
     },
@@ -2620,7 +2620,7 @@ DeviceCallContext::$supportedActions['sp_spg-create-BP'] = array(
             if( $countDG == 0  )
             {
                 #$dg = $context->subSystem->createDeviceGroup( "alert-only" );
-                derr( "NO DG available; please run 'pa_device-edit in=InputConfig.xml out=OutputConfig.xml actions=devicegroup-create:DG-NAME' first", null, false );
+                derr( "NO DG available; please run 'pan-os-php type=device in=InputConfig.xml out=OutputConfig.xml actions=devicegroup-create:DG-NAME' first", null, false );
             }
         }
     },
@@ -2768,7 +2768,7 @@ DeviceCallContext::$supportedActions['LogForwardingProfile-create-BP'] = array(
             if( $countDG == 0 )
             {
                 #$dg = $context->subSystem->createDeviceGroup( "alert-only" );
-                derr( "NO DG available; please run 'pa_device-edit in=InputConfig.xml out=OutputConfig.xml actions=devicegroup-create:DG-NAME' first", null, false );
+                derr( "NO DG available; please run 'pan-os-php type=device in=InputConfig.xml out=OutputConfig.xml actions=devicegroup-create:DG-NAME' first", null, false );
             }
         }
     },

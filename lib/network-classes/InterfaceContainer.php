@@ -92,8 +92,8 @@ class InterfaceContainer extends ObjRuleContainer
         {
             $tmp = DH::createElement($this->xmlroot, "member", $entry->name());
         }
-
-
+        #PH::print_stdout(get_class($this->owner));
+        #PH::print_stdout($this->owner->name());
     }
 
     /**
@@ -143,7 +143,11 @@ class InterfaceContainer extends ObjRuleContainer
         $this->o[] = $if;
         $if->addReference($this);
 
-        if( get_class( $this->owner ) !== "SecureWebGateway" )
+        if( get_class( $this->owner ) !== "SecureWebGateway" &&
+            get_class( $this->owner ) !== "GPGatewayTunnel" &&
+            get_class( $this->owner ) !== "GreTunnel" &&
+            get_class( $this->owner ) !== "IPsecTunnel"
+        )
         {
             if( $this->xmlroot === null )
             {

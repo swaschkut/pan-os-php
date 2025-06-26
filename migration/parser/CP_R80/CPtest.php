@@ -259,6 +259,9 @@ trait CPtest
         if( ($domain == "Global" || $domain == "Check Point Data") && $type == 'object' )
         {
             $this->sub = $this->pan;
+
+            if( $this->configType == "panos" )
+                $this->sub = $this->template_vsys;
         }
         else
         {
@@ -293,8 +296,10 @@ trait CPtest
                 }
             }
 
+            #PH::print_stdout("configtype: ".$this->configType);
             if( $this->configType == "panos" )
             {
+                #PH::print_stdout("use templatevsys: ".$this->template_vsys->name());
                 $this->sub = $this->template_vsys;
             }
             else

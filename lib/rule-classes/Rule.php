@@ -2222,6 +2222,8 @@ class Rule
 
         if( isset($sub->apiCache[$unused_flag][$this->name()]) )
             return TRUE;
+        else
+            return FALSE;
 
         return null;
     }

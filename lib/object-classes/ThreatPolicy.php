@@ -270,7 +270,7 @@ class ThreatPolicy
         PH::print_stdout( $string );
     }
 
-    public function newThreatPolicyXML( $xmlroot, $name, $severity, $action )
+    public function newThreatPolicyXML( $xmlroot, $name, $severity, $action, $host_type = 'any' )
     {
         $tmp_rules_xmlroot = DH::findFirstElement('rules', $xmlroot);
         $tmp_entry = DH::findFirstElementByNameAttrOrCreate("entry", $name, $tmp_rules_xmlroot, $xmlroot->ownerDocument);
@@ -294,7 +294,15 @@ class ThreatPolicy
         if( $this->type == "ThreatPolicyVulnerability" )
         {
             $tmp_cve = DH::findFirstElementOrCreate('cve', $tmp_entry);
-            $tmp_cve->textContent = "any";
+            $tmp_cve_member = DH::findFirstElementOrCreate('member', $tmp_cve);
+            $tmp_cve_member->textContent = "any";
+
+            $tmp_vendorID = DH::findFirstElementOrCreate('vendor-id', $tmp_entry);
+            $tmp_vendorID_member = DH::findFirstElementOrCreate('member', $tmp_vendorID);
+            $tmp_vendorID_member->textContent = "any";
+
+            $tmp_host = DH::findFirstElementOrCreate('host', $tmp_entry);
+            $tmp_host->textContent = $host_type;
         }
     }
 }
