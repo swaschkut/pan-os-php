@@ -1,6 +1,14 @@
 CHANGELOG
 
-2.1.37
+2.1.38
+UTIL:
+
+BUGFIX:
+
+GENERAL:
+
+
+2.1.37 (20250628)
 UTIL:
 * type=interface | new actions=replace_IPv4_objects_by_value
 * type=gpgateway-tunnel | introduce new util - to extend the reading of each XML part
