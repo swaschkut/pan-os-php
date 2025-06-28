@@ -292,6 +292,11 @@ foreach( $json_a as $type => $UTILtype )
             PH::print_stdout("******* SKIPPED for now *******");
             continue;
         }
+        elseif( $type == 'gpgateway-tunnel' )
+        {
+            PH::print_stdout("******* SKIPPED for now *******");
+            continue;
+        }
         else
         {
             derr('unsupported type: '.$type);
