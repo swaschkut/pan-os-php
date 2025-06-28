@@ -4,6 +4,7 @@ CHANGELOG
 UTIL:
 
 BUGFIX:
+* bugfix for type=securityprofile securityprofiletype=url-filtering actions=exporttoexcel
 
 GENERAL:
 
