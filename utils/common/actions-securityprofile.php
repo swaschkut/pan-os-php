@@ -1507,10 +1507,10 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         $tmp_array[] = "Block (".$countBlock.")";
                         $tmp_array[] = "------------------------";
 
-                        #$check_array = $object->url_siteaccess_bp_visibility_JSON( "bp", "url" );
-                        #if( isset($check_array[0]['type']) )
-                        #    $block_categories = $check_array[0]['type'];
-                        #else
+                        $check_array = $object->url_siteaccess_bp_visibility_JSON( "bp", "url" );
+                        if( isset($check_array[0]['type']) )
+                            $block_categories = $check_array[0]['type'];
+                        else
                             $block_categories = array('command-and-control','compromised-website','grayware','malware','phishing','ransomware','scanning-activity');
 
                         $notBlock = array();
@@ -1542,10 +1542,10 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         $tmp_array[] = "Block (".$countBlockcredential.")";
                         $tmp_array[] = "------------------------";
 
-                        #$check_array = $object->url_siteaccess_bp_visibility_JSON( "bp", "url" );
-                        #if( isset($check_array[0]['type']) )
-                        #    $block_categories = $check_array[0]['type'];
-                        #else
+                        $check_array = $object->url_siteaccess_bp_visibility_JSON( "bp", "url" );
+                        if( isset($check_array[0]['type']) )
+                            $block_categories = $check_array[0]['type'];
+                        else
                             $block_categories = array('command-and-control','compromised-website','grayware','malware','phishing','ransomware','scanning-activity');
 
                         $notBlock = array();
@@ -2934,10 +2934,10 @@ SecurityProfileCallContext::$supportedActions['url.best-practice-set'] = array(
 
         $alert_xmlnode = DH::findFirstElementOrCreate("alert", $object->xmlroot);
 
-        #$check_array = $object->url_siteaccess_bp_visibility_JSON( "bp", "url" );
-        #if( isset($check_array[0]['type']) )
-        #    $block_categories = $check_array[0]['type'];
-        #else
+        $check_array = $object->url_siteaccess_bp_visibility_JSON( "bp", "url" );
+        if( isset($check_array[0]['type']) )
+            $block_categories = $check_array[0]['type'];
+        else
             $block_categories = array('command-and-control','compromised-website','grayware','malware','phishing','ransomware','scanning-activity');
 
         $block_xmlnode = DH::findFirstElementOrCreate("block", $object->xmlroot);
