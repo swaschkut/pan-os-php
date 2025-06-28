@@ -564,10 +564,10 @@ RQuery::$defaultFilters['address']['name']['operators']['has.wrong.characters'] 
     )
 );
 RQuery::$defaultFilters['address']['netmask']['operators']['>,<,=,!'] = array(
-    'eval' => '!$object->isGroup() && !$object->isRegion() && !\$object->isEDL() && $object->isType_ipNetmask() && $object->getNetworkMask() !operator! !value!',
+    'eval' => '!$object->isGroup() && !$object->isRegion() && !$object->isEDL() && $object->isType_ipNetmask() && $object->getNetworkMask() !operator! !value!',
     'arg' => TRUE,
     'ci' => array(
-        'fString' => '(%PROP% 1)',
+        'fString' => '(%PROP% 27)',
         'input' => 'input/panorama-8.0.xml'
     )
 );
