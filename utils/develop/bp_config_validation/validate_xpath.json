@@ -396,35 +396,35 @@
     "xpath": "vsys/entry[@name='vsys1']/setting/ssl-decrypt/allow-forward-decrypted-content",
     "value": "yes",
     "variable-name": "{{ CONTENT-FORWARD-DECRYPTED-CONTENT }}",
-    "comment": "jit should be this set setting ssl-decrypt allow-forward-decrypted-content"
+    "comment": "Mandatory for Decrypt Mirror Port, among others."
   },
   {
     "check": "true",
     "xpath": "deviceconfig/setting/application/bypass-exceed-queue",
     "value": "no",
     "variable-name": "{{ CONTENT-FWD-TCP-EXCEED-APP-ID-QUEUE }}",
-    "comment": ""
+    "comment": "Palo Alto Networks recommends that you disable this option for maximum security."
   },
   {
     "check": "true",
     "xpath": "deviceconfig/setting/ctd/tcp-bypass-exceed-queue",
     "value": "no",
     "variable-name": "{{ CONTENT-FWD-TCP-EXCEED-CONTENT-INSPECT-QUEUE }}",
-    "comment": ""
+    "comment": "Palo Alto Networks recommends that you disable this option for maximum security."
   },
   {
     "check": "true",
     "xpath": "deviceconfig/setting/ctd/udp-bypass-exceed-queue",
     "value": "no",
     "variable-name": "{{ CONTENT-FWD-UDP-EXCEED-CONTENT-INSPECT-QUEUE }}",
-    "comment": ""
+    "comment": "Palo Alto Networks recommends that you disable this option for maximum security."
   },
   {
     "check": "true",
     "xpath": "deviceconfig/setting/ctd/allow-http-range",
     "value": "yes",
     "variable-name": "{{ CONTENT-HTTP-PARTIAL-RESPONSE }}",
-    "comment": ""
+    "comment": "Palo Alto Networks recommends that you keep this option enabled for maximum security."
   },
   {
     "check": "true",
@@ -522,48 +522,48 @@
     "xpath": "deviceconfig/setting/tcp/bypass-exceed-oo-queue",
     "value": "no",
     "variable-name": "{{ TCP-FWD-EXCEED-OUT-OF-ORDER-QUEUE }}",
-    "comment": ""
+    "comment": "Keeping the default for maximum security."
   },
   {
     "check": "true",
     "xpath": "deviceconfig/setting/tcp/allow-challenge-ack",
     "value": "no",
     "variable-name": "{{ TCP-ALLOW-CHALLANGE-ACK }}",
-    "comment": ""
+    "comment": "Keeping the default for maximum security."
   },
   {
     "check": "true",
     "xpath": "deviceconfig/setting/tcp/check-timestamp-option",
     "value": "yes",
     "variable-name": "{{ TCP-DROP-NULL-TIMESTAMP }}",
-    "comment": ""
+    "comment": "Keeping the default for maximum security."
   },
   {
     "check": "true",
     "xpath": "deviceconfig/setting/tcp/asymmetric-path",
     "value": "drop",
     "variable-name": "{{ TCP-ASYMMETRIC-PATH }}",
-    "comment": ""
+    "comment": "Keeping the default for maximum security."
   },
   {
     "check": "true",
     "xpath": "deviceconfig/setting/tcp/urgent-data",
     "value": "clear",
     "variable-name": "{{ TCP-URGENT-DATA-FLAG }}",
-    "comment": ""
+    "comment": "Keeping the default for maximum security."
   },
   {
     "check": "true",
     "xpath": "deviceconfig/setting/tcp/drop-zero-flag",
     "value": "yes",
     "variable-name": "{{ TCP-DROP-WITHOUT-FLAG }}",
-    "comment": ""
+    "comment": "Keeping the default for maximum security."
   },
   {
     "check": "true",
     "xpath": "deviceconfig/setting/tcp/strip-mptcp-option",
     "value": "yes",
     "variable-name": "{{ TCP-STRIP-MPTCP-OPTION }}",
-    "comment": ""
+    "comment": "Keeping the default for maximum security."
   }
 ]
