@@ -4,6 +4,7 @@ CHANGELOG
 UTIL:
 
 BUGFIX:
+* type=securityprofile actions=spyware.alert-only-set | fix if no spyware rule is already available
 
 GENERAL:
 
