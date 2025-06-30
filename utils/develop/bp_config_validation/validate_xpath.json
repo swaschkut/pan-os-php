@@ -23,7 +23,7 @@
   {
     "check": "true",
     "xpath": "deviceconfig/setting/management/idle-timeout",
-    "value": "30",
+    "value": "60",
     "variable-name": "{{ IDLE-TIMEOUT }}",
     "comment": ""
   },
@@ -32,14 +32,14 @@
     "xpath": "deviceconfig/setting/management/api/key/lifetime",
     "value": "0",
     "variable-name": "{{ API_KEY_LIFETIME }}",
-    "comment": ""
+    "comment": "It depends. While a lifetime of 0 (=never) might be a security issue, it helps with long-term scripts and monitoring tools."
   },
   {
     "check": "true",
     "xpath": "deviceconfig/setting/management/api/key/certificate",
     "value": "api_key_cert",
     "variable-name": "{{ API_KEY_CERT }}",
-    "comment": ""
+    "comment": "Must be with a keysize > 2048 bits to omit any warning after the commit."
   },
   {
     "check": "true",
@@ -81,7 +81,7 @@
     "xpath": "deviceconfig/setting/management/wildcard-topdown-match-mode",
     "value": "yes",
     "variable-name": "{{ POLICY-WILDCARD-TOP-DOWN-MATCH }}",
-    "comment": ""
+    "comment": "The default is 'no', but a 'yes' behaves more 'policy-like' aka first-match-out rather than 'routing-like' aka longest-match. Note: Currently IPv4-only as of PAN-OS 11.2."
   },
   {
     "check": "true",
@@ -109,7 +109,7 @@
     "xpath": "deviceconfig/setting/management/log-revert-operations",
     "value": "yes",
     "variable-name": "{{ CONFIG-LOG-FOR-REVERT-OPERATIONS }}",
-    "comment": ""
+    "comment": "If this is set to 'no' (default), reverts of the configuration are NOT logged within the 'configuration logs'. Hence: 'yes'."
   },
   {
     "check": "true",
@@ -182,11 +182,11 @@
     "comment": ""
   },
   {
-    "check": "true",
+    "check": "false",
     "xpath": "deviceconfig/system/motd-and-banner/motd-enable",
     "value": "no",
-    "variable-name": "{{ LOGIN-BANNER-ENABLE }}",
-    "comment": ""
+    "variable-name": "{{ MOTD-ENABLE }}",
+    "comment": "If no MOTD is set at all, there is no need to have the MOTD enabled. Don't confuse this with the 'Login Banner'."
   },
   {
     "check": "true",
@@ -263,7 +263,7 @@
     "xpath": "mgt-config/password-complexity/password-history-count",
     "value": "24",
     "variable-name": "{{ PW-PREVENT-REUSE-LIMIT }}",
-    "comment": ""
+    "comment": "Historically grown value from Iron Skillet, for whatever reason."
   },
   {
     "check": "true",
@@ -417,35 +417,35 @@
     "xpath": "vsys/entry[@name='vsys1']/setting/ssl-decrypt/allow-forward-decrypted-content",
     "value": "yes",
     "variable-name": "{{ CONTENT-FORWARD-DECRYPTED-CONTENT }}",
-    "comment": "jit should be this set setting ssl-decrypt allow-forward-decrypted-content"
+    "comment": "Mandatory for Decrypt Mirror Port, among others."
   },
   {
     "check": "true",
     "xpath": "deviceconfig/setting/application/bypass-exceed-queue",
     "value": "no",
     "variable-name": "{{ CONTENT-FWD-TCP-EXCEED-APP-ID-QUEUE }}",
-    "comment": ""
+    "comment": "Palo Alto Networks recommends that you disable this option for maximum security."
   },
   {
     "check": "true",
     "xpath": "deviceconfig/setting/ctd/tcp-bypass-exceed-queue",
     "value": "no",
     "variable-name": "{{ CONTENT-FWD-TCP-EXCEED-CONTENT-INSPECT-QUEUE }}",
-    "comment": ""
+    "comment": "Palo Alto Networks recommends that you disable this option for maximum security."
   },
   {
     "check": "true",
     "xpath": "deviceconfig/setting/ctd/udp-bypass-exceed-queue",
     "value": "no",
     "variable-name": "{{ CONTENT-FWD-UDP-EXCEED-CONTENT-INSPECT-QUEUE }}",
-    "comment": ""
+    "comment": "Palo Alto Networks recommends that you disable this option for maximum security."
   },
   {
     "check": "true",
     "xpath": "deviceconfig/setting/ctd/allow-http-range",
     "value": "yes",
     "variable-name": "{{ CONTENT-HTTP-PARTIAL-RESPONSE }}",
-    "comment": ""
+    "comment": "Palo Alto Networks recommends that you keep this option enabled for maximum security."
   },
   {
     "check": "true",
@@ -543,48 +543,48 @@
     "xpath": "deviceconfig/setting/tcp/bypass-exceed-oo-queue",
     "value": "no",
     "variable-name": "{{ TCP-FWD-EXCEED-OUT-OF-ORDER-QUEUE }}",
-    "comment": ""
+    "comment": "Keeping the default for maximum security."
   },
   {
     "check": "true",
     "xpath": "deviceconfig/setting/tcp/allow-challenge-ack",
     "value": "no",
     "variable-name": "{{ TCP-ALLOW-CHALLANGE-ACK }}",
-    "comment": ""
+    "comment": "Keeping the default for maximum security."
   },
   {
     "check": "true",
     "xpath": "deviceconfig/setting/tcp/check-timestamp-option",
     "value": "yes",
     "variable-name": "{{ TCP-DROP-NULL-TIMESTAMP }}",
-    "comment": ""
+    "comment": "Keeping the default for maximum security."
   },
   {
     "check": "true",
     "xpath": "deviceconfig/setting/tcp/asymmetric-path",
     "value": "drop",
     "variable-name": "{{ TCP-ASYMMETRIC-PATH }}",
-    "comment": ""
+    "comment": "Keeping the default for maximum security."
   },
   {
     "check": "true",
     "xpath": "deviceconfig/setting/tcp/urgent-data",
     "value": "clear",
     "variable-name": "{{ TCP-URGENT-DATA-FLAG }}",
-    "comment": ""
+    "comment": "Keeping the default for maximum security."
   },
   {
     "check": "true",
     "xpath": "deviceconfig/setting/tcp/drop-zero-flag",
     "value": "yes",
     "variable-name": "{{ TCP-DROP-WITHOUT-FLAG }}",
-    "comment": ""
+    "comment": "Keeping the default for maximum security."
   },
   {
     "check": "true",
     "xpath": "deviceconfig/setting/tcp/strip-mptcp-option",
     "value": "yes",
     "variable-name": "{{ TCP-STRIP-MPTCP-OPTION }}",
-    "comment": ""
+    "comment": "Keeping the default for maximum security."
   }
 ]
