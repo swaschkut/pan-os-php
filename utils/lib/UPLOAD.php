@@ -534,7 +534,7 @@ class UPLOAD extends UTIL
                         if( $xpathResults->length > 1 )
                         {
                             //var_dump($xpathResults);
-                            derr('more than one one results found for xpath query: ' . $xpathQuery);
+                            derr('more than one results found for xpath query: ' . $xpathQuery);
                         }
                         if( $xpathResults->length == 0 )
                             $runningNodeFound = FALSE;

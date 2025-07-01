@@ -186,6 +186,25 @@ class NetworkPropertiesContainer
         {
             $this->secureWebGateway->load_from_domxml($tmp);
         }
+
+
+        $tmp_profiles = DH::findFirstElement('profiles', $this->xmlroot);
+        if( $tmp_profiles !== FALSE )
+        {
+            $tmp = DH::findFirstElement('zone-protection-profile', $tmp_profiles);
+            if( $tmp !== FALSE )
+            {
+                foreach( $tmp->childNodes as $childNode )
+                {
+                    /** @var DOMElement $node */
+                    if( $childNode->nodeType != XML_ELEMENT_NODE )
+                        continue;
+
+                    //Todo: swaschkut 20250701 - missing zp profile implementation
+                    #DH::DEBUGprintDOMDocument($childNode);
+                }
+            }
+        }
     }
 
     function load_from_domxml_2(DOMElement $xml)
