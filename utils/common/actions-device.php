@@ -3566,7 +3566,7 @@ DeviceCallContext::$supportedActions['DefaultSecurityRule-SecurityProfileGroup-S
         if( $context->first )
         {
             $secProfGroup = $context->arguments['securityProfileGroup'];
-
+            $force = $context->arguments['force'];
 
 
             if( $classtype == "VirtualSystem" || $classtype == "DeviceGroup" )
@@ -3634,9 +3634,12 @@ DeviceCallContext::$supportedActions['DefaultSecurityRule-SecurityProfileGroup-S
                             }
 
                             $group = DH::findFirstElementOrCreate( "group", $profilesetting );
-                            $tmp = DH::findFirstElementOrCreate( "member", $group );
-
-                            $tmp->textContent = $secProfGroup;
+                            $tmp = DH::findFirstElement( "member", $group );
+                            if( $tmp === FALSE || ( $tmp === TRUE && $force ) )
+                            {
+                                $tmp = DH::findFirstElementOrCreate( "member", $group );
+                                $tmp->textContent = $secProfGroup;
+                            }
                         }
                     }
                 }
@@ -3662,6 +3665,9 @@ DeviceCallContext::$supportedActions['DefaultSecurityRule-SecurityProfileGroup-S
     'args' => array(
         'securityProfileGroup' => array('type' => 'string', 'default' => '*nodefault*',
             'help' => "set SecurityProfileGroup to default SecurityRules, if the Rule is an allow rule"
+        ),
+        'force' => array('type' => 'bool', 'default' => 'false',
+            'help' => "per default, SecurityProfileGroupSet only if Rule has no SPG. force=true => add always SPG"
         )
     )
 );
