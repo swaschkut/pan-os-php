@@ -16,6 +16,7 @@ apikey="APIKEY from SOPHOS UTM"
 fqdn="SOPHOS IP / FQDN"
 
 #authkey=$(echo -n $username + ":" + $password | base64)
+authkey=$(echo -n "token:$apikey" | base64)
 
 echo $authkey
 
@@ -96,10 +97,8 @@ arrapi=(
 
 for i in "${arrapi[@]}"
 do
-	#curl -X GET -k -H "Accept: application/json" \
-	#      -H "Authorization: Basic $authkey" "$urlbase$i" -o "$TEMP_DIR/file$j.txt"
 	curl -X GET -k -H "Accept: application/json" \
-  				-H "Authorization: Basic $apikey" "$urlbase$i" -o "$TEMP_DIR/file$j.txt"
+  				-H "Authorization: Basic $authkey" "$urlbase$i" -o "$TEMP_DIR/file$j.txt"
 
 	response_code=$?
 
@@ -125,6 +124,6 @@ rm -rf "$TEMP_DIR"
 urlorder="https://$fqdn:4444/api/nodes/packetfilter.rules"
 
 curl -X GET -k -H "Accept: application/json" \
-				 -H "Authorization: Basic $apikey" "$urlorder" -o "$fqdn-ruleorder.txt"
+				 -H "Authorization: Basic $authkey" "$urlorder" -o "$fqdn-ruleorder.txt"
 
 

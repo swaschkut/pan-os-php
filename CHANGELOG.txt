@@ -7,6 +7,7 @@ BUGFIX:
 * type=securityprofile actions=spyware.alert-only-set | fix if no spyware rule is already available
 
 GENERAL:
+* adjust repository links, to github.com/swaschkut/pan-os-php
 
 
 2.1.37 (20250628)

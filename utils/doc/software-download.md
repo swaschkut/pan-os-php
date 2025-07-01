@@ -7,7 +7,7 @@ internal and external Server with PAN-OS-PHP version 2.0.26 prepared
 internal Server has access to Panorama mgmt device
 external Server has access to Internet
 
-https://github.com/PaloAltoNetworks/pan-os-php
+https://github.com/swaschkut/pan-os-php
 
 
 
