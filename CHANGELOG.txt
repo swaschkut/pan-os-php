@@ -9,6 +9,7 @@ BUGFIX:
 
 GENERAL:
 * adjust repository links, to github.com/swaschkut/pan-os-php
+* introduce class ZoneProtectionProfile and ZoneProtectionProfileStore
 
 
 2.1.37 (20250628)

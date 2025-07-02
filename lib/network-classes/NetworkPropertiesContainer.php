@@ -63,6 +63,10 @@ class NetworkPropertiesContainer
     /** @var SecureWebGateway */
     public $secureWebGateway;
 
+
+    /** @var ZoneProtectionProfileStore */
+    public $zoneProtectionProfileStore;
+
     /** @var DOMElement|null */
     public $xmlroot = null;
 
@@ -91,6 +95,8 @@ class NetworkPropertiesContainer
         $this->virtualWireStore = new VirtualWireStore('', $owner);
         $this->dhcpStore = new DHCPStore('DHCP', $owner);
         $this->secureWebGateway = new SecureWebGateway('SecurityWebGateway', $owner);
+
+        $this->zoneProtectionProfileStore = new ZoneProtectionProfileStore('', $owner);
 
 
         $this->sharedGatewayStore = new SharedGatewayStore('SharedGateway', $owner);
@@ -194,15 +200,7 @@ class NetworkPropertiesContainer
             $tmp = DH::findFirstElement('zone-protection-profile', $tmp_profiles);
             if( $tmp !== FALSE )
             {
-                foreach( $tmp->childNodes as $childNode )
-                {
-                    /** @var DOMElement $node */
-                    if( $childNode->nodeType != XML_ELEMENT_NODE )
-                        continue;
-
-                    //Todo: swaschkut 20250701 - missing zp profile implementation
-                    #DH::DEBUGprintDOMDocument($childNode);
-                }
+                $this->zoneProtectionProfileStore->load_from_domxml($tmp);
             }
         }
     }

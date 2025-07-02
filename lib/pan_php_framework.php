@@ -358,6 +358,8 @@ require_once $basedir . '/network-classes/GPGateway.php';
 require_once $basedir . '/network-classes/GPGatewayStore.php';
 require_once $basedir . '/network-classes/GPPortal.php';
 require_once $basedir . '/network-classes/GPPortalStore.php';
+require_once $basedir . '/network-classes/ZoneProtectionProfile.php';
+require_once $basedir . '/network-classes/ZoneProtectionProfileStore.php';
 
 require_once $basedir . '/network-classes/SharedGatewayStore.php';
 
