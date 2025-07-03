@@ -3,6 +3,7 @@ CHANGELOG
 2.1.38
 UTIL:
 * type=device actions=defaultsecurityrule-securityprofilegroup-set:{NAME},true/false |  introduce additional argument FORCE - to add SPG per default only if no SPG is set
+* type=securityprofile securityprofiletype=spyware actions=display | extend to show also advanced-dns-security-categories
 
 BUGFIX:
 * type=securityprofile actions=spyware.alert-only-set | fix if no spyware rule is already available
