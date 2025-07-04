@@ -8,6 +8,7 @@ UTIL:
 BUGFIX:
 * type=securityprofile actions=spyware.alert-only-set | fix if no spyware rule is already available
 * type=address 'filter=(netmask >,<,=,! XYZ)'
+* type=securityprofile actions=url.best-practice-set | bugfix to not error out based on none URLProfile object
 
 GENERAL:
 * adjust repository links, to github.com/swaschkut/pan-os-php

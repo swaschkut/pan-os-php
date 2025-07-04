@@ -2927,6 +2927,9 @@ SecurityProfileCallContext::$supportedActions['url.best-practice-set'] = array(
     'MainFunction' => function (SecurityProfileCallContext $context) {
         $object = $context->object;
 
+        if (get_class($object) !== "URLProfile")
+            return null;
+
         //call alert-only-set from above
         $f = SecurityProfileCallContext::$supportedActions['url.alert-only-set']['MainFunction'];
         $f($context);
