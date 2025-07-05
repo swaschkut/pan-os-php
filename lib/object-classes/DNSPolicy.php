@@ -60,10 +60,13 @@ class DNSPolicy
             $this->action = $tmp->textContent;
         }
 
-        $tmp = DH::findFirstElement('packet-capture', $tmp_entry1);
-        if( $tmp !== FALSE )
+        if( $this->advanced === FALSE )
         {
-            $this->packetCapture = $tmp->textContent;
+            $tmp = DH::findFirstElement('packet-capture', $tmp_entry1);
+            if( $tmp !== FALSE )
+            {
+                $this->packetCapture = $tmp->textContent;
+            }
         }
     }
 
