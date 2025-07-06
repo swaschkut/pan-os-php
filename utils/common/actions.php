@@ -145,3 +145,7 @@ GREtunnelCallContext::prepareSupportedActions();
 require_once("GPGatewaytunnelCallContext.php");
 require_once "actions-gpgatewaytunnel.php";
 GPGatewaytunnelCallContext::prepareSupportedActions();
+
+require_once("ZoneProtectionProfileCallContext.php");
+require_once "actions-zoneprotectionprofile.php";
+ZoneProtectionProfileCallContext::prepareSupportedActions();

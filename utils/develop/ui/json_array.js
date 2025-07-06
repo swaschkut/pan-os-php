@@ -707,10 +707,10 @@ var subjectObject =
             "netmask": {
                 "operators": {
                     ">,<,=,!": {
-                        "eval": "!$object->isGroup() && !$object->isRegion() && !\\$object->isEDL() && $object->isType_ipNetmask() && $object->getNetworkMask() !operator! !value!",
+                        "eval": "!$object->isGroup() && !$object->isRegion() && !$object->isEDL() && $object->isType_ipNetmask() && $object->getNetworkMask() !operator! !value!",
                         "arg": true,
                         "ci": {
-                            "fString": "(%PROP% 1)",
+                            "fString": "(%PROP% 27)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -2066,6 +2066,11 @@ var subjectObject =
                         "type": "string",
                         "default": "*nodefault*",
                         "help": "set SecurityProfileGroup to default SecurityRules, if the Rule is an allow rule"
+                    },
+                    "force": {
+                        "type": "bool",
+                        "default": "false",
+                        "help": "per default, SecurityProfileGroupSet only if Rule has no SPG. force=true => add always SPG"
                     }
                 }
             },
@@ -11395,6 +11400,11 @@ var subjectObject =
                 }
             }
         }
+    },
+    "zone-protection-profile": {
+        "name": "zone-protection-profile",
+        "action": [],
+        "filter": []
     }
 }
 

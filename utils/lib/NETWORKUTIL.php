@@ -128,6 +128,10 @@ class NETWORKUTIL extends UTIL
                     {
                         $this->objectsToProcess[] = Array('store' => $this->pan->network->gpGatewayTunnelStore, 'objects' => $this->pan->network->gpGatewayTunnelStore->tunnels());
                     }
+                    elseif( $this->utilType == 'zone-protection-profile' )
+                    {
+                        $this->objectsToProcess[] = Array('store' => $this->pan->network->zoneProtectionProfileStore, 'objects' => $this->pan->network->zoneProtectionProfileStore->zoneProtectionProfile());
+                    }
 
                     $locationFound = TRUE;
                 }
@@ -164,6 +168,8 @@ class NETWORKUTIL extends UTIL
                             {}
                             elseif( $this->utilType == 'ipsec-tunnel' )
                             {}
+                            elseif( $this->utilType == 'zone-protection-profile' )
+                            {}
 
                             $locationFound = TRUE;
                         }
@@ -195,6 +201,8 @@ class NETWORKUTIL extends UTIL
                             elseif( $this->utilType == 'ipsec-profile' )
                             {}
                             elseif( $this->utilType == 'ipsec-tunnel' )
+                            {}
+                            elseif( $this->utilType == 'zone-protection-profile' )
                             {}
 
                             $locationFound = TRUE;
@@ -231,6 +239,8 @@ class NETWORKUTIL extends UTIL
                         elseif( $this->utilType == 'ipsec-profile' )
                         {}
                         elseif( $this->utilType == 'ipsec-tunnel' )
+                        {}
+                        elseif( $this->utilType == 'zone-protection-profile' )
                         {}
 
                         $locationFound = TRUE;
@@ -321,6 +331,10 @@ class NETWORKUTIL extends UTIL
                                 elseif( $this->utilType == 'gpgateway-tunnel' )
                                 {
                                     $this->objectsToProcess[] = Array('store' => $template->deviceConfiguration->network->gpGatewayTunnelStore, 'objects' => $template->deviceConfiguration->network->gpGatewayTunnelStore->tunnels());
+                                }
+                                elseif( $this->utilType == 'zone-protection-profile' )
+                                {
+                                    $this->objectsToProcess[] = Array('store' => $template->deviceConfiguration->network->zoneProtectionProfileStore, 'objects' => $template->deviceConfiguration->network->zoneProtectionProfileStore->zoneProtectionProfile());
                                 }
 
                                 $locationFound = true;
