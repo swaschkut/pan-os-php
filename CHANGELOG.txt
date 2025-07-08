@@ -5,6 +5,7 @@ UTIL:
 * type=device actions=defaultsecurityrule-securityprofilegroup-set:{NAME},true/false |  introduce additional argument FORCE - to add SPG per default only if no SPG is set
 * type=securityprofile securityprofiletype=spyware actions=display | extend to show also advanced-dns-security-categories
 * type=zone-protection-profile | introduce new utility
+* type=address 'actions=name-replace-character:TEXT1,' - now it can any character replaced by ''
 
 BUGFIX:
 * type=securityprofile actions=spyware.alert-only-set | fix if no spyware rule is already available
