@@ -32,10 +32,67 @@ ZoneProtectionProfileCallContext::$supportedActions['displayreferences'] = array
 ZoneProtectionProfileCallContext::$supportedActions['display'] = array(
     'name' => 'display',
     'MainFunction' => function (ZoneProtectionProfileCallContext $context) {
-        /** @var Zone $object */
+        /** @var ZoneProtectionProfile $object */
         $object = $context->object;
         $tmp_txt = "     * " . get_class($object) . " '{$object->name()}'   ( type: " . $object->type . " )";
 
+        PH::print_stdout( "\n     - FLOOD:");
+        #print_r($object->flood);
+        foreach( $object->flood as $key => $flood )
+        {
+            PH::print_stdout( "      * ".$key );
+            $tmp_string = "";
+            if( isset($flood['red']) )
+            {
+                #PH::print_stdout( "        - red:" );
+                if( isset($flood['red']['alarm-rate']) )
+                    $tmp_string .= " - alarm-rate: ".$flood['red']['alarm-rate'];
+                if( isset($flood['red']['activate-rate']) )
+                    $tmp_string .= " - activate-rate: ".$flood['red']['activate-rate'];
+                if( isset($flood['red']['maximal-rate']) )
+                    $tmp_string .= " - maximal-rate: ".$flood['red']['maximal-rate'];
+            }
+            if( isset($flood['enable']) )
+                $tmp_string .= " - enable: '".$flood['enable']."'";
+
+            if( !empty($tmp_string) )
+                PH::print_stdout( "        ".$tmp_string." ");
+        }
+
+        PH::print_stdout( "\n     - SCAN:");
+        foreach( $object->scan as $key => $scan )
+        {
+            PH::print_stdout( "      * ".$key );
+            $tmp_string = "";
+            if( isset($scan['action']) )
+                $tmp_string .= " - action: ".$scan['action'];
+            if( isset($scan['interval']) )
+                $tmp_string .= " - interval: ".$scan['interval'];
+            if( isset($scan['threshold']) )
+                $tmp_string .= " - threshold: ".$scan['threshold'];
+
+            if( !empty($tmp_string) )
+                PH::print_stdout( "        ".$tmp_string." ");
+        }
+
+        $tmp_string = "";
+
+        if( $object->discard_ip_spoof !== FALSE )
+            $tmp_string .= " - discard-ip-spoof: '".$object->discard_ip_spoof."'";
+        if( $object->discard_malformed_option !== FALSE )
+            $tmp_string .= " - discard-malformed-option: '".$object->discard_malformed_option."'";
+        if( $object->remove_tcp_timestamp !== FALSE )
+            $tmp_string .= " - remove-tcp-timestamp: '".$object->remove_tcp_timestamp."'";
+        if( $object->strip_tcp_fast_open_and_data !== FALSE )
+            $tmp_string .= " - strip-tcp-fast-open-and-data: '".$object->strip_tcp_fast_open_and_data."'";
+        if( $object->strip_mptcp_option !== FALSE )
+            $tmp_string .= " - strip-mptcp-option: '".$object->strip_mptcp_option."'";
+
+        if( !empty($tmp_string) )
+        {
+            PH::print_stdout( "\n     - ADDITIONAL :");
+            PH::print_stdout( "        ".$tmp_string." ");
+        }
 
     },
 );
