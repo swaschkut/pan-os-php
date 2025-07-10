@@ -529,7 +529,7 @@
     "xpath": "deviceconfig/setting/tcp/allow-challenge-ack",
     "value": "no",
     "variable-name": "{{ TCP-ALLOW-CHALLANGE-ACK }}",
-    "comment": "Keeping the default for maximum security."
+    "comment": "Keeping the default for maximum security. Details for scenarios, where a 'yes' is considerable: https://knowledgebase.paloaltonetworks.com/KCSArticleDetail?id=kA10g000000boBJCAY"
   },
   {
     "check": "true",
