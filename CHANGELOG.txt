@@ -6,6 +6,7 @@ UTIL:
 * type=securityprofile securityprofiletype=spyware actions=display | extend to show also advanced-dns-security-categories
 * type=zone-protection-profile | introduce new utility
 * type=address 'actions=name-replace-character:TEXT1,' - now it can any character replaced by ''
+* type=xpath filter-nameattribute_regex=ABC | introduce new argument to search within a nameattribute
 
 BUGFIX:
 * type=securityprofile actions=spyware.alert-only-set | fix if no spyware rule is already available
