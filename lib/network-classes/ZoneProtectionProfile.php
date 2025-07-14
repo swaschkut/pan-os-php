@@ -181,6 +181,58 @@ class ZoneProtectionProfile
         $strip_mptcp_option_Node = DH::findFirstElement('strip-mptcp-option', $xml);
         if( $strip_mptcp_option_Node !== FALSE )
             $this->strip_mptcp_option = $strip_mptcp_option_Node->textContent;
+        //Todo: missing - swaschkut 20250714
+        /*
+         <discard-ip-frag>yes</discard-ip-frag>
+         <strict-ip-check>yes</strict-ip-check>
+         <discard-strict-source-routing>yes</discard-strict-source-routing>
+         <discard-security>yes</discard-security>
+         <discard-loose-source-routing>yes</discard-loose-source-routing>
+         <discard-stream-id>yes</discard-stream-id>
+         <discard-timestamp>yes</discard-timestamp>
+         <discard-unknown-option>yes</discard-unknown-option>
+         <discard-record-route>yes</discard-record-route>
+         <discard-tcp-split-handshake>yes</discard-tcp-split-handshake>
+         <discard-overlapping-tcp-segment-mismatch>yes</discard-overlapping-tcp-segment-mismatch>
+         <discard-icmp-ping-zero-id>yes</discard-icmp-ping-zero-id>
+         <discard-icmp-frag>yes</discard-icmp-frag>
+         <discard-icmp-large-packet>yes</discard-icmp-large-packet>
+         <suppress-icmp-timeexceeded>yes</suppress-icmp-timeexceeded>
+         <suppress-icmp-needfrag>yes</suppress-icmp-needfrag>
+         <discard-icmp-error>yes</discard-icmp-error>
+         */
+
+
+        /*
+        <net-inspection>
+            <rule/>
+         </net-inspection>
+         -------------------------
+         <ipv6>
+            <filter-ext-hdr>
+               <hop-by-hop-hdr>yes</hop-by-hop-hdr>
+               <routing-hdr>yes</routing-hdr>
+               <dest-option-hdr>yes</dest-option-hdr>
+            </filter-ext-hdr>
+            <ignore-inv-pkt>
+               <dest-unreach>yes</dest-unreach>
+               <pkt-too-big>yes</pkt-too-big>
+               <time-exceeded>yes</time-exceeded>
+               <param-problem>yes</param-problem>
+               <redirect>yes</redirect>
+            </ignore-inv-pkt>
+            <ipv4-compatible-address>yes</ipv4-compatible-address>
+            <anycast-source>yes</anycast-source>
+            <needless-fragment-hdr>yes</needless-fragment-hdr>
+            <icmpv6-too-big-small-mtu-discard>yes</icmpv6-too-big-small-mtu-discard>
+            <options-invalid-ipv6-discard>yes</options-invalid-ipv6-discard>
+            <reserved-field-set-discard>yes</reserved-field-set-discard>
+            <routing-header-3>yes</routing-header-3>
+            <routing-header-253>yes</routing-header-253>
+            <routing-header-254>yes</routing-header-254>
+         </ipv6>
+
+            */
     }
 
     /**
