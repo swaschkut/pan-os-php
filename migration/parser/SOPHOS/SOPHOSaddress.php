@@ -13,12 +13,18 @@ trait SOPHOSaddress
             foreach ($master_array['network'] as $policy)
             {
                 $addr_name = str_replace(',', "", $policy['name']);
+                PH::print_stdout("ADR: ".$addr_name );
                 //$addr_name = str_replace('(',"",$addr_name);
                 //$addr_name = str_replace(')',"",$addr_name);
 
                 $addr_type = explode("/", $policy['_type']);
 
-                if ($policy['_type'] == 'network/host,') {
+                $ref_name = str_replace(',', "", $policy['_ref']);
+                PH::print_stdout("_REF add: ".$ref_name );
+                $this->ref_array[$ref_name] = $addr_name;
+
+                if ($policy['_type'] == 'network/host,')
+                {
                     $addr_value = str_replace(',', "", $policy['address']);
                     $addr_comment = str_replace(',', "", $policy['comment']);
                     //[_type] => network/host,
@@ -32,7 +38,8 @@ trait SOPHOSaddress
                             $tmp_address->setDescription($addr_comment);
                         }
                     }
-                } elseif ($policy['_type'] == 'network/dns_host,' || $policy['_type'] == 'network/dns_group,') {
+                } elseif ($policy['_type'] == 'network/dns_host,' || $policy['_type'] == 'network/dns_group,')
+                {
                     //network/dns_group
 
                     $addr_value = str_replace(',', "", $policy['hostname']);

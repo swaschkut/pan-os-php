@@ -162,7 +162,10 @@ class IPMap
                 if( $entry['start'] == $entry['end'] )
                     $ret[] = long2ip($entry['start']);
                 else
-                    $ret[] = long2ip($entry['start']) . '-' . long2ip($entry['end']);
+                {
+                    if( is_int($entry['start']) && is_int( $entry['end'])  )
+                        $ret[] = long2ip($entry['start']) . '-' . long2ip($entry['end']);
+                }
             }
             else
             {

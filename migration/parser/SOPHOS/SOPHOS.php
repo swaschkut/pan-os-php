@@ -7,6 +7,7 @@ require_once("SOPHOSservice.php");
 require_once("SOPHOSrule.php");
 
 require_once("SOPHOSinterface.php");
+require_once("SOPHOSroute.php");
 
 //USAGE:
 //php SOPHOS_parser.php
@@ -60,8 +61,13 @@ class SOPHOS extends PARSER
     use SOPHOSservice;
 
     use SOPHOSinterface;
+    use SOPHOSroute;
 
     use SHAREDNEW;
+
+    public $useLogicalRouter = false;
+
+    public $ref_array = array();
 
     public function vendor_main()
     {
@@ -273,6 +279,7 @@ class SOPHOS extends PARSER
 
          */
 
+        $this->route( $master_array );
 
 //Todo: ipsec
 

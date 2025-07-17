@@ -8,6 +8,8 @@ UTIL:
 * type=address 'actions=name-replace-character:TEXT1,' - now it can any character replaced by ''
 * type=xpath filter-nameattribute_regex=ABC | introduce new argument to search within a nameattribute
 * type=vendor-migration vendor=sophos | extend with interface migration
+* type=vendor-migration vendor=sophos | add static route
+* type=static-route actions=exporttoexcel | new implementation
 
 BUGFIX:
 * type=securityprofile actions=spyware.alert-only-set | fix if no spyware rule is already available

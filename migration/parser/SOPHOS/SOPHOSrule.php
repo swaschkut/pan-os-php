@@ -309,6 +309,7 @@ trait SOPHOSrule
                 }
                 elseif( !isset($policy['action']) )
                 {
+                    PH::print_stdout( "Rule not action set" );
                     print_r($policy);
                     exit();
                 }

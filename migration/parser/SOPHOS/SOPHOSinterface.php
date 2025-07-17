@@ -6,6 +6,9 @@ trait SOPHOSinterface
     {
         $ref_names = array();
 
+        PH::print_stdout("**************************************");
+        PH::print_stdout( "\nINTERFACE  migration:\n");
+
         if( isset($master_array['itfparams']) )
         {
             foreach( $master_array['itfparams'] as $key => $value )
@@ -154,7 +157,10 @@ trait SOPHOSinterface
                     $this->sub->importedInterfaces->addInterface($newInterface);
 
                     $int_primary = str_replace(',', "", $value['primary_address']);
-                    print "primary_IP_REF:".$int_primary."\n";
+                    $tmp_address = $ref_names[$int_primary]['address']."/".$ref_names[$int_primary]['netmask'];
+
+                    print "primary_IP_REF:".$int_primary." | address: ".$tmp_address."\n";
+
                     #print_r( $ref_names[$int_primary] );
                     /*
                          [address] => 10.66.0.9
@@ -170,9 +176,14 @@ trait SOPHOSinterface
                         [name] => 10.65.0.241/29
                         [type] => static
                      */
-                    $newInterface->addIPv4Address($ref_names[$int_primary]['address']."/".$ref_names[$int_primary]['netmask']);
+                    $newInterface->addIPv4Address($tmp_address);
                     if( $ref_names[$int_primary]['address6'] !== "::" && $ref_names[$int_primary]['netmask6'] !== "0" )
-                        $newInterface->addIPv6Address($ref_names[$int_primary]['address6']."/".$ref_names[$int_primary]['netmask6']);
+                    {
+                        $tmp_address6 = $ref_names[$int_primary]['address6']."/".$ref_names[$int_primary]['netmask6'];
+                        PH::print_stdout( "IPv6: ".$tmp_address6 );
+                        $newInterface->addIPv6Address($tmp_address6);
+                    }
+
 
                     if( isset($value['default_gateway_address']) )
                     {
@@ -182,22 +193,29 @@ trait SOPHOSinterface
                             //Todo: add static default rout to Router "default"
 
                             //if default route is already available created "default-2"
-                            //if default-2 is already available created "default-1+x" as long as available
+                            //if default-2 is already available create "default-1+x" if available
                         }
                     }
 
-                    if( isset($value['additional_string']) )
+                    if( isset($value['additional_addresses']) )
                     {
-                        $int_additional_string = $value['additional_string'];
+                        $int_additional_string = $value['additional_addresses'];
                         $int_additional_array = explode(',', $int_additional_string);
-                        print "additional_IPs_REF:"."\n";
-                        #print_r($int_additional_array);
+                        print "additional_IPs_REF:"."";
+                        print implode(",", $int_additional_array)."\n";
                         foreach( $int_additional_array as $key_additional_string => $int_additional )
                         {
                             #print_r( $ref_names[$int_additional ] );
-                            $newInterface->addIPv4Address($ref_names[$int_additional]['address']."/".$ref_names[$int_additional]['netmask']);
+                            $tmp_address = $ref_names[$int_additional]['address']."/".$ref_names[$int_additional]['netmask'];
+                            PH::print_stdout( "IPv4: ".$tmp_address);
+                            $newInterface->addIPv4Address($tmp_address );
                             if( $ref_names[$int_additional]['address6'] !== "::" && $ref_names[$int_additional]['netmask6'] !== "0" )
-                                $newInterface->addIPv6Address($ref_names[$int_primary]['address6']."/".$ref_names[$int_primary]['netmask6']);
+                            {
+                                $tmp_address6 = $ref_names[$int_primary]['address6']."/".$ref_names[$int_primary]['netmask6'];
+                                PH::print_stdout( "IPv6: ".$tmp_address6);
+                                $newInterface->addIPv6Address($tmp_address6);
+                            }
+
                         }
                     }
 
@@ -272,7 +290,7 @@ trait SOPHOSinterface
                 }
             }
 
-            print_r($itfhw_array);
+            #print_r($itfhw_array);
 
 
         }
