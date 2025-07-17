@@ -593,7 +593,7 @@ InterfaceCallContext::$supportedActions['type-aggregate-ethernet-set'] = array(
         if( get_class($object) !== "EthernetInterface" )
         {
             mwarning( "SKIPPED: Interface of type NOT EthernetInterface. provided: ".get_class($object), null, false );
-            return false;
+            #return false;
         }
 
 
@@ -632,8 +632,15 @@ InterfaceCallContext::$supportedActions['type-aggregate-ethernet-set'] = array(
             }
         }
         $vsys_obj->importedInterfaces->removeInterface($object);
-        $object->owner->owner->network->ethernetIfStore->removeEthernetIf($object);
-
+        if( get_class($object) === "EthernetInterface" )
+            $object->owner->owner->network->ethernetIfStore->removeEthernetIf($object);
+        elseif( get_class($object) === "AggregateEthernetInterface" )
+            $object->owner->owner->network->aggregateEthernetIfStore->removeEthernetIf($object);
+        else
+        {
+            mwarning( "SKIPPED: Interface of type ".get_class($object).". not yet supported", null, false );
+            return false;
+        }
 
         if( count( $object->subInterfaces()) > 0 )
         {

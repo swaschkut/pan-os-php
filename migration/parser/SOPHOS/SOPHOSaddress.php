@@ -147,7 +147,8 @@ trait SOPHOSaddress
 
             if ($policy['_type'] == 'network/group,') {
                 $tmp_address_group = $this->sub->addressStore->find($srv_name);
-                if ($tmp_address_group !== FALSE) {
+                if ($tmp_address_group === FALSE || $tmp_address_group === null)
+                {
                     $tmp_address_group = $this->sub->addressStore->newAddressGroup($srv_name);
                 }
 

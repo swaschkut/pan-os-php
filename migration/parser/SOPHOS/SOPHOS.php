@@ -6,6 +6,8 @@ require_once("SOPHOSaddress.php");
 require_once("SOPHOSservice.php");
 require_once("SOPHOSrule.php");
 
+require_once("SOPHOSinterface.php");
+
 //USAGE:
 //php SOPHOS_parser.php
 //  file=/Users/swaschkut/Documents/Expedition_config/XYZ output\ DMZ.txt
@@ -56,6 +58,8 @@ class SOPHOS extends PARSER
     use SOPHOSaddress;
     use SOPHOSrule;
     use SOPHOSservice;
+
+    use SOPHOSinterface;
 
     use SHAREDNEW;
 
@@ -223,8 +227,16 @@ class SOPHOS extends PARSER
         // no NAT rule migration until now
         //
         ////////////////////////////////////////////////////////////////
-        $this->rule($master_array, $rulesort);
+        if( count($rulesort) == 1 && empty($rulesort[0]) )
+        {
+            print "no rulesort\n";
+            $this->rule_noRulesort($master_array);
+        }
+        else
+            $this->rule($master_array, $rulesort);
 
+
+        $this->interface( $master_array );
 
         //Todo: route
         //route policy
