@@ -5024,6 +5024,7 @@ RuleCallContext::$supportedActions[] = array(
             'dnat_host_resolved_sum' => 'dnat_host_resolved_sum',
             'dnat_port' => 'dnat_port',
             'dnat_distribution' => 'dnat_distribution',
+            'bidir_nat' => 'bidir_nat',
             'description' => 'description',
             'schedule' => 'schedule',
             'schedule_resolved_sum' => 'schedule_resolved_sum',
@@ -5129,7 +5130,7 @@ RuleCallContext::$supportedActions[] = array(
                         ($fieldName == 'nat_rule_type' || $fieldName == 'snat_type' || $fieldName == 'snat_address' ||
                             $fieldName == 'snat_address_resovled_sum' || $fieldName == "dnat_type" || $fieldName == 'dnat_host' ||
                             $fieldName == 'dnat_host_resovled_sum' || $fieldName == 'dnat_port' || $fieldName == 'dnat_distribution'  ||
-                            $fieldName == "dst_interface" || $fieldName == "snat_interface" )
+                            $fieldName == "dst_interface" || $fieldName == "snat_interface" || $fieldName == "bidir_nat" )
                         && !$context->arguments['tmp_natrule']
                     )
                     {
@@ -5195,11 +5196,9 @@ RuleCallContext::$supportedActions[] = array(
                         $continue = true;
                     }
                     elseif(
-                        (
-                            ($fieldName == 'sp_adoption' )
-                            &&
-                            (!$adoption || !$context->arguments['tmp_secrule'])
-                        )
+                        ($fieldName == 'sp_adoption' )
+                        &&
+                        (!$adoption || !$context->arguments['tmp_secrule'])
                     )
                     {
                         $continue_text = "continue16";
@@ -5321,7 +5320,7 @@ RuleCallContext::$supportedActions[] = array(
                 ($fieldName == 'nat_rule_type' || $fieldName == 'snat_type' || $fieldName == 'snat_address' ||
                     $fieldName == 'snat_address_resovled_sum' || $fieldName == "dnat_type" || $fieldName == 'dnat_host' ||
                     $fieldName == 'dnat_host_resovled_sum' || $fieldName == 'dnat_port' || $fieldName == 'dnat_distribution'  ||
-                    $fieldName == "dst_interface" || $fieldName == "snat_interface" )
+                    $fieldName == "dst_interface" || $fieldName == "snat_interface" || $fieldName == "bidir_nat" )
                 && !$context->arguments['tmp_natrule']
             )
             {
