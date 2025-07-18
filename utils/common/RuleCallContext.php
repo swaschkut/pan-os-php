@@ -991,6 +991,16 @@ class RuleCallContext extends CallContext
                 return self::enclose('');
             return self::enclose($rule->snatinterface);
         }
+        if( $fieldName == 'bidir_nat' )
+        {
+            if( !$rule->isNatRule() )
+                return self::enclose('');
+            if( $rule->isBiDirectional() )
+                $tmp_bidir_nat = "yes";
+            else
+                $tmp_bidir_nat = "no";
+            return self::enclose($tmp_bidir_nat, $wrap);
+        }
 
         if( $fieldName == 'dnat_type' )
         {
@@ -1023,16 +1033,6 @@ class RuleCallContext extends CallContext
             if( $rule->dnatdistribution === null )
                 return self::enclose('');
             return self::enclose($rule->dnatdistribution, $wrap);
-        }
-        if( $fieldName == 'bidir_nat' )
-        {
-            if( !$rule->isNatRule() )
-                return self::enclose('');
-            if( $rule->isBiDirectional() )
-                $tmp_bidir_nat = "yes";
-            else
-                $tmp_bidir_nat = "no";
-            return self::enclose($tmp_bidir_nat, $wrap);
         }
 
         if( $fieldName == 'disabled' )
