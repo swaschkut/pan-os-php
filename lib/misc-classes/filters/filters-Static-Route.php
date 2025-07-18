@@ -38,6 +38,18 @@ RQuery::$defaultFilters['static-route']['nexthop-ip']['operators']['is.set'] = A
     )
 );
 
+RQuery::$defaultFilters['static-route']['nexthop-ip']['operators']['is'] = Array(
+    'Function' => function(StaticRouteRQueryContext $context )
+    {
+        return $context->object->nexthopIP() == $context->value;
+    },
+    'arg' => true,
+    'ci' => Array(
+        'fString' => '(%PROP% ethernet1/1)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+
 RQuery::$defaultFilters['static-route']['nexthop-vr']['operators']['is.set'] = Array(
     'Function' => function(StaticRouteRQueryContext $context )
     {

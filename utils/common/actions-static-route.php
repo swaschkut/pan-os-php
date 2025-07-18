@@ -202,3 +202,30 @@ StaticRouteCallContext::$supportedActions['exportToExcel'] = array(
     )
 
 );
+
+StaticRouteCallContext::$supportedActions['display-nexthop-ips'] = array(
+    'name' => 'display-nexthop-ips',
+    'GlobalInitFunction' => function (StaticRouteCallContext $context)
+    {
+        $context->objectList = array();
+    },
+    'MainFunction' => function (StaticRouteCallContext $context)
+    {
+        $object = $context->object;
+
+        if( $object->nexthopIP() !== null )
+            $context->objectList[$object->nexthopIP()][] = $object;
+        else
+            $context->objectList['no-nexthop-ip'][] = $object;
+    },
+
+    'GlobalFinishFunction' => function (StaticRouteCallContext $context)
+    {
+        foreach( $context->objectList as $nexthopIP => $object )
+        {
+            PH::print_stdout( "      * ".$nexthopIP." [".count( $context->objectList[$nexthopIP] )." - static routes ]");
+        }
+
+    }
+
+);

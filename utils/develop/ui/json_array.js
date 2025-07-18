@@ -344,7 +344,7 @@ var subjectObject =
                     },
                     "replace": {
                         "type": "string",
-                        "default": "*nodefault*"
+                        "default": ""
                     }
                 },
                 "help": ""
@@ -9889,6 +9889,36 @@ var subjectObject =
             "display": {
                 "name": "display",
                 "MainFunction": {}
+            },
+            "display-nexthop-ips": {
+                "name": "display-nexthop-ips",
+                "GlobalInitFunction": {},
+                "MainFunction": {},
+                "GlobalFinishFunction": {}
+            },
+            "exporttoexcel": {
+                "name": "exportToExcel",
+                "MainFunction": {},
+                "GlobalInitFunction": {},
+                "GlobalFinishFunction": {},
+                "args": {
+                    "filename": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "additionalFields": {
+                        "type": "pipeSeparatedList",
+                        "subtype": "string",
+                        "default": "*NONE*",
+                        "choices": [
+                            "WhereUsed",
+                            "UsedInLocation",
+                            "ResolveIP",
+                            "NestedMembers"
+                        ],
+                        "help": "pipe(|) separated list of additional fields (ie: Arg1|Arg2|Arg3...) to include in the report. The following is available:\n  - NestedMembers: lists all members, even the ones that may be included in nested groups\n  - ResolveIP\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n  - WhereUsed : list places where object is used (rules, groups ...)\n"
+                    }
+                }
             }
         },
         "filter": {
@@ -9933,6 +9963,14 @@ var subjectObject =
                     "is.set": {
                         "Function": {},
                         "arg": false,
+                        "ci": {
+                            "fString": "(%PROP% ethernet1\/1)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is": {
+                        "Function": {},
+                        "arg": true,
                         "ci": {
                             "fString": "(%PROP% ethernet1\/1)",
                             "input": "input\/panorama-8.0.xml"
@@ -11403,7 +11441,16 @@ var subjectObject =
     },
     "zone-protection-profile": {
         "name": "zone-protection-profile",
-        "action": [],
+        "action": {
+            "display": {
+                "name": "display",
+                "MainFunction": {}
+            },
+            "displayreferences": {
+                "name": "displayReferences",
+                "MainFunction": {}
+            }
+        },
         "filter": []
     }
 }
