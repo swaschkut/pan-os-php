@@ -54,6 +54,8 @@ trait SOPHOSinterface
                     if( isset($value['status']) )
                         $tmp_array[ $ref_name ]['status'] = str_replace(',', "", $value['status']);
 
+                    $this->sub->addressStore->newAddress( $ref_name, "ip-netmask", $tmp_array[ $ref_name ]['address']."/".$tmp_array[ $ref_name ]['netmask'] );
+
                     $ref_names = array_merge( $ref_names, $tmp_array );
                     #print_r( $tmp_array );
                     /*
@@ -148,9 +150,13 @@ trait SOPHOSinterface
                     )
                      */
 
-                    $itfhw_array[$value['itfhw']] = $value['itfhw'];
+                    $ref_name = str_replace(',', "", $value['_ref'] );
 
                     $int_name = str_replace(',', "", $value['itfhw']);
+                    $this->ref_array[$ref_name] = $int_name;
+
+                    $itfhw_array[$int_name] = $ref_name;
+
 
                     /** @var EthernetInterface $newInterface */
                     $newInterface = $this->template->network->ethernetIfStore->newEthernetIf( $int_name, "layer3" );
@@ -222,9 +228,6 @@ trait SOPHOSinterface
                 }
                 elseif( $value['_type'] === 'interface/vlan,' )
                 {
-                    $itfhw_array[$value['itfhw']] = $value['itfhw'];
-
-                    $int_name = str_replace(',', "", $value['itfhw']);
 
                     /** @var EthernetInterface $newInterface */
                     $MainInterface = $this->template->network->ethernetIfStore->find( $int_name, "layer3" );
@@ -286,7 +289,14 @@ trait SOPHOSinterface
                 elseif( $value['_type'] === 'interface/group,' )
                 {
                     //group import????
-                    #print_r($value);
+                    print_r($value);
+                    $ref_name = str_replace(',', "", $value['_ref'] );
+
+                    if( isset($value['members']) )
+                    {
+                        $int_name = str_replace(',', "", $value['members'][0]);
+                        $this->ref_array[$ref_name] = $int_name;
+                    }
                 }
             }
 

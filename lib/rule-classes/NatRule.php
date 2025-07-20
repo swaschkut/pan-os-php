@@ -624,6 +624,9 @@ class NatRule extends Rule
         else
             derr('not supported yet');
 
+        if( $interface !== null )
+            $this->setSNATInterface($interface);
+
         $this->rewriteSNAT_XML();
     }
 

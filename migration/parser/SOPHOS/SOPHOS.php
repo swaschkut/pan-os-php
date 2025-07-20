@@ -227,6 +227,9 @@ class SOPHOS extends PARSER
         $this->servicegroup($master_array);
 
 
+        $this->interface( $master_array );
+
+
         ////////////////////////////////////////////////////////////////
         //
         //generate security rules  based on information in array $master_array['packetfilter']
@@ -242,7 +245,7 @@ class SOPHOS extends PARSER
             $this->rule($master_array, $rulesort);
 
 
-        $this->interface( $master_array );
+
 
         //Todo: route
         //route policy

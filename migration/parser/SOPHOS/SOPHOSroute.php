@@ -17,7 +17,7 @@ trait SOPHOSroute
             {
                 if( $value['_type'] === "route/static," )
                 {
-                    print_r( $value );
+                    #print_r( $value );
 
                     $route_name = str_replace(',', "", $value['name']);
                     $route_comment = str_replace(',', "", $value['comment']);
@@ -150,7 +150,7 @@ trait SOPHOSroute
                 }
                 elseif( $value['_type'] === "route/policy," )
                 {
-                    print_r( $value );
+                    #print_r( $value );
                 }
 
             }

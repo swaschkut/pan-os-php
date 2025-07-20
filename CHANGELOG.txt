@@ -12,6 +12,7 @@ UTIL:
 * type=static-route actions=exporttoexcel | new implementation
 * type=static-route actions=display-nexthop-ips 'filter=(nexthop-ip is a.b.c.d )'| new implementation of actions and filter
 * type=rule ruletype=nat actions=exporttoexcel:file.html | add column bidir_nat
+* type=vendor-migration vendor=sophos | extend with NatRule migration packetfilter/nat [mode dnat|full] | packetfilter/masq
 
 BUGFIX:
 * type=securityprofile actions=spyware.alert-only-set | fix if no spyware rule is already available

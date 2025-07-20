@@ -53,6 +53,9 @@ trait SOPHOSservice
             foreach ($master_array['service'] as $policy) {
                 $srv_name = str_replace(',', "", $policy['name']);
 
+                $ref_name = str_replace(',', "", $policy['_ref']);
+                $this->ref_array[$ref_name] = $srv_name;
+
                 if ($policy['_type'] == 'service/group,') {
                     //check seperate import later on
                 } elseif ($policy['_type'] == 'service/tcp,') {
@@ -93,6 +96,8 @@ trait SOPHOSservice
             foreach ($master_array['service'] as $policy)
             {
                 $srv_name = str_replace(',', "", $policy['name']);
+                $ref_name = str_replace(',', "", $policy['_ref']);
+                $this->ref_array[$ref_name] = $srv_name;
 
                 if ($policy['_type'] == 'service/group,') {
                     $tmp_service_group = $this->sub->serviceStore->find($srv_name);
