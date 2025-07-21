@@ -145,8 +145,19 @@ foreach( $tmpVsyses as $vsys )
             $object->setName($newName);
     }
 
-//get all rules rename it
+//get all sec rules rename it
     $tmp_rules = $vsys->securityRules->rules();
+    foreach ( $tmp_rules as $object)
+    {
+        $oldName = $object->name();
+        $newName = strip_wrong_chars($oldName);
+
+        if( $oldName !==  $newName )
+            $object->setName($newName);
+    }
+
+    //get all nat rules rename it
+    $tmp_rules = $vsys->natRules->rules();
     foreach ( $tmp_rules as $object)
     {
         $oldName = $object->name();
