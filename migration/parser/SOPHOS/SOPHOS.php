@@ -236,13 +236,11 @@ class SOPHOS extends PARSER
         // no NAT rule migration until now
         //
         ////////////////////////////////////////////////////////////////
-        if( count($rulesort) == 1 && empty($rulesort[0]) )
-        {
-            print "no rulesort\n";
-            $this->rule_noRulesort($master_array);
-        }
-        else
-            $this->rule($master_array, $rulesort);
+
+        $this->rule($master_array, $rulesort);
+
+
+        $this->rule_nat($master_array);
 
 
 
