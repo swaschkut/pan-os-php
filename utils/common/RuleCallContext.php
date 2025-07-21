@@ -1686,7 +1686,7 @@ class RuleCallContext extends CallContext
     public function ServiceResolveSummary( $rule )
     {
         $mapObject = new ServiceDstPortMapping();
-        if( $rule->services->isAny() )
+        if( $rule->services !== null && $rule->services->isAny() )
         {
             $localMap = ServiceDstPortMapping::mappingFromText('0-65535', TRUE);
             $mapObject->mergeWithMapping($localMap);
@@ -1695,7 +1695,11 @@ class RuleCallContext extends CallContext
         }
 
 
-        $allMembers = $rule->services->getAll();
+        if( $rule->services !== null )
+            $allMembers = $rule->services->getAll();
+        else
+            $allMembers = array();
+
         $strMapping = array();
         foreach($allMembers as $member)
         {
@@ -1732,10 +1736,14 @@ class RuleCallContext extends CallContext
 
     public function ServiceResolveValueNestedSummary( $rule )
     {
-        if( $rule->services->isAny() )
+        if( $rule->services !== null && $rule->services->isAny() )
             return array('tcp/0-65535', 'udp/0-65535');
 
-        $allMembers = $rule->services->getAll();
+        if( $rule->services !== null )
+            $allMembers = $rule->services->getAll();
+        else
+            $allMembers = array();
+
         $strMapping = array();
         foreach($allMembers as $member)
         {
@@ -1789,10 +1797,14 @@ class RuleCallContext extends CallContext
     public function ServiceResolveNameNestedSummary( $rule )
     {
         /** @var SecurityRule $rule */
-        if( $rule->services->isAny() )
+        if( $rule->services !== null && $rule->services->isAny() )
             return array('tcp/0-65535', 'udp/0-65535');
 
-        $allMembers = $rule->services->getAll();
+        if( $rule->services !== null )
+            $allMembers = $rule->services->getAll();
+        else
+            $allMembers = array();
+
         $strMapping = array();
         foreach($allMembers as $member1)
         {
@@ -1819,10 +1831,14 @@ class RuleCallContext extends CallContext
 
     public function ServiceResolveLocationNestedSummary( $rule )
     {
-        if( $rule->services->isAny() )
+        if( $rule->services !== null && $rule->services->isAny() )
             return array('tcp/0-65535', 'udp/0-65535');
 
-        $allMembers = $rule->services->getAll();
+        if( $rule->services !== null )
+            $allMembers = $rule->services->getAll();
+        else
+            $allMembers = array();
+
         $strMapping = array();
         foreach($allMembers as $member)
         {

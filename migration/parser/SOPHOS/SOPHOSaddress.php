@@ -75,7 +75,23 @@ trait SOPHOSaddress
 
                         }
                     }
-                } elseif ($policy['_type'] == 'network/network,' || $policy['_type'] == 'network/interface_network,') {
+                }
+                elseif ($policy['_type'] == 'network/interface_address,')
+                {
+                    $addr_value = str_replace(',', "", $policy['address']);
+                    $addr_comment = str_replace(',', "", $policy['comment']);
+
+                    $tmp_address = $this->sub->addressStore->find( $addr_name);
+
+                    if ($tmp_address == null)
+                    {
+                        $tmp_address = $this->sub->addressStore->newAddress($addr_name, 'ip-netmask', $addr_value . "/32");
+
+                        $tmp_address->setDescription($addr_comment);
+                    }
+                }
+                elseif ($policy['_type'] == 'network/network,' || $policy['_type'] == 'network/interface_network,')
+                {
                     $addr_value = str_replace(',', "", $policy['address']);
                     $addr_netmask = str_replace(',', "", $policy['netmask']);
                     $addr_comment = str_replace(',', "", $policy['comment']);
