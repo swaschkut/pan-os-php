@@ -563,6 +563,14 @@ RQuery::$defaultFilters['address']['name']['operators']['has.wrong.characters'] 
         'input' => 'input/panorama-8.0.xml'
     )
 );
+RQuery::$defaultFilters['address']['name.length']['operators']['>,<,=,!'] = array(
+    'eval' => "strlen(\$object->name()) !operator! !value!",
+    'arg' => TRUE,
+    'ci' => array(
+        'fString' => '(%PROP% 63)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
 RQuery::$defaultFilters['address']['netmask']['operators']['>,<,=,!'] = array(
     'eval' => "!\$object->isGroup() && !\$object->isRegion() && !\$object->isEDL() && \$object->isType_ipNetmask() && \$object->getNetworkMask() !operator! !value!",
     'arg' => TRUE,

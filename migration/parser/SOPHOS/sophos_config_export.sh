@@ -4,22 +4,38 @@
 ###############################################################
 #https://fqdn:4444/api/definitions
 
-
+##################
 
 echo "Request SOPHOS UTM configuration data"
 
 
-apikey="APIKEY from SOPHOS UTM"
-#NOT WORKING with USERNAME/PASSWORD
-#username="USERNAME from SOPHOS UTM"
-#password="PASSWORD from SOPHOS UTM"
-fqdn="SOPHOS IP / FQDN"
+############################################################################
+####################################
+#USERNAME + Password
+username="USERNAME from SOPHOS UTM"
+password="PASSWORD from SOPHOS UTM"
+##################
+#NO CHANGE at the following line
+authkey=$(echo -n $username + ":" + $password | base64)
 
-#authkey=$(echo -n $username + ":" + $password | base64)
+
+####################################
+# APIKey of Sophos User
+apikey="APIKEY from SOPHOS UTM"
+##################
+#NO CHANGE at the following line
 authkey=$(echo -n "token:$apikey" | base64)
 
-echo $authkey
 
+
+############################################################################
+# DNS oder IP von Sophos
+fqdn="SOPHOS IP / FQDN"
+
+
+#############################
+##no change after this line
+#############################
 urlbase="https://$fqdn:4444/api/objects/"
 
 # Create a temporary directory for downloaded files

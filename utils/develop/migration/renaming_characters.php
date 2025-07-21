@@ -52,7 +52,7 @@ $usageMsg = PH::boldText('USAGE: ') . "php " . basename(__FILE__) . " in=api:://
 function strip_wrong_chars($str)
 {
     //not possible to replace it in general
-    $chars = array("\u0026amp;", "'", "ä", "ö", "ü", "Ä" , "Ö", "Ü", "+", "#", "*", "?", ",", "-", ";", ":", "(", ")", "[", "]", "\r\n", "\n", "\r", "\t", "\0", "\x0B", "/");
+    $chars = array("\u0026amp;", "'", "ä", "ö", "ü", "Ä" , "Ö", "Ü", "+", "#", "*", "?", ",", ";", ":", "(", ")", "[", "]", "\r\n", "\n", "\r", "\t", "\0", "\x0B", "/");
 
 
     foreach( $chars as $char )
