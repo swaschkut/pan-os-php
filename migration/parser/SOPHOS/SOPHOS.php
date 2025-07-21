@@ -371,6 +371,9 @@ class SOPHOS extends PARSER
         )
 
          */
+
+        echo PH::boldText("\nVALIDATION - replace tmp services with APP-id if possible\n");
+        CONVERTER::AppMigration( $this->sub, $this->configType );
     }
 
     function clean_config()

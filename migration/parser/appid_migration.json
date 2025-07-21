@@ -480,6 +480,20 @@
             "toApp": [
                 "dhcp"
             ]
+        },
+        "ping": {
+            "toApp": [
+                "icmp",
+                "ping",
+                "traceroute"
+            ]
+        },
+        "ping echo reply": {
+            "toApp": [
+                "icmp",
+                "ping",
+                "traceroute"
+            ]
         }
     }
 }
