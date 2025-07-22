@@ -94,7 +94,7 @@ trait SOPHOSrule
                                     // add to rule source
                                     if( $tmp_address->isAddress() )
                                     {
-                                        if( $tmp_address->value() !== "0.0.0.0/0" )
+                                        #if( $tmp_address->value() !== "0.0.0.0/0" )
                                             $tmp_rule->source->addObject($tmp_address);
                                     }
                                     else
@@ -143,7 +143,7 @@ trait SOPHOSrule
                                     // add to rule destination
                                     if( $tmp_address->isAddress() )
                                     {
-                                        if( $tmp_address->value() !== "0.0.0.0/0" )
+                                        #if( $tmp_address->value() !== "0.0.0.0/0" )
                                             $tmp_rule->destination->addObject($tmp_address);
                                     }
                                     else
@@ -324,12 +324,26 @@ trait SOPHOSrule
                                 $tmp_adr_name = $this->ref_array[$dnat_address_ref];
                                 $adr_object = $this->sub->addressStore->find($tmp_adr_name);
                                 PH::print_stdout( "set DNAT : ".$adr_object->name() ." - ".$adr_object->value() );
-                                $tmp_rule->setDNAT($adr_object);
-                                if (!empty($dnat_service)) {
-                                    $tmp_srv_name = $this->ref_array[$dnat_service_ref];
-                                    $srv_object = $this->sub->serviceStore->find($tmp_srv_name);
-                                    $tmp_rule->setDNAT($adr_object, $srv_object);
+                                /** @var Address $adr_object */
+                                if( !$adr_object->isType_FQDN() )
+                                {
+                                    PH::print_stdout("type: ".$adr_object->type());
+                                    $tmp_rule->setDNAT($adr_object);
+                                    if (!empty($dnat_service)) {
+                                        $tmp_srv_name = $this->ref_array[$dnat_service_ref];
+                                        $srv_object = $this->sub->serviceStore->find($tmp_srv_name);
+                                        $tmp_rule->setDNAT($adr_object, $srv_object);
+                                    }
                                 }
+                                else
+                                {
+                                    $tmp_adr = $this->sub->addressStore->find( "dummy-1.2.3.4");
+                                    if( $tmp_adr === null )
+                                        $tmp_adr = $this->sub->addressStore->newAddress( "dummy-1.2.3.4", "ip-netmask", "1.2.3.4" );
+                                    $tmp_rule->setDNAT($adr_object);
+                                    $tmp_rule->setDescription("dnat FQDN obj: ".$adr_object->name());
+                                }
+
 
                                 print_r($policy);
                                 /*
@@ -381,11 +395,23 @@ trait SOPHOSrule
                                 $tmp_adr_name = $this->ref_array[$dnat_address_ref];
                                 $adr_object = $this->sub->addressStore->find($tmp_adr_name);
                                 PH::print_stdout( "set DNAT : ".$adr_object->name() ." - ".$adr_object->value() );
-                                $tmp_rule->setDNAT($adr_object);
-                                if (!empty($dnat_service)) {
-                                    $tmp_srv_name = $this->ref_array[$dnat_service_ref];
-                                    $srv_object = $this->sub->serviceStore->find($tmp_srv_name);
-                                    $tmp_rule->setDNAT($adr_object, $srv_object);
+                                if( $adr_object->isType_FQDN() )
+                                {
+                                    PH::print_stdout("type: ".$adr_object->type());
+                                    $tmp_rule->setDNAT($adr_object);
+                                    if (!empty($dnat_service)) {
+                                        $tmp_srv_name = $this->ref_array[$dnat_service_ref];
+                                        $srv_object = $this->sub->serviceStore->find($tmp_srv_name);
+                                        $tmp_rule->setDNAT($adr_object, $srv_object);
+                                    }
+                                }
+                                else
+                                {
+                                    $tmp_adr = $this->sub->addressStore->find( "dummy-1.2.3.4");
+                                    if( $tmp_adr === null )
+                                        $tmp_adr = $this->sub->addressStore->newAddress( "dummy-1.2.3.4", "ip-netmask", "1.2.3.4" );
+                                    $tmp_rule->setDNAT($adr_object);
+                                    $tmp_rule->setDescription("dnat FQDN obj: ".$adr_object->name());
                                 }
 
                                 //NAT
@@ -618,12 +644,12 @@ trait SOPHOSrule
                                         PH::print_stdout("- source not NULL");
                                         PH::print_stdout(get_class($adr_object) );
                                         PH::print_stdout("value: ".$adr_object->value());
-                                        if( $adr_object->value() !== "0.0.0.0/0" )
-                                        {
+                                        #if( $adr_object->value() !== "0.0.0.0/0" )
+                                        #{
                                             PH::print_stdout("- value: " . $adr_object->value());
                                             PH::print_stdout( "set source : ".$adr_object->name() );
                                             $tmp_rule->source->addObject($adr_object);
-                                        }
+                                        #}
                                     }
                                     else
                                         $tmp_rule->source->addObject($adr_object);
@@ -648,11 +674,10 @@ trait SOPHOSrule
                                         PH::print_stdout(get_class($adr_object) );
                                         PH::print_stdout("value: ".$adr_object->value());
 
-                                        if( $adr_object->value() !== "0.0.0.0/0" )
-                                        {
+                                        #if( $adr_object->value() !== "0.0.0.0/0" ) {
                                             PH::print_stdout( "set destination : ".$adr_object->name() );
                                             $tmp_rule->destination->addObject($adr_object);
-                                        }
+                                        #}
                                     }
                                     else
                                         $tmp_rule->destination->addObject($adr_object);
@@ -671,8 +696,16 @@ trait SOPHOSrule
                                     /** @var NatRule $tmp_rule */
                                     if ($srv_object !== null)
                                     {
-                                        PH::print_stdout( "set service : ".$srv_object->name() );
-                                        $tmp_rule->setService($srv_object);
+                                        if( $srv_object->isService() )
+                                        {
+                                            PH::print_stdout( "set service : ".$srv_object->name() );
+                                            $tmp_rule->setService($srv_object);
+                                        }
+                                        else
+                                        {
+                                            $tmp_rule->setDescription("SRVgroup: ".$srv_object->name());
+                                        }
+
                                     }
                                     else
                                         mwarning("   - service object not found:" . $ref_obj_name . "\n", null, false);

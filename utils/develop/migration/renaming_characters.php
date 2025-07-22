@@ -152,6 +152,8 @@ foreach( $tmpVsyses as $vsys )
         $oldName = $object->name();
         $newName = strip_wrong_chars($oldName);
 
+        $newName = trim($newName);
+
         if( $oldName !==  $newName )
             $object->setName($newName);
     }
@@ -162,6 +164,8 @@ foreach( $tmpVsyses as $vsys )
     {
         $oldName = $object->name();
         $newName = strip_wrong_chars($oldName);
+
+        $newName = trim($newName);
 
         if( $oldName !==  $newName )
             $object->setName($newName);
