@@ -7,7 +7,7 @@ trait SOPHOSinterface
         $ref_names = array();
 
         PH::print_stdout("**************************************");
-        PH::print_stdout( "\nINTERFACE  migration:\n");
+        PH::print_stdout( "\nINTERFACE migration:\n");
 
         if( isset($master_array['itfparams']) )
         {
@@ -159,6 +159,7 @@ trait SOPHOSinterface
 
 
                     /** @var EthernetInterface $newInterface */
+                    PH::print_stdout(" - create EthernetInterface: ".$int_name );
                     $newInterface = $this->template->network->ethernetIfStore->newEthernetIf( $int_name, "layer3" );
                     $this->sub->importedInterfaces->addInterface($newInterface);
 
@@ -228,15 +229,21 @@ trait SOPHOSinterface
                 }
                 elseif( $value['_type'] === 'interface/vlan,' )
                 {
+                    $int_name = str_replace(',', "", $value['itfhw']);
+
+                    $this->ref_array[$ref_name] = $int_name;
+                    $itfhw_array[$int_name] = $ref_name;
 
                     /** @var EthernetInterface $newInterface */
                     $MainInterface = $this->template->network->ethernetIfStore->find( $int_name, "layer3" );
 
                     if( $MainInterface === null )
                     {
+                        PH::print_stdout(" - create EthernetInterface: ".$int_name );
                         $MainInterface = $this->template->network->ethernetIfStore->newEthernetIf( $int_name, "layer3" );
                         $this->sub->importedInterfaces->addInterface($newInterface);
                     }
+                    PH::print_stdout("found Interface: ".$MainInterface->name());
 
                     #print_r( $value );
                     /*
@@ -259,6 +266,7 @@ trait SOPHOSinterface
                         [status] => true,
                         [vlantag] => 811
                      */
+                    PH::print_stdout(" - EthernetInterface: ".$MainInterface->name(). " add subinterface: ".$value['vlantag'] );
                     $newInterface = $MainInterface->addSubInterface( $value['vlantag'] );
                     $this->sub->importedInterfaces->addInterface($newInterface);
 

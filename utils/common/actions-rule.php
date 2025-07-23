@@ -1962,6 +1962,7 @@ RuleCallContext::$supportedActions[] = array(
         }
         if( $rule->isNatRule()  )
         {
+            /** @var NatRule $rule */
             $string = "Rule is of type ".get_class($rule)." - implementation missing";
             PH::ACTIONstatus( $context, "SKIPPED", $string );
             return;
@@ -1973,8 +1974,9 @@ RuleCallContext::$supportedActions[] = array(
             return;
         }
 
+        /** @var SecurityRule $rule */
         if( $context->isAPI )
-                $rule->services->API_setAny();
+            $rule->services->API_setAny();
         else
             $rule->services->setAny();
     },

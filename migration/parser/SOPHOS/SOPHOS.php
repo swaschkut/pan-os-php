@@ -374,6 +374,9 @@ class SOPHOS extends PARSER
 
         echo PH::boldText("\nVALIDATION - replace tmp services with APP-id if possible\n");
         CONVERTER::AppMigration( $this->sub, $this->configType );
+
+        echo PH::boldText( "\nVALIDATION - interface name and change into PAN-OS confirm naming convention\n" );
+        CONVERTER::validate_interface_names($this->template);
     }
 
     function clean_config()
