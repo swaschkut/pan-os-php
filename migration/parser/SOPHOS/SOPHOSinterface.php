@@ -270,6 +270,16 @@ trait SOPHOSinterface
                     $newInterface = $MainInterface->addSubInterface( $value['vlantag'] );
                     $this->sub->importedInterfaces->addInterface($newInterface);
 
+                    /** @var VirtualSystem $dummy_sub */
+                    $dummy_sub = $this->sub;
+                    $tmp_zone = $dummy_sub->zoneStore->newZone( "v".$value['vlantag'], "layer3" );
+                    $tmp_zone->attachedInterfaces->addInterface($newInterface);
+
+                    $dummy_template = $this->template->network;
+                    /** @var NetworkPropertiesContainer $dummy_template*/
+                    $tmp_router = $dummy_template->virtualRouterStore->findOrCreate("default");
+                    $tmp_router->attachedInterfaces->addInterface($newInterface);
+
 
 
                     $int_primary = str_replace(',', "", $value['primary_address']);
