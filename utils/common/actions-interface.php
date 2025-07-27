@@ -334,6 +334,8 @@ InterfaceCallContext::$supportedActions['name-Rename'] = array(
 
         $newName = $context->arguments['newName'];
 
+        $newName = str_replace("$$", "/", $newName);
+
         //Todo: only working for offline config
         if( $context->isAPI )
             derr( "changing interface is not supported in API mode" );
@@ -342,7 +344,12 @@ InterfaceCallContext::$supportedActions['name-Rename'] = array(
         $object->setName($newName);
 
     },
-    'args' => array('newName' => array('type' => 'string', 'default' => '*nodefault*') )
+    'args' => array(
+        'newName' => array(
+            'type' => 'string',
+            'default' => '*nodefault*',
+            'help' => "instead of '/' use '$$' => 'actions=name-rename:ethernet1/1' please use 'actions=name-rename:ethernet1$$1'")
+    )
 );
 
 InterfaceCallContext::$supportedActions['display-migration-warning'] = array(
