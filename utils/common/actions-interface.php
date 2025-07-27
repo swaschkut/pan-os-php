@@ -683,7 +683,7 @@ InterfaceCallContext::$supportedActions['remove'] = array(
         $newMainInterface = $object->owner->owner->network->ethernetIfStore->find($object->name());
         if( $newMainInterface === null )
         {
-            mwarning( "Interface: ".$object->name()." not/no longer available", null, false );
+            #mwarning( "Interface: ".$object->name()." not/no longer available", null, false );
             return false;
         }
 
