@@ -14,6 +14,7 @@ UTIL:
 * type=rule ruletype=nat actions=exporttoexcel:file.html | add column bidir_nat
 * type=vendor-migration vendor=sophos | extend with NatRule migration packetfilter/nat [mode dnat|full] | packetfilter/masq
 * type=interface 'actions=name-rename:ethernet1$$2' | introduce variable $$ to get it working for /
+* update App-id version to 9004-9564
 
 BUGFIX:
 * type=securityprofile actions=spyware.alert-only-set | fix if no spyware rule is already available

@@ -704,6 +704,18 @@ var subjectObject =
                     }
                 }
             },
+            "name.length": {
+                "operators": {
+                    ">,<,=,!": {
+                        "eval": "strlen($object->name()) !operator! !value!",
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% 63)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
             "netmask": {
                 "operators": {
                     ">,<,=,!": {
@@ -3688,7 +3700,8 @@ var subjectObject =
                 "args": {
                     "newName": {
                         "type": "string",
-                        "default": "*nodefault*"
+                        "default": "*nodefault*",
+                        "help": "instead of '\/' use '$$' => 'actions=name-rename:ethernet1\/1' please use 'actions=name-rename:ethernet1$$1'"
                     }
                 }
             },
