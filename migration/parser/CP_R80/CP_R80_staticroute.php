@@ -26,8 +26,12 @@ Destination     Gateway         Genmask         Flags   MSS Window  irtt Iface
         $lines = explode("\n", $routetable);
 
         $start = FALSE;
+        //possible needed, if no header line is copied over into routing export file
+        #$start = TRUE;
         $routeentry = "";
         $routearray = array();
+
+        #print_r( $lines );
 
         foreach( $lines as $index => &$line )
         {

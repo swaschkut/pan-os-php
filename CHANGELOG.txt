@@ -22,6 +22,7 @@ BUGFIX:
 * type=securityprofile actions=url.best-practice-set | bugfix to not error out based on none URLProfile object
 * type=securityprofile actions=spyware.alert-only-set/spyware.best-practice-set - fix to not add packet-capture XMLnode for advanced-dns part
 * type=rule ruletype=nat actions=exporttoexcel:file.html | bugfix to get NATrule information correctly displayed
+* class ZoneRuleContainer - revert back Panorama DeviceGroup search within Templates - issue with type=rule filters
 
 GENERAL:
 * adjust repository links, to github.com/swaschkut/pan-os-php
@@ -68,7 +69,7 @@ BUGFIX:
 * Class GPGatewayTunnel | class Panoramaconf type=stats
 * type=gpgateway-tunnel | improvements to handle interface references without error out
 * class PanoramaConf for type=stats | this is based on wf adoption/visibility/best-practice
-* class ZoneRuleContainer | bugfix to add zones from Panorama Template - validation. needed if this is totally correct
+* class ZoneRuleContainer | bugfix to add zones from Panorama Template - validation. needed if this is totally correct -> not correct see 2.1.38 [reverted]
 * type=stats | correction for user-id adoption/visibility calculation | use all security Rules
 * type=stats | BP credential theft - fit to SCM BP
 * type=rule actions=exporttoexcel | validate that $rule is NOT null
