@@ -443,6 +443,11 @@ trait SOPHOSrule
                                 )
                                  */
                             }
+                            else
+                            {
+                                $tmp_rule = $this->sub->natRules->newNATRule($rule_name);
+                                mwarning( "mode: ".$policy['mode']." not yet supported" );
+                            }
                         }
                         elseif ($rule_type === "packetfilter/masq")
                         {

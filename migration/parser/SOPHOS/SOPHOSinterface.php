@@ -229,6 +229,8 @@ trait SOPHOSinterface
                 }
                 elseif( $value['_type'] === 'interface/vlan,' )
                 {
+                    $ref_name = str_replace(',', "", $value['_ref'] );
+
                     $int_name = str_replace(',', "", $value['itfhw']);
 
                     $this->ref_array[$ref_name] = $int_name;
@@ -307,13 +309,15 @@ trait SOPHOSinterface
                 elseif( $value['_type'] === 'interface/group,' )
                 {
                     //group import????
-                    print_r($value);
+                    #print_r($value);
                     $ref_name = str_replace(',', "", $value['_ref'] );
 
                     if( isset($value['members']) )
                     {
-                        $int_name = str_replace(',', "", $value['members'][0]);
-                        $this->ref_array[$ref_name] = $int_name;
+                        $tmp_members = explode(',', $value['members']);
+                        $int_name = str_replace(',', "", $tmp_members[0]);
+
+                        $this->ref_array[$ref_name] = $this->ref_array[$int_name];
                     }
                 }
             }

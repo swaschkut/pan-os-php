@@ -854,7 +854,10 @@ class NatRule extends Rule
         if( get_class( $this->owner->owner->owner ) != "PanoramaConf" )
         {
             $tmp_interface = $this->owner->owner->owner->network->findInterface($this->snatinterface);
-            $tmp_interface->addReference($this);
+            if( $tmp_interface != null )
+                $tmp_interface->addReference($this);
+            else
+                derr( "Interface: ".$this->snatinterface." not found" );
         }
         else
         {
