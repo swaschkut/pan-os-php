@@ -14,7 +14,7 @@ UTIL:
 * type=rule ruletype=nat actions=exporttoexcel:file.html | add column bidir_nat
 * type=vendor-migration vendor=sophos | extend with NatRule migration packetfilter/nat [mode dnat|full] | packetfilter/masq
 * type=interface 'actions=name-rename:ethernet1$$2' | introduce variable $$ to get it working for /
-* update App-id version to 9004-9564
+* type=device actions=rename-wrong-characters | for migration to replace object names of none PANW naming convention for sec/nat rule adr/srv objects
 
 BUGFIX:
 * type=securityprofile actions=spyware.alert-only-set | fix if no spyware rule is already available
@@ -28,6 +28,7 @@ BUGFIX:
 GENERAL:
 * adjust repository links, to github.com/swaschkut/pan-os-php
 * introduce class ZoneProtectionProfile and ZoneProtectionProfileStore
+* update App-id version to 9004-9564
 
 
 2.1.37 (20250628)

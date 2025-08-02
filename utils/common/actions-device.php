@@ -4873,3 +4873,106 @@ DeviceCallContext::$supportedActions['telemetry-enable'] = array(
     ),
     'help' => "enable function: possible values: 'yes' or 'no'"
 );
+
+DeviceCallContext::$commonActionFunctions['rename_characters'] = array(
+    'function' => function (string $str)
+    {
+        //not possible to replace it in general
+        $chars = array("\u0026amp;", "'", "ä", "ö", "ü", "Ä" , "Ö", "Ü", "+", "#", "*", "?", ",", ";", ":", "(", ")", "[", "]", "\\", "\r\n", "\n", "\r", "\t", "\0", "\x0B", "/");
+
+        foreach( $chars as $char )
+        {
+
+            if( $char === "ä" )
+                $str = str_replace($char, "ae", $str);
+            elseif( $char === "ö" )
+                $str = str_replace($char, "oe", $str);
+            elseif( $char === "ü" )
+                $str = str_replace($char, "ue", $str);
+            elseif( $char === "Ä" )
+                $str = str_replace($char, "Ae", $str);
+            elseif( $char === "Ö" )
+                $str = str_replace($char, "Oe", $str);
+            elseif( $char === "Ü" )
+                $str = str_replace($char, "Ue", $str);
+            else
+                $str = str_replace($char, "", $str);
+        }
+
+
+        return $str;
+    }
+);
+
+DeviceCallContext::$supportedActions['rename-wrong-characters'] = array(
+    'name' => 'rename-wrong-characters',
+    'GlobalInitFunction' => function (DeviceCallContext $context) {
+        $context->first = true;
+    },
+    'MainFunction' => function (DeviceCallContext $context)
+    {
+        $f = DeviceCallContext::$commonActionFunctions['rename_characters']['function'];
+
+        $vsys = $context->object;
+
+        if( get_class($vsys) !== "DeviceGroup" and get_class($vsys) !== "VirtualSystem" )
+        {
+            derr( "only working for DeviceGroups or VirtualSystems", null, false );
+        }
+
+        $tmp_services = $vsys->serviceStore->all();
+        foreach( $tmp_services as $object)
+        {
+            $oldName = $object->name();
+            $newName = $f($oldName);
+            #$newName = strip_wrong_chars($oldName);
+
+            if( $oldName !==  $newName )
+                $object->setName($newName);
+        }
+
+        //get all address / address-groups rename it
+        $tmp_addresses = $vsys->addressStore->all();
+        foreach( $tmp_addresses as $object)
+        {
+            $oldName = $object->name();
+            $newName = $f($oldName);
+            #$newName = strip_wrong_chars($oldName);
+
+            if( $oldName !==  $newName  && $object !== null )
+                $object->setName($newName);
+        }
+
+        //get all sec rules rename it
+        $tmp_rules = $vsys->securityRules->rules();
+        foreach ( $tmp_rules as $object)
+        {
+            $oldName = $object->name();
+            $newName = $f($oldName);
+            #$newName = strip_wrong_chars($oldName);
+
+            $newName = trim($newName);
+
+            if( $oldName !==  $newName )
+                $object->setName($newName);
+        }
+
+        //get all nat rules rename it
+        $tmp_rules = $vsys->natRules->rules();
+        foreach ( $tmp_rules as $object)
+        {
+            $oldName = $object->name();
+            $newName = $f($oldName);
+            #$newName = strip_wrong_chars($oldName);
+
+            $newName = trim($newName);
+
+            if( $oldName !==  $newName )
+                $object->setName($newName);
+        }
+    },
+    'args' => array(
+        'enable' => array('type' => 'string', 'default' => 'no')
+        ),
+        'help' => "enable function: possible values: 'yes' or 'no'"
+);

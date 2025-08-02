@@ -50,6 +50,9 @@ trait SOPHOSaddress
                     $tmp_address = $this->sub->addressStore->find($addr_name);
                     if ($tmp_address == null) {
                         #print $tmp_address->name()."\n";
+                        $addr_value_array = explode("/", $addr_value);
+                        $addr_value = $addr_value_array[0];
+
                         PH::print_stdout("create address fqdn - name: " . $addr_name . " - value: " . $addr_value);
                         $tmp_address = $this->sub->addressStore->newAddress($addr_name, 'fqdn', $addr_value);
                         $tmp_address->setDescription($addr_comment);
