@@ -124,6 +124,18 @@ trait SOPHOSinterface
 
             foreach( $master_array['interface'] as $key => $value )
             {
+                if(  $this->useLogicalRouter )
+                    $new_router = $this->template->network->logicalRouterStore->findVirtualRouter("default");
+                else
+                    $new_router = $this->template->network->virtualRouterStore->findVirtualRouter("default");
+                if( $new_router === null )
+                {
+                    if(  $this->useLogicalRouter )
+                        $new_router = $this->template->network->logicalRouterStore->newLogicalRouter("default");
+                    else
+                        $new_router = $this->template->network->virtualRouterStore->newVirtualRouter("default");
+                }
+
                 if( $value['_type'] === 'interface/ethernet,' )
                 {
                     #print_r($value);
@@ -162,6 +174,17 @@ trait SOPHOSinterface
                     PH::print_stdout(" - create EthernetInterface: ".$int_name );
                     $newInterface = $this->template->network->ethernetIfStore->newEthernetIf( $int_name, "layer3" );
                     $this->sub->importedInterfaces->addInterface($newInterface);
+                    $new_router->attachedInterfaces->addInterface($newInterface);
+
+                    /** @var VirtualSystem $dummy_sub */
+                    $dummy_sub = $this->sub;
+                    $tmp_zone = $dummy_sub->zoneStore->newZone( $int_name, "layer3" );
+                    if( strpos( $int_name, "RedRed" ) !== false )
+                    {
+                        //check needed if $newInterface is already used by another Zone
+                    }
+                    else
+                        $tmp_zone->attachedInterfaces->addInterface($newInterface);
 
                     $int_primary = str_replace(',', "", $value['primary_address']);
                     $tmp_address = $ref_names[$int_primary]['address']."/".$ref_names[$int_primary]['netmask'];
@@ -243,7 +266,18 @@ trait SOPHOSinterface
                     {
                         PH::print_stdout(" - create EthernetInterface: ".$int_name );
                         $MainInterface = $this->template->network->ethernetIfStore->newEthernetIf( $int_name, "layer3" );
-                        $this->sub->importedInterfaces->addInterface($newInterface);
+                        $this->sub->importedInterfaces->addInterface($MainInterface);
+                        $new_router->attachedInterfaces->addInterface($MainInterface);
+
+                        /** @var VirtualSystem $dummy_sub */
+                        $dummy_sub = $this->sub;
+                        $tmp_zone = $dummy_sub->zoneStore->newZone( $int_name, "layer3" );
+                        if( strpos( $int_name, "RedRed" ) !== false )
+                        {
+                            //check needed if $newInterface is already used by another Zone
+                        }
+                        else
+                            $tmp_zone->attachedInterfaces->addInterface($newInterface);
                     }
                     PH::print_stdout("found Interface: ".$MainInterface->name());
 
@@ -271,16 +305,15 @@ trait SOPHOSinterface
                     PH::print_stdout(" - EthernetInterface: ".$MainInterface->name(). " add subinterface: ".$value['vlantag'] );
                     $newInterface = $MainInterface->addSubInterface( $value['vlantag'] );
                     $this->sub->importedInterfaces->addInterface($newInterface);
+                    $new_router->attachedInterfaces->addInterface($newInterface);
 
                     /** @var VirtualSystem $dummy_sub */
                     $dummy_sub = $this->sub;
                     $tmp_zone = $dummy_sub->zoneStore->newZone( "v".$value['vlantag'], "layer3" );
                     $tmp_zone->attachedInterfaces->addInterface($newInterface);
 
-                    $dummy_template = $this->template->network;
-                    /** @var NetworkPropertiesContainer $dummy_template*/
-                    $tmp_router = $dummy_template->virtualRouterStore->findOrCreate("default");
-                    $tmp_router->attachedInterfaces->addInterface($newInterface);
+
+
 
 
 

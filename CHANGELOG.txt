@@ -15,6 +15,7 @@ UTIL:
 * type=vendor-migration vendor=sophos | extend with NatRule migration packetfilter/nat [mode dnat|full] | packetfilter/masq
 * type=interface 'actions=name-rename:ethernet1$$2' | introduce variable $$ to get it working for /
 * type=device actions=rename-wrong-characters | for migration to replace object names of none PANW naming convention for sec/nat rule adr/srv objects
+* type=vendor-migration vendor=sophos | optimisation of interface/staticroute/rules with same name migration
 
 BUGFIX:
 * type=securityprofile actions=spyware.alert-only-set | fix if no spyware rule is already available
@@ -23,7 +24,6 @@ BUGFIX:
 * type=securityprofile actions=spyware.alert-only-set/spyware.best-practice-set - fix to not add packet-capture XMLnode for advanced-dns part
 * type=rule ruletype=nat actions=exporttoexcel:file.html | bugfix to get NATrule information correctly displayed
 * class ZoneRuleContainer - revert back Panorama DeviceGroup search within Templates - issue with type=rule filters
-* type=vendor-migration vendor=sophos | improvements related to interface migration
 
 GENERAL:
 * adjust repository links, to github.com/swaschkut/pan-os-php

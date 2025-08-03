@@ -4878,7 +4878,7 @@ DeviceCallContext::$commonActionFunctions['rename_characters'] = array(
     'function' => function (string $str)
     {
         //not possible to replace it in general
-        $chars = array("\u0026amp;", "'", "ä", "ö", "ü", "Ä" , "Ö", "Ü", "+", "#", "*", "?", ",", ";", ":", "(", ")", "[", "]", "\\", "\r\n", "\n", "\r", "\t", "\0", "\x0B", "/");
+        $chars = array("\u0026amp;", "'", "ä", "ö", "ü", "Ä" , "Ö", "Ü", "ß", "+", "#", "*", "?", ",", ";", ":", "(", ")", "[", "]", "\\", "\r\n", "\n", "\r", "\t", "\0", "\x0B", "/");
 
         foreach( $chars as $char )
         {
@@ -4895,6 +4895,8 @@ DeviceCallContext::$commonActionFunctions['rename_characters'] = array(
                 $str = str_replace($char, "Oe", $str);
             elseif( $char === "Ü" )
                 $str = str_replace($char, "Ue", $str);
+            elseif( $char === "ß" )
+                $str = str_replace($char, "ss", $str);
             else
                 $str = str_replace($char, "", $str);
         }
@@ -4954,7 +4956,11 @@ DeviceCallContext::$supportedActions['rename-wrong-characters'] = array(
             $newName = trim($newName);
 
             if( $oldName !==  $newName )
-                $object->setName($newName);
+            {
+                $final_newName = $object->owner->findAvailableName($newName);
+                $object->setName($final_newName);
+            }
+
         }
 
         //get all nat rules rename it
@@ -4968,7 +4974,11 @@ DeviceCallContext::$supportedActions['rename-wrong-characters'] = array(
             $newName = trim($newName);
 
             if( $oldName !==  $newName )
-                $object->setName($newName);
+            {
+                $final_newName = $object->owner->findAvailableName($newName);
+                $object->setName($final_newName);
+            }
+
         }
     },
     'args' => array(

@@ -44,8 +44,9 @@ trait SOPHOSrule
                         $rule_name = rtrim($rule_name);
 
 
-                        $tmp_rule = $this->sub->securityRules->newSecurityRule($rule_name);
-                        PH::print_stdout( PH::boldText("generate new Rule:" . $rule_name) );
+                        $final_newName = $this->sub->securityRules->findAvailableName($rule_name);
+                        $tmp_rule = $this->sub->securityRules->newSecurityRule($final_newName);
+                        PH::print_stdout( PH::boldText("generate new Rule:" . $final_newName) );
 
 
                         if( strpos($policy['comment'], ",") !== 0 )
@@ -297,8 +298,9 @@ trait SOPHOSrule
                         {
                             if (isset($policy['mode']) && $policy['mode'] == 'snat,') {
                                 /** @var NatRule $tmp_rule */
-                                $tmp_rule = $this->sub->natRules->newNATRule($rule_name);
-                                PH::print_stdout(PH::boldText("generate new SNAT Rule:" . $rule_name));
+                                $final_newName = $this->sub->natRules->findAvailableName($rule_name);
+                                $tmp_rule = $this->sub->natRules->newNATRule($final_newName);
+                                PH::print_stdout(PH::boldText("generate new SNAT Rule:" . $final_newName));
 
                                 $snat_address_ref = str_replace(',', "", $policy['source_nat_address']);
                                 $snat_service_ref = str_replace(',', "", $policy['source_nat_service']);
@@ -315,8 +317,9 @@ trait SOPHOSrule
                             elseif (isset($policy['mode']) && $policy['mode'] == 'dnat,')
                             {
                                 /** @var NatRule $tmp_rule */
-                                $tmp_rule = $this->sub->natRules->newNATRule($rule_name);
-                                PH::print_stdout(PH::boldText("generate new DNAT Rule:" . $rule_name));
+                                $final_newName = $this->sub->natRules->findAvailableName($rule_name);
+                                $tmp_rule = $this->sub->natRules->newNATRule($final_newName);
+                                PH::print_stdout(PH::boldText("generate new DNAT Rule:" . $final_newName));
 
                                 $dnat_address_ref = str_replace(',', "", $policy['destination_nat_address']);
                                 $dnat_service_ref = str_replace(',', "", $policy['destination_nat_service']);
@@ -375,8 +378,9 @@ trait SOPHOSrule
                             elseif (isset($policy['mode']) && $policy['mode'] == 'full,')
                             {
                                 /** @var NatRule $tmp_rule */
-                                $tmp_rule = $this->sub->natRules->newNATRule($rule_name);
-                                PH::print_stdout(PH::boldText("generate new full SNAT and DNAT Rule:" . $rule_name));
+                                $final_newName = $this->sub->natRules->findAvailableName($rule_name);
+                                $tmp_rule = $this->sub->natRules->newNATRule($final_newName);
+                                PH::print_stdout(PH::boldText("generate new full SNAT and DNAT Rule:" . $final_newName));
 
                                 $snat_address_ref = str_replace(',', "", $policy['source_nat_address']);
                                 $snat_service_ref = str_replace(',', "", $policy['source_nat_service']);
@@ -445,14 +449,16 @@ trait SOPHOSrule
                             }
                             else
                             {
-                                $tmp_rule = $this->sub->natRules->newNATRule($rule_name);
+                                $final_newName = $this->sub->natRules->findAvailableName($rule_name);
+                                $tmp_rule = $this->sub->natRules->newNATRule($final_newName);
                                 mwarning( "mode: ".$policy['mode']." not yet supported" );
                             }
                         }
                         elseif ($rule_type === "packetfilter/masq")
                         {
-                            $tmp_rule = $this->sub->natRules->newNATRule($rule_name);
-                            PH::print_stdout(PH::boldText("generate new masq NAT Rule:" . $rule_name));
+                            $final_newName = $this->sub->natRules->findAvailableName($rule_name);
+                            $tmp_rule = $this->sub->natRules->newNATRule($final_newName);
+                            PH::print_stdout(PH::boldText("generate new masq NAT Rule:" . $final_newName));
 
 
                             /** @var NatRule $tmp_rule */

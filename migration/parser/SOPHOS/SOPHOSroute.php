@@ -74,7 +74,10 @@ trait SOPHOSroute
                             if( $obj_route_network->isAddress() )
                             {
                                 $route_network = $obj_route_network->value();
-
+                                if( strpos($route_network, "/") === FALSE )
+                                {
+                                    $route_network .= "/32";
+                                }
                                 //------------
 
                                 $xml_interface = "dummy";
