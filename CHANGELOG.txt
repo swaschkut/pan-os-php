@@ -1,6 +1,14 @@
 CHANGELOG
 
-2.1.38
+2.1.39
+UTIL:
+
+BUGFIX:
+
+GENERAL:
+
+
+2.1.38 (20250806)
 UTIL:
 * type=device actions=defaultsecurityrule-securityprofilegroup-set:{NAME},true/false |  introduce additional argument FORCE - to add SPG per default only if no SPG is set
 * type=securityprofile securityprofiletype=spyware actions=display | extend to show also advanced-dns-security-categories
