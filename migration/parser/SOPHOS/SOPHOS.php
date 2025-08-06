@@ -6,6 +6,9 @@ require_once("SOPHOSaddress.php");
 require_once("SOPHOSservice.php");
 require_once("SOPHOSrule.php");
 
+require_once("SOPHOSinterface.php");
+require_once("SOPHOSroute.php");
+
 //USAGE:
 //php SOPHOS_parser.php
 //  file=/Users/swaschkut/Documents/Expedition_config/XYZ output\ DMZ.txt
@@ -57,7 +60,14 @@ class SOPHOS extends PARSER
     use SOPHOSrule;
     use SOPHOSservice;
 
+    use SOPHOSinterface;
+    use SOPHOSroute;
+
     use SHAREDNEW;
+
+    public $useLogicalRouter = false;
+
+    public $ref_array = array();
 
     public function vendor_main()
     {
@@ -217,13 +227,22 @@ class SOPHOS extends PARSER
         $this->servicegroup($master_array);
 
 
+        $this->interface( $master_array );
+
+
         ////////////////////////////////////////////////////////////////
         //
         //generate security rules  based on information in array $master_array['packetfilter']
         // no NAT rule migration until now
         //
         ////////////////////////////////////////////////////////////////
+
         $this->rule($master_array, $rulesort);
+
+
+        $this->rule_nat($master_array);
+
+
 
 
         //Todo: route
@@ -261,6 +280,7 @@ class SOPHOS extends PARSER
 
          */
 
+        $this->route( $master_array );
 
 //Todo: ipsec
 
@@ -351,6 +371,12 @@ class SOPHOS extends PARSER
         )
 
          */
+
+        echo PH::boldText("\nVALIDATION - replace tmp services with APP-id if possible\n");
+        CONVERTER::AppMigration( $this->sub, $this->configType );
+
+        echo PH::boldText( "\nVALIDATION - interface name and change into PAN-OS confirm naming convention\n" );
+        CONVERTER::validate_interface_names($this->template);
     }
 
     function clean_config()

@@ -137,6 +137,8 @@ class RQuery
             $this->contextObject = new GREtunnelRQueryContext($this);
         elseif( $this->objectType == 'gpgateway-tunnel' )
             $this->contextObject = new GPGatewaytunnelRQueryContext($this);
+        elseif( $this->objectType == 'zone-protection-profile' )
+            $this->contextObject = new ZoneProtectionProfileRQueryContext($this);
 
         else
             derr("unsupported object type '$objectType'");

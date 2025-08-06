@@ -13,12 +13,18 @@ trait SOPHOSaddress
             foreach ($master_array['network'] as $policy)
             {
                 $addr_name = str_replace(',', "", $policy['name']);
+                PH::print_stdout("ADR: ".$addr_name );
                 //$addr_name = str_replace('(',"",$addr_name);
                 //$addr_name = str_replace(')',"",$addr_name);
 
                 $addr_type = explode("/", $policy['_type']);
 
-                if ($policy['_type'] == 'network/host,') {
+                $ref_name = str_replace(',', "", $policy['_ref']);
+                PH::print_stdout("_REF add: ".$ref_name );
+                $this->ref_array[$ref_name] = $addr_name;
+
+                if ($policy['_type'] == 'network/host,')
+                {
                     $addr_value = str_replace(',', "", $policy['address']);
                     $addr_comment = str_replace(',', "", $policy['comment']);
                     //[_type] => network/host,
@@ -32,7 +38,8 @@ trait SOPHOSaddress
                             $tmp_address->setDescription($addr_comment);
                         }
                     }
-                } elseif ($policy['_type'] == 'network/dns_host,' || $policy['_type'] == 'network/dns_group,') {
+                } elseif ($policy['_type'] == 'network/dns_host,' || $policy['_type'] == 'network/dns_group,')
+                {
                     //network/dns_group
 
                     $addr_value = str_replace(',', "", $policy['hostname']);
@@ -43,6 +50,9 @@ trait SOPHOSaddress
                     $tmp_address = $this->sub->addressStore->find($addr_name);
                     if ($tmp_address == null) {
                         #print $tmp_address->name()."\n";
+                        $addr_value_array = explode("/", $addr_value);
+                        $addr_value = $addr_value_array[0];
+
                         PH::print_stdout("create address fqdn - name: " . $addr_name . " - value: " . $addr_value);
                         $tmp_address = $this->sub->addressStore->newAddress($addr_name, 'fqdn', $addr_value);
                         $tmp_address->setDescription($addr_comment);
@@ -68,7 +78,23 @@ trait SOPHOSaddress
 
                         }
                     }
-                } elseif ($policy['_type'] == 'network/network,' || $policy['_type'] == 'network/interface_network,') {
+                }
+                elseif ($policy['_type'] == 'network/interface_address,')
+                {
+                    $addr_value = str_replace(',', "", $policy['address']);
+                    $addr_comment = str_replace(',', "", $policy['comment']);
+
+                    $tmp_address = $this->sub->addressStore->find( $addr_name);
+
+                    if ($tmp_address == null)
+                    {
+                        $tmp_address = $this->sub->addressStore->newAddress($addr_name, 'ip-netmask', $addr_value . "/32");
+
+                        $tmp_address->setDescription($addr_comment);
+                    }
+                }
+                elseif ($policy['_type'] == 'network/network,' || $policy['_type'] == 'network/interface_network,')
+                {
                     $addr_value = str_replace(',', "", $policy['address']);
                     $addr_netmask = str_replace(',', "", $policy['netmask']);
                     $addr_comment = str_replace(',', "", $policy['comment']);
@@ -147,7 +173,8 @@ trait SOPHOSaddress
 
             if ($policy['_type'] == 'network/group,') {
                 $tmp_address_group = $this->sub->addressStore->find($srv_name);
-                if ($tmp_address_group !== FALSE) {
+                if ($tmp_address_group === FALSE || $tmp_address_group === null)
+                {
                     $tmp_address_group = $this->sub->addressStore->newAddressGroup($srv_name);
                 }
 

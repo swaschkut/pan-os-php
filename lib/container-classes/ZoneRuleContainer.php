@@ -199,6 +199,8 @@ class ZoneRuleContainer extends ObjRuleContainer
             }
 
 
+            /*
+            //new Code - planed with 2.1.37 but buggy
             if( isset( $this->owner->owner->owner ) && get_class($this->owner->owner->owner) == 'DeviceGroup' )
             {
 
@@ -213,10 +215,12 @@ class ZoneRuleContainer extends ObjRuleContainer
                 foreach( $all as $template )
                 {
                     /** @var Template|TemplateStack $template */
+            /*
                     $all_vsys = $template->deviceConfiguration->getVirtualSystems();
                     foreach( $all_vsys as $vsys )
                     {
                         /** @var VirtualSystem $vsys */
+            /*
                         $tmp_zone = $vsys->zoneStore->find( $node->textContent, $this );
 
                                 //Todo: validate if correct Template / TemplateStack
@@ -244,7 +248,7 @@ class ZoneRuleContainer extends ObjRuleContainer
                                 }
                                 */
                                 /////////////////////////////////////
-
+            /*
                         if( $tmp_zone !== null )
                         {
                             #PH::print_stdout( $tmp_zone->name()." added" );
@@ -263,6 +267,11 @@ class ZoneRuleContainer extends ObjRuleContainer
                 $f = $this->parentCentralStore->findOrCreate($node->textContent, $this);
                 $this->o[] = $f;
             }
+            */
+
+            //old Code before 2.1.37
+            $f = $this->parentCentralStore->findOrCreate($node->textContent, $this);
+            $this->o[] = $f;
 
             $i++;
         }

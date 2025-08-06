@@ -2154,7 +2154,14 @@ SecurityProfileCallContext::$supportedActions['spyware.best-practice-set'] = arr
         foreach( $object->dns_rules_obj as $rule )
         {
             $tmp_action = DH::findFirstElementOrCreate("action", $rule->xmlroot);
-            $tmp_packet_capture = DH::findFirstElementOrCreate("packet-capture", $rule->xmlroot);
+
+            if( !$rule->advanced )
+            {
+                $tmp_packet_capture = DH::findFirstElement("packet-capture", $rule->xmlroot);
+                if( $tmp_packet_capture === FALSE )
+                    $tmp_packet_capture = DH::findFirstElementOrCreate("packet-capture", $rule->xmlroot);
+            }
+
             $tmp_log_level = DH::findFirstElement("log-level", $rule->xmlroot);
             /** @var DNSPolicy $rule */
             if( $rule->name() == "pan-dns-sec-adtracking"
@@ -2416,9 +2423,14 @@ SecurityProfileCallContext::$supportedActions['spyware.alert-only-set'] = array(
         foreach( $object->dns_rules_obj as $rule )
         {
             $tmp_action = DH::findFirstElement("action", $rule->xmlroot);
-            $tmp_packet_capture = DH::findFirstElement("packet-capture", $rule->xmlroot);
-            if( $tmp_packet_capture === FALSE )
-                $tmp_packet_capture = DH::findFirstElementOrCreate("packet-capture", $rule->xmlroot);
+
+            if( !$rule->advanced )
+            {
+                $tmp_packet_capture = DH::findFirstElement("packet-capture", $rule->xmlroot);
+                if( $tmp_packet_capture === FALSE )
+                    $tmp_packet_capture = DH::findFirstElementOrCreate("packet-capture", $rule->xmlroot);
+            }
+
             $tmp_log_level = DH::findFirstElement("log-level", $rule->xmlroot);
             if( $tmp_log_level === FALSE )
                 $tmp_log_level = DH::findFirstElementOrCreate("log-level", $rule->xmlroot);
@@ -2926,6 +2938,9 @@ SecurityProfileCallContext::$supportedActions['url.best-practice-set'] = array(
     'name' => 'url.best-practice-set',
     'MainFunction' => function (SecurityProfileCallContext $context) {
         $object = $context->object;
+
+        if (get_class($object) !== "URLProfile")
+            return null;
 
         //call alert-only-set from above
         $f = SecurityProfileCallContext::$supportedActions['url.alert-only-set']['MainFunction'];

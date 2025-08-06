@@ -1962,6 +1962,7 @@ RuleCallContext::$supportedActions[] = array(
         }
         if( $rule->isNatRule()  )
         {
+            /** @var NatRule $rule */
             $string = "Rule is of type ".get_class($rule)." - implementation missing";
             PH::ACTIONstatus( $context, "SKIPPED", $string );
             return;
@@ -1973,8 +1974,9 @@ RuleCallContext::$supportedActions[] = array(
             return;
         }
 
+        /** @var SecurityRule $rule */
         if( $context->isAPI )
-                $rule->services->API_setAny();
+            $rule->services->API_setAny();
         else
             $rule->services->setAny();
     },
@@ -4892,6 +4894,8 @@ RuleCallContext::$supportedActions[] = array(
             elseif( $rule->isNatRule() )
                 $context->arguments['tmp_natrule'] = true;
             $context->ruleList[] = $rule;
+
+
         }
 
     },
@@ -5017,6 +5021,7 @@ RuleCallContext::$supportedActions[] = array(
             'snat_address' => 'snat_address',
             'snat_address_resolved_sum' => 'snat_address_resolved_sum',
             'snat_interface' => 'snat_interface',
+            'bidir_nat' => 'bidir_nat',
             'dnat_type' => 'dnat_type',
             'dnat_host' => 'dnat_host',
             'dnat_host_resolved_sum' => 'dnat_host_resolved_sum',
@@ -5051,100 +5056,176 @@ RuleCallContext::$supportedActions[] = array(
 
                 foreach( $fields as $fieldName => $fieldID )
                 {
+                    $continue = false;
+
                     if(
-                        (
-                            ($fieldName == 'src_resolved_sum' || $fieldName == 'src_resolved_sumOLD' || $fieldName == 'src_resolved_value'
-                            || $fieldName == 'src_resolved_nested_name' || $fieldName == 'src_resolved_nested_value'
-                            || $fieldName == 'src_resolved_nested_location'
+                        ($fieldName == 'src_resolved_sum' || $fieldName == 'src_resolved_sumOLD' || $fieldName == 'src_resolved_value'
+                            || $fieldName == 'src_resolved_nested_name' || $fieldName == 'src_resolved_nested_value' || $fieldName == 'src_resolved_nested_location'
                             || $fieldName == 'dst_resolved_sum' || $fieldName == 'dst_resolved_sumOLD' || $fieldName == 'dst_resolved_value'
-                            || $fieldName == 'dst_resolved_nested_name' || $fieldName == 'dst_resolved_nested_value'
-                            || $fieldName == 'dst_resolved_nested_location' || $fieldName == 'dnat_host_resolved_sum'
-                            || $fieldName == 'snat_address_resolved_sum')
-                            && !$addResolvedAddressSummary
+                            || $fieldName == 'dst_resolved_nested_name' || $fieldName == 'dst_resolved_nested_value' || $fieldName == 'dst_resolved_nested_location'
+                            || $fieldName == 'dnat_host_resolved_sum'
+                            || $fieldName == 'snat_address_resolved_sum'
                         )
-                        || (
-                            ($fieldName == 'service_resolved_sum'
-                                || $fieldName == 'service_resolved_nested_name' || $fieldName == 'service_resolved_nested_value'
-                                || $fieldName == 'service_resolved_nested_location' ||
-                                $fieldName == 'service_count' || $fieldName == 'service_count_tcp' || $fieldName == 'service_count_udp')
-                            && !$addResolvedServiceSummary
-                        )
-                        || (
-                            ($fieldName == 'service_appdefault_resolved_sum') && !$addResolvedServiceAppDefaultSummary
-                        )
-                        || (
-                            ($fieldName == 'application_resolved_sum') && !$addResolvedApplicationSummary
-                        )
-                        || (
-                            ($fieldName == 'schedule_resolved_sum' ) && !$addResolvedScheduleSummary
-                        )
-                        || (
-                            ($fieldName == 'application_seen') && (!$addAppSeenSummary || !$context->isAPI)
-                        )
-                        || (
-                            ($fieldName == 'first-hit' || $fieldName == 'last-hit' || $fieldName == 'hit-count'
-                                || $fieldName == 'rule-creation')
-                            && (!$addHitCountSummary || !$context->isAPI)
-                        )
-                        || (
-                            ($fieldName == 'sec_rule_type' )
-                            && !$context->arguments['tmp_secrule']
-                        )
-                        || (
-                            ($fieldName == 'nat_rule_type' || $fieldName == 'snat_type' || $fieldName == 'snat_address' ||
-                                $fieldName == 'snat_address_resovled_sum' || $fieldName == "dnat_type" || $fieldName == 'dnat_host' ||
-                                $fieldName == 'dnat_host_resovled_sum' || $fieldName == 'dnat_port' || $fieldName == 'dnat_distribution' ||
-                                $fieldName == "dst_interface" || $fieldName == "snat_interface" )
-                            && !$context->arguments['tmp_natrule']
-                        )
-                        || (
-                            ($fieldName == 'sp_best_practice' ) && !$bestPractice
-                            || !$context->arguments['tmp_secrule']
-                        )
-                        || (
-                            ($fieldName == 'sp_best_practice_details')
-                            && (!$bestPractice && !$visibility && !$adoption)
-                            || !$context->arguments['tmp_secrule']
-                        )
-                        || (
-                            ($fieldName == 'sp_av_bp' || $fieldName == 'sp_as_bp' || $fieldName == 'sp_vp_bp' || $fieldName == 'sp_url_bp'
-                                || $fieldName == 'sp_file_bp' || $fieldName == 'sp_data_bp' || $fieldName == 'sp_wf_bp')
-                            && (!$bestPractice )
-                            || !$context->arguments['tmp_secrule']
-                        )
-                        || (
-                            ($fieldName == 'sp_av_visible' || $fieldName == 'sp_as_visible' || $fieldName == 'sp_vp_visible'
-                                || $fieldName == 'sp_url_visible' || $fieldName == 'sp_file_visible' || $fieldName == 'sp_data_visible'
-                                || $fieldName == 'sp_wf_visible')
-                            && (!$visibility)
-                            || !$context->arguments['tmp_secrule']
-                        )
-                        || (
-                            ($fieldName == 'sp_av_adoption' || $fieldName == 'sp_as_adoption' || $fieldName == 'sp_vp_adoption'
-                                || $fieldName == 'sp_url_adoption' || $fieldName == 'sp_file_adoption' || $fieldName == 'sp_data_adoption'
-                                || $fieldName == 'sp_wf_adoption')
-                            && (!$adoption)
-                            || !$context->arguments['tmp_secrule']
-                        )
-                        || (
-                            ($fieldName == 'sp_visibility' ) && !$visibility
-                            || !$context->arguments['tmp_secrule']
-                        )
-                        || (
-                            ($fieldName == 'sp_adoption' ) && !$adoption
-                            || !$context->arguments['tmp_secrule']
-                        )
-                        || (
-                            (
-                                ($fieldName == 'application') || ($fieldName == 'action') ||
-                                ($fieldName == 'security-profile') || ($fieldName == 'url_category') || ($fieldName == 'log_start') ||
-                                ($fieldName == 'log_end') || ($fieldName == 'log_prof') || ($fieldName == 'log_prof_name') ||
-                                ($fieldName == 'schedule') || ($fieldName == 'src_user')
-                            )
-                            && !$context->arguments['tmp_secrule']
-                        )
+                        && !$addResolvedAddressSummary
                     )
+                    {
+                        $continue_text = "continue1";
+                        $continue = true;
+                    }
+                    elseif(
+                        ($fieldName == 'service_resolved_sum'
+                            || $fieldName == 'service_resolved_nested_name' || $fieldName == 'service_resolved_nested_value'
+                            || $fieldName == 'service_resolved_nested_location'
+                            || $fieldName == 'service_count' || $fieldName == 'service_count_tcp'
+                            || $fieldName == 'service_count_udp')
+                        && !$addResolvedServiceSummary
+                    )
+                    {
+                        $continue_text = "continue2";
+                        $continue = true;
+                    }
+                    elseif(
+                        ($fieldName == 'service_appdefault_resolved_sum') && !$addResolvedServiceAppDefaultSummary
+                    )
+                    {
+                        $continue_text = "continue3";
+                        $continue = true;
+                    }
+                    elseif(
+                        ($fieldName == 'application_resolved_sum') && !$addResolvedApplicationSummary
+                    )
+                    {
+                        $continue_text = "continue4";
+                        $continue = true;
+                    }
+                    elseif(
+                        ($fieldName == 'schedule_resolved_sum') && !$addResolvedScheduleSummary
+                    )
+                    {
+                        $continue_text = "continue5";
+                        $continue = true;
+                    }
+                    elseif(
+                        ($fieldName == 'application_seen') && (!$addAppSeenSummary || !$context->isAPI)
+                    )
+                    {
+                        $continue_text = "continue6";
+                        $continue = true;
+                    }
+                    elseif(
+                        ($fieldName == 'first-hit' || $fieldName == 'last-hit' || $fieldName == 'hit-count' || $fieldName == 'rule-creation' )
+                        && (!$addHitCountSummary || !$context->isAPI)
+                    )
+                    {
+                        $continue_text = "continue7";
+                        $continue = true;
+                    }
+                    elseif(
+                        ($fieldName == 'sec_rule_type' )
+                        && !$context->arguments['tmp_secrule']
+                    )
+                    {
+                        $continue_text = "continue8";
+                        $continue = true;
+                    }
+                    elseif(
+                        ($fieldName == 'nat_rule_type' || $fieldName == 'snat_type' || $fieldName == 'snat_address' ||
+                            $fieldName == 'snat_address_resovled_sum' || $fieldName == "dnat_type" || $fieldName == 'dnat_host' ||
+                            $fieldName == 'dnat_host_resovled_sum' || $fieldName == 'dnat_port' || $fieldName == 'dnat_distribution'  ||
+                            $fieldName == "dst_interface" || $fieldName == "snat_interface" || $fieldName == "bidir_nat" )
+                        && !$context->arguments['tmp_natrule']
+                    )
+                    {
+                        $continue_text = "continue9";
+                        $continue = true;
+                    }
+                    elseif(
+                        ($fieldName == 'sp_best_practice' )
+                        &&
+                        ( !$bestPractice || !$context->arguments['tmp_secrule'] )
+                    )
+                    {
+                        $continue_text = "continue10";
+                        $continue = true;
+                    }
+                    elseif(
+                        ($fieldName == 'sp_best_practice_details')
+                        &&
+                        ( (!$bestPractice && !$visibility && !$adoption) || !$context->arguments['tmp_secrule'] )
+                    )
+                    {
+                        $continue_text = "continue11";
+                        $continue = true;
+                    }
+                    elseif(
+                        ($fieldName == 'sp_av_bp' || $fieldName == 'sp_as_bp' || $fieldName == 'sp_vp_bp' || $fieldName == 'sp_url_bp'
+                            || $fieldName == 'sp_file_bp' || $fieldName == 'sp_data_bp' || $fieldName == 'sp_wf_bp')
+                        &&
+                        (!$bestPractice || !$context->arguments['tmp_secrule'] )
+                    )
+                    {
+                        $continue_text = "continue12";
+                        $continue = true;
+                    }
+                    elseif(
+                        ($fieldName == 'sp_av_visible' || $fieldName == 'sp_as_visible' || $fieldName == 'sp_vp_visible'
+                            || $fieldName == 'sp_url_visible' || $fieldName == 'sp_file_visible' || $fieldName == 'sp_data_visible'
+                            || $fieldName == 'sp_wf_visible')
+                        &&
+                        (!$visibility || !$context->arguments['tmp_secrule'] )
+                    )
+                    {
+                        $continue_text = "continue13";
+                        $continue = true;
+                    }
+                    elseif(
+                        ($fieldName == 'sp_av_adoption' || $fieldName == 'sp_as_adoption' || $fieldName == 'sp_vp_adoption'
+                            || $fieldName == 'sp_url_adoption' || $fieldName == 'sp_file_adoption' || $fieldName == 'sp_data_adoption'
+                            || $fieldName == 'sp_wf_adoption')
+                        &&
+                        ( !$adoption || !$context->arguments['tmp_secrule'] )
+                    )
+                    {
+                        $continue_text = "continue14";
+                        $continue = true;
+                    }
+                    elseif(
+                        ($fieldName == 'sp_visibility' ) &&
+                        (!$visibility || !$context->arguments['tmp_secrule'])
+                    )
+                    {
+                        $continue_text = "continue15";
+                        $continue = true;
+                    }
+                    elseif(
+                        ($fieldName == 'sp_adoption' )
+                        &&
+                        (!$adoption || !$context->arguments['tmp_secrule'])
+                    )
+                    {
+                        $continue_text = "continue16";
+                        $continue = true;
+                    }
+                    elseif(
+                        (
+                            $fieldName == 'application' || $fieldName == 'action'
+                            || $fieldName == 'security-profile' || $fieldName == 'url_category' || $fieldName == 'log_start'
+                            || $fieldName == 'log_end' || $fieldName == 'log_prof' || $fieldName == 'log_prof_name'
+                            || $fieldName == 'schedule' || $fieldName == 'src_user'
+                        )
+
+                        && !$context->arguments['tmp_secrule']
+                    )
+                    {
+                        $continue_text = "continue17";
+                        $continue = true;
+                    }
+
+                    if( $continue )
+                    {
+                        #PH::print_stdout( $fieldName ." - ". $continue_text );
                         continue;
+                    }
 
                     $rule_hitcount_array = array();
                     if(
@@ -5165,8 +5246,9 @@ RuleCallContext::$supportedActions[] = array(
         $tableHeaders = '';
         foreach( $fields as $fieldName => $value )
         {
+            $continue = false;
+
             if(
-                (
                     ($fieldName == 'src_resolved_sum' || $fieldName == 'src_resolved_sumOLD' || $fieldName == 'src_resolved_value'
                         || $fieldName == 'src_resolved_nested_name' || $fieldName == 'src_resolved_nested_value' || $fieldName == 'src_resolved_nested_location'
                         || $fieldName == 'dst_resolved_sum' || $fieldName == 'dst_resolved_sumOLD' || $fieldName == 'dst_resolved_value'
@@ -5175,99 +5257,167 @@ RuleCallContext::$supportedActions[] = array(
                         || $fieldName == 'snat_address_resolved_sum'
                     )
                     && !$addResolvedAddressSummary
-                )
-                || (
-                    ($fieldName == 'service_resolved_sum'
-                        || $fieldName == 'service_resolved_nested_name' || $fieldName == 'service_resolved_nested_value'
-                        || $fieldName == 'service_resolved_nested_location'
-                        || $fieldName == 'service_count' || $fieldName == 'service_count_tcp'
-                        || $fieldName == 'service_count_udp')
-                    && !$addResolvedServiceSummary
-                )
-                || (
-                    ($fieldName == 'service_appdefault_resolved_sum') && !$addResolvedServiceAppDefaultSummary
-                )
-                || (
-                    ($fieldName == 'application_resolved_sum') && !$addResolvedApplicationSummary
-                )
-                || (
-                    ($fieldName == 'schedule_resolved_sum') && !$addResolvedScheduleSummary
-                )
-                || (
-                    ($fieldName == 'application_seen') && (!$addAppSeenSummary || !$context->isAPI)
-                )
-                || (
-                    ($fieldName == 'first-hit' || $fieldName == 'last-hit' || $fieldName == 'hit-count' || $fieldName == 'rule-creation' )
-                    && (!$addHitCountSummary || !$context->isAPI)
-                )
-                || (
-                    ($fieldName == 'sec_rule_type' )
-                    #&& get_class($rule) !== "SecurityRule"
-                    && !$context->arguments['tmp_secrule']
-                )
-                || (
-                    ($fieldName == 'nat_rule_type' || $fieldName == 'snat_type' || $fieldName == 'snat_address' ||
-                        $fieldName == 'snat_address_resovled_sum' || $fieldName == "dnat_type" || $fieldName == 'dnat_host' ||
-                        $fieldName == 'dnat_host_resovled_sum' || $fieldName == 'dnat_port' || $fieldName == 'dnat_distribution'  ||
-                        $fieldName == "dst_interface" || $fieldName == "snat_interface" )
-                    #&& get_class($rule) !== "NatRule"
-                    && !$context->arguments['tmp_natrule']
-                )
-                || (
-                    ($fieldName == 'sp_best_practice' ) && !$bestPractice
-                    #|| get_class($rule) !== "SecurityRule"
-                    || !$context->arguments['tmp_secrule']
-                )
-                || (
-                    ($fieldName == 'sp_best_practice_details')
-                    && (!$bestPractice && !$visibility && !$adoption)
-                    || !$context->arguments['tmp_secrule']
-                )
-                || (
-                    ($fieldName == 'sp_av_bp' || $fieldName == 'sp_as_bp' || $fieldName == 'sp_vp_bp' || $fieldName == 'sp_url_bp'
+                 )
+            {
+                $continue_text = "continue1";
+                $continue = true;
+            }
+            elseif(
+                ($fieldName == 'service_resolved_sum'
+                    || $fieldName == 'service_resolved_nested_name' || $fieldName == 'service_resolved_nested_value'
+                    || $fieldName == 'service_resolved_nested_location'
+                    || $fieldName == 'service_count' || $fieldName == 'service_count_tcp'
+                    || $fieldName == 'service_count_udp')
+                && !$addResolvedServiceSummary
+            )
+            {
+                $continue_text = "continue2";
+                $continue = true;
+            }
+            elseif(
+                ($fieldName == 'service_appdefault_resolved_sum') && !$addResolvedServiceAppDefaultSummary
+            )
+            {
+                $continue_text = "continue3";
+                $continue = true;
+            }
+            elseif(
+                ($fieldName == 'application_resolved_sum') && !$addResolvedApplicationSummary
+            )
+            {
+                $continue_text = "continue4";
+                $continue = true;
+            }
+            elseif(
+                ($fieldName == 'schedule_resolved_sum') && !$addResolvedScheduleSummary
+            )
+            {
+                $continue_text = "continue5";
+                $continue = true;
+            }
+            elseif(
+                ($fieldName == 'application_seen') && (!$addAppSeenSummary || !$context->isAPI)
+            )
+            {
+                $continue_text = "continue6";
+                $continue = true;
+            }
+            elseif(
+                ($fieldName == 'first-hit' || $fieldName == 'last-hit' || $fieldName == 'hit-count' || $fieldName == 'rule-creation' )
+                && (!$addHitCountSummary || !$context->isAPI)
+            )
+            {
+                $continue_text = "continue7";
+                $continue = true;
+            }
+            elseif(
+                ($fieldName == 'sec_rule_type' )
+                && !$context->arguments['tmp_secrule']
+            )
+            {
+                $continue_text = "continue8";
+                $continue = true;
+            }
+            elseif(
+                ($fieldName == 'nat_rule_type' || $fieldName == 'snat_type' || $fieldName == 'snat_address' ||
+                    $fieldName == 'snat_address_resovled_sum' || $fieldName == "dnat_type" || $fieldName == 'dnat_host' ||
+                    $fieldName == 'dnat_host_resovled_sum' || $fieldName == 'dnat_port' || $fieldName == 'dnat_distribution'  ||
+                    $fieldName == "dst_interface" || $fieldName == "snat_interface" || $fieldName == "bidir_nat" )
+                && !$context->arguments['tmp_natrule']
+            )
+            {
+                $continue_text = "continue9";
+                $continue = true;
+            }
+            elseif(
+                ($fieldName == 'sp_best_practice' )
+                &&
+                ( !$bestPractice || !$context->arguments['tmp_secrule'] )
+            )
+            {
+                $continue_text = "continue10";
+                $continue = true;
+            }
+            elseif(
+                ($fieldName == 'sp_best_practice_details')
+                &&
+                ( (!$bestPractice && !$visibility && !$adoption) || !$context->arguments['tmp_secrule'] )
+            )
+            {
+                $continue_text = "continue11";
+                $continue = true;
+            }
+            elseif(
+                ($fieldName == 'sp_av_bp' || $fieldName == 'sp_as_bp' || $fieldName == 'sp_vp_bp' || $fieldName == 'sp_url_bp'
                         || $fieldName == 'sp_file_bp' || $fieldName == 'sp_data_bp' || $fieldName == 'sp_wf_bp')
-                    && (!$bestPractice )
-                    #|| get_class($rule) !== "SecurityRule"
-                    || !$context->arguments['tmp_secrule']
-                )
-                || (
-                    ($fieldName == 'sp_av_visible' || $fieldName == 'sp_as_visible' || $fieldName == 'sp_vp_visible'
+                &&
+                (!$bestPractice || !$context->arguments['tmp_secrule'] )
+            )
+            {
+                $continue_text = "continue12";
+                $continue = true;
+            }
+            elseif(
+                ($fieldName == 'sp_av_visible' || $fieldName == 'sp_as_visible' || $fieldName == 'sp_vp_visible'
                         || $fieldName == 'sp_url_visible' || $fieldName == 'sp_file_visible' || $fieldName == 'sp_data_visible'
                         || $fieldName == 'sp_wf_visible')
-                    && (!$visibility)
-                    #|| get_class($rule) !== "SecurityRule"
-                    || !$context->arguments['tmp_secrule']
-                )
-                || (
-                    ($fieldName == 'sp_av_adoption' || $fieldName == 'sp_as_adoption' || $fieldName == 'sp_vp_adoption'
+                &&
+                (!$visibility || !$context->arguments['tmp_secrule'] )
+            )
+            {
+                $continue_text = "continue13";
+                $continue = true;
+            }
+            elseif(
+                ($fieldName == 'sp_av_adoption' || $fieldName == 'sp_as_adoption' || $fieldName == 'sp_vp_adoption'
                         || $fieldName == 'sp_url_adoption' || $fieldName == 'sp_file_adoption' || $fieldName == 'sp_data_adoption'
                         || $fieldName == 'sp_wf_adoption')
-                    && (!$adoption)
-                    #|| get_class($rule) !== "SecurityRule"
-                    || !$context->arguments['tmp_secrule']
-                )
-                || (
-                    ($fieldName == 'sp_visibility' ) && !$visibility
-                    #|| get_class($rule) !== "SecurityRule"
-                    || !$context->arguments['tmp_secrule']
-                )
-                || (
-                    ($fieldName == 'sp_adoption' ) && !$adoption
-                    #|| get_class($rule) !== "SecurityRule"
-                    || !$context->arguments['tmp_secrule']
-                )
-                || (
-                    (
-                        ($fieldName == 'application') || ($fieldName == 'action')
-                        || ($fieldName == 'security-profile') || ($fieldName == 'url_category') || ($fieldName == 'log_start')
-                        || ($fieldName == 'log_end') || ($fieldName == 'log_prof') || ($fieldName == 'log_prof_name')
-                        || ($fieldName == 'schedule') || ($fieldName == 'src_user')
-                    )
-                    #&& get_class($rule) !== "SecurityRule"
-                    && !$context->arguments['tmp_secrule']
+                &&
+                ( !$adoption || !$context->arguments['tmp_secrule'] )
+            )
+            {
+                $continue_text = "continue14";
+                $continue = true;
+            }
+            elseif(
+                ($fieldName == 'sp_visibility' ) &&
+                (!$visibility || !$context->arguments['tmp_secrule'])
+            )
+            {
+                $continue_text = "continue15";
+                $continue = true;
+            }
+            elseif(
+                (
+                    ($fieldName == 'sp_adoption' )
+                    &&
+                    (!$adoption || !$context->arguments['tmp_secrule'])
                 )
             )
+            {
+                $continue_text = "continue16";
+                $continue = true;
+            }
+            elseif(
+                (
+                    ($fieldName == 'application') || ($fieldName == 'action')
+                    || ($fieldName == 'security-profile') || ($fieldName == 'url_category') || ($fieldName == 'log_start')
+                    || ($fieldName == 'log_end') || ($fieldName == 'log_prof') || ($fieldName == 'log_prof_name')
+                    || ($fieldName == 'schedule') || ($fieldName == 'src_user')
+                )
+
+                && !$context->arguments['tmp_secrule']
+            )
+            {
+                $continue_text = "continue17";
+                $continue = true;
+            }
+
+            if( $continue )
+            {
+                #PH::print_stdout( $fieldName ." - ". $continue_text );
                 continue;
+            }
 
             $tableHeaders .= "<th>{$fieldName}</th>\n";
         }

@@ -21,7 +21,7 @@
 
 class InterfaceCallContext extends CallContext
 {
-    /** @var  Interface */
+    /** @var  EthernetInterface */
     public $object;
 
 

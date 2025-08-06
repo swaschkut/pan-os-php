@@ -1185,7 +1185,7 @@ class DH
             $string = "";
     }
 
-    static public function getXpathDisplayMain( &$string, $xmlDoc, $qualifiedNodeName, $nameattribute, $xpath, $displayXMLnode, $displayAttributeName, $displayXMLlineno, $fullxpath, $displayAPIcommand, $pan, $own_xpath = null )
+    static public function getXpathDisplayMain( &$string, $xmlDoc, $qualifiedNodeName, $nameattribute, $xpath, $displayXMLnode, $displayAttributeName, $displayXMLlineno, $fullxpath, $displayAPIcommand, $pan, $own_xpath = null, $nameattribute_regex = false )
     {
         $padding = "   ";
 
@@ -1204,7 +1204,16 @@ class DH
                     continue;
 
                 if( $XMLnameAttribute !== $nameattribute )
-                    continue;
+                {
+                    if( $nameattribute_regex )
+                    {
+                        if(! str_contains($XMLnameAttribute, $nameattribute) )
+                            continue;
+                    }
+                    else
+                        continue;
+                }
+
             }
             $text = DH::elementToPanXPath($item);
             $replace_template = "/config/devices/entry[@name='localhost.localdomain']/template/";

@@ -991,6 +991,16 @@ class RuleCallContext extends CallContext
                 return self::enclose('');
             return self::enclose($rule->snatinterface);
         }
+        if( $fieldName == 'bidir_nat' )
+        {
+            if( !$rule->isNatRule() )
+                return self::enclose('');
+            if( $rule->isBiDirectional() )
+                $tmp_bidir_nat = "yes";
+            else
+                $tmp_bidir_nat = "no";
+            return self::enclose($tmp_bidir_nat, $wrap);
+        }
 
         if( $fieldName == 'dnat_type' )
         {
@@ -1676,7 +1686,7 @@ class RuleCallContext extends CallContext
     public function ServiceResolveSummary( $rule )
     {
         $mapObject = new ServiceDstPortMapping();
-        if( $rule->services->isAny() )
+        if( $rule->services !== null && $rule->services->isAny() )
         {
             $localMap = ServiceDstPortMapping::mappingFromText('0-65535', TRUE);
             $mapObject->mergeWithMapping($localMap);
@@ -1685,7 +1695,11 @@ class RuleCallContext extends CallContext
         }
 
 
-        $allMembers = $rule->services->getAll();
+        if( $rule->services !== null )
+            $allMembers = $rule->services->getAll();
+        else
+            $allMembers = array();
+
         $strMapping = array();
         foreach($allMembers as $member)
         {
@@ -1722,10 +1736,14 @@ class RuleCallContext extends CallContext
 
     public function ServiceResolveValueNestedSummary( $rule )
     {
-        if( $rule->services->isAny() )
+        if( $rule->services !== null && $rule->services->isAny() )
             return array('tcp/0-65535', 'udp/0-65535');
 
-        $allMembers = $rule->services->getAll();
+        if( $rule->services !== null )
+            $allMembers = $rule->services->getAll();
+        else
+            $allMembers = array();
+
         $strMapping = array();
         foreach($allMembers as $member)
         {
@@ -1779,10 +1797,14 @@ class RuleCallContext extends CallContext
     public function ServiceResolveNameNestedSummary( $rule )
     {
         /** @var SecurityRule $rule */
-        if( $rule->services->isAny() )
+        if( $rule->services !== null && $rule->services->isAny() )
             return array('tcp/0-65535', 'udp/0-65535');
 
-        $allMembers = $rule->services->getAll();
+        if( $rule->services !== null )
+            $allMembers = $rule->services->getAll();
+        else
+            $allMembers = array();
+
         $strMapping = array();
         foreach($allMembers as $member1)
         {
@@ -1809,10 +1831,14 @@ class RuleCallContext extends CallContext
 
     public function ServiceResolveLocationNestedSummary( $rule )
     {
-        if( $rule->services->isAny() )
+        if( $rule->services !== null && $rule->services->isAny() )
             return array('tcp/0-65535', 'udp/0-65535');
 
-        $allMembers = $rule->services->getAll();
+        if( $rule->services !== null )
+            $allMembers = $rule->services->getAll();
+        else
+            $allMembers = array();
+
         $strMapping = array();
         foreach($allMembers as $member)
         {

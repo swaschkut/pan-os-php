@@ -272,7 +272,7 @@ class ThreatPolicy
 
     public function newThreatPolicyXML( $xmlroot, $name, $severity, $action, $host_type = 'any' )
     {
-        $tmp_rules_xmlroot = DH::findFirstElement('rules', $xmlroot);
+        $tmp_rules_xmlroot = DH::findFirstElementOrCreate('rules', $xmlroot);
         $tmp_entry = DH::findFirstElementByNameAttrOrCreate("entry", $name, $tmp_rules_xmlroot, $xmlroot->ownerDocument);
 
         $tmp_severity = DH::findFirstElementOrCreate('severity', $tmp_entry);

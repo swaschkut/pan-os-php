@@ -333,7 +333,8 @@ class Address
     public function setName($newName)
     {
         $this->setRefName($newName);
-        $this->xmlroot->setAttribute('name', $newName);
+        if( $this->xmlroot !== NULL )
+            $this->xmlroot->setAttribute('name', $newName);
 
         if( $this->isTmpAddr() )
         {

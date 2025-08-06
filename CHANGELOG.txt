@@ -1,6 +1,37 @@
 CHANGELOG
 
-2.1.37
+2.1.38
+UTIL:
+* type=device actions=defaultsecurityrule-securityprofilegroup-set:{NAME},true/false |  introduce additional argument FORCE - to add SPG per default only if no SPG is set
+* type=securityprofile securityprofiletype=spyware actions=display | extend to show also advanced-dns-security-categories
+* type=zone-protection-profile | introduce new utility
+* type=address 'actions=name-replace-character:TEXT1,' - now it can any character replaced by ''
+* type=xpath filter-nameattribute_regex=ABC | introduce new argument to search within a nameattribute
+* type=vendor-migration vendor=sophos | extend with interface migration
+* type=vendor-migration vendor=sophos | add static route
+* type=static-route actions=exporttoexcel | new implementation
+* type=static-route actions=display-nexthop-ips 'filter=(nexthop-ip is a.b.c.d )'| new implementation of actions and filter
+* type=rule ruletype=nat actions=exporttoexcel:file.html | add column bidir_nat
+* type=vendor-migration vendor=sophos | extend with NatRule migration packetfilter/nat [mode dnat|full] | packetfilter/masq
+* type=interface 'actions=name-rename:ethernet1$$2' | introduce variable $$ to get it working for /
+* type=device actions=rename-wrong-characters | for migration to replace object names of none PANW naming convention for sec/nat rule adr/srv objects
+* type=vendor-migration vendor=sophos | optimisation of interface/staticroute/rules with same name migration
+
+BUGFIX:
+* type=securityprofile actions=spyware.alert-only-set | fix if no spyware rule is already available
+* type=address 'filter=(netmask >,<,=,! XYZ)'
+* type=securityprofile actions=url.best-practice-set | bugfix to not error out based on none URLProfile object
+* type=securityprofile actions=spyware.alert-only-set/spyware.best-practice-set - fix to not add packet-capture XMLnode for advanced-dns part
+* type=rule ruletype=nat actions=exporttoexcel:file.html | bugfix to get NATrule information correctly displayed
+* class ZoneRuleContainer - revert back Panorama DeviceGroup search within Templates - issue with type=rule filters
+
+GENERAL:
+* adjust repository links, to github.com/swaschkut/pan-os-php
+* introduce class ZoneProtectionProfile and ZoneProtectionProfileStore
+* update App-id version to 9004-9564
+
+
+2.1.37 (20250628)
 UTIL:
 * type=interface | new actions=replace_IPv4_objects_by_value
 * type=gpgateway-tunnel | introduce new util - to extend the reading of each XML part
@@ -40,7 +71,7 @@ BUGFIX:
 * Class GPGatewayTunnel | class Panoramaconf type=stats
 * type=gpgateway-tunnel | improvements to handle interface references without error out
 * class PanoramaConf for type=stats | this is based on wf adoption/visibility/best-practice
-* class ZoneRuleContainer | bugfix to add zones from Panorama Template - validation. needed if this is totally correct
+* class ZoneRuleContainer | bugfix to add zones from Panorama Template - validation. needed if this is totally correct -> not correct see 2.1.38 [reverted]
 * type=stats | correction for user-id adoption/visibility calculation | use all security Rules
 * type=stats | BP credential theft - fit to SCM BP
 * type=rule actions=exporttoexcel | validate that $rule is NOT null

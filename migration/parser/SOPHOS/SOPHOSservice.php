@@ -53,6 +53,9 @@ trait SOPHOSservice
             foreach ($master_array['service'] as $policy) {
                 $srv_name = str_replace(',', "", $policy['name']);
 
+                $ref_name = str_replace(',', "", $policy['_ref']);
+                $this->ref_array[$ref_name] = $srv_name;
+
                 if ($policy['_type'] == 'service/group,') {
                     //check seperate import later on
                 } elseif ($policy['_type'] == 'service/tcp,') {
@@ -93,8 +96,11 @@ trait SOPHOSservice
             foreach ($master_array['service'] as $policy)
             {
                 $srv_name = str_replace(',', "", $policy['name']);
+                $ref_name = str_replace(',', "", $policy['_ref']);
+                $this->ref_array[$ref_name] = $srv_name;
 
-                if ($policy['_type'] == 'service/group,') {
+                if ($policy['_type'] == 'service/group,')
+                {
                     $tmp_service_group = $this->sub->serviceStore->find($srv_name);
                     if ($tmp_service_group == FALSE or $tmp_service_group == null) {
                         $tmp_service_group = $this->sub->serviceStore->newServiceGroup($srv_name);
@@ -110,9 +116,11 @@ trait SOPHOSservice
                     $tmp_found = FALSE;
                     $src_array = explode(",", $policy['members']);
                     PH::print_stdout("\n- set group members:");
-                    foreach ($src_array as $members) {
+                    foreach ($src_array as $members)
+                    {
                         #print "src_ref:".$source."\n";
-                        foreach ($master_array['service'] as $master_service) {
+                        foreach ($master_array['service'] as $master_service)
+                        {
                             #print "compare:".$master_address['_ref']."-".$master_address['name']."|\n";
                             if (str_replace(',', "", $master_service['_ref']) == $members) {
                                 //search object in addressstore
@@ -122,7 +130,11 @@ trait SOPHOSservice
                                 $tmp_service = $this->sub->serviceStore->find($tmp_name);
                                 // add to rule source
                                 if ($tmp_service !== FALSE && $tmp_service !== null)
-                                    $tmp_service_group->addMember($tmp_service);
+                                {
+                                    if( $tmp_service_group->name() !== $tmp_service->name() )
+                                        $tmp_service_group->addMember($tmp_service);
+                                }
+
                                 else {
                                     $missingGroupMembers[$tmp_service_group->name()] = $tmp_name;
                                     mwarning("serviceobject: " . $tmp_name . " not found. check if defined later on");

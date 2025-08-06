@@ -4,21 +4,38 @@
 ###############################################################
 #https://fqdn:4444/api/definitions
 
-
+##################
 
 echo "Request SOPHOS UTM configuration data"
 
 
+############################################################################
+####################################
+#USERNAME + Password
+username="USERNAME from SOPHOS UTM"
+password="PASSWORD from SOPHOS UTM"
+##################
+#NO CHANGE at the following line
+authkey=$(echo -n $username + ":" + $password | base64)
+
+
+####################################
+# APIKey of Sophos User
 apikey="APIKEY from SOPHOS UTM"
-#NOT WORKING with USERNAME/PASSWORD
-#username="USERNAME from SOPHOS UTM"
-#password="PASSWORD from SOPHOS UTM"
+##################
+#NO CHANGE at the following line
+authkey=$(echo -n "token:$apikey" | base64)
+
+
+
+############################################################################
+# DNS oder IP von Sophos
 fqdn="SOPHOS IP / FQDN"
 
-#authkey=$(echo -n $username + ":" + $password | base64)
 
-echo $authkey
-
+#############################
+##no change after this line
+#############################
 urlbase="https://$fqdn:4444/api/objects/"
 
 # Create a temporary directory for downloaded files
@@ -96,10 +113,8 @@ arrapi=(
 
 for i in "${arrapi[@]}"
 do
-	#curl -X GET -k -H "Accept: application/json" \
-	#      -H "Authorization: Basic $authkey" "$urlbase$i" -o "$TEMP_DIR/file$j.txt"
 	curl -X GET -k -H "Accept: application/json" \
-  				-H "Authorization: Basic $apikey" "$urlbase$i" -o "$TEMP_DIR/file$j.txt"
+  				-H "Authorization: Basic $authkey" "$urlbase$i" -o "$TEMP_DIR/file$j.txt"
 
 	response_code=$?
 
@@ -125,6 +140,6 @@ rm -rf "$TEMP_DIR"
 urlorder="https://$fqdn:4444/api/nodes/packetfilter.rules"
 
 curl -X GET -k -H "Accept: application/json" \
-				 -H "Authorization: Basic $apikey" "$urlorder" -o "$fqdn-ruleorder.txt"
+				 -H "Authorization: Basic $authkey" "$urlorder" -o "$fqdn-ruleorder.txt"
 
 

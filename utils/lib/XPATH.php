@@ -33,11 +33,14 @@ class XPATH extends UTIL
     private $qualifiedNodeName = false;
     private $nameattribute = false;
 
+    private $nameattribute_regex = false;
+
     public function utilStart()
     {
         $this->usageMsg = PH::boldText("USAGE: ")."php ".basename(__FILE__)." in=inputfile.xml \n".
             "        \"filter-node=certificate\"\n".
             "        \"[filter-nameattribute=address_object_name]\"\n".
+            "        \"[filter-nameattribute_regex=part_of_address_object_name]\"\n".
             "        \"[filter-text=xml-node-text]\"\n".
             "        \"[filter-text_regex=xml-node-text]\"\n".
             "        \"[filter-xpath=/config/devices/entry[@name='localhost.localdomain']/deviceconfig/system/update-server]\"\n".
@@ -97,9 +100,9 @@ class XPATH extends UTIL
         }
 
 
-        if( !isset( PH::$args['filter-node'] ) && !isset( PH::$args['filter-nameattribute'] ) && !isset( PH::$args['filter-xpath'] ) && !isset( PH::$args['filter-text'] ) && !isset( PH::$args['filter-text_regex'] ) )
+        if( !isset( PH::$args['filter-node'] ) && !isset( PH::$args['filter-nameattribute'] ) && !isset( PH::$args['filter-nameattribute_regex'] ) && !isset( PH::$args['filter-xpath'] ) && !isset( PH::$args['filter-text'] ) && !isset( PH::$args['filter-text_regex'] ) )
             $this->display_error_usage_exit('"filter-node" argument is not set: example "certificate"');
-        elseif( !isset( PH::$args['filter-node'] ) && isset( PH::$args['filter-nameattribute'] ) )
+        elseif( !isset( PH::$args['filter-node'] ) && (isset( PH::$args['filter-nameattribute'] ) || isset( PH::$args['filter-nameattribute_regex'] )) )
             $this->qualifiedNodeName = "entry";
         elseif( isset( PH::$args['filter-text'] ) )
             $this->qualifiedNodeName = '//*[text()="'.PH::$args['filter-text'].'"]';
@@ -131,11 +134,16 @@ class XPATH extends UTIL
 
         if( isset( PH::$args['filter-nameattribute'] ) )
             $this->nameattribute = PH::$args['filter-nameattribute'];
+        elseif( isset( PH::$args['filter-nameattribute_regex'] ) )
+            $this->nameattribute = PH::$args['filter-nameattribute_regex'];
         else
             $this->nameattribute = null;
 
         if( isset( PH::$args['display-nameattribute'] ) )
             $this->displayAttributeName = true;
+
+        if( isset( PH::$args['filter-nameattribute_regex'] ) )
+            $this->nameattribute_regex = true;
         ########################################################################################################################
 
         if( !isset( PH::$args['filter-xpath'] ) && !isset( PH::$args['filter-text'] ) && !isset( PH::$args['filter-text_regex'] ) )
@@ -143,7 +151,7 @@ class XPATH extends UTIL
             //todo: missing connector support
             //$this->getXpathDisplayMain();
             $tmp_string = "";
-            DH::getXpathDisplayMain( $tmp_string, $this->xmlDoc, $this->qualifiedNodeName, $this->nameattribute, $this->xpath, $this->displayXMLnode, $this->displayAttributeName, $this->displayXMLlineno, $this->fullxpath, $this->displayAPIcommand, $this->pan );
+            DH::getXpathDisplayMain( $tmp_string, $this->xmlDoc, $this->qualifiedNodeName, $this->nameattribute, $this->xpath, $this->displayXMLnode, $this->displayAttributeName, $this->displayXMLlineno, $this->fullxpath, $this->displayAPIcommand, $this->pan, null, $this->nameattribute_regex );
             PH::print_stdout( $tmp_string );
 
             PH::print_stdout();
@@ -259,6 +267,7 @@ class XPATH extends UTIL
         $this->supportedArguments[] = Array('niceName' => 'filter-node', 'shortHelp' => 'specify the filter-node to get all xPath within this configuration file');
         $this->supportedArguments[] = Array('niceName' => 'filter-xpath', 'shortHelp' => 'specify the xpath to get the value defined on this config');
         $this->supportedArguments[] = Array('niceName' => 'filter-nameattribute', 'shortHelp' => 'specify the nameattribute to get only XMLnode where nameattribute match');
+        $this->supportedArguments[] = Array('niceName' => 'filter-nameattribute_regex', 'shortHelp' => 'specify the nameattribute to get only XMLnode where nameattribute is containing');
         $this->supportedArguments[] = Array('niceName' => 'filter-text', 'shortHelp' => 'specify the textContent to get only XMLnode where text is match exactly');
         $this->supportedArguments[] = Array('niceName' => 'filter-text_regex', 'shortHelp' => 'specify the textContent to get only XMLnode where text is containing');
 

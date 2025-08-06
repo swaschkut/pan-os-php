@@ -650,6 +650,14 @@ class AntiSpywareProfile extends SecurityProfile2
                             PH::print_stdout( $string );
                         }
                     }
+                    elseif( $type == "advanced-dns-security-categories" )
+                    {
+                        foreach( $this->additional['botnet-domain'][$type] as $name => $value )
+                        {
+                            $padding = "    ";
+                            $value->display( $padding);
+                        }
+                    }
                 }
             }
 

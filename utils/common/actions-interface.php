@@ -334,6 +334,8 @@ InterfaceCallContext::$supportedActions['name-Rename'] = array(
 
         $newName = $context->arguments['newName'];
 
+        $newName = str_replace("$$", "/", $newName);
+
         //Todo: only working for offline config
         if( $context->isAPI )
             derr( "changing interface is not supported in API mode" );
@@ -342,7 +344,12 @@ InterfaceCallContext::$supportedActions['name-Rename'] = array(
         $object->setName($newName);
 
     },
-    'args' => array('newName' => array('type' => 'string', 'default' => '*nodefault*') )
+    'args' => array(
+        'newName' => array(
+            'type' => 'string',
+            'default' => '*nodefault*',
+            'help' => "instead of '/' use '$$' => 'actions=name-rename:ethernet1/1' please use 'actions=name-rename:ethernet1$$1'")
+    )
 );
 
 InterfaceCallContext::$supportedActions['display-migration-warning'] = array(
@@ -593,7 +600,7 @@ InterfaceCallContext::$supportedActions['type-aggregate-ethernet-set'] = array(
         if( get_class($object) !== "EthernetInterface" )
         {
             mwarning( "SKIPPED: Interface of type NOT EthernetInterface. provided: ".get_class($object), null, false );
-            return false;
+            #return false;
         }
 
 
@@ -632,8 +639,15 @@ InterfaceCallContext::$supportedActions['type-aggregate-ethernet-set'] = array(
             }
         }
         $vsys_obj->importedInterfaces->removeInterface($object);
-        $object->owner->owner->network->ethernetIfStore->removeEthernetIf($object);
-
+        if( get_class($object) === "EthernetInterface" )
+            $object->owner->owner->network->ethernetIfStore->removeEthernetIf($object);
+        elseif( get_class($object) === "AggregateEthernetInterface" )
+            $object->owner->owner->network->aggregateEthernetIfStore->removeEthernetIf($object);
+        else
+        {
+            mwarning( "SKIPPED: Interface of type ".get_class($object).". not yet supported", null, false );
+            return false;
+        }
 
         if( count( $object->subInterfaces()) > 0 )
         {
@@ -676,7 +690,7 @@ InterfaceCallContext::$supportedActions['remove'] = array(
         $newMainInterface = $object->owner->owner->network->ethernetIfStore->find($object->name());
         if( $newMainInterface === null )
         {
-            mwarning( "Interface: ".$object->name()." not/no longer available", null, false );
+            #mwarning( "Interface: ".$object->name()." not/no longer available", null, false );
             return false;
         }
 
