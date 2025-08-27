@@ -265,6 +265,7 @@ trait CPtest
         }
         else
         {
+            $tmp_sub = $this->template_vsys;
 
             $this->template_vsys = $this->template->findVSYS_by_displayName($domain);
             if( $this->template_vsys !== null )
@@ -300,7 +301,11 @@ trait CPtest
             if( $this->configType == "panos" )
             {
                 #PH::print_stdout("use templatevsys: ".$this->template_vsys->name());
-                $this->sub = $this->template_vsys;
+                //Todo: orig code line
+                #$this->sub = $this->template_vsys;
+
+                //Todo: for panos always use same vsys
+                $this->sub = $tmp_sub;
             }
             else
             {

@@ -5,6 +5,7 @@ UTIL:
 
 BUGFIX:
 * type=migration vendor=cp-r80 | bugfix for finding service within access_layer - if service naming must be normalize
+* type=vendor-migration vendor=cp-r80 | if single firewall - only migrate into one vsys
 
 GENERAL:
 
