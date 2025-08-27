@@ -2,6 +2,7 @@ CHANGELOG
 
 2.1.39
 UTIL:
+* type=vendor-migration vendor=cp-r80 | implement tcp/udp session timeout migration
 
 BUGFIX:
 * type=migration vendor=cp-r80 | bugfix for finding service within access_layer - if service naming must be normalize
