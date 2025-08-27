@@ -312,6 +312,8 @@ trait CP_R80_accesslayer
                     #print "service: ".$service."\n";
                     $service_name = $this->find_service_uid($service);
 
+                    $service_name = $this->truncate_names($this->normalizeNames($service_name));
+
                     if( $service_name == null )
                     {
                         //CpmiAnyObject
@@ -332,7 +334,7 @@ trait CP_R80_accesslayer
                         }
                         else
                         {
-                            mwarning("service object not found", null, false);
+                            mwarning("service object not found: '".$service_name."' sub: '".$this->sub->name()."'", null, false);
                         }
                     }
                 }

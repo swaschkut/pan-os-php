@@ -4,6 +4,7 @@ CHANGELOG
 UTIL:
 
 BUGFIX:
+* type=migration vendor=cp-r80 | bugfix for finding service within access_layer - if service naming must be normalize
 
 GENERAL:
 
