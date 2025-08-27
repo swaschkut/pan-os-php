@@ -265,8 +265,6 @@ trait CPtest
         }
         else
         {
-            $tmp_sub = $this->template_vsys;
-
             $this->template_vsys = $this->template->findVSYS_by_displayName($domain);
             if( $this->template_vsys !== null )
             {
@@ -276,36 +274,34 @@ trait CPtest
             }
             else
             {
-                //create new vsys, search for latest ID
-                do
+                if( $this->configType !== "panos" )
                 {
-                    $vsysID++;
-                    $this->template_vsys = $this->template->findVirtualSystem('vsys' . $vsysID);
-                } while( $this->template_vsys !== null );
+                    //create new vsys, search for latest ID
+                    do {
+                        $vsysID++;
+                        $this->template_vsys = $this->template->findVirtualSystem('vsys' . $vsysID);
+                    } while ($this->template_vsys !== null);
 
-                if( $this->template_vsys === null )
-                {
+                    if ($this->template_vsys === null) {
 
-                    $this->template_vsys = $this->template->createVirtualSystem(intval($vsysID), $vsysName . $vsysID);
-                    $this->template_vsys->setAlternativeName($domain);
+                        $this->template_vsys = $this->template->createVirtualSystem(intval($vsysID), $vsysName . $vsysID);
+                        $this->template_vsys->setAlternativeName($domain);
 
-                    if( $this->template_vsys === null )
-                    {
-                        derr("vsys" . $vsysID . " could not be created ? Exit\n");
+                        if ($this->template_vsys === null) {
+                            derr("vsys" . $vsysID . " could not be created ? Exit\n");
+                        }
+                        print "create VSYS: " . $this->template_vsys->name() . " - " . $this->template_vsys->alternativeName() . "\n";
                     }
-                    print "create VSYS: " . $this->template_vsys->name() . " - " . $this->template_vsys->alternativeName() . "\n";
                 }
+                else
+                    $this->template_vsys = $this->template->findVirtualSystem('vsys1');
             }
 
             #PH::print_stdout("configtype: ".$this->configType);
             if( $this->configType == "panos" )
             {
                 #PH::print_stdout("use templatevsys: ".$this->template_vsys->name());
-                //Todo: orig code line
-                #$this->sub = $this->template_vsys;
-
-                //Todo: for panos always use same vsys
-                $this->sub = $tmp_sub;
+                $this->sub = $this->template_vsys;
             }
             else
             {
