@@ -78,7 +78,21 @@ cd [/rootFolder/parentFolder/childFolder]
   docker run --name panosphp --rm -v ${PWD}:/share -it swaschkut/pan-os-php:latest
 ```
 
- 
+
+Start and re-enter your Docker Container without loosing PAN-OS API Key information
+=============
+- start container without automatically removing it after exit
+```bash
+  docker run --name panosphp -v ${PWD}:/share -it swaschkut/pan-os-php:latest
+```
+
+- re-enter your panosphp Docker container
+```bash
+  docker exec -it panosphp bash
+```
+
+
+
 #Additional Information
 
 Docker PAN-OS-PHP API and UI
