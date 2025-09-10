@@ -66,6 +66,12 @@ ZoneProtectionProfileCallContext::$supportedActions['display'] = array(
             $tmp_string = "";
             if( isset($scan['action']) )
                 $tmp_string .= " - action: ".$scan['action'];
+
+            if( isset($scan['track-by']) )
+                $tmp_string .= " - track-by: ".$scan['track-by'];
+            if( isset($scan['duration']) )
+                $tmp_string .= " - duration: ".$scan['duration'];
+
             if( isset($scan['interval']) )
                 $tmp_string .= " - interval: ".$scan['interval'];
             if( isset($scan['threshold']) )
