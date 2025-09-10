@@ -603,9 +603,12 @@ class UTIL
                     $tmp_utilType = "securityprofile";
                 elseif( $tmp_utilType == "rule-merger" )
                     $tmp_utilType = "rule";
+                else
+                    $tmp_utilType = NULL;
 
 
-                ksort(RQuery::$defaultFilters[$tmp_utilType]);
+                if( $tmp_utilType !== NULL )
+                    ksort(RQuery::$defaultFilters[$tmp_utilType]);
 
 
                 $pos = array_search('help', PH::$args);
@@ -622,7 +625,7 @@ class UTIL
                 #$action = PH::$args[(array_search($pos, $keys) +1)];
                 $filter = $keys[($key_search + 2)];
 
-                if( !isset(RQuery::$defaultFilters[$tmp_utilType][$filter]) )
+                if( $tmp_utilType !== NULL && !isset(RQuery::$defaultFilters[$tmp_utilType][$filter]) )
                 {
                     mwarning("request help for filter '{$filter}' but it does not exist", null, false);
 
@@ -647,29 +650,32 @@ class UTIL
                 PH::print_stdout( "*** help for Filter " . PH::boldText($filter) . ":" . $args );
                 PH::print_stdout();
 
-                foreach( RQuery::$defaultFilters[$tmp_utilType] as $index => &$filter_name )
+                if( $tmp_utilType !== NULL )
                 {
-                    if($filter !== $index)
-                        continue;
-
-                    PH::print_stdout( "* " . $index . "" );
-                    PH::$JSON_TMP[$index]['name'] = $index;
-
-                    ksort($filter_name['operators']);
-
-                    foreach( $filter_name['operators'] as $oindex => &$operator )
+                    foreach (RQuery::$defaultFilters[$tmp_utilType] as $index => &$filter_name)
                     {
-                        //if( $operator['arg'] )
-                        $output = "    - $oindex";
-                        $output = str_pad($output, 40);
-                        if( isset($operator['help']) )
-                            $output .= ": ".$operator['help'];
+                        if ($filter !== $index)
+                            continue;
 
-                        PH::print_stdout( $output . "" );
-                        PH::$JSON_TMP[$index]['operators'][$oindex]['name'] = $oindex;
-                        PH::$JSON_TMP[$index]['operators'][$oindex]['operator'] = $operator;
+                        PH::print_stdout("* " . $index . "");
+                        PH::$JSON_TMP[$index]['name'] = $index;
+
+                        ksort($filter_name['operators']);
+
+                        foreach ($filter_name['operators'] as $oindex => &$operator)
+                        {
+                            //if( $operator['arg'] )
+                            $output = "    - $oindex";
+                            $output = str_pad($output, 40);
+                            if (isset($operator['help']))
+                                $output .= ": " . $operator['help'];
+
+                            PH::print_stdout($output . "");
+                            PH::$JSON_TMP[$index]['operators'][$oindex]['name'] = $oindex;
+                            PH::$JSON_TMP[$index]['operators'][$oindex]['operator'] = $operator;
+                        }
+                        PH::print_stdout();
                     }
-                    PH::print_stdout();
                 }
             }
             else
@@ -2391,25 +2397,25 @@ class UTIL
                     }
                     catch(Exception $e)
                     {
-                        $timezone_backward = PH::timezone_backward_migration( $this->timezone );
+                        $timezone_backward = PH::timezone_backward_migration( $this->pan->timezone );
                         if( $timezone_backward !== null )
                         {
                             $this->pan->timezone = $timezone_backward;
                             date_default_timezone_set($timezone_backward);
 
                             PH::print_stdout("   --------------");
-                            PH::print_stdout( " X Timezone: $timezone->textContent is not supported with this PHP version. ".$this->timezone." is used." );
+                            PH::print_stdout( " X Timezone: $timezone->textContent is not supported with this PHP version. ".$this->pan->timezone." is used." );
                             PH::print_stdout("   - the timezone is IANA deprecated. Please change to a supported one:");
 
 
                             PH::print_stdout();
-                            PH::print_stdout("   -- '".$this->timezone."'");
+                            PH::print_stdout("   -- '".$this->pan->timezone."'");
                             PH::print_stdout("   --------------");
                             PH::print_stdout();
                         }
                         else
                         {
-                            PH::print_stdout("timezone: '".$this->timezone."' not supported by IANA");
+                            PH::print_stdout("timezone: '".$this->pan->timezone."' not supported by IANA");
                         }
                     }
                     PH::disableExceptionSupport();
