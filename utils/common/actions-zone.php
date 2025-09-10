@@ -399,6 +399,54 @@ ZoneCallContext::$supportedActions[] = array(
     ),
     'help' => ''
 );
+ZoneCallContext::$supportedActions[] = array(
+    'name' => 'name-Replace-Character',
+    'MainFunction' => function (ZoneCallContext $context) {
+        $object = $context->object;
+
+
+        $characterToreplace = $context->arguments['search'];
+        $characterForreplace = $context->arguments['replace'];
+
+
+        $newName = str_replace($characterToreplace, $characterForreplace, $object->name());
+
+
+        if( $object->name() == $newName )
+        {
+            $string = "new name and old name are the same";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
+        $string = "new name will be '{$newName}'";
+        PH::ACTIONlog( $context, $string );
+
+        $findObject = $object->owner->find($newName, null, false);
+        if( $findObject !== null )
+        {
+            $string = "an object with same name already exists";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+        else
+        {
+            $text = $context->padding . " - renaming object... ";
+            if( $context->isAPI )
+                $object->API_setName($newName);
+            else
+                $object->setName($newName);
+
+            PH::ACTIONlog( $context, $text );
+        }
+
+    },
+    'args' => array(
+        'search' => array('type' => 'string', 'default' => '*nodefault*'),
+        'replace' => array('type' => 'string', 'default' => '')
+    ),
+    'help' => ''
+);
 
 ZoneCallContext::$supportedActions['displayreferences'] = array(
     'name' => 'displayReferences',

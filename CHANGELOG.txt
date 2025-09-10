@@ -4,6 +4,7 @@ CHANGELOG
 UTIL:
 * type=vendor-migration vendor=cp-r80 | implement tcp/udp session timeout migration
 * type=zone-protection-profile | extend with additional fields
+* type=zone | new actions=name-Replace-Character
 
 BUGFIX:
 * type=migration vendor=cp-r80 | bugfix for finding service within access_layer - if service naming must be normalize
