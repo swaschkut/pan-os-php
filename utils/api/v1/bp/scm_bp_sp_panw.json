@@ -345,22 +345,7 @@
         "rule": {
             "bp": {
                 "block": {
-                    "filetype": [
-                        "7z",
-                        "bat",
-                        "chm",
-                        "class",
-                        "cpl",
-                        "dll",
-                        "hlp",
-                        "hta",
-                        "jar",
-                        "ocx",
-                        "pif",
-                        "scr",
-                        "torrent",
-                        "vbe",
-                        "wsf",
+                    "filetype_blocked_also_before": [
                         "cab",
                         "exe",
                         "flash",
@@ -372,19 +357,6 @@
                         "encrypted-rar",
                         "encrypted-zip"
                     ],
-                    "action": "block"
-                }
-            },
-            "visibility": {
-                "alert": {
-                    "filetype": [
-                        "any"
-                    ],
-                    "action": "alert"
-                }
-            },
-            "bp_custom": {
-                "block": {
                     "filetype": [
                         "7z",
                         "bat",
@@ -402,39 +374,20 @@
                         "vbe",
                         "wsf"
                     ],
-                    "action": "block"
+                    "action": "block",
+                    "direction": "both",
+                    "application": "any",
+                    "all_other_filetypes": "alert"
                 }
             },
-            "bp_panw": {
-                "block": {
+            "visibility": {
+                "alert": {
                     "filetype": [
-                        "7z",
-                        "bat",
-                        "chm",
-                        "class",
-                        "cpl",
-                        "dll",
-                        "hlp",
-                        "hta",
-                        "jar",
-                        "ocx",
-                        "pif",
-                        "scr",
-                        "torrent",
-                        "vbe",
-                        "wsf",
-                        "cab",
-                        "exe",
-                        "flash",
-                        "msi",
-                        "Multi-Level-Encoding",
-                        "PE",
-                        "rar",
-                        "tar",
-                        "encrypted-rar",
-                        "encrypted-zip"
+                        "any"
                     ],
-                    "action": "block"
+                    "action": "alert",
+                    "direction": "both",
+                    "application": "any"
                 }
             }
         }
