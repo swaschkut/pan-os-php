@@ -1041,7 +1041,10 @@ SecurityProfileCallContext::$supportedActions[] = array(
                             if( $object->fileblocking_rules_best_practice() )
                                 $lines .= $context->encloseFunction($bp_text_yes.' BP FB rules set');
                             else
+                            {
                                 $lines .= $context->encloseFunction($bp_text_no.' NO BP FB rules');
+                            }
+
                         }
                         if( $visibility )
                         {
