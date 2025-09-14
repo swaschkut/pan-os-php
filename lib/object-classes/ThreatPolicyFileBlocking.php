@@ -79,6 +79,21 @@ class ThreatPolicyFileBlocking extends ThreatPolicy
 
             foreach( $check as $validate => $values )
             {
+                if( $validate == "filetype_blocked_also_before" )
+                    continue;
+
+                if( $validate == "direction" )
+                {
+                    if( $this->direction() !== $values )
+                        return false;
+                }
+
+                if( $validate == "application" )
+                {
+                    if( $this->application() !== $values )
+                        return false;
+                }
+
                 #print "Action: ".$action."\n";
                 #print_r($check);
                 if( is_array( $values ) )
@@ -87,9 +102,6 @@ class ThreatPolicyFileBlocking extends ThreatPolicy
                     //filetype
                     foreach( $values as $value )
                     {
-                        if( $validate == "filetype_blocked_also_before" )
-                            continue;
-
                         if( in_array( "any", $this->$validate ) )
                             return true;
                         if( !in_array( $value, $this->$validate ) )
@@ -106,13 +118,11 @@ class ThreatPolicyFileBlocking extends ThreatPolicy
     {
         $bp = false;
         $not_block = array();
+
         foreach( $check_array as $action => $check )
         {
             if( $this->action() !== $action )
                 continue;
-
-            if( $action === "block")
-                $bp = true;
 
             $not_block = array();
             foreach( $check as $validate => $values )
