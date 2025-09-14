@@ -907,7 +907,12 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         elseif( get_class($rule ) == "ThreatPolicyFileBlocking" )
                         {
                             if( !$rule->fileblocking_rule_best_practice() && $bestPractice )
-                                $tmp_string .= $bp_NOT_sign;
+                            {
+                                $check_array = $rule->fileblocking_rule_bp_visibility_JSON( "bp", "file-blocking" );
+                                $not_block = $rule->show_missing_bp_json( $check_array );
+                                $tmp_string .= $bp_NOT_sign."[".implode(", ", $not_block)."]";
+                            }
+
                             if( !$rule->fileblocking_rule_visibility() && $visibility )
                                 $tmp_string .= $visible_NOT_sign;
                         }
