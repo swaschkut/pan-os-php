@@ -166,7 +166,7 @@ class MAXMIND__
         $line_of_text = array();
         while (!feof($file_handle) )
         {
-            $array = fgetcsv($file_handle, 1024);
+            $array = fgetcsv($file_handle, 1024, ',', '"', '\\');
             if( !$first && !empty($array) )
             {
                 if( !empty( $array[4] ) )
@@ -191,7 +191,8 @@ class MAXMIND__
 
         while (!feof($file_handle) )
         {
-            $array = fgetcsv($file_handle, 1024);
+            $array = fgetcsv($file_handle, 1024, ',', '"', '\\');
+            //fgetcsv($stream, ?int $length = null, string $separator = ',', string $enclosure = '"', string $escape = '\\') {}
             if( !$first && !empty($array) )
             {
                 $value = $array[0];
