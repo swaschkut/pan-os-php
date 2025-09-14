@@ -910,7 +910,10 @@ SecurityProfileCallContext::$supportedActions[] = array(
                             {
                                 $check_array = $rule->fileblocking_rule_bp_visibility_JSON( "bp", "file-blocking" );
                                 $not_block = $rule->show_missing_bp_json( $check_array );
-                                $tmp_string .= $bp_NOT_sign."[".implode(", ", $not_block)."]";
+                                if( !empty( $not_block ) )
+                                    $tmp_string .= $bp_NOT_sign."[".implode(", ", $not_block)."]";
+                                else
+                                    $tmp_string .= $bp_NOT_sign;
                             }
 
                             if( !$rule->fileblocking_rule_visibility() && $visibility )
