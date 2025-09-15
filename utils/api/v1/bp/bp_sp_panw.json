@@ -398,58 +398,6 @@
                         "any"
                     ]
                 }
-            },
-            "bp_custom": {
-                "block": {
-                    "filetype": [
-                        "7z",
-                        "bat",
-                        "chm",
-                        "class",
-                        "cpl",
-                        "dll",
-                        "hlp",
-                        "hta",
-                        "jar",
-                        "ocx",
-                        "pif",
-                        "scr",
-                        "torrent",
-                        "vbe",
-                        "wsf"
-                    ]
-                }
-            },
-            "bp_panw": {
-                "block": {
-                    "filetype": [
-                        "7z",
-                        "bat",
-                        "chm",
-                        "class",
-                        "cpl",
-                        "dll",
-                        "hlp",
-                        "hta",
-                        "jar",
-                        "ocx",
-                        "pif",
-                        "scr",
-                        "torrent",
-                        "vbe",
-                        "wsf",
-                        "cab",
-                        "exe",
-                        "flash",
-                        "msi",
-                        "Multi-Level-Encoding",
-                        "PE",
-                        "rar",
-                        "tar",
-                        "encrypted-rar",
-                        "encrypted-zip"
-                    ]
-                }
             }
         }
     },

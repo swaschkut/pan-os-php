@@ -2229,6 +2229,8 @@ class MERGER extends UTIL
             $pickedObject_DG = $pickedObject->owner->owner;
             if( $pickedObject_DG->parentDeviceGroup !== null )
             {
+                $tmp_DG_name = $pickedObject_DG->parentDeviceGroup->name();
+
                 $nextFindObject = $pickedObject_DG->parentDeviceGroup->addressStore->find( $pickedObject->name(), null, True );
                 if( $nextFindObject !== null )
                 {

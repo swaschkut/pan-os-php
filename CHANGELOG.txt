@@ -11,6 +11,7 @@ BUGFIX:
 * type=vendor-migration vendor=cp-r80 | if single firewall - only migrate into one vsys
 * type=session | bugfix for wrong variable usage - class UTIL improvement if filter is set and used in combination with argument help
 * type=securityprofile securityprofiletype=file-blocking 'actions=exporttoexcel:file.html,bestpractice|adoption|visibility' | bugfix to display BP correctly
+* type=addressgroup-merger | bugfix as variable $tmp_DG_name was not set on a specific situation
 
 GENERAL:
 
