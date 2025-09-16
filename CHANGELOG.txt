@@ -12,6 +12,7 @@ BUGFIX:
 * type=session | bugfix for wrong variable usage - class UTIL improvement if filter is set and used in combination with argument help
 * type=securityprofile securityprofiletype=file-blocking 'actions=exporttoexcel:file.html,bestpractice|adoption|visibility' | bugfix to display BP correctly
 * type=addressgroup-merger | bugfix as variable $tmp_DG_name was not set on a specific situation
+* type=addressgroup-merger | bugfix for argument exportcsv=file.html allowmergingwithupperlevel | to include all merged objects
 
 GENERAL:
 
