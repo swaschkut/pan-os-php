@@ -15,6 +15,7 @@ BUGFIX:
 * type=addressgroup-merger | bugfix for argument exportcsv=file.html allowmergingwithupperlevel | to include all merged objects
 
 GENERAL:
+* update to Device App-ID version: 9022-9656
 
 
 2.1.38 (20250806)
