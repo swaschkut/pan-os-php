@@ -3929,6 +3929,14 @@ var subjectObject =
             }
         },
         "filter": {
+            "filter": {
+                "operators": {
+                    "is.all-logs": {
+                        "Function": {},
+                        "arg": false
+                    }
+                }
+            },
             "location": {
                 "operators": {
                     "is": {
@@ -11709,14 +11717,6 @@ var subjectObject =
             }
         },
         "filter": {
-            "interface": {
-                "operators": {
-                    "is.set": {
-                        "Function": {},
-                        "arg": false
-                    }
-                }
-            },
             "location": {
                 "operators": {
                     "is": {
@@ -11750,27 +11750,6 @@ var subjectObject =
                         "help": "returns TRUE if object location (shared\/device-group\/vsys name) matches \/ is parent the one specified in argument",
                         "ci": {
                             "fString": "(%PROP%  Datacenter-Firewalls)",
-                            "input": "input\/panorama-8.0.xml"
-                        }
-                    }
-                }
-            },
-            "logprof": {
-                "operators": {
-                    "is.set": {
-                        "Function": {},
-                        "arg": false,
-                        "ci": {
-                            "fString": "(%PROP%)",
-                            "input": "input\/panorama-8.0.xml"
-                        }
-                    },
-                    "is": {
-                        "Function": {},
-                        "arg": true,
-                        "help": "return true if Log Forwarding Profile is the one specified in argument",
-                        "ci": {
-                            "fString": "(%PROP%  log_to_panorama)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -11887,47 +11866,6 @@ var subjectObject =
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% securityrule )",
-                            "input": "input\/panorama-8.0.xml"
-                        }
-                    }
-                }
-            },
-            "type": {
-                "operators": {
-                    "is": {
-                        "Function": {},
-                        "arg": true
-                    }
-                }
-            },
-            "userid": {
-                "operators": {
-                    "is.enabled": {
-                        "Function": {},
-                        "arg": false,
-                        "ci": {
-                            "fString": "(%PROP%)",
-                            "input": "input\/panorama-8.0.xml"
-                        }
-                    }
-                }
-            },
-            "zpp": {
-                "operators": {
-                    "is.set": {
-                        "Function": {},
-                        "arg": false,
-                        "ci": {
-                            "fString": "(%PROP%)",
-                            "input": "input\/panorama-8.0.xml"
-                        }
-                    },
-                    "is": {
-                        "Function": {},
-                        "arg": true,
-                        "help": "return true if Zone Protection Profile is the one specified in argument",
-                        "ci": {
-                            "fString": "(%PROP%  log_to_panorama)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
