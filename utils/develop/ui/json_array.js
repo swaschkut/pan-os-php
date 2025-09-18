@@ -2303,6 +2303,18 @@ var subjectObject =
                     }
                 }
             },
+            "rename-wrong-characters": {
+                "name": "rename-wrong-characters",
+                "GlobalInitFunction": {},
+                "MainFunction": {},
+                "args": {
+                    "enable": {
+                        "type": "string",
+                        "default": "no"
+                    }
+                },
+                "help": "enable function: possible values: 'yes' or 'no'"
+            },
             "sharedgateway-delete": {
                 "name": "sharedgateway-delete",
                 "MainFunction": {}
@@ -11168,6 +11180,21 @@ var subjectObject =
                         "type": "string",
                         "default": "*nodefault*",
                         "help": "This string is used to compose a name. You can use the following aliases :\n  - $$current.name$$ : current name of the object\n"
+                    }
+                },
+                "help": ""
+            },
+            "name-replace-character": {
+                "name": "name-Replace-Character",
+                "MainFunction": {},
+                "args": {
+                    "search": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "replace": {
+                        "type": "string",
+                        "default": ""
                     }
                 },
                 "help": ""

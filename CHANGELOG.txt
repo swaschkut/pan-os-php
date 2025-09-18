@@ -16,6 +16,8 @@ BUGFIX:
 * type=servicegroup-merger | bugfix for exportcsv to add all merged objects
 
 GENERAL:
+* update to Device App-ID version: 9022-9656
+* update regionIPv4/v6 | protocol-numbers | json action/filter
 
 
 2.1.38 (20250806)
