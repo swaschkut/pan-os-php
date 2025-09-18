@@ -465,6 +465,8 @@ class UTIL
             $tmp_array = &GPGatewaytunnelCallContext::$supportedActions;
         elseif( $this->utilType == 'zone-protection-profile' )
             $tmp_array = &ZoneProtectionProfileCallContext::$supportedActions;
+        elseif( $this->utilType == 'log-profile' )
+            $tmp_array = &LogProfileCallContext::$supportedActions;
 
         return $tmp_array;
     }
@@ -581,7 +583,8 @@ class UTIL
                 DeviceCallContext::prepareSupportedActions();
             elseif( $this->utilType == 'certificate' )
                 CertificateCallContext::prepareSupportedActions();
-
+            elseif( $this->utilType == 'log-profile' )
+                LogProfileCallContext::prepareSupportedActions();
 
         }
     }
@@ -1416,6 +1419,8 @@ class UTIL
                 $context = new GPGatewaytunnelCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'zone-protection-profile' )
                 $context = new ZoneProtectionProfileCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+            elseif( $this->utilType == 'log-profile' )
+                $context = new LogProfileCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
 
             $context->baseObject = $this->pan;
             if( isset($this->configInput['type'])  )
@@ -1798,6 +1803,8 @@ class UTIL
                         $this->objectsToProcess[] = array('store' => $this->pan->ThreatPolicyStore, 'objects' => $this->pan->ThreatPolicyStore->getAll());
                     elseif( $this->utilType == 'dns-rule' )
                         $this->objectsToProcess[] = array('store' => $this->pan->DNSPolicyStore, 'objects' => $this->pan->DNSPolicyStore->getAll());
+                    elseif( $this->utilType == 'log-profile' )
+                        $this->objectsToProcess[] = array('store' => $this->pan->LogProfileStore, 'objects' => $this->pan->LogProfileStore->getAll());
 
                     $locationFound = TRUE;
                     self::GlobalInitAction($this->pan);
@@ -1824,6 +1831,8 @@ class UTIL
                             $this->objectsToProcess[] = array('store' => $sub->ThreatPolicyStore, 'objects' => $sub->ThreatPolicyStore->resultingObjectSet());
                         elseif( $this->utilType == 'dns-rule' )
                             $this->objectsToProcess[] = array('store' => $sub->DNSPolicyStore, 'objects' => $sub->DNSPolicyStore->resultingObjectSet());
+                        elseif( $this->utilType == 'log-profile' )
+                            $this->objectsToProcess[] = array('store' => $sub->LogProfileStore, 'objects' => $sub->LogProfileStore->resultingObjectSet());
 
                         $locationFound = TRUE;
                         self::GlobalInitAction($sub);
@@ -1848,6 +1857,8 @@ class UTIL
                             $this->objectsToProcess[] = array('store' => $sub->ThreatPolicyStore, 'objects' => $sub->ThreatPolicyStore->getall());
                         elseif( $this->utilType == 'dns-rule' )
                             $this->objectsToProcess[] = array('store' => $sub->DNSPolicyStore, 'objects' => $sub->DNSPolicyStore->getall());
+                        elseif( $this->utilType == 'log-profile' )
+                            $this->objectsToProcess[] = array('store' => $sub->LogProfileStore, 'objects' => $sub->LogProfileStore->getall());
 
                         $locationFound = TRUE;
                         self::GlobalInitAction($sub);
@@ -1876,6 +1887,8 @@ class UTIL
                             $this->objectsToProcess[] = array('store' => $sub->ThreatPolicyStore, 'objects' => $sub->ThreatPolicyStore->getall());
                         elseif( $this->utilType == 'dns-rule' )
                             $this->objectsToProcess[] = array('store' => $sub->DNSPolicyStore, 'objects' => $sub->DNSPolicyStore->getall());
+                        elseif( $this->utilType == 'log-profile' )
+                            $this->objectsToProcess[] = array('store' => $sub->LogProfileStore, 'objects' => $sub->LogProfileStore->getall());
 
                         $locationFound = TRUE;
                         self::GlobalInitAction($this->pan);
@@ -1908,6 +1921,8 @@ class UTIL
                         $this->objectsToProcess[] = array('store' => $this->pan->ThreatPolicyStore, 'objects' => $this->pan->ThreatPolicyStore->getall());
                     elseif( $this->utilType == 'dns-rule' )
                         $this->objectsToProcess[] = array('store' => $this->pan->DNSPolicyStore, 'objects' => $this->pan->DNSPolicyStore->getall());
+                    elseif( $this->utilType == 'log-profile' )
+                        $this->objectsToProcess[] = array('store' => $this->pan->LogProfileStore, 'objects' => $this->pan->LogProfileStore->getall());
 
                     $locationFound = TRUE;
                     self::GlobalInitAction($this->pan);
@@ -1975,6 +1990,8 @@ class UTIL
                             $this->objectsToProcess[] = array('store' => $sub->ThreatPolicyStore, 'objects' => $sub->ThreatPolicyStore->getall());
                         elseif( $this->utilType == 'dns-rule' )
                             $this->objectsToProcess[] = array('store' => $sub->DNSPolicyStore, 'objects' => $sub->DNSPolicyStore->getall());
+                        elseif( $this->utilType == 'log-profile' )
+                            $this->objectsToProcess[] = array('store' => $sub->LogProfileStore, 'objects' => $sub->LogProfileStore->getall());
 
                         $locationFound = TRUE;
                         $this->GlobalInitAction($sub);

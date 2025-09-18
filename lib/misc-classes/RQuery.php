@@ -139,6 +139,8 @@ class RQuery
             $this->contextObject = new GPGatewaytunnelRQueryContext($this);
         elseif( $this->objectType == 'zone-protection-profile' )
             $this->contextObject = new ZoneProtectionProfileRQueryContext($this);
+        elseif( $this->objectType == 'log-profile' )
+            $this->contextObject = new LogProfileRQueryContext($this);
 
         else
             derr("unsupported object type '$objectType'");
@@ -752,5 +754,8 @@ require_once 'filters/filters-IKEprofile.php';
 require_once 'filters/filters-IPSECprofile.php';
 require_once 'filters/filters-IPSECtunnel.php';
 require_once 'filters/filters-GREtunnel.php';
+
+require_once 'filters/filters-ZoneProtectionProfile.php';
+require_once 'filters/filters-LogProfile.php';
 
 

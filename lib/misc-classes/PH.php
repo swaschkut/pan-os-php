@@ -1011,7 +1011,7 @@ class PH
         "zone",  "interface", "virtualwire", "routing", "dhcp", "certificate", "static-route",
         "gp-gateway", "gp-portal",
         "ike-profile", "ike-gateway", 'ipsec-profile', 'ipsec-tunnel',
-        "zone-protection-profile",
+        "zone-protection-profile","log-profile",
         "gre-tunnel", "gpgateway-tunnel",
         "key-manager",
         "address-merger", "addressgroup-merger",
@@ -1249,6 +1249,7 @@ class PH
             || $type == 'threat'
             || $type == 'threat-rule'
             || $type == 'dns-rule'
+            || $type == 'log-profile'
         )
             $util = new UTIL($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
 

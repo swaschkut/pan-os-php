@@ -1,7 +1,7 @@
 <?php
 
-// <editor-fold desc=" ***** Zone filters *****" defaultstate="collapsed" >
-RQuery::$defaultFilters['zone-protection-profile']['refcount']['operators']['>,<,=,!'] = array(
+// <editor-fold desc=" ***** LogProfile filters *****" defaultstate="collapsed" >
+RQuery::$defaultFilters['log-profile']['refcount']['operators']['>,<,=,!'] = array(
     'eval' => '$object->countReferences() !operator! !value!',
     'arg' => TRUE,
     'ci' => array(
@@ -9,8 +9,8 @@ RQuery::$defaultFilters['zone-protection-profile']['refcount']['operators']['>,<
         'input' => 'input/panorama-8.0.xml'
     )
 );
-RQuery::$defaultFilters['zone-protection-profile']['object']['operators']['is.unused'] = array(
-    'Function' => function (ZoneProtectionProfileRQueryContext $context) {
+RQuery::$defaultFilters['log-profile']['object']['operators']['is.unused'] = array(
+    'Function' => function (LogProfileRQueryContext $context) {
         return $context->object->countReferences() == 0;
     },
     'arg' => FALSE,
@@ -19,8 +19,8 @@ RQuery::$defaultFilters['zone-protection-profile']['object']['operators']['is.un
         'input' => 'input/panorama-8.0.xml'
     )
 );
-RQuery::$defaultFilters['zone-protection-profile']['name']['operators']['is.in.file'] = array(
-    'Function' => function (ZoneProtectionProfileRQueryContext $context) {
+RQuery::$defaultFilters['log-profile']['name']['operators']['is.in.file'] = array(
+    'Function' => function (LogProfileRQueryContext $context) {
         $object = $context->object;
 
         if( !isset($context->cachedList) )
@@ -48,8 +48,8 @@ RQuery::$defaultFilters['zone-protection-profile']['name']['operators']['is.in.f
     },
     'arg' => TRUE
 );
-RQuery::$defaultFilters['zone-protection-profile']['object']['operators']['is.tmp'] = array(
-    'Function' => function (ZoneProtectionProfileRQueryContext $context) {
+RQuery::$defaultFilters['log-profile']['object']['operators']['is.tmp'] = array(
+    'Function' => function (LogProfileRQueryContext $context) {
         return $context->object->isTmp();
     },
     'arg' => FALSE,
@@ -58,8 +58,8 @@ RQuery::$defaultFilters['zone-protection-profile']['object']['operators']['is.tm
         'input' => 'input/panorama-8.0.xml'
     )
 );
-RQuery::$defaultFilters['zone-protection-profile']['name']['operators']['eq'] = array(
-    'Function' => function (ZoneProtectionProfileRQueryContext $context) {
+RQuery::$defaultFilters['log-profile']['name']['operators']['eq'] = array(
+    'Function' => function (LogProfileRQueryContext $context) {
         return $context->object->name() == $context->value;
     },
     'arg' => TRUE,
@@ -68,8 +68,8 @@ RQuery::$defaultFilters['zone-protection-profile']['name']['operators']['eq'] = 
         'input' => 'input/panorama-8.0.xml'
     )
 );
-RQuery::$defaultFilters['zone-protection-profile']['name']['operators']['eq.nocase'] = array(
-    'Function' => function (ZoneProtectionProfileRQueryContext $context) {
+RQuery::$defaultFilters['log-profile']['name']['operators']['eq.nocase'] = array(
+    'Function' => function (LogProfileRQueryContext $context) {
         return strtolower($context->object->name()) == strtolower($context->value);
     },
     'arg' => TRUE,
@@ -78,8 +78,8 @@ RQuery::$defaultFilters['zone-protection-profile']['name']['operators']['eq.noca
         'input' => 'input/panorama-8.0.xml'
     )
 );
-RQuery::$defaultFilters['zone-protection-profile']['name']['operators']['contains'] = array(
-    'Function' => function (ZoneProtectionProfileRQueryContext $context) {
+RQuery::$defaultFilters['log-profile']['name']['operators']['contains'] = array(
+    'Function' => function (LogProfileRQueryContext $context) {
         return strpos($context->object->name(), $context->value) !== FALSE;
     },
     'arg' => TRUE,
@@ -88,8 +88,8 @@ RQuery::$defaultFilters['zone-protection-profile']['name']['operators']['contain
         'input' => 'input/panorama-8.0.xml'
     )
 );
-RQuery::$defaultFilters['zone-protection-profile']['name']['operators']['regex'] = array(
-    'Function' => function (ZoneProtectionProfileRQueryContext $context) {
+RQuery::$defaultFilters['log-profile']['name']['operators']['regex'] = array(
+    'Function' => function (LogProfileRQueryContext $context) {
         $object = $context->object;
         $value = $context->value;
 
@@ -115,8 +115,8 @@ RQuery::$defaultFilters['zone-protection-profile']['name']['operators']['regex']
         'input' => 'input/panorama-8.0.xml'
     )
 );
-RQuery::$defaultFilters['zone-protection-profile']['location']['operators']['is'] = array(
-    'Function' => function (ZoneProtectionProfileRQueryContext $context) {
+RQuery::$defaultFilters['log-profile']['location']['operators']['is'] = array(
+    'Function' => function (LogProfileRQueryContext $context) {
         $owner = $context->object->owner->owner;
         if( strtolower($context->value) == 'shared' )
         {
@@ -137,8 +137,8 @@ RQuery::$defaultFilters['zone-protection-profile']['location']['operators']['is'
         'input' => 'input/panorama-8.0.xml'
     )
 );
-RQuery::$defaultFilters['zone-protection-profile']['location']['operators']['regex'] = array(
-    'Function' => function (ZoneProtectionProfileRQueryContext $context) {
+RQuery::$defaultFilters['log-profile']['location']['operators']['regex'] = array(
+    'Function' => function (LogProfileRQueryContext $context) {
         $name = $context->object->getLocationString();
         $matching = preg_match($context->value, $name);
         if( $matching === FALSE )
@@ -153,8 +153,8 @@ RQuery::$defaultFilters['zone-protection-profile']['location']['operators']['reg
         'input' => 'input/panorama-8.0.xml'
     )
 );
-RQuery::$defaultFilters['zone-protection-profile']['location']['operators']['is.child.of'] = array(
-    'Function' => function (ZoneProtectionProfileRQueryContext $context) {
+RQuery::$defaultFilters['log-profile']['location']['operators']['is.child.of'] = array(
+    'Function' => function (LogProfileRQueryContext $context) {
         $zone_location = $context->object->getLocationString();
 
         $sub = $context->object->owner;
@@ -204,8 +204,8 @@ RQuery::$defaultFilters['zone-protection-profile']['location']['operators']['is.
         'input' => 'input/panorama-8.0.xml'
     )
 );
-RQuery::$defaultFilters['zone-protection-profile']['location']['operators']['is.parent.of'] = array(
-    'Function' => function (ZoneProtectionProfileRQueryContext $context) {
+RQuery::$defaultFilters['log-profile']['location']['operators']['is.parent.of'] = array(
+    'Function' => function (LogProfileRQueryContext $context) {
         $zone_location = $context->object->getLocationString();
 
         $sub = $context->object->owner;
@@ -257,8 +257,8 @@ RQuery::$defaultFilters['zone-protection-profile']['location']['operators']['is.
         'input' => 'input/panorama-8.0.xml'
     )
 );
-RQuery::$defaultFilters['zone-protection-profile']['reflocation']['operators']['is'] = array(
-    'Function' => function (ZoneProtectionProfileRQueryContext $context) {
+RQuery::$defaultFilters['log-profile']['reflocation']['operators']['is'] = array(
+    'Function' => function (LogProfileRQueryContext $context) {
         $object = $context->object;
         $owner = $context->object->owner->owner;
 
@@ -300,8 +300,8 @@ RQuery::$defaultFilters['zone-protection-profile']['reflocation']['operators']['
         'input' => 'input/panorama-8.0.xml'
     )
 );
-RQuery::$defaultFilters['zone-protection-profile']['reflocation']['operators']['is.only'] = array(
-    'Function' => function (ZoneProtectionProfileRQueryContext $context) {
+RQuery::$defaultFilters['log-profile']['reflocation']['operators']['is.only'] = array(
+    'Function' => function (LogProfileRQueryContext $context) {
         $owner = $context->object->owner->owner;
         $reflocations = $context->object->getReferencesLocation();
 
@@ -336,8 +336,8 @@ RQuery::$defaultFilters['zone-protection-profile']['reflocation']['operators']['
         'input' => 'input/panorama-8.0.xml'
     )
 );
-RQuery::$defaultFilters['zone-protection-profile']['refstore']['operators']['is'] = array(
-    'Function' => function (ZoneProtectionProfileRQueryContext $context) {
+RQuery::$defaultFilters['log-profile']['refstore']['operators']['is'] = array(
+    'Function' => function (LogProfileRQueryContext $context) {
         $value = $context->value;
         $value = strtolower($value);
 
@@ -357,8 +357,8 @@ RQuery::$defaultFilters['zone-protection-profile']['refstore']['operators']['is'
         'input' => 'input/panorama-8.0.xml'
     )
 );
-RQuery::$defaultFilters['zone-protection-profile']['reftype']['operators']['is'] = array(
-    'Function' => function (ZoneProtectionProfileRQueryContext $context) {
+RQuery::$defaultFilters['log-profile']['reftype']['operators']['is'] = array(
+    'Function' => function (LogProfileRQueryContext $context) {
         $value = $context->value;
         $value = strtolower($value);
 
@@ -378,129 +378,9 @@ RQuery::$defaultFilters['zone-protection-profile']['reftype']['operators']['is']
         'input' => 'input/panorama-8.0.xml'
     )
 );
-RQuery::$defaultFilters['zone-protection-profile']['logprof']['operators']['is.set'] = array(
-    'Function' => function (ZoneProtectionProfileRQueryContext $context) {
-        /** @var Zone $zone */
-        $zone = $context->object;
-        if( $zone->isTmp() )
-            return FALSE;
-
-        if( $zone->logsetting === null || $zone->logsetting == '' )
-            return FALSE;
-
-        return TRUE;
-    },
-    'arg' => FALSE,
-    'ci' => array(
-        'fString' => '(%PROP%)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
-RQuery::$defaultFilters['zone-protection-profile']['logprof']['operators']['is'] = array(
-    'Function' => function (ZoneProtectionProfileRQueryContext $context) {
-
-        /** @var Zone $zone */
-        $zone = $context->object;
-        if( $zone->isTmp() )
-            return FALSE;
-
-        if( $zone->logsetting === null )
-            return FALSE;
-
-        if( $zone->logsetting == $context->value )
-            return TRUE;
-
-        return FALSE;
-    },
-    'arg' => TRUE,
-    'help' => 'return true if Log Forwarding Profile is the one specified in argument',
-    'ci' => array(
-        'fString' => '(%PROP%  log_to_panorama)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
-
-RQuery::$defaultFilters['zone-protection-profile']['zpp']['operators']['is.set'] = array(
-    'Function' => function (ZoneProtectionProfileRQueryContext $context) {
-        /** @var Zone $zone */
-        $zone = $context->object;
-        if( $zone->isTmp() )
-            return FALSE;
-
-        if( $zone->zoneProtectionProfile === null || $zone->zoneProtectionProfile == '' )
-            return FALSE;
-
-        return TRUE;
-    },
-    'arg' => FALSE,
-    'ci' => array(
-        'fString' => '(%PROP%)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
-RQuery::$defaultFilters['zone-protection-profile']['zpp']['operators']['is'] = array(
-    'Function' => function (ZoneProtectionProfileRQueryContext $context) {
-
-        /** @var Zone $zone */
-        $zone = $context->object;
-        if( $zone->isTmp() )
-            return FALSE;
-
-        if( $zone->zoneProtectionProfile === null )
-            return FALSE;
-
-        if( $zone->zoneProtectionProfile == $context->value )
-            return TRUE;
-
-        return FALSE;
-    },
-    'arg' => TRUE,
-    'help' => 'return true if Zone Protection Profile is the one specified in argument',
-    'ci' => array(
-        'fString' => '(%PROP%  log_to_panorama)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
-RQuery::$defaultFilters['zone-protection-profile']['userid']['operators']['is.enabled'] = array(
-    'Function' => function (ZoneProtectionProfileRQueryContext $context) {
-        return $context->object->userID;
-    },
-    'arg' => FALSE,
-    'ci' => array(
-        'fString' => '(%PROP%)',
-        'input' => 'input/panorama-8.0.xml'
-    )
-);
-
-RQuery::$defaultFilters['zone-protection-profile']['interface']['operators']['is.set'] = array(
-    'Function' => function (ZoneProtectionProfileRQueryContext $context) {
-        $object = $context->object;
-
-        $interfaces = $object->attachedInterfaces->getAll();
-        if( count($interfaces) > 0)
-            return TRUE;
-        else
-            return FALSE;
-    },
-    'arg' => FALSE
-);
-
-RQuery::$defaultFilters['zone-protection-profile']['type']['operators']['is'] = array(
-    'Function' => function (ZoneProtectionProfileRQueryContext $context) {
-        $object = $context->object;
 
 
-        if( !in_array( $context->value, $object->getZoneTypes() ) )
-        {
-            derr( "Zone type filter not supported: '".$context->value."' | please pick a supported one: '".implode( ", ", $object->getZoneTypes() ), null, FALSE );
-        }
 
 
-        if( $object->type == $context->value )
-            return TRUE;
 
-        return null;
-    },
-    'arg' => TRUE
-);
 // </editor-fold>

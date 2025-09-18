@@ -250,6 +250,9 @@ require_once $basedir . '/object-classes/Schedule.php';
 require_once $basedir . '/object-classes/EDLStore.php';
 require_once $basedir . '/object-classes/EDL.php';
 
+require_once $basedir . '/object-classes/LogProfile.php';
+require_once $basedir . '/object-classes/LogProfileStore.php';
+
 require_once $basedir . '/object-classes/SecurityProfileStore.php';
 require_once $basedir . '/object-classes/SecurityProfileGroupStore.php';
 require_once $basedir . '/object-classes/SecurityProfileGroup.php';
