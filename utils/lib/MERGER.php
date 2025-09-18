@@ -2526,6 +2526,7 @@ class MERGER extends UTIL
                         if( $memberFound === null )
                         {
                             PH::print_stdout("   * SKIPPED : this group has an object named '{$memberObject->name()} that does not exist in target location '{$tmp_DG_name}'");
+                            $this->skippedObject( $index, $pickedObject, $memberObject, "this group has an object named '{$memberObject->name()} that does not exist in target location '{$tmp_DG_name}'" );
                             $skip = TRUE;
                             break;
                         }
@@ -2537,6 +2538,7 @@ class MERGER extends UTIL
                                 if( $memberFound->getDestPort() !== $memberObject->getDestPort() || $memberFound->getSourcePort() !== $memberObject->getSourcePort() || $memberFound->protocol() !== $memberObject->protocol() )
                                 {
                                     PH::print_stdout("   * SKIPPED : this group has an object named '{$memberObject->name()} that does exist in target location '{$tmp_DG_name}' with different value or protocol");
+                                    $this->skippedObject( $index, $pickedObject, $memberObject, "this group has an object named '{$memberObject->name()} that does exist in target location '{$tmp_DG_name}' with different value or protocol" );
                                     $skip = TRUE;
                                     break;
                                 }
@@ -2547,12 +2549,14 @@ class MERGER extends UTIL
                                 if( count($diff['minus']) != 0 || count($diff['plus']) != 0 )
                                 {
                                     PH::print_stdout("   * SKIPPED : this group has different member ship compare to upperlevel");
+                                    $this->skippedObject( $index, $pickedObject, $memberObject, "this group has different member ship compare to upperlevel" );
                                     $skip = TRUE;
                                 }
                             }
                             else
                             {
                                 PH::print_stdout("   * SKIPPED : this group has an object named '{$memberObject->name()} that does exist in target location '{$tmp_DG_name}' with different object type");
+                                $this->skippedObject( $index, $pickedObject, $memberObject, "this group has an object named '{$memberObject->name()} that does exist in target location '{$tmp_DG_name}' with different object type" );
                                 $skip = TRUE;
                                 break;
                             }
@@ -2564,6 +2568,7 @@ class MERGER extends UTIL
 
                     if( $this->action === "merge" )
                     {
+                        self::deletedObject($index, $pickedObject, $pickedObject);
                         /** @var AddressStore $store */
                         if( $this->apiMode )
                         {

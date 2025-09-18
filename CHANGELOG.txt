@@ -13,6 +13,7 @@ BUGFIX:
 * type=securityprofile securityprofiletype=file-blocking 'actions=exporttoexcel:file.html,bestpractice|adoption|visibility' | bugfix to display BP correctly
 * type=addressgroup-merger | bugfix as variable $tmp_DG_name was not set on a specific situation
 * type=addressgroup-merger | bugfix for argument exportcsv=file.html allowmergingwithupperlevel | to include all merged objects
+* type=servicegroup-merger | bugfix for exportcsv to add all merged objects
 
 GENERAL:
 
