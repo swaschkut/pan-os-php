@@ -1173,6 +1173,11 @@
             <filter>All Logs</filter>
             <send-to-panorama>yes</send-to-panorama>
           </entry>
+          <entry name="DNSSecurity_Log_Forwarding">
+            <log-type>dns-security</log-type>
+            <filter>All Logs</filter>
+            <send-to-panorama>yes</send-to-panorama>
+          </entry>
         </match-list>
       </entry>
       </profiles>

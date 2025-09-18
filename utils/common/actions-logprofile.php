@@ -37,7 +37,29 @@ LogProfileCallContext::$supportedActions['display'] = array(
         $tmp_txt = "     * " . get_class($object) . " '{$object->name()}'   ";
 
 
-        PH::print_stdout($tmp_txt);
+        if( !empty( $object->type() ) )
+        {
+            foreach( $object->type() as $key => $name )
+            {
+                if( isset($name['notSet']))
+                {
+                    $tmp_txt = "       - ".str_pad( $key, 10 );
+                    $tmp_txt .= " | NOT SET";
+                }
+                else
+                {
+                    foreach ($name as $name_key => $type)
+                    {
+                        $tmp_txt = "       - " . str_pad($key, 10)." | ".str_pad($name_key, 12)."";
+                        foreach ($type as $type_key => $type_value)
+                        {
+                            $tmp_txt .= " |" . $type_key . "->" . $type_value;
+                        }
+                    }
+                }
+                PH::print_stdout($tmp_txt);
+            }
+        }
 
     },
 );

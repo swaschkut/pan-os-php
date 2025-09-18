@@ -30,8 +30,7 @@ class LogProfile
     public $owner = null;
 
     public $type = null;
-    public $recurring = null;
-    public $url = null;
+    public $type_available = null;
 
     /**
      * @param string $name
@@ -41,7 +40,13 @@ class LogProfile
     public function __construct($name, $owner, $fromXmlTemplate = FALSE)
     {
         $this->name = $name;
-
+        //before PAN-OS 10.0
+        //$this->type_available = array('auth', 'data', 'decryption', 'threat', 'traffic', 'tunnel', 'url', 'wildfire');
+        $this->type_available = array('auth', 'data', 'decryption', 'threat', 'traffic', 'tunnel', 'url', 'wildfire');
+        //PAN-OS 12.1 and above
+        //$this->type_available = array('auth', 'data', 'decryption', 'dns-security', 'threat', 'traffic', 'tunnel', 'url', 'wildfire');
+        foreach( $this->type_available as $type )
+            $this->type[$type] = array('notSet'=>'--');
 
         if( $fromXmlTemplate )
         {
@@ -127,7 +132,31 @@ class LogProfile
         $tmp_match_list_node = DH::findFirstElement('match-list', $xml);
         if( $tmp_match_list_node !== FALSE )
         {
-            //read all entry and add to array
+            foreach( $tmp_match_list_node->childNodes as $node )
+            {
+                if( $node->nodeType != 1 )
+                    continue;
+                $name = DH::findAttribute('name', $node);
+
+                $tmp_log_type_node = DH::findFirstElement('log-type', $node);
+                $log_type_text = $tmp_log_type_node->textContent;
+                unset( $this->type[$log_type_text]['notSet'] );
+                $this->type[$log_type_text][$name] = array();
+                if( $tmp_log_type_node !== FALSE )
+                {
+                    $tmp_filter_node = DH::findFirstElement('filter', $node);
+                    if( $tmp_filter_node !== FALSE )
+                        $this->type[$log_type_text][$name]['filter'] = $tmp_filter_node->textContent;
+
+                    $tmp_send_to_panorama_node = DH::findFirstElement('send-to-panorama', $node);
+                    if( $tmp_send_to_panorama_node !== FALSE )
+                        $this->type[$log_type_text][$name]['send-to-panorama'] = $tmp_send_to_panorama_node->textContent;
+
+                    $tmp_quarantine_node = DH::findFirstElement('quarantine', $node);
+                    if( $tmp_quarantine_node !== FALSE )
+                        $this->type[$log_type_text][$name]['quarantine'] = $tmp_quarantine_node->textContent;
+                }
+            }
         }
         /*
          <entry name="Panorama" loc="shared">

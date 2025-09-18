@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Class ZoneProtectionProfileRQueryContext
+ * Class LogProfileRQueryContext
  * @property LogProfile $object
  * @ignore
  */

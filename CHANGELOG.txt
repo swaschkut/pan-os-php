@@ -5,6 +5,8 @@ UTIL:
 * type=vendor-migration vendor=cp-r80 | implement tcp/udp session timeout migration
 * type=zone-protection-profile | extend with additional fields
 * type=zone | new actions=name-Replace-Character
+* type=log-profile | introduce of new util type
+* type=log-profile | extension for actions and filters | extend iron-skillet files for log-profile type decryption and dns-security
 
 BUGFIX:
 * type=migration vendor=cp-r80 | bugfix for finding service within access_layer - if service naming must be normalize
@@ -14,7 +16,6 @@ BUGFIX:
 * type=addressgroup-merger | bugfix as variable $tmp_DG_name was not set on a specific situation
 * type=addressgroup-merger | bugfix for argument exportcsv=file.html allowmergingwithupperlevel | to include all merged objects
 * type=servicegroup-merger | bugfix for exportcsv to add all merged objects
-* type=log-profile | introduce of new util type
 
 GENERAL:
 * update to Device App-ID version: 9022-9656

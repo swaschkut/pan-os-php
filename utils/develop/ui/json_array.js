@@ -4082,6 +4082,46 @@ var subjectObject =
                         }
                     }
                 }
+            },
+            "send-to-panorama": {
+                "operators": {
+                    "is.set": {
+                        "Function": {},
+                        "arg": false
+                    }
+                }
+            },
+            "type": {
+                "operators": {
+                    "auth.is.set": {
+                        "Function": {},
+                        "arg": false
+                    },
+                    "data.is.set": {
+                        "Function": {},
+                        "arg": false
+                    },
+                    "decryption.is.set": {
+                        "Function": {},
+                        "arg": false
+                    },
+                    "traffic.is.set": {
+                        "Function": {},
+                        "arg": false
+                    },
+                    "tunnel.is.set": {
+                        "Function": {},
+                        "arg": false
+                    },
+                    "url.is.set": {
+                        "Function": {},
+                        "arg": false
+                    },
+                    "wildfire.is.set": {
+                        "Function": {},
+                        "arg": false
+                    }
+                }
             }
         }
     },
