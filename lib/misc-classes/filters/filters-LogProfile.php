@@ -404,7 +404,8 @@ RQuery::$defaultFilters['log-profile']['type']['operators']['data.is.set'] = arr
 RQuery::$defaultFilters['log-profile']['type']['operators']['decryption.is.set'] = array(
     'Function' => function (LogProfileRQueryContext $context)
     {
-        if( isset($context->object->type['decryption']['notSet']) )
+        if( isset($context->object->type['decryption']) )
+            if( isset($context->object->type['decryption']['notSet']) )
             return FALSE;
 
         return TRUE;
@@ -450,6 +451,17 @@ RQuery::$defaultFilters['log-profile']['type']['operators']['wildfire.is.set'] =
     {
         if( isset($context->object->type['wildfire']['notSet']) )
             return FALSE;
+
+        return TRUE;
+    },
+    'arg' => FALSE
+);
+RQuery::$defaultFilters['log-profile']['type']['operators']['dns-security.is.set'] = array(
+    'Function' => function (LogProfileRQueryContext $context)
+    {
+        if( isset($context->object->type['dns-security']) )
+            if( isset($context->object->type['dns-security']['notSet']) )
+                return FALSE;
 
         return TRUE;
     },
