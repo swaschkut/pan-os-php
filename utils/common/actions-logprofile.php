@@ -43,14 +43,14 @@ LogProfileCallContext::$supportedActions['display'] = array(
             {
                 if( isset($name['notSet']))
                 {
-                    $tmp_txt = "       - ".str_pad( $key, 10 );
+                    $tmp_txt = "       - ".str_pad( $key, 12 );
                     $tmp_txt .= " | NOT SET";
                 }
                 else
                 {
                     foreach ($name as $name_key => $type)
                     {
-                        $tmp_txt = "       - " . str_pad($key, 10)." | ".str_pad($name_key, 12)."";
+                        $tmp_txt = "       - " . str_pad($key, 12)." | ".str_pad($name_key, 12)."";
                         foreach ($type as $type_key => $type_value)
                         {
                             $tmp_txt .= " |" . $type_key . "->" . $type_value;

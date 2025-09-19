@@ -7,6 +7,7 @@ UTIL:
 * type=zone | new actions=name-Replace-Character
 * type=log-profile | introduce of new util type
 * type=log-profile | extension for actions and filters | extend iron-skillet files for log-profile type decryption and dns-security
+* type=log-profile | adjust type for different PAN-OS versions | class Zone extend references for Virtualsystem
 
 BUGFIX:
 * type=migration vendor=cp-r80 | bugfix for finding service within access_layer - if service naming must be normalize

@@ -225,14 +225,25 @@ class Zone
 
                     //Todo: swaschkut 20250918
                     //add reference
+                    //network not available for VirtualSystem::
+                    if( get_class($this->owner->owner) == "VirtualSystem")
+                    {
+                        $tmp_zpp =  $this->owner->owner->owner->network->zoneProtectionProfileStore->find( $this->zoneProtectionProfile );
+                        if( is_object( $tmp_zpp ) )
+                            $tmp_zpp->addReference( $this );
+                    }
+
                 }
                 elseif( $node->tagName == 'log-setting' )
                 {
                     $this->logsetting = $node->textContent;
 
-                    #$tmp_logprof =  $this->owner->owner->LogProfileStore->find( $this->logSetting );
-                    #if( is_object( $tmp_logprof ) )
-                    #    $tmp_logprof->addReference( $this );
+                    if( get_class($this->owner->owner) == "VirtualSystem")
+                    {
+                        $tmp_logprof =  $this->owner->owner->LogProfileStore->find( $this->logsetting );
+                        if( is_object( $tmp_logprof ) )
+                            $tmp_logprof->addReference( $this );
+                    }
                 }
                 elseif( $node->tagName == 'enable-packet-buffer-protection' )
                 {

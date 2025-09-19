@@ -40,11 +40,15 @@ class LogProfile
     public function __construct($name, $owner, $fromXmlTemplate = FALSE)
     {
         $this->name = $name;
-        //before PAN-OS 10.0
-        //$this->type_available = array('auth', 'data', 'decryption', 'threat', 'traffic', 'tunnel', 'url', 'wildfire');
-        $this->type_available = array('auth', 'data', 'decryption', 'threat', 'traffic', 'tunnel', 'url', 'wildfire');
-        //PAN-OS 12.1 and above
-        //$this->type_available = array('auth', 'data', 'decryption', 'dns-security', 'threat', 'traffic', 'tunnel', 'url', 'wildfire');
+
+        //with 910 there was als gcp scp??
+        if( $owner->owner->version < 100 )
+            $this->type_available = array('auth', 'data', 'threat', 'traffic', 'tunnel', 'url', 'wildfire');
+        elseif( $owner->owner->version >= 100 and $owner->owner->version < 120)
+            $this->type_available = array('auth', 'data', 'decryption', 'threat', 'traffic', 'tunnel', 'url', 'wildfire');
+        elseif( $owner->owner->version >= 120 )
+            $this->type_available = array('auth', 'data', 'decryption', 'dns-security', 'threat', 'traffic', 'tunnel', 'url', 'wildfire');
+
         foreach( $this->type_available as $type )
             $this->type[$type] = array('notSet'=>'--');
 
