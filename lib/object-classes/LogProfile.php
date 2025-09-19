@@ -41,7 +41,7 @@ class LogProfile
     {
         $this->name = $name;
 
-        //with 910 there was als gcp scp??
+        //with 810,910,100,121 there was also gtp,sctp??
         if( $owner->owner->version < 100 )
             $this->type_available = array('auth', 'data', 'threat', 'traffic', 'tunnel', 'url', 'wildfire');
         elseif( $owner->owner->version >= 100 and $owner->owner->version < 120)

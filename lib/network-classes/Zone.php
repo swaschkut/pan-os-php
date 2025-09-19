@@ -232,6 +232,8 @@ class Zone
                         if( is_object( $tmp_zpp ) )
                             $tmp_zpp->addReference( $this );
                     }
+                    else
+                        mwarning("Zone-protection-profile: '".$this->zoneProtectionProfile."'  found in Zone: '".$this->name()."'. References for class: '".get_class($this->owner->owner)." not yet implemented", null, false);
 
                 }
                 elseif( $node->tagName == 'log-setting' )
@@ -244,6 +246,8 @@ class Zone
                         if( is_object( $tmp_logprof ) )
                             $tmp_logprof->addReference( $this );
                     }
+                    else
+                        mwarning("Log-profile: '".$this->logsetting."'  found in Zone: '".$this->name()."'. References for class: '".get_class($this->owner->owner)." not yet implemented", null, false);
                 }
                 elseif( $node->tagName == 'enable-packet-buffer-protection' )
                 {
