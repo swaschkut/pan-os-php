@@ -222,10 +222,17 @@ class Zone
                 elseif( $node->tagName == 'zone-protection-profile' )
                 {
                     $this->zoneProtectionProfile = $node->textContent;
+
+                    //Todo: swaschkut 20250918
+                    //add reference
                 }
                 elseif( $node->tagName == 'log-setting' )
                 {
                     $this->logsetting = $node->textContent;
+
+                    #$tmp_logprof =  $this->owner->owner->LogProfileStore->find( $this->logSetting );
+                    #if( is_object( $tmp_logprof ) )
+                    #    $tmp_logprof->addReference( $this );
                 }
                 elseif( $node->tagName == 'enable-packet-buffer-protection' )
                 {

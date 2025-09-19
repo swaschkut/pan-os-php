@@ -53,6 +53,10 @@ trait RulewithLogging
             if( $node->nodeName == 'log-setting' )
             {
                 $this->logSetting = $node->textContent;
+
+                $tmp_logprof =  $this->owner->owner->LogProfileStore->find( $this->logSetting );
+                if( is_object( $tmp_logprof ) )
+                    $tmp_logprof->addReference( $this );
             }
         }
     }
