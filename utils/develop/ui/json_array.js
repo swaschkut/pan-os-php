@@ -3926,6 +3926,29 @@ var subjectObject =
             "displayreferences": {
                 "name": "displayReferences",
                 "MainFunction": {}
+            },
+            "exporttoexcel": {
+                "name": "exportToExcel",
+                "MainFunction": {},
+                "GlobalInitFunction": {},
+                "GlobalFinishFunction": {},
+                "args": {
+                    "filename": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "additionalFields": {
+                        "type": "pipeSeparatedList",
+                        "subtype": "string",
+                        "default": "*NONE*",
+                        "choices": [
+                            "WhereUsed",
+                            "UsedInLocation",
+                            "TotalUse"
+                        ],
+                        "help": "pipe(|) separated list of additional field to include in the report. The following is available:\n  - WhereUsed : list places where object is used (rules, groups ...)\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n  - TotalUse : list a counter how often this object is used\n"
+                    }
+                }
             }
         },
         "filter": {
@@ -4126,6 +4149,10 @@ var subjectObject =
                         "arg": false
                     },
                     "wildfire.is.set": {
+                        "Function": {},
+                        "arg": false
+                    },
+                    "dns-security.is.set": {
                         "Function": {},
                         "arg": false
                     }
@@ -11714,6 +11741,29 @@ var subjectObject =
             "displayreferences": {
                 "name": "displayReferences",
                 "MainFunction": {}
+            },
+            "exporttoexcel": {
+                "name": "exportToExcel",
+                "MainFunction": {},
+                "GlobalInitFunction": {},
+                "GlobalFinishFunction": {},
+                "args": {
+                    "filename": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "additionalFields": {
+                        "type": "pipeSeparatedList",
+                        "subtype": "string",
+                        "default": "*NONE*",
+                        "choices": [
+                            "WhereUsed",
+                            "UsedInLocation",
+                            "TotalUse"
+                        ],
+                        "help": "pipe(|) separated list of additional field to include in the report. The following is available:\n  - WhereUsed : list places where object is used (rules, groups ...)\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n  - TotalUse : list a counter how often this object is used\n"
+                    }
+                }
             }
         },
         "filter": {
