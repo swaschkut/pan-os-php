@@ -635,6 +635,14 @@ var subjectObject =
                     }
                 }
             },
+            "member.name": {
+                "operators": {
+                    "is.in.file": {
+                        "Function": {},
+                        "arg": true
+                    }
+                }
+            },
             "members.count": {
                 "operators": {
                     ">,<,=,!": {
@@ -9620,6 +9628,14 @@ var subjectObject =
                             "fString": "(%PROP%  Datacenter-Firewalls)",
                             "input": "input\/panorama-8.0.xml"
                         }
+                    }
+                }
+            },
+            "member.name": {
+                "operators": {
+                    "is.in.file": {
+                        "Function": {},
+                        "arg": true
                     }
                 }
             },

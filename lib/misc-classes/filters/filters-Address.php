@@ -587,6 +587,52 @@ RQuery::$defaultFilters['address']['members.count']['operators']['>,<,=,!'] = ar
         'input' => 'input/panorama-8.0.xml'
     )
 );
+RQuery::$defaultFilters['address']['member.name']['operators']['is.in.file'] = array(
+    'Function' => function (AddressRQueryContext $context) {
+        $object = $context->object;
+
+        if( !$object->isGroup() )
+            return FALSE;
+
+        if( !isset($context->cachedList) )
+        {
+            $text = file_get_contents($context->value);
+
+            if( $text === FALSE )
+                derr("cannot open file '{$context->value}");
+
+            $lines = explode("\n", $text);
+            foreach( $lines as $line )
+            {
+                $line = trim($line);
+                if( strlen($line) == 0 )
+                    continue;
+                $list[$line] = TRUE;
+            }
+
+            $context->cachedList = &$list;
+        }
+        else
+            $list = &$context->cachedList;
+
+        $member_name_array = array();
+        foreach( $context->object->members() as $member_obj )
+        {
+            $member_name_array[$member_obj->name()] = $member_obj->name();
+        }
+
+
+        foreach( $list as $file_membername => $truefalse )
+        {
+            if( isset($member_name_array[$file_membername]) ) {
+                return TRUE;
+            }
+        }
+
+        return FALSE;
+    },
+    'arg' => TRUE
+);
 RQuery::$defaultFilters['address']['tag.count']['operators']['>,<,=,!'] = array(
     'eval' => "!\$object->isRegion() && !\$object->isEDL() && \$object->tags->count() !operator! !value!",
     'arg' => TRUE,
