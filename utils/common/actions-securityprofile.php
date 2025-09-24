@@ -907,7 +907,15 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         elseif( get_class($rule ) == "ThreatPolicyFileBlocking" )
                         {
                             if( !$rule->fileblocking_rule_best_practice() && $bestPractice )
-                                $tmp_string .= $bp_NOT_sign;
+                            {
+                                $check_array = $rule->fileblocking_rule_bp_visibility_JSON( "bp", "file-blocking" );
+                                $not_block = $rule->show_missing_bp_json( $check_array );
+                                if( !empty( $not_block ) )
+                                    $tmp_string .= $bp_NOT_sign."[".implode(", ", $not_block)."]";
+                                else
+                                    $tmp_string .= $bp_NOT_sign;
+                            }
+
                             if( !$rule->fileblocking_rule_visibility() && $visibility )
                                 $tmp_string .= $visible_NOT_sign;
                         }
@@ -1041,7 +1049,10 @@ SecurityProfileCallContext::$supportedActions[] = array(
                             if( $object->fileblocking_rules_best_practice() )
                                 $lines .= $context->encloseFunction($bp_text_yes.' BP FB rules set');
                             else
+                            {
                                 $lines .= $context->encloseFunction($bp_text_no.' NO BP FB rules');
+                            }
+
                         }
                         if( $visibility )
                         {

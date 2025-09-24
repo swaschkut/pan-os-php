@@ -465,6 +465,8 @@ class UTIL
             $tmp_array = &GPGatewaytunnelCallContext::$supportedActions;
         elseif( $this->utilType == 'zone-protection-profile' )
             $tmp_array = &ZoneProtectionProfileCallContext::$supportedActions;
+        elseif( $this->utilType == 'log-profile' )
+            $tmp_array = &LogProfileCallContext::$supportedActions;
 
         return $tmp_array;
     }
@@ -581,7 +583,8 @@ class UTIL
                 DeviceCallContext::prepareSupportedActions();
             elseif( $this->utilType == 'certificate' )
                 CertificateCallContext::prepareSupportedActions();
-
+            elseif( $this->utilType == 'log-profile' )
+                LogProfileCallContext::prepareSupportedActions();
 
         }
     }
@@ -603,9 +606,12 @@ class UTIL
                     $tmp_utilType = "securityprofile";
                 elseif( $tmp_utilType == "rule-merger" )
                     $tmp_utilType = "rule";
+                else
+                    $tmp_utilType = NULL;
 
 
-                ksort(RQuery::$defaultFilters[$tmp_utilType]);
+                if( $tmp_utilType !== NULL )
+                    ksort(RQuery::$defaultFilters[$tmp_utilType]);
 
 
                 $pos = array_search('help', PH::$args);
@@ -622,7 +628,7 @@ class UTIL
                 #$action = PH::$args[(array_search($pos, $keys) +1)];
                 $filter = $keys[($key_search + 2)];
 
-                if( !isset(RQuery::$defaultFilters[$tmp_utilType][$filter]) )
+                if( $tmp_utilType !== NULL && !isset(RQuery::$defaultFilters[$tmp_utilType][$filter]) )
                 {
                     mwarning("request help for filter '{$filter}' but it does not exist", null, false);
 
@@ -647,29 +653,32 @@ class UTIL
                 PH::print_stdout( "*** help for Filter " . PH::boldText($filter) . ":" . $args );
                 PH::print_stdout();
 
-                foreach( RQuery::$defaultFilters[$tmp_utilType] as $index => &$filter_name )
+                if( $tmp_utilType !== NULL )
                 {
-                    if($filter !== $index)
-                        continue;
-
-                    PH::print_stdout( "* " . $index . "" );
-                    PH::$JSON_TMP[$index]['name'] = $index;
-
-                    ksort($filter_name['operators']);
-
-                    foreach( $filter_name['operators'] as $oindex => &$operator )
+                    foreach (RQuery::$defaultFilters[$tmp_utilType] as $index => &$filter_name)
                     {
-                        //if( $operator['arg'] )
-                        $output = "    - $oindex";
-                        $output = str_pad($output, 40);
-                        if( isset($operator['help']) )
-                            $output .= ": ".$operator['help'];
+                        if ($filter !== $index)
+                            continue;
 
-                        PH::print_stdout( $output . "" );
-                        PH::$JSON_TMP[$index]['operators'][$oindex]['name'] = $oindex;
-                        PH::$JSON_TMP[$index]['operators'][$oindex]['operator'] = $operator;
+                        PH::print_stdout("* " . $index . "");
+                        PH::$JSON_TMP[$index]['name'] = $index;
+
+                        ksort($filter_name['operators']);
+
+                        foreach ($filter_name['operators'] as $oindex => &$operator)
+                        {
+                            //if( $operator['arg'] )
+                            $output = "    - $oindex";
+                            $output = str_pad($output, 40);
+                            if (isset($operator['help']))
+                                $output .= ": " . $operator['help'];
+
+                            PH::print_stdout($output . "");
+                            PH::$JSON_TMP[$index]['operators'][$oindex]['name'] = $oindex;
+                            PH::$JSON_TMP[$index]['operators'][$oindex]['operator'] = $operator;
+                        }
+                        PH::print_stdout();
                     }
-                    PH::print_stdout();
                 }
             }
             else
@@ -1410,6 +1419,8 @@ class UTIL
                 $context = new GPGatewaytunnelCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'zone-protection-profile' )
                 $context = new ZoneProtectionProfileCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+            elseif( $this->utilType == 'log-profile' )
+                $context = new LogProfileCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
 
             $context->baseObject = $this->pan;
             if( isset($this->configInput['type'])  )
@@ -1792,6 +1803,8 @@ class UTIL
                         $this->objectsToProcess[] = array('store' => $this->pan->ThreatPolicyStore, 'objects' => $this->pan->ThreatPolicyStore->getAll());
                     elseif( $this->utilType == 'dns-rule' )
                         $this->objectsToProcess[] = array('store' => $this->pan->DNSPolicyStore, 'objects' => $this->pan->DNSPolicyStore->getAll());
+                    elseif( $this->utilType == 'log-profile' )
+                        $this->objectsToProcess[] = array('store' => $this->pan->LogProfileStore, 'objects' => $this->pan->LogProfileStore->getAll());
 
                     $locationFound = TRUE;
                     self::GlobalInitAction($this->pan);
@@ -1818,6 +1831,8 @@ class UTIL
                             $this->objectsToProcess[] = array('store' => $sub->ThreatPolicyStore, 'objects' => $sub->ThreatPolicyStore->resultingObjectSet());
                         elseif( $this->utilType == 'dns-rule' )
                             $this->objectsToProcess[] = array('store' => $sub->DNSPolicyStore, 'objects' => $sub->DNSPolicyStore->resultingObjectSet());
+                        elseif( $this->utilType == 'log-profile' )
+                            $this->objectsToProcess[] = array('store' => $sub->LogProfileStore, 'objects' => $sub->LogProfileStore->resultingObjectSet());
 
                         $locationFound = TRUE;
                         self::GlobalInitAction($sub);
@@ -1842,6 +1857,8 @@ class UTIL
                             $this->objectsToProcess[] = array('store' => $sub->ThreatPolicyStore, 'objects' => $sub->ThreatPolicyStore->getall());
                         elseif( $this->utilType == 'dns-rule' )
                             $this->objectsToProcess[] = array('store' => $sub->DNSPolicyStore, 'objects' => $sub->DNSPolicyStore->getall());
+                        elseif( $this->utilType == 'log-profile' )
+                            $this->objectsToProcess[] = array('store' => $sub->LogProfileStore, 'objects' => $sub->LogProfileStore->getall());
 
                         $locationFound = TRUE;
                         self::GlobalInitAction($sub);
@@ -1870,6 +1887,8 @@ class UTIL
                             $this->objectsToProcess[] = array('store' => $sub->ThreatPolicyStore, 'objects' => $sub->ThreatPolicyStore->getall());
                         elseif( $this->utilType == 'dns-rule' )
                             $this->objectsToProcess[] = array('store' => $sub->DNSPolicyStore, 'objects' => $sub->DNSPolicyStore->getall());
+                        elseif( $this->utilType == 'log-profile' )
+                            $this->objectsToProcess[] = array('store' => $sub->LogProfileStore, 'objects' => $sub->LogProfileStore->getall());
 
                         $locationFound = TRUE;
                         self::GlobalInitAction($this->pan);
@@ -1902,6 +1921,8 @@ class UTIL
                         $this->objectsToProcess[] = array('store' => $this->pan->ThreatPolicyStore, 'objects' => $this->pan->ThreatPolicyStore->getall());
                     elseif( $this->utilType == 'dns-rule' )
                         $this->objectsToProcess[] = array('store' => $this->pan->DNSPolicyStore, 'objects' => $this->pan->DNSPolicyStore->getall());
+                    elseif( $this->utilType == 'log-profile' )
+                        $this->objectsToProcess[] = array('store' => $this->pan->LogProfileStore, 'objects' => $this->pan->LogProfileStore->getall());
 
                     $locationFound = TRUE;
                     self::GlobalInitAction($this->pan);
@@ -1969,6 +1990,8 @@ class UTIL
                             $this->objectsToProcess[] = array('store' => $sub->ThreatPolicyStore, 'objects' => $sub->ThreatPolicyStore->getall());
                         elseif( $this->utilType == 'dns-rule' )
                             $this->objectsToProcess[] = array('store' => $sub->DNSPolicyStore, 'objects' => $sub->DNSPolicyStore->getall());
+                        elseif( $this->utilType == 'log-profile' )
+                            $this->objectsToProcess[] = array('store' => $sub->LogProfileStore, 'objects' => $sub->LogProfileStore->getall());
 
                         $locationFound = TRUE;
                         $this->GlobalInitAction($sub);
@@ -2391,25 +2414,25 @@ class UTIL
                     }
                     catch(Exception $e)
                     {
-                        $timezone_backward = PH::timezone_backward_migration( $this->timezone );
+                        $timezone_backward = PH::timezone_backward_migration( $this->pan->timezone );
                         if( $timezone_backward !== null )
                         {
                             $this->pan->timezone = $timezone_backward;
                             date_default_timezone_set($timezone_backward);
 
                             PH::print_stdout("   --------------");
-                            PH::print_stdout( " X Timezone: $timezone->textContent is not supported with this PHP version. ".$this->timezone." is used." );
+                            PH::print_stdout( " X Timezone: $timezone->textContent is not supported with this PHP version. ".$this->pan->timezone." is used." );
                             PH::print_stdout("   - the timezone is IANA deprecated. Please change to a supported one:");
 
 
                             PH::print_stdout();
-                            PH::print_stdout("   -- '".$this->timezone."'");
+                            PH::print_stdout("   -- '".$this->pan->timezone."'");
                             PH::print_stdout("   --------------");
                             PH::print_stdout();
                         }
                         else
                         {
-                            PH::print_stdout("timezone: '".$this->timezone."' not supported by IANA");
+                            PH::print_stdout("timezone: '".$this->pan->timezone."' not supported by IANA");
                         }
                     }
                     PH::disableExceptionSupport();

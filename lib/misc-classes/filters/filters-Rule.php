@@ -308,6 +308,9 @@ RQuery::$defaultFilters['rule']['from']['operators']['is.in.file'] = array(
 
         if( !isset($context->cachedList) )
         {
+            if( !file_exists($context->value) )
+                derr("cannot find file '{$context->value}'", null, FALSE);
+
             $text = file_get_contents($context->value);
 
             if( $text === FALSE )
@@ -346,6 +349,9 @@ RQuery::$defaultFilters['rule']['to']['operators']['is.in.file'] = array(
 
         if( !isset($context->cachedList) )
         {
+            if( !file_exists($context->value) )
+                derr("cannot find file '{$context->value}'", null, FALSE);
+
             $text = file_get_contents($context->value);
 
             if( $text === FALSE )
@@ -862,6 +868,9 @@ RQuery::$commonFilters['src-dst']['xxx-is.partially.or.fully.included.in.list'] 
 RQuery::$commonFilters['src-dst']['xxx-get.file'] = function (RuleRQueryContext $context) {
     if( !isset($context->cachedList) )
     {
+        if( !file_exists($context->value) )
+            derr("cannot find file '{$context->value}'", null, FALSE);
+
         $text = file_get_contents($context->value);
 
         if( $text === FALSE )
@@ -3460,6 +3469,9 @@ RQuery::$defaultFilters['rule']['name']['operators']['is.in.file'] = array(
 
         if( !isset($context->cachedList) )
         {
+            if( !file_exists($context->value) )
+                derr("cannot find file '{$context->value}'", null, FALSE);
+
             $text = file_get_contents($context->value);
 
             if( $text === FALSE )
@@ -3661,6 +3673,9 @@ RQuery::$defaultFilters['rule']['user']['operators']['is.in.file'] = array(
 
         if( !isset($context->cachedList) )
         {
+            if( !file_exists($context->value) )
+                derr("cannot find file '{$context->value}'", null, FALSE);
+
             $text = file_get_contents($context->value);
 
             if( $text === FALSE )

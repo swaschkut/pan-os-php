@@ -230,7 +230,7 @@ class PH
 
     private static $library_version_major = 2;
     private static $library_version_sub = 1;
-    private static $library_version_bugfix = 38;
+    private static $library_version_bugfix = 39;
 
     //BASIC AUTH PAN-OS 7.1
     public static $softwareupdate_key = "658d787f293e631196dac9fb29490f1cc1bb3827";
@@ -1011,7 +1011,7 @@ class PH
         "zone",  "interface", "virtualwire", "routing", "dhcp", "certificate", "static-route",
         "gp-gateway", "gp-portal",
         "ike-profile", "ike-gateway", 'ipsec-profile', 'ipsec-tunnel',
-        "zone-protection-profile",
+        "zone-protection-profile","log-profile",
         "gre-tunnel", "gpgateway-tunnel",
         "key-manager",
         "address-merger", "addressgroup-merger",
@@ -1249,6 +1249,7 @@ class PH
             || $type == 'threat'
             || $type == 'threat-rule'
             || $type == 'dns-rule'
+            || $type == 'log-profile'
         )
             $util = new UTIL($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
 

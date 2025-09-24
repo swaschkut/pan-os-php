@@ -1,6 +1,34 @@
 CHANGELOG
 
-2.1.38
+2.1.39
+UTIL:
+* type=vendor-migration vendor=cp-r80 | implement tcp/udp session timeout migration
+* type=zone-protection-profile | extend with additional fields
+* type=zone | new actions=name-Replace-Character
+* type=log-profile | introduce of new util type
+* type=log-profile | extension for actions and filters | extend iron-skillet files for log-profile type decryption and dns-security
+* type=log-profile | adjust type for different PAN-OS versions | class Zone extend references for Virtualsystem
+* type=log-profile actions=exporttoexcel | introduction of new action
+* type=zone-protection-profile actions=exporttoexcel:file.html | introduce exporttoexcel for ZPP
+* type=address/service | new 'filter=(member.name is.in.file FILENAME.txt)'
+* type=address/service | new 'filter=(member.name is XYZ)'
+
+BUGFIX:
+* type=migration vendor=cp-r80 | bugfix for finding service within access_layer - if service naming must be normalize
+* type=vendor-migration vendor=cp-r80 | if single firewall - only migrate into one vsys
+* type=session | bugfix for wrong variable usage - class UTIL improvement if filter is set and used in combination with argument help
+* type=securityprofile securityprofiletype=file-blocking 'actions=exporttoexcel:file.html,bestpractice|adoption|visibility' | bugfix to display BP correctly
+* type=addressgroup-merger | bugfix as variable $tmp_DG_name was not set on a specific situation
+* type=addressgroup-merger | bugfix for argument exportcsv=file.html allowmergingwithupperlevel | to include all merged objects
+* type=servicegroup-merger | bugfix for exportcsv to add all merged objects
+* adjust type=zone-protection-profile | remove filters  which are not for zone-protection-profile
+
+GENERAL:
+* update to Device App-ID version: 9022-9656
+* update regionIPv4/v6 | protocol-numbers | json action/filter
+
+
+2.1.38 (20250806)
 UTIL:
 * type=device actions=defaultsecurityrule-securityprofilegroup-set:{NAME},true/false |  introduce additional argument FORCE - to add SPG per default only if no SPG is set
 * type=securityprofile securityprofiletype=spyware actions=display | extend to show also advanced-dns-security-categories

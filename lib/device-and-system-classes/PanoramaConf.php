@@ -213,6 +213,9 @@ class PanoramaConf
     /** @var EDLStore */
     public $EDLStore = null;
 
+    /** @var LogProfileStore */
+    public $LogProfileStore = null;
+
     /** @var ZoneStore */
     public $zoneStore = null;
 
@@ -360,6 +363,9 @@ class PanoramaConf
 
         $this->EDLStore = new EDLStore($this);
         $this->EDLStore->setName('EDLStore');
+
+        $this->LogProfileStore = new LogProfileStore($this);
+        $this->LogProfileStore->setName('LogProfileStore');
 
         $this->securityRules = new RuleStore($this, 'SecurityRule', TRUE);
         $this->natRules = new RuleStore($this, 'NatRule', TRUE);
@@ -782,6 +788,16 @@ class PanoramaConf
         if( $tmp !== FALSE )
             $this->EDLStore->load_from_domxml($tmp);
         // End of EDL extraction
+
+        //
+        // Extract LogProfile objects
+        //
+        $tmp2 = DH::findFirstElement('log-settings', $this->sharedroot);
+        if( $tmp2 !== FALSE )
+            $tmp = DH::findFirstElement('profiles', $tmp2);
+        if( $tmp2 !== FALSE && $tmp !== FALSE )
+            $this->LogProfileStore->load_from_domxml($tmp);
+        // End of LogProfile extraction
 
         //
         // Extracting policies
@@ -1296,7 +1312,7 @@ class PanoramaConf
                         $storeType = array(
                             'addressStore', 'serviceStore', 'tagStore', 'scheduleStore', 'appStore',
 
-                            'EDLStore',
+                            'EDLStore', 'LogProfileStore',
 
                             'securityProfileGroupStore',
 

@@ -35,5 +35,10 @@
       <filter>All Logs</filter>
       <send-to-panorama>yes</send-to-panorama>
     </entry>
+    <entry name="Decryption_Log_Forwarding">
+      <log-type>decryption</log-type>
+      <filter>All Logs</filter>
+      <send-to-panorama>yes</send-to-panorama>
+    </entry>
   </match-list>
 </entry></root>

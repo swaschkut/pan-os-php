@@ -31,13 +31,14 @@ class SESSIONBROWSER extends UTIL
         $this->supportedArguments['location'] = Array('niceName' => 'Location', 'shortHelp' => 'specify if you want to limit your query to a VSYS/DG. By default location=shared for Panorama, =vsys1 for PANOS', 'argDesc' => 'vsys1|shared|dg1');
         $this->supportedArguments['actions'] = Array('niceName' => 'Actions', 'shortHelp' => 'action to apply on each rule matched by Filter. ie: actions=from-Add:net-Inside,netDMZ', 'argDesc' => 'action:arg1[,arg2]' );
         $this->supportedArguments['debugapi'] = Array('niceName' => 'DebugAPI', 'shortHelp' => 'prints API calls when they happen');
+        $this->supportedArguments['filter-query'] = Array('niceName' => 'Filter-Query', 'shortHelp' => "filters session based on a query. ie: 'filter=<application>ms-update</application>'", 'argDesc' => '(field operator value)');
         $this->supportedArguments['filter'] = Array('niceName' => 'Filter', 'shortHelp' => "filters logs based on a query. ie: 'filter=( (subtype eq auth) and ( receive_time geq !TIME! ) )'", 'argDesc' => '(field operator value)');
         $this->supportedArguments['help'] = Array('niceName' => 'help', 'shortHelp' => 'this message');
         $this->supportedArguments['stats'] = Array('niceName' => 'Stats', 'shortHelp' => 'display stats after changes');
         $this->supportedArguments['hours'] = Array('niceName' => 'Hours', 'shortHelp' => 'display log for the last few hours');
         $this->supportedArguments['apitimeout'] = Array('niceName' => 'apiTimeout', 'shortHelp' => 'in case API takes too long time to anwer, increase this value (default=60)');
 
-        $this->usageMsg = PH::boldText('USAGE: ')."php ".basename(__FILE__)." in=api://192.168.55.100 location=shared [Actions=display] ['Filter=(subtype eq pppoe)'] ...";
+        $this->usageMsg = PH::boldText('USAGE: ')."php ".basename(__FILE__)." in=api://192.168.55.100 location=shared [Actions=display] ['Filter=<application>ms-update</application>'] ...";
 
 
         $this->prepareSupportedArgumentsArray();
@@ -54,6 +55,8 @@ class SESSIONBROWSER extends UTIL
 
     public function main()
     {
+        $actions = "display";
+
 
         #$util = new UTIL( "custom", $argv, $argc, __FILE__, $supportedArguments, $usageMsg );
         #$util->utilInit();
@@ -81,10 +84,26 @@ class SESSIONBROWSER extends UTIL
         $time = time() - ($hours * 3600);
         $time = date('Y/m/d H:i:s', $time);
 
+        if( isset(PH::$args['actions']) )
+        {
+            $actions = PH::$args['actions'];
+        }
 
         if( isset(PH::$args['filter']) )
         {
-            $filterquery = "<filter>".PH::$args['filter']."</filter>";
+            $filter = "<filter>".PH::$args['filter']."</filter>";
+            $filter = str_replace( "!TIME!", "'".$time."'", $filter );
+            //Todo: session filter is working differently compare to session filter in UI
+            #$filterquery = '';
+        }
+        else
+        {
+            $filter = '';
+        }
+
+        if( isset(PH::$args['filter-query']) )
+        {
+            $filterquery = "<filter>".PH::$args['filter-query']."</filter>";
             $filterquery = str_replace( "!TIME!", "'".$time."'", $filterquery );
             //Todo: session filter is working differently compare to session filter in UI
             #$filterquery = '';
@@ -93,7 +112,6 @@ class SESSIONBROWSER extends UTIL
         {
             $filterquery = '';
         }
-
 ########################################################################################################################
 
         $inputConnector->refreshSystemInfos();
@@ -127,9 +145,27 @@ class SESSIONBROWSER extends UTIL
             foreach( $output as $log )
             {
                 PH::print_stdout(  " - ".http_build_query($log,'',' | ') );
-                PH::print_stdout();
+
 
                 PH::$JSON_OUT['session-browser'][] = $log;
+
+                if( $actions == "delete" )
+                {
+                    if( isset( $log['idx'] ) )
+                    {
+                        PH::print_stdout( "SESSION-ID: ".$log['idx'] );
+
+                        $query = '<clear><session><id>'.$log["idx"].'</id></session></clear>';
+                        $output = $inputConnector->sendOpRequest( $query );
+
+                        $result = DH::findFirstElement("result", $output);
+                        $member = DH::findFirstElement("member", $result);
+
+                        PH::print_stdout( "     - '".$member->textContent."'");
+                    }
+                }
+
+                PH::print_stdout();
             }
         }
         else
@@ -140,8 +176,9 @@ class SESSIONBROWSER extends UTIL
             PH::$JSON_OUT['session-browser'] = array();
         }
 
+        PH::print_stdout( "count Sessions: ".count( PH::$JSON_OUT['session-browser'] ) );
+
         PH::print_stdout( "##########################################" );
         PH::print_stdout();
     }
-
 }

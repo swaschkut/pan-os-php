@@ -973,7 +973,7 @@ trait SHAREDNEW
         return $tmp_addressgroup;
     }
 
-    public function MainAddService($name, $protocol, $dport, $description = '', $sport = null)
+    public function MainAddService($name, $protocol, $dport, $description = '', $sport = null, $session_timeout = null)
     {
         global $print;
 
@@ -981,6 +981,7 @@ trait SHAREDNEW
 
         $name = $this->truncate_names($this->normalizeNames($name));
 
+        /** @var Service $tmp_service */
         $tmp_service = $location->serviceStore->find($name);
 
         #if( $description !== null )
@@ -992,6 +993,9 @@ trait SHAREDNEW
             if( $print )
                 print " * create service: " . $name . " | protocol: " . $protocol . " | port: " . $dport . "\n";
             $tmp_service = $location->serviceStore->newService($name, $protocol, $dport, $description, $sport);
+
+            if( $session_timeout !== null )
+                $tmp_service->setTimeout($session_timeout);
         }
         else
         {

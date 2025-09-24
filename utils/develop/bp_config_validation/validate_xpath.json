@@ -445,7 +445,7 @@
     "xpath": "deviceconfig/setting/ctd/allow-http-range",
     "value": "yes",
     "variable-name": "{{ CONTENT-HTTP-PARTIAL-RESPONSE }}",
-    "comment": "Palo Alto Networks recommends that you keep this option enabled for maximum security."
+    "comment": "Palo Alto Networks recommends that you disable this option for maximum security."
   },
   {
     "check": "true",

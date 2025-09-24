@@ -222,10 +222,32 @@ class Zone
                 elseif( $node->tagName == 'zone-protection-profile' )
                 {
                     $this->zoneProtectionProfile = $node->textContent;
+
+                    //Todo: swaschkut 20250918
+                    //add reference
+                    //network not available for VirtualSystem::
+                    if( get_class($this->owner->owner) == "VirtualSystem")
+                    {
+                        $tmp_zpp =  $this->owner->owner->owner->network->zoneProtectionProfileStore->find( $this->zoneProtectionProfile );
+                        if( is_object( $tmp_zpp ) )
+                            $tmp_zpp->addReference( $this );
+                    }
+                    else
+                        mwarning("Zone-protection-profile: '".$this->zoneProtectionProfile."'  found in Zone: '".$this->name()."'. References for class: '".get_class($this->owner->owner)." not yet implemented", null, false);
+
                 }
                 elseif( $node->tagName == 'log-setting' )
                 {
                     $this->logsetting = $node->textContent;
+
+                    if( get_class($this->owner->owner) == "VirtualSystem")
+                    {
+                        $tmp_logprof =  $this->owner->owner->LogProfileStore->find( $this->logsetting );
+                        if( is_object( $tmp_logprof ) )
+                            $tmp_logprof->addReference( $this );
+                    }
+                    else
+                        mwarning("Log-profile: '".$this->logsetting."'  found in Zone: '".$this->name()."'. References for class: '".get_class($this->owner->owner)." not yet implemented", null, false);
                 }
                 elseif( $node->tagName == 'enable-packet-buffer-protection' )
                 {

@@ -193,6 +193,9 @@ require_once $basedir . '/misc-classes/StaticRouteRQueryContext.php';
 require_once $basedir . '/misc-classes/GPGatewayRQueryContext.php';
 require_once $basedir . '/misc-classes/GPPortalRQueryContext.php';
 
+require_once $basedir . '/misc-classes/ZoneProtectionProfileRQueryContext.php';
+require_once $basedir . '/misc-classes/LogProfileRQueryContext.php';
+
 require_once $basedir . '/misc-classes/CsvParser.php';
 require_once $basedir . '/misc-classes/trait/PanSubHelperTrait.php';
 require_once $basedir . '/misc-classes/PanAPIConnector.php';
@@ -249,6 +252,9 @@ require_once $basedir . '/object-classes/Schedule.php';
 
 require_once $basedir . '/object-classes/EDLStore.php';
 require_once $basedir . '/object-classes/EDL.php';
+
+require_once $basedir . '/object-classes/LogProfile.php';
+require_once $basedir . '/object-classes/LogProfileStore.php';
 
 require_once $basedir . '/object-classes/SecurityProfileStore.php';
 require_once $basedir . '/object-classes/SecurityProfileGroupStore.php';

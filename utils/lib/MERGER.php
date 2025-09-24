@@ -936,6 +936,7 @@ class MERGER extends UTIL
                                 PH::print_stdout("      - object: " . $memberObject->name() . " from DG: '" . $memberObject->owner->owner->name() . "' move to: '" . $tmp_DG_name . "'");
                                 if( $this->action === "merge" )
                                 {
+                                    self::deletedObject($index, $pickedObject, $pickedObject);
                                     /** @var AddressStore $store */
                                     if( $this->apiMode )
                                     {
@@ -955,6 +956,7 @@ class MERGER extends UTIL
                             else
                             {
                                 PH::print_stdout("   * SKIPPED : this group has an object named '{$memberObject->name()} that does not exist in target location '{$tmp_DG_name}'");
+                                $this->skippedObject( $index, $pickedObject, $memberObject, "this group has an object named '{$memberObject->name()} that does not exist in target location '{$tmp_DG_name}'" );
                                 $skip = TRUE;
                                 break;
                             }
@@ -968,6 +970,7 @@ class MERGER extends UTIL
                                 if( $memberFound->value() !== $memberObject->value() )
                                 {
                                     PH::print_stdout("   * SKIPPED : this group has an object named '{$memberObject->name()} that does exist in target location '{$tmp_DG_name}' with different value");
+                                    $this->skippedObject( $index, $object, $memberObject, "this group has an object named '{$memberObject->name()} that does exist in target location '{$tmp_DG_name}' with different value" );
                                     $skip = TRUE;
                                     break;
                                 }
@@ -978,6 +981,7 @@ class MERGER extends UTIL
                                 if( count($diff['minus']) != 0 || count($diff['plus']) != 0 )
                                 {
                                     PH::print_stdout("   * SKIPPED : this group has different member ship compare to upperlevel");
+                                    $this->skippedObject( $index, $object, $memberObject, "this group has different member ship compare to upperlevel" );
                                     $skip = TRUE;
                                     break;
                                 }
@@ -985,6 +989,7 @@ class MERGER extends UTIL
                             else
                             {
                                 PH::print_stdout("   * SKIPPED : this group has an object named '{$memberObject->name()} that does exist in target location '{$tmp_DG_name}' with different object type");
+                                $this->skippedObject( $index, $object, $memberObject, "this group has an object named '{$memberObject->name()} that does not exist in target location '{$tmp_DG_name}'" );
                                 $skip = TRUE;
                                 break;
                             }
@@ -999,6 +1004,7 @@ class MERGER extends UTIL
                     if( $this->action === "merge" )
                     {
                         /** @var AddressStore $store */
+                        self::deletedObject($index, $pickedObject, $pickedObject);
                         if( $this->apiMode )
                         {
                             $oldXpath = $pickedObject->getXPath();
@@ -1121,6 +1127,7 @@ class MERGER extends UTIL
                         PH::print_stdout("    - group '{$object->name()}' DG: '" . $object->owner->owner->name() . "' merged with its ancestor at DG: '" . $tmp_address->owner->owner->name() . "', deleting: " . $object->_PANC_shortName());
 
                         PH::print_stdout("    - replacing '{$object->_PANC_shortName()}' ...");
+                        self::deletedObject($index, $tmp_address, $object);
                         if( $this->action === "merge" )
                         {
                             $success = $object->__replaceWhereIamUsed($this->apiMode, $tmp_address, TRUE, 5);
@@ -2229,6 +2236,8 @@ class MERGER extends UTIL
             $pickedObject_DG = $pickedObject->owner->owner;
             if( $pickedObject_DG->parentDeviceGroup !== null )
             {
+                $tmp_DG_name = $pickedObject_DG->parentDeviceGroup->name();
+
                 $nextFindObject = $pickedObject_DG->parentDeviceGroup->addressStore->find( $pickedObject->name(), null, True );
                 if( $nextFindObject !== null )
                 {
@@ -2517,6 +2526,7 @@ class MERGER extends UTIL
                         if( $memberFound === null )
                         {
                             PH::print_stdout("   * SKIPPED : this group has an object named '{$memberObject->name()} that does not exist in target location '{$tmp_DG_name}'");
+                            $this->skippedObject( $index, $pickedObject, $memberObject, "this group has an object named '{$memberObject->name()} that does not exist in target location '{$tmp_DG_name}'" );
                             $skip = TRUE;
                             break;
                         }
@@ -2528,6 +2538,7 @@ class MERGER extends UTIL
                                 if( $memberFound->getDestPort() !== $memberObject->getDestPort() || $memberFound->getSourcePort() !== $memberObject->getSourcePort() || $memberFound->protocol() !== $memberObject->protocol() )
                                 {
                                     PH::print_stdout("   * SKIPPED : this group has an object named '{$memberObject->name()} that does exist in target location '{$tmp_DG_name}' with different value or protocol");
+                                    $this->skippedObject( $index, $pickedObject, $memberObject, "this group has an object named '{$memberObject->name()} that does exist in target location '{$tmp_DG_name}' with different value or protocol" );
                                     $skip = TRUE;
                                     break;
                                 }
@@ -2538,12 +2549,14 @@ class MERGER extends UTIL
                                 if( count($diff['minus']) != 0 || count($diff['plus']) != 0 )
                                 {
                                     PH::print_stdout("   * SKIPPED : this group has different member ship compare to upperlevel");
+                                    $this->skippedObject( $index, $pickedObject, $memberObject, "this group has different member ship compare to upperlevel" );
                                     $skip = TRUE;
                                 }
                             }
                             else
                             {
                                 PH::print_stdout("   * SKIPPED : this group has an object named '{$memberObject->name()} that does exist in target location '{$tmp_DG_name}' with different object type");
+                                $this->skippedObject( $index, $pickedObject, $memberObject, "this group has an object named '{$memberObject->name()} that does exist in target location '{$tmp_DG_name}' with different object type" );
                                 $skip = TRUE;
                                 break;
                             }
@@ -2555,6 +2568,7 @@ class MERGER extends UTIL
 
                     if( $this->action === "merge" )
                     {
+                        self::deletedObject($index, $pickedObject, $pickedObject);
                         /** @var AddressStore $store */
                         if( $this->apiMode )
                         {

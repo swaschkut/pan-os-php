@@ -137,6 +137,19 @@ class ZoneProtectionProfile
                 {
                     $severity = DH::firstChildElement($action_Node);
                     $this->scan[$entry_name]['action'] = $severity->nodeName;
+
+                    if( $action_Node->hasChildNodes() )
+                    {
+                        //<track-by>source</track-by>
+                        //<duration>3600</duration>
+                        $track_by_Node = DH::findFirstElement('track-by', $severity);
+                        $duration_Node = DH::findFirstElement('duration', $severity);
+
+                        if( $track_by_Node !== FALSE )
+                            $this->scan[$entry_name]['track-by'] = $track_by_Node->textContent;
+                        if( $duration_Node !== FALSE )
+                            $this->scan[$entry_name]['duration'] = $duration_Node->textContent;
+                    }
                 }
 
                 $interval_Node = DH::findFirstElement('interval', $scan_entry_Node);
@@ -153,6 +166,18 @@ class ZoneProtectionProfile
                    <interval>2</interval>
                    <threshold>100</threshold>
                   </entry>
+                 */
+                /*
+                <entry name="8003">
+                  <action>
+                    <block-ip>
+                      <track-by>source</track-by>
+                      <duration>3600</duration>
+                    </block-ip>
+                  </action>
+                  <interval>2</interval>
+                  <threshold>100</threshold>
+                </entry>
                  */
             }
 
@@ -233,6 +258,121 @@ class ZoneProtectionProfile
          </ipv6>
 
             */
+
+        /*
+            <entry name="recommended">
+              <flood>
+                <tcp-syn>
+                  <red>
+                    <alarm-rate>10000</alarm-rate>
+                    <activate-rate>10000</activate-rate>
+                    <maximal-rate>40000</maximal-rate>
+                  </red>
+                  <enable>yes</enable>
+                </tcp-syn>
+                <udp>
+                  <red>
+                    <alarm-rate>10000</alarm-rate>
+                    <activate-rate>10000</activate-rate>
+                    <maximal-rate>40000</maximal-rate>
+                  </red>
+                  <enable>yes</enable>
+                </udp>
+                <icmp>
+                  <red>
+                    <alarm-rate>10000</alarm-rate>
+                    <activate-rate>10000</activate-rate>
+                    <maximal-rate>40000</maximal-rate>
+                  </red>
+                  <enable>yes</enable>
+                </icmp>
+                <icmpv6>
+                  <red>
+                    <alarm-rate>10000</alarm-rate>
+                    <activate-rate>10000</activate-rate>
+                    <maximal-rate>40000</maximal-rate>
+                  </red>
+                  <enable>yes</enable>
+                </icmpv6>
+                <other-ip>
+                  <red>
+                    <alarm-rate>10000</alarm-rate>
+                    <activate-rate>10000</activate-rate>
+                    <maximal-rate>40000</maximal-rate>
+                  </red>
+                  <enable>yes</enable>
+                </other-ip>
+              </flood>
+              <net-inspection>
+                <rule/>
+              </net-inspection>
+              <ipv6>
+                <ignore-inv-pkt>
+                  <dest-unreach>yes</dest-unreach>
+                  <pkt-too-big>yes</pkt-too-big>
+                  <time-exceeded>yes</time-exceeded>
+                  <param-problem>yes</param-problem>
+                  <redirect>yes</redirect>
+                </ignore-inv-pkt>
+              </ipv6>
+              <scan>
+                <entry name="8001">
+                  <action>
+                    <block-ip>
+                      <track-by>source</track-by>
+                      <duration>3600</duration>
+                    </block-ip>
+                  </action>
+                  <interval>2</interval>
+                  <threshold>100</threshold>
+                </entry>
+                <entry name="8002">
+                  <action>
+                    <block-ip>
+                      <track-by>source</track-by>
+                      <duration>3600</duration>
+                    </block-ip>
+                  </action>
+                  <interval>10</interval>
+                  <threshold>100</threshold>
+                </entry>
+                <entry name="8003">
+                  <action>
+                    <block-ip>
+                      <track-by>source</track-by>
+                      <duration>3600</duration>
+                    </block-ip>
+                  </action>
+                  <interval>2</interval>
+                  <threshold>100</threshold>
+                </entry>
+                <entry name="8006">
+                  <action>
+                    <block-ip>
+                      <track-by>source</track-by>
+                      <duration>3600</duration>
+                    </block-ip>
+                  </action>
+                  <interval>2</interval>
+                  <threshold>4</threshold>
+                </entry>
+              </scan>
+              <discard-ip-spoof>yes</discard-ip-spoof>
+              <discard-strict-source-routing>yes</discard-strict-source-routing>
+              <discard-security>yes</discard-security>
+              <discard-loose-source-routing>yes</discard-loose-source-routing>
+              <discard-stream-id>yes</discard-stream-id>
+              <discard-timestamp>yes</discard-timestamp>
+              <discard-unknown-option>yes</discard-unknown-option>
+              <discard-record-route>yes</discard-record-route>
+              <discard-malformed-option>yes</discard-malformed-option>
+              <discard-icmp-ping-zero-id>yes</discard-icmp-ping-zero-id>
+              <discard-icmp-frag>yes</discard-icmp-frag>
+              <suppress-icmp-timeexceeded>no</suppress-icmp-timeexceeded>
+              <suppress-icmp-needfrag>yes</suppress-icmp-needfrag>
+              <discard-icmp-error>yes</discard-icmp-error>
+            </entry>
+         */
     }
 
     /**

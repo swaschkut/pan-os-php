@@ -169,30 +169,8 @@ class FileBlockingProfile extends SecurityProfile2
                     return false;
             }
 
-            foreach( $check_array['alert']['filetype'] as $bp_array )
-            {
-                if( isset($this->rule_coverage[$bp_array]) )
-                {
-                    $checkAction = $check_array['alert']['action'][0];
-                    if( strpos( $checkAction, "!" ) !== FALSE )
-                    {
-                        $checkAction = str_replace("!", "", $checkAction);
-                        if( $checkAction === $this->rule_coverage[$bp_array]['action'] )
-                            return false;
-                        else
-                            $bp_set = true;
-                    }
-                    else
-                    {
-                        if( isset($this->rule_coverage['any']) && $checkBP_array['block']['action'] === $this->rule_coverage['any']['action'] )
-                            $bp_set = true;
-                        elseif( $checkAction !== $this->rule_coverage[$bp_array]['action'] )
-                            return false;
-                        else
-                            $bp_set = true;
-                    }
-                }
-            }
+            if( !$this->fileblocking_rules_visibility() )
+                return false;
 
             /*
             foreach ($this->rules_obj as $rulename => $rule)

@@ -72,8 +72,28 @@ class ThreatPolicyFileBlocking extends ThreatPolicy
 
             if( $action === "block")
                 $bp = true;
+
+            //Todo: 20250914 swaschkut - missing validation
+            //application
+            //direction
+
             foreach( $check as $validate => $values )
             {
+                if( $validate == "filetype_blocked_also_before" )
+                    continue;
+
+                if( $validate == "direction" )
+                {
+                    if( $this->direction() !== $values )
+                        return false;
+                }
+
+                if( $validate == "application" )
+                {
+                    if( $this->application() !== $values )
+                        return false;
+                }
+
                 #print "Action: ".$action."\n";
                 #print_r($check);
                 if( is_array( $values ) )
@@ -92,6 +112,36 @@ class ThreatPolicyFileBlocking extends ThreatPolicy
         }
 
         return $bp;
+    }
+
+    public function show_missing_bp_json( $check_array )
+    {
+        $bp = false;
+        $not_block = array();
+
+        foreach( $check_array as $action => $check )
+        {
+            if( $this->action() !== $action )
+                continue;
+
+            $not_block = array();
+            foreach( $check as $validate => $values )
+            {
+                if( is_array( $values ) )
+                {
+                    foreach( $values as $value )
+                    {
+                        if( $validate == "filetype_blocked_also_before" )
+                            continue;
+
+                        if( !in_array( $value, $this->$validate ) )
+                            $not_block[] = $value;
+                    }
+                }
+            }
+        }
+
+        return $not_block;
     }
 
     public function check_visibility_json( $check_array )

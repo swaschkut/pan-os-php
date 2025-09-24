@@ -199,7 +199,21 @@ trait CP_R80_objects
                     if( $dport == "Any" )
                         $dport = "1-65525";
 
-                    $this->MainAddService( $name, 'tcp', $dport, $description);
+                    if( isset($service['use-default-session-timeout']) )
+                        $use_default_session_timeout = $service['use-default-session-timeout'];
+                    else
+                        $use_default_session_timeout = null;
+
+                    if( $use_default_session_timeout !== null && !$use_default_session_timeout  )
+                    {
+                        $session_timeout = $service['session-timeout'];
+                        if( $session_timeout == 3600 )
+                            $session_timeout = null;
+                    }
+                    else
+                        $session_timeout = null;
+
+                    $this->MainAddService( $name, 'tcp', $dport, $description,null, $session_timeout );
 
                     /*
                     $tmp_service = $this->sub->serviceStore->find($name);
@@ -243,7 +257,22 @@ trait CP_R80_objects
 
                     $description = $service['comments'];
 
-                    $this->MainAddService( $name, 'udp', $dport, $description);
+
+                    if( isset($service['use-default-session-timeout']) )
+                        $use_default_session_timeout = $service['use-default-session-timeout'];
+                    else
+                        $use_default_session_timeout = null;
+
+                    if( $use_default_session_timeout !== null && !$use_default_session_timeout  )
+                    {
+                        $session_timeout = $service['session-timeout'];
+                        if( $session_timeout == 3600 )
+                            $session_timeout = null;
+                    }
+                    else
+                        $session_timeout = null;
+
+                    $this->MainAddService( $name, 'udp', $dport, $description,null, $session_timeout );
                     /*
                     $tmp_service = $this->sub->serviceStore->find($name);
                     if( $tmp_service == null )

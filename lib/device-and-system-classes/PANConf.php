@@ -180,6 +180,9 @@ class PANConf
     /** @var EDLStore */
     public $EDLStore = null;
 
+    /** @var LogProfileStore */
+    public $LogProfileStore = null;
+
     /** @var CertificateStore */
     public $certificateStore = null;
 
@@ -277,6 +280,9 @@ class PANConf
 
         $this->EDLStore = new EDLStore($this);
         $this->EDLStore->setName('EDLStore');
+
+        $this->LogProfileStore = new LogProfileStore($this);
+        $this->LogProfileStore->setName('LogProfileStore');
 
         $this->certificateStore = new CertificateStore($this);
         $this->certificateStore->setName('certificateStore');
@@ -674,6 +680,23 @@ class PANConf
                 $this->scheduleStore->load_from_domxml($tmp);
             // End of address groups extraction
 
+            //
+            // Extract EDL objects
+            //
+            $tmp = DH::findFirstElement('external-list', $xml);
+            if( $tmp !== FALSE )
+                $this->EDLStore->load_from_domxml($tmp);
+            // End of EDL extraction
+
+            //
+            // Extract LogProfile objects
+            //
+            $tmp2 = DH::findFirstElement('log-settings', $xml);
+            if( $tmp2 !== FALSE )
+                $tmp = DH::findFirstElement('profiles', $tmp2);
+            if( $tmp2 !== FALSE && $tmp !== FALSE )
+                $this->LogProfileStore->load_from_domxml($tmp);
+            // End of LogProfile extraction
 
             //
             // Extract Certificate objects

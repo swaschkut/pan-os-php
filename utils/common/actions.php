@@ -149,3 +149,7 @@ GPGatewaytunnelCallContext::prepareSupportedActions();
 require_once("ZoneProtectionProfileCallContext.php");
 require_once "actions-zoneprotectionprofile.php";
 ZoneProtectionProfileCallContext::prepareSupportedActions();
+
+require_once("LogProfileCallContext.php");
+require_once "actions-logprofile.php";
+LogProfileCallContext::prepareSupportedActions();
