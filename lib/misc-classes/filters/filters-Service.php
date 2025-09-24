@@ -352,6 +352,30 @@ RQuery::$defaultFilters['service']['member.name']['operators']['is.in.file'] = a
     },
     'arg' => TRUE
 );
+RQuery::$defaultFilters['service']['member.name']['operators']['is'] = array(
+    'Function' => function (ServiceRQueryContext $context) {
+        $object = $context->object;
+
+        if( !$object->isGroup() )
+            return FALSE;
+
+
+
+        $member_name_array = array();
+        foreach( $context->object->members() as $member_obj )
+        {
+            $member_name_array[$member_obj->name()] = $member_obj->name();
+        }
+
+
+        if( isset($member_name_array[$context->value]) )
+            return TRUE;
+
+
+        return FALSE;
+    },
+    'arg' => TRUE
+);
 RQuery::$defaultFilters['service']['tag']['operators']['has'] = array(
     'Function' => function (ServiceRQueryContext $context) {
         return $context->object->tags->hasTag($context->value) === TRUE;

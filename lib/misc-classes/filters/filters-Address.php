@@ -633,6 +633,30 @@ RQuery::$defaultFilters['address']['member.name']['operators']['is.in.file'] = a
     },
     'arg' => TRUE
 );
+RQuery::$defaultFilters['address']['member.name']['operators']['is'] = array(
+    'Function' => function (AddressRQueryContext $context) {
+        $object = $context->object;
+
+        if( !$object->isGroup() )
+            return FALSE;
+
+
+
+        $member_name_array = array();
+        foreach( $context->object->members() as $member_obj )
+        {
+            $member_name_array[$member_obj->name()] = $member_obj->name();
+        }
+
+
+        if( isset($member_name_array[$context->value]) )
+            return TRUE;
+
+
+        return FALSE;
+    },
+    'arg' => TRUE
+);
 RQuery::$defaultFilters['address']['tag.count']['operators']['>,<,=,!'] = array(
     'eval' => "!\$object->isRegion() && !\$object->isEDL() && \$object->tags->count() !operator! !value!",
     'arg' => TRUE,

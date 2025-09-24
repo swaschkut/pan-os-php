@@ -11,6 +11,7 @@ UTIL:
 * type=log-profile actions=exporttoexcel | introduction of new action
 * type=zone-protection-profile actions=exporttoexcel:file.html | introduce exporttoexcel for ZPP
 * type=address/service | new 'filter=(member.name is.in.file FILENAME.txt)'
+* type=address/service | new 'filter=(member.name is XYZ)'
 
 BUGFIX:
 * type=migration vendor=cp-r80 | bugfix for finding service within access_layer - if service naming must be normalize
