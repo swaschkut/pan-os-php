@@ -1,6 +1,14 @@
 CHANGELOG
 
-2.1.39
+2.1.40
+UTIL:
+
+BUGFIX:
+
+GENERAL:
+
+
+2.1.39 (20250924)
 UTIL:
 * type=vendor-migration vendor=cp-r80 | implement tcp/udp session timeout migration
 * type=zone-protection-profile | extend with additional fields
