@@ -38,6 +38,9 @@ RQuery::$defaultFilters['securityprofile']['name']['operators']['is.in.file'] = 
 
         if( !isset($context->cachedList) )
         {
+            if( !file_exists($context->value) )
+                derr("cannot find file '{$context->value}'", null, FALSE);
+
             $text = file_get_contents($context->value);
 
             if( $text === FALSE )

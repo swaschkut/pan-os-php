@@ -25,6 +25,9 @@ RQuery::$defaultFilters['log-profile']['name']['operators']['is.in.file'] = arra
 
         if( !isset($context->cachedList) )
         {
+            if( !file_exists($context->value) )
+                derr("cannot find file '{$context->value}'", null, FALSE);
+
             $text = file_get_contents($context->value);
 
             if( $text === FALSE )

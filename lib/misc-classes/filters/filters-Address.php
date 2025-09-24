@@ -486,6 +486,9 @@ RQuery::$defaultFilters['address']['name']['operators']['is.in.file'] = array(
 
         if( !isset($context->cachedList) )
         {
+            if( !file_exists($context->value) )
+                derr("cannot find file '{$context->value}'", null, FALSE);
+
             $text = file_get_contents($context->value);
 
             if( $text === FALSE )
@@ -596,6 +599,9 @@ RQuery::$defaultFilters['address']['member.name']['operators']['is.in.file'] = a
 
         if( !isset($context->cachedList) )
         {
+            if( !file_exists($context->value) )
+                derr("cannot find file '{$context->value}'", null, FALSE);
+
             $text = file_get_contents($context->value);
 
             if( $text === FALSE )
@@ -1717,6 +1723,9 @@ RQuery::$defaultFilters['address']['value']['operators']['ip4.match.exact.from.f
 
         if( !isset($context->cachedValueMapping) )
         {
+            if( !file_exists($context->value) )
+                derr("cannot find file '{$context->value}'", null, FALSE);
+
             $text = file_get_contents($context->value);
 
             if( $text === false )
@@ -1902,6 +1911,9 @@ RQuery::$defaultFilters['address']['value']['operators']['ip6.match.exact.from.f
 
         if( !isset($context->cachedValueMapping) )
         {
+            if( !file_exists($context->value) )
+                derr("cannot find file '{$context->value}'", null, FALSE);
+
             $text = file_get_contents($context->value);
 
             if( $text === false )
@@ -1953,6 +1965,9 @@ RQuery::$defaultFilters['address']['value']['operators']['ip6.included-in.from.f
 
         if( !isset($context->cachedValueMapping) )
         {
+            if( !file_exists($context->value) )
+                derr("cannot find file '{$context->value}'", null, FALSE);
+
             $text = file_get_contents($context->value);
 
             if( $text === false )
@@ -2002,6 +2017,9 @@ RQuery::$defaultFilters['address']['value']['operators']['ip6.includes-full.from
 
         if( !isset($context->cachedValueMapping) )
         {
+            if( !file_exists($context->value) )
+                derr("cannot find file '{$context->value}'", null, FALSE);
+
             $text = file_get_contents($context->value);
 
             if( $text === false )
@@ -2048,6 +2066,9 @@ RQuery::$defaultFilters['address']['value']['operators']['ip6.includes-full-or-p
 
         if( !isset($context->cachedValueMapping) )
         {
+            if( !file_exists($context->value) )
+                derr("cannot find file '{$context->value}'", null, FALSE);
+
             $text = file_get_contents($context->value);
 
             if( $text === false )
@@ -2165,6 +2186,9 @@ RQuery::$defaultFilters['address']['value']['operators']['is.in.file'] = Array(
 
         if( !isset($context->cachedList) )
         {
+            if( !file_exists($context->value) )
+                derr("cannot find file '{$context->value}'", null, FALSE);
+
             $text = file_get_contents($context->value);
 
             if( $text === false )
