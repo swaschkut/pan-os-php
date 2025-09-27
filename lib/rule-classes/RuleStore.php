@@ -96,27 +96,7 @@ class RuleStore
 
         $this->type = $ruleType;
 
-        $tmp_ruletype_xpath = str_replace("Rule", "", $ruleType);
-        $tmp_ruletype_xpath = strtolower($tmp_ruletype_xpath);
-
         $this->name = self::$storeNameByType[$this->type]['name'];
-
-        if( get_class($owner) == 'PanoramaConf' )
-        {
-            if($isPreOrPost)
-                $this->xpath = "/config/shared/pre-rulebase/".$tmp_ruletype_xpath."/rules";
-            else
-                $this->xpath = "/config/shared/post-rulebase/".$tmp_ruletype_xpath."/rules";
-        }
-        elseif( get_class($owner) == 'DeviceGroup' )
-        {
-            if($isPreOrPost)
-                $this->xpath = $this->owner->getXPath()."/pre-rulebase/".$tmp_ruletype_xpath."/rules";
-            else
-                $this->xpath = $this->owner->getXPath()."/pre-rulebase/".$tmp_ruletype_xpath."/rules";
-        }
-        else
-            $this->xpath = $this->owner->getXPath()."/rulebase/".$tmp_ruletype_xpath."/rules";
     }
 
 
@@ -513,6 +493,15 @@ class RuleStore
         return $varName;
     }
 
+    /**
+     * @return string
+     */
+    function &getStoreXpathName()
+    {
+        $varName = self::$storeNameByType[$this->type]['xpathRoot'];
+
+        return $varName;
+    }
 
     /**
      * @param string $base
@@ -655,7 +644,7 @@ class RuleStore
         return $nr;
     }
 
-    public function API_moveRule($rule, $targetXpath, $newName, $inPostRuleBase = null, $nested = TRUE, $where = "bottom")
+    public function API_moveRule($rule, $targetRuleStore, $newName, $inPostRuleBase = null, $nested = TRUE, $where = "bottom")
     {
         $nr = $this->cloneRule($rule, $newName, $inPostRuleBase, $nested);
 
@@ -663,10 +652,26 @@ class RuleStore
 
         $xpath = $this->getXPath($rule);
 
-        if( $inPostRuleBase )
-            $targetXpath = str_replace( "pre-rulebase", "post-rulebase", $targetXpath );
+
+        $tmp_ruletype_xpath = $this->getStoreXpathName();
+
+        if( get_class($targetRuleStore->owner) == 'PanoramaConf' )
+        {
+            if($inPostRuleBase)
+                $targetXpath = "/config/shared/post-rulebase/".$tmp_ruletype_xpath."/rules";
+            else
+                $targetXpath = "/config/shared/pre-rulebase/".$tmp_ruletype_xpath."/rules";
+        }
+        elseif( get_class($targetRuleStore->owner) == 'DeviceGroup' )
+        {
+            if($inPostRuleBase)
+                $targetXpath = "/config/devices/entry[@name='localhost.localdomain']/device-group/entry[@name='" . $targetRuleStore->owner->name() . "']/post-rulebase/".$tmp_ruletype_xpath."/rules";
+            else
+                $targetXpath = "/config/devices/entry[@name='localhost.localdomain']/device-group/entry[@name='" . $targetRuleStore->owner->name() . "']/pre-rulebase/".$tmp_ruletype_xpath."/rules";
+        }
         else
-            $targetXpath = str_replace( "post-rulebase", "pre-rulebase", $targetXpath );
+            $targetXpath = $targetRuleStore->owner->getXPath()."/rulebase/".$tmp_ruletype_xpath."/rules";
+
 
         $con->sendMoveRequest($xpath, $targetXpath, $rule);
 

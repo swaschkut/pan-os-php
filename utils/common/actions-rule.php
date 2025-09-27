@@ -4617,10 +4617,7 @@ RuleCallContext::$supportedActions[] = array(
 
             }
             else
-            {
-                $targetXpath = $ruleStore->xpath;
-                $rule->owner->API_moveRule($rule, $targetXpath, null, $moveToPost, FALSE);
-            }
+                $rule->owner->API_moveRule($rule, $ruleStore, null, $moveToPost, FALSE);
         }
         else
         {
