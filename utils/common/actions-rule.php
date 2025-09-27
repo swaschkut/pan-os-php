@@ -4618,8 +4618,8 @@ RuleCallContext::$supportedActions[] = array(
             }
             else
             {
-                $ruleStore->API_cloneRule($rule, null, $moveToPost, FALSE);
-                $rule->owner->API_remove($rule);
+                $targetXpath = $ruleStore->xpath;
+                $rule->owner->API_moveRule($rule, $targetXpath, null, $moveToPost, FALSE);
             }
         }
         else

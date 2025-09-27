@@ -40,6 +40,7 @@ class RuleStore
     public $owner = null;
     public $name = 'temporaryname';
 
+    public $xpath = null;
 
     /** @var string[]|DOMElement */
     public $postRulesRoot = null;
@@ -95,7 +96,27 @@ class RuleStore
 
         $this->type = $ruleType;
 
+        $tmp_ruletype_xpath = str_replace("Rule", "", $ruleType);
+        $tmp_ruletype_xpath = strtolower($tmp_ruletype_xpath);
+
         $this->name = self::$storeNameByType[$this->type]['name'];
+
+        if( get_class($owner) == 'PanoramaConf' )
+        {
+            if($isPreOrPost)
+                $this->xpath = "/config/shared/pre-rulebase/".$tmp_ruletype_xpath."/rules";
+            else
+                $this->xpath = "/config/shared/post-rulebase/".$tmp_ruletype_xpath."/rules";
+        }
+        elseif( get_class($owner) == 'DeviceGroup' )
+        {
+            if($isPreOrPost)
+                $this->xpath = $this->owner->getXPath()."/pre-rulebase/".$tmp_ruletype_xpath."/rules";
+            else
+                $this->xpath = $this->owner->getXPath()."/pre-rulebase/".$tmp_ruletype_xpath."/rules";
+        }
+        else
+            $this->xpath = $this->owner->getXPath()."/rulebase/".$tmp_ruletype_xpath."/rules";
     }
 
 
@@ -630,6 +651,24 @@ class RuleStore
             $xpath = str_replace( "post-rulebase", "pre-rulebase", $xpath );
 
         $con->sendSetRequest($xpath, $element);
+
+        return $nr;
+    }
+
+    public function API_moveRule($rule, $targetXpath, $newName, $inPostRuleBase = null, $nested = TRUE, $where = "bottom")
+    {
+        $nr = $this->cloneRule($rule, $newName, $inPostRuleBase, $nested);
+
+        $con = findConnectorOrDie($this);
+
+        $xpath = $this->getXPath($rule);
+
+        if( $inPostRuleBase )
+            $targetXpath = str_replace( "pre-rulebase", "post-rulebase", $targetXpath );
+        else
+            $targetXpath = str_replace( "post-rulebase", "pre-rulebase", $targetXpath );
+
+        $con->sendMoveRequest($xpath, $targetXpath, $rule);
 
         return $nr;
     }
