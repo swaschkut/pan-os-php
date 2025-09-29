@@ -4617,10 +4617,7 @@ RuleCallContext::$supportedActions[] = array(
 
             }
             else
-            {
-                $ruleStore->API_cloneRule($rule, null, $moveToPost, FALSE);
-                $rule->owner->API_remove($rule);
-            }
+                $rule->owner->API_moveRule($rule, $ruleStore, null, $moveToPost, FALSE);
         }
         else
         {

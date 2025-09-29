@@ -2044,6 +2044,25 @@ class PanAPIConnector
         return $this->sendSimpleRequest($params, $moreOptions);
     }
 
+    public function sendMoveRequest($xpath, $targetXpath, $element, $useChildNodes = FALSE, $timeout = 30, $where = "bottom")
+    {
+        $params = array();
+        $moreOptions = array('timeout' => $timeout, 'lowSpeedTime' => 0);
+
+
+        $element = '<selected-list><source xpath="'.$xpath.'"><member>'.$element->name().'</member></source></selected-list><all-errors>no</all-errors>';
+
+        $params['type'] = 'config';
+        $params['action'] = 'multi-move';
+        $params['xpath'] = &$targetXpath;
+        $params['element'] = &$element;
+        $params['where'] = &$where;
+
+
+        $this->prepareAuditComment( $params );
+
+        return $this->sendSimpleRequest($params, $moreOptions);
+    }
     public function sendSimpleRequest(&$request, $options = array(), $checkResultTag = FALSE )
     {
         $file = null;
