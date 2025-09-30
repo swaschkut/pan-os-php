@@ -665,7 +665,7 @@ class DH
                 {
                     if( $debug )
                     {
-                        print "1-1\n";
+                        print "1-1a\n";
                         print "nodename: ".$element->nodeName."\n";
                         print "xpath: ".$xpath."\n";
                         print "string: ".$string."\n";
@@ -681,10 +681,10 @@ class DH
                     {
                         if( $debug )
                         {
-                            print "1-1\n";
-                            print "nodename: ".$element->nodeName."\n";
-                            print "xpath: ".$xpath."\n";
-                            print "string: ".$string."\n";
+                            print "1-1b\n";
+                            print "nodename: '".$element->nodeName."'\n";
+                            print "xpath: '".$xpath."'\n";
+                            print "string: '".$string."'\n";
                         }
 
                         if( strpos( $xpath, "delete" ) !== FALSE
@@ -696,15 +696,22 @@ class DH
                                         && strpos( $xpath, "dynamic" ) === FALSE
                                     )
                                 )
-                                || (
+                                ||
+                                (
                                     strpos( $xpath, "rule" ) !== FALSE
                                     && (
-                                        strpos( $xpath, "source" ) === FALSE
-                                        && strpos( $xpath, "destination" ) === FALSE
-                                        && strpos( $xpath, "service" ) === FALSE
-                                        && strpos( $xpath, "tag" ) === FALSE
-                                        && strpos( $xpath, "from" ) === FALSE
-                                        && strpos( $xpath, "to" ) === FALSE
+                                        (
+                                            strpos( $xpath, "source" ) === FALSE
+                                            && strpos( $xpath, "destination" ) === FALSE
+                                            && strpos( $xpath, "service" ) === FALSE
+                                            && strpos( $xpath, "tag" ) === FALSE
+                                            && strpos( $xpath, "from" ) === FALSE
+                                            && strpos( $xpath, "to" ) === FALSE
+                                        )
+                                        ||
+                                        (
+                                            strpos( $xpath, "profil-setting" ) !== FALSE
+                                        )
                                     )
                                 )
                             )
@@ -716,6 +723,7 @@ class DH
                             {
                                 print "1-2\n";
                                 print "finalstring: ".$finalstring."\n";
+                                PH::print_stdout("-----STOP-----");
                             }
 
                             self::setCommandvalidation( $finalstring, $array, $debug);
@@ -729,8 +737,13 @@ class DH
 
             foreach( $element->childNodes as $childElement )
             {
-                #print "xpath: ".$xpath."\n";
-                #print "string: ".$string."\n";
+                if( $debug )
+                {
+                    print "1-3\n";
+                    print "xpath: ".$xpath."\n";
+                    print "string: ".$string."\n";
+                }
+
                 self::CHILDelementToPanSetCommand( $type, $childElement, $array, $xpath, $string, $debug );
             }
 
@@ -739,7 +752,7 @@ class DH
                 $finalstring = $xpath.$string;
 
                 if( $debug )
-                    print "1-3\n";
+                    print "1-4\n";
 
                 self::setCommandvalidation( $finalstring, $array, $debug);
             }
@@ -747,12 +760,23 @@ class DH
         else
         {
             if( $debug )
-                print "2\n";
+                print "2 - 'NOT XML_ELEMENT_NODE'\n";
 
             if( strpos( $xpath, "delete" ) !== FALSE && strpos( $xpath, " local-address ip" ) !== FALSE )
             {
                 if( $debug )
-                    print "2-1\n";
+                    print "2-1a\n";
+
+                $finalstring = $xpath;
+
+                self::setCommandvalidation( $finalstring, $array, $debug);
+
+                return;
+            }
+            elseif( strpos( $xpath, "delete" ) !== FALSE && strpos( $xpath, " profile-setting " ) !== FALSE )
+            {
+                if( $debug )
+                    print "2-1b\n";
 
                 $finalstring = $xpath;
 
@@ -763,10 +787,15 @@ class DH
 
             if( trim($element->nodeValue) !== '')
             {
-                if( $debug )
-                    print "2-2\n";
-
                 $value = $element->nodeValue;
+                if( $debug )
+                {
+                    print "2-2\n";
+                    print "nodeValue: '".$value."'\n";
+                }
+
+
+
                 if(strstr($value, PHP_EOL))
                     $value = str_replace(PHP_EOL,"^M",$value);
 

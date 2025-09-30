@@ -5,6 +5,7 @@ UTIL:
 
 BUGFIX:
 * type=rule location=DG1 actions=move:shared | bugfix for Panorama if a rule is moved within the DG hierarchy to avoid PAN-OS API error message
+* type={anyutil} outputformatset=file.txt | bugfix for security rules profile-setting to produce correct set commands
 
 GENERAL:
 
