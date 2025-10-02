@@ -137,7 +137,7 @@ class FawkesConf
 
         $this->threatStore = ThreatStore::getPredefinedStore( $this );
 
-        $this->urlStore = SecurityProfileStore::getURLPredefinedStore();
+        $this->urlStore = SecurityProfileStore::getURLPredefinedStore( $this );
 
         $this->_fakeNetworkProperties = new NetworkPropertiesContainer($this);
 
