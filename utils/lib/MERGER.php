@@ -1047,7 +1047,16 @@ class MERGER extends UTIL
                     {
                         if( $this->addMissingObjects )
                         {
-                            $this->addressgroupGetValueDiff( $pickedObject, $tmp_address, true );
+                            $tmp_return_value = $this->addressgroupGetValueDiff($ancestor, $object, true);;
+
+                            if( $tmp_return_value === FALSE )
+                            {
+                                //if delete earlier, why not replacing this reference???
+                                $tmp_txt = 'was delete earlier';
+                                PH::print_stdout("    - SKIP: object name '{$ancestor->_PANC_shortName()}' was delete earlier. upperlevel '{$object->_PANC_shortName()}'");
+                                $this->skippedObject( $index, $object, $ancestor, $tmp_txt);
+                                continue;
+                            }
                         }
                         else
                         {
@@ -1092,7 +1101,16 @@ class MERGER extends UTIL
                             {
 
                             */
-                                $this->addressgroupGetValueDiff($ancestor, $object, true);
+                                $tmp_return_value = $this->addressgroupGetValueDiff($ancestor, $object, true);;
+
+                                if( $tmp_return_value === FALSE )
+                                {
+                                    //if delete earlier, why not replacing this reference???
+                                    $tmp_txt = 'was delete earlier';
+                                    PH::print_stdout("    - SKIP: object name '{$ancestor->_PANC_shortName()}' was delete earlier. upperlevel '{$object->_PANC_shortName()}'");
+                                    $this->skippedObject( $index, $object, $ancestor, $tmp_txt);
+                                    continue;
+                                }
 
                                 if( isset($childancestor->owner) )
                                 {
@@ -1192,12 +1210,35 @@ class MERGER extends UTIL
                                 }
 
                             if( $hashGenerator($object) != $hashGenerator($ancestor) )
-                                $this->addressgroupGetValueDiff($ancestor, $object, true);
+                            {
+                                $tmp_return_value = $this->addressgroupGetValueDiff($ancestor, $object, true);;
+
+                                if( $tmp_return_value === FALSE )
+                                {
+                                    //if delete earlier, why not replacing this reference???
+                                    $tmp_txt = 'was delete earlier';
+                                    PH::print_stdout("    - SKIP: object name '{$ancestor->_PANC_shortName()}' was delete earlier. upperlevel '{$object->_PANC_shortName()}'");
+                                    $this->skippedObject( $index, $object, $ancestor, $tmp_txt);
+                                    continue;
+                                }
+
+                            }
 
                             if( $hashGenerator($object) == $hashGenerator($ancestor) )
                             {
                                 if( $this->dupAlg == 'samename' )
-                                    $this->addressgroupGetValueDiff($ancestor, $object);
+                                {
+                                    $tmp_return_value = $this->addressgroupGetValueDiff($ancestor, $object);;
+
+                                    if( $tmp_return_value === FALSE )
+                                    {
+                                        //if delete earlier, why not replacing this reference???
+                                        $tmp_txt = 'was delete earlier';
+                                        PH::print_stdout("    - SKIP: object name '{$ancestor->_PANC_shortName()}' was delete earlier. upperlevel '{$object->_PANC_shortName()}'");
+                                        $this->skippedObject( $index, $object, $ancestor, $tmp_txt);
+                                        continue;
+                                    }
+                                }
 
                                 if( isset($ancestor->owner) )
                                 {
@@ -1277,7 +1318,16 @@ class MERGER extends UTIL
                             else
                             {
                                 */
-                                $this->addressgroupGetValueDiff($childancestor, $object, true);
+                                $tmp_return_value = $this->addressgroupGetValueDiff($ancestor, $object, true);;
+
+                                if( $tmp_return_value === FALSE )
+                                {
+                                    //if delete earlier, why not replacing this reference???
+                                    $tmp_txt = 'was delete earlier';
+                                    PH::print_stdout("    - SKIP: object name '{$ancestor->_PANC_shortName()}' was delete earlier. upperlevel '{$object->_PANC_shortName()}'");
+                                    $this->skippedObject( $index, $object, $ancestor, $tmp_txt);
+                                    continue;
+                                }
 
                                 if( isset($childancestor->owner) )
                                 {
@@ -1451,11 +1501,14 @@ class MERGER extends UTIL
                     }
                 }
                 else
+                {
                     mwarning( "store of ".get_class($ancestor)." object: ".$object->name(). " is null. minus", null, FALSE );
+                    return FALSE;
+                }
             }
 
 
-            if( $store !== null && count($diff['plus']) != 0 )
+            if( count($diff['plus']) != 0 )
             {
                 if( $store !== null )
                 {
@@ -1467,9 +1520,14 @@ class MERGER extends UTIL
                     }
                 }
                 else
+                {
                     mwarning( "store of ".get_class($ancestor)." object: ".$object->name(). " is null. plus", null, FALSE );
+                    return FALSE;
+                }
             }
         }
+
+        return TRUE;
     }
 
     function address_merging()
