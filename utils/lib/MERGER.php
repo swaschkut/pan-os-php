@@ -1402,6 +1402,7 @@ class MERGER extends UTIL
             $diff = $ancestor->getValueDiff($object);
             $store = $ancestor->owner;
             if( $store !== null && count($diff['minus']) != 0 )
+            {
                 foreach( $diff['minus'] as $d )
                 {
                     /** @var Address|AddressGroup $d */
@@ -1446,14 +1447,22 @@ class MERGER extends UTIL
                         }
                     }
                 }
+            }
+            else
+                mwarning( "store of ".get_class($ancestor)." object: ".$object->name(). " is null. minus", null, FALSE );
+
 
             if( $store !== null && count($diff['plus']) != 0 )
+            {
                 foreach( $diff['plus'] as $d )
                 {
                     /** @var Address|AddressGroup $d */
                     //TMP usage to clean DG level ADDRESSgroup up
                     $object->addMember($d);
                 }
+            }
+            else
+                mwarning( "store of ".get_class($ancestor)." object: ".$object->name(). " is null. plus", null, FALSE );
         }
     }
 
