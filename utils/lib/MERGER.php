@@ -1450,9 +1450,9 @@ class MERGER extends UTIL
         if( $this->addMissingObjects )
         {
             $diff = $ancestor->getValueDiff($object);
-            $store = $ancestor->owner;
             if( count($diff['minus']) != 0 )
             {
+                $store = $ancestor->owner;
                 if( $store !== null )
                 {
                     foreach( $diff['minus'] as $d )
@@ -1510,6 +1510,7 @@ class MERGER extends UTIL
 
             if( count($diff['plus']) != 0 )
             {
+                $store = $ancestor->owner;
                 if( $store !== null )
                 {
                     foreach( $diff['plus'] as $d )
@@ -1912,7 +1913,7 @@ class MERGER extends UTIL
 
                         /** @var Address $ancestor */
                         #if( $this->upperLevelSearch && !$ancestor->isGroup() && !$ancestor->isTmpAddr() && ($ancestor->isType_ipNetmask() || $ancestor->isType_ipRange() || $ancestor->isType_FQDN()) )
-                        if( $this->upperLevelSearch && !$ancestor->isGroup() && ($ancestor->isType_ipNetmask() || $ancestor->isType_ipRange() || $ancestor->isType_FQDN()) )
+                        if( $this->upperLevelSearch && !$ancestor->isGroup() && ($ancestor->isType_ipNetmask() || $ancestor->isType_ipRange() || $ancestor->isType_FQDN() || $ancestor->isTmpAddr() ) )
                         {
                             if( $object->getIP4Mapping()->equals($ancestor->getIP4Mapping()) || ($object->isType_FQDN() && $ancestor->isType_FQDN()) && ($object->value() == $ancestor->value())  )
                             {
@@ -2964,6 +2965,7 @@ class MERGER extends UTIL
 
     function servicegroupGetValueDiff( $ancestor, $object, $display = false)
     {
+        /* @var ServiceGroup $ancestor */
         if( $display )
             $ancestor->displayValueDiff($object, 7);
 
