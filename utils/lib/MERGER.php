@@ -1401,7 +1401,7 @@ class MERGER extends UTIL
         {
             $diff = $ancestor->getValueDiff($object);
             $store = $ancestor->owner;
-            if( count($diff['minus']) != 0 )
+            if( $store !== null && count($diff['minus']) != 0 )
                 foreach( $diff['minus'] as $d )
                 {
                     /** @var Address|AddressGroup $d */
@@ -1447,7 +1447,7 @@ class MERGER extends UTIL
                     }
                 }
 
-            if( count($diff['plus']) != 0 )
+            if( $store !== null && count($diff['plus']) != 0 )
                 foreach( $diff['plus'] as $d )
                 {
                     /** @var Address|AddressGroup $d */
