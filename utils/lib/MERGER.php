@@ -1401,68 +1401,74 @@ class MERGER extends UTIL
         {
             $diff = $ancestor->getValueDiff($object);
             $store = $ancestor->owner;
-            if( $store !== null && count($diff['minus']) != 0 )
+            if( count($diff['minus']) != 0 )
             {
-                foreach( $diff['minus'] as $d )
+                if( $store !== null )
                 {
-                    /** @var Address|AddressGroup $d */
+                    foreach( $diff['minus'] as $d )
+                    {
+                        /** @var Address|AddressGroup $d */
 
-                    if( $store->find($d->name()) !== null )
-                    {
-                        $text = "      - adding objects to group: ";
-                        $text .= $d->name();
-                        PH::print_stdout($text);
-                        if( $this->action === "merge" )
+                        if( $store->find($d->name()) !== null )
                         {
-                            if( $this->apiMode )
-                                $ancestor->API_addMember($d);
-                            else
-                                $ancestor->addMember($d);
-                        }
-                    }
-                    else
-                    {
-                        #PH::print_stdout("      - object not found: " . $d->name() . "");
-                        $text = "      - adding object: ";
-                        $text .= $d->name();
-                        $text .= " from DG '".$d->owner->owner->_PANC_shortName()."' to '".$store->owner->_PANC_shortName()."'";
-                        $text .= " to group";
-                        PH::print_stdout($text);
-                        if( $this->action === "merge" )
-                        {
-                            /** @var AddressStore $store */
-                            if( $this->apiMode )
+                            $text = "      - adding objects to group: ";
+                            $text .= $d->name();
+                            PH::print_stdout($text);
+                            if( $this->action === "merge" )
                             {
-                                $oldXpath = $d->getXPath();
-                                $d->owner->remove($d);
-                                $store->add($d);
-                                $d->API_sync();
-                                $this->pan->connector->sendDeleteRequest($d);
+                                if( $this->apiMode )
+                                    $ancestor->API_addMember($d);
+                                else
+                                    $ancestor->addMember($d);
                             }
-                            else
+                        }
+                        else
+                        {
+                            #PH::print_stdout("      - object not found: " . $d->name() . "");
+                            $text = "      - adding object: ";
+                            $text .= $d->name();
+                            $text .= " from DG '".$d->owner->owner->_PANC_shortName()."' to '".$store->owner->_PANC_shortName()."'";
+                            $text .= " to group";
+                            PH::print_stdout($text);
+                            if( $this->action === "merge" )
                             {
-                                $d->owner->remove($d);
-                                $store->add($d);
+                                /** @var AddressStore $store */
+                                if( $this->apiMode )
+                                {
+                                    $oldXpath = $d->getXPath();
+                                    $d->owner->remove($d);
+                                    $store->add($d);
+                                    $d->API_sync();
+                                    $this->pan->connector->sendDeleteRequest($d);
+                                }
+                                else
+                                {
+                                    $d->owner->remove($d);
+                                    $store->add($d);
+                                }
                             }
                         }
                     }
                 }
+                else
+                    mwarning( "store of ".get_class($ancestor)." object: ".$object->name(). " is null. minus", null, FALSE );
             }
-            else
-                mwarning( "store of ".get_class($ancestor)." object: ".$object->name(). " is null. minus", null, FALSE );
 
 
             if( $store !== null && count($diff['plus']) != 0 )
             {
-                foreach( $diff['plus'] as $d )
+                if( $store !== null )
                 {
-                    /** @var Address|AddressGroup $d */
-                    //TMP usage to clean DG level ADDRESSgroup up
-                    $object->addMember($d);
+                    foreach( $diff['plus'] as $d )
+                    {
+                        /** @var Address|AddressGroup $d */
+                        //TMP usage to clean DG level ADDRESSgroup up
+                        $object->addMember($d);
+                    }
                 }
+                else
+                    mwarning( "store of ".get_class($ancestor)." object: ".$object->name(). " is null. plus", null, FALSE );
             }
-            else
-                mwarning( "store of ".get_class($ancestor)." object: ".$object->name(). " is null. plus", null, FALSE );
         }
     }
 
