@@ -3255,8 +3255,15 @@ class MERGER extends UTIL
                             $string = "    - SKIP: object name '{$pickedObject->_PANC_shortName()}'\n";
                             if( $pickedObject->isService() )
                             {
+                                /* @var Service $pickedObject */
                                 $string .= "            [protocol '{$pickedObject->protocol()}']";
                                 $string .= " [with dport value '{$pickedObject->getDestPort()}']";
+                                if( $pickedObject->getTimeout() != '' )
+                                    $string .= " [timeout '{$pickedObject->getTimeout()}']";
+                                if( $pickedObject->getHalfcloseTimeout() != '' )
+                                    $string .= " [HalfcloseTimeout '{$pickedObject->getHalfcloseTimeout()}']";
+                                if( $pickedObject->getTimewaitTimeout() != '' )
+                                    $string .= " [TimewaitTimeout '{$pickedObject->getTimewaitTimeout()}']";
                                 if( !empty($pickedObject->getSourcePort()) )
                                     $string .= " [with sport value '{$pickedObject->getSourcePort()}']\n";
                                 else
@@ -3272,8 +3279,14 @@ class MERGER extends UTIL
                             {
                                 $string .= "            [protocol '{$tmp_service->protocol()}']";
                                 $string .= " [with dport value '{$tmp_service->getDestPort()}']";
+                                if( $pickedObject->getTimeout() != '' )
+                                    $string .= " [timeout '{$pickedObject->getTimeout()}']";
+                                if( $pickedObject->getHalfcloseTimeout() != '' )
+                                    $string .= " [HalfcloseTimeout '{$pickedObject->getHalfcloseTimeout()}']";
+                                if( $pickedObject->getTimewaitTimeout() != '' )
+                                    $string .= " [TimewaitTimeout '{$pickedObject->getTimewaitTimeout()}']";
                                 if( !empty($tmp_service->getSourcePort()) )
-                                    $string .= " [with sport value '{$tmp_service->getSourcePort()}']";
+                                    $string .= " [with sport value '{$tmp_service->getSourcePort()}']\n";
                                 else
                                     $string .= "\n";
                             }
