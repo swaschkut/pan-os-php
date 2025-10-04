@@ -55,8 +55,16 @@ Installation without Docker Desktop
 ============
 - MacOS:
   - https://dev.to/mochafreddo/running-docker-on-macos-without-docker-desktop-64o
+    ```
+    brew install docker
+    brew install colima
+    ```
   - if you also need homebrew:
     - https://docs.brew.sh/Installation
+      ```
+      /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+      ```
+      - copy past the three comand at the end into your cli
 - Windows:
   - https://dev.to/bowmanjd/install-docker-on-windows-wsl-without-docker-desktop-34m9
 

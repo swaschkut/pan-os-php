@@ -92,6 +92,113 @@ class STATSUTIL extends RULEUTIL
             }
         }
 
+        if( isset(PH::$args['shadow-json-to-folder']) )
+        {
+            $outputFolder = PH::$args['shadow-json-to-folder'];
+
+            if( $this->projectFolder !== null )
+                $outputFolder = $this->projectFolder."/".$outputFolder;
+
+            // Create output folder if it doesn't exist
+            if( !is_dir($outputFolder) )
+            {
+                if( !mkdir($outputFolder, 0755, true) )
+                {
+                    derr("Failed to create output folder: ".$outputFolder);
+                }
+                PH::print_stdout( "Created output folder: ".$outputFolder );
+            }
+
+            // Process each statistic entry
+            foreach( PH::$JSON_TMP as $key => $stat )
+            {
+                if( !isset($stat['statstype']) || $stat['statstype'] != "adoption" )
+                    continue;
+
+                if( !isset($stat['percentage']) )
+                    continue;
+
+                $type = isset($stat['type']) ? $stat['type'] : 'Unknown';
+
+                // Determine the filename prefix
+                if( $type == 'PanoramaConf' )
+                {
+                    $filePrefix = "Panorama-full";
+                }
+                elseif( $type == 'DeviceGroup' )
+                {
+                    // Extract device group name from header or use a counter
+                    $dgName = "DeviceGroup";
+                    if( isset($stat['header']) )
+                    {
+                        // Try to extract name from header like "BP/Visibility Statistics for VSYS 'DG1' | 'xxx'"
+                        if( preg_match("/'([^']+)'/", $stat['header'], $matches) )
+                        {
+                            $dgName = $matches[1];
+                            // Strip ANSI escape codes and other non-printable characters
+                            $dgName = preg_replace('/\033\[[0-9;]*m/', '', $dgName);
+                            $dgName = trim($dgName);
+                        }
+                    }
+                    $filePrefix = $dgName;
+                }
+                elseif( $type == 'PANConf' )
+                {
+                    $filePrefix = "Firewall-full";
+                }
+                elseif( $type == 'VirtualSystem' )
+                {
+                    $vsysName = "VirtualSystem";
+                    if( isset($stat['header']) )
+                    {
+                        if( preg_match("/'([^']+)'/", $stat['header'], $matches) )
+                        {
+                            $vsysName = $matches[1];
+                            // Strip ANSI escape codes and other non-printable characters
+                            $vsysName = preg_replace('/\033\[[0-9;]*m/', '', $vsysName);
+                            $vsysName = trim($vsysName);
+                        }
+                    }
+                    $filePrefix = $vsysName;
+                }
+                else
+                {
+                    continue;
+                }
+
+                // Sanitize filename
+                $filePrefix = preg_replace('/[^a-zA-Z0-9_-]/', '_', $filePrefix);
+
+                // Create files for each percentage type
+                if( isset($stat['percentage']['adoption']) )
+                {
+                    $filename = $outputFolder."/".$filePrefix.".adoption.json";
+                    $jsonContent = json_encode($stat['percentage']['adoption'], JSON_PRETTY_PRINT);
+                    file_put_contents($filename, $jsonContent);
+                    PH::print_stdout( " - Created: ".$filename );
+                }
+
+                if( isset($stat['percentage']['visibility']) )
+                {
+                    $filename = $outputFolder."/".$filePrefix.".visibility.json";
+                    $jsonContent = json_encode($stat['percentage']['visibility'], JSON_PRETTY_PRINT);
+                    file_put_contents($filename, $jsonContent);
+                    PH::print_stdout( " - Created: ".$filename );
+                }
+
+                if( isset($stat['percentage']['best-practice']) )
+                {
+                    $filename = $outputFolder."/".$filePrefix.".best-practice.json";
+                    $jsonContent = json_encode($stat['percentage']['best-practice'], JSON_PRETTY_PRINT);
+                    file_put_contents($filename, $jsonContent);
+                    PH::print_stdout( " - Created: ".$filename );
+                }
+            }
+
+            PH::print_stdout();
+            PH::print_stdout( "JSON files generated successfully in: ".$outputFolder );
+        }
+
         if( isset(PH::$args['exportcsv'])  )
         {
             $this->exportcsvFile = PH::$args['exportcsv'];
@@ -152,7 +259,8 @@ class STATSUTIL extends RULEUTIL
     public function supportedArguments()
     {
         parent::supportedArguments();
-        $this->supportedArguments['exportcsv'] = array('niceName' => 'deviceType', 'shortHelp' => 'specify which type(s) of your device want to edit, (default is "dg". ie: devicetype=any  devicetype=vsys,devicegroup,templatestack,template,container,devicecloud,manageddevice,deviceonprem', 'argDesc' => 'all|any|vsys|devicegroup|templatestack|template|container|devicecloud|manageddevice|deviceonprem');
+        $this->supportedArguments['exportcsv'] = array('niceName' => 'exportCsv', 'shortHelp' => 'export statistics to CSV file using jq', 'argDesc' => 'filename.csv');
+        $this->supportedArguments['shadow-json-to-folder'] = array('niceName' => 'shadowJsonToFolder', 'shortHelp' => 'generate separate JSON files for adoption, visibility, and best-practice statistics for each PanoramaConf and DeviceGroup', 'argDesc' => '/path/to/output/folder');
     }
 
 }
