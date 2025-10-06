@@ -1939,7 +1939,7 @@ class PanoramaConf
         //-----------------
         $stdoutarray = array();
 
-        $stdoutarray['type'] = get_class( $this );
+        $stdoutarray['type'] = "DeviceGroup";
         $stdoutarray['statstype'] = "objects";
 
         $header = "Statistics for DG '" . PH::boldText('shared') . "'";
@@ -2076,7 +2076,11 @@ class PanoramaConf
 
         $stdoutarray = array();
 
-        $stdoutarray['type'] = get_class( $sub );
+        if( empty($sub->name))
+            $stdoutarray['type'] = get_class( $sub );
+        else
+            $stdoutarray['type'] = "DeviceGroup";
+
         $stdoutarray['statstype'] = "adoption";
 
         $header = "BP/Visibility Statistics for PanoramaConf '" . PH::boldText($sub->name) . "' | '" . $sub->toString() . "'";
@@ -2902,6 +2906,7 @@ class PanoramaConf
     {
         $stdoutarray = $this->get_bp_statistics( $actions );
 
+        $stdoutarray['type'] = "DeviceGroup";
         $header = "BP/Visibility Statistics for PanoramaConf '" . PH::boldText("shared") . "' | ";
         $stdoutarray['header'] = $header;
 
