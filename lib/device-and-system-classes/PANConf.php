@@ -1463,6 +1463,7 @@ class PANConf
         else
             $stdoutarray['log at not start percentage'] = 0;
         $percentageArray_best_practice['Logging']['value'] = $stdoutarray['log at not start percentage'];
+        $percentageArray_best_practice['Logging']['group'] = 'Logging';
         #$percentageArray_best_practice['Log Forwarding Profiles']['value'] = $stdoutarray['log prof set percentage'];
 
         $stdoutarray['wf best-practice calc'] = $stdoutarray['wf best-practice'] ."/". $ruleForCalculation;
