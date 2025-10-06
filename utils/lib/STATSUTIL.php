@@ -92,9 +92,9 @@ class STATSUTIL extends RULEUTIL
             }
         }
 
-        if( isset(PH::$args['shadow-json-to-folder']) )
+        if( isset(PH::$args['json-to-folder']) )
         {
-            $outputFolder = PH::$args['shadow-json-to-folder'];
+            $outputFolder = PH::$args['json-to-folder'];
 
             if( $this->projectFolder !== null )
                 $outputFolder = $this->projectFolder."/".$outputFolder;
@@ -260,7 +260,7 @@ class STATSUTIL extends RULEUTIL
     {
         parent::supportedArguments();
         $this->supportedArguments['exportcsv'] = array('niceName' => 'exportCsv', 'shortHelp' => 'export statistics to CSV file using jq', 'argDesc' => 'filename.csv');
-        $this->supportedArguments['shadow-json-to-folder'] = array('niceName' => 'shadowJsonToFolder', 'shortHelp' => 'generate separate JSON files for adoption, visibility, and best-practice statistics for each PanoramaConf and DeviceGroup', 'argDesc' => '/path/to/output/folder');
+        $this->supportedArguments['json-to-folder'] = array('niceName' => 'shadowJsonToFolder', 'shortHelp' => 'generate separate JSON files for adoption, visibility, and best-practice statistics for each PanoramaConf and DeviceGroup', 'argDesc' => '/path/to/output/folder');
     }
 
 }
