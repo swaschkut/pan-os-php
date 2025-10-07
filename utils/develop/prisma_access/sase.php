@@ -1,7 +1,7 @@
 <?php
 
-require_once( "lib/pan_php_framework.php" );
-require_once ( "utils/lib/UTIL.php" );
+require_once("lib/pan_php_framework.php");
+require_once("utils/lib/UTIL.php");
 
 ##########################################
 ##########################################
@@ -13,7 +13,7 @@ $supportedArguments['out'] = array('niceName' => 'out', 'shortHelp' => 'output f
 $supportedArguments['filter'] = array('niceName' => 'Filter', 'shortHelp' => "filters objects based on a query. ie: 'filter=((from has external) or (source has privateNet1) and (to has external))'", 'argDesc' => '(field operator [value])');
 $supportedArguments['debugapi'] = array('niceName' => 'DebugAPI', 'shortHelp' => 'prints API calls when they happen');
 
-$fawkes_filename = dirname(__FILE__)."/fawkes_baseconfig.xml";
+$fawkes_filename = dirname(__FILE__) . "/fawkes_baseconfig.xml";
 
 
 $usageMsg = PH::boldText('USAGE: ') . "php " . basename(__FILE__) . " in=FAWKES_baseconfig.xml out=output.xml client_id={{USER}} client_secret={{SECRET}} scope={{tsg_id:TSGID}}";

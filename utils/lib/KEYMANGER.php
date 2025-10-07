@@ -264,7 +264,7 @@ class KEYMANGER extends UTIL
                             if( $debugAPI )
                                 $sase_connector->showApiCalls = true;
 
-                            $sase_connector->getAccessToken();
+                            $sase_connector->getAccessToken( $debugAPI );
                         } catch(Exception $e)
                         {
                             PH::disableExceptionSupport();
@@ -314,7 +314,7 @@ class KEYMANGER extends UTIL
                         if( $debugAPI )
                             $sase_connector->showApiCalls = true;
 
-                        $sase_connector->getAccessToken();
+                        $sase_connector->getAccessToken( $debugAPI );
                     }
                 }
 
@@ -337,8 +337,8 @@ class KEYMANGER extends UTIL
         }
         ksort($connectorList);
 
-        if( $debugAPI )
-            print_r($connectorList);
+        #if( $debugAPI )
+        #    print_r($connectorList);
 
         foreach( $connectorList as $connector )
         {

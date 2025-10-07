@@ -128,28 +128,39 @@ foreach( $SNjsonArray['data'] as $SNentry )
     print_r($SN_IPsec_Tunnel);
 
 
-    $SN_IPsecCrypto_profile_name = $SN_IPsec_Tunnel['auto_key']['ipsec_crypto_profile'];
-    #print $SN_IPsecCrypto_profile_name."\n";
-    $SN_IPsecCrypto_profile = getSASEarrayName($IPsecCryptojsonArray, $SN_IPsecCrypto_profile_name);
-    print( "#########################################\n");
-    print( "## IPSEC CRYPTO PROFIL ##\n" );
-    print_r($SN_IPsecCrypto_profile);
+    if( isset( $SN_IPsec_Tunnel['auto_key']['ipsec_crypto_profile'] ) )
+    {
+        $SN_IPsecCrypto_profile_name = $SN_IPsec_Tunnel['auto_key']['ipsec_crypto_profile'];
+        #print $SN_IPsecCrypto_profile_name."\n";
+        $SN_IPsecCrypto_profile = getSASEarrayName($IPsecCryptojsonArray, $SN_IPsecCrypto_profile_name);
+        print( "#########################################\n");
+        print( "## IPSEC CRYPTO PROFIL ##\n" );
+        print_r($SN_IPsecCrypto_profile);
+    }
 
 
-    $SN_IKE_gateway_name = $SN_IPsec_Tunnel['auto_key']['ike_gateway']['0']['name'];
-    #print $SN_IKE_gateway_name."\n";
-    $SN_IKE_gateway = getSASEarrayName($IKEgw_jsonArray, $SN_IKE_gateway_name);
-    print( "#########################################\n");
-    print( "## IKE GATEWAY ##\n" );
-    print_r($SN_IKE_gateway);
+
+    if( isset( $SN_IPsec_Tunnel['auto_key']['ike_gateway']['0']['name'] ) )
+    {
+        $SN_IKE_gateway_name = $SN_IPsec_Tunnel['auto_key']['ike_gateway']['0']['name'];
+        #print $SN_IKE_gateway_name."\n";
+        $SN_IKE_gateway = getSASEarrayName($IKEgw_jsonArray, $SN_IKE_gateway_name);
+        print( "#########################################\n");
+        print( "## IKE GATEWAY ##\n" );
+        print_r($SN_IKE_gateway);
+    }
 
 
-    $SN_IKECrypto_profile_name = $SN_IKE_gateway['protocol']['ikev1']['ike_crypto_profile'];
-    #print $SN_IKECrypto_profile_name."\n";
-    $SN_IKE_Crypto_Profile = getSASEarrayName($IKECryptojsonArray, $SN_IKECrypto_profile_name);
-    print( "#########################################\n");
-    print( "## IKE CRYPTO PROFIL ##\n" );
-    print_r($SN_IKE_Crypto_Profile);
+    if( isset( $SN_IKE_gateway['protocol']['ikev1']['ike_crypto_profile'] ) )
+    {
+        $SN_IKECrypto_profile_name = $SN_IKE_gateway['protocol']['ikev1']['ike_crypto_profile'];
+        #print $SN_IKECrypto_profile_name."\n";
+        $SN_IKE_Crypto_Profile = getSASEarrayName($IKECryptojsonArray, $SN_IKECrypto_profile_name);
+        print( "#########################################\n");
+        print( "## IKE CRYPTO PROFIL ##\n" );
+        print_r($SN_IKE_Crypto_Profile);
+    }
+
 
 
 }

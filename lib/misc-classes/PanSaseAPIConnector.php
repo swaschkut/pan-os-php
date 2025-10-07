@@ -180,7 +180,7 @@ class PanSaseAPIConnector
     }
 
 
-    public function getAccessToken()
+    public function getAccessToken( $debugAPI = false )
     {
         /*
         curl -d "grant_type=client_credentials&scope=tsg_id:<tsg_id>" \
@@ -219,7 +219,6 @@ class PanSaseAPIConnector
         if( empty($response) )
             derr("something went wrong - check internet connection", null, FALSE);
 
-
         $jsonArray = json_decode($response, TRUE);
         if( !isset($jsonArray['access_token']) )
         {
@@ -232,7 +231,8 @@ class PanSaseAPIConnector
 
             derr( "problem with SASE API connection - not possible to get 'access_token'", null, FALSE );
         }
-
+        elseif( $debugAPI )
+            PH::print_stdout( "TOKEN: ".$jsonArray['access_token'] );
 
         $this->access_token = $jsonArray['access_token'];
     }
