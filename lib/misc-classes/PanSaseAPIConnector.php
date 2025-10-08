@@ -520,6 +520,9 @@ class PanSaseAPIConnector
         $typeArray = $this->getTypeArray($utilType);
         foreach( $typeArray as $type )
         {
+            if( $folder == "Service Connections" && strpos($type, "-rule") !== FALSE )
+                continue;
+
             $resource = $this->getResource($this->access_token, $type, $folder, $this->global_limit);
 
             if( $resource !== null )

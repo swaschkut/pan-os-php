@@ -1185,9 +1185,10 @@ class UTIL
                 if( $this->debugAPI )
                 {
                     PH::print_stdout( "FOLDER: ".$folder );
-                    //Todo: 20240326 swaschkut - do not always load full config
-                    $sase_connector->loadSaseConfig($folder, $sub, $this->utilType);
                 }
+
+                //Todo: 20240326 swaschkut - do not always load full config
+                $sase_connector->loadSaseConfig($folder, $sub, $this->utilType);
             }
         }
         else
