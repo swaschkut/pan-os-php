@@ -456,7 +456,7 @@ class PanSaseAPIConnector
 
         if( $this->showApiCalls )
         {
-            #PH::print_stdout($url);
+            PH::print_stdout($url);
         }
 
 
@@ -527,7 +527,7 @@ class PanSaseAPIConnector
                 if( $this->showApiCalls )
                 {
                     #PH::print_stdout("|" . $folder . " - " . $type);
-                    print_r($resource);
+                    #print_r($resource);
                 }
 
                 $this->importConfig($sub, $folder, $type, $resource);
