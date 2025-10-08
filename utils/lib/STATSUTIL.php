@@ -109,6 +109,7 @@ class STATSUTIL extends RULEUTIL
                 PH::print_stdout( "Created output folder: ".$outputFolder );
             }
 
+            $mainArray = array();
             // Process each statistic entry
             foreach( PH::$JSON_TMP as $key => $stat )
             {
@@ -174,14 +175,15 @@ class STATSUTIL extends RULEUTIL
                 {
                     $filename = $outputFolder."/".$filePrefix.".adoption.json";
                     $tmp_Array = array();
-                    $tmp_Array['title'] = "Overall Adoption";
+                    $title = "Overall Adoption";
+                    $tmp_Array['title'] = $title;
                     $tmp_Array['info'] = "Adopted";
                     $categoriesArray = array();
                     foreach($stat['percentage']['adoption'] as $name => $info)
                         $categoriesArray[] = array( "name" => $name, "value" => $info['value'], "group" => $info['group'] );
 
                     $tmp_Array['categories'] = $categoriesArray;
-                    #$jsonContent = json_encode($stat['percentage']['best-practice'], JSON_PRETTY_PRINT);
+                    $mainArray[$filePrefix."-".$title] = $tmp_Array;
                     $jsonContent = json_encode($tmp_Array, JSON_PRETTY_PRINT);
                     file_put_contents($filename, $jsonContent);
                     PH::print_stdout( " - Created: ".$filename );
@@ -191,13 +193,15 @@ class STATSUTIL extends RULEUTIL
                 {
                     $filename = $outputFolder."/".$filePrefix.".visibility.json";
                     $tmp_Array = array();
-                    $tmp_Array['title'] = "Visibility";
+                    $title = "Visibility";
+                    $tmp_Array['title'] = $title;
                     $tmp_Array['info'] = "Visible";
                     $categoriesArray = array();
                     foreach($stat['percentage']['visibility'] as $name => $info)
                         $categoriesArray[] = array( "name" => $name, "value" => $info['value'], "group" => $info['group'] );
 
                     $tmp_Array['categories'] = $categoriesArray;
+                    $mainArray[$filePrefix."-".$title] = $tmp_Array;
                     $jsonContent = json_encode($tmp_Array, JSON_PRETTY_PRINT);
                     file_put_contents($filename, $jsonContent);
                     PH::print_stdout( " - Created: ".$filename );
@@ -207,18 +211,26 @@ class STATSUTIL extends RULEUTIL
                 {
                     $filename = $outputFolder."/".$filePrefix.".best-practice.json";
                     $tmp_Array = array();
-                    $tmp_Array['title'] = "Best Practices";
+                    $title = "Best Practices";
+                    $tmp_Array['title'] = $title;
                     $tmp_Array['info'] = "Best Practice";
                     $categoriesArray = array();
                     foreach($stat['percentage']['best-practice'] as $name => $info)
                         $categoriesArray[] = array( "name" => $name, "value" => $info['value'], "group" => $info['group'] );
 
                     $tmp_Array['categories'] = $categoriesArray;
+                    $mainArray[$filePrefix."-".$title] = $tmp_Array;
                     $jsonContent = json_encode($tmp_Array, JSON_PRETTY_PRINT);
                     file_put_contents($filename, $jsonContent);
                     PH::print_stdout( " - Created: ".$filename );
                 }
             }
+
+            $jsonContent = json_encode($mainArray, JSON_PRETTY_PRINT);
+            $tmp_string = "const samples = ".$jsonContent;
+            $filename = $outputFolder."/diagram_data.js";
+            file_put_contents($filename, $tmp_string);
+
 
             PH::print_stdout();
             PH::print_stdout( "JSON files generated successfully in: ".$outputFolder );
