@@ -47,8 +47,11 @@ class PanSaseAPIConnector
     private $utilAction = "";
 
     public $url_token = "https://auth.apps.paloaltonetworks.com/oauth2/access_token";
-    public $url_api = "https://api.sase.paloaltonetworks.com";
-    #public $url_api = "https://api.stratacloud.paloaltonetworks.com"; //identical to api.sase.paloaltonetworks.com but introduced on 20230801
+
+    //FAWKES - Prisma Access Configuration
+    #public $url_api = "https://api.sase.paloaltonetworks.com";
+    //Strata Cloud Manager
+    public $url_api = "https://api.strata.paloaltonetworks.com";
 
 
     static public $folderArray = array(
@@ -436,7 +439,10 @@ class PanSaseAPIConnector
         $this->getAccessToken();
 
         $url = $this->url_api;
+        //Fawkes
         $url .= "/sse/config/v1/" . $type . "?folder=" . $folder;
+        //Buckbeak
+        //$url .= "/config/objects/v1/" . $type . "?folder=" . $folder;
 
         $url .= "&limit=" . $this->global_limit;
 
@@ -1021,7 +1027,10 @@ class PanSaseAPIConnector
 
         $type = $this->getTypeURL($element);
 
+        //Fawkes
         $url .= "/sse/config/v1/" . $type . "?folder=" . $folder;
+        //Buckbeak
+        //$url .= "/config/objects/v1/" . $type . "?folder=" . $folder;
 
         $body = json_encode($bodyArray);
 
@@ -1061,7 +1070,10 @@ class PanSaseAPIConnector
 
         $type = $this->getTypeURL($element);
 
+        //Fawkes
         $url .= "/sse/config/v1/" . $type . "/" . $element->getSaseID();
+        //Buckbeak
+        //$url .= "/config/objects/v1/" . $type . "/" . $element->getSaseID();
 
         $body = json_encode($bodyArray);
 
@@ -1099,6 +1111,8 @@ class PanSaseAPIConnector
             derr( "for DELETE request SaseID must be present", null, FALSE );
 
         $url .= "/sse/config/v1/" . $type . "/" . $saseID;
+        //Buckbeak
+        //$url .= "/config/objects/v1/" . $type . "/" . $saseID;
 
         if( $this->showApiCalls )
             PH::print_stdout( "URL: ".$url);
