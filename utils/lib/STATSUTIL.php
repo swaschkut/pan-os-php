@@ -175,6 +175,7 @@ class STATSUTIL extends RULEUTIL
                     $filename = $outputFolder."/".$filePrefix.".adoption.json";
                     $tmp_Array = array();
                     $tmp_Array['title'] = "Overall Adoption";
+                    $tmp_Array['info'] = "Adopted";
                     $categoriesArray = array();
                     foreach($stat['percentage']['adoption'] as $name => $info)
                         $categoriesArray[] = array( "name" => $name, "value" => $info['value'], "group" => $info['group'] );
@@ -191,6 +192,7 @@ class STATSUTIL extends RULEUTIL
                     $filename = $outputFolder."/".$filePrefix.".visibility.json";
                     $tmp_Array = array();
                     $tmp_Array['title'] = "Visibility";
+                    $tmp_Array['info'] = "Visible";
                     $categoriesArray = array();
                     foreach($stat['percentage']['visibility'] as $name => $info)
                         $categoriesArray[] = array( "name" => $name, "value" => $info['value'], "group" => $info['group'] );
@@ -206,6 +208,7 @@ class STATSUTIL extends RULEUTIL
                     $filename = $outputFolder."/".$filePrefix.".best-practice.json";
                     $tmp_Array = array();
                     $tmp_Array['title'] = "Best Practices";
+                    $tmp_Array['info'] = "Best Practice";
                     $categoriesArray = array();
                     foreach($stat['percentage']['best-practice'] as $name => $info)
                         $categoriesArray[] = array( "name" => $name, "value" => $info['value'], "group" => $info['group'] );
