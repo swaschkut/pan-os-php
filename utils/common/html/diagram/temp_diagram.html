@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>D3.js Coxcomb Chart Generator v28</title>
+    <script src="d3.v7.min.js"></script>
+    <script src="html2canvas.min.js"></script>
+    <!-- Import Lato font from Google Fonts with multiple weights -->
+    <!-- <link href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&display=swap" rel="stylesheet">
+ -->
+
+    <link rel="stylesheet" href="styles.css">
+    <!-- <script src="script.js"></script> -->
+    <script src="diagram_data.js"></script>
+</head>
+<body>
+<div class="container">
+    <div class="controls">
+        <h3>JSON Data Input</h3>
+
+        <!-- Light mode toggle -->
+        <div class="mode-toggle-container">
+            <span class="mode-toggle-label">Light Mode</span>
+            <label class="toggle-switch">
+                <input type="checkbox" id="lightModeToggle" onchange="toggleLightMode()">
+                <span class="toggle-slider"></span>
+            </label>
+        </div>
+
+        <div class="input-container">
+            <div id="sampleButtonsContainer" class="sample-buttons"></div>
+            <textarea id="jsonInput" placeholder='Enter your JSON data here...
+        Example format:
+        {
+          "title": "Overall Adoption",
+          "categories": [
+            {"name": "Logging", "value": 100, "shortName": "Logging", "group": "Logging"},
+            {"name": "DNS Security", "value": 100, "shortName": "DNS Security", "group": "DNS Security"},
+            {"name": "Wildfire Analysis Profiles", "value": 75, "shortName": "Wildfire Analysis", "group": "Wildfire"}
+          ]
+        }'></textarea>
+        </div>
+        <button onclick="generateChart()">Generate Chart</button>
+        <button onclick="resetChart()" style="background: #666;">Reset Chart</button>
+        <button onclick="saveChartAsJpg()" style="background: #2578B1;">Save as JPG</button>
+        <button onclick="generateAllJpgs()" style="background: #2578B1;">Generate all JPGs</button>
+        <div id="error" class="error"></div>
+    </div>
+
+    <div class="chart-container">
+        <div class="chart-title" id="chartTitle">Overall Adoption</div>
+        <div id="chart"></div>
+        <div class="tooltip" id="tooltip"></div>
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #25B197;"></div>
+                <div class="legend-text">Excellent (75-100%)</div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #FBB441;"></div>
+                <div class="legend-text">Good (50-75%)</div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #F06A0A;"></div>
+                <div class="legend-text">Fair (25-50%)</div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #E8121C;"></div>
+                <div class="legend-text">Poor (0-25%)</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+
+</script>
+</body>
+</html>
