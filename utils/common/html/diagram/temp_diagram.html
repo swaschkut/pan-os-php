@@ -5,21 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>D3.js Coxcomb Chart Generator v28</title>
     <script src="d3.v7.min.js"></script>
-    <script src="html2canvas.min.js"></script>
-    <!-- Import Lato font from Google Fonts with multiple weights -->
-    <!-- <link href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&display=swap" rel="stylesheet">
- -->
-
-    <link rel="stylesheet" href="styles.css">
-    <!-- <script src="script.js"></script> -->
     <script src="diagram_data.js"></script>
+    <script src="html2canvas.min.js"></script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="diagram_styles.css">
+    <script src="diagram_script.js"></script>
+    <script src="diagram_data.js"></script>
+
 </head>
 <body>
 <div class="container">
     <div class="controls">
         <h3>JSON Data Input</h3>
 
-        <!-- Light mode toggle -->
         <div class="mode-toggle-container">
             <span class="mode-toggle-label">Light Mode</span>
             <label class="toggle-switch">
@@ -45,6 +45,7 @@
         <button onclick="resetChart()" style="background: #666;">Reset Chart</button>
         <button onclick="saveChartAsJpg()" style="background: #2578B1;">Save as JPG</button>
         <button onclick="generateAllJpgs()" style="background: #2578B1;">Generate all JPGs</button>
+        <button onclick="generateAllJpgsManualClick()" style="background: #2578B1;">Generate all JPGs manual Click</button>
         <div id="error" class="error"></div>
     </div>
 
@@ -73,8 +74,5 @@
     </div>
 </div>
 
-<script>
-
-</script>
 </body>
 </html>
