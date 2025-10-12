@@ -2200,7 +2200,7 @@ class UTIL
         }
     }
 
-    public function stats( $debug = false, $actions = "display" )
+    public function stats( $debug = false, $actions = "display", $location = false )
     {
         if( isset(PH::$args['stats']) )
         {
@@ -2211,7 +2211,10 @@ class UTIL
             if( $this->configInput['type'] == 'api' )
                 $mainConnector = findConnector($pan);
 
-            $pan->display_statistics( $mainConnector, $debug, $actions );
+            if( !PH::$shadow_loaddghierarchy )
+                $pan->display_statistics( $mainConnector, $debug, $actions );
+            else
+                $pan->display_statistics( $mainConnector, $debug, $actions, $location );
 
             $processedLocations = array();
             foreach( $this->objectsToProcess as &$record )
@@ -2234,8 +2237,8 @@ class UTIL
                         }
                     }
 
-                    
-                    $sub->display_statistics( $debug, $actions );
+                    if( !PH::$shadow_loaddghierarchy )
+                        $sub->display_statistics( $debug, $actions );
                 }
             }
 

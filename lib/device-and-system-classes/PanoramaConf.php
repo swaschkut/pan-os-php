@@ -1535,7 +1535,7 @@ class PanoramaConf
     }
 
 
-    public function display_statistics( $connector = null, $debug = false, $actions = "display" )
+    public function display_statistics( $connector = null, $debug = false, $actions = "display", $location = false )
     {
 
         $gpreSecRules = $this->securityRules->countPreRules();
@@ -1611,8 +1611,26 @@ class PanoramaConf
 
         $gndataobjects = $this->DataObjectsProfileStore->count();
 
+
+        if( PH::$shadow_loaddghierarchy )
+        {
+            $parentDGS = array();
+            if( $location !== false )
+            {
+                /** @var DeviceGroup $DG_object */
+                $DG_object = $this->findDeviceGroup($location);
+                $parentDGS = $DG_object->parentDeviceGroups();
+            }
+        }
+
         foreach( $this->deviceGroups as $cur )
         {
+            if( PH::$shadow_loaddghierarchy && !empty($parentDGS) )
+            {
+                if( !isset($parentDGS[$cur->name()]) )
+                    continue;
+            }
+
             $gpreSecRules += $cur->securityRules->countPreRules();
             $gpreNatRules += $cur->natRules->countPreRules();
             $gpreDecryptRules += $cur->decryptionRules->countPreRules();
@@ -1693,7 +1711,11 @@ class PanoramaConf
         $stdoutarray['type'] = get_class( $this );
         $stdoutarray['statstype'] = "objects";
 
-        $header = "Statistics for PanoramaConf '" . $this->name . "'";
+        if( !PH::$shadow_loaddghierarchy )
+            $header = "Statistics for PanoramaConf '" . $this->name . "'";
+        else
+            $header = "Statistics for PanoramaConf: DG-Hierarchy location: '" .$location. "'";
+
         $stdoutarray['header'] = $header;
 
         $stdoutarray['pre security rules'] = array();
@@ -1930,9 +1952,13 @@ class PanoramaConf
         if( !PH::$shadow_json && $actions == "display")
             PH::print_stdout( $stdoutarray, true );
 
-        $this->display_bp_statistics( $debug, $actions );
+        if( !PH::$shadow_loaddghierarchy )
+            $this->display_bp_statistics( $debug, $actions );
+        else
+            $this->display_bp_statistics( $debug, $actions, $location );
 
-        $this->display_shared_statistics( $connector, $debug, $actions );
+        if( !PH::$shadow_loaddghierarchy )
+            $this->display_shared_statistics( $connector, $debug, $actions );
     }
 
     public function display_shared_statistics( $connector = null, $debug = false, $actions = "display" )
@@ -2507,13 +2533,18 @@ class PanoramaConf
         return $stdoutarray;
     }
 
-    public function display_bp_statistics( $debug = false, $actions = "display" )
+    public function display_bp_statistics( $debug = false, $actions = "display", $location = false )
     {
         $stdoutarray = $this->get_bp_statistics( $actions );
 
         $stdoutarray['type'] = get_class( $this );
 
-        $header = "Statistics for ".get_class( $this )." '" . PH::boldText('Panorama full') . "'";
+
+        if( !PH::$shadow_loaddghierarchy )
+            $header = "Statistics for ".get_class( $this )." '" . PH::boldText('Panorama full') . "'";
+        else
+            $header = "Statistics for ".get_class( $this ).": DG-Hierarchy location: '" .$location. "'";
+
         $stdoutarray['header'] = $header;
         $stdoutarray['statstype'] = "adoption";
 

@@ -68,7 +68,12 @@ class STATSUTIL extends RULEUTIL
 
 
         PH::$JSON_TMP = array();
-        $this->stats( $this->debugAPI, $actions );
+
+        if( !PH::$shadow_loaddghierarchy )
+            $this->stats( $this->debugAPI, $actions );
+        else
+            $this->stats( $this->debugAPI, $actions, $this->location );
+
         if( PH::$args['actions'] == "display" || PH::$args['actions'] == "display-bpa" )
             PH::print_stdout(PH::$JSON_TMP, false, "statistic");
 
@@ -131,7 +136,10 @@ class STATSUTIL extends RULEUTIL
                 // Determine the filename prefix
                 if( $type == 'PanoramaConf' )
                 {
-                    $filePrefix = "Panorama-full";
+                    if( !PH::$shadow_loaddghierarchy )
+                        $filePrefix = "Panorama-full";
+                    else
+                        $filePrefix = "Panorama-DG-Hierarchy_".$this->location;
                 }
                 elseif( $type == 'DeviceGroup' )
                 {
