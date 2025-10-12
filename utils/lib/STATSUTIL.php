@@ -50,7 +50,12 @@ class STATSUTIL extends RULEUTIL
 
 
 
-        if( isset(PH::$args['actions']) )
+        if( isset(PH::$args['json-to-folder']) )
+        {
+            PH::$args['actions'] = "display-bpa";
+            $actions = PH::$args['actions'];
+        }
+        elseif( isset(PH::$args['actions']) )
         {
             PH::print_stdout( "ACTIONS: ".PH::$args['actions'] );
             $actions = PH::$args['actions'];
@@ -64,7 +69,7 @@ class STATSUTIL extends RULEUTIL
 
         PH::$JSON_TMP = array();
         $this->stats( $this->debugAPI, $actions );
-        if( PH::$args['actions'] == "display" )
+        if( PH::$args['actions'] == "display" || PH::$args['actions'] == "display-bpa" )
             PH::print_stdout(PH::$JSON_TMP, false, "statistic");
 
         if( PH::$args['actions'] == "trending" )
@@ -95,6 +100,8 @@ class STATSUTIL extends RULEUTIL
         if( isset(PH::$args['json-to-folder']) )
         {
             $outputFolder = PH::$args['json-to-folder'];
+            if( $outputFolder === TRUE )
+                $outputFolder = "json";
 
             if( $this->projectFolder !== null )
                 $outputFolder = $this->projectFolder."/".$outputFolder;

@@ -1154,8 +1154,8 @@ class PANConf
         if( !PH::$shadow_json and $actions == "display" )
             PH::print_stdout( $stdoutarray, true );
 
-
-        $this->display_bp_statistics( $debug, $actions );
+        if( !PH::$shadow_json and $actions == "display-bpa" )
+            $this->display_bp_statistics( $debug, $actions );
     }
 
     public function display_bp_statistics( $debug = false, $actions = "display" )
@@ -1554,7 +1554,7 @@ class PANConf
         $percentageArray_visibility = $stdoutarray['percentage']['visibility'];
         $percentageArray_best_practice = $stdoutarray['percentage']['best-practice'];
 
-        if( !PH::$shadow_json && $actions == "display")
+        if( !PH::$shadow_json && $actions == "display-bpa")
         {
 
             PH::print_stdout("adoption");

@@ -2254,8 +2254,8 @@ class UTIL
                     $firewall->load_from_domxml( $doc );
 
                     $firewall->display_statistics( $fwconnector, $actions );
-
-                    $firewall->display_bp_statistics( $actions );
+                    if( $actions == "display-bpa" )
+                        $firewall->display_bp_statistics( $actions );
                 }
 
             }

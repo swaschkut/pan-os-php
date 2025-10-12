@@ -1607,7 +1607,7 @@ class VirtualSystem
         $percentageArray_visibility = $stdoutarray['percentage']['visibility'];
         $percentageArray_best_practice = $stdoutarray['percentage']['best-practice'];
 
-        if( !PH::$shadow_json and $actions == "display" )
+        if( !PH::$shadow_json and $actions == "display-bpa" )
         {
             PH::print_stdout("---------------------------");
             PH::print_stdout("FEATURE ADOPTION");

@@ -1711,7 +1711,7 @@ class DeviceGroup
         $percentageArray_visibility = $stdoutarray['percentage']['visibility'];
         $percentageArray_best_practice = $stdoutarray['percentage']['best-practice'];
 
-        if( !PH::$shadow_json && $actions == "display" )
+        if( !PH::$shadow_json && $actions == "display-bpa" )
         {
             PH::print_stdout("adoption");
             $tbl = new ConsoleTable();

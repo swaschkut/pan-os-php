@@ -3,6 +3,7 @@ CHANGELOG
 2.1.40
 UTIL:
 * type=stats | introduce json-to-folder={folder}
+* type=stats actions=display-bpa | introduction
 
 BUGFIX:
 * type=rule location=DG1 actions=move:shared | bugfix for Panorama if a rule is moved within the DG hierarchy to avoid PAN-OS API error message

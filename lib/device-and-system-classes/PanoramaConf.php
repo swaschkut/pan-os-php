@@ -1924,7 +1924,8 @@ class PanoramaConf
         */
 
         #PH::$JSON_TMP['all'] = $stdoutarray;
-        PH::$JSON_TMP[] = $stdoutarray;
+        if( $actions == "display" )
+            PH::$JSON_TMP[] = $stdoutarray;
 
         if( !PH::$shadow_json && $actions == "display")
             PH::print_stdout( $stdoutarray, true );
@@ -2061,7 +2062,8 @@ class PanoramaConf
         $stdoutarray['DataObjects objects']['total'] = $this->DataObjectsProfileStore->count();
 
         #PH::$JSON_TMP['shared'] = $stdoutarray;
-        PH::$JSON_TMP[] = $stdoutarray;
+        if( $actions == "display" )
+            PH::$JSON_TMP[] = $stdoutarray;
 
         if( !PH::$shadow_json && $actions == "display")
             PH::print_stdout( $stdoutarray, true );
@@ -2905,7 +2907,7 @@ class PanoramaConf
         $percentageArray_visibility = $stdoutarray['percentage']['visibility'];
         $percentageArray_best_practice = $stdoutarray['percentage']['best-practice'];
 
-        if( !PH::$shadow_json && $actions == "display")
+        if( !PH::$shadow_json && $actions == "display-bpa")
         {
             PH::print_stdout("adoption");
             $tbl = new ConsoleTable();
@@ -2975,10 +2977,11 @@ class PanoramaConf
             echo $tbl->getTable();
         }
 
-        if( !PH::$shadow_json && $debug && $actions == "display")
+        if( !PH::$shadow_json && $debug && $actions == "display-bpa")
             PH::print_stdout( $stdoutarray, true );
 
-        PH::$JSON_TMP[] = $stdoutarray;
+        if( $actions == "display-bpa" )
+            PH::$JSON_TMP[] = $stdoutarray;
     }
 
     public function display_bp_shared_statistics( $debug = false, $actions = "display" )
@@ -2993,7 +2996,7 @@ class PanoramaConf
         $percentageArray_visibility = $stdoutarray['percentage']['visibility'];
         $percentageArray_best_practice = $stdoutarray['percentage']['best-practice'];
 
-        if( !PH::$shadow_json && $actions == "display" )
+        if( !PH::$shadow_json && $actions == "display-bpa" )
         {
             PH::print_stdout("adoption");
             $tbl = new ConsoleTable();
@@ -3065,10 +3068,11 @@ class PanoramaConf
 
 
         #PH::$JSON_TMP[$this->name] = $stdoutarray;
-        PH::$JSON_TMP[] = $stdoutarray;
+        if( $actions == "display-bpa" )
+            PH::$JSON_TMP[] = $stdoutarray;
 
 
-        if( !PH::$shadow_json && $debug && $actions == "display" )
+        if( !PH::$shadow_json && $debug && $actions == "display-bpa" )
             PH::print_stdout( $stdoutarray, true );
 
     }
