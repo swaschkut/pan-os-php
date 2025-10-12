@@ -2909,6 +2909,8 @@ class PanoramaConf
 
         if( !PH::$shadow_json && $actions == "display-bpa")
         {
+            PH::print_stdout( $header );
+
             PH::print_stdout("adoption");
             $tbl = new ConsoleTable();
             $tbl->setHeaders(
@@ -2975,6 +2977,8 @@ class PanoramaConf
             }
 
             echo $tbl->getTable();
+
+            PH::print_stdout();
         }
 
         if( !PH::$shadow_json && $debug && $actions == "display-bpa")
@@ -2998,6 +3002,8 @@ class PanoramaConf
 
         if( !PH::$shadow_json && $actions == "display-bpa" )
         {
+            PH::print_stdout( $header );
+
             PH::print_stdout("adoption");
             $tbl = new ConsoleTable();
             $tbl->setHeaders(

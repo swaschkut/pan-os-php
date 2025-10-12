@@ -1603,17 +1603,16 @@ class VirtualSystem
     {
         $stdoutarray = $this->get_bp_statistics();
 
+        $header = $stdoutarray['header'];
+
         $percentageArray_adoption = $stdoutarray['percentage']['adoption'];
         $percentageArray_visibility = $stdoutarray['percentage']['visibility'];
         $percentageArray_best_practice = $stdoutarray['percentage']['best-practice'];
 
         if( !PH::$shadow_json and $actions == "display-bpa" )
         {
-            PH::print_stdout("---------------------------");
-            PH::print_stdout("FEATURE ADOPTION");
-            PH::print_stdout("---------------------------");
+            PH::print_stdout( $header );
 
-            PH::print_stdout();
             PH::print_stdout("overall | adoption");
             $tbl = new ConsoleTable();
             $tbl->setHeaders(

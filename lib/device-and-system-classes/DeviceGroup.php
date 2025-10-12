@@ -1707,12 +1707,16 @@ class DeviceGroup
         $stdoutarray = $this->get_bp_statistics(  );
         PH::$JSON_TMP[] = $stdoutarray;
 
+        $header = $stdoutarray['header'];
+
         $percentageArray_adoption = $stdoutarray['percentage']['adoption'];
         $percentageArray_visibility = $stdoutarray['percentage']['visibility'];
         $percentageArray_best_practice = $stdoutarray['percentage']['best-practice'];
 
         if( !PH::$shadow_json && $actions == "display-bpa" )
         {
+            PH::print_stdout( $header );
+
             PH::print_stdout("adoption");
             $tbl = new ConsoleTable();
             $tbl->setHeaders(
@@ -1778,6 +1782,8 @@ class DeviceGroup
             }
 
             echo $tbl->getTable();
+
+            PH::print_stdout();
         }
 
 

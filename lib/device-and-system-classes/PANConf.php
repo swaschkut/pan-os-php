@@ -1556,6 +1556,7 @@ class PANConf
 
         if( !PH::$shadow_json && $actions == "display-bpa")
         {
+            PH::print_stdout( $header );
 
             PH::print_stdout("adoption");
             $tbl = new ConsoleTable();
@@ -1623,6 +1624,8 @@ class PANConf
             }
 
             echo $tbl->getTable();
+
+            PH::print_stdout( );
         }
 
 
