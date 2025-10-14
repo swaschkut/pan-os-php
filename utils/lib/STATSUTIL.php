@@ -199,9 +199,9 @@ class STATSUTIL extends RULEUTIL
 
                     $tmp_Array['categories'] = $categoriesArray;
                     $mainArray[$filePrefix."-".$title] = $tmp_Array;
-                    $jsonContent = json_encode($tmp_Array, JSON_PRETTY_PRINT);
-                    file_put_contents($filename, $jsonContent);
-                    PH::print_stdout( " - Created: ".$filename );
+                    #$jsonContent = json_encode($tmp_Array, JSON_PRETTY_PRINT);
+                    #file_put_contents($filename, $jsonContent);
+                    #PH::print_stdout( " - Created: ".$filename );
                 }
 
                 if( isset($stat['percentage']['visibility']) )
@@ -217,9 +217,9 @@ class STATSUTIL extends RULEUTIL
 
                     $tmp_Array['categories'] = $categoriesArray;
                     $mainArray[$filePrefix."-".$title] = $tmp_Array;
-                    $jsonContent = json_encode($tmp_Array, JSON_PRETTY_PRINT);
-                    file_put_contents($filename, $jsonContent);
-                    PH::print_stdout( " - Created: ".$filename );
+                    #$jsonContent = json_encode($tmp_Array, JSON_PRETTY_PRINT);
+                    #file_put_contents($filename, $jsonContent);
+                    #PH::print_stdout( " - Created: ".$filename );
                 }
 
                 if( isset($stat['percentage']['best-practice']) )
@@ -235,9 +235,9 @@ class STATSUTIL extends RULEUTIL
 
                     $tmp_Array['categories'] = $categoriesArray;
                     $mainArray[$filePrefix."-".$title] = $tmp_Array;
-                    $jsonContent = json_encode($tmp_Array, JSON_PRETTY_PRINT);
-                    file_put_contents($filename, $jsonContent);
-                    PH::print_stdout( " - Created: ".$filename );
+                    #$jsonContent = json_encode($tmp_Array, JSON_PRETTY_PRINT);
+                    #file_put_contents($filename, $jsonContent);
+                    #PH::print_stdout( " - Created: ".$filename );
                 }
             }
 
@@ -249,6 +249,21 @@ class STATSUTIL extends RULEUTIL
 
             PH::print_stdout();
             PH::print_stdout( "JSON files generated successfully in: ".$outputFolder );
+        }
+
+
+        if( $this->debugAPI )
+        {
+            $debugAPI_file = "";
+            if( $this->projectFolder !== null )
+                $debugAPI_file = $this->projectFolder."/";
+
+            PH::$JSON_TMP = array_values(PH::$JSON_TMP);
+            $string = json_encode( PH::$JSON_TMP, JSON_PRETTY_PRINT );
+
+            //store string into tmp file:
+            $tmpJsonFile = $debugAPI_file."debugAPI_string.json";
+            file_put_contents($tmpJsonFile, $string);
         }
 
         if( isset(PH::$args['exportcsv'])  )
