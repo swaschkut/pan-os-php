@@ -254,9 +254,16 @@ class STATSUTIL extends RULEUTIL
 
         if( $this->debugAPI )
         {
-            $debugAPI_file = "";
+            if( isset(PH::$args['json-to-folder']) ) {
+                $debugAPI_file = PH::$args['json-to-folder'];
+                if ($debugAPI_file === TRUE)
+                    $debugAPI_file = "json";
+            }
+            else
+                $debugAPI_file = "";
+
             if( $this->projectFolder !== null )
-                $debugAPI_file = $this->projectFolder."/";
+                $debugAPI_file = $this->projectFolder."/".$debugAPI_file;
 
             PH::$JSON_TMP = array_values(PH::$JSON_TMP);
             $string = json_encode( PH::$JSON_TMP, JSON_PRETTY_PRINT );
