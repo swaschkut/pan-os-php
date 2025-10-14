@@ -37,7 +37,7 @@ class ThreatPolicyDataFiltering extends ThreatPolicy
             derr( "only 'bp' or 'visibility' argument allowed" );
 
         ###############################
-        $details = $this->owner->owner->getBPjsonFile();
+        $details = PH::getBPjsonFile( );
 
         $array_type = "rule";
 

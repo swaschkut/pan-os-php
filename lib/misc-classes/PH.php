@@ -1297,4 +1297,48 @@ class PH
 
         return null;
     }
+
+    public static function getBPjsonFile( )
+    {
+        if( PH::$shadow_bp_jsonfile == null )
+        {
+            $filename = PH::$shadow_bp_jsonfilename;
+
+            $JSONarray = file_get_contents( $filename);
+
+            if( $JSONarray === false )
+                derr("cannot open file '{$filename}");
+
+            $details = json_decode($JSONarray, true);
+
+            if( $details === null )
+                derr( "invalid JSON file provided", null, FALSE );
+
+            PH::$shadow_bp_jsonfile = $details;
+        }
+        else
+            $details = PH::$shadow_bp_jsonfile;
+
+        return $details;
+    }
+
+    public static function validateIncludedInBPA( &$stdoutarray )
+    {
+        PH::getBPjsonFile();
+        $tmp_array_bpa = array( 'adoption', 'visibility', 'best-practice' );
+        foreach( $tmp_array_bpa as $bpa_key )
+        {
+            foreach( array_keys($stdoutarray['percentage'][$bpa_key]) as $value_key )
+            {
+                $tmp_key = str_replace( "/", "_", $value_key );
+                if( isset( PH::$shadow_bp_jsonfile['included-in-bpa'][$bpa_key][$tmp_key] ) )
+                {
+                    if( PH::$shadow_bp_jsonfile['included-in-bpa'][$bpa_key][$tmp_key] === false )
+                        unset( $stdoutarray['percentage'][$bpa_key][$value_key] );
+                }
+
+            }
+        }
+    }
+
 }

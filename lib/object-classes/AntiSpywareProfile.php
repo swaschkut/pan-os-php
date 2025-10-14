@@ -684,7 +684,7 @@ class AntiSpywareProfile extends SecurityProfile2
             derr( "only 'bp' or 'visibility' argument allowed" );
 
         ###############################
-        $details = $this->owner->getBPjsonFile();
+        $details = PH::getBPjsonFile( );
 
         $array_type = "lists";
 

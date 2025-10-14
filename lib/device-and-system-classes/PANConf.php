@@ -1548,7 +1548,9 @@ class PANConf
 
         $stdoutarray['percentage'] = $percentageArray;
 
-
+        //Todo swaschkut 20251014
+        //todo: validate if information must be changed bas on bp_sp_panw.json
+        PH::validateIncludedInBPA( $stdoutarray );
 
         $percentageArray_adoption = $stdoutarray['percentage']['adoption'];
         $percentageArray_visibility = $stdoutarray['percentage']['visibility'];

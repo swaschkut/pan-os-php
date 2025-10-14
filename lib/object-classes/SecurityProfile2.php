@@ -162,32 +162,6 @@ class SecurityProfile2
         return $bp_set;
     }
 
-    public function getBPjsonFile()
-    {
-        //Todo: this is duplicate code, also available in class SecurityProfileStore
-
-        ###############################
-        if( PH::$shadow_bp_jsonfile == null )
-        {
-            $filename = $this->bp_json_file;
-
-            $JSONarray = file_get_contents( $filename);
-
-            if( $JSONarray === false )
-                derr("cannot open file '{$filename}");
-
-            $details = json_decode($JSONarray, true);
-
-            if( $details === null )
-                derr( "invalid JSON file provided", null, FALSE );
-
-            PH::$shadow_bp_jsonfile = $details;
-        }
-        else
-            $details = PH::$shadow_bp_jsonfile;
-
-        return $details;
-    }
 
     public function bp_visibility_JSON( $checkType, $secprof_type )
     {
@@ -196,7 +170,7 @@ class SecurityProfile2
         if( $checkType !== "bp" && $checkType !== "visibility" )
             derr( "only 'bp' or 'visibility' argument allowed" );
 
-        $details = $this->getBPjsonFile();
+        $details = PH::getBPjsonFile( );
 
         $array_type = "cloud-inline";
         $check_action_type = "inline-policy-action";

@@ -419,5 +419,53 @@
                 }
             ]
         }
+    },
+    "included-in-bpa":
+    {
+        "adoption": {
+            "Logging": true,
+            "LogForwarding Profiles": true,
+            "Wildfire Analysis Prifles": true,
+            "Zone Protection": true,
+            "App-ID": true,
+            "User-ID": true,
+            "Service_Port": true,
+            "Antivirus Profiles": true,
+            "Anti-Spyware Profiles": true,
+            "Vulnerability Profiles": true,
+            "File Blocking Profiles": true,
+            "Data Filtering": true,
+            "URL Filtering Profiles": true,
+            "Credential lTheft Prevention": true,
+            "DNS Security": true
+        },
+        "visibility": {
+            "Logging": true,
+            "LogForwarding Profiles": true,
+            "Wildfire Analysis Prifles": true,
+            "Zone Protection": true,
+            "App-ID": true,
+            "User-ID": true,
+            "Service_Port": true,
+            "Antivirus Profiles": true,
+            "Anti-Spyware Profiles": true,
+            "Vulnerability Profiles": true,
+            "File Blocking Profiles": true,
+            "Data Filtering": true,
+            "URL Filtering Profiles": true,
+            "Credential lTheft Prevention": true,
+            "DNS Security": true
+        },
+        "best-practice": {
+            "Logging": true,
+            "Wildfire Analysis Prifles": true,
+            "Antivirus Profiles": true,
+            "Anti-Spyware Profiles": true,
+            "Vulnerability Profiles": true,
+            "File Blocking Profiles": true,
+            "URL Filtering Profiles": true,
+            "Credential lTheft Prevention": true,
+            "DNS Security": true
+        }
     }
 }

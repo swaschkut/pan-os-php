@@ -132,7 +132,7 @@ class DNSPolicy
             derr( "only 'bp' or 'visibility' argument allowed" );
 
         ###############################
-        $details = $this->owner->owner->getBPjsonFile();
+        $details = PH::getBPjsonFile( );
 
         if( isset($details[$secprof_type]['dns']) )
         {

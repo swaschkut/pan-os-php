@@ -457,7 +457,7 @@ class AntiVirusProfile extends SecurityProfile2
 
 
         ###############################
-        $details = $this->owner->getBPjsonFile();
+        $details = PH::getBPjsonFile( );
 
         $array_type = "rule";
 
