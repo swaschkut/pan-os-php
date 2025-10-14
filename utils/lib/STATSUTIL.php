@@ -263,7 +263,7 @@ class STATSUTIL extends RULEUTIL
                 $debugAPI_file = "";
 
             if( $this->projectFolder !== null )
-                $debugAPI_file = $this->projectFolder."/".$debugAPI_file;
+                $debugAPI_file = $this->projectFolder."/".$debugAPI_file."/";
 
             PH::$JSON_TMP = array_values(PH::$JSON_TMP);
             $string = json_encode( PH::$JSON_TMP, JSON_PRETTY_PRINT );
