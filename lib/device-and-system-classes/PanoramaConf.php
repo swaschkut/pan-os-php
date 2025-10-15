@@ -1619,7 +1619,11 @@ class PanoramaConf
             {
                 /** @var DeviceGroup $DG_object */
                 $DG_object = $this->findDeviceGroup($location);
-                $parentDGS = $DG_object->parentDeviceGroups();
+                if( $DG_object !== null )
+                {
+                    if( get_class($DG_object) !== 'PanoramaConf' )
+                        $parentDGS = $DG_object->parentDeviceGroups();
+                }
             }
         }
 

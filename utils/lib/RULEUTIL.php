@@ -152,8 +152,11 @@ class RULEUTIL extends UTIL
                     if( PH::$shadow_loaddghierarchy )
                     {
                         $DG_object = $this->pan->findDeviceGroup($location);
-                        if( $DG_object !== null && get_class($DG_object) !== 'PanoramaConf' )
-                            $parentDGS = $DG_object->parentDeviceGroups();
+                        if( $DG_object !== null )
+                        {
+                            if( get_class($DG_object) !== 'PanoramaConf' )
+                                $parentDGS = $DG_object->parentDeviceGroups();
+                        }
                         //Todo: how to find out which DG is of interest
                         #elseif( $location == "any" )
                         #    $parentDGS = $sub->parentDeviceGroups();
@@ -181,7 +184,10 @@ class RULEUTIL extends UTIL
                     {
                         $DG_object = $this->pan->findDeviceGroup($location);
                         if( $DG_object !== null )
-                            $parentDGS = $DG_object->parentDeviceGroups();
+                        {
+                            if( get_class($DG_object) !== 'PanoramaConf' )
+                                $parentDGS = $DG_object->parentDeviceGroups();
+                        }
                         //Todo: how to find out which DG is of interest
                         #elseif( $location == "any" )
                         #    $parentDGS = $sub->parentDeviceGroups();
