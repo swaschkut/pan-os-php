@@ -947,6 +947,9 @@ class PANConf
 
     public function display_statistics( $connector = null, $debug = false, $actions = 'display' )
     {
+        $displayAvailable = FALSE;
+        if( $actions == 'display-available' )
+            $displayAvailable = TRUE;
 
         $numSecRules = 0;
         $numNatRules = 0;
@@ -1072,7 +1075,6 @@ class PANConf
                 $stdoutarray['model'] = $connector->info_model;
         }
 
-
         $stdoutarray['security rules'] = $numSecRules;
 
         $stdoutarray['nat rules'] = $numNatRules;
@@ -1148,11 +1150,16 @@ class PANConf
 
 
 
+        if( !PH::$shadow_json && $actions == "display"  )
+            PH::print_stdout( $stdoutarray, true );
+
+        if( !PH::$shadow_json && $actions == "display-available" )
+        {
+            PH::print_stdout( $stdoutarray, true );
+        }
+
         PH::$JSON_TMP[] = $stdoutarray;
 
-
-        if( !PH::$shadow_json and $actions == "display" )
-            PH::print_stdout( $stdoutarray, true );
 
         if( !PH::$shadow_json and $actions == "display-bpa" )
             $this->display_bp_statistics( $debug, $actions );

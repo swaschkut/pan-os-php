@@ -1258,11 +1258,17 @@ class DeviceGroup
         #$stdoutarray['apps'] = $this->appStore->count();
 
 
-        #PH::$JSON_TMP[$this->name] = $stdoutarray;
+
+        if( !PH::$shadow_json && $actions == "display"  )
+            PH::print_stdout( $stdoutarray, true );
+
+        if( !PH::$shadow_json && $actions == "display-available" )
+        {
+            PH::print_stdout( $stdoutarray, true );
+        }
+
         PH::$JSON_TMP[] = $stdoutarray;
 
-        if( !PH::$shadow_json && $actions == "display")
-            PH::print_stdout( $stdoutarray, true );
 
         $this->display_bp_statistics( $debug, $actions );
     }
