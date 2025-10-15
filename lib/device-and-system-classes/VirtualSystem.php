@@ -1160,12 +1160,15 @@ class VirtualSystem
 
         if( !PH::$shadow_json && $actions == "display-available" )
         {
+            #print_r($stdoutarray);
+            PH::stats_remove_zero_arrays($stdoutarray);
             PH::print_stdout( $stdoutarray, true );
         }
 
         PH::$JSON_TMP[] = $stdoutarray;
 
-        $this->display_bp_statistics( $debug, $actions);
+        if( (!PH::$shadow_json and $actions == "display-bpa" ) and $actions !== "display-available" )
+            $this->display_bp_statistics( $debug, $actions);
     }
 
 

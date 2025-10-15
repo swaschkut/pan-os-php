@@ -1953,9 +1953,11 @@ class PanoramaConf
         if( !PH::$shadow_json && $actions == "display"  )
             PH::print_stdout( $stdoutarray, true );
 
-        if( !PH::$shadow_json && $actions == "display-available" )
+        if( $actions == "display-available" )
         {
-            PH::print_stdout( $stdoutarray, true );
+            PH::stats_remove_zero_arrays($stdoutarray);
+            if( !PH::$shadow_json )
+                PH::print_stdout( $stdoutarray, true );
         }
 
         if( $actions == "display" || $actions == "display-available" )
@@ -2097,12 +2099,19 @@ class PanoramaConf
         $stdoutarray['DataObjects objects'] = array();
         $stdoutarray['DataObjects objects']['total'] = $this->DataObjectsProfileStore->count();
 
-        #PH::$JSON_TMP['shared'] = $stdoutarray;
-        if( $actions == "display" )
-            PH::$JSON_TMP[] = $stdoutarray;
 
-        if( !PH::$shadow_json && ( $actions == "display" || $actions == "display-available" ) )
+        if( !PH::$shadow_json && $actions == "display"  )
             PH::print_stdout( $stdoutarray, true );
+
+        if( $actions == "display-available" )
+        {
+            PH::stats_remove_zero_arrays($stdoutarray);
+            if( !PH::$shadow_json )
+                PH::print_stdout( $stdoutarray, true );
+        }
+
+        if( $actions == "display" || $actions == "display-available" )
+            PH::$JSON_TMP[] = $stdoutarray;
 
         $this->display_bp_shared_statistics( $debug, $actions );
     }

@@ -1341,4 +1341,68 @@ class PH
         }
     }
 
+
+    /*
+    public static function stats_remove_zero_arrays(array &$data): void
+    {
+        // Iterate through the array. We use a reference ($data) to allow modification (unsetting).
+        foreach ($data as $key => $value)
+        {
+
+            // 1. Check if the current value is a nested array (e.g., a rule type or object type).
+            if (is_array($value))
+            {
+                $sum = 0;
+
+                // 2. Iterate through the nested array to sum up all numeric counts.
+                // Since the counts are non-negative, if the total sum is 0, every count must be 0.
+                foreach ($value as $sub_value)
+                {
+                    if (is_numeric($sub_value))
+                    {
+                        // Use intval() to ensure only the integer part is summed, though typecasting
+                        // is not strictly necessary for simple integers.
+                        $sum += (int)$sub_value;
+                    }
+                }
+
+                // 3. If the total sum is 0, all child key values were 0. Remove the main key.
+                if ($sum === 0) {
+                    unset($data[$key]);
+                }
+            }
+        }
+    }
+    */
+
+    public static function stats_remove_zero_arrays(array &$data): void
+    {
+        // Iterate through the array. We use a reference ($data) to allow modification (unsetting).
+        foreach ($data as $key => $value) {
+
+            // 1. Check if the current value is a nested array (e.g., rule type with DG/shared counts, or objects with multiple counts).
+            if (is_array($value)) {
+                $sum = 0;
+
+                // Iterate through the nested array to sum up all numeric counts.
+                foreach ($value as $sub_value) {
+                    if (is_numeric($sub_value)) {
+                        // Use intval() to ensure only the integer part is summed.
+                        $sum += (int)$sub_value;
+                    }
+                }
+
+                // If the total sum is 0, all child key values were 0. Remove the main key.
+                if ($sum === 0) {
+                    unset($data[$key]);
+                }
+            }
+            // 2. Check if the current value is a direct numeric counter that is 0 (e.g., 'qos rules' => 0).
+            elseif (is_numeric($value) && (int)$value === 0) {
+                // If the value is numeric and is 0, remove the main key.
+                unset($data[$key]);
+            }
+            // Values that are non-numeric strings or non-zero numbers are automatically kept.
+        }
+    }
 }
