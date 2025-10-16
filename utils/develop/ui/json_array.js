@@ -640,6 +640,10 @@ var subjectObject =
                     "is.in.file": {
                         "Function": {},
                         "arg": true
+                    },
+                    "is": {
+                        "Function": {},
+                        "arg": true
                     }
                 }
             },
@@ -2643,6 +2647,11 @@ var subjectObject =
                 }
             }
         }
+    },
+    "device-config-bundle": {
+        "name": "device-config-bundle",
+        "action": [],
+        "filter": []
     },
     "dhcp": {
         "name": "dhcp",
@@ -9634,6 +9643,10 @@ var subjectObject =
             "member.name": {
                 "operators": {
                     "is.in.file": {
+                        "Function": {},
+                        "arg": true
+                    },
+                    "is": {
                         "Function": {},
                         "arg": true
                     }

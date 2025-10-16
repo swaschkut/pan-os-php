@@ -94,6 +94,8 @@ require_once dirname(__FILE__)."/APPIDTOOLBOX.php";
 
 require_once dirname(__FILE__)."/RULE_COMPARE.php";
 
+require_once dirname(__FILE__)."/DEVICE_CONFIG_BUNDLE.php";
+
 
 class UTIL
 {
@@ -2463,7 +2465,8 @@ class UTIL
         if( PH::$shadow_json )
         {
             PH::$JSON_OUT['log'] = PH::$JSON_OUTlog;
-            print json_encode( PH::$JSON_OUT, JSON_PRETTY_PRINT );
+            if( PH::$args['actions'] !== "display-available" )
+                print json_encode( PH::$JSON_OUT, JSON_PRETTY_PRINT );
             #print json_encode( PH::$JSON_OUT, JSON_PRETTY_PRINT|JSON_FORCE_OBJECT );
         }
 

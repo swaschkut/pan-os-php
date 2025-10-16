@@ -639,6 +639,10 @@
                     "is.in.file": {
                         "Function": {},
                         "arg": true
+                    },
+                    "is": {
+                        "Function": {},
+                        "arg": true
                     }
                 }
             },
@@ -2642,6 +2646,11 @@
                 }
             }
         }
+    },
+    "device-config-bundle": {
+        "name": "device-config-bundle",
+        "action": [],
+        "filter": []
     },
     "dhcp": {
         "name": "dhcp",
@@ -9633,6 +9642,10 @@
             "member.name": {
                 "operators": {
                     "is.in.file": {
+                        "Function": {},
+                        "arg": true
+                    },
+                    "is": {
                         "Function": {},
                         "arg": true
                     }

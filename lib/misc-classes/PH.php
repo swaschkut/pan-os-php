@@ -390,8 +390,8 @@ class PH
 
     public static function processCliArgs()
     {
-        //print "SECOND\n";
-        //print_r( PH::$argv );
+        #print "SECOND\n";
+        #print_r( PH::$argv );
 
         $first = TRUE;
 
@@ -1056,7 +1056,8 @@ class PH
         "vendor-migration",
         "appid-toolbox",
         "rule-compare",
-        "custom-url-category-merger"
+        "custom-url-category-merger",
+        "device-config-bundle"
         );
 
 
@@ -1088,7 +1089,8 @@ class PH
         "html-merger",
         "tsf",
         "xpath",
-        "gcp"
+        "gcp",
+        "device-config-bundle"
     );
 
     public static function callPANOSPHP( $type, $argv, $argc, $PHP_FILE, $_supportedArguments = array(), $_usageMsg = "", $projectfolder = "" )
@@ -1098,6 +1100,9 @@ class PH
 
         elseif( $type == "stats" )
             $util = new STATSUTIL( $type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
+
+        elseif( $type == "device-config-bundle" )
+            $util = new DEVICE_CONFIG_BUNDLE( $type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
 
         elseif( $type == "securityprofile" )
             $util = new SECURITYPROFILEUTIL($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
