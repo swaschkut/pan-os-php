@@ -951,6 +951,25 @@ class PANConf
         if( $actions == 'display-available' )
             $displayAvailable = TRUE;
 
+        /*
+        //todo: missing stuff
+                routing
+         - static-routes
+         - custom-report
+        dhcp
+        edl
+        gp-gateway
+        gp-portal
+        gpgateway-tunnel
+        gre-tunnel
+        ike-gateway
+        ike-profile
+        ipsec-tunnel
+        ipsec-profile
+        log-profile
+        zone-protection-profile
+         */
+
         $numSecRules = 0;
         $numNatRules = 0;
         $numQosRules = 0;
@@ -986,7 +1005,9 @@ class PANConf
         $gTagCount = $this->tagStore->count();
         $gTagUnusedCount = $this->tagStore->countUnused();
 
+        $gCertificatCount = $this->certificateStore->count();
 
+        $gLogProfileCount = $this->LogProfileStore->count();
 
         foreach( $this->virtualSystems as $vsys )
         {
@@ -1022,6 +1043,10 @@ class PANConf
             $gTagCount += $vsys->tagStore->count();
             $gTagUnusedCount += $vsys->tagStore->countUnused();
 
+            $gCertificatCount += $vsys->certificateStore->count();
+
+            $gLogProfileCount += $vsys->LogProfileStore->count();
+
             if( isset(PH::$args['loadpanoramapushedconfig']) && isset($vsys->parentDeviceGroup) )
             {
                 $numSecRules += $vsys->parentDeviceGroup->securityRules->count();
@@ -1054,6 +1079,10 @@ class PANConf
 
                 $gTagCount += $vsys->parentDeviceGroup->tagStore->count();
                 $gTagUnusedCount += $vsys->parentDeviceGroup->tagStore->countUnused();
+
+                $gCertificatCount += $vsys->parentDeviceGroup->tagStore->count();
+
+                $gLogProfileCount += $vsys->parentDeviceGroup->LogProfileStore->count();
             }
 
         }
@@ -1137,6 +1166,15 @@ class PANConf
         $stdoutarray['tag objects']['total VSYSs'] = $gTagCount;
         $stdoutarray['tag objects']['unused'] = $gTagUnusedCount;
 
+
+        $stdoutarray['certificate objects'] = array();
+        $stdoutarray['certificate objects']['shared'] = $this->certificateStore->count();
+        $stdoutarray['certificate objects']['total VSYSs'] = $gCertificatCount;
+
+        $stdoutarray['LogProfile objects'] = array();
+        $stdoutarray['LogProfile objects']['shared'] = $this->LogProfileStore->count();
+        $stdoutarray['LogProfile objects']['total VSYSs'] = $gLogProfileCount;
+
         #$stdoutarray['zones'] = $this->zoneStore->count();
         #$stdoutarray['apps'] = $this->appStore->count();
 
@@ -1148,6 +1186,12 @@ class PANConf
         $stdoutarray['sub-interfaces']['total'] = $numSubInterfaces;
         $stdoutarray['sub-interfaces']['ethernet'] = $this->network->ethernetIfStore->countSubInterfaces();
 
+        $stdoutarray['routing'] = array();
+        $stdoutarray['routing']['virtual'] = $this->network->virtualRouterStore->count();
+        $stdoutarray['routing']['logical'] = $this->network->logicalRouterStore->count();
+
+        $stdoutarray['ZPProfile objects'] = array();
+        $stdoutarray['ZPProfile objects']['total'] = $this->network->zoneProtectionProfileStore->count();
 
 
         if( !PH::$shadow_json && $actions == "display"  )

@@ -1149,6 +1149,11 @@ class VirtualSystem
         $stdoutarray['DataObjects objects'] = array();
         $stdoutarray['DataObjects objects']['total'] = $this->DataObjectsProfileStore->count();
 
+        $stdoutarray['certificate objects'] = array();
+        $stdoutarray['certificate objects']['total'] = $this->certificateStore->count();;
+
+        $stdoutarray['LogProfile objects'] = array();
+        $stdoutarray['LogProfile objects']['total'] = $this->LogProfileStore->count();;
 
         $stdoutarray['zones'] = $this->zoneStore->count();
         $stdoutarray['apps'] = $this->appStore->count();
