@@ -1543,6 +1543,7 @@ class PanoramaConf
 
     public function display_statistics( $connector = null, $debug = false, $actions = "display", $location = false )
     {
+        //Todo: swaschkut 20251017 template / template-stack missing
 
         $gpreSecRules = $this->securityRules->countPreRules();
         $gpreNatRules = $this->natRules->countPreRules();
@@ -1616,6 +1617,11 @@ class PanoramaConf
         $gnsdwantrafficdistribution = $this->SDWanTrafficDistributionProfileStore->count();
 
         $gndataobjects = $this->DataObjectsProfileStore->count();
+
+
+        $gCertificatCount = 0;
+
+        $gSSL_TLSServiceProfileCount = 0;
 
 
         if( PH::$shadow_loaddghierarchy )
@@ -1714,6 +1720,15 @@ class PanoramaConf
             $gnsdwantrafficdistribution += $cur->SDWanTrafficDistributionProfileStore->count();
 
             $gndataobjects += $cur->DataObjectsProfileStore->count();
+        }
+
+        foreach( $this->templates as $template )
+        {
+            #$gCertificatCount += $template->certificateStore->count();
+
+            #$gSSL_TLSServiceProfileCount += $template->SSL_TLSServiceProfileStore->count();
+
+            #$gLogProfileCount += $template->LogProfileStore->count();
         }
 
         $stdoutarray = array();
@@ -1954,6 +1969,16 @@ class PanoramaConf
         $stdoutarray['sub-interfaces']['total'] = $numSubInterfaces;
         $stdoutarray['sub-interfaces']['ethernet'] = $this->network->ethernetIfStore->countSubInterfaces();
         */
+
+
+        #$stdoutarray['certificate objects'] = array();
+        #$stdoutarray['certificate objects']['total_Templates'] = $gCertificatCount;
+
+        #$stdoutarray['SSL_TLSServiceProfile objects'] = array();
+        #$stdoutarray['SSL_TLSServiceProfile objects']['total_Templates'] = $gSSL_TLSServiceProfileCount;
+
+        #$stdoutarray['LogProfile objects'] = array();
+        #$stdoutarray['LogProfile objects']['total_Templates'] = $gLogProfileCount;
 
 
         if( !PH::$shadow_json && $actions == "display"  )
