@@ -222,6 +222,9 @@ class PanoramaConf
     /** @var CertificateStore */
     public $certificateStore = null;
 
+    /** @var SSL_TLSServiceProfileStore */
+    public $SSL_TLSServiceProfileStore = null;
+
     /** @var PANConf[] */
     public $managedFirewalls = array();
 
@@ -274,6 +277,9 @@ class PanoramaConf
 
         $this->certificateStore = new CertificateStore($this);
         $this->certificateStore->setName('certificateStore');
+
+        $this->SSL_TLSServiceProfileStore = new SSL_TLSServiceProfileStore($this);
+        $this->SSL_TLSServiceProfileStore->setName('SSL_TLSServiceStore');
 
         $this->appStore = AppStore::getPredefinedStore( $this );
 

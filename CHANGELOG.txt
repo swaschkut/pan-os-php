@@ -9,6 +9,7 @@ UTIL:
 * type=stats debugapi | write fixed filename debugAPI_string.json also possible with argument projectfolder={FOLDER}
 * type=device-config-bundle | introduction of new utility
 * type=stats | extend for PANConf and VirtualSystem class
+* type=ssl-tls-service-profile | introduce new utility
 
 BUGFIX:
 * type=rule location=DG1 actions=move:shared | bugfix for Panorama if a rule is moved within the DG hierarchy to avoid PAN-OS API error message

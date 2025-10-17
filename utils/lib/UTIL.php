@@ -445,6 +445,8 @@ class UTIL
             $tmp_array = &DHCPCallContext::$supportedActions;
         elseif( $this->utilType == 'certificate' )
             $tmp_array = &CertificateCallContext::$supportedActions;
+        elseif( $this->utilType == 'ssl-tls-service-profile' )
+            $tmp_array = &SSL_TLSServiceProfileCallContext::$supportedActions;
         elseif( $this->utilType == 'static-route' )
             $tmp_array = &StaticRouteCallContext::$supportedActions;
 
@@ -585,6 +587,8 @@ class UTIL
                 DeviceCallContext::prepareSupportedActions();
             elseif( $this->utilType == 'certificate' )
                 CertificateCallContext::prepareSupportedActions();
+            elseif( $this->utilType == 'ssl-tls-service-profile' )
+                SSL_TLSServiceProfileCallContext::prepareSupportedActions();
             elseif( $this->utilType == 'log-profile' )
                 LogProfileCallContext::prepareSupportedActions();
 
@@ -1406,6 +1410,8 @@ class UTIL
                 $context = new DHCPCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'certificate' )
                 $context = new CertificateCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+            elseif( $this->utilType == 'ssl-tls-service-profile' )
+                $context = new SSL_TLSServiceProfileCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'static-route' )
                 $context = new StaticRouteCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'gp-gateway' )

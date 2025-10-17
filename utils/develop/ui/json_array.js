@@ -10185,6 +10185,28 @@ var subjectObject =
         "action": [],
         "filter": []
     },
+    "ssl-tls-service-profile": {
+        "name": "ssl-tls-service-profile",
+        "action": {
+            "display": {
+                "name": "display",
+                "MainFunction": {}
+            },
+            "exporttoexcel": {
+                "name": "exportToExcel",
+                "MainFunction": {},
+                "GlobalInitFunction": {},
+                "GlobalFinishFunction": {},
+                "args": {
+                    "filename": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                }
+            }
+        },
+        "filter": []
+    },
     "static-route": {
         "name": "static-route",
         "action": {

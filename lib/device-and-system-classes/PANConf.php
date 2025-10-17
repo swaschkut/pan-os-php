@@ -186,6 +186,9 @@ class PANConf
     /** @var CertificateStore */
     public $certificateStore = null;
 
+    /** @var SSL_TLSServiceProfileStore */
+    public $SSL_TLSServiceProfileStore = null;
+
     public $_public_cloud_server = null;
 
     public $_advance_routing_enabled = false;
@@ -286,6 +289,9 @@ class PANConf
 
         $this->certificateStore = new CertificateStore($this);
         $this->certificateStore->setName('certificateStore');
+
+        $this->SSL_TLSServiceProfileStore = new SSL_TLSServiceProfileStore($this);
+        $this->SSL_TLSServiceProfileStore->setName('SSL_TLSServiceStore');
 
         $this->network = new NetworkPropertiesContainer($this);
     }
@@ -707,7 +713,18 @@ class PANConf
                 $this->certificateStore->load_from_domxml($tmp);
             }
             // End of Certificate objects extraction
+
+            //
+            // Extract ssl-tls-service-profile objects
+            //
+            $tmp = DH::findFirstElement('ssl-tls-service-profile', $this->sharedroot);
+            if( $tmp !== FALSE )
+            {
+                $this->SSL_TLSServiceProfileStore->load_from_domxml($tmp);
+            }
+            // End of SSL_TLSServiceProfile objects extraction
         }
+
         $this->AntiVirusPredefinedStore = SecurityProfileStore::getVirusPredefinedStore( $this );
         $this->AntiSpywarePredefinedStore = SecurityProfileStore::getSpywarePredefinedStore( $this );
         $this->VulnerabilityPredefinedStore = SecurityProfileStore::getVulnerabilityPredefinedStore( $this );
@@ -1007,6 +1024,8 @@ class PANConf
 
         $gCertificatCount = $this->certificateStore->count();
 
+        $gSSL_TLSServiceProfileCount = $this->SSL_TLSServiceProfileStore->count();
+
         $gLogProfileCount = $this->LogProfileStore->count();
 
         foreach( $this->virtualSystems as $vsys )
@@ -1044,6 +1063,8 @@ class PANConf
             $gTagUnusedCount += $vsys->tagStore->countUnused();
 
             $gCertificatCount += $vsys->certificateStore->count();
+
+            $gSSL_TLSServiceProfileCount += $vsys->SSL_TLSServiceProfileStore->count();
 
             $gLogProfileCount += $vsys->LogProfileStore->count();
 
@@ -1170,6 +1191,10 @@ class PANConf
         $stdoutarray['certificate objects'] = array();
         $stdoutarray['certificate objects']['shared'] = $this->certificateStore->count();
         $stdoutarray['certificate objects']['total VSYSs'] = $gCertificatCount;
+
+        $stdoutarray['SSL_TLSServiceProfile objects'] = array();
+        $stdoutarray['SSL_TLSServiceProfile objects']['shared'] = $this->SSL_TLSServiceProfileStore->count();
+        $stdoutarray['SSL_TLSServiceProfile objects']['total VSYSs'] = $gSSL_TLSServiceProfileCount;
 
         $stdoutarray['LogProfile objects'] = array();
         $stdoutarray['LogProfile objects']['shared'] = $this->LogProfileStore->count();
