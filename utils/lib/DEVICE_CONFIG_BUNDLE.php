@@ -24,25 +24,23 @@ class DEVICE_CONFIG_BUNDLE extends UTIL
 
     function __construct($utilType, $argv, $argc, $PHP_FILE, $_supportedArguments = array(), $_usageMsg = "")
     {
-        #$_usageMsg =  PH::boldText('USAGE: ')."php ".basename(__FILE__)." in=[device-config-bundle.tgz] [playbook=playbook.json] [projectfolder=demo_folder]";;
-        #parent::__construct($utilType, $argv, $argc, $PHP_FILE, $_supportedArguments, $_usageMsg);
+        $_usageMsg =  PH::boldText('USAGE: ')."php ".basename(__FILE__)." in=[device-config-bundle.tgz] [playbook=playbook.json] [projectfolder=demo_folder]";;
+        parent::__construct($utilType, $argv, $argc, $PHP_FILE, $_supportedArguments, $_usageMsg);
 
-        $this->utilStart2($argv, $argc);
+        #$this->utilStart2($argv, $argc);
     }
 
-    public function utilStart2( $argv, $argc )
+    public function utilStart( )
     {
-        $tmp_ph = new PH($argv, $argc);
-        PH::processCliArgs();
-        $this->PHP_FILE = __FILE__;
+        #$tmp_ph = new PH($argv, $argc);
+        #PH::processCliArgs();
+        #$this->PHP_FILE = __FILE__;
         //get the in tgz filename
         //validate that it is tgz. not only on filename
         //extract all to projectfolder
 
 
-        if( $this->projectFolder !== null )
-            $this->projectFolder = $this->projectFolder;
-        else
+        if( $this->projectFolder == null )
             $this->projectFolder = "device-config-bundle";
 
         if (!file_exists($this->projectFolder))
