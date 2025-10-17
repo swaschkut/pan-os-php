@@ -1618,7 +1618,9 @@ class PanoramaConf
 
         $gndataobjects = $this->DataObjectsProfileStore->count();
 
+        $gLogProfileCount = $this->LogProfileStore->count();
 
+        //Template
         $gCertificatCount = 0;
 
         $gSSL_TLSServiceProfileCount = 0;
@@ -1720,6 +1722,8 @@ class PanoramaConf
             $gnsdwantrafficdistribution += $cur->SDWanTrafficDistributionProfileStore->count();
 
             $gndataobjects += $cur->DataObjectsProfileStore->count();
+
+            $gLogProfileCount += $cur->LogProfileStore->count();
         }
 
         foreach( $this->templates as $template )
@@ -1727,8 +1731,6 @@ class PanoramaConf
             #$gCertificatCount += $template->certificateStore->count();
 
             #$gSSL_TLSServiceProfileCount += $template->SSL_TLSServiceProfileStore->count();
-
-            #$gLogProfileCount += $template->LogProfileStore->count();
         }
 
         $stdoutarray = array();
@@ -1957,6 +1959,10 @@ class PanoramaConf
         $stdoutarray['DataObjects objects']['shared'] = $this->DataObjectsProfileStore->count();
         $stdoutarray['DataObjects objects']['total_DGs'] = $gndataobjects;
 
+        $stdoutarray['LogProfile objects'] = array();
+        $stdoutarray['LogProfile objects']['shared'] = $this->LogProfileStore->count();
+        $stdoutarray['LogProfile objects']['total_DGs'] = $gLogProfileCount;
+
         $stdoutarray['zones'] = $this->zoneStore->count();
         #$stdoutarray['apps'] = $this->appStore->count();
 
@@ -1977,8 +1983,6 @@ class PanoramaConf
         #$stdoutarray['SSL_TLSServiceProfile objects'] = array();
         #$stdoutarray['SSL_TLSServiceProfile objects']['total_Templates'] = $gSSL_TLSServiceProfileCount;
 
-        #$stdoutarray['LogProfile objects'] = array();
-        #$stdoutarray['LogProfile objects']['total_Templates'] = $gLogProfileCount;
 
 
         if( !PH::$shadow_json && $actions == "display"  )

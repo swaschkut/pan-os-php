@@ -1254,6 +1254,9 @@ class DeviceGroup
         $stdoutarray['DataObjects objects'] = array();
         $stdoutarray['DataObjects objects']['total'] = $this->DataObjectsProfileStore->count();
 
+        $stdoutarray['LogProfile objects'] = array();
+        $stdoutarray['LogProfile objects']['total'] = $this->LogProfileStore->count();
+
         #$stdoutarray['zones'] = $this->zoneStore->count();
         #$stdoutarray['apps'] = $this->appStore->count();
 
