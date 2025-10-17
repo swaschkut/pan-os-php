@@ -1686,6 +1686,8 @@ class RuleCallContext extends CallContext
     public function ServiceResolveSummary( $rule )
     {
         $mapObject = new ServiceDstPortMapping();
+        $mapObjectSrc = new ServiceSrcPortMapping();
+        $timeoutSet = false;
         if( $rule->services !== null && $rule->services->isAny() )
         {
             $localMap = ServiceDstPortMapping::mappingFromText('0-65535', TRUE);
@@ -1713,6 +1715,13 @@ class RuleCallContext extends CallContext
 
                     $localMap = $tmp_member->dstPortMapping( array(), $rule->owner->owner );
                     $mapObject->mergeWithMapping($localMap);
+
+                    $localMapSrc = $tmp_member->srcPortMapping( array(), $rule->owner->owner );
+                    $mapObjectSrc->mergeWithMapping($localMapSrc);
+
+                    /* @var Service $tmp_member */
+                    if( $tmp_member->getTimeout() != '' )
+                        $timeoutSet = true;
                 }
             }
             else
@@ -1721,12 +1730,26 @@ class RuleCallContext extends CallContext
 
                 $localMap = $tmp_member->dstPortMapping( array(), $rule->owner->owner );
                 $mapObject->mergeWithMapping($localMap);
+
+                $localMapSrc = $tmp_member->srcPortMapping( array(), $rule->owner->owner );
+                $mapObjectSrc->mergeWithMapping($localMapSrc);
             }
 
         }
 
 
         $strMapping = explode(',', $mapObject->mappingToText());
+        if( !empty($mapObjectSrc->mappingToText()) )
+        {
+            $strMappingSRC = explode(',', "sport:".$mapObjectSrc->mappingToText());
+            $strMapping = array_merge($strMapping, $strMappingSRC);
+        }
+
+        if( $timeoutSet )
+        {
+            $strMappingTimeout = array( 0 => "timeout" );
+            $strMapping = array_merge($strMapping, $strMappingTimeout);
+        }
 
         if( count( $strMapping) === 1 && empty( $strMapping[0] ) )
             $strMapping = array();

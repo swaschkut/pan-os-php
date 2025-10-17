@@ -16,6 +16,7 @@ BUGFIX:
 * type={anyutil} outputformatset=file.txt | bugfix for security rules profile-setting to produce correct set commands
 * bugfix for class Fawkes/BuckbeakConf
 * type=service-merger | bugfix to not merge service objects based on different timeout
+* type=rule actions=exporttoexcel:file.html,resolveservicesummary | extend html with service sport and timeout if set
 
 GENERAL:
 
