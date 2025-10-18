@@ -38,6 +38,9 @@ class Template
     /** @var CertificateStore */
     public $certificateStore = null;
 
+    /** @var SSL_TLSServiceProfileStore */
+    public $SSL_TLSServiceProfileStore = null;
+
     /**
      * Template constructor.
      * @param string $name
@@ -51,6 +54,9 @@ class Template
 
         $this->certificateStore = new CertificateStore($this);
         $this->certificateStore->setName('certificateStore');
+
+        $this->SSL_TLSServiceProfileStore = new SSL_TLSServiceProfileStore($this);
+        $this->SSL_TLSServiceProfileStore->setName('SSL_TLSServiceStore');
     }
 
     public function load_from_domxml(DOMElement $xml)
@@ -96,6 +102,16 @@ class Template
                 $this->certificateStore->load_from_domxml($tmp);
             }
             // End of Certificate objects extraction
+
+            //
+            // Extract ssl-tls-service-profile objects
+            //
+            $tmp = DH::findFirstElement('ssl-tls-service-profile', $shared);
+            if( $tmp !== FALSE )
+            {
+                $this->SSL_TLSServiceProfileStore->load_from_domxml($tmp);
+            }
+            // End of SSL_TLSServiceProfile objects extraction
         }
     }
 

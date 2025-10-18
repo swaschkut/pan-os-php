@@ -1097,37 +1097,6 @@ class SecurityProfileStore extends ObjStore
         return $objects;
     }
 
-    public function getBPjsonFile()
-    {
-        if( $this->bp_details_array == null )
-        {
-            $this->bp_details_array = array();
-            ###############################
-            //add bp JSON filename to UTIL???
-            //so this can be flexible if customer like to use its own file
-
-            if( PH::$shadow_bp_jsonfile == null )
-            {
-                $JSONarray = file_get_contents( $this->bp_json_file);
-
-                if( $JSONarray === false )
-                    derr("cannot open file '{$this->bp_json_file}");
-
-                $details = json_decode($JSONarray, true);
-
-                if( $details === null )
-                    derr( "invalid JSON file provided", null, FALSE );
-
-                $this->bp_details_array = $details;
-                PH::$shadow_bp_jsonfile = $details;
-            }
-            else
-                $this->bp_details_array = PH::$shadow_bp_jsonfile;
-        }
-
-        return $this->bp_details_array;
-    }
-
     public function rewriteXML()
     {
         if( count($this->o) > 0 )

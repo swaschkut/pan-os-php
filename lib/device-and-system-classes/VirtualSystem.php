@@ -185,6 +185,9 @@ class VirtualSystem
     /** @var CertificateStore */
     public $certificateStore = null;
 
+    /** @var SSL_TLSServiceProfileStore */
+    public $SSL_TLSServiceProfileStore = null;
+
     /** @var InterfaceContainer */
     public $importedInterfaces;
 
@@ -254,6 +257,8 @@ class VirtualSystem
         $this->certificateStore = new CertificateStore($this);
         $this->certificateStore->setName('certificateStore');
 
+        $this->SSL_TLSServiceProfileStore = new SSL_TLSServiceProfileStore($this);
+        $this->SSL_TLSServiceProfileStore->setName('SSL_TLSServiceProfileStore');
 
         $this->serviceStore = new ServiceStore($this);
         $this->serviceStore->name = 'services';
@@ -1018,6 +1023,16 @@ class VirtualSystem
         // End of Certificate objects extraction
 
         //
+        // Extract SSL_TLSServiceProfile objects
+        //
+        $tmp = DH::findFirstElement('ssl-tls-service-profile', $xml);
+        if( $tmp !== FALSE )
+        {
+            $this->SSL_TLSServiceProfileStore->load_from_domxml($tmp);
+        }
+        // End of SSL_TLSServiceProfile objects extraction
+
+        //
         // Extract GlobalProtect objects
         //
         $tmp_globalprotect = DH::findFirstElement('global-protect', $xml);
@@ -1149,19 +1164,31 @@ class VirtualSystem
         $stdoutarray['DataObjects objects'] = array();
         $stdoutarray['DataObjects objects']['total'] = $this->DataObjectsProfileStore->count();
 
+        $stdoutarray['certificate objects'] = array();
+        $stdoutarray['certificate objects']['total'] = $this->certificateStore->count();;
+
+        $stdoutarray['LogProfile objects'] = array();
+        $stdoutarray['LogProfile objects']['total'] = $this->LogProfileStore->count();;
 
         $stdoutarray['zones'] = $this->zoneStore->count();
         $stdoutarray['apps'] = $this->appStore->count();
 
 
-        #PH::$JSON_TMP[$this->name] = $stdoutarray;
-        PH::$JSON_TMP[] = $stdoutarray;
 
-
-        if( !PH::$shadow_json && $actions == "display" )
+        if( !PH::$shadow_json && $actions == "display"  )
             PH::print_stdout( $stdoutarray, true );
 
-        $this->display_bp_statistics( $debug, $actions);
+        if( $actions == "display-available" )
+        {
+            PH::stats_remove_zero_arrays($stdoutarray);
+            if( !PH::$shadow_json )
+                PH::print_stdout( $stdoutarray, true );
+        }
+
+        PH::$JSON_TMP[] = $stdoutarray;
+
+        if( (!PH::$shadow_json and $actions == "display-bpa" ) and $actions !== "display-available" )
+            $this->display_bp_statistics( $debug, $actions);
     }
 
 
@@ -1492,66 +1519,105 @@ class VirtualSystem
         $percentageArray = array();
 
         $percentageArray_adoption = array();
-        $percentageArray_adoption['Logging'] = $stdoutarray['log at end percentage'];
-        $percentageArray_adoption['Log Forwarding Profiles'] = $stdoutarray['log prof set percentage'];
-        $percentageArray_adoption['Wildfire Analysis Profiles'] = $stdoutarray['wf visibility percentage'];
-        $percentageArray_adoption['Zone Protection'] = $stdoutarray['zone protection percentage'];
-        $percentageArray_adoption['App-ID'] = $stdoutarray['app id percentage'];
-        $percentageArray_adoption['User-ID'] = $stdoutarray['user id percentage'];
-        $percentageArray_adoption['Service/Port'] = $stdoutarray['service port percentage'];
+        $percentageArray_adoption['Logging']['value'] = $stdoutarray['log at end percentage'];
+        $percentageArray_adoption['Logging']['group'] = 'Logging';
+        $percentageArray_adoption['Log Forwarding Profiles']['value'] = $stdoutarray['log prof set percentage'];
+        $percentageArray_adoption['Log Forwarding Profiles']['group'] = 'Logging';
+        $percentageArray_adoption['Wildfire Analysis Profiles']['value'] = $stdoutarray['wf visibility percentage'];
+        $percentageArray_adoption['Wildfire Analysis Profiles']['group'] = 'Wildfire';
+        $percentageArray_adoption['Zone Protection']['value'] = $stdoutarray['zone protection percentage'];
+        $percentageArray_adoption['Zone Protection']['group'] = 'Zone Protection';
+        $percentageArray_adoption['App-ID']['value'] = $stdoutarray['app id percentage'];
+        $percentageArray_adoption['App-ID']['group'] = 'Apps, Users, Ports';
+        $percentageArray_adoption['User-ID']['value'] = $stdoutarray['user id percentage'];
+        $percentageArray_adoption['User-ID']['group'] = 'Apps, Users, Ports';
+        $percentageArray_adoption['Service/Port']['value'] = $stdoutarray['service port percentage'];
+        $percentageArray_adoption['Service/Port']['group'] = 'Apps, Users, Ports';
 
-        $percentageArray_adoption['Antivirus Profiles'] = $stdoutarray['av adoption percentage'];
-        $percentageArray_adoption['Anti-Spyware Profiles'] = $stdoutarray['as adoption percentage'];
-        $percentageArray_adoption['Vulnerability Profiles'] = $stdoutarray['vp adoption percentage'];
-        $percentageArray_adoption['File Blocking Profiles'] = $stdoutarray['fb adoption percentage'];
-        $percentageArray_adoption['Data Filtering'] = $stdoutarray['data adoption percentage'];
-        $percentageArray_adoption['URL Filtering Profiles'] = $stdoutarray['url-site-access adoption percentage'];
-        $percentageArray_adoption['Credential Theft Prevention'] = $stdoutarray['url-credential adoption percentage'];
-        #$percentageArray_adoption['DNS List'] = $stdoutarray['dns-list adoption percentage'];
-        $percentageArray_adoption['DNS Security'] = $stdoutarray['dns-security adoption percentage'];
+        $percentageArray_adoption['Antivirus Profiles']['value'] = $stdoutarray['av adoption percentage'];
+        $percentageArray_adoption['Antivirus Profiles']['group'] = 'Threat Prevention';
+        $percentageArray_adoption['Anti-Spyware Profiles']['value'] = $stdoutarray['as adoption percentage'];
+        $percentageArray_adoption['Anti-Spyware Profiles']['group'] = 'Threat Prevention';
+        $percentageArray_adoption['Vulnerability Profiles']['value'] = $stdoutarray['vp adoption percentage'];
+        $percentageArray_adoption['Vulnerability Profiles']['group'] = 'Threat Prevention';
+        $percentageArray_adoption['File Blocking Profiles']['value'] = $stdoutarray['fb adoption percentage'];
+        $percentageArray_adoption['File Blocking Profiles']['group'] = 'Data Loss Prevention';
+        $percentageArray_adoption['Data Filtering']['value'] = $stdoutarray['data adoption percentage'];
+        $percentageArray_adoption['Data Filtering']['group'] = 'Data Loss Prevention';
+        $percentageArray_adoption['URL Filtering Profiles']['value'] = $stdoutarray['url-site-access adoption percentage'];
+        $percentageArray_adoption['URL Filtering Profiles']['group'] = 'URL Filtering';
+        $percentageArray_adoption['Credential Theft Prevention']['value'] = $stdoutarray['url-credential adoption percentage'];
+        $percentageArray_adoption['Credential Theft Prevention']['group'] = 'URL Filtering';
+        #$percentageArray_adoption['DNS List']['value'] = $stdoutarray['dns-list adoption percentage'];
+        $percentageArray_adoption['DNS Security']['value'] = $stdoutarray['dns-security adoption percentage'];
+        $percentageArray_adoption['DNS Security']['group'] = 'DNS Security';
 
         $percentageArray['adoption'] = $percentageArray_adoption;
 
         $percentageArray_visibility = array();
-        $percentageArray_visibility['Logging'] = $stdoutarray['log at end percentage'];
-        $percentageArray_visibility['Log Forwarding Profiles'] = $stdoutarray['log prof set percentage'];
-        $percentageArray_visibility['Wildfire Analysis Profiles'] = $stdoutarray['wf visibility percentage'];
-        $percentageArray_visibility['Zone Protection'] = $stdoutarray['zone protection percentage'];
-        $percentageArray_visibility['App-ID'] = $stdoutarray['app id percentage'];
-        $percentageArray_visibility['User-ID'] = $stdoutarray['user id percentage'];
-        $percentageArray_visibility['Service/Port'] = $stdoutarray['service port percentage'];
+        $percentageArray_visibility['Logging']['value'] = $stdoutarray['log at end percentage'];
+        $percentageArray_visibility['Logging']['group'] = 'Logging';
+        $percentageArray_visibility['Log Forwarding Profiles']['value'] = $stdoutarray['log prof set percentage'];
+        $percentageArray_visibility['Log Forwarding Profiles']['group'] = 'Logging';
+        $percentageArray_visibility['Wildfire Analysis Profiles']['value'] = $stdoutarray['wf visibility percentage'];
+        $percentageArray_visibility['Wildfire Analysis Profiles']['group'] = 'Wildfire';
+        $percentageArray_visibility['Zone Protection']['value'] = $stdoutarray['zone protection percentage'];
+        $percentageArray_visibility['Zone Protection']['group'] = 'Zone Protection';
+        $percentageArray_visibility['App-ID']['value'] = $stdoutarray['app id percentage'];
+        $percentageArray_visibility['App-ID']['group'] = 'Apps, Users, Ports';
+        $percentageArray_visibility['User-ID']['value'] = $stdoutarray['user id percentage'];
+        $percentageArray_visibility['User-ID']['group'] = 'Apps, Users, Ports';
+        $percentageArray_visibility['Service/Port']['value'] = $stdoutarray['service port percentage'];
+        $percentageArray_visibility['Service/Port']['group'] = 'Apps, Users, Ports';
 
-        $percentageArray_visibility['Antivirus Profiles'] = $stdoutarray['av visibility percentage'];
-        $percentageArray_visibility['Anti-Spyware Profiles'] = $stdoutarray['as visibility percentage'];
-        $percentageArray_visibility['Vulnerability Profiles'] = $stdoutarray['vp visibility percentage'];
-        $percentageArray_visibility['File Blocking Profiles'] = $stdoutarray['fb visibility percentage'];
-        $percentageArray_visibility['Data Filtering'] = $stdoutarray['data visibility percentage'];
-        $percentageArray_visibility['URL Filtering Profiles'] = $stdoutarray['url-site-access visibility percentage'];
-        $percentageArray_visibility['Credential Theft Prevention'] = $stdoutarray['url-credential visibility percentage'];
-        #$percentageArray_visibility['DNS List'] = $stdoutarray['dns-list visibility percentage'];
-        $percentageArray_visibility['DNS Security'] = $stdoutarray['dns-security visibility percentage'];
+        $percentageArray_visibility['Antivirus Profiles']['value'] = $stdoutarray['av visibility percentage'];
+        $percentageArray_visibility['Antivirus Profiles']['group'] = 'Threat Prevention';
+        $percentageArray_visibility['Anti-Spyware Profiles']['value'] = $stdoutarray['as visibility percentage'];
+        $percentageArray_visibility['Anti-Spyware Profiles']['group'] = 'Threat Prevention';
+        $percentageArray_visibility['Vulnerability Profiles']['value'] = $stdoutarray['vp visibility percentage'];
+        $percentageArray_visibility['Vulnerability Profiles']['group'] = 'Threat Prevention';
+        $percentageArray_visibility['File Blocking Profiles']['value'] = $stdoutarray['fb visibility percentage'];
+        $percentageArray_visibility['File Blocking Profiles']['group'] = 'Data Loss Prevention';
+        $percentageArray_visibility['Data Filtering']['value'] = $stdoutarray['data visibility percentage'];
+        $percentageArray_visibility['Data Filtering']['group'] = 'Data Loss Prevention';
+        $percentageArray_visibility['URL Filtering Profiles']['value'] = $stdoutarray['url-site-access visibility percentage'];
+        $percentageArray_visibility['URL Filtering Profiles']['group'] = 'URL Filtering';
+        $percentageArray_visibility['Credential Theft Prevention']['value'] = $stdoutarray['url-credential visibility percentage'];
+        $percentageArray_visibility['Credential Theft Prevention']['group'] = 'URL Filtering';
+        #$percentageArray_visibility['DNS List']['value'] = $stdoutarray['dns-list visibility percentage'];
+        $percentageArray_visibility['DNS Security']['value'] = $stdoutarray['dns-security visibility percentage'];
+        $percentageArray_visibility['DNS Security']['group'] = 'DNS Security';
 
         $percentageArray['visibility'] = $percentageArray_visibility;
 
         $percentageArray_best_practice = array();
-        $percentageArray_best_practice['Logging'] = $stdoutarray['log at not start percentage'];
-        #$percentageArray_best_practice['Log Forwarding Profiles'] = $stdoutarray['log prof set percentage'];
+        $percentageArray_best_practice['Logging']['value'] = $stdoutarray['log at not start percentage'];
+        $percentageArray_best_practice['Logging']['group'] = 'Logging';
+        #$percentageArray_best_practice['Log Forwarding Profiles']['value'] = $stdoutarray['log prof set percentage'];
 
-        $percentageArray_best_practice['Wildfire Analysis Profiles'] = $stdoutarray['wf best-practice percentage'];
-        #$percentageArray_best_practice['Zone Protection'] = '---';
-        #$percentageArray_best_practice['App-ID'] = $stdoutarray['app id percentage'];
-        #$percentageArray_best_practice['User-ID'] = $stdoutarray['user id percentage'];
-        #$percentageArray_best_practice['Service/Port'] = $stdoutarray['service port percentage'];
+        $percentageArray_best_practice['Wildfire Analysis Profiles']['value'] = $stdoutarray['wf best-practice percentage'];
+        $percentageArray_best_practice['Wildfire Analysis Profiles']['group'] = 'Wildfire';
+        #$percentageArray_best_practice['Zone Protection']['value'] = '---';
+        #$percentageArray_best_practice['App-ID']['value'] = $stdoutarray['app id percentage'];
+        #$percentageArray_best_practice['User-ID']['value'] = $stdoutarray['user id percentage'];
+        #$percentageArray_best_practice['Service/Port']['value'] = $stdoutarray['service port percentage'];
 
-        $percentageArray_best_practice['Antivirus Profiles'] = $stdoutarray['av best-practice percentage'];
-        $percentageArray_best_practice['Anti-Spyware Profiles'] = $stdoutarray['as best-practice percentage'];
-        $percentageArray_best_practice['Vulnerability Profiles'] = $stdoutarray['vp best-practice percentage'];
-        $percentageArray_best_practice['File Blocking Profiles'] = $stdoutarray['fb best-practice percentage'];
-        #$percentageArray_best_practice['Data Filtering'] = '---';
-        $percentageArray_best_practice['URL Filtering Profiles'] = $stdoutarray['url-site-access best-practice percentage'];
-        $percentageArray_best_practice['Credential Theft Prevention'] = $stdoutarray['url-credential best-practice percentage'];
-        #$percentageArray_best_practice['DNS List'] = $stdoutarray['dns-list best-practice percentage'];
-        $percentageArray_best_practice['DNS Security'] = $stdoutarray['dns-security best-practice percentage'];
+        $percentageArray_best_practice['Antivirus Profiles']['value'] = $stdoutarray['av best-practice percentage'];
+        $percentageArray_best_practice['Antivirus Profiles']['group'] = 'Threat Prevention';
+        $percentageArray_best_practice['Anti-Spyware Profiles']['value'] = $stdoutarray['as best-practice percentage'];
+        $percentageArray_best_practice['Anti-Spyware Profiles']['group'] = 'Threat Prevention';
+        $percentageArray_best_practice['Vulnerability Profiles']['value'] = $stdoutarray['vp best-practice percentage'];
+        $percentageArray_best_practice['Vulnerability Profiles']['group'] = 'Threat Prevention';
+        $percentageArray_best_practice['File Blocking Profiles']['value'] = $stdoutarray['fb best-practice percentage'];
+        $percentageArray_best_practice['File Blocking Profiles']['group'] = 'Threat Prevention';
+        #$percentageArray_best_practice['Data Filtering']['value'] = '---';
+        $percentageArray_best_practice['URL Filtering Profiles']['value'] = $stdoutarray['url-site-access best-practice percentage'];
+        $percentageArray_best_practice['URL Filtering Profiles']['group'] = 'URL Filtering';
+        $percentageArray_best_practice['Credential Theft Prevention']['value'] = $stdoutarray['url-credential best-practice percentage'];
+        $percentageArray_best_practice['Credential Theft Prevention']['group'] = 'URL Filtering';
+        #$percentageArray_best_practice['DNS List']['value'] = $stdoutarray['dns-list best-practice percentage'];
+        $percentageArray_best_practice['DNS Security']['value'] = $stdoutarray['dns-security best-practice percentage'];
+        $percentageArray_best_practice['DNS Security']['group'] = 'DNS Security';
 
         $percentageArray['best-practice'] = $percentageArray_best_practice;
 
@@ -1564,17 +1630,20 @@ class VirtualSystem
     {
         $stdoutarray = $this->get_bp_statistics();
 
+        $header = $stdoutarray['header'];
+
+        //Todo swaschkut 20251014
+        //todo: validate if information must be changed bas on bp_sp_panw.json
+        PH::validateIncludedInBPA( $stdoutarray );
+
         $percentageArray_adoption = $stdoutarray['percentage']['adoption'];
         $percentageArray_visibility = $stdoutarray['percentage']['visibility'];
         $percentageArray_best_practice = $stdoutarray['percentage']['best-practice'];
 
-        if( !PH::$shadow_json and $actions == "display" )
+        if( !PH::$shadow_json and $actions == "display-bpa" )
         {
-            PH::print_stdout("---------------------------");
-            PH::print_stdout("FEATURE ADOPTION");
-            PH::print_stdout("---------------------------");
+            PH::print_stdout( $header );
 
-            PH::print_stdout();
             PH::print_stdout("overall | adoption");
             $tbl = new ConsoleTable();
             $tbl->setHeaders(
@@ -1582,17 +1651,17 @@ class VirtualSystem
             );
             foreach( $percentageArray_adoption as $key => $value )
             {
-                if( strpos($value, "---") !== False )
+                if( strpos($value['value'], "---") !== False )
                 {
-                    $string = $value;
+                    $string = $value['value'];
                 }
                 else
                 {
                     $string = "";
-                    $test = floor( ($value/10) * 2 );
+                    $test = floor( ($value['value']/10) * 2 );
                     $string = str_pad($string, $test, "*", STR_PAD_LEFT);
                 }
-                $tbl->addRow(array($key, $value, $string));
+                $tbl->addRow(array($key, $value['value'], $string));
             }
 
             echo $tbl->getTable();
@@ -1605,17 +1674,17 @@ class VirtualSystem
             );
             foreach( $percentageArray_visibility as $key => $value )
             {
-                if( strpos($value, "---") !== False )
+                if( strpos($value['value'], "---") !== False )
                 {
-                    $string = $value;
+                    $string = $value['value'];
                 }
                 else
                 {
                     $string = "";
-                    $test = floor( ($value/10) * 2 );
+                    $test = floor( ($value['value']/10) * 2 );
                     $string = str_pad($string, $test, "*", STR_PAD_LEFT);
                 }
-                $tbl->addRow(array($key, $value, $string));
+                $tbl->addRow(array($key, $value['value'], $string));
             }
 
             echo $tbl->getTable();
@@ -1629,17 +1698,17 @@ class VirtualSystem
             );
             foreach( $percentageArray_best_practice as $key => $value )
             {
-                if( strpos($value, "---") !== False )
+                if( strpos($value['value'], "---") !== False )
                 {
-                    $string = $value;
+                    $string = $value['value'];
                 }
                 else
                 {
                     $string = "";
-                    $test = floor( ($value/10) * 2 );
+                    $test = floor( ($value['value']/10) * 2 );
                     $string = str_pad($string, $test, "*", STR_PAD_LEFT);
                 }
-                $tbl->addRow(array($key, $value, $string));
+                $tbl->addRow(array($key, $value['value'], $string));
             }
 
             echo $tbl->getTable();

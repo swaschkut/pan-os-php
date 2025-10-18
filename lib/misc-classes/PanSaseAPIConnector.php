@@ -47,8 +47,11 @@ class PanSaseAPIConnector
     private $utilAction = "";
 
     public $url_token = "https://auth.apps.paloaltonetworks.com/oauth2/access_token";
-    public $url_api = "https://api.sase.paloaltonetworks.com";
-    #public $url_api = "https://api.stratacloud.paloaltonetworks.com"; //identical to api.sase.paloaltonetworks.com but introduced on 20230801
+
+    //FAWKES - Prisma Access Configuration
+    #public $url_api = "https://api.sase.paloaltonetworks.com";
+    //Strata Cloud Manager
+    public $url_api = "https://api.strata.paloaltonetworks.com";
 
 
     static public $folderArray = array(
@@ -180,7 +183,7 @@ class PanSaseAPIConnector
     }
 
 
-    public function getAccessToken()
+    public function getAccessToken( $debugAPI = false )
     {
         /*
         curl -d "grant_type=client_credentials&scope=tsg_id:<tsg_id>" \
@@ -219,7 +222,6 @@ class PanSaseAPIConnector
         if( empty($response) )
             derr("something went wrong - check internet connection", null, FALSE);
 
-
         $jsonArray = json_decode($response, TRUE);
         if( !isset($jsonArray['access_token']) )
         {
@@ -232,7 +234,8 @@ class PanSaseAPIConnector
 
             derr( "problem with SASE API connection - not possible to get 'access_token'", null, FALSE );
         }
-
+        elseif( $debugAPI )
+            PH::print_stdout( "TOKEN: ".$jsonArray['access_token'] );
 
         $this->access_token = $jsonArray['access_token'];
     }
@@ -436,7 +439,10 @@ class PanSaseAPIConnector
         $this->getAccessToken();
 
         $url = $this->url_api;
+        //Fawkes
         $url .= "/sse/config/v1/" . $type . "?folder=" . $folder;
+        //Buckbeak
+        //$url .= "/config/objects/v1/" . $type . "?folder=" . $folder;
 
         $url .= "&limit=" . $this->global_limit;
 
@@ -450,7 +456,7 @@ class PanSaseAPIConnector
 
         if( $this->showApiCalls )
         {
-            #PH::print_stdout($url);
+            PH::print_stdout($url);
         }
 
 
@@ -514,6 +520,9 @@ class PanSaseAPIConnector
         $typeArray = $this->getTypeArray($utilType);
         foreach( $typeArray as $type )
         {
+            if( $folder == "Service Connections" && strpos($type, "-rule") !== FALSE )
+                continue;
+
             $resource = $this->getResource($this->access_token, $type, $folder, $this->global_limit);
 
             if( $resource !== null )
@@ -521,7 +530,7 @@ class PanSaseAPIConnector
                 if( $this->showApiCalls )
                 {
                     #PH::print_stdout("|" . $folder . " - " . $type);
-                    print_r($resource);
+                    #print_r($resource);
                 }
 
                 $this->importConfig($sub, $folder, $type, $resource);
@@ -1021,7 +1030,10 @@ class PanSaseAPIConnector
 
         $type = $this->getTypeURL($element);
 
+        //Fawkes
         $url .= "/sse/config/v1/" . $type . "?folder=" . $folder;
+        //Buckbeak
+        //$url .= "/config/objects/v1/" . $type . "?folder=" . $folder;
 
         $body = json_encode($bodyArray);
 
@@ -1061,7 +1073,10 @@ class PanSaseAPIConnector
 
         $type = $this->getTypeURL($element);
 
+        //Fawkes
         $url .= "/sse/config/v1/" . $type . "/" . $element->getSaseID();
+        //Buckbeak
+        //$url .= "/config/objects/v1/" . $type . "/" . $element->getSaseID();
 
         $body = json_encode($bodyArray);
 
@@ -1099,6 +1114,8 @@ class PanSaseAPIConnector
             derr( "for DELETE request SaseID must be present", null, FALSE );
 
         $url .= "/sse/config/v1/" . $type . "/" . $saseID;
+        //Buckbeak
+        //$url .= "/config/objects/v1/" . $type . "/" . $saseID;
 
         if( $this->showApiCalls )
             PH::print_stdout( "URL: ".$url);

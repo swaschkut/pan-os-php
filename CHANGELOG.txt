@@ -1,6 +1,31 @@
 CHANGELOG
 
-2.1.39
+2.1.40
+UTIL:
+* type=stats | introduce json-to-folder={folder}
+* type=stats actions=display-bpa | introduction
+* type=stats location={DGname} shadow-loaddghierarchy actions=display-bpa json-to-folder=json
+* type=stats | extend scm_bp_sp_panw.json to define which part is included in BPA output
+* type=stats debugapi | write fixed filename debugAPI_string.json also possible with argument projectfolder={FOLDER}
+* type=device-config-bundle | introduction of new utility
+* type=stats | extend for PANConf and VirtualSystem class
+* type=ssl-tls-service-profile | introduce new utility
+* type=stats | extend Panorama / DeviceGroup with LogProfile
+* type=device-config-bundle | create for every single FW config a html and from there a combined xls file
+* type=device-config-bundle playbook={Playbook.json} | to run the defined playbook only against Panorama config file
+
+BUGFIX:
+* type=rule location=DG1 actions=move:shared | bugfix for Panorama if a rule is moved within the DG hierarchy to avoid PAN-OS API error message
+* type={anyutil} outputformatset=file.txt | bugfix for security rules profile-setting to produce correct set commands
+* bugfix for class Fawkes/BuckbeakConf
+* type=service-merger | bugfix to not merge service objects based on different timeout
+* type=rule actions=exporttoexcel:file.html,resolveservicesummary | extend html with service sport and timeout if set
+
+GENERAL:
+* Device App-ID updated to version: 9030-9720
+
+
+2.1.39 (20250924)
 UTIL:
 * type=vendor-migration vendor=cp-r80 | implement tcp/udp session timeout migration
 * type=zone-protection-profile | extend with additional fields

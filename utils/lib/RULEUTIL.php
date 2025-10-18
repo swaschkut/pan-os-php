@@ -22,6 +22,8 @@ class RULEUTIL extends UTIL
 {
     public $ruleTypes = null;
 
+    public $supportedRuleTypes = array( 'any', 'security', 'nat', 'decryption', 'appoverride', 'captiveportal', 'authentication', 'pbf', 'qos', 'dos', 'tunnelinspection', 'defaultsecurity', 'networkpacketbroker', 'sdwan');
+
     public function utilStart()
     {
         $this->utilInit();
@@ -66,7 +68,8 @@ class RULEUTIL extends UTIL
     public function supportedArguments()
     {
         parent::supportedArguments();
-        $this->supportedArguments['ruletype'] = array('niceName' => 'ruleType', 'shortHelp' => 'specify which type(s) of you rule want to edit, (default is "security". ie: ruletype=any  ruletype=security,nat', 'argDesc' => 'any|security|nat|decryption|pbf|qos|dos|appoverride|tunnelinspection|defaultsecurity');
+        $this->supportedArguments['ruletype'] = array('niceName' => 'ruleType', 'shortHelp' => 'specify which type(s) of you rule want to edit, (default is "security". ie: ruletype=any  ruletype=security,nat', 'argDesc' => implode("|", $this->supportedRuleTypes));
+        //'any|security|nat|decryption|pbf|qos|dos|appoverride|tunnelinspection|defaultsecurity'
     }
 
     public function location_filter_object()
@@ -153,7 +156,10 @@ class RULEUTIL extends UTIL
                     {
                         $DG_object = $this->pan->findDeviceGroup($location);
                         if( $DG_object !== null )
-                            $parentDGS = $DG_object->parentDeviceGroups();
+                        {
+                            if( get_class($DG_object) !== 'PanoramaConf' )
+                                $parentDGS = $DG_object->parentDeviceGroups();
+                        }
                         //Todo: how to find out which DG is of interest
                         #elseif( $location == "any" )
                         #    $parentDGS = $sub->parentDeviceGroups();
@@ -181,7 +187,10 @@ class RULEUTIL extends UTIL
                     {
                         $DG_object = $this->pan->findDeviceGroup($location);
                         if( $DG_object !== null )
-                            $parentDGS = $DG_object->parentDeviceGroups();
+                        {
+                            if( get_class($DG_object) !== 'PanoramaConf' )
+                                $parentDGS = $DG_object->parentDeviceGroups();
+                        }
                         //Todo: how to find out which DG is of interest
                         #elseif( $location == "any" )
                         #    $parentDGS = $sub->parentDeviceGroups();

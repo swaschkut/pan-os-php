@@ -682,6 +682,9 @@ class Service
         if( $otherObject->_sport !== $this->_sport )
             return FALSE;
 
+        if( $otherObject->getOverride() !== $this->getOverride() )
+            return FALSE;
+
         return TRUE;
     }
 

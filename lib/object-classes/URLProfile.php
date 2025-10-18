@@ -604,7 +604,7 @@ class URLProfile extends SecurityProfile2
             derr( "only 'bp' or 'visibility' argument allowed" );
 
         ###############################
-        $details = $this->owner->getBPjsonFile();
+        $details = PH::getBPjsonFile( );
 
         $array_type = "site_access";
 
@@ -637,7 +637,7 @@ class URLProfile extends SecurityProfile2
             derr( "only 'bp' or 'visibility' argument allowed" );
 
         ###############################
-        $details = $this->owner->getBPjsonFile();
+        $details = PH::getBPjsonFile( );
 
         $array_type = "user_credential_submission";
 

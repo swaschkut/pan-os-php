@@ -1,0 +1,38 @@
+# Use a Python base image that supports both AMD64 and ARM64
+FROM python:3.11-slim-bookworm
+
+# 1. Install system dependencies for headless Chrome/Chromium
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    chromium \
+    chromium-driver \
+    libnss3 \
+    libglib2.0-0 \
+    libxtst6 \
+    libxss1 \
+    xdg-utils \
+    fontconfig \
+    # Clean up apt lists to reduce image size
+    && rm -rf /var/lib/apt/lists/*
+
+# 2. Set the working directory
+WORKDIR /app
+
+# 3. Create the necessary symlink for Selenium compatibility
+RUN ln -s /usr/bin/chromium-driver /usr/local/bin/chromedriver
+
+# 4. Copy all necessary files into the container
+# Ensure your local python script is named 'create_jpg.py'
+COPY create_jpg.py .
+COPY temp_diagram.html .
+COPY diagram_script.js .
+COPY diagram_data.js .
+COPY d3.v7.min.js .
+COPY diagram_styles.css .
+COPY html2canvas.min.js .
+
+# 5. Install Python dependencies
+RUN pip install --no-cache-dir selenium
+
+# 6. Define the command to run the script
+CMD ["python", "create_jpg.py"]

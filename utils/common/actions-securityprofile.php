@@ -2263,7 +2263,7 @@ SecurityProfileCallContext::$supportedActions['spyware.best-practice-set'] = arr
                         {
                             if( $hasDNSlicense )
                                 #$tmp->textContent = "single-packet";
-                                $tmp->textContent = "extended-packet";
+                                $tmp->textContent = "extended-capture";
                             else
                                 $tmp->textContent = "disable";
                         }

@@ -37,7 +37,7 @@ class CertificateStore extends ObjStore
     public static $childn = 'Certificate';
 
     /**
-     * @param VirtualSystem|DeviceCloud|DeviceGroup|PanoramaConf|Container|FawkesConf|Template $owner
+     * @param VirtualSystem|DeviceCloud|DeviceGroup|PanoramaConf|PANConf|Container|FawkesConf|Template $owner
      */
     public function __construct($owner)
     {

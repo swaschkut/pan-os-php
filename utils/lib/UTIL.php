@@ -94,6 +94,8 @@ require_once dirname(__FILE__)."/APPIDTOOLBOX.php";
 
 require_once dirname(__FILE__)."/RULE_COMPARE.php";
 
+require_once dirname(__FILE__)."/DEVICE_CONFIG_BUNDLE.php";
+
 
 class UTIL
 {
@@ -443,6 +445,8 @@ class UTIL
             $tmp_array = &DHCPCallContext::$supportedActions;
         elseif( $this->utilType == 'certificate' )
             $tmp_array = &CertificateCallContext::$supportedActions;
+        elseif( $this->utilType == 'ssl-tls-service-profile' )
+            $tmp_array = &SSL_TLSServiceProfileCallContext::$supportedActions;
         elseif( $this->utilType == 'static-route' )
             $tmp_array = &StaticRouteCallContext::$supportedActions;
 
@@ -583,6 +587,8 @@ class UTIL
                 DeviceCallContext::prepareSupportedActions();
             elseif( $this->utilType == 'certificate' )
                 CertificateCallContext::prepareSupportedActions();
+            elseif( $this->utilType == 'ssl-tls-service-profile' )
+                SSL_TLSServiceProfileCallContext::prepareSupportedActions();
             elseif( $this->utilType == 'log-profile' )
                 LogProfileCallContext::prepareSupportedActions();
 
@@ -1182,8 +1188,13 @@ class UTIL
                     }
                 }
 
+                if( $this->debugAPI )
+                {
+                    PH::print_stdout( "FOLDER: ".$folder );
+                }
+
                 //Todo: 20240326 swaschkut - do not always load full config
-                #$sase_connector->loadSaseConfig($folder, $sub, $this->utilType);
+                $sase_connector->loadSaseConfig($folder, $sub, $this->utilType);
             }
         }
         else
@@ -1399,6 +1410,8 @@ class UTIL
                 $context = new DHCPCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'certificate' )
                 $context = new CertificateCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+            elseif( $this->utilType == 'ssl-tls-service-profile' )
+                $context = new SSL_TLSServiceProfileCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'static-route' )
                 $context = new StaticRouteCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'gp-gateway' )
@@ -2195,7 +2208,7 @@ class UTIL
         }
     }
 
-    public function stats( $debug = false, $actions = "display" )
+    public function stats( $debug = false, $actions = "display", $location = false )
     {
         if( isset(PH::$args['stats']) )
         {
@@ -2206,7 +2219,10 @@ class UTIL
             if( $this->configInput['type'] == 'api' )
                 $mainConnector = findConnector($pan);
 
-            $pan->display_statistics( $mainConnector, $debug, $actions );
+            if( !PH::$shadow_loaddghierarchy )
+                $pan->display_statistics( $mainConnector, $debug, $actions );
+            else
+                $pan->display_statistics( $mainConnector, $debug, $actions, $location );
 
             $processedLocations = array();
             foreach( $this->objectsToProcess as &$record )
@@ -2229,8 +2245,8 @@ class UTIL
                         }
                     }
 
-                    
-                    $sub->display_statistics( $debug, $actions );
+                    if( !PH::$shadow_loaddghierarchy )
+                        $sub->display_statistics( $debug, $actions );
                 }
             }
 
@@ -2249,8 +2265,8 @@ class UTIL
                     $firewall->load_from_domxml( $doc );
 
                     $firewall->display_statistics( $fwconnector, $actions );
-
-                    $firewall->display_bp_statistics( $actions );
+                    if( $actions == "display-bpa" )
+                        $firewall->display_bp_statistics( $actions );
                 }
 
             }
@@ -2455,7 +2471,8 @@ class UTIL
         if( PH::$shadow_json )
         {
             PH::$JSON_OUT['log'] = PH::$JSON_OUTlog;
-            print json_encode( PH::$JSON_OUT, JSON_PRETTY_PRINT );
+            if( PH::$args['actions'] !== "display-available" )
+                print json_encode( PH::$JSON_OUT, JSON_PRETTY_PRINT );
             #print json_encode( PH::$JSON_OUT, JSON_PRETTY_PRINT|JSON_FORCE_OBJECT );
         }
 

@@ -200,6 +200,22 @@ RQuery::$defaultFilters['service']['object']['operators']['has.srcport'] = array
         'input' => 'input/panorama-8.0.xml'
     )
 );
+RQuery::$defaultFilters['service']['object']['operators']['srcport.is.set'] = array(
+    'Function' => function (ServiceRQueryContext $context) {
+        if( !$context->object->isService() )
+            return FALSE;
+
+        if( $context->object->getSourcePort() !== "" )
+            return TRUE;
+
+        return FALSE;
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
 RQuery::$defaultFilters['service']['object']['operators']['has.group.as.member'] = array(
     'Function' => function (ServiceRQueryContext $context) {
 

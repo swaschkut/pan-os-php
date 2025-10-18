@@ -230,7 +230,7 @@ class PH
 
     private static $library_version_major = 2;
     private static $library_version_sub = 1;
-    private static $library_version_bugfix = 39;
+    private static $library_version_bugfix = 40;
 
     //BASIC AUTH PAN-OS 7.1
     public static $softwareupdate_key = "658d787f293e631196dac9fb29490f1cc1bb3827";
@@ -390,8 +390,8 @@ class PH
 
     public static function processCliArgs()
     {
-        //print "SECOND\n";
-        //print_r( PH::$argv );
+        #print "SECOND\n";
+        #print_r( PH::$argv );
 
         $first = TRUE;
 
@@ -1008,7 +1008,7 @@ class PH
         "address", "service", "tag", "schedule", "application", "threat", "edl", "threat-rule", "dns-rule",
         "rule",
         "device", "securityprofile", "securityprofilegroup",
-        "zone",  "interface", "virtualwire", "routing", "dhcp", "certificate", "static-route",
+        "zone",  "interface", "virtualwire", "routing", "dhcp", "certificate", "static-route", "ssl-tls-service-profile",
         "gp-gateway", "gp-portal",
         "ike-profile", "ike-gateway", 'ipsec-profile', 'ipsec-tunnel',
         "zone-protection-profile","log-profile",
@@ -1049,14 +1049,14 @@ class PH
         "html-merger",
         "tsf",
         "xpath",
-        "certificate",
         "ssh-connector",
         "custom-report",
         "gcp",
         "vendor-migration",
         "appid-toolbox",
         "rule-compare",
-        "custom-url-category-merger"
+        "custom-url-category-merger",
+        "device-config-bundle"
         );
 
 
@@ -1088,7 +1088,8 @@ class PH
         "html-merger",
         "tsf",
         "xpath",
-        "gcp"
+        "gcp",
+        "device-config-bundle"
     );
 
     public static function callPANOSPHP( $type, $argv, $argc, $PHP_FILE, $_supportedArguments = array(), $_usageMsg = "", $projectfolder = "" )
@@ -1098,6 +1099,9 @@ class PH
 
         elseif( $type == "stats" )
             $util = new STATSUTIL( $type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
+
+        elseif( $type == "device-config-bundle" )
+            $util = new DEVICE_CONFIG_BUNDLE( $type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
 
         elseif( $type == "securityprofile" )
             $util = new SECURITYPROFILEUTIL($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
@@ -1118,6 +1122,7 @@ class PH
             || $type == "gre-tunnel"
             || $type == "gpgateway-tunnel"
             || $type == "zone-protection-profile"
+            || $type == "ssl-tls-service-profile"
         )
             $util = new NETWORKUTIL($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
 
@@ -1296,5 +1301,113 @@ class PH
             return $timezone_backward[$timezoneID];
 
         return null;
+    }
+
+    public static function getBPjsonFile( )
+    {
+        if( PH::$shadow_bp_jsonfile == null )
+        {
+            $filename = PH::$shadow_bp_jsonfilename;
+
+            $JSONarray = file_get_contents( $filename);
+
+            if( $JSONarray === false )
+                derr("cannot open file '{$filename}");
+
+            $details = json_decode($JSONarray, true);
+
+            if( $details === null )
+                derr( "invalid JSON file provided", null, FALSE );
+
+            PH::$shadow_bp_jsonfile = $details;
+        }
+        else
+            $details = PH::$shadow_bp_jsonfile;
+
+        return $details;
+    }
+
+    public static function validateIncludedInBPA( &$stdoutarray )
+    {
+        PH::getBPjsonFile();
+        $tmp_array_bpa = array( 'adoption', 'visibility', 'best-practice' );
+        foreach( $tmp_array_bpa as $bpa_key )
+        {
+            foreach( array_keys($stdoutarray['percentage'][$bpa_key]) as $value_key )
+            {
+                $tmp_key = str_replace( "/", "_", $value_key );
+                if( isset( PH::$shadow_bp_jsonfile['included-in-bpa'][$bpa_key][$tmp_key] ) )
+                {
+                    if( PH::$shadow_bp_jsonfile['included-in-bpa'][$bpa_key][$tmp_key] === false )
+                        unset( $stdoutarray['percentage'][$bpa_key][$value_key] );
+                }
+
+            }
+        }
+    }
+
+
+    /*
+    public static function stats_remove_zero_arrays(array &$data): void
+    {
+        // Iterate through the array. We use a reference ($data) to allow modification (unsetting).
+        foreach ($data as $key => $value)
+        {
+
+            // 1. Check if the current value is a nested array (e.g., a rule type or object type).
+            if (is_array($value))
+            {
+                $sum = 0;
+
+                // 2. Iterate through the nested array to sum up all numeric counts.
+                // Since the counts are non-negative, if the total sum is 0, every count must be 0.
+                foreach ($value as $sub_value)
+                {
+                    if (is_numeric($sub_value))
+                    {
+                        // Use intval() to ensure only the integer part is summed, though typecasting
+                        // is not strictly necessary for simple integers.
+                        $sum += (int)$sub_value;
+                    }
+                }
+
+                // 3. If the total sum is 0, all child key values were 0. Remove the main key.
+                if ($sum === 0) {
+                    unset($data[$key]);
+                }
+            }
+        }
+    }
+    */
+
+    public static function stats_remove_zero_arrays(array &$data): void
+    {
+        // Iterate through the array. We use a reference ($data) to allow modification (unsetting).
+        foreach ($data as $key => $value) {
+
+            // 1. Check if the current value is a nested array (e.g., rule type with DG/shared counts, or objects with multiple counts).
+            if (is_array($value)) {
+                $sum = 0;
+
+                // Iterate through the nested array to sum up all numeric counts.
+                foreach ($value as $sub_value) {
+                    if (is_numeric($sub_value)) {
+                        // Use intval() to ensure only the integer part is summed.
+                        $sum += (int)$sub_value;
+                    }
+                }
+
+                // If the total sum is 0, all child key values were 0. Remove the main key.
+                if ($sum === 0) {
+                    unset($data[$key]);
+                }
+            }
+            // 2. Check if the current value is a direct numeric counter that is 0 (e.g., 'qos rules' => 0).
+            elseif (is_numeric($value) && (int)$value === 0) {
+                // If the value is numeric and is 0, remove the main key.
+                unset($data[$key]);
+            }
+            // Values that are non-numeric strings or non-zero numbers are automatically kept.
+        }
     }
 }

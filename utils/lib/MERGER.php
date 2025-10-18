@@ -1047,7 +1047,16 @@ class MERGER extends UTIL
                     {
                         if( $this->addMissingObjects )
                         {
-                            $this->addressgroupGetValueDiff( $pickedObject, $tmp_address, true );
+                            $tmp_return_value = $this->addressgroupGetValueDiff($ancestor, $object, true);;
+
+                            if( $tmp_return_value === FALSE )
+                            {
+                                //if delete earlier, why not replacing this reference???
+                                $tmp_txt = 'was delete earlier';
+                                PH::print_stdout("    - SKIP: object name '{$ancestor->_PANC_shortName()}' was delete earlier. upperlevel '{$object->_PANC_shortName()}'");
+                                $this->skippedObject( $index, $object, $ancestor, $tmp_txt);
+                                continue;
+                            }
                         }
                         else
                         {
@@ -1092,7 +1101,16 @@ class MERGER extends UTIL
                             {
 
                             */
-                                $this->addressgroupGetValueDiff($ancestor, $object, true);
+                                $tmp_return_value = $this->addressgroupGetValueDiff($ancestor, $object, true);;
+
+                                if( $tmp_return_value === FALSE )
+                                {
+                                    //if delete earlier, why not replacing this reference???
+                                    $tmp_txt = 'was delete earlier';
+                                    PH::print_stdout("    - SKIP: object name '{$ancestor->_PANC_shortName()}' was delete earlier. upperlevel '{$object->_PANC_shortName()}'");
+                                    $this->skippedObject( $index, $object, $ancestor, $tmp_txt);
+                                    continue;
+                                }
 
                                 if( isset($childancestor->owner) )
                                 {
@@ -1192,12 +1210,35 @@ class MERGER extends UTIL
                                 }
 
                             if( $hashGenerator($object) != $hashGenerator($ancestor) )
-                                $this->addressgroupGetValueDiff($ancestor, $object, true);
+                            {
+                                $tmp_return_value = $this->addressgroupGetValueDiff($ancestor, $object, true);;
+
+                                if( $tmp_return_value === FALSE )
+                                {
+                                    //if delete earlier, why not replacing this reference???
+                                    $tmp_txt = 'was delete earlier';
+                                    PH::print_stdout("    - SKIP: object name '{$ancestor->_PANC_shortName()}' was delete earlier. upperlevel '{$object->_PANC_shortName()}'");
+                                    $this->skippedObject( $index, $object, $ancestor, $tmp_txt);
+                                    continue;
+                                }
+
+                            }
 
                             if( $hashGenerator($object) == $hashGenerator($ancestor) )
                             {
                                 if( $this->dupAlg == 'samename' )
-                                    $this->addressgroupGetValueDiff($ancestor, $object);
+                                {
+                                    $tmp_return_value = $this->addressgroupGetValueDiff($ancestor, $object);;
+
+                                    if( $tmp_return_value === FALSE )
+                                    {
+                                        //if delete earlier, why not replacing this reference???
+                                        $tmp_txt = 'was delete earlier';
+                                        PH::print_stdout("    - SKIP: object name '{$ancestor->_PANC_shortName()}' was delete earlier. upperlevel '{$object->_PANC_shortName()}'");
+                                        $this->skippedObject( $index, $object, $ancestor, $tmp_txt);
+                                        continue;
+                                    }
+                                }
 
                                 if( isset($ancestor->owner) )
                                 {
@@ -1277,7 +1318,16 @@ class MERGER extends UTIL
                             else
                             {
                                 */
-                                $this->addressgroupGetValueDiff($childancestor, $object, true);
+                                $tmp_return_value = $this->addressgroupGetValueDiff($ancestor, $object, true);;
+
+                                if( $tmp_return_value === FALSE )
+                                {
+                                    //if delete earlier, why not replacing this reference???
+                                    $tmp_txt = 'was delete earlier';
+                                    PH::print_stdout("    - SKIP: object name '{$ancestor->_PANC_shortName()}' was delete earlier. upperlevel '{$object->_PANC_shortName()}'");
+                                    $this->skippedObject( $index, $object, $ancestor, $tmp_txt);
+                                    continue;
+                                }
 
                                 if( isset($childancestor->owner) )
                                 {
@@ -1400,61 +1450,85 @@ class MERGER extends UTIL
         if( $this->addMissingObjects )
         {
             $diff = $ancestor->getValueDiff($object);
-            $store = $ancestor->owner;
             if( count($diff['minus']) != 0 )
-                foreach( $diff['minus'] as $d )
+            {
+                $store = $ancestor->owner;
+                if( $store !== null )
                 {
-                    /** @var Address|AddressGroup $d */
+                    foreach( $diff['minus'] as $d )
+                    {
+                        /** @var Address|AddressGroup $d */
 
-                    if( $store->find($d->name()) !== null )
-                    {
-                        $text = "      - adding objects to group: ";
-                        $text .= $d->name();
-                        PH::print_stdout($text);
-                        if( $this->action === "merge" )
+                        if( $store->find($d->name()) !== null )
                         {
-                            if( $this->apiMode )
-                                $ancestor->API_addMember($d);
-                            else
-                                $ancestor->addMember($d);
-                        }
-                    }
-                    else
-                    {
-                        #PH::print_stdout("      - object not found: " . $d->name() . "");
-                        $text = "      - adding object: ";
-                        $text .= $d->name();
-                        $text .= " from DG '".$d->owner->owner->_PANC_shortName()."' to '".$store->owner->_PANC_shortName()."'";
-                        $text .= " to group";
-                        PH::print_stdout($text);
-                        if( $this->action === "merge" )
-                        {
-                            /** @var AddressStore $store */
-                            if( $this->apiMode )
+                            $text = "      - adding objects to group: ";
+                            $text .= $d->name();
+                            PH::print_stdout($text);
+                            if( $this->action === "merge" )
                             {
-                                $oldXpath = $d->getXPath();
-                                $d->owner->remove($d);
-                                $store->add($d);
-                                $d->API_sync();
-                                $this->pan->connector->sendDeleteRequest($d);
+                                if( $this->apiMode )
+                                    $ancestor->API_addMember($d);
+                                else
+                                    $ancestor->addMember($d);
                             }
-                            else
+                        }
+                        else
+                        {
+                            #PH::print_stdout("      - object not found: " . $d->name() . "");
+                            $text = "      - adding object: ";
+                            $text .= $d->name();
+                            $text .= " from DG '".$d->owner->owner->_PANC_shortName()."' to '".$store->owner->_PANC_shortName()."'";
+                            $text .= " to group";
+                            PH::print_stdout($text);
+                            if( $this->action === "merge" )
                             {
-                                $d->owner->remove($d);
-                                $store->add($d);
+                                /** @var AddressStore $store */
+                                if( $this->apiMode )
+                                {
+                                    $oldXpath = $d->getXPath();
+                                    $d->owner->remove($d);
+                                    $store->add($d);
+                                    $d->API_sync();
+                                    $this->pan->connector->sendDeleteRequest($d);
+                                }
+                                else
+                                {
+                                    $d->owner->remove($d);
+                                    $store->add($d);
+                                }
                             }
                         }
                     }
                 }
+                else
+                {
+                    mwarning( "store of ".get_class($ancestor)." object: ".$object->name(). " is null. minus", null, FALSE );
+                    return FALSE;
+                }
+            }
+
 
             if( count($diff['plus']) != 0 )
-                foreach( $diff['plus'] as $d )
+            {
+                $store = $ancestor->owner;
+                if( $store !== null )
                 {
-                    /** @var Address|AddressGroup $d */
-                    //TMP usage to clean DG level ADDRESSgroup up
-                    $object->addMember($d);
+                    foreach( $diff['plus'] as $d )
+                    {
+                        /** @var Address|AddressGroup $d */
+                        //TMP usage to clean DG level ADDRESSgroup up
+                        $object->addMember($d);
+                    }
                 }
+                else
+                {
+                    mwarning( "store of ".get_class($ancestor)." object: ".$object->name(). " is null. plus", null, FALSE );
+                    return FALSE;
+                }
+            }
         }
+
+        return TRUE;
     }
 
     function address_merging()
@@ -1839,7 +1913,7 @@ class MERGER extends UTIL
 
                         /** @var Address $ancestor */
                         #if( $this->upperLevelSearch && !$ancestor->isGroup() && !$ancestor->isTmpAddr() && ($ancestor->isType_ipNetmask() || $ancestor->isType_ipRange() || $ancestor->isType_FQDN()) )
-                        if( $this->upperLevelSearch && !$ancestor->isGroup() && ($ancestor->isType_ipNetmask() || $ancestor->isType_ipRange() || $ancestor->isType_FQDN()) )
+                        if( $this->upperLevelSearch && !$ancestor->isGroup() && ($ancestor->isType_ipNetmask() || $ancestor->isType_ipRange() || $ancestor->isType_FQDN() || $ancestor->isTmpAddr() ) )
                         {
                             if( $object->getIP4Mapping()->equals($ancestor->getIP4Mapping()) || ($object->isType_FQDN() && $ancestor->isType_FQDN()) && ($object->value() == $ancestor->value())  )
                             {
@@ -2891,6 +2965,7 @@ class MERGER extends UTIL
 
     function servicegroupGetValueDiff( $ancestor, $object, $display = false)
     {
+        /* @var ServiceGroup $ancestor */
         if( $display )
             $ancestor->displayValueDiff($object, 7);
 
@@ -3180,8 +3255,15 @@ class MERGER extends UTIL
                             $string = "    - SKIP: object name '{$pickedObject->_PANC_shortName()}'\n";
                             if( $pickedObject->isService() )
                             {
+                                /* @var Service $pickedObject */
                                 $string .= "            [protocol '{$pickedObject->protocol()}']";
                                 $string .= " [with dport value '{$pickedObject->getDestPort()}']";
+                                if( $pickedObject->getTimeout() != '' )
+                                    $string .= " [timeout '{$pickedObject->getTimeout()}']";
+                                if( $pickedObject->getHalfcloseTimeout() != '' )
+                                    $string .= " [HalfcloseTimeout '{$pickedObject->getHalfcloseTimeout()}']";
+                                if( $pickedObject->getTimewaitTimeout() != '' )
+                                    $string .= " [TimewaitTimeout '{$pickedObject->getTimewaitTimeout()}']";
                                 if( !empty($pickedObject->getSourcePort()) )
                                     $string .= " [with sport value '{$pickedObject->getSourcePort()}']\n";
                                 else
@@ -3197,8 +3279,14 @@ class MERGER extends UTIL
                             {
                                 $string .= "            [protocol '{$tmp_service->protocol()}']";
                                 $string .= " [with dport value '{$tmp_service->getDestPort()}']";
+                                if( $pickedObject->getTimeout() != '' )
+                                    $string .= " [timeout '{$pickedObject->getTimeout()}']";
+                                if( $pickedObject->getHalfcloseTimeout() != '' )
+                                    $string .= " [HalfcloseTimeout '{$pickedObject->getHalfcloseTimeout()}']";
+                                if( $pickedObject->getTimewaitTimeout() != '' )
+                                    $string .= " [TimewaitTimeout '{$pickedObject->getTimewaitTimeout()}']";
                                 if( !empty($tmp_service->getSourcePort()) )
-                                    $string .= " [with sport value '{$tmp_service->getSourcePort()}']";
+                                    $string .= " [with sport value '{$tmp_service->getSourcePort()}']\n";
                                 else
                                     $string .= "\n";
                             }
@@ -4874,9 +4962,9 @@ class MERGER extends UTIL
     function exportCSVToHtml( $skipped = FALSE)
     {
         if( !$skipped )
-            $headers = '<th>ID</th><th>hash</th><th>kept (create)</th><th>removed</th>';
+            $headers = '<th>ID</th><th>kept (create)</th><th>removed</th><th>hash</th>';
         else
-            $headers = '<th>ID</th><th>hash</th><th>kept</th><th>not merged with</th><th>reason</th>';
+            $headers = '<th>ID</th><th>kept</th><th>not merged with</th><th>reason</th><th>hash</th>';
 
 
         $lines = '';
@@ -4939,10 +5027,6 @@ class MERGER extends UTIL
 
                 $lines .= $encloseFunction( (string)$count );
 
-                $tmp_array = explode( "./.", $index );
-                $lines .= $encloseFunction( $tmp_array );
-                #$lines .= $encloseFunction( (string)$index );
-
                 if( isset( $line['kept'] ) )
                     $lines .= $encloseFunction( $line['kept'] );
                 else
@@ -4958,6 +5042,10 @@ class MERGER extends UTIL
                 }
                 elseif( $skipped )
                     $lines .= $encloseFunction( "" );
+
+                $tmp_array = explode( "./.", $index );
+                $lines .= $encloseFunction( $tmp_array );
+                #$lines .= $encloseFunction( (string)$index );
 
                 $lines .= "</tr>\n";
 

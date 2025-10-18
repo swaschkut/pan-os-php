@@ -40,6 +40,7 @@ class RuleStore
     public $owner = null;
     public $name = 'temporaryname';
 
+    public $xpath = null;
 
     /** @var string[]|DOMElement */
     public $postRulesRoot = null;
@@ -492,6 +493,15 @@ class RuleStore
         return $varName;
     }
 
+    /**
+     * @return string
+     */
+    function &getStoreXpathName()
+    {
+        $varName = self::$storeNameByType[$this->type]['xpathRoot'];
+
+        return $varName;
+    }
 
     /**
      * @param string $base
@@ -630,6 +640,40 @@ class RuleStore
             $xpath = str_replace( "post-rulebase", "pre-rulebase", $xpath );
 
         $con->sendSetRequest($xpath, $element);
+
+        return $nr;
+    }
+
+    public function API_moveRule($rule, $targetRuleStore, $newName, $inPostRuleBase = null, $nested = TRUE, $where = "bottom")
+    {
+        $nr = $this->cloneRule($rule, $newName, $inPostRuleBase, $nested);
+
+        $con = findConnectorOrDie($this);
+
+        $xpath = $this->getXPath($rule);
+
+
+        $tmp_ruletype_xpath = $this->getStoreXpathName();
+
+        if( get_class($targetRuleStore->owner) == 'PanoramaConf' )
+        {
+            if($inPostRuleBase)
+                $targetXpath = "/config/shared/post-rulebase/".$tmp_ruletype_xpath."/rules";
+            else
+                $targetXpath = "/config/shared/pre-rulebase/".$tmp_ruletype_xpath."/rules";
+        }
+        elseif( get_class($targetRuleStore->owner) == 'DeviceGroup' )
+        {
+            if($inPostRuleBase)
+                $targetXpath = "/config/devices/entry[@name='localhost.localdomain']/device-group/entry[@name='" . $targetRuleStore->owner->name() . "']/post-rulebase/".$tmp_ruletype_xpath."/rules";
+            else
+                $targetXpath = "/config/devices/entry[@name='localhost.localdomain']/device-group/entry[@name='" . $targetRuleStore->owner->name() . "']/pre-rulebase/".$tmp_ruletype_xpath."/rules";
+        }
+        else
+            $targetXpath = $targetRuleStore->owner->getXPath()."/rulebase/".$tmp_ruletype_xpath."/rules";
+
+
+        $con->sendMoveRequest($xpath, $targetXpath, $rule);
 
         return $nr;
     }

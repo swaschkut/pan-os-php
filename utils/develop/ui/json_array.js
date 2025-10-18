@@ -640,6 +640,10 @@ var subjectObject =
                     "is.in.file": {
                         "Function": {},
                         "arg": true
+                    },
+                    "is": {
+                        "Function": {},
+                        "arg": true
                     }
                 }
             },
@@ -2643,6 +2647,11 @@ var subjectObject =
                 }
             }
         }
+    },
+    "device-config-bundle": {
+        "name": "device-config-bundle",
+        "action": [],
+        "filter": []
     },
     "dhcp": {
         "name": "dhcp",
@@ -9636,6 +9645,10 @@ var subjectObject =
                     "is.in.file": {
                         "Function": {},
                         "arg": true
+                    },
+                    "is": {
+                        "Function": {},
+                        "arg": true
                     }
                 }
             },
@@ -10170,6 +10183,28 @@ var subjectObject =
     "ssh-connector": {
         "name": "ssh-connector",
         "action": [],
+        "filter": []
+    },
+    "ssl-tls-service-profile": {
+        "name": "ssl-tls-service-profile",
+        "action": {
+            "display": {
+                "name": "display",
+                "MainFunction": {}
+            },
+            "exporttoexcel": {
+                "name": "exportToExcel",
+                "MainFunction": {},
+                "GlobalInitFunction": {},
+                "GlobalFinishFunction": {},
+                "args": {
+                    "filename": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                }
+            }
+        },
         "filter": []
     },
     "static-route": {

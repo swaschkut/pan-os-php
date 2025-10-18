@@ -4319,5 +4319,92 @@ RQuery::$defaultFilters['rule']['threat-log.occurrence.per-rule.date.fast']['ope
     'arg' => true,
     'help' => 'returns TRUE if rule name matches the specified timestamp MM/DD/YYYY [american] / DD-MM-YYYY [european]'
 );
+
+RQuery::$defaultFilters['rule']['nat']['operators']['find.dnat.sec.pair.beta'] = Array(
+    'Function' => function(RuleRQueryContext $context )
+    {
+        $rule = $context->object;
+
+        $natfile = fopen("dnatfile.txt", "a") or die("Unable to open file!");
+
+        if( !$rule->isNatRule() )
+            return null;
+
+        if( !$rule->destinationNatIsEnabled() )
+        {
+            #PH::print_stdout( "     *** skipped *** NAT rule: ".$rule->name()." is not of type destinationNAT");
+            return null;
+        }
+
+        if( $rule->isBiDirectional() )
+        {
+            #PH::print_stdout("     *** skipped *** NAT rule: ".$rule->name()." is of type biDirectionalNAT" );
+            return null;
+        }
+
+        //nat src/dst is public
+        $tmp_mapping = new IP4Map();
+        $tmp_mapping->addMap(IP4Map::mapFromText("192.168.0.0/24"));
+        $tmp_mapping->addMap(IP4Map::mapFromText("172.16.0.0/12"));
+        $tmp_mapping->addMap(IP4Map::mapFromText("10.0.0.0/8"));
+
+        $sourceMapping = $rule->source->getIP4Mapping();
+        if( $tmp_mapping->includedInOtherMap($sourceMapping) )
+        {
+            PH::print_stdout("     *** skipped *** DNAT rule src has private IP-Range" );
+            return null;
+        }
+        $destinationMapping = $rule->destination->getIP4Mapping();
+        if( $tmp_mapping->includedInOtherMap($destinationMapping) )
+        {
+            PH::print_stdout("     *** skipped *** DNAT rule dst has private IP-Range" );
+            return null;
+        }
+
+
+        PH::print_stdout(" - relevant: ".$rule->name());
+        /*
+        $snathosts = $rule->snathosts;
+        $snathost_array = $snathosts->getAll();
+        if( count( $snathost_array ) > 1 )
+        {
+            print "     *** skipped *** sourceNAT Rule: ".$rule->name()." has ".count($snathost_array )." snathost configured.\n";
+            return null;
+        }
+
+        $snathost = $snathost_array[0]->value();
+
+        $natrules = $rule->owner->rules();
+
+        foreach( $natrules as $natrule )
+        {
+            if( !$natrule->destinationNatIsEnabled() )
+                continue;
+
+            $destinations = $natrule->destination;
+            $destination_array = $destinations->getAll();
+            $destination = $destination_array[0]->value();
+
+
+            if( $snathost == $destination )
+            {
+                print "\n#################################################\n";
+                print "   SRC / DST partner rules found: ";
+                print "   - sourceNAT rule: ".$rule->name()." - has destinationNAT rulename: ".$natrule->name()." as a pair\n";
+                print "\n   - DESTINATION NAT RULE:\n";
+                $natrule->display( 7 );
+
+                fwrite($natfile, $natrule->name()."\n" );
+
+                fclose($natfile);
+                return true;
+            }
+        }
+        */
+
+        return true;
+    },
+    'arg' => false
+);
 // </editor-fold>
 

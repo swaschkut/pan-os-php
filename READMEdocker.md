@@ -30,8 +30,8 @@ graph TD
     F2 --> Z1[navigate to the folder with your PAN-OS XML offline configuration using the CD command]
     
     
-    Z1 -->|TERMINAL| K1["docker run  --name panosphp --rm -v ${PWD}:/share -it swaschkut/pan-os-php:latest"]
-    Z1 -->|POWERSHELL| K1["docker run  --name panosphp --rm -v ${PWD}:/share -it swaschkut/pan-os-php:latest"]
+    Z1 -->|TERMINAL| K1["docker run  --name panosphp --rm -v ${PWD}:/share -v ~/.panconfkeystore:/home/ubuntu/.panconfkeystore -it swaschkut/pan-os-php:latest"]
+    Z1 -->|POWERSHELL| K1["docker run  --name panosphp --rm -v ${PWD}:/share -v ~/.panconfkeystore:/home/ubuntu/.panconfkeystore -it swaschkut/pan-os-php:latest"]
     
   
     
@@ -83,7 +83,7 @@ cd [/rootFolder/parentFolder/childFolder]
 
 - Share the XML folder with docker and deploy container
 ```bash
-  docker run --name panosphp --rm -v ${PWD}:/share -it swaschkut/pan-os-php:latest
+  docker run --name panosphp --rm -v ${PWD}:/share -v ~/.panconfkeystore:/home/ubuntu/.panconfkeystore -it swaschkut/pan-os-php:latest
 ```
 
 
@@ -91,7 +91,7 @@ Start and re-enter your Docker Container without loosing PAN-OS API Key informat
 =============
 - start container without automatically removing it after exit
 ```bash
-  docker run --name panosphp -v ${PWD}:/share -it swaschkut/pan-os-php:latest
+  docker run --name panosphp -v ${PWD}:/share -v ~/.panconfkeystore:/home/ubuntu/.panconfkeystore -it swaschkut/pan-os-php:latest
 ```
 
 - re-enter your panosphp Docker container
