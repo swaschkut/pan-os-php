@@ -129,8 +129,10 @@ class DEVICE_CONFIG_BUNDLE extends UTIL
 
                        $string = json_encode( PH::$JSON_OUT, JSON_PRETTY_PRINT );
 
+                       $filenameFolder = str_replace(".xml", "", $checkFilename);
+
                        //store string into tmp file:
-                       $tmpJsonFile = $this->projectFolder."/json/".$checkFilename.".json";
+                       $tmpJsonFile = $this->projectFolder."/json/".$filenameFolder.".json";
                        file_put_contents($tmpJsonFile, $string);
 
 
@@ -157,6 +159,42 @@ class DEVICE_CONFIG_BUNDLE extends UTIL
                                if( isset( $entry['model'] ) )
                                    unset( $entry['model'] );
 
+                               $typeArray = array();
+                               $typeArray['security rules'] = "rule ruletype=security";
+                               $typeArray['nat rules'] = "rule ruletype=nat";
+                               $typeArray['qos rules'] = "rule ruletype=qos";
+                               $typeArray['pbf rules'] = "rule ruletype=pbf";
+                               $typeArray['decryption rules'] = "rule ruletype=decryption";
+                               $typeArray['app-override rules'] = "rule ruletype=appoverride";
+                               $typeArray['capt-portal rules'] = "rule ruletype=cap";
+                               $typeArray['authentication rules'] = "rule ruletype=security";
+                               $typeArray['dos rules'] = "rule ruletype=dos";
+                               $typeArray['tunnel-inspection rules'] = "rule ruletype=tunnelinspection";
+                               $typeArray['default-security rules'] = "rule ruletype=defaultsecurity";
+                               $typeArray['network-packet-broker rules'] = "rule ruletype=networkpacketbroker";
+                               $typeArray['sdwan rules'] = "rule ruletype=sdwan";
+
+
+                               $typeArray['address objects'] = "address";
+                               $typeArray['addressgroup objects'] = "address";
+                               $typeArray['temporary address objects'] = "address";
+                               $typeArray['region objects'] = "address";
+                               $typeArray['service objects'] = "service";
+                               $typeArray['servicegroup objects'] = "service";
+                               $typeArray['temporary service objects'] = "service";
+
+                               $typeArray['tag objects'] = "tag";
+                               $typeArray['certificate objects'] = "certificate";
+                               $typeArray['SSL_TLSServiceProfile objects'] = "ssl-tls-service-profile";
+                               $typeArray['LogProfile objects'] = "log-profile";
+                               $typeArray['zones'] = "zone";;
+                               $typeArray['apps'] = "application";;
+                               $typeArray['interfaces'] = "interface";
+                               $typeArray['sub-interfaces'] = "interface";
+                               $typeArray['routing'] = "routing";
+                               $typeArray['ZPProfile objects'] = "zone-protection-profile";
+
+
                                if( !empty( $entry ) )
                                {
                                    if( $first )
@@ -165,7 +203,77 @@ class DEVICE_CONFIG_BUNDLE extends UTIL
                                        $first = false;
                                    }
 
-                                   print_r(array_keys($entry));
+                                   #print_r(array_keys($entry));
+                                   $bug_missing_state_array = array();
+                                   foreach( $entry as $key => $value )
+                                   {
+                                       print $key."\n";
+
+                                       if( isset( $typeArray[$key] ) )
+                                       {
+                                           $type = $typeArray[$key];
+
+                                           $additional_argument = false;
+                                           $tmp_type_array = explode( " ", $type );
+                                           if( count( $tmp_type_array ) == 2 )
+                                           {
+                                               $type = $tmp_type_array[0];
+                                               $additional_argument = true;
+                                               $additional_argument_string = $tmp_type_array[1];
+                                           }
+
+                                           PH::$JSON_OUT = array();
+                                           PH::$JSON_TMP = array();
+                                           $PHP_FILE = __FILE__;
+                                           PH::$shadow_json = false;
+
+                                           $arguments = array();
+                                           $arguments[0] = "";
+                                           $arguments[1] = "in=".$this->projectFolder."/".$file_folder_name."/".$checkFilename;
+                                           $arguments[2] = "actions=exporttoexcel:".$type.".html";
+                                           $arguments[3] = "projectfolder=".$this->projectFolder."/html/".$filenameFolder;
+                                           if( $additional_argument )
+                                               $arguments[4] = $additional_argument;
+
+                                           PH::resetCliArgs( $arguments);
+
+                                           $tool = "pan-os-php type=".$type;
+                                           $util = PH::callPANOSPHP( $type, PH::$argv, $argc, $PHP_FILE );
+                                       }
+                                       else
+                                       {
+                                           $bug_missing_state_array[] = $key;
+                                       }
+
+                                   }
+
+                                   //Todo: type=html-merger projectfolder
+                                   PH::$JSON_OUT = array();
+                                   PH::$JSON_TMP = array();
+                                   $PHP_FILE = __FILE__;
+                                   PH::$shadow_json = false;
+
+                                   //exportCSV=[spreadsheet.xlsx] projectfolder=[DIRECTORY]
+                                   $arguments = array();
+                                   $arguments[0] = "";
+                                   $arguments[1] = "exportcsv=".$filenameFolder.".xls";
+                                   $arguments[2] = "projectfolder=".$this->projectFolder."/html/".$filenameFolder;
+
+                                   PH::resetCliArgs( $arguments);
+
+                                   $tool = "pan-os-php type=html-merger";
+                                   $util = PH::callPANOSPHP( "html-merger", PH::$argv, $argc, $PHP_FILE );
+
+                                   //todo: move xls file to parten html folder
+                                   $orig_file = "/share/".$this->projectFolder."/html/".$filenameFolder."/".$filenameFolder.".xls";
+                                   if( file_exists($orig_file) )
+                                   {
+                                       $rename_file = "/share/".$this->projectFolder."/html/".$filenameFolder.".xls";
+                                       rename($orig_file, $rename_file);
+                                   }
+
+                                   if( !empty($bug_missing_state_array) )
+                                       print_r( $bug_missing_state_array );
 
                                    $print_section = true;
 
@@ -183,7 +291,6 @@ class DEVICE_CONFIG_BUNDLE extends UTIL
                    }
                }
             }
-
         }
         else
             PH::print_stdout( "No files found in the directory." );

@@ -22,6 +22,8 @@ class RULEUTIL extends UTIL
 {
     public $ruleTypes = null;
 
+    public $supportedRuleTypes = array( 'any', 'security', 'nat', 'decryption', 'appoverride', 'captiveportal', 'authentication', 'pbf', 'qos', 'dos', 'tunnelinspection', 'defaultsecurity', 'networkpacketbroker', 'sdwan');
+
     public function utilStart()
     {
         $this->utilInit();
@@ -66,7 +68,8 @@ class RULEUTIL extends UTIL
     public function supportedArguments()
     {
         parent::supportedArguments();
-        $this->supportedArguments['ruletype'] = array('niceName' => 'ruleType', 'shortHelp' => 'specify which type(s) of you rule want to edit, (default is "security". ie: ruletype=any  ruletype=security,nat', 'argDesc' => 'any|security|nat|decryption|pbf|qos|dos|appoverride|tunnelinspection|defaultsecurity');
+        $this->supportedArguments['ruletype'] = array('niceName' => 'ruleType', 'shortHelp' => 'specify which type(s) of you rule want to edit, (default is "security". ie: ruletype=any  ruletype=security,nat', 'argDesc' => implode("|", $this->supportedRuleTypes));
+        //'any|security|nat|decryption|pbf|qos|dos|appoverride|tunnelinspection|defaultsecurity'
     }
 
     public function location_filter_object()
