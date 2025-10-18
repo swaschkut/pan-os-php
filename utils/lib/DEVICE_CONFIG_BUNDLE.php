@@ -121,9 +121,9 @@ class DEVICE_CONFIG_BUNDLE extends UTIL
 
 
                        $tool = "pan-os-php type=stats";
-                       #PH::print_stdout();
-                       #PH::print_stdout( PH::boldText( "[ ".$tool. " ".implode( " ", PH::$argv )." ]" ) );
-                       #PH::print_stdout();
+                       PH::print_stdout();
+                       PH::print_stdout( PH::boldText( "[ ".$tool. " ".implode( " ", PH::$argv )." ]" ) );
+                       PH::print_stdout();
 
                        $util = PH::callPANOSPHP( "stats", PH::$argv, $argc, $PHP_FILE );
 
@@ -146,6 +146,7 @@ class DEVICE_CONFIG_BUNDLE extends UTIL
                            {
                                if( isset($entry['type']) )
                                {
+                                   //todo: possible to extend here for BPA playbook JSON file
                                    if( $entry['type'] == "PanoramaConf" || $entry['type'] == "DeviceGroup" )
                                        continue;
                                }
@@ -159,6 +160,7 @@ class DEVICE_CONFIG_BUNDLE extends UTIL
                                if( isset( $entry['model'] ) )
                                    unset( $entry['model'] );
 
+                               //these are the possible PANconf information from type=stats, combine them the correct type=XYZ
                                $typeArray = array();
                                $typeArray['security rules'] = "rule ruletype=security";
                                $typeArray['nat rules'] = "rule ruletype=nat";
@@ -238,6 +240,9 @@ class DEVICE_CONFIG_BUNDLE extends UTIL
                                            PH::resetCliArgs( $arguments);
 
                                            $tool = "pan-os-php type=".$type;
+                                           PH::print_stdout();
+                                           PH::print_stdout( PH::boldText( "[ ".$tool. " ".implode( " ", PH::$argv )." ]" ) );
+                                           PH::print_stdout();
                                            $util = PH::callPANOSPHP( $type, PH::$argv, $argc, $PHP_FILE );
                                        }
                                        else
@@ -247,7 +252,7 @@ class DEVICE_CONFIG_BUNDLE extends UTIL
 
                                    }
 
-                                   //Todo: type=html-merger projectfolder
+                                   //type=html-merger projectfolder
                                    PH::$JSON_OUT = array();
                                    PH::$JSON_TMP = array();
                                    $PHP_FILE = __FILE__;
@@ -262,9 +267,12 @@ class DEVICE_CONFIG_BUNDLE extends UTIL
                                    PH::resetCliArgs( $arguments);
 
                                    $tool = "pan-os-php type=html-merger";
+                                   PH::print_stdout();
+                                   PH::print_stdout( PH::boldText( "[ ".$tool. " ".implode( " ", PH::$argv )." ]" ) );
+                                   PH::print_stdout();
                                    $util = PH::callPANOSPHP( "html-merger", PH::$argv, $argc, $PHP_FILE );
 
-                                   //todo: move xls file to parten html folder
+                                   //move xls file to parent html folder
                                    $orig_file = "/share/".$this->projectFolder."/html/".$filenameFolder."/".$filenameFolder.".xls";
                                    if( file_exists($orig_file) )
                                    {
@@ -311,8 +319,8 @@ class DEVICE_CONFIG_BUNDLE extends UTIL
     public function supportedArguments()
     {
         parent::supportedArguments();
-        $this->supportedArguments['exportcsv'] = array('niceName' => 'exportCsv', 'shortHelp' => 'export statistics to CSV file using jq', 'argDesc' => 'filename.csv');
-        $this->supportedArguments['json-to-folder'] = array('niceName' => 'Json-To-Folder', 'shortHelp' => 'generate separate JSON files for adoption, visibility, and best-practice statistics for each PanoramaConf and DeviceGroup', 'argDesc' => '/path/to/output/folder');
+        #$this->supportedArguments['exportcsv'] = array('niceName' => 'exportCsv', 'shortHelp' => 'export statistics to CSV file using jq', 'argDesc' => 'filename.csv');
+        #$this->supportedArguments['json-to-folder'] = array('niceName' => 'Json-To-Folder', 'shortHelp' => 'generate separate JSON files for adoption, visibility, and best-practice statistics for each PanoramaConf and DeviceGroup', 'argDesc' => '/path/to/output/folder');
     }
 
 }
