@@ -1,6 +1,14 @@
 CHANGELOG
 
-2.1.40
+2.1.41
+UTIL:
+
+BUGFIX:
+
+GENERAL:
+
+
+2.1.40  (20251018)
 UTIL:
 * type=stats | introduce json-to-folder={folder}
 * type=stats actions=display-bpa | introduction
