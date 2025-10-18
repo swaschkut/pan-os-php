@@ -154,9 +154,34 @@ class DEVICE_CONFIG_BUNDLE extends UTIL
                            {
                                if( isset($entry['type']) )
                                {
-                                   //todo: possible to extend here for BPA playbook JSON file
+
                                    if( $entry['type'] == "PanoramaConf" || $entry['type'] == "DeviceGroup" )
+                                   {
+                                       if( isset( PH::$args['playbook'] ) )
+                                       {
+                                           $playbookFile = PH::$args['projectfolder'];
+
+                                           //todo: possible to extend here for BPA playbook JSON file
+                                           $arguments = array();
+                                           $arguments[0] = "";
+                                           $arguments[1] = "in=".$this->projectFolder."/".$file_folder_name."/".$checkFilename;
+                                           $arguments[2] = "playbook=".$playbookFile;
+                                           $arguments[3] = "projectfolder=".$this->projectFolder."/playbook";
+
+                                           PH::resetCliArgs( $arguments);
+
+
+                                           $tool = "pan-os-php type=playbook";
+                                           PH::print_stdout();
+                                           PH::print_stdout( PH::boldText( "[ ".$tool. " ".implode( " ", PH::$argv )." ]" ) );
+                                           PH::print_stdout();
+
+                                           $util = PH::callPANOSPHP( "playbook", PH::$argv, $argc, $PHP_FILE );
+                                       }
+
+
                                        continue;
+                                   }
                                }
 
                                if( isset( $entry['type'] ) )

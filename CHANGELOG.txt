@@ -12,6 +12,7 @@ UTIL:
 * type=ssl-tls-service-profile | introduce new utility
 * type=stats | extend Panorama / DeviceGroup with LogProfile
 * type=device-config-bundle | create for every single FW config a html and from there a combined xls file
+* type=device-config-bundle playbook={Playbook.json} | to run the defined playbook only against Panorama config file
 
 BUGFIX:
 * type=rule location=DG1 actions=move:shared | bugfix for Panorama if a rule is moved within the DG hierarchy to avoid PAN-OS API error message
