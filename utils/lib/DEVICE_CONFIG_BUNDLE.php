@@ -39,7 +39,13 @@ class DEVICE_CONFIG_BUNDLE extends UTIL
         //validate that it is tgz. not only on filename
         //extract all to projectfolder
 
-        $this->projectFolder = PH::$args['projectfolder'];
+        if( isset( PH::$args['playbook'] ) )
+            $playbookFile = PH::$args['playbook'];
+        else
+            $playbookFile = null;
+
+        if( isset( PH::$args['projectfolder'] ) )
+            $this->projectFolder = PH::$args['projectfolder'];
 
         if( $this->projectFolder == null )
             $this->projectFolder = "device-config-bundle";
@@ -154,18 +160,17 @@ class DEVICE_CONFIG_BUNDLE extends UTIL
                            {
                                if( isset($entry['type']) )
                                {
-
                                    if( $entry['type'] == "PanoramaConf" || $entry['type'] == "DeviceGroup" )
                                    {
-                                       if( isset( PH::$args['playbook'] ) )
+                                       if( $entry['type'] == "PanoramaConf" && $playbookFile != null )
                                        {
-                                           $playbookFile = PH::$args['projectfolder'];
+                                           PH::$shadow_json = false;
 
                                            //todo: possible to extend here for BPA playbook JSON file
                                            $arguments = array();
                                            $arguments[0] = "";
                                            $arguments[1] = "in=".$this->projectFolder."/".$file_folder_name."/".$checkFilename;
-                                           $arguments[2] = "playbook=".$playbookFile;
+                                           $arguments[2] = "json=".$playbookFile;
                                            $arguments[3] = "projectfolder=".$this->projectFolder."/playbook";
 
                                            PH::resetCliArgs( $arguments);
@@ -179,9 +184,11 @@ class DEVICE_CONFIG_BUNDLE extends UTIL
                                            $util = PH::callPANOSPHP( "playbook", PH::$argv, $argc, $PHP_FILE );
                                        }
 
-
                                        continue;
                                    }
+                                   elseif( $testing )
+                                       continue;
+
                                }
 
                                if( isset( $entry['type'] ) )
