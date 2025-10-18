@@ -51,35 +51,43 @@ class DEVICE_CONFIG_BUNDLE extends UTIL
 
         $config_filename = PH::$args['in'];
 
-        //validation if file has .tar.gz
-        if( strpos($config_filename, ".tar.gz") === FALSE && strpos($config_filename, ".tgz") === FALSE )
-        {
-            derr("specified filename with argument 'FILE' is not 'tar.gz' ");
-        }
+        if( isset(PH::$args['testing']) )
+            $testing = true;
         else
+            $testing = false;
+        if( !$testing )
         {
-            $srcfile = $config_filename;
-
-
-            //Todo check if it is better to create this under Tool folder and clean it up at the end
-
-            $destfile = $this->projectFolder . '/test1.tar.gz';
-
-            if( !copy($srcfile, $destfile) )
+            //validation if file has .tar.gz
+            if( strpos($config_filename, ".tar.gz") === FALSE && strpos($config_filename, ".tgz") === FALSE )
             {
-                echo "File cannot be copied! \n";
+                derr("specified filename with argument 'FILE' is not 'tar.gz' ");
             }
             else
             {
-                #echo "File has been copied!\n";
+                $srcfile = $config_filename;
+
+
+                //Todo check if it is better to create this under Tool folder and clean it up at the end
+
+                $destfile = $this->projectFolder . '/test1.tar.gz';
+
+                if( !copy($srcfile, $destfile) )
+                {
+                    echo "File cannot be copied! \n";
+                }
+                else
+                {
+                    #echo "File has been copied!\n";
+                }
+
+                //extract into specified folder
+                exec('tar -C ' . $this->projectFolder . '/' . ' -zxvf ' . $destfile . ' 2>&1');
+
+                #print "sleep 15 seconds: wait for tar extract complete";
+                #sleep(15);
             }
-
-            //extract into specified folder
-            exec('tar -C ' . $this->projectFolder . '/' . ' -zxvf ' . $destfile . ' 2>&1');
-
-            #print "sleep 15 seconds: wait for tar extract complete";
-            #sleep(15);
         }
+
 
         $file_folder_name = str_replace(".tgz", "", $config_filename);
         $files = glob( $this->projectFolder."/".$file_folder_name."/*" );
@@ -186,6 +194,31 @@ class DEVICE_CONFIG_BUNDLE extends UTIL
                                $typeArray['temporary service objects'] = "service";
 
                                $typeArray['tag objects'] = "tag";
+
+                               $typeArray['securityProfileGroup objects'] = "securityprofilegroup";
+                               $typeArray['Anti-Spyware objects'] = "securityprofile securityprofiletype=spyware";
+                               $typeArray['Vulnerability objects'] = "securityprofile securityprofiletype=vulnerability";
+                               $typeArray['Antivirus objects'] = "securityprofile securityprofiletype=virus";
+                               $typeArray['Wildfire objects'] = "securityprofile securityprofiletype=wildfire-analysis";
+                               $typeArray['URL objects'] = "securityprofile securityprofiletype=url-filtering";
+                               $typeArray['custom URL objects'] = "securityprofile securityprofiletype=custom-url-category";
+                               $typeArray['File-Blocking objects'] = "securityprofile securityprofiletype=file-blocking";
+                               $typeArray['Decryption objects'] = null;
+
+                               $typeArray['HipObject objects'] = null;
+                               $typeArray['HipProfile objects'] = null;
+
+                               $typeArray['GTP objects'] = null;
+                               $typeArray['SCEP objects'] = null;
+                               $typeArray['PacketBroker objects'] = null;
+
+                               $typeArray['SDWanErrorCorrection objects'] = null;
+                               $typeArray['SDWanPathQuality objects'] = null;
+                               $typeArray['SDWanSaasQuality objects'] = null;
+                               $typeArray['SDWanTrafficDistribution objects'] = null;
+                               $typeArray['DataObjects objects'] = null;
+
+
                                $typeArray['certificate objects'] = "certificate";
                                $typeArray['SSL_TLSServiceProfile objects'] = "ssl-tls-service-profile";
                                $typeArray['LogProfile objects'] = "log-profile";
@@ -215,6 +248,7 @@ class DEVICE_CONFIG_BUNDLE extends UTIL
                                        {
                                            $type = $typeArray[$key];
 
+                                           $htmlFilename = $type;
                                            $additional_argument = false;
                                            $tmp_type_array = explode( " ", $type );
                                            if( count( $tmp_type_array ) == 2 )
@@ -222,6 +256,11 @@ class DEVICE_CONFIG_BUNDLE extends UTIL
                                                $type = $tmp_type_array[0];
                                                $additional_argument = true;
                                                $additional_argument_string = $tmp_type_array[1];
+
+                                               if( strpos($additional_argument_string, "ruletype=") !== false )
+                                                   $htmlFilename = $type."_".str_replace("ruletype=", "", $additional_argument_string);
+                                               if( strpos($additional_argument_string, "securityprofiletype=") !== false )
+                                                   $htmlFilename = "sp_".str_replace("securityprofiletype=", "", $additional_argument_string);
                                            }
 
                                            PH::$JSON_OUT = array();
@@ -232,10 +271,12 @@ class DEVICE_CONFIG_BUNDLE extends UTIL
                                            $arguments = array();
                                            $arguments[0] = "";
                                            $arguments[1] = "in=".$this->projectFolder."/".$file_folder_name."/".$checkFilename;
-                                           $arguments[2] = "actions=exporttoexcel:".$type.".html";
+                                           $arguments[2] = "actions=exporttoexcel:".$htmlFilename.".html";
                                            $arguments[3] = "projectfolder=".$this->projectFolder."/html/".$filenameFolder;
                                            if( $additional_argument )
-                                               $arguments[4] = $additional_argument;
+                                               $arguments[] = $additional_argument_string;
+                                           if( $type == "application" )
+                                               $arguments[] = "filter=!(object is.predefined)";
 
                                            PH::resetCliArgs( $arguments);
 
