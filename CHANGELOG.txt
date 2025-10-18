@@ -22,6 +22,7 @@ BUGFIX:
 * type=rule actions=exporttoexcel:file.html,resolveservicesummary | extend html with service sport and timeout if set
 
 GENERAL:
+* Device App-ID updated to version: 9030-9720
 
 
 2.1.39 (20250924)
