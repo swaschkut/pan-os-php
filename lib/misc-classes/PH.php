@@ -495,10 +495,22 @@ class PH
         $ret['filename'] = null;
 
         $pos_sase = strpos($str, 'sase-api://');
+        $pos_scm = strpos($str, 'scm-api://');
         $pos = strpos($str, 'api://');
         if( $pos !== FALSE )
         {
-            if( $pos_sase !== FALSE )
+            if( $pos_scm !== FALSE )
+            {
+                PanAPIConnector::loadConnectorsFromUserHome();
+                $host = substr($str, strlen('scm-api://'));
+                $ret['status'] = 'ok';
+                $ret['type'] = 'scm-api';
+
+                $connector = new PanSCMAPIConnector($host);
+                $connector->findOrCreateConnectorFromHost($host);
+                $ret['connector'] = $connector;
+            }
+            elseif( $pos_sase !== FALSE )
             {
                 PanAPIConnector::loadConnectorsFromUserHome();
                 $host = substr($str, strlen('sase-api://'));

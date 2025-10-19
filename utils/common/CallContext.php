@@ -33,6 +33,7 @@ class CallContext
 
     public $isAPI = FALSE;
     public $isSaseAPI = FALSE;
+    public $isSCMAPI = FALSE;
     public $projectFolder = null;
 
     public $first;

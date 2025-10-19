@@ -2,6 +2,7 @@ CHANGELOG
 
 2.1.41
 UTIL:
+* pan-os-php in=scm-api:// | introduction to use SCM API - sase-api -> only Prisma Access
 
 BUGFIX:
 

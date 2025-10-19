@@ -512,6 +512,11 @@ class BuckbeakConf
         return null;
     }
 
+    public function getSnippets()
+    {
+        return $this->snippets;
+    }
+
     /**
      * @param string $fileName
      * @param bool $printMessage

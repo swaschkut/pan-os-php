@@ -200,6 +200,7 @@ require_once $basedir . '/misc-classes/CsvParser.php';
 require_once $basedir . '/misc-classes/trait/PanSubHelperTrait.php';
 require_once $basedir . '/misc-classes/PanAPIConnector.php';
 require_once $basedir . '/misc-classes/PanSaseAPIConnector.php';
+require_once $basedir . '/misc-classes/PanSCMAPIConnector.php';
 
 
 require_once $basedir . '/helper-classes/IPMap.php';
