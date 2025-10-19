@@ -517,6 +517,112 @@ class PanSCMAPIConnector
         return $jsonArray;
     }
 
+    function getResourceURL( $url_config, $type = null, $folder = null, $limit = 200, $prePost = "pre", $offset = 0, $runtime = 1)
+    {
+        $this->getAccessToken();
+
+        $url = $this->url_api;
+        $url .= "" . $url_config;
+
+        if( $type !== null && $folder !== null )
+        {
+            //Fawkes
+            #$url .= "/sse/config/v1/" . $type . "?folder=" . $folder;
+            //Buckbeak
+            $url .= "/config/objects/v1/" . $type . "?folder=" . $folder;
+        }
+        elseif( $type == null && $folder !== null )
+        {
+            if(strpos( $url, "?" ) !== FALSE)
+                $url .= "&folder=" . $folder;
+            else
+                $url .= "?folder=" . $folder;
+        }
+
+        if( $limit !== null )
+        {
+            #$url .= "&limit=" . $this->global_limit;
+            if(strpos( $url, "?" ) !== FALSE)
+                $url .= "&limit=" . $limit;
+            else
+                $url .= "?limit=" . $limit;
+        }
+
+
+        if( $offset !== null )
+        {
+            if(strpos( $url, "?" ) !== FALSE)
+                $url .= "&offset=" . $offset;
+            else
+                $url .= "?offset=" . $limit;
+        }
+
+
+        if( $type !== null )
+            if( strpos($type, "-rule") !== FALSE )
+                $url .= "&position=" . $prePost;
+
+        $url = str_replace(' ', '%20', $url);
+
+        if( $this->showApiCalls )
+        {
+            PH::print_stdout($url);
+        }
+
+
+        $header = array("Authorization: Bearer {$this->access_token}");
+
+
+        $this->_createOrRenewCurl();
+
+        curl_setopt($this->_curl_handle, CURLOPT_URL, $url);
+        curl_setopt($this->_curl_handle, CURLOPT_HTTPHEADER, $header);
+        curl_setopt($this->_curl_handle, CURLOPT_SSL_VERIFYPEER, FALSE);
+        curl_setopt($this->_curl_handle, CURLOPT_RETURNTRANSFER, TRUE);
+
+        if( $this->showApiCalls )
+        {
+            if( PH::$displayCurlRequest )
+            {
+                curl_setopt($this->_curl_handle, CURLOPT_FOLLOWLOCATION, TRUE);
+                curl_setopt($this->_curl_handle, CURLOPT_VERBOSE, TRUE);
+            }
+        }
+
+
+        $response = curl_exec($this->_curl_handle);
+        if( $this->showApiCalls )
+        {
+            #print $response . "\n";
+        }
+
+        $jsonArray = json_decode($response, TRUE);
+
+        if( isset($jsonArray['_errors']) )
+        {
+            print_r($jsonArray['_errors']);
+            derr($jsonArray['_errors'][0]['message'], null, FALSE);
+        }
+
+
+        if( $jsonArray !== null
+            && isset($jsonArray['total'])
+            && $jsonArray['total'] > ($this->global_limit - 1)
+            && $jsonArray['total'] > ($runtime * $this->global_limit)
+        )
+        {
+            $offset = $this->global_limit * $runtime;
+            $runtime++;
+            $resource = $this->getResource($access_token, $type, $folder, $this->global_limit, $prePost, $offset, $runtime);
+
+            foreach( $resource['data'] as $data )
+                $jsonArray['data'][] = $data;
+        }
+
+
+        return $jsonArray;
+    }
+
     function loadSCMConfig($folder, $sub, $utilType, $ruleType = "security")
     {
         $this->getAccessToken();
