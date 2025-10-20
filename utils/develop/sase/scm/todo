@@ -1,0 +1,7 @@
+- list jobs:
+https://api.strata.paloaltonetworks.com/config/operations/v1/jobs
+-list config version:
+https://api.strata.paloaltonetworks.com/config/operations/v1/config-versions
+
+
+/config/setup/v1/snippet-audit-logs
