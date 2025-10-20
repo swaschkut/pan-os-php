@@ -5,6 +5,7 @@ UTIL:
 * pan-os-php in=scm-api:// | introduction to use SCM API - sase-api -> only Prisma Access
 
 BUGFIX:
+* type=stats | update actions=display-bpa | to use 'included-in-bpa' info from JSON BPA at table stage
 
 GENERAL:
 

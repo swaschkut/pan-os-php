@@ -2998,15 +2998,23 @@ class PanoramaConf
 
         if( !PH::$shadow_json && $actions == "display-bpa")
         {
+            PH::getBPjsonFile();
+
             PH::print_stdout( $header );
 
-            PH::print_stdout("adoption");
+            $string_check = "adoption";
+            PH::print_stdout($string_check);
             $tbl = new ConsoleTable();
             $tbl->setHeaders(
                 array('Type', 'percentage', "%")
             );
             foreach( $percentageArray_adoption as $key => $value )
             {
+                if( isset( PH::$shadow_bp_jsonfile['included-in-bpa'][$string_check][$key] ) )
+                {
+                    if( PH::$shadow_bp_jsonfile['included-in-bpa'][$string_check][$key] === false )
+                        continue;
+                }
                 if( strpos($value['value'], "---") !== False )
                 {
                     $string = $value['value'];
@@ -3023,13 +3031,19 @@ class PanoramaConf
             echo $tbl->getTable();
 
 
-            PH::print_stdout("visibility");
+            $string_check = "visibility";
+            PH::print_stdout($string_check);
             $tbl = new ConsoleTable();
             $tbl->setHeaders(
                 array('Type', 'percentage', "%")
             );
             foreach( $percentageArray_visibility as $key => $value )
             {
+                if( isset( PH::$shadow_bp_jsonfile['included-in-bpa'][$string_check][$key] ) )
+                {
+                    if( PH::$shadow_bp_jsonfile['included-in-bpa'][$string_check][$key] === false )
+                        continue;
+                }
                 if( strpos($value['value'], "---") !== False )
                 {
                     $string = $value['value'];
@@ -3045,13 +3059,19 @@ class PanoramaConf
 
             echo $tbl->getTable();
 
-            PH::print_stdout("best-practice");
+            $string_check = "best-practice";
+            PH::print_stdout($string_check);
             $tbl = new ConsoleTable();
             $tbl->setHeaders(
                 array('Type', 'percentage', "%")
             );
             foreach( $percentageArray_best_practice as $key => $value )
             {
+                if( isset( PH::$shadow_bp_jsonfile['included-in-bpa'][$string_check][$key] ) )
+                {
+                    if( PH::$shadow_bp_jsonfile['included-in-bpa'][$string_check][$key] === false )
+                        continue;
+                }
                 if( strpos($value['value'], "---") !== False )
                 {
                     $string = $value['value'];
