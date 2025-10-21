@@ -6288,6 +6288,14 @@ var subjectObject =
                     }
                 }
             },
+            "dst.ip.count": {
+                "operators": {
+                    ">,<,=,!": {
+                        "Function": {},
+                        "arg": true
+                    }
+                }
+            },
             "from": {
                 "operators": {
                     "has": {
@@ -7246,6 +7254,14 @@ var subjectObject =
                         "help": "example: 'filter=(src has.from.query subquery1)' 'subquery1=(value ip4.includes-full 10.10.0.1)'"
                     },
                     "has.recursive.from.query": {
+                        "Function": {},
+                        "arg": true
+                    }
+                }
+            },
+            "src.ip.count": {
+                "operators": {
+                    ">,<,=,!": {
                         "Function": {},
                         "arg": true
                     }
@@ -9776,6 +9792,14 @@ var subjectObject =
                         }
                     },
                     "has.srcport": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "srcport.is.set": {
                         "Function": {},
                         "arg": false,
                         "ci": {

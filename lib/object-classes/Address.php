@@ -883,7 +883,7 @@ class Address
     public function getIPcount()
     {
         $value = $this->value();
-
+        $int = 0;
         if( $this->isType_ipNetmask() )
         {
             $startEndArray = CIDR::stringToStartEnd( $value );

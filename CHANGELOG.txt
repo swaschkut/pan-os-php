@@ -3,6 +3,7 @@ CHANGELOG
 2.1.41
 UTIL:
 * pan-os-php in=scm-api:// | introduction to use SCM API - sase-api -> only Prisma Access
+* type=rule | introduce 'filter=(src.ip.count >,<,=,!  1000) | (dst.ip.count >,<,=,!  1000)
 
 BUGFIX:
 * type=stats | update actions=display-bpa | to use 'included-in-bpa' info from JSON BPA at table stage
