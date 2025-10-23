@@ -76,7 +76,10 @@ trait CP_R80_accesslayer
                 if( isset( $access['name'] ) )
                 {
                     $tagname = $this->strip_hidden_chars($access['name']);
-                    $tmp_tag = $this->sub->tagStore->findOrCreate($tagname);
+                    if( !empty( $tagname ) )
+                        $tmp_tag = $this->sub->tagStore->findOrCreate($tagname);
+                    else
+                        mwarning( "TAG empty name: '".$access['name']."'" );
                 }
                 else
                     mwarning( "access-section - array['name] - not found" , null, false);
