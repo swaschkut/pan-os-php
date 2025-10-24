@@ -364,21 +364,35 @@ class RuleCallContext extends CallContext
             return self::enclose($rule->ruleNature(), $wrap);
 
         if( $fieldName == 'sec_rule_type' )
-            return self::enclose($rule->type(), $wrap);
+            if( !method_exists($rule, 'type'))
+                return self::enclose( "", $wrap);
+            else
+                return self::enclose($rule->type(), $wrap);
 
         if( $fieldName == 'nat_rule_type' )
-            return self::enclose($rule->getNatRuleType(), $wrap);
+        {
+            if( get_class($rule) === "NatRule" )
+                return self::enclose($rule->getNatRuleType(), $wrap);
+            else
+                return self::enclose( "", $wrap);
+        }
+
 
         if( $fieldName == 'from' )
         {
-            if( $rule->from->isAny() )
-                return self::enclose('any');
-            return self::enclose($rule->from->getAll(), $wrap);
+            if( method_exists($rule->from, 'isAny'))
+            {
+                if( $rule->from->isAny() )
+                    return self::enclose('any');
+                return self::enclose($rule->from->getAll(), $wrap);
+            }
+            else
+                return self::enclose("", $wrap);
         }
 
         if( $fieldName == 'to' )
         {
-            if( $rule->isPbfRule() && $rule->isInterfaceBased() )
+            if( $rule->isPbfRule() && $rule->isInterfaceBased() && $rule->to != null)
                 return self::enclose($rule->to->getAll(), $wrap);
 
             if( $rule->isPbfRule() )
@@ -431,7 +445,7 @@ class RuleCallContext extends CallContext
 
         if( $fieldName == 'dst_interface' )
         {
-            if( $rule->destinationInterface() == null )
+            if( !method_exists($rule,'destinationInterface') || $rule->destinationInterface() == null )
                 return self::enclose('');
             return self::enclose($rule->destinationInterface());
         }
@@ -448,11 +462,17 @@ class RuleCallContext extends CallContext
                     return self::enclose(array($rule->service));
                 return self::enclose('any');
             }
-            if( $rule->services->isAny() )
-                return self::enclose('any');
-            if( $rule->services->isApplicationDefault() )
-                return self::enclose('application-default');
-            return self::enclose($rule->services->getAll(), $wrap);
+            if( isset($rule->service) )
+            {
+                if( $rule->services->isAny() )
+                    return self::enclose('any');
+                if( $rule->services->isApplicationDefault() )
+                    return self::enclose('application-default');
+                return self::enclose($rule->services->getAll(), $wrap);
+            }
+            else
+                return self::enclose("", $wrap);
+
         }
 
         if( $fieldName == 'service_resolved_sum' )
@@ -987,7 +1007,7 @@ class RuleCallContext extends CallContext
         }
         if( $fieldName == 'snat_interface' )
         {
-            if( $rule->snatinterface == null )
+            if( !method_exists($rule,'snatinterface') || $rule->snatinterface == null )
                 return self::enclose('');
             return self::enclose($rule->snatinterface);
         }
