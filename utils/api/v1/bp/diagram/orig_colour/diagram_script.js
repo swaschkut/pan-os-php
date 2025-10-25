@@ -176,7 +176,7 @@ function createCoxcombChart(data) {
     const groupLabelBorderColor = isLightMode ? '#bbb' : '#575757';
     const groupLabelTextColor = isLightMode ? '#333' : '#eeeeee';
     const radialLineColor = isLightMode ? '#FFFFFF' : '#000000';
-    const separatorColor = isLightMode ? '#999999' : '#000';
+    const separatorColor = isLightMode ? '#FFFFFF' : '#000';
     const externalLabelTextColor = isLightMode ? '#333' : '#ffffff';
     const centerDividerColor = isLightMode ? '#d0d0d0' : '#354252';
 
