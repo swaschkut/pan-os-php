@@ -123,8 +123,14 @@ function resetChart() {
 function estimateTextWidth(text, fontSize) {
     // Approximate character width based on font size for Lato font
     const avgCharWidth = fontSize * 0.6;
-    return text.length * avgCharWidth;
+
+    // Get the actual length
+    const actualLength = text.length;
+    const compensatedLength = actualLength;
+
+    return compensatedLength * avgCharWidth;
 }
+
 
 function createCoxcombChart(data) {
     // Clear existing chart
@@ -169,7 +175,7 @@ function createCoxcombChart(data) {
     const groupLabelBgColor = isLightMode ? '#f5f5f5' : '#0D0D0D';
     const groupLabelBorderColor = isLightMode ? '#bbb' : '#575757';
     const groupLabelTextColor = isLightMode ? '#333' : '#eeeeee';
-    const radialLineColor = isLightMode ? '#ffffff' : '#ffffff';
+    const radialLineColor = isLightMode ? '#FFFFFF' : '#000000';
     const separatorColor = isLightMode ? '#999999' : '#000';
     const externalLabelTextColor = isLightMode ? '#333' : '#ffffff';
     const centerDividerColor = isLightMode ? '#d0d0d0' : '#354252';
@@ -422,10 +428,10 @@ function createCoxcombChart(data) {
         const isBottom = y > 50;
 
         // Calculate text widths for intelligent positioning
-        const categoryWidth = estimateTextWidth(d.shortName, 10);
-        const percentageText = d.value + '%';
-        const percentageWidth = estimateTextWidth(percentageText, 20);
-        const adoptedWidth = estimateTextWidth(adoptedText, 10);
+        categoryWidth = estimateTextWidth(d.shortName, 10);
+        percentageText = d.value + '%';
+        percentageWidth = estimateTextWidth(percentageText, 20);
+        adoptedWidth = estimateTextWidth(adoptedText, 10);
 
         // Consistent gap between percentage and "Adopted" text (5 pixels)
         const CONSISTENT_GAP = 5;
@@ -448,8 +454,7 @@ function createCoxcombChart(data) {
             adoptedX = 0;
 
             percentageAnchor = 'end';
-            percentageX = -adoptedWidth;
-
+            percentageX =  - adoptedWidth;
         } else if (isRight) {
             // Right side: align to left edge of category name
             categoryAnchor = 'start';
@@ -461,7 +466,6 @@ function createCoxcombChart(data) {
 
             adoptedAnchor = 'start';
             adoptedX = percentageWidth + CONSISTENT_GAP;
-
         } else {
             // Top/Bottom: center alignment with consistent spacing
             categoryAnchor = 'middle';
@@ -520,7 +524,7 @@ function createCoxcombChart(data) {
     // Calculate averages for center
     const totalValue = data.reduce((sum, d) => sum + d.value, 0);
     const average = Math.round(totalValue / data.length);
-    const notAdopted = 100 - average;
+    const notAdoptedpercentage = 100 - average;
 
     // Center content with consistent spacing
     const centerGroup = g.append('g').attr('class', 'center-content');
@@ -566,21 +570,24 @@ function createCoxcombChart(data) {
         .attr('x', -50);
 
     // "Not Adopted" percentage with consistent positioning
-    const notAdoptedPercentageText = notAdopted + '%';
+    const notAdoptedPercentageText = notAdoptedpercentage + '%';
     const notAdoptedPercentageWidth = estimateTextWidth(notAdoptedPercentageText, 20);
 
     centerGroup.append('text')
         .attr('y', 40)
+        //.attr('x', - 40)
         .attr('text-anchor', 'middle')
         .style('font-family', 'Lato, sans-serif')
         .style('font-size', '20px')
         .style('font-weight', '300')
-        .style('fill', getPercentageColor(notAdopted))
+        //.style('fill', getPercentageColor(notAdopted))
+        .style('fill', externalLabelTextColor)
         .text(notAdoptedPercentageText);
 
     centerGroup.append('text')
         .attr('x', centerOverlayRadius / 2 - 38)
         .attr('y', centerOverlayRadius / 2 + 16)
+        //.attr('y', 40)
         .attr('text-anchor', 'middle')
         .style('font-family', 'Lato, sans-serif')
         .style('font-size', '10px')
