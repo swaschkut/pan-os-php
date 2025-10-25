@@ -2845,10 +2845,13 @@ SecurityProfileCallContext::$supportedActions['url.alert-only-set'] = array(
 
                 $tmp_name = $allow_node->textContent;
 
+                //Todo: not working correclty
                 $custom_url_category_obj = $object->owner->owner->customURLProfileStore->find($tmp_name);
                 if( $custom_url_category_obj !== NULL )
                     continue;
-
+                //workaround
+                if(isset( $object->allow_custom[$tmp_name] ) )
+                    continue;
 
                 $clone_node = $allow_node->cloneNode(true);
                 $alert_xmlnode->appendChild($clone_node);
@@ -2858,16 +2861,19 @@ SecurityProfileCallContext::$supportedActions['url.alert-only-set'] = array(
                 $key = array_search ($tmp_name, $object->allow);
                 unset($object->allow[$key]);
             }
-            if( empty($object->allow) )
+            if( empty($object->allow) and empty($object->allow_custom) )
                 $object->xmlroot->removeChild($allow_xmlnode);
         }
 
         foreach( $object->allow as $allow )
         {
+            //Todo: not working correclty
             $custom_url_category_obj = $object->owner->owner->customURLProfileStore->find($allow);
             if( $custom_url_category_obj !== NULL )
                 continue;
-
+            //workaround
+            if(isset( $object->allow_custom[$tmp_name] ) )
+                continue;
 
             $object->alert[] = $allow;
 
@@ -2889,8 +2895,12 @@ SecurityProfileCallContext::$supportedActions['url.alert-only-set'] = array(
 
                 $tmp_name = $allow_node->textContent;
 
+                //Todo: not working correclty
                 $custom_url_category_obj = $object->owner->owner->customURLProfileStore->find($tmp_name);
                 if( $custom_url_category_obj !== NULL )
+                    continue;
+                //workaround
+                if(isset( $object->allow_credential_custom[$tmp_name] ) )
                     continue;
 
                 $clone_node = $allow_node->cloneNode(true);
@@ -2900,14 +2910,18 @@ SecurityProfileCallContext::$supportedActions['url.alert-only-set'] = array(
                 $key = array_search ($tmp_name, $object->allow_credential);
                 unset($object->allow_credential[$key]);
             }
-            if( empty($object->allow_credential) )
+            if( empty($object->allow_credential) and empty($object->allow_credential_custom) )
                 $credential_xmlnode->removeChild($allow_credential_xmlnode);
         }
 
         foreach( $object->allow_credential as $allow )
         {
+            //Todo: not working correclty
             $custom_url_category_obj = $object->owner->owner->customURLProfileStore->find($allow);
             if( $custom_url_category_obj !== NULL )
+                continue;
+            //workaround
+            if(isset( $object->allow_credential_custom[$tmp_name] ) )
                 continue;
 
             $object->alert_credential[] = $allow;
