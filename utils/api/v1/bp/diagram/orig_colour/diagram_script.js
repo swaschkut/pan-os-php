@@ -171,6 +171,7 @@ function createCoxcombChart(data) {
     const externalLabelRadius = labelRadius + 60;
 
     // Theme-based colors
+    const backgroundColor = isLightMode ? '#ffffff' : '#0a0a0a';
     const centerOverlayColor = isLightMode ? '#ffffff' : '#1a1a1a';
     const groupLabelBgColor = isLightMode ? '#f5f5f5' : '#0D0D0D';
     const groupLabelBorderColor = isLightMode ? '#bbb' : '#575757';
@@ -181,39 +182,57 @@ function createCoxcombChart(data) {
     const centerDividerColor = isLightMode ? '#d0d0d0' : '#354252';
 
 
+
+    const redPercentagUsedColor = '#E8121C';
+    const redLabelUsedColor = '#F8B1B1';
+    const redBackgroundColor = '#FFBDC2';    //'#FAD0D2'
+
+    const orangePercentagUsedColor = '#F06A0A';
+    const orangeLabelUsedColor = '#F5B181';
+    const orangeBackgroundColor = '#FCE1CE';
+
+    const yellowPercentagUsedColor = '#FBB441';
+    const yellowLabelUsedColor = '#FEE5BB';
+    const yellowBackgroundColor = '#FDF0D9';
+
+    const greenPercentagUsedColor = '#0A947B'; //25B197
+    const greenLabelUsedColor = '#92DDCD';
+    const greenBackgroundColor = '#D2EFEA';
+
+
     // Grid label colors
     const gridLabelColors = {
-        25: {stroke: '#E8121C', fill: '#F8B1B1'},
-        50: {stroke: '#F06A0A', fill: '#F5B181'},
-        75: {stroke: '#FBB441', fill: '#FEE5BB'},
-        100: {stroke: '#0A947B', fill: '#92DDCD'} //#25B197
+        25: {stroke: redPercentagUsedColor, fill: redLabelUsedColor},
+        50: {stroke: orangePercentagUsedColor, fill: orangeLabelUsedColor},
+        75: {stroke: yellowPercentagUsedColor, fill: yellowLabelUsedColor},
+        100: {stroke: greenPercentagUsedColor, fill: greenLabelUsedColor}
     };
 
     // Improved color functions based on percentage ranges matching circle border colors
     const getColor = (value) => {
-        if (value >= 0 && value <= 25) return '#E8121C';    // Red - matches 25% circle border
-        if (value > 25 && value <= 50) return '#F06A0A';    // Orange - matches 50% circle border
-        if (value > 50 && value <= 75) return '#FBB441';    // Yellow - matches 75% circle border
-        if (value > 75 && value <= 100) return '#0A947B';   // Teal - matches 100% circle border
-        return '#E8121C'; // Default to red for any edge cases
+        if (value >= 0 && value <= 25) return redPercentagUsedColor;    // Red - matches 25% circle border
+        if (value > 25 && value <= 50) return orangePercentagUsedColor;    // Orange - matches 50% circle border
+        if (value > 50 && value <= 75) return yellowPercentagUsedColor;    // Yellow - matches 75% circle border
+        if (value > 75 && value <= 100) return greenPercentagUsedColor;   // Teal - matches 100% circle border
+        return redPercentagUsedColor; // Default to red for any edge cases
     };
 
     // Updated percentage color function for outer labels
     const getColor_background = (value) => {
-        if (value >= 0 && value <= 25) return '#FFBDC2';    //'#FAD0D2'// Red - matches 25% circle border
-        if (value > 25 && value <= 50) return '#FCE1CE';    // Orange - matches 50% circle border
-        if (value > 50 && value <= 75) return '#FDF0D9';    // Yellow - matches 75% circle border
-        if (value > 75 && value <= 100) return '#D2EFEA';   // Teal - matches 100% circle border
-        return '#FFBDC2'; // Default to red for any edge cases
+        if (value >= 0 && value <= 25) return redBackgroundColor;    // Red - matches 25% circle border
+        if (value > 25 && value <= 50) return orangeBackgroundColor;    // Orange - matches 50% circle border
+        if (value > 50 && value <= 75) return yellowBackgroundColor;    // Yellow - matches 75% circle border
+        if (value > 75 && value <= 100) return greenBackgroundColor;   // Teal - matches 100% circle border
+        return redBackgroundColor; // Default to red for any edge cases
     };
 
     // Updated percentage color function for outer labels
     const getPercentageColor = (value) => {
-        if (value >= 0 && value <= 25) return '#E8121C';    // Red - matches 25% circle border
-        if (value > 25 && value <= 50) return '#F06A0A';    // Orange - matches 50% circle border
-        if (value > 50 && value <= 75) return '#FBB441';    // Yellow - matches 75% circle border
-        if (value > 75 && value <= 100) return '#0A947B';   // Teal - matches 100% circle border
-        return '#E8121C'; // Default to red for any edge cases
+        if (value >= 0 && value <= 25) return redPercentagUsedColor;    // Red - matches 25% circle border
+        if (value > 25 && value <= 50) return orangePercentagUsedColor;    // Orange - matches 50% circle border
+        if (value > 50 && value <= 75) return yellowPercentagUsedColor;    // Yellow - matches 75% circle border
+        if (value > 75 && value <= 100) return greenPercentagUsedColor;   // Teal - matches 100% circle border
+        return redPercentagUsedColor; // Default to red for any edge cases
     };
 
 
