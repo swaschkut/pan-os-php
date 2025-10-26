@@ -245,6 +245,13 @@ function createCoxcombChart(data) {
 
 
 
+    const groupLabelOuterRadius = 25;
+
+    // Consistent gap between percentage and "Adopted" text (5 pixels)
+    const CONSISTENT_GAP = 2;
+
+
+
     // Grid label colors
     const gridLabelColors = {
         25: {stroke: redPercentagUsedColor, fill: redLabelUsedColor},
@@ -390,7 +397,9 @@ function createCoxcombChart(data) {
         // Determine if text should be flipped (upside down prevention)
         const shouldFlip = normalizedAngle > Math.PI / 2 && normalizedAngle < 3 * Math.PI / 2;
 
-        const pathRadius = labelRadius + 17;
+
+        const pathRadius = labelRadius + groupLabelOuterRadius / 2 + 2;
+
         let pathData;
 
         if (shouldFlip) {
@@ -414,7 +423,7 @@ function createCoxcombChart(data) {
 
         const groupLabelArc = d3.arc()
             .innerRadius(labelRadius)
-            .outerRadius(labelRadius + 30)
+            .outerRadius(labelRadius + groupLabelOuterRadius)
             .startAngle(startAngle)
             .endAngle(endAngle);
 
@@ -496,8 +505,7 @@ function createCoxcombChart(data) {
         percentageWidth = estimateTextWidth(percentageText, 20);
         adoptedWidth = estimateTextWidth(adoptedText, 10);
 
-        // Consistent gap between percentage and "Adopted" text (5 pixels)
-        const CONSISTENT_GAP = 5;
+
 
         const labelContainer = group.append('g')
             .attr('transform', `translate(${x}, ${y})`);
@@ -508,6 +516,9 @@ function createCoxcombChart(data) {
         let adoptedX = 0, adoptedAnchor = 'middle';
 
         if (isLeft) {
+            //Todo: this is the left site of the diagram
+            //something wrong
+
             // Left side: align to right edge of category name
             categoryAnchor = 'end';
             categoryX = 0;
