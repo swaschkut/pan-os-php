@@ -205,31 +205,31 @@ function createCoxcombChart(data) {
 
 
     //curved grouplabeling
-    const groupLabelGroupsFontSize = '9.5px'; //11
+    const groupLabelGroupsFontSize = '11px'; //11
     const groupLabelGroupsFontWeight = '300';
 // Define a small padding angle for the group label arc
     const GROUP_PADDING_ANGLE = 0.0075; // Adjust this value (e.g., 0.005 radians)
 
 
     //outside labeling around the diagramm
-    const LabelcontainerCategoryFontSize = '8px'; //10
-    const LabelcontainerCategoryFontWeight = '600'; //400
+    const LabelcontainerCategoryFontSize = '10px'; //10
+    const LabelcontainerCategoryFontWeight = '400'; //400
 
-    const LabelcontainerPercentageFontSize = '16px'; //20
-    const LabelcontainerPercentageFontWeight = '500'; //300
+    const LabelcontainerPercentageFontSize = '20px'; //20
+    const LabelcontainerPercentageFontWeight = '300'; //300
 
-    const LabelcontainerAdoptedFontSize = '8px'; //10
-    const LabelcontainerAdoptedFontWeight = '500'; //300
+    const LabelcontainerAdoptedFontSize = '10px'; //10
+    const LabelcontainerAdoptedFontWeight = '300'; //300
 
 
     //color full labeling 12 o-clock
-    const GridLabelGroupsFontSize = '10px'; //12
+    const GridLabelGroupsFontSize = '12px'; //12
     const GridLabelGroupsFontWeight = '400';
 
 
     //inner circle
-    const CenterGroupAverageFontSize = '10px'; //12
-    const CenterGroupAverageFontWeight = '400'; //700
+    const CenterGroupAverageFontSize = '12px'; //12
+    const CenterGroupAverageFontWeight = '700'; //700
 
     const CenterGroupAveragePercentageFontSize = '40px';
     const CenterGroupAveragePercentageFontWeight = '300';
@@ -240,8 +240,8 @@ function createCoxcombChart(data) {
     const CenterGroupNotAdaptedPercentageFontSize = '20px';
     const CenterGroupNotAdaptedPercentageFontWeight = '300';
 
-    const CenterGroupNotAdaptedFontSize = '8px'; //10
-    const CenterGroupNotAdaptedFontWeight = '300'; //400
+    const CenterGroupNotAdaptedFontSize = '10px'; //10
+    const CenterGroupNotAdaptedFontWeight = '400'; //400
 
 
 
