@@ -793,48 +793,69 @@ class VirtualSystem
         {
             foreach( $this->importedInterfaces->interfaces() as $interface )
             {
+                $interfacesIPv4 = array();
+                $interfacesIPv6 = array();
+                $interfacesIP = array();
                 if( $interface->isEthernetType() && $interface->type() == "layer3" )
                 {
-                    $interfacesv4 = $interface->getLayer3IPv4Addresses();
-                    $interfacesv6 = $interface->getLayer3IPv6Addresses();
-                    $interfaces = array_merge($interfacesv4, $interfacesv6);
+                    $interfacesIPv4 = $interface->getLayer3IPv4Addresses();
+                    $interfacesIPv6 = $interface->getLayer3IPv6Addresses();
+                    $interfacesIP = array_merge( $interfacesIPv4, $interfacesIPv6 );
 
                     if( !empty($interface->subInterfaces()) )
                     {
                         foreach( $interface->subInterfaces() as $subinterface )
                         {
-                            $interfacesv4 = $subinterface->getLayer3IPv4Addresses();
-                            $interfacesv6 = $subinterface->getLayer3IPv6Addresses();
-                            $sub_interfaces = array_merge($interfacesv4, $interfacesv6);
+                            $sub_interfacesIPv4 = $subinterface->getLayer3IPv4Addresses();
+                            $sub_interfacesIPv6 = $subinterface->getLayer3IPv6Addresses();
 
-                            foreach( $sub_interfaces as $layer3IPAddress )
+                            foreach( $sub_interfacesIPv4 as $layer3IPAddress )
                             {
                                 $findobject = $this->addressStore->find($layer3IPAddress);
                                 if( is_object($findobject) )
+                                {
                                     $findobject->addReference($subinterface);
+                                }
+                            }
+                            foreach( $sub_interfacesIPv6 as $layer3IPAddress )
+                            {
+                                $findobject = $this->addressStore->find($layer3IPAddress);
+                                if( is_object($findobject) )
+                                {
+                                    $findobject->addReference($subinterface);
+                                }
                             }
                         }
                     }
                 }
                 elseif( $interface->isVlanType() || $interface->isLoopbackType() || $interface->isTunnelType() )
                 {
-                    $interfacesv4 = $interface->getIPv4Addresses();
-                    $interfacesv6 = $interface->getIPv6Addresses();
-                    $interfaces = array_merge($interfacesv4, $interfacesv6);
+                    $interfacesIPv4 = array_merge( $interfacesIPv4, $interface->getIPv4Addresses() );
+                    $interfacesIPv6 = array_merge( $interfacesIPv6,$interface->getIPv6Addresses() );
+                    $interfacesIP = array_merge( $interfacesIPv4, $interfacesIPv6 );
                 }
                 //elseif( $interface->isAggregateType() )
                 //{}
 
-                else
-                    $interfaces = array();
-
-
-                foreach( $interfaces as $layer3IPAddress )
+                foreach( $interfacesIP as $layer3IPAddress )
                 {
                     $findobject = $this->addressStore->find($layer3IPAddress);
                     if( is_object($findobject) )
+                    {
                         $findobject->addReference($interface);
+
+                        if( $interface->isEthernetType() && $interface->type() == "layer3" )
+                            $interface->addLayer3ObjectIPAddresses($findobject->value());
+                        elseif( $interface->isVlanType() || $interface->isLoopbackType() || $interface->isTunnelType() )
+                            $interface->addObjectIPAddresses($findobject->value());
+                    }
+                    else
+                        if( $interface->isEthernetType() && $interface->type() == "layer3" )
+                            $interface->addLayer3ObjectIPAddresses($layer3IPAddress);
+                        elseif( $interface->isVlanType() || $interface->isLoopbackType() || $interface->isTunnelType() )
+                            $interface->addObjectIPAddresses($layer3IPAddress);
                 }
+
             }
         }
 
@@ -1285,9 +1306,9 @@ class VirtualSystem
 
         //User-ID
         $stdoutarray['user id'] = count( $sub_ruleStore->rules( $generalFilter_allow."!(user is.any)" ) );
-        $stdoutarray['user id calc'] = $stdoutarray['user id']."/".$stdoutarray['security rules'];
+        $stdoutarray['user id calc'] = $stdoutarray['user id']."/".$ruleForCalculation;
         if( $ruleForCalculation !== 0 )
-            $stdoutarray['user id percentage'] = floor( ( $stdoutarray['user id'] / $stdoutarray['security rules'] ) * 100 );
+            $stdoutarray['user id percentage'] = floor( ( $stdoutarray['user id'] / $ruleForCalculation ) * 100 );
         else
             $stdoutarray['user id percentage'] = 0;
         //Service/Port

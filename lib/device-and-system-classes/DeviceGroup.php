@@ -1370,9 +1370,9 @@ class DeviceGroup
 
         //User-ID
         $stdoutarray['user id'] = count( $sub_ruleStore->rules( $generalFilter_allow."!(user is.any)" ) );
-        $stdoutarray['user id calc'] = $stdoutarray['user id']."/".$stdoutarray['security rules'];
+        $stdoutarray['user id calc'] = $stdoutarray['user id']."/".$ruleForCalculation;
         if( $ruleForCalculation !== 0 )
-            $stdoutarray['user id percentage'] = floor( ( $stdoutarray['user id'] / $stdoutarray['security rules'] ) * 100 );
+            $stdoutarray['user id percentage'] = floor( ( $stdoutarray['user id'] / $ruleForCalculation ) * 100 );
         else
             $stdoutarray['user id percentage'] = 0;
         //Service/Port

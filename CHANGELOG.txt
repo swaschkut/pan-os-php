@@ -10,9 +10,11 @@ BUGFIX:
 * type=vendor-migration vendor=cp-r80 | add region Taiwan/Vietnam - issue, not variable enough
 * class RuleCAllContext | bugfix for type=rule ruletype=any actions=exporttoexcel
 * type=securityprofile securityprofiletype=url-filtering | bugfix for actions=url.alert-only-set and url.best-practice-set | related to customURLcategories
+* type=stats | user-id was calculated with all secRules, not only the enabled one
 
 GENERAL:
 * ironskillet | remove for all AS profiles <entry name="pan-dns-sec-benign">
+* adjustment for interface to read IP address from object for zoneCalculation
 
 
 2.1.40  (20251018)
