@@ -186,7 +186,7 @@ function createCoxcombChart(data) {
         25: {stroke: '#E8121C', fill: '#F8B1B1'},
         50: {stroke: '#F06A0A', fill: '#F5B181'},
         75: {stroke: '#FBB441', fill: '#FEE5BB'},
-        100: {stroke: '#25B197', fill: '#92DDCD'}
+        100: {stroke: '#0A947B', fill: '#92DDCD'} //#25B197
     };
 
     // Improved color functions based on percentage ranges matching circle border colors
@@ -194,17 +194,17 @@ function createCoxcombChart(data) {
         if (value >= 0 && value <= 25) return '#E8121C';    // Red - matches 25% circle border
         if (value > 25 && value <= 50) return '#F06A0A';    // Orange - matches 50% circle border
         if (value > 50 && value <= 75) return '#FBB441';    // Yellow - matches 75% circle border
-        if (value > 75 && value <= 100) return '#25B197';   // Teal - matches 100% circle border
+        if (value > 75 && value <= 100) return '#0A947B';   // Teal - matches 100% circle border
         return '#E8121C'; // Default to red for any edge cases
     };
 
     // Updated percentage color function for outer labels
     const getColor_background = (value) => {
-        if (value >= 0 && value <= 25) return '#FAD0D2';    // Red - matches 25% circle border
+        if (value >= 0 && value <= 25) return '#FFBDC2';    //'#FAD0D2'// Red - matches 25% circle border
         if (value > 25 && value <= 50) return '#FCE1CE';    // Orange - matches 50% circle border
         if (value > 50 && value <= 75) return '#FDF0D9';    // Yellow - matches 75% circle border
         if (value > 75 && value <= 100) return '#D2EFEA';   // Teal - matches 100% circle border
-        return '#E8121C'; // Default to red for any edge cases
+        return '#FFBDC2'; // Default to red for any edge cases
     };
 
     // Updated percentage color function for outer labels
@@ -212,7 +212,7 @@ function createCoxcombChart(data) {
         if (value >= 0 && value <= 25) return '#E8121C';    // Red - matches 25% circle border
         if (value > 25 && value <= 50) return '#F06A0A';    // Orange - matches 50% circle border
         if (value > 50 && value <= 75) return '#FBB441';    // Yellow - matches 75% circle border
-        if (value > 75 && value <= 100) return '#25B197';   // Teal - matches 100% circle border
+        if (value > 75 && value <= 100) return '#0A947B';   // Teal - matches 100% circle border
         return '#E8121C'; // Default to red for any edge cases
     };
 
