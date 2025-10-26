@@ -2670,9 +2670,9 @@ class PanoramaConf
         $percentageArray_adoption['App-ID']['value'] = $stdoutarray['app id percentage'];
         $percentageArray_adoption['App-ID']['group'] = 'Apps, Users, Ports';
 
-        $stdoutarray['user id calc'] =  $stdoutarray['user id'] ."/". $stdoutarray['security rules'];
+        $stdoutarray['user id calc'] =  $stdoutarray['user id'] ."/". $ruleForCalculation;
         if( $ruleForCalculation !== 0 )
-            $stdoutarray['user id percentage'] = floor( ( $stdoutarray['user id'] / $stdoutarray['security rules'] ) * 100 );
+            $stdoutarray['user id percentage'] = floor( ( $stdoutarray['user id'] / $ruleForCalculation ) * 100 );
         else
             $stdoutarray['user id percentage'] = 0;
         $percentageArray_adoption['User-ID']['value'] = $stdoutarray['user id percentage'];
@@ -2805,9 +2805,9 @@ class PanoramaConf
         $percentageArray_visibility['App-ID']['value'] = $stdoutarray['app id percentage'];
         $percentageArray_visibility['App-ID']['group'] = 'Apps, Users, Ports';
 
-        $stdoutarray['user id calc'] =  $stdoutarray['user id'] ."/". $stdoutarray['security rules'];
+        $stdoutarray['user id calc'] =  $stdoutarray['user id'] ."/". $ruleForCalculation;
         if( $ruleForCalculation !== 0 )
-            $stdoutarray['user id percentage'] = floor( ( $stdoutarray['user id'] / $stdoutarray['security rules'] ) * 100 );
+            $stdoutarray['user id percentage'] = floor( ( $stdoutarray['user id'] / $ruleForCalculation ) * 100 );
         else
             $stdoutarray['user id percentage'] = 0;
         $percentageArray_visibility['User-ID']['value'] = $stdoutarray['user id percentage'];
