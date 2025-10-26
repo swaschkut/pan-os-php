@@ -1476,11 +1476,7 @@
             </entry>
           </lists>
           <dns-security-categories>
-            <entry name="pan-dns-sec-benign">
-              <log-level>default</log-level>
-              <action>allow</action>
-              <packet-capture>disable</packet-capture>
-            </entry>
+
             <entry name="pan-dns-sec-cc">
               <log-level>default</log-level>
               <action>allow</action>
@@ -1570,11 +1566,7 @@
             </entry>
           </lists>
           <dns-security-categories>
-            <entry name="pan-dns-sec-benign">
-              <log-level>default</log-level>
-              <action>default</action>
-              <packet-capture>disable</packet-capture>
-            </entry>
+
             <entry name="pan-dns-sec-cc">
               <log-level>default</log-level>
               <action>sinkhole</action>
@@ -1678,11 +1670,7 @@
             </entry>
           </lists>
           <dns-security-categories>
-            <entry name="pan-dns-sec-benign">
-              <log-level>default</log-level>
-              <action>default</action>
-              <packet-capture>disable</packet-capture>
-            </entry>
+
             <entry name="pan-dns-sec-cc">
               <log-level>default</log-level>
               <action>sinkhole</action>
@@ -1786,11 +1774,7 @@
             </entry>
           </lists>
           <dns-security-categories>
-            <entry name="pan-dns-sec-benign">
-              <log-level>default</log-level>
-              <action>default</action>
-              <packet-capture>disable</packet-capture>
-            </entry>
+
             <entry name="pan-dns-sec-cc">
               <log-level>default</log-level>
               <action>sinkhole</action>

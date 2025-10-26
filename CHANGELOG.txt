@@ -12,6 +12,7 @@ BUGFIX:
 * type=securityprofile securityprofiletype=url-filtering | bugfix for actions=url.alert-only-set and url.best-practice-set | related to customURLcategories
 
 GENERAL:
+* ironskillet | remove for all AS profiles <entry name="pan-dns-sec-benign">
 
 
 2.1.40  (20251018)
