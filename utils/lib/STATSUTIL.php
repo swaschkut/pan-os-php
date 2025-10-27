@@ -249,7 +249,7 @@ class STATSUTIL extends RULEUTIL
             }
 
             $jsonContent = json_encode($mainArray, JSON_PRETTY_PRINT);
-            $tmp_string = "const samples = ".$jsonContent;
+            $tmp_string = "samples = ".$jsonContent;
             $filename = $outputFolder."/diagram_data.js";
             file_put_contents($filename, $tmp_string);
 

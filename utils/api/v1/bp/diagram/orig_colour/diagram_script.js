@@ -1,3 +1,9 @@
+// Global variables
+let currentChart = null;
+let currentData = null;
+let adoptedText = null;
+let notAdoptedText = null;
+
 // Light mode state
 let isLightMode = false;
 
@@ -44,11 +50,7 @@ function loadfirstSample() {
     loadSample(sampleKeys[0]);
 }
 
-// Global variables
-let currentChart = null;
-let currentData = null;
-let adoptedText = null;
-let notAdoptedText = null;
+
 
 function loadSample(type) {
     document.getElementById('jsonInput').value = JSON.stringify(samples[type], null, 2);
@@ -162,6 +164,9 @@ function createCoxcombChart(data) {
         currentIndex += groupItems.length;
     });
 
+
+////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
     // Chart dimensions and setup
     const LabelGapToCircle = 40;
     const width = 760;
@@ -175,7 +180,7 @@ function createCoxcombChart(data) {
 
     let BottomGapCategoryPercentage = 15;
 
-    // Theme-based colors
+// Theme-based colors
     const backgroundColor = isLightMode ? '#ffffff' : '#0a0a0a';
     const centerOverlayColor = isLightMode ? '#ffffff' : '#1a1a1a';
     const groupLabelBgColor = isLightMode ? '#f5f5f5' : '#0D0D0D';
@@ -209,14 +214,14 @@ function createCoxcombChart(data) {
     const ArcPadAngle = '0.01' // gap between diagram Segments
 
 
-    //curved grouplabeling
+//curved grouplabeling
     const groupLabelGroupsFontSize = '9.5px'; //11
     const groupLabelGroupsFontWeight = '300';
 // Define a small padding angle for the group label arc
     const GROUP_PADDING_ANGLE = 0.0075; // Adjust this value (e.g., 0.005 radians)
 
 
-    //outside labeling around the diagramm
+//outside labeling around the diagramm
     const LabelcontainerCategoryFontSize = '8'; //10
     const LabelcontainerCategoryFontWeight = '600'; //400
 
@@ -227,12 +232,12 @@ function createCoxcombChart(data) {
     const LabelcontainerAdoptedFontWeight = '500'; //300
 
 
-    //color full labeling 12 o-clock
+//color full labeling 12 o-clock
     const GridLabelGroupsFontSize = '10px'; //12
     const GridLabelGroupsFontWeight = '400';
 
 
-    //inner circle
+//inner circle
     const CenterGroupAverageFontSize = '10px'; //12
     const CenterGroupAverageFontWeight = '400'; //700
 
@@ -241,7 +246,7 @@ function createCoxcombChart(data) {
 
     const CenterGroupAdoptedFontSize = '10px';
     const CenterGroupAdoptedFontWeight = '400';
-    /////////
+/////////
     const CenterGroupNotAdaptedPercentageFontSize = '20px';
     const CenterGroupNotAdaptedPercentageFontWeight = '300';
 
@@ -252,8 +257,10 @@ function createCoxcombChart(data) {
 
     const groupLabelOuterRadius = 25;
 
-    // Consistent gap between percentage and "Adopted" text (5 pixels)
+// Consistent gap between percentage and "Adopted" text (5 pixels)
     const CONSISTENT_GAP = 10;
+////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
 
 
     // Grid label colors
