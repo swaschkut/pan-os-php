@@ -47,6 +47,8 @@ function loadfirstSample() {
 // Global variables
 let currentChart = null;
 let currentData = null;
+let adoptedText = null;
+let notAdoptedText = null;
 
 function loadSample(type) {
     document.getElementById('jsonInput').value = JSON.stringify(samples[type], null, 2);
@@ -161,6 +163,7 @@ function createCoxcombChart(data) {
     });
 
     // Chart dimensions and setup
+    const LabelGapToCircle = 40;
     const width = 760;
     const height = 760;
     const margin = 160;
@@ -168,7 +171,9 @@ function createCoxcombChart(data) {
     const centerOverlayRadius = innerRadius - 5;
     const labelRadius = Math.min(width, height) / 2 - margin;
     const maxRadius = labelRadius;
-    const externalLabelRadius = labelRadius + 60;
+    const externalLabelRadius = labelRadius + LabelGapToCircle;
+
+    let BottomGapCategoryPercentage = 15;
 
     // Theme-based colors
     const backgroundColor = isLightMode ? '#ffffff' : '#0a0a0a';
@@ -212,13 +217,13 @@ function createCoxcombChart(data) {
 
 
     //outside labeling around the diagramm
-    const LabelcontainerCategoryFontSize = '8px'; //10
+    const LabelcontainerCategoryFontSize = '8'; //10
     const LabelcontainerCategoryFontWeight = '600'; //400
 
-    const LabelcontainerPercentageFontSize = '16px'; //20
+    const LabelcontainerPercentageFontSize = '16'; //20
     const LabelcontainerPercentageFontWeight = '500'; //300
 
-    const LabelcontainerAdoptedFontSize = '8px'; //10
+    const LabelcontainerAdoptedFontSize = '8'; //10
     const LabelcontainerAdoptedFontWeight = '500'; //300
 
 
@@ -248,8 +253,7 @@ function createCoxcombChart(data) {
     const groupLabelOuterRadius = 25;
 
     // Consistent gap between percentage and "Adopted" text (5 pixels)
-    const CONSISTENT_GAP = 2;
-
+    const CONSISTENT_GAP = 10;
 
 
     // Grid label colors
@@ -500,10 +504,11 @@ function createCoxcombChart(data) {
         const isBottom = y > 50;
 
         // Calculate text widths for intelligent positioning
-        categoryWidth = estimateTextWidth(d.shortName, 10);
+        categoryWidth = estimateTextWidth(d.shortName, LabelcontainerCategoryFontSize);
         percentageText = d.value + '%';
-        percentageWidth = estimateTextWidth(percentageText, 20);
-        adoptedWidth = estimateTextWidth(adoptedText, 10);
+        percentageWidth = estimateTextWidth(percentageText, LabelcontainerPercentageFontSize);
+        adoptedWidth = estimateTextWidth(adoptedText, LabelcontainerAdoptedFontSize);
+        gapWidth = estimateTextWidth("  ", LabelcontainerAdoptedFontSize);
 
 
 
@@ -511,9 +516,11 @@ function createCoxcombChart(data) {
             .attr('transform', `translate(${x}, ${y})`);
 
         // Smart positioning calculations with consistent spacing
-        let categoryX = 0, categoryAnchor = 'middle';
-        let percentageX = 0, percentageAnchor = 'middle';
-        let adoptedX = 0, adoptedAnchor = 'middle';
+        let categoryX = 0, categoryAnchor = 'middle', categoryY = -15;
+        let percentageX = 0, percentageAnchor = 'middle', percentageY = 4;
+        let adoptedX = 0, adoptedAnchor = 'middle', adoptedY = 3;
+
+
 
         if (isLeft) {
             //Todo: this is the left site of the diagram
@@ -528,7 +535,15 @@ function createCoxcombChart(data) {
             adoptedX = 0;
 
             percentageAnchor = 'end';
+            //percentageX =  - adoptedWidth - CONSISTENT_GAP - percentageX;
             percentageX =  - adoptedWidth;
+
+            if (isBottom)
+            {
+                categoryY = categoryY + BottomGapCategoryPercentage;
+                percentageY = percentageY + BottomGapCategoryPercentage;
+                adoptedY = adoptedY + BottomGapCategoryPercentage;
+            }
         } else if (isRight) {
             // Right side: align to left edge of category name
             categoryAnchor = 'start';
@@ -539,7 +554,15 @@ function createCoxcombChart(data) {
             percentageX = 0;
 
             adoptedAnchor = 'start';
-            adoptedX = percentageWidth + CONSISTENT_GAP;
+            //adoptedX = percentageWidth + CONSISTENT_GAP;
+            adoptedX = percentageWidth + gapWidth;
+
+            if (isBottom)
+            {
+                categoryY = categoryY + BottomGapCategoryPercentage;
+                percentageY = percentageY + BottomGapCategoryPercentage;
+                adoptedY = adoptedY + BottomGapCategoryPercentage;
+            }
         } else {
             // Top/Bottom: center alignment with consistent spacing
             categoryAnchor = 'middle';
@@ -552,16 +575,23 @@ function createCoxcombChart(data) {
 
             adoptedAnchor = 'start';
             adoptedX = -totalWidth / 2 + percentageWidth + CONSISTENT_GAP;
+
+            if (isBottom)
+            {
+                categoryY = categoryY + BottomGapCategoryPercentage;
+                percentageY = percentageY + BottomGapCategoryPercentage;
+                adoptedY = adoptedY + BottomGapCategoryPercentage;
+            }
         }
 
 
         // Category name with smart positioning
         labelContainer.append('text')
             .attr('x', categoryX)
-            .attr('y', -15)
+            .attr('y', categoryY)
             .style('text-anchor', categoryAnchor)
             .style('font-family', 'Lato, sans-serif')
-            .style('font-size', LabelcontainerCategoryFontSize)
+            .style('font-size', LabelcontainerCategoryFontSize+"px")
             .style('font-weight', LabelcontainerCategoryFontWeight)
             .style('fill', externalLabelTextColor)
             .text(d.shortName);
@@ -569,10 +599,10 @@ function createCoxcombChart(data) {
         // Percentage with calculated positioning
         labelContainer.append('text')
             .attr('x', percentageX)
-            .attr('y', 8)
+            .attr('y', percentageY)
             .style('text-anchor', percentageAnchor)
             .style('font-family', 'Lato, sans-serif')
-            .style('font-size', LabelcontainerPercentageFontSize)
+            .style('font-size', LabelcontainerPercentageFontSize+"px")
             .style('font-weight', LabelcontainerPercentageFontWeight)
             .style('fill', getPercentageColor(d.value))
             .text(percentageText);
@@ -580,10 +610,10 @@ function createCoxcombChart(data) {
         // "Adopted" text with calculated positioning
         labelContainer.append('text')
             .attr('x', adoptedX)
-            .attr('y', 7)
+            .attr('y', adoptedY)
             .style('text-anchor', adoptedAnchor)
             .style('font-family', 'Lato, sans-serif')
-            .style('font-size', LabelcontainerAdoptedFontSize)
+            .style('font-size', LabelcontainerAdoptedFontSize+"px")
             .style('font-weight', LabelcontainerAdoptedFontWeight)
             .style('fill', externalLabelTextColor)
             .text(adoptedText);
