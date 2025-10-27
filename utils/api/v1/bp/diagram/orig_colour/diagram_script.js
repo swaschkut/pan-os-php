@@ -508,7 +508,7 @@ function createCoxcombChart(data) {
         percentageText = d.value + '%';
         percentageWidth = estimateTextWidth(percentageText, LabelcontainerPercentageFontSize);
         adoptedWidth = estimateTextWidth(adoptedText, LabelcontainerAdoptedFontSize);
-        gapWidth = estimateTextWidth("  ", LabelcontainerAdoptedFontSize);
+        gapWidth = estimateTextWidth("--", LabelcontainerAdoptedFontSize);
 
 
 
@@ -523,9 +523,6 @@ function createCoxcombChart(data) {
 
 
         if (isLeft) {
-            //Todo: this is the left site of the diagram
-            //something wrong
-
             // Left side: align to right edge of category name
             categoryAnchor = 'end';
             categoryX = 0;
@@ -533,10 +530,10 @@ function createCoxcombChart(data) {
             // Position "Adopted" at right edge, percentage with consistent gap to the left
             adoptedAnchor = 'end';
             adoptedX = 0;
+            gapX = - adoptedWidth;
 
             percentageAnchor = 'end';
-            //percentageX =  - adoptedWidth - CONSISTENT_GAP - percentageX;
-            percentageX =  - adoptedWidth;
+            percentageX =  - adoptedWidth - 3;
 
             if (isBottom)
             {
@@ -552,6 +549,8 @@ function createCoxcombChart(data) {
             // Position percentage at left edge, "Adopted" with consistent gap to the right
             percentageAnchor = 'start';
             percentageX = 0;
+
+            gapX = percentageWidth;
 
             adoptedAnchor = 'start';
             //adoptedX = percentageWidth + CONSISTENT_GAP;
@@ -575,6 +574,8 @@ function createCoxcombChart(data) {
 
             adoptedAnchor = 'start';
             adoptedX = -totalWidth / 2 + percentageWidth + CONSISTENT_GAP;
+
+            gapX = -totalWidth / 2 + percentageWidth;
 
             if (isBottom)
             {
@@ -617,6 +618,17 @@ function createCoxcombChart(data) {
             .style('font-weight', LabelcontainerAdoptedFontWeight)
             .style('fill', externalLabelTextColor)
             .text(adoptedText);
+
+        // "gap" text with calculated positioning
+        //labelContainer.append('text')
+        //    .attr('x', gapX)
+        //    .attr('y', adoptedY)
+        //    .style('text-anchor', adoptedAnchor)
+        //    .style('font-family', 'Lato, sans-serif')
+        //    .style('font-size', LabelcontainerAdoptedFontSize+"px")
+        //    .style('font-weight', LabelcontainerAdoptedFontWeight)
+        //    .style('fill', externalLabelTextColor)
+        //    .text("--");
     });
 
     // Add center overlay circle
