@@ -2872,7 +2872,7 @@ SecurityProfileCallContext::$supportedActions['url.alert-only-set'] = array(
             if( $custom_url_category_obj !== NULL )
                 continue;
             //workaround
-            if(isset( $object->allow_custom[$tmp_name] ) )
+            if(isset( $object->allow_custom[$allow] ) )
                 continue;
 
             $object->alert[] = $allow;
