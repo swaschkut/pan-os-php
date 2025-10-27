@@ -2921,7 +2921,7 @@ SecurityProfileCallContext::$supportedActions['url.alert-only-set'] = array(
             if( $custom_url_category_obj !== NULL )
                 continue;
             //workaround
-            if(isset( $object->allow_credential_custom[$tmp_name] ) )
+            if(isset( $object->allow_credential_custom[$allow] ) )
                 continue;
 
             $object->alert_credential[] = $allow;
