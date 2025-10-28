@@ -406,7 +406,7 @@ class VirtualSystem
 
             'URLProfileStore', 'AntiVirusProfileStore', 'FileBlockingProfileStore', 'DataFilteringProfileStore',
             'VulnerabilityProfileStore', 'AntiSpywareProfileStore', 'WildfireProfileStore',
-            'DecryptionProfileStore', 'HipObjectsProfileStore'
+            'DecryptionProfileStore', 'HipObjectsProfileStore', 'customURLProfileStore'
 
         );
 

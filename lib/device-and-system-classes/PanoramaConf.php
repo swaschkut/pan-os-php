@@ -1324,7 +1324,7 @@ class PanoramaConf
 
                             'URLProfileStore', 'AntiVirusProfileStore', 'FileBlockingProfileStore', 'DataFilteringProfileStore',
                             'VulnerabilityProfileStore', 'AntiSpywareProfileStore', 'WildfireProfileStore',
-                            'DecryptionProfileStore', 'HipObjectsProfileStore'
+                            'DecryptionProfileStore', 'HipObjectsProfileStore', 'customURLProfileStore'
 
                             );
 
@@ -3394,7 +3394,7 @@ class PanoramaConf
 
                     'URLProfileStore', 'AntiVirusProfileStore', 'FileBlockingProfileStore', 'DataFilteringProfileStore',
                     'VulnerabilityProfileStore', 'AntiSpywareProfileStore', 'WildfireProfileStore',
-                    'DecryptionProfileStore', 'HipObjectsProfileStore'
+                    'DecryptionProfileStore', 'HipObjectsProfileStore', 'customURLProfileStore'
 
                 );
 

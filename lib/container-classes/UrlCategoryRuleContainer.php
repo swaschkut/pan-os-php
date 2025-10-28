@@ -195,8 +195,32 @@ class UrlCategoryRuleContainer extends ObjRuleContainer
             }
 
 
-            $f = $this->parentCentralStore->findOrCreate($node->textContent, $this);
-            $this->o[] = $f;
+            //customURLcategory
+            $f = $this->parentCentralStore->find($node->textContent, $this);
+            if( $f !== null )
+                $this->o[] = $f;
+            else
+            {
+                //external-list
+                $f = $this->owner->owner->owner->EDLStore->find($node->textContent, $this);
+                if( $f !== null )
+                    $this->o[] = $f;
+                else
+                {
+                    //search in predefined URL
+                    #PH::print_stdout(get_class($this->owner->owner->owner->owner));
+                    #PH::print_stdout("search for: ".$node->textContent);
+                    if(  get_class($this->owner->owner->owner->owner) == "PanoramaConf" || get_class($this->owner->owner->owner->owner) == "PANConf" || get_class($this->owner->owner->owner->owner) == "FawkesConf" )
+                        $predefined_url_store = $this->owner->owner->owner->owner->urlStore;
+                    else
+                        $predefined_url_store = $this->owner->owner->owner->owner->owner->urlStore;
+                    $f = $predefined_url_store->find($node->textContent, $this);
+                    if( $f !== null )
+                        $this->o[] = $f;
+                    else
+                        mwarning( "DG: ".$this->owner->owner->owner->name()." Rule: ".$this->owner->name()." UrlCategory has objects which are not referenced: '".$node->textContent."'", null, false );
+                }
+            }
             $i++;
         }
     }

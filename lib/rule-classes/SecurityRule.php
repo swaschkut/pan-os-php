@@ -85,7 +85,6 @@ class SecurityRule extends RuleWithUserID
     );
 
 
-    protected $parentCustomURLProfileStore;
 
     const ActionAllow = 0;
     const ActionDeny = 1;
@@ -116,7 +115,7 @@ class SecurityRule extends RuleWithUserID
 
         $this->parentAddressStore = $this->owner->owner->addressStore;
         $this->parentServiceStore = $this->owner->owner->serviceStore;
-        $this->parentCustomURLProfileStore = $this->owner->owner->customURLProfileStore;
+        $this->parentServiceStore = $this->owner->owner->serviceStore;
 
         $this->tags = new TagRuleContainer($this);
         $this->grouptag = new GroupTagRuleContainer($this);
@@ -142,7 +141,6 @@ class SecurityRule extends RuleWithUserID
 
         $this->urlCategories = new UrlCategoryRuleContainer($this);
         $this->urlCategories->name = 'urlcategories';
-        $this->urlCategories->parentCentralStore = $this->parentCustomURLProfileStore;
 
         $this->apps = new AppRuleContainer($this);
         $this->apps->name = 'apps';

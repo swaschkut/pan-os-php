@@ -372,7 +372,7 @@ class BuckbeakConf
                         //'DataFilteringProfileStore',
                         'VulnerabilityProfileStore', 'AntiSpywareProfileStore',
                         //'WildfireProfileStore',
-                        'DecryptionProfileStore', 'HipObjectsProfileStore',
+                        'DecryptionProfileStore', 'HipObjectsProfileStore', 'customURLProfileStore',
 
                         'DNSSecurityProfileStore', 'SaasSecurityProfileStore'
 
@@ -999,7 +999,7 @@ class BuckbeakConf
                 //'DataFilteringProfileStore',
                 'VulnerabilityProfileStore', 'AntiSpywareProfileStore',
                 //'WildfireProfileStore',
-                'DecryptionProfileStore', 'HipObjectsProfileStore',
+                'DecryptionProfileStore', 'HipObjectsProfileStore', 'customURLProfileStore',
 
                 'DNSSecurityProfileStore', 'SaasSecurityProfileStore'
             );
@@ -1094,7 +1094,7 @@ class BuckbeakConf
                 //'DataFilteringProfileStore',
                 'VulnerabilityProfileStore', 'AntiSpywareProfileStore',
                 //'WildfireProfileStore',
-                'DecryptionProfileStore', 'HipObjectsProfileStore',
+                'DecryptionProfileStore', 'HipObjectsProfileStore', 'customURLProfileStore',
 
                 'DNSSecurityProfileStore', 'SaasSecurityProfileStore'
 
@@ -1189,7 +1189,7 @@ class BuckbeakConf
                 //'DataFilteringProfileStore',
                 'VulnerabilityProfileStore', 'AntiSpywareProfileStore',
                 //'WildfireProfileStore',
-                'DecryptionProfileStore', 'HipObjectsProfileStore',
+                'DecryptionProfileStore', 'HipObjectsProfileStore', 'customURLProfileStore',
 
                 'DNSSecurityProfileStore', 'SaasSecurityProfileStore'
 
