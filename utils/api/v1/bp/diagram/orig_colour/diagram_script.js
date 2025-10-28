@@ -245,9 +245,12 @@ function createCoxcombChart(data) {
     const CenterGroupNotAdaptedPercentageFontSize = '17';
     const CenterGroupNotAdaptedPercentageFontWeight = '100';
 
-    const CenterGroupNotAdaptedFontSize = '8'; //10
+    const CenterGroupNotAdaptedFontSize = '10'; //10
     const CenterGroupNotAdaptedFontWeight = '300'; //400
 
+
+    const ColorCircleLineWidth = "1.5";
+    const ColorCircleLineOpacity = "0.75";
 
 
     const groupLabelOuterRadius = 25;
@@ -464,8 +467,8 @@ function createCoxcombChart(data) {
         .attr('r', d => radiusScale(d))
         .style('fill', 'none')
         .style('stroke', d => gridLabelColors[d].stroke)
-        .style('stroke-width', 1.5) // Reduced from 2 to make circles thinner
-        .style('opacity', 0.6); // Reduced from 0.8 to make circles more subtle
+        .style('stroke-width', ColorCircleLineWidth) // Reduced from 2 to make circles thinner
+        .style('opacity', ColorCircleLineOpacity); // Reduced from 0.8 to make circles more subtle
 
     // Add radial lines
     segments.append('line')
@@ -692,16 +695,17 @@ function createCoxcombChart(data) {
 
     // Center the percentage + adopted combination with consistent gap
     const totalNotAdaptedWidth = notAdoptedPercentageWidth + gapWidth + notAdoptedWidth;
-    CenterGroupNotAdaptedPercentageX = -totalNotAdaptedWidth / 2 + 20;
-    CenterGroupNotAdaptedX = -totalNotAdaptedWidth / 2 + notAdoptedWidth + gapWidth;
+    CenterGroupNotAdaptedPercentageX = 5 -totalNotAdaptedWidth / 2;
+    CenterGroupNotAdaptedX = 5 -totalNotAdaptedWidth / 2 + notAdoptedPercentageWidth + gapWidth;
+    CenterGroupNotAdaptedGapX = 5 -totalNotAdaptedWidth / 2 + notAdoptedPercentageWidth;
 
 
     centerGroup.append('text')
         .attr('y', 40)
         .attr('x', CenterGroupNotAdaptedPercentageX)
-        .attr('text-anchor', 'middle')
+        .attr('text-anchor', 'left')
         .style('font-family', 'Lato, sans-serif')
-        .style('font-size', CenterGroupNotAdaptedPercentageFontSize)
+        .style('font-size', CenterGroupNotAdaptedPercentageFontSize+"px")
         .style('font-weight', CenterGroupNotAdaptedPercentageFontWeight)
         //.style('fill', getPercentageColor(notAdopted))
         .style('fill', externalLabelTextColor)
@@ -712,12 +716,24 @@ function createCoxcombChart(data) {
         //.attr('y', centerOverlayRadius / 2 + 16)
         .attr('y', 40)
         .attr('x', CenterGroupNotAdaptedX)
-        .attr('text-anchor', 'middle')
+        .attr('text-anchor', 'left')
         .style('font-family', 'Lato, sans-serif')
-        .style('font-size', CenterGroupNotAdaptedFontSize)
+        .style('font-size', CenterGroupNotAdaptedFontSize+"px")
         .style('font-weight', CenterGroupNotAdaptedFontWeight)
         .style('fill', externalLabelTextColor)
         .text(notAdoptedText);
+
+    //centerGroup.append('text')
+        //.attr('x', centerOverlayRadius / 2 - 38)
+        //.attr('y', centerOverlayRadius / 2 + 16)
+    //    .attr('y', 40)
+    //    .attr('x', CenterGroupNotAdaptedGapX)
+    //    .attr('text-anchor', 'left')
+    //    .style('font-family', 'Lato, sans-serif')
+    //    .style('font-size', CenterGroupNotAdaptedFontSize+"px")
+    //    .style('font-weight', CenterGroupNotAdaptedFontWeight)
+    //    .style('fill', externalLabelTextColor)
+    //    .text("--");
 
     // Create grid labels
     const gridLabelGroups = g.selectAll('.grid-label-group')
