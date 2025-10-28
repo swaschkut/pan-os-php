@@ -124,9 +124,7 @@ function resetChart() {
 // Helper function to estimate text width (approximate)
 function estimateTextWidth(text, fontSize) {
     // Approximate character width based on font size for Lato font
-    //tmpFontSize = fontSize.replace("px", "");
-    tmpFontSize = fontSize;
-    const avgCharWidth = tmpFontSize * 0.6;
+    const avgCharWidth = fontSize * 0.6;
 
     // Get the actual length
     const actualLength = text.length;
