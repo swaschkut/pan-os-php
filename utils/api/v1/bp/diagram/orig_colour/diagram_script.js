@@ -1,9 +1,3 @@
-// Global variables
-let currentChart = null;
-let currentData = null;
-let adoptedText = null;
-let notAdoptedText = null;
-
 // Light mode state
 let isLightMode = false;
 
@@ -50,7 +44,11 @@ function loadfirstSample() {
     loadSample(sampleKeys[0]);
 }
 
-
+// Global variables
+let currentChart = null;
+let currentData = null;
+let adoptedText = null;
+let notAdoptedText = null;
 
 function loadSample(type) {
     document.getElementById('jsonInput').value = JSON.stringify(samples[type], null, 2);
@@ -126,7 +124,9 @@ function resetChart() {
 // Helper function to estimate text width (approximate)
 function estimateTextWidth(text, fontSize) {
     // Approximate character width based on font size for Lato font
-    const avgCharWidth = fontSize * 0.6;
+    //tmpFontSize = fontSize.replace("px", "");
+    tmpFontSize = fontSize;
+    const avgCharWidth = tmpFontSize * 0.6;
 
     // Get the actual length
     const actualLength = text.length;
@@ -164,11 +164,8 @@ function createCoxcombChart(data) {
         currentIndex += groupItems.length;
     });
 
-
-////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////
     // Chart dimensions and setup
-    const LabelGapToCircle = 40;
+    const LabelGapToCircle = 37;
     const width = 760;
     const height = 760;
     const margin = 160;
@@ -180,7 +177,7 @@ function createCoxcombChart(data) {
 
     let BottomGapCategoryPercentage = 15;
 
-// Theme-based colors
+    // Theme-based colors
     const backgroundColor = isLightMode ? '#ffffff' : '#0a0a0a';
     const centerOverlayColor = isLightMode ? '#ffffff' : '#1a1a1a';
     const groupLabelBgColor = isLightMode ? '#f5f5f5' : '#0D0D0D';
@@ -193,74 +190,72 @@ function createCoxcombChart(data) {
 
 
 
-    const redPercentagUsedColor = '#E8121C';
+    const redPercentagUsedColor = '#E20019';
     const redLabelUsedColor = '#F8B1B1';
-    const redBackgroundColor = '#FFBDC2';    //'#FAD0D2'
+    const redBackgroundColor = '#F8C4C8';    //'#FAD0D2'
 
-    const orangePercentagUsedColor = '#F06A0A';
+    const orangePercentagUsedColor = '#EB540D';
     const orangeLabelUsedColor = '#F5B181';
-    const orangeBackgroundColor = '#FCE1CE';
+    const orangeBackgroundColor = '#FADAC3';
 
-    const yellowPercentagUsedColor = '#FBB441';
+    const yellowPercentagUsedColor = '#F7A633';
     const yellowLabelUsedColor = '#FEE5BB';
-    const yellowBackgroundColor = '#FDF0D9';
+    const yellowBackgroundColor = '#FCEDD0';
 
-    const greenPercentagUsedColor = '#0A947B'; //25B197
+    const greenPercentagUsedColor = '#24A385'; //25B197
     const greenLabelUsedColor = '#92DDCD';
-    const greenBackgroundColor = '#D2EFEA';
+    const greenBackgroundColor = '#CBECE5';
 
 
 
     const ArcPadAngle = '0.01' // gap between diagram Segments
 
 
-//curved grouplabeling
+    //curved grouplabeling
     const groupLabelGroupsFontSize = '9.5px'; //11
     const groupLabelGroupsFontWeight = '300';
 // Define a small padding angle for the group label arc
     const GROUP_PADDING_ANGLE = 0.0075; // Adjust this value (e.g., 0.005 radians)
 
 
-//outside labeling around the diagramm
-    const LabelcontainerCategoryFontSize = '8'; //10
-    const LabelcontainerCategoryFontWeight = '600'; //400
+    //outside labeling around the diagramm
+    const LabelcontainerCategoryFontSize = '9'; //10
+    const LabelcontainerCategoryFontWeight = '400'; //400
 
-    const LabelcontainerPercentageFontSize = '16'; //20
-    const LabelcontainerPercentageFontWeight = '500'; //300
+    const LabelcontainerPercentageFontSize = '18'; //20
+    const LabelcontainerPercentageFontWeight = '400'; //300
 
     const LabelcontainerAdoptedFontSize = '8'; //10
     const LabelcontainerAdoptedFontWeight = '500'; //300
 
 
-//color full labeling 12 o-clock
+    //color full labeling 12 o-clock
     const GridLabelGroupsFontSize = '10px'; //12
     const GridLabelGroupsFontWeight = '400';
 
 
-//inner circle
-    const CenterGroupAverageFontSize = '10px'; //12
-    const CenterGroupAverageFontWeight = '400'; //700
+    //inner circle
+    const CenterGroupAverageFontSize = '10'; //12
+    const CenterGroupAverageFontWeight = '500'; //700
 
-    const CenterGroupAveragePercentageFontSize = '40px';
+    const CenterGroupAveragePercentageFontSize = '36';
     const CenterGroupAveragePercentageFontWeight = '300';
 
-    const CenterGroupAdoptedFontSize = '10px';
+    const CenterGroupAdoptedFontSize = '9.25';
     const CenterGroupAdoptedFontWeight = '400';
-/////////
-    const CenterGroupNotAdaptedPercentageFontSize = '20px';
-    const CenterGroupNotAdaptedPercentageFontWeight = '300';
+    /////////
+    const CenterGroupNotAdaptedPercentageFontSize = '17';
+    const CenterGroupNotAdaptedPercentageFontWeight = '100';
 
-    const CenterGroupNotAdaptedFontSize = '8px'; //10
+    const CenterGroupNotAdaptedFontSize = '8'; //10
     const CenterGroupNotAdaptedFontWeight = '300'; //400
 
 
 
     const groupLabelOuterRadius = 25;
 
-// Consistent gap between percentage and "Adopted" text (5 pixels)
+    // Consistent gap between percentage and "Adopted" text (5 pixels)
     const CONSISTENT_GAP = 10;
-////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////
 
 
     // Grid label colors
@@ -657,7 +652,7 @@ function createCoxcombChart(data) {
         .attr('y', -45)
         .attr('text-anchor', 'middle')
         .style('font-family', 'Lato, sans-serif')
-        .style('font-size', CenterGroupAverageFontSize)
+        .style('font-size', CenterGroupAverageFontSize+"px")
         .style('font-weight', CenterGroupAverageFontWeight)
         .style('fill', externalLabelTextColor)
         .text('Average');
@@ -670,7 +665,7 @@ function createCoxcombChart(data) {
         .attr('y', -5)
         .attr('text-anchor', 'middle')
         .style('font-family', 'Lato, sans-serif')
-        .style('font-size', CenterGroupAveragePercentageFontSize)
+        .style('font-size', CenterGroupAveragePercentageFontSize+"px")
         .style('font-weight', CenterGroupAveragePercentageFontWeight)
         .style('fill', getPercentageColor(average))
         .text(averagePercentageText);
@@ -680,7 +675,7 @@ function createCoxcombChart(data) {
         .attr('y', 10)
         .attr('text-anchor', 'middle')
         .style('font-family', 'Lato, sans-serif')
-        .style('font-size', CenterGroupAdoptedFontSize)
+        .style('font-size', CenterGroupAdoptedFontSize+"px")
         .style('font-weight', CenterGroupAdoptedFontWeight)
         .style('fill', externalLabelTextColor)
         .text(adoptedText);
@@ -694,11 +689,18 @@ function createCoxcombChart(data) {
 
     // "Not Adopted" percentage with consistent positioning
     const notAdoptedPercentageText = notAdoptedpercentage + '%';
-    const notAdoptedPercentageWidth = estimateTextWidth(notAdoptedPercentageText, 20);
+    const notAdoptedPercentageWidth = estimateTextWidth(notAdoptedPercentageText, CenterGroupNotAdaptedPercentageFontSize);
+    const notAdoptedWidth = estimateTextWidth(notAdoptedText, CenterGroupNotAdaptedFontSize);
+
+    // Center the percentage + adopted combination with consistent gap
+    const totalNotAdaptedWidth = notAdoptedPercentageWidth + gapWidth + notAdoptedWidth;
+    CenterGroupNotAdaptedPercentageX = -totalNotAdaptedWidth / 2 + 20;
+    CenterGroupNotAdaptedX = -totalNotAdaptedWidth / 2 + notAdoptedWidth + gapWidth;
+
 
     centerGroup.append('text')
         .attr('y', 40)
-        //.attr('x', - 40)
+        .attr('x', CenterGroupNotAdaptedPercentageX)
         .attr('text-anchor', 'middle')
         .style('font-family', 'Lato, sans-serif')
         .style('font-size', CenterGroupNotAdaptedPercentageFontSize)
@@ -708,9 +710,10 @@ function createCoxcombChart(data) {
         .text(notAdoptedPercentageText);
 
     centerGroup.append('text')
-        .attr('x', centerOverlayRadius / 2 - 38)
-        .attr('y', centerOverlayRadius / 2 + 16)
-        //.attr('y', 40)
+        //.attr('x', centerOverlayRadius / 2 - 38)
+        //.attr('y', centerOverlayRadius / 2 + 16)
+        .attr('y', 40)
+        .attr('x', CenterGroupNotAdaptedX)
         .attr('text-anchor', 'middle')
         .style('font-family', 'Lato, sans-serif')
         .style('font-size', CenterGroupNotAdaptedFontSize)
