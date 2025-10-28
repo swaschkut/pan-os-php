@@ -11,6 +11,7 @@ BUGFIX:
 * class RuleCAllContext | bugfix for type=rule ruletype=any actions=exporttoexcel
 * type=securityprofile securityprofiletype=url-filtering | bugfix for actions=url.alert-only-set and url.best-practice-set | related to customURLcategories
 * type=stats | user-id was calculated with all secRules, not only the enabled one
+* Class SecurityRule | do not error out if an object is not found [example DLP pluing object]
 
 GENERAL:
 * ironskillet | remove for all AS profiles <entry name="pan-dns-sec-benign">
