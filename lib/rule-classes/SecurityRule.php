@@ -534,7 +534,7 @@ class SecurityRule extends RuleWithUserID
                         {
                             //todo: not an object - default object not yet created
                             mwarning( "SecRule: '".$this->name()."' SecurityProfile: '".$firstE->textContent."' of Type: '".$prof->nodeName."' not found.", null, false );
-                            $this->secprofProfiles_obj[$prof->nodeName] = $firstE->textContent;
+                            #$this->secprofProfiles_obj[$prof->nodeName] = $firstE->textContent;
                         }
                     }
                 }

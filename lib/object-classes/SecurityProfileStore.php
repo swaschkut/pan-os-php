@@ -242,7 +242,7 @@ class SecurityProfileStore extends ObjStore
                     continue;
                 if( $node->tagName != 'entry' )
                 {
-                    mwarning("A SecyrityProfile entry with tag '{$node->tagName}' was found and ignored");
+                    mwarning("A SecurityProfile entry with tag '{$node->tagName}' was found and ignored");
                     continue;
                 }
                 $tmp_name = DH::findAttribute('name', $node);
