@@ -19,6 +19,7 @@ BUGFIX:
 GENERAL:
 * ironskillet | remove for all AS profiles <entry name="pan-dns-sec-benign">
 * adjustment for interface to read IP address from object for zoneCalculation
+* reduce information output | overall this is only useful for development
 
 
 2.1.40  (20251018)

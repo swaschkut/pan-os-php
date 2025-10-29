@@ -431,6 +431,7 @@ class PANConf
                             $this->timezone = $timezone_backward;
                             date_default_timezone_set($timezone_backward);
 
+                            /*
                             PH::print_stdout("   --------------");
                             PH::print_stdout( " X Timezone: $timezone->textContent is not supported with this PHP version. ".$this->timezone." is used." );
                             PH::print_stdout("   - the timezone is IANA deprecated. Please change to a supported one:");
@@ -439,6 +440,7 @@ class PANConf
                             PH::print_stdout("   -- '".$this->timezone."'");
                             PH::print_stdout("   --------------");
                             PH::print_stdout();
+                            */
                         }
                         else
                         {

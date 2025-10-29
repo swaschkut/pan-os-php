@@ -228,7 +228,10 @@ class UrlCategoryRuleContainer extends ObjRuleContainer
                     if( $f !== null )
                         $this->o[] = $f;
                     else
-                        mwarning( "DG: ".$this->owner->owner->owner->name()." Rule: ".$this->owner->name()." UrlCategory has objects which are not referenced: '".$node->textContent."'", null, false );
+                    {
+                        //mwarning( "DG: ".$this->owner->owner->owner->name()." Rule: ".$this->owner->name()." UrlCategory has objects which are not referenced: '".$node->textContent."'", null, false );
+                    }
+
                 }
             }
             $i++;
