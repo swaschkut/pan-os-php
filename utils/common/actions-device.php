@@ -266,9 +266,12 @@ DeviceCallContext::$supportedActions['display'] = array(
     {
         if( $context->arguments['listserial'] )
         {
-            foreach( $context->objectList['serial'] as $device)
+            if( isset($context->objectList['serial']) )
             {
-                PH::print_stdout("Serial: ". str_pad( $device['serial'], 16) . " | DG: ". str_pad($device['dg'],30)." | Template-Stack: ". str_pad( $device['template-stack'],30)." | vsys: ".$device['vsys'] );
+                foreach( $context->objectList['serial'] as $device)
+                {
+                    PH::print_stdout("Serial: ". str_pad( $device['serial'], 16) . " | DG: ". str_pad($device['dg'],30)." | Template-Stack: ". str_pad( $device['template-stack'],30)." | vsys: ".$device['vsys'] );
+                }
             }
 
             PH::print_stdout();
