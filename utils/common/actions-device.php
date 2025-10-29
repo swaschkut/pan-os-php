@@ -31,6 +31,9 @@
 
 DeviceCallContext::$supportedActions['display'] = array(
     'name' => 'display',
+    'GlobalInitFunction' => function (DeviceCallContext $context) {
+        $context->objectList = array();
+    },
     'MainFunction' => function (DeviceCallContext $context) {
         $object = $context->object;
         PH::print_stdout( "     * " . get_class($object) . " '{$object->name()}'" );
@@ -90,10 +93,18 @@ DeviceCallContext::$supportedActions['display'] = array(
                 if( $managedFirewall !== null )
                     PH::print_stdout( $context->padding." - serial: ".$key." - Template-Stack: ".$managedFirewall->template_stack);
 
+
                 if( isset($device['vsyslist']) )
+                {
                     PH::print_stdout($context->padding."  - virtualsystem: '".array_keys($device['vsyslist'])[0]."'");
+                    $context->objectList['serial'][$key] = array( 'serial' => $key, 'dg' => $managedFirewall->devicegroup, 'template-stack' => $managedFirewall->template_stack, 'vsys' => array_keys($device['vsyslist'])[0] );
+                }
                 else
+                {
                     PH::print_stdout($context->padding."   - virtualsystem: 'vsys1'");
+                    $context->objectList['serial'][$key] = array( 'serial' => $key, 'dg' => $managedFirewall->devicegroup, 'template-stack' => $managedFirewall->template_stack, 'vsys' => 'vsys1' );
+                }
+
 
                 PH::$JSON_TMP['sub']['object'][$object->name()]['devices'][] = $key;
             }
@@ -251,6 +262,22 @@ DeviceCallContext::$supportedActions['display'] = array(
 
         PH::print_stdout();
     },
+    'GlobalFinishFunction' => function (DeviceCallContext $context)
+    {
+        if( $context->arguments['listserial'] )
+        {
+            foreach( $context->objectList['serial'] as $device)
+            {
+                PH::print_stdout("Serial: ". str_pad( $device['serial'], 16) . " | DG: ". str_pad($device['dg'],30)." | Template-Stack: ". str_pad( $device['template-stack'],30)." | vsys: ".$device['vsys'] );
+            }
+
+            PH::print_stdout();
+            PH::print_stdout( "Device count: ".count( $context->objectList ) );
+        }
+    },
+    'args' => array(
+        'listserial' => array('type' => 'string', 'default' => 'false')
+    )
 );
 
 DeviceCallContext::$supportedActions['displayreferences'] = array(

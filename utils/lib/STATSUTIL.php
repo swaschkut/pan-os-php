@@ -22,6 +22,8 @@ class STATSUTIL extends RULEUTIL
 {
     public $exportcsvFile = null;
 
+    public $jsonToFolder_string = "";
+
     function __construct($utilType, $argv, $argc, $PHP_FILE, $_supportedArguments = array(), $_usageMsg = "")
     {
         #PH::print_stdout("argv");
@@ -81,7 +83,7 @@ class STATSUTIL extends RULEUTIL
         else
             $this->stats( $this->debugAPI, $actions, $this->location );
 
-        if( PH::$args['actions'] == "display" || PH::$args['actions'] == "display-bpa" || PH::$args['actions'] == "display-available" )
+        if( PH::$args['actions'] == "display" || PH::$args['actions'] == "display-bpa" || PH::$args['actions'] == "display-available")
             PH::print_stdout(PH::$JSON_TMP, false, "statistic");
 
         if( PH::$args['actions'] == "trending" )
@@ -105,6 +107,45 @@ class STATSUTIL extends RULEUTIL
                     print_r( $tmpArray );
 
                     break;
+                }
+            }
+        }
+
+        if( PH::$args['actions'] == "display-managedfw-serial" || isset(PH::$args['json-to-folder']) )
+        {
+            if( $this->configType == 'panorama' )
+            {
+                $AllmanagedFirewall = $this->pan->managedFirewallsStore->getAll();
+                $tmp_devices = array();
+
+                foreach( $AllmanagedFirewall as $managedFirewall )
+                {
+                    if( $managedFirewall->devicegroup == null )
+                        $tmp_dg = "---";
+                    else
+                        $tmp_dg = $managedFirewall->devicegroup;
+                    if( $managedFirewall->template_stack == null )
+                        $tmp_tstack = "---";
+                    else
+                        $tmp_tstack = $managedFirewall->template_stack;
+
+                    if( in_array( 'any', $this->objectsLocation) || in_array( $tmp_dg, $this->objectsLocation) )
+                    {
+                        $tmp_devices[] = array( 'serial' => $managedFirewall->name(), "dg" => $tmp_dg, "template-stack" => $tmp_tstack );
+                        PH::print_stdout( " - ".str_pad($managedFirewall->name(),16)." - DG: ".str_pad($tmp_dg,30)." - T-Stack: ".str_pad($tmp_tstack,30) );
+                    }
+
+                }
+
+                if( !isset(PH::$args['json-to-folder']) )
+                {
+                    PH::print_stdout();
+                    PH::print_stdout("count: ".count($AllmanagedFirewall));
+                }
+                elseif( isset(PH::$args['json-to-folder']) )
+                {
+                    $jsonContent = json_encode($tmp_devices, JSON_PRETTY_PRINT);
+                    $this->jsonToFolder_string .= "devices = ".$jsonContent.";";
                 }
             }
         }
@@ -249,15 +290,14 @@ class STATSUTIL extends RULEUTIL
             }
 
             $jsonContent = json_encode($mainArray, JSON_PRETTY_PRINT);
-            $tmp_string = "samples = ".$jsonContent;
+            $this->jsonToFolder_string .= "samples = ".$jsonContent.";";
             $filename = $outputFolder."/diagram_data.js";
-            file_put_contents($filename, $tmp_string);
+            file_put_contents($filename, $this->jsonToFolder_string);
 
 
             PH::print_stdout();
             PH::print_stdout( "JSON files generated successfully in: ".$outputFolder );
         }
-
 
         if( $this->debugAPI )
         {
