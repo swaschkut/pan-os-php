@@ -221,7 +221,7 @@ function createCoxcombChart(data) {
     const LabelcontainerCategoryFontWeight = '400'; //400
 
     const LabelcontainerPercentageFontSize = '18'; //20
-    const LabelcontainerPercentageFontWeight = '400'; //300
+    const LabelcontainerPercentageFontWeight = '300'; //300
 
     const LabelcontainerAdoptedFontSize = '8'; //10
     const LabelcontainerAdoptedFontWeight = '500'; //300
@@ -240,16 +240,16 @@ function createCoxcombChart(data) {
     const CenterGroupAveragePercentageFontWeight = '300';
 
     const CenterGroupAdoptedFontSize = '9.25';
-    const CenterGroupAdoptedFontWeight = '400';
+    const CenterGroupAdoptedFontWeight = '300';
     /////////
     const CenterGroupNotAdaptedPercentageFontSize = '17';
-    const CenterGroupNotAdaptedPercentageFontWeight = '100';
+    const CenterGroupNotAdaptedPercentageFontWeight = '300';
 
     const CenterGroupNotAdaptedFontSize = '10'; //10
     const CenterGroupNotAdaptedFontWeight = '300'; //400
 
 
-    const ColorCircleLineWidth = "1.5";
+    const ColorCircleLineWidth = "1.0";
     const ColorCircleLineOpacity = "0.75";
 
 

@@ -206,6 +206,8 @@ class ZoneRuleContainer extends ObjRuleContainer
                 //new Code - planed with 2.1.37 but buggy
                 if (isset($this->owner->owner->owner) && get_class($this->owner->owner->owner) == 'DeviceGroup')
                 {
+                    PH::print_stdout("DG check");
+
                     //old intermediate code cause issues with 2.1.37 - no longer the case
                     //Todo: per devicegroup check if there is a serial attached,
                     //if not get child devicegroups and check if there are serial attached.
@@ -214,7 +216,8 @@ class ZoneRuleContainer extends ObjRuleContainer
                     $tmp_devicegroup = $this->owner->owner->owner;
                     $tmp_panorama = $tmp_devicegroup->owner;
 
-
+                    /*
+                    PH::print_stdout("new code");
                     print( "Main DG: ".$tmp_devicegroup->name()."\n" );
 
                     $childDGS = array();
@@ -231,15 +234,17 @@ class ZoneRuleContainer extends ObjRuleContainer
 
                         foreach ($child->getDevicesInGroup() as $key => $device)
                         {
-                            // /** @var ManagedDevice $device */
+
                             PH::print_stdout($device->template_stack->name());
-                            exit();
-                            break;
+                            //exit();
+                            //break;
                         }
                     }
+                    */
+
+                    //PH::print_stdout("now start with old code");
 
 
-                    /*
                     //=======================================================
                     $all_Templates = $tmp_panorama->getTemplates();
                     $all_TemplateStacks = $tmp_panorama->getTemplatesStacks();
@@ -250,62 +255,64 @@ class ZoneRuleContainer extends ObjRuleContainer
                     foreach( $all as $template )
                     {
                         /** @var Template|TemplateStack $template */
-                    /*
+
                         $all_vsys = $template->deviceConfiguration->getVirtualSystems();
                         foreach ($all_vsys as $vsys)
                         {
                             /** @var VirtualSystem $vsys */
-                    /*
+
                             $tmp_zone = $vsys->zoneStore->find($node->textContent, $this);
 
                             //Todo: validate if correct Template / TemplateStack
 
-                            /*
+
                             $childDGS = array();
                             $childDGS[] = $tmp_devicegroup;
                             $tmp_childDGS = $tmp_devicegroup->childDeviceGroups(true);
                             $childDGS = array_merge($childDGS, $tmp_childDGS);
-                            foreach( $childDGS as $child )
+                            foreach ($childDGS as $child)
                             {
                                 #PH::print_stdout("DG: ".$child->name());
 
-                                if( count($child->getDevicesInGroup()) == 0)
+                                if (count($child->getDevicesInGroup()) == 0)
                                     continue;
 
                                 #PH::print_stdout( count($child->getDevicesInGroup()) );
 
-                                foreach( $child->getDevicesInGroup() as $key => $device )
+                                foreach ($child->getDevicesInGroup() as $key => $device)
                                 {
                                     // /** @var ManagedDevice $device */
-                            /*  PH::print_stdout( $device->template_stack->name() );
-                                break;
+                                    PH::print_stdout($device->template_stack->name());
+                                    //break; //is this causing the bug???
+                                }
+
+
+                                /////////////////////////////////////
+                                if ($tmp_zone === null)
+                                {
+                                    $f = $this->parentCentralStore->findOrCreate($node->textContent, $this);
+                                    $this->o[] = $f;
+                                } elseif ($tmp_zone !== null)
+                                    $this->o[] = $tmp_zone;
                             }
-                            */
-                    /*
-                            /////////////////////////////////////
-                            if( $tmp_zone === null )
-                            {
-                                $f = $this->parentCentralStore->findOrCreate($node->textContent, $this);
-                                $this->o[] = $f;
-                            }
-                            elseif( $tmp_zone !== null )
-                                $this->o[] = $tmp_zone;
                         }
                     }
-                    */
-
                 }
                 else
                 {
+                    PH::print_stdout("NOT DG check");
+                    //not DeviceGroup
                     $f = $this->parentCentralStore->findOrCreate($node->textContent, $this);
                     $this->o[] = $f;
                 }
 
 
-            } else {
+            }
+            else {
                 //old Code before 2.1.37
                 $f = $this->parentCentralStore->findOrCreate($node->textContent, $this);
-                $this->o[] = $f; }
+                $this->o[] = $f;
+            }
 
             $i++;
         }
