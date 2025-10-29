@@ -15,6 +15,7 @@ BUGFIX:
 * different Device classes | set parentStore also for customURLProfileStore | to get 'filter=(object is.unused)'; working for customURLProfiles
 * type=custom-url-category-merger allowmergingwithupperlevel addmissingobjects |  bugfix to get this working for child object search
 * type=stats json-to-folder | extend with device serial/dg/t-stack information
+* class ZoneProtection/URLProfile | bugfix with better validation if XMLnode is FALSE
 
 GENERAL:
 * ironskillet | remove for all AS profiles <entry name="pan-dns-sec-benign">

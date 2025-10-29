@@ -136,19 +136,22 @@ class ZoneProtectionProfile
                 if( $action_Node !== FALSE )
                 {
                     $severity = DH::firstChildElement($action_Node);
-                    $this->scan[$entry_name]['action'] = $severity->nodeName;
-
-                    if( $action_Node->hasChildNodes() )
+                    if( $severity !== FALSE )
                     {
-                        //<track-by>source</track-by>
-                        //<duration>3600</duration>
-                        $track_by_Node = DH::findFirstElement('track-by', $severity);
-                        $duration_Node = DH::findFirstElement('duration', $severity);
+                        $this->scan[$entry_name]['action'] = $severity->nodeName;
 
-                        if( $track_by_Node !== FALSE )
-                            $this->scan[$entry_name]['track-by'] = $track_by_Node->textContent;
-                        if( $duration_Node !== FALSE )
-                            $this->scan[$entry_name]['duration'] = $duration_Node->textContent;
+                        if( $action_Node->hasChildNodes() )
+                        {
+                            //<track-by>source</track-by>
+                            //<duration>3600</duration>
+                            $track_by_Node = DH::findFirstElement('track-by', $severity);
+                            $duration_Node = DH::findFirstElement('duration', $severity);
+
+                            if( $track_by_Node !== FALSE )
+                                $this->scan[$entry_name]['track-by'] = $track_by_Node->textContent;
+                            if( $duration_Node !== FALSE )
+                                $this->scan[$entry_name]['duration'] = $duration_Node->textContent;
+                        }
                     }
                 }
 

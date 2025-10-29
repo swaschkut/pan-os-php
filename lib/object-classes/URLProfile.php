@@ -319,7 +319,8 @@ class URLProfile extends SecurityProfile2
             if( $tmp_credential_mode != null )
             {
                 $mode_node = DH::firstChildElement($tmp_credential_mode);
-                $this->credential_mode = $mode_node->nodeName;
+                if( $mode_node != null )
+                    $this->credential_mode = $mode_node->nodeName;
             }
 
             $tmp_credential_log_severity = DH::findFirstElement("log-severity", $tmp_credential_enforcement);
