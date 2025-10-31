@@ -278,10 +278,10 @@ DeviceCallContext::$supportedActions['display'] = array(
                         $device_TStack = "---";
                     PH::print_stdout("Serial: ". str_pad( $device['serial'], 16) . " | DG: ". str_pad($device_dg,30)." | Template-Stack: ". str_pad( $device_TStack,30)." | vsys: ".$device['vsys'] );
                 }
-            }
 
-            PH::print_stdout();
-            PH::print_stdout( "Device count: ".count( $context->objectList ) );
+                PH::print_stdout();
+                PH::print_stdout( "Device count: ".count( $context->objectList['serial'] ) );
+            }
         }
     },
     'args' => array(
