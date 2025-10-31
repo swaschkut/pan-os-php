@@ -17,6 +17,7 @@ BUGFIX:
 * type=stats json-to-folder | extend with device serial/dg/t-stack information
 * class ZoneProtection/URLProfile | bugfix with better validation if XMLnode is FALSE
 * class ThreatPolicy | bugfix to update memory
+* type=device actions=display | fix to avoid warning message
 
 GENERAL:
 * ironskillet | remove for all AS profiles <entry name="pan-dns-sec-benign">
