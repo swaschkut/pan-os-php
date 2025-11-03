@@ -163,14 +163,18 @@
       "location": "location=any"
     },
     {
-      "type": "device",
-      "actions": "actions=defaultsecurityrule-securityprofilegroup-set:Alert-Only",
-      "location": "location=any"
+      "type": "rule",
+      "ruletype": "ruletype=defaultsecurity",
+      "actions": "actions=securityprofile-group-set:Alert-Only",
+      "location": "location=any",
+      "filter": "filter=!(secprof is.set) and (action is.allow)"
     },
     {
-      "type": "device",
-      "actions": "actions=defaultsecurityrule-securityprofile-remove:false",
-      "location": "location=any"
+      "type": "rule",
+      "ruletype": "ruletype=defaultsecurity",
+      "actions": "actions=securityprofile-remove",
+      "location": "location=any",
+      "filter": "filter=!(action is.allow)"
     }
   ]
 }

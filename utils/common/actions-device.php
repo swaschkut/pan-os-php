@@ -3204,6 +3204,8 @@ DeviceCallContext::$supportedActions['DefaultSecurityRule-create-BP'] = array(
     )
 );
 
+/*
+//already availabel with type=rule ruletype=defaultsecurity
 DeviceCallContext::$supportedActions['DefaultSecurityRule-logend-enable'] = array(
     'name' => 'defaultsecurityrule-logend-enable',
     'GlobalInitFunction' => function (DeviceCallContext $context) {
@@ -3275,7 +3277,9 @@ DeviceCallContext::$supportedActions['DefaultSecurityRule-logend-enable'] = arra
         }
     }
 );
-
+*/
+/*
+//already availabel with type=rule ruletype=defaultsecurity
 DeviceCallContext::$supportedActions['DefaultSecurityRule-logstart-disable'] = array(
     'name' => 'defaultsecurityrule-logstart-disable',
     'GlobalInitFunction' => function (DeviceCallContext $context) {
@@ -3347,7 +3351,10 @@ DeviceCallContext::$supportedActions['DefaultSecurityRule-logstart-disable'] = a
         }
     }
 );
+*/
 
+/*
+//already availabel with type=rule ruletype=defaultsecurity
 DeviceCallContext::$supportedActions['DefaultSecurityRule-logsetting-set'] = array(
     'name' => 'defaultsecurityrule-logsetting-set',
     'GlobalInitFunction' => function (DeviceCallContext $context) {
@@ -3443,6 +3450,7 @@ DeviceCallContext::$supportedActions['DefaultSecurityRule-logsetting-set'] = arr
         )
     )
 );
+*/
 
 DeviceCallContext::$supportedActions['DefaultSecurityRule-remove-override'] = array(
     'name' => 'defaultsecurityrule-remove-override',
@@ -3499,6 +3507,8 @@ DeviceCallContext::$supportedActions['DefaultSecurityRule-remove-override'] = ar
     }
 );
 
+/*
+// this is available with type=rule ruletype=defaultsecurity actions=securityprofile-remove
 DeviceCallContext::$supportedActions['DefaultSecurityRule-securityProfile-Remove'] = array(
     'name' => 'defaultsecurityrule-securityprofile-remove',
     'GlobalInitFunction' => function (DeviceCallContext $context) {
@@ -3589,7 +3599,10 @@ DeviceCallContext::$supportedActions['DefaultSecurityRule-securityProfile-Remove
         )
     )
 );
+*/
 
+/*
+ //this is already available with  type=rule ruletype=defaultsecurity actions=securityprofile-group-set:XYZ
 DeviceCallContext::$supportedActions['DefaultSecurityRule-SecurityProfileGroup-Set'] = array(
     'name' => 'defaultsecurityrule-securityprofilegroup-set',
     'GlobalInitFunction' => function (DeviceCallContext $context) {
@@ -3599,6 +3612,7 @@ DeviceCallContext::$supportedActions['DefaultSecurityRule-SecurityProfileGroup-S
         $object = $context->object;
         $classtype = get_class($object);
 
+        //Todo: deprecated
         if( $context->first )
         {
             $secProfGroup = $context->arguments['securityProfileGroup'];
@@ -3697,6 +3711,7 @@ DeviceCallContext::$supportedActions['DefaultSecurityRule-SecurityProfileGroup-S
                     $context->first = false;
             }
         }
+
     },
     'args' => array(
         'securityProfileGroup' => array('type' => 'string', 'default' => '*nodefault*',
@@ -3705,8 +3720,10 @@ DeviceCallContext::$supportedActions['DefaultSecurityRule-SecurityProfileGroup-S
         'force' => array('type' => 'bool', 'default' => 'false',
             'help' => "per default, SecurityProfileGroupSet only if Rule has no SPG. force=true => add always SPG"
         )
-    )
+    ),
+    'deprecated' => 'this action "defaultsecurityrule-securityprofilegroup-set" is deprecated, you should use "type=rule ruletype=defaultsecurity actions=securityprofile-group-set:XYZ" instead!'
 );
+*/
 
 DeviceCallContext::$supportedActions['DefaultSecurityRule-SecurityProfile-SetAlert'] = array(
     'name' => 'defaultsecurityrule-securityprofile-setAlert',
@@ -3913,7 +3930,8 @@ DeviceCallContext::$supportedActions['DefaultSecurityRule-SecurityProfile-SetAle
     }
 );
 
-
+/*
+//this is available with type=rule ruletype=defaultsecurity actions=action-set:XYZ
 DeviceCallContext::$supportedActions['DefaultSecurityRule-action-set'] = array(
     'name' => 'defaultsecurityrule-action-set',
     'GlobalInitFunction' => function (DeviceCallContext $context) {
@@ -3983,14 +4001,7 @@ DeviceCallContext::$supportedActions['DefaultSecurityRule-action-set'] = array(
                     elseif( $entry === "interzone-default" )
                         $action_txt = $action;
 
-                    /*
-                    if( $entry === "intrazone-default" && $action === "allow" )
-                    {
-                        $string = "ruletype: intrazone-default and action:allow - is default value";
-                        PH::ACTIONstatus( $context, "SKIPPED", $string );
-                        return;
-                    }
-                    */
+
 
 
                     $xmlAction = DH::findFirstElement( "action", $tmp_XYZzone_xml );
@@ -4041,7 +4052,7 @@ DeviceCallContext::$supportedActions['DefaultSecurityRule-action-set'] = array(
         )
     )
 );
-
+*/
 
 DeviceCallContext::$supportedActions['find-zone-from-ip'] = array(
     'name' => 'find-zone-from-ip',

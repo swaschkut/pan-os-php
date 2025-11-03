@@ -4,6 +4,7 @@ CHANGELOG
 UTIL:
 * pan-os-php in=scm-api:// | introduction to use SCM API - sase-api -> only Prisma Access
 * type=rule | introduce 'filter=(src.ip.count >,<,=,!  1000) | (dst.ip.count >,<,=,!  1000)
+* type=device actions=defaultsecurityrule-XYZ | deprecated / decommission actions which are already available in type=rule ruletype=defaultsecurity
 
 BUGFIX:
 * type=stats | update actions=display-bpa | to use 'included-in-bpa' info from JSON BPA at table stage
