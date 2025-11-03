@@ -212,10 +212,20 @@ class UrlCategoryRuleContainer extends ObjRuleContainer
                     //search in predefined URL
                     #PH::print_stdout(get_class($this->owner->owner->owner->owner));
                     #PH::print_stdout("search for: ".$node->textContent);
-                    if(  get_class($this->owner->owner->owner->owner) == "PanoramaConf" || get_class($this->owner->owner->owner->owner) == "PANConf" || get_class($this->owner->owner->owner->owner) == "FawkesConf" )
+                    if(  isset($this->owner->owner->owner->owner) && ( get_class($this->owner->owner->owner->owner) == "PanoramaConf" || get_class($this->owner->owner->owner->owner) == "PANConf" || get_class($this->owner->owner->owner->owner) == "FawkesConf" ) )
+                    {
+                        //Panorama->DeviceGroup->RuleStore
                         $predefined_url_store = $this->owner->owner->owner->owner->urlStore;
+                    }
+                    elseif(  isset($this->owner->owner->owner) && ( get_class($this->owner->owner->owner) == "PanoramaConf" || get_class($this->owner->owner->owner) == "PANConf" || get_class($this->owner->owner->owner) == "FawkesConf" ) )
+                    {
+                        //Panorama->RuleStore
+                        //shared
+                        $predefined_url_store = $this->owner->owner->owner->urlStore;
+                    }
                     else
                         $predefined_url_store = $this->owner->owner->owner->owner->owner->urlStore;
+
                     if( count( $predefined_url_store->getAll() ) == 0 )
                     {
                         #PH::print_stdout("empty");
