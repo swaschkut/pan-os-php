@@ -56,8 +56,10 @@ class EthernetInterface
     /** @var int */
     protected $ae = null;
 
-    protected $l3ipv4Addresses;
-    protected $l3ipv6Addresses;
+    protected $l3ipv4Addresses = array();
+    protected $l3ipv4ObjectAddresses = array();
+    protected $l3ipv6Addresses = array();
+    protected $l3ipv6ObjectAddresses = array();
 
     protected $linkstate = "auto";
 
@@ -130,6 +132,8 @@ class EthernetInterface
                         continue;
 
                     $tmpIP = $l3ipNode->getAttribute('name');
+                    $this->load_IP_from_domxml( $tmpIP, 'l3ipv4Addresses', 'l3ipv4ObjectAddresses');
+                    /*
                     #$this->l3ipv4Addresses[] = $tmpIP;
 
                     //Todo - reference adding is missing, search object name if no IP
@@ -146,22 +150,32 @@ class EthernetInterface
                             {
                                 $shared_object->addReference($this);
                                 $this->l3ipv4Addresses[] = $shared_object->name();
+                                $this->l3ipv4ObjectAddresses[] = $shared_object->value();
                             }
                             else
+                            {
                                 $this->l3ipv4Addresses[] = $tmpIP;
+                                $this->l3ipv4ObjectAddresses[] = $tmpIP;
+                            }
                         }
                     }
                     else
                     {
                         //NGFW
                         if( strpos( $tmpIP, "/" ) !== False )
+                        {
                             $this->l3ipv4Addresses[] = $tmpIP;
+                            $this->l3ipv4ObjectAddresses[] = $tmpIP;
+                        }
+
                         else
                         {
                             //object
                             $this->l3ipv4Addresses[] = $tmpIP;
+                            $this->l3ipv4ObjectAddresses[] = $tmpIP;
                         }
                     }
+                    */
                 }
             }
 
@@ -178,6 +192,9 @@ class EthernetInterface
                             continue;
 
                         $tmpIP = $l3ipNode->getAttribute('name');
+
+                        $this->load_IP_from_domxml( $tmpIP, 'l3ipv6Addresses', 'l3ipv6ObjectAddresses');
+                        /*
                         #$this->l3ipv6Addresses[] = $tmpIP;
 
                         //Todo - reference adding is missing, search object name if no IP
@@ -195,16 +212,23 @@ class EthernetInterface
                                 {
                                     $shared_object->addReference($this);
                                     $this->l3ipv6Addresses[] = $shared_object->name();
+                                    $this->l3ipv6ObjectAddresses[] = $shared_object->value();
                                 }
                                 else
+                                {
                                     $this->l3ipv6Addresses[] = $tmpIP;
+                                    $this->l3ipv6ObjectAddresses[] = $tmpIP;
+                                }
+
                             }
                         }
                         else
                         {
                             //NGFW
                             $this->l3ipv6Addresses[] = $tmpIP;
+                            $this->l3ipv6ObjectAddresses[] = $tmpIP;
                         }
+                        */
 
                     }
                 }
@@ -395,7 +419,54 @@ class EthernetInterface
         if( $this->l3ipv6Addresses === null && $this->l3ipv4Addresses === null )
             return array();
 
-        return array_merge( $this->l3ipv4Addresses, $this->l3ipv6Addresses );
+        $merge = array_merge( $this->l3ipv4Addresses, $this->l3ipv6Addresses );
+        return $merge;
+    }
+
+    public function getLayer3ObjectIPv4Addresses()
+    {
+        if( $this->type != 'layer3' )
+            derr('cannot be requested from a non Layer3 Interface');
+
+        if( $this->l3ipv4ObjectAddresses === null )
+            return array();
+
+        return $this->l3ipv4ObjectAddresses;
+    }
+
+    public function addLayer3ObjectIPAddresses( $ip )
+    {
+        if( $this->type != 'layer3' )
+            derr('cannot be requested from a non Layer3 Interface');
+
+        if( filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) !== FALSE )
+            $this->l3ipv4ObjectAddresses[] = $ip;
+        elseif( filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) !== FALSE )
+            $this->l3ipv6ObjectAddresses[] = $ip;
+
+    }
+
+    public function getLayer3ObjectIPv6Addresses()
+    {
+        if( $this->type != 'layer3' )
+            derr('cannot be requested from a non Layer3 Interface');
+
+        if( $this->l3ipv6ObjectAddresses === null )
+            return array();
+
+        return $this->l3ipv6ObjectAddresses;
+    }
+
+    public function getLayer3ObjectIPAddresses()
+    {
+        if( $this->type != 'layer3' )
+            derr('cannot be requested from a non Layer3 Interface');
+
+        if( $this->l3ipv6ObjectAddresses === null && $this->l3ipv4ObjectAddresses === null )
+            return array();
+
+        $merge = array_merge( $this->l3ipv4ObjectAddresses, $this->l3ipv6ObjectAddresses );
+        return $merge;
     }
 
     public function countSubInterfaces()

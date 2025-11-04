@@ -4259,11 +4259,12 @@ class MERGER extends UTIL
                         $exitObject = null;
                         foreach( $child_NamehashMap[ $pickedObject->name() ] as $obj )
                         {
-                            if( !$obj->sameValue($pickedObject) )
-                            {
-                                $exit = true;
-                                $exitObject = $obj;
-                            }
+                            if( !$this->addMissingObjects )
+                                if( !$obj->sameValue($pickedObject) )
+                                {
+                                    $exit = true;
+                                    $exitObject = $obj;
+                                }
                         }
 
                         if( $exit )
@@ -4301,10 +4302,13 @@ class MERGER extends UTIL
                     }
                     else
                     {
-                        $stringSkippedReason = $pickedObject->displayValueDiff($tmp_tag, 7, true);
-                        PH::print_stdout( "    - SKIP: object name '{$pickedObject->_PANC_shortName()}' [with value '".implode("./.",$pickedObject->getmembers())."'] is not IDENTICAL to object name: '{$tmp_tag->_PANC_shortName()}' [with value '".implode("./.",$tmp_tag->getmembers())."'] " );
-                        $this->skippedObject( $index, $pickedObject, $tmp_tag, $stringSkippedReason);
-                        continue;
+                        if( !$this->addMissingObjects )
+                        {
+                            $stringSkippedReason = $pickedObject->displayValueDiff($tmp_tag, 7, true);
+                            PH::print_stdout("    - SKIP: object name '{$pickedObject->_PANC_shortName()}' [with value '" . implode("./.", $pickedObject->getmembers()) . "'] is not IDENTICAL to object name: '{$tmp_tag->_PANC_shortName()}' [with value '" . implode("./.", $tmp_tag->getmembers()) . "'] ");
+                            $this->skippedObject($index, $pickedObject, $tmp_tag, $stringSkippedReason);
+                            continue;
+                        }
                     }
                 }
 

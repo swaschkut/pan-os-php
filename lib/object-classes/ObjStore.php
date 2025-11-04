@@ -360,7 +360,7 @@ class ObjStore
                 $currentObject = $currentObject->owner;
             }
         }
-        #mwarning('no parent store found for: '.$storeType.'!');
+        #mwarning('no parent store found for: '.$storeType.'! :'.get_class($this->owner), null, false);
     }
 
     protected function setParentCentralStore( $storeType )

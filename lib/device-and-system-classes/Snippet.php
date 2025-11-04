@@ -349,7 +349,7 @@ class Snippet
                     //'DataFilteringProfileStore',
                     'VulnerabilityProfileStore', 'AntiSpywareProfileStore',
                     //'WildfireProfileStore',
-                    'DecryptionProfileStore', 'HipObjectsProfileStore',
+                    'DecryptionProfileStore', 'HipObjectsProfileStore', 'customURLProfileStore',
 
                     'DNSSecurityProfileStore', 'SaasSecurityProfileStore'
 

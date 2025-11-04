@@ -1452,7 +1452,8 @@ RQuery::$defaultFilters['securityprofile']['wf.rules']['operators']['is.best-pra
         /** @var WildfireProfile $object */
         $object = $context->object;
 
-        //Todo:
+        //Todo: 202502 - swaschkut: 20251028
+        //class SecurityRule around line 537 - reading of Rule objects, which are not yet created e.g. DLP plugin
         //why could $object be a string?????
 
         if( $object->secprof_type != 'wildfire' )

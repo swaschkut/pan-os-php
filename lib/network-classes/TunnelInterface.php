@@ -27,7 +27,9 @@ class TunnelInterface
     use ReferenceableObject;
 
     protected $_ipv4Addresses = array();
+    protected $_ipv4ObjectAddresses = array();
     protected $_ipv6Addresses = array();
+    protected $_ipv6ObjectAddresses = array();
 
     /** @var string */
     public $type = 'tunnel';
@@ -65,13 +67,7 @@ class TunnelInterface
                 $ip_string = $l3ipNode->getAttribute('name');
                 if( !empty($ip_string) )
                 {
-                    if( strpos( $ip_string, "/" ) !== False )
-                        $this->_ipv4Addresses[] = $ip_string;
-                    else
-                    {
-                        //object
-                        $this->_ipv4Addresses[] = $ip_string;
-                    }
+                    $this->load_IP_from_domxml( $ip_string, '_ipv4Addresses', '_ipv4ObjectAddresses');
                 }
             }
         }
@@ -90,10 +86,7 @@ class TunnelInterface
                     $ip_string = $l3ipNode->getAttribute('name');
                     if(!empty($ip_string))
                     {
-                        if(filter_var($ip_string, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6))
-                            $this->_ipv6Addresses[] = $ip_string;
-                        else
-                            $this->_ipv6Addresses[] = $ip_string;
+                        $this->load_IP_from_domxml( $ip_string, '_ipv6Addresses', '_ipv6ObjectAddresses');
                     }
                 }
             }
@@ -116,6 +109,24 @@ class TunnelInterface
     public function getIPv6Addresses()
     {
         return $this->_ipv6Addresses;
+    }
+
+    public function getIPv4ObjectAddresses()
+    {
+        return $this->_ipv4ObjectAddresses;
+    }
+
+    public function getIPv6ObjectAddresses()
+    {
+        return $this->_ipv6ObjectAddresses;
+    }
+
+    public function addObjectIPAddresses( $ip )
+    {
+        if( filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) !== FALSE )
+            $this->_ipv4ObjectAddresses[] = $ip;
+        elseif( filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) !== FALSE )
+            $this->_ipv6ObjectAddresses[] = $ip;
     }
 
     /**

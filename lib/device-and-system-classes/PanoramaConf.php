@@ -1324,7 +1324,7 @@ class PanoramaConf
 
                             'URLProfileStore', 'AntiVirusProfileStore', 'FileBlockingProfileStore', 'DataFilteringProfileStore',
                             'VulnerabilityProfileStore', 'AntiSpywareProfileStore', 'WildfireProfileStore',
-                            'DecryptionProfileStore', 'HipObjectsProfileStore'
+                            'DecryptionProfileStore', 'HipObjectsProfileStore', 'customURLProfileStore'
 
                             );
 
@@ -1421,6 +1421,7 @@ class PanoramaConf
                             $this->timezone = $timezone_backward;
                             date_default_timezone_set($timezone_backward);
 
+                            /*
                             PH::print_stdout("   --------------");
                             PH::print_stdout( " X Timezone: $timezone->textContent is not supported with this PHP version. ".$this->timezone." is used." );
                             PH::print_stdout("   - the timezone is IANA deprecated. Please change to a supported one:");
@@ -1429,6 +1430,7 @@ class PanoramaConf
                             PH::print_stdout("   -- '".$this->timezone."'");
                             PH::print_stdout("   --------------");
                             PH::print_stdout();
+                            */
                         }
                         else
                         {
@@ -2245,10 +2247,10 @@ class PanoramaConf
             $stdoutarray['app id percentage'] = 0;
 
         //User-ID
-        $stdoutarray['user id'] = count( $sub_ruleStore->rules( $generalFilter_allow."!(user is.any)" ) );
-        $stdoutarray['user id calc'] = $stdoutarray['user id']."/".$stdoutarray['security rules'];
-        if( $ruleForCalculation !== 0 )
-            $stdoutarray['user id percentage'] = floor( ( $stdoutarray['user id'] / $stdoutarray['security rules'] ) * 100 );
+        $stdoutarray['user id'] = count( $sub_ruleStore->rules( $generalFilter."!(user is.any)" ) );
+        $stdoutarray['user id calc'] = $stdoutarray['user id']."/".$stdoutarray['security rules enabled'];
+        if( $stdoutarray['security rules enabled'] !== 0 )
+            $stdoutarray['user id percentage'] = floor( ( $stdoutarray['user id'] / $stdoutarray['security rules enabled'] ) * 100 );
         else
             $stdoutarray['user id percentage'] = 0;
         //Service/Port
@@ -2670,9 +2672,9 @@ class PanoramaConf
         $percentageArray_adoption['App-ID']['value'] = $stdoutarray['app id percentage'];
         $percentageArray_adoption['App-ID']['group'] = 'Apps, Users, Ports';
 
-        $stdoutarray['user id calc'] =  $stdoutarray['user id'] ."/". $stdoutarray['security rules'];
-        if( $ruleForCalculation !== 0 )
-            $stdoutarray['user id percentage'] = floor( ( $stdoutarray['user id'] / $stdoutarray['security rules'] ) * 100 );
+        $stdoutarray['user id calc'] =  $stdoutarray['user id'] ."/". $stdoutarray['security rules enabled'];
+        if( $stdoutarray['security rules enabled'] !== 0 )
+            $stdoutarray['user id percentage'] = floor( ( $stdoutarray['user id'] / $stdoutarray['security rules enabled'] ) * 100 );
         else
             $stdoutarray['user id percentage'] = 0;
         $percentageArray_adoption['User-ID']['value'] = $stdoutarray['user id percentage'];
@@ -2805,9 +2807,9 @@ class PanoramaConf
         $percentageArray_visibility['App-ID']['value'] = $stdoutarray['app id percentage'];
         $percentageArray_visibility['App-ID']['group'] = 'Apps, Users, Ports';
 
-        $stdoutarray['user id calc'] =  $stdoutarray['user id'] ."/". $stdoutarray['security rules'];
-        if( $ruleForCalculation !== 0 )
-            $stdoutarray['user id percentage'] = floor( ( $stdoutarray['user id'] / $stdoutarray['security rules'] ) * 100 );
+        $stdoutarray['user id calc'] =  $stdoutarray['user id'] ."/". $stdoutarray['security rules enabled'];
+        if( $stdoutarray['security rules enabled'] !== 0 )
+            $stdoutarray['user id percentage'] = floor( ( $stdoutarray['user id'] / $stdoutarray['security rules enabled'] ) * 100 );
         else
             $stdoutarray['user id percentage'] = 0;
         $percentageArray_visibility['User-ID']['value'] = $stdoutarray['user id percentage'];
@@ -2998,15 +3000,23 @@ class PanoramaConf
 
         if( !PH::$shadow_json && $actions == "display-bpa")
         {
+            PH::getBPjsonFile();
+
             PH::print_stdout( $header );
 
-            PH::print_stdout("adoption");
+            $string_check = "adoption";
+            PH::print_stdout($string_check);
             $tbl = new ConsoleTable();
             $tbl->setHeaders(
                 array('Type', 'percentage', "%")
             );
             foreach( $percentageArray_adoption as $key => $value )
             {
+                if( isset( PH::$shadow_bp_jsonfile['included-in-bpa'][$string_check][$key] ) )
+                {
+                    if( PH::$shadow_bp_jsonfile['included-in-bpa'][$string_check][$key] === false )
+                        continue;
+                }
                 if( strpos($value['value'], "---") !== False )
                 {
                     $string = $value['value'];
@@ -3023,13 +3033,19 @@ class PanoramaConf
             echo $tbl->getTable();
 
 
-            PH::print_stdout("visibility");
+            $string_check = "visibility";
+            PH::print_stdout($string_check);
             $tbl = new ConsoleTable();
             $tbl->setHeaders(
                 array('Type', 'percentage', "%")
             );
             foreach( $percentageArray_visibility as $key => $value )
             {
+                if( isset( PH::$shadow_bp_jsonfile['included-in-bpa'][$string_check][$key] ) )
+                {
+                    if( PH::$shadow_bp_jsonfile['included-in-bpa'][$string_check][$key] === false )
+                        continue;
+                }
                 if( strpos($value['value'], "---") !== False )
                 {
                     $string = $value['value'];
@@ -3045,13 +3061,19 @@ class PanoramaConf
 
             echo $tbl->getTable();
 
-            PH::print_stdout("best-practice");
+            $string_check = "best-practice";
+            PH::print_stdout($string_check);
             $tbl = new ConsoleTable();
             $tbl->setHeaders(
                 array('Type', 'percentage', "%")
             );
             foreach( $percentageArray_best_practice as $key => $value )
             {
+                if( isset( PH::$shadow_bp_jsonfile['included-in-bpa'][$string_check][$key] ) )
+                {
+                    if( PH::$shadow_bp_jsonfile['included-in-bpa'][$string_check][$key] === false )
+                        continue;
+                }
                 if( strpos($value['value'], "---") !== False )
                 {
                     $string = $value['value'];
@@ -3374,7 +3396,7 @@ class PanoramaConf
 
                     'URLProfileStore', 'AntiVirusProfileStore', 'FileBlockingProfileStore', 'DataFilteringProfileStore',
                     'VulnerabilityProfileStore', 'AntiSpywareProfileStore', 'WildfireProfileStore',
-                    'DecryptionProfileStore', 'HipObjectsProfileStore'
+                    'DecryptionProfileStore', 'HipObjectsProfileStore', 'customURLProfileStore'
 
                 );
 

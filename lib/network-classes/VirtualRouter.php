@@ -519,7 +519,8 @@ class VirtualRouter
                     continue;
 
                 #$ipAddresses = $if->getLayer3IPv4Addresses();
-                $ipAddresses = $if->getLayer3IPAddresses();
+                #$ipAddresses = $if->getLayer3IPAddresses();
+                $ipAddresses = $if->getLayer3ObjectIPAddresses();
 
                 foreach( $ipAddresses as $interfaceIP )
                 {
@@ -540,7 +541,8 @@ class VirtualRouter
                     continue;
 
                 //should be already IPv4 and IPv6
-                $ipAddresses = $if->getIPv4Addresses();
+                #$ipAddresses = $if->getIPv4Addresses();
+                $ipAddresses = $if->getIPv4ObjectAddresses();
 
                 foreach( $ipAddresses as $interfaceIP )
                 {
@@ -628,7 +630,8 @@ class VirtualRouter
                         else
                         {
                             #$ips = $if->getLayer3IPv4Addresses();
-                            $ips = $if->getLayer3IPAddresses();
+                            #$ips = $if->getLayer3IPAddresses();
+                            $ips = $if->getLayer3ObjectIPAddresses();
                         }
 
 

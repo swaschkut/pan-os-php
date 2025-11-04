@@ -106,6 +106,8 @@ class HUAWEI extends PARSER
         $access_rule = array();
         $nat_policy = array();
 
+        $domain = "";
+
         $string = $this->data;
 
         #if( preg_match_all('#^([a-zA-Z0-9_-]+) (.*)$#m', $string, $output_array, PREG_OFFSET_CAPTURE) )

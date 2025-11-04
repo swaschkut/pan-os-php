@@ -472,4 +472,47 @@ trait InterfaceType
 
         PH::print_stdout( $text );
     }
+
+    public function load_IP_from_domxml( $tmpIP, $ipVariable, $ipObjectVariable)
+    {
+        //Todo - reference adding is missing, search object name if no IP
+        $pan_object = $this->owner->owner;
+        if( isset( $pan_object->owner ) )
+        {
+            //Panorama Template
+            if( get_class($pan_object->owner) == "Template" || get_class($pan_object->owner) == "TemplateStack" )
+            {
+                $template_object = $pan_object->owner;
+                $panorama_object = $template_object->owner;
+                $shared_object = $panorama_object->addressStore->find($tmpIP);
+                if( $shared_object != null )
+                {
+
+                    $shared_object->addReference($this);
+                    $this->$ipVariable[] = $shared_object->name();
+                    $this->$ipObjectVariable[] = $shared_object->value();
+                }
+                else
+                {
+                    $this->$ipVariable[] = $tmpIP;
+                    $this->$ipObjectVariable[] = $tmpIP;
+                }
+            }
+        }
+        else
+        {
+            //NGFW - this is done earlier
+            if( strpos( $tmpIP, "/" ) !== False )
+            {
+                $this->$ipVariable[] = $tmpIP;
+                $this->$ipObjectVariable[] = $tmpIP;
+            }
+            else
+            {
+                $this->$ipVariable[] = $tmpIP;
+                //If added it could be address obejct name
+                #$this->$ipObjectVariable[] = $tmpIP;
+            }
+        }
+    }
 }

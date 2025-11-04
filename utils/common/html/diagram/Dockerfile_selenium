@@ -30,6 +30,7 @@ COPY diagram_data.js .
 COPY d3.v7.min.js .
 COPY diagram_styles.css .
 COPY html2canvas.min.js .
+COPY fonts ./fonts
 
 # 5. Install Python dependencies
 RUN pip install --no-cache-dir selenium

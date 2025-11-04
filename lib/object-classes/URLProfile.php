@@ -15,7 +15,13 @@ class URLProfile extends SecurityProfile2
     protected $value;
 
     public $_all;
+    public $_all_all;
     public $_all_credential;
+
+    public $_all_credential_all;
+
+    public $_all_custom;
+    public $_all_credential_custom;
 
     /** @var SecurityProfileStore|null */
     public $owner;
@@ -23,19 +29,29 @@ class URLProfile extends SecurityProfile2
     public $secprof_type;
 
     public $allow = array();
+    public $allow_custom = array();
     public $allow_credential = array();
+    public $allow_credential_custom = array();
 
     public $alert = array();
+    public $alert_custom = array();
     public $alert_credential = array();
+    public $alert_credential_custom = array();
 
     public $block = array();
+    public $block_custom = array();
     public $block_credential = array();
+    public $block_credential_custom = array();
 
     public $continue = array();
+    public $continue_custom = array();
     public $continue_credential = array();
+    public $continue_credential_custom = array();
 
     public $override = array();
+    public $override_custom = array();
     public $override_credential = array();
+    public $override_credential_custom = array();
 
     public $predefined = array();
 
@@ -154,24 +170,8 @@ class URLProfile extends SecurityProfile2
                         continue;
 
                     $url_category = $tmp_entry->textContent;
-                    $this->_all[ $url_category ] = $url_type;
 
-                    if( $url_type == 'allow' )
-                        $this->allow[ $url_category ] = $url_category;
-                    elseif( $url_type !== 'allow' )
-                    {
-                        if( $url_type == 'alert' )
-                            $this->alert[ $url_category ] = $url_category;
-                        elseif( $url_type == 'block' )
-                            $this->block[ $url_category ] = $url_category;
-                        elseif( $url_type == 'continue' )
-                            $this->continue[ $url_category ] = $url_category;
-                        elseif( $url_type == 'override' )
-                            $this->override[ $url_category ] = $url_category;
-
-                        unset($this->allow[ $url_category ]);
-                    }
-
+                    $is_custom = false;
                     // add references
                     if( isset( $this->predefined[$url_category] ) )
                     {
@@ -181,10 +181,55 @@ class URLProfile extends SecurityProfile2
                     }
                     else
                     {
+                        $is_custom = true;
                         # add references to custom url category
                         $tmp_obj = $this->owner->owner->customURLProfileStore->find( $url_category );
                         if( $tmp_obj !== null )
                             $tmp_obj->addReference($this);
+                    }
+
+
+                    $this->_all_all[ $url_category ] = $url_type;
+
+                    if( !$is_custom )
+                    {
+                        $this->_all[ $url_category ] = $url_type;
+
+                        if( $url_type == 'allow' )
+                            $this->allow[ $url_category ] = $url_category;
+                        elseif( $url_type !== 'allow' )
+                        {
+                            if( $url_type == 'alert' )
+                                $this->alert[ $url_category ] = $url_category;
+                            elseif( $url_type == 'block' )
+                                $this->block[ $url_category ] = $url_category;
+                            elseif( $url_type == 'continue' )
+                                $this->continue[ $url_category ] = $url_category;
+                            elseif( $url_type == 'override' )
+                                $this->override[ $url_category ] = $url_category;
+
+                            unset($this->allow[ $url_category ]);
+                        }
+                    }
+                    else
+                    {
+                        $this->_all_custom[ $url_category ] = $url_type;
+
+                        if( $url_type == 'allow' )
+                            $this->allow_custom[ $url_category ] = $url_category;
+                        elseif( $url_type !== 'allow' )
+                        {
+                            if( $url_type == 'alert' )
+                                $this->alert_custom[ $url_category ] = $url_category;
+                            elseif( $url_type == 'block' )
+                                $this->block_custom[ $url_category ] = $url_category;
+                            elseif( $url_type == 'continue' )
+                                $this->continue_custom[ $url_category ] = $url_category;
+                            elseif( $url_type == 'override' )
+                                $this->override_custom[ $url_category ] = $url_category;
+
+                            unset($this->allow_custom[ $url_category ]);
+                        }
                     }
                 }
             }
@@ -204,23 +249,68 @@ class URLProfile extends SecurityProfile2
                             continue;
 
                         $url_category = $tmp_entry->textContent;
-                        $this->_all_credential[ $url_category ] = $url_type;
 
-                        if( $url_type == 'allow' )
-                            $this->allow_credential[ $url_category ] = $url_category;
-                        elseif( $url_type !== 'allow' )
+                        $is_custom = false;
+                        // add references
+                        if( isset( $this->predefined[$url_category] ) )
                         {
-                            if( $url_type == 'alert' )
-                                $this->alert_credential[ $url_category ] = $url_category;
-                            elseif( $url_type == 'block' )
-                                $this->block_credential[ $url_category ] = $url_category;
-                            elseif( $url_type == 'continue' )
-                                $this->continue_credential[ $url_category ] = $url_category;
-                            elseif( $url_type == 'override' )
-                                $this->override_credential[ $url_category ] = $url_category;
-
-                            unset($this->allow_credential[ $url_category ]);
+                            $tmp_obj = $predefined_url_store->find($url_category);
+                            if( $tmp_obj !== null )
+                                $tmp_obj->addReference($this);
                         }
+                        else
+                        {
+                            $is_custom = true;
+                            # add references to custom url category
+                            $tmp_obj = $this->owner->owner->customURLProfileStore->find( $url_category );
+                            if( $tmp_obj !== null )
+                                $tmp_obj->addReference($this);
+                        }
+
+
+                        $this->_all_credential_all[ $url_category ] = $url_type;
+
+                        if( !$is_custom )
+                        {
+                            $this->_all_credential[ $url_category ] = $url_type;
+
+                            if( $url_type == 'allow' )
+                                $this->allow_credential[ $url_category ] = $url_category;
+                            elseif( $url_type !== 'allow' )
+                            {
+                                if( $url_type == 'alert' )
+                                    $this->alert_credential[ $url_category ] = $url_category;
+                                elseif( $url_type == 'block' )
+                                    $this->block_credential[ $url_category ] = $url_category;
+                                elseif( $url_type == 'continue' )
+                                    $this->continue_credential[ $url_category ] = $url_category;
+                                elseif( $url_type == 'override' )
+                                    $this->override_credential[ $url_category ] = $url_category;
+
+                                unset($this->allow_credential[ $url_category ]);
+                            }
+                        }
+                        else
+                        {
+                            $this->_all_credential_custom[ $url_category ] = $url_type;
+
+                            if( $url_type == 'allow' )
+                                $this->allow_credential_custom[ $url_category ] = $url_category;
+                            elseif( $url_type !== 'allow' )
+                            {
+                                if( $url_type == 'alert' )
+                                    $this->alert_credential_custom[ $url_category ] = $url_category;
+                                elseif( $url_type == 'block' )
+                                    $this->block_credential_custom[ $url_category ] = $url_category;
+                                elseif( $url_type == 'continue' )
+                                    $this->continue_credential_custom[ $url_category ] = $url_category;
+                                elseif( $url_type == 'override' )
+                                    $this->override_credential_custom[ $url_category ] = $url_category;
+
+                                unset($this->allow_credential_custom[ $url_category ]);
+                            }
+                        }
+
                     }
                 }
             }
@@ -229,7 +319,8 @@ class URLProfile extends SecurityProfile2
             if( $tmp_credential_mode != null )
             {
                 $mode_node = DH::firstChildElement($tmp_credential_mode);
-                $this->credential_mode = $mode_node->nodeName;
+                if( $mode_node != null )
+                    $this->credential_mode = $mode_node->nodeName;
             }
 
             $tmp_credential_log_severity = DH::findFirstElement("log-severity", $tmp_credential_enforcement);

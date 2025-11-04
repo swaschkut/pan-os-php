@@ -978,6 +978,62 @@ RQuery::$defaultFilters['rule']['src']['operators']['has.recursive.regex'] = arr
     },
     'arg' => TRUE
 );
+RQuery::$defaultFilters['rule']['src.ip.count']['operators']['>,<,=,!'] = array(
+    'Function' => function (RuleRQueryContext $context) {
+        $members = $context->object->source->membersExpanded(FALSE);
+
+        $arg = $context->value;
+
+        $operator = $context->operator;
+        if( $operator == '=' )
+            $operator = '==';
+
+        $overallCounter = 0;
+        foreach( $members as $member )
+        {
+            $overallCounter += $member->getIPcount();
+        }
+
+        if( $overallCounter == FALSE )
+            return FALSE;
+
+        $operator_string = $overallCounter." ".$operator." ".$arg;
+
+        if( eval("return $operator_string;" ) )
+            return true;
+
+        return FALSE;
+    },
+    'arg' => TRUE
+);
+RQuery::$defaultFilters['rule']['dst.ip.count']['operators']['>,<,=,!'] = array(
+    'Function' => function (RuleRQueryContext $context) {
+        $members = $context->object->destination->membersExpanded(FALSE);
+
+        $arg = $context->value;
+
+        $operator = $context->operator;
+        if( $operator == '=' )
+            $operator = '==';
+
+        $overallCounter = 0;
+        foreach( $members as $member )
+        {
+            $overallCounter += $member->getIPcount();
+        }
+
+        if( $overallCounter == FALSE )
+            return FALSE;
+
+        $operator_string = $overallCounter." ".$operator." ".$arg;
+
+        if( eval("return $operator_string;" ) )
+            return true;
+
+        return FALSE;
+    },
+    'arg' => TRUE
+);
 RQuery::$defaultFilters['rule']['dst']['operators']['has'] = array(
     'eval' => function ($object, &$nestedQueries, $value) {
         /** @var Rule|SecurityRule|NatRule|DecryptionRule|AppOverrideRule|CaptivePortalRule|AuthenticationRule|PbfRule|QoSRule|DoSRule $object */

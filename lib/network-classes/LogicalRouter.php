@@ -455,7 +455,7 @@ class LogicalRouter
     }
 
     /**
-     * @return LogicalSystem[]
+     * @return VirtualSystem[]
      */
     public function &findConcernedVsys()
     {
@@ -472,7 +472,7 @@ class LogicalRouter
 
 
     /**
-     * @param $contextVSYS LogicalSystem
+     * @param $contextVSYS VirtualSystem
      * @param $orderByNarrowest bool
      * @return array
      */
@@ -503,7 +503,8 @@ class LogicalRouter
                     continue;
 
                 #$ipAddresses = $if->getLayer3IPv4Addresses();
-                $ipAddresses = $if->getLayer3IPAddresses();
+                #$ipAddresses = $if->getLayer3IPAddresses();
+                $ipAddresses = $if->getLayer3ObjectIPAddresses();
 
                 foreach( $ipAddresses as $interfaceIP )
                 {
@@ -526,7 +527,8 @@ class LogicalRouter
                     continue;
 
                 //should be already IPv4 and IPv6
-                $ipAddresses = $if->getIPv4Addresses();
+                #$ipAddresses = $if->getIPv4Addresses();
+                $ipAddresses = $if->getIPv4ObjectAddresses();
 
                 foreach( $ipAddresses as $interfaceIP )
                 {
@@ -616,14 +618,19 @@ class LogicalRouter
                             continue;
 
                         if( $if->isLoopbackType() )
-                            $ips = $if->getIPv4Addresses();
+                        {
+                            #$ips = $if->getIPv4Addresses();
+                            $ips = $if->getIPv4ObjectAddresses();
+                        }
+
                         else
                         {
                             #$ips = $if->getLayer3IPv4Addresses();
-                            $ips = $if->getLayer3IPAddresses();
+                            #$ips = $if->getLayer3IPAddresses();
+                            $ips = $if->getLayer3ObjectIPAddresses();
                         }
 
-
+                        print_r($ips);
                         foreach( $ips as &$interfaceIP )
                         {
                             if( cidr::netMatch($nexthopIP, $interfaceIP) > 0 )

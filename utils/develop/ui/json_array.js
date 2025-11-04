@@ -2003,23 +2003,6 @@ var subjectObject =
                     }
                 }
             },
-            "defaultsecurityrule-action-set": {
-                "name": "defaultsecurityrule-action-set",
-                "GlobalInitFunction": {},
-                "MainFunction": {},
-                "args": {
-                    "ruletype": {
-                        "type": "string",
-                        "default": "*nodefault*",
-                        "help": "define which ruletype; 'intrazone'|'interzone'|'all' "
-                    },
-                    "action": {
-                        "type": "string",
-                        "default": "*nodefault*",
-                        "help": "define the action you like to set 'allow'|'deny'"
-                    }
-                }
-            },
             "defaultsecurityrule-create-bp": {
                 "name": "defaultsecurityRule-create-bp",
                 "GlobalInitFunction": {},
@@ -2032,71 +2015,15 @@ var subjectObject =
                     }
                 }
             },
-            "defaultsecurityrule-logend-enable": {
-                "name": "defaultsecurityrule-logend-enable",
-                "GlobalInitFunction": {},
-                "MainFunction": {}
-            },
-            "defaultsecurityrule-logsetting-set": {
-                "name": "defaultsecurityrule-logsetting-set",
-                "GlobalInitFunction": {},
-                "MainFunction": {},
-                "args": {
-                    "logprof": {
-                        "type": "string",
-                        "default": "default",
-                        "help": "LogForwardingProfile name"
-                    },
-                    "force": {
-                        "type": "bool",
-                        "default": "false",
-                        "help": "LogForwardingProfile overwrite"
-                    }
-                }
-            },
-            "defaultsecurityrule-logstart-disable": {
-                "name": "defaultsecurityrule-logstart-disable",
-                "GlobalInitFunction": {},
-                "MainFunction": {}
-            },
             "defaultsecurityrule-remove-override": {
                 "name": "defaultsecurityrule-remove-override",
                 "GlobalInitFunction": {},
                 "MainFunction": {}
             },
-            "defaultsecurityrule-securityprofile-remove": {
-                "name": "defaultsecurityrule-securityprofile-remove",
-                "GlobalInitFunction": {},
-                "MainFunction": {},
-                "args": {
-                    "force": {
-                        "type": "bool",
-                        "default": "false",
-                        "help": "per default, remove SecurityProfiles only if Rule action is NOT allow. force=true => remove always"
-                    }
-                }
-            },
             "defaultsecurityrule-securityprofile-setalert": {
                 "name": "defaultsecurityrule-securityprofile-setAlert",
                 "GlobalInitFunction": {},
                 "MainFunction": {}
-            },
-            "defaultsecurityrule-securityprofilegroup-set": {
-                "name": "defaultsecurityrule-securityprofilegroup-set",
-                "GlobalInitFunction": {},
-                "MainFunction": {},
-                "args": {
-                    "securityProfileGroup": {
-                        "type": "string",
-                        "default": "*nodefault*",
-                        "help": "set SecurityProfileGroup to default SecurityRules, if the Rule is an allow rule"
-                    },
-                    "force": {
-                        "type": "bool",
-                        "default": "false",
-                        "help": "per default, SecurityProfileGroupSet only if Rule has no SPG. force=true => add always SPG"
-                    }
-                }
             },
             "devicegroup-addserial": {
                 "name": "devicegroup-addserial",
@@ -2154,7 +2081,15 @@ var subjectObject =
             },
             "display": {
                 "name": "display",
-                "MainFunction": {}
+                "GlobalInitFunction": {},
+                "MainFunction": {},
+                "GlobalFinishFunction": {},
+                "args": {
+                    "listserial": {
+                        "type": "string",
+                        "default": "false"
+                    }
+                }
             },
             "display-shadowrule": {
                 "name": "display-shadowrule",
@@ -6288,6 +6223,14 @@ var subjectObject =
                     }
                 }
             },
+            "dst.ip.count": {
+                "operators": {
+                    ">,<,=,!": {
+                        "Function": {},
+                        "arg": true
+                    }
+                }
+            },
             "from": {
                 "operators": {
                     "has": {
@@ -7246,6 +7189,14 @@ var subjectObject =
                         "help": "example: 'filter=(src has.from.query subquery1)' 'subquery1=(value ip4.includes-full 10.10.0.1)'"
                     },
                     "has.recursive.from.query": {
+                        "Function": {},
+                        "arg": true
+                    }
+                }
+            },
+            "src.ip.count": {
+                "operators": {
+                    ">,<,=,!": {
                         "Function": {},
                         "arg": true
                     }
@@ -9776,6 +9727,14 @@ var subjectObject =
                         }
                     },
                     "has.srcport": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "srcport.is.set": {
                         "Function": {},
                         "arg": false,
                         "ci": {

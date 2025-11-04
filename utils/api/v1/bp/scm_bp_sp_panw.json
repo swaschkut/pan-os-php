@@ -424,8 +424,8 @@
     {
         "adoption": {
             "Logging": true,
-            "LogForwarding Profiles": true,
-            "Wildfire Analysis Prifles": true,
+            "Log Forwarding Profiles": true,
+            "Wildfire Analysis Profiles": true,
             "Zone Protection": true,
             "App-ID": true,
             "User-ID": true,
@@ -436,13 +436,13 @@
             "File Blocking Profiles": true,
             "Data Filtering": true,
             "URL Filtering Profiles": true,
-            "Credential lTheft Prevention": true,
+            "Credential Theft Prevention": true,
             "DNS Security": true
         },
         "visibility": {
             "Logging": true,
-            "LogForwarding Profiles": true,
-            "Wildfire Analysis Prifles": true,
+            "Log Forwarding Profiles": true,
+            "Wildfire Analysis Profiles": true,
             "Zone Protection": true,
             "App-ID": true,
             "User-ID": true,
@@ -453,18 +453,18 @@
             "File Blocking Profiles": true,
             "Data Filtering": true,
             "URL Filtering Profiles": true,
-            "Credential lTheft Prevention": true,
+            "Credential Theft Prevention": true,
             "DNS Security": true
         },
         "best-practice": {
             "Logging": true,
-            "Wildfire Analysis Prifles": true,
+            "Wildfire Analysis Profiles": true,
             "Antivirus Profiles": true,
             "Anti-Spyware Profiles": true,
             "Vulnerability Profiles": true,
             "File Blocking Profiles": true,
             "URL Filtering Profiles": true,
-            "Credential lTheft Prevention": true,
+            "Credential Theft Prevention": true,
             "DNS Security": true
         }
     }

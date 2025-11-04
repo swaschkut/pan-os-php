@@ -1370,9 +1370,9 @@ class DeviceGroup
 
         //User-ID
         $stdoutarray['user id'] = count( $sub_ruleStore->rules( $generalFilter_allow."!(user is.any)" ) );
-        $stdoutarray['user id calc'] = $stdoutarray['user id']."/".$stdoutarray['security rules'];
+        $stdoutarray['user id calc'] = $stdoutarray['user id']."/".$ruleForCalculation;
         if( $ruleForCalculation !== 0 )
-            $stdoutarray['user id percentage'] = floor( ( $stdoutarray['user id'] / $stdoutarray['security rules'] ) * 100 );
+            $stdoutarray['user id percentage'] = floor( ( $stdoutarray['user id'] / $ruleForCalculation ) * 100 );
         else
             $stdoutarray['user id percentage'] = 0;
         //Service/Port
@@ -1732,13 +1732,19 @@ class DeviceGroup
         {
             PH::print_stdout( $header );
 
-            PH::print_stdout("adoption");
+            $string_check = "adoption";
+            PH::print_stdout($string_check);
             $tbl = new ConsoleTable();
             $tbl->setHeaders(
                 array('Type', 'percentage', "%")
             );
             foreach( $percentageArray_adoption as $key => $value )
             {
+                if( isset( PH::$shadow_bp_jsonfile['included-in-bpa'][$string_check][$key] ) )
+                {
+                    if( PH::$shadow_bp_jsonfile['included-in-bpa'][$string_check][$key] === false )
+                        continue;
+                }
                 if( strpos($value['value'], "---") !== False )
                 {
                     $string = $value['value'];
@@ -1754,13 +1760,19 @@ class DeviceGroup
 
             echo $tbl->getTable();
 
-            PH::print_stdout("visibility");
+            $string_check = "visibility";
+            PH::print_stdout($string_check);
             $tbl = new ConsoleTable();
             $tbl->setHeaders(
                 array('Type', 'percentage', "%")
             );
             foreach( $percentageArray_visibility as $key => $value )
             {
+                if( isset( PH::$shadow_bp_jsonfile['included-in-bpa'][$string_check][$key] ) )
+                {
+                    if( PH::$shadow_bp_jsonfile['included-in-bpa'][$string_check][$key] === false )
+                        continue;
+                }
                 if( strpos($value['value'], "---") !== False )
                 {
                     $string = $value['value'];
@@ -1776,13 +1788,19 @@ class DeviceGroup
 
             echo $tbl->getTable();
 
-            PH::print_stdout("best-practice");
+            $string_check = "best-practice";
+            PH::print_stdout($string_check);
             $tbl = new ConsoleTable();
             $tbl->setHeaders(
                 array('Type', 'percentage', "%")
             );
             foreach( $percentageArray_best_practice as $key => $value )
             {
+                if( isset( PH::$shadow_bp_jsonfile['included-in-bpa'][$string_check][$key] ) )
+                {
+                    if( PH::$shadow_bp_jsonfile['included-in-bpa'][$string_check][$key] === false )
+                        continue;
+                }
                 if( strpos($value['value'], "---") !== False )
                 {
                     $string = $value['value'];

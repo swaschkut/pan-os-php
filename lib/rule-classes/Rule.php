@@ -1633,8 +1633,8 @@ class Rule
             if( $system->owner->_advance_routing_enabled )
                 $RouterStore = "logicalRouterStore";
         }
-        if( $RouterStore == "logicalRouterStore" )
-            derr( "Locigal Router not yet suported", null, FALSE );
+        #if( $RouterStore == "logicalRouterStore" )
+        #    derr( "Locigal Router not yet suported", null, FALSE );
 
         /** @var VirtualRouter $virtualRouterToProcess */
         $virtualRouterToProcess = null;
@@ -1679,14 +1679,20 @@ class Rule
 
                         //Todo 20241109 swaschkut extend with logical-router part
                         //This is to get full routing table incl. dynamic routing for zone-calculation
-                        $cmd = "<show><routing><route><virtual-router>".$virtualRouter."</virtual-router></route></routing></show>";
+                        if( $RouterStore == "logicalRouterStore" )
+                            $cmd = "<show><routing><route><logical-router>".$virtualRouter."</logical-router></route></routing></show>";
+                        else
+                            $cmd = "<show><routing><route><virtual-router>".$virtualRouter."</virtual-router></route></routing></show>";
                         $res = $connector->sendOpRequest($cmd, TRUE);
 
                         $res = DH::findFirstElement( "result", $res);
                         $entries = $res->getElementsByTagName('entry');
 
                         /** @var VirtualRouter $vr */
-                        $tmp_vr = $firewall->network->virtualRouterStore->findVirtualRouter( $virtualRouter );
+                        if( $RouterStore == "logicalRouterStore" )
+                            $tmp_vr = $firewall->network->logicalRouterStore->findVirtualRouter( $virtualRouter );
+                        else
+                            $tmp_vr = $firewall->network->virtualRouterStore->findVirtualRouter( $virtualRouter );
 
                         foreach( $entries as $key => $child )
                         {
@@ -1755,16 +1761,38 @@ class Rule
                 }
 
                 if( $configIsOnLocalFirewall )
-                    $virtualRouterToProcess = $firewall->network->virtualRouterStore->findVirtualRouter($virtualRouter);
+                {
+                    if( $RouterStore == "logicalRouterStore" )
+                        $virtualRouterToProcess = $firewall->network->logicalRouterStore->findVirtualRouter($virtualRouter);
+                    else
+                        $virtualRouterToProcess = $firewall->network->virtualRouterStore->findVirtualRouter($virtualRouter);
+                }
                 else
-                    $virtualRouterToProcess = $template->deviceConfiguration->network->virtualRouterStore->findVirtualRouter($virtualRouter);
+                {
+                    if( $RouterStore == "logicalRouterStore" )
+                        $virtualRouterToProcess = $template->deviceConfiguration->network->logicalRouterStore->findVirtualRouter($virtualRouter);
+                    else
+                        $virtualRouterToProcess = $template->deviceConfiguration->network->virtualRouterStore->findVirtualRouter($virtualRouter);
+                }
+
 
                 if( $virtualRouterToProcess === null )
                 {
                     if( $configIsOnLocalFirewall )
-                        $tmpVar = $firewall->network->virtualRouterStore->virtualRouters();
+                    {
+                        if( $RouterStore == "logicalRouterStore" )
+                            $tmpVar = $firewall->network->logicalRouterStore->virtualRouters();
+                        else
+                            $tmpVar = $firewall->network->virtualRouterStore->virtualRouters();
+                    }
                     else
-                        $tmpVar = $template->deviceConfiguration->network->virtualRouterStore->virtualRouters();
+                    {
+                        if( $RouterStore == "logicalRouterStore" )
+                            $tmpVar = $template->deviceConfiguration->network->logicalRouterStore->virtualRouters();
+                        else
+                            $tmpVar = $template->deviceConfiguration->network->virtualRouterStore->virtualRouters();
+                    }
+
 
                     derr("cannot find VirtualRouter named '{$virtualRouter}' in Template '{$template_name}'. Available VR list: " . PH::list_to_string($tmpVar));
                 }
@@ -1805,13 +1833,19 @@ class Rule
             }
             else if( $virtualRouter != '*autodetermine*' )
             {
-                $virtualRouterToProcess = $system->owner->network->virtualRouterStore->findVirtualRouter($virtualRouter);
+                if( $RouterStore == "logicalRouterStore" )
+                    $virtualRouterToProcess = $system->owner->network->logicalRouterStore->findVirtualRouter($virtualRouter);
+                else
+                    $virtualRouterToProcess = $system->owner->network->virtualRouterStore->findVirtualRouter($virtualRouter);
                 if( $virtualRouterToProcess === null )
                     derr("VirtualRouter named '{$virtualRouter}' not found");
             }
             else
             {
-                $vRouters = $system->owner->network->virtualRouterStore->virtualRouters();
+                if( $RouterStore == "logicalRouterStore" )
+                    $vRouters = $system->owner->network->logicalRouterStore->virtualRouters();
+                else
+                    $vRouters = $system->owner->network->virtualRouterStore->virtualRouters();
                 $foundRouters = array();
 
                 foreach( $vRouters as $router )
@@ -1850,31 +1884,69 @@ class Rule
         {
             PH::print_stdout( $padding . " - CONTINUE : address container is ANY()" );
             #return;
-        }
-        else
-        {
-            PH::print_stdout( $padding . " - SKIPPED : address container is NOT ANY()" );
-            return;
-        }
 
-
-        foreach( $zoneContainer->zones() as $zone )
-        {
-            print "zone: ".$zone->name()."\n";
-            foreach( $ipMapping['ipv4'] as $ipMap )
+            foreach( $zoneContainer->zones() as $zone )
             {
-                #print_r($ipMap);
-                if( isset($ipMap['zone']) )
+                print "zone: ".$zone->name()."\n";
+                foreach( $ipMapping['ipv4'] as $ipMap )
                 {
-                    #print "validate zone: ".$ipMap['zone']."\n";
-                    if( $zone->name() == $ipMap['zone'] )
+                    #print_r($ipMap);
+                    if( isset($ipMap['zone']) )
                     {
-                        $tmp_adddress = $this->owner->owner->addressStore->findOrCreate($ipMap['network']);
-                        $addressContainer->addObject( $tmp_adddress );
+                        #print "validate zone: ".$ipMap['zone']."\n";
+                        if( $zone->name() == $ipMap['zone'] )
+                        {
+                            $tmp_adddress = $this->owner->owner->addressStore->findOrCreate($ipMap['network']);
+                            $addressContainer->addObject( $tmp_adddress );
+                        }
                     }
                 }
             }
         }
+        else
+        {
+            PH::print_stdout( $padding . " - UNDER Development : address container is NOT ANY()" );
+            #return;
+
+
+            if( $addrContainerIsNegated )
+            {
+                mwarning($padding . " - AddressContainer is negated. not supported.", null, false);
+                return;
+            }
+
+            //Todo:
+
+
+            //take Rule SRC / Dest for each member / addressgroup
+            //$addressContainer
+            print_r( $ipMapping  );
+            //Full Zone map:
+            $fullIPv4ZoneMap = new IP4Map();
+            foreach( $zoneContainer->zones() as $zone )
+            {
+                foreach ($ipMapping['ipv4'] as $ipMap)
+                {
+                    $fullIPv4ZoneMap->addMap(IP4Map::mapFromText($ipMap['network']));
+                }
+            }
+            foreach( $addressContainer->getAll() as $address )
+            {
+                /* @var Address|AddressGroup $address */
+                $address->getIP4Mapping();
+                $containerMapping = $address->_ip4Map;
+
+                /* @var IP4Map $ipMapping */
+                if( !$fullIPv4ZoneMap->includesOtherMap($containerMapping) )
+                {
+                    PH::print_stdout(  'object: '.$address->name(). "is not included in Zone");
+                }
+            }
+
+        }
+
+
+
 
         return;
 

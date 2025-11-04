@@ -27,7 +27,9 @@ class LoopbackInterface
     use ReferenceableObject;
 
     protected $_ipv4Addresses = array();
+    protected $_ipv4ObjectAddresses = array();
     protected $_ipv6Addresses = array();
+    protected $_ipv6ObjectAddresses = array();
 
     /** @var string */
     public $type = 'loopback';
@@ -70,16 +72,10 @@ class LoopbackInterface
                 if( $l3ipNode->nodeType != XML_ELEMENT_NODE )
                     continue;
 
-                $ip_string = $l3ipNode->getAttribute('name');
-                if( !empty($ip_string) )
+                $tmpIP = $l3ipNode->getAttribute('name');
+                if( !empty($tmpIP) )
                 {
-                    if( strpos( $ip_string, "/" ) !== False )
-                        $this->_ipv4Addresses[] = $ip_string;
-                    else
-                    {
-                        //object
-                        $this->_ipv4Addresses[] = $ip_string;
-                    }
+                    $this->load_IP_from_domxml( $tmpIP, '_ipv4Addresses', '_ipv4ObjectAddresses');
                 }
             }
         }
@@ -95,16 +91,10 @@ class LoopbackInterface
                     if( $l3ipNode->nodeType != XML_ELEMENT_NODE )
                         continue;
 
-                    $ip_string = $l3ipNode->getAttribute('name');
-                    if( !empty($ip_string) )
+                    $tmpIP = $l3ipNode->getAttribute('name');
+                    if( !empty($tmpIP) )
                     {
-                        if(filter_var($ip_string, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6))
-                            $this->_ipv6Addresses[] = $ip_string;
-                        else
-                        {
-                            //Todo: validation object
-                            $this->_ipv6Addresses[] = $ip_string;
-                        }
+                        $this->load_IP_from_domxml( $tmpIP, '_ipv6Addresses', '_ipv6ObjectAddresses');
                     }
                 }
             }
@@ -119,6 +109,25 @@ class LoopbackInterface
     public function getIPv6Addresses()
     {
         return $this->_ipv6Addresses;
+    }
+
+    public function getIPv4ObjectAddresses()
+    {
+        return $this->_ipv4ObjectAddresses;
+    }
+
+    public function getIPv6ObjectAddresses()
+    {
+        return $this->_ipv6ObjectAddresses;
+    }
+
+    public function addObjectIPAddresses( $ip )
+    {
+        if( filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) !== FALSE )
+            $this->_ipv4ObjectAddresses[] = $ip;
+        elseif( filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) !== FALSE )
+            $this->_ipv6ObjectAddresses[] = $ip;
+
     }
 
     /**

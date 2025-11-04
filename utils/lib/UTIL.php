@@ -125,7 +125,7 @@ class UTIL
     /** @var DOMDocument $xmlDoc */
     public $xmlDoc = null;
 
-    /** @var PANConf|PanoramaConf|FawkesConf $pan  */
+    /** @var PANConf|PanoramaConf|FawkesConf|BuckbeakConf $pan  */
     public $pan = null;
 
     public $nestedQueries = array();
@@ -175,6 +175,10 @@ class UTIL
     public $loadEndMem;
 
     public $scope = null;
+
+
+    //TMP usage:
+    public $sase_connector = null;
 
     public $networkUsedObjects = array();
 
@@ -996,6 +1000,9 @@ class UTIL
 
 
         $this->location_provided();
+
+        if( $this->configInput['type'] == 'sase-api' || $this->configInput['type'] == 'scm-api' )
+            $this->location_filter_scm_object();
     }
 
     public function inDebugapiArgument()
@@ -1126,7 +1133,7 @@ class UTIL
                     $this->origXmlDoc = $this->configInput['connector']->getSavedConfig($this->configInput['filename']);
             }
         }
-        elseif( $this->configInput['type'] == 'sase-api')
+        elseif( $this->configInput['type'] == 'sase-api' || $this->configInput['type'] == 'scm-api')
         {
             if( $this->debugAPI )
                 $this->configInput['connector']->setShowApiCalls(TRUE);
@@ -1146,10 +1153,20 @@ class UTIL
             }
 
             ##############################################
-            //- load fawkes base config into $this->xmldoc
-            $fawkes_filename = dirname(__FILE__)."/../develop/fawkes_baseconfig.xml";
-            $this->configType = 'fawkes';
-            $this->pan = new FawkesConf();
+            if( $this->configInput['type'] == 'sase-api' )
+            {
+                //- load fawkes base config into $this->xmldoc
+                $fawkes_filename = dirname(__FILE__)."/../develop/fawkes_baseconfig.xml";
+                $this->configType = 'fawkes';
+                $this->pan = new FawkesConf();
+            }
+            elseif( $this->configInput['type'] == 'scm-api' )
+            {
+                //- load buckbeak base config into $this->xmldoc
+                $fawkes_filename = dirname(__FILE__)."/../develop/fawkes_baseconfig.xml";
+                $this->configType = 'buckbeak';
+                $this->pan = new BuckbeakConf();
+            }
 
             $this->xmlDoc = new DOMDocument();
             PH::print_stdout( " - Reading XML file from disk... ".$fawkes_filename );
@@ -1167,35 +1184,15 @@ class UTIL
             PanAPIConnector::loadConnectorsFromUserHome();
             $TSGid = str_replace( "tsg_id:", "", $this->scope);
 
-            $sase_connector =  new PanSaseAPIConnector($TSGid);
+            if( $this->configInput['type'] == 'sase-api' )
+                $this->sase_connector =  new PanSaseAPIConnector($TSGid);
+            elseif( $this->configInput['type'] == 'scm-api' )
+                $this->sase_connector =  new PanSCMAPIConnector($TSGid);
+
             if( $this->debugAPI )
-                $sase_connector->showApiCalls = TRUE;
-            $sase_connector->findOrCreateConnectorFromHost($TSGid);
+                $this->sase_connector->showApiCalls = TRUE;
+            $this->sase_connector->findOrCreateConnectorFromHost($TSGid);
 
-            $folderArray = PanSaseAPIConnector::$folderArray;
-            foreach( $folderArray as $folder )
-            {
-                if( $folder === "Shared" )
-                    $sub = $this->pan->findContainer( "Prisma Access");
-                else
-                {
-                    $sub = $this->pan->findContainer( $folder);
-                    if( $sub === null )
-                    {
-                        $sub = $this->pan->findDeviceCloud( $folder);
-                        if( $sub === null )
-                            $sub = $this->pan->createDeviceCloud( $folder, "Prisma Access" );
-                    }
-                }
-
-                if( $this->debugAPI )
-                {
-                    PH::print_stdout( "FOLDER: ".$folder );
-                }
-
-                //Todo: 20240326 swaschkut - do not always load full config
-                $sase_connector->loadSaseConfig($folder, $sub, $this->utilType);
-            }
         }
         else
             derr('not supported yet');
@@ -1249,7 +1246,7 @@ class UTIL
         unset($xpathResult);
 
 
-        if( isset($this->configInput['type']) && $this->configInput['type'] !== 'sase-api')
+        if( isset($this->configInput['type']) && $this->configInput['type'] !== 'sase-api' && $this->configInput['type'] !== 'scm-api')
         {
             if( $this->configType == 'panos' )
             {
@@ -1276,7 +1273,7 @@ class UTIL
         PH::print_stdout( " - Detected platform type is '{$this->configType}'" );
         PH::print_stdout( array( get_class( $this->pan ) ), false, "platform" );
 
-        if( isset($this->configInput['type']) && ( $this->configInput['type'] == 'api' || $this->configInput['type'] == 'sase-api' ) )
+        if( isset($this->configInput['type']) && ( $this->configInput['type'] == 'api' || $this->configInput['type'] == 'sase-api' || $this->configInput['type'] == 'scm-api' ) )
             $this->pan->connector = $this->configInput['connector'];
         // </editor-fold>
     }
@@ -1445,7 +1442,11 @@ class UTIL
                     $context->isAPI = TRUE;
                     $context->isSaseAPI = TRUE;
                 }
-
+                elseif( $this->configInput['type'] == 'scm-api' )
+                {
+                    $context->isAPI = TRUE;
+                    $context->isSCMAPI = TRUE;
+                }
 
                 $context->connector = $this->pan->connector;
             }
@@ -1501,12 +1502,12 @@ class UTIL
         //
         // load the config
         //
-        if( $this->configInput['type'] !== "sase-api" )
+        if( $this->configInput['type'] !== "sase-api" && $this->configInput['type'] !== "scm-api" )
             PH::print_stdout( " - Loading configuration through PAN-OS-PHP library... " );
 
         $this->loadStart();
 
-        if( $this->configInput['type'] !== "sase-api" )
+        if( $this->configInput['type'] !== "sase-api" && $this->configInput['type'] !== "scm-api" )
             $this->pan->load_from_domxml($this->xmlDoc, $this->debugLoadTime);
 
 
@@ -1779,6 +1780,50 @@ class UTIL
         }
     }
 
+
+    public function location_filter_scm_object()
+    {
+        if( $this->configInput['type'] == 'sase-api' )
+            $folderArray = PanSaseAPIConnector::$folderArray;
+        elseif( $this->configInput['type'] == 'scm-api' )
+            $folderArray = PanSCMAPIConnector::$folderArray;
+
+
+        if( $this->objectsLocation !== "any" )
+        {
+            $folderArray = array();
+            $folderArray[0] = $this->objectsLocation;
+        }
+
+
+        //Todo: swaschkut if location is set reduce/replce $folderArray with this
+        foreach( $folderArray as $folder )
+        {
+            if( $folder === "Shared" )
+                $sub = $this->pan->findContainer( "Prisma Access");
+            else
+            {
+                $sub = $this->pan->findContainer( $folder);
+                if( $sub === null )
+                {
+                    $sub = $this->pan->findDeviceCloud( $folder);
+                    if( $sub === null )
+                        $sub = $this->pan->createDeviceCloud( $folder, "Prisma Access" );
+                }
+            }
+
+            if( $this->debugAPI )
+            {
+                PH::print_stdout( "FOLDER: ".$folder );
+            }
+
+            //Todo: 20240326 swaschkut - do not always load full config
+            if( $this->configInput['type'] == 'sase-api' )
+                $this->sase_connector->loadSaseConfig($folder, $sub, $this->utilType);
+            elseif( $this->configInput['type'] == 'scm-api' )
+                $this->sase_connector->loadSCMConfig($folder, $sub, $this->utilType);
+        }
+    }
     public function location_filter_object()
     {
         $sub = null;
@@ -2436,6 +2481,7 @@ class UTIL
                             $this->pan->timezone = $timezone_backward;
                             date_default_timezone_set($timezone_backward);
 
+                            /*
                             PH::print_stdout("   --------------");
                             PH::print_stdout( " X Timezone: $timezone->textContent is not supported with this PHP version. ".$this->pan->timezone." is used." );
                             PH::print_stdout("   - the timezone is IANA deprecated. Please change to a supported one:");
@@ -2445,6 +2491,7 @@ class UTIL
                             PH::print_stdout("   -- '".$this->pan->timezone."'");
                             PH::print_stdout("   --------------");
                             PH::print_stdout();
+                            */
                         }
                         else
                         {

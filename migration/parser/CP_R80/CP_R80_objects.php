@@ -1337,10 +1337,56 @@ trait CP_R80_objects
 
                 }
             }
+            elseif( $chkp_region == "Taiwan" )
+            {
+                $region_array = array(
+                    'TW'
+                );
+                foreach( $region_array as $key )
+                {
+                    if(isset( $this->panw_regions[$key] ) )
+                    {
+                        $tmp_adr = $rule->owner->owner->addressStore->findOrCreate($key);
+                        if($type == "src")
+                            $rule->source->addObject($tmp_adr);
+                        elseif($type == "dst")
+                            $rule->destination->addObject($tmp_adr);
+                    }
+                    else
+                    {
+                        PH::print_stdout("region2: ".$key." not found", null, false);
+                        exit;
+                    }
+
+                }
+            }
+            elseif( $chkp_region == "Vietnam" )
+            {
+                $region_array = array(
+                    'VN'
+                );
+                foreach( $region_array as $key )
+                {
+                    if(isset( $this->panw_regions[$key] ) )
+                    {
+                        $tmp_adr = $rule->owner->owner->addressStore->findOrCreate($key);
+                        if($type == "src")
+                            $rule->source->addObject($tmp_adr);
+                        elseif($type == "dst")
+                            $rule->destination->addObject($tmp_adr);
+                    }
+                    else
+                    {
+                        PH::print_stdout("region2: ".$key." not found", null, false);
+                        exit;
+                    }
+
+                }
+            }
             else
             {
                 PH::print_stdout("region: ".$chkp_region." not found", null, false);
-                exit;
+                mwarning( "region: ".$chkp_region." not found" );
             }
 
             return null;

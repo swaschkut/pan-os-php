@@ -1,3 +1,8 @@
+@font-face {
+    font-family: Lato;
+    src: url('fonts/Lato/Lato-Regular.ttf');
+}
+
 body {
     font-family: 'Lato', sans-serif;
     background: #1a1a1a;
@@ -54,7 +59,7 @@ textarea {
     border: 1px solid #444;
     border-radius: 4px;
     padding: 10px;
-    font-family: monospace;
+    font-family: 'Lato', sans-serif;
     font-size: 12px;
     transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }

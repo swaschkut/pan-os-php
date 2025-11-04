@@ -135,7 +135,16 @@ class TSF__
 
         $cliArray[] = "tar -xf ".$this->projectfolder."panosphp-".$filename." --directory ./".$this->projectfolder." ./opt/pancfg/mgmt/".$ext_folder;
         foreach( $ext_filename_array as $ext_filename )
-            $cliArray[] = "cp ".$this->projectfolder."opt/pancfg/mgmt/".$ext_folder."/".$ext_filename." ".$this->projectfolder.$ext_filename;
+        {
+            $final_ext_filename = $ext_filename;
+            if( str_starts_with($final_ext_filename, ".") )
+            {
+                $final_ext_filename =  ltrim($final_ext_filename, '1');;
+            }
+
+            $cliArray[] = "cp ".$this->projectfolder."opt/pancfg/mgmt/".$ext_folder."/".$ext_filename." ".$this->projectfolder.$final_ext_filename;
+        }
+
 
         $cliArray[] = "tar -xf ".$this->projectfolder."panosphp-".$filename." --directory ./".$this->projectfolder." ./tmp/cli/";
         $cliArray[] = "cp ".$this->projectfolder."tmp/cli/techsupport_*.txt ".$this->projectfolder."techsupport.txt";

@@ -1,6 +1,32 @@
 CHANGELOG
 
-2.1.40
+2.1.41
+UTIL:
+* pan-os-php in=scm-api:// | introduction to use SCM API - sase-api -> only Prisma Access
+* type=rule | introduce 'filter=(src.ip.count >,<,=,!  1000) | (dst.ip.count >,<,=,!  1000)
+* type=device actions=defaultsecurityrule-XYZ | deprecated / decommission actions which are already available in type=rule ruletype=defaultsecurity
+
+BUGFIX:
+* type=stats | update actions=display-bpa | to use 'included-in-bpa' info from JSON BPA at table stage
+* type=vendor-migration vendor=cp-r80 | add region Taiwan/Vietnam - issue, not variable enough
+* class RuleCAllContext | bugfix for type=rule ruletype=any actions=exporttoexcel
+* type=securityprofile securityprofiletype=url-filtering | bugfix for actions=url.alert-only-set and url.best-practice-set | related to customURLcategories
+* type=stats | user-id was calculated with all secRules, not only the enabled one
+* Class SecurityRule | do not error out if an object is not found [example DLP pluing object]
+* different Device classes | set parentStore also for customURLProfileStore | to get 'filter=(object is.unused)'; working for customURLProfiles
+* type=custom-url-category-merger allowmergingwithupperlevel addmissingobjects |  bugfix to get this working for child object search
+* type=stats json-to-folder | extend with device serial/dg/t-stack information
+* class ZoneProtection/URLProfile | bugfix with better validation if XMLnode is FALSE
+* class ThreatPolicy | bugfix to update memory
+* type=device actions=display | fix to avoid warning message
+
+GENERAL:
+* ironskillet | remove for all AS profiles <entry name="pan-dns-sec-benign">
+* adjustment for interface to read IP address from object for zoneCalculation
+* reduce information output | overall this is only useful for development
+
+
+2.1.40  (20251018)
 UTIL:
 * type=stats | introduce json-to-folder={folder}
 * type=stats actions=display-bpa | introduction

@@ -230,7 +230,7 @@ class PH
 
     private static $library_version_major = 2;
     private static $library_version_sub = 1;
-    private static $library_version_bugfix = 40;
+    private static $library_version_bugfix = 41;
 
     //BASIC AUTH PAN-OS 7.1
     public static $softwareupdate_key = "658d787f293e631196dac9fb29490f1cc1bb3827";
@@ -495,10 +495,22 @@ class PH
         $ret['filename'] = null;
 
         $pos_sase = strpos($str, 'sase-api://');
+        $pos_scm = strpos($str, 'scm-api://');
         $pos = strpos($str, 'api://');
         if( $pos !== FALSE )
         {
-            if( $pos_sase !== FALSE )
+            if( $pos_scm !== FALSE )
+            {
+                PanAPIConnector::loadConnectorsFromUserHome();
+                $host = substr($str, strlen('scm-api://'));
+                $ret['status'] = 'ok';
+                $ret['type'] = 'scm-api';
+
+                $connector = new PanSCMAPIConnector($host);
+                $connector->findOrCreateConnectorFromHost($host);
+                $ret['connector'] = $connector;
+            }
+            elseif( $pos_sase !== FALSE )
             {
                 PanAPIConnector::loadConnectorsFromUserHome();
                 $host = substr($str, strlen('sase-api://'));

@@ -85,6 +85,7 @@ class SecurityRule extends RuleWithUserID
     );
 
 
+
     const ActionAllow = 0;
     const ActionDeny = 1;
     const ActionDrop = 2;
@@ -113,6 +114,7 @@ class SecurityRule extends RuleWithUserID
         $this->owner = $owner;
 
         $this->parentAddressStore = $this->owner->owner->addressStore;
+        $this->parentServiceStore = $this->owner->owner->serviceStore;
         $this->parentServiceStore = $this->owner->owner->serviceStore;
 
         $this->tags = new TagRuleContainer($this);
@@ -529,8 +531,8 @@ class SecurityRule extends RuleWithUserID
                         else
                         {
                             //todo: not an object - default object not yet created
-                            mwarning( "SecRule: '".$this->name()."' SecurityProfile: '".$firstE->textContent."' of Type: '".$prof->nodeName."' not found.", null, false );
-                            $this->secprofProfiles_obj[$prof->nodeName] = $firstE->textContent;
+                            mwarning( "SecRule: '".$this->name()."' SecurityProfile: '".$firstE->textContent."' of Type: '".$prof->nodeName."' StoreName: '".$tmp_store_name."' not found.", null, false );
+                            #$this->secprofProfiles_obj[$prof->nodeName] = $firstE->textContent;
                         }
                     }
                 }

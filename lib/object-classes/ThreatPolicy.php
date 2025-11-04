@@ -44,6 +44,9 @@ class ThreatPolicy
 
     //Todo:
     //add CVE / VEndorID for Vulnerability Profilte
+    public $cve = null;
+    public $vendorID = null;
+
     public function __construct($name, $owner)
     {
         $this->owner = $owner;
@@ -272,24 +275,35 @@ class ThreatPolicy
 
     public function newThreatPolicyXML( $xmlroot, $name, $severity, $action, $host_type = 'any' )
     {
+        $packet_capture = "disable";
+        $threat_name = "any";
+        $category = "any";
+        $vendorID = "any";
+
         $tmp_rules_xmlroot = DH::findFirstElementOrCreate('rules', $xmlroot);
         $tmp_entry = DH::findFirstElementByNameAttrOrCreate("entry", $name, $tmp_rules_xmlroot, $xmlroot->ownerDocument);
+
+        $this->xmlroot = $tmp_rules_xmlroot;
 
         $tmp_severity = DH::findFirstElementOrCreate('severity', $tmp_entry);
         $tmp_severity_member = DH::findFirstElementOrCreate('member', $tmp_severity);
         $tmp_severity_member->textContent = $severity;
+        $this->severity[] = $severity;
 
         $tmp_action = DH::findFirstElementOrCreate('action', $tmp_entry);
         $tmp_action_node = DH::findFirstElementOrCreate($action, $tmp_action);
 
         $tmp_threat_name = DH::findFirstElementOrCreate('threat-name', $tmp_entry);
-        $tmp_threat_name->textContent = "any";
+        $tmp_threat_name->textContent = $threat_name;
+        $this->threatname = $threat_name;
 
         $tmp_category = DH::findFirstElementOrCreate('category', $tmp_entry);
-        $tmp_category->textContent = "any";
+        $tmp_category->textContent = $category;
+        //$this->category[] = $category;
 
         $tmp_packet_capture = DH::findFirstElementOrCreate('packet-capture', $tmp_entry);
-        $tmp_packet_capture->textContent = "disable";
+        $tmp_packet_capture->textContent = $packet_capture;
+        $this->packetCapture = $packet_capture;
 
         if( $this->type == "ThreatPolicyVulnerability" )
         {
@@ -299,10 +313,13 @@ class ThreatPolicy
 
             $tmp_vendorID = DH::findFirstElementOrCreate('vendor-id', $tmp_entry);
             $tmp_vendorID_member = DH::findFirstElementOrCreate('member', $tmp_vendorID);
-            $tmp_vendorID_member->textContent = "any";
+            $tmp_vendorID_member->textContent = $vendorID;
+            $this->vendorID = $vendorID;
 
             $tmp_host = DH::findFirstElementOrCreate('host', $tmp_entry);
             $tmp_host->textContent = $host_type;
+            $this->host = $host_type;
+
         }
     }
 }

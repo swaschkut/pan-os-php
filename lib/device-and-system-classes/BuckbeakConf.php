@@ -372,7 +372,7 @@ class BuckbeakConf
                         //'DataFilteringProfileStore',
                         'VulnerabilityProfileStore', 'AntiSpywareProfileStore',
                         //'WildfireProfileStore',
-                        'DecryptionProfileStore', 'HipObjectsProfileStore',
+                        'DecryptionProfileStore', 'HipObjectsProfileStore', 'customURLProfileStore',
 
                         'DNSSecurityProfileStore', 'SaasSecurityProfileStore'
 
@@ -510,6 +510,11 @@ class BuckbeakConf
         }
 
         return null;
+    }
+
+    public function getSnippets()
+    {
+        return $this->snippets;
     }
 
     /**
@@ -994,7 +999,7 @@ class BuckbeakConf
                 //'DataFilteringProfileStore',
                 'VulnerabilityProfileStore', 'AntiSpywareProfileStore',
                 //'WildfireProfileStore',
-                'DecryptionProfileStore', 'HipObjectsProfileStore',
+                'DecryptionProfileStore', 'HipObjectsProfileStore', 'customURLProfileStore',
 
                 'DNSSecurityProfileStore', 'SaasSecurityProfileStore'
             );
@@ -1089,7 +1094,7 @@ class BuckbeakConf
                 //'DataFilteringProfileStore',
                 'VulnerabilityProfileStore', 'AntiSpywareProfileStore',
                 //'WildfireProfileStore',
-                'DecryptionProfileStore', 'HipObjectsProfileStore',
+                'DecryptionProfileStore', 'HipObjectsProfileStore', 'customURLProfileStore',
 
                 'DNSSecurityProfileStore', 'SaasSecurityProfileStore'
 
@@ -1184,7 +1189,7 @@ class BuckbeakConf
                 //'DataFilteringProfileStore',
                 'VulnerabilityProfileStore', 'AntiSpywareProfileStore',
                 //'WildfireProfileStore',
-                'DecryptionProfileStore', 'HipObjectsProfileStore',
+                'DecryptionProfileStore', 'HipObjectsProfileStore', 'customURLProfileStore',
 
                 'DNSSecurityProfileStore', 'SaasSecurityProfileStore'
 

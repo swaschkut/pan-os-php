@@ -1,0 +1,23 @@
+- list jobs:
+https://api.strata.paloaltonetworks.com/config/operations/v1/jobs
+-list config version:
+https://api.strata.paloaltonetworks.com/config/operations/v1/config-versions
+
+
+/config/setup/v1/snippet-audit-logs
+
+
+
+
+
+public IPs
+https://docs.paloaltonetworks.com/prisma-access/administration/prisma-access-setup/retrieve-ip-addresses-for-prisma-access
+- Go to Prisma Access (Managed by Strata Cloud Manager), and select ConfigurationNGFW and Prisma AccessConfiguration ScopePrisma AccessPrisma Access InfrastructureInfrastructure Settings.
+curl -X POST -d @option.txt -H "header-api-key: {API-KEY}" "https://api.lab.datapath.prismaaccess.com/getPrismaAccessIP/v2"
+
+option.txt
+ {
+   "serviceType": "all",
+   "addrType": "all",
+   "location": "all"
+ }

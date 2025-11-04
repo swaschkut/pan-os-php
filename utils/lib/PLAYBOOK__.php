@@ -433,6 +433,46 @@ class PLAYBOOK__
                 sleep(5);
         }
 
+        /*
+        //todo: is this needed?? swaschkut 20251104
+        //this would be type=diff file1=start_config.xml file2=end_config.xml outputformatset=xyz_start_end.txt
+        if( $this->outputformatset )
+        {
+            $arguments = array();
+            $arguments[0] = "";
+            $arguments[] = "file1=".$input;
+            $arguments[] = "file2=".$out;
+            $tmp_string_outputformatset = str_replace(".txt", "", $this->outputformatsetFile);
+            $arguments[] = "outputformatset=".$tmp_string_outputformatset."_start_end.txt";
+
+            if( $this->projectFolder !== null )
+            {
+                $string = "=".$this->projectFolder;
+                $arguments[] = "projectfolder".$string;
+            }
+
+            $script = "diff";
+
+            PH::resetCliArgs( $arguments);
+
+            if( $comment !== null && !empty( $comment ) )
+            {
+                self::printCOMMENTS( $comment );
+            }
+
+            $tool = "pan-os-php type=".$script;
+            PH::print_stdout();
+            PH::print_stdout( PH::boldText( "[ ".$tool. " ".implode( " ", PH::$argv )." ]" ) );
+            PH::print_stdout();
+
+            $util = PH::callPANOSPHP( $script, PH::$argv, $argc, $PHP_FILE );
+
+            PH::print_stdout();
+            PH::print_stdout( "############################################################################");
+            PH::print_stdout();
+        }
+        */
+
         if( $finaloutput != null && $finaloutput !== "/dev/null" && !$this->isAPI )
         {
             //now save the latest out= from the foreach loop "$out" into "$output" file;
