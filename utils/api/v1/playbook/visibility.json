@@ -153,13 +153,17 @@
       "location": "location=any"
     },
     {
-      "type": "device",
-      "actions": "actions=defaultsecurityrule-logend-enable",
+      "type": "rule",
+      "ruletype": "ruletype=defaultsecurity",
+      "actions": "actions=logend-Enable",
+      "filter": "filter=(rule is.enabled)",
       "location": "location=any"
     },
     {
-      "type": "device",
-      "actions": "actions=defaultsecurityrule-logsetting-set:default,false",
+      "type": "rule",
+      "ruletype": "ruletype=defaultsecurity",
+      "actions": "actions=logsetting-set:default",
+      "filter": "filter=!(logprof is.set)",
       "location": "location=any"
     },
     {
