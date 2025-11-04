@@ -2,6 +2,15 @@ CHANGELOG
 
 2.1.41
 UTIL:
+
+BUGFIX:
+
+
+GENERAL:
+
+
+2.1.41 (20251104)
+UTIL:
 * pan-os-php in=scm-api:// | introduction to use SCM API - sase-api -> only Prisma Access
 * type=rule | introduce 'filter=(src.ip.count >,<,=,!  1000) | (dst.ip.count >,<,=,!  1000)
 * type=device actions=defaultsecurityrule-XYZ | deprecated / decommission actions which are already available in type=rule ruletype=defaultsecurity
