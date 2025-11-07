@@ -762,8 +762,14 @@ class URLProfile extends SecurityProfile2
 
             foreach( $urlList as $url )
             {
-                if( !in_array( $url, $this->$action ) )
+                if( $action == "block" && !in_array( $url, $this->$action ) )
+                {
                     return false;
+                }
+                elseif( $action == "alert" && !in_array( $url, $this->$action ) && !in_array( $url, $this->block ) )
+                {
+                    return false;
+                }
             }
         }
 
@@ -803,9 +809,14 @@ class URLProfile extends SecurityProfile2
 
                 foreach( $urlList as $url )
                 {
-                    if( !isset($this->$action[$url]) )
+                    if( $action == "block_credential" && !isset($this->$action[$url]) )
+                    #if( !isset($this->$action[$url]) )
                     {
                         #print $url." NOT in array\n";
+                        return false;
+                    }
+                    elseif( $action == "alert_credential" && !isset($this->$action[$url])  && !in_array( $url, $this->block_credential ) )
+                    {
                         return false;
                     }
 

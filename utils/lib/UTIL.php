@@ -1432,6 +1432,9 @@ class UTIL
             elseif( $this->utilType == 'log-profile' )
                 $context = new LogProfileCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
 
+            if( $this->debugAPI )
+                $context->debug = true;
+
             $context->baseObject = $this->pan;
             if( isset($this->configInput['type'])  )
             {
