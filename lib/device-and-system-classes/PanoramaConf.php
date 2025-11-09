@@ -492,7 +492,18 @@ class PanoramaConf
         $this->templatestackroot = DH::findFirstElementOrCreate('template-stack', $this->localhostroot);
         $this->logcollectorgrouproot = DH::findFirstElement('log-collector-group', $this->localhostroot);
 
+        //above is general part
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //Todo: add DG hierarchy, and create DG, with parent and child relation
+        //Todo: part1
 
+
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //Todo: shared address object part
+        //part2:  everything what is needed for Template
         if( $debugLoadTime )
             PH::print_DEBUG_loadtime("shared objects");
         //
@@ -531,7 +542,55 @@ class PanoramaConf
             $this->addressStore->load_addressgroups_from_domxml($tmp);
         // End of address groups extraction
 
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //Todo: part3 Template - DONE
+        //Todo: part4 Template-Stack - DONE
+        if( $debugLoadTime )
+            PH::print_DEBUG_loadtime("Template");
+        //
+        // loading templates
+        //
+        foreach( $this->templateroot->childNodes as $node )
+        {
+            if( $node->nodeType != XML_ELEMENT_NODE ) continue;
 
+            $ldv = new Template('*tmp*', $this);
+            $ldv->load_from_domxml($node);
+            $this->templates[] = $ldv;
+            #PH::print_stdout(  "Template '{$ldv->name()}' found" );
+        }
+        //
+        // end of Templates
+        //
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //Todo: this is old part3 and will be new part4 move it higher
+        if( $debugLoadTime )
+            PH::print_DEBUG_loadtime("TemplateStack");
+        //
+        // loading templatestacks
+        //
+        foreach( $this->templatestackroot->childNodes as $node )
+        {
+            if( $node->nodeType != XML_ELEMENT_NODE ) continue;
+
+            $ldv = new TemplateStack('*tmp*', $this);
+            $ldv->load_from_domxml($node);
+            $this->templatestacks[] = $ldv;
+            //PH::print_stdout(  "TemplateStack '{$ldv->name()}' found" );
+
+            //Todo: add templates to templatestack
+        }
+        //
+        // end of Templates
+        //
+
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //Todo: part6 - all other parts related to shared - keep it - DONE
         //
         // Extract services
         //
@@ -1139,45 +1198,13 @@ class PanoramaConf
         // end of policies extraction
         //
 
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //Todo: this was former place of Template and Template-Stack
 
-        if( $debugLoadTime )
-            PH::print_DEBUG_loadtime("Template");
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
         //
-        // loading templates
-        //
-        foreach( $this->templateroot->childNodes as $node )
-        {
-            if( $node->nodeType != XML_ELEMENT_NODE ) continue;
-
-            $ldv = new Template('*tmp*', $this);
-            $ldv->load_from_domxml($node);
-            $this->templates[] = $ldv;
-            #PH::print_stdout(  "Template '{$ldv->name()}' found" );
-        }
-        //
-        // end of Templates
-        //
-
-        if( $debugLoadTime )
-            PH::print_DEBUG_loadtime("TemplateStack");
-        //
-        // loading templatestacks
-        //
-        foreach( $this->templatestackroot->childNodes as $node )
-        {
-            if( $node->nodeType != XML_ELEMENT_NODE ) continue;
-
-            $ldv = new TemplateStack('*tmp*', $this);
-            $ldv->load_from_domxml($node);
-            $this->templatestacks[] = $ldv;
-            //PH::print_stdout(  "TemplateStack '{$ldv->name()}' found" );
-
-            //Todo: add templates to templatestack
-        }
-        //
-        // end of Templates
-        //
-
         if( $debugLoadTime )
             PH::print_DEBUG_loadtime("DeviceGroup");
         //
@@ -1346,6 +1373,9 @@ class PanoramaConf
         // End of DeviceGroup loading
         //
 
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //Todo: keep this part as it is - DONE
         if( $debugLoadTime )
             PH::print_DEBUG_loadtime("LogCollectorGroup");
         //

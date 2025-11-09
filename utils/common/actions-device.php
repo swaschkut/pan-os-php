@@ -264,7 +264,7 @@ DeviceCallContext::$supportedActions['display'] = array(
     },
     'GlobalFinishFunction' => function (DeviceCallContext $context)
     {
-        if( $context->arguments['listserial'] )
+        if( $context->arguments['listserial'] !== 'false' )
         {
             if( isset($context->objectList['serial']) )
             {

@@ -11,6 +11,7 @@ BUGFIX:
 * type=device actions=sp_spg-create-alert-only-bp:true | to create SPG also at shared level
 
 GENERAL:
+* class PanoramaConf - first restructur part to better read config for ZPP BP calculation - DGhierarchy readiing must be still improved
 
 
 2.1.41 (20251104)

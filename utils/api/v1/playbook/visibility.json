@@ -4,6 +4,9 @@
   "footer-comment": "*****************************************************************************************************************************************************\n*                                                                                                                                                   *\n*   VISIBILITY playbook FINALISED                                                                                                                   *\n*                                                                                                                                                   *\n*****************************************************************************************************************************************************",
   "command": [
     {
+      "type": "xml-issue"
+    },
+    {
       "type": "device",
       "actions": "actions=logforwardingprofile-create-bp:true",
       "comment": "*****************************************************************************************************************\n*                                                                                                               *\n*  The next pan-os-php command (below) will create the Best Practice Log Forwarding Profile called 'default'.   *\n*  This config is sourced from the relevant snippet on https://github.com/PaloAltoNetworks/iron-skillet.        *\n*                                                                                                               *\n*****************************************************************************************************************"
