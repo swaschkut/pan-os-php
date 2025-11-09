@@ -5,6 +5,7 @@ UTIL:
 
 BUGFIX:
 * type=securityprofile securityprofiletype=url-filtering | bugfix for actions=exporttoexcel:file.html,bestpractice
+* type=securityprofile securityprofiletype=spyware actions=spyware.alert-only-set | bugfix for botnet settings, do not set packet-capture to disable
 
 GENERAL:
 

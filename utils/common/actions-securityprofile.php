@@ -2593,7 +2593,10 @@ SecurityProfileCallContext::$supportedActions['spyware.alert-only-set'] = array(
                         if ($tmp !== FALSE)
                         {
                             if( $hasDNSlicense )
-                                $tmp->textContent = "disable";
+                            {
+                                //keep what is there before!!!!
+                                //$tmp->textContent = "disable";
+                            }
                             else
                                 $tmp->textContent = "disable";
                         }
