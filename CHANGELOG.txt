@@ -8,6 +8,7 @@ BUGFIX:
 * type=securityprofile securityprofiletype=url-filtering | bugfix for actions=exporttoexcel:file.html,bestpractice
 * type=securityprofile securityprofiletype=spyware actions=spyware.alert-only-set | bugfix for botnet settings, do not set packet-capture to disable
 * type=diff outputformatset | bugfix if an object name has {number1}_{number2} at end of the name; intension was to keep Interface name, but validation was not enough
+* type=device actions=sp_spg-create-alert-only-bp:true | to create SPG also at shared level
 
 GENERAL:
 
