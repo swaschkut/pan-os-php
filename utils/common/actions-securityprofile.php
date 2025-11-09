@@ -2313,7 +2313,11 @@ SecurityProfileCallContext::$supportedActions['spyware.best-practice-set'] = arr
                                 $tmp->removeChild($tmp_action);
 
                                 if( $hasDNSlicense )
+                                {
+                                    //swaschkut 20251109 - clarified with roland
+                                    //this should be kept as sinkhole - also if block is set, change it to sinkhole
                                     $tmp_actionString = "sinkhole";
+                                }
                                 else
                                     $tmp_actionString = "allow";
                                 $xmlString = '<'.$tmp_actionString.'/>';
@@ -2327,8 +2331,10 @@ SecurityProfileCallContext::$supportedActions['spyware.best-practice-set'] = arr
                         if ($tmp !== FALSE)
                         {
                             if( $hasDNSlicense )
+                            {
                                 #$tmp->textContent = "single-packet";
                                 $tmp->textContent = "extended-capture";
+                            }
                             else
                                 $tmp->textContent = "disable";
                         }
