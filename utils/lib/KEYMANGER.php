@@ -36,8 +36,6 @@ class KEYMANGER extends UTIL
     - php " . basename(__FILE__) . " add=maxmind-licensekey apikey=[ Maxmind license to download Maxmind geo2ip lite database. create free account: https://www.maxmind.com ]
     - php " . basename(__FILE__) . " add=tsg_id{{TSGID}} 'apikey={{CLIENT_ID}}%{{CLIENT_SECRET}}'  | character '%' must be used as separator between client_id and client_secret";
 
-//        pan-os-php type=key-manager add=tsg_id1668544452 'apikey=api-test-swaschkut@1668544451.iam.panserviceaccount.com%6378343f-060e-45ad-9a83-e4273d4a051d'
-
         $this->prepareSupportedArgumentsArray();
         PH::processCliArgs();
 
