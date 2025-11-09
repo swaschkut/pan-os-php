@@ -592,11 +592,18 @@ class DH
             $fullpath = str_replace($replace, "", $fullpath);
         }
 
-        $fullpath = preg_replace("/(\d+)\/(\d+)/", "$1_$2", $fullpath);
+        //this is interfaces, to keep '/'
+        $changed_backslash = false;
+        if( preg_match("/(\d+)\/(\d+)/", $fullpath) )
+        {
+            $fullpath = preg_replace("/(\d+)\/(\d+)/", "$1_$2", $fullpath);
+            $changed_backslash = true;
+        }
         $fullpath = str_replace("/", " ", $fullpath);
         $fullpath = str_replace("entry[@name='", '"', $fullpath);
         $fullpath = str_replace("']", '"', $fullpath);
-        $fullpath = preg_replace("/(\d+)_(\d+)/", "$1/$2", $fullpath);
+        if( $changed_backslash )
+            $fullpath = preg_replace("/(\d+)_(\d+)/", "$1/$2", $fullpath);
 
         $xpath = $type . $fullpath;
 
