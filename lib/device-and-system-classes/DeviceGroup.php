@@ -343,6 +343,51 @@ class DeviceGroup
         $this->load_from_domxml($element);
     }
 
+    public function init_load_from_domxml_devices($xml, $debugLoadTime = false)
+    {
+        $this->xmlroot = $xml;
+
+        // this DeviceGroup has a name ?
+        $this->name = DH::findAttribute('name', $xml);
+        if ($this->name === FALSE)
+            derr("DeviceGroup name not found\n");
+
+        if ($debugLoadTime)
+            PH::print_DEBUG_loadtime("devices");
+
+        // Devices extraction
+        $this->devicesRoot = DH::findFirstElement('devices', $xml);
+        if ($this->devicesRoot !== FALSE) {
+            foreach ($this->devicesRoot->childNodes as $device) {
+                if ($device->nodeType != 1) continue;
+                $devname = DH::findAttribute('name', $device);
+                $vsyslist = array();
+
+                $vsysChild = DH::firstChildElement($device);
+
+                if ($vsysChild !== FALSE) {
+                    foreach ($vsysChild->childNodes as $vsysentry) {
+                        if ($vsysentry->nodeType != 1) continue;
+                        $vname = DH::findAttribute('name', $vsysentry);
+                        $vsyslist[$vname] = $vname;
+                    }
+                } else {
+                    //print "No vsys for device '$devname'\n";
+                    $vsyslist['vsys1'] = 'vsys1';
+                }
+
+                $this->devices[$devname] = array('serial' => $devname, 'vsyslist' => $vsyslist);
+                foreach ($this->devices as $serial => $array) {
+                    $managedFirewall = $this->owner->managedFirewallsStore->find($serial);
+                    if ($managedFirewall !== null) {
+                        $managedFirewall->addDeviceGroup($this->name);
+                        $managedFirewall->addReference($this);
+                    }
+
+                }
+            }
+        }
+    }
 
     /**
      * !! Should not be used outside of a PanoramaConf constructor. !!
@@ -352,11 +397,12 @@ class DeviceGroup
     {
         $this->xmlroot = $xml;
 
-        // this VirtualSystem has a name ?
+        // this DeviceGroup has a name ?
         $this->name = DH::findAttribute('name', $xml);
         if( $this->name === FALSE )
-            derr("VirtualSystem name not found\n");
+            derr("DeviceGroup name not found\n");
 
+        /*
         if( $debugLoadTime )
             PH::print_DEBUG_loadtime("devices");
 
@@ -400,7 +446,7 @@ class DeviceGroup
                 }
             }
         }
-
+        */
 
         if( $debugLoadTime )
             PH::print_DEBUG_loadtime("tag");

@@ -199,114 +199,118 @@ class ZoneRuleContainer extends ObjRuleContainer
             }
 
 
-            $bugfix = false;
+            $bugfix = true;
             if( $bugfix )
             {
-
                 //new Code - planed with 2.1.37 but buggy
                 if (isset($this->owner->owner->owner) && get_class($this->owner->owner->owner) == 'DeviceGroup')
                 {
-                    PH::print_stdout("DG check");
+                    $actualDG = $this->owner->owner->owner;
+                    #PH::print_stdout("DGname: ".$actualDG->name());
 
-                    //old intermediate code cause issues with 2.1.37 - no longer the case
-                    //Todo: per devicegroup check if there is a serial attached,
-                    //if not get child devicegroups and check if there are serial attached.
-                    //for all serial, get template-stack, get all templates, search for zone name.
 
-                    $tmp_devicegroup = $this->owner->owner->owner;
-                    $tmp_panorama = $tmp_devicegroup->owner;
+                    //describe the problem:
+                    //- rule has SRC/DST ZoneRuleContainer
+                    //this ZoneRuleContainer has Zones:
+                    // for DG we need to find Zones in Template / Template-Stack
+                    // how are DG and Template-Stack related -> Serial
 
-                    /*
-                    PH::print_stdout("new code");
-                    print( "Main DG: ".$tmp_devicegroup->name()."\n" );
+                    // how to find the Serial for the actual DG
+                    //=> relevant part yet
+                    //1) does DG has serial attached -> no 2)
+                    $devices =  $actualDG->getDevicesInGroup(true);
+                    #$parentDG = $actualDG->parentDeviceGroups();
+                    #PH::print_stdout("parentDG");
+                    #print_r( array_keys($parentDG) );
 
-                    $childDGS = array();
-                    $childDGS[] = $tmp_devicegroup;
-                    $tmp_childDGS = $tmp_devicegroup->childDeviceGroups(true);
-                    $childDGS = array_merge($childDGS, $tmp_childDGS);
-                    foreach( $childDGS as $child )
+                    $childDG = $actualDG->childDeviceGroups(false);
+                    #PH::print_stdout("childDG");
+                    #print_r( array_keys($childDG) );
+
+                    #PH::print_stdout("Devices: ".count($devices));
+                    #PH::print_stdout("---------------------------");
+
+                    //2) get childDG -> check if serial is found
+
+
+                    //if Serial found -> pick Template-Stack
+                    //search all Templates and Template-stack
+                    //find all zones there
+
+
+                    $search_f_TStack = null;
+                    foreach( $devices as $deviceObj )
                     {
-                        PH::print_stdout("  - DG: ".$child->name());
-                        if (count($child->getDevicesInGroup()) == 0)
-                            continue;
+                        /* @var ManagedDevice $managedFirewall*/
+                        $managedFirewall = $this->owner->owner->owner->owner->managedFirewallsStore->find($deviceObj['serial']);
 
-                        PH::print_stdout( "    Device count: ".count($child->getDevicesInGroup()) );
+                        #print "DG: ".$managedFirewall->devicegroup."\n;
+                        #print "T-Stack: ".$managedFirewall->template_stack."\n;
 
-                        foreach ($child->getDevicesInGroup() as $key => $device)
-                        {
+                        $search_f_TStack = $managedFirewall->template_stack;
 
-                            PH::print_stdout($device->template_stack->name());
-                            //exit();
-                            //break;
-                        }
                     }
-                    */
+                    #############################################################
+                    #############################################################
 
-                    //PH::print_stdout("now start with old code");
-
-
-                    //=======================================================
-                    $all_Templates = $tmp_panorama->getTemplates();
-                    $all_TemplateStacks = $tmp_panorama->getTemplatesStacks();
-
-                    $all = array_merge($all_Templates, $all_TemplateStacks);
-
-                    $break_found = FALSE;
-                    foreach( $all as $template )
+                    if( $search_f_TStack !== null )
                     {
-                        /** @var Template|TemplateStack $template */
+                        $tmp_devicegroup = $this->owner->owner->owner;
+                        $tmp_panorama = $tmp_devicegroup->owner;
+                        $tmp_TemplateStack = $tmp_panorama->findTemplateStack( $search_f_TStack );
+                        /* @var TemplateStack $tmp_TemplateStack */
+                        $tmp_templates = $tmp_TemplateStack->templates;
 
-                        $all_vsys = $template->deviceConfiguration->getVirtualSystems();
-                        foreach ($all_vsys as $vsys)
+                        $all = array_merge($tmp_templates, array($tmp_TemplateStack));
+
+                        $break_found = FALSE;
+                        foreach( $all as $template )
                         {
-                            /** @var VirtualSystem $vsys */
+                            /** @var Template|TemplateStack $template */
 
-                            $tmp_zone = $vsys->zoneStore->find($node->textContent, $this);
-
-                            //Todo: validate if correct Template / TemplateStack
-
-
-                            $childDGS = array();
-                            $childDGS[] = $tmp_devicegroup;
-                            $tmp_childDGS = $tmp_devicegroup->childDeviceGroups(true);
-                            $childDGS = array_merge($childDGS, $tmp_childDGS);
-                            foreach ($childDGS as $child)
+                            $all_vsys = $template->deviceConfiguration->getVirtualSystems();
+                            foreach( $all_vsys as $vsys )
                             {
-                                #PH::print_stdout("DG: ".$child->name());
+                                /** @var VirtualSystem $vsys */
 
-                                if (count($child->getDevicesInGroup()) == 0)
-                                    continue;
+                                $tmp_zone = $vsys->zoneStore->find( $node->textContent, $this );
 
-                                #PH::print_stdout( count($child->getDevicesInGroup()) );
-
-                                foreach ($child->getDevicesInGroup() as $key => $device)
+                                if( $tmp_zone !== null )
                                 {
-                                    // /** @var ManagedDevice $device */
-                                    PH::print_stdout($device->template_stack->name());
-                                    //break; //is this causing the bug???
-                                }
-
-
-                                /////////////////////////////////////
-                                if ($tmp_zone === null)
-                                {
-                                    $f = $this->parentCentralStore->findOrCreate($node->textContent, $this);
-                                    $this->o[] = $f;
-                                } elseif ($tmp_zone !== null)
+                                    #PH::print_stdout( $tmp_zone->name()." added" );
                                     $this->o[] = $tmp_zone;
+                                    $break_found = TRUE;
+                                    break;
+                                }
                             }
+
+                            if($break_found)
+                                break;
                         }
+
+
+                        #PH::print_stdout("1find/create for: ".$node->textContent);
+                        #PH::print_stdout("1Rule: ".$this->owner->name());
+                        #$f = $this->parentCentralStore->findOrCreate($node->textContent, $this);
+                        #$this->o[] = $f;
+                    }
+                    else
+                    {
+                        #PH::print_stdout("2find/create for: ".$node->textContent);
+                        #PH::print_stdout("2Rule: ".$this->owner->name());
+                        $f = $this->parentCentralStore->findOrCreate($node->textContent, $this);
+                        $this->o[] = $f;
                     }
                 }
                 else
                 {
-                    PH::print_stdout("NOT DG check");
+                    #PH::print_stdout("NOT DG check");
                     //not DeviceGroup
+                    #PH::print_stdout("find/create for: ".$node->textContent);
+                    #PH::print_stdout("Rule: ".$this->owner->name());
                     $f = $this->parentCentralStore->findOrCreate($node->textContent, $this);
                     $this->o[] = $f;
                 }
-
-
             }
             else {
                 //old Code before 2.1.37

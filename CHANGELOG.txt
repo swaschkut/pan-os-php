@@ -14,6 +14,7 @@ BUGFIX:
 GENERAL:
 * class PanoramaConf - first restructure part to better read config for ZPP BP calculation - DGhierarchy reading must be still improved
 * class PanoramaConf/DeviceGroup | second restructure part - code re-org in preparation for BP ZPP calculation
+* class ZoneRuleContainer / DeviceGroup / PanoramaConf | third restructure part - improvement for ZPP BP calculation
 
 
 2.1.41 (20251104)

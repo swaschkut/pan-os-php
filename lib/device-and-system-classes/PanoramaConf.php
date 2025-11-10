@@ -494,6 +494,96 @@ class PanoramaConf
 
         //above is general part
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //Todo: shared address object part
+        //part2:  everything what is needed for Template
+        if( $debugLoadTime )
+            PH::print_DEBUG_loadtime("shared objects");
+        //
+        // Extract Tag objects
+        //
+        if( $this->version >= 60 )
+        {
+            $tmp = DH::findFirstElement('tag', $this->sharedroot);
+            if( $tmp !== FALSE )
+                $this->tagStore->load_from_domxml($tmp);
+        }
+        // End of Tag objects extraction
+
+
+        //
+        // Extract region objects
+        //
+        $tmp = DH::findFirstElement('region', $this->sharedroot);
+        if( $tmp !== false )
+            $this->addressStore->load_regions_from_domxml($tmp);
+        // End of region objects extraction
+
+        //
+        // Shared address objects extraction
+        //
+        $tmp = DH::findFirstElementorCreate('address', $this->sharedroot);
+        if( $tmp !== FALSE )
+            $this->addressStore->load_addresses_from_domxml($tmp);
+        // end of address extraction
+
+        //
+        // Extract address groups
+        //
+        $tmp = DH::findFirstElementorCreate('address-group', $this->sharedroot);
+        if( $tmp !== FALSE )
+            $this->addressStore->load_addressgroups_from_domxml($tmp);
+        // End of address groups extraction
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //Todo: part3 Template - DONE
+        //Todo: part4 Template-Stack - DONE
+        if( $debugLoadTime )
+            PH::print_DEBUG_loadtime("Template");
+        //
+        // loading templates
+        //
+        foreach( $this->templateroot->childNodes as $node )
+        {
+            if( $node->nodeType != XML_ELEMENT_NODE ) continue;
+
+            $ldv = new Template('*tmp*', $this);
+            $ldv->load_from_domxml($node);
+            $this->templates[] = $ldv;
+            #PH::print_stdout(  "Template '{$ldv->name()}' found" );
+        }
+        //
+        // end of Templates
+        //
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //this is old part3 and will be new part4 move it higher - DONE
+        if( $debugLoadTime )
+            PH::print_DEBUG_loadtime("TemplateStack");
+        //
+        // loading templatestacks
+        //
+        foreach( $this->templatestackroot->childNodes as $node )
+        {
+            if( $node->nodeType != XML_ELEMENT_NODE ) continue;
+
+            $ldv = new TemplateStack('*tmp*', $this);
+            $ldv->load_from_domxml($node);
+            $this->templatestacks[] = $ldv;
+            //PH::print_stdout(  "TemplateStack '{$ldv->name()}' found" );
+
+            //Todo: add templates to templatestack
+        }
+        //
+        // end of Templates
+        //
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
         //Todo: add DG hierarchy, and create DG, with parent and child relation
         //Todo: part1
         if( $debugLoadTime )
@@ -511,15 +601,15 @@ class PanoramaConf
 
                 $ldv = new DeviceGroup($this);
 
-                $doc = new DOMDocument();
-                $doc->loadXML(DeviceGroup::$templatexml, XML_PARSE_BIG_LINES);
-                $node = DH::findFirstElementOrDie('entry', $doc);
-                $ldv->load_from_domxml($node);
-                $ldv->xmlroot = $node;
+                #$doc = new DOMDocument();
+                #$doc->loadXML(DeviceGroup::$templatexml, XML_PARSE_BIG_LINES);
+                #$node = DH::findFirstElementOrDie('entry', $doc);
+                #$ldv->load_from_domxml($node);
+                #$ldv->xmlroot = $node;
 
-                $ldv->setName($lvname);
+                #$ldv->setName($lvname);
                 //Todo: swaschkut 20251109 - load it in part2
-                #$ldv->load_from_domxml($node, $debugLoadTime);
+                $ldv->init_load_from_domxml_devices($node, $debugLoadTime);
                 $this->deviceGroups[] = $ldv;
             }
         }
@@ -625,13 +715,13 @@ class PanoramaConf
 
                 $ldv = new DeviceGroup($this);
 
-                $doc = new DOMDocument();
-                $doc->loadXML(DeviceGroup::$templatexml, XML_PARSE_BIG_LINES);
-                $node = DH::findFirstElementOrDie('entry', $doc);
-                $ldv->load_from_domxml($node);
-                $ldv->xmlroot = $node;
+                #$doc = new DOMDocument();
+                #$doc->loadXML(DeviceGroup::$templatexml, XML_PARSE_BIG_LINES);
+                #$node = DH::findFirstElementOrDie('entry', $doc);
+                #$ldv->load_from_domxml($node);
+                #$ldv->xmlroot = $node;
 
-                $ldv->setName($dgName);
+                #$ldv->setName($dgName);
 
                 if( !isset($dgToParent[$dgName]) )
                 {
@@ -674,6 +764,7 @@ class PanoramaConf
 
                 //Todo: swaschkut 20251109 load it in part2
                 #$ldv->load_from_domxml($deviceGroupNodes[$dgName], $debugLoadTime);
+                $ldv->init_load_from_domxml_devices($deviceGroupNodes[$dgName], $debugLoadTime);
                 $this->deviceGroups[] = $ldv;
 
             }
@@ -682,96 +773,6 @@ class PanoramaConf
         //
         // End of DeviceGroup loading
         //
-
-
-        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        //Todo: shared address object part
-        //part2:  everything what is needed for Template
-        if( $debugLoadTime )
-            PH::print_DEBUG_loadtime("shared objects");
-        //
-        // Extract Tag objects
-        //
-        if( $this->version >= 60 )
-        {
-            $tmp = DH::findFirstElement('tag', $this->sharedroot);
-            if( $tmp !== FALSE )
-                $this->tagStore->load_from_domxml($tmp);
-        }
-        // End of Tag objects extraction
-
-
-        //
-        // Extract region objects
-        //
-        $tmp = DH::findFirstElement('region', $this->sharedroot);
-        if( $tmp !== false )
-            $this->addressStore->load_regions_from_domxml($tmp);
-        // End of region objects extraction
-
-        //
-        // Shared address objects extraction
-        //
-        $tmp = DH::findFirstElementorCreate('address', $this->sharedroot);
-        if( $tmp !== FALSE )
-            $this->addressStore->load_addresses_from_domxml($tmp);
-        // end of address extraction
-
-        //
-        // Extract address groups
-        //
-        $tmp = DH::findFirstElementorCreate('address-group', $this->sharedroot);
-        if( $tmp !== FALSE )
-            $this->addressStore->load_addressgroups_from_domxml($tmp);
-        // End of address groups extraction
-
-        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        //Todo: part3 Template - DONE
-        //Todo: part4 Template-Stack - DONE
-        if( $debugLoadTime )
-            PH::print_DEBUG_loadtime("Template");
-        //
-        // loading templates
-        //
-        foreach( $this->templateroot->childNodes as $node )
-        {
-            if( $node->nodeType != XML_ELEMENT_NODE ) continue;
-
-            $ldv = new Template('*tmp*', $this);
-            $ldv->load_from_domxml($node);
-            $this->templates[] = $ldv;
-            #PH::print_stdout(  "Template '{$ldv->name()}' found" );
-        }
-        //
-        // end of Templates
-        //
-
-        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        //Todo: this is old part3 and will be new part4 move it higher
-        if( $debugLoadTime )
-            PH::print_DEBUG_loadtime("TemplateStack");
-        //
-        // loading templatestacks
-        //
-        foreach( $this->templatestackroot->childNodes as $node )
-        {
-            if( $node->nodeType != XML_ELEMENT_NODE ) continue;
-
-            $ldv = new TemplateStack('*tmp*', $this);
-            $ldv->load_from_domxml($node);
-            $this->templatestacks[] = $ldv;
-            //PH::print_stdout(  "TemplateStack '{$ldv->name()}' found" );
-
-            //Todo: add templates to templatestack
-        }
-        //
-        // end of Templates
-        //
-
 
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////
