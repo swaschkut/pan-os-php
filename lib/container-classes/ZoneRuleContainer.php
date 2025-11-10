@@ -202,41 +202,10 @@ class ZoneRuleContainer extends ObjRuleContainer
             $bugfix = true;
             if( $bugfix )
             {
-                //new Code - planed with 2.1.37 but buggy
                 if (isset($this->owner->owner->owner) && get_class($this->owner->owner->owner) == 'DeviceGroup')
                 {
                     $actualDG = $this->owner->owner->owner;
-                    #PH::print_stdout("DGname: ".$actualDG->name());
-
-
-                    //describe the problem:
-                    //- rule has SRC/DST ZoneRuleContainer
-                    //this ZoneRuleContainer has Zones:
-                    // for DG we need to find Zones in Template / Template-Stack
-                    // how are DG and Template-Stack related -> Serial
-
-                    // how to find the Serial for the actual DG
-                    //=> relevant part yet
-                    //1) does DG has serial attached -> no 2)
                     $devices =  $actualDG->getDevicesInGroup(true);
-                    #$parentDG = $actualDG->parentDeviceGroups();
-                    #PH::print_stdout("parentDG");
-                    #print_r( array_keys($parentDG) );
-
-                    $childDG = $actualDG->childDeviceGroups(false);
-                    #PH::print_stdout("childDG");
-                    #print_r( array_keys($childDG) );
-
-                    #PH::print_stdout("Devices: ".count($devices));
-                    #PH::print_stdout("---------------------------");
-
-                    //2) get childDG -> check if serial is found
-
-
-                    //if Serial found -> pick Template-Stack
-                    //search all Templates and Template-stack
-                    //find all zones there
-
 
                     $search_f_TStack = null;
                     foreach( $devices as $deviceObj )
@@ -244,26 +213,20 @@ class ZoneRuleContainer extends ObjRuleContainer
                         /* @var ManagedDevice $managedFirewall*/
                         $managedFirewall = $this->owner->owner->owner->owner->managedFirewallsStore->find($deviceObj['serial']);
 
-                        #print "DG: ".$managedFirewall->devicegroup."\n;
-                        #print "T-Stack: ".$managedFirewall->template_stack."\n;
-
                         $search_f_TStack = $managedFirewall->template_stack;
-
                     }
-                    #############################################################
-                    #############################################################
 
                     if( $search_f_TStack !== null )
                     {
                         $tmp_devicegroup = $this->owner->owner->owner;
                         $tmp_panorama = $tmp_devicegroup->owner;
                         $tmp_TemplateStack = $tmp_panorama->findTemplateStack( $search_f_TStack );
+
                         /* @var TemplateStack $tmp_TemplateStack */
                         $tmp_templates = $tmp_TemplateStack->templates;
 
                         $all = array_merge($tmp_templates, array($tmp_TemplateStack));
 
-                        $break_found = FALSE;
                         foreach( $all as $template )
                         {
                             /** @var Template|TemplateStack $template */
@@ -274,46 +237,35 @@ class ZoneRuleContainer extends ObjRuleContainer
                                 /** @var VirtualSystem $vsys */
 
                                 $tmp_zone = $vsys->zoneStore->find( $node->textContent, $this );
-
                                 if( $tmp_zone !== null )
                                 {
-                                    #PH::print_stdout( $tmp_zone->name()." added" );
                                     $this->o[] = $tmp_zone;
                                     $tmp_zone->addReference($this);
-                                    #$break_found = TRUE;
-                                    #break;
                                 }
                             }
-
-                            #if($break_found)
-                            #    break;
                         }
 
-
-                        #PH::print_stdout("1find/create for: ".$node->textContent);
-                        #PH::print_stdout("1Rule: ".$this->owner->name());
+                        //this is needed to get type=rule 'filter=(from has XZY) - back into working mode
                         $f = $this->parentCentralStore->findOrCreate($node->textContent, $this);
+
                         #$this->o[] = $f;
                     }
                     else
                     {
-                        #PH::print_stdout("2find/create for: ".$node->textContent);
-                        #PH::print_stdout("2Rule: ".$this->owner->name());
+                        //if zone is not found in Template / Template-Stack
                         $f = $this->parentCentralStore->findOrCreate($node->textContent, $this);
                         $this->o[] = $f;
                     }
                 }
                 else
                 {
-                    #PH::print_stdout("NOT DG check");
-                    //not DeviceGroup
-                    #PH::print_stdout("find/create for: ".$node->textContent);
-                    #PH::print_stdout("Rule: ".$this->owner->name());
+                    //if NOT Panorama / Device-Group
                     $f = $this->parentCentralStore->findOrCreate($node->textContent, $this);
                     $this->o[] = $f;
                 }
             }
-            else {
+            else
+            {
                 //old Code before 2.1.37
                 $f = $this->parentCentralStore->findOrCreate($node->textContent, $this);
                 $this->o[] = $f;
