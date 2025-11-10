@@ -12,6 +12,7 @@ BUGFIX:
 * type=device actions=sp_spg-create-alert-only-bp:true | to create SPG also at shared level
 * class ZoneRuleContainer | fix to get rule filters working again 'filter=(from has XYZ)' - after ZPP calc improvements
 * type=custom-url-category-merger 'excludefilter=(name eq XYZ)' | bugfix to use correct filter class
+* type=stats actions=display-bpa debugapi | bugfix
 
 GENERAL:
 * class PanoramaConf - first restructure part to better read config for ZPP BP calculation - DGhierarchy reading must be still improved

@@ -1875,7 +1875,7 @@ class DeviceGroup
         PH::$JSON_TMP[] = $stdoutarray;
 
 
-        if( !PH::$shadow_json && $debug && $actions == "display" )
+        if( !PH::$shadow_json && $debug && $actions == "display-bpa" )
             PH::print_stdout( $stdoutarray, true );
 
     }

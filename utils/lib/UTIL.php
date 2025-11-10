@@ -2312,9 +2312,9 @@ class UTIL
                     $doc = $fwconnector->getMergedConfig();
                     $firewall->load_from_domxml( $doc );
 
-                    $firewall->display_statistics( $fwconnector, $actions );
+                    $firewall->display_statistics( $fwconnector, $debug, $actions );
                     if( $actions == "display-bpa" )
-                        $firewall->display_bp_statistics( $actions );
+                        $firewall->display_bp_statistics( $debug, $actions );
                 }
 
             }
