@@ -2,6 +2,7 @@
 FROM python:3.11-slim-bookworm
 
 # 1. Install system dependencies for headless Chrome/Chromium
+# Install core browser and driver, plus all necessary dependencies for headless execution (libnss3, libxss1, etc.).
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     chromium \
@@ -19,18 +20,20 @@ RUN apt-get update && \
 WORKDIR /app
 
 # 3. Create the necessary symlink for Selenium compatibility
-RUN ln -s /usr/bin/chromium-driver /usr/local/bin/chromedriver
+# CRITICAL FIX: The Debian driver name is 'chromium-driver'. 
+# We link it to 'chromedriver' in a standard PATH location (/usr/local/bin)
+# to satisfy Selenium's internal naming expectations.
+#RUN ln -s /usr/bin/chromium-driver /usr/local/bin/chromedriver
 
 # 4. Copy all necessary files into the container
 # Ensure your local python script is named 'create_jpg.py'
 COPY create_jpg.py .
 COPY temp_diagram.html .
 COPY diagram_script.js .
-COPY diagram_data.js .
+#COPY diagram_data.js .
 COPY d3.v7.min.js .
 COPY diagram_styles.css .
 COPY html2canvas.min.js .
-COPY fonts ./fonts
 
 # 5. Install Python dependencies
 RUN pip install --no-cache-dir selenium

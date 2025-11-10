@@ -299,6 +299,39 @@ class STATSUTIL extends RULEUTIL
             PH::print_stdout( "JSON files generated successfully in: ".$outputFolder );
         }
 
+        if( isset(PH::$args['json-to-folder']) && isset(PH::$args['bp-create-diagram']) )
+        {
+
+            $filename;
+            PH::enableExceptionSupport();
+            try
+            {
+                $cli = "python3 ".dirname(__FILE__)."/../common/html/diagram/create_jpg.py " . $filename . " " . $this->projectFolder;
+
+                exec($cli, $output, $retValue);
+
+                foreach( $output as $line )
+                {
+                    $string = '   ##  ';
+                    $string .= $line;
+                    print $string . "\n";
+                }
+            }
+            //catch exception
+            catch(Exception $e)
+            {
+                PH::disableExceptionSupport();
+                PH::print_stdout( " ***** an error occured : " . $e->getMessage() );
+                PH::print_stdout();
+            }
+            catch(Error $e)
+            {
+                PH::disableExceptionSupport();
+                PH::print_stdout( " ***** an error occured : " . $e->getMessage() );
+                PH::print_stdout();
+            }
+        }
+
         if( $this->debugAPI )
         {
             if( isset(PH::$args['json-to-folder']) ) {
@@ -384,6 +417,7 @@ class STATSUTIL extends RULEUTIL
         parent::supportedArguments();
         $this->supportedArguments['exportcsv'] = array('niceName' => 'exportCsv', 'shortHelp' => 'export statistics to CSV file using jq', 'argDesc' => 'filename.csv');
         $this->supportedArguments['json-to-folder'] = array('niceName' => 'Json-To-Folder', 'shortHelp' => 'generate separate JSON files for adoption, visibility, and best-practice statistics for each PanoramaConf and DeviceGroup', 'argDesc' => '/path/to/output/folder');
+        $this->supportedArguments['bp-create-diagram'] = array('niceName' => 'BP-create-diagram', 'shortHelp' => 'generate BP jpg diagram based on the JSON files for adoption, visibility, and best-practice statistics for each PanoramaConf and DeviceGroup', 'argDesc' => '');
     }
 
 }

@@ -23,25 +23,21 @@ def generate_and_save_charts(html_file_path):
 
     # --- Setup Chrome Options ---
     chrome_options = Options()
-
+    
     # **CRITICAL FIX:** Read driver and browser paths from environment variables
     # guaranteed to be set by the selenium/standalone-chromium base image.
     chrome_driver_path = os.environ.get('CHROMEDRIVER_PATH', '/usr/bin/chromedriver')
     chrome_binary_path = os.environ.get('CHROME_BIN', '/usr/bin/chromium')
-
+    
     # Explicitly set the browser binary location
     chrome_options.binary_location = chrome_binary_path
-
+    
     # Run in headless mode (no visible browser window) for automation.
     chrome_options.add_argument("--headless")
     chrome_options.add_argument("--disable-gpu")
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--window-size=1200,800")
-    chrome_options.add_argument("--disable-dev-shm-usage")
-
-    prefs = {'profile.default_content_setting_values.automatic_downloads': 1}
-    chrome_options.add_experimental_option("prefs", prefs)
-
+    chrome_options.add_argument("--disable-dev-shm-usage") 
 
     # --- Initialize WebDriver ---
     try:
@@ -60,20 +56,20 @@ def generate_and_save_charts(html_file_path):
         # --- Trigger the chart generation and data capture ---
         try:
             print("Waiting for 'Generate all JPGs' button to become present...")
-
+            
             # CRITICAL FIX: The button was being searched by a non-existent ID.
             # Now, it is searched by its exact visible text content using XPath.
-            wait = WebDriverWait(driver, 90) # Wait up to 10 seconds
+            wait = WebDriverWait(driver, 10) # Wait up to 10 seconds
             generate_button = wait.until(
                 EC.presence_of_element_located((By.XPATH, "//button[text()='Generate all JPGs']"))
             )
-
+            
             print("Found 'Generate all JPGs' button. Clicking...")
             generate_button.click()
 
             # Wait for all charts to be generated and data stored in the array
             print("Waiting for charts to be generated and data to be captured...")
-            time.sleep(12)
+            time.sleep(10) 
             print("Finished waiting. Now processing captured data...")
 
         except Exception as e:
@@ -112,8 +108,8 @@ def generate_and_save_charts(html_file_path):
         print("WebDriver closed.")
 
 if __name__ == "__main__":
-    current_script_dir = os.path.dirname(os.path.abspath(__file__))
-    html_file = 'temp_diagram.html'
+    current_script_dir = os.path.dirname(os.path.abspath(__file__)) 
+    html_file = 'temp_diagram.html' 
     html_full_path = os.path.join(current_script_dir, html_file)
 
     if os.path.exists(html_full_path):

@@ -221,7 +221,7 @@ function createCoxcombChart(data) {
     const LabelcontainerCategoryFontWeight = '400'; //400
 
     const LabelcontainerPercentageFontSize = '18'; //20
-    const LabelcontainerPercentageFontWeight = '300'; //300
+    const LabelcontainerPercentageFontWeight = '400'; //300
 
     const LabelcontainerAdoptedFontSize = '8'; //10
     const LabelcontainerAdoptedFontWeight = '500'; //300
@@ -240,16 +240,16 @@ function createCoxcombChart(data) {
     const CenterGroupAveragePercentageFontWeight = '300';
 
     const CenterGroupAdoptedFontSize = '9.25';
-    const CenterGroupAdoptedFontWeight = '300';
+    const CenterGroupAdoptedFontWeight = '400';
     /////////
     const CenterGroupNotAdaptedPercentageFontSize = '17';
-    const CenterGroupNotAdaptedPercentageFontWeight = '300';
+    const CenterGroupNotAdaptedPercentageFontWeight = '100';
 
     const CenterGroupNotAdaptedFontSize = '10'; //10
     const CenterGroupNotAdaptedFontWeight = '300'; //400
 
 
-    const ColorCircleLineWidth = "1.0";
+    const ColorCircleLineWidth = "1.5";
     const ColorCircleLineOpacity = "0.75";
 
 
@@ -695,6 +695,9 @@ function createCoxcombChart(data) {
 
     // Center the percentage + adopted combination with consistent gap
     const totalNotAdaptedWidth = notAdoptedPercentageWidth + gapWidth + notAdoptedWidth;
+    console.log( "todalNotAdaptedWitdh: "+totalNotAdaptedWidth );
+    console.log( "notAdoptedPercentageWidth: "+notAdoptedPercentageWidth );
+    console.log( "notAdoptedWidth: "+notAdoptedWidth );
     CenterGroupNotAdaptedPercentageX = 5 -totalNotAdaptedWidth / 2;
     CenterGroupNotAdaptedX = 5 -totalNotAdaptedWidth / 2 + notAdoptedPercentageWidth + gapWidth;
     CenterGroupNotAdaptedGapX = 5 -totalNotAdaptedWidth / 2 + notAdoptedPercentageWidth;

@@ -418,7 +418,7 @@ class MERGER extends UTIL
         elseif( $this->utilType == "tag-merger" )
             $type = 'tag';
         elseif( $this->utilType == "custom-url-category-merger" )
-            $type = 'customUrlProfile';
+            $type = 'securityprofile';
 
         if( isset(PH::$args['pickfilter']) )
         {
