@@ -358,6 +358,51 @@ class DeviceGroup
             derr("VirtualSystem name not found\n");
 
         if( $debugLoadTime )
+            PH::print_DEBUG_loadtime("devices");
+
+        // Devices extraction
+        $this->devicesRoot = DH::findFirstElement('devices', $xml);
+        if( $this->devicesRoot !== FALSE )
+        {
+            foreach( $this->devicesRoot->childNodes as $device )
+            {
+                if( $device->nodeType != 1 ) continue;
+                $devname = DH::findAttribute('name', $device);
+                $vsyslist = array();
+
+                $vsysChild = DH::firstChildElement($device);
+
+                if( $vsysChild !== FALSE )
+                {
+                    foreach( $vsysChild->childNodes as $vsysentry )
+                    {
+                        if( $vsysentry->nodeType != 1 ) continue;
+                        $vname = DH::findAttribute('name', $vsysentry);
+                        $vsyslist[$vname] = $vname;
+                    }
+                }
+                else
+                {
+                    //print "No vsys for device '$devname'\n";
+                    $vsyslist['vsys1'] = 'vsys1';
+                }
+
+                $this->devices[$devname] = array('serial' => $devname, 'vsyslist' => $vsyslist);
+                foreach( $this->devices as $serial => $array )
+                {
+                    $managedFirewall = $this->owner->managedFirewallsStore->find($serial);
+                    if( $managedFirewall !== null )
+                    {
+                        $managedFirewall->addDeviceGroup($this->name);
+                        $managedFirewall->addReference($this);
+                    }
+
+                }
+            }
+        }
+
+
+        if( $debugLoadTime )
             PH::print_DEBUG_loadtime("tag");
         //
         // Extract Tag objects
@@ -1002,46 +1047,6 @@ class DeviceGroup
         //
 
 
-        // Devices extraction
-        $this->devicesRoot = DH::findFirstElement('devices', $xml);
-        if( $this->devicesRoot !== FALSE )
-        {
-            foreach( $this->devicesRoot->childNodes as $device )
-            {
-                if( $device->nodeType != 1 ) continue;
-                $devname = DH::findAttribute('name', $device);
-                $vsyslist = array();
-
-                $vsysChild = DH::firstChildElement($device);
-
-                if( $vsysChild !== FALSE )
-                {
-                    foreach( $vsysChild->childNodes as $vsysentry )
-                    {
-                        if( $vsysentry->nodeType != 1 ) continue;
-                        $vname = DH::findAttribute('name', $vsysentry);
-                        $vsyslist[$vname] = $vname;
-                    }
-                }
-                else
-                {
-                    //print "No vsys for device '$devname'\n";
-                    $vsyslist['vsys1'] = 'vsys1';
-                }
-
-                $this->devices[$devname] = array('serial' => $devname, 'vsyslist' => $vsyslist);
-                foreach( $this->devices as $serial => $array )
-                {
-                    $managedFirewall = $this->owner->managedFirewallsStore->find($serial);
-                    if( $managedFirewall !== null )
-                    {
-                        $managedFirewall->addDeviceGroup($this->name);
-                        $managedFirewall->addReference($this);
-                    }
-
-                }
-            }
-        }
 
         $this->userGroupSourceRoot = DH::findFirstElement('user-group-source', $xml);
         if( $this->userGroupSourceRoot !== false )
