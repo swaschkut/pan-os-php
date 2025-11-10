@@ -199,7 +199,7 @@ class ZoneRuleContainer extends ObjRuleContainer
             }
 
 
-            $bugfix = true;
+            $bugfix = false;
             if( $bugfix )
             {
                 //new Code - planed with 2.1.37 but buggy
