@@ -106,22 +106,6 @@
             }
         },
         "dns": {
-            "bp_custom": {
-                "action": [
-                    {
-                        "type": [
-                            "pan-dns-sec-malware",
-                            "pan-dns-sec-phishing"
-                        ],
-                        "action": [
-                            "sinkhole"
-                        ],
-                        "packet-capture": [
-                            "single-packet"
-                        ]
-                    }
-                ]
-            },
             "bp": {
                 "action": [
                     {
@@ -130,7 +114,6 @@
                             "pan-dns-sec-ddns",
                             "pan-dns-sec-grayware",
                             "pan-dns-sec-malware",
-                            "pan-dns-sec-parked",
                             "pan-dns-sec-phishing",
                             "pan-dns-sec-proxy",
                             "pan-dns-sec-recent"
@@ -152,27 +135,34 @@
                         "packet-capture": [
                             "extended-capture"
                         ]
-                    }
-                ]
-            },
-            "bp_panw": {
-                "action": [
+                    },
                     {
                         "type": [
-                            "pan-dns-sec-adtracking",
-                            "pan-dns-sec-ddns",
-                            "pan-dns-sec-grayware",
-                            "pan-dns-sec-malware",
-                            "pan-dns-sec-parked",
-                            "pan-dns-sec-phishing",
-                            "pan-dns-sec-proxy",
-                            "pan-dns-sec-recent"
+                            "pan-dns-sec-parked"
                         ],
                         "action": [
                             "sinkhole"
                         ],
                         "packet-capture": [
-                            "single-packet"
+                            "disabled"
+                        ]
+                    }
+                ]
+            }
+        },
+        "advanced-dns": {
+            "bp": {
+                "action": [
+                    {
+                        "type": [
+                            "pan-adns-sec-dnsmisconfig",
+                            "pan-adns-sec-hijacking"
+                        ],
+                        "action": [
+                            "default"
+                        ],
+                        "log-level": [
+                            "default"
                         ]
                     }
                 ]

@@ -3,6 +3,7 @@ CHANGELOG
 2.1.42
 UTIL:
 * type=securityprofile securityprofiltype=spyware | mica-engine-spyware-enabled extended starting with version 11.2 with local-deep-learning setting
+* SCM BP json file | add advanced-dns, but no logic | spyware.best-practice-set -> pan-dns-sec-cc set to extended-capture
 
 BUGFIX:
 * type=securityprofile securityprofiletype=url-filtering | bugfix for actions=exporttoexcel:file.html,bestpractice

@@ -2275,6 +2275,20 @@ SecurityProfileCallContext::$supportedActions['spyware.best-practice-set'] = arr
                     $tmp_log_level->textContent = "none";
                 }
             }
+            elseif( $rule->name() == "pan-dns-sec-cc" )
+            {
+                if( $hasDNSlicense )
+                {
+                    $tmp_action->textContent = "sinkhole";
+                    $tmp_packet_capture->textContent = "extended-capture";
+                }
+                else
+                {
+                    $tmp_action->textContent = "allow";
+                    $tmp_packet_capture->textContent = "disable";
+                    $tmp_log_level->textContent = "none";
+                }
+            }
             else
             {
                 if( $hasDNSlicense )
