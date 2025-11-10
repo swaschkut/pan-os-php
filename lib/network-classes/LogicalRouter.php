@@ -630,7 +630,7 @@ class LogicalRouter
                             $ips = $if->getLayer3ObjectIPAddresses();
                         }
 
-                        print_r($ips);
+                        #print_r($ips);
                         foreach( $ips as &$interfaceIP )
                         {
                             if( cidr::netMatch($nexthopIP, $interfaceIP) > 0 )
