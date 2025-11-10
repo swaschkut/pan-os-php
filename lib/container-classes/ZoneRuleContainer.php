@@ -199,7 +199,7 @@ class ZoneRuleContainer extends ObjRuleContainer
             }
 
 
-            $bugfix = false;
+            $bugfix = true;
             if( $bugfix )
             {
                 //new Code - planed with 2.1.37 but buggy
@@ -279,19 +279,20 @@ class ZoneRuleContainer extends ObjRuleContainer
                                 {
                                     #PH::print_stdout( $tmp_zone->name()." added" );
                                     $this->o[] = $tmp_zone;
-                                    $break_found = TRUE;
-                                    break;
+                                    $tmp_zone->addReference($this);
+                                    #$break_found = TRUE;
+                                    #break;
                                 }
                             }
 
-                            if($break_found)
-                                break;
+                            #if($break_found)
+                            #    break;
                         }
 
 
                         #PH::print_stdout("1find/create for: ".$node->textContent);
                         #PH::print_stdout("1Rule: ".$this->owner->name());
-                        #$f = $this->parentCentralStore->findOrCreate($node->textContent, $this);
+                        $f = $this->parentCentralStore->findOrCreate($node->textContent, $this);
                         #$this->o[] = $f;
                     }
                     else
