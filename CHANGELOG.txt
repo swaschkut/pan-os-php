@@ -14,6 +14,7 @@ BUGFIX:
 * type=custom-url-category-merger 'excludefilter=(name eq XYZ)' | bugfix to use correct filter class
 * type=stats actions=display-bpa debugapi | bugfix
 * type=securityprofile securityprofiletype=url-filtering actions=exporttoexcel:sp_url.html,bestpractice | bugfix to calculate correct
+* class UTIL.php | bugfix for shadow-json in regards to type=diff
 
 GENERAL:
 * class PanoramaConf - first restructure part to better read config for ZPP BP calculation - DGhierarchy reading must be still improved

@@ -2521,7 +2521,7 @@ class UTIL
         if( PH::$shadow_json )
         {
             PH::$JSON_OUT['log'] = PH::$JSON_OUTlog;
-            if( PH::$args['actions'] !== "display-available" )
+            if( !isset(PH::$args['actions']) || ( isset(PH::$args['actions']) && PH::$args['actions'] !== "display-available" ) )
                 print json_encode( PH::$JSON_OUT, JSON_PRETTY_PRINT );
             #print json_encode( PH::$JSON_OUT, JSON_PRETTY_PRINT|JSON_FORCE_OBJECT );
         }
