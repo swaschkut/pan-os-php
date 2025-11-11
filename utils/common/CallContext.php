@@ -31,6 +31,8 @@ class CallContext
 
     public $actionRef;
 
+    public $debug = false;
+
     public $isAPI = FALSE;
     public $isSaseAPI = FALSE;
     public $isSCMAPI = FALSE;

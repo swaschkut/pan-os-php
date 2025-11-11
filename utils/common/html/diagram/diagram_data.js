@@ -1,4 +1,4 @@
-const samples = {
+samples = {
     "Panorama-full-Overall Adoption": {
         "title": "Overall Adoption",
         "info": "Adopted",
@@ -10,12 +10,12 @@ const samples = {
             },
             {
                 "name": "Log Forwarding Profiles",
-                "value": 96,
+                "value": 98,
                 "group": "Logging"
             },
             {
                 "name": "Wildfire Analysis Profiles",
-                "value": 3,
+                "value": 88,
                 "group": "Wildfire"
             },
             {
@@ -25,37 +25,37 @@ const samples = {
             },
             {
                 "name": "App-ID",
-                "value": 14,
+                "value": 49,
                 "group": "Apps, Users, Ports"
             },
             {
                 "name": "User-ID",
-                "value": 2,
+                "value": 0,
                 "group": "Apps, Users, Ports"
             },
             {
                 "name": "Service\/Port",
-                "value": 97,
+                "value": 93,
                 "group": "Apps, Users, Ports"
             },
             {
                 "name": "Antivirus Profiles",
-                "value": 91,
+                "value": 96,
                 "group": "Threat Prevention"
             },
             {
                 "name": "Anti-Spyware Profiles",
-                "value": 91,
+                "value": 96,
                 "group": "Threat Prevention"
             },
             {
                 "name": "Vulnerability Profiles",
-                "value": 91,
+                "value": 96,
                 "group": "Threat Prevention"
             },
             {
                 "name": "File Blocking Profiles",
-                "value": 15,
+                "value": 77,
                 "group": "Data Loss Prevention"
             },
             {
@@ -65,7 +65,7 @@ const samples = {
             },
             {
                 "name": "URL Filtering Profiles",
-                "value": 0,
+                "value": 40,
                 "group": "URL Filtering"
             },
             {
@@ -75,7 +75,7 @@ const samples = {
             },
             {
                 "name": "DNS Security",
-                "value": 91,
+                "value": 96,
                 "group": "DNS Security"
             }
         ]
@@ -91,12 +91,12 @@ const samples = {
             },
             {
                 "name": "Log Forwarding Profiles",
-                "value": 96,
+                "value": 98,
                 "group": "Logging"
             },
             {
                 "name": "Wildfire Analysis Profiles",
-                "value": 3,
+                "value": 88,
                 "group": "Wildfire"
             },
             {
@@ -106,17 +106,17 @@ const samples = {
             },
             {
                 "name": "App-ID",
-                "value": 14,
+                "value": 49,
                 "group": "Apps, Users, Ports"
             },
             {
                 "name": "User-ID",
-                "value": 2,
+                "value": 0,
                 "group": "Apps, Users, Ports"
             },
             {
                 "name": "Service\/Port",
-                "value": 97,
+                "value": 93,
                 "group": "Apps, Users, Ports"
             },
             {
@@ -136,7 +136,7 @@ const samples = {
             },
             {
                 "name": "File Blocking Profiles",
-                "value": 15,
+                "value": 75,
                 "group": "Data Loss Prevention"
             },
             {
@@ -156,7 +156,7 @@ const samples = {
             },
             {
                 "name": "DNS Security",
-                "value": 91,
+                "value": 96,
                 "group": "DNS Security"
             }
         ]
@@ -167,12 +167,225 @@ const samples = {
         "categories": [
             {
                 "name": "Logging",
-                "value": 94,
+                "value": 99,
                 "group": "Logging"
             },
             {
                 "name": "Wildfire Analysis Profiles",
-                "value": 3,
+                "value": 88,
+                "group": "Wildfire"
+            },
+            {
+                "name": "Antivirus Profiles",
+                "value": 0,
+                "group": "Threat Prevention"
+            },
+            {
+                "name": "Anti-Spyware Profiles",
+                "value": 0,
+                "group": "Threat Prevention"
+            },
+            {
+                "name": "Vulnerability Profiles",
+                "value": 0,
+                "group": "Threat Prevention"
+            },
+            {
+                "name": "File Blocking Profiles",
+                "value": 1,
+                "group": "Data Loss Prevention"
+            },
+            {
+                "name": "URL Filtering Profiles",
+                "value": 0,
+                "group": "URL Filtering"
+            },
+            {
+                "name": "Credential Theft Prevention",
+                "value": 0,
+                "group": "URL Filtering"
+            },
+            {
+                "name": "DNS Security",
+                "value": 0,
+                "group": "DNS Security"
+            }
+        ]
+    },
+    "shared-Overall Adoption": {
+        "title": "Overall Adoption",
+        "info": "Adopted",
+        "categories": [
+            {
+                "name": "Logging",
+                "value": 0,
+                "group": "Logging"
+            },
+            {
+                "name": "Log Forwarding Profiles",
+                "value": 0,
+                "group": "Logging"
+            },
+            {
+                "name": "Wildfire Analysis Profiles",
+                "value": 0,
+                "group": "Wildfire"
+            },
+            {
+                "name": "Zone Protection",
+                "value": 0,
+                "group": "Zone Protection"
+            },
+            {
+                "name": "App-ID",
+                "value": 0,
+                "group": "Apps, Users, Ports"
+            },
+            {
+                "name": "User-ID",
+                "value": 0,
+                "group": "Apps, Users, Ports"
+            },
+            {
+                "name": "Service\/Port",
+                "value": 0,
+                "group": "Apps, Users, Ports"
+            },
+            {
+                "name": "Antivirus Profiles",
+                "value": 0,
+                "group": "Threat Prevention"
+            },
+            {
+                "name": "Anti-Spyware Profiles",
+                "value": 0,
+                "group": "Threat Prevention"
+            },
+            {
+                "name": "Vulnerability Profiles",
+                "value": 0,
+                "group": "Threat Prevention"
+            },
+            {
+                "name": "File Blocking Profiles",
+                "value": 0,
+                "group": "Data Loss Prevention"
+            },
+            {
+                "name": "Data Filtering",
+                "value": 0,
+                "group": "Data Loss Prevention"
+            },
+            {
+                "name": "URL Filtering Profiles",
+                "value": 0,
+                "group": "URL Filtering"
+            },
+            {
+                "name": "Credential Theft Prevention",
+                "value": 0,
+                "group": "URL Filtering"
+            },
+            {
+                "name": "DNS Security",
+                "value": 0,
+                "group": "DNS Security"
+            }
+        ]
+    },
+    "shared-Visibility": {
+        "title": "Visibility",
+        "info": "Visible",
+        "categories": [
+            {
+                "name": "Logging",
+                "value": 0,
+                "group": "Logging"
+            },
+            {
+                "name": "Log Forwarding Profiles",
+                "value": 0,
+                "group": "Logging"
+            },
+            {
+                "name": "Wildfire Analysis Profiles",
+                "value": 0,
+                "group": "Wildfire"
+            },
+            {
+                "name": "Zone Protection",
+                "value": 0,
+                "group": "Zone Protection"
+            },
+            {
+                "name": "App-ID",
+                "value": 0,
+                "group": "Apps, Users, Ports"
+            },
+            {
+                "name": "User-ID",
+                "value": 0,
+                "group": "Apps, Users, Ports"
+            },
+            {
+                "name": "Service\/Port",
+                "value": 0,
+                "group": "Apps, Users, Ports"
+            },
+            {
+                "name": "Antivirus Profiles",
+                "value": 0,
+                "group": "Threat Prevention"
+            },
+            {
+                "name": "Anti-Spyware Profiles",
+                "value": 0,
+                "group": "Threat Prevention"
+            },
+            {
+                "name": "Vulnerability Profiles",
+                "value": 0,
+                "group": "Threat Prevention"
+            },
+            {
+                "name": "File Blocking Profiles",
+                "value": 0,
+                "group": "Data Loss Prevention"
+            },
+            {
+                "name": "Data Filtering",
+                "value": 0,
+                "group": "Data Loss Prevention"
+            },
+            {
+                "name": "URL Filtering Profiles",
+                "value": 0,
+                "group": "URL Filtering"
+            },
+            {
+                "name": "Credential Theft Prevention",
+                "value": 0,
+                "group": "URL Filtering"
+            },
+            {
+                "name": "DNS Security",
+                "value": 0,
+                "group": "DNS Security"
+            }
+        ]
+    },
+    "shared-Best Practices": {
+        "title": "Best Practices",
+        "info": "Best Practice",
+        "categories": [
+            {
+                "name": "Logging",
+                "value": 0,
+                "group": "Logging"
+            },
+            {
+                "name": "Wildfire Analysis Profiles",
+                "value": 0,
                 "group": "Wildfire"
             },
             {

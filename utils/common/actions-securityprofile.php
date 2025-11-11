@@ -618,7 +618,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
             $headers .= '<th>URL adoption</th>';
         }
 
-        if( $addURLmembers or ( !$bestPractice and !$visibility ) )
+        if( $addURLmembers or ( !$bestPractice and !$visibility ) or $context->debug )
             $headers .= '<th>URL members</th>';
 
 
@@ -1483,7 +1483,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         $lines .= $context->encloseFunction('---');
                     }
 
-                    if( !$bestPractice and !$visibility )
+                    if( (!$bestPractice and !$visibility ) or $context->debug)
                     {
                         /**
                          * @var $object customURLProfile
@@ -1519,13 +1519,34 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         $tmp_array[] = "------------------------";
 
                         $check_array = $object->url_siteaccess_bp_visibility_JSON( "bp", "url" );
-                        if( isset($check_array[0]['type']) )
-                            $block_categories = $check_array[0]['type'];
-                        else
-                            $block_categories = array('command-and-control','compromised-website','grayware','malware','phishing','ransomware','scanning-activity');
+                        #print_r($check_array);
+                        $block_categories_to_check = array();
+                        $alert_categories_to_check = array();
+                        foreach( $check_array as $check )
+                        {
+                            if( isset( $check['action'] ) )
+                            {
+                                if( $check['action'] == 'block' )
+                                {
+                                    if( isset( $check['type'] ) )
+                                        $block_categories_to_check = array_merge( $block_categories_to_check, $check['type'] );
+                                }
+                                elseif( $check['action'] == 'alert' )
+                                {
+                                    if( isset( $check['type'] ) )
+                                        $alert_categories_to_check = array_merge( $alert_categories_to_check, $check['type'] );
+                                }
+                            }
+                        }
+
+                        #if( isset($check_array[0]['type']) )
+                        #    $block_categories = $check_array[0]['type'];
+                        #else
+                        if( empty( $block_categories_to_check ) )
+                            $block_categories_to_check = array('command-and-control','compromised-website','grayware','malware','phishing','ransomware','scanning-activity');
 
                         $notBlock = array();
-                        foreach( $block_categories as $block_category )
+                        foreach( $block_categories_to_check as $block_category )
                         {
                             if( !in_array( $block_category, $object->block ) )
                                 $notBlock[] = $block_category;
@@ -1536,7 +1557,20 @@ SecurityProfileCallContext::$supportedActions[] = array(
                             $tmp_array[] = 'BLOCK missing: ';
                             $tmp_array = array_merge( $tmp_array, $notBlock );
                         }
-                        else
+                        $notAlert = array();
+                        foreach( $alert_categories_to_check as $alert_category )
+                        {
+                            if( !in_array( $alert_category, $object->alert ) && !in_array( $alert_category, $object->block ) )
+                                $notAlert[] = $alert_category;
+
+                        }
+                        if( !empty($notAlert) )
+                        {
+                            $tmp_array[] = 'ALERT missing: ';
+                            $tmp_array = array_merge( $tmp_array, $notAlert );
+                        }
+
+                        if( empty($notBlock) && empty($notAlert) )
                             $tmp_array[] = "yes";
 
                         $lines .= $context->encloseFunction($tmp_array);
@@ -1554,13 +1588,31 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         $tmp_array[] = "------------------------";
 
                         $check_array = $object->url_siteaccess_bp_visibility_JSON( "bp", "url" );
-                        if( isset($check_array[0]['type']) )
-                            $block_categories = $check_array[0]['type'];
-                        else
-                            $block_categories = array('command-and-control','compromised-website','grayware','malware','phishing','ransomware','scanning-activity');
+
+                        $block_categories_to_check = array();
+                        $alert_categories_to_check = array();
+                        foreach( $check_array as $check )
+                        {
+                            if( isset( $check['action'] ) )
+                            {
+                                if( $check['action'] == 'block' )
+                                {
+                                    if( isset( $check['type'] ) )
+                                        $block_categories_to_check = array_merge( $block_categories_to_check, $check['type'] );
+                                }
+                                elseif( $check['action'] == 'alert' )
+                                {
+                                    if( isset( $check['type'] ) )
+                                        $alert_categories_to_check = array_merge( $alert_categories_to_check, $check['type'] );
+                                }
+                            }
+                        }
+
+                        if( empty( $block_categories_to_check ) )
+                            $block_categories_to_check = array('command-and-control','compromised-website','grayware','malware','phishing','ransomware','scanning-activity');
 
                         $notBlock = array();
-                        foreach( $block_categories as $block_category )
+                        foreach( $block_categories_to_check as $block_category )
                         {
                             if( !in_array( $block_category, $object->block_credential ) )
                                 $notBlock[] = $block_category;
@@ -1571,7 +1623,20 @@ SecurityProfileCallContext::$supportedActions[] = array(
                             $tmp_array[] = 'BLOCK missing: ';
                             $tmp_array = array_merge( $tmp_array, $notBlock );
                         }
-                        else
+                        $notAlert = array();
+                        foreach( $alert_categories_to_check as $alert_category )
+                        {
+                            if( !in_array( $alert_category, $object->alert_credential ) && !in_array( $alert_category, $object->block_credential ) )
+                                $notAlert[] = $alert_category;
+
+                        }
+                        if( !empty($notAlert) )
+                        {
+                            $tmp_array[] = 'ALERT missing: ';
+                            $tmp_array = array_merge( $tmp_array, $notAlert );
+                        }
+
+                        if( empty($notBlock) && empty($notAlert) )
                             $tmp_array[] = "yes";
 
                         $lines .= $context->encloseFunction($tmp_array);
@@ -1653,7 +1718,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                             $lines .= $context->encloseFunction($bp_text_no.' NO Adoption URL set');
                     }
 
-                    if( $addURLmembers or ( !$bestPractice and !$visibility and !$adoption ) )
+                    if( $addURLmembers or ( !$bestPractice and !$visibility and !$adoption ) or $context->debug )
                     {
                         /**
                          * @var $object URLProfile
@@ -1696,7 +1761,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     }
                     if( $adoption )
                         $lines .= $context->encloseFunction('---');
-                    if( $addURLmembers or ( !$bestPractice and !$visibility ) )
+                    if( $addURLmembers or ( !$bestPractice and !$visibility ) or $context->debug)
                         $lines .= $context->encloseFunction('');
                 }
 
@@ -2210,6 +2275,20 @@ SecurityProfileCallContext::$supportedActions['spyware.best-practice-set'] = arr
                     $tmp_log_level->textContent = "none";
                 }
             }
+            elseif( $rule->name() == "pan-dns-sec-cc" )
+            {
+                if( $hasDNSlicense )
+                {
+                    $tmp_action->textContent = "sinkhole";
+                    $tmp_packet_capture->textContent = "extended-capture";
+                }
+                else
+                {
+                    $tmp_action->textContent = "allow";
+                    $tmp_packet_capture->textContent = "disable";
+                    $tmp_log_level->textContent = "none";
+                }
+            }
             else
             {
                 if( $hasDNSlicense )
@@ -2248,7 +2327,11 @@ SecurityProfileCallContext::$supportedActions['spyware.best-practice-set'] = arr
                                 $tmp->removeChild($tmp_action);
 
                                 if( $hasDNSlicense )
+                                {
+                                    //swaschkut 20251109 - clarified with roland
+                                    //this should be kept as sinkhole - also if block is set, change it to sinkhole
                                     $tmp_actionString = "sinkhole";
+                                }
                                 else
                                     $tmp_actionString = "allow";
                                 $xmlString = '<'.$tmp_actionString.'/>';
@@ -2262,8 +2345,10 @@ SecurityProfileCallContext::$supportedActions['spyware.best-practice-set'] = arr
                         if ($tmp !== FALSE)
                         {
                             if( $hasDNSlicense )
+                            {
                                 #$tmp->textContent = "single-packet";
                                 $tmp->textContent = "extended-capture";
+                            }
                             else
                                 $tmp->textContent = "disable";
                         }
@@ -2528,7 +2613,10 @@ SecurityProfileCallContext::$supportedActions['spyware.alert-only-set'] = array(
                         if ($tmp !== FALSE)
                         {
                             if( $hasDNSlicense )
-                                $tmp->textContent = "disable";
+                            {
+                                //keep what is there before!!!!
+                                //$tmp->textContent = "disable";
+                            }
                             else
                                 $tmp->textContent = "disable";
                         }

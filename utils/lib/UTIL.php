@@ -1432,6 +1432,9 @@ class UTIL
             elseif( $this->utilType == 'log-profile' )
                 $context = new LogProfileCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
 
+            if( $this->debugAPI )
+                $context->debug = true;
+
             $context->baseObject = $this->pan;
             if( isset($this->configInput['type'])  )
             {
@@ -2309,9 +2312,9 @@ class UTIL
                     $doc = $fwconnector->getMergedConfig();
                     $firewall->load_from_domxml( $doc );
 
-                    $firewall->display_statistics( $fwconnector, $actions );
+                    $firewall->display_statistics( $fwconnector, $debug, $actions );
                     if( $actions == "display-bpa" )
-                        $firewall->display_bp_statistics( $actions );
+                        $firewall->display_bp_statistics( $debug, $actions );
                 }
 
             }
@@ -2518,7 +2521,7 @@ class UTIL
         if( PH::$shadow_json )
         {
             PH::$JSON_OUT['log'] = PH::$JSON_OUTlog;
-            if( PH::$args['actions'] !== "display-available" )
+            if( !isset(PH::$args['actions']) || ( isset(PH::$args['actions']) && PH::$args['actions'] !== "display-available" ) )
                 print json_encode( PH::$JSON_OUT, JSON_PRETTY_PRINT );
             #print json_encode( PH::$JSON_OUT, JSON_PRETTY_PRINT|JSON_FORCE_OBJECT );
         }

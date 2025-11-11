@@ -1,6 +1,28 @@
 CHANGELOG
 
-2.1.41
+2.1.42
+UTIL:
+* type=securityprofile securityprofiltype=spyware | mica-engine-spyware-enabled extended starting with version 11.2 with local-deep-learning setting
+* SCM BP json file | add advanced-dns, but no logic | spyware.best-practice-set -> pan-dns-sec-cc set to extended-capture
+
+BUGFIX:
+* type=securityprofile securityprofiletype=url-filtering | bugfix for actions=exporttoexcel:file.html,bestpractice
+* type=securityprofile securityprofiletype=spyware actions=spyware.alert-only-set | bugfix for botnet settings, do not set packet-capture to disable
+* type=diff outputformatset | bugfix if an object name has {number1}_{number2} at end of the name; intension was to keep Interface name, but validation was not enough
+* type=device actions=sp_spg-create-alert-only-bp:true | to create SPG also at shared level
+* class ZoneRuleContainer | fix to get rule filters working again 'filter=(from has XYZ)' - after ZPP calc improvements
+* type=custom-url-category-merger 'excludefilter=(name eq XYZ)' | bugfix to use correct filter class
+* type=stats actions=display-bpa debugapi | bugfix
+* type=securityprofile securityprofiletype=url-filtering actions=exporttoexcel:sp_url.html,bestpractice | bugfix to calculate correct
+* class UTIL.php | bugfix for shadow-json in regards to type=diff
+
+GENERAL:
+* class PanoramaConf - first restructure part to better read config for ZPP BP calculation - DGhierarchy reading must be still improved
+* class PanoramaConf/DeviceGroup | second restructure part - code re-org in preparation for BP ZPP calculation
+* class ZoneRuleContainer / DeviceGroup / PanoramaConf | third restructure part - improvement for ZPP BP calculation
+
+
+2.1.41 (20251104)
 UTIL:
 * pan-os-php in=scm-api:// | introduction to use SCM API - sase-api -> only Prisma Access
 * type=rule | introduce 'filter=(src.ip.count >,<,=,!  1000) | (dst.ip.count >,<,=,!  1000)

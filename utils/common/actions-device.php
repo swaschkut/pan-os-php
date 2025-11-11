@@ -264,7 +264,7 @@ DeviceCallContext::$supportedActions['display'] = array(
     },
     'GlobalFinishFunction' => function (DeviceCallContext $context)
     {
-        if( $context->arguments['listserial'] )
+        if( $context->arguments['listserial'] !== 'false' )
         {
             if( isset($context->objectList['serial']) )
             {
@@ -2536,8 +2536,20 @@ DeviceCallContext::$supportedActions['sp_spg-create-alert-only-BP'] = array(
             {
                 $sub = $object;
 
-                if( $context->arguments['shared'] && !$context->subSystem->isFirewall() )
-                    $sharedStore = $sub->owner;
+                if( $context->arguments['shared'] )
+                {
+                    //if( $context->arguments['shared'] && !$context->subSystem->isFirewall() )
+                    if( $context->subSystem->isFirewall() )
+                    {
+                        //Todo: check if multi-vsys, if not create it at vsys1
+                        $sharedStore = $sub->owner;
+                    }
+                    else
+                    {
+                        //Panorama
+                        $sharedStore = $sub->owner;
+                    }
+                }
                 else
                     $sharedStore = $sub;
 

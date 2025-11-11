@@ -1755,7 +1755,7 @@ class VirtualSystem
         PH::print_stdout();
 
 
-        if( !PH::$shadow_json && $debug && $actions == "display" )
+        if( !PH::$shadow_json && $debug && $actions == "display-bpa" )
             PH::print_stdout( $stdoutarray, true );
 
         PH::$JSON_TMP[] = $stdoutarray;

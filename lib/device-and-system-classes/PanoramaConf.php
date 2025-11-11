@@ -492,7 +492,12 @@ class PanoramaConf
         $this->templatestackroot = DH::findFirstElementOrCreate('template-stack', $this->localhostroot);
         $this->logcollectorgrouproot = DH::findFirstElement('log-collector-group', $this->localhostroot);
 
-
+        //above is general part
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //Todo: shared address object part
+        //part2:  everything what is needed for Template
         if( $debugLoadTime )
             PH::print_DEBUG_loadtime("shared objects");
         //
@@ -531,7 +536,247 @@ class PanoramaConf
             $this->addressStore->load_addressgroups_from_domxml($tmp);
         // End of address groups extraction
 
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //Todo: part3 Template - DONE
+        //Todo: part4 Template-Stack - DONE
+        if( $debugLoadTime )
+            PH::print_DEBUG_loadtime("Template");
+        //
+        // loading templates
+        //
+        foreach( $this->templateroot->childNodes as $node )
+        {
+            if( $node->nodeType != XML_ELEMENT_NODE ) continue;
 
+            $ldv = new Template('*tmp*', $this);
+            $ldv->load_from_domxml($node);
+            $this->templates[] = $ldv;
+            #PH::print_stdout(  "Template '{$ldv->name()}' found" );
+        }
+        //
+        // end of Templates
+        //
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //this is old part3 and will be new part4 move it higher - DONE
+        if( $debugLoadTime )
+            PH::print_DEBUG_loadtime("TemplateStack");
+        //
+        // loading templatestacks
+        //
+        foreach( $this->templatestackroot->childNodes as $node )
+        {
+            if( $node->nodeType != XML_ELEMENT_NODE ) continue;
+
+            $ldv = new TemplateStack('*tmp*', $this);
+            $ldv->load_from_domxml($node);
+            $this->templatestacks[] = $ldv;
+            //PH::print_stdout(  "TemplateStack '{$ldv->name()}' found" );
+
+            //Todo: add templates to templatestack
+        }
+        //
+        // end of Templates
+        //
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        //Todo: add DG hierarchy, and create DG, with parent and child relation
+        //Todo: part1
+        if( $debugLoadTime )
+            PH::print_DEBUG_loadtime("DeviceGroup part1");
+        //
+        // loading Device Groups now
+        //
+        if( $this->version < 70 || $this->_fakeMode )
+        {
+            foreach( $this->devicegrouproot->childNodes as $node )
+            {
+                if( $node->nodeType != XML_ELEMENT_NODE ) continue;
+                $lvname = $node->nodeName;
+                //PH::print_stdout(  "Device Group '$lvname' found" );
+
+                $ldv = new DeviceGroup($this);
+
+                #$doc = new DOMDocument();
+                #$doc->loadXML(DeviceGroup::$templatexml, XML_PARSE_BIG_LINES);
+                #$node = DH::findFirstElementOrDie('entry', $doc);
+                #$ldv->load_from_domxml($node);
+                #$ldv->xmlroot = $node;
+
+                #$ldv->setName($lvname);
+                //Todo: swaschkut 20251109 - load it in part2
+                $ldv->init_load_from_domxml_devices($node, $debugLoadTime);
+                $this->deviceGroups[] = $ldv;
+            }
+        }
+        else
+        {
+            if( $this->version < 80 )
+                $dgMetaDataNode = DH::findXPathSingleEntry('/config/readonly/dg-meta-data/dginfo', $this->xmlroot);
+            else
+                $dgMetaDataNode = DH::findXPathSingleEntry('/config/readonly/devices/entry/device-group', $this->xmlroot);
+
+            $dgToParent = array();
+            $parentToDG = array();
+
+            if( $dgMetaDataNode !== false )
+                foreach( $dgMetaDataNode->childNodes as $node )
+                {
+                    if( $node->nodeType != XML_ELEMENT_NODE )
+                        continue;
+
+                    $dgName = DH::findAttribute('name', $node);
+                    if( $dgName === FALSE )
+                        derr("DeviceGroup name attribute not found in dg-meta-data", $node);
+
+                    $parentDG = DH::findFirstElement('parent-dg', $node);
+                    if( $parentDG === FALSE )
+                    {
+                        $dgToParent[$dgName] = 'shared';
+                        $parentToDG['shared'][] = $dgName;
+                    }
+                    else
+                    {
+                        $dgToParent[$dgName] = $parentDG->textContent;
+                        $parentToDG[$parentDG->textContent][] = $dgName;
+                    }
+                }
+
+            $dgLoadOrder = array('shared');
+
+
+            while( count($parentToDG) > 0 )
+            {
+                $dgLoadOrderCount = count($dgLoadOrder);
+
+                foreach( $dgLoadOrder as &$dgName )
+                {
+                    if( isset($parentToDG[$dgName]) )
+                    {
+                        foreach( $parentToDG[$dgName] as &$newDGName )
+                        {
+                            $dgLoadOrder[] = $newDGName;
+                        }
+                        unset($parentToDG[$dgName]);
+                    }
+                }
+
+                if( count($dgLoadOrder) <= $dgLoadOrderCount )
+                {
+                    PH::print_stdout(  "Problems could be available with the following DeviceGroup(s)" );
+                    #print_r($dgLoadOrder);
+                    print_r($parentToDG);
+                    foreach( $parentToDG as $key => $dgName )
+                    {
+                        PH::print_stdout( "there is no DeviceGroup name: ".$key." available");
+                        $tmp = DH::findFirstElementByNameAttr( "entry", $dgName[0], $dgMetaDataNode );
+                        derr('dg-meta-data seems to be corrupted, parent.child template cannot be calculated ', $tmp, FALSE);
+                    }
+                }
+            }
+
+            /*PH::print_stdout(  "DG loading order:" );
+            foreach( $dgLoadOrder as &$dgName )
+                PH::print_stdout(  " - {$dgName}");*/
+
+
+            $deviceGroupNodes = array();
+
+            foreach( $this->devicegrouproot->childNodes as $node )
+            {
+                if( $node->nodeType != XML_ELEMENT_NODE )
+                    continue;
+
+                $nodeNameAttr = DH::findAttribute('name', $node);
+                if( $nodeNameAttr === FALSE )
+                    derr("DeviceGroup 'name' attribute was not found", $node);
+
+                if( !is_string($nodeNameAttr) || $nodeNameAttr == '' )
+                    derr("DeviceGroup 'name' attribute has invalid value", $node);
+
+                $deviceGroupNodes[$nodeNameAttr] = $node;
+            }
+
+            foreach( $dgLoadOrder as $dgIndex => &$dgName )
+            {
+                if( $dgName == 'shared' )
+                    continue;
+
+                if( !isset($deviceGroupNodes[$dgName]) )
+                {
+                    mwarning("DeviceGroup '$dgName' is listed in dg-meta-data but doesn't exist in XML");
+                    //unset($dgLoadOrder[$dgIndex]);
+                    continue;
+                }
+
+                $ldv = new DeviceGroup($this);
+
+                #$doc = new DOMDocument();
+                #$doc->loadXML(DeviceGroup::$templatexml, XML_PARSE_BIG_LINES);
+                #$node = DH::findFirstElementOrDie('entry', $doc);
+                #$ldv->load_from_domxml($node);
+                #$ldv->xmlroot = $node;
+
+                #$ldv->setName($dgName);
+
+                if( !isset($dgToParent[$dgName]) )
+                {
+                    mwarning("DeviceGroup '$dgName' has not parent associated, assuming SHARED");
+                }
+                elseif( $dgToParent[$dgName] == 'shared' )
+                {
+                    // do nothing
+                }
+                else
+                {
+                    $parentDG = $this->findDeviceGroup($dgToParent[$dgName]);
+                    if( $parentDG === null )
+                        mwarning("DeviceGroup '$dgName' has DG '{$dgToParent[$dgName]}' listed as parent but it cannot be found in XML");
+                    else
+                    {
+                        $parentDG->_childDeviceGroups[$dgName] = $ldv;
+                        $ldv->parentDeviceGroup = $parentDG;
+
+                        $storeType = array(
+                            'addressStore', 'serviceStore', 'tagStore', 'scheduleStore', 'appStore',
+
+                            'EDLStore', 'LogProfileStore',
+
+                            'securityProfileGroupStore',
+
+                            'URLProfileStore', 'AntiVirusProfileStore', 'FileBlockingProfileStore', 'DataFilteringProfileStore',
+                            'VulnerabilityProfileStore', 'AntiSpywareProfileStore', 'WildfireProfileStore',
+                            'DecryptionProfileStore', 'HipObjectsProfileStore', 'customURLProfileStore'
+
+                        );
+
+                        foreach( $storeType as $type )
+                            $ldv->$type->parentCentralStore = $parentDG->$type;
+                    }
+                }
+
+                if( $debugLoadTime )
+                    PH::print_DEBUG_loadtime("DeviceGroup1 - ".$dgName);
+
+                //Todo: swaschkut 20251109 load it in part2
+                #$ldv->load_from_domxml($deviceGroupNodes[$dgName], $debugLoadTime);
+                $ldv->init_load_from_domxml_devices($deviceGroupNodes[$dgName], $debugLoadTime);
+                $this->deviceGroups[] = $ldv;
+
+            }
+
+        }
+        //
+        // End of DeviceGroup loading
+        //
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //Todo: part6 - all other parts related to shared - keep it - DONE
         //
         // Extract services
         //
@@ -1139,47 +1384,14 @@ class PanoramaConf
         // end of policies extraction
         //
 
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //Todo: this was former place of Template and Template-Stack
 
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
         if( $debugLoadTime )
-            PH::print_DEBUG_loadtime("Template");
-        //
-        // loading templates
-        //
-        foreach( $this->templateroot->childNodes as $node )
-        {
-            if( $node->nodeType != XML_ELEMENT_NODE ) continue;
-
-            $ldv = new Template('*tmp*', $this);
-            $ldv->load_from_domxml($node);
-            $this->templates[] = $ldv;
-            #PH::print_stdout(  "Template '{$ldv->name()}' found" );
-        }
-        //
-        // end of Templates
-        //
-
-        if( $debugLoadTime )
-            PH::print_DEBUG_loadtime("TemplateStack");
-        //
-        // loading templatestacks
-        //
-        foreach( $this->templatestackroot->childNodes as $node )
-        {
-            if( $node->nodeType != XML_ELEMENT_NODE ) continue;
-
-            $ldv = new TemplateStack('*tmp*', $this);
-            $ldv->load_from_domxml($node);
-            $this->templatestacks[] = $ldv;
-            //PH::print_stdout(  "TemplateStack '{$ldv->name()}' found" );
-
-            //Todo: add templates to templatestack
-        }
-        //
-        // end of Templates
-        //
-
-        if( $debugLoadTime )
-            PH::print_DEBUG_loadtime("DeviceGroup");
+            PH::print_DEBUG_loadtime("DeviceGroup part2");
         //
         // loading Device Groups now
         //
@@ -1188,12 +1400,16 @@ class PanoramaConf
             foreach( $this->devicegrouproot->childNodes as $node )
             {
                 if( $node->nodeType != XML_ELEMENT_NODE ) continue;
-                //$lvname = $node->nodeName;
+                $lvname = $node->nodeName;
                 //PH::print_stdout(  "Device Group '$lvname' found" );
 
-                $ldv = new DeviceGroup($this);
+                //already crated in part1
+                #$ldv = new DeviceGroup($this);
+                $ldv = $this->findDeviceGroup( $lvname );
+
                 $ldv->load_from_domxml($node, $debugLoadTime);
-                $this->deviceGroups[] = $ldv;
+                //already added in part1
+                #$this->deviceGroups[] = $ldv;
             }
         }
         else
@@ -1247,19 +1463,6 @@ class PanoramaConf
                         unset($parentToDG[$dgName]);
                     }
                 }
-
-                if( count($dgLoadOrder) <= $dgLoadOrderCount )
-                {
-                    PH::print_stdout(  "Problems could be available with the following DeviceGroup(s)" );
-                    #print_r($dgLoadOrder);
-                    print_r($parentToDG);
-                    foreach( $parentToDG as $key => $dgName )
-                    {
-                        PH::print_stdout( "there is no DeviceGroup name: ".$key." available");
-                        $tmp = DH::findFirstElementByNameAttr( "entry", $dgName[0], $dgMetaDataNode );
-                        derr('dg-meta-data seems to be corrupted, parent.child template cannot be calculated ', $tmp, FALSE);
-                    }
-                }
             }
 
             /*PH::print_stdout(  "DG loading order:" );
@@ -1296,48 +1499,16 @@ class PanoramaConf
                     continue;
                 }
 
-                $ldv = new DeviceGroup($this);
-                if( !isset($dgToParent[$dgName]) )
-                {
-                    mwarning("DeviceGroup '$dgName' has not parent associated, assuming SHARED");
-                }
-                elseif( $dgToParent[$dgName] == 'shared' )
-                {
-                    // do nothing
-                }
-                else
-                {
-                    $parentDG = $this->findDeviceGroup($dgToParent[$dgName]);
-                    if( $parentDG === null )
-                        mwarning("DeviceGroup '$dgName' has DG '{$dgToParent[$dgName]}' listed as parent but it cannot be found in XML");
-                    else
-                    {
-                        $parentDG->_childDeviceGroups[$dgName] = $ldv;
-                        $ldv->parentDeviceGroup = $parentDG;
-
-                        $storeType = array(
-                            'addressStore', 'serviceStore', 'tagStore', 'scheduleStore', 'appStore',
-
-                            'EDLStore', 'LogProfileStore',
-
-                            'securityProfileGroupStore',
-
-                            'URLProfileStore', 'AntiVirusProfileStore', 'FileBlockingProfileStore', 'DataFilteringProfileStore',
-                            'VulnerabilityProfileStore', 'AntiSpywareProfileStore', 'WildfireProfileStore',
-                            'DecryptionProfileStore', 'HipObjectsProfileStore', 'customURLProfileStore'
-
-                            );
-
-                        foreach( $storeType as $type )
-                            $ldv->$type->parentCentralStore = $parentDG->$type;
-                    }
-                }
+                //already created in part1
+                #$ldv = new DeviceGroup($this);
+                $ldv = $this->findDeviceGroup( $dgName );
 
                 if( $debugLoadTime )
-                    PH::print_DEBUG_loadtime("DeviceGroup - ".$dgName);
+                    PH::print_DEBUG_loadtime("DeviceGroup2 - ".$dgName);
 
                 $ldv->load_from_domxml($deviceGroupNodes[$dgName], $debugLoadTime);
-                $this->deviceGroups[] = $ldv;
+                //already added in part1
+                #$this->deviceGroups[] = $ldv;
 
             }
 
@@ -1346,6 +1517,9 @@ class PanoramaConf
         // End of DeviceGroup loading
         //
 
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //Todo: keep this part as it is - DONE
         if( $debugLoadTime )
             PH::print_DEBUG_loadtime("LogCollectorGroup");
         //

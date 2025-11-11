@@ -1732,7 +1732,7 @@ class PANConf
 
 
 
-        if( !PH::$shadow_json && $debug && $actions == "display" )
+        if( !PH::$shadow_json && $debug && $actions == "display-bpa" )
             PH::print_stdout( $stdoutarray, true );
 
         if( $actions == "display-available" )

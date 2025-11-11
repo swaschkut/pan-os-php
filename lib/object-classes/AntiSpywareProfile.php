@@ -255,14 +255,49 @@ class AntiSpywareProfile extends SecurityProfile2
   </entry>
 </mica-engine-spyware-enabled>';
 
-            if( $this->owner->owner->version >= 102 )
+            $xmlstring_112 = '<mica-engine-spyware-enabled>
+  <entry name="HTTP Command and Control detector">
+    <inline-policy-action>alert</inline-policy-action>
+    <local-deep-learning>enable</local-deep-learning>
+  </entry>
+  <entry name="HTTP2 Command and Control detector">
+    <inline-policy-action>alert</inline-policy-action>
+    <local-deep-learning>enable</local-deep-learning>
+  </entry>
+  <entry name="SSL Command and Control detector">
+    <inline-policy-action>alert</inline-policy-action>
+  </entry>
+  <entry name="Unknown-TCP Command and Control detector">
+    <inline-policy-action>alert</inline-policy-action>
+  </entry>
+  <entry name="Unknown-UDP Command and Control detector">
+    <inline-policy-action>alert</inline-policy-action>
+  </entry>
+</mica-engine-spyware-enabled>';
+
+            if( $this->owner->owner->version >= 112 )
+            {
+                $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $xmlstring_112);
+                $xml->appendChild($xmlElement);
+            }
+            elseif( $this->owner->owner->version >= 102 )
             {
                 $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $xmlstring_102);
                 $xml->appendChild($xmlElement);
             }
 
+            if( $this->owner->owner->version >= 112 )
+            {
+                $this->additional['mica-engine-spyware-enabled']['HTTP Command and Control detector']['inline-policy-action'] = "disable";
+                $this->additional['mica-engine-spyware-enabled']['HTTP Command and Control detector']['local-deep-learning'] = "enable";
+                $this->additional['mica-engine-spyware-enabled']['HTTP2 Command and Control detector']['inline-policy-action'] = "disable";
+                $this->additional['mica-engine-spyware-enabled']['HTTP2 Command and Control detector']['local-deep-learning'] = "enable";
+                $this->additional['mica-engine-spyware-enabled']['SSL Command and Control detector']['inline-policy-action'] = "disable";
 
-            if( $this->owner->owner->version >= 102 )
+                $this->additional['mica-engine-spyware-enabled']['Unknown-TCP Command and Control detector']['inline-policy-action'] = "disable";
+                $this->additional['mica-engine-spyware-enabled']['Unknown-UDP Command and Control detector']['inline-policy-action'] = "disable";
+            }
+            elseif( $this->owner->owner->version >= 102 )
             {
                 $this->additional['mica-engine-spyware-enabled']['HTTP Command and Control detector']['inline-policy-action'] = "disable";
                 $this->additional['mica-engine-spyware-enabled']['HTTP2 Command and Control detector']['inline-policy-action'] = "disable";
