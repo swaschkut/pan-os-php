@@ -755,6 +755,9 @@ class URLProfile extends SecurityProfile2
 
     public function check_siteaccess_bp_json( $check_array )
     {
+        if( !empty($this->allow) )
+            return false;
+
         foreach( $check_array as $check )
         {
             $action = $check["action"];
@@ -800,6 +803,9 @@ class URLProfile extends SecurityProfile2
 
     public function check_usercredentialsubmission_bp_json( $check_array )
     {
+        if( !empty($this->allow_credential) )
+            return false;
+
         if( is_array( $check_array['category'] ) )
         {
             foreach( $check_array['category'] as $check )
