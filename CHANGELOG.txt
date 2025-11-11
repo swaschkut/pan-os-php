@@ -23,6 +23,7 @@ BUGFIX:
 * type=stats actions=display-bpa debugapi | bugfix
 * type=securityprofile securityprofiletype=url-filtering actions=exporttoexcel:sp_url.html,bestpractice | bugfix to calculate correct
 * class UTIL.php | bugfix for shadow-json in regards to type=diff
+* class Zone - bugfix to attach ZPP also if 'network' xmlnode is not available | actions-securityprofile - better validation
 
 GENERAL:
 * class PanoramaConf - first restructure part to better read config for ZPP BP calculation - DGhierarchy reading must be still improved

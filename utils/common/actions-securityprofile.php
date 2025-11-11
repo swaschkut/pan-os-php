@@ -3032,7 +3032,7 @@ SecurityProfileCallContext::$supportedActions['url.alert-only-set'] = array(
         $credential_xmlnode = DH::findFirstElementOrCreate("credential-enforcement", $object->xmlroot);
         $mode_credential_xmlnode = DH::findFirstElementOrCreate("mode", $credential_xmlnode);
         $mode_child_xmlnode = DH::firstChildElement($mode_credential_xmlnode);
-        if( $mode_child_xmlnode->nodeName == "disabled" )
+        if( $mode_child_xmlnode !== false && $mode_child_xmlnode->nodeName == "disabled" )
         {
             DH::findFirstElementOrCreate("ip-user", $mode_credential_xmlnode);
             $logseverity_credential_xmlnode = DH::findFirstElementOrCreate("log-severity", $credential_xmlnode);

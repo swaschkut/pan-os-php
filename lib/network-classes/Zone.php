@@ -395,7 +395,7 @@ class Zone
             $this->zoneProtectionProfile = $newZPP;
 
 
-        $valueRoot = DH::findFirstElement('network', $this->xmlroot);
+        $valueRoot = DH::findFirstElementOrCreate('network', $this->xmlroot);
         $zppRoot = DH::findFirstElementOrCreate('zone-protection-profile', $valueRoot);
 
 
