@@ -335,6 +335,20 @@ class PanSaseAPIConnector
             $this->typeArray[] = "application-filters";
             $this->typeArray[] = "application-groups";
         }
+        elseif( $utilType == "securityprofilegroup" || $utilType == "securityprofile" )
+        {
+            $this->typeArray[] = "profile-groups";
+            $this->typeArray[] = "anti-spyware-profiles";
+            //maybe needed later on:
+            //url-filtering-categories
+            $this->typeArray[] = "url-access-profiles";
+            $this->typeArray[] = "file-blocking-profiles";
+            $this->typeArray[] = "dns-security-profiles";
+            $this->typeArray[] = "vulnerability-protection-profiles";
+            //this is: customURLCategories
+            $this->typeArray[] = "url-categories";
+            $this->typeArray[] = "wildfire-anti-virus-profiles";
+        }
         elseif( $utilType == "upload" )
         {
             $this->typeArray[] = "addresses";
@@ -370,6 +384,7 @@ class PanSaseAPIConnector
             derr("PAN-OS-PHP connection method 'sase-api://' - do not yet support this UTIL type: '" . $utilType . "'", null, FALSE);
         }
 
+        //Todo:
         #"hip-objects",
         #"hip-profiles",
 
@@ -381,6 +396,7 @@ class PanSaseAPIConnector
         #"vulnerability-protection-profile",
         #"dns-security-profiles",
         #"file-blocking-profiles",
+        //Todo:
         #"decryption-profiles",
 
         return $this->typeArray;
@@ -523,8 +539,17 @@ class PanSaseAPIConnector
         $typeArray = $this->getTypeArray($utilType);
         foreach( $typeArray as $type )
         {
-            if( $folder == "Service Connections" && strpos($type, "-rule") !== FALSE )
-                continue;
+            if( $folder == "Service Connections" )
+            {
+                if( strpos($type, "-rule") !== FALSE )
+                    continue;
+                elseif( strpos($type, "profile-groups") !== FALSE )
+                    continue;
+                elseif( strpos($type, "-profiles") !== FALSE )
+                    continue;
+            }
+
+
 
             $resource = $this->getResource($this->access_token, $type, $folder, $this->global_limit);
 
@@ -765,11 +790,416 @@ class PanSaseAPIConnector
                 //pan-os-php has no newhip-profiles method
                 PH::print_stdout($type . " - not implemented yet");
             }
+            //anti-spyware-profiles
+            //dns-security-profiles
+            //file-blocking-profiles
+            //url-access-profiles
+            elseif( $type === "vulnerability-protection-profiles" )
+            {
+                PH::print_stdout($type . " - not implemented yet");
+                #print_r($object);
+                /*
+                 *Array
+                (
+                    [id] => d6f00677-3200-475f-a470-c07952802f24
+                    [name] => best-practice
+                    [folder] => All
+                    [snippet] => predefined-snippet
+                    [description] => Best practice vulnerability protection security profile
+                    [rules] => Array
+                        (
+                            [0] => Array
+                                (
+                                    [name] => simple-client-critical
+                                    [action] => Array
+                                        (
+                                            [reset_both] => Array
+                                                (
+                                                )
+
+                                        )
+
+                                    [vendor_id] => Array
+                                        (
+                                            [0] => any
+                                        )
+
+                                    [severity] => Array
+                                        (
+                                            [0] => critical
+                                        )
+
+                                    [cve] => Array
+                                        (
+                                            [0] => any
+                                        )
+
+                                    [threat_name] => any
+                                    [host] => client
+                                    [category] => any
+                                    [packet_capture] => single-packet
+                                )
+
+                            [1] => Array
+                                (
+                                    [name] => simple-client-high
+                                    [action] => Array
+                                        (
+                                            [reset_both] => Array
+                                                (
+                                                )
+
+                                        )
+
+                                    [vendor_id] => Array
+                                        (
+                                            [0] => any
+                                        )
+
+                                    [severity] => Array
+                                        (
+                                            [0] => high
+                                        )
+
+                                    [cve] => Array
+                                        (
+                                            [0] => any
+                                        )
+
+                                    [threat_name] => any
+                                    [host] => client
+                                    [category] => any
+                                    [packet_capture] => single-packet
+                                )
+
+                            [2] => Array
+                                (
+                                    [name] => simple-client-medium
+                                    [action] => Array
+                                        (
+                                            [reset_both] => Array
+                                                (
+                                                )
+
+                                        )
+
+                                    [vendor_id] => Array
+                                        (
+                                            [0] => any
+                                        )
+
+                                    [severity] => Array
+                                        (
+                                            [0] => medium
+                                        )
+
+                                    [cve] => Array
+                                        (
+                                            [0] => any
+                                        )
+
+                                    [threat_name] => any
+                                    [host] => client
+                                    [category] => any
+                                    [packet_capture] => single-packet
+                                )
+
+                            [3] => Array
+                                (
+                                    [name] => simple-client-informational
+                                    [action] => Array
+                                        (
+                                        )
+
+                                    [vendor_id] => Array
+                                        (
+                                            [0] => any
+                                        )
+
+                                    [severity] => Array
+                                        (
+                                            [0] => informational
+                                        )
+
+                                    [cve] => Array
+                                        (
+                                            [0] => any
+                                        )
+
+                                    [threat_name] => any
+                                    [host] => client
+                                    [category] => any
+                                    [packet_capture] => disable
+                                )
+
+                            [4] => Array
+                                (
+                                    [name] => simple-client-low
+                                    [action] => Array
+                                        (
+                                        )
+
+                                    [vendor_id] => Array
+                                        (
+                                            [0] => any
+                                        )
+
+                                    [severity] => Array
+                                        (
+                                            [0] => low
+                                        )
+
+                                    [cve] => Array
+                                        (
+                                            [0] => any
+                                        )
+
+                                    [threat_name] => any
+                                    [host] => client
+                                    [category] => any
+                                    [packet_capture] => single-packet
+                                )
+
+                            [5] => Array
+                                (
+                                    [name] => simple-server-critical
+                                    [action] => Array
+                                        (
+                                            [reset_both] => Array
+                                                (
+                                                )
+
+                                        )
+
+                                    [vendor_id] => Array
+                                        (
+                                            [0] => any
+                                        )
+
+                                    [severity] => Array
+                                        (
+                                            [0] => critical
+                                        )
+
+                                    [cve] => Array
+                                        (
+                                            [0] => any
+                                        )
+
+                                    [threat_name] => any
+                                    [host] => server
+                                    [category] => any
+                                    [packet_capture] => single-packet
+                                )
+
+                            [6] => Array
+                                (
+                                    [name] => simple-server-high
+                                    [action] => Array
+                                        (
+                                            [reset_both] => Array
+                                                (
+                                                )
+
+                                        )
+
+                                    [vendor_id] => Array
+                                        (
+                                            [0] => any
+                                        )
+
+                                    [severity] => Array
+                                        (
+                                            [0] => high
+                                        )
+
+                                    [cve] => Array
+                                        (
+                                            [0] => any
+                                        )
+
+                                    [threat_name] => any
+                                    [host] => server
+                                    [category] => any
+                                    [packet_capture] => single-packet
+                                )
+
+                            [7] => Array
+                                (
+                                    [name] => simple-server-medium
+                                    [action] => Array
+                                        (
+                                            [reset_both] => Array
+                                                (
+                                                )
+
+                                        )
+
+                                    [vendor_id] => Array
+                                        (
+                                            [0] => any
+                                        )
+
+                                    [severity] => Array
+                                        (
+                                            [0] => medium
+                                        )
+
+                                    [cve] => Array
+                                        (
+                                            [0] => any
+                                        )
+
+                                    [threat_name] => any
+                                    [host] => server
+                                    [category] => any
+                                    [packet_capture] => single-packet
+                                )
+
+                            [8] => Array
+                                (
+                                    [name] => simple-server-informational
+                                    [action] => Array
+                                        (
+                                        )
+
+                                    [vendor_id] => Array
+                                        (
+                                            [0] => any
+                                        )
+
+                                    [severity] => Array
+                                        (
+                                            [0] => informational
+                                        )
+
+                                    [cve] => Array
+                                        (
+                                            [0] => any
+                                        )
+
+                                    [threat_name] => any
+                                    [host] => server
+                                    [category] => any
+                                    [packet_capture] => disable
+                                )
+
+                            [9] => Array
+                                (
+                                    [name] => simple-server-low
+                                    [action] => Array
+                                        (
+                                        )
+
+                                    [vendor_id] => Array
+                                        (
+                                            [0] => any
+                                        )
+
+                                    [severity] => Array
+                                        (
+                                            [0] => low
+                                        )
+
+                                    [cve] => Array
+                                        (
+                                            [0] => any
+                                        )
+
+                                    [threat_name] => any
+                                    [host] => server
+                                    [category] => any
+                                    [packet_capture] => single-packet
+                                )
+
+                        )
+
+                )
+
+                 */
+            }
+            elseif( $type === "wildfire-anti-virus-profiles" )
+            {
+                PH::print_stdout($type . " - not implemented yet");
+                #print_r($object);
+                /*
+                 * Array
+            (
+                [id] => 2b70caff-c6af-4c08-9ee1-7915ea76fb88
+                [name] => best-practice
+                [folder] => All
+                [snippet] => predefined-snippet
+                [rules] => Array
+                    (
+                        [0] => Array
+                            (
+                                [name] => default
+                                [application] => Array
+                                    (
+                                        [0] => any
+                                    )
+
+                                [file_type] => Array
+                                    (
+                                        [0] => any
+                                    )
+
+                                [direction] => both
+                                [analysis] => public-cloud
+                            )
+
+                    )
+
+                [description] => Best practice antivirus and wildfire analysis security profile
+            )
+
+                 */
+            }
+            elseif( $type === "profile-groups" )
+            {
+                PH::print_stdout($type . " - not implemented yet");
+                #print_r($object);
+                /*
+                 * Array
+(
+    [id] => c0b6257c-ea66-4c19-ae87-3094150b37f3
+    [name] => Explicit Proxy - Unknown Users
+    [folder] => All
+    [snippet] => predefined-snippet
+    [spyware] => Array
+        (
+            [0] => best-practice
+        )
+
+    [vulnerability] => Array
+        (
+            [0] => best-practice
+        )
+
+    [url_filtering] => Array
+        (
+            [0] => Explicit Proxy - Unknown Users
+        )
+
+    [file_blocking] => Array
+        (
+            [0] => best-practice
+        )
+
+    [virus_and_wildfire_analysis] => Array
+        (
+            [0] => best-practice
+        )
+
+)
+
+                 */
+            }
             elseif( $type === "security-rules" )
             {
                 $tmp_rule = null;
 
-                //Todo: why is this not working | or in other words, why are rules added twice?
+
                 $tmp_rule = $sub->securityRules->find($object['name']);
                 if( $tmp_rule !== null )
                 {
