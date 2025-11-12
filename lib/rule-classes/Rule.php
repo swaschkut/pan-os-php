@@ -1580,8 +1580,8 @@ class Rule
 
                 if( $isAPI )
                 {
+                    $this->tags->parentCentralStore->API_sync();
                     $this->API_sync();
-                    $this->tags->API_sync();
                 }
             }
         }
@@ -2140,8 +2140,8 @@ class Rule
 
                 if( $isAPI )
                 {
+                    $this->tags->parentCentralStore->API_sync();
                     $this->API_sync();
-                    $this->tags->API_sync();
                 }
 
             }

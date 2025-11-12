@@ -443,8 +443,8 @@ RuleCallContext::$commonActionFunctions['calculate-zones'] = array(
 
                 if( $context->isAPI )
                 {
+                    $rule->tags->parentCentralStore->API_sync();
                     $rule->API_sync();
-                    $rule->tags->API_sync();
                 }
 
             }
