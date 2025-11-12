@@ -95,6 +95,7 @@ trait PathableName
     public function setSaseID( $saseID )
     {
         $this->saseID = $saseID;
+        $this->xmlroot->setAttribute('uuid', $saseID);
     }
 
     public function getSaseID()

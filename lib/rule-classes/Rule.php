@@ -103,6 +103,8 @@ class Rule
     public function setUUID( $uuid)
     {
         $this->uuid = $uuid;
+        $this->xmlroot->setAttribute('uuid', $uuid);
+
         return true;
     }
 

@@ -9,6 +9,7 @@ BUGFIX:
 
 GENERAL:
 * in=sase-api://{TSGID} | class Container/DeviceCloud/PanSaseAPIConnector/RuleWithUserID - improvements for FAWKES
+* in=sase-api://{TSGID} | bring in uuid for downloading config
 
 
 2.1.42 (20251111)
