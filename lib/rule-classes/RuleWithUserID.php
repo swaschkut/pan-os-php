@@ -153,6 +153,8 @@ class RuleWithUserID extends Rule
 
         DH::Hosts_to_xmlDom($tmpRoot, $this->_users, 'member', FALSE, 'any', FALSE);
 
+        $this->_userIDType = self::__UserIDType_Custom;
+
         return true;
     }
 

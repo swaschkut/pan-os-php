@@ -124,6 +124,9 @@ class DeviceCloud
     /** @var EDLStore */
     public $EDLStore = null;
 
+    /** @var LogProfileStore */
+    public $LogProfileStore = null;
+
 /*
     public static $templateCloudxml = '<entry name="**Need a Name**"><address></address>
                                     <rulebase><security><rules></rules></security><nat><rules></rules></nat></rulebase>
@@ -323,6 +326,9 @@ class DeviceCloud
 
         $this->EDLStore = new EDLStore($this);
         $this->EDLStore->setName('EDLStore');
+
+        $this->LogProfileStore = new LogProfileStore($this);
+        $this->LogProfileStore->setName('LogProfileStore');
 
         $this->securityRules = new RuleStore($this, 'SecurityRule');
         $this->securityRules->name = 'Security';
@@ -756,6 +762,16 @@ class DeviceCloud
             if( $tmp !== FALSE )
                 $this->EDLStore->load_from_domxml($tmp);
             // End of EDL extraction
+
+            //
+            // Extract LogProfile objects
+            //
+            $tmp2 = DH::findFirstElement('log-settings', $xml);
+            if( $tmp2 !== FALSE )
+                $tmp = DH::findFirstElement('profiles', $tmp2);
+            if( $tmp2 !== FALSE && $tmp !== FALSE )
+                $this->LogProfileStore->load_from_domxml($tmp);
+            // End of LogProfile extraction
         }
 
 

@@ -481,12 +481,15 @@ class PanSaseAPIConnector
 
 
         $response = curl_exec($this->_curl_handle);
-        if( $this->showApiCalls )
-        {
-            #print $response . "\n";
-        }
 
         $jsonArray = json_decode($response, TRUE);
+
+        if( $this->showApiCalls )
+        {
+            #print json_encode($jsonArray, JSON_PRETTY_PRINT)."\n";
+        }
+
+
 
         if( isset($jsonArray['_errors']) )
         {
@@ -766,6 +769,14 @@ class PanSaseAPIConnector
             {
                 $tmp_rule = null;
 
+                //Todo: why is this not working | or in other words, why are rules added twice?
+                $tmp_rule = $sub->securityRules->find($object['name']);
+                if( $tmp_rule !== null )
+                {
+                    //already added
+                    return;
+                }
+
                 if( isset($object['position']) && $object['position'] === "post" )
                     $tmp_rule = $sub->securityRules->newSecurityRule($object['name'], TRUE);
                 else
@@ -818,13 +829,15 @@ class PanSaseAPIConnector
                         $tmp_addr = $sub->serviceStore->findOrCreate($obj, null, TRUE);
                         $tmp_rule->services->add($tmp_addr);
                     }
-                if( isset($object['source-user']) )
-                    foreach( $object['source-user'] as $obj )
+                if( isset($object['source_user']) )
+                {
+                    foreach( $object['source_user'] as $obj )
                     {
                         if( $obj === "any" )
                             continue;
                         $tmp_rule->userID_addUser($obj);
                     }
+                }
                 if( isset($object['application']) )
                     foreach( $object['application'] as $obj )
                     {
@@ -833,8 +846,23 @@ class PanSaseAPIConnector
                         $tmp_obj = $sub->appStore->findorCreate($obj);
                         $tmp_rule->apps->addApp($tmp_obj);
                     }
-                if( isset($object['log-setting']) )
-                    $tmp_rule->setLogSetting($object['log-setting']);
+                if( isset($object['log_setting']) )
+                    $tmp_rule->setLogSetting($object['log_setting']);
+                if( isset($object['log_start']) )
+                {
+                    if( $object['log_start'] == "true" )
+                        $tmp_rule->setLogStart( true );
+                    else
+                        $tmp_rule->setLogStart( false );
+                }
+                if( isset($object['log_end']) )
+                {
+                    if( $object['log_end'] == "true" )
+                        $tmp_rule->setLogEnd( true );
+                    else
+                        $tmp_rule->setLogEnd( false );
+                }
+
                 if( isset($object['tag']) )
                     foreach( $object['tag'] as $obj )
                     {

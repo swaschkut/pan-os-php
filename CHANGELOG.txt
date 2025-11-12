@@ -8,6 +8,7 @@ BUGFIX:
 * Class UrlCategoryRuleContainer | bugfix to get this working with Buckbeak
 
 GENERAL:
+* in=sase-api://{TSGID} | class Container/DeviceCloud/PanSaseAPIConnector/RuleWithUserID - improvements for FAWKES
 
 
 2.1.42 (20251111)
