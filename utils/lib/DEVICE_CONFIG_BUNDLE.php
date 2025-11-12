@@ -140,6 +140,8 @@ class DEVICE_CONFIG_BUNDLE extends UTIL
                        PH::print_stdout();
 
                        $util = PH::callPANOSPHP( "stats", PH::$argv, $argc, $PHP_FILE );
+                       unset($util);
+                       gc_collect_cycles();
 
                        $string = json_encode( PH::$JSON_OUT, JSON_PRETTY_PRINT );
 
@@ -182,6 +184,8 @@ class DEVICE_CONFIG_BUNDLE extends UTIL
                                            PH::print_stdout();
 
                                            $util = PH::callPANOSPHP( "playbook", PH::$argv, $argc, $PHP_FILE );
+                                           unset($util);
+                                           gc_collect_cycles();
                                        }
 
                                        continue;
@@ -317,6 +321,8 @@ class DEVICE_CONFIG_BUNDLE extends UTIL
                                            PH::print_stdout( PH::boldText( "[ ".$tool. " ".implode( " ", PH::$argv )." ]" ) );
                                            PH::print_stdout();
                                            $util = PH::callPANOSPHP( $type, PH::$argv, $argc, $PHP_FILE );
+                                           unset($util);
+                                           gc_collect_cycles();
                                        }
                                        else
                                        {
@@ -344,6 +350,8 @@ class DEVICE_CONFIG_BUNDLE extends UTIL
                                    PH::print_stdout( PH::boldText( "[ ".$tool. " ".implode( " ", PH::$argv )." ]" ) );
                                    PH::print_stdout();
                                    $util = PH::callPANOSPHP( "html-merger", PH::$argv, $argc, $PHP_FILE );
+                                   unset($util);
+                                   gc_collect_cycles();
 
                                    //move xls file to parent html folder
                                    $orig_file = "/share/".$this->projectFolder."/html/".$filenameFolder."/".$filenameFolder.".xls";

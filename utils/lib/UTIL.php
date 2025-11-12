@@ -184,6 +184,8 @@ class UTIL
 
     function __construct($utilType, $argv, $argc, $PHP_FILE, $_supportedArguments = array(), $_usageMsg = "", $projectFolder = "")
     {
+        gc_enable(); // Enable garbage collection if not already enabled
+
         PanAPIConnector::$projectfolder = $projectFolder;
 
         $this->argv = $argv;
@@ -255,7 +257,6 @@ class UTIL
         //vulnarability?
         //$this->log->info("END UTIL: " . $this->PHP_FILE);
 
-        
     }
 
     /*
@@ -1460,6 +1461,8 @@ class UTIL
             }
 
             $this->doActions[] = $context;
+            unset($context);
+            unset($tmp_array);
         }
 //
 // ---------
@@ -2423,6 +2426,13 @@ class UTIL
 
         //vulnerability??
         //$this->log->info("END UTIL: " . $this->PHP_FILE);
+
+        $vars = array_keys(get_defined_vars());
+        for ($i = 0; $i < sizeOf($vars); $i++) {
+            unset($vars[$i]);
+        }
+        unset($vars,$i);
+        gc_collect_cycles();
     }
 
     public function setTimezone()
@@ -2555,7 +2565,12 @@ class UTIL
             $utilDiff->runDiff( $this->origXmlDoc, $doc2 );
 
             $utilDiff->display_outputformatset();
+
+            unset($doc2);
+            unset($utilDiff);
         }
+
+
     }
 
     public function useException()
@@ -2576,5 +2591,29 @@ class UTIL
     {
         if( !PH::$doNotDisableExceptions )
             PH::$useExceptions = FALSE;
+    }
+
+    function __destruct()
+    {
+        /*
+        //todo: this is not helping to free up memory
+        if ($this->debugLoadTime)
+        {
+            #PH::print_DEBUG_loadtime("before cleanup");
+        }
+
+
+        unset($this->xmlDoc);
+        unset($this->origXmlDoc);
+        unset($this->log);
+        unset($this->pan);
+        unset($this->sase_connector);
+        gc_collect_cycles();
+
+        if ($this->debugLoadTime)
+        {
+            #PH::print_DEBUG_loadtime("after cleanup");
+        }
+        */
     }
 }

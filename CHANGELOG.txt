@@ -5,6 +5,7 @@ UTIL:
 
 BUGFIX:
 * type=securityprofile securityprofiletype=url-filtering actions=url.alert-only-set | bugfix
+* Class UrlCategoryRuleContainer | bugfix to get this working with Buckbeak
 
 GENERAL:
 

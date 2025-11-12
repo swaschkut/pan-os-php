@@ -424,6 +424,8 @@ class PLAYBOOK__
             PH::print_stdout();
 
             $util = PH::callPANOSPHP( $script, PH::$argv, $argc, $PHP_FILE );
+            unset( $util );
+            gc_collect_cycles();
 
             PH::print_stdout();
             PH::print_stdout( "############################################################################");

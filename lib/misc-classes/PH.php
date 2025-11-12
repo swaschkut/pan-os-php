@@ -1011,8 +1011,9 @@ class PH
         PH::print_stdout( PH::boldText("sleeping now 600 seconds") );
         #sleep(600);
 
-        PH::callPANOSPHP( $type, $argv, $argc, $PHP_FILE );
-
+        $util = PH::callPANOSPHP( $type, $argv, $argc, $PHP_FILE );
+        unset($util);
+        gc_collect_cycles();
     }
 
     public static $supportedUTILTypes = array(

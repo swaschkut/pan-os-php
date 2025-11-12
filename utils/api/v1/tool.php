@@ -314,5 +314,6 @@ function UTILcaller( $url_pieces, $argv, $argc, $PHP_FILE )
 
         //memory clean up
         unset($util);
+        gc_collect_cycles();
     }
 }

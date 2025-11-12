@@ -116,4 +116,7 @@ elseif( isset(PH::$args['type']) )
     PH::$argv = array();
 
     $util = PH::callPANOSPHP( $type, $argv, $argc, $PHP_FILE );
+
+    unset($util);
+    gc_collect_cycles();
 }

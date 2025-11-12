@@ -201,6 +201,7 @@ class DeviceGroup
     public $device = null;
     public $apiCache = null;
 
+    public $debugLoadTime = false;
 
     public function __construct($owner)
     {
@@ -328,6 +329,89 @@ class DeviceGroup
         $this->pbfRules->_networkStore = $this->_fakeNetworkProperties;
     }
 
+    public function __destruct()
+    {
+        /*
+        if ($this->debugLoadTime)
+        {
+            #PH::print_stdout("unset DeviceGroup");
+        }
+
+        unset( $this->xmlroot);
+
+        unset($this->tagStore );
+        unset($this->zoneStore );
+        unset($this->certificateStore );
+        unset($this->SSL_TLSServiceProfileStore );
+
+        unset($this->appStore );
+
+        unset($this->threatStore );
+
+        unset($this->urlStore );
+
+        unset($this->serviceStore );
+
+        unset($this->addressStore );
+
+
+        unset($this->customURLProfileStore );
+        unset($this->URLProfileStore );
+        unset($this->AntiVirusProfileStore );
+
+
+        unset($this->ThreatPolicyStore );
+        unset($this->DNSPolicyStore );
+        unset($this->VulnerabilityProfileStore );
+        unset($this->AntiSpywareProfileStore );
+        unset($this->FileBlockingProfileStore );
+        unset($this->DataFilteringProfileStore );
+        unset($this->WildfireProfileStore );
+        unset($this->securityProfileGroupStore );
+
+
+        unset($this->DecryptionProfileStore );
+        unset($this->HipObjectsProfileStore );
+        unset($this->HipProfilesProfileStore );
+        unset($this->GTPProfileStore );
+        unset($this->SCEPProfileStore );
+        unset($this->PacketBrokerProfileStore );
+        unset($this->SDWanErrorCorrectionProfileStore );
+        unset($this->SDWanPathQualityProfileStore );
+        unset($this->SDWanSaasQualityProfileStore );
+        unset($this->SDWanTrafficDistributionProfileStore );
+        unset($this->DataObjectsProfileStore );
+
+
+        unset($this->scheduleStore );
+        unset($this->EDLStore );
+        unset($this->LogProfileStore );
+
+        unset($this->securityRules );
+        unset($this->natRules );
+        unset($this->decryptionRules );
+        unset($this->appOverrideRules );
+        unset($this->captivePortalRules );
+        unset($this->authenticationRules );
+        unset($this->pbfRules );
+        unset($this->qosRules );
+        unset($this->dosRules );
+        unset($this->tunnelInspectionRules );
+        unset($this->defaultSecurityRules );
+
+        unset($this->networkPacketBrokerRules );
+        unset($this->sdWanRules );
+
+
+        gc_collect_cycles();
+
+        if ($this->debugLoadTime)
+        {
+            #PH::print_DEBUG_loadtime("after unset DeviceGroup");
+        }
+        */
+    }
+
     public function load_from_templateXml()
     {
         if( $this->owner === null )
@@ -345,6 +429,8 @@ class DeviceGroup
 
     public function init_load_from_domxml_devices($xml, $debugLoadTime = false)
     {
+        $this->debugLoadTime = $debugLoadTime;
+
         $this->xmlroot = $xml;
 
         // this DeviceGroup has a name ?
