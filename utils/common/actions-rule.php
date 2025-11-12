@@ -442,7 +442,11 @@ RuleCallContext::$commonActionFunctions['calculate-zones'] = array(
                 $rule->tags->addTag($objectFind);
 
                 if( $context->isAPI )
-                    $zoneContainer->API_sync();
+                {
+                    $rule->API_sync();
+                    $rule->tags->API_sync();
+                }
+
             }
         }
     },

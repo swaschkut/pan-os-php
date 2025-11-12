@@ -1579,7 +1579,10 @@ class Rule
                 $this->tags->addTag($objectFind);
 
                 if( $isAPI )
-                    $zoneContainer->API_sync();
+                {
+                    $this->API_sync();
+                    $this->tags->API_sync();
+                }
             }
         }
     }
@@ -2136,7 +2139,11 @@ class Rule
                 $this->tags->addTag($objectFind);
 
                 if( $isAPI )
-                    $zoneContainer->API_sync();
+                {
+                    $this->API_sync();
+                    $this->tags->API_sync();
+                }
+
             }
         }
     }

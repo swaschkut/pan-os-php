@@ -6,6 +6,7 @@ UTIL:
 BUGFIX:
 * type=securityprofile securityprofiletype=url-filtering actions=url.alert-only-set | bugfix
 * Class UrlCategoryRuleContainer | bugfix to get this working with Buckbeak
+* type=rule actions=from-calculate-zones:unneeded-tag-add | bugfix for API mode
 
 GENERAL:
 * in=sase-api://{TSGID} | class Container/DeviceCloud/PanSaseAPIConnector/RuleWithUserID - improvements for FAWKES
