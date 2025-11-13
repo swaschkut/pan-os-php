@@ -2211,6 +2211,9 @@ class MERGER extends UTIL
     function hashMapPickfilter( $upperHashMap, $index, &$hash)
     {
         $pickedObject = null;
+        if( $this->dupAlg == 'identical' )
+            $this->pickFilter = 'identical';
+
         if( $this->pickFilter !== null )
         {
             if( isset($upperHashMap[$index]) )
@@ -2226,7 +2229,16 @@ class MERGER extends UTIL
 
             foreach( $hashArray as $object )
             {
-                if( $this->pickFilter->matchSingleObject(array('object' => $object, 'nestedQueries' => &$nestedQueries)) )
+                if( $this->dupAlg == 'identical' )
+                {
+                    if( get_class($object->owner->owner) !== "PanoramaConf" && $object->owner->owner->parentDeviceGroup !== null)
+                    {
+                        $pickedObject = $object->owner->owner->parentDeviceGroup->addressStore->find( $object->name() );
+                        if( $pickedObject !== null )
+                            break;
+                    }
+                }
+                elseif( $this->pickFilter->matchSingleObject(array('object' => $object, 'nestedQueries' => &$nestedQueries)) )
                 {
                     $pickedObject = $object;
                     break;
@@ -2242,7 +2254,16 @@ class MERGER extends UTIL
 
                     foreach( $hashArray as $object )
                     {
-                        if( $this->pickFilter->matchSingleObject(array('object' => $object, 'nestedQueries' => &$nestedQueries)) )
+                        if( $this->dupAlg == 'identical' )
+                        {
+                            if( get_class($object->owner->owner) !== "PanoramaConf" && $object->owner->owner->parentDeviceGroup !== null)
+                            {
+                                $pickedObject = $object->owner->owner->parentDeviceGroup->addressStore->find( $object->name() );
+                                if( $pickedObject !== null )
+                                    break;
+                            }
+                        }
+                        elseif( $this->pickFilter->matchSingleObject(array('object' => $object, 'nestedQueries' => &$nestedQueries)) )
                         {
                             $pickedObject = $object;
                             break;

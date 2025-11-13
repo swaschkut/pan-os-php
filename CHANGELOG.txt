@@ -9,6 +9,7 @@ BUGFIX:
 * type=rule actions=from-calculate-zones:unneeded-tag-add | bugfix for API mode
 * type=vendor-migration vendor=cp-r80 | bugfix for natlayer migration
 * type=XYZ actions=move:shared | bugfix if XMLnode is not available, create it correclty under /config/shared
+* type=address-merger dupalgorithm=identical allowmergingwithupperlevel | bugfix to pick the object with the same name from upperlevel, and not the own with the same value
 
 GENERAL:
 * in=sase-api://{TSGID} | class Container/DeviceCloud/PanSaseAPIConnector/RuleWithUserID - improvements for FAWKES
