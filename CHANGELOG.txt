@@ -8,7 +8,7 @@ BUGFIX:
 * Class UrlCategoryRuleContainer | bugfix to get this working with Buckbeak
 * type=rule actions=from-calculate-zones:unneeded-tag-add | bugfix for API mode
 * type=vendor-migration vendor=cp-r80 | bugfix for natlayer migration
-* type=tag actions=move:shared | bugfix
+* type=XYZ actions=move:shared | bugfix if XMLnode is not available, create it correclty under /config/shared
 
 GENERAL:
 * in=sase-api://{TSGID} | class Container/DeviceCloud/PanSaseAPIConnector/RuleWithUserID - improvements for FAWKES

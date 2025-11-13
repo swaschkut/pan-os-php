@@ -91,7 +91,12 @@ class LogProfileStore extends ObjStore
         {
             if( $this->xmlroot === null )
             {
-                $tmp_xmlroot = DH::findFirstElementOrCreate('log-settings', $this->owner->xmlroot);
+                if( $this->owner->isPanorama() || $this->owner->isFirewall() )
+                    $xml = $this->owner->sharedroot;
+                else
+                    $xml = $this->owner->xmlroot;
+
+                $tmp_xmlroot = DH::findFirstElementOrCreate('log-settings', $xml);
                 $this->xmlroot = DH::findFirstElementOrCreate('profiles', $tmp_xmlroot);
             }
 
@@ -152,16 +157,13 @@ class LogProfileStore extends ObjStore
 
         if( $this->xmlroot === null )
         {
-            if( $this->owner->isDeviceGroup() || $this->owner->isVirtualSystem() || $this->owner->isContainer() || $this->owner->isDeviceCloud() )
-            {
-                $tmp_xmlroot = DH::findFirstElementOrCreate('log-settings', $this->owner->xmlroot);
-                $this->xmlroot = DH::findFirstElementOrCreate('profiles', $tmp_xmlroot);
-            }
+            if( $this->owner->isPanorama() || $this->owner->isFirewall() )
+                $xml = $this->owner->sharedroot;
             else
-            {
-                $tmp_xmlroot = DH::findFirstElementOrCreate('log-settings', $this->owner->sharedroot);
-                $this->xmlroot = DH::findFirstElementOrCreate('profiles', $tmp_xmlroot);
-            }
+                $xml = $this->owner->xmlroot;
+
+            $tmp_xmlroot = DH::findFirstElementOrCreate('log-settings', $xml);
+            $this->xmlroot = DH::findFirstElementOrCreate('profiles', $tmp_xmlroot);
         }
 
         $newLogProfile = new LogProfile($name, $this, TRUE);
