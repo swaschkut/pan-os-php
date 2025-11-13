@@ -790,13 +790,36 @@ class PanSaseAPIConnector
                 //pan-os-php has no newhip-profiles method
                 PH::print_stdout($type . " - not implemented yet");
             }
-            //anti-spyware-profiles
-            //dns-security-profiles
-            //file-blocking-profiles
-            //url-access-profiles
+
+            elseif( $type === "anti-spyware-profiles" )
+            {
+                PH::print_stdout($type . " - not implemented yet");
+                $tmp_obj = $sub->AntiSpywareProfileStore->findOrCreate($object['name'], $this);
+                $tmp_obj->setSaseID($object['id']);
+            }
+            elseif( $type === "dns-security-profiles" )
+            {
+                PH::print_stdout($type . " - not implemented yet");
+                $tmp_obj = $sub->DNSSecurityProfileStore->findOrCreate($object['name']);
+                $tmp_obj->setSaseID($object['id']);
+            }
+            elseif( $type === "file-blocking-profiles" )
+            {
+                PH::print_stdout($type . " - not implemented yet");
+                $tmp_obj = $sub->FileBlockingProfileStore->findOrCreate($object['name']);
+                $tmp_obj->setSaseID($object['id']);
+            }
+            elseif( $type === "url-access-profiles" )
+            {
+                PH::print_stdout($type . " - not implemented yet");
+                $tmp_obj = $sub->URLProfileStore->findOrCreate($object['name']);
+                $tmp_obj->setSaseID($object['id']);
+            }
             elseif( $type === "vulnerability-protection-profiles" )
             {
                 PH::print_stdout($type . " - not implemented yet");
+                $tmp_obj = $sub->VulnerabilityProfileStore->findOrCreate($object['name']);
+                $tmp_obj->setSaseID( $object['id'] );
                 #print_r($object);
                 /*
                  *Array
@@ -1121,6 +1144,9 @@ class PanSaseAPIConnector
             elseif( $type === "wildfire-anti-virus-profiles" )
             {
                 PH::print_stdout($type . " - not implemented yet");
+                $tmp_obj = $sub->VirusAndWildfireProfileStore->findOrCreate($object['name']);
+                $tmp_obj->setSaseID( $object['id'] );
+
                 #print_r($object);
                 /*
                  * Array
@@ -1158,6 +1184,9 @@ class PanSaseAPIConnector
             elseif( $type === "profile-groups" )
             {
                 PH::print_stdout($type . " - not implemented yet");
+
+                $tmp_obj = $sub->securityProfileGroupStore->createSecurityProfileGroup($object['name']);
+                //todo: search for all SP
                 #print_r($object);
                 /*
                  * Array
