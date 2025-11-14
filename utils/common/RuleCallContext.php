@@ -463,16 +463,13 @@ class RuleCallContext extends CallContext
                 return self::enclose('any');
             }
             if( count($rule->services->getAll()) > 0 )
-            {
-                if( $rule->services->isAny() )
-                    return self::enclose('any');
-                if( $rule->services->isApplicationDefault() )
-                    return self::enclose('application-default');
                 return self::enclose($rule->services->getAll(), $wrap);
-            }
+            elseif( $rule->services->isAny() )
+                return self::enclose('any');
+            elseif( $rule->services->isApplicationDefault() )
+                return self::enclose('application-default');
             else
-                return self::enclose("any", $wrap);
-
+                return self::enclose('any');
         }
 
         if( $fieldName == 'service_resolved_sum' )
