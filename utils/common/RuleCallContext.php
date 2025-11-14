@@ -454,22 +454,27 @@ class RuleCallContext extends CallContext
         {
             if( $rule->isDecryptionRule() )
                 return self::enclose('');
-            if( $rule->isAppOverrideRule() )
+            elseif( $rule->isAppOverrideRule() )
                 return self::enclose($rule->ports());
-            if( $rule->isNatRule() )
+            elseif( $rule->isNatRule() )
             {
                 if( $rule->service !== null )
                     return self::enclose(array($rule->service));
                 return self::enclose('any');
             }
-            if( count($rule->services->getAll()) > 0 )
-                return self::enclose($rule->services->getAll(), $wrap);
-            elseif( $rule->services->isAny() )
-                return self::enclose('any');
-            elseif( $rule->services->isApplicationDefault() )
-                return self::enclose('application-default');
+            elseif( $rule->isSecurityRule() || $rule->isDefaultSecurityRule())
+            {
+                if( count($rule->services->getAll()) > 0 )
+                    return self::enclose($rule->services->getAll(), $wrap);
+                elseif( $rule->services->isAny() )
+                    return self::enclose('any');
+                elseif( $rule->services->isApplicationDefault() )
+                    return self::enclose('application-default');
+                else
+                    return self::enclose('any');
+            }
             else
-                return self::enclose('any');
+                return self::enclose('');
         }
 
         if( $fieldName == 'service_resolved_sum' )
