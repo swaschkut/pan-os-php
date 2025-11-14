@@ -144,7 +144,7 @@
                             "sinkhole"
                         ],
                         "packet-capture": [
-                            "disabled"
+                            "disable"
                         ]
                     }
                 ]

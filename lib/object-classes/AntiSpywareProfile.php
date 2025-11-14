@@ -388,17 +388,15 @@ class AntiSpywareProfile extends SecurityProfile2
                      */
 
                     $name = DH::findAttribute("name", $tmp_entry1);
-                    $action_element = DH::findFirstElement("action", $tmp_entry1);
-                    if( $action_element !== FALSE )
-                    {
-                        $tmp_firstElement = $action_element->firstElementChild;
-                        if( $tmp_firstElement !== FALSE && $tmp_firstElement !== null )
-                            $this->additional['botnet-domain']['lists'][$name]['action'] = $action_element->firstElementChild->nodeName;
-                    }
 
-                    $tmp_packet_capture = DH::findFirstElement("packet-capture", $tmp_entry1);
-                    if( $tmp_packet_capture !== FALSE )
-                        $this->additional['botnet-domain']['lists'][$name]['packet-capture'] = $tmp_packet_capture->textContent;
+                    $dnsPolicy_obj = new DNSPolicy( $name, $this );
+                    $dnsPolicy_obj->load_from_domxml( $tmp_entry1 );
+                    $this->dns_rules_obj[$name] = $dnsPolicy_obj;
+                    $dnsPolicy_obj->addReference( $this );
+
+                    $this->owner->owner->DNSPolicyStore->add($dnsPolicy_obj);
+
+                    $this->additional['botnet-domain']['lists'][$name] = $dnsPolicy_obj;
                 }
             }
 
@@ -654,10 +652,8 @@ class AntiSpywareProfile extends SecurityProfile2
                         #print_r($this->additional['botnet-domain'][$type]);
                         foreach( $this->additional['botnet-domain']['lists'] as $name => $value )
                         {
-                            $string_packetCapture = "";
-                            if( isset( $value['packet-capture'] ) )
-                                $string_packetCapture = " -  packet-capture: ".$value['packet-capture'];
-                            PH::print_stdout("            - ".$name." -  action: ".$value['action'] .$string_packetCapture );
+                            $padding = "    ";
+                            $value->display( $padding);
                         }
                     }
                     elseif( $type == "sinkhole" )
@@ -749,56 +745,19 @@ class AntiSpywareProfile extends SecurityProfile2
         if( $this->secprof_type != 'spyware' )
             return null;
 
-        $checkBP_array = $this->spyware_lists_bp_visibility_JSON( "bp", "spyware");
-
-        if( isset($this->additional['botnet-domain']['lists']) )
+        $bp_set = false;
+        if( isset($this->additional['botnet-domain']['list']) )
         {
-            foreach( $this->additional['botnet-domain']['lists'] as $name => $array)
+            foreach ($this->additional['botnet-domain']['list'] as $name => $value)
             {
-                foreach( $checkBP_array['action'] as $validation )
-                {
-                    foreach( $validation['type'] as $check_type )
-                    {
-                        if( $name == $check_type )
-                        {
-                            $checkBP_value = false;
-                            if( isset($array['action']) )
-                            {
-                                foreach( $validation['action'] as $check_action)
-                                {
-                                    $negate_string = "";
-                                    if( strpos( $check_action, "!" ) !== FALSE )
-                                        $negate_string = "!";
-                                    if ( $negate_string.$array['action'] == $check_action )
-                                        $checkBP_value = TRUE;
-                                    else
-                                        $checkBP_value = FALSE;
-                                }
-                            }
-
-                            if( isset($array['packet-capture']) )
-                            {
-                                foreach( $validation['packet-capture'] as $check_action)
-                                {
-                                    $negate_string = "";
-                                    if( strpos( $check_action, "!" ) !== FALSE )
-                                        $negate_string = "!";
-                                    if ( $negate_string.$array['packet-capture'] == $check_action )
-                                        $checkBP_value = TRUE;
-                                    else
-                                        $checkBP_value = FALSE;
-                                }
-                            }
-
-                            if( $checkBP_value )
-                                return TRUE;
-                        }
-                    }
-                }
+                /** @var DNSPolicy $value */
+                if ($value->spyware_dns_security_rule_bestpractice())
+                    $bp_set = true;
+                else
+                    return false;
             }
         }
-
-        return FALSE;
+        return $bp_set;
     }
 
     public function spyware_dnslist_visibility()
@@ -806,44 +765,19 @@ class AntiSpywareProfile extends SecurityProfile2
         if( $this->secprof_type != 'spyware' )
             return null;
 
-        $check_array = $this->spyware_lists_bp_visibility_JSON( "visibility", "spyware");
-
-        if( isset($this->additional['botnet-domain']['lists']) )
+        $bp_set = false;
+        if( isset($this->additional['botnet-domain']['list']) )
         {
-            foreach( $this->additional['botnet-domain']['lists'] as $name => $array)
+            foreach ($this->additional['botnet-domain']['list'] as $name => $value)
             {
-                foreach( $check_array['action'] as $validation )
-                {
-                    foreach( $validation['type'] as $check_type )
-                    {
-                        if( $name == $check_type )
-                        {
-                            if( isset($array['action']) )
-                            {
-                                $check_result = FALSE;
-                                foreach( $validation['action'] as $check_action)
-                                {
-                                    $negate_string = "";
-                                    if( strpos( $check_action, "!" ) !== FALSE )
-                                        $negate_string = "!";
-                                    if ( $negate_string.$array['action'] == $check_action )
-                                        $check_result =  FALSE;
-                                    else
-                                        $check_result = TRUE;
-                                }
-
-                                if( $check_result )
-                                    return TRUE;
-                                else
-                                    return FALSE;
-                            }
-                        }
-                    }
-                }
+                /** @var DNSPolicy $value */
+                if ($value->spyware_dns_security_rule_visibility())
+                    $bp_set = true;
+                else
+                    return false;
             }
         }
-
-        return FALSE;
+        return $bp_set;
     }
 
     public function spyware_dnslist_adoption()

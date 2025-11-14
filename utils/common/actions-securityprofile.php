@@ -1165,25 +1165,22 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         {
                             if( $type == "lists" )
                             {
-                                foreach( $object->additional['botnet-domain']['lists'] as $name => $value )
+                                foreach( $object->additional['botnet-domain']['lists'] as $name => $rule )
                                 {
-                                    $string = $name." -  action: ".$value['action'];
-                                    if( isset($value['packet-capture']) )
-                                    {
-                                        //Todo: this is still hardcoded - how to use BP JSON file???
-                                        //PH::$shadow_bp_jsonfile
-                                        $string .= " -  packet-capture: ".$value['packet-capture'];
-                                        if( $bestPractice && $name == "default-paloalto-dns" )
-                                        {
-                                            if( $value['action'] != "sinkhole" && ($value['packet-capture'] != "single-packet" || $value['packet-capture'] != "extended-capture" ) )
-                                                $string .= $bp_NOT_sign;
-                                        }
-                                        if( $visibility && $name == "default-paloalto-dns" )
-                                        {
-                                            if( $value['action'] == "allow" )
-                                                $string .= $visible_NOT_sign;
-                                        }
-                                    }
+                                    //$string = $name." -  action: ".$value['action'];
+                                    $string = "";
+                                    $string .= $rule->name();
+
+                                    $string .= " - action: '".$rule->action."'";
+                                    $string .= " - packet-capture: '".$rule->packetCapture()."'";
+
+                                    /** @var DNSPolicy $rule */
+                                    if( $bestPractice && !$rule->spyware_dns_security_rule_bestpractice() )
+                                        $string .= $bp_NOT_sign;
+                                    if( $visibility && !$rule->spyware_dns_security_rule_visibility() )
+                                        $string .= $visible_NOT_sign;
+
+
 
                                     $string_dns_list[] =  $string;
                                 }
@@ -2588,7 +2585,9 @@ SecurityProfileCallContext::$supportedActions['spyware.alert-only-set'] = array(
                         continue;
 
                     $name = DH::findAttribute("name", $tmp_entry1);
-                    if( $object->additional['botnet-domain']['lists'][$name]['action'] == "allow" )
+                    /** @var DNSPolicy $tmp_dnsobj */
+                    $tmp_dnsobj = $object->additional['botnet-domain']['lists'][$name];
+                    if( $tmp_dnsobj->action() == "allow" )
                     {
                         $tmp = DH::findFirstElement("action", $tmp_entry1);
                         if ($tmp !== FALSE)
@@ -2606,7 +2605,7 @@ SecurityProfileCallContext::$supportedActions['spyware.alert-only-set'] = array(
                                 $xmlElement = DH::importXmlStringOrDie($rule->xmlroot->ownerDocument, $xmlString);
                                 $tmp->appendChild($xmlElement);
 
-                                $object->additional['botnet-domain']['lists'][$name]['action'] = $tmp_actionString;
+                                $tmp_dnsobj->action = $tmp_actionString;
                             }
                         }
                         $tmp = DH::findFirstElement("packet-capture", $tmp_entry1);

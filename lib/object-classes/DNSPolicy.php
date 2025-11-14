@@ -55,9 +55,13 @@ class DNSPolicy
         }
 
         $tmp = DH::findFirstElement('action', $tmp_entry1);
-        if( $tmp !== FALSE )
+        if( $tmp !== FALSE && $tmp !== NULL )
         {
-            $this->action = $tmp->textContent;
+            $child = DH::firstChildElement($tmp);
+            if( $child !== FALSE )
+                $this->action = $child->nodeName;
+            else
+                $this->action = $tmp->textContent;
         }
 
         if( $this->advanced === FALSE )
@@ -169,16 +173,22 @@ class DNSPolicy
             {
                 if( $this->name() == $name )
                 {
+                    #print "0) name: ".$name."\n";
                     foreach( $validate['action'] as $final_action_check )
                     {
                         #print "1) action: ".$this->action()." |validate: ".$final_action_check."\n";
                         if( $this->action() == $final_action_check )
                         {
                             $bp_action = TRUE;
+                            #print "1-0) true\n";
                             break;
                         }
                         else
+                        {
                             $bp_action = FALSE;
+                            #print "1-1) false\n";
+                        }
+
                     }
 
 
@@ -188,10 +198,14 @@ class DNSPolicy
                         if( $this->packetCapture() == $final_packet_check )
                         {
                             $bp_packet = TRUE;
+                            #print "2-0) true\n";
                             break;
                         }
                         else
+                        {
                             $bp_packet = FALSE;
+                            #print "2-1) false\n";
+                        }
                     }
 
 
