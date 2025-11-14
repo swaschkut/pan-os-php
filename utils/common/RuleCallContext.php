@@ -471,7 +471,7 @@ class RuleCallContext extends CallContext
                 return self::enclose($rule->services->getAll(), $wrap);
             }
             else
-                return self::enclose("---", $wrap);
+                return self::enclose("any", $wrap);
 
         }
 
