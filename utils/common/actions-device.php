@@ -387,6 +387,63 @@ DeviceCallContext::$supportedActions['DeviceGroup-create'] = array(
     ),
 );
 
+DeviceCallContext::$supportedActions['DeviceGroup-setParentDG'] = array(
+    'name' => 'devicegroup-setparentdg',
+    'MainFunction' => function (DeviceCallContext $context) {
+    },
+    'GlobalFinishFunction' => function (DeviceCallContext $context) {
+        $dgName = $context->arguments['name'];
+        $parentDG = $context->arguments['parentdg'];
+
+        $pan = $context->subSystem;
+
+        if( $parentDG != 'null' )
+        {
+            $tmp_parentdg = $pan->findDeviceGroup($parentDG);
+            if( $tmp_parentdg === null )
+            {
+                $string = "parentDG set with '" . $parentDG . "' but not found on this config";
+                PH::ACTIONstatus($context, "SKIPPED", $string);
+                $parentDG = null;
+
+                return;
+            }
+        }
+
+        if( !$pan->isPanorama() )
+            derr("only supported on Panorama config");
+
+        $tmp_dg = $pan->findDeviceGroup($dgName);
+        if( $tmp_dg === null )
+        {
+            $string = "DeviceGroup with name: " . $dgName . " not available!";
+            PH::ACTIONlog( $context, $string );
+        }
+        else
+        {
+            $string = "DeviceGroup with name: " . $dgName . " got parentDG: ".$parentDG." set!";
+
+            //Todo: no validatio if all references are fine, PAN-OS XML will error out if other references are not working
+
+            $pan->setParentDG($dgName, $parentDG);
+
+            PH::ACTIONlog( $context, $string );
+            if( $context->isAPI )
+            {
+                $tmp_dg->API_sync();
+                if( $parentDG !== null )
+                {
+                    $tmp_dg->owner->API_syncDGparentEntry($tmp_dg->name(), $parentDG);
+                }
+            }
+        }
+    },
+    'args' => array(
+        'name' => array('type' => 'string', 'default' => 'false'),
+        'parentdg' => array('type' => 'string', 'default' => 'null'),
+    ),
+);
+
 DeviceCallContext::$supportedActions['DeviceGroup-addSerial'] = array(
     'name' => 'devicegroup-addserial',
     'MainFunction' => function (DeviceCallContext $context) {

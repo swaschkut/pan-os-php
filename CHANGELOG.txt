@@ -2,6 +2,7 @@ CHANGELOG
 
 2.1.43
 UTIL:
+* type=device | new actions=devicegroup-setparentdg:{DGNAME},{parentDG}
 
 BUGFIX:
 * type=securityprofile securityprofiletype=url-filtering actions=url.alert-only-set | bugfix

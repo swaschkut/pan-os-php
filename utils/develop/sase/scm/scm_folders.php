@@ -74,6 +74,9 @@ $connector = $pan->connector;
 
 $url_config = "/config/setup/v1/folders";
 
+//validation:
+//$connector->url_api = "https://api.strata.paloaltonetworks.com";
+
 //$limit and $offset are running into 'Access denied
 $MUjsonArray = $connector->getResourceURL( $url_config);
 print_r($MUjsonArray);

@@ -3670,6 +3670,34 @@ class PanoramaConf
         return $newDG;
     }
 
+    public function setParentDG($name, $parentDGname = null)
+    {
+        if( $this->version >= 70 )
+        {
+
+            if( $this->version >= 80 )
+                $dgMetaDataNode = DH::findXPathSingleEntryOrDie('/config/readonly/devices/entry[@name="localhost.localdomain"]/device-group', $this->xmlroot);
+            else
+                $dgMetaDataNode = DH::findXPathSingleEntryOrDie('/config/readonly/dg-meta-data/dg-info', $this->xmlroot);
+
+            $parentXMLnode = "";
+            if( $parentDGname !== null )
+            {
+                $parentDG = $this->findDeviceGroup( $parentDGname );
+                if( $parentDG === null )
+                    mwarning("DeviceGroup '$name' has DeviceGroup '{$parentDGname}' listed as parent but it cannot be found in XML");
+                else
+                    $parentXMLnode = "<parent-dg>".$parentDGname."</parent-dg>";
+            }
+
+            $newXmlNode = DH::importXmlStringOrDie($this->xmldoc, $parentXMLnode);
+
+            $readOnlyDG = DH::findFirstElementByNameAttrOrDie( "entry", $name, $dgMetaDataNode );
+            $readOnlyDG->appendChild($newXmlNode);
+
+        }
+    }
+
     public function API_syncDGparentEntry($name, $parentDGname)
     {
         $cmd = "<request><move-dg><entry name=\"".$name."\"><new-parent-dg>".$parentDGname."</new-parent-dg></entry></move-dg></request>";

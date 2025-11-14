@@ -2079,6 +2079,21 @@ var subjectObject =
                 "name": "devicegroup-removeserial-any",
                 "MainFunction": {}
             },
+            "devicegroup-setparentdg": {
+                "name": "devicegroup-setparentdg",
+                "MainFunction": {},
+                "GlobalFinishFunction": {},
+                "args": {
+                    "name": {
+                        "type": "string",
+                        "default": "false"
+                    },
+                    "parentdg": {
+                        "type": "string",
+                        "default": "null"
+                    }
+                }
+            },
             "display": {
                 "name": "display",
                 "GlobalInitFunction": {},

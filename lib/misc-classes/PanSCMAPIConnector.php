@@ -613,10 +613,64 @@ class PanSCMAPIConnector
         {
             $offset = $this->global_limit * $runtime;
             $runtime++;
-            $resource = $this->getResource($access_token, $type, $folder, $this->global_limit, $prePost, $offset, $runtime);
+            $resource = $this->getResource( $type, $folder, $this->global_limit, $prePost, $offset, $runtime);
 
             foreach( $resource['data'] as $data )
                 $jsonArray['data'][] = $data;
+        }
+
+
+        return $jsonArray;
+    }
+
+    function getSCMapi( $url_config, $runtime = 1)
+    {
+        $this->getAccessToken();
+
+        $url = $this->url_api;
+        $url .= "" . $url_config;
+
+
+        $url = str_replace(' ', '%20', $url);
+
+        if( $this->showApiCalls )
+        {
+            PH::print_stdout($url);
+        }
+
+
+        $header = array("Authorization: Bearer {$this->access_token}");
+
+
+        $this->_createOrRenewCurl();
+
+        curl_setopt($this->_curl_handle, CURLOPT_URL, $url);
+        curl_setopt($this->_curl_handle, CURLOPT_HTTPHEADER, $header);
+        curl_setopt($this->_curl_handle, CURLOPT_SSL_VERIFYPEER, FALSE);
+        curl_setopt($this->_curl_handle, CURLOPT_RETURNTRANSFER, TRUE);
+
+        if( $this->showApiCalls )
+        {
+            if( PH::$displayCurlRequest )
+            {
+                curl_setopt($this->_curl_handle, CURLOPT_FOLLOWLOCATION, TRUE);
+                curl_setopt($this->_curl_handle, CURLOPT_VERBOSE, TRUE);
+            }
+        }
+
+
+        $response = curl_exec($this->_curl_handle);
+        if( $this->showApiCalls )
+        {
+            #print $response . "\n";
+        }
+
+        $jsonArray = json_decode($response, TRUE);
+
+        if( isset($jsonArray['_errors']) )
+        {
+            print_r($jsonArray['_errors']);
+            derr($jsonArray['_errors'][0]['message'], null, FALSE);
         }
 
 
