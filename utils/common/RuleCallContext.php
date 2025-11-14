@@ -462,7 +462,7 @@ class RuleCallContext extends CallContext
                     return self::enclose(array($rule->service));
                 return self::enclose('any');
             }
-            if( isset($rule->service) )
+            if( count($rule->services->getAll()) > 0 )
             {
                 if( $rule->services->isAny() )
                     return self::enclose('any');
@@ -471,7 +471,7 @@ class RuleCallContext extends CallContext
                 return self::enclose($rule->services->getAll(), $wrap);
             }
             else
-                return self::enclose("", $wrap);
+                return self::enclose("---", $wrap);
 
         }
 
