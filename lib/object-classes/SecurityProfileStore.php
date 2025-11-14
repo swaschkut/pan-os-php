@@ -1122,6 +1122,30 @@ class SecurityProfileStore extends ObjStore
         }
     }
 
+    function createSPTmp($name, $ref = null)
+    {
+
+        $f = new $this->classn($name, $this);
+        /** @var AntiSpywareProfile|AntiVirusProfile|WildfireProfile|VirusAndWildfireProfile|VulnerabilityProfile|URLProfile|FileBlockingProfile $f */
+
+        $this->o[] = $f;
+        $this->nameIndex[$name] = $f;
+        $f->type = 'tmp';
+        $f->addReference($ref);
+
+        if( $f->xmlroot == null )
+        {
+            if( $this->xmlroot == null )
+            {
+                $this->createXmlRoot();
+            }
+            $f->xmlroot = DH::createElement( $this->xmlroot, 'entry');
+            $f->xmlroot->setAttribute("name", $name);
+        }
+
+        return $f;
+    }
+
 
     public function createXmlRoot()
     {
