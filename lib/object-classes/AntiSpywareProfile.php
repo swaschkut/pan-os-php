@@ -391,7 +391,7 @@ class AntiSpywareProfile extends SecurityProfile2
 
                     $dnsPolicy_obj = new DNSPolicy( $name, $this );
                     $dnsPolicy_obj->load_from_domxml( $tmp_entry1 );
-                    $this->dns_rules_obj[$name] = $dnsPolicy_obj;
+
                     $dnsPolicy_obj->addReference( $this );
 
                     $this->owner->owner->DNSPolicyStore->add($dnsPolicy_obj);
