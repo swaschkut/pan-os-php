@@ -62,14 +62,24 @@
         },
         "cloud-inline": {
             "bp": {
-                "inline-policy-action": [
-                    "enable"
-                ]
+                "inline-policy-action": {
+                    "type": [
+                        "any"
+                    ],
+                    "action": [
+                        "enable"
+                    ]
+                }
             },
             "visibility": {
-                "inline-policy-action": [
-                    "!disable"
-                ]
+                "inline-policy-action": {
+                    "type": [
+                        "any"
+                    ],
+                    "action": [
+                        "!disable"
+                    ]
+                }
             }
         }
     },
@@ -200,12 +210,44 @@
         "cloud-inline": {
             "bp": {
                 "inline-policy-action": [
-                    "reset-both"
+                    {
+                        "type": [
+                            "any"
+                        ],
+                        "action": [
+                            "reset-both"
+                        ]
+                    },
+                    {
+                        "type": [
+                            "HTTP Command and Control detector",
+                            "HTTP2 Command and Control detector"
+                        ],
+                        "local-deep-learning": [
+                            "enable"
+                        ]
+                    }
                 ]
             },
             "visibility": {
                 "inline-policy-action": [
-                    "!allow"
+                    {
+                        "type": [
+                            "any"
+                        ],
+                        "action": [
+                            "!allow"
+                        ]
+                    },
+                    {
+                        "type": [
+                            "HTTP Command and Control detector",
+                            "HTTP2 Command and Control detector"
+                        ],
+                        "local-deep-learning": [
+                            "enable"
+                        ]
+                    }
                 ]
             }
         }
@@ -248,14 +290,24 @@
         },
         "cloud-inline": {
             "bp": {
-                "inline-policy-action": [
-                    "reset-both"
-                ]
+                "inline-policy-action": {
+                    "type": [
+                        "any"
+                    ],
+                    "action": [
+                        "reset-both"
+                    ]
+                }
             },
             "visibility": {
-                "inline-policy-action": [
-                    "!allow"
-                ]
+                "inline-policy-action": {
+                    "type": [
+                        "any"
+                    ],
+                    "action": [
+                        "!allow"
+                    ]
+                }
             }
         }
     },

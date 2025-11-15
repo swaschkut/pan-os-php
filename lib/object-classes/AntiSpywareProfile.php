@@ -213,6 +213,16 @@ class AntiSpywareProfile extends SecurityProfile2
                     $tmp_inline_policy_action->textContent = "disable";
                     $this->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action'] = "disable";
                 }
+
+                $tmp_local_deep_learning = DH::findFirstElement("local-deep-learning", $tmp_entry1);
+                if( $tmp_local_deep_learning !== FALSE )
+                    $this->additional['mica-engine-spyware-enabled'][$name]['local-deep-learning'] = $tmp_local_deep_learning->textContent;
+                else
+                {
+                    #$tmp_local_deep_learning = DH::findFirstElementOrCreate("local-deep-learning", $tmp_entry1);
+                    #$tmp_local_deep_learning->textContent = "disable";
+                    #$this->additional['mica-engine-spyware-enabled'][$name]['local-deep-learning'] = "disable";
+                }
             }
 
             $Unkown_TCP_xmlstring = '<entry name="Unknown-TCP Command and Control detector">
@@ -741,7 +751,12 @@ class AntiSpywareProfile extends SecurityProfile2
                 PH::print_stdout("        - mica-engine-spyware-enabled: ". $enabled);
 
                 foreach ($this->additional['mica-engine-spyware-enabled'] as $name => $threat)
-                    PH::print_stdout("          * " . $name . " - inline-policy-action :" . $this->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action']);
+                {
+                    $string = "          * " . $name . " - inline-policy-action :" . $this->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action'];
+                    if( isset($this->additional['mica-engine-spyware-enabled'][$name]['local-deep-learning']) )
+                        $string .= " - local-deep-learning :" . $this->additional['mica-engine-spyware-enabled'][$name]['local-deep-learning'];
+                    PH::print_stdout( $string );
+                }
             }
         }
         #PH::print_stdout();

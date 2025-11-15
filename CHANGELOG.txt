@@ -4,6 +4,7 @@ CHANGELOG
 UTIL:
 * type=device | new actions=devicegroup-setparentdg:{DGNAME},{parentDG}
 * type=securityprofile securityprofiletype=spyware | pan-os 11.2 add all adns cat, add adns to exporttoexcel
+* type=securityprofile securityprofiletype=spyware | extend mica output with local-deep-learning
 
 BUGFIX:
 * type=securityprofile securityprofiletype=url-filtering actions=url.alert-only-set | bugfix

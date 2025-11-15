@@ -1264,6 +1264,11 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         foreach ($object->additional['mica-engine-spyware-enabled'] as $type => $array)
                         {
                             $tmp_string = $type . " - inline-policy-action :" . $object->additional['mica-engine-spyware-enabled'][$type]['inline-policy-action'];
+                            //Todo: swaschkut 2025115  LDL missing
+                            if( isset($object->additional['mica-engine-spyware-enabled'][$type]['local-deep-learning']) )
+                            {
+                                $tmp_string .= " - local-deep-learning :".$object->additional['mica-engine-spyware-enabled'][$type]['local-deep-learning'];
+                            }
                             if( $bestPractice )
                             {
                                 if( isset(PH::$shadow_bp_jsonfile['spyware']['cloud-inline']['bp']) )
@@ -1271,8 +1276,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                                     $check_array = PH::$shadow_bp_jsonfile['spyware']['cloud-inline']['bp'];
                                     if( isset($check_array['inline-policy-action']) )
                                     {
-                                        foreach( $check_array['inline-policy-action'] as $validate )
-                                            $bp_set = $object->bp_stringValidation($array, 'inline-policy-action', $validate);
+                                        $bp_set = $object->cloud_inline_analysis_best_practice();
                                         if($bp_set == FALSE)
                                             $tmp_string .= $bp_NOT_sign;
                                     }
@@ -1286,8 +1290,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                                     $check_array = PH::$shadow_bp_jsonfile['spyware']['cloud-inline']['visibility'];
                                     if( isset($check_array['inline-policy-action']) )
                                     {
-                                        foreach( $check_array['inline-policy-action'] as $validate )
-                                            $bp_set = $object->visibility_stringValidation($array, 'inline-policy-action', $validate);
+                                        $bp_set = $object->cloud_inline_analysis_visibility();
                                         if($bp_set == FALSE)
                                             $tmp_string .= $visible_NOT_sign;
                                     }
@@ -1323,8 +1326,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                                     $check_array = PH::$shadow_bp_jsonfile['vulnerability']['cloud-inline']['bp'];
                                     if( isset($check_array['inline-policy-action']) )
                                     {
-                                        foreach( $check_array['inline-policy-action'] as $validate )
-                                            $bp_set = $object->bp_stringValidation($array, 'inline-policy-action', $validate);
+                                        $bp_set = $object->cloud_inline_analysis_best_practice();
                                         if($bp_set == FALSE)
                                             $tmp_string .= $bp_NOT_sign;
                                     }
@@ -1338,8 +1340,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                                     $check_array = PH::$shadow_bp_jsonfile['vulnerability']['cloud-inline']['visibility'];
                                     if( isset($check_array['inline-policy-action']) )
                                     {
-                                        foreach( $check_array['inline-policy-action'] as $validate )
-                                            $bp_set = $object->visibility_stringValidation($array, 'inline-policy-action', $validate);
+                                        $bp_set = $object->cloud_inline_analysis_visibility();
                                         if($bp_set == FALSE)
                                             $tmp_string .= $visible_NOT_sign;
                                     }
@@ -1365,8 +1366,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                                     $check_array = PH::$shadow_bp_jsonfile['virus']['cloud-inline']['bp'];
                                     if( isset($check_array['inline-policy-action']) )
                                     {
-                                        foreach( $check_array['inline-policy-action'] as $validate )
-                                            $bp_set = $object->bp_stringValidation($array, 'mlav-policy-action', $validate);
+                                        $bp_set = $object->cloud_inline_analysis_best_practice();
                                         if($bp_set == FALSE)
                                             $tmp_string .= $bp_NOT_sign;
                                     }
@@ -1380,8 +1380,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                                     $check_array = PH::$shadow_bp_jsonfile['virus']['cloud-inline']['visibility'];
                                     if( isset($check_array['inline-policy-action']) )
                                     {
-                                        foreach( $check_array['inline-policy-action'] as $validate )
-                                            $bp_set = $object->visibility_stringValidation($array, 'mlav-policy-action', $validate);
+                                        $bp_set = $object->cloud_inline_analysis_visibility();
                                         if($bp_set == FALSE)
                                             $tmp_string .= $visible_NOT_sign;
                                     }
