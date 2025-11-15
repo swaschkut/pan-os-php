@@ -1422,5 +1422,8 @@ class PH
             }
             // Values that are non-numeric strings or non-zero numbers are automatically kept.
         }
+
+        if( count( array_keys($data) ) == 3)
+            $data = array();
     }
 }

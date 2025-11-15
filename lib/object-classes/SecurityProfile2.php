@@ -50,12 +50,11 @@ class SecurityProfile2
                 {
                     foreach( $check_array['inline-policy-action'] as $validate )
                     {
-                        if( $validate['type'][0] == 'any' )
+                        if( isset($validate['type']) && $validate['type'][0] == 'any' )
                         {
                             $bp_set = $this->bp_stringValidation($name, 'inline-policy-action', $validate['action'][0]);
                             if (!$bp_set)
                                 return FALSE;
-                            #$bp_set = $this->bp_stringValidation($name, 'inline-policy-action', $validate);
                         }
                     }
 
@@ -70,12 +69,11 @@ class SecurityProfile2
                 {
                     foreach( $check_array['inline-policy-action'] as $validate )
                     {
-                        if( $validate['type'][0] == 'any' )
+                        if( isset($validate['type']) && $validate['type'][0] == 'any' )
                         {
                             $bp_set = $this->bp_stringValidation($name, 'inline-policy-action', $validate['action'][0]);
                             if (!$bp_set)
                                 return FALSE;
-                            #$bp_set = $this->bp_stringValidation($name, 'inline-policy-action', $validate);
                         }
                     }
                     if($bp_set == FALSE)
@@ -92,12 +90,11 @@ class SecurityProfile2
             {
                 foreach( $check_array['inline-policy-action'] as $validate )
                 {
-                    if( $validate['type'][0] == 'any' )
+                    if( isset($validate['type']) && $validate['type'][0] == 'any' )
                     {
                         $bp_set = $this->bp_stringValidation($name, 'mlav-policy-action', $validate['action'][0]);
                         if (!$bp_set)
                             return FALSE;
-                        #$bp_set = $this->bp_stringValidation($name, 'mlav-policy-action', $validate);
                     }
                 }
 
@@ -129,12 +126,11 @@ class SecurityProfile2
                 {
                     foreach( $check_array['inline-policy-action'] as $validate )
                     {
-                        if( $validate['type'][0] == 'any' )
+                        if( isset($validate['type']) && $validate['type'][0] == 'any' )
                         {
                             $bp_set = $this->visibility_stringValidation($name, 'inline-policy-action', $validate['action'][0]);
                             if (!$bp_set)
                                 return FALSE;
-                            #$bp_set = $this->visibility_stringValidation($name, 'inline-policy-action', $validate);
                         }
                     }
 
@@ -149,12 +145,11 @@ class SecurityProfile2
                 {
                     foreach( $check_array['inline-policy-action'] as $validate )
                     {
-                        if( $validate['type'][0] == 'any' )
+                        if( isset($validate['type']) && $validate['type'][0] == 'any' )
                         {
                             $bp_set = $this->visibility_stringValidation($name, 'inline-policy-action', $validate['action'][0]);
                             if(!$bp_set)
                                 return FALSE;
-                            #$bp_set = $this->visibility_stringValidation($name, 'inline-policy-action', $validate);
                         }
                         else
                         {
@@ -178,17 +173,7 @@ class SecurityProfile2
                 //$check_array is unique for all AV/AS/VP from JSON file
                 foreach( $check_array['inline-policy-action'] as $validate )
                 {
-                    /*
-                    "inline-policy-action": {
-                    "type": [
-                        "any"
-                    ],
-                    "action": [
-                        "reset-both"
-                    ]
-                    }
-                    */
-                    if( $validate['type'][0] == 'any' )
+                    if( isset($validate['type']) && $validate['type'][0] == 'any' )
                     {
                         $bp_set = $this->visibility_stringValidation($name, 'mlav-policy-action', $validate['action'][0]);
                         if(!$bp_set)

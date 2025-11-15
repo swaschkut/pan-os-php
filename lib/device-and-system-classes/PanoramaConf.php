@@ -263,6 +263,9 @@ class PanoramaConf
 
     public $debugLoadTime = false;
 
+    public $sizeArray = array();
+    public $sizeArrayShared = array();
+
     public function name()
     {
         return $this->name;
@@ -1840,6 +1843,19 @@ class PanoramaConf
         $gpostNetworkPacketBrockerRules = $this->networkPacketBrokerRules->countPostRules();
         $gpostSDWanRules = $this->sdWanRules->countPostRules();
 
+        $size_securityRules = &DH::dom_get_config_size($this->securityRules->xmlroot);
+        $size_natRules = &DH::dom_get_config_size($this->natRules->xmlroot);
+        $size_decryptionRules = &DH::dom_get_config_size($this->decryptionRules->xmlroot);
+        $size_appOverrideRules = &DH::dom_get_config_size($this->appOverrideRules->xmlroot);
+        $size_captivePortalRules = &DH::dom_get_config_size($this->captivePortalRules->xmlroot);
+        $size_authenticationRules = &DH::dom_get_config_size($this->authenticationRules->xmlroot);
+        $size_pbfRules = &DH::dom_get_config_size($this->pbfRules->xmlroot);
+        $size_qosRules = &DH::dom_get_config_size($this->qosRules->xmlroot);
+        $size_dosRules = &DH::dom_get_config_size($this->dosRules->xmlroot);
+        $size_tunnelInspectionRules = &DH::dom_get_config_size($this->tunnelInspectionRules->xmlroot);
+        $size_defaultSecurityRules = &DH::dom_get_config_size($this->defaultSecurityRules->xmlroot);
+        $size_networkPacketBrokerRules = &DH::dom_get_config_size($this->networkPacketBrokerRules->xmlroot);
+        $size_sdWanRules = &DH::dom_get_config_size($this->sdWanRules->xmlroot);
 
         $gnservices = $this->serviceStore->countServices();
         $gnservicesUnused = $this->serviceStore->countUnusedServices();
@@ -1865,6 +1881,7 @@ class PanoramaConf
         $gnwildfire = $this->WildfireProfileStore->count();
         $gnurlprofil = $this->URLProfileStore->count();
         $gncustomurlprofil = $this->customURLProfileStore->count();
+        $size_customURLProfileStore = &DH::dom_get_config_size($this->customURLProfileStore->xmlroot);
         $gnfileblocking = $this->FileBlockingProfileStore->count();
         $gndecryption = $this->DecryptionProfileStore->count();
 
@@ -1970,6 +1987,7 @@ class PanoramaConf
             $gnwildfire += $cur->WildfireProfileStore->count();
             $gnurlprofil += $cur->URLProfileStore->count();
             $gncustomurlprofil += $cur->customURLProfileStore->count();
+            $size_customURLProfileStore += DH::dom_get_config_size($cur->customURLProfileStore->xmlroot);
             $gnfileblocking += $cur->FileBlockingProfileStore->count();
             $gndecryption += $cur->DecryptionProfileStore->count();
 
@@ -2000,7 +2018,9 @@ class PanoramaConf
         $stdoutarray = array();
 
         $stdoutarray['type'] = get_class( $this );
+        $this->sizeArray['type'] = get_class( $this );
         $stdoutarray['statstype'] = "objects";
+        $this->sizeArray['statstype'] = "objects";
 
         if( !PH::$shadow_loaddghierarchy )
             $header = "Statistics for PanoramaConf '" . $this->name . "'";
@@ -2008,6 +2028,7 @@ class PanoramaConf
             $header = "Statistics for PanoramaConf: DG-Hierarchy location: '" .$location. "'";
 
         $stdoutarray['header'] = $header;
+        $this->sizeArray['header'] = $header;
 
         $stdoutarray['pre security rules'] = array();
         $stdoutarray['pre security rules']['shared'] = $this->securityRules->countPreRules();
@@ -2183,6 +2204,7 @@ class PanoramaConf
         $stdoutarray['custom URL objects'] = array();
         $stdoutarray['custom URL objects']['shared'] = $this->customURLProfileStore->count();
         $stdoutarray['custom URL objects']['total_DGs'] = $gncustomurlprofil;
+        $this->sizeArray['kb custom URL objects'] = $size_customURLProfileStore;
         $stdoutarray['File-Blocking objects'] = array();
         $stdoutarray['File-Blocking objects']['shared'] = $this->FileBlockingProfileStore->count();
         $stdoutarray['File-Blocking objects']['total_DGs'] = $gnfileblocking;
@@ -2252,6 +2274,12 @@ class PanoramaConf
         if( !PH::$shadow_json && $actions == "display"  )
             PH::print_stdout( $stdoutarray, true );
 
+        if( !PH::$shadow_json && $actions == "display-size"  )
+        {
+            PH::stats_remove_zero_arrays($this->sizeArray);
+            PH::print_stdout( $this->sizeArray, true );
+        }
+
         if( $actions == "display-available" )
         {
             PH::stats_remove_zero_arrays($stdoutarray);
@@ -2278,10 +2306,13 @@ class PanoramaConf
         $stdoutarray = array();
 
         $stdoutarray['type'] = "DeviceGroup";
+        $this->sizeArrayShared['type'] = "DeviceGroup";
         $stdoutarray['statstype'] = "objects";
+        $this->sizeArrayShared['statstype'] = "objects";
 
         $header = "Statistics for DG '" . PH::boldText('shared') . "'";
         $stdoutarray['header'] = $header;
+        $this->sizeArrayShared['header'] = $header;
 
         $stdoutarray['security rules'] = array();
         $stdoutarray['security rules']['pre'] = $this->securityRules->countPreRules();
@@ -2369,6 +2400,7 @@ class PanoramaConf
         $stdoutarray['URL objects']['total'] = $this->URLProfileStore->count();
         $stdoutarray['custom URL objects'] = array();
         $stdoutarray['custom URL objects']['total'] = $this->customURLProfileStore->count();
+        $this->sizeArrayShared['kb custom URL objects'] = &DH::dom_get_config_size($this->customURLProfileStore->xmlroot);
         $stdoutarray['File-Blocking objects'] = array();
         $stdoutarray['File-Blocking objects']['total'] = $this->FileBlockingProfileStore->count();
         $stdoutarray['Decryption objects'] = array();
@@ -2401,6 +2433,12 @@ class PanoramaConf
 
         if( !PH::$shadow_json && $actions == "display"  )
             PH::print_stdout( $stdoutarray, true );
+
+        if( !PH::$shadow_json && $actions == "display-size"  )
+        {
+            PH::stats_remove_zero_arrays($this->sizeArrayShared);
+            PH::print_stdout( $this->sizeArrayShared, true );
+        }
 
         if( $actions == "display-available" )
         {

@@ -83,7 +83,7 @@ class STATSUTIL extends RULEUTIL
         else
             $this->stats( $this->debugAPI, $actions, $this->location );
 
-        if( PH::$args['actions'] == "display" || PH::$args['actions'] == "display-bpa" || PH::$args['actions'] == "display-available")
+        if( PH::$args['actions'] == "display" || PH::$args['actions'] == "display-bpa" || PH::$args['actions'] == "display-available" || PH::$args['actions'] == "display-available")
             PH::print_stdout(PH::$JSON_TMP, false, "statistic");
 
         if( PH::$args['actions'] == "trending" )

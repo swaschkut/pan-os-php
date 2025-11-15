@@ -473,6 +473,20 @@ class DH
         return $out;
     }
 
+    static function &dom_get_config_size( $xmlroot )
+    {
+        $length = 0;
+        if( $xmlroot !== Null )
+        {
+            $xml = &DH::dom_to_xml( $xmlroot );
+            $length = strlen( $xml );
+            $length = round( $length/1000 );
+        }
+
+
+        return $length;
+    }
+
     static private $charsToConvert = array('&', '>', '<', '"');
     static private $charsToConvertInto = array('&amp;', '&gt;', '&lt;', '&quot;');
 

@@ -254,9 +254,7 @@ DeviceCallContext::$supportedActions['display'] = array(
             }
         }
 
-        $xml = &DH::dom_to_xml( $object->xmlroot );
-        $length = strlen( $xml );
-        $length = round( $length/1000 );
+        $length = &DH::dom_get_config_size($object->xmlroot);
         PH::print_stdout($context->padding."---");
         PH::print_stdout( $context->padding."- config-size: ".$length."kB");
 
