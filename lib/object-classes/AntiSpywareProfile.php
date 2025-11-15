@@ -24,6 +24,7 @@ class AntiSpywareProfile extends SecurityProfile2
     public $threatException = array();
     public $rules_obj = array();
     public $dns_rules_obj = array();
+    public $lists_obj = array();
     public $additional = array();
 
     public $rule_coverage = array();
@@ -369,6 +370,19 @@ class AntiSpywareProfile extends SecurityProfile2
             }
 
             $tmp_lists = DH::findFirstElement('lists', $tmp_rule);
+            if( $tmp_lists == FALSE or !$tmp_lists->hasChildNodes() )
+            {
+                $tmp_lists = DH::findFirstElementOrCreate('lists', $tmp_rule);
+                $tmp_xmlstring = '<entry name="default-paloalto-dns">
+   <action>
+      <alert/>
+   </action>
+   <packet-capture>disable</packet-capture>
+</entry>';
+                $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $tmp_xmlstring);
+                $tmp_lists->appendChild($xmlElement);
+                $tmp_lists = DH::findFirstElement('lists', $tmp_rule);
+            }
             if( $tmp_lists !== FALSE )
             {
                 $this->additional['botnet-domain']['lists'] = array();
@@ -391,7 +405,7 @@ class AntiSpywareProfile extends SecurityProfile2
 
                     $dnsPolicy_obj = new DNSPolicy( $name, $this );
                     $dnsPolicy_obj->load_from_domxml( $tmp_entry1 );
-
+                    $this->lists_obj[$name] = $dnsPolicy_obj;
                     $dnsPolicy_obj->addReference( $this );
 
                     $this->owner->owner->DNSPolicyStore->add($dnsPolicy_obj);
@@ -568,8 +582,34 @@ class AntiSpywareProfile extends SecurityProfile2
 
                     $this->owner->owner->DNSPolicyStore->add($dnsPolicy_obj);
 
-                    $this->additional['botnet-domain']['advanced-dns-security-categories'][] = $dnsPolicy_obj;
+                    $this->additional['botnet-domain']['advanced-dns-security-categories'][$name] = $dnsPolicy_obj;
                 }
+
+
+                foreach( $this->owner->owner->DNSPolicyStore->tmp_adns_prof_array as $dns_category )
+                {
+                    //add missing DNS security categories
+                    if( !isset($this->additional['botnet-domain']['advanced-dns-security-categories'][$dns_category]) )
+                    {
+                        $tmp_xml_string = '<entry name="'.$dns_category.'">
+                           <log-level>default</log-level>
+                           <action>default</action>
+                        </entry>';
+
+                        $dnsPolicy_obj = new DNSPolicy( $dns_category, $this );
+                        $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $tmp_xml_string);
+                        $tmp_advanced_dns_security_categories->appendChild($xmlElement);
+
+                        $dnsPolicy_obj->load_from_domxml( $xmlElement );
+                        $this->dns_rules_obj[$dns_category] = $dnsPolicy_obj;
+                        $dnsPolicy_obj->addReference( $this );
+
+                        $this->owner->owner->DNSPolicyStore->add($dnsPolicy_obj);
+
+                        $this->additional['botnet-domain']['advanced-dns-security-categories'][$dns_category] = $dnsPolicy_obj;
+                    }
+                }
+
             }
 
             $tmp_whitelists = DH::findFirstElement('whitelist', $tmp_rule);
@@ -746,12 +786,12 @@ class AntiSpywareProfile extends SecurityProfile2
             return null;
 
         $bp_set = false;
-        if( isset($this->additional['botnet-domain']['list']) )
+        if( isset($this->additional['botnet-domain']['lists']) )
         {
-            foreach ($this->additional['botnet-domain']['list'] as $name => $value)
+            foreach ($this->additional['botnet-domain']['lists'] as $name => $value)
             {
                 /** @var DNSPolicy $value */
-                if ($value->spyware_dns_security_rule_bestpractice())
+                if ($value->spyware_lists_bestpractice())
                     $bp_set = true;
                 else
                     return false;
@@ -766,12 +806,14 @@ class AntiSpywareProfile extends SecurityProfile2
             return null;
 
         $bp_set = false;
-        if( isset($this->additional['botnet-domain']['list']) )
+        if( isset($this->additional['botnet-domain']['lists']) )
         {
-            foreach ($this->additional['botnet-domain']['list'] as $name => $value)
+            foreach ($this->additional['botnet-domain']['lists'] as $name => $value)
             {
+                if( $value->name() !== "default-paloalto-dns" )
+                    continue;
                 /** @var DNSPolicy $value */
-                if ($value->spyware_dns_security_rule_visibility())
+                if ($value->spyware_lists_visibility())
                     $bp_set = true;
                 else
                     return false;

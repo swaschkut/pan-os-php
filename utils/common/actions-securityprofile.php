@@ -1175,9 +1175,9 @@ SecurityProfileCallContext::$supportedActions[] = array(
                                     $string .= " - packet-capture: '".$rule->packetCapture()."'";
 
                                     /** @var DNSPolicy $rule */
-                                    if( $bestPractice && !$rule->spyware_dns_security_rule_bestpractice() )
+                                    if( $bestPractice && !$rule->spyware_lists_bestpractice() )
                                         $string .= $bp_NOT_sign;
-                                    if( $visibility && !$rule->spyware_dns_security_rule_visibility() )
+                                    if( $visibility && !$rule->spyware_lists_visibility() )
                                         $string .= $visible_NOT_sign;
 
 
@@ -1206,6 +1206,28 @@ SecurityProfileCallContext::$supportedActions[] = array(
                                         $string .= $bp_NOT_sign;
                                     if( $visibility && !$rule->spyware_dns_security_rule_visibility() )
                                         $string .= $visible_NOT_sign;
+                                    $string_dns_security[] = $string;
+                                }
+                            }
+                            elseif( $type == "advanced-dns-security-categories" )
+                            {
+                                $string_dns_security[] = "";
+                                $string_dns_security[] = "---Advanced DNS Security Categories";
+                                foreach( $object->additional['botnet-domain'][$type] as $name => $rule )
+                                {
+                                    $string = "";
+                                    $string .= $rule->name();
+
+                                    $string .= " - log-level: '".$rule->logLevel()."'";
+                                    $string .= " - action: '".$rule->action."'";
+                                    #adns does not have packet-capture
+                                    //$string .= " - packet-capture: '".$rule->packetCapture()."'";
+                                    /** @var DNSPolicy $rule */
+                                    //Todo: TBD
+                                    #if( $bestPractice && !$rule->spyware_dns_security_rule_bestpractice() )
+                                    #    $string .= $bp_NOT_sign;
+                                    #if( $visibility && !$rule->spyware_dns_security_rule_visibility() )
+                                    #    $string .= $visible_NOT_sign;
                                     $string_dns_security[] = $string;
                                 }
                             }

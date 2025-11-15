@@ -37,6 +37,11 @@ class DNSPolicyStore extends ObjStore
         "pan-dns-sec-recent"
     );
 
+    public $tmp_adns_prof_array = array(
+        "pan-adns-sec-dnsmisconfig",
+        "pan-adns-sec-hijacking"
+    );
+
     public function __construct($owner)
     {
         $this->classn = &self::$childn;

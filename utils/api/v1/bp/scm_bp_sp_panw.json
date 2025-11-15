@@ -159,10 +159,10 @@
                             "pan-adns-sec-hijacking"
                         ],
                         "action": [
-                            "default"
+                            "reset-both"
                         ],
                         "log-level": [
-                            "default"
+                            "!none"
                         ]
                     }
                 ]
