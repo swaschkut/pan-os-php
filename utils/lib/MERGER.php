@@ -2307,7 +2307,16 @@ class MERGER extends UTIL
         {
             foreach( $hash as $object )
             {
-                if( $this->pickFilter->matchSingleObject(array('object' => $object, 'nestedQueries' => &$nestedQueries)) )
+                if( $this->dupAlg == 'identical' )
+                {
+                    if( get_class($object->owner->owner) !== "PanoramaConf" && $object->owner->owner->parentDeviceGroup !== null)
+                    {
+                        $pickedObject = $object->owner->owner->parentDeviceGroup->addressStore->find( $object->name() );
+                        if( $pickedObject !== null )
+                            break;
+                    }
+                }
+                elseif( $this->pickFilter->matchSingleObject(array('object' => $object, 'nestedQueries' => &$nestedQueries)) )
                 {
                     $pickedObject = $object;
                     break;
