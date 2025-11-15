@@ -159,7 +159,7 @@ class SecurityProfile2
                         else
                         {
                             //todo: speciall now for LDL
-                            print_r($validate);
+                            #print_r($validate);
                         }
                     }
 
