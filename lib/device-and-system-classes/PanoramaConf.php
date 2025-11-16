@@ -1862,6 +1862,9 @@ class PanoramaConf
         $gnserviceGs = $this->serviceStore->countServiceGroups();
         $gnserviceGsUnused = $this->serviceStore->countUnusedServiceGroups();
         $gnTmpServices = $this->serviceStore->countTmpServices();
+        $size_srvRoot = &DH::dom_get_config_size($this->serviceStore->serviceRoot);
+        $size_srvgrpRoot = &DH::dom_get_config_size($this->serviceStore->serviceGroupRoot);
+        $size_serviceStore = $size_srvRoot+$size_srvgrpRoot;
 
         $gnaddresss = $this->addressStore->countAddresses();
         $gnaddresssUnused = $this->addressStore->countUnusedAddresses();
@@ -1869,9 +1872,14 @@ class PanoramaConf
         $gnaddressGsUnused = $this->addressStore->countUnusedAddressGroups();
         $gnTmpAddresses = $this->addressStore->countTmpAddresses();
         $gnRegionAddresses = $this->addressStore->countRegionObjects();
+        $size_adrRoot = &DH::dom_get_config_size($this->addressStore->addressRoot);
+        $size_adrgrpRoot = &DH::dom_get_config_size($this->addressStore->addressGroupRoot);
+        $size_regionRoot = &DH::dom_get_config_size($this->addressStore->regionRoot);
+        $size_addressStore = $size_adrRoot+$size_adrgrpRoot+$size_regionRoot;
 
         $gTagCount = $this->tagStore->count();
         $gTagUnusedCount = $this->tagStore->countUnused();
+        $size_tagStore = &DH::dom_get_config_size($this->tagStore->xmlroot);
 
         $gnsecurityprofileGs = $this->securityProfileGroupStore->count();
 
@@ -1961,12 +1969,16 @@ class PanoramaConf
             $gpostNetworkPacketBrockerRules += $cur->networkPacketBrokerRules->countPostRules();
             $gpostSDWanRules += $cur->sdWanRules->countPostRules();
 
+            $size_securityRules += DH::dom_get_config_size($cur->securityRules->xmlroot);
 
             $gnservices += $cur->serviceStore->countServices();
             $gnservicesUnused += $cur->serviceStore->countUnusedServices();
             $gnserviceGs += $cur->serviceStore->countServiceGroups();
             $gnserviceGsUnused += $cur->serviceStore->countUnusedServiceGroups();
             $gnTmpServices += $cur->serviceStore->countTmpServices();
+            $size_tmpsrvRoot = DH::dom_get_config_size($cur->serviceStore->serviceRoot);
+            $size_tmpsrvgrpRoot = DH::dom_get_config_size($cur->serviceStore->serviceGroupRoot);
+            $size_serviceStore += ($size_tmpsrvRoot+$size_tmpsrvgrpRoot);
 
             $gnaddresss += $cur->addressStore->countAddresses();
             $gnaddresssUnused += $cur->addressStore->countUnusedAddresses();
@@ -1974,9 +1986,14 @@ class PanoramaConf
             $gnaddressGsUnused += $cur->addressStore->countUnusedAddressGroups();
             $gnTmpAddresses += $cur->addressStore->countTmpAddresses();
             $gnRegionAddresses += $cur->addressStore->countRegionObjects();
+            $size_tmpadrRoot = DH::dom_get_config_size($cur->addressStore->addressRoot);
+            $size_tmpadrgrpRoot = DH::dom_get_config_size($cur->addressStore->addressGroupRoot);
+            $size_tmpregionRoot = DH::dom_get_config_size($cur->addressStore->regionRoot);
+            $size_addressStore += ($size_tmpadrRoot+$size_tmpadrgrpRoot+$size_tmpregionRoot);
 
             $gTagCount += $cur->tagStore->count();
             $gTagUnusedCount += $cur->tagStore->countUnused();
+            $size_tagStore += DH::dom_get_config_size($cur->tagStore->xmlroot);
 
 
             $gnsecurityprofileGs += $cur->securityProfileGroupStore->count();
@@ -1988,6 +2005,7 @@ class PanoramaConf
             $gnurlprofil += $cur->URLProfileStore->count();
             $gncustomurlprofil += $cur->customURLProfileStore->count();
             $size_customURLProfileStore += DH::dom_get_config_size($cur->customURLProfileStore->xmlroot);
+
             $gnfileblocking += $cur->FileBlockingProfileStore->count();
             $gndecryption += $cur->DecryptionProfileStore->count();
 
@@ -2018,9 +2036,7 @@ class PanoramaConf
         $stdoutarray = array();
 
         $stdoutarray['type'] = get_class( $this );
-        $this->sizeArray['type'] = get_class( $this );
         $stdoutarray['statstype'] = "objects";
-        $this->sizeArray['statstype'] = "objects";
 
         if( !PH::$shadow_loaddghierarchy )
             $header = "Statistics for PanoramaConf '" . $this->name . "'";
@@ -2028,7 +2044,6 @@ class PanoramaConf
             $header = "Statistics for PanoramaConf: DG-Hierarchy location: '" .$location. "'";
 
         $stdoutarray['header'] = $header;
-        $this->sizeArray['header'] = $header;
 
         $stdoutarray['pre security rules'] = array();
         $stdoutarray['pre security rules']['shared'] = $this->securityRules->countPreRules();
@@ -2204,7 +2219,7 @@ class PanoramaConf
         $stdoutarray['custom URL objects'] = array();
         $stdoutarray['custom URL objects']['shared'] = $this->customURLProfileStore->count();
         $stdoutarray['custom URL objects']['total_DGs'] = $gncustomurlprofil;
-        $this->sizeArray['kb custom URL objects'] = $size_customURLProfileStore;
+
         $stdoutarray['File-Blocking objects'] = array();
         $stdoutarray['File-Blocking objects']['shared'] = $this->FileBlockingProfileStore->count();
         $stdoutarray['File-Blocking objects']['total_DGs'] = $gnfileblocking;
@@ -2274,6 +2289,16 @@ class PanoramaConf
         if( !PH::$shadow_json && $actions == "display"  )
             PH::print_stdout( $stdoutarray, true );
 
+        $this->sizeArray['type'] = get_class( $this );
+        $this->sizeArray['statstype'] = "objects";
+        $this->sizeArray['header'] = $header;
+        $this->sizeArray['kb Panorama'] = DH::dom_get_config_size($this->xmlroot);
+        $this->sizeArray['kb security rules'] = $size_securityRules;
+        $this->sizeArray['kb address objects'] = $size_addressStore;
+        $this->sizeArray['kb service objects'] = $size_serviceStore;
+        $this->sizeArray['kb tag objects'] = $size_tagStore;
+        $this->sizeArray['kb custom URL objects'] = $size_customURLProfileStore;
+
         if( !PH::$shadow_json && $actions == "display-size"  )
         {
             PH::stats_remove_zero_arrays($this->sizeArray);
@@ -2306,13 +2331,10 @@ class PanoramaConf
         $stdoutarray = array();
 
         $stdoutarray['type'] = "DeviceGroup";
-        $this->sizeArrayShared['type'] = "DeviceGroup";
         $stdoutarray['statstype'] = "objects";
-        $this->sizeArrayShared['statstype'] = "objects";
 
         $header = "Statistics for DG '" . PH::boldText('shared') . "'";
         $stdoutarray['header'] = $header;
-        $this->sizeArrayShared['header'] = $header;
 
         $stdoutarray['security rules'] = array();
         $stdoutarray['security rules']['pre'] = $this->securityRules->countPreRules();
@@ -2400,7 +2422,6 @@ class PanoramaConf
         $stdoutarray['URL objects']['total'] = $this->URLProfileStore->count();
         $stdoutarray['custom URL objects'] = array();
         $stdoutarray['custom URL objects']['total'] = $this->customURLProfileStore->count();
-        $this->sizeArrayShared['kb custom URL objects'] = &DH::dom_get_config_size($this->customURLProfileStore->xmlroot);
         $stdoutarray['File-Blocking objects'] = array();
         $stdoutarray['File-Blocking objects']['total'] = $this->FileBlockingProfileStore->count();
         $stdoutarray['Decryption objects'] = array();
@@ -2429,6 +2450,23 @@ class PanoramaConf
 
         $stdoutarray['DataObjects objects'] = array();
         $stdoutarray['DataObjects objects']['total'] = $this->DataObjectsProfileStore->count();
+
+
+
+        $this->sizeArrayShared['type'] = "DeviceGroup";
+        $this->sizeArrayShared['statstype'] = "objects";
+        $this->sizeArrayShared['header'] = $header;
+        $this->sizeArrayShared['kb shared'] = &DH::dom_get_config_size($this->sharedroot);
+        $this->sizeArrayShared['kb security rules'] = &DH::dom_get_config_size($this->securityRules->xmlroot);
+        $tmp_adrRoot = &DH::dom_get_config_size($this->addressStore->addressRoot);
+        $tmp_adrgrpRoot = &DH::dom_get_config_size($this->addressStore->addressGroupRoot);
+        $tmp_regionRoot = &DH::dom_get_config_size($this->addressStore->regionRoot);
+        $this->sizeArrayShared['kb address objects'] = $tmp_adrRoot+$tmp_adrgrpRoot+$tmp_regionRoot;
+        $tmp_srvRoot = &DH::dom_get_config_size($this->serviceStore->serviceRoot);
+        $tmp_srvgrpRoot = &DH::dom_get_config_size($this->serviceStore->serviceGroupRoot);
+        $this->sizeArrayShared['kb service objects'] = $tmp_srvRoot+$tmp_srvgrpRoot;
+        $this->sizeArrayShared['kb tag objects'] = &DH::dom_get_config_size($this->tagStore->xmlroot);
+        $this->sizeArrayShared['kb custom URL objects'] = &DH::dom_get_config_size($this->customURLProfileStore->xmlroot);
 
 
         if( !PH::$shadow_json && $actions == "display"  )
