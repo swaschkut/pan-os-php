@@ -20,6 +20,7 @@ BUGFIX:
 * type=securityprofile securityprofiletype=spyware | multiple bugfixes for best-practise
 * class AntiSpyware | default-paloalto-dns wrongly added to dns_security, so log-level was added
 * type=securityprofile securityprofiletype=spyware | bugfix for default-paloalto-dns
+* type=addressgroup-merger | bugfix if compare two objects of different types, and the skipped details must be used
 
 GENERAL:
 * in=sase-api://{TSGID} | class Container/DeviceCloud/PanSaseAPIConnector/RuleWithUserID - improvements for FAWKES

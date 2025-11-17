@@ -1101,7 +1101,7 @@ class MERGER extends UTIL
                             {
 
                             */
-                                $tmp_return_value = $this->addressgroupGetValueDiff($ancestor, $object, true);;
+                                $tmp_return_value = $this->addressgroupGetValueDiff($childancestor, $object, true);
 
                                 if( $tmp_return_value === FALSE )
                                 {
