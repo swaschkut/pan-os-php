@@ -24,6 +24,7 @@ GENERAL:
 * in=sase-api://{TSGID} | class Container/DeviceCloud/PanSaseAPIConnector/RuleWithUserID - improvements for FAWKES
 * in=sase-api://{TSGID} | bring in uuid for downloading config
 * develop PanSaseAPIConnector | continue reading SP object
+* App-ID update to version: 9039-9750
 
 
 2.1.42 (20251111)
