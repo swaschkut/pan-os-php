@@ -7864,6 +7864,24 @@ var subjectObject =
                     }
                 }
             },
+            "move": {
+                "name": "move",
+                "MainFunction": {},
+                "args": {
+                    "location": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "mode": {
+                        "type": "string",
+                        "default": "skipIfConflict",
+                        "choices": [
+                            "skipIfConflict",
+                            "removeIfMatch"
+                        ]
+                    }
+                }
+            },
             "name-addprefix": {
                 "name": "name-addPrefix",
                 "MainFunction": {},

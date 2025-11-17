@@ -7,6 +7,7 @@ UTIL:
 * type=securityprofile securityprofiletype=spyware | extend mica output with local-deep-learning
 * class AntiSpywareProfile | always add local-deep-learning XMLnode if not there for PAN-OS >=112
 * type=stats | introduce actions=display-size
+* type=securityprofile | new actions=move:{DGname}/shared
 
 BUGFIX:
 * type=securityprofile securityprofiletype=url-filtering actions=url.alert-only-set | bugfix
