@@ -206,17 +206,26 @@ class DecryptionRule extends RuleWithUserID
                                 foreach( $all as $template )
                                 {
                                     /** @var Template|TemplateStack $template */
-
-                                    $all_vsys = $template->deviceConfiguration->getVirtualSystems();
-                                    foreach( $all_vsys as $vsys )
+                                    //shared has also certificates, how to add this
+                                    $tmp_certificate = $template->certificateStore->find( $member->textContent, $this );
+                                    if( $tmp_certificate !== null )
                                     {
-                                        /** @var VirtualSystem $vsys */
-
-                                        $tmp_certificate = $vsys->certificateStore->find( $member->textContent, $this );
-                                        if( $tmp_certificate !== null )
+                                        $this->decryptionCertificateObjects[] = $tmp_certificate;
+                                        #$tmp_certificate->addReference($this);
+                                    }
+                                    else
+                                    {
+                                        $all_vsys = $template->deviceConfiguration->getVirtualSystems();
+                                        foreach( $all_vsys as $vsys )
                                         {
-                                            $this->decryptionCertificateObjects[] = $tmp_certificate;
-                                            $tmp_certificate->addReference($this);
+                                            /** @var VirtualSystem $vsys */
+
+                                            $tmp_certificate = $vsys->certificateStore->find( $member->textContent, $this );
+                                            if( $tmp_certificate !== null )
+                                            {
+                                                $this->decryptionCertificateObjects[] = $tmp_certificate;
+                                                #$tmp_certificate->addReference($this);
+                                            }
                                         }
                                     }
                                 }
@@ -349,6 +358,12 @@ class DecryptionRule extends RuleWithUserID
         {
             PH::print_stdout( $padding . "  Certificates:  " . implode( ",", $this->getDecryptionCertificate() ) );
             PH::$JSON_TMP['sub']['object'][$this->name()]['certificates'] = $this->getDecryptionCertificate();
+
+            #print "counter: ".count($this->decryptionCertificateObjects)."\n";
+            #foreach($this->getDecryptionCertificateObj() as $certificate)
+            #{
+            #    PH::print_stdout( $padding . "  Certificate:  " . $certificate->name() );
+            #}
         }
 
 
@@ -391,6 +406,10 @@ class DecryptionRule extends RuleWithUserID
     public function getDecryptionCertificate()
     {
         return $this->_SSLinboundInspectionCertificates;
+    }
+    public function getDecryptionCertificateObj()
+    {
+        return $this->decryptionCertificateObjects;
     }
 
     protected function extract_category_from_domxml()
