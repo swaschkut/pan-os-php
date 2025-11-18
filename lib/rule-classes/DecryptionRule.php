@@ -239,7 +239,7 @@ class DecryptionRule extends RuleWithUserID
                             {
                                 //if certificate is not found in Template / Template-Stack
                                 $f = $this->owner->owner->certificateStore->find($member->textContent, $this);
-                                if( $f !== FALSE || $f !== null )
+                                if( $f !== FALSE && $f !== null )
                                     $this->decryptionCertificateObjects[] = $f;
                             }
                         }
@@ -247,7 +247,7 @@ class DecryptionRule extends RuleWithUserID
                         {
                             //if NOT Panorama / Device-Group
                             $f = $this->owner->owner->certificateStore->find($member->nodeValue, $this);
-                            if( $f !== FALSE || $f !== null )
+                            if( $f !== FALSE && $f !== null )
                                 $this->decryptionCertificateObjects[] = $f;
                         }
                     }
