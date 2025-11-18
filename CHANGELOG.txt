@@ -9,6 +9,7 @@ UTIL:
 * type=stats | introduce actions=display-size
 * type=securityprofile | new actions=move:{DGname}/shared
 * type=profile | introduction of new utility - extend decryptionRule with profile and certificate
+* type=rule | introduce 'filter=(rule decryption-certificate eq XYZ / has.regex XYZ)' | filter=(decryption-type is.ssl-inbound)'
 
 BUGFIX:
 * type=securityprofile securityprofiletype=url-filtering actions=url.alert-only-set | bugfix

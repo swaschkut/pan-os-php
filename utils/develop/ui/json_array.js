@@ -6198,6 +6198,26 @@ var subjectObject =
                     }
                 }
             },
+            "decryption-certificate": {
+                "operators": {
+                    "eq": {
+                        "Function": {},
+                        "arg": true
+                    },
+                    "has.regex": {
+                        "Function": {},
+                        "arg": true
+                    }
+                }
+            },
+            "decryption-type": {
+                "operators": {
+                    "is.ssl-inbound": {
+                        "Function": {},
+                        "arg": false
+                    }
+                }
+            },
             "description": {
                 "operators": {
                     "is.empty": {
