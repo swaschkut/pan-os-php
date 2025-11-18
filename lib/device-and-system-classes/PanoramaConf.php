@@ -1699,7 +1699,7 @@ class PanoramaConf
                         }
                         else
                         {
-                            PH::print_stdout("timezone: '".$this->timezone."' not supported by IANA");
+                            #PH::print_stdout("timezone: '".$this->timezone."' not supported by IANA");
                         }
                     }
                     PH::disableExceptionSupport();

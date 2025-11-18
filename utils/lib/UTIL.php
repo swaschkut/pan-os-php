@@ -2513,7 +2513,7 @@ class UTIL
                         }
                         else
                         {
-                            PH::print_stdout("timezone: '".$this->pan->timezone."' not supported by IANA");
+                            #PH::print_stdout("timezone: '".$this->pan->timezone."' not supported by IANA");
                         }
                     }
                     PH::disableExceptionSupport();
