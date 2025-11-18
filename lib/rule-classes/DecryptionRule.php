@@ -156,7 +156,7 @@ class DecryptionRule extends RuleWithUserID
         {
             $this->_profile = $profileXML->nodeValue;
             $tmp_decryptprofie_obj = $this->owner->owner->DecryptionProfileStore->find($this->_profile);
-            if( $tmp_decryptprofie_obj !== FALSE )
+            if( $tmp_decryptprofie_obj !== FALSE and $tmp_decryptprofie_obj !== NULL )
                 $tmp_decryptprofie_obj->addReference($this);
         }
 
