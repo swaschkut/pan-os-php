@@ -158,6 +158,11 @@ class DecryptionRule extends RuleWithUserID
             $tmp_decryptprofie_obj = $this->owner->owner->DecryptionProfileStore->find($this->_profile);
             if( $tmp_decryptprofie_obj !== FALSE and $tmp_decryptprofie_obj !== NULL )
                 $tmp_decryptprofie_obj->addReference($this);
+            else
+            {
+                if( $this->_profile !== "default" )
+                    mwarning("decryption profile ".$this->_profile." not found\n",null, false);
+            }
         }
 
         $typeXML = DH::findFirstElement('type', $xml);
