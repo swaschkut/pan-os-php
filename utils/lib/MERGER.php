@@ -970,7 +970,7 @@ class MERGER extends UTIL
                                 if( $memberFound->value() !== $memberObject->value() )
                                 {
                                     PH::print_stdout("   * SKIPPED : this group has an object named '{$memberObject->name()} that does exist in target location '{$tmp_DG_name}' with different value");
-                                    $this->skippedObject( $index, $object, $memberObject, "this group has an object named '{$memberObject->name()} that does exist in target location '{$tmp_DG_name}' with different value" );
+                                    $this->skippedObject( $index, $memberFound, $memberObject, "this group has an object named '{$memberObject->name()} that does exist in target location '{$tmp_DG_name}' with different value" );
                                     $skip = TRUE;
                                     break;
                                 }
@@ -981,7 +981,7 @@ class MERGER extends UTIL
                                 if( count($diff['minus']) != 0 || count($diff['plus']) != 0 )
                                 {
                                     PH::print_stdout("   * SKIPPED : this group has different member ship compare to upperlevel");
-                                    $this->skippedObject( $index, $object, $memberObject, "this group has different member ship compare to upperlevel" );
+                                    $this->skippedObject( $index, $memberFound, $memberObject, "this group has different member ship compare to upperlevel" );
                                     $skip = TRUE;
                                     break;
                                 }
@@ -989,7 +989,7 @@ class MERGER extends UTIL
                             else
                             {
                                 PH::print_stdout("   * SKIPPED : this group has an object named '{$memberObject->name()} that does exist in target location '{$tmp_DG_name}' with different object type");
-                                $this->skippedObject( $index, $object, $memberObject, "this group has an object named '{$memberObject->name()} that does not exist in target location '{$tmp_DG_name}'" );
+                                $this->skippedObject( $index, $memberFound, $memberObject, "this group has an object named '{$memberObject->name()} that does not exist in target location '{$tmp_DG_name}'" );
                                 $skip = TRUE;
                                 break;
                             }
