@@ -13,6 +13,7 @@ UTIL:
 * class DecryptionRule | introduce certificate reference
 * type=certificate actions=displayreferences
 * type=rule ruletype=decryption | new 'filter=(decryption-certificate has.from.query subquery1)' 'subquery1=(expired <= 100days) and (expired > 0 days)'
+* class SecureWebGateway | implement 'enablement' -> 'none'
 
 BUGFIX:
 * type=securityprofile securityprofiletype=url-filtering actions=url.alert-only-set | bugfix
