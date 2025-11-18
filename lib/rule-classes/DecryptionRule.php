@@ -38,7 +38,8 @@ class DecryptionRule extends RuleWithUserID
      */
     public $urlCategories;
 
-    public $_SSLinboundInspectionCertificate = array();
+    public $_SSLinboundInspectionCertificates = array();
+    public $decryptionCertificateObjects = array();
     //ssl-inbound-inspection - ssl-forward-proxy - ssh-proxy
     public $decryptType = null;
 
@@ -176,8 +177,70 @@ class DecryptionRule extends RuleWithUserID
                         if( $member->nodeType != XML_ELEMENT_NODE )
                             continue;
 
-                        $this->_SSLinboundInspectionCertificate[] = $member->nodeValue;
-                        //Todo: search for certificate in Template / Template-Stack
+                        $this->_SSLinboundInspectionCertificates[] = $member->nodeValue;
+
+                        if (isset($this->owner->owner) && get_class($this->owner->owner) == 'DeviceGroup')
+                        {
+                            $actualDG = $this->owner->owner;
+                            $devices =  $actualDG->getDevicesInGroup(true);
+
+                            $search_f_TStack = null;
+                            foreach( $devices as $deviceObj )
+                            {
+                                /* @var ManagedDevice $managedFirewall*/
+                                $managedFirewall = $this->owner->owner->owner->managedFirewallsStore->find($deviceObj['serial']);
+
+                                $search_f_TStack = $managedFirewall->template_stack;
+                            }
+
+                            if( $search_f_TStack !== null )
+                            {
+                                $tmp_panorama = $actualDG->owner;
+                                $tmp_TemplateStack = $tmp_panorama->findTemplateStack( $search_f_TStack );
+
+                                /* @var TemplateStack $tmp_TemplateStack */
+                                $tmp_templates = $tmp_TemplateStack->templates;
+
+                                $all = array_merge($tmp_templates, array($tmp_TemplateStack));
+
+                                foreach( $all as $template )
+                                {
+                                    /** @var Template|TemplateStack $template */
+
+                                    $all_vsys = $template->deviceConfiguration->getVirtualSystems();
+                                    foreach( $all_vsys as $vsys )
+                                    {
+                                        /** @var VirtualSystem $vsys */
+
+                                        $tmp_certificate = $vsys->certificateStore->find( $member->textContent, $this );
+                                        if( $tmp_certificate !== null )
+                                        {
+                                            $this->decryptionCertificateObjects[] = $tmp_certificate;
+                                            $tmp_certificate->addReference($this);
+                                        }
+                                    }
+                                }
+
+                                //Todo: is this also needed for certificates, I do not think so
+                                #$f = $this->parentCentralStore->find($member->textContent, $this);
+
+                                #$this->o[] = $f;
+                            }
+                            else
+                            {
+                                //if certificate is not found in Template / Template-Stack
+                                $f = $this->owner->owner->certificateStore->find($member->textContent, $this);
+                                if( $f !== FALSE || $f !== null )
+                                    $this->decryptionCertificateObjects[] = $f;
+                            }
+                        }
+                        else
+                        {
+                            //if NOT Panorama / Device-Group
+                            $f = $this->owner->owner->certificateStore->find($member->nodeValue, $this);
+                            if( $f !== FALSE || $f !== null )
+                                $this->decryptionCertificateObjects[] = $f;
+                        }
                     }
                 }
             }
@@ -327,7 +390,7 @@ class DecryptionRule extends RuleWithUserID
 
     public function getDecryptionCertificate()
     {
-        return $this->_SSLinboundInspectionCertificate;
+        return $this->_SSLinboundInspectionCertificates;
     }
 
     protected function extract_category_from_domxml()

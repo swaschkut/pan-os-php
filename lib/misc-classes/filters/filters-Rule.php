@@ -4481,11 +4481,11 @@ RQuery::$defaultFilters['rule']['decryption-certificate']['operators']['eq'] = a
         if( !$context->object->isDecryptionRule() )
             return FALSE;
 
-        if( empty($context->object->_SSLinboundInspectionCertificate) )
+        if( empty($context->object->_SSLinboundInspectionCertificates) )
             return FALSE;
 
         $matching = FALSE;
-        foreach( $context->object->_SSLinboundInspectionCertificate as $certificate )
+        foreach($context->object->_SSLinboundInspectionCertificates as $certificate )
         {
             if( $context->value == $certificate )
                 return TRUE;
@@ -4503,11 +4503,11 @@ RQuery::$defaultFilters['rule']['decryption-certificate']['operators']['has.rege
         if( !$context->object->isDecryptionRule() )
             return FALSE;
 
-        if( empty($context->object->_SSLinboundInspectionCertificate) )
+        if( empty($context->object->_SSLinboundInspectionCertificates) )
             return FALSE;
 
         $matching = FALSE;
-        foreach( $context->object->_SSLinboundInspectionCertificate as $certificate )
+        foreach($context->object->_SSLinboundInspectionCertificates as $certificate )
         {
             $matching = preg_match($context->value, $certificate );
             if( $matching === FALSE )

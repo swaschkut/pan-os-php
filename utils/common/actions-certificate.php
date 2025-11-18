@@ -307,3 +307,11 @@ CertificateCallContext::$supportedActions['exportToExcel'] = array(
     },
     'args' => array('filename' => array('type' => 'string', 'default' => '*nodefault*'))
 );
+CertificateCallContext::$supportedActions['displayreferences'] = array(
+    'name' => 'displayReferences',
+    'MainFunction' => function (CertificateCallContext $context) {
+        $object = $context->object;
+
+        $object->display_references(7);
+    },
+);
