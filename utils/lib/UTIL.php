@@ -27,6 +27,7 @@ require_once(dirname(__FILE__)."/STATSUTIL.php");
 require_once(dirname(__FILE__)."/SECURITYPROFILEUTIL.php");
 require_once(dirname(__FILE__)."/DEVICEUTIL.php");
 require_once(dirname(__FILE__)."/NETWORKUTIL.php");
+require_once(dirname(__FILE__)."/PROFILEUTIL.php");
 
 require_once(dirname(__FILE__)."/MERGER.php");
 require_once(dirname(__FILE__)."/RULEMERGER.php");
@@ -476,6 +477,8 @@ class UTIL
             $tmp_array = &ZoneProtectionProfileCallContext::$supportedActions;
         elseif( $this->utilType == 'log-profile' )
             $tmp_array = &LogProfileCallContext::$supportedActions;
+        elseif( $this->utilType == 'profile' )
+            $tmp_array = &ProfileCallContext::$supportedActions;
 
         return $tmp_array;
     }
@@ -1432,6 +1435,8 @@ class UTIL
                 $context = new ZoneProtectionProfileCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'log-profile' )
                 $context = new LogProfileCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+            elseif( $this->utilType == 'profile' )
+                $context = new ProfileCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
 
             if( $this->debugAPI )
                 $context->debug = true;

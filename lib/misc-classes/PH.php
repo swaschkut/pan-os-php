@@ -1020,7 +1020,7 @@ class PH
         "stats",
         "address", "service", "tag", "schedule", "application", "threat", "edl", "threat-rule", "dns-rule",
         "rule",
-        "device", "securityprofile", "securityprofilegroup",
+        "device", "securityprofile", "securityprofilegroup", "profile",
         "zone",  "interface", "virtualwire", "routing", "dhcp", "certificate", "static-route", "ssl-tls-service-profile",
         "gp-gateway", "gp-portal",
         "ike-profile", "ike-gateway", 'ipsec-profile', 'ipsec-tunnel',
@@ -1118,6 +1118,9 @@ class PH
 
         elseif( $type == "securityprofile" )
             $util = new SECURITYPROFILEUTIL($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
+
+        elseif( $type == "profile" )
+            $util = new PROFILEUTIL($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
 
         elseif( $type == "zone"
             || $type == "interface"

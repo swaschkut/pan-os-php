@@ -8,6 +8,7 @@ UTIL:
 * class AntiSpywareProfile | always add local-deep-learning XMLnode if not there for PAN-OS >=112
 * type=stats | introduce actions=display-size
 * type=securityprofile | new actions=move:{DGname}/shared
+* type=profile | introduction of new utility - extend decryptionRule with profile and certificate
 
 BUGFIX:
 * type=securityprofile securityprofiletype=url-filtering actions=url.alert-only-set | bugfix

@@ -38,6 +38,10 @@ class DecryptionRule extends RuleWithUserID
      */
     public $urlCategories;
 
+    public $_SSLinboundInspectionCertificate = array();
+    //ssl-inbound-inspection - ssl-forward-proxy - ssh-proxy
+    public $decryptType = null;
+
     /**
      * @param RuleStore $owner
      * @param bool $fromTemplateXML
@@ -148,7 +152,38 @@ class DecryptionRule extends RuleWithUserID
 
         $profileXML = DH::findFirstElement('profile', $xml);
         if( $profileXML !== FALSE )
+        {
             $this->_profile = $profileXML->nodeValue;
+            $tmp_decryptprofie_obj = $this->owner->owner->DecryptionProfileStore->find($this->_profile);
+            if( $tmp_decryptprofie_obj !== FALSE )
+                $tmp_decryptprofie_obj->addReference($this);
+        }
+
+        $typeXML = DH::findFirstElement('type', $xml);
+        if( $typeXML !== FALSE )
+        {
+            $tmp_decryptTypeXML = DH::firstChildElement($typeXML);
+            $this->decryptType = $tmp_decryptTypeXML->nodeName;
+
+            $SSLinboundInspectionXML = DH::findFirstElement('ssl-inbound-inspection', $typeXML);
+            if( $SSLinboundInspectionXML !== FALSE )
+            {
+                $certificateXML = DH::findFirstElement('certificates', $SSLinboundInspectionXML);
+                if( $certificateXML !== FALSE )
+                {
+                    foreach( $certificateXML->childNodes as $member )
+                    {
+                        if( $member->nodeType != XML_ELEMENT_NODE )
+                            continue;
+
+                        $this->_SSLinboundInspectionCertificate[] = $member->nodeValue;
+                        //Todo: search for certificate in Template / Template-Stack
+                    }
+                }
+            }
+            //SSL Forward Proxy
+            //SSH Proxy
+        }
     }
 
     public function display($padding = 0)
@@ -242,6 +277,17 @@ class DecryptionRule extends RuleWithUserID
             PH::print_stdout( $padding . "  Profil:  " . $this->getDecryptionProfile() );
             PH::$JSON_TMP['sub']['object'][$this->name()]['profile'] = $this->getDecryptionProfile();
         }
+        if( $this->decryptType !== null )
+        {
+            PH::print_stdout( $padding . "  Type:  " . $this->decryptType );
+            PH::$JSON_TMP['sub']['object'][$this->name()]['type'] = $this->decryptType;
+        }
+        if( $this->decryptType == "ssl-inbound-inspection" )
+        {
+            PH::print_stdout( $padding . "  Certificates:  " . implode( ",", $this->getDecryptionCertificate() ) );
+            PH::$JSON_TMP['sub']['object'][$this->name()]['certificates'] = $this->getDecryptionCertificate();
+        }
+
 
         $text = $padding . "  URL Category: ";
         if( !empty($this->_urlCategories) )
@@ -277,6 +323,11 @@ class DecryptionRule extends RuleWithUserID
 
         $domNode = DH::findFirstElementOrCreate('profile', $this->xmlroot);
         DH::setDomNodeText($domNode, $newDecryptName);
+    }
+
+    public function getDecryptionCertificate()
+    {
+        return $this->_SSLinboundInspectionCertificate;
     }
 
     protected function extract_category_from_domxml()
