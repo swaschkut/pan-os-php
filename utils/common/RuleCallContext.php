@@ -377,6 +377,13 @@ class RuleCallContext extends CallContext
                 return self::enclose( "", $wrap);
         }
 
+        if( $fieldName == 'decryption_rule_type' )
+        {
+            if( get_class($rule) === "DecryptionRule" )
+                return self::enclose($rule->decryptType, $wrap);
+            else
+                return self::enclose( "", $wrap);
+        }
 
         if( $fieldName == 'from' )
         {
@@ -1171,6 +1178,56 @@ class RuleCallContext extends CallContext
             $strMapping = $this->NatAddressResolveSummary( $rule, "snathosts", $unresolvedArray );
             $strMapping = array_merge( $strMapping, $unresolvedArray );
             return self::enclose($strMapping);
+        }
+
+        if( $fieldName == 'decryption-certificate' )
+        {
+            if( get_class($rule) === "DecryptionRule" )
+                return self::enclose($rule->getDecryptionCertificate(), $wrap);
+            else
+                return self::enclose( "", $wrap);
+        }
+
+        if( $fieldName == 'certificate-not-valid-before' )
+        {
+            if( get_class($rule) === "DecryptionRule" )
+            {
+                if( $rule->decryptType == "ssl-inbound-inspection" )
+                {
+                    $certArray = array();
+                    foreach( $rule->getDecryptionCertificateObj() as $cert )
+                    {
+                        /** @VAR Certificate $cert */
+                        $certArray[] = $cert->notValidbefore;
+                    }
+                    return self::enclose($certArray, $wrap);
+                }
+                else
+                    return self::enclose( "", $wrap);
+            }
+            else
+                return self::enclose( "", $wrap);
+        }
+
+        if( $fieldName == 'certificate-not-valid-after' )
+        {
+            if( get_class($rule) === "DecryptionRule" )
+            {
+                if( $rule->decryptType == "ssl-inbound-inspection" )
+                {
+                    $certArray = array();
+                    foreach( $rule->getDecryptionCertificateObj() as $cert )
+                    {
+                        /** @VAR Certificate $cert */
+                        $certArray[] = $cert->notValidafter;
+                    }
+                    return self::enclose($certArray, $wrap);
+                }
+                else
+                    return self::enclose( "", $wrap);
+            }
+            else
+                return self::enclose( "", $wrap);
         }
 
         if( $fieldName == 'target' )

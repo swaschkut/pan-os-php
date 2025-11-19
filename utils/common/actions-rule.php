@@ -4884,6 +4884,7 @@ RuleCallContext::$supportedActions[] = array(
         $context->ruleList = array();
         $context->arguments['tmp_secrule'] = false;
         $context->arguments['tmp_natrule'] = false;
+        $context->arguments['tmp_decryptionrule'] = false;
     },
     'MainFunction' => function (RuleCallContext $context) {
         $rule = $context->object;
@@ -4894,6 +4895,8 @@ RuleCallContext::$supportedActions[] = array(
                 $context->arguments['tmp_secrule'] = true;
             elseif( $rule->isNatRule() )
                 $context->arguments['tmp_natrule'] = true;
+            elseif( $rule->isDecryptionRule() )
+                $context->arguments['tmp_decryptionrule'] = true;
             $context->ruleList[] = $rule;
 
 
@@ -4950,6 +4953,7 @@ RuleCallContext::$supportedActions[] = array(
             'rule_type' => 'rule_type',
             'sec_rule_type' => 'sec_rule_type',
             'nat_rule_type' => 'nat_rule_type',
+            'decryption_rule_type' => 'decryption_rule_type',
             'name' => 'name',
             'tag' => 'tags',
             'grouptag' => 'grouptags',
@@ -5031,6 +5035,9 @@ RuleCallContext::$supportedActions[] = array(
             'description' => 'description',
             'schedule' => 'schedule',
             'schedule_resolved_sum' => 'schedule_resolved_sum',
+            'decryption-certificate' => 'decryption-certificate',
+            'certificate-not-valid-before' => 'certificate-not-valid-before',
+            'certificate-not-valid-after' => 'certificate-not-valid-after',
             'target' => 'target',
             'first-hit' => 'first-hit',
             'last-hit' => 'last-hit',
@@ -5219,6 +5226,18 @@ RuleCallContext::$supportedActions[] = array(
                     )
                     {
                         $continue_text = "continue17";
+                        $continue = true;
+                    }
+                    elseif(
+                        ($fieldName == 'decryption_rule_type'
+                            || $fieldName == 'decryption-certificate'
+                            || $fieldName == 'certificate-not-valid-before'
+                            || $fieldName == 'certificate-not-valid-after'
+                        )
+                        && !$context->arguments['tmp_decryptionrule']
+                    )
+                    {
+                        $continue_text = "continue18";
                         $continue = true;
                     }
 
@@ -5411,6 +5430,18 @@ RuleCallContext::$supportedActions[] = array(
             )
             {
                 $continue_text = "continue17";
+                $continue = true;
+            }
+            elseif(
+                ($fieldName == 'decryption_rule_type'
+                    || $fieldName == 'decryption-certificate'
+                    || $fieldName == 'certificate-not-valid-before'
+                    || $fieldName == 'certificate-not-valid-after'
+                )
+                && !$context->arguments['tmp_decryptionrule']
+            )
+            {
+                $continue_text = "continue18";
                 $continue = true;
             }
 

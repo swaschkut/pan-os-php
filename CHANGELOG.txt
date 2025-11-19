@@ -14,6 +14,7 @@ UTIL:
 * type=certificate actions=displayreferences
 * type=rule ruletype=decryption | new 'filter=(decryption-certificate has.from.query subquery1)' 'subquery1=(expired <= 100days) and (expired > 0 days)'
 * class SecureWebGateway | implement 'enablement' -> 'none'
+* type=rule ruletype=decryption actions=exporttoexcel:rule_decrypt.html | extend with field decryption-rule-type - decryption-certificate - certificate-valid-after certificate-valid-before
 
 BUGFIX:
 * type=securityprofile securityprofiletype=url-filtering actions=url.alert-only-set | bugfix
