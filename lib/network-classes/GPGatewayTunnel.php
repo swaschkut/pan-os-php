@@ -121,9 +121,12 @@ class GPGatewayTunnel
                         {
                             $this->localIPv4 = $tmp_ip->textContent;
 
-                            $tmp_address = $tmp_vsys->addressStore->find($this->localIPv4);
-                            if( $tmp_address !== FALSE && $tmp_address !== NULL )
-                                $tmp_address->addReference( $this );
+                            if( $tmp_vsys !== null )
+                            {
+                                $tmp_address = $tmp_vsys->addressStore->find($this->localIPv4);
+                                if( $tmp_address !== FALSE && $tmp_address !== NULL )
+                                    $tmp_address->addReference( $this );
+                            }
                         }
 
 
@@ -132,9 +135,12 @@ class GPGatewayTunnel
                         {
                             $this->localIPv6 = $tmp_ip->textContent;
 
-                            $tmp_address = $tmp_vsys->addressStore->find($this->localIPv4);
-                            if( $tmp_address !== FALSE && $tmp_address !== NULL )
-                                $tmp_address->addReference( $this );
+                            if( $tmp_vsys !== null )
+                            {
+                                $tmp_address = $tmp_vsys->addressStore->find($this->localIPv6);
+                                if ($tmp_address !== FALSE && $tmp_address !== NULL)
+                                    $tmp_address->addReference($this);
+                            }
                         }
                     }
                 }

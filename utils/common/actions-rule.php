@@ -564,7 +564,12 @@ RuleCallContext::$commonActionFunctions['zone-replace'] = array(
 
         $zoneToReplace = $zoneContainer->parentCentralStore->find($zoneNameToReplace);
         if( $zoneToReplace === null )
-            derr("zone '{$zoneNameToReplace}' does not exist. If it's intended then please use a REGEXP instead\n", null, False);
+        {
+            if( !$force )
+                derr("zone '{$zoneNameToReplace}' does not exist. If it's intended then please use a REGEXP instead\n", null, False);
+            $zoneToReplace = $zoneContainer->parentCentralStore->createTmp($zoneNameToReplace);
+        }
+
 
         if( !$zoneContainer->hasZone($zoneToReplace) )
         {
