@@ -38,6 +38,14 @@ class CP_R80 extends PARSER
     public $region_objects_uid = array();
     public $user_objects_uid = array();
 
+    public $LegacyUserAtLocation = array();
+    public $updateableObject = array();
+    public $Internet = array();
+    public $securityZone = array();
+    public $accessRole = array();
+
+    public $missingRuleConfigMigration = array();
+
     public $panw_regions = array();
 
     use CPtest;
@@ -106,8 +114,16 @@ class CP_R80 extends PARSER
 
         CONVERTER::deleteDirectory( );
 
-        print_r( $this->missing_objects_uid );
+        #print_r( $this->missing_objects_uid );
         PH::print_stdout( "\nCount Missing objects:". count( $this->missing_objects_uid ) );
+
+        $filename = "rule_missing_object_migration.json";
+        PH::print_stdout("missing objects in detail related to rules:");
+        PH::print_stdout("this information is stored in file: '".$filename."'");
+        #print_r( $this->missingRuleConfigMigration );
+        $jsonContent = json_encode($this->missingRuleConfigMigration, JSON_PRETTY_PRINT);
+        file_put_contents($filename, $jsonContent);
+        PH::print_stdout( "\nCount Rule Missing objects:". count( $this->missingRuleConfigMigration ) );
     }
 
     function clean_config()
