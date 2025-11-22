@@ -1721,8 +1721,14 @@ class MERGER extends UTIL
                                 $exit = TRUE;
                                 $exitObject = $obj;
                             }
+                            elseif( $obj->getNetworkMask() !== $pickedObject->getNetworkMask() )
+                            {
+                                $exit = TRUE;
+                                $exitObject = $obj;
+                            }
 
-                            if( isset($obj->owner->parentCentralStore) )
+
+                            if( !$exit && isset($obj->owner->parentCentralStore) )
                             {
                                 $tmpParentStore = $obj->owner->parentCentralStore;
                                 $tmp_obj = $tmpParentStore->find( $pickedObject->name(), null, true );
@@ -1739,6 +1745,11 @@ class MERGER extends UTIL
                                         }
                                     }
                                     elseif( $tmp_obj->value() !== $pickedObject->value() )
+                                    {
+                                        $exit = TRUE;
+                                        $exitObject = $tmp_obj;
+                                    }
+                                    elseif( $tmp_obj->getNetworkMask() !== $pickedObject->getNetworkMask() )
                                     {
                                         $exit = TRUE;
                                         $exitObject = $tmp_obj;
@@ -1839,6 +1850,12 @@ class MERGER extends UTIL
                             continue;
                         }
 
+                    //|| is needed, to not change the existing traffic flow
+                    if( $object->tags->count() > 0 || $tmp_address->tags->count() > 0 )
+                    {
+                        if( $this->address_tag_DAG_check( $object, $tmp_address, $index) )
+                            continue;
+                    }
                     if( $object->tags->count() + $tmp_address->tags->count() > $object->tagLimit )
                     {
                         if( $this->address_tag_merge_check( $object, $tmp_address, $index) )
@@ -1933,6 +1950,12 @@ class MERGER extends UTIL
                                         continue;
                                     }
 
+                                //|| is needed, to not change the existing traffic flow
+                                if( $pickedObject->tags->count() > 0 || $ancestor->tags->count() > 0 )
+                                {
+                                    if( $this->address_tag_DAG_check( $pickedObject, $ancestor, $index) )
+                                        continue;
+                                }
                                 if( $pickedObject->tags->count() + $ancestor->tags->count() > $pickedObject->tagLimit )
                                 {
                                     if( $this->address_tag_merge_check( $pickedObject, $ancestor, $index) )
@@ -2022,6 +2045,12 @@ class MERGER extends UTIL
                         if( $pickedObject->isType_TMP() )
                             continue;
 
+                        //|| is needed, to not change the existing traffic flow
+                        if( $object->tags->count() > 0 || $pickedObject->tags->count() > 0 )
+                        {
+                            if( $this->address_tag_DAG_check( $object, $pickedObject, $index) )
+                                continue;
+                        }
                         if( $object->tags->count() + $pickedObject->tags->count() > $object->tagLimit )
                         {
                             if( $this->address_tag_merge_check( $object, $pickedObject, $index) )
@@ -2168,6 +2197,44 @@ class MERGER extends UTIL
         return TRUE;
     }
 
+    function address_tag_DAG_check( $pickedObject, $ancestor, $index)
+    {
+        //todo:
+        //check if both objects are part of the same DAG
+        //then continue;
+        //but if they are in addition to differnet obj skipp it
+        /** @var Address $pickedObject */
+        $pickedObjReferences = $pickedObject->refrules;
+
+        $pickedDAG = array();
+        foreach( $pickedObjReferences as $objReference)
+        {
+            /** @var AddressGroup $objReference */
+            if( get_class($objReference) == "AddressGroup" && $objReference->isDynamic() )
+            {
+                $tmp_string = "    - SKIP: '{$pickedObject->_PANC_shortName()}' [with value '{$pickedObject->value()}'] is member of a DAG: ".$objReference->name();
+                PH::print_stdout( $tmp_string );
+                $this->skippedObject( $index, $pickedObject, $ancestor, $tmp_string );
+
+                return true;
+            }
+        }
+        $ancestorRef = $ancestor->refrules;
+        foreach( $ancestorRef as $objReference)
+        {
+            /** @var AddressGroup $objReference */
+            if( get_class($objReference) == "AddressGroup" && $objReference->isDynamic() )
+            {
+                $tmp_string = "    - SKIP: '{$ancestor->_PANC_shortName()}' [with value '{$ancestor->value()}'] is member of a DAG: ".$objReference->name();
+                PH::print_stdout( $tmp_string );
+                $this->skippedObject( $index, $pickedObject, $ancestor, $tmp_string );
+
+                return true;
+            }
+        }
+
+        return false;
+    }
     function address_tag_merge_check( $pickedObject, $ancestor, $index)
     {
         $arrayPicked = array();
@@ -2197,8 +2264,10 @@ class MERGER extends UTIL
     function address_get_value_string( $object )
     {
         $value = $object->value();
-        if( ($object->isType_ipNetmask() || $object->isType_TMP() ) && strpos($object->value(), '/32') !== FALSE )
-            $value = substr($value, 0, strlen($value) - 3);
+        #if( ($object->isType_ipNetmask() || $object->isType_TMP() ) && strpos($object->value(), '/32') !== FALSE )
+        #    $value = substr($value, 0, strlen($value) - 3);
+        if( ($object->isType_ipNetmask() || $object->isType_TMP() ) && strpos($object->value(), '/') == FALSE )
+            $value = $value . "/32";
 
         if( $object->type() === "tmp" )
             $value = "ip-netmask" . '-' . $value;
@@ -2383,6 +2452,8 @@ class MERGER extends UTIL
             $pickedObject_DG = $pickedObject->owner->owner;
             if( $pickedObject_DG->parentDeviceGroup !== null )
             {
+                $tmp_DG_name = $pickedObject_DG->parentDeviceGroup->name();
+
                 $nextFindObject = $pickedObject_DG->parentDeviceGroup->serviceStore->find( $pickedObject->name(), null, True );
                 if( $nextFindObject !== null )
                 {
