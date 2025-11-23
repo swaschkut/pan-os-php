@@ -87,11 +87,12 @@ class SecureWebGateway
             $tmp_explicit_proxy = DH::findFirstElement('none', $tmp_enablement);
             if( $tmp_explicit_proxy !== null && $tmp_explicit_proxy !== false )
             {
-                if( !PH::$shadow_json )
-                {
-                    DH::DEBUGprintDOMDocument($tmp_enablement);
-                    mwarning( "SecureWebGateway type not yet implemented", null, false );
-                }
+                $this->type = "none";
+                #if( !PH::$shadow_json )
+                #{
+                #    DH::DEBUGprintDOMDocument($tmp_enablement);
+                #    mwarning( "SecureWebGateway type not yet implemented", null, false );
+                #}
             }
         }
 
