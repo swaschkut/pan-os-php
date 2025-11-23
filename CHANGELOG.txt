@@ -1,6 +1,14 @@
 CHANGELOG
 
-2.1.43
+2.1.44
+UTIL:
+
+BUGFIX:
+
+GENERAL:
+
+
+2.1.43 (20251123)
 UTIL:
 * type=device | new actions=devicegroup-setparentdg:{DGNAME},{parentDG}
 * type=securityprofile securityprofiletype=spyware | pan-os 11.2 add all adns cat, add adns to exporttoexcel
