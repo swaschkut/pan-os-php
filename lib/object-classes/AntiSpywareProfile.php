@@ -222,8 +222,8 @@ class AntiSpywareProfile extends SecurityProfile2
                     if( $this->owner->owner->version >= 112 )
                     {
                         $tmp_local_deep_learning = DH::findFirstElementOrCreate("local-deep-learning", $tmp_entry1);
-                        $tmp_local_deep_learning->textContent = "enable";
-                        $this->additional['mica-engine-spyware-enabled'][$name]['local-deep-learning'] = "enable";
+                        $tmp_local_deep_learning->textContent = "disable";
+                        $this->additional['mica-engine-spyware-enabled'][$name]['local-deep-learning'] = "disable";
                     }
 
                 }
@@ -232,22 +232,41 @@ class AntiSpywareProfile extends SecurityProfile2
             $Unkown_TCP_xmlstring = '<entry name="Unknown-TCP Command and Control detector">
   <inline-policy-action>alert</inline-policy-action>
 </entry>';
+            $Unkown_TCP_xmlstring_112 = '<entry name="Unknown-TCP Command and Control detector">
+  <inline-policy-action>alert</inline-policy-action>
+  <local-deep-learning>disable</local-deep-learning>
+</entry>';
+
             $Unkown_UDP_xmlstring = '<entry name="Unknown-UDP Command and Control detector">
   <inline-policy-action>alert</inline-policy-action>
 </entry>';
+            $Unkown_UDP_xmlstring_112 = '<entry name="Unknown-UDP Command and Control detector">
+  <inline-policy-action>alert</inline-policy-action>
+  <local-deep-learning>disable</local-deep-learning>
+</entry>';
             if( !$tmp_mica_Unknown_TCP_found && $this->owner->owner->version >= 102)
             {
-                $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $Unkown_TCP_xmlstring);
+                if( $this->owner->owner->version >= 112 )
+                    $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $Unkown_TCP_xmlstring_112);
+                else
+                    $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $Unkown_TCP_xmlstring);
                 $tmp_rule->appendChild($xmlElement);
 
-                $this->additional['mica-engine-spyware-enabled']['Unknown-TCP Command and Control detector']['inline-policy-action'] = "disable";
+                $this->additional['mica-engine-spyware-enabled']['Unknown-TCP Command and Control detector']['inline-policy-action'] = "alert";
+                if( $this->owner->owner->version >= 112 )
+                    $this->additional['mica-engine-spyware-enabled']['Unknown-TCP Command and Control detector']['local-deep-learning'] = "disable";
             }
             if( !$tmp_mica_Unknown_UDP_found && $this->owner->owner->version >= 102 )
             {
-                $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $Unkown_UDP_xmlstring);
+                if( $this->owner->owner->version >= 112 )
+                    $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $Unkown_UDP_xmlstring_112);
+                else
+                    $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $Unkown_UDP_xmlstring);
                 $tmp_rule->appendChild($xmlElement);
 
-                $this->additional['mica-engine-spyware-enabled']['Unknown-UDP Command and Control detector']['inline-policy-action'] = "disable";
+                $this->additional['mica-engine-spyware-enabled']['Unknown-UDP Command and Control detector']['inline-policy-action'] = "alert";
+                if( $this->owner->owner->version >= 112 )
+                    $this->additional['mica-engine-spyware-enabled']['Unknown-UDP Command and Control detector']['local-deep-learning'] = "disable";
             }
         }
         else
