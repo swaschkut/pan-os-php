@@ -30,6 +30,7 @@ BUGFIX:
 * type=addressgroup-merger | bugfix if compare two objects of different types, and the skipped details must be used
 * class GPGatewaytunnel | bugfix - Null Pointer error - related to addressStore - intermediate as vsys could not be found - final fix for finding vsys needed
 * type=address-merger | bugfix to NOT merge objects with tag and which are parts of DAG, as this can change the rule behaviour
+* type=securityprofile securityprofiletype=vulnerability,spyware,virus actions=exporttoexcel:bp.html,visiblity|bestpractice | bugfix to correct display the info, after extending SCM BP json file for local-deep-learning
 
 GENERAL:
 * in=sase-api://{TSGID} | class Container/DeviceCloud/PanSaseAPIConnector/RuleWithUserID - improvements for FAWKES
