@@ -38,6 +38,11 @@ class DecryptionRule extends RuleWithUserID
      */
     public $urlCategories;
 
+    public $_SSLinboundInspectionCertificates = array();
+    public $decryptionCertificateObjects = array();
+    //ssl-inbound-inspection - ssl-forward-proxy - ssh-proxy
+    public $decryptType = null;
+
     /**
      * @param RuleStore $owner
      * @param bool $fromTemplateXML
@@ -148,7 +153,114 @@ class DecryptionRule extends RuleWithUserID
 
         $profileXML = DH::findFirstElement('profile', $xml);
         if( $profileXML !== FALSE )
+        {
             $this->_profile = $profileXML->nodeValue;
+            $tmp_decryptprofie_obj = $this->owner->owner->DecryptionProfileStore->find($this->_profile);
+            if( $tmp_decryptprofie_obj !== FALSE and $tmp_decryptprofie_obj !== NULL )
+                $tmp_decryptprofie_obj->addReference($this);
+            else
+            {
+                if( $this->_profile !== "default" )
+                    mwarning("decryption profile ".$this->_profile." not found\n",null, false);
+            }
+        }
+
+        $typeXML = DH::findFirstElement('type', $xml);
+        if( $typeXML !== FALSE )
+        {
+            $tmp_decryptTypeXML = DH::firstChildElement($typeXML);
+            $this->decryptType = $tmp_decryptTypeXML->nodeName;
+
+            $SSLinboundInspectionXML = DH::findFirstElement('ssl-inbound-inspection', $typeXML);
+            if( $SSLinboundInspectionXML !== FALSE )
+            {
+                $certificateXML = DH::findFirstElement('certificates', $SSLinboundInspectionXML);
+                if( $certificateXML !== FALSE )
+                {
+                    foreach( $certificateXML->childNodes as $member )
+                    {
+                        if( $member->nodeType != XML_ELEMENT_NODE )
+                            continue;
+
+                        $this->_SSLinboundInspectionCertificates[] = $member->nodeValue;
+
+                        if (isset($this->owner->owner) && get_class($this->owner->owner) == 'DeviceGroup')
+                        {
+                            $actualDG = $this->owner->owner;
+                            $devices =  $actualDG->getDevicesInGroup(true);
+
+                            $search_f_TStack = null;
+                            foreach( $devices as $deviceObj )
+                            {
+                                /* @var ManagedDevice $managedFirewall*/
+                                $managedFirewall = $this->owner->owner->owner->managedFirewallsStore->find($deviceObj['serial']);
+
+                                $search_f_TStack = $managedFirewall->template_stack;
+                            }
+
+                            if( $search_f_TStack !== null )
+                            {
+                                $tmp_panorama = $actualDG->owner;
+                                $tmp_TemplateStack = $tmp_panorama->findTemplateStack( $search_f_TStack );
+
+                                /* @var TemplateStack $tmp_TemplateStack */
+                                $tmp_templates = $tmp_TemplateStack->templates;
+
+                                $all = array_merge($tmp_templates, array($tmp_TemplateStack));
+
+                                foreach( $all as $template )
+                                {
+                                    /** @var Template|TemplateStack $template */
+                                    //shared has also certificates, how to add this
+                                    $tmp_certificate = $template->certificateStore->find( $member->textContent, $this );
+                                    if( $tmp_certificate !== null )
+                                    {
+                                        $this->decryptionCertificateObjects[] = $tmp_certificate;
+                                        #$tmp_certificate->addReference($this);
+                                    }
+                                    else
+                                    {
+                                        $all_vsys = $template->deviceConfiguration->getVirtualSystems();
+                                        foreach( $all_vsys as $vsys )
+                                        {
+                                            /** @var VirtualSystem $vsys */
+
+                                            $tmp_certificate = $vsys->certificateStore->find( $member->textContent, $this );
+                                            if( $tmp_certificate !== null )
+                                            {
+                                                $this->decryptionCertificateObjects[] = $tmp_certificate;
+                                                #$tmp_certificate->addReference($this);
+                                            }
+                                        }
+                                    }
+                                }
+
+                                //Todo: is this also needed for certificates, I do not think so
+                                #$f = $this->parentCentralStore->find($member->textContent, $this);
+
+                                #$this->o[] = $f;
+                            }
+                            else
+                            {
+                                //if certificate is not found in Template / Template-Stack
+                                $f = $this->owner->owner->certificateStore->find($member->textContent, $this);
+                                if( $f !== FALSE && $f !== null )
+                                    $this->decryptionCertificateObjects[] = $f;
+                            }
+                        }
+                        else
+                        {
+                            //if NOT Panorama / Device-Group
+                            $f = $this->owner->owner->certificateStore->find($member->nodeValue, $this);
+                            if( $f !== FALSE && $f !== null )
+                                $this->decryptionCertificateObjects[] = $f;
+                        }
+                    }
+                }
+            }
+            //SSL Forward Proxy
+            //SSH Proxy
+        }
     }
 
     public function display($padding = 0)
@@ -242,6 +354,23 @@ class DecryptionRule extends RuleWithUserID
             PH::print_stdout( $padding . "  Profil:  " . $this->getDecryptionProfile() );
             PH::$JSON_TMP['sub']['object'][$this->name()]['profile'] = $this->getDecryptionProfile();
         }
+        if( $this->decryptType !== null )
+        {
+            PH::print_stdout( $padding . "  Type:  " . $this->decryptType );
+            PH::$JSON_TMP['sub']['object'][$this->name()]['type'] = $this->decryptType;
+        }
+        if( $this->decryptType == "ssl-inbound-inspection" )
+        {
+            PH::print_stdout( $padding . "  Certificates:  " . implode( ",", $this->getDecryptionCertificate() ) );
+            PH::$JSON_TMP['sub']['object'][$this->name()]['certificates'] = $this->getDecryptionCertificate();
+
+            #print "counter: ".count($this->decryptionCertificateObjects)."\n";
+            #foreach($this->getDecryptionCertificateObj() as $certificate)
+            #{
+            #    PH::print_stdout( $padding . "  Certificate:  " . $certificate->name() );
+            #}
+        }
+
 
         $text = $padding . "  URL Category: ";
         if( !empty($this->_urlCategories) )
@@ -277,6 +406,15 @@ class DecryptionRule extends RuleWithUserID
 
         $domNode = DH::findFirstElementOrCreate('profile', $this->xmlroot);
         DH::setDomNodeText($domNode, $newDecryptName);
+    }
+
+    public function getDecryptionCertificate()
+    {
+        return $this->_SSLinboundInspectionCertificates;
+    }
+    public function getDecryptionCertificateObj()
+    {
+        return $this->decryptionCertificateObjects;
     }
 
     protected function extract_category_from_domxml()

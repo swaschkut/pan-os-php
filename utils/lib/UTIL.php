@@ -27,6 +27,7 @@ require_once(dirname(__FILE__)."/STATSUTIL.php");
 require_once(dirname(__FILE__)."/SECURITYPROFILEUTIL.php");
 require_once(dirname(__FILE__)."/DEVICEUTIL.php");
 require_once(dirname(__FILE__)."/NETWORKUTIL.php");
+require_once(dirname(__FILE__)."/PROFILEUTIL.php");
 
 require_once(dirname(__FILE__)."/MERGER.php");
 require_once(dirname(__FILE__)."/RULEMERGER.php");
@@ -184,6 +185,8 @@ class UTIL
 
     function __construct($utilType, $argv, $argc, $PHP_FILE, $_supportedArguments = array(), $_usageMsg = "", $projectFolder = "")
     {
+        gc_enable(); // Enable garbage collection if not already enabled
+
         PanAPIConnector::$projectfolder = $projectFolder;
 
         $this->argv = $argv;
@@ -255,7 +258,6 @@ class UTIL
         //vulnarability?
         //$this->log->info("END UTIL: " . $this->PHP_FILE);
 
-        
     }
 
     /*
@@ -475,6 +477,8 @@ class UTIL
             $tmp_array = &ZoneProtectionProfileCallContext::$supportedActions;
         elseif( $this->utilType == 'log-profile' )
             $tmp_array = &LogProfileCallContext::$supportedActions;
+        elseif( $this->utilType == 'profile' )
+            $tmp_array = &ProfileCallContext::$supportedActions;
 
         return $tmp_array;
     }
@@ -1431,6 +1435,8 @@ class UTIL
                 $context = new ZoneProtectionProfileCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'log-profile' )
                 $context = new LogProfileCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+            elseif( $this->utilType == 'profile' )
+                $context = new ProfileCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
 
             if( $this->debugAPI )
                 $context->debug = true;
@@ -1460,6 +1466,8 @@ class UTIL
             }
 
             $this->doActions[] = $context;
+            unset($context);
+            unset($tmp_array);
         }
 //
 // ---------
@@ -2423,6 +2431,13 @@ class UTIL
 
         //vulnerability??
         //$this->log->info("END UTIL: " . $this->PHP_FILE);
+
+        $vars = array_keys(get_defined_vars());
+        for ($i = 0; $i < sizeOf($vars); $i++) {
+            unset($vars[$i]);
+        }
+        unset($vars,$i);
+        gc_collect_cycles();
     }
 
     public function setTimezone()
@@ -2498,7 +2513,7 @@ class UTIL
                         }
                         else
                         {
-                            PH::print_stdout("timezone: '".$this->pan->timezone."' not supported by IANA");
+                            #PH::print_stdout("timezone: '".$this->pan->timezone."' not supported by IANA");
                         }
                     }
                     PH::disableExceptionSupport();
@@ -2555,7 +2570,12 @@ class UTIL
             $utilDiff->runDiff( $this->origXmlDoc, $doc2 );
 
             $utilDiff->display_outputformatset();
+
+            unset($doc2);
+            unset($utilDiff);
         }
+
+
     }
 
     public function useException()
@@ -2576,5 +2596,29 @@ class UTIL
     {
         if( !PH::$doNotDisableExceptions )
             PH::$useExceptions = FALSE;
+    }
+
+    function __destruct()
+    {
+        /*
+        //todo: this is not helping to free up memory
+        if ($this->debugLoadTime)
+        {
+            #PH::print_DEBUG_loadtime("before cleanup");
+        }
+
+
+        unset($this->xmlDoc);
+        unset($this->origXmlDoc);
+        unset($this->log);
+        unset($this->pan);
+        unset($this->sase_connector);
+        gc_collect_cycles();
+
+        if ($this->debugLoadTime)
+        {
+            #PH::print_DEBUG_loadtime("after cleanup");
+        }
+        */
     }
 }

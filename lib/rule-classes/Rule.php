@@ -103,6 +103,8 @@ class Rule
     public function setUUID( $uuid)
     {
         $this->uuid = $uuid;
+        $this->xmlroot->setAttribute('uuid', $uuid);
+
         return true;
     }
 
@@ -1577,7 +1579,10 @@ class Rule
                 $this->tags->addTag($objectFind);
 
                 if( $isAPI )
-                    $zoneContainer->API_sync();
+                {
+                    $this->tags->parentCentralStore->API_sync();
+                    $this->API_sync();
+                }
             }
         }
     }
@@ -2134,7 +2139,11 @@ class Rule
                 $this->tags->addTag($objectFind);
 
                 if( $isAPI )
-                    $zoneContainer->API_sync();
+                {
+                    $this->tags->parentCentralStore->API_sync();
+                    $this->API_sync();
+                }
+
             }
         }
     }

@@ -1165,25 +1165,22 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         {
                             if( $type == "lists" )
                             {
-                                foreach( $object->additional['botnet-domain']['lists'] as $name => $value )
+                                foreach( $object->additional['botnet-domain']['lists'] as $name => $rule )
                                 {
-                                    $string = $name." -  action: ".$value['action'];
-                                    if( isset($value['packet-capture']) )
-                                    {
-                                        //Todo: this is still hardcoded - how to use BP JSON file???
-                                        //PH::$shadow_bp_jsonfile
-                                        $string .= " -  packet-capture: ".$value['packet-capture'];
-                                        if( $bestPractice && $name == "default-paloalto-dns" )
-                                        {
-                                            if( $value['action'] != "sinkhole" && ($value['packet-capture'] != "single-packet" || $value['packet-capture'] != "extended-capture" ) )
-                                                $string .= $bp_NOT_sign;
-                                        }
-                                        if( $visibility && $name == "default-paloalto-dns" )
-                                        {
-                                            if( $value['action'] == "allow" )
-                                                $string .= $visible_NOT_sign;
-                                        }
-                                    }
+                                    //$string = $name." -  action: ".$value['action'];
+                                    $string = "";
+                                    $string .= $rule->name();
+
+                                    $string .= " - action: '".$rule->action."'";
+                                    $string .= " - packet-capture: '".$rule->packetCapture()."'";
+
+                                    /** @var DNSPolicy $rule */
+                                    if( $bestPractice && !$rule->spyware_lists_bestpractice() )
+                                        $string .= $bp_NOT_sign;
+                                    if( $visibility && !$rule->spyware_lists_visibility() )
+                                        $string .= $visible_NOT_sign;
+
+
 
                                     $string_dns_list[] =  $string;
                                 }
@@ -1209,6 +1206,28 @@ SecurityProfileCallContext::$supportedActions[] = array(
                                         $string .= $bp_NOT_sign;
                                     if( $visibility && !$rule->spyware_dns_security_rule_visibility() )
                                         $string .= $visible_NOT_sign;
+                                    $string_dns_security[] = $string;
+                                }
+                            }
+                            elseif( $type == "advanced-dns-security-categories" )
+                            {
+                                $string_dns_security[] = "";
+                                $string_dns_security[] = "---Advanced DNS Security Categories";
+                                foreach( $object->additional['botnet-domain'][$type] as $name => $rule )
+                                {
+                                    $string = "";
+                                    $string .= $rule->name();
+
+                                    $string .= " - log-level: '".$rule->logLevel()."'";
+                                    $string .= " - action: '".$rule->action."'";
+                                    #adns does not have packet-capture
+                                    //$string .= " - packet-capture: '".$rule->packetCapture()."'";
+                                    /** @var DNSPolicy $rule */
+                                    //Todo: TBD
+                                    #if( $bestPractice && !$rule->spyware_dns_security_rule_bestpractice() )
+                                    #    $string .= $bp_NOT_sign;
+                                    #if( $visibility && !$rule->spyware_dns_security_rule_visibility() )
+                                    #    $string .= $visible_NOT_sign;
                                     $string_dns_security[] = $string;
                                 }
                             }
@@ -1252,8 +1271,14 @@ SecurityProfileCallContext::$supportedActions[] = array(
                                     $check_array = PH::$shadow_bp_jsonfile['spyware']['cloud-inline']['bp'];
                                     if( isset($check_array['inline-policy-action']) )
                                     {
-                                        foreach( $check_array['inline-policy-action'] as $validate )
-                                            $bp_set = $object->bp_stringValidation($array, 'inline-policy-action', $validate);
+                                        $bp_set = TRUE;
+                                        foreach( $check_array['inline-policy-action'] as $detailed_check )
+                                        {
+                                            if ($detailed_check['type'][0] == "any") {
+                                                if ($detailed_check['action'][0] !== $object->additional['mica-engine-spyware-enabled'][$type]['inline-policy-action'])
+                                                    $bp_set = FALSE;
+                                            }
+                                        }
                                         if($bp_set == FALSE)
                                             $tmp_string .= $bp_NOT_sign;
                                     }
@@ -1267,13 +1292,30 @@ SecurityProfileCallContext::$supportedActions[] = array(
                                     $check_array = PH::$shadow_bp_jsonfile['spyware']['cloud-inline']['visibility'];
                                     if( isset($check_array['inline-policy-action']) )
                                     {
-                                        foreach( $check_array['inline-policy-action'] as $validate )
-                                            $bp_set = $object->visibility_stringValidation($array, 'inline-policy-action', $validate);
+                                        $bp_set = TRUE;
+                                        foreach( $check_array['inline-policy-action'] as $detailed_check )
+                                        {
+                                            if ($detailed_check['type'][0] == "any") {
+                                                $validate = $detailed_check['action'][0];
+                                                $negate_string = "";
+                                                if (strpos($validate, "!") !== FALSE)
+                                                    $negate_string = "!";
+                                                if ($validate === $negate_string . $object->additional['mica-engine-spyware-enabled'][$type]['inline-policy-action'])
+                                                    $bp_set = FALSE;
+                                            }
+                                        }
                                         if($bp_set == FALSE)
                                             $tmp_string .= $visible_NOT_sign;
                                     }
                                 }
                             }
+
+                            //Todo: swaschkut 2025115  LDL missing
+                            if( isset($object->additional['mica-engine-spyware-enabled'][$type]['local-deep-learning']) )
+                            {
+                                $tmp_string .= " - local-deep-learning :".$object->additional['mica-engine-spyware-enabled'][$type]['local-deep-learning'];
+                            }
+
                             $string_mica_engine[] = $tmp_string;
                         }
 
@@ -1304,8 +1346,16 @@ SecurityProfileCallContext::$supportedActions[] = array(
                                     $check_array = PH::$shadow_bp_jsonfile['vulnerability']['cloud-inline']['bp'];
                                     if( isset($check_array['inline-policy-action']) )
                                     {
-                                        foreach( $check_array['inline-policy-action'] as $validate )
-                                            $bp_set = $object->bp_stringValidation($array, 'inline-policy-action', $validate);
+                                        $bp_set = TRUE;
+                                        foreach( $check_array['inline-policy-action'] as $detailed_check )
+                                        {
+                                            if( $detailed_check['type'][0] == "any" )
+                                            {
+                                                if( $detailed_check['action'][0] !== $object->additional['mica-engine-vulnerability-enabled'][$type]['inline-policy-action'] )
+                                                    $bp_set = FALSE;
+                                            }
+                                        }
+
                                         if($bp_set == FALSE)
                                             $tmp_string .= $bp_NOT_sign;
                                     }
@@ -1319,8 +1369,19 @@ SecurityProfileCallContext::$supportedActions[] = array(
                                     $check_array = PH::$shadow_bp_jsonfile['vulnerability']['cloud-inline']['visibility'];
                                     if( isset($check_array['inline-policy-action']) )
                                     {
-                                        foreach( $check_array['inline-policy-action'] as $validate )
-                                            $bp_set = $object->visibility_stringValidation($array, 'inline-policy-action', $validate);
+                                        $bp_set = TRUE;
+                                        foreach( $check_array['inline-policy-action'] as $detailed_check )
+                                        {
+                                            if ($detailed_check['type'][0] == "any")
+                                            {
+                                                $validate = $detailed_check['action'][0];
+                                                $negate_string = "";
+                                                if (strpos($validate, "!") !== FALSE)
+                                                    $negate_string = "!";
+                                                if ($validate === $negate_string . $object->additional['mica-engine-vulnerability-enabled'][$type]['inline-policy-action'])
+                                                    $bp_set = FALSE;
+                                            }
+                                        }
                                         if($bp_set == FALSE)
                                             $tmp_string .= $visible_NOT_sign;
                                     }
@@ -1346,8 +1407,14 @@ SecurityProfileCallContext::$supportedActions[] = array(
                                     $check_array = PH::$shadow_bp_jsonfile['virus']['cloud-inline']['bp'];
                                     if( isset($check_array['inline-policy-action']) )
                                     {
-                                        foreach( $check_array['inline-policy-action'] as $validate )
-                                            $bp_set = $object->bp_stringValidation($array, 'mlav-policy-action', $validate);
+                                        $bp_set = TRUE;
+                                        foreach( $check_array['inline-policy-action'] as $detailed_check )
+                                        {
+                                            if ($detailed_check['type'][0] == "any") {
+                                                if ($detailed_check['action'][0] !== $object->additional['mlav-engine-filebased-enabled'][$type]['mlav-policy-action'])
+                                                    $bp_set = FALSE;
+                                            }
+                                        }
                                         if($bp_set == FALSE)
                                             $tmp_string .= $bp_NOT_sign;
                                     }
@@ -1361,8 +1428,19 @@ SecurityProfileCallContext::$supportedActions[] = array(
                                     $check_array = PH::$shadow_bp_jsonfile['virus']['cloud-inline']['visibility'];
                                     if( isset($check_array['inline-policy-action']) )
                                     {
-                                        foreach( $check_array['inline-policy-action'] as $validate )
-                                            $bp_set = $object->visibility_stringValidation($array, 'mlav-policy-action', $validate);
+                                        $bp_set = TRUE;
+                                        foreach( $check_array['inline-policy-action'] as $detailed_check )
+                                        {
+                                            if ($detailed_check['type'][0] == "any")
+                                            {
+                                                $validate = $detailed_check['action'][0];
+                                                $negate_string = "";
+                                                if (strpos($validate, "!") !== FALSE)
+                                                    $negate_string = "!";
+                                                if ($validate === $negate_string . $object->additional['mlav-engine-filebased-enabled'][$type]['mlav-policy-action'])
+                                                    $bp_set = FALSE;
+                                            }
+                                        }
                                         if($bp_set == FALSE)
                                             $tmp_string .= $visible_NOT_sign;
                                     }
@@ -2588,7 +2666,9 @@ SecurityProfileCallContext::$supportedActions['spyware.alert-only-set'] = array(
                         continue;
 
                     $name = DH::findAttribute("name", $tmp_entry1);
-                    if( $object->additional['botnet-domain']['lists'][$name]['action'] == "allow" )
+                    /** @var DNSPolicy $tmp_dnsobj */
+                    $tmp_dnsobj = $object->additional['botnet-domain']['lists'][$name];
+                    if( $tmp_dnsobj->action() == "allow" )
                     {
                         $tmp = DH::findFirstElement("action", $tmp_entry1);
                         if ($tmp !== FALSE)
@@ -2606,7 +2686,7 @@ SecurityProfileCallContext::$supportedActions['spyware.alert-only-set'] = array(
                                 $xmlElement = DH::importXmlStringOrDie($rule->xmlroot->ownerDocument, $xmlString);
                                 $tmp->appendChild($xmlElement);
 
-                                $object->additional['botnet-domain']['lists'][$name]['action'] = $tmp_actionString;
+                                $tmp_dnsobj->action = $tmp_actionString;
                             }
                         }
                         $tmp = DH::findFirstElement("packet-capture", $tmp_entry1);
@@ -3032,7 +3112,13 @@ SecurityProfileCallContext::$supportedActions['url.alert-only-set'] = array(
         $credential_xmlnode = DH::findFirstElementOrCreate("credential-enforcement", $object->xmlroot);
         $mode_credential_xmlnode = DH::findFirstElementOrCreate("mode", $credential_xmlnode);
         $mode_child_xmlnode = DH::firstChildElement($mode_credential_xmlnode);
-        if( $mode_child_xmlnode->nodeName == "disabled" )
+        if( $mode_child_xmlnode == false )
+        {
+            DH::findFirstElementOrCreate("ip-user", $mode_credential_xmlnode);
+            $logseverity_credential_xmlnode = DH::findFirstElementOrCreate("log-severity", $credential_xmlnode);
+            $logseverity_credential_xmlnode->textContent = "medium";
+        }
+        elseif( $mode_child_xmlnode !== false && $mode_child_xmlnode->nodeName == "disabled" )
         {
             DH::findFirstElementOrCreate("ip-user", $mode_credential_xmlnode);
             $logseverity_credential_xmlnode = DH::findFirstElementOrCreate("log-severity", $credential_xmlnode);
@@ -3199,5 +3285,161 @@ SecurityProfileCallContext::$supportedActions['url.credential-enforcement.log-se
     'args' => array(
         'severity' => array('type' => 'string', 'default' => '*nodefault*',
             'help' => '"critical", "high","medium","low","informational"'),
+    ),
+);
+
+SecurityProfileCallContext::$supportedActions[] = array(
+    'name' => 'move',
+    'MainFunction' => function (SecurityProfileCallContext $context) {
+        $object = $context->object;
+
+        $localLocation = 'shared';
+
+        if( !$object->owner->owner->isPanorama() && !$object->owner->owner->isFirewall() )
+            $localLocation = $object->owner->owner->name();
+
+        $targetLocation = $context->arguments['location'];
+        $targetStore = null;
+
+        if( $localLocation == $targetLocation )
+        {
+            $string = "because original and target destinations are the same: $targetLocation";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
+        $rootObject = PH::findRootObjectOrDie($object->owner->owner);
+
+        $spStore = get_class($object)."Store";
+        if( $targetLocation == 'shared' )
+        {
+            $findSubSystem = $rootObject;
+
+            $targetStore = $rootObject->$spStore;
+        }
+        else
+        {
+            $findSubSystem = $rootObject->findSubSystemByName($targetLocation);
+            if( $findSubSystem === null )
+                derr("cannot find VSYS/DG named '$targetLocation'");
+
+            $targetStore = $findSubSystem->$spStore;
+        }
+
+        if( $localLocation == 'shared' )
+        {
+            $reflocations = $object->getReferencesLocation();
+
+            foreach( $object->getReferences() as $ref )
+            {
+                if( PH::getLocationString($ref) != $targetLocation )
+                {
+                    $skipped = TRUE;
+                    //check if targetLocation is parent of reflocation
+                    if( $findSubSystem->owner->isPanorama() )
+                        $locations = $findSubSystem->childDeviceGroups(TRUE);
+                    elseif( $findSubSystem->owner->isFirewall() )
+                    {
+                        $locations = array();
+                        $skipped = TRUE;
+                    }
+
+                    foreach( $locations as $childloc )
+                    {
+                        if( PH::getLocationString($ref) == $childloc->name() )
+                            $skipped = FALSE;
+                    }
+
+                    if( $skipped )
+                    {
+                        $string = "moving from SHARED to sub-level is NOT possible because of references";
+                        PH::ACTIONstatus( $context, "SKIPPED", $string );
+                        return;
+                    }
+                }
+            }
+        }
+
+        if( $localLocation != 'shared' && $targetLocation != 'shared' )
+        {
+            if( $context->baseObject->isFirewall() )
+            {
+                $string = "moving between VSYS is not supported";
+                PH::ACTIONstatus( $context, "SKIPPED", $string );
+                return;
+            }
+
+            foreach( $object->getReferences() as $ref )
+            {
+                if( PH::getLocationString($ref) != $targetLocation )
+                {
+                    $skipped = TRUE;
+                    //check if targetLocation is parent of reflocation
+                    $locations = $findSubSystem->childDeviceGroups(TRUE);
+                    foreach( $locations as $childloc )
+                    {
+                        if( PH::getLocationString($ref) == $childloc->name() )
+                            $skipped = FALSE;
+                    }
+
+                    if( $skipped )
+                    {
+                        $string = "moving between 2 VSYS/DG is not possible because of references on higher DG level";
+                        PH::ACTIONstatus( $context, "SKIPPED", $string );
+                        return;
+                    }
+                }
+            }
+        }
+
+        $conflictObject = $targetStore->find($object->name(), null, FALSE);
+        if( $conflictObject === null )
+        {
+            $string = "moved, no conflict";
+            PH::ACTIONlog( $context, $string );
+
+            //Todo: update remove and add SP object
+            if( $context->isAPI )
+            {
+                $oldXpath = $object->getXPath();
+                $object->owner->API_removeSecurityProfile($object);
+                $targetStore->API_addSecurityProfile($object);
+
+                $object->API_sync();
+                $context->connector->sendDeleteRequest($oldXpath);
+            }
+            else
+            {
+                $object->owner->removeSecurityProfile($object);
+                $targetStore->addSecurityProfile($object);
+            }
+            return;
+        }
+
+        if( $context->arguments['mode'] == 'skipifconflict' )
+        {
+            $string = "there is an object with same name. Choose another mode to to resolve this conflict";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
+        $string = "there is a conflict with an object of same name";
+        PH::ACTIONlog( $context, $string );
+
+        if( $object->equals($conflictObject) )
+        {
+            $string = "Removed because target has same content";
+            PH::ACTIONlog( $context, $string );
+            $object->replaceMeGlobally($conflictObject);
+
+            if( $context->isAPI )
+                $object->owner->API_removeSecurityProfile($object);
+            else
+                $object->owner->removeSecurityProfile($object);
+        }
+
+    },
+    'args' => array('location' => array('type' => 'string', 'default' => '*nodefault*'),
+        'mode' => array('type' => 'string', 'default' => 'skipIfConflict', 'choices' => array('skipIfConflict', 'removeIfMatch'))
     ),
 );

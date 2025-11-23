@@ -4462,5 +4462,105 @@ RQuery::$defaultFilters['rule']['nat']['operators']['find.dnat.sec.pair.beta'] =
     },
     'arg' => false
 );
+RQuery::$defaultFilters['rule']['decryption-type']['operators']['is.ssl-inbound'] = array(
+    'Function' => function (RuleRQueryContext $context) {
+        /** @var Rule|SecurityRule|NatRule|DecryptionRule|AppOverrideRule|CaptivePortalRule|AuthenticationRule|PbfRule|QoSRule|DoSRule $object */
+        if( !$context->object->isDecryptionRule() )
+            return FALSE;
+
+        if( $context->object->decryptType == "ssl-inbound-inspection" )
+            return TRUE;
+
+        return FALSE;
+    },
+    'arg' => FALSE
+);
+RQuery::$defaultFilters['rule']['decryption-certificate']['operators']['has.from.query'] = array(
+    'Function' => function (RuleRQueryContext $context) {
+        $rule = $context->object;
+
+        if( !$context->object->isDecryptionRule() )
+            return FALSE;
+
+        if( $context->object->decryptType !== "ssl-inbound-inspection" )
+            return FALSE;
+
+        if( $context->value === null || !isset($context->nestedQueries[$context->value]) )
+            derr("cannot find nested query called '{$context->value}'");
+
+
+        $errorMessage = '';
+
+        if( !isset($context->cachedSubRQuery) )
+        {
+            $rQuery = new RQuery('certificate');
+            if( $rQuery->parseFromString($context->nestedQueries[$context->value], $errorMessage) === FALSE )
+                derr('nested query execution error : ' . $errorMessage);
+            $context->cachedSubRQuery = $rQuery;
+        }
+        else
+            $rQuery = $context->cachedSubRQuery;
+
+        foreach( $rule->getDecryptionCertificateObj() as $key => $certificate )
+        {
+            if( $certificate !== null )
+            {
+                if( $rQuery->matchSingleObject(array('object' => $certificate, 'nestedQueries' => &$context->nestedQueries)) )
+                    return TRUE;
+            }
+        }
+
+        return FALSE;
+    },
+    'arg' => TRUE,
+    'help' => 'example: \'filter=(decryption-certificate has.from.query subquery1)\' \'subquery1=(expired >= 30days)\'',
+);
+RQuery::$defaultFilters['rule']['decryption-certificate']['operators']['eq'] = array(
+    'Function' => function (RuleRQueryContext $context) {
+        /** @var Rule|SecurityRule|NatRule|DecryptionRule|AppOverrideRule|CaptivePortalRule|AuthenticationRule|PbfRule|QoSRule|DoSRule $object */
+        if( !$context->object->isDecryptionRule() )
+            return FALSE;
+
+        if( empty($context->object->_SSLinboundInspectionCertificates) )
+            return FALSE;
+
+        $matching = FALSE;
+        foreach($context->object->_SSLinboundInspectionCertificates as $certificate )
+        {
+            if( $context->value == $certificate )
+                return TRUE;
+            else
+                $matching = FALSE;
+        }
+
+        return $matching;
+    },
+    'arg' => TRUE
+);
+RQuery::$defaultFilters['rule']['decryption-certificate']['operators']['has.regex'] = array(
+    'Function' => function (RuleRQueryContext $context) {
+        /** @var Rule|SecurityRule|NatRule|DecryptionRule|AppOverrideRule|CaptivePortalRule|AuthenticationRule|PbfRule|QoSRule|DoSRule $object */
+        if( !$context->object->isDecryptionRule() )
+            return FALSE;
+
+        if( empty($context->object->_SSLinboundInspectionCertificates) )
+            return FALSE;
+
+        $matching = FALSE;
+        foreach($context->object->_SSLinboundInspectionCertificates as $certificate )
+        {
+            $matching = preg_match($context->value, $certificate );
+            if( $matching === FALSE )
+                derr("regular expression error on '{$context->value}'");
+            if( $matching === 1 )
+                return TRUE;
+            else
+                $matching =  FALSE;
+        }
+
+        return $matching;
+    },
+    'arg' => TRUE
+);
 // </editor-fold>
 

@@ -758,4 +758,6 @@ require_once 'filters/filters-GREtunnel.php';
 require_once 'filters/filters-ZoneProtectionProfile.php';
 require_once 'filters/filters-LogProfile.php';
 
+require_once 'filters/filters-Profile.php';
+
 

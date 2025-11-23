@@ -157,3 +157,7 @@ ZoneProtectionProfileCallContext::prepareSupportedActions();
 require_once("LogProfileCallContext.php");
 require_once "actions-logprofile.php";
 LogProfileCallContext::prepareSupportedActions();
+
+require_once("ProfileCallContext.php");
+require_once "actions-profile.php";
+ProfileCallContext::prepareSupportedActions();

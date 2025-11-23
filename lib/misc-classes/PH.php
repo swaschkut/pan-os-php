@@ -230,7 +230,7 @@ class PH
 
     private static $library_version_major = 2;
     private static $library_version_sub = 1;
-    private static $library_version_bugfix = 42;
+    private static $library_version_bugfix = 43;
 
     //BASIC AUTH PAN-OS 7.1
     public static $softwareupdate_key = "658d787f293e631196dac9fb29490f1cc1bb3827";
@@ -1011,15 +1011,16 @@ class PH
         PH::print_stdout( PH::boldText("sleeping now 600 seconds") );
         #sleep(600);
 
-        PH::callPANOSPHP( $type, $argv, $argc, $PHP_FILE );
-
+        $util = PH::callPANOSPHP( $type, $argv, $argc, $PHP_FILE );
+        unset($util);
+        gc_collect_cycles();
     }
 
     public static $supportedUTILTypes = array(
         "stats",
         "address", "service", "tag", "schedule", "application", "threat", "edl", "threat-rule", "dns-rule",
         "rule",
-        "device", "securityprofile", "securityprofilegroup",
+        "device", "securityprofile", "securityprofilegroup", "profile",
         "zone",  "interface", "virtualwire", "routing", "dhcp", "certificate", "static-route", "ssl-tls-service-profile",
         "gp-gateway", "gp-portal",
         "ike-profile", "ike-gateway", 'ipsec-profile', 'ipsec-tunnel',
@@ -1117,6 +1118,9 @@ class PH
 
         elseif( $type == "securityprofile" )
             $util = new SECURITYPROFILEUTIL($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
+
+        elseif( $type == "profile" )
+            $util = new PROFILEUTIL($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
 
         elseif( $type == "zone"
             || $type == "interface"
@@ -1421,5 +1425,8 @@ class PH
             }
             // Values that are non-numeric strings or non-zero numbers are automatically kept.
         }
+
+        if( count( array_keys($data) ) == 3)
+            $data = array();
     }
 }

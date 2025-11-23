@@ -377,6 +377,13 @@ class RuleCallContext extends CallContext
                 return self::enclose( "", $wrap);
         }
 
+        if( $fieldName == 'decryption_rule_type' )
+        {
+            if( get_class($rule) === "DecryptionRule" )
+                return self::enclose($rule->decryptType, $wrap);
+            else
+                return self::enclose( "", $wrap);
+        }
 
         if( $fieldName == 'from' )
         {
@@ -454,25 +461,27 @@ class RuleCallContext extends CallContext
         {
             if( $rule->isDecryptionRule() )
                 return self::enclose('');
-            if( $rule->isAppOverrideRule() )
+            elseif( $rule->isAppOverrideRule() )
                 return self::enclose($rule->ports());
-            if( $rule->isNatRule() )
+            elseif( $rule->isNatRule() )
             {
                 if( $rule->service !== null )
                     return self::enclose(array($rule->service));
                 return self::enclose('any');
             }
-            if( isset($rule->service) )
+            elseif( $rule->isSecurityRule() || $rule->isDefaultSecurityRule())
             {
-                if( $rule->services->isAny() )
+                if( count($rule->services->getAll()) > 0 )
+                    return self::enclose($rule->services->getAll(), $wrap);
+                elseif( $rule->services->isAny() )
                     return self::enclose('any');
-                if( $rule->services->isApplicationDefault() )
+                elseif( $rule->services->isApplicationDefault() )
                     return self::enclose('application-default');
-                return self::enclose($rule->services->getAll(), $wrap);
+                else
+                    return self::enclose('any');
             }
             else
-                return self::enclose("", $wrap);
-
+                return self::enclose('');
         }
 
         if( $fieldName == 'service_resolved_sum' )
@@ -1169,6 +1178,56 @@ class RuleCallContext extends CallContext
             $strMapping = $this->NatAddressResolveSummary( $rule, "snathosts", $unresolvedArray );
             $strMapping = array_merge( $strMapping, $unresolvedArray );
             return self::enclose($strMapping);
+        }
+
+        if( $fieldName == 'decryption-certificate' )
+        {
+            if( get_class($rule) === "DecryptionRule" )
+                return self::enclose($rule->getDecryptionCertificate(), $wrap);
+            else
+                return self::enclose( "", $wrap);
+        }
+
+        if( $fieldName == 'certificate-not-valid-before' )
+        {
+            if( get_class($rule) === "DecryptionRule" )
+            {
+                if( $rule->decryptType == "ssl-inbound-inspection" )
+                {
+                    $certArray = array();
+                    foreach( $rule->getDecryptionCertificateObj() as $cert )
+                    {
+                        /** @VAR Certificate $cert */
+                        $certArray[] = $cert->notValidbefore;
+                    }
+                    return self::enclose($certArray, $wrap);
+                }
+                else
+                    return self::enclose( "", $wrap);
+            }
+            else
+                return self::enclose( "", $wrap);
+        }
+
+        if( $fieldName == 'certificate-not-valid-after' )
+        {
+            if( get_class($rule) === "DecryptionRule" )
+            {
+                if( $rule->decryptType == "ssl-inbound-inspection" )
+                {
+                    $certArray = array();
+                    foreach( $rule->getDecryptionCertificateObj() as $cert )
+                    {
+                        /** @VAR Certificate $cert */
+                        $certArray[] = $cert->notValidafter;
+                    }
+                    return self::enclose($certArray, $wrap);
+                }
+                else
+                    return self::enclose( "", $wrap);
+            }
+            else
+                return self::enclose( "", $wrap);
         }
 
         if( $fieldName == 'target' )

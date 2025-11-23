@@ -201,6 +201,9 @@ class DeviceGroup
     public $device = null;
     public $apiCache = null;
 
+    public $debugLoadTime = false;
+
+    public $sizeArray = array();
 
     public function __construct($owner)
     {
@@ -328,6 +331,89 @@ class DeviceGroup
         $this->pbfRules->_networkStore = $this->_fakeNetworkProperties;
     }
 
+    public function __destruct()
+    {
+        /*
+        if ($this->debugLoadTime)
+        {
+            #PH::print_stdout("unset DeviceGroup");
+        }
+
+        unset( $this->xmlroot);
+
+        unset($this->tagStore );
+        unset($this->zoneStore );
+        unset($this->certificateStore );
+        unset($this->SSL_TLSServiceProfileStore );
+
+        unset($this->appStore );
+
+        unset($this->threatStore );
+
+        unset($this->urlStore );
+
+        unset($this->serviceStore );
+
+        unset($this->addressStore );
+
+
+        unset($this->customURLProfileStore );
+        unset($this->URLProfileStore );
+        unset($this->AntiVirusProfileStore );
+
+
+        unset($this->ThreatPolicyStore );
+        unset($this->DNSPolicyStore );
+        unset($this->VulnerabilityProfileStore );
+        unset($this->AntiSpywareProfileStore );
+        unset($this->FileBlockingProfileStore );
+        unset($this->DataFilteringProfileStore );
+        unset($this->WildfireProfileStore );
+        unset($this->securityProfileGroupStore );
+
+
+        unset($this->DecryptionProfileStore );
+        unset($this->HipObjectsProfileStore );
+        unset($this->HipProfilesProfileStore );
+        unset($this->GTPProfileStore );
+        unset($this->SCEPProfileStore );
+        unset($this->PacketBrokerProfileStore );
+        unset($this->SDWanErrorCorrectionProfileStore );
+        unset($this->SDWanPathQualityProfileStore );
+        unset($this->SDWanSaasQualityProfileStore );
+        unset($this->SDWanTrafficDistributionProfileStore );
+        unset($this->DataObjectsProfileStore );
+
+
+        unset($this->scheduleStore );
+        unset($this->EDLStore );
+        unset($this->LogProfileStore );
+
+        unset($this->securityRules );
+        unset($this->natRules );
+        unset($this->decryptionRules );
+        unset($this->appOverrideRules );
+        unset($this->captivePortalRules );
+        unset($this->authenticationRules );
+        unset($this->pbfRules );
+        unset($this->qosRules );
+        unset($this->dosRules );
+        unset($this->tunnelInspectionRules );
+        unset($this->defaultSecurityRules );
+
+        unset($this->networkPacketBrokerRules );
+        unset($this->sdWanRules );
+
+
+        gc_collect_cycles();
+
+        if ($this->debugLoadTime)
+        {
+            #PH::print_DEBUG_loadtime("after unset DeviceGroup");
+        }
+        */
+    }
+
     public function load_from_templateXml()
     {
         if( $this->owner === null )
@@ -345,6 +431,8 @@ class DeviceGroup
 
     public function init_load_from_domxml_devices($xml, $debugLoadTime = false)
     {
+        $this->debugLoadTime = $debugLoadTime;
+
         $this->xmlroot = $xml;
 
         // this DeviceGroup has a name ?
@@ -1266,39 +1354,52 @@ class DeviceGroup
 
         $stdoutarray['Anti-Spyware objects'] = array();
         $stdoutarray['Anti-Spyware objects']['total'] = $this->AntiSpywareProfileStore->count();
+
         $stdoutarray['Vulnerability objects'] = array();
         $stdoutarray['Vulnerability objects']['total'] = $this->VulnerabilityProfileStore->count();
+
         $stdoutarray['Antivirus objects'] = array();
         $stdoutarray['Antivirus objects']['total'] = $this->AntiVirusProfileStore->count();
+
         $stdoutarray['Wildfire objects'] = array();
         $stdoutarray['Wildfire objects']['total'] = $this->WildfireProfileStore->count();
+
         $stdoutarray['URL objects'] = array();
         $stdoutarray['URL objects']['total'] = $this->URLProfileStore->count();
+
         $stdoutarray['custom URL objects'] = array();
         $stdoutarray['custom URL objects']['total'] = $this->customURLProfileStore->count();
+
         $stdoutarray['File-Blocking objects'] = array();
         $stdoutarray['File-Blocking objects']['total'] = $this->FileBlockingProfileStore->count();
+
         $stdoutarray['Decryption objects'] = array();
         $stdoutarray['Decryption objects']['total'] = $this->DecryptionProfileStore->count();
 
         $stdoutarray['HipObject objects'] = array();
         $stdoutarray['HipObject objects']['total'] = $this->HipObjectsProfileStore->count();
+
         $stdoutarray['HipProfile objects'] = array();
         $stdoutarray['HipProfile objects']['total'] = $this->HipProfilesProfileStore->count();
 
         $stdoutarray['GTP objects'] = array();
         $stdoutarray['GTP objects']['total'] = $this->GTPProfileStore->count();
+
         $stdoutarray['SCEP objects'] = array();
         $stdoutarray['SCEP objects']['total'] = $this->SCEPProfileStore->count();
+
         $stdoutarray['PacketBroker objects'] = array();
         $stdoutarray['PacketBroker objects']['total'] = $this->PacketBrokerProfileStore->count();
 
         $stdoutarray['SDWanErrorCorrection objects'] = array();
         $stdoutarray['SDWanErrorCorrection objects']['total'] = $this->SDWanErrorCorrectionProfileStore->count();
+
         $stdoutarray['SDWanPathQuality objects'] = array();
         $stdoutarray['SDWanPathQuality objects']['total'] = $this->SDWanPathQualityProfileStore->count();
+
         $stdoutarray['SDWanSaasQuality objects'] = array();
         $stdoutarray['SDWanSaasQuality objects']['total'] = $this->SDWanSaasQualityProfileStore->count();
+
         $stdoutarray['SDWanTrafficDistribution objects'] = array();
         $stdoutarray['SDWanTrafficDistribution objects']['total'] = $this->SDWanTrafficDistributionProfileStore->count();
 
@@ -1308,13 +1409,72 @@ class DeviceGroup
         $stdoutarray['LogProfile objects'] = array();
         $stdoutarray['LogProfile objects']['total'] = $this->LogProfileStore->count();
 
+
         #$stdoutarray['zones'] = $this->zoneStore->count();
         #$stdoutarray['apps'] = $this->appStore->count();
 
 
 
+        $this->sizeArray['type'] = get_class( $this );
+        $this->sizeArray['statstype'] = "objects";
+        $this->sizeArray['header'] = $header;
+        $this->sizeArray['kb DG'] = &DH::dom_get_config_size($this->xmlroot);
+        $this->sizeArray['kb security rules'] = &DH::dom_get_config_size($this->securityRules->xmlroot);
+        $this->sizeArray['kb nat rules'] = &DH::dom_get_config_size($this->natRules->xmlroot);
+        $this->sizeArray['kb qos rules'] = &DH::dom_get_config_size($this->qosRules->xmlroot);
+        $this->sizeArray['kb pbf rules'] = &DH::dom_get_config_size($this->pbfRules->xmlroot);
+        $this->sizeArray['kb decrypt rules'] = &DH::dom_get_config_size($this->decryptionRules->xmlroot);
+        $this->sizeArray['kb app-override rules'] = &DH::dom_get_config_size($this->appOverrideRules->xmlroot);
+        $this->sizeArray['kb captive-portal rules'] = &DH::dom_get_config_size($this->captivePortalRules->xmlroot);
+        $this->sizeArray['kb authentication rules'] = &DH::dom_get_config_size($this->authenticationRules->xmlroot);
+        $this->sizeArray['kb dos rules'] = &DH::dom_get_config_size($this->dosRules->xmlroot);
+        $this->sizeArray['kb tunnel-inspection rules'] = &DH::dom_get_config_size($this->tunnelInspectionRules->xmlroot);
+        $this->sizeArray['kb default-security rules'] = &DH::dom_get_config_size($this->defaultSecurityRules->xmlroot);
+        $this->sizeArray['kb network-packet-broker rules'] = &DH::dom_get_config_size($this->networkPacketBrokerRules->xmlroot);
+        $this->sizeArray['kb sdwan rules'] = &DH::dom_get_config_size($this->sdWanRules->xmlroot);
+
+        $tmp_adr = &DH::dom_get_config_size($this->addressStore->addressRoot);
+        $tmp_adrgrp = &DH::dom_get_config_size($this->addressStore->addressGroupRoot);
+        $tmp_region = &DH::dom_get_config_size($this->addressStore->regionRoot);
+        $this->sizeArray['kb address objects '] = $tmp_adr+$tmp_adrgrp+$tmp_region;
+        $tmp_srv = &DH::dom_get_config_size($this->serviceStore->serviceRoot);
+        $tmp_srvgrp = &DH::dom_get_config_size($this->serviceStore->serviceGroupRoot);
+        $this->sizeArray['kb address objects '] = $tmp_srv+$tmp_srvgrp;
+        $this->sizeArray['kb tag objects'] = &DH::dom_get_config_size($this->tagStore->xmlroot);
+
+        $this->sizeArray['kb securityProfileGroup objects'] = &DH::dom_get_config_size($this->securityProfileGroupStore->xmlroot);
+
+        $this->sizeArray['kb Anti-Spyware objects'] = &DH::dom_get_config_size($this->AntiSpywareProfileStore->xmlroot);
+        $this->sizeArray['kb Vulnerability objects'] = &DH::dom_get_config_size($this->VulnerabilityProfileStore->xmlroot);
+        $this->sizeArray['kb Antivirus objects'] = &DH::dom_get_config_size($this->AntiVirusProfileStore->xmlroot);
+        $this->sizeArray['kb Wildfire objects'] = &DH::dom_get_config_size($this->WildfireProfileStore->xmlroot);
+        $this->sizeArray['kb URL objects'] = &DH::dom_get_config_size($this->URLProfileStore->xmlroot);
+        $this->sizeArray['kb custom URL objects'] = &DH::dom_get_config_size($this->customURLProfileStore->xmlroot);
+        $this->sizeArray['kb File-Blocking objects'] = &DH::dom_get_config_size($this->FileBlockingProfileStore->xmlroot);
+
+        $this->sizeArray['kb Decryption objects'] = &DH::dom_get_config_size($this->DecryptionProfileStore->xmlroot);
+        $this->sizeArray['kb HipObject objects'] = &DH::dom_get_config_size($this->HipObjectsProfileStore->xmlroot);
+        $this->sizeArray['kb HipProfile objects'] = &DH::dom_get_config_size($this->HipProfilesProfileStore->xmlroot);
+        $this->sizeArray['kb GTP objects'] = &DH::dom_get_config_size($this->GTPProfileStore->xmlroot);
+        $this->sizeArray['kb SCEP objects'] = &DH::dom_get_config_size($this->SCEPProfileStore->xmlroot);
+        $this->sizeArray['kb PacketBroker objects'] = &DH::dom_get_config_size($this->PacketBrokerProfileStore->xmlroot);
+        $this->sizeArray['kb SDWanErrorCorrection objects'] = &DH::dom_get_config_size($this->tagStore->xmlroot);
+        $this->sizeArray['kb SDWanPathQuality objects'] = &DH::dom_get_config_size($this->SDWanPathQualityProfileStore->xmlroot);
+        $this->sizeArray['kb SDWanSaasQuality objects'] = &DH::dom_get_config_size($this->SDWanSaasQualityProfileStore->xmlroot);
+        $this->sizeArray['kb SDWanTrafficDistribution objects'] = &DH::dom_get_config_size($this->SDWanTrafficDistributionProfileStore->xmlroot);
+        $this->sizeArray['kb DataObjects objects'] = &DH::dom_get_config_size($this->DataObjectsProfileStore->xmlroot);
+        $this->sizeArray['kb LogProfile objects'] = &DH::dom_get_config_size($this->LogProfileStore->xmlroot);
+
+
+
         if( !PH::$shadow_json && $actions == "display"  )
             PH::print_stdout( $stdoutarray, true );
+
+        if( !PH::$shadow_json && $actions == "display-size"  )
+        {
+            PH::stats_remove_zero_arrays($this->sizeArray);
+            PH::print_stdout( $this->sizeArray, true );
+        }
 
         if( $actions == "display-available" )
         {

@@ -261,6 +261,11 @@ foreach( RQuery::$defaultFilters as $type => &$filtersByField )
                 PH::print_stdout("******* SKIPPED for now *******");
                 continue;
             }
+            elseif( $type == 'zone-protection-profile' )
+            {
+                PH::print_stdout("******* SKIPPED for now *******");
+                continue;
+            }
             else
             {
                 derr('unsupported type: '.$type);

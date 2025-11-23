@@ -77,17 +77,19 @@ class SecureWebGateway
 
         $tmp_enablement = DH::findFirstElement('enablement', $xml);
         $tmp_explicit_proxy = DH::findFirstElement('explicit-proxy', $tmp_enablement);
+
         if( $tmp_explicit_proxy !== null && $tmp_explicit_proxy !== false )
         {
             $this->type = "explicit-web-gateway";
         }
         else
         {
-            DH::DEBUGprintDOMDocument($tmp_enablement);
-            mwarning( "SecureWebGateway type not yet implemented", null, false );
+            $tmp_explicit_proxy = DH::findFirstElement('none', $tmp_enablement);
+            if( $tmp_explicit_proxy !== null && $tmp_explicit_proxy !== false )
+                $this->type = "none";
         }
 
-        if( $this->type !== null )
+        if( $this->type !== null && $this->type !== "none" )
         {
             $tmp_type = DH::findFirstElement($this->type, $xml);
             if( $tmp_type !== False )

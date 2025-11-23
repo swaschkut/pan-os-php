@@ -24,6 +24,7 @@ class AntiSpywareProfile extends SecurityProfile2
     public $threatException = array();
     public $rules_obj = array();
     public $dns_rules_obj = array();
+    public $lists_obj = array();
     public $additional = array();
 
     public $rule_coverage = array();
@@ -212,27 +213,60 @@ class AntiSpywareProfile extends SecurityProfile2
                     $tmp_inline_policy_action->textContent = "disable";
                     $this->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action'] = "disable";
                 }
+
+                $tmp_local_deep_learning = DH::findFirstElement("local-deep-learning", $tmp_entry1);
+                if( $tmp_local_deep_learning !== FALSE )
+                    $this->additional['mica-engine-spyware-enabled'][$name]['local-deep-learning'] = $tmp_local_deep_learning->textContent;
+                else
+                {
+                    if( $this->owner->owner->version >= 112 )
+                    {
+                        $tmp_local_deep_learning = DH::findFirstElementOrCreate("local-deep-learning", $tmp_entry1);
+                        $tmp_local_deep_learning->textContent = "disable";
+                        $this->additional['mica-engine-spyware-enabled'][$name]['local-deep-learning'] = "disable";
+                    }
+
+                }
             }
 
             $Unkown_TCP_xmlstring = '<entry name="Unknown-TCP Command and Control detector">
   <inline-policy-action>alert</inline-policy-action>
 </entry>';
+            $Unkown_TCP_xmlstring_112 = '<entry name="Unknown-TCP Command and Control detector">
+  <inline-policy-action>alert</inline-policy-action>
+  <local-deep-learning>disable</local-deep-learning>
+</entry>';
+
             $Unkown_UDP_xmlstring = '<entry name="Unknown-UDP Command and Control detector">
   <inline-policy-action>alert</inline-policy-action>
 </entry>';
+            $Unkown_UDP_xmlstring_112 = '<entry name="Unknown-UDP Command and Control detector">
+  <inline-policy-action>alert</inline-policy-action>
+  <local-deep-learning>disable</local-deep-learning>
+</entry>';
             if( !$tmp_mica_Unknown_TCP_found && $this->owner->owner->version >= 102)
             {
-                $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $Unkown_TCP_xmlstring);
+                if( $this->owner->owner->version >= 112 )
+                    $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $Unkown_TCP_xmlstring_112);
+                else
+                    $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $Unkown_TCP_xmlstring);
                 $tmp_rule->appendChild($xmlElement);
 
-                $this->additional['mica-engine-spyware-enabled']['Unknown-TCP Command and Control detector']['inline-policy-action'] = "disable";
+                $this->additional['mica-engine-spyware-enabled']['Unknown-TCP Command and Control detector']['inline-policy-action'] = "alert";
+                if( $this->owner->owner->version >= 112 )
+                    $this->additional['mica-engine-spyware-enabled']['Unknown-TCP Command and Control detector']['local-deep-learning'] = "disable";
             }
             if( !$tmp_mica_Unknown_UDP_found && $this->owner->owner->version >= 102 )
             {
-                $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $Unkown_UDP_xmlstring);
+                if( $this->owner->owner->version >= 112 )
+                    $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $Unkown_UDP_xmlstring_112);
+                else
+                    $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $Unkown_UDP_xmlstring);
                 $tmp_rule->appendChild($xmlElement);
 
-                $this->additional['mica-engine-spyware-enabled']['Unknown-UDP Command and Control detector']['inline-policy-action'] = "disable";
+                $this->additional['mica-engine-spyware-enabled']['Unknown-UDP Command and Control detector']['inline-policy-action'] = "alert";
+                if( $this->owner->owner->version >= 112 )
+                    $this->additional['mica-engine-spyware-enabled']['Unknown-UDP Command and Control detector']['local-deep-learning'] = "disable";
             }
         }
         else
@@ -266,12 +300,15 @@ class AntiSpywareProfile extends SecurityProfile2
   </entry>
   <entry name="SSL Command and Control detector">
     <inline-policy-action>alert</inline-policy-action>
+    <local-deep-learning>enable</local-deep-learning>
   </entry>
   <entry name="Unknown-TCP Command and Control detector">
     <inline-policy-action>alert</inline-policy-action>
+    <local-deep-learning>enable</local-deep-learning>
   </entry>
   <entry name="Unknown-UDP Command and Control detector">
     <inline-policy-action>alert</inline-policy-action>
+    <local-deep-learning>enable</local-deep-learning>
   </entry>
 </mica-engine-spyware-enabled>';
 
@@ -293,9 +330,12 @@ class AntiSpywareProfile extends SecurityProfile2
                 $this->additional['mica-engine-spyware-enabled']['HTTP2 Command and Control detector']['inline-policy-action'] = "disable";
                 $this->additional['mica-engine-spyware-enabled']['HTTP2 Command and Control detector']['local-deep-learning'] = "enable";
                 $this->additional['mica-engine-spyware-enabled']['SSL Command and Control detector']['inline-policy-action'] = "disable";
+                $this->additional['mica-engine-spyware-enabled']['SSL Command and Control detector']['local-deep-learning'] = "enable";
 
                 $this->additional['mica-engine-spyware-enabled']['Unknown-TCP Command and Control detector']['inline-policy-action'] = "disable";
+                $this->additional['mica-engine-spyware-enabled']['Unknown-TCP Command and Control detector']['local-deep-learning'] = "enable";
                 $this->additional['mica-engine-spyware-enabled']['Unknown-UDP Command and Control detector']['inline-policy-action'] = "disable";
+                $this->additional['mica-engine-spyware-enabled']['Unknown-UDP Command and Control detector']['local-deep-learning'] = "enable";
             }
             elseif( $this->owner->owner->version >= 102 )
             {
@@ -369,6 +409,19 @@ class AntiSpywareProfile extends SecurityProfile2
             }
 
             $tmp_lists = DH::findFirstElement('lists', $tmp_rule);
+            if( $tmp_lists == FALSE or !$tmp_lists->hasChildNodes() )
+            {
+                $tmp_lists = DH::findFirstElementOrCreate('lists', $tmp_rule);
+                $tmp_xmlstring = '<entry name="default-paloalto-dns">
+   <action>
+      <alert/>
+   </action>
+   <packet-capture>disable</packet-capture>
+</entry>';
+                $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $tmp_xmlstring);
+                $tmp_lists->appendChild($xmlElement);
+                $tmp_lists = DH::findFirstElement('lists', $tmp_rule);
+            }
             if( $tmp_lists !== FALSE )
             {
                 $this->additional['botnet-domain']['lists'] = array();
@@ -388,17 +441,15 @@ class AntiSpywareProfile extends SecurityProfile2
                      */
 
                     $name = DH::findAttribute("name", $tmp_entry1);
-                    $action_element = DH::findFirstElement("action", $tmp_entry1);
-                    if( $action_element !== FALSE )
-                    {
-                        $tmp_firstElement = $action_element->firstElementChild;
-                        if( $tmp_firstElement !== FALSE && $tmp_firstElement !== null )
-                            $this->additional['botnet-domain']['lists'][$name]['action'] = $action_element->firstElementChild->nodeName;
-                    }
 
-                    $tmp_packet_capture = DH::findFirstElement("packet-capture", $tmp_entry1);
-                    if( $tmp_packet_capture !== FALSE )
-                        $this->additional['botnet-domain']['lists'][$name]['packet-capture'] = $tmp_packet_capture->textContent;
+                    $dnsPolicy_obj = new DNSPolicy( $name, $this );
+                    $dnsPolicy_obj->load_from_domxml( $tmp_entry1 );
+                    $this->lists_obj[$name] = $dnsPolicy_obj;
+                    $dnsPolicy_obj->addReference( $this );
+
+                    $this->owner->owner->DNSPolicyStore->add($dnsPolicy_obj);
+
+                    $this->additional['botnet-domain']['lists'][$name] = $dnsPolicy_obj;
                 }
             }
 
@@ -570,8 +621,34 @@ class AntiSpywareProfile extends SecurityProfile2
 
                     $this->owner->owner->DNSPolicyStore->add($dnsPolicy_obj);
 
-                    $this->additional['botnet-domain']['advanced-dns-security-categories'][] = $dnsPolicy_obj;
+                    $this->additional['botnet-domain']['advanced-dns-security-categories'][$name] = $dnsPolicy_obj;
                 }
+
+
+                foreach( $this->owner->owner->DNSPolicyStore->tmp_adns_prof_array as $dns_category )
+                {
+                    //add missing DNS security categories
+                    if( !isset($this->additional['botnet-domain']['advanced-dns-security-categories'][$dns_category]) )
+                    {
+                        $tmp_xml_string = '<entry name="'.$dns_category.'">
+                           <log-level>default</log-level>
+                           <action>default</action>
+                        </entry>';
+
+                        $dnsPolicy_obj = new DNSPolicy( $dns_category, $this );
+                        $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $tmp_xml_string);
+                        $tmp_advanced_dns_security_categories->appendChild($xmlElement);
+
+                        $dnsPolicy_obj->load_from_domxml( $xmlElement );
+                        $this->dns_rules_obj[$dns_category] = $dnsPolicy_obj;
+                        $dnsPolicy_obj->addReference( $this );
+
+                        $this->owner->owner->DNSPolicyStore->add($dnsPolicy_obj);
+
+                        $this->additional['botnet-domain']['advanced-dns-security-categories'][$dns_category] = $dnsPolicy_obj;
+                    }
+                }
+
             }
 
             $tmp_whitelists = DH::findFirstElement('whitelist', $tmp_rule);
@@ -654,10 +731,8 @@ class AntiSpywareProfile extends SecurityProfile2
                         #print_r($this->additional['botnet-domain'][$type]);
                         foreach( $this->additional['botnet-domain']['lists'] as $name => $value )
                         {
-                            $string_packetCapture = "";
-                            if( isset( $value['packet-capture'] ) )
-                                $string_packetCapture = " -  packet-capture: ".$value['packet-capture'];
-                            PH::print_stdout("            - ".$name." -  action: ".$value['action'] .$string_packetCapture );
+                            $padding = "    ";
+                            $value->display( $padding);
                         }
                     }
                     elseif( $type == "sinkhole" )
@@ -705,7 +780,12 @@ class AntiSpywareProfile extends SecurityProfile2
                 PH::print_stdout("        - mica-engine-spyware-enabled: ". $enabled);
 
                 foreach ($this->additional['mica-engine-spyware-enabled'] as $name => $threat)
-                    PH::print_stdout("          * " . $name . " - inline-policy-action :" . $this->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action']);
+                {
+                    $string = "          * " . $name . " - inline-policy-action :" . $this->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action'];
+                    if( isset($this->additional['mica-engine-spyware-enabled'][$name]['local-deep-learning']) )
+                        $string .= " - local-deep-learning :" . $this->additional['mica-engine-spyware-enabled'][$name]['local-deep-learning'];
+                    PH::print_stdout( $string );
+                }
             }
         }
         #PH::print_stdout();
@@ -749,56 +829,19 @@ class AntiSpywareProfile extends SecurityProfile2
         if( $this->secprof_type != 'spyware' )
             return null;
 
-        $checkBP_array = $this->spyware_lists_bp_visibility_JSON( "bp", "spyware");
-
+        $bp_set = false;
         if( isset($this->additional['botnet-domain']['lists']) )
         {
-            foreach( $this->additional['botnet-domain']['lists'] as $name => $array)
+            foreach ($this->additional['botnet-domain']['lists'] as $name => $value)
             {
-                foreach( $checkBP_array['action'] as $validation )
-                {
-                    foreach( $validation['type'] as $check_type )
-                    {
-                        if( $name == $check_type )
-                        {
-                            $checkBP_value = false;
-                            if( isset($array['action']) )
-                            {
-                                foreach( $validation['action'] as $check_action)
-                                {
-                                    $negate_string = "";
-                                    if( strpos( $check_action, "!" ) !== FALSE )
-                                        $negate_string = "!";
-                                    if ( $negate_string.$array['action'] == $check_action )
-                                        $checkBP_value = TRUE;
-                                    else
-                                        $checkBP_value = FALSE;
-                                }
-                            }
-
-                            if( isset($array['packet-capture']) )
-                            {
-                                foreach( $validation['packet-capture'] as $check_action)
-                                {
-                                    $negate_string = "";
-                                    if( strpos( $check_action, "!" ) !== FALSE )
-                                        $negate_string = "!";
-                                    if ( $negate_string.$array['packet-capture'] == $check_action )
-                                        $checkBP_value = TRUE;
-                                    else
-                                        $checkBP_value = FALSE;
-                                }
-                            }
-
-                            if( $checkBP_value )
-                                return TRUE;
-                        }
-                    }
-                }
+                /** @var DNSPolicy $value */
+                if ($value->spyware_lists_bestpractice())
+                    $bp_set = true;
+                else
+                    return false;
             }
         }
-
-        return FALSE;
+        return $bp_set;
     }
 
     public function spyware_dnslist_visibility()
@@ -806,44 +849,21 @@ class AntiSpywareProfile extends SecurityProfile2
         if( $this->secprof_type != 'spyware' )
             return null;
 
-        $check_array = $this->spyware_lists_bp_visibility_JSON( "visibility", "spyware");
-
+        $bp_set = false;
         if( isset($this->additional['botnet-domain']['lists']) )
         {
-            foreach( $this->additional['botnet-domain']['lists'] as $name => $array)
+            foreach ($this->additional['botnet-domain']['lists'] as $name => $value)
             {
-                foreach( $check_array['action'] as $validation )
-                {
-                    foreach( $validation['type'] as $check_type )
-                    {
-                        if( $name == $check_type )
-                        {
-                            if( isset($array['action']) )
-                            {
-                                $check_result = FALSE;
-                                foreach( $validation['action'] as $check_action)
-                                {
-                                    $negate_string = "";
-                                    if( strpos( $check_action, "!" ) !== FALSE )
-                                        $negate_string = "!";
-                                    if ( $negate_string.$array['action'] == $check_action )
-                                        $check_result =  FALSE;
-                                    else
-                                        $check_result = TRUE;
-                                }
-
-                                if( $check_result )
-                                    return TRUE;
-                                else
-                                    return FALSE;
-                            }
-                        }
-                    }
-                }
+                if( $value->name() !== "default-paloalto-dns" )
+                    continue;
+                /** @var DNSPolicy $value */
+                if ($value->spyware_lists_visibility())
+                    $bp_set = true;
+                else
+                    return false;
             }
         }
-
-        return FALSE;
+        return $bp_set;
     }
 
     public function spyware_dnslist_adoption()

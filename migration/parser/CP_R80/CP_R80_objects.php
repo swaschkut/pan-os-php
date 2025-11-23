@@ -546,6 +546,8 @@ trait CP_R80_objects
 
                 foreach( $subarray as $host_key => $host )
                 {
+                    $this->updateableObject[$host['uid']] = $host;
+
                     if( strpos( $host['icon'], '@app/cp_geo' ) !== false )
                     {
                         //Region
@@ -601,6 +603,7 @@ trait CP_R80_objects
                     //
                     elseif( strpos( $host['icon'], '@app/cp_wb_webex' ) !== false )
                     {
+                        //Todo how to work on this??? also some parts are EDL related
                         continue;
                     }
 
@@ -610,6 +613,8 @@ trait CP_R80_objects
             {
                 foreach( $subarray as $host_key => $host )
                 {
+                    $this->accessRole[$host['uid']] = $host;
+
                     if( isset($host['users']) and is_array($host['users']) )
                     {
                         $tmp_array = array();
@@ -656,6 +661,31 @@ trait CP_R80_objects
                     }
                 }
             }
+            elseif( $key == "LegacyUserAtLocation" )
+            {
+                foreach( $subarray as $host_key => $host )
+                {
+                    $this->LegacyUserAtLocation[$host['uid']] = $host;
+                }
+            }
+            elseif( $key == "Internet" )
+            {
+                foreach( $subarray as $host_key => $host )
+                {
+                    $this->Internet[$host['uid']] = $host;
+                }
+            }
+            elseif( $key == "security-zone" )
+            {
+                foreach( $subarray as $host_key => $host )
+                {
+                    $this->securityZone[$host['uid']] = $host;
+                }
+            }
+            elseif( $key == "CpmiExternalGroup" )
+            {
+                #print_r($subarray);
+            }
             elseif(
                 $key == "vpn-community-meshed"
                 || $key == "vpn-community-star"
@@ -665,7 +695,7 @@ trait CP_R80_objects
                 || $key == "Global"
                 #|| $key == "application-site"
                 || $key == "DropUserCheckInteractionScheme"
-                || $key == "Internet"
+                #|| $key == "Internet"
                 || $key == "application-site-category"
                 #|| $key == "access-role"
                 || $key == "application-site-group"

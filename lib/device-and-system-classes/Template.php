@@ -41,6 +41,7 @@ class Template
     /** @var SSL_TLSServiceProfileStore */
     public $SSL_TLSServiceProfileStore = null;
 
+    public $debugLoadTime = false;
     /**
      * Template constructor.
      * @param string $name
@@ -59,8 +60,33 @@ class Template
         $this->SSL_TLSServiceProfileStore->setName('SSL_TLSServiceStore');
     }
 
-    public function load_from_domxml(DOMElement $xml)
+    public function __destruct()
     {
+        /*
+        if ($this->debugLoadTime)
+        {
+            #PH::print_stdout("unset Template");
+        }
+
+
+        unset( $this->xmlroot);
+
+        unset( $this->deviceConfiguration );
+        unset( $this->certificateStore );
+        unset( $this->SSL_TLSServiceProfileStore );
+
+        gc_collect_cycles();
+
+        if ($this->debugLoadTime)
+        {
+            #PH::print_DEBUG_loadtime("after unset Template");
+        }
+        */
+    }
+    public function load_from_domxml(DOMElement $xml, $debugLoadTime = false)
+    {
+        $this->debugLoadTime = $debugLoadTime;
+
         $this->xmlroot = $xml;
 
         $this->name = DH::findAttribute('name', $xml);

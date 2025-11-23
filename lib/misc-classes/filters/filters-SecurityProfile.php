@@ -1181,9 +1181,12 @@ RQuery::$defaultFilters['securityprofile']['dns-list.action']['operators']['has'
 
         if( isset($object->additional['botnet-domain']) && isset($object->additional['botnet-domain']['lists']) )
         {
-            foreach( $object->additional['botnet-domain']['lists'] as $name)
+            foreach( $object->additional['botnet-domain']['lists'] as $rule)
             {
-                if( isset($name['action']) && $name['action'] == $value )
+                /** @var DNSPolicy $rule */
+
+                print "name: ".$rule->name()." action: ".$rule->action()."\n";
+                if( $rule->action() == $value )
                     return TRUE;
             }
         }

@@ -206,7 +206,14 @@ class SecurityProfileGroupStore extends ObjStore
         if( $ret && $rewriteXML )
         {
             if( $this->xmlroot === null )
-                $this->xmlroot = DH::findFirstElementOrCreate('profile-group', $this->owner->xmlroot);
+            {
+                if( $this->owner->isPanorama() || $this->owner->isFirewall() )
+                    $xml = $this->owner->sharedroot;
+                else
+                    $xml = $this->owner->xmlroot;
+
+                $this->xmlroot = DH::findFirstElementOrCreate('profile-group', $xml);
+            }
 
             $this->xmlroot->appendChild($Obj->xmlroot);
         }
@@ -264,10 +271,12 @@ class SecurityProfileGroupStore extends ObjStore
 
         if( $this->xmlroot === null )
         {
-            if( $this->owner->isDeviceGroup() || $this->owner->isVirtualSystem() || $this->owner->isContainer() || $this->owner->isDeviceCloud() )
-                $this->xmlroot = DH::findFirstElementOrCreate('profile-group', $this->owner->xmlroot);
+            if( $this->owner->isPanorama() || $this->owner->isFirewall() )
+                $xml = $this->owner->sharedroot;
             else
-                $this->xmlroot = DH::findFirstElementOrCreate('profile-group', $this->owner->sharedroot);
+                $xml = $this->owner->xmlroot;
+
+            $this->xmlroot = DH::findFirstElementOrCreate('profile-group', $xml);
         }
 
         $newSecurityProfileGroup = new SecurityProfileGroup($name, $this);
@@ -401,7 +410,15 @@ class SecurityProfileGroupStore extends ObjStore
         if( $this->xmlroot === null )
         {
             if( count($this->o) > 0 )
-                $this->xmlroot = DH::findFirstElementOrCreate('profile-group', $this->owner->xmlroot);
+            {
+                if( $this->owner->isPanorama() || $this->owner->isFirewall() )
+                    $xml = $this->owner->sharedroot;
+                else
+                    $xml = $this->owner->xmlroot;
+
+                $this->xmlroot = DH::findFirstElementOrCreate('profile-group', $xml);
+            }
+
         }
 
         DH::clearDomNodeChilds($this->xmlroot);

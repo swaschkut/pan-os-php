@@ -187,7 +187,7 @@ trait CP_R80_natlayer
                 //add DESTINATION
                 $destination = $access['original-destination'];
                 $destination_name = $this->find_address_uid($destination, "dst");
-                if( is_array($source_name) )
+                if( is_array($destination_name) )
                 {
 
                 }

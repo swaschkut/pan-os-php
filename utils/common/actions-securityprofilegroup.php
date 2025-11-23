@@ -295,7 +295,7 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
 
         $headers .= '<th>URL Filtering</th>';
         if( $bestPractice )
-            $headers .= '<th>URL VP</th>';
+            $headers .= '<th>BP URL</th>';
         if( $visibility )
             $headers .= '<th>visibility</th>';
         if( $adoption )

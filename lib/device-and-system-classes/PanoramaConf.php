@@ -261,6 +261,10 @@ class PanoramaConf
     public $_public_cloud_server = null;
     public $_auditComment = false;
 
+    public $debugLoadTime = false;
+
+    public $sizeArray = array();
+    public $sizeArrayShared = array();
 
     public function name()
     {
@@ -397,6 +401,91 @@ class PanoramaConf
         $this->managedFirewallsStore = new ManagedDeviceStore( $this );
     }
 
+    public function __destruct()
+    {
+        /*
+        if ($this->debugLoadTime)
+        {
+            #PH::print_stdout("unset PanoramaConf");
+        }
+
+        unset( $this->xmldoc );
+        unset( $this->xmlroot);
+
+        unset($this->tagStore );
+        unset($this->zoneStore );
+        unset($this->certificateStore );
+        unset($this->SSL_TLSServiceProfileStore );
+
+        unset($this->appStore );
+
+        unset($this->threatStore );
+
+        unset($this->urlStore );
+
+        unset($this->serviceStore );
+
+        unset($this->addressStore );
+
+
+        unset($this->customURLProfileStore );
+        unset($this->URLProfileStore );
+        unset($this->AntiVirusProfileStore );
+
+
+        unset($this->ThreatPolicyStore );
+        unset($this->DNSPolicyStore );
+        unset($this->VulnerabilityProfileStore );
+        unset($this->AntiSpywareProfileStore );
+        unset($this->FileBlockingProfileStore );
+        unset($this->DataFilteringProfileStore );
+        unset($this->WildfireProfileStore );
+        unset($this->securityProfileGroupStore );
+
+
+        unset($this->DecryptionProfileStore );
+        unset($this->HipObjectsProfileStore );
+        unset($this->HipProfilesProfileStore );
+        unset($this->GTPProfileStore );
+        unset($this->SCEPProfileStore );
+        unset($this->PacketBrokerProfileStore );
+        unset($this->SDWanErrorCorrectionProfileStore );
+        unset($this->SDWanPathQualityProfileStore );
+        unset($this->SDWanSaasQualityProfileStore );
+        unset($this->SDWanTrafficDistributionProfileStore );
+        unset($this->DataObjectsProfileStore );
+
+
+        unset($this->scheduleStore );
+        unset($this->EDLStore );
+        unset($this->LogProfileStore );
+
+        unset($this->securityRules );
+        unset($this->natRules );
+        unset($this->decryptionRules );
+        unset($this->appOverrideRules );
+        unset($this->captivePortalRules );
+        unset($this->authenticationRules );
+        unset($this->pbfRules );
+        unset($this->qosRules );
+        unset($this->dosRules );
+        unset($this->tunnelInspectionRules );
+        unset($this->defaultSecurityRules );
+
+        unset($this->networkPacketBrokerRules );
+        unset($this->sdWanRules );
+
+        unset($this->_fakeNetworkProperties );
+
+        unset($this->managedFirewallsStore );
+        gc_collect_cycles();
+
+        if ($this->debugLoadTime)
+        {
+            #PH::print_DEBUG_loadtime("after unset PanroamaConf");
+        }
+        */
+    }
 
     public function load_from_xmlstring(&$xml)
     {
@@ -414,6 +503,8 @@ class PanoramaConf
      */
     public function load_from_domxml($xml, $debugLoadTime = false)
     {
+        $this->debugLoadTime = $debugLoadTime;
+
         if( $xml->nodeType == XML_DOCUMENT_NODE )
         {
             $this->xmldoc = $xml;
@@ -550,7 +641,7 @@ class PanoramaConf
             if( $node->nodeType != XML_ELEMENT_NODE ) continue;
 
             $ldv = new Template('*tmp*', $this);
-            $ldv->load_from_domxml($node);
+            $ldv->load_from_domxml($node, $this->debugLoadTime);
             $this->templates[] = $ldv;
             #PH::print_stdout(  "Template '{$ldv->name()}' found" );
         }
@@ -1608,7 +1699,7 @@ class PanoramaConf
                         }
                         else
                         {
-                            PH::print_stdout("timezone: '".$this->timezone."' not supported by IANA");
+                            #PH::print_stdout("timezone: '".$this->timezone."' not supported by IANA");
                         }
                     }
                     PH::disableExceptionSupport();
@@ -1752,12 +1843,28 @@ class PanoramaConf
         $gpostNetworkPacketBrockerRules = $this->networkPacketBrokerRules->countPostRules();
         $gpostSDWanRules = $this->sdWanRules->countPostRules();
 
+        $size_securityRules = &DH::dom_get_config_size($this->securityRules->xmlroot);
+        $size_natRules = &DH::dom_get_config_size($this->natRules->xmlroot);
+        $size_decryptionRules = &DH::dom_get_config_size($this->decryptionRules->xmlroot);
+        $size_appOverrideRules = &DH::dom_get_config_size($this->appOverrideRules->xmlroot);
+        $size_captivePortalRules = &DH::dom_get_config_size($this->captivePortalRules->xmlroot);
+        $size_authenticationRules = &DH::dom_get_config_size($this->authenticationRules->xmlroot);
+        $size_pbfRules = &DH::dom_get_config_size($this->pbfRules->xmlroot);
+        $size_qosRules = &DH::dom_get_config_size($this->qosRules->xmlroot);
+        $size_dosRules = &DH::dom_get_config_size($this->dosRules->xmlroot);
+        $size_tunnelInspectionRules = &DH::dom_get_config_size($this->tunnelInspectionRules->xmlroot);
+        $size_defaultSecurityRules = &DH::dom_get_config_size($this->defaultSecurityRules->xmlroot);
+        $size_networkPacketBrokerRules = &DH::dom_get_config_size($this->networkPacketBrokerRules->xmlroot);
+        $size_sdWanRules = &DH::dom_get_config_size($this->sdWanRules->xmlroot);
 
         $gnservices = $this->serviceStore->countServices();
         $gnservicesUnused = $this->serviceStore->countUnusedServices();
         $gnserviceGs = $this->serviceStore->countServiceGroups();
         $gnserviceGsUnused = $this->serviceStore->countUnusedServiceGroups();
         $gnTmpServices = $this->serviceStore->countTmpServices();
+        $size_srvRoot = &DH::dom_get_config_size($this->serviceStore->serviceRoot);
+        $size_srvgrpRoot = &DH::dom_get_config_size($this->serviceStore->serviceGroupRoot);
+        $size_serviceStore = $size_srvRoot+$size_srvgrpRoot;
 
         $gnaddresss = $this->addressStore->countAddresses();
         $gnaddresssUnused = $this->addressStore->countUnusedAddresses();
@@ -1765,9 +1872,14 @@ class PanoramaConf
         $gnaddressGsUnused = $this->addressStore->countUnusedAddressGroups();
         $gnTmpAddresses = $this->addressStore->countTmpAddresses();
         $gnRegionAddresses = $this->addressStore->countRegionObjects();
+        $size_adrRoot = &DH::dom_get_config_size($this->addressStore->addressRoot);
+        $size_adrgrpRoot = &DH::dom_get_config_size($this->addressStore->addressGroupRoot);
+        $size_regionRoot = &DH::dom_get_config_size($this->addressStore->regionRoot);
+        $size_addressStore = $size_adrRoot+$size_adrgrpRoot+$size_regionRoot;
 
         $gTagCount = $this->tagStore->count();
         $gTagUnusedCount = $this->tagStore->countUnused();
+        $size_tagStore = &DH::dom_get_config_size($this->tagStore->xmlroot);
 
         $gnsecurityprofileGs = $this->securityProfileGroupStore->count();
 
@@ -1777,6 +1889,7 @@ class PanoramaConf
         $gnwildfire = $this->WildfireProfileStore->count();
         $gnurlprofil = $this->URLProfileStore->count();
         $gncustomurlprofil = $this->customURLProfileStore->count();
+        $size_customURLProfileStore = &DH::dom_get_config_size($this->customURLProfileStore->xmlroot);
         $gnfileblocking = $this->FileBlockingProfileStore->count();
         $gndecryption = $this->DecryptionProfileStore->count();
 
@@ -1856,12 +1969,16 @@ class PanoramaConf
             $gpostNetworkPacketBrockerRules += $cur->networkPacketBrokerRules->countPostRules();
             $gpostSDWanRules += $cur->sdWanRules->countPostRules();
 
+            $size_securityRules += DH::dom_get_config_size($cur->securityRules->xmlroot);
 
             $gnservices += $cur->serviceStore->countServices();
             $gnservicesUnused += $cur->serviceStore->countUnusedServices();
             $gnserviceGs += $cur->serviceStore->countServiceGroups();
             $gnserviceGsUnused += $cur->serviceStore->countUnusedServiceGroups();
             $gnTmpServices += $cur->serviceStore->countTmpServices();
+            $size_tmpsrvRoot = DH::dom_get_config_size($cur->serviceStore->serviceRoot);
+            $size_tmpsrvgrpRoot = DH::dom_get_config_size($cur->serviceStore->serviceGroupRoot);
+            $size_serviceStore += ($size_tmpsrvRoot+$size_tmpsrvgrpRoot);
 
             $gnaddresss += $cur->addressStore->countAddresses();
             $gnaddresssUnused += $cur->addressStore->countUnusedAddresses();
@@ -1869,9 +1986,14 @@ class PanoramaConf
             $gnaddressGsUnused += $cur->addressStore->countUnusedAddressGroups();
             $gnTmpAddresses += $cur->addressStore->countTmpAddresses();
             $gnRegionAddresses += $cur->addressStore->countRegionObjects();
+            $size_tmpadrRoot = DH::dom_get_config_size($cur->addressStore->addressRoot);
+            $size_tmpadrgrpRoot = DH::dom_get_config_size($cur->addressStore->addressGroupRoot);
+            $size_tmpregionRoot = DH::dom_get_config_size($cur->addressStore->regionRoot);
+            $size_addressStore += ($size_tmpadrRoot+$size_tmpadrgrpRoot+$size_tmpregionRoot);
 
             $gTagCount += $cur->tagStore->count();
             $gTagUnusedCount += $cur->tagStore->countUnused();
+            $size_tagStore += DH::dom_get_config_size($cur->tagStore->xmlroot);
 
 
             $gnsecurityprofileGs += $cur->securityProfileGroupStore->count();
@@ -1882,6 +2004,8 @@ class PanoramaConf
             $gnwildfire += $cur->WildfireProfileStore->count();
             $gnurlprofil += $cur->URLProfileStore->count();
             $gncustomurlprofil += $cur->customURLProfileStore->count();
+            $size_customURLProfileStore += DH::dom_get_config_size($cur->customURLProfileStore->xmlroot);
+
             $gnfileblocking += $cur->FileBlockingProfileStore->count();
             $gndecryption += $cur->DecryptionProfileStore->count();
 
@@ -2095,6 +2219,7 @@ class PanoramaConf
         $stdoutarray['custom URL objects'] = array();
         $stdoutarray['custom URL objects']['shared'] = $this->customURLProfileStore->count();
         $stdoutarray['custom URL objects']['total_DGs'] = $gncustomurlprofil;
+
         $stdoutarray['File-Blocking objects'] = array();
         $stdoutarray['File-Blocking objects']['shared'] = $this->FileBlockingProfileStore->count();
         $stdoutarray['File-Blocking objects']['total_DGs'] = $gnfileblocking;
@@ -2163,6 +2288,22 @@ class PanoramaConf
 
         if( !PH::$shadow_json && $actions == "display"  )
             PH::print_stdout( $stdoutarray, true );
+
+        $this->sizeArray['type'] = get_class( $this );
+        $this->sizeArray['statstype'] = "objects";
+        $this->sizeArray['header'] = $header;
+        $this->sizeArray['kb Panorama'] = DH::dom_get_config_size($this->xmlroot);
+        $this->sizeArray['kb security rules'] = $size_securityRules;
+        $this->sizeArray['kb address objects'] = $size_addressStore;
+        $this->sizeArray['kb service objects'] = $size_serviceStore;
+        $this->sizeArray['kb tag objects'] = $size_tagStore;
+        $this->sizeArray['kb custom URL objects'] = $size_customURLProfileStore;
+
+        if( !PH::$shadow_json && $actions == "display-size"  )
+        {
+            PH::stats_remove_zero_arrays($this->sizeArray);
+            PH::print_stdout( $this->sizeArray, true );
+        }
 
         if( $actions == "display-available" )
         {
@@ -2311,8 +2452,31 @@ class PanoramaConf
         $stdoutarray['DataObjects objects']['total'] = $this->DataObjectsProfileStore->count();
 
 
+
+        $this->sizeArrayShared['type'] = "DeviceGroup";
+        $this->sizeArrayShared['statstype'] = "objects";
+        $this->sizeArrayShared['header'] = $header;
+        $this->sizeArrayShared['kb shared'] = &DH::dom_get_config_size($this->sharedroot);
+        $this->sizeArrayShared['kb security rules'] = &DH::dom_get_config_size($this->securityRules->xmlroot);
+        $tmp_adrRoot = &DH::dom_get_config_size($this->addressStore->addressRoot);
+        $tmp_adrgrpRoot = &DH::dom_get_config_size($this->addressStore->addressGroupRoot);
+        $tmp_regionRoot = &DH::dom_get_config_size($this->addressStore->regionRoot);
+        $this->sizeArrayShared['kb address objects'] = $tmp_adrRoot+$tmp_adrgrpRoot+$tmp_regionRoot;
+        $tmp_srvRoot = &DH::dom_get_config_size($this->serviceStore->serviceRoot);
+        $tmp_srvgrpRoot = &DH::dom_get_config_size($this->serviceStore->serviceGroupRoot);
+        $this->sizeArrayShared['kb service objects'] = $tmp_srvRoot+$tmp_srvgrpRoot;
+        $this->sizeArrayShared['kb tag objects'] = &DH::dom_get_config_size($this->tagStore->xmlroot);
+        $this->sizeArrayShared['kb custom URL objects'] = &DH::dom_get_config_size($this->customURLProfileStore->xmlroot);
+
+
         if( !PH::$shadow_json && $actions == "display"  )
             PH::print_stdout( $stdoutarray, true );
+
+        if( !PH::$shadow_json && $actions == "display-size"  )
+        {
+            PH::stats_remove_zero_arrays($this->sizeArrayShared);
+            PH::print_stdout( $this->sizeArrayShared, true );
+        }
 
         if( $actions == "display-available" )
         {
@@ -3580,6 +3744,34 @@ class PanoramaConf
         }
 
         return $newDG;
+    }
+
+    public function setParentDG($name, $parentDGname = null)
+    {
+        if( $this->version >= 70 )
+        {
+
+            if( $this->version >= 80 )
+                $dgMetaDataNode = DH::findXPathSingleEntryOrDie('/config/readonly/devices/entry[@name="localhost.localdomain"]/device-group', $this->xmlroot);
+            else
+                $dgMetaDataNode = DH::findXPathSingleEntryOrDie('/config/readonly/dg-meta-data/dg-info', $this->xmlroot);
+
+            $parentXMLnode = "";
+            if( $parentDGname !== null )
+            {
+                $parentDG = $this->findDeviceGroup( $parentDGname );
+                if( $parentDG === null )
+                    mwarning("DeviceGroup '$name' has DeviceGroup '{$parentDGname}' listed as parent but it cannot be found in XML");
+                else
+                    $parentXMLnode = "<parent-dg>".$parentDGname."</parent-dg>";
+            }
+
+            $newXmlNode = DH::importXmlStringOrDie($this->xmldoc, $parentXMLnode);
+
+            $readOnlyDG = DH::findFirstElementByNameAttrOrDie( "entry", $name, $dgMetaDataNode );
+            $readOnlyDG->appendChild($newXmlNode);
+
+        }
     }
 
     public function API_syncDGparentEntry($name, $parentDGname)

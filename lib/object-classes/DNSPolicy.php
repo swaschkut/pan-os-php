@@ -55,9 +55,13 @@ class DNSPolicy
         }
 
         $tmp = DH::findFirstElement('action', $tmp_entry1);
-        if( $tmp !== FALSE )
+        if( $tmp !== FALSE && $tmp !== NULL )
         {
-            $this->action = $tmp->textContent;
+            $child = DH::firstChildElement($tmp);
+            if( $child !== FALSE )
+                $this->action = $child->nodeName;
+            else
+                $this->action = $tmp->textContent;
         }
 
         if( $this->advanced === FALSE )
@@ -169,16 +173,22 @@ class DNSPolicy
             {
                 if( $this->name() == $name )
                 {
+                    #print "0) name: ".$name."\n";
                     foreach( $validate['action'] as $final_action_check )
                     {
                         #print "1) action: ".$this->action()." |validate: ".$final_action_check."\n";
                         if( $this->action() == $final_action_check )
                         {
                             $bp_action = TRUE;
+                            #print "1-0) true\n";
                             break;
                         }
                         else
+                        {
                             $bp_action = FALSE;
+                            #print "1-1) false\n";
+                        }
+
                     }
 
 
@@ -188,10 +198,14 @@ class DNSPolicy
                         if( $this->packetCapture() == $final_packet_check )
                         {
                             $bp_packet = TRUE;
+                            #print "2-0) true\n";
                             break;
                         }
                         else
+                        {
                             $bp_packet = FALSE;
+                            #print "2-1) false\n";
+                        }
                     }
 
 
@@ -224,6 +238,105 @@ class DNSPolicy
     }
 
     public function spyware_dns_security_rule_visibility()
+    {
+        //every setting is visibility
+        return true;
+    }
+
+    public function spyware_lists_bp_visibility_JSON( $checkType )
+    {
+        $secprof_type = "spyware";
+        $checkArray = array();
+
+        if( $checkType !== "bp" && $checkType !== "visibility" )
+            derr( "only 'bp' or 'visibility' argument allowed" );
+
+        ###############################
+        $details = PH::getBPjsonFile( );
+
+        if( isset($details[$secprof_type]['lists']) )
+        {
+            if( $checkType == "bp" )
+            {
+                if( isset($details[$secprof_type]['lists']['bp']))
+                    $checkArray = $details[$secprof_type]['lists']['bp'];
+                else
+                    derr( "this JSON bp/visibility JSON file does not have 'bp' -> 'lists' defined correctly for: '".$secprof_type, null, FALSE );
+            }
+            elseif( $checkType == "visibility")
+            {
+                if( isset($details[$secprof_type]['lists']['visibility']))
+                    $checkArray = $details[$secprof_type]['lists']['visibility'];
+                #else
+                //until now all settings are visibilty
+                #    derr( "this JSON bp/visibility JSON file does not have 'visibility' -> 'dns' defined correctly for: '".$secprof_type, null, FALSE );
+            }
+        }
+
+        return $checkArray;
+    }
+
+    public function spyware_lists_bestpractice()
+    {
+        $check_array = $this->spyware_lists_bp_visibility_JSON( "bp");
+
+        foreach( $check_array['action'] as $validate )
+        {
+            $bp_action = FALSE;
+            $bp_packet = FALSE;
+
+            foreach( $validate['type'] as $name )
+            {
+                if( $this->name() == $name )
+                {
+                    #print "0) name: ".$name."\n";
+                    foreach( $validate['action'] as $final_action_check )
+                    {
+                        #print "1) action: ".$this->action()." |validate: ".$final_action_check."\n";
+                        if( $this->action() == $final_action_check )
+                        {
+                            $bp_action = TRUE;
+                            #print "1-0) true\n";
+                            break;
+                        }
+                        else
+                        {
+                            $bp_action = FALSE;
+                            #print "1-1) false\n";
+                        }
+
+                    }
+
+
+                    foreach( $validate['packet-capture'] as $final_packet_check )
+                    {
+                        #print "2) packet: ".$this->packetCapture()." |validate: ".$final_packet_check."\n";
+                        if( $this->packetCapture() == $final_packet_check )
+                        {
+                            $bp_packet = TRUE;
+                            #print "2-0) true\n";
+                            break;
+                        }
+                        else
+                        {
+                            $bp_packet = FALSE;
+                            #print "2-1) false\n";
+                        }
+                    }
+
+
+                    if( $bp_action && $bp_packet )
+                        return TRUE;
+                    else
+                        return FALSE;
+                }
+            }
+        }
+
+        return TRUE;
+    }
+
+    public function spyware_lists_visibility()
     {
         //every setting is visibility
         return true;

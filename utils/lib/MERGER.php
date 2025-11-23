@@ -970,7 +970,7 @@ class MERGER extends UTIL
                                 if( $memberFound->value() !== $memberObject->value() )
                                 {
                                     PH::print_stdout("   * SKIPPED : this group has an object named '{$memberObject->name()} that does exist in target location '{$tmp_DG_name}' with different value");
-                                    $this->skippedObject( $index, $object, $memberObject, "this group has an object named '{$memberObject->name()} that does exist in target location '{$tmp_DG_name}' with different value" );
+                                    $this->skippedObject( $index, $memberFound, $memberObject, "this group has an object named '{$memberObject->name()} that does exist in target location '{$tmp_DG_name}' with different value" );
                                     $skip = TRUE;
                                     break;
                                 }
@@ -981,7 +981,7 @@ class MERGER extends UTIL
                                 if( count($diff['minus']) != 0 || count($diff['plus']) != 0 )
                                 {
                                     PH::print_stdout("   * SKIPPED : this group has different member ship compare to upperlevel");
-                                    $this->skippedObject( $index, $object, $memberObject, "this group has different member ship compare to upperlevel" );
+                                    $this->skippedObject( $index, $memberFound, $memberObject, "this group has different member ship compare to upperlevel" );
                                     $skip = TRUE;
                                     break;
                                 }
@@ -989,7 +989,7 @@ class MERGER extends UTIL
                             else
                             {
                                 PH::print_stdout("   * SKIPPED : this group has an object named '{$memberObject->name()} that does exist in target location '{$tmp_DG_name}' with different object type");
-                                $this->skippedObject( $index, $object, $memberObject, "this group has an object named '{$memberObject->name()} that does not exist in target location '{$tmp_DG_name}'" );
+                                $this->skippedObject( $index, $memberFound, $memberObject, "this group has an object named '{$memberObject->name()} that does not exist in target location '{$tmp_DG_name}'" );
                                 $skip = TRUE;
                                 break;
                             }
@@ -1101,7 +1101,7 @@ class MERGER extends UTIL
                             {
 
                             */
-                                $tmp_return_value = $this->addressgroupGetValueDiff($ancestor, $object, true);;
+                                $tmp_return_value = $this->addressgroupGetValueDiff($childancestor, $object, true);
 
                                 if( $tmp_return_value === FALSE )
                                 {
@@ -1548,7 +1548,10 @@ class MERGER extends UTIL
             if( $this->upperLevelSearch )
                 $objectsToSearchThrough = $store->nestedPointOfView();
             else
-                $objectsToSearchThrough = $store->addressObjects();
+            {
+                #$objectsToSearchThrough = $store->addressObjects();
+                $objectsToSearchThrough = $store->addressANDtmpIPObjects();
+            }
 
             $hashMap = array();
             $NamehashMap = array();
@@ -1561,7 +1564,13 @@ class MERGER extends UTIL
                 //todo: childDG/childDG to parentDG merge is always done; should it not combined to upperLevelSearch value?
                 foreach( $childDeviceGroups as $dg )
                 {
-                    foreach( $dg->addressStore->addressObjects() as $object )
+                    if( $this->debugAPI )
+                    {
+                        PH::print_stdout("check DG: ".$dg->name());
+                        PH::print_stdout("count: ".count( $dg->addressStore->addressObjects() ));
+                        PH::print_stdout("count: ".count( $dg->addressStore->addressTMPObjects() ));
+                    }
+                    foreach( $dg->addressStore->addressANDtmpIPObjects() as $object )
                     {
                         if( !$object->isAddress() )
                             continue;
@@ -1573,7 +1582,8 @@ class MERGER extends UTIL
 
                         $value = $this->address_get_value_string( $object );
 
-                        #PH::print_stdout( "add objNAME: " . $object->name() . " DG: " . $object->owner->owner->name() . "" );
+                        if( $this->debugAPI )
+                            PH::print_stdout( "add objNAME: " . $object->name() . " childDG: " . $object->owner->owner->name() . "" );
                         $child_hashMap[$value][] = $object;
                         $child_NamehashMap[$object->name()][] = $object;
                     }
@@ -1606,6 +1616,9 @@ class MERGER extends UTIL
 
                     if( $object->owner === $store )
                     {
+                        if( $this->debugAPI && $object->name() == "20.73.215.48" )
+                            print "added: 20.73.215.48 to Hashmap\n";
+
                         $hashMap[$value][] = $object;
                         $NamehashMap[$object->name()][] = $object;
                         if( $parentStore !== null )
@@ -1615,8 +1628,12 @@ class MERGER extends UTIL
                     }
                     else
                     {
+                        if( $this->debugAPI && $object->name() == "20.73.215.48" )
+                            print "added: 20.73.215.48 to upper2\n";
                         $upperHashMap[$value][] = $object;
                         $upper_NamehashMap[$object->name()][] = $object;
+
+                        #$object->childancestor = self::findChildAncestor( $childDeviceGroups, $object, "addressStore");
                     }
 
                 }
@@ -1721,8 +1738,14 @@ class MERGER extends UTIL
                                 $exit = TRUE;
                                 $exitObject = $obj;
                             }
+                            elseif( $obj->getNetworkMask() !== $pickedObject->getNetworkMask() )
+                            {
+                                $exit = TRUE;
+                                $exitObject = $obj;
+                            }
 
-                            if( isset($obj->owner->parentCentralStore) )
+
+                            if( !$exit && isset($obj->owner->parentCentralStore) )
                             {
                                 $tmpParentStore = $obj->owner->parentCentralStore;
                                 $tmp_obj = $tmpParentStore->find( $pickedObject->name(), null, true );
@@ -1743,6 +1766,11 @@ class MERGER extends UTIL
                                         $exit = TRUE;
                                         $exitObject = $tmp_obj;
                                     }
+                                    elseif( $tmp_obj->getNetworkMask() !== $pickedObject->getNetworkMask() )
+                                    {
+                                        $exit = TRUE;
+                                        $exitObject = $tmp_obj;
+                                    }
                                 }
                             }
                         }
@@ -1754,7 +1782,7 @@ class MERGER extends UTIL
                             continue;
                         }
                     }
-                    PH::print_stdout("   * create object in DG: '" . $tmp_DG_name . "' : '" . $pickedObject->name() . "'");
+                    PH::print_stdout("   * create object in DG: '" . $tmp_DG_name . "' : '" . $pickedObject->name() . "' type: ".$pickedObject->type());
 
                     if( $this->action === "merge" )
                     {
@@ -1824,7 +1852,10 @@ class MERGER extends UTIL
                 // Merging loop finally!
                 foreach( $hash as $objectIndex => $object )
                 {
+                    /** @var Address $object*/
                     if( $tmp_address === null )
+                        continue;
+                    if( $object->isTmpAddr() )
                         continue;
 
                     $checkHash = $this->address_service_hash_map_check( $index, $object, $NamehashMap, $upper_NamehashMap, $child_NamehashMap,true, true, true );
@@ -1839,6 +1870,12 @@ class MERGER extends UTIL
                             continue;
                         }
 
+                    //|| is needed, to not change the existing traffic flow
+                    if( $object->tags->count() > 0 || $tmp_address->tags->count() > 0 )
+                    {
+                        if( $this->address_tag_DAG_check( $object, $tmp_address, $index) )
+                            continue;
+                    }
                     if( $object->tags->count() + $tmp_address->tags->count() > $object->tagLimit )
                     {
                         if( $this->address_tag_merge_check( $object, $tmp_address, $index) )
@@ -1933,6 +1970,12 @@ class MERGER extends UTIL
                                         continue;
                                     }
 
+                                //|| is needed, to not change the existing traffic flow
+                                if( $pickedObject->tags->count() > 0 || $ancestor->tags->count() > 0 )
+                                {
+                                    if( $this->address_tag_DAG_check( $pickedObject, $ancestor, $index) )
+                                        continue;
+                                }
                                 if( $pickedObject->tags->count() + $ancestor->tags->count() > $pickedObject->tagLimit )
                                 {
                                     if( $this->address_tag_merge_check( $pickedObject, $ancestor, $index) )
@@ -2022,6 +2065,12 @@ class MERGER extends UTIL
                         if( $pickedObject->isType_TMP() )
                             continue;
 
+                        //|| is needed, to not change the existing traffic flow
+                        if( $object->tags->count() > 0 || $pickedObject->tags->count() > 0 )
+                        {
+                            if( $this->address_tag_DAG_check( $object, $pickedObject, $index) )
+                                continue;
+                        }
                         if( $object->tags->count() + $pickedObject->tags->count() > $object->tagLimit )
                         {
                             if( $this->address_tag_merge_check( $object, $pickedObject, $index) )
@@ -2168,6 +2217,78 @@ class MERGER extends UTIL
         return TRUE;
     }
 
+    function address_tag_DAG_check( $pickedObject, $ancestor, $index)
+    {
+        /** @var Address $pickedObject */
+        $pickedObjReferences = $pickedObject->refrules;
+
+        $pickedObjPartOfDAG = false;
+        foreach( $pickedObjReferences as $objReference)
+        {
+            /** @var AddressGroup $objReference */
+            if( get_class($objReference) == "AddressGroup" && $objReference->isDynamic() )
+            {
+                $pickedObjPartOfDAG = true;
+                break;
+            }
+        }
+
+        $ancestorRef = $ancestor->refrules;
+        $ancestorPartOfDAG = false;
+        foreach( $ancestorRef as $objReference)
+        {
+            /** @var AddressGroup $objReference */
+            if( get_class($objReference) == "AddressGroup" && $objReference->isDynamic() )
+            {
+                $ancestorPartOfDAG = true;
+                break;
+            }
+        }
+
+        if( $pickedObjPartOfDAG || $ancestorPartOfDAG )
+        {
+            /** @var Address $pickedObject */
+            /** @var Address $ancestor */
+            foreach( $pickedObject->tags->getAll() as $objTag )
+            {
+                if( !$ancestor->tags->hasTag($objTag) )
+                {
+                    //todo: check if both objects are at same level
+                    if( $pickedObject->owner->owner !== $ancestor->owner->owner )
+                    {
+                        if( is_object($objTag) )
+                            $tmp_string = "    - SKIP1: '{$pickedObject->_PANC_shortName()}' [has a tag '{$objTag->name()}'] which is not part of address object: ".$ancestor->_PANC_shortName();
+                        else
+                            $tmp_string = "    - SKIP1: '{$pickedObject->_PANC_shortName()}' [has a tag '{$objTag}'] which is not part of address object: ".$ancestor->_PANC_shortName();
+                        PH::print_stdout( $tmp_string );
+                        $this->skippedObject( $index, $pickedObject, $ancestor, $tmp_string );
+
+                        return true;
+                    }
+                }
+            }
+            foreach( $ancestor->tags->getAll() as $objTag )
+            {
+                if( !$pickedObject->tags->hasTag($objTag) )
+                {
+                    if( $pickedObject->owner->owner !== $ancestor->owner->owner )
+                    {
+                        #if (is_object($objTag))
+                        #    $tmp_string = "    - SKIP2: '{$ancestor->_PANC_shortName()}' [has a tag '{$objTag->name()}'] which is not part of address object: " . $pickedObject->_PANC_shortName();
+                        #else
+                        #    $tmp_string = "    - SKIP2: '{$ancestor->_PANC_shortName()}' [has a tag '{$objTag}'] which is not part of address object: " . $pickedObject->_PANC_shortName();
+                        #PH::print_stdout($tmp_string);
+                        #$this->skippedObject($index, $pickedObject, $ancestor, $tmp_string);
+
+                        #return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
     function address_tag_merge_check( $pickedObject, $ancestor, $index)
     {
         $arrayPicked = array();
@@ -2185,10 +2306,6 @@ class MERGER extends UTIL
             PH::print_stdout( "    - SKIP: tag count of name '{$ancestor->_PANC_shortName()}' [with value '{$ancestor->value()}'] added with object name from upperlevel '{$pickedObject->_PANC_shortName()}' [with value '{$pickedObject->value()}'] exceed PAN-OS limit ".$pickedObject->tagLimit." with unique tag count: ".count($mergeArray) );
             $this->skippedObject( $index, $pickedObject, $ancestor, "tag object count exceed PAN-OS limit ".$pickedObject->tagLimit." with unique tag count: ".count($mergeArray) );
 
-            #PH::print_stdout( count($mergeArray) );
-            #$result=array_intersect($arrayPicked,$arrayAncestor);
-            #print_r( $result );
-
             return true;
         }
 
@@ -2196,9 +2313,12 @@ class MERGER extends UTIL
     }
     function address_get_value_string( $object )
     {
+        /** @var Address $object */
         $value = $object->value();
-        if( ($object->isType_ipNetmask() || $object->isType_TMP() ) && strpos($object->value(), '/32') !== FALSE )
-            $value = substr($value, 0, strlen($value) - 3);
+        #if( ($object->isType_ipNetmask() || $object->isType_TMP() ) && strpos($object->value(), '/32') !== FALSE )
+        #    $value = substr($value, 0, strlen($value) - 3);
+        if( ($object->isType_ipNetmask() || $object->isType_TMP() ) && strpos($object->value(), '/') == FALSE )
+            $value = $value . "/32";
 
         if( $object->type() === "tmp" )
             $value = "ip-netmask" . '-' . $value;
@@ -2211,6 +2331,9 @@ class MERGER extends UTIL
     function hashMapPickfilter( $upperHashMap, $index, &$hash)
     {
         $pickedObject = null;
+        if( $this->dupAlg == 'identical' )
+            $this->pickFilter = 'identical';
+
         if( $this->pickFilter !== null )
         {
             if( isset($upperHashMap[$index]) )
@@ -2226,7 +2349,16 @@ class MERGER extends UTIL
 
             foreach( $hashArray as $object )
             {
-                if( $this->pickFilter->matchSingleObject(array('object' => $object, 'nestedQueries' => &$nestedQueries)) )
+                if( $this->dupAlg == 'identical' )
+                {
+                    if( get_class($object->owner->owner) !== "PanoramaConf" && $object->owner->owner->parentDeviceGroup !== null)
+                    {
+                        $pickedObject = $object->owner->owner->parentDeviceGroup->addressStore->find( $object->name() );
+                        if( $pickedObject !== null )
+                            break;
+                    }
+                }
+                elseif( $this->pickFilter->matchSingleObject(array('object' => $object, 'nestedQueries' => &$nestedQueries)) )
                 {
                     $pickedObject = $object;
                     break;
@@ -2242,7 +2374,16 @@ class MERGER extends UTIL
 
                     foreach( $hashArray as $object )
                     {
-                        if( $this->pickFilter->matchSingleObject(array('object' => $object, 'nestedQueries' => &$nestedQueries)) )
+                        if( $this->dupAlg == 'identical' )
+                        {
+                            if( get_class($object->owner->owner) !== "PanoramaConf" && $object->owner->owner->parentDeviceGroup !== null)
+                            {
+                                $pickedObject = $object->owner->owner->parentDeviceGroup->addressStore->find( $object->name() );
+                                if( $pickedObject !== null )
+                                    break;
+                            }
+                        }
+                        elseif( $this->pickFilter->matchSingleObject(array('object' => $object, 'nestedQueries' => &$nestedQueries)) )
                         {
                             $pickedObject = $object;
                             break;
@@ -2286,13 +2427,24 @@ class MERGER extends UTIL
         {
             foreach( $hash as $object )
             {
-                if( $this->pickFilter->matchSingleObject(array('object' => $object, 'nestedQueries' => &$nestedQueries)) )
+                if( $this->dupAlg == 'identical' )
+                {
+                    if( get_class($object->owner->owner) !== "PanoramaConf" && $object->owner->owner->parentDeviceGroup !== null)
+                    {
+                        $pickedObject = $object->owner->owner->parentDeviceGroup->addressStore->find( $object->name() );
+                        if( $pickedObject !== null )
+                            break;
+                    }
+                }
+                elseif( $this->pickFilter->matchSingleObject(array('object' => $object, 'nestedQueries' => &$nestedQueries)) )
                 {
                     $pickedObject = $object;
                     break;
                 }
             }
             if( $pickedObject === null )
+                $pickedObject = reset($hash);
+            if( $pickedObject->isType_TMP() )
                 $pickedObject = reset($hash);
         }
         else
@@ -2353,6 +2505,8 @@ class MERGER extends UTIL
             $pickedObject_DG = $pickedObject->owner->owner;
             if( $pickedObject_DG->parentDeviceGroup !== null )
             {
+                $tmp_DG_name = $pickedObject_DG->parentDeviceGroup->name();
+
                 $nextFindObject = $pickedObject_DG->parentDeviceGroup->serviceStore->find( $pickedObject->name(), null, True );
                 if( $nextFindObject !== null )
                 {

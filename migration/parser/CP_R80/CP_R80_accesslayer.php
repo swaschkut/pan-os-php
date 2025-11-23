@@ -205,7 +205,9 @@ trait CP_R80_accesslayer
                             $tmp_tag_uid = $this->sub->tagStore->findOrCreate("src-".$source);
                             $tmp_secrule->tags->addTag($tmp_tag_uid);
                             if( $access['enabled'] !== "0" )
-                                $this->missing_objects_uid[$source] = $source;
+                            {
+                                $this->missingObjectValidationRule($tmp_secrule, 'src', $source);
+                            }
                         }
                     }
                     else
@@ -262,7 +264,9 @@ trait CP_R80_accesslayer
                         $tmp_tag_uid = $this->sub->tagStore->findOrCreate("dst-" . $destination);
                         $tmp_secrule->tags->addTag($tmp_tag_uid);
                         if( $access['enabled'] !== "0" )
-                            $this->missing_objects_uid[$destination] = $destination;
+                        {
+                            $this->missingObjectValidationRule( $tmp_secrule, "dst", $destination );
+                        }
                     }
                     else
                     {
@@ -342,6 +346,68 @@ trait CP_R80_accesslayer
                     }
                 }
             }
+        }
+    }
+
+    public function missingObjectValidationRule( $rule, $src_dst, $chkp_obj_uid )
+    {
+        $name = $rule->name();
+        if( $src_dst == "dst" )
+            $src_dst_string = "destination";
+        elseif( $src_dst == "src" )
+            $src_dst_string = "source";
+
+        if( isset($this->LegacyUserAtLocation[$chkp_obj_uid]) )
+        {
+            $this->missing_objects_uid[$chkp_obj_uid]['type'] = "LegacyUserAtLocation";
+            $this->missing_objects_uid[$chkp_obj_uid]['name'] = $this->LegacyUserAtLocation[$chkp_obj_uid]['name'];
+
+            $this->missingRuleConfigMigration[$name][$src_dst_string]['uid'] = $chkp_obj_uid;
+            $this->missingRuleConfigMigration[$name][$src_dst_string]['type'] = "LegacyUserAtLocation";
+            $this->missingRuleConfigMigration[$name][$src_dst_string]['name'] = $this->LegacyUserAtLocation[$chkp_obj_uid]['name'];
+        }
+        elseif( isset($this->updateableObject[$chkp_obj_uid]) )
+        {
+            $this->missing_objects_uid[$chkp_obj_uid]['type'] = "updateableObject";
+            $this->missing_objects_uid[$chkp_obj_uid]['name'] = $this->updateableObject[$chkp_obj_uid]['name'];
+
+            $this->missingRuleConfigMigration[$name][$src_dst_string]['uid'] = $chkp_obj_uid;
+            $this->missingRuleConfigMigration[$name][$src_dst_string]['type'] = "updateableObject";
+            $this->missingRuleConfigMigration[$name][$src_dst_string]['name'] = $this->updateableObject[$chkp_obj_uid]['name'];
+        }
+        elseif( isset($this->Internet[$chkp_obj_uid]) )
+        {
+            $this->missing_objects_uid[$chkp_obj_uid]['type'] = "Internet";
+            $this->missing_objects_uid[$chkp_obj_uid]['name'] = $this->Internet[$chkp_obj_uid]['name'];
+
+            $this->missingRuleConfigMigration[$name][$src_dst_string]['uid'] = $chkp_obj_uid;
+            $this->missingRuleConfigMigration[$name][$src_dst_string]['type'] = "Internet";
+            $this->missingRuleConfigMigration[$name][$src_dst_string]['name'] = $this->Internet[$chkp_obj_uid]['name'];
+        }
+        elseif( isset($this->accessRole[$chkp_obj_uid]) )
+        {
+            $this->missing_objects_uid[$chkp_obj_uid]['type'] = "access-role";
+            $this->missing_objects_uid[$chkp_obj_uid]['name'] = $this->accessRole[$chkp_obj_uid]['name'];
+
+            $this->missingRuleConfigMigration[$name][$src_dst_string]['uid'] = $chkp_obj_uid;
+            $this->missingRuleConfigMigration[$name][$src_dst_string]['type'] = "access-role";
+            $this->missingRuleConfigMigration[$name][$src_dst_string]['name'] = $this->accessRole[$chkp_obj_uid]['name'];
+        }
+        elseif( isset($this->securityZone[$chkp_obj_uid]) )
+        {
+            $this->missing_objects_uid[$chkp_obj_uid]['type'] = "security-zone";
+            $this->missing_objects_uid[$chkp_obj_uid]['name'] = $this->securityZone[$chkp_obj_uid]['name'];
+
+            $this->missingRuleConfigMigration[$name][$src_dst_string]['uid'] = $chkp_obj_uid;
+            $this->missingRuleConfigMigration[$name][$src_dst_string]['type'] = "security-zone";
+            $this->missingRuleConfigMigration[$name][$src_dst_string]['name'] = $this->securityZone[$chkp_obj_uid]['name'];
+        }
+        else
+        {
+            $this->missing_objects_uid[$chkp_obj_uid]['type'] = "";
+
+            $this->missingRuleConfigMigration[$name][$src_dst_string]['uid'] = $chkp_obj_uid;
+            $this->missingRuleConfigMigration[$name][$src_dst_string]['type'] = "";
         }
     }
 }

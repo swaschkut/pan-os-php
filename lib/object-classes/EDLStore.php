@@ -90,7 +90,14 @@ class EDLStore extends ObjStore
         if( $ret && $rewriteXML )
         {
             if( $this->xmlroot === null )
-                $this->xmlroot = DH::findFirstElementOrCreate('external-list', $this->owner->xmlroot);
+            {
+                if( $this->owner->isPanorama() || $this->owner->isFirewall() )
+                    $xml = $this->owner->sharedroot;
+                else
+                    $xml = $this->owner->xmlroot;
+
+                $this->xmlroot = DH::findFirstElementOrCreate('external-list', $xml);
+            }
 
             $this->xmlroot->appendChild($Obj->xmlroot);
         }
@@ -149,10 +156,12 @@ class EDLStore extends ObjStore
 
         if( $this->xmlroot === null )
         {
-            if( $this->owner->isDeviceGroup() || $this->owner->isVirtualSystem() || $this->owner->isContainer() || $this->owner->isDeviceCloud() )
-                $this->xmlroot = DH::findFirstElementOrCreate('external-list', $this->owner->xmlroot);
+            if( $this->owner->isPanorama() || $this->owner->isFirewall() )
+                $xml = $this->owner->sharedroot;
             else
-                $this->xmlroot = DH::findFirstElementOrCreate('external-list', $this->owner->sharedroot);
+                $xml = $this->owner->xmlroot;
+
+            $this->xmlroot = DH::findFirstElementOrCreate('external-list', $xml);
         }
 
         $newEDL = new EDL($name, $this, TRUE);

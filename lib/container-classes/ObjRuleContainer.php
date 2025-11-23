@@ -114,7 +114,7 @@ class ObjRuleContainer
     }
 
 
-    protected function has($obj, $caseSensitive = TRUE)
+    public function has($obj, $caseSensitive = TRUE)
     {
         $tmpObj = $obj;
         if( !is_string($obj) )

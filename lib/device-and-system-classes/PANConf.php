@@ -197,6 +197,9 @@ class PANConf
 
     public $panorama = null;
 
+    public $sizeArray = array();
+    public $sizeArrayShared = array();
+
     public function name()
     {
         return $this->name;
@@ -444,7 +447,7 @@ class PANConf
                         }
                         else
                         {
-                            PH::print_stdout("timezone: '".$this->timezone."' not supported by IANA");
+                            #PH::print_stdout("timezone: '".$this->timezone."' not supported by IANA");
                         }
                     }
                     PH::disableExceptionSupport();
@@ -1004,12 +1007,20 @@ class PANConf
         $numNetworkBrokerRules = 0;
         $numSDwanRules = 0;
 
+        $size_securityRules = 0;
+        $size_serviceStore = 0;
+        $size_addressStore = 0;
+        $size_customURLProfileStore = 0;
+
 
         $gnservices = $this->serviceStore->countServices();
         $gnservicesUnused = $this->serviceStore->countUnusedServices();
         $gnserviceGs = $this->serviceStore->countServiceGroups();
         $gnserviceGsUnused = $this->serviceStore->countUnusedServiceGroups();
         $gnTmpServices = $this->serviceStore->countTmpServices();
+        $size_srvRoot = &DH::dom_get_config_size($this->serviceStore->serviceRoot);
+        $size_srvgrpRoot = &DH::dom_get_config_size($this->serviceStore->serviceGroupRoot);
+        $size_serviceStore = $size_srvRoot+$size_srvgrpRoot;
 
         $gnaddresss = $this->addressStore->countAddresses();
         $gnaddresssUnused = $this->addressStore->countUnusedAddresses();
@@ -1017,12 +1028,17 @@ class PANConf
         $gnaddressGsUnused = $this->addressStore->countUnusedAddressGroups();
         $gnTmpAddresses = $this->addressStore->countTmpAddresses();
         $gnRegionAddresses = $this->addressStore->countRegionObjects();
+        $size_adrRoot = &DH::dom_get_config_size($this->addressStore->addressRoot);
+        $size_adrgrpRoot = &DH::dom_get_config_size($this->addressStore->addressGroupRoot);
+        $size_regionRoot = &DH::dom_get_config_size($this->addressStore->regionRoot);
+        $size_addressStore = $size_adrRoot+$size_adrgrpRoot+$size_regionRoot;
 
         $numInterfaces = $this->network->ipsecTunnelStore->count() + $this->network->ethernetIfStore->count();
         $numSubInterfaces = $this->network->ethernetIfStore->countSubInterfaces();
 
         $gTagCount = $this->tagStore->count();
         $gTagUnusedCount = $this->tagStore->countUnused();
+        $size_tagStore = &DH::dom_get_config_size($this->tagStore->xmlroot);
 
         $gCertificatCount = $this->certificateStore->count();
 
@@ -1048,11 +1064,16 @@ class PANConf
             $numNetworkBrokerRules += $vsys->networkPacketBrokerRules->count();
             $numSDwanRules += $vsys->sdWanRules->count();
 
+            $size_securityRules += DH::dom_get_config_size($vsys->securityRules->xmlroot);
+
             $gnservices += $vsys->serviceStore->countServices();
             $gnservicesUnused += $vsys->serviceStore->countUnusedServices();
             $gnserviceGs += $vsys->serviceStore->countServiceGroups();
             $gnserviceGsUnused += $vsys->serviceStore->countUnusedServiceGroups();
             $gnTmpServices += $vsys->serviceStore->countTmpServices();
+            $size_tmpsrvRoot = DH::dom_get_config_size($vsys->serviceStore->serviceRoot);
+            $size_tmpsrvgrpRoot = DH::dom_get_config_size($vsys->serviceStore->serviceGroupRoot);
+            $size_serviceStore += ($size_tmpsrvRoot+$size_tmpsrvgrpRoot);
 
             $gnaddresss += $vsys->addressStore->countAddresses();
             $gnaddresssUnused += $vsys->addressStore->countUnusedAddresses();
@@ -1060,9 +1081,16 @@ class PANConf
             $gnaddressGsUnused += $vsys->addressStore->countUnusedAddressGroups();
             $gnTmpAddresses += $vsys->addressStore->countTmpAddresses();
             $gnRegionAddresses = $vsys->addressStore->countRegionObjects();
+            $size_tmpadrRoot = DH::dom_get_config_size($vsys->addressStore->addressRoot);
+            $size_tmpadrgrpRoot = DH::dom_get_config_size($vsys->addressStore->addressGroupRoot);
+            $size_tmpregionRoot = DH::dom_get_config_size($vsys->addressStore->regionRoot);
+            $size_addressStore += ($size_tmpadrRoot+$size_tmpadrgrpRoot+$size_tmpregionRoot);
 
             $gTagCount += $vsys->tagStore->count();
             $gTagUnusedCount += $vsys->tagStore->countUnused();
+            $size_tagStore += DH::dom_get_config_size($vsys->tagStore->xmlroot);
+
+            $size_customURLProfileStore += DH::dom_get_config_size($vsys->customURLProfileStore->xmlroot);
 
             $gCertificatCount += $vsys->certificateStore->count();
 
@@ -1220,9 +1248,24 @@ class PANConf
         $stdoutarray['ZPProfile objects'] = array();
         $stdoutarray['ZPProfile objects']['total'] = $this->network->zoneProtectionProfileStore->count();
 
+        $this->sizeArray['type'] = get_class( $this );
+        $this->sizeArray['statstype'] = "objects";
+        $this->sizeArray['header'] = $header;
+        $this->sizeArray['kb PANConf'] = DH::dom_get_config_size($this->xmlroot);
+        $this->sizeArray['kb security rules'] = $size_securityRules;
+        $this->sizeArray['kb address objects'] = $size_addressStore;
+        $this->sizeArray['kb service objects'] = $size_serviceStore;
+        $this->sizeArray['kb tag objects'] = $size_tagStore;
+        $this->sizeArray['kb custom URL objects'] = $size_customURLProfileStore;
 
         if( !PH::$shadow_json && $actions == "display"  )
             PH::print_stdout( $stdoutarray, true );
+
+        if( !PH::$shadow_json && $actions == "display-size"  )
+        {
+            PH::stats_remove_zero_arrays($this->sizeArray);
+            PH::print_stdout( $this->sizeArray, true );
+        }
 
         if( $actions == "display-available" )
         {

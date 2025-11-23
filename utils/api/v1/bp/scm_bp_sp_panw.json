@@ -63,12 +63,26 @@
         "cloud-inline": {
             "bp": {
                 "inline-policy-action": [
-                    "enable"
+                    {
+                        "type": [
+                            "any"
+                        ],
+                        "action": [
+                            "enable"
+                        ]
+                    }
                 ]
             },
             "visibility": {
                 "inline-policy-action": [
-                    "!disable"
+                    {
+                        "type": [
+                            "any"
+                        ],
+                        "action": [
+                            "!disable"
+                        ]
+                    }
                 ]
             }
         }
@@ -144,7 +158,7 @@
                             "sinkhole"
                         ],
                         "packet-capture": [
-                            "disabled"
+                            "disable"
                         ]
                     }
                 ]
@@ -159,10 +173,10 @@
                             "pan-adns-sec-hijacking"
                         ],
                         "action": [
-                            "default"
+                            "reset-both"
                         ],
                         "log-level": [
-                            "default"
+                            "!none"
                         ]
                     }
                 ]
@@ -200,12 +214,44 @@
         "cloud-inline": {
             "bp": {
                 "inline-policy-action": [
-                    "reset-both"
+                    {
+                        "type": [
+                            "any"
+                        ],
+                        "action": [
+                            "reset-both"
+                        ]
+                    },
+                    {
+                        "type": [
+                            "HTTP Command and Control detector",
+                            "HTTP2 Command and Control detector"
+                        ],
+                        "local-deep-learning": [
+                            "enable"
+                        ]
+                    }
                 ]
             },
             "visibility": {
                 "inline-policy-action": [
-                    "!allow"
+                    {
+                        "type": [
+                            "any"
+                        ],
+                        "action": [
+                            "!allow"
+                        ]
+                    },
+                    {
+                        "type": [
+                            "HTTP Command and Control detector",
+                            "HTTP2 Command and Control detector"
+                        ],
+                        "local-deep-learning": [
+                            "enable"
+                        ]
+                    }
                 ]
             }
         }
@@ -249,12 +295,26 @@
         "cloud-inline": {
             "bp": {
                 "inline-policy-action": [
-                    "reset-both"
+                    {
+                        "type": [
+                            "any"
+                        ],
+                        "action": [
+                            "reset-both"
+                        ]
+                    }
                 ]
             },
             "visibility": {
                 "inline-policy-action": [
-                    "!allow"
+                    {
+                        "type": [
+                            "any"
+                        ],
+                        "action": [
+                            "!allow"
+                        ]
+                    }
                 ]
             }
         }

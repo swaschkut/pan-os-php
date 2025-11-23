@@ -795,10 +795,11 @@ AddressCallContext::$supportedActions[] = array(
                 {
                     if( $object->isTmpAddr() )
                     {
-                        $lines .= $context->encloseFunction('unknown');
+                        $lines .= $context->encloseFunction('tmp');
+                        $lines .= $context->encloseFunction($object->value());
                         $lines .= $context->encloseFunction('');
                         $lines .= $context->encloseFunction('');
-                        $lines .= $context->encloseFunction('');
+                        $lines .= $context->encloseFunction( (string)$object->getIPcount() );
                         $lines .= $context->encloseFunction('');
                     }
                     else

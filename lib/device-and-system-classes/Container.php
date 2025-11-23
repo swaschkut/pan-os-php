@@ -131,6 +131,9 @@ class Container
     /** @var EDLStore */
     public $EDLStore = null;
 
+    /** @var LogProfileStore */
+    public $LogProfileStore = null;
+
     //Todo: add secprofiles and secprofgroups| 20200312 swaschkut
   /*  public static $templateContainerxml = '<entry name="**Need a Name**"><address></address><post-rulebase><security><rules></rules></security><nat><rules></rules></nat></post-rulebase>
 									<pre-rulebase><security><rules></rules></security><nat><rules></rules></nat></pre-rulebase>
@@ -330,6 +333,9 @@ class Container
 
         $this->EDLStore = new EDLStore($this);
         $this->EDLStore->setName('EDLStore');
+
+        $this->LogProfileStore = new LogProfileStore($this);
+        $this->LogProfileStore->setName('LogProfileStore');
 
         $this->securityRules = new RuleStore($this, 'SecurityRule', TRUE);
         $this->natRules = new RuleStore($this, 'NatRule', TRUE);
@@ -670,7 +676,17 @@ class Container
         if( $tmp !== FALSE )
             $this->EDLStore->load_from_domxml($tmp);
         // End of EDL extraction
-        
+
+        //
+        // Extract LogProfile objects
+        //
+        $tmp2 = DH::findFirstElement('log-settings', $xml);
+        if( $tmp2 !== FALSE )
+            $tmp = DH::findFirstElement('profiles', $tmp2);
+        if( $tmp2 !== FALSE && $tmp !== FALSE )
+            $this->LogProfileStore->load_from_domxml($tmp);
+        // End of LogProfile extraction
+
         //
         // Extracting policies
         //

@@ -46,9 +46,7 @@ class XMLISSUE extends UTIL
 
         $this->load_config();
 
-
         $this->main();
-
 
         $this->save_our_work( true );
     }
@@ -88,6 +86,10 @@ class XMLISSUE extends UTIL
             #PH::print_stdout( $region_name );
             $this->region_array[$region_name] = $region_entry;
         }
+
+        unset($filename);
+        unset($xmlDoc_region);
+        unset($xpath);
 
 
 ///////////////////////////////////////////////////////////

@@ -1,6 +1,46 @@
 CHANGELOG
 
-2.1.42
+2.1.43
+UTIL:
+* type=device | new actions=devicegroup-setparentdg:{DGNAME},{parentDG}
+* type=securityprofile securityprofiletype=spyware | pan-os 11.2 add all adns cat, add adns to exporttoexcel
+* type=securityprofile securityprofiletype=spyware | extend mica output with local-deep-learning
+* class AntiSpywareProfile | always add local-deep-learning XMLnode if not there for PAN-OS >=112
+* type=stats | introduce actions=display-size
+* type=securityprofile | new actions=move:{DGname}/shared
+* type=profile | introduction of new utility - extend decryptionRule with profile and certificate
+* type=rule ruletype=decryption | introduce 'filter=(rule decryption-certificate eq XYZ / has.regex XYZ)' | filter=(decryption-type is.ssl-inbound)'
+* class DecryptionRule | introduce certificate reference
+* type=certificate actions=displayreferences
+* type=rule ruletype=decryption | new 'filter=(decryption-certificate has.from.query subquery1)' 'subquery1=(expired <= 100days) and (expired > 0 days)'
+* class SecureWebGateway | implement 'enablement' -> 'none'
+* type=rule ruletype=decryption actions=exporttoexcel:rule_decrypt.html | extend with field decryption-rule-type - decryption-certificate - certificate-valid-after certificate-valid-before
+* class AntiSpywareProfile | update regarding local-deep-learning
+
+BUGFIX:
+* type=securityprofile securityprofiletype=url-filtering actions=url.alert-only-set | bugfix
+* Class UrlCategoryRuleContainer | bugfix to get this working with Buckbeak
+* type=rule actions=from-calculate-zones:unneeded-tag-add | bugfix for API mode
+* type=vendor-migration vendor=cp-r80 | bugfix for natlayer migration
+* type=XYZ actions=move:shared | bugfix if XMLnode is not available, create it correclty under /config/shared
+* type=address-merger dupalgorithm=identical allowmergingwithupperlevel | bugfix to pick the object with the same name from upperlevel, and not the own with the same value
+* type=rule actions=exporttoexcel:rule.html | bugfix for service column
+* type=securityprofile securityprofiletype=spyware | multiple bugfixes for best-practise
+* class AntiSpyware | default-paloalto-dns wrongly added to dns_security, so log-level was added
+* type=securityprofile securityprofiletype=spyware | bugfix for default-paloalto-dns
+* type=addressgroup-merger | bugfix if compare two objects of different types, and the skipped details must be used
+* class GPGatewaytunnel | bugfix - Null Pointer error - related to addressStore - intermediate as vsys could not be found - final fix for finding vsys needed
+* type=address-merger | bugfix to NOT merge objects with tag and which are parts of DAG, as this can change the rule behaviour
+* type=securityprofile securityprofiletype=vulnerability,spyware,virus actions=exporttoexcel:bp.html,visiblity|bestpractice | bugfix to correct display the info, after extending SCM BP json file for local-deep-learning
+
+GENERAL:
+* in=sase-api://{TSGID} | class Container/DeviceCloud/PanSaseAPIConnector/RuleWithUserID - improvements for FAWKES
+* in=sase-api://{TSGID} | bring in uuid for downloading config
+* develop PanSaseAPIConnector | continue reading SP object
+* App-ID update to version: 9039-9750
+
+
+2.1.42 (20251111)
 UTIL:
 * type=securityprofile securityprofiltype=spyware | mica-engine-spyware-enabled extended starting with version 11.2 with local-deep-learning setting
 * SCM BP json file | add advanced-dns, but no logic | spyware.best-practice-set -> pan-dns-sec-cc set to extended-capture
@@ -15,6 +55,7 @@ BUGFIX:
 * type=stats actions=display-bpa debugapi | bugfix
 * type=securityprofile securityprofiletype=url-filtering actions=exporttoexcel:sp_url.html,bestpractice | bugfix to calculate correct
 * class UTIL.php | bugfix for shadow-json in regards to type=diff
+* class Zone - bugfix to attach ZPP also if 'network' xmlnode is not available | actions-securityprofile - better validation
 
 GENERAL:
 * class PanoramaConf - first restructure part to better read config for ZPP BP calculation - DGhierarchy reading must be still improved
