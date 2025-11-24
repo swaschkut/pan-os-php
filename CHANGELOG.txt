@@ -2,6 +2,7 @@ CHANGELOG
 
 2.1.44
 UTIL:
+* type=edl | new actions=move:{DGname}
 
 BUGFIX:
 
