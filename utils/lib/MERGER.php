@@ -2444,7 +2444,7 @@ class MERGER extends UTIL
             }
             if( $pickedObject === null )
                 $pickedObject = reset($hash);
-            if( $pickedObject->isType_TMP() )
+            if( get_class($pickedObject) == "Address" && $pickedObject->isType_TMP() )
                 $pickedObject = reset($hash);
         }
         else
