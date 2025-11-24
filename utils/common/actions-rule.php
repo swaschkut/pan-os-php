@@ -2668,6 +2668,43 @@ RuleCallContext::$supportedActions[] = array(
             return;
         }
 
+        $LogprofName = $context->arguments['profName'];
+        $LogProfObject = $rule->owner->owner->LogProfileStore->find( $LogprofName );
+        if( $LogProfObject === null )
+        {
+            derr( "LogProfile: '".$LogProfObject."' not available in this configuration", null, False );
+        }
+        if( $context->isAPI )
+        {
+            if( $rule->isDefaultSecurityRule() )
+            {
+                $rule->API_setAction( $rule->action() );
+                $rule->API_setLogStart($rule->logStart());
+                $rule->API_setLogEnd($rule->logEnd());
+                $rule->API_setLogSetting($LogprofName);
+            }
+            else
+                $rule->API_setLogSetting($LogprofName);
+        }
+        else
+            $rule->setLogSetting($LogprofName);
+    },
+    'args' => array('profName' => array('type' => 'string', 'default' => '*nodefault*')),
+    'help' => "Sets log setting/forwarding profile of a Security rule to the value specified."
+);
+RuleCallContext::$supportedActions[] = array(
+    'name' => 'logSetting-set-force',
+    'section' => 'log',
+    'MainFunction' => function (RuleCallContext $context) {
+        $rule = $context->object;
+
+        if( !$rule->isSecurityRule() && !$rule->isDefaultSecurityRule() )
+        {
+            $string = "this is not a security rule" ;
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
         if( $context->isAPI )
         {
             if( $rule->isDefaultSecurityRule() )
