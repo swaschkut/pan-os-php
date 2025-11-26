@@ -23,6 +23,7 @@ class PLAYBOOK__
 
     public $isAPI = false;
     public $debugAPI = false;
+    public $debugMemory = false;
     public $outputformatset = false;
 
     public $mainLocation = null;
@@ -46,6 +47,7 @@ class PLAYBOOK__
         $this->supportedArguments['stagename'] = array('niceName' => 'stagename');
         $this->supportedArguments['help'] = array('niceName' => 'help', 'shortHelp' => 'this message');
         $this->supportedArguments['debugapi'] = array('niceName' => 'DebugAPI', 'shortHelp' => 'prints API calls when they happen');
+        $this->supportedArguments['debugmemory'] = array('niceName' => 'DebugMemory', 'shortHelp' => 'prints memory usage information after each playbook step');
         $this->supportedArguments['outputformatset'] = array('niceName' => 'outputformatset', 'shortHelp' => 'get all PAN-OS set commands about the task the UTIL script is doing. outputformatset=FILENAME -> store set commands in file', 'argDesc' => 'outputformatset');
 
 
@@ -132,6 +134,9 @@ class PLAYBOOK__
 
         if( isset(PH::$args['debugapi']) )
             $this->debugAPI = TRUE;
+
+        if( isset(PH::$args['debugmemory']) )
+            $this->debugMemory = TRUE;
 
         if( isset(PH::$args['projectfolder']) )
         {
@@ -424,8 +429,35 @@ class PLAYBOOK__
             PH::print_stdout();
 
             $util = PH::callPANOSPHP( $script, PH::$argv, $argc, $PHP_FILE );
+
+            // Enhanced memory cleanup between playbook steps
+            // Explicitly clear large objects before unsetting the utility
+            if( isset($util->xmlDoc) )
+            {
+                $util->xmlDoc = null;
+            }
+            if( isset($util->origXmlDoc) )
+            {
+                $util->origXmlDoc = null;
+            }
+            if( isset($util->pan) )
+            {
+                // Clear DOM references in the config object
+                if( isset($util->pan->xmldoc) )
+                    $util->pan->xmldoc = null;
+                if( isset($util->pan->xmlroot) )
+                    $util->pan->xmlroot = null;
+                $util->pan = null;
+            }
+            if( isset($util->objectsToProcess) )
+            {
+                $util->objectsToProcess = array();
+            }
+
             unset( $util );
-            gc_collect_cycles();
+
+            // Use enhanced memory cleanup with verbose output if debugMemory is enabled
+            PH::clearGlobalMemory( true, $this->debugMemory );
 
             PH::print_stdout();
             PH::print_stdout( "############################################################################");
