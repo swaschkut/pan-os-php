@@ -191,7 +191,7 @@ class LogProfile
 
 
 
-    static public $templatexml = '<entry name="**temporarynamechangeme**"></entry>';
+    static public $templatexml = '<entry name="**temporarynamechangeme**"><match-list/></entry>';
 
     public function isLogProfile()
     {

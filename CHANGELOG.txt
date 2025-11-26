@@ -4,6 +4,7 @@ CHANGELOG
 UTIL:
 * type=edl | new actions=move:{DGname}
 * type=rule | new actions=logsetting-set-foce:{profileNAME} | and hardingen of actions=logsetting-set:{profileName} to only allow these profiles which are available
+* type=log-profile/securityprofilegroup | new actions=create:name
 
 BUGFIX:
 * type=adddressgroup-merger | bugfix for skipped info to NOT error out
