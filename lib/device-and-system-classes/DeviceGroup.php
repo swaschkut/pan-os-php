@@ -348,11 +348,11 @@ class DeviceGroup
         // Clear object stores
         $this->tagStore = null;
         $this->zoneStore = null;
-        $this->certificateStore = null;
-        $this->SSL_TLSServiceProfileStore = null;
-        $this->appStore = null;
+        #$this->certificateStore = null;
+        #$this->SSL_TLSServiceProfileStore = null;
+        #$this->appStore = null;
         $this->threatStore = null;
-        $this->urlStore = null;
+        #$this->urlStore = null;
         $this->serviceStore = null;
         $this->addressStore = null;
 
