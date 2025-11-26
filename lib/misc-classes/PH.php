@@ -464,6 +464,13 @@ class PH
         // Force garbage collection multiple times to handle circular references
         gc_collect_cycles();
         gc_collect_cycles();
+        gc_collect_cycles();
+
+        // Release cached memory back to system (PHP 7.0+)
+        if( function_exists('gc_mem_caches') )
+        {
+            gc_mem_caches();
+        }
 
         $memAfter = memory_get_usage(true);
         $memFreed = $memBefore - $memAfter;
