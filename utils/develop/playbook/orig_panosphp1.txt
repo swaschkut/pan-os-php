@@ -1,0 +1,25 @@
+
+
+pan-os-php type=upload in=ATSBG_converted_config.xml out=panorama_start.xml 'fromXpath=/config/shared/*' 'toXpath=/config/devices/entry/device-group/entry[@name="ATSBG"]'
+pan-os-php type=upload in=ATSBG_converted_config.xml out=panorama_start.xml 'fromXpath=/config/devices/entry/device-group/entry[@name="NAT"]/*' 'toXpath=/config/devices/entry/device-group/entry[@name="ATSBG_NAT"]'
+pan-os-php type=upload in=ATSBG_converted_config.xml out=panorama_start.xml 'fromXpath=/config/devices/entry/device-group/entry[@name="Security"]/*' 'toXpath=/config/devices/entry/device-group/entry[@name="ATSBG_Security"]'
+pan-os-php type=upload in=ATSBG_converted_config.xml out=panorama_start.xml 'fromXpath=/config/devices/entry/device-group/entry[@name="Application"]/*' 'toXpath=/config/devices/entry/device-group/entry[@name="ATSBG_Application"]'
+
+
+
+pan-os-php type=upload in=SITES_converted_config_start.xml out=panorama_start.xml 'fromXpath=/config/shared/*' 'toXpath=/config/devices/entry/device-group/entry[@name="SITES"]'
+pan-os-php type=upload in=SITES_converted_config_start.xml out=panorama_start.xml 'fromXpath=/config/devices/entry/device-group/entry[@name="NAT"]/*' 'toXpath=/config/devices/entry/device-group/entry[@name="SITES_NAT"]'
+pan-os-php type=upload in=SITES_converted_config_start.xml out=panorama_start.xml 'fromXpath=/config/devices/entry/device-group/entry[@name="Security"]/*' 'toXpath=/config/devices/entry/device-group/entry[@name="SITES_Security"]'
+pan-os-php type=upload in=SITES_converted_config_start.xml out=panorama_start.xml 'fromXpath=/config/devices/entry/device-group/entry[@name="Application"]/*' 'toXpath=/config/devices/entry/device-group/entry[@name="SITES_Application"]'
+
+
+pan-os-php type=device 'actions=devicegroup-setparentdg:ATSBG_NAT,ATSBG' in=panorama_start.xml out=panorama_start.xml
+pan-os-php type=device 'actions=devicegroup-setparentdg:ATSBG_Application,ATSBG' in=panorama_start.xml out=panorama_start.xml
+pan-os-php type=device 'actions=devicegroup-setparentdg:ATSBG_Security,ATSBG' in=panorama_start.xml out=panorama_start.xml
+
+
+pan-os-php type=device 'actions=devicegroup-setparentdg:SITES_NAT,SITES' in=panorama_start.xml out=panorama_start.xml
+pan-os-php type=device 'actions=devicegroup-setparentdg:SITES_Application,SITES' in=panorama_start.xml out=panorama_start.xml
+pan-os-php type=device 'actions=devicegroup-setparentdg:SITES_Security,SITES' in=panorama_start.xml out=panorama_start.xml
+
+

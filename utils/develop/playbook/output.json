@@ -1,0 +1,552 @@
+{
+    "command": [
+        {
+            "type": "tag",
+            "location": "location=ATSBG",
+            "actions": "actions=move:shared"
+        },
+        {
+            "type": "address",
+            "location": "location=ATSBG",
+            "filter": "filter=!(object is.group)",
+            "actions": "actions=move:shared"
+        },
+        {
+            "type": "address",
+            "location": "location=ATSBG",
+            "actions": "actions=move:shared"
+        },
+        {
+            "type": "address",
+            "location": "location=ATSBG",
+            "actions": "actions=move:shared"
+        },
+        {
+            "type": "service",
+            "location": "location=ATSBG",
+            "filter": "filter=!(object is.group)",
+            "actions": "actions=move:shared"
+        },
+        {
+            "type": "service",
+            "location": "location=ATSBG",
+            "actions": "actions=move:shared"
+        },
+        {
+            "type": "service",
+            "location": "location=ATSBG",
+            "actions": "actions=move:shared"
+        },
+        {
+            "type": "service",
+            "location": "location=ATSBG",
+            "actions": "actions=move:shared"
+        },
+        {
+            "type": "tag-merger",
+            "location": "location=SITES",
+            "exportcsv": "exportcsv=tag_SITES-merged.html",
+            "dupalgorithm": "dupalgorithm=SameName"
+        },
+        {
+            "type": "address-merger",
+            "location": "location=SITES",
+            "exportcsv": "exportcsv=adr_SITES-merged.html",
+            "dupalgorithm": "dupalgorithm=identical"
+        },
+        {
+            "type": "addressgroup-merger",
+            "location": "location=SITES",
+            "exportcsv": "exportcsv=adrgrp_SITES-merged.html",
+            "dupalgorithm": "dupalgorithm=identical"
+        },
+        {
+            "type": "service-merger",
+            "location": "location=SITES",
+            "exportcsv": "exportcsv=srv_SITES-merged.html",
+            "dupalgorithm": "dupalgorithm=identical"
+        },
+        {
+            "type": "servicegroup-merger",
+            "location": "location=SITES",
+            "exportcsv": "exportcsv=srvgrp_SITES-merged.html",
+            "dupalgorithm": "dupalgorithm=identical"
+        },
+        {
+            "type": "tag",
+            "location": "location=SITES",
+            "actions": "actions=move:shared"
+        },
+        {
+            "type": "address",
+            "location": "location=SITES",
+            "actions": "actions=move:shared",
+            "filter": "filter=!(object is.group)"
+        },
+        {
+            "type": "address",
+            "location": "location=SITES",
+            "actions": "actions=move:shared"
+        },
+        {
+            "type": "service",
+            "location": "location=SITES",
+            "actions": "actions=move:shared",
+            "filter": "filter=!(object is.group)"
+        },
+        {
+            "type": "service",
+            "location": "location=SITES",
+            "actions": "actions=move:shared"
+        },
+        {
+            "type": "application",
+            "location": "location=any",
+            "actions": "actions=move:shared",
+            "filter": "filter=!(object is.predefined)"
+        },
+        {
+            "type": "edl",
+            "location": "location=any",
+            "actions": "actions=move:shared"
+        },
+        {
+            "type": "tag-merger",
+            "location": "location=any",
+            "exportcsv": "exportcsv=tag_any-merged.html",
+            "dupalgorithm": "dupalgorithm=samename"
+        },
+        {
+            "type": "tag",
+            "location": "location=shared:excludeMaindg",
+            "actions": "actions=move:shared"
+        },
+        {
+            "type": "address-merger",
+            "location": "location=SITES",
+            "exportcsv": "exportcsv=adr_SITES-merged.html",
+            "dupalgorithm": "dupalgorithm=identical"
+        },
+        {
+            "type": "rule",
+            "ruletype": "ruletype=security",
+            "location": "location=SITES_Security",
+            "actions": "actions=name-rename:SITE-$$current.name$$"
+        },
+        {
+            "type": "rule",
+            "ruletype": "ruletype=security",
+            "location": "location=any",
+            "actions": "actions=securityProfile-Group-Set-Force:Default",
+            "filter": "filter=(action is.allow)"
+        },
+        {
+            "type": "rule",
+            "ruletype": "ruletype=security",
+            "location": "location=any",
+            "actions": "actions=logsetting-set-force:Cortex Data Lake"
+        },
+        {
+            "type": "device",
+            "actions": "actions=devicegroup-create:RAS"
+        },
+        {
+            "type": "rule",
+            "ruletype": "ruletype=security",
+            "location": "location=ATSBG_Security",
+            "actions": "actions=move:RAS",
+            "filter": "filter=(tag has.regex /VPN Secure Client/)"
+        },
+        {
+            "type": "rule",
+            "ruletype": "ruletype=security",
+            "location": "location=SITES_Security",
+            "actions": "actions=move:RAS",
+            "filter": "filter=(tag has.regex /VPN Secure Client/)"
+        },
+        {
+            "type": "rule",
+            "location": "location=any",
+            "actions": "actions=from-replace:bond3.201,ZONE-DMZ-3,yes",
+            "filter": "filter=(from has bond3.201)"
+        },
+        {
+            "type": "rule",
+            "location": "location=any",
+            "actions": "actions=to-replace:bond3.201,ZONE-DMZ-3,yes",
+            "filter": "filter=(to has bond3.201)"
+        },
+        {
+            "type": "rule",
+            "location": "location=any",
+            "actions": "actions=from-replace:bond1.70,ZONE-TRUST,yes",
+            "filter": "filter=(from has bond1.70)"
+        },
+        {
+            "type": "rule",
+            "location": "location=any",
+            "actions": "actions=to-replace:bond1.70,ZONE-TRUST,yes",
+            "filter": "filter=(to has bond1.70)"
+        },
+        {
+            "type": "rule",
+            "location": "location=any",
+            "actions": "actions=from-replace:bond1.410,ZONE-DMZ-410,yes",
+            "filter": "filter=(from has bond1.410)"
+        },
+        {
+            "type": "rule",
+            "location": "location=any",
+            "actions": "actions=to-replace:bond1.410,ZONE-DMZ-410,yes",
+            "filter": "filter=(to has bond1.410)"
+        },
+        {
+            "type": "rule",
+            "location": "location=any",
+            "actions": "actions=from-replace:bond3.23,ZONE-DMZ-23,yes",
+            "filter": "filter=(from has bond3.23)"
+        },
+        {
+            "type": "rule",
+            "location": "location=any",
+            "actions": "actions=to-replace:bond3.23,ZONE-DMZ-23,yes",
+            "filter": "filter=(to has bond3.23)"
+        },
+        {
+            "type": "rule",
+            "location": "location=any",
+            "actions": "actions=from-replace:bond3.31,ZONE-DMZ-31,yes",
+            "filter": "filter=(from has bond3.31)"
+        },
+        {
+            "type": "rule",
+            "location": "location=any",
+            "actions": "actions=to-replace:bond3.31,ZONE-DMZ-31,yes",
+            "filter": "filter=(to has bond3.31)"
+        },
+        {
+            "type": "rule",
+            "location": "location=any",
+            "actions": "actions=from-replace:bond3.24,ZONE-DMZ-24,yes",
+            "filter": "filter=(from has bond3.24)"
+        },
+        {
+            "type": "rule",
+            "location": "location=any",
+            "actions": "actions=to-replace:bond3.24,ZONE-DMZ-24,yes",
+            "filter": "filter=(to has bond3.24)"
+        },
+        {
+            "type": "rule",
+            "location": "location=any",
+            "actions": "actions=from-replace:bond3.15,ZONE-DMZ-15,yes",
+            "filter": "filter=(from has bond3.15)"
+        },
+        {
+            "type": "rule",
+            "location": "location=any",
+            "actions": "actions=to-replace:bond3.15,ZONE-DMZ-15,yes",
+            "filter": "filter=(to has bond3.15)"
+        },
+        {
+            "type": "rule",
+            "location": "location=any",
+            "actions": "actions=from-replace:bond3.19,ZONE-DMZ-19,yes",
+            "filter": "filter=(from has bond3.19)"
+        },
+        {
+            "type": "rule",
+            "location": "location=any",
+            "actions": "actions=to-replace:bond3.19,ZONE-DMZ-19,yes",
+            "filter": "filter=(to has bond3.19)"
+        },
+        {
+            "type": "rule",
+            "location": "location=any",
+            "actions": "actions=from-replace:bond3.20,ZONE-DMZ-20,yes",
+            "filter": "filter=(from has bond3.20)"
+        },
+        {
+            "type": "rule",
+            "location": "location=any",
+            "actions": "actions=to-replace:bond3.20,ZONE-DMZ-20,yes",
+            "filter": "filter=(to has bond3.20)"
+        },
+        {
+            "type": "rule",
+            "location": "location=any",
+            "actions": "actions=from-replace:bond3.68,ZONE-DMZ-68,yes",
+            "filter": "filter=(from has bond3.68)"
+        },
+        {
+            "type": "rule",
+            "location": "location=any",
+            "actions": "actions=to-replace:bond3.68,ZONE-DMZ-68,yes",
+            "filter": "filter=(to has bond3.68)"
+        },
+        {
+            "type": "rule",
+            "location": "location=any",
+            "actions": "actions=from-replace:bond3.32,ZONE-DMZ-32,yes",
+            "filter": "filter=(from has bond3.32)"
+        },
+        {
+            "type": "rule",
+            "location": "location=any",
+            "actions": "actions=to-replace:bond3.32,ZONE-DMZ-32,yes",
+            "filter": "filter=(to has bond3.32)"
+        },
+        {
+            "type": "rule",
+            "location": "location=any",
+            "actions": "actions=from-replace:bond3.34,ZONE-DMZ-34,yes",
+            "filter": "filter=(from has bond3.34)"
+        },
+        {
+            "type": "rule",
+            "location": "location=any",
+            "actions": "actions=to-replace:bond3.34,ZONE-DMZ-34,yes",
+            "filter": "filter=(to has bond3.34)"
+        },
+        {
+            "type": "rule",
+            "location": "location=any",
+            "actions": "actions=from-replace:bond3.5,ZONE-CANCOM-MGMT-5,yes",
+            "filter": "filter=(from has bond3.5)"
+        },
+        {
+            "type": "rule",
+            "location": "location=any",
+            "actions": "actions=to-replace:bond3.5,ZONE-CANCOM-MGMT-5,yes",
+            "filter": "filter=(to has bond3.5)"
+        },
+        {
+            "type": "rule",
+            "location": "location=any",
+            "actions": "actions=from-replace:bond3.203,ZONE-DMZ-203,yes",
+            "filter": "filter=(from has bond3.203)"
+        },
+        {
+            "type": "rule",
+            "location": "location=any",
+            "actions": "actions=to-replace:bond3.203,ZONE-DMZ-203,yes",
+            "filter": "filter=(to has bond3.203)"
+        },
+        {
+            "type": "rule",
+            "location": "location=any",
+            "actions": "actions=from-replace:bond3.67,ZONE-DMZ-67,yes",
+            "filter": "filter=(from has bond3.67)"
+        },
+        {
+            "type": "rule",
+            "location": "location=any",
+            "actions": "actions=to-replace:bond3.67,ZONE-DMZ-67,yes",
+            "filter": "filter=(to has bond3.67)"
+        },
+        {
+            "type": "rule",
+            "location": "location=any",
+            "actions": "actions=from-replace:bond2.6,ZONE-MPLS-6,yes",
+            "filter": "filter=(from has bond2.6)"
+        },
+        {
+            "type": "rule",
+            "location": "location=any",
+            "actions": "actions=to-replace:bond2.6,ZONE-MPLS-6,yes",
+            "filter": "filter=(to has bond2.6)"
+        },
+        {
+            "type": "rule",
+            "location": "location=any",
+            "actions": "actions=from-replace:bond2.60,ZONE-UNTRUST,yes",
+            "filter": "filter=(from has bond2.60)"
+        },
+        {
+            "type": "rule",
+            "location": "location=any",
+            "actions": "actions=to-replace:bond2.60,ZONE-UNTRUST,yes",
+            "filter": "filter=(to has bond2.60)"
+        },
+        {
+            "type": "rule",
+            "location": "location=any",
+            "actions": "actions=from-replace:bond3.202,ZONE-MPLS-202,yes",
+            "filter": "filter=(from has bond3.202)"
+        },
+        {
+            "type": "rule",
+            "location": "location=any",
+            "actions": "actions=to-replace:bond3.202,ZONE-MPLS-202,yes",
+            "filter": "filter=(to has bond3.202)"
+        },
+        {
+            "type": "rule",
+            "location": "location=any",
+            "actions": "actions=from-replace:bond3.7,ZONE-MPLS-7,yes",
+            "filter": "filter=(from has bond3.7)"
+        },
+        {
+            "type": "rule",
+            "location": "location=any",
+            "actions": "actions=to-replace:bond3.7,ZONE-MPLS-7,yes",
+            "filter": "filter=(to has bond3.7)"
+        },
+        {
+            "type": "rule",
+            "location": "location=any",
+            "actions": "actions=from-replace:bond3.33,ZONE-DMZ-33,yes",
+            "filter": "filter=(from has bond3.33)"
+        },
+        {
+            "type": "rule",
+            "location": "location=any",
+            "actions": "actions=to-replace:bond3.33,ZONE-DMZ-33,yes",
+            "filter": "filter=(to has bond3.33)"
+        },
+        {
+            "type": "rule",
+            "location": "location=any",
+            "actions": "actions=from-replace:bond3.30,ZONE-DMZ-30,yes",
+            "filter": "filter=(from has bond3.30)"
+        },
+        {
+            "type": "rule",
+            "location": "location=any",
+            "actions": "actions=to-replace:bond3.30,ZONE-DMZ-30,yes",
+            "filter": "filter=(to has bond3.30)"
+        },
+        {
+            "type": "rule",
+            "location": "location=any",
+            "actions": "actions=from-replace:bond3.18,ZONE-DMZ-18,yes",
+            "filter": "filter=(from has bond3.18)"
+        },
+        {
+            "type": "rule",
+            "location": "location=any",
+            "actions": "actions=to-replace:bond3.18,ZONE-DMZ-18,yes",
+            "filter": "filter=(to has bond3.18)"
+        },
+        {
+            "type": "rule",
+            "location": "location=any",
+            "actions": "actions=from-replace:tunnel 1,ZONE-SASE-SC,yes",
+            "filter": "filter=(from has tunnel 1)"
+        },
+        {
+            "type": "rule",
+            "location": "location=any",
+            "actions": "actions=to-replace:tunnel 1,ZONE-SASE-SC,yes",
+            "filter": "filter=(to has tunnel 1)"
+        },
+        {
+            "type": "rule",
+            "location": "location=any",
+            "actions": "actions=from-replace:tunnel 2,ZONE-SASE-SC,yes",
+            "filter": "filter=(from has tunnel 2)"
+        },
+        {
+            "type": "rule",
+            "location": "location=any",
+            "actions": "actions=to-replace:tunnel 2,ZONE-SASE-SC,yes",
+            "filter": "filter=(to has tunnel 2)"
+        },
+        {
+            "type": "rule",
+            "location": "location=any",
+            "actions": "actions=from-replace:tunnel 3,ZONE-AWS,yes",
+            "filter": "filter=(from has tunnel 3)"
+        },
+        {
+            "type": "rule",
+            "location": "location=any",
+            "actions": "actions=to-replace:tunnel 3,ZONE-AWS,yes",
+            "filter": "filter=(to has tunnel 3)"
+        },
+        {
+            "type": "rule",
+            "location": "location=any",
+            "actions": "actions=from-replace:tunnel 4,ZONE-AWS,yes",
+            "filter": "filter=(from has tunnel 4)"
+        },
+        {
+            "type": "rule",
+            "location": "location=any",
+            "actions": "actions=to-replace:tunnel 4,ZONE-AWS,yes",
+            "filter": "filter=(to has tunnel 4)"
+        },
+        {
+            "type": "rule",
+            "location": "location=any",
+            "actions": "actions=from-replace:Eth1,ZONE-UNTRUST,yes",
+            "filter": "filter=(from has Eth1)"
+        },
+        {
+            "type": "rule",
+            "location": "location=any",
+            "actions": "actions=to-replace:Eth1,ZONE-UNTRUST,yes",
+            "filter": "filter=(to has Eth1)"
+        },
+        {
+            "type": "rule",
+            "location": "location=any",
+            "actions": "actions=from-replace:eth1,ZONE-UNTRUST,yes",
+            "filter": "filter=(from has eth1)"
+        },
+        {
+            "type": "rule",
+            "location": "location=any",
+            "actions": "actions=to-replace:eth1,ZONE-UNTRUST,yes",
+            "filter": "filter=(to has eth1)"
+        },
+        {
+            "type": "rule",
+            "location": "location=any",
+            "actions": "actions=from-replace:Eth2,ZONE-UNTRUST,yes",
+            "filter": "filter=(from has Eth2)"
+        },
+        {
+            "type": "rule",
+            "location": "location=any",
+            "actions": "actions=to-replace:Eth2,ZONE-UNTRUST,yes",
+            "filter": "filter=(to has Eth2)"
+        },
+        {
+            "type": "rule",
+            "location": "location=any",
+            "actions": "actions=from-replace:Eth3,ZONE-TRUST,yes",
+            "filter": "filter=(from has Eth3)"
+        },
+        {
+            "type": "rule",
+            "location": "location=any",
+            "actions": "actions=to-replace:Eth3,ZONE-TRUST,yes",
+            "filter": "filter=(to has Eth3)"
+        },
+        {
+            "type": "rule",
+            "location": "location=any",
+            "actions": "actions=from-replace:eth3.4035,ZONE-GUEST,yes",
+            "filter": "filter=(from has eth3.4035)"
+        },
+        {
+            "type": "rule",
+            "location": "location=any",
+            "actions": "actions=to-replace:eth3.4035,ZONE-GUEST,yes",
+            "filter": "filter=(to has eth3.4035)"
+        },
+        {
+            "type": "rule",
+            "location": "location=any",
+            "actions": "actions=from-replace:eth2.4035,ZONE-GUEST,yes",
+            "filter": "filter=(from has eth2.4035)"
+        },
+        {
+            "type": "rule",
+            "location": "location=any",
+            "actions": "actions=to-replace:eth2.4035,ZONE-GUEST,yes",
+            "filter": "filter=(to has eth2.4035)"
+        }
+    ]
+}

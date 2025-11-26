@@ -1,0 +1,171 @@
+
+pan-os-php type=tag location=ATSBG actions=move:shared in=panorama.xml out=panorama.xml
+pan-os-php type=address location=ATSBG 'filter=!(object is.group)' actions=move:shared in=panorama.xml out=panorama.xml
+pan-os-php type=address location=ATSBG actions=move:shared in=panorama.xml out=panorama.xml
+pan-os-php type=address location=ATSBG actions=move:shared in=panorama.xml out=panorama.xml
+
+pan-os-php type=service location=ATSBG 'filter=!(object is.group)' actions=move:shared in=panorama.xml out=panorama.xml
+pan-os-php type=service location=ATSBG  actions=move:shared in=panorama.xml out=panorama.xml
+pan-os-php type=service location=ATSBG  actions=move:shared in=panorama.xml out=panorama.xml
+pan-os-php type=service location=ATSBG  actions=move:shared in=panorama.xml out=panorama.xml
+
+
+
+
+
+pan-os-php type=tag-merger location=SITES allowmergingwithupperlevel exportcsv=tag_SITES-merged.html dupalgorithm=SameName in=panorama.xml out=panorama.xml
+
+
+pan-os-php type=address-merger location=SITES allowmergingwithupperlevel exportcsv=adr_SITES-merged.html dupalgorithm=identical in=panorama.xml out=panorama.xml
+pan-os-php type=addressgroup-merger location=SITES allowmergingwithupperlevel exportcsv=adrgrp_SITES-merged.html dupalgorithm=identical in=panorama.xml out=panorama.xml
+
+pan-os-php type=service-merger location=SITES allowmergingwithupperlevel exportcsv=srv_SITES-merged.html dupalgorithm=identical in=panorama.xml out=panorama.xml
+pan-os-php type=servicegroup-merger location=SITES allowmergingwithupperlevel exportcsv=srvgrp_SITES-merged.html dupalgorithm=identical in=panorama.xml out=panorama.xml
+
+
+
+
+
+pan-os-php type=tag location=SITES actions=move:shared in=panorama.xml out=panorama.xml
+pan-os-php type=address location=SITES actions=move:shared 'filter=!(object is.group)' in=panorama.xml out=panorama.xml
+pan-os-php type=address location=SITES actions=move:shared in=panorama.xml out=panorama.xml
+pan-os-php type=service location=SITES actions=move:shared 'filter=!(object is.group)' in=panorama.xml out=panorama.xml
+pan-os-php type=service location=SITES actions=move:shared in=panorama.xml out=panorama.xml
+
+
+
+pan-os-php type=application location=any actions=move:shared in=panorama.xml out=panorama.xml 'filter=!(object is.predefined)'
+pan-os-php type=edl location=any actions=move:shared in=panorama.xml out=panorama.xml
+
+
+
+pan-os-php type=tag-merger location=any allowmergingwithupperlevel exportcsv=tag_any-merged.html dupalgorithm=samename in=panorama.xml out=panorama.xml
+pan-os-php type=tag location=shared:excludeMaindg actions=move:shared in=panorama.xml out=panorama.xml
+
+pan-os-php type=address-merger in=panorama.xml out=panorama.xml location=SITES allowmergingwithupperlevel exportcsv=adr_SITES-merged.html dupalgorithm=identical
+
+
+
+pan-os-php type=rule ruletype=security in=panorama.xml out=panorama.xml location=SITES_Security 'actions=name-rename:SITE-$$current.name$$'
+
+
+
+pan-os-php type=rule ruletype=security location=any actions=securityProfile-Group-Set-Force:Default 'filter=(action is.allow)' in=panorama.xml out=panorama.xml
+pan-os-php type=rule ruletype=security location=any 'actions=logsetting-set-force:Cortex Data Lake' in=panorama.xml out=panorama.xml
+
+
+
+pan-os-php type=device in=panorama.xml out=panorama.xml actions=devicegroup-create:RAS
+
+
+
+pan-os-php type=rule ruletype=security location=ATSBG_Security actions=move:RAS in=panorama.xml out=panorama.xml 'filter=(tag has.regex /VPN Secure Client/)'
+
+pan-os-php type=rule ruletype=security location=SITES_Security actions=move:RAS in=panorama.xml out=panorama.xml 'filter=(tag has.regex /VPN Secure Client/)'
+
+
+
+
+
+
+
+
+
+pan-os-php type=rule location=any 'actions=from-replace:bond3.201,ZONE-DMZ-3,yes' 'filter=(from has bond3.201)' in=panorama.xml out=panorama.xml
+pan-os-php type=rule location=any 'actions=to-replace:bond3.201,ZONE-DMZ-3,yes' 'filter=(to has bond3.201)' in=panorama.xml out=panorama.xml
+
+pan-os-php type=rule location=any 'actions=from-replace:bond1.70,ZONE-TRUST,yes' 'filter=(from has bond1.70)' in=panorama.xml out=panorama.xml
+pan-os-php type=rule location=any 'actions=to-replace:bond1.70,ZONE-TRUST,yes' 'filter=(to has bond1.70)' in=panorama.xml out=panorama.xml
+
+pan-os-php type=rule location=any 'actions=from-replace:bond1.410,ZONE-DMZ-410,yes' 'filter=(from has bond1.410)' in=panorama.xml out=panorama.xml
+pan-os-php type=rule location=any 'actions=to-replace:bond1.410,ZONE-DMZ-410,yes' 'filter=(to has bond1.410)' in=panorama.xml out=panorama.xml
+
+pan-os-php type=rule location=any 'actions=from-replace:bond3.23,ZONE-DMZ-23,yes' 'filter=(from has bond3.23)' in=panorama.xml out=panorama.xml
+pan-os-php type=rule location=any 'actions=to-replace:bond3.23,ZONE-DMZ-23,yes' 'filter=(to has bond3.23)' in=panorama.xml out=panorama.xml
+
+pan-os-php type=rule location=any 'actions=from-replace:bond3.31,ZONE-DMZ-31,yes' 'filter=(from has bond3.31)' in=panorama.xml out=panorama.xml
+pan-os-php type=rule location=any 'actions=to-replace:bond3.31,ZONE-DMZ-31,yes' 'filter=(to has bond3.31)' in=panorama.xml out=panorama.xml
+
+pan-os-php type=rule location=any 'actions=from-replace:bond3.24,ZONE-DMZ-24,yes' 'filter=(from has bond3.24)' in=panorama.xml out=panorama.xml
+pan-os-php type=rule location=any 'actions=to-replace:bond3.24,ZONE-DMZ-24,yes' 'filter=(to has bond3.24)' in=panorama.xml out=panorama.xml
+
+pan-os-php type=rule location=any 'actions=from-replace:bond3.15,ZONE-DMZ-15,yes' 'filter=(from has bond3.15)' in=panorama.xml out=panorama.xml
+pan-os-php type=rule location=any 'actions=to-replace:bond3.15,ZONE-DMZ-15,yes' 'filter=(to has bond3.15)' in=panorama.xml out=panorama.xml
+
+pan-os-php type=rule location=any 'actions=from-replace:bond3.19,ZONE-DMZ-19,yes' 'filter=(from has bond3.19)' in=panorama.xml out=panorama.xml
+pan-os-php type=rule location=any 'actions=to-replace:bond3.19,ZONE-DMZ-19,yes' 'filter=(to has bond3.19)' in=panorama.xml out=panorama.xml
+
+pan-os-php type=rule location=any 'actions=from-replace:bond3.20,ZONE-DMZ-20,yes' 'filter=(from has bond3.20)' in=panorama.xml out=panorama.xml
+pan-os-php type=rule location=any 'actions=to-replace:bond3.20,ZONE-DMZ-20,yes' 'filter=(to has bond3.20)' in=panorama.xml out=panorama.xml
+
+pan-os-php type=rule location=any 'actions=from-replace:bond3.68,ZONE-DMZ-68,yes' 'filter=(from has bond3.68)' in=panorama.xml out=panorama.xml
+pan-os-php type=rule location=any 'actions=to-replace:bond3.68,ZONE-DMZ-68,yes' 'filter=(to has bond3.68)' in=panorama.xml out=panorama.xml
+
+pan-os-php type=rule location=any 'actions=from-replace:bond3.32,ZONE-DMZ-32,yes' 'filter=(from has bond3.32)' in=panorama.xml out=panorama.xml
+pan-os-php type=rule location=any 'actions=to-replace:bond3.32,ZONE-DMZ-32,yes' 'filter=(to has bond3.32)' in=panorama.xml out=panorama.xml
+
+pan-os-php type=rule location=any 'actions=from-replace:bond3.34,ZONE-DMZ-34,yes' 'filter=(from has bond3.34)' in=panorama.xml out=panorama.xml
+pan-os-php type=rule location=any 'actions=to-replace:bond3.34,ZONE-DMZ-34,yes' 'filter=(to has bond3.34)' in=panorama.xml out=panorama.xml
+
+pan-os-php type=rule location=any 'actions=from-replace:bond3.5,ZONE-CANCOM-MGMT-5,yes' 'filter=(from has bond3.5)' in=panorama.xml out=panorama.xml
+pan-os-php type=rule location=any 'actions=to-replace:bond3.5,ZONE-CANCOM-MGMT-5,yes' 'filter=(to has bond3.5)' in=panorama.xml out=panorama.xml
+
+pan-os-php type=rule location=any 'actions=from-replace:bond3.203,ZONE-DMZ-203,yes' 'filter=(from has bond3.203)' in=panorama.xml out=panorama.xml
+pan-os-php type=rule location=any 'actions=to-replace:bond3.203,ZONE-DMZ-203,yes' 'filter=(to has bond3.203)' in=panorama.xml out=panorama.xml
+
+pan-os-php type=rule location=any 'actions=from-replace:bond3.67,ZONE-DMZ-67,yes' 'filter=(from has bond3.67)' in=panorama.xml out=panorama.xml
+pan-os-php type=rule location=any 'actions=to-replace:bond3.67,ZONE-DMZ-67,yes' 'filter=(to has bond3.67)' in=panorama.xml out=panorama.xml
+
+pan-os-php type=rule location=any 'actions=from-replace:bond2.6,ZONE-MPLS-6,yes' 'filter=(from has bond2.6)' in=panorama.xml out=panorama.xml
+pan-os-php type=rule location=any 'actions=to-replace:bond2.6,ZONE-MPLS-6,yes' 'filter=(to has bond2.6)' in=panorama.xml out=panorama.xml
+
+pan-os-php type=rule location=any 'actions=from-replace:bond2.60,ZONE-UNTRUST,yes' 'filter=(from has bond2.60)' in=panorama.xml out=panorama.xml
+pan-os-php type=rule location=any 'actions=to-replace:bond2.60,ZONE-UNTRUST,yes' 'filter=(to has bond2.60)' in=panorama.xml out=panorama.xml
+
+pan-os-php type=rule location=any 'actions=from-replace:bond3.202,ZONE-MPLS-202,yes' 'filter=(from has bond3.202)' in=panorama.xml out=panorama.xml
+pan-os-php type=rule location=any 'actions=to-replace:bond3.202,ZONE-MPLS-202,yes' 'filter=(to has bond3.202)' in=panorama.xml out=panorama.xml
+
+pan-os-php type=rule location=any 'actions=from-replace:bond3.7,ZONE-MPLS-7,yes' 'filter=(from has bond3.7)' in=panorama.xml out=panorama.xml
+pan-os-php type=rule location=any 'actions=to-replace:bond3.7,ZONE-MPLS-7,yes' 'filter=(to has bond3.7)' in=panorama.xml out=panorama.xml
+
+pan-os-php type=rule location=any 'actions=from-replace:bond3.33,ZONE-DMZ-33,yes' 'filter=(from has bond3.33)' in=panorama.xml out=panorama.xml
+pan-os-php type=rule location=any 'actions=to-replace:bond3.33,ZONE-DMZ-33,yes' 'filter=(to has bond3.33)' in=panorama.xml out=panorama.xml
+
+pan-os-php type=rule location=any 'actions=from-replace:bond3.30,ZONE-DMZ-30,yes' 'filter=(from has bond3.30)' in=panorama.xml out=panorama.xml
+pan-os-php type=rule location=any 'actions=to-replace:bond3.30,ZONE-DMZ-30,yes' 'filter=(to has bond3.30)' in=panorama.xml out=panorama.xml
+
+pan-os-php type=rule location=any 'actions=from-replace:bond3.18,ZONE-DMZ-18,yes' 'filter=(from has bond3.18)' in=panorama.xml out=panorama.xml
+pan-os-php type=rule location=any 'actions=to-replace:bond3.18,ZONE-DMZ-18,yes' 'filter=(to has bond3.18)' in=panorama.xml out=panorama.xml
+
+pan-os-php type=rule location=any 'actions=from-replace:tunnel 1,ZONE-SASE-SC,yes' 'filter=(from has tunnel 1)' in=panorama.xml out=panorama.xml
+pan-os-php type=rule location=any 'actions=to-replace:tunnel 1,ZONE-SASE-SC,yes' 'filter=(to has tunnel 1)' in=panorama.xml out=panorama.xml
+
+pan-os-php type=rule location=any 'actions=from-replace:tunnel 2,ZONE-SASE-SC,yes' 'filter=(from has tunnel 2)' in=panorama.xml out=panorama.xml
+pan-os-php type=rule location=any 'actions=to-replace:tunnel 2,ZONE-SASE-SC,yes' 'filter=(to has tunnel 2)' in=panorama.xml out=panorama.xml
+
+pan-os-php type=rule location=any 'actions=from-replace:tunnel 3,ZONE-AWS,yes' 'filter=(from has tunnel 3)' in=panorama.xml out=panorama.xml
+pan-os-php type=rule location=any 'actions=to-replace:tunnel 3,ZONE-AWS,yes' 'filter=(to has tunnel 3)' in=panorama.xml out=panorama.xml
+
+pan-os-php type=rule location=any 'actions=from-replace:tunnel 4,ZONE-AWS,yes' 'filter=(from has tunnel 4)' in=panorama.xml out=panorama.xml
+pan-os-php type=rule location=any 'actions=to-replace:tunnel 4,ZONE-AWS,yes' 'filter=(to has tunnel 4)' in=panorama.xml out=panorama.xml
+
+
+
+pan-os-php type=rule location=any 'actions=from-replace:Eth1,ZONE-UNTRUST,yes' 'filter=(from has Eth1)' in=panorama.xml out=panorama.xml
+pan-os-php type=rule location=any 'actions=to-replace:Eth1,ZONE-UNTRUST,yes' 'filter=(to has Eth1)' in=panorama.xml out=panorama.xml
+
+pan-os-php type=rule location=any 'actions=from-replace:eth1,ZONE-UNTRUST,yes' 'filter=(from has eth1)' in=panorama.xml out=panorama.xml
+pan-os-php type=rule location=any 'actions=to-replace:eth1,ZONE-UNTRUST,yes' 'filter=(to has eth1)' in=panorama.xml out=panorama.xml
+
+pan-os-php type=rule location=any 'actions=from-replace:Eth2,ZONE-UNTRUST,yes' 'filter=(from has Eth2)' in=panorama.xml out=panorama.xml
+pan-os-php type=rule location=any 'actions=to-replace:Eth2,ZONE-UNTRUST,yes' 'filter=(to has Eth2)' in=panorama.xml out=panorama.xml
+
+pan-os-php type=rule location=any 'actions=from-replace:Eth3,ZONE-TRUST,yes' 'filter=(from has Eth3)' in=panorama.xml out=panorama.xml
+pan-os-php type=rule location=any 'actions=to-replace:Eth3,ZONE-TRUST,yes' 'filter=(to has Eth3)' in=panorama.xml out=panorama.xml
+
+pan-os-php type=rule location=any 'actions=from-replace:eth3.4035,ZONE-GUEST,yes' 'filter=(from has eth3.4035)' in=panorama.xml out=panorama.xml
+pan-os-php type=rule location=any 'actions=to-replace:eth3.4035,ZONE-GUEST,yes' 'filter=(to has eth3.4035)' in=panorama.xml out=panorama.xml
+
+pan-os-php type=rule location=any 'actions=from-replace:eth2.4035,ZONE-GUEST,yes' 'filter=(from has eth2.4035)' in=panorama.xml out=panorama.xml
+pan-os-php type=rule location=any 'actions=to-replace:eth2.4035,ZONE-GUEST,yes' 'filter=(to has eth2.4035)' in=panorama.xml out=panorama.xml
+
