@@ -299,6 +299,92 @@ class PANConf
         $this->network = new NetworkPropertiesContainer($this);
     }
 
+    public function __destruct()
+    {
+        $this->cleanupMemory();
+    }
+
+    /**
+     * Cleans up memory by setting all object references to null.
+     * This helps PHP's garbage collector handle circular references.
+     */
+    public function cleanupMemory()
+    {
+        // Clear DOM references first - these hold the most memory
+        $this->xmldoc = null;
+        $this->xmlroot = null;
+        $this->sharedroot = null;
+        $this->devicesroot = null;
+        $this->localhostroot = null;
+        $this->deviceconfigroot = null;
+        $this->vsyssroot = null;
+
+        // Clear virtual systems
+        if( isset($this->virtualSystems) && is_array($this->virtualSystems) )
+        {
+            foreach( $this->virtualSystems as $vsys )
+            {
+                if( method_exists($vsys, 'cleanupMemory') )
+                    $vsys->cleanupMemory();
+            }
+            $this->virtualSystems = array();
+        }
+
+        // Clear shared gateways
+        if( isset($this->sharedGateways) && is_array($this->sharedGateways) )
+        {
+            $this->sharedGateways = array();
+        }
+
+        // Clear object stores
+        $this->tagStore = null;
+        $this->appStore = null;
+        $this->threatStore = null;
+        $this->urlStore = null;
+        $this->serviceStore = null;
+        $this->addressStore = null;
+
+        // Clear security profile stores
+        $this->customURLProfileStore = null;
+        $this->URLProfileStore = null;
+        $this->AntiVirusProfileStore = null;
+        $this->ThreatPolicyStore = null;
+        $this->DNSPolicyStore = null;
+        $this->VulnerabilityProfileStore = null;
+        $this->AntiSpywareProfileStore = null;
+        $this->FileBlockingProfileStore = null;
+        $this->DataFilteringProfileStore = null;
+        $this->WildfireProfileStore = null;
+        $this->securityProfileGroupStore = null;
+
+        // Clear additional profile stores
+        $this->DecryptionProfileStore = null;
+        $this->HipObjectsProfileStore = null;
+        $this->HipProfilesProfileStore = null;
+        $this->GTPProfileStore = null;
+        $this->SCEPProfileStore = null;
+        $this->PacketBrokerProfileStore = null;
+        $this->SDWanErrorCorrectionProfileStore = null;
+        $this->SDWanPathQualityProfileStore = null;
+        $this->SDWanSaasQualityProfileStore = null;
+        $this->SDWanTrafficDistributionProfileStore = null;
+        $this->DataObjectsProfileStore = null;
+
+        // Clear other stores
+        $this->scheduleStore = null;
+        $this->EDLStore = null;
+        $this->LogProfileStore = null;
+        $this->certificateStore = null;
+        $this->SSL_TLSServiceProfileStore = null;
+
+        // Clear network properties
+        $this->network = null;
+
+        // Clear other references
+        $this->connector = null;
+        $this->owner = null;
+        $this->panorama = null;
+    }
 
     public function load_from_xmlstring(&$xml)
     {

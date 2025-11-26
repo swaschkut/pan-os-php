@@ -2600,25 +2600,57 @@ class UTIL
 
     function __destruct()
     {
-        /*
-        //todo: this is not helping to free up memory
-        if ($this->debugLoadTime)
+        // Memory cleanup: Set references to null before unset to help PHP's garbage collector
+        // Note: Simply using unset() may not be enough for circular references
+
+        if( isset($this->xmlDoc) )
         {
-            #PH::print_DEBUG_loadtime("before cleanup");
+            $this->xmlDoc = null;
         }
 
-
-        unset($this->xmlDoc);
-        unset($this->origXmlDoc);
-        unset($this->log);
-        unset($this->pan);
-        unset($this->sase_connector);
-        gc_collect_cycles();
-
-        if ($this->debugLoadTime)
+        if( isset($this->origXmlDoc) )
         {
-            #PH::print_DEBUG_loadtime("after cleanup");
+            $this->origXmlDoc = null;
         }
-        */
+
+        if( isset($this->pan) )
+        {
+            // Clear internal references in pan object first
+            if( method_exists($this->pan, 'cleanupMemory') )
+            {
+                $this->pan->cleanupMemory();
+            }
+            $this->pan = null;
+        }
+
+        if( isset($this->log) )
+        {
+            $this->log = null;
+        }
+
+        if( isset($this->sase_connector) )
+        {
+            $this->sase_connector = null;
+        }
+
+        if( isset($this->objectsToProcess) )
+        {
+            $this->objectsToProcess = array();
+        }
+
+        if( isset($this->nestedQueries) )
+        {
+            $this->nestedQueries = array();
+        }
+
+        if( isset($this->objectFilterRQuery) )
+        {
+            $this->objectFilterRQuery = null;
+        }
+
+        if( isset($this->configInput) )
+        {
+            $this->configInput = null;
+        }
     }
 }
