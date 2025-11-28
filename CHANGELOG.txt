@@ -11,6 +11,7 @@ BUGFIX:
 * class ZoneRulecontainer | major bug which is related to type=rule 'filter=(from/to has xyz) | type=rule-merger
 
 GENERAL:
+* Device App-ID update to version: 9042-9771
 
 
 2.1.43 (20251123)
