@@ -403,88 +403,108 @@ class PanoramaConf
 
     public function __destruct()
     {
-        /*
-        if ($this->debugLoadTime)
+        $this->cleanupMemory();
+    }
+
+    /**
+     * Cleans up memory by setting all object references to null.
+     * This helps PHP's garbage collector handle circular references.
+     */
+    public function cleanupMemory()
+    {
+        // Clear DOM references first - these hold the most memory
+        $this->xmldoc = null;
+        $this->xmlroot = null;
+
+        // Clear device groups - they hold references to many objects
+        if( isset($this->deviceGroups) && is_array($this->deviceGroups) )
         {
-            #PH::print_stdout("unset PanoramaConf");
+            foreach( $this->deviceGroups as $dg )
+            {
+                if( method_exists($dg, 'cleanupMemory') )
+                    $dg->cleanupMemory();
+            }
+            $this->deviceGroups = array();
         }
 
-        unset( $this->xmldoc );
-        unset( $this->xmlroot);
-
-        unset($this->tagStore );
-        unset($this->zoneStore );
-        unset($this->certificateStore );
-        unset($this->SSL_TLSServiceProfileStore );
-
-        unset($this->appStore );
-
-        unset($this->threatStore );
-
-        unset($this->urlStore );
-
-        unset($this->serviceStore );
-
-        unset($this->addressStore );
-
-
-        unset($this->customURLProfileStore );
-        unset($this->URLProfileStore );
-        unset($this->AntiVirusProfileStore );
-
-
-        unset($this->ThreatPolicyStore );
-        unset($this->DNSPolicyStore );
-        unset($this->VulnerabilityProfileStore );
-        unset($this->AntiSpywareProfileStore );
-        unset($this->FileBlockingProfileStore );
-        unset($this->DataFilteringProfileStore );
-        unset($this->WildfireProfileStore );
-        unset($this->securityProfileGroupStore );
-
-
-        unset($this->DecryptionProfileStore );
-        unset($this->HipObjectsProfileStore );
-        unset($this->HipProfilesProfileStore );
-        unset($this->GTPProfileStore );
-        unset($this->SCEPProfileStore );
-        unset($this->PacketBrokerProfileStore );
-        unset($this->SDWanErrorCorrectionProfileStore );
-        unset($this->SDWanPathQualityProfileStore );
-        unset($this->SDWanSaasQualityProfileStore );
-        unset($this->SDWanTrafficDistributionProfileStore );
-        unset($this->DataObjectsProfileStore );
-
-
-        unset($this->scheduleStore );
-        unset($this->EDLStore );
-        unset($this->LogProfileStore );
-
-        unset($this->securityRules );
-        unset($this->natRules );
-        unset($this->decryptionRules );
-        unset($this->appOverrideRules );
-        unset($this->captivePortalRules );
-        unset($this->authenticationRules );
-        unset($this->pbfRules );
-        unset($this->qosRules );
-        unset($this->dosRules );
-        unset($this->tunnelInspectionRules );
-        unset($this->defaultSecurityRules );
-
-        unset($this->networkPacketBrokerRules );
-        unset($this->sdWanRules );
-
-        unset($this->_fakeNetworkProperties );
-
-        unset($this->managedFirewallsStore );
-        gc_collect_cycles();
-
-        if ($this->debugLoadTime)
+        // Clear templates
+        if( isset($this->templates) && is_array($this->templates) )
         {
-            #PH::print_DEBUG_loadtime("after unset PanroamaConf");
+            foreach( $this->templates as $template )
+            {
+                if( method_exists($template, 'cleanupMemory') )
+                    $template->cleanupMemory();
+            }
+            $this->templates = array();
         }
-        */
+
+        // Clear template stacks
+        if( isset($this->templatestacks) && is_array($this->templatestacks) )
+        {
+            $this->templatestacks = array();
+        }
+
+        // Clear object stores
+        $this->tagStore = null;
+        $this->zoneStore = null;
+        $this->certificateStore = null;
+        $this->SSL_TLSServiceProfileStore = null;
+        $this->appStore = null;
+        $this->threatStore = null;
+        $this->urlStore = null;
+        $this->serviceStore = null;
+        $this->addressStore = null;
+
+        // Clear security profile stores
+        $this->customURLProfileStore = null;
+        $this->URLProfileStore = null;
+        $this->AntiVirusProfileStore = null;
+        $this->ThreatPolicyStore = null;
+        $this->DNSPolicyStore = null;
+        $this->VulnerabilityProfileStore = null;
+        $this->AntiSpywareProfileStore = null;
+        $this->FileBlockingProfileStore = null;
+        $this->DataFilteringProfileStore = null;
+        $this->WildfireProfileStore = null;
+        $this->securityProfileGroupStore = null;
+
+        // Clear additional profile stores
+        $this->DecryptionProfileStore = null;
+        $this->HipObjectsProfileStore = null;
+        $this->HipProfilesProfileStore = null;
+        $this->GTPProfileStore = null;
+        $this->SCEPProfileStore = null;
+        $this->PacketBrokerProfileStore = null;
+        $this->SDWanErrorCorrectionProfileStore = null;
+        $this->SDWanPathQualityProfileStore = null;
+        $this->SDWanSaasQualityProfileStore = null;
+        $this->SDWanTrafficDistributionProfileStore = null;
+        $this->DataObjectsProfileStore = null;
+
+        // Clear other stores
+        $this->scheduleStore = null;
+        $this->EDLStore = null;
+        $this->LogProfileStore = null;
+
+        // Clear rule stores
+        $this->securityRules = null;
+        $this->natRules = null;
+        $this->decryptionRules = null;
+        $this->appOverrideRules = null;
+        $this->captivePortalRules = null;
+        $this->authenticationRules = null;
+        $this->pbfRules = null;
+        $this->qosRules = null;
+        $this->dosRules = null;
+        $this->tunnelInspectionRules = null;
+        $this->defaultSecurityRules = null;
+        $this->networkPacketBrokerRules = null;
+        $this->sdWanRules = null;
+
+        // Clear other properties
+        $this->_fakeNetworkProperties = null;
+        $this->managedFirewallsStore = null;
+        $this->connector = null;
     }
 
     public function load_from_xmlstring(&$xml)

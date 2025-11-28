@@ -845,3 +845,21 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
             )
     )
 );
+
+SecurityProfileGroupCallContext::$supportedActions['create'] = array(
+    'name' => 'create',
+    'MainFunction' => function (SecurityProfileGroupCallContext $context) {
+    },
+    'GlobalFinishFunction' => function (SecurityProfileGroupCallContext $context)
+    {
+        $object = $context->object;
+
+        $args = &$context->arguments;
+        $spg_name = $args['spg-name'];
+
+        $secprofgrp = new SecurityProfileGroup($spg_name, $context->subSystem->securityProfileGroupStore, TRUE);
+
+        $context->subSystem->securityProfileGroupStore->addSecurityProfileGroup($secprofgrp);
+    },
+    'args' => array('spg-name' => array('type' => 'string', 'default' => '*nodefault*') )
+);

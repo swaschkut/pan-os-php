@@ -230,7 +230,7 @@ class PH
 
     private static $library_version_major = 2;
     private static $library_version_sub = 1;
-    private static $library_version_bugfix = 43;
+    private static $library_version_bugfix = 44;
 
     //BASIC AUTH PAN-OS 7.1
     public static $softwareupdate_key = "658d787f293e631196dac9fb29490f1cc1bb3827";
@@ -430,6 +430,59 @@ class PH
         PH::$argv = $argv;
 
         //print_r( $argv );
+    }
+
+    /**
+     * Clears static variables and forces garbage collection to free memory.
+     * This is particularly useful in playbook scenarios where multiple utilities
+     * are executed sequentially and memory accumulates between steps.
+     *
+     * @param bool $clearJsonOutput Whether to clear JSON output arrays (default: true)
+     * @param bool $verbose Whether to print memory usage info (default: false)
+     */
+    public static function clearGlobalMemory( $clearJsonOutput = true, $verbose = false )
+    {
+        $memBefore = memory_get_usage(true);
+
+        // Clear JSON output accumulators
+        if( $clearJsonOutput )
+        {
+            PH::$JSON_OUT = array();
+            PH::$JSON_TMP = array();
+            PH::$JSON_OUTlog = "";
+        }
+
+        // Clear CLI args
+        PH::$args = array();
+        PH::$argv = array();
+
+        // Clear load time tracking
+        PH::$loadStartTime = null;
+        PH::$loadStartMem = null;
+        PH::$loadArrayMem = array( "0", "b");
+
+        // Force garbage collection multiple times to handle circular references
+        gc_collect_cycles();
+        gc_collect_cycles();
+        gc_collect_cycles();
+
+        // Release cached memory back to system (PHP 7.0+)
+        if( function_exists('gc_mem_caches') )
+        {
+            gc_mem_caches();
+        }
+
+        $memAfter = memory_get_usage(true);
+        $memFreed = $memBefore - $memAfter;
+
+        if( $verbose )
+        {
+            $memFreedFormatted = number_format($memFreed / 1024 / 1024, 2);
+            $memAfterFormatted = number_format($memAfter / 1024 / 1024, 2);
+            PH::print_stdout(" - Memory cleanup: freed {$memFreedFormatted} MB, current usage: {$memAfterFormatted} MB");
+        }
+
+        return $memFreed;
     }
 
     public static function generate_arguments($in = "", $out = "", $location = "", $actions = "", $filter = "", $subquery = "", $additional = "")

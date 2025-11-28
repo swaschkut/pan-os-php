@@ -1,0 +1,96 @@
+{
+    "command": [
+        {
+            "type": "upload",
+            "in": "in=ATSBG_converted_config.xml",
+            "out": "out=panorama_start.xml",
+            "fromXpath": "fromXpath=/config/shared/*",
+            "toXpath": "toXpath=/config/devices/entry/device-group/entry[@name=\"ATSBG\"]"
+        },
+        {
+            "type": "upload",
+            "in": "in=ATSBG_converted_config.xml",
+            "out": "out=panorama_start.xml",
+            "fromXpath": "fromXpath=/config/devices/entry/device-group/entry[@name=\"NAT\"]/*",
+            "toXpath": "toXpath=/config/devices/entry/device-group/entry[@name=\"ATSBG_NAT\"]"
+        },
+        {
+            "type": "upload",
+            "in": "in=ATSBG_converted_config.xml",
+            "out": "out=panorama_start.xml",
+            "fromXpath": "fromXpath=/config/devices/entry/device-group/entry[@name=\"Security\"]/*",
+            "toXpath": "toXpath=/config/devices/entry/device-group/entry[@name=\"ATSBG_Security\"]"
+        },
+        {
+            "type": "upload",
+            "in": "in=ATSBG_converted_config.xml",
+            "out": "out=panorama_start.xml",
+            "fromXpath": "fromXpath=/config/devices/entry/device-group/entry[@name=\"Application\"]/*",
+            "toXpath": "toXpath=/config/devices/entry/device-group/entry[@name=\"ATSBG_Application\"]"
+        },
+        {
+            "type": "upload",
+            "in": "in=SITES_converted_config_start.xml",
+            "out": "out=panorama_start.xml",
+            "fromXpath": "fromXpath=/config/shared/*",
+            "toXpath": "toXpath=/config/devices/entry/device-group/entry[@name=\"SITES\"]"
+        },
+        {
+            "type": "upload",
+            "in": "in=SITES_converted_config_start.xml",
+            "out": "out=panorama_start.xml",
+            "fromXpath": "fromXpath=/config/devices/entry/device-group/entry[@name=\"NAT\"]/*",
+            "toXpath": "toXpath=/config/devices/entry/device-group/entry[@name=\"SITES_NAT\"]"
+        },
+        {
+            "type": "upload",
+            "in": "in=SITES_converted_config_start.xml",
+            "out": "out=panorama_start.xml",
+            "fromXpath": "fromXpath=/config/devices/entry/device-group/entry[@name=\"Security\"]/*",
+            "toXpath": "toXpath=/config/devices/entry/device-group/entry[@name=\"SITES_Security\"]"
+        },
+        {
+            "type": "upload",
+            "in": "in=SITES_converted_config_start.xml",
+            "out": "out=panorama_start.xml",
+            "fromXpath": "fromXpath=/config/devices/entry/device-group/entry[@name=\"Application\"]/*",
+            "toXpath": "toXpath=/config/devices/entry/device-group/entry[@name=\"SITES_Application\"]"
+        },
+        {
+            "type": "device",
+            "actions": "actions=devicegroup-setparentdg:ATSBG_NAT,ATSBG",
+            "in": "in=panorama_start.xml",
+            "out": "out=panorama_start.xml"
+        },
+        {
+            "type": "device",
+            "actions": "actions=devicegroup-setparentdg:ATSBG_Application,ATSBG",
+            "in": "in=panorama_start.xml",
+            "out": "out=panorama_start.xml"
+        },
+        {
+            "type": "device",
+            "actions": "actions=devicegroup-setparentdg:ATSBG_Security,ATSBG",
+            "in": "in=panorama_start.xml",
+            "out": "out=panorama_start.xml"
+        },
+        {
+            "type": "device",
+            "actions": "actions=devicegroup-setparentdg:SITES_NAT,SITES",
+            "in": "in=panorama_start.xml",
+            "out": "out=panorama_start.xml"
+        },
+        {
+            "type": "device",
+            "actions": "actions=devicegroup-setparentdg:SITES_Application,SITES",
+            "in": "in=panorama_start.xml",
+            "out": "out=panorama_start.xml"
+        },
+        {
+            "type": "device",
+            "actions": "actions=devicegroup-setparentdg:SITES_Security,SITES",
+            "in": "in=panorama_start.xml",
+            "out": "out=panorama_start.xml"
+        }
+    ]
+}

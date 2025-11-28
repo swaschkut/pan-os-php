@@ -104,6 +104,29 @@ class EDLStore extends ObjStore
         return $ret;
     }
 
+    /**
+     * @param EDL $edl
+     * @return bool
+     */
+    public function API_addEDL(EDL $edl)
+    {
+        $xpath = null;
+
+        if( !$edl->isTmp() )
+            $xpath = $edl->getXPath();
+
+        $ret = $this->addEDL($edl);
+
+        if( $ret && !$edl->isTmp() )
+        {
+            $con = findConnectorOrDie($this);
+
+            if( $con->isAPI() )
+                $con->sendSetRequest($xpath, DH::domlist_to_xml($edl->xmlroot->childNodes, -1, FALSE));
+        }
+
+        return $ret;
+    }
 
     /**
      * @param string $base

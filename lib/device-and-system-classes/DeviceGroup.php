@@ -333,85 +333,78 @@ class DeviceGroup
 
     public function __destruct()
     {
-        /*
-        if ($this->debugLoadTime)
-        {
-            #PH::print_stdout("unset DeviceGroup");
-        }
+        $this->cleanupMemory();
+    }
 
-        unset( $this->xmlroot);
+    /**
+     * Cleans up memory by setting all object references to null.
+     * This helps PHP's garbage collector handle circular references.
+     */
+    public function cleanupMemory()
+    {
+        // Clear DOM reference
+        $this->xmlroot = null;
 
-        unset($this->tagStore );
-        unset($this->zoneStore );
-        unset($this->certificateStore );
-        unset($this->SSL_TLSServiceProfileStore );
+        // Clear object stores
+        $this->tagStore = null;
+        $this->zoneStore = null;
+        #$this->certificateStore = null;
+        #$this->SSL_TLSServiceProfileStore = null;
+        #$this->appStore = null;
+        $this->threatStore = null;
+        #$this->urlStore = null;
+        $this->serviceStore = null;
+        $this->addressStore = null;
 
-        unset($this->appStore );
+        // Clear security profile stores
+        $this->customURLProfileStore = null;
+        $this->URLProfileStore = null;
+        $this->AntiVirusProfileStore = null;
+        $this->ThreatPolicyStore = null;
+        $this->DNSPolicyStore = null;
+        $this->VulnerabilityProfileStore = null;
+        $this->AntiSpywareProfileStore = null;
+        $this->FileBlockingProfileStore = null;
+        $this->DataFilteringProfileStore = null;
+        $this->WildfireProfileStore = null;
+        $this->securityProfileGroupStore = null;
 
-        unset($this->threatStore );
+        // Clear additional profile stores
+        $this->DecryptionProfileStore = null;
+        $this->HipObjectsProfileStore = null;
+        $this->HipProfilesProfileStore = null;
+        $this->GTPProfileStore = null;
+        $this->SCEPProfileStore = null;
+        $this->PacketBrokerProfileStore = null;
+        $this->SDWanErrorCorrectionProfileStore = null;
+        $this->SDWanPathQualityProfileStore = null;
+        $this->SDWanSaasQualityProfileStore = null;
+        $this->SDWanTrafficDistributionProfileStore = null;
+        $this->DataObjectsProfileStore = null;
 
-        unset($this->urlStore );
+        // Clear other stores
+        $this->scheduleStore = null;
+        $this->EDLStore = null;
+        $this->LogProfileStore = null;
 
-        unset($this->serviceStore );
+        // Clear rule stores
+        $this->securityRules = null;
+        $this->natRules = null;
+        $this->decryptionRules = null;
+        $this->appOverrideRules = null;
+        $this->captivePortalRules = null;
+        $this->authenticationRules = null;
+        $this->pbfRules = null;
+        $this->qosRules = null;
+        $this->dosRules = null;
+        $this->tunnelInspectionRules = null;
+        $this->defaultSecurityRules = null;
+        $this->networkPacketBrokerRules = null;
+        $this->sdWanRules = null;
 
-        unset($this->addressStore );
-
-
-        unset($this->customURLProfileStore );
-        unset($this->URLProfileStore );
-        unset($this->AntiVirusProfileStore );
-
-
-        unset($this->ThreatPolicyStore );
-        unset($this->DNSPolicyStore );
-        unset($this->VulnerabilityProfileStore );
-        unset($this->AntiSpywareProfileStore );
-        unset($this->FileBlockingProfileStore );
-        unset($this->DataFilteringProfileStore );
-        unset($this->WildfireProfileStore );
-        unset($this->securityProfileGroupStore );
-
-
-        unset($this->DecryptionProfileStore );
-        unset($this->HipObjectsProfileStore );
-        unset($this->HipProfilesProfileStore );
-        unset($this->GTPProfileStore );
-        unset($this->SCEPProfileStore );
-        unset($this->PacketBrokerProfileStore );
-        unset($this->SDWanErrorCorrectionProfileStore );
-        unset($this->SDWanPathQualityProfileStore );
-        unset($this->SDWanSaasQualityProfileStore );
-        unset($this->SDWanTrafficDistributionProfileStore );
-        unset($this->DataObjectsProfileStore );
-
-
-        unset($this->scheduleStore );
-        unset($this->EDLStore );
-        unset($this->LogProfileStore );
-
-        unset($this->securityRules );
-        unset($this->natRules );
-        unset($this->decryptionRules );
-        unset($this->appOverrideRules );
-        unset($this->captivePortalRules );
-        unset($this->authenticationRules );
-        unset($this->pbfRules );
-        unset($this->qosRules );
-        unset($this->dosRules );
-        unset($this->tunnelInspectionRules );
-        unset($this->defaultSecurityRules );
-
-        unset($this->networkPacketBrokerRules );
-        unset($this->sdWanRules );
-
-
-        gc_collect_cycles();
-
-        if ($this->debugLoadTime)
-        {
-            #PH::print_DEBUG_loadtime("after unset DeviceGroup");
-        }
-        */
+        // Clear other properties
+        $this->_fakeNetworkProperties = null;
+        $this->owner = null;
     }
 
     public function load_from_templateXml()

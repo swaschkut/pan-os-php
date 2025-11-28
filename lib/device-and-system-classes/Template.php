@@ -62,26 +62,31 @@ class Template
 
     public function __destruct()
     {
-        /*
-        if ($this->debugLoadTime)
+        $this->cleanupMemory();
+    }
+
+    /**
+     * Cleans up memory by setting all object references to null.
+     * This helps PHP's garbage collector handle circular references.
+     */
+    public function cleanupMemory()
+    {
+        // Clear DOM reference
+        $this->xmlroot = null;
+
+        // Clear device configuration
+        if( isset($this->deviceConfiguration) && method_exists($this->deviceConfiguration, 'cleanupMemory') )
         {
-            #PH::print_stdout("unset Template");
+            $this->deviceConfiguration->cleanupMemory();
         }
+        $this->deviceConfiguration = null;
 
+        // Clear stores
+        $this->certificateStore = null;
+        $this->SSL_TLSServiceProfileStore = null;
 
-        unset( $this->xmlroot);
-
-        unset( $this->deviceConfiguration );
-        unset( $this->certificateStore );
-        unset( $this->SSL_TLSServiceProfileStore );
-
-        gc_collect_cycles();
-
-        if ($this->debugLoadTime)
-        {
-            #PH::print_DEBUG_loadtime("after unset Template");
-        }
-        */
+        // Clear other references
+        $this->owner = null;
     }
     public function load_from_domxml(DOMElement $xml, $debugLoadTime = false)
     {

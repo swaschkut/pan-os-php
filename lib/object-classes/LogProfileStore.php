@@ -364,6 +364,21 @@ class LogProfileStore extends ObjStore
         return "LogProfileStore";
     }
 
+    public function createXmlRoot()
+    {
+        if( $this->xmlroot === null )
+        {
+            if( $this->owner->isPanorama() || $this->owner->isFirewall() )
+                $xml = $this->owner->sharedroot;
+            else
+                $xml = $this->owner->xmlroot;
+
+            $xml = DH::findFirstElementOrCreate('log-settings', $this->owner->xmlroot);
+            $xml = DH::findFirstElementOrCreate('profile-group', $xml);
+            $this->xmlroot = $xml;
+        }
+    }
+
 }
 
 

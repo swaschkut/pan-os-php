@@ -1318,14 +1318,14 @@ class MERGER extends UTIL
                             else
                             {
                                 */
-                                $tmp_return_value = $this->addressgroupGetValueDiff($ancestor, $object, true);;
+                                $tmp_return_value = $this->addressgroupGetValueDiff($childancestor, $object, true);;
 
                                 if( $tmp_return_value === FALSE )
                                 {
                                     //if delete earlier, why not replacing this reference???
                                     $tmp_txt = 'was delete earlier';
-                                    PH::print_stdout("    - SKIP: object name '{$ancestor->_PANC_shortName()}' was delete earlier. upperlevel '{$object->_PANC_shortName()}'");
-                                    $this->skippedObject( $index, $object, $ancestor, $tmp_txt);
+                                    PH::print_stdout("    - SKIP: object name '{$childancestor->_PANC_shortName()}' was delete earlier. upperlevel '{$object->_PANC_shortName()}'");
+                                    $this->skippedObject( $index, $object, $childancestor, $tmp_txt);
                                     continue;
                                 }
 
@@ -2444,7 +2444,7 @@ class MERGER extends UTIL
             }
             if( $pickedObject === null )
                 $pickedObject = reset($hash);
-            if( $pickedObject->isType_TMP() )
+            if( get_class($pickedObject) == "Address" && $pickedObject->isType_TMP() )
                 $pickedObject = reset($hash);
         }
         else

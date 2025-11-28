@@ -239,3 +239,19 @@ LogProfileCallContext::$supportedActions[] = array(
             )
     )
 );
+
+LogProfileCallContext::$supportedActions['create'] = array(
+    'name' => 'create',
+    'MainFunction' => function (LogProfileCallContext $context) {
+    },
+    'GlobalFinishFunction' => function (LogProfileCallContext $context)
+    {
+        $object = $context->object;
+
+        $args = &$context->arguments;
+        $log_name = $args['logprofile-name'];
+
+        $context->subSystem->LogProfileStore->createLogProfile($log_name);
+    },
+    'args' => array('logprofile-name' => array('type' => 'string', 'default' => '*nodefault*') )
+);

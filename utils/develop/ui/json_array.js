@@ -1788,6 +1788,10 @@ var subjectObject =
                 "name": "display",
                 "MainFunction": {}
             },
+            "displayreferences": {
+                "name": "displayReferences",
+                "MainFunction": {}
+            },
             "exporttoexcel": {
                 "name": "exportToExcel",
                 "MainFunction": {},
@@ -2946,6 +2950,24 @@ var subjectObject =
                     }
                 }
             },
+            "move": {
+                "name": "move",
+                "MainFunction": {},
+                "args": {
+                    "location": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "mode": {
+                        "type": "string",
+                        "default": "skipIfConflict",
+                        "choices": [
+                            "skipIfConflict",
+                            "removeIfMatch"
+                        ]
+                    }
+                }
+            },
             "name-addprefix": {
                 "name": "name-addPrefix",
                 "MainFunction": {},
@@ -3886,6 +3908,17 @@ var subjectObject =
     "log-profile": {
         "name": "log-profile",
         "action": {
+            "create": {
+                "name": "create",
+                "MainFunction": {},
+                "GlobalFinishFunction": {},
+                "args": {
+                    "logprofile-name": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                }
+            },
             "display": {
                 "name": "display",
                 "MainFunction": {}
@@ -5120,6 +5153,18 @@ var subjectObject =
                 },
                 "help": "Sets log setting\/forwarding profile of a Security rule to the value specified."
             },
+            "logsetting-set-force": {
+                "name": "logSetting-set-force",
+                "section": "log",
+                "MainFunction": {},
+                "args": {
+                    "profName": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                },
+                "help": "Sets log setting\/forwarding profile of a Security rule to the value specified."
+            },
             "logstart-disable": {
                 "name": "logStart-Disable",
                 "section": "log",
@@ -6200,6 +6245,11 @@ var subjectObject =
             },
             "decryption-certificate": {
                 "operators": {
+                    "has.from.query": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "example: 'filter=(decryption-certificate has.from.query subquery1)' 'subquery1=(expired >= 30days)'"
+                    },
                     "eq": {
                         "Function": {},
                         "arg": true
@@ -9068,6 +9118,17 @@ var subjectObject =
     "securityprofilegroup": {
         "name": "securityprofilegroup",
         "action": {
+            "create": {
+                "name": "create",
+                "MainFunction": {},
+                "GlobalFinishFunction": {},
+                "args": {
+                    "spg-name": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                }
+            },
             "display": {
                 "name": "display",
                 "MainFunction": {}

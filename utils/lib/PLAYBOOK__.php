@@ -23,7 +23,10 @@ class PLAYBOOK__
 
     public $isAPI = false;
     public $debugAPI = false;
+    public $debugMemory = false;
     public $outputformatset = false;
+    public $subprocessMode = false;
+    public $memoryThreshold = 0;
 
     public $mainLocation = null;
 
@@ -46,6 +49,9 @@ class PLAYBOOK__
         $this->supportedArguments['stagename'] = array('niceName' => 'stagename');
         $this->supportedArguments['help'] = array('niceName' => 'help', 'shortHelp' => 'this message');
         $this->supportedArguments['debugapi'] = array('niceName' => 'DebugAPI', 'shortHelp' => 'prints API calls when they happen');
+        $this->supportedArguments['debugmemory'] = array('niceName' => 'DebugMemory', 'shortHelp' => 'prints memory usage information after each playbook step');
+        $this->supportedArguments['subprocess'] = array('niceName' => 'subprocess', 'shortHelp' => 'run each playbook step as a separate PHP process (slower but uses less memory)');
+        $this->supportedArguments['memorythreshold'] = array('niceName' => 'memorythreshold', 'shortHelp' => 'memory threshold in MB before switching to subprocess mode (e.g., memorythreshold=512)', 'argDesc' => 'memorythreshold=MB');
         $this->supportedArguments['outputformatset'] = array('niceName' => 'outputformatset', 'shortHelp' => 'get all PAN-OS set commands about the task the UTIL script is doing. outputformatset=FILENAME -> store set commands in file', 'argDesc' => 'outputformatset');
 
 
@@ -132,6 +138,15 @@ class PLAYBOOK__
 
         if( isset(PH::$args['debugapi']) )
             $this->debugAPI = TRUE;
+
+        if( isset(PH::$args['debugmemory']) )
+            $this->debugMemory = TRUE;
+
+        if( isset(PH::$args['subprocess']) )
+            $this->subprocessMode = TRUE;
+
+        if( isset(PH::$args['memorythreshold']) )
+            $this->memoryThreshold = intval(PH::$args['memorythreshold']) * 1024 * 1024; // Convert MB to bytes
 
         if( isset(PH::$args['projectfolder']) )
         {
@@ -423,9 +438,96 @@ class PLAYBOOK__
             PH::print_stdout( PH::boldText( "[ ".$tool. " ".implode( " ", PH::$argv )." ]" ) );
             PH::print_stdout();
 
-            $util = PH::callPANOSPHP( $script, PH::$argv, $argc, $PHP_FILE );
-            unset( $util );
-            gc_collect_cycles();
+            // Check if we should use subprocess mode
+            $useSubprocess = $this->subprocessMode;
+
+            // If memory threshold is set, check current memory usage
+            if( !$useSubprocess && $this->memoryThreshold > 0 )
+            {
+                $currentMemory = memory_get_usage(true);
+                if( $currentMemory > $this->memoryThreshold )
+                {
+                    $useSubprocess = true;
+                    if( $this->debugMemory )
+                    {
+                        $memMB = number_format($currentMemory / 1024 / 1024, 2);
+                        $threshMB = number_format($this->memoryThreshold / 1024 / 1024, 2);
+                        PH::print_stdout(" - Memory ({$memMB} MB) exceeds threshold ({$threshMB} MB), switching to subprocess mode for this step");
+                    }
+                }
+            }
+
+            if( $useSubprocess )
+            {
+                // Run this step as a subprocess to get clean memory
+                $this->runStepAsSubprocess($script, $arguments, $PHP_FILE);
+            }
+            else
+            {
+                // Run in-process
+                $util = PH::callPANOSPHP( $script, PH::$argv, $argc, $PHP_FILE );
+
+                // Enhanced memory cleanup between playbook steps
+                // Call cleanupMemory methods explicitly before nullifying to break circular references
+
+                // First clean up the pan config object thoroughly
+                if( isset($util->pan) && $util->pan !== null )
+                {
+                    if( method_exists($util->pan, 'cleanupMemory') )
+                    {
+                        $util->pan->cleanupMemory();
+                    }
+                    $util->pan = null;
+                }
+
+                // Clean up DOM documents
+                if( isset($util->xmlDoc) && $util->xmlDoc !== null )
+                {
+                    // Clear all child nodes to break references
+                    while( $util->xmlDoc->hasChildNodes() )
+                    {
+                        $util->xmlDoc->removeChild($util->xmlDoc->firstChild);
+                    }
+                    $util->xmlDoc = null;
+                }
+                if( isset($util->origXmlDoc) && $util->origXmlDoc !== null )
+                {
+                    while( $util->origXmlDoc->hasChildNodes() )
+                    {
+                        $util->origXmlDoc->removeChild($util->origXmlDoc->firstChild);
+                    }
+                    $util->origXmlDoc = null;
+                }
+
+                // Clear processed objects array
+                if( isset($util->objectsToProcess) )
+                {
+                    $util->objectsToProcess = array();
+                }
+
+                // Clear nested queries
+                if( isset($util->nestedQueries) )
+                {
+                    $util->nestedQueries = array();
+                }
+
+                // Clear filter query
+                if( isset($util->objectFilterRQuery) )
+                {
+                    $util->objectFilterRQuery = null;
+                }
+
+                // Clear config input
+                if( isset($util->configInput) )
+                {
+                    $util->configInput = null;
+                }
+
+                unset( $util );
+
+                // Use enhanced memory cleanup with verbose output if debugMemory is enabled
+                PH::clearGlobalMemory( true, $this->debugMemory );
+            }
 
             PH::print_stdout();
             PH::print_stdout( "############################################################################");
@@ -494,6 +596,55 @@ class PLAYBOOK__
 
     function endOfScript()
     {
+    }
+
+    /**
+     * Run a playbook step as a subprocess to achieve complete memory cleanup.
+     * This spawns a new PHP process for the step, which guarantees all memory
+     * is released when the subprocess exits.
+     *
+     * @param string $script The utility type (e.g., 'rule', 'address', 'device')
+     * @param array $arguments The arguments array for the step
+     * @param string $PHP_FILE The path to the pan-os-php.php entry point
+     */
+    function runStepAsSubprocess($script, $arguments, $PHP_FILE)
+    {
+        // $PHP_FILE points to PLAYBOOK__.php - we need pan-os-php.php instead
+        $panOsPHPFile = dirname(dirname($PHP_FILE)) . '/pan-os-php.php';
+        if( !file_exists($panOsPHPFile) )
+        {
+            // Fallback: try to find it relative to current file
+            $panOsPHPFile = dirname(__DIR__) . '/pan-os-php.php';
+        }
+
+        // Build the command - redirect stderr to stdout for unified output
+        $cmd = 'php ' . escapeshellarg($panOsPHPFile) . ' type=' . escapeshellarg($script);
+
+        // Add all arguments
+        foreach( $arguments as $arg )
+        {
+            if( !empty($arg) )
+            {
+                $cmd .= ' ' . escapeshellarg($arg);
+            }
+        }
+
+        // Redirect stderr to stdout so we get all output in order
+        $cmd .= ' 2>&1';
+
+        if( $this->debugMemory )
+        {
+            PH::print_stdout(" - Running step as subprocess");
+        }
+
+        // Use passthru for real-time streaming output
+        $returnCode = 0;
+        passthru($cmd, $returnCode);
+
+        if( $returnCode !== 0 )
+        {
+            PH::print_stdout(" ** WARNING: Subprocess exited with code $returnCode");
+        }
     }
 
     function printCOMMENTS( $string )
