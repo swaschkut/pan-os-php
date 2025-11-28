@@ -8,6 +8,7 @@ UTIL:
 
 BUGFIX:
 * type=adddressgroup-merger | bugfix for skipped info to NOT error out
+* class ZoneRulecontainer | major bug which is related to type=rule 'filter=(from/to has xyz) | type=rule-merger
 
 GENERAL:
 

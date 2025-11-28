@@ -72,7 +72,7 @@ $connector = $pan->connector;
 //-H 'Accept: application/json' \
 //-H 'Authorization: Bearer <token>'
 
-$url_config = "/config/mobile-agent/v1/infrastructure-settings";
+$url_config = "/config/mobile-agent/v1/infrastructure-settings?folder=Mobile Users";
 
 //validation:
 //$connector->url_api = "https://api.strata.paloaltonetworks.com";

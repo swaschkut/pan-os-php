@@ -227,6 +227,7 @@ class ZoneRuleContainer extends ObjRuleContainer
 
                         $all = array_merge($tmp_templates, array($tmp_TemplateStack));
 
+                        $zone_added = false;
                         foreach( $all as $template )
                         {
                             /** @var Template|TemplateStack $template */
@@ -239,16 +240,20 @@ class ZoneRuleContainer extends ObjRuleContainer
                                 $tmp_zone = $vsys->zoneStore->find( $node->textContent, $this );
                                 if( $tmp_zone !== null )
                                 {
+                                    $zone_added = true;
                                     $this->o[] = $tmp_zone;
                                     $tmp_zone->addReference($this);
                                 }
                             }
                         }
 
-                        //this is needed to get type=rule 'filter=(from has XZY) - back into working mode
-                        $f = $this->parentCentralStore->findOrCreate($node->textContent, $this);
+                        if( !$zone_added )
+                        {
+                            //this is needed to get type=rule 'filter=(from has XZY) - back into working mode
+                            $f = $this->parentCentralStore->findOrCreate($node->textContent, $this);
+                            $this->o[] = $f;
+                        }
 
-                        #$this->o[] = $f;
                     }
                     else
                     {
