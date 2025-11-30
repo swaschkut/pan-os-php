@@ -5,7 +5,8 @@
   "command": [
      {
       "type": "xml-issue",
-      "comment": "*****************************************************************************************************************\n*                                                                                                               *\n*  The next pan-os-php command (below) will analysis the config for any known xml configuraiton issues that can cause pan-os-php to error out and fix these automatically.                                                                             *\n*****************************************************************************************************************"
+      "comment": "*****************************************************************************************************************\n*                                                                                                               *\n*  The next pan-os-php command (below) will analysis the config for any known xml configuraiton issues that can cause pan-os-php to error out and fix these automatically.                                                                             *\n*****************************************************************************************************************",
+      "outputformatset": "outputformatset=xml-issue_setcommands.txt"
     },
     {
       "type": "device",

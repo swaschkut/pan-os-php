@@ -317,13 +317,12 @@ class PLAYBOOK__
                     $arguments[] = "location=".$this->mainLocation;
             }
 
-            foreach( $command as $arg )
-                $arguments[] = $arg;
-
-            if( $this->debugAPI )
-                $arguments[] = "debugapi";
-
-            if( $this->outputformatset )
+            if( isset( $command['outputformatset'] ) )
+            {
+                $arguments[] = $command['outputformatset'];
+                unset( $command['outputformatset'] );
+            }
+            elseif( $this->outputformatset )
             {
                 $string = "";
                 if( $this->outputformatsetFile !== null)
@@ -331,6 +330,13 @@ class PLAYBOOK__
 
                 $arguments[] = "outputformatset".$string;
             }
+
+            foreach( $command as $arg )
+                $arguments[] = $arg;
+
+            if( $this->debugAPI )
+                $arguments[] = "debugapi";
+
 
             if( $this->projectFolder !== null )
             {

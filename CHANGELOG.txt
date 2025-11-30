@@ -2,6 +2,7 @@ CHANGELOG
 
 2.1.45
 UTIL:
+* type=playbook | extend to support 'outputformatset' inside json playbook file
 
 BUGFIX:
 
