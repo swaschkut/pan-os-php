@@ -451,12 +451,14 @@ class PLAYBOOK__
             if( !$useSubprocess && $this->memoryThreshold > 0 )
             {
                 $currentMemory = memory_get_usage(true);
+                $memMB = number_format($currentMemory / 1024 / 1024, 2);
+                if( $this->debugMemory )
+                    PH::print_stdout(" - currentMemory=".$memMB);
                 if( $currentMemory > $this->memoryThreshold )
                 {
                     $useSubprocess = true;
                     if( $this->debugMemory )
                     {
-                        $memMB = number_format($currentMemory / 1024 / 1024, 2);
                         $threshMB = number_format($this->memoryThreshold / 1024 / 1024, 2);
                         PH::print_stdout(" - Memory ({$memMB} MB) exceeds threshold ({$threshMB} MB), switching to subprocess mode for this step");
                     }
@@ -466,7 +468,7 @@ class PLAYBOOK__
             if( $useSubprocess )
             {
                 // Run this step as a subprocess to get clean memory
-                $this->runStepAsSubprocess($script, $arguments, $PHP_FILE);
+                $this->runStepAsSubprocess($script, PH::$argv, $argc, $PHP_FILE);
             }
             else
             {
@@ -613,7 +615,7 @@ class PLAYBOOK__
      * @param array $arguments The arguments array for the step
      * @param string $PHP_FILE The path to the pan-os-php.php entry point
      */
-    function runStepAsSubprocess($script, $arguments, $PHP_FILE)
+    function runStepAsSubprocess($script, $arguments, $argc, $PHP_FILE)
     {
         // $PHP_FILE points to PLAYBOOK__.php - we need pan-os-php.php instead
         $panOsPHPFile = dirname(dirname($PHP_FILE)) . '/pan-os-php.php';
@@ -631,7 +633,7 @@ class PLAYBOOK__
         {
             if( !empty($arg) )
             {
-                $cmd .= ' ' . escapeshellarg($arg);
+                $cmd .= " " . escapeshellarg($arg);
             }
         }
 

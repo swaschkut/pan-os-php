@@ -5,6 +5,7 @@ UTIL:
 * type=playbook | extend to support 'outputformatset' inside json playbook file
 
 BUGFIX:
+* type=playbook | bugfix for argument subprocess - to get correct arguments handed over
 
 GENERAL:
 
