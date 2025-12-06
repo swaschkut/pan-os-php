@@ -107,7 +107,7 @@ class PLAYBOOK__
 
         if( isset(PH::$args['help']) )
         {
-            $help_string = PH::boldText("USAGE: ") . "php " . $PHP_FILE . " in=inputfile.xml out=outputfile.xml [json=JSONfile]\n";
+            $help_string = PH::boldText("USAGE: ") . "php " . $PHP_FILE . ' in=inputfile.xml out=outputfile.xml [json=JSONfile] [json=$$playbookfolder$$/JSONfile]\n';
 
             PH::print_stdout( $help_string );
 
@@ -181,6 +181,12 @@ class PLAYBOOK__
         if( isset(PH::$args['json']) )
         {
             $jsonFile = PH::$args['json'];
+
+            if( strpos( $jsonFile, '$$playbook$$/') !== FALSE )
+            {
+                $jsonFile = str_replace( '$$playbook$$', $visibility_pathString, $jsonFile );
+            }
+
             PH::print_stdout("using JSON input file: ".$jsonFile);
             $filedata = file_get_contents($jsonFile);
             $details = json_decode( $filedata, true );
