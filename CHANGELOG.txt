@@ -7,6 +7,7 @@ UTIL:
 
 BUGFIX:
 * type=playbook | bugfix for argument subprocess - to get correct arguments handed over
+* type=log-profile | bugfix for Firewall config if profile is available at shared level
 
 GENERAL:
 
