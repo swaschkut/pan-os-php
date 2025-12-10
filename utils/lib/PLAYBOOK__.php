@@ -107,7 +107,7 @@ class PLAYBOOK__
 
         if( isset(PH::$args['help']) )
         {
-            $help_string = PH::boldText("USAGE: ") . "php " . $PHP_FILE . " in=inputfile.xml out=outputfile.xml [json=JSONfile]\n";
+            $help_string = PH::boldText("USAGE: ") . "php " . $PHP_FILE . ' in=inputfile.xml out=outputfile.xml [json=JSONfile] [json=$$playbookfolder$$/JSONfile]\n';
 
             PH::print_stdout( $help_string );
 
@@ -181,6 +181,12 @@ class PLAYBOOK__
         if( isset(PH::$args['json']) )
         {
             $jsonFile = PH::$args['json'];
+
+            if( strpos( $jsonFile, '$$playbook$$/') !== FALSE )
+            {
+                $jsonFile = str_replace( '$$playbook$$', $visibility_pathString, $jsonFile );
+            }
+
             PH::print_stdout("using JSON input file: ".$jsonFile);
             $filedata = file_get_contents($jsonFile);
             $details = json_decode( $filedata, true );
@@ -317,13 +323,12 @@ class PLAYBOOK__
                     $arguments[] = "location=".$this->mainLocation;
             }
 
-            foreach( $command as $arg )
-                $arguments[] = $arg;
-
-            if( $this->debugAPI )
-                $arguments[] = "debugapi";
-
-            if( $this->outputformatset )
+            if( isset( $command['outputformatset'] ) )
+            {
+                $arguments[] = $command['outputformatset'];
+                unset( $command['outputformatset'] );
+            }
+            elseif( $this->outputformatset )
             {
                 $string = "";
                 if( $this->outputformatsetFile !== null)
@@ -331,6 +336,13 @@ class PLAYBOOK__
 
                 $arguments[] = "outputformatset".$string;
             }
+
+            foreach( $command as $arg )
+                $arguments[] = $arg;
+
+            if( $this->debugAPI )
+                $arguments[] = "debugapi";
+
 
             if( $this->projectFolder !== null )
             {
@@ -445,12 +457,14 @@ class PLAYBOOK__
             if( !$useSubprocess && $this->memoryThreshold > 0 )
             {
                 $currentMemory = memory_get_usage(true);
+                $memMB = number_format($currentMemory / 1024 / 1024, 2);
+                if( $this->debugMemory )
+                    PH::print_stdout(" - currentMemory=".$memMB);
                 if( $currentMemory > $this->memoryThreshold )
                 {
                     $useSubprocess = true;
                     if( $this->debugMemory )
                     {
-                        $memMB = number_format($currentMemory / 1024 / 1024, 2);
                         $threshMB = number_format($this->memoryThreshold / 1024 / 1024, 2);
                         PH::print_stdout(" - Memory ({$memMB} MB) exceeds threshold ({$threshMB} MB), switching to subprocess mode for this step");
                     }
@@ -460,7 +474,7 @@ class PLAYBOOK__
             if( $useSubprocess )
             {
                 // Run this step as a subprocess to get clean memory
-                $this->runStepAsSubprocess($script, $arguments, $PHP_FILE);
+                $this->runStepAsSubprocess($script, PH::$argv, $argc, $PHP_FILE);
             }
             else
             {
@@ -607,7 +621,7 @@ class PLAYBOOK__
      * @param array $arguments The arguments array for the step
      * @param string $PHP_FILE The path to the pan-os-php.php entry point
      */
-    function runStepAsSubprocess($script, $arguments, $PHP_FILE)
+    function runStepAsSubprocess($script, $arguments, $argc, $PHP_FILE)
     {
         // $PHP_FILE points to PLAYBOOK__.php - we need pan-os-php.php instead
         $panOsPHPFile = dirname(dirname($PHP_FILE)) . '/pan-os-php.php';
@@ -625,7 +639,7 @@ class PLAYBOOK__
         {
             if( !empty($arg) )
             {
-                $cmd .= ' ' . escapeshellarg($arg);
+                $cmd .= " " . escapeshellarg($arg);
             }
         }
 

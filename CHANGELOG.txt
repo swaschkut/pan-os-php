@@ -1,6 +1,19 @@
 CHANGELOG
 
-2.1.44
+2.1.45
+UTIL:
+* type=playbook | extend to support 'outputformatset' inside json playbook file
+* type=playbook | extend with 'json=$$playbook$$/visibility.json'
+
+BUGFIX:
+* type=playbook | bugfix for argument subprocess - to get correct arguments handed over
+* type=log-profile | bugfix for Firewall config if profile is available at shared level
+
+GENERAL:
+*  Device App-ID update to version: 9046-9791
+
+
+2.1.44 (20251128)
 UTIL:
 * type=edl | new actions=move:{DGname}
 * type=rule | new actions=logsetting-set-foce:{profileNAME} | and hardingen of actions=logsetting-set:{profileName} to only allow these profiles which are available

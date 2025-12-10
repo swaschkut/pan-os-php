@@ -780,7 +780,7 @@ class PANConf
             //
             // Extract EDL objects
             //
-            $tmp = DH::findFirstElement('external-list', $xml);
+            $tmp = DH::findFirstElement('external-list', $this->sharedroot);
             if( $tmp !== FALSE )
                 $this->EDLStore->load_from_domxml($tmp);
             // End of EDL extraction
@@ -788,7 +788,7 @@ class PANConf
             //
             // Extract LogProfile objects
             //
-            $tmp2 = DH::findFirstElement('log-settings', $xml);
+            $tmp2 = DH::findFirstElement('log-settings', $this->sharedroot);
             if( $tmp2 !== FALSE )
                 $tmp = DH::findFirstElement('profiles', $tmp2);
             if( $tmp2 !== FALSE && $tmp !== FALSE )

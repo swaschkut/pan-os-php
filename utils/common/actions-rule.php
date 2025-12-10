@@ -2672,7 +2672,7 @@ RuleCallContext::$supportedActions[] = array(
         $LogProfObject = $rule->owner->owner->LogProfileStore->find( $LogprofName );
         if( $LogProfObject === null )
         {
-            derr( "LogProfile: '".$LogProfObject."' not available in this configuration", null, False );
+            derr( "LogProfile: '".$LogprofName."' not available in this configuration", null, False );
         }
         if( $context->isAPI )
         {

@@ -5,6 +5,7 @@
   "command": [
      {
       "type": "xml-issue",
+      "outputformatset": "outputformatset=visibility-set-commands-xml-issue.txt",
       "comment": "*****************************************************************************************************************\n*                                                                                                               *\n*  The next pan-os-php command (below) will analysis the config for any known xml configuraiton issues that can cause pan-os-php to error out and fix these automatically.                                                                             *\n*****************************************************************************************************************"
     },
     {
