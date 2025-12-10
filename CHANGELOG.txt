@@ -10,6 +10,7 @@ BUGFIX:
 * type=log-profile | bugfix for Firewall config if profile is available at shared level
 
 GENERAL:
+*  Device App-ID update to version: 9046-9791
 
 
 2.1.44 (20251128)
