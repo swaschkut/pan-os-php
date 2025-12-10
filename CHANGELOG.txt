@@ -1,6 +1,14 @@
 CHANGELOG
 
-2.1.45
+2.1.46
+UTIL:
+
+BUGFIX:
+
+GENERAL:
+
+
+2.1.45 (20251210)
 UTIL:
 * type=playbook | extend to support 'outputformatset' inside json playbook file
 * type=playbook | extend with 'json=$$playbook$$/visibility.json'
