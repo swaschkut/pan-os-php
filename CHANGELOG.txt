@@ -4,6 +4,7 @@ CHANGELOG
 UTIL:
 
 BUGFIX:
+* class URLProfile | missing validation if customURLProfileStore is NULL
 
 GENERAL:
 
