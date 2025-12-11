@@ -30,7 +30,21 @@ InterfaceCallContext::$supportedActions['display'] = Array(
         if( method_exists($object, 'getLinkState') )
             $linkstate = "[".$object->getLinkState()."]";
 
-        PH::print_stdout("     * ".get_class($object)." '{$object->name()}' {$linkstate}" );
+        $mgmtProfile = "";
+        if( method_exists($object, 'getMgmtProfile') )
+        {
+            if( $object->getMgmtProfile() !== null )
+            {
+                $mgmtProfile = " mgmtProfile:[".$object->getMgmtProfile()."]";
+                PH::$JSON_TMP['sub']['object'][$object->name()]['interface-management-profile'] = $object->getMgmtProfile();
+            }
+            else
+            {
+                $mgmtProfile = " mgmtProfile:[---]";
+            }
+        }
+
+        PH::print_stdout("     * ".get_class($object)." '{$object->name()}' {$linkstate}".$mgmtProfile );
         PH::$JSON_TMP['sub']['object'][$object->name()]['name'] = $object->name();
         PH::$JSON_TMP['sub']['object'][$object->name()]['type'] = get_class($object);
         PH::$JSON_TMP['sub']['object'][$object->name()]['linkstate'] = $linkstate;
@@ -185,7 +199,7 @@ InterfaceCallContext::$supportedActions['exportToExcel'] = array(
             $addUsedInLocation = TRUE;
 
 
-        $headers = '<th>ID</th><th>template</th><th>location</th><th>name</th><th>class</th><th>type</th><th>subinterfaces</th><th>IP-addresses</th>';
+        $headers = '<th>ID</th><th>template</th><th>location</th><th>name</th><th>class</th><th>type</th><th>subinterfaces</th><th>IP-addresses</th><th>IPv6-addresses</th><th>mgmt-profile</th>';
 
         if( $addWhereUsed )
             $headers .= '<th>where used</th>';
@@ -232,6 +246,8 @@ InterfaceCallContext::$supportedActions['exportToExcel'] = array(
                     $lines .= $context->encloseFunction('');
                     $lines .= $context->encloseFunction('');
                     $lines .= $context->encloseFunction('');
+                    $lines .= $context->encloseFunction('');
+                    $lines .= $context->encloseFunction('');
                 }
                 else
                 {
@@ -264,6 +280,21 @@ InterfaceCallContext::$supportedActions['exportToExcel'] = array(
                     {
                         $lines .= $context->encloseFunction($object->getIPv4Addresses());
                         $lines .= $context->encloseFunction($object->getIPv6Addresses());
+                    }
+                    else
+                    {
+                        $lines .= $context->encloseFunction("----");
+                        $lines .= $context->encloseFunction("----");
+                    }
+
+
+                    //mgmt-profile
+                    if( method_exists($object, 'getMgmtProfile') )
+                    {
+                        if( $object->getMgmtProfile() !== null )
+                            $lines .= $context->encloseFunction($object->getMgmtProfile());
+                        else
+                            $lines .= $context->encloseFunction("----");
                     }
                     else
                         $lines .= $context->encloseFunction("----");

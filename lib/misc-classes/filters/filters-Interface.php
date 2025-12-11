@@ -178,5 +178,16 @@ RQuery::$defaultFilters['interface']['type']['operators']['is.aggregate'] = Arra
         'input' => 'input/panorama-8.0.xml'
     )
 );
+RQuery::$defaultFilters['interface']['mgmt-profile']['operators']['is.set'] = Array(
+    'Function' => function(InterfaceRQueryContext $context )
+    {
+        $object = $context->object;
 
+        if( method_exists($object, 'getMgmtProfile') )
+            return $object->getMgmtProfile() !== null;
+        else
+            return null;
+    },
+    'arg' => false
+);
 // </editor-fold>

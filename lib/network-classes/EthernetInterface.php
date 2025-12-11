@@ -63,6 +63,7 @@ class EthernetInterface
 
     protected $linkstate = "auto";
 
+    private $intMgmtProfile = null;
     public static $childn = 'EthernetInterface';
 
     static public $supportedTypes = array('layer3', 'layer2', 'virtual-wire', 'tap', 'ha', 'aggregate-group', 'log-card', 'decrypt-mirror', 'empty');
@@ -232,6 +233,13 @@ class EthernetInterface
 
                     }
                 }
+            }
+
+            $intMgmtProfileNode = DH::findFirstElement('interface-management-profile', $this->typeRoot);
+            if( $intMgmtProfileNode !== FALSE )
+            {
+                //<interface-management-profile>Ping-Allow</interface-management-profile>
+                $this->intMgmtProfile = $intMgmtProfileNode->textContent;
             }
         }
 
@@ -1112,6 +1120,11 @@ class EthernetInterface
             return null;
 
         return $this->linkstate;
+    }
+
+    public function getMgmtProfile()
+    {
+        return $this->intMgmtProfile;
     }
     //Todo: (20180722)
     //---(also needed for vlan / loopback / tunnel interface)

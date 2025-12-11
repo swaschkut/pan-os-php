@@ -2,6 +2,7 @@ CHANGELOG
 
 2.1.46
 UTIL:
+* type=interface | extend with mgmt profile information - none object version
 
 BUGFIX:
 * class URLProfile | missing validation if customURLProfileStore is NULL
