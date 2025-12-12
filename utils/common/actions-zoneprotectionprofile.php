@@ -137,7 +137,7 @@ ZoneProtectionProfileCallContext::$supportedActions[] = array(
             $addTotalUse = TRUE;
 
         #$headers = '<th>ID</th><th>location</th><th>name</th><th>color</th><th>description</th>';
-        $headers = '<th>ID</th><th>location</th><th>name</th><th>content</th>';
+        $headers = '<th>ID</th><th>template</th><th>location</th><th>name</th><th>content</th>';
 
         if( $addWhereUsed )
             $headers .= '<th>where used</th>';
@@ -161,7 +161,21 @@ ZoneProtectionProfileCallContext::$supportedActions[] = array(
 
                 $lines .= $context->encloseFunction( (string)$count );
 
-                $lines .= $context->encloseFunction(PH::getLocationString($object));
+                if( get_class($object->owner->owner) == "PANConf" )
+                {
+                    if( isset($object->owner->owner->owner) && $object->owner->owner->owner !== null && (get_class($object->owner->owner->owner) == "Template" || get_class($context->subSystem->owner) == "TemplateStack" ) )
+                    {
+                        $lines .= $context->encloseFunction($object->owner->owner->owner->name());
+                        $lines .= $context->encloseFunction($object->owner->owner->name());
+                    }
+                    else
+                    {
+                        $lines .= $context->encloseFunction("---");
+                        $lines .= $context->encloseFunction($object->owner->owner->name());
+                    }
+                }
+
+                #$lines .= $context->encloseFunction(PH::getLocationString($object));
 
                 $lines .= $context->encloseFunction($object->name());
 

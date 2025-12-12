@@ -31,12 +31,12 @@ InterfaceCallContext::$supportedActions['display'] = Array(
             $linkstate = "[".$object->getLinkState()."]";
 
         $mgmtProfile = "";
-        if( method_exists($object, 'getMgmtProfile') )
+        if( method_exists($object, 'getMgmtProfileName') )
         {
-            if( $object->getMgmtProfile() !== null )
+            if( $object->getMgmtProfileName() !== null )
             {
-                $mgmtProfile = " mgmtProfile:[".$object->getMgmtProfile()."]";
-                PH::$JSON_TMP['sub']['object'][$object->name()]['interface-management-profile'] = $object->getMgmtProfile();
+                $mgmtProfile = " mgmtProfile:[".$object->getMgmtProfileName()."]";
+                PH::$JSON_TMP['sub']['object'][$object->name()]['interface-management-profile'] = $object->getMgmtProfileName();
             }
             else
             {

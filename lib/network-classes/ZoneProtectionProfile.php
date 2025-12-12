@@ -3,8 +3,6 @@
 /**
  * ISC License
  *
- * Copyright (c) 2014-2018, Palo Alto Networks Inc.
- * Copyright (c) 2019, Palo Alto Networks Inc.
  * Copyright (c) 2024, Sven Waschkut - pan-os-php@waschkut.net
  *
  * Permission to use, copy, modify, and/or distribute this software for any
@@ -50,7 +48,7 @@ class ZoneProtectionProfile
     /**
      * ZoneProtectionProfile constructor.
      * @param string $name
-     * @param IPSecCryptoProfileStore $owner
+     * @param ZoneProtectionProfileStore $owner
      */
     public function __construct($name, $owner)
     {
@@ -379,8 +377,8 @@ class ZoneProtectionProfile
     }
 
     /**
-     * return true if change was successful false if not (duplicate IPsecCryptoProfil name?)
-     * @param string $name new name for the IPsecCryptoProfil
+     * return true if change was successful false if not (duplicate ZoneProtectionProfile name?)
+     * @param string $name new name for the ZoneProtectionProfile
      * @return bool
      */
     public function setName($name)

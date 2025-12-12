@@ -66,6 +66,8 @@ class NetworkPropertiesContainer
 
     /** @var ZoneProtectionProfileStore */
     public $zoneProtectionProfileStore;
+    /** @var InterfaceManagementProfileStore */
+    public $interfaceManagementProfileStore;
 
     /** @var DOMElement|null */
     public $xmlroot = null;
@@ -97,6 +99,8 @@ class NetworkPropertiesContainer
         $this->secureWebGateway = new SecureWebGateway('SecurityWebGateway', $owner);
 
         $this->zoneProtectionProfileStore = new ZoneProtectionProfileStore('', $owner);
+
+        $this->interfaceManagementProfileStore = new InterfaceManagementProfileStore('', $owner);
 
 
         $this->sharedGatewayStore = new SharedGatewayStore('SharedGateway', $owner);
@@ -201,6 +205,12 @@ class NetworkPropertiesContainer
             if( $tmp !== FALSE )
             {
                 $this->zoneProtectionProfileStore->load_from_domxml($tmp);
+            }
+
+            $tmp = DH::findFirstElement('interface-management-profile', $tmp_profiles);
+            if( $tmp !== FALSE )
+            {
+                $this->interfaceManagementProfileStore->load_from_domxml($tmp);
             }
         }
     }

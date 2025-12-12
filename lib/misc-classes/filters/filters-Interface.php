@@ -183,8 +183,8 @@ RQuery::$defaultFilters['interface']['mgmt-profile']['operators']['is.set'] = Ar
     {
         $object = $context->object;
 
-        if( method_exists($object, 'getMgmtProfile') )
-            return $object->getMgmtProfile() !== null;
+        if( method_exists($object, 'getMgmtProfileName') )
+            return $object->getMgmtProfileName() !== null;
         else
             return null;
     },

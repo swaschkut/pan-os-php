@@ -19,17 +19,17 @@
  */
 
 /**
- * Class ZoneProtectionProfileStore
- * @property $o ZoneProtectionProfile[]
+ * Class InterfaceManagementProfileStore
+ * @property $o InterfaceManagementProfile[]
  * @property PANConf $owner
  */
-class ZoneProtectionProfileStore extends ObjStore
+class InterfaceManagementProfileStore extends ObjStore
 {
     public $owner;
 
-    public static $childn = 'ZoneProtectionProfile';
+    public static $childn = 'InterfaceManagementProfile';
 
-    /** @var ZoneProtectionProfile[] */
+    /** @var InterfaceManagementProfile[] */
     protected $_all = array();
 
     protected $fastMemToIndex = null;
@@ -43,65 +43,65 @@ class ZoneProtectionProfileStore extends ObjStore
     }
 
     /**
-     * @return ZoneProtectionProfile[]
+     * @return InterfaceManagementProfile[]
      */
-    public function zoneProtectionProfile()
+    public function interfaceManagementProfile()
     {
         return $this->o;
     }
 
     /**
-     * Creates a new ZoneProtectionProfile in this store. It will be placed at the end of the list.
-     * @param string $name name of the new ZoneProtectionProfile
-     * @return ZoneProtectionProfile
+     * Creates a new InterfaceManagementProfile in this store. It will be placed at the end of the list.
+     * @param string $name name of the new InterfaceManagementProfile
+     * @return InterfaceManagementProfile
      */
-    public function newZoneProtectionProfile($name)
+    public function newInterfaceManagementProfile($name)
     {
-        $ZoneProtectionProfile = new ZoneProtectionProfile($name, $this);
-        $xmlElement = DH::importXmlStringOrDie($this->owner->xmlroot->ownerDocument, ZoneProtectionProfile::$templatexml);
+        $InterfaceManagementProfile = new InterfaceManagementProfile($name, $this);
+        $xmlElement = DH::importXmlStringOrDie($this->owner->xmlroot->ownerDocument, InterfaceManagementProfile::$templatexml);
 
-        $ZoneProtectionProfile->load_from_domxml($xmlElement);
+        $InterfaceManagementProfile->load_from_domxml($xmlElement);
 
-        $ZoneProtectionProfile->owner = null;
-        $ZoneProtectionProfile->setName($name);
+        $InterfaceManagementProfile->owner = null;
+        $InterfaceManagementProfile->setName($name);
 
-        $this->addProfil($ZoneProtectionProfile);
+        $this->addProfil($InterfaceManagementProfile);
 
-        $this->_all[$ZoneProtectionProfile->name()] = $ZoneProtectionProfile;
+        $this->_all[$InterfaceManagementProfile->name()] = $InterfaceManagementProfile;
 
-        return $ZoneProtectionProfile;
+        return $InterfaceManagementProfile;
     }
 
     /**
-     * @param ZoneProtectionProfile $ZoneProtectionProfile
+     * @param InterfaceManagementProfile $InterfaceManagementProfile
      * @return bool
      */
-    public function addProfil($ZoneProtectionProfile)
+    public function addProfil($InterfaceManagementProfile)
     {
-        if( !is_object($ZoneProtectionProfile) )
-            derr('this function only accepts ZoneProtectionProfile class objects');
+        if( !is_object($InterfaceManagementProfile) )
+            derr('this function only accepts InterfaceManagementProfile class objects');
 
-        if( $ZoneProtectionProfile->owner !== null )
-            derr('Trying to add a ZoneProtectionProfile that has a owner already !');
+        if( $InterfaceManagementProfile->owner !== null )
+            derr('Trying to add a InterfaceManagementProfile that has a owner already !');
 
 
-        $ser = spl_object_hash($ZoneProtectionProfile);
+        $ser = spl_object_hash($InterfaceManagementProfile);
 
         if( !isset($this->fastMemToIndex[$ser]) )
         {
-            $ZoneProtectionProfile->owner = $this;
+            $InterfaceManagementProfile->owner = $this;
 
             if( $this->xmlroot === null )
                 $this->createXmlRoot();
 
-            $this->xmlroot->appendChild($ZoneProtectionProfile->xmlroot);
+            $this->xmlroot->appendChild($InterfaceManagementProfile->xmlroot);
 
-            $ret = $this->add($ZoneProtectionProfile);
+            $ret = $this->add($InterfaceManagementProfile);
 
             return TRUE;
         }
         else
-            derr('You cannot add a ZoneProtectionProfile that is already here :)');
+            derr('You cannot add a InterfaceManagementProfile that is already here :)');
 
         return FALSE;
     }
@@ -115,13 +115,13 @@ class ZoneProtectionProfileStore extends ObjStore
             $xml = DH::findFirstElementOrCreate('network', $xml);
             $xml = DH::findFirstElementOrCreate('profiles', $xml);
 
-            $this->xmlroot = DH::findFirstElementOrCreate('zone-protection-profiles', $xml);
+            $this->xmlroot = DH::findFirstElementOrCreate('interface-management-profiles', $xml);
         }
     }
 
 
     /**
-     * @param ZoneProtectionProfile $s
+     * @param InterfaceManagementProfile $s
      * @param bool $cleanInMemory
      * @return bool
      */
@@ -151,11 +151,11 @@ class ZoneProtectionProfileStore extends ObjStore
     }
 
     /**
-     * @param $ZoneProtectionProfile string
-     * @return null|ZoneProtectionProfile
+     * @param $InterfaceManagementProfile string
+     * @return null|InterfaceManagementProfile
      */
-    public function findZoneProtectionProfile($ZoneProtectionProfile)
+    public function findInterfaceManagementProfile($InterfaceManagementProfile)
     {
-        return $this->findByName($ZoneProtectionProfile);
+        return $this->findByName($InterfaceManagementProfile);
     }
 } 

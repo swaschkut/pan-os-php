@@ -239,7 +239,12 @@ class EthernetInterface
             if( $intMgmtProfileNode !== FALSE )
             {
                 //<interface-management-profile>Ping-Allow</interface-management-profile>
+                //todo: swaschkut 20251212 not working
                 $this->intMgmtProfile = $intMgmtProfileNode->textContent;
+
+                $tmp_IntMgmtProfile =  $this->owner->owner->network->interfaceManagementProfileStore->find( $this->intMgmtProfile );
+                if( is_object( $tmp_IntMgmtProfile ) )
+                    $tmp_IntMgmtProfile->addReference( $this );
             }
         }
 
@@ -1122,10 +1127,16 @@ class EthernetInterface
         return $this->linkstate;
     }
 
-    public function getMgmtProfile()
+    public function getMgmtProfileName()
     {
-        return $this->intMgmtProfile;
+        if( is_object($this->intMgmtProfile) )
+            return $this->intMgmtProfile->name();
+        else
+        {
+            return $this->intMgmtProfile;
+        }
     }
+
     //Todo: (20180722)
     //---(also needed for vlan / loopback / tunnel interface)
     //- add Virtual Router

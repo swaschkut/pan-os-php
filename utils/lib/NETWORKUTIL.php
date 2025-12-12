@@ -136,6 +136,10 @@ class NETWORKUTIL extends UTIL
                     {
                         $this->objectsToProcess[] = Array('store' => $this->pan->network->zoneProtectionProfileStore, 'objects' => $this->pan->network->zoneProtectionProfileStore->zoneProtectionProfile());
                     }
+                    elseif( $this->utilType == 'interface-management-profile' )
+                    {
+                        $this->objectsToProcess[] = Array('store' => $this->pan->network->interfaceManagementProfileStore, 'objects' => $this->pan->network->interfaceManagementProfileStore->interfaceManagementProfile());
+                    }
 
                     $locationFound = TRUE;
                 }
@@ -176,6 +180,8 @@ class NETWORKUTIL extends UTIL
                             {}
                             elseif( $this->utilType == 'zone-protection-profile' )
                             {}
+                            elseif( $this->utilType == 'interface-management-profile' )
+                            {}
 
                             $locationFound = TRUE;
                         }
@@ -211,6 +217,8 @@ class NETWORKUTIL extends UTIL
                             elseif( $this->utilType == 'ipsec-tunnel' )
                             {}
                             elseif( $this->utilType == 'zone-protection-profile' )
+                            {}
+                            elseif( $this->utilType == 'interface-management-profile' )
                             {}
 
                             $locationFound = TRUE;
@@ -251,6 +259,8 @@ class NETWORKUTIL extends UTIL
                         elseif( $this->utilType == 'ipsec-tunnel' )
                         {}
                         elseif( $this->utilType == 'zone-protection-profile' )
+                        {}
+                        elseif( $this->utilType == 'interface-management-profile' )
                         {}
 
                         $locationFound = TRUE;
@@ -349,6 +359,10 @@ class NETWORKUTIL extends UTIL
                                 elseif( $this->utilType == 'zone-protection-profile' )
                                 {
                                     $this->objectsToProcess[] = Array('store' => $template->deviceConfiguration->network->zoneProtectionProfileStore, 'objects' => $template->deviceConfiguration->network->zoneProtectionProfileStore->zoneProtectionProfile());
+                                }
+                                elseif( $this->utilType == 'interface-management-profile' )
+                                {
+                                    $this->objectsToProcess[] = Array('store' => $template->deviceConfiguration->network->interfaceManagementProfileStore, 'objects' => $template->deviceConfiguration->network->interfaceManagementProfileStore->interfaceManagementProfile());
                                 }
 
                                 $locationFound = true;
