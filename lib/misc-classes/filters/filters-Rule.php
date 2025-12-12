@@ -2737,7 +2737,9 @@ RQuery::$defaultFilters['rule']['secprof']['operators']['av-profile.is.set'] = a
         {
             /** @var SecurityProfileGroup $tmp_group */
             $tmp_group =  $rule->owner->owner->securityProfileGroupStore->find( $rule->securityProfileGroup() );
-            $secprof_objects = $tmp_group->securityProfiles();
+            if( $tmp_group !== null )
+                $secprof_objects = $tmp_group->securityProfiles();
+            
         }
         else
             $secprof_objects = $rule->securityProfiles();
@@ -2763,7 +2765,8 @@ RQuery::$defaultFilters['rule']['secprof']['operators']['as-profile.is.set'] = a
         {
             /** @var SecurityProfileGroup $tmp_group */
             $tmp_group =  $rule->owner->owner->securityProfileGroupStore->find( $rule->securityProfileGroup() );
-            $secprof_objects = $tmp_group->securityProfiles();
+            if( $tmp_group !== null )
+                $secprof_objects = $tmp_group->securityProfiles();
         }
         else
             $secprof_objects = $rule->securityProfiles();
@@ -2789,7 +2792,8 @@ RQuery::$defaultFilters['rule']['secprof']['operators']['url-profile.is.set'] = 
         {
             /** @var SecurityProfileGroup $tmp_group */
             $tmp_group =  $rule->owner->owner->securityProfileGroupStore->find( $rule->securityProfileGroup() );
-            $secprof_objects = $tmp_group->securityProfiles();
+            if( $tmp_group !== null )
+                $secprof_objects = $tmp_group->securityProfiles();
         }
         else
             $secprof_objects = $rule->securityProfiles();
@@ -2815,7 +2819,8 @@ RQuery::$defaultFilters['rule']['secprof']['operators']['wf-profile.is.set'] = a
         {
             /** @var SecurityProfileGroup $tmp_group */
             $tmp_group =  $rule->owner->owner->securityProfileGroupStore->find( $rule->securityProfileGroup() );
-            $secprof_objects = $tmp_group->securityProfiles();
+            if( $tmp_group !== null )
+                $secprof_objects = $tmp_group->securityProfiles();
         }
         else
             $secprof_objects = $rule->securityProfiles();
@@ -2841,7 +2846,8 @@ RQuery::$defaultFilters['rule']['secprof']['operators']['vuln-profile.is.set'] =
         {
             /** @var SecurityProfileGroup $tmp_group */
             $tmp_group =  $rule->owner->owner->securityProfileGroupStore->find( $rule->securityProfileGroup() );
-            $secprof_objects = $tmp_group->securityProfiles();
+            if( $tmp_group !== null )
+                $secprof_objects = $tmp_group->securityProfiles();
         }
         else
             $secprof_objects = $rule->securityProfiles();
@@ -2867,7 +2873,8 @@ RQuery::$defaultFilters['rule']['secprof']['operators']['file-profile.is.set'] =
         {
             /** @var SecurityProfileGroup $tmp_group */
             $tmp_group =  $rule->owner->owner->securityProfileGroupStore->find( $rule->securityProfileGroup() );
-            $secprof_objects = $tmp_group->securityProfiles();
+            if( $tmp_group !== null )
+                $secprof_objects = $tmp_group->securityProfiles();
         }
         else
             $secprof_objects = $rule->securityProfiles();
@@ -2893,7 +2900,8 @@ RQuery::$defaultFilters['rule']['secprof']['operators']['data-profile.is.set'] =
         {
             /** @var SecurityProfileGroup $tmp_group */
             $tmp_group =  $rule->owner->owner->securityProfileGroupStore->find( $rule->securityProfileGroup() );
-            $secprof_objects = $tmp_group->securityProfiles();
+            if( $tmp_group !== null )
+                $secprof_objects = $tmp_group->securityProfiles();
         }
         else
             $secprof_objects = $rule->securityProfiles();
@@ -2933,7 +2941,8 @@ RQuery::$defaultFilters['rule']['secprof']['operators']['has.from.query'] = arra
         {
             /** @var SecurityProfileGroup $tmp_group */
             $tmp_group =  $rule->owner->owner->securityProfileGroupStore->find( $rule->securityProfileGroup() );
-            $secprof_objects = $tmp_group->securityProfiles();
+            if( $tmp_group !== null )
+                $secprof_objects = $tmp_group->securityProfiles();
         }
         else
             $secprof_objects = $rule->securityProfiles();
