@@ -110,6 +110,21 @@ class NetworkPropertiesContainer
     {
         $this->xmlroot = $xml;
 
+        $tmp_profiles = DH::findFirstElement('profiles', $this->xmlroot);
+        if( $tmp_profiles !== FALSE )
+        {
+            $tmp = DH::findFirstElement('zone-protection-profile', $tmp_profiles);
+            if( $tmp !== FALSE )
+            {
+                $this->zoneProtectionProfileStore->load_from_domxml($tmp);
+            }
+
+            $tmp = DH::findFirstElement('interface-management-profile', $tmp_profiles);
+            if( $tmp !== FALSE )
+            {
+                $this->interfaceManagementProfileStore->load_from_domxml($tmp);
+            }
+        }
 
         $xmlInterface = DH::findFirstElement('interface', $this->xmlroot);
         if( $xmlInterface !== FALSE )
@@ -195,23 +210,6 @@ class NetworkPropertiesContainer
         if( $tmp !== FALSE )
         {
             $this->secureWebGateway->load_from_domxml($tmp);
-        }
-
-
-        $tmp_profiles = DH::findFirstElement('profiles', $this->xmlroot);
-        if( $tmp_profiles !== FALSE )
-        {
-            $tmp = DH::findFirstElement('zone-protection-profile', $tmp_profiles);
-            if( $tmp !== FALSE )
-            {
-                $this->zoneProtectionProfileStore->load_from_domxml($tmp);
-            }
-
-            $tmp = DH::findFirstElement('interface-management-profile', $tmp_profiles);
-            if( $tmp !== FALSE )
-            {
-                $this->interfaceManagementProfileStore->load_from_domxml($tmp);
-            }
         }
     }
 

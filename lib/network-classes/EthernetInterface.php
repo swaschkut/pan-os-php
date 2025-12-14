@@ -64,6 +64,7 @@ class EthernetInterface
     protected $linkstate = "auto";
 
     private $intMgmtProfile = null;
+    private $intMgmtProfileObj = null;
     public static $childn = 'EthernetInterface';
 
     static public $supportedTypes = array('layer3', 'layer2', 'virtual-wire', 'tap', 'ha', 'aggregate-group', 'log-card', 'decrypt-mirror', 'empty');
@@ -239,12 +240,15 @@ class EthernetInterface
             if( $intMgmtProfileNode !== FALSE )
             {
                 //<interface-management-profile>Ping-Allow</interface-management-profile>
-                //todo: swaschkut 20251212 not working
                 $this->intMgmtProfile = $intMgmtProfileNode->textContent;
 
                 $tmp_IntMgmtProfile =  $this->owner->owner->network->interfaceManagementProfileStore->find( $this->intMgmtProfile );
                 if( is_object( $tmp_IntMgmtProfile ) )
+                {
                     $tmp_IntMgmtProfile->addReference( $this );
+                    $this->intMgmtProfileObj = $tmp_IntMgmtProfile;
+                }
+
             }
         }
 
@@ -1135,6 +1139,14 @@ class EthernetInterface
         {
             return $this->intMgmtProfile;
         }
+    }
+
+    public function getMgmtProfileObj()
+    {
+        if( is_object($this->intMgmtProfileObj) )
+            return $this->intMgmtProfileObj;
+
+        return null;
     }
 
     //Todo: (20180722)

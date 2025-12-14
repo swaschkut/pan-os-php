@@ -289,10 +289,10 @@ InterfaceCallContext::$supportedActions['exportToExcel'] = array(
 
 
                     //mgmt-profile
-                    if( method_exists($object, 'getMgmtProfile') )
+                    if( method_exists($object, 'getMgmtProfileName') )
                     {
-                        if( $object->getMgmtProfile() !== null )
-                            $lines .= $context->encloseFunction($object->getMgmtProfile());
+                        if( $object->getMgmtProfileName() !== null )
+                            $lines .= $context->encloseFunction($object->getMgmtProfileName());
                         else
                             $lines .= $context->encloseFunction("----");
                     }
