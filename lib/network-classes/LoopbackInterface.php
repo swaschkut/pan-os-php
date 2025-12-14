@@ -31,6 +31,8 @@ class LoopbackInterface
     protected $_ipv6Addresses = array();
     protected $_ipv6ObjectAddresses = array();
 
+    private $intMgmtProfile = null;
+    private $intMgmtProfileObj = null;
     /** @var string */
     public $type = 'loopback';
 
@@ -99,6 +101,21 @@ class LoopbackInterface
                 }
             }
         }
+
+        $intMgmtProfileNode = DH::findFirstElement('interface-management-profile', $xml);
+        if( $intMgmtProfileNode !== FALSE )
+        {
+            //<interface-management-profile>Ping-Allow</interface-management-profile>
+            $this->intMgmtProfile = $intMgmtProfileNode->textContent;
+
+            $tmp_IntMgmtProfile =  $this->owner->owner->network->interfaceManagementProfileStore->find( $this->intMgmtProfile );
+            if( is_object( $tmp_IntMgmtProfile ) )
+            {
+                $tmp_IntMgmtProfile->addReference( $this );
+                $this->intMgmtProfileObj = $tmp_IntMgmtProfile;
+            }
+
+        }
     }
 
     public function getIPv4Addresses()
@@ -149,6 +166,24 @@ class LoopbackInterface
 
         return TRUE;
 
+    }
+
+    public function getMgmtProfileName()
+    {
+        if( is_object($this->intMgmtProfile) )
+            return $this->intMgmtProfile->name();
+        else
+        {
+            return $this->intMgmtProfile;
+        }
+    }
+
+    public function getMgmtProfileObj()
+    {
+        if( is_object($this->intMgmtProfileObj) )
+            return $this->intMgmtProfileObj;
+
+        return null;
     }
 
     public function referencedObjectRenamed($h, $old, $replaceType = 'name')
