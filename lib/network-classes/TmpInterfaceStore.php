@@ -47,5 +47,19 @@ class TmpInterfaceStore extends ObjStore
         return $this->o;
     }
 
+    /**
+     * @return TmpInterface[]
+     */
+    public function getNoneVsysUsedInterfaces()
+    {
+        $unusedVsysInterfaces = array();
+        foreach( $this->o as $interface )
+        {
+            $tmp_vsys = $this->owner->network->findVsysInterfaceOwner($interface->name());
+            if( $tmp_vsys == null)
+                $unusedVsysInterfaces[] = $interface;
+        }
+        return $unusedVsysInterfaces;
+    }
 
 }

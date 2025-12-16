@@ -66,6 +66,22 @@ class EthernetIfStore extends ObjStore
         return $this->o;
     }
 
+    /**
+     * @return EthernetInterface[]
+     */
+    function getNoneVsysUsedInterfaces()
+    {
+        $unusedVsysInterfaces = array();
+        foreach( $this->o as $interface )
+        {
+            $tmp_vsys = $this->owner->network->findVsysInterfaceOwner($interface->name());
+            if( $tmp_vsys == null)
+                $unusedVsysInterfaces[] = $interface;
+        }
+        return $unusedVsysInterfaces;
+    }
+
+
     public function load_from_domxml(DOMElement $xml)
     {
         parent::load_from_domxml($xml);

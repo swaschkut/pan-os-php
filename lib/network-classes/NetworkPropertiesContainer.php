@@ -341,6 +341,40 @@ class NetworkPropertiesContainer
         return $ifs;
     }
 
+    function getNoneVsysUsedInterfaces()
+    {
+        $ifs = array();
+
+        foreach( $this->ethernetIfStore->getNoneVsysUsedInterfaces() as $if )
+            $ifs[$if->name()] = $if;
+
+        foreach( $this->aggregateEthernetIfStore->getNoneVsysUsedInterfaces() as $if )
+            $ifs[$if->name()] = $if;
+
+        foreach( $this->loopbackIfStore->getNoneVsysUsedInterfaces() as $if )
+            $ifs[$if->name()] = $if;
+
+        foreach( $this->ipsecTunnelStore->getNoneVsysUsedInterfaces() as $if )
+            $ifs[$if->name()] = $if;
+
+        foreach( $this->greTunnelStore->getNoneVsysUsedInterfaces() as $if )
+            $ifs[$if->name()] = $if;
+
+        foreach( $this->gpGatewayTunnelStore->getNoneVsysUsedInterfaces() as $if )
+            $ifs[$if->name()] = $if;
+
+        foreach( $this->vlanIfStore->getNoneVsysUsedInterfaces() as $if )
+            $ifs[$if->name()] = $if;
+
+        foreach( $this->tunnelIfStore->getNoneVsysUsedInterfaces() as $if )
+            $ifs[$if->name()] = $if;
+
+        foreach( $this->tmpInterfaceStore->getNoneVsysUsedInterfaces() as $if )
+            $ifs[$if->name()] = $if;
+
+        return $ifs;
+    }
+
     public function count()
     {
         $tmpcount = $this->getAllInterfaces();

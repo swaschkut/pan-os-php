@@ -228,12 +228,26 @@ InterfaceCallContext::$supportedActions['exportToExcel'] = array(
                     if( isset($object->owner->owner->owner) && $object->owner->owner->owner !== null && (get_class($object->owner->owner->owner) == "Template" || get_class($context->subSystem->owner) == "TemplateStack" ) )
                     {
                         $lines .= $context->encloseFunction($object->owner->owner->owner->name());
-                        $lines .= $context->encloseFunction($object->owner->owner->name());
+                        #$lines .= $context->encloseFunction($object->owner->owner->name());
+
+                        $tmp_vsys = $object->owner->owner->network->findVsysInterfaceOwner($object->name());
+                        if( $tmp_vsys !==  null )
+                            $lines .= $context->encloseFunction($tmp_vsys->name());
+                        else
+                            $lines .= $context->encloseFunction(get_class($object->owner->owner));
                     }
                     else
                     {
                         $lines .= $context->encloseFunction("---");
-                        $lines .= $context->encloseFunction($object->owner->owner->name());
+
+                        $tmp_vsys = $object->owner->owner->network->findVsysInterfaceOwner($object->name());
+                        if( $tmp_vsys !==  null )
+                            $lines .= $context->encloseFunction($tmp_vsys->name());
+                        else
+                        {
+                            #$lines .= $context->encloseFunction($object->owner->owner->name());
+                            $lines .= $context->encloseFunction(get_class($object->owner->owner));
+                        }
                     }
                 }
 

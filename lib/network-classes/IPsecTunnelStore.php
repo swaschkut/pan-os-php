@@ -61,6 +61,21 @@ class IPsecTunnelStore extends ObjStore
     }
 
     /**
+     * @return IPsecTunnel[]
+     */
+    public function getNoneVsysUsedInterfaces()
+    {
+        $unusedVsysInterfaces = array();
+        foreach( $this->o as $interface )
+        {
+            $tmp_vsys = $this->owner->network->findVsysInterfaceOwner($interface->name());
+            if( $tmp_vsys == null)
+                $unusedVsysInterfaces[] = $interface;
+        }
+        return $unusedVsysInterfaces;
+    }
+
+    /**
      * Creates a new IPsecTunnel in this store. It will be placed at the end of the list.
      * @param string $name name of the new IPsecTunnel
      * @return IPsecTunnel

@@ -71,7 +71,10 @@ class NETWORKUTIL extends UTIL
                     if( $this->utilType == 'virtualwire' )
                         $this->objectsToProcess[] = Array('store' => $this->pan->network->virtualWireStore, 'objects' => $this->pan->network->virtualWireStore->virtualWires());
                     elseif( $this->utilType == 'interface' )
-                        $this->objectsToProcess[] = Array('store' => $this->pan->network, 'objects' => $this->pan->network->getAllInterfaces());
+                    {
+                        #$this->objectsToProcess[] = Array('store' => $this->pan->network, 'objects' => $this->pan->network->getAllInterfaces());
+                        $this->objectsToProcess[] = Array('store' => $this->pan->network, 'objects' => $this->pan->network->getNoneVsysUsedInterfaces());
+                    }
                     elseif( $this->utilType == 'routing' && !$this->pan->_advance_routing_enabled )
                         $this->objectsToProcess[] = Array('store' => $this->pan->network->virtualRouterStore, 'objects' => $this->pan->network->virtualRouterStore->getAll());
                     elseif( $this->utilType == 'routing' && $this->pan->_advance_routing_enabled )

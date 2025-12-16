@@ -6,6 +6,7 @@ UTIL:
 * type=interface-management-profile | introduction of new utility
 * type=interface | new 'filter=(mgmt-profile has.from.query subquery1)' 'subquery1=(enabled-service has.http)'
 * type=interface-management-profile | references extended to class LoopbackInterface, TunnelInterface, VlanInterface
+* type=interface actions=exporttoexcel:int.html | optimisation to get correct interface membership and detailed about where it is used
 
 BUGFIX:
 * class URLProfile | missing validation if customURLProfileStore is NULL
