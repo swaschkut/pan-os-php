@@ -9,6 +9,7 @@ UTIL:
 
 BUGFIX:
 * class URLProfile | missing validation if customURLProfileStore is NULL
+* class ZoneRuleContainer | another one since zone filter was not working
 
 GENERAL:
 * develop | extend scm-api:// to read folder/snippet

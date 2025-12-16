@@ -247,26 +247,28 @@ class ZoneRuleContainer extends ObjRuleContainer
                             }
                         }
 
-                        if( !$zone_added )
-                        {
-                            //this is needed to get type=rule 'filter=(from has XZY) - back into working mode
-                            $f = $this->parentCentralStore->findOrCreate($node->textContent, $this);
+                        //if( !$zone_added ) {
+                        //this is needed to get type=rule 'filter=(from has XZY) - back into working mode
+                        $f = $this->parentCentralStore->findOrCreate($node->textContent, $this);
+                        if( !$this->has($f) )
                             $this->o[] = $f;
-                        }
+                        //}
 
                     }
                     else
                     {
                         //if zone is not found in Template / Template-Stack
                         $f = $this->parentCentralStore->findOrCreate($node->textContent, $this);
-                        $this->o[] = $f;
+                        if( !$this->has($f) )
+                            $this->o[] = $f;
                     }
                 }
                 else
                 {
                     //if NOT Panorama / Device-Group
                     $f = $this->parentCentralStore->findOrCreate($node->textContent, $this);
-                    $this->o[] = $f;
+                    if( !$this->has($f) )
+                        $this->o[] = $f;
                 }
             }
             else
