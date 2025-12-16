@@ -211,6 +211,8 @@ class DeviceCloud
 
     public $version = null;
 
+    public $attachedSnippets = array();
+
     /** @var FawkesConf|Buckbeak|null $owner */
     public function __construct( $owner, Container|null $applicableDG = null)
     {
@@ -1177,6 +1179,26 @@ class DeviceCloud
         return TRUE;
     }
 
+    public function addSnippet( $snippetObj)
+    {
+        $this->attachedSnippets[] = $snippetObj;
+    }
+
+    public function getAttachedSnippets()
+    {
+        return $this->attachedSnippets;
+    }
+
+    public function getAttachedSnippetNames()
+    {
+        $name = array();
+        foreach( $this->attachedSnippets as $snippet )
+        {
+            $name[] = $snippet->name;
+        }
+
+        return $name;
+    }
 
     static public $templateXml = '<entry name="temporarynamechangemeplease"><address/><address-group/><service/><service-group/><rulebase></rulebase></entry>';
 

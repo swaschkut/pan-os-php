@@ -11,6 +11,7 @@ BUGFIX:
 * class URLProfile | missing validation if customURLProfileStore is NULL
 
 GENERAL:
+* develop | extend scm-api:// to read folder/snippet
 
 
 2.1.45 (20251210)

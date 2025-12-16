@@ -31,7 +31,7 @@ class Container
     /** String */
     protected $name;
 
-    /** @var FawkesConf */
+    /** @var FawkesConf|BuckbeakConf */
     public $owner = null;
 
     /** @var DOMElement */
@@ -45,6 +45,7 @@ class Container
     /** @var ServiceStore */
     public $serviceStore = null;
 
+    public $attachedSnippets = array();
 
     protected $securityProfilebaseroot;
 
@@ -381,6 +382,22 @@ class Container
     public function load_from_domxml($xml)
     {
         $this->xmlroot = $xml;
+
+        $tmp = DH::findFirstElement('snippets', $xml);
+        if( $tmp !== FALSE )
+        {
+            #DH::DEBUGprintDOMDocument($tmp);
+            foreach( $tmp->childNodes as $member )
+            {
+                if ($member->nodeType != 1)
+                    continue;
+
+                $snippetObj = $this->owner->findSnippet($member->textContent);
+                if( $snippetObj !== null )
+                    $this->attachedSnippets[] = $snippetObj;
+            }
+        }
+
 
         // this VirtualSystem has a name ?
         $this->name = DH::findAttribute('name', $xml);
@@ -1320,6 +1337,29 @@ class Container
         return $containers;
     }
 
+    public function addSnippet( $snippetObj)
+    {
+        $this->attachedSnippets[] = $snippetObj;
+
+        $snippetsXMLNode = DH::findFirstElementOrCreate( 'snippets', $this->xmlroot);
+        DH::createElement($snippetsXMLNode, 'member', $snippetObj->name());
+    }
+
+    public function getAttachedSnippets()
+    {
+        return $this->attachedSnippets;
+    }
+
+    public function getAttachedSnippetNames()
+    {
+        $name = array();
+        foreach( $this->attachedSnippets as $snippet )
+        {
+            $name[] = $snippet->name();
+        }
+
+        return $name;
+    }
 }
 
 

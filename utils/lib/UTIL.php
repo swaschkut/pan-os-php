@@ -1799,9 +1799,22 @@ class UTIL
     public function location_filter_scm_object()
     {
         if( $this->configInput['type'] == 'sase-api' )
+        {
             $folderArray = PanSaseAPIConnector::$folderArray;
+        }
         elseif( $this->configInput['type'] == 'scm-api' )
+        {
             $folderArray = PanSCMAPIConnector::$folderArray;
+
+            //todo: download all folders / snippets name
+            $responseArray = $this->sase_connector->getSnippetsavailable($this->pan);
+
+            $responseArray = $this->sase_connector->getFolderavailable($this->pan);
+
+            $folderArray = array_merge($folderArray, $responseArray);
+
+        }
+
 
 
         if( $this->objectsLocation !== "any" )
