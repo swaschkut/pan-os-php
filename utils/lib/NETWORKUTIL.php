@@ -305,7 +305,10 @@ class NETWORKUTIL extends UTIL
                                 if( $this->utilType == 'virtualwire' )
                                     $this->objectsToProcess[] = Array('store' => $template->deviceConfiguration->network->virtualWireStore, 'objects' => $template->deviceConfiguration->network->virtualWireStore->virtualWires());
                                 elseif( $this->utilType == 'interface' )
-                                    $this->objectsToProcess[] = Array('store' => $template->deviceConfiguration->network, 'objects' => $template->deviceConfiguration->network->getAllInterfaces());
+                                {
+                                    #$this->objectsToProcess[] = Array('store' => $template->deviceConfiguration->network, 'objects' => $template->deviceConfiguration->network->getAllInterfaces());
+                                    $this->objectsToProcess[] = Array('store' => $template->deviceConfiguration->network, 'objects' => $template->deviceConfiguration->network->getNoneVsysUsedInterfaces());
+                                }
                                 elseif( $this->utilType == 'routing' )
                                     $this->objectsToProcess[] = Array('store' => $template->deviceConfiguration->network->virtualRouterStore, 'objects' => $template->deviceConfiguration->network->virtualRouterStore->getAll());
                                 elseif( $this->utilType == 'zone' )
