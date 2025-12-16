@@ -10,6 +10,7 @@ UTIL:
 BUGFIX:
 * class URLProfile | missing validation if customURLProfileStore is NULL
 * class ZoneRuleContainer | another one since zone filter was not working
+* type=interface-management-profile actions=exporttoexcel:intmgmt.html | fix column order enabled-service compare to permitted-ips
 
 GENERAL:
 * develop | extend scm-api:// to read folder/snippet

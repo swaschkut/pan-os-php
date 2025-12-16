@@ -123,11 +123,8 @@ InterfaceManagementProfileCallContext::$supportedActions[] = array(
 
                 $lines .= $context->encloseFunction($object->name());
 
-
-
-
-                $lines .= $context->encloseFunction(implode(", ", $object->permittedIPs));
                 $lines .= $context->encloseFunction(implode(", ",array_keys($object->enabledServices)) );
+                $lines .= $context->encloseFunction(implode(", ", $object->permittedIPs));
 
                 if( $addWhereUsed )
                 {
