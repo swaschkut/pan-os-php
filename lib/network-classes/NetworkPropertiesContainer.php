@@ -66,6 +66,8 @@ class NetworkPropertiesContainer
 
     /** @var ZoneProtectionProfileStore */
     public $zoneProtectionProfileStore;
+    /** @var InterfaceManagementProfileStore */
+    public $interfaceManagementProfileStore;
 
     /** @var DOMElement|null */
     public $xmlroot = null;
@@ -98,6 +100,8 @@ class NetworkPropertiesContainer
 
         $this->zoneProtectionProfileStore = new ZoneProtectionProfileStore('', $owner);
 
+        $this->interfaceManagementProfileStore = new InterfaceManagementProfileStore('', $owner);
+
 
         $this->sharedGatewayStore = new SharedGatewayStore('SharedGateway', $owner);
     }
@@ -106,6 +110,21 @@ class NetworkPropertiesContainer
     {
         $this->xmlroot = $xml;
 
+        $tmp_profiles = DH::findFirstElement('profiles', $this->xmlroot);
+        if( $tmp_profiles !== FALSE )
+        {
+            $tmp = DH::findFirstElement('zone-protection-profile', $tmp_profiles);
+            if( $tmp !== FALSE )
+            {
+                $this->zoneProtectionProfileStore->load_from_domxml($tmp);
+            }
+
+            $tmp = DH::findFirstElement('interface-management-profile', $tmp_profiles);
+            if( $tmp !== FALSE )
+            {
+                $this->interfaceManagementProfileStore->load_from_domxml($tmp);
+            }
+        }
 
         $xmlInterface = DH::findFirstElement('interface', $this->xmlroot);
         if( $xmlInterface !== FALSE )
@@ -191,17 +210,6 @@ class NetworkPropertiesContainer
         if( $tmp !== FALSE )
         {
             $this->secureWebGateway->load_from_domxml($tmp);
-        }
-
-
-        $tmp_profiles = DH::findFirstElement('profiles', $this->xmlroot);
-        if( $tmp_profiles !== FALSE )
-        {
-            $tmp = DH::findFirstElement('zone-protection-profile', $tmp_profiles);
-            if( $tmp !== FALSE )
-            {
-                $this->zoneProtectionProfileStore->load_from_domxml($tmp);
-            }
         }
     }
 
@@ -328,6 +336,40 @@ class NetworkPropertiesContainer
             $ifs[$if->name()] = $if;
 
         foreach( $this->tmpInterfaceStore->getInterfaces() as $if )
+            $ifs[$if->name()] = $if;
+
+        return $ifs;
+    }
+
+    function getNoneVsysUsedInterfaces()
+    {
+        $ifs = array();
+
+        foreach( $this->ethernetIfStore->getNoneVsysUsedInterfaces() as $if )
+            $ifs[$if->name()] = $if;
+
+        foreach( $this->aggregateEthernetIfStore->getNoneVsysUsedInterfaces() as $if )
+            $ifs[$if->name()] = $if;
+
+        foreach( $this->loopbackIfStore->getNoneVsysUsedInterfaces() as $if )
+            $ifs[$if->name()] = $if;
+
+        foreach( $this->ipsecTunnelStore->getNoneVsysUsedInterfaces() as $if )
+            $ifs[$if->name()] = $if;
+
+        foreach( $this->greTunnelStore->getNoneVsysUsedInterfaces() as $if )
+            $ifs[$if->name()] = $if;
+
+        foreach( $this->gpGatewayTunnelStore->getNoneVsysUsedInterfaces() as $if )
+            $ifs[$if->name()] = $if;
+
+        foreach( $this->vlanIfStore->getNoneVsysUsedInterfaces() as $if )
+            $ifs[$if->name()] = $if;
+
+        foreach( $this->tunnelIfStore->getNoneVsysUsedInterfaces() as $if )
+            $ifs[$if->name()] = $if;
+
+        foreach( $this->tmpInterfaceStore->getNoneVsysUsedInterfaces() as $if )
             $ifs[$if->name()] = $if;
 
         return $ifs;

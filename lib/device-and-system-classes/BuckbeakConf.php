@@ -211,6 +211,7 @@ class BuckbeakConf
         }
         */
 
+        $this->snippetroot = DH::findFirstElementOrCreate('snippet', $this->localhostroot);
 
         $this->containerroot = DH::findFirstElementOrCreate('container', $this->localhostroot);
         $this->devicecloudroot = DH::findFirstElementOrCreate('device', $this->localhostroot);
@@ -218,11 +219,27 @@ class BuckbeakConf
 
         $this->onpremroot = DH::findFirstElement('on-prem', $this->devicecloudroot);
 
-        $this->snippetroot = DH::findFirstElementOrCreate('snippet', $this->localhostroot);
+
 
         $tmp = DH::findFirstElement('managed-devices', $this->localhostroot);
 
-            //->devices/container
+        //->devices/snippet
+        //
+        // loading snippets
+        //
+        foreach( $this->snippetroot->childNodes as $node )
+        {
+            if( $node->nodeType != XML_ELEMENT_NODE ) continue;
+
+            $ldv = new Snippet( $this );
+
+            $ldv->load_from_domxml( $node );
+            $this->snippets[] = $ldv;
+        }
+
+
+
+        //->devices/container
         //
         // loading Containers now
         //
@@ -429,19 +446,7 @@ class BuckbeakConf
         // end of DeviceCloud
         //
 
-        //->devices/snippet
-        //
-        // loading snippets
-        //
-        foreach( $this->snippetroot->childNodes as $node )
-        {
-            if( $node->nodeType != XML_ELEMENT_NODE ) continue;
 
-            $ldv = new Snippet( $this );
-
-            $ldv->load_from_domxml( $node );
-            $this->snippets[] = $ldv;
-        }
         //
         // end of DeviceCloud
         //
@@ -495,6 +500,89 @@ class BuckbeakConf
         }
 
         return null;
+    }
+
+
+    public function createSnippet($name )
+    {
+        $newDG = new Snippet($this);
+
+        $xmlNode = DH::importXmlStringOrDie($this->xmldoc, DeviceCloud::$templateXml);
+
+        $xmlNode->setAttribute('name', $name);
+
+        #$newDG->load_from_domxml($xmlNode);
+        $newDG->load_from_templateSnippetXml();
+        $newDG->setName($name);
+
+
+        $this->snippets[] = $newDG;
+
+        /*
+        if( $this->version >= 70 )
+        {
+            if( $this->version >= 80 )
+                $dgMetaDataNode = DH::findXPathSingleEntryOrDie('/config/readonly/max-internal-id', $this->xmlroot);
+            else
+                $dgMetaDataNode = DH::findXPathSingleEntryOrDie('/config/readonly/dg-meta-data/max-dg-id', $this->xmlroot);
+
+            $dgMaxID = $dgMetaDataNode->textContent;
+            $dgMaxID++;
+            DH::setDomNodeText($dgMetaDataNode, "{$dgMaxID}");
+
+            if( $this->version >= 80 )
+                $dgMetaDataNode = DH::findXPathSingleEntryOrDie('/config/readonly/devices/entry[@name="localhost.localdomain"]/snippets', $this->xmlroot);
+            else
+                $dgMetaDataNode = DH::findXPathSingleEntryOrDie('/config/readonly/dg-meta-data/dg-info', $this->xmlroot);
+
+            if( $this->version >= 80 )
+                $newXmlNode = DH::importXmlStringOrDie($this->xmldoc, "<entry name=\"{$name}\"><id>{$dgMaxID}</id></entry>");
+            else
+                $newXmlNode = DH::importXmlStringOrDie($this->xmldoc, "<entry name=\"{$name}\"><dg-id>{$dgMaxID}</dg-id></entry>");
+
+            $dgMetaDataNode->appendChild($newXmlNode);
+        }
+        */
+
+        $parentContainer = $this->findContainer( "All" );
+        if( $parentContainer === null )
+            mwarning("Container '$name' has Container 'All' listed as parent but it cannot be found in XML");
+        else
+        {
+            $parentContainer->_childContainers[$name] = $newDG;
+            $newDG->parentContainer = $parentContainer;
+
+            /*
+            $newDG->addressStore->parentCentralStore = $parentContainer->addressStore;
+            $newDG->serviceStore->parentCentralStore = $parentContainer->serviceStore;
+            $newDG->tagStore->parentCentralStore = $parentContainer->tagStore;
+            $newDG->scheduleStore->parentCentralStore = $parentContainer->scheduleStore;
+            $newDG->appStore->parentCentralStore = $parentContainer->appStore;
+            $newDG->securityProfileGroupStore->parentCentralStore = $parentContainer->securityProfileGroupStore;
+            */
+            //Todo: swaschkut 20210505 - check if other Stores must be added
+            //- appStore;scheduleStore/securityProfileGroupStore/all kind of SecurityProfile
+
+            $storeType = array(
+                'addressStore', 'serviceStore', 'tagStore', 'scheduleStore', 'appStore',
+
+                'securityProfileGroupStore',
+
+                'URLProfileStore', 'VirusAndWildfireProfileStore', 'FileBlockingProfileStore',
+                //'DataFilteringProfileStore',
+                'VulnerabilityProfileStore', 'AntiSpywareProfileStore',
+                //'WildfireProfileStore',
+                'DecryptionProfileStore', 'HipObjectsProfileStore', 'customURLProfileStore',
+
+                'DNSSecurityProfileStore', 'SaasSecurityProfileStore'
+
+            );
+
+            foreach( $storeType as $type )
+                $newDG->$type->parentCentralStore = $parentContainer->$type;
+        }
+
+        return $newDG;
     }
 
     /**

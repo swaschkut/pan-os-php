@@ -51,6 +51,20 @@ class VlanIfStore extends ObjStore
         return $this->o;
     }
 
+    /**
+     * @return VlanInterface[]
+     */
+    public function getNoneVsysUsedInterfaces()
+    {
+        $unusedVsysInterfaces = array();
+        foreach( $this->o as $interface )
+        {
+            $tmp_vsys = $this->owner->network->findVsysInterfaceOwner($interface->name());
+            if( $tmp_vsys == null)
+                $unusedVsysInterfaces[] = $interface;
+        }
+        return $unusedVsysInterfaces;
+    }
 
     /**
      * Creates a new VlanInterface in this store. It will be placed at the end of the list.

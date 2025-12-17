@@ -194,6 +194,7 @@ require_once $basedir . '/misc-classes/GPGatewayRQueryContext.php';
 require_once $basedir . '/misc-classes/GPPortalRQueryContext.php';
 
 require_once $basedir . '/misc-classes/ZoneProtectionProfileRQueryContext.php';
+require_once $basedir . '/misc-classes/InterfaceManagementProfileRQueryContext.php';
 require_once $basedir . '/misc-classes/LogProfileRQueryContext.php';
 
 require_once $basedir . '/misc-classes/CsvParser.php';
@@ -367,6 +368,8 @@ require_once $basedir . '/network-classes/GPPortal.php';
 require_once $basedir . '/network-classes/GPPortalStore.php';
 require_once $basedir . '/network-classes/ZoneProtectionProfile.php';
 require_once $basedir . '/network-classes/ZoneProtectionProfileStore.php';
+require_once $basedir . '/network-classes/InterfaceManagementProfile.php';
+require_once $basedir . '/network-classes/InterfaceManagementProfileStore.php';
 
 require_once $basedir . '/network-classes/SharedGatewayStore.php';
 

@@ -3,8 +3,6 @@
 /**
  * ISC License
  *
- * Copyright (c) 2014-2018, Palo Alto Networks Inc.
- * Copyright (c) 2019, Palo Alto Networks Inc.
  * Copyright (c) 2024, Sven Waschkut - pan-os-php@waschkut.net
  *
  * Permission to use, copy, modify, and/or distribute this software for any
@@ -53,8 +51,8 @@ class ZoneProtectionProfileStore extends ObjStore
     }
 
     /**
-     * Creates a new IPsecCryptoProfil in this store. It will be placed at the end of the list.
-     * @param string $name name of the new IPsecCryptoProfil
+     * Creates a new ZoneProtectionProfile in this store. It will be placed at the end of the list.
+     * @param string $name name of the new ZoneProtectionProfile
      * @return ZoneProtectionProfile
      */
     public function newZoneProtectionProfile($name)
@@ -154,7 +152,7 @@ class ZoneProtectionProfileStore extends ObjStore
 
     /**
      * @param $ZoneProtectionProfile string
-     * @return null|IPsecTunnel
+     * @return null|ZoneProtectionProfile
      */
     public function findZoneProtectionProfile($ZoneProtectionProfile)
     {

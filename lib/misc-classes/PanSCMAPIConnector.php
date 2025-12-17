@@ -94,6 +94,102 @@ class PanSCMAPIConnector
         }
     }
 
+    public function getFolderavailable( BuckbeakConf $pan)
+    {
+        $url_config = "/config/setup/v1/folders";
+
+        //$limit and $offset are running into 'Access denied
+        $responseArray = $this->getResourceURL( $url_config);
+
+        $folderNameArray = array();
+        foreach( $responseArray['data'] as $folder )
+        {
+            $folderNameArray[] = $folder['name'];
+
+            #print "name: " . $folder['name'] . "\n";
+            #print "parent: " . $folder['parent'] . "\n";
+            #print "id: " . $folder['id'] . "\n";
+            #if( isset( $folder['display_name'] ) )
+            #    print "display_name: " . $folder['display_name'] . "\n";
+            #print "type: " . $folder['type'] . "\n";
+            #print_r($folder);
+            #PH::print_stdout("-----------");
+
+            if( !empty($folder['parent']) )
+            {
+                $parent = $folder['parent'];
+
+                if( $parent == "ngfw-shared" )
+                {
+                    $sub = $pan->findContainer( "ngfw-shared" );
+                    if( $sub == null )
+                    {
+                        $sub = $pan->createContainer( "ngfw-shared", "All" );
+                    }
+                }
+            }
+
+            else
+                $parent = null;
+
+            if( $folder['type'] == "container" )
+            {
+                $sub = $pan->findContainer( $folder['name'] );
+                if( $sub == null )
+                    $sub = $pan->createContainer( $folder['name'], $parent );
+                $sub->setSaseID($folder['id']);
+            }
+            elseif( $folder['type'] == "cloud" )
+            {
+                $sub = $pan->findDeviceCloud( $folder['name'] );
+                if( $sub == null )
+                    $sub = $pan->createDeviceCloud( $folder['name'], $parent );
+                $sub->setSaseID($folder['id']);
+            }
+
+            if( isset($folder['snippets']) )
+            {
+                foreach( $folder['snippets'] as $snippet )
+                {
+                    $snippet = $pan->findSnippet( $snippet );
+                    $sub->addSnippet( $snippet );
+                }
+            }
+        }
+
+        return $folderNameArray;
+    }
+
+    public function getSnippetsavailable( BuckbeakConf $pan)
+    {
+        $url_config = "/config/setup/v1/snippets";
+
+        //$limit and $offset are running into 'Access denied
+        $responseArray = $this->getResourceURL( $url_config);
+
+        $folderNameArray = array();
+        foreach( $responseArray['data'] as $folder )
+        {
+            $folderNameArray[] = $folder['name'];
+
+            #print "name: " . $folder['name'] . "\n";
+            #print "parent: " . $folder['parent'] . "\n";
+            #print "id: " . $folder['id'] . "\n";
+            #if( isset( $folder['display_name'] ) )
+            #    print "display_name: " . $folder['display_name'] . "\n";
+            #print "type: " . $folder['type'] . "\n";
+            #print_r($folder);
+            #PH::print_stdout("-----------");
+
+            $sub = $pan->findSnippet( $folder['name'] );
+            if( $sub == null )
+                $sub = $pan->createSnippet( $folder['name'] );
+            $sub->setSaseID($folder['id']);
+        }
+
+        return $folderNameArray;
+    }
+
     public function setUTILtype( $utilType)
     {
         $this->utilType = $utilType;
@@ -364,7 +460,7 @@ class PanSCMAPIConnector
         }
         elseif( $utilType == "device" )
         {
-            mwarning("only local offline config validation", null, FALSE);
+            #mwarning("only local offline config validation", null, FALSE);
         }
         elseif( $utilType == "custom" )
         {
@@ -438,7 +534,7 @@ class PanSCMAPIConnector
         return $this->typeArray;
     }
 
-    function getResource($access_token, $type = "address", $folder = "Shared", $limit = 200, $prePost = "pre", $offset = 0, $runtime = 1)
+    function getResource($access_token, $type = "address", $foldertype = "folder", $folderName = "Shared", $limit = 200, $prePost = "pre", $offset = 0, $runtime = 1)
     {
         $this->getAccessToken();
 
@@ -446,7 +542,7 @@ class PanSCMAPIConnector
         //Fawkes
         #$url .= "/sse/config/v1/" . $type . "?folder=" . $folder;
         //Buckbeak
-        $url .= "/config/objects/v1/" . $type . "?folder=" . $folder;
+        $url .= "/config/objects/v1/" . $type . "?".$foldertype."=" . $folderName;
 
         $url .= "&limit=" . $this->global_limit;
 
@@ -507,7 +603,7 @@ class PanSCMAPIConnector
         {
             $offset = $this->global_limit * $runtime;
             $runtime++;
-            $resource = $this->getResource($access_token, $type, $folder, $this->global_limit, $prePost, $offset, $runtime);
+            $resource = $this->getResource($access_token, $type, $foldertype, $folderName, $this->global_limit, $prePost, $offset, $runtime);
 
             foreach( $resource['data'] as $data )
                 $jsonArray['data'][] = $data;
@@ -517,7 +613,7 @@ class PanSCMAPIConnector
         return $jsonArray;
     }
 
-    function getResourceURL( $url_config, $type = null, $folder = null, $limit = 200, $prePost = "pre", $offset = 0, $runtime = 1)
+    function getResourceURL( $url_config, $type = null, $foldertype = "folder", $folder = null, $limit = 200, $prePost = "pre", $offset = 0, $runtime = 1)
     {
         $this->getAccessToken();
 
@@ -529,14 +625,14 @@ class PanSCMAPIConnector
             //Fawkes
             #$url .= "/sse/config/v1/" . $type . "?folder=" . $folder;
             //Buckbeak
-            $url .= "/config/objects/v1/" . $type . "?folder=" . $folder;
+            $url .= "/config/objects/v1/" . $type . "?".$foldertype."=" . $folder;
         }
         elseif( $type == null && $folder !== null )
         {
             if(strpos( $url, "?" ) !== FALSE)
-                $url .= "&folder=" . $folder;
+                $url .= "&".$foldertype."=" . $folder;
             else
-                $url .= "?folder=" . $folder;
+                $url .= "?".$foldertype."=" . $folder;
         }
 
         if( $limit !== null )
@@ -613,7 +709,7 @@ class PanSCMAPIConnector
         {
             $offset = $this->global_limit * $runtime;
             $runtime++;
-            $resource = $this->getResource( $type, $folder, $this->global_limit, $prePost, $offset, $runtime);
+            $resource = $this->getResource( $type, $foldertype, $folder, $this->global_limit, $prePost, $offset, $runtime);
 
             foreach( $resource['data'] as $data )
                 $jsonArray['data'][] = $data;
@@ -687,7 +783,15 @@ class PanSCMAPIConnector
             if( $folder == "Service Connections" && strpos($type, "-rule") !== FALSE )
                 continue;
 
-            $resource = $this->getResource($this->access_token, $type, $folder, $this->global_limit);
+            $foldertype = "folder";
+            if( get_class($sub) == "Container" )
+                $foldertype = "folder";
+            elseif( get_class($sub) == "DeviceCloud" )
+                $foldertype = "device";
+            elseif( get_class($sub) == "Snippet" )
+                $foldertype = "snippet";
+
+            $resource = $this->getResource($this->access_token, $type, $foldertype, $folder, $this->global_limit);
 
             if( $resource !== null )
             {
@@ -759,6 +863,10 @@ class PanSCMAPIConnector
             {
                 if( isset( $object['id'] ) )
                 {
+                    $tmp_address = $sub->addressStore->find($object['name']);
+                    if( $tmp_address !== null )
+                        continue;
+
                     if( isset($object['ip_netmask']) )
                         $tmp_address = $sub->addressStore->newAddress($object['name'], 'ip-netmask', $object['ip_netmask']);
                     elseif( isset($object['fqdn']) )

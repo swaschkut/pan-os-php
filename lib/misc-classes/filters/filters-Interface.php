@@ -178,5 +178,54 @@ RQuery::$defaultFilters['interface']['type']['operators']['is.aggregate'] = Arra
         'input' => 'input/panorama-8.0.xml'
     )
 );
+RQuery::$defaultFilters['interface']['mgmt-profile']['operators']['is.set'] = Array(
+    'Function' => function(InterfaceRQueryContext $context )
+    {
+        $object = $context->object;
 
+        if( method_exists($object, 'getMgmtProfileName') )
+            return $object->getMgmtProfileName() !== null;
+        else
+            return null;
+    },
+    'arg' => false
+);
+
+RQuery::$defaultFilters['interface']['mgmt-profile']['operators']['has.from.query'] = array(
+    'Function' => function (InterfaceRQueryContext $context) {
+        $object = $context->object;
+
+        if( !method_exists($object, 'getMgmtProfileName') )
+            return FALSE;
+
+        if( $context->object->getMgmtProfileName() === null )
+            return FALSE;
+
+        if( $context->value === null || !isset($context->nestedQueries[$context->value]) )
+            derr("cannot find nested query called '{$context->value}'");
+
+
+        $errorMessage = '';
+
+        if( !isset($context->cachedSubRQuery) )
+        {
+            $rQuery = new RQuery('interface-management-profile');
+            if( $rQuery->parseFromString($context->nestedQueries[$context->value], $errorMessage) === FALSE )
+                derr('nested query execution error : ' . $errorMessage);
+            $context->cachedSubRQuery = $rQuery;
+        }
+        else
+            $rQuery = $context->cachedSubRQuery;
+
+        if( $object->getMgmtProfileObj() !==  null )
+        {
+            if( $rQuery->matchSingleObject(array('object' => $object->getMgmtProfileObj(), 'nestedQueries' => &$context->nestedQueries)) )
+                return TRUE;
+        }
+
+        return FALSE;
+    },
+    'arg' => TRUE,
+    'help' => 'example: \'filter=(mgmt-profile has.from.query subquery1)\' \'subquery1=(enabled-service has.telnet)\'',
+);
 // </editor-fold>

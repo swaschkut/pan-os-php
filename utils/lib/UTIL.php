@@ -475,6 +475,8 @@ class UTIL
             $tmp_array = &GPGatewaytunnelCallContext::$supportedActions;
         elseif( $this->utilType == 'zone-protection-profile' )
             $tmp_array = &ZoneProtectionProfileCallContext::$supportedActions;
+        elseif( $this->utilType == 'interface-management-profile' )
+            $tmp_array = &InterfaceManagementProfileCallContext::$supportedActions;
         elseif( $this->utilType == 'log-profile' )
             $tmp_array = &LogProfileCallContext::$supportedActions;
         elseif( $this->utilType == 'profile' )
@@ -1433,6 +1435,8 @@ class UTIL
                 $context = new GPGatewaytunnelCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'zone-protection-profile' )
                 $context = new ZoneProtectionProfileCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+            elseif( $this->utilType == 'interface-management-profile' )
+                $context = new InterfaceManagementProfileCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'log-profile' )
                 $context = new LogProfileCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'profile' )
@@ -1795,9 +1799,22 @@ class UTIL
     public function location_filter_scm_object()
     {
         if( $this->configInput['type'] == 'sase-api' )
+        {
             $folderArray = PanSaseAPIConnector::$folderArray;
+        }
         elseif( $this->configInput['type'] == 'scm-api' )
+        {
             $folderArray = PanSCMAPIConnector::$folderArray;
+
+            //todo: download all folders / snippets name
+            $responseArray = $this->sase_connector->getSnippetsavailable($this->pan);
+
+            $responseArray = $this->sase_connector->getFolderavailable($this->pan);
+
+            $folderArray = array_merge($folderArray, $responseArray);
+
+        }
+
 
 
         if( $this->objectsLocation !== "any" )

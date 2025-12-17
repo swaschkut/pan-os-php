@@ -30,7 +30,21 @@ InterfaceCallContext::$supportedActions['display'] = Array(
         if( method_exists($object, 'getLinkState') )
             $linkstate = "[".$object->getLinkState()."]";
 
-        PH::print_stdout("     * ".get_class($object)." '{$object->name()}' {$linkstate}" );
+        $mgmtProfile = "";
+        if( method_exists($object, 'getMgmtProfileName') )
+        {
+            if( $object->getMgmtProfileName() !== null )
+            {
+                $mgmtProfile = " mgmtProfile:[".$object->getMgmtProfileName()."]";
+                PH::$JSON_TMP['sub']['object'][$object->name()]['interface-management-profile'] = $object->getMgmtProfileName();
+            }
+            else
+            {
+                $mgmtProfile = " mgmtProfile:[---]";
+            }
+        }
+
+        PH::print_stdout("     * ".get_class($object)." '{$object->name()}' {$linkstate}".$mgmtProfile );
         PH::$JSON_TMP['sub']['object'][$object->name()]['name'] = $object->name();
         PH::$JSON_TMP['sub']['object'][$object->name()]['type'] = get_class($object);
         PH::$JSON_TMP['sub']['object'][$object->name()]['linkstate'] = $linkstate;
@@ -185,7 +199,7 @@ InterfaceCallContext::$supportedActions['exportToExcel'] = array(
             $addUsedInLocation = TRUE;
 
 
-        $headers = '<th>ID</th><th>template</th><th>location</th><th>name</th><th>class</th><th>type</th><th>subinterfaces</th><th>IP-addresses</th>';
+        $headers = '<th>ID</th><th>template</th><th>location</th><th>name</th><th>class</th><th>type</th><th>subinterfaces</th><th>IP-addresses</th><th>IPv6-addresses</th><th>mgmt-profile</th>';
 
         if( $addWhereUsed )
             $headers .= '<th>where used</th>';
@@ -214,12 +228,26 @@ InterfaceCallContext::$supportedActions['exportToExcel'] = array(
                     if( isset($object->owner->owner->owner) && $object->owner->owner->owner !== null && (get_class($object->owner->owner->owner) == "Template" || get_class($context->subSystem->owner) == "TemplateStack" ) )
                     {
                         $lines .= $context->encloseFunction($object->owner->owner->owner->name());
-                        $lines .= $context->encloseFunction($object->owner->owner->name());
+                        #$lines .= $context->encloseFunction($object->owner->owner->name());
+
+                        $tmp_vsys = $object->owner->owner->network->findVsysInterfaceOwner($object->name());
+                        if( $tmp_vsys !==  null )
+                            $lines .= $context->encloseFunction($tmp_vsys->name());
+                        else
+                            $lines .= $context->encloseFunction(get_class($object->owner->owner));
                     }
                     else
                     {
                         $lines .= $context->encloseFunction("---");
-                        $lines .= $context->encloseFunction($object->owner->owner->name());
+
+                        $tmp_vsys = $object->owner->owner->network->findVsysInterfaceOwner($object->name());
+                        if( $tmp_vsys !==  null )
+                            $lines .= $context->encloseFunction($tmp_vsys->name());
+                        else
+                        {
+                            #$lines .= $context->encloseFunction($object->owner->owner->name());
+                            $lines .= $context->encloseFunction(get_class($object->owner->owner));
+                        }
                     }
                 }
 
@@ -229,6 +257,8 @@ InterfaceCallContext::$supportedActions['exportToExcel'] = array(
                 if( $object->type == "tmp" )
                 {
                     $lines .= $context->encloseFunction('unknown');
+                    $lines .= $context->encloseFunction('');
+                    $lines .= $context->encloseFunction('');
                     $lines .= $context->encloseFunction('');
                     $lines .= $context->encloseFunction('');
                     $lines .= $context->encloseFunction('');
@@ -264,6 +294,21 @@ InterfaceCallContext::$supportedActions['exportToExcel'] = array(
                     {
                         $lines .= $context->encloseFunction($object->getIPv4Addresses());
                         $lines .= $context->encloseFunction($object->getIPv6Addresses());
+                    }
+                    else
+                    {
+                        $lines .= $context->encloseFunction("----");
+                        $lines .= $context->encloseFunction("----");
+                    }
+
+
+                    //mgmt-profile
+                    if( method_exists($object, 'getMgmtProfileName') )
+                    {
+                        if( $object->getMgmtProfileName() !== null )
+                            $lines .= $context->encloseFunction($object->getMgmtProfileName());
+                        else
+                            $lines .= $context->encloseFunction("----");
                     }
                     else
                         $lines .= $context->encloseFunction("----");

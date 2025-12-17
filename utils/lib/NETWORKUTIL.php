@@ -71,7 +71,10 @@ class NETWORKUTIL extends UTIL
                     if( $this->utilType == 'virtualwire' )
                         $this->objectsToProcess[] = Array('store' => $this->pan->network->virtualWireStore, 'objects' => $this->pan->network->virtualWireStore->virtualWires());
                     elseif( $this->utilType == 'interface' )
-                        $this->objectsToProcess[] = Array('store' => $this->pan->network, 'objects' => $this->pan->network->getAllInterfaces());
+                    {
+                        #$this->objectsToProcess[] = Array('store' => $this->pan->network, 'objects' => $this->pan->network->getAllInterfaces());
+                        $this->objectsToProcess[] = Array('store' => $this->pan->network, 'objects' => $this->pan->network->getNoneVsysUsedInterfaces());
+                    }
                     elseif( $this->utilType == 'routing' && !$this->pan->_advance_routing_enabled )
                         $this->objectsToProcess[] = Array('store' => $this->pan->network->virtualRouterStore, 'objects' => $this->pan->network->virtualRouterStore->getAll());
                     elseif( $this->utilType == 'routing' && $this->pan->_advance_routing_enabled )
@@ -136,6 +139,10 @@ class NETWORKUTIL extends UTIL
                     {
                         $this->objectsToProcess[] = Array('store' => $this->pan->network->zoneProtectionProfileStore, 'objects' => $this->pan->network->zoneProtectionProfileStore->zoneProtectionProfile());
                     }
+                    elseif( $this->utilType == 'interface-management-profile' )
+                    {
+                        $this->objectsToProcess[] = Array('store' => $this->pan->network->interfaceManagementProfileStore, 'objects' => $this->pan->network->interfaceManagementProfileStore->interfaceManagementProfile());
+                    }
 
                     $locationFound = TRUE;
                 }
@@ -176,6 +183,8 @@ class NETWORKUTIL extends UTIL
                             {}
                             elseif( $this->utilType == 'zone-protection-profile' )
                             {}
+                            elseif( $this->utilType == 'interface-management-profile' )
+                            {}
 
                             $locationFound = TRUE;
                         }
@@ -211,6 +220,8 @@ class NETWORKUTIL extends UTIL
                             elseif( $this->utilType == 'ipsec-tunnel' )
                             {}
                             elseif( $this->utilType == 'zone-protection-profile' )
+                            {}
+                            elseif( $this->utilType == 'interface-management-profile' )
                             {}
 
                             $locationFound = TRUE;
@@ -252,6 +263,8 @@ class NETWORKUTIL extends UTIL
                         {}
                         elseif( $this->utilType == 'zone-protection-profile' )
                         {}
+                        elseif( $this->utilType == 'interface-management-profile' )
+                        {}
 
                         $locationFound = TRUE;
                     }
@@ -292,7 +305,10 @@ class NETWORKUTIL extends UTIL
                                 if( $this->utilType == 'virtualwire' )
                                     $this->objectsToProcess[] = Array('store' => $template->deviceConfiguration->network->virtualWireStore, 'objects' => $template->deviceConfiguration->network->virtualWireStore->virtualWires());
                                 elseif( $this->utilType == 'interface' )
-                                    $this->objectsToProcess[] = Array('store' => $template->deviceConfiguration->network, 'objects' => $template->deviceConfiguration->network->getAllInterfaces());
+                                {
+                                    #$this->objectsToProcess[] = Array('store' => $template->deviceConfiguration->network, 'objects' => $template->deviceConfiguration->network->getAllInterfaces());
+                                    $this->objectsToProcess[] = Array('store' => $template->deviceConfiguration->network, 'objects' => $template->deviceConfiguration->network->getNoneVsysUsedInterfaces());
+                                }
                                 elseif( $this->utilType == 'routing' )
                                     $this->objectsToProcess[] = Array('store' => $template->deviceConfiguration->network->virtualRouterStore, 'objects' => $template->deviceConfiguration->network->virtualRouterStore->getAll());
                                 elseif( $this->utilType == 'zone' )
@@ -349,6 +365,10 @@ class NETWORKUTIL extends UTIL
                                 elseif( $this->utilType == 'zone-protection-profile' )
                                 {
                                     $this->objectsToProcess[] = Array('store' => $template->deviceConfiguration->network->zoneProtectionProfileStore, 'objects' => $template->deviceConfiguration->network->zoneProtectionProfileStore->zoneProtectionProfile());
+                                }
+                                elseif( $this->utilType == 'interface-management-profile' )
+                                {
+                                    $this->objectsToProcess[] = Array('store' => $template->deviceConfiguration->network->interfaceManagementProfileStore, 'objects' => $template->deviceConfiguration->network->interfaceManagementProfileStore->interfaceManagementProfile());
                                 }
 
                                 $locationFound = true;

@@ -213,6 +213,11 @@ DeviceCallContext::$supportedActions['display'] = array(
                 $tmp_padding .= "  ";
                 PH::$JSON_TMP['sub']['object'][$object->name()]['hierarchy'][] = $key;
             }
+
+            if( !empty( $object->attachedSnippets ) )
+            {
+                PH::print_stdout( $context->padding."AttachedSnippets: ".implode(", ", $object->getAttachedSnippetNames()) );
+            }
         }
         elseif( get_class($object) == "DeviceCloud" )
         {

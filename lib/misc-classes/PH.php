@@ -230,7 +230,7 @@ class PH
 
     private static $library_version_major = 2;
     private static $library_version_sub = 1;
-    private static $library_version_bugfix = 45;
+    private static $library_version_bugfix = 46;
 
     //BASIC AUTH PAN-OS 7.1
     public static $softwareupdate_key = "658d787f293e631196dac9fb29490f1cc1bb3827";
@@ -1077,7 +1077,7 @@ class PH
         "zone",  "interface", "virtualwire", "routing", "dhcp", "certificate", "static-route", "ssl-tls-service-profile",
         "gp-gateway", "gp-portal",
         "ike-profile", "ike-gateway", 'ipsec-profile', 'ipsec-tunnel',
-        "zone-protection-profile","log-profile",
+        "zone-protection-profile","log-profile", "interface-management-profile",
         "gre-tunnel", "gpgateway-tunnel",
         "key-manager",
         "address-merger", "addressgroup-merger",
@@ -1191,6 +1191,7 @@ class PH
             || $type == "gre-tunnel"
             || $type == "gpgateway-tunnel"
             || $type == "zone-protection-profile"
+            || $type == "interface-management-profile"
             || $type == "ssl-tls-service-profile"
         )
             $util = new NETWORKUTIL($type, $argv, $argc,$PHP_FILE." type=".$type, $_supportedArguments, $_usageMsg, $projectfolder);
