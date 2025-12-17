@@ -1,6 +1,14 @@
 CHANGELOG
 
-2.1.46
+2.1.47
+UTIL:
+
+BUGFIX:
+
+GENERAL:
+
+
+2.1.46 (20251217)
 UTIL:
 * type=interface | extend with mgmt profile information - none object version
 * type=interface-management-profile | introduction of new utility
