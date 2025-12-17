@@ -3747,6 +3747,11 @@ var subjectObject =
                     "is.set": {
                         "Function": {},
                         "arg": false
+                    },
+                    "has.from.query": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "example: 'filter=(mgmt-profile has.from.query subquery1)' 'subquery1=(enabled-service has.telnet)'"
                     }
                 }
             },

@@ -15,6 +15,7 @@ BUGFIX:
 
 GENERAL:
 * develop | extend scm-api:// to read folder/snippet
+* Device App-ID update to version: 9049-9799
 
 
 2.1.45 (20251210)
