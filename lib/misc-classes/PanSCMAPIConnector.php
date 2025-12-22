@@ -542,7 +542,10 @@ class PanSCMAPIConnector
         //Fawkes
         #$url .= "/sse/config/v1/" . $type . "?folder=" . $folder;
         //Buckbeak
-        $url .= "/config/objects/v1/" . $type . "?".$foldertype."=" . $folderName;
+        if( strpos( $type, "-rules") !== FALSE )
+            $url .= "/config/security/v1/" . $type . "?".$foldertype."=" . $folderName;
+        else
+            $url .= "/config/objects/v1/" . $type . "?".$foldertype."=" . $folderName;
 
         $url .= "&limit=" . $this->global_limit;
 
@@ -550,7 +553,9 @@ class PanSCMAPIConnector
             $url .= "&offset=" . $offset;
 
         if( strpos($type, "-rule") !== FALSE )
+        {
             $url .= "&position=" . $prePost;
+        }
 
         $url = str_replace(' ', '%20', $url);
 
@@ -583,7 +588,7 @@ class PanSCMAPIConnector
         $response = curl_exec($this->_curl_handle);
         if( $this->showApiCalls )
         {
-            #print $response . "\n";
+            print $response . "\n";
         }
 
         $jsonArray = json_decode($response, TRUE);
@@ -634,6 +639,8 @@ class PanSCMAPIConnector
             else
                 $url .= "?".$foldertype."=" . $folder;
         }
+        #elseif( $type == null && $folder == null )
+        #    $url .= "&".$foldertype."=" . $folder;
 
         if( $limit !== null )
         {
@@ -665,6 +672,8 @@ class PanSCMAPIConnector
             PH::print_stdout($url);
         }
 
+        if( strpos($url, "parent1=200") !== FALSE )
+            derr( "check" );
 
         $header = array("Authorization: Bearer {$this->access_token}");
 
@@ -689,7 +698,7 @@ class PanSCMAPIConnector
         $response = curl_exec($this->_curl_handle);
         if( $this->showApiCalls )
         {
-            #print $response . "\n";
+            print $response . "\n";
         }
 
         $jsonArray = json_decode($response, TRUE);
@@ -709,7 +718,7 @@ class PanSCMAPIConnector
         {
             $offset = $this->global_limit * $runtime;
             $runtime++;
-            $resource = $this->getResource( $type, $foldertype, $folder, $this->global_limit, $prePost, $offset, $runtime);
+            $resource = $this->getResource( $this->access_token, $type, $foldertype, $folder, $this->global_limit, $prePost, $offset, $runtime);
 
             foreach( $resource['data'] as $data )
                 $jsonArray['data'][] = $data;
@@ -758,7 +767,7 @@ class PanSCMAPIConnector
         $response = curl_exec($this->_curl_handle);
         if( $this->showApiCalls )
         {
-            #print $response . "\n";
+            print $response . "\n";
         }
 
         $jsonArray = json_decode($response, TRUE);
@@ -824,7 +833,7 @@ class PanSCMAPIConnector
 
             if( strpos($type, '-rules') !== FALSE )
             {
-                $resource = $this->getResource($this->access_token, $type, $folder, $this->global_limit, 'post');
+                $resource = $this->getResource($this->access_token, $type, $foldertype, $folder, $this->global_limit, 'post');
 
                 if( $resource !== null )
                 {
@@ -924,6 +933,10 @@ class PanSCMAPIConnector
                 {
                     if( isset($object['static']) )
                     {
+                        $tmp_addressgroup = $sub->addressStore->find($object['name']);
+                        if( $tmp_addressgroup !== null )
+                            continue;
+
                         $tmp_addressgroup = $sub->addressStore->newAddressGroup($object['name']);
                         foreach( $object['static'] as $member )
                         {
@@ -939,6 +952,10 @@ class PanSCMAPIConnector
             }
             elseif( $type === "services" )
             {
+                $tmp_service = $sub->serviceStore->find($object['name']);
+                if( $tmp_service !== null )
+                    continue;
+
                 if( isset( $object['id'] ) )
                 {
                     foreach( $object['protocol'] as $prot => $entry )
@@ -956,6 +973,10 @@ class PanSCMAPIConnector
             {
                 if( isset( $object['id'] ) )
                 {
+                    $tmp_servicegroup = $sub->serviceStore->find($object['name']);
+                    if( $tmp_servicegroup !== null )
+                        continue;
+
                     $tmp_servicegroup = $sub->serviceStore->newServiceGroup($object['name']);
                     foreach( $object['members'] as $member )
                     {
@@ -978,6 +999,10 @@ class PanSCMAPIConnector
             }
             elseif( $type === "schedules" )
             {
+                $tmp_schedule = $sub->scheduleStore->find($object['name']);
+                if( $tmp_schedule !== null )
+                    continue;
+
                 $tmp_schedule = $sub->scheduleStore->createSchedule($object['name']);
 
                 if( isset($object['schedule_type']['non_recurring']) )
@@ -1037,6 +1062,10 @@ class PanSCMAPIConnector
             elseif( $type === "security-rules" )
             {
                 $tmp_rule = null;
+
+                $tmp_rule = $sub->securityRules->find($object['name']);
+                if( $tmp_rule !== null )
+                    continue;
 
                 if( isset($object['position']) && $object['position'] === "post" )
                     $tmp_rule = $sub->securityRules->newSecurityRule($object['name'], TRUE);

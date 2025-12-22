@@ -2,6 +2,7 @@ CHANGELOG
 
 2.1.47
 UTIL:
+* in=scm-api://{TSG-ID} | extend/validate if offline file is already available - bring rules back to working mode in same way as in=sase-api://
 
 BUGFIX:
 

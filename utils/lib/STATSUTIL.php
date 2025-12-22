@@ -57,7 +57,11 @@ class STATSUTIL extends RULEUTIL
 
         PH::$args['stats'] = "stats";
 
-
+        $actions_array = array("display", "display-bpa", "display-available", "display-size", "display-managedfw-serial");
+        if( !in_array(PH::$args['actions'], $actions_array) )
+        {
+            derr( " argument actions: '".PH::$args['actions']." not available. Please use one of these: ".implode(", ", $actions_array), null, FALSE );
+        }
 
         if( isset(PH::$args['json-to-folder']) )
         {
@@ -83,7 +87,7 @@ class STATSUTIL extends RULEUTIL
         else
             $this->stats( $this->debugAPI, $actions, $this->location );
 
-        if( PH::$args['actions'] == "display" || PH::$args['actions'] == "display-bpa" || PH::$args['actions'] == "display-available" || PH::$args['actions'] == "display-available")
+        if( PH::$args['actions'] == "display" || PH::$args['actions'] == "display-bpa" || PH::$args['actions'] == "display-available")
             PH::print_stdout(PH::$JSON_TMP, false, "statistic");
 
         if( PH::$args['actions'] == "trending" )

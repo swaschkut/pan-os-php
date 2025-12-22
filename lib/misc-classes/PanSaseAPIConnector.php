@@ -623,6 +623,10 @@ class PanSaseAPIConnector
             {
                 if( isset( $object['id'] ) )
                 {
+                    $tmp_address = $sub->addressStore->find($object['name']);
+                    if( $tmp_address !== null )
+                        continue;
+
                     if( isset($object['ip_netmask']) )
                         $tmp_address = $sub->addressStore->newAddress($object['name'], 'ip-netmask', $object['ip_netmask']);
                     elseif( isset($object['fqdn']) )
@@ -680,6 +684,10 @@ class PanSaseAPIConnector
                 {
                     if( isset($object['static']) )
                     {
+                        $tmp_addressgroup = $sub->addressStore->find($object['name']);
+                        if( $tmp_addressgroup !== null )
+                            continue;
+
                         $tmp_addressgroup = $sub->addressStore->newAddressGroup($object['name']);
                         foreach( $object['static'] as $member )
                         {
@@ -697,6 +705,10 @@ class PanSaseAPIConnector
             {
                 if( isset( $object['id'] ) )
                 {
+                    $tmp_service = $sub->serviceStore->find($object['name']);
+                    if( $tmp_service !== null )
+                        continue;
+
                     foreach( $object['protocol'] as $prot => $entry )
                     {
                         $tmp_service = $sub->serviceStore->newService($object['name'], $prot, $entry['port']);
@@ -712,6 +724,10 @@ class PanSaseAPIConnector
             {
                 if( isset( $object['id'] ) )
                 {
+                    $tmp_servicegroup = $sub->serviceStore->find($object['name']);
+                    if( $tmp_servicegroup !== null )
+                        continue;
+
                     $tmp_servicegroup = $sub->serviceStore->newServiceGroup($object['name']);
                     foreach( $object['members'] as $member )
                     {
@@ -734,6 +750,10 @@ class PanSaseAPIConnector
             }
             elseif( $type === "schedules" )
             {
+                $tmp_schedule = $sub->serviceStore->find($object['name']);
+                if( $tmp_schedule !== null )
+                    continue;
+
                 $tmp_schedule = $sub->scheduleStore->createSchedule($object['name']);
 
                 if( isset($object['schedule_type']['non_recurring']) )
@@ -1232,8 +1252,8 @@ class PanSaseAPIConnector
                 $tmp_rule = $sub->securityRules->find($object['name']);
                 if( $tmp_rule !== null )
                 {
-                    //already added
-                    return;
+                    #return;
+                    continue;
                 }
 
                 if( isset($object['position']) && $object['position'] === "post" )
