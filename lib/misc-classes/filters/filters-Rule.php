@@ -2937,6 +2937,7 @@ RQuery::$defaultFilters['rule']['secprof']['operators']['has.from.query'] = arra
         else
             $rQuery = $context->cachedSubRQuery;
 
+        $secprof_objects = array();
         if( $rule->securityProfileType() == "group" )
         {
             /** @var SecurityProfileGroup $tmp_group */
