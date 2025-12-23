@@ -483,6 +483,28 @@ class PanSCMAPIConnector
         {
             $this->typeArray[] = "profile-groups";
         }
+        elseif( $utilType == "stats" )
+        {
+            $this->typeArray[] = "tags";
+            $this->typeArray[] = "addresses";
+            $this->typeArray[] = "address-groups";
+            $this->typeArray[] = "regions";
+
+            $this->typeArray[] = "services";
+            $this->typeArray[] = "service-groups";
+
+            $this->typeArray[] = "anti-spyware-profiles";
+            $this->typeArray[] = "dns-security-profiles";
+            $this->typeArray[] = "file-blocking-profiles";
+            $this->typeArray[] = "saas-security-profiles";
+            $this->typeArray[] = "url-access-profiles";
+            $this->typeArray[] = "wildfire-anti-virus-profiles";
+            $this->typeArray[] = "vulnerability-protection-profiles";
+
+            $this->typeArray[] = "profile-groups";
+
+            $this->typeArray[] = "security-rules";
+        }
         else
         {
             derr("PAN-OS-PHP connection method 'scm-api://' - do not yet support this UTIL type: '" . $utilType . "'", null, FALSE);
@@ -1227,6 +1249,25 @@ class PanSCMAPIConnector
 
                 if( isset($object['id']) )
                     $tmp_rule->setSaseID( $object['id'] );
+
+
+                if( isset($object['log_start']) )
+                    if( $object['log_start'] == FALSE )
+                        $tmp_rule->setLogStart(FALSE);
+                    else
+                        $tmp_rule->setLogStart(TRUE);
+                if( isset($object['log_end']) )
+                    if( $object['log_end'] == FALSE )
+                        $tmp_rule->setLogEnd(FALSE);
+                    else
+                        $tmp_rule->setLogEnd(TRUE);
+
+                if( isset($object['negate_source']) )
+                    if( $object['negate_source'] === TRUE )
+                        $tmp_rule->setSourceIsNegated(TRUE);
+                if( isset($object['negate_destination']) )
+                    if( $object['negate_destination'] === TRUE )
+                        $tmp_rule->setDestinationIsNegated(TRUE);
             }
 
             //Todo: specify profiles import

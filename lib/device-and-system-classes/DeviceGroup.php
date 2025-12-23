@@ -1493,7 +1493,7 @@ class DeviceGroup
         $stdoutarray['type'] = get_class( $sub );
         $stdoutarray['statstype'] = "adoption";
 
-        $header = "BP/Visibility Statistics for VSYS '" . PH::boldText($sub->name) . "' | '" . $sub->toString() . "'";
+        $header = "BP/Visibility Statistics for DG '" . PH::boldText($sub->name) . "' | '" . $sub->toString() . "'";
         $stdoutarray['header'] = $header;
 
         $stdoutarray['security rules'] = $sub_ruleStore->count();

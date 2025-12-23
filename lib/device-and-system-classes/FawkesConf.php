@@ -731,7 +731,7 @@ class FawkesConf
 
         $stdoutarray = array();
 
-        $header = "Statistics for PanoramaConf '" . $this->name . "'";
+        $header = "Statistics for FawkesConf '" . $this->name . "'";
         $stdoutarray['header'] = $header;
 
         $stdoutarray['pre security rules'] = array();
