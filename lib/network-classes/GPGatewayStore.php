@@ -35,7 +35,7 @@ class GPGatewayStore extends ObjStore
     public static $childn = 'GPGateway';
 
     /**
-     * @param VirtualSystem|DeviceCloud|DeviceGroup|PanoramaConf|Container|FawkesConf $owner
+     * @param VirtualSystem|DeviceCloud|DeviceGroup|PanoramaConf|Container|FawkesConf|BuckbeakConf $owner
      */
     public function __construct($owner)
     {

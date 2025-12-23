@@ -115,6 +115,9 @@ class FawkesConf
 
     public $_fakeMode = FALSE;
 
+    public $sizeArray = array();
+    public $sizeArrayShared = array();
+
     /** @var NetworkPropertiesContainer */
     public $_fakeNetworkProperties;
 
@@ -548,7 +551,8 @@ class FawkesConf
 
     }
 
-    public function display_statistics( $return = false, $debug = false, $actions = "display" )
+    #public function display_statistics( $return = false, $debug = false, $actions = "display" )
+    public function display_statistics( $connector = null, $debug = false, $actions = "display", $location = false ): void
     {
 
         $container_all = $this->findContainer( "All");
@@ -851,37 +855,37 @@ class FawkesConf
         $stdoutarray['securityProfileGroup objects']['All'] = $container_all->securityProfileGroupStore->count();
         $stdoutarray['securityProfileGroup objects']['total_DGs'] = $gnsecprofgroups;
 
-        $stdoutarray['securityProfile objects'] = array();
+        $stdoutarray['securityProfile Anti-Spyware objects'] = array();
         $stdoutarray['securityProfile Anti-Spyware objects']['All'] = $container_all->AntiSpywareProfileStore->count();
         $stdoutarray['securityProfile Anti-Spyware objects']['total_DGs'] = $gnsecprofAS;
 
-        $stdoutarray['securityProfile objects'] = array();
+        $stdoutarray['securityProfile Vulnerability objects'] = array();
         $stdoutarray['securityProfile Vulnerability objects']['All'] = $container_all->VulnerabilityProfileStore->count();
         $stdoutarray['securityProfile Vulnerability objects']['total_DGs'] = $gnsecprofVB;
 
-        $stdoutarray['securityProfile objects'] = array();
+        $stdoutarray['securityProfile WildfireAndAnti-Virus objects'] = array();
         $stdoutarray['securityProfile WildfireAndAnti-Virus objects']['All'] = $container_all->VirusAndWildfireProfileStore->count();
         $stdoutarray['securityProfile WildfireAndAnti-Virus objects']['total_DGs'] = $gnsecprofAVWF;
 
-        $stdoutarray['securityProfile objects'] = array();
+        $stdoutarray['securityProfile DNS objects'] = array();
         $stdoutarray['securityProfile DNS objects']['All'] = $container_all->DNSSecurityProfileStore->count();
         $stdoutarray['securityProfile DNS objects']['total_DGs'] = $gnsecprofDNS;
 
-        $stdoutarray['securityProfile objects'] = array();
+        $stdoutarray['securityProfile Saas objects'] = array();
         $stdoutarray['securityProfile Saas objects']['All'] = $container_all->SaasSecurityProfileStore->count();
         $stdoutarray['securityProfile Saas objects']['total_DGs'] = $gnsecprofSaas;
 
-        $stdoutarray['securityProfile objects'] = array();
+        $stdoutarray['securityProfile URL objects'] = array();
         $stdoutarray['securityProfile URL objects']['All'] = $container_all->URLProfileStore->count();
         $stdoutarray['securityProfile URL objects']['total_DGs'] = $gnsecprofURL;
 
 
-        $stdoutarray['securityProfile objects'] = array();
+        $stdoutarray['securityProfile File-Blocking objects'] = array();
         $stdoutarray['securityProfile File-Blocking objects']['All'] = $container_all->FileBlockingProfileStore->count();
         $stdoutarray['securityProfile File-Blocking objects']['total_DGs'] = $gnsecprofFB;
 
 
-        $stdoutarray['securityProfile objects'] = array();
+        $stdoutarray['securityProfile Decryption objects'] = array();
         $stdoutarray['securityProfile Decryption objects']['All'] = $container_all->DecryptionProfileStore->count();
         $stdoutarray['securityProfile Decryption objects']['total_DGs'] = $gnsecprofDecr;
 
@@ -899,6 +903,7 @@ class FawkesConf
         $stdoutarray['sub-interfaces']['ethernet'] = $this->network->ethernetIfStore->countSubInterfaces();
         */
 
+        /*
         $return = array();
         $return['PanoramaConf-stat'] = $stdoutarray;
 
@@ -913,6 +918,45 @@ class FawkesConf
         }
 
         return null;
+        */
+
+        if( !PH::$shadow_json && $actions == "display"  )
+            PH::print_stdout( $stdoutarray, true );
+
+        $this->sizeArray['type'] = get_class( $this );
+        $this->sizeArray['statstype'] = "objects";
+        $this->sizeArray['header'] = $header;
+        $this->sizeArray['kb Panorama'] = DH::dom_get_config_size($this->xmlroot);
+        #$this->sizeArray['kb security rules'] = $size_securityRules;
+        #$this->sizeArray['kb address objects'] = $size_addressStore;
+        #$this->sizeArray['kb service objects'] = $size_serviceStore;
+        #$this->sizeArray['kb tag objects'] = $size_tagStore;
+        #$this->sizeArray['kb custom URL objects'] = $size_customURLProfileStore;
+
+        if( !PH::$shadow_json && $actions == "display-size"  )
+        {
+            PH::stats_remove_zero_arrays($this->sizeArray);
+            PH::print_stdout( $this->sizeArray, true );
+        }
+
+        if( $actions == "display-available" )
+        {
+            PH::stats_remove_zero_arrays($stdoutarray);
+            if( !PH::$shadow_json )
+                PH::print_stdout( $stdoutarray, true );
+        }
+
+        if( $actions == "display" || $actions == "display-available" )
+            PH::$JSON_TMP[] = $stdoutarray;
+
+
+        if( !PH::$shadow_loaddghierarchy )
+            $this->display_bp_statistics( $debug, $actions );
+        else
+            $this->display_bp_statistics( $debug, $actions, $location );
+
+        #if( !PH::$shadow_loaddghierarchy )
+        #    $this->display_shared_statistics( $connector, $debug, $actions );
     }
 
     public function display_bp_statistics( $debug = false )

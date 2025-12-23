@@ -1176,7 +1176,7 @@ class UTIL
                 if( isset(PH::$args['out']) && file_exists($this->configOutput) )
                     $fawkes_filename = $this->configOutput;
                 else
-                    $fawkes_filename = dirname(__FILE__)."/../develop/fawkes_baseconfig.xml";
+                    $fawkes_filename = dirname(__FILE__)."/../develop/buckbeak_baseconfig.xml";
 
                 $this->configType = 'buckbeak';
                 $this->pan = new BuckbeakConf();
@@ -2293,7 +2293,7 @@ class UTIL
     {
         if( isset(PH::$args['stats']) )
         {
-            /** @var PANConf|PanoramaConf|FawkesConf $pan */
+            /** @var PANConf|PanoramaConf|VirtualSystem|DeviceGroup|FawkesConf|BuckbeakConf|Container|DeviceCloud|Snippet $pan */
             $pan = $this->pan;
 
             $mainConnector = null;

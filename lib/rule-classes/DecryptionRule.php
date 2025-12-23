@@ -160,7 +160,7 @@ class DecryptionRule extends RuleWithUserID
                 $tmp_decryptprofie_obj->addReference($this);
             else
             {
-                if( $this->_profile !== "default" )
+                if( $this->_profile !== "default" || $this->_profile !== "best-practice-ssl-decryption")
                     mwarning("decryption profile ".$this->_profile." not found\n",null, false);
             }
         }

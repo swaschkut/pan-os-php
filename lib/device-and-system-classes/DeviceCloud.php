@@ -213,6 +213,8 @@ class DeviceCloud
 
     public $attachedSnippets = array();
 
+    public $sizeArray = array();
+
     /** @var FawkesConf|Buckbeak|null $owner */
     public function __construct( $owner, Container|null $applicableDG = null)
     {
@@ -998,13 +1000,13 @@ class DeviceCloud
         return TRUE;
     }
 
-    public function display_statistics()
+    public function display_statistics( $debug = false, $actions = "display")
     {
         $stdoutarray = array();
 
         $stdoutarray['type'] = get_class( $this );
 
-        $header = "Statistics for VSYS '" . PH::boldText($this->name) . "' | '" . $this->toString() . "'";
+        $header = "Statistics for DeviceCloud '" . PH::boldText($this->name) . "' | '" . $this->toString() . "'";
         $stdoutarray['header'] = $header;
 
         $stdoutarray['security rules'] = $this->securityRules->count();
@@ -1111,7 +1113,78 @@ class DeviceCloud
         $stdoutarray['apps'] = $this->appStore->count();
 
 
-        PH::print_stdout( $stdoutarray, true );
+        $this->sizeArray['type'] = get_class( $this );
+        $this->sizeArray['statstype'] = "objects";
+        $this->sizeArray['header'] = $header;
+        $this->sizeArray['kb Container'] = &DH::dom_get_config_size($this->xmlroot);
+        $this->sizeArray['kb security rules'] = &DH::dom_get_config_size($this->securityRules->xmlroot);
+        $this->sizeArray['kb nat rules'] = &DH::dom_get_config_size($this->natRules->xmlroot);
+        $this->sizeArray['kb qos rules'] = &DH::dom_get_config_size($this->qosRules->xmlroot);
+        $this->sizeArray['kb pbf rules'] = &DH::dom_get_config_size($this->pbfRules->xmlroot);
+        $this->sizeArray['kb decrypt rules'] = &DH::dom_get_config_size($this->decryptionRules->xmlroot);
+        $this->sizeArray['kb app-override rules'] = &DH::dom_get_config_size($this->appOverrideRules->xmlroot);
+        $this->sizeArray['kb captive-portal rules'] = &DH::dom_get_config_size($this->captivePortalRules->xmlroot);
+        $this->sizeArray['kb authentication rules'] = &DH::dom_get_config_size($this->authenticationRules->xmlroot);
+        $this->sizeArray['kb dos rules'] = &DH::dom_get_config_size($this->dosRules->xmlroot);
+        $this->sizeArray['kb tunnel-inspection rules'] = &DH::dom_get_config_size($this->tunnelInspectionRules->xmlroot);
+        #$this->sizeArray['kb default-security rules'] = &DH::dom_get_config_size($this->defaultSecurityRules->xmlroot);
+        $this->sizeArray['kb network-packet-broker rules'] = &DH::dom_get_config_size($this->networkPacketBrokerRules->xmlroot);
+        $this->sizeArray['kb sdwan rules'] = &DH::dom_get_config_size($this->sdWanRules->xmlroot);
+
+        $tmp_adr = &DH::dom_get_config_size($this->addressStore->addressRoot);
+        $tmp_adrgrp = &DH::dom_get_config_size($this->addressStore->addressGroupRoot);
+        $tmp_region = &DH::dom_get_config_size($this->addressStore->regionRoot);
+        $this->sizeArray['kb address objects '] = $tmp_adr+$tmp_adrgrp+$tmp_region;
+        $tmp_srv = &DH::dom_get_config_size($this->serviceStore->serviceRoot);
+        $tmp_srvgrp = &DH::dom_get_config_size($this->serviceStore->serviceGroupRoot);
+        $this->sizeArray['kb address objects '] = $tmp_srv+$tmp_srvgrp;
+        $this->sizeArray['kb tag objects'] = &DH::dom_get_config_size($this->tagStore->xmlroot);
+
+        $this->sizeArray['kb securityProfileGroup objects'] = &DH::dom_get_config_size($this->securityProfileGroupStore->xmlroot);
+
+        $this->sizeArray['kb Anti-Spyware objects'] = &DH::dom_get_config_size($this->AntiSpywareProfileStore->xmlroot);
+        $this->sizeArray['kb Vulnerability objects'] = &DH::dom_get_config_size($this->VulnerabilityProfileStore->xmlroot);
+        $this->sizeArray['kb Wildfire and Antivirus objects'] = &DH::dom_get_config_size($this->VirusAndWildfireProfileStore->xmlroot);
+        #$this->sizeArray['kb Wildfire objects'] = &DH::dom_get_config_size($this->WildfireProfileStore->xmlroot);
+        $this->sizeArray['kb URL objects'] = &DH::dom_get_config_size($this->URLProfileStore->xmlroot);
+        $this->sizeArray['kb custom URL objects'] = &DH::dom_get_config_size($this->customURLProfileStore->xmlroot);
+        $this->sizeArray['kb File-Blocking objects'] = &DH::dom_get_config_size($this->FileBlockingProfileStore->xmlroot);
+
+        $this->sizeArray['kb Decryption objects'] = &DH::dom_get_config_size($this->DecryptionProfileStore->xmlroot);
+        $this->sizeArray['kb HipObject objects'] = &DH::dom_get_config_size($this->HipObjectsProfileStore->xmlroot);
+        $this->sizeArray['kb HipProfile objects'] = &DH::dom_get_config_size($this->HipProfilesProfileStore->xmlroot);
+        #$this->sizeArray['kb GTP objects'] = &DH::dom_get_config_size($this->GTPProfileStore->xmlroot);
+        #$this->sizeArray['kb SCEP objects'] = &DH::dom_get_config_size($this->SCEPProfileStore->xmlroot);
+        #$this->sizeArray['kb PacketBroker objects'] = &DH::dom_get_config_size($this->PacketBrokerProfileStore->xmlroot);
+        #$this->sizeArray['kb SDWanErrorCorrection objects'] = &DH::dom_get_config_size($this->tagStore->xmlroot);
+        #$this->sizeArray['kb SDWanPathQuality objects'] = &DH::dom_get_config_size($this->SDWanPathQualityProfileStore->xmlroot);
+        #$this->sizeArray['kb SDWanSaasQuality objects'] = &DH::dom_get_config_size($this->SDWanSaasQualityProfileStore->xmlroot);
+        #$this->sizeArray['kb SDWanTrafficDistribution objects'] = &DH::dom_get_config_size($this->SDWanTrafficDistributionProfileStore->xmlroot);
+        #$this->sizeArray['kb DataObjects objects'] = &DH::dom_get_config_size($this->DataObjectsProfileStore->xmlroot);
+        #$this->sizeArray['kb LogProfile objects'] = &DH::dom_get_config_size($this->LogProfileStore->xmlroot);
+
+
+
+        if( !PH::$shadow_json && $actions == "display"  )
+            PH::print_stdout( $stdoutarray, true );
+
+        if( !PH::$shadow_json && $actions == "display-size"  )
+        {
+            PH::stats_remove_zero_arrays($this->sizeArray);
+            PH::print_stdout( $this->sizeArray, true );
+        }
+
+        if( $actions == "display-available" )
+        {
+            PH::stats_remove_zero_arrays($stdoutarray);
+            if( !PH::$shadow_json )
+                PH::print_stdout( $stdoutarray, true );
+        }
+
+        PH::$JSON_TMP[] = $stdoutarray;
+
+
+        $this->display_bp_statistics( $debug, $actions );
 
     }
 

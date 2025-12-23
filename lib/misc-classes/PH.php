@@ -941,7 +941,7 @@ class PH
 
     /**
      * @param $panConfObject
-     * @return PANConf|PanoramaConf|DeviceGroup|VirtualSystem|FawkesConf|Container
+     * @return PANConf|PanoramaConf|DeviceGroup|VirtualSystem|FawkesConf|BuckbeakConf|Container
      * @throws Exception
      */
     public static function findLocationObjectOrDie($panConfObject)
@@ -965,7 +965,7 @@ class PH
 
     /**
      * @param $panConfObject
-     * @return PANConf|PanoramaConf|DeviceGroup|VirtualSystem|FawkesConf|Container
+     * @return PANConf|PanoramaConf|DeviceGroup|VirtualSystem|FawkesConf|BuckbeakConf|Container
      * @throws Exception
      */
     public static function findLocationObject($panConfObject)
@@ -991,7 +991,7 @@ class PH
      */
     public static function getLocationString($panConfObject)
     {
-        /** @var PANConf|PanoramaConf|DeviceGroup|VirtualSystem|FawkesConf|Container $panConfObject */
+        /** @var PANConf|PanoramaConf|DeviceGroup|VirtualSystem|FawkesConf|BuckbeakConf|Container $panConfObject */
         while( TRUE )
         {
             $class = get_class($panConfObject);

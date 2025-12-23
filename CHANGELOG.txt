@@ -4,6 +4,7 @@ CHANGELOG
 UTIL:
 * in=scm-api://{TSG-ID} | extend/validate if offline file is already available - bring rules back to working mode in same way as in=sase-api://
 * in=scm-api:// | extend with securityprofiles and securityprofilegroups - final implementation needed
+* type=stats actions=display-available | extend for fawkes/buckbeakconf - in=sase-api:// - in=scm-api://
 
 BUGFIX:
 

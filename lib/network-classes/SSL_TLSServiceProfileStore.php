@@ -37,7 +37,7 @@ class SSL_TLSServiceProfileStore extends ObjStore
     public static $childn = 'SSL_TLSServiceProfile';
 
     /**
-     * @param VirtualSystem|DeviceCloud|DeviceGroup|PanoramaConf|PANConf|Container|FawkesConf|Template $owner
+     * @param VirtualSystem|DeviceCloud|DeviceGroup|PanoramaConf|PANConf|Container|FawkesConf|BuckbeakConf|Template $owner
      */
     public function __construct($owner)
     {

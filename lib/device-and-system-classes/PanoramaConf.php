@@ -1828,7 +1828,7 @@ class PanoramaConf
     }
 
 
-    public function display_statistics( $connector = null, $debug = false, $actions = "display", $location = false )
+    public function display_statistics( $connector = null, $debug = false, $actions = "display", $location = false ): void
     {
         //Todo: swaschkut 20251017 template / template-stack missing
 
