@@ -465,6 +465,24 @@ class PanSCMAPIConnector
         elseif( $utilType == "custom" )
         {
         }
+        elseif( $utilType == "securityprofile" )
+        {
+            $this->typeArray[] = "anti-spyware-profiles";
+            $this->typeArray[] = "dns-security-profiles";
+            $this->typeArray[] = "file-blocking-profiles";
+            $this->typeArray[] = "saas-security-profiles";
+            $this->typeArray[] = "url-access-profiles";
+            $this->typeArray[] = "wildfire-anti-virus-profiles";
+            $this->typeArray[] = "vulnerability-protection-profiles";
+
+            //Todo: missing:
+            //ai-security-profiles
+            //header-insertion-profiles
+        }
+        elseif( $utilType == "securityprofilegroup" )
+        {
+            $this->typeArray[] = "profile-groups";
+        }
         else
         {
             derr("PAN-OS-PHP connection method 'scm-api://' - do not yet support this UTIL type: '" . $utilType . "'", null, FALSE);
@@ -518,6 +536,31 @@ class PanSCMAPIConnector
             return "application-groups";
 
 
+        elseif( get_class($object) == "AntiSpywareProfile" )
+            return "anti-spyware-profiles";
+        elseif( get_class($object) == "DNSSecurityProfile" )
+            return "dns-security-profiles";
+        elseif( get_class($object) == "FileBlockingProfile" )
+            return "file-blocking-profiles";
+        elseif( get_class($object) == "SaasSecurityProfile" )
+            return "saas-security-profiles";
+        elseif( get_class($object) == "URLProfile" )
+            return "url-access-profiles";
+        elseif( get_class($object) == "VirusAndWildfireProfile" )
+            return "wildfire-anti-virus-profiles";
+        elseif( get_class($object) == "VulnerabilityProfile" )
+            return "vulnerability-protection-profiles";
+        //Todo: implementation needed
+        elseif( get_class($object) == "AISecurityProfile" )
+            return "ai-security-profiles";
+        //Todo: Header insertion profile - implementation needed
+
+        elseif( get_class($object) == "SecurityProfileGroup" )
+            return "profile-groups";
+        #elseif( get_class($object) == "SecurityProfileGroup" )
+
+
+
         #"hip-objects",
         #"hip-profiles",
 
@@ -542,7 +585,7 @@ class PanSCMAPIConnector
         //Fawkes
         #$url .= "/sse/config/v1/" . $type . "?folder=" . $folder;
         //Buckbeak
-        if( strpos( $type, "-rules") !== FALSE )
+        if( strpos( $type, "-rules") !== FALSE || strpos( $type, "-profiles") !== FALSE || strpos( $type, "profile-groups") !== FALSE )
             $url .= "/config/security/v1/" . $type . "?".$foldertype."=" . $folderName;
         else
             $url .= "/config/objects/v1/" . $type . "?".$foldertype."=" . $folderName;
@@ -1185,6 +1228,121 @@ class PanSCMAPIConnector
                 if( isset($object['id']) )
                     $tmp_rule->setSaseID( $object['id'] );
             }
+
+            //Todo: specify profiles import
+            elseif( $type === "anti-spyware-profiles" )
+            {
+                if( isset( $object['id'] ) )
+                {
+                    $tmp_spyware = $sub->AntiSpywareProfileStore->find($object['name']);
+                    if ($tmp_spyware !== null)
+                        continue;
+
+                    $tmp_spyware = $sub->AntiSpywareProfileStore->findOrCreate($object['name']);
+                }
+                PH::print_stdout($type . " - not finalised");
+            }
+            elseif( $type === "dns-security-profiles" )
+            {
+                if( isset( $object['id'] ) )
+                {
+                    $tmp_file_blocking = $sub->DNSSecurityProfileStore->find($object['name']);
+                    if ($tmp_file_blocking !== null)
+                        continue;
+
+                    $tmp_file_blocking = $sub->FileBlockingProfileStore->findOrCreate($object['name']);
+                }
+                PH::print_stdout($type . " - not finalised");
+            }
+            elseif( $type === "file-blocking-profiles" )
+            {
+                if( isset( $object['id'] ) )
+                {
+                    $tmp_file_blocking = $sub->FileBlockingProfileStore->find($object['name']);
+                    if ($tmp_file_blocking !== null)
+                        continue;
+
+                    $tmp_file_blocking = $sub->FileBlockingProfileStore->findOrCreate($object['name']);
+                }
+                PH::print_stdout($type . " - not finalised");
+            }
+            elseif( $type === "saas-security-profiles" )
+            {
+                //Todo: not yet
+                if( isset( $object['id'] ) )
+                {
+                    $tmp_saas_security = $sub->SaasSecurityProfileStore->find($object['name']);
+                    if ($tmp_saas_security !== null)
+                        continue;
+
+                    $tmp_saas_security = $sub->SaasSecurityProfileStore->findOrCreate($object['name']);
+                }
+                PH::print_stdout($type . " - not finalised");
+            }
+            elseif( $type === "vulnerability-protection-profiles" )
+            {
+                if( isset( $object['id'] ) )
+                {
+                    $tmp_vulnerability = $sub->VulnerabilityProfileStore->find($object['name']);
+                    if ($tmp_vulnerability !== null)
+                        continue;
+
+                    $tmp_vulnerability = $sub->VulnerabilityProfileStore->findOrCreate($object['name']);
+                }
+                PH::print_stdout($type . " - not finalised");
+            }
+            elseif( $type === "wildfire-anti-virus-profiles" )
+            {
+                if( isset( $object['id'] ) )
+                {
+                    $tmp_virus_wildfire = $sub->VirusAndWildfireProfileStore->find($object['name']);
+                    if ($tmp_virus_wildfire !== null)
+                        continue;
+
+                    $tmp_virus_wildfire = $sub->VirusAndWildfireProfileStore->findOrCreate($object['name']);
+                }
+                PH::print_stdout($type . " - not finalised");
+            }
+            elseif( $type === "ai-security-profiles" )
+            {
+                if( isset( $object['id'] ) )
+                {
+                    #$tmp_ai_security = $sub->VirusAndWildfireProfileStore->find($object['name']);
+                    #if ($tmp_ai_security !== null)
+                    #    continue;
+
+                    #$tmp_ai_security = $sub->VirusAndWildfireProfileStore->findOrCreate($object['name']);
+                }
+                PH::print_stdout($type . " - not finalised");
+            }
+            //Todo: missing http-header-profiles
+
+            //Todo: specify profile-groups import
+            elseif( $type === "profile-groups" )
+            {
+                /*
+                Anti-Spyware Profile
+                Vulnerability Protection Profile
+                URL Access Management Profile
+                File Blocking Profile
+                WildFire and Antivirus Profile
+                DNS Security Profile
+
+                HTTP Header Insertion Profile
+                AI Security Profile
+                 */
+                if( isset( $object['id'] ) )
+                {
+                    $tmp_spg = $sub->securityProfileGroupStore->find($object['name']);
+                    if ($tmp_spg !== null)
+                        continue;
+
+                    $tmp_spg = $sub->securityProfileGroupStore->findOrCreate($object['name']);
+                }
+                PH::print_stdout($type . " - not finalised");
+            }
+
+
             else
             {
                 PH::print_stdout($type . " - 2 not implemented yet");
