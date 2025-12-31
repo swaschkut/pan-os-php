@@ -345,58 +345,84 @@ class PanSCMAPIConnector
         $this->typeArray = array();
         if( $utilType == "address" )
         {
-            #$this->typeArray[] = "tags";
+            $this->typeArray[] = "tags";
+
             $this->typeArray[] = "addresses";
-            #$this->typeArray[] = "address-groups";
-            #$this->typeArray[] = "regions";
-            #$this->typeArray[] = "security-rules";
+            $this->typeArray[] = "address-groups";
+            $this->typeArray[] = "regions";
+
+            $this->typeArray[] = "security-rules";
         }
         elseif( $utilType == "address-merger" )
         {
             $this->typeArray[] = "tags";
+
             $this->typeArray[] = "addresses";
             $this->typeArray[] = "address-groups";
             $this->typeArray[] = "regions";
+
             $this->typeArray[] = "security-rules";
         }
         elseif( $utilType == "addressgroup-merger" )
         {
             $this->typeArray[] = "tags";
+
             $this->typeArray[] = "addresses";
             $this->typeArray[] = "address-groups";
             $this->typeArray[] = "regions";
+
             $this->typeArray[] = "security-rules";
         }
         elseif( $utilType == "service" )
         {
             $this->typeArray[] = "tags";
+
             $this->typeArray[] = "services";
             $this->typeArray[] = "service-groups";
+
             $this->typeArray[] = "security-rules";
         }
         elseif( $utilType == "service-merger" )
         {
             $this->typeArray[] = "tags";
+
             $this->typeArray[] = "services";
             $this->typeArray[] = "service-groups";
+
             $this->typeArray[] = "security-rules";
         }
         elseif( $utilType == "servicegroup-merger" )
         {
             $this->typeArray[] = "tags";
+
             $this->typeArray[] = "services";
             $this->typeArray[] = "service-groups";
+
             $this->typeArray[] = "security-rules";
         }
         elseif( $utilType == "rule" )
         {
             $this->typeArray[] = "tags";
+
             $this->typeArray[] = "addresses";
             $this->typeArray[] = "address-groups";
             $this->typeArray[] = "regions";
 
             $this->typeArray[] = "services";
             $this->typeArray[] = "service-groups";
+
+
+            $this->typeArray[] = "anti-spyware-profiles";
+            $this->typeArray[] = "dns-security-profiles";
+            $this->typeArray[] = "file-blocking-profiles";
+            $this->typeArray[] = "saas-security-profiles";
+            $this->typeArray[] = "url-access-profiles";
+            $this->typeArray[] = "wildfire-anti-virus-profiles";
+            $this->typeArray[] = "vulnerability-protection-profiles";
+
+            $this->typeArray[] = "profile-groups";
+
+
             $this->typeArray[] = "security-rules";
             #$this->typeArray[] = "authentication-rules"; //problems reading config also in Shared
             #$this->typeArray[] = "qos-policy-rules"; // Access denied
@@ -406,17 +432,20 @@ class PanSCMAPIConnector
         elseif( $utilType == "tag" )
         {
             $this->typeArray[] = "tags";
+
             $this->typeArray[] = "addresses";
             $this->typeArray[] = "address-groups";
             $this->typeArray[] = "regions";
 
             $this->typeArray[] = "services";
             $this->typeArray[] = "service-groups";
+
             $this->typeArray[] = "security-rules";
         }
         elseif( $utilType == "tag-merger" )
         {
             $this->typeArray[] = "tags";
+
             $this->typeArray[] = "addresses";
             $this->typeArray[] = "address-groups";
             $this->typeArray[] = "regions";
@@ -443,6 +472,17 @@ class PanSCMAPIConnector
 
             $this->typeArray[] = "services";
             $this->typeArray[] = "service-groups";
+
+            $this->typeArray[] = "anti-spyware-profiles";
+            $this->typeArray[] = "dns-security-profiles";
+            $this->typeArray[] = "file-blocking-profiles";
+            $this->typeArray[] = "saas-security-profiles";
+            $this->typeArray[] = "url-access-profiles";
+            $this->typeArray[] = "wildfire-anti-virus-profiles";
+            $this->typeArray[] = "vulnerability-protection-profiles";
+
+            $this->typeArray[] = "profile-groups";
+
 
             $this->typeArray[] = "security-rules";
             #$this->typeArray[] = "authentication-rules"; //problems reading config also in Shared
@@ -486,6 +526,7 @@ class PanSCMAPIConnector
         elseif( $utilType == "stats" )
         {
             $this->typeArray[] = "tags";
+
             $this->typeArray[] = "addresses";
             $this->typeArray[] = "address-groups";
             $this->typeArray[] = "regions";
@@ -1273,120 +1314,59 @@ class PanSCMAPIConnector
             //Todo: specify profiles import
             elseif( $type === "anti-spyware-profiles" )
             {
-                if( isset( $object['id'] ) )
-                {
-                    $tmp_spyware = $sub->AntiSpywareProfileStore->find($object['name']);
-                    if ($tmp_spyware !== null)
-                        continue;
+                $profileStoreName = "AntiSpywareProfileStore";
+                $return = $this->SCM_API_object_import_preperation($object, $sub, $profileStoreName);
 
-
-                    $dom = null;
-                    $rootEntry = null;
-                    $this->SCM_API_prepareMethodForImport( $object, $dom, $rootEntry );
-
-                    // Start the conversion
-                    $this->SCM_API_arrayToXml($dom, $rootEntry, $object);
-
-                    mwarning("I am here 1");
-                    $this->SCM_API_object_import($dom, $sub, 'AntiSpywareProfileStore');
-                }
+                if( $return === "continue" )
+                    continue;
             }
             elseif( $type === "dns-security-profiles" )
             {
-                if( isset( $object['id'] ) )
-                {
-                    $tmp_dns_security = $sub->DNSSecurityProfileStore->find($object['name']);
-                    if ($tmp_dns_security !== null)
-                        continue;
+                $profileStoreName = "DNSSecurityProfileStore";
+                $return = $this->SCM_API_object_import_preperation($object, $sub, $profileStoreName);
 
-
-                    $dom = null;
-                    $rootEntry = null;
-                    $this->SCM_API_prepareMethodForImport( $object, $dom, $rootEntry );
-
-                    // Start the conversion
-                    $this->SCM_API_arrayToXml($dom, $rootEntry, $object);
-
-
-                    $this->SCM_API_object_import($dom, $sub, 'DNSSecurityProfileStore');
-                }
+                if( $return === "continue" )
+                    continue;
             }
             elseif( $type === "file-blocking-profiles" )
             {
-                if( isset( $object['id'] ) )
-                {
-                    $tmp_file_blocking = $sub->FileBlockingProfileStore->find($object['name']);
-                    if ($tmp_file_blocking !== null)
-                        continue;
+                $profileStoreName = "FileBlockingProfileStore";
+                $return = $this->SCM_API_object_import_preperation($object, $sub, $profileStoreName);
 
-
-                    $dom = null;
-                    $rootEntry = null;
-                    $this->SCM_API_prepareMethodForImport( $object, $dom, $rootEntry );
-
-                    // Start the conversion
-                    $this->SCM_API_arrayToXml($dom, $rootEntry, $object);
-
-                    $this->SCM_API_object_import($dom, $sub, 'FileBlockingProfileStore');
-                }
+                if( $return === "continue" )
+                    continue;
             }
             elseif( $type === "saas-security-profiles" )
             {
-                //Todo: not yet
-                if( isset( $object['id'] ) )
-                {
-                    $tmp_saas_security = $sub->SaasSecurityProfileStore->find($object['name']);
-                    if ($tmp_saas_security !== null)
-                        continue;
+                $profileStoreName = "SaasSecurityProfileStore";
+                $return = $this->SCM_API_object_import_preperation($object, $sub, $profileStoreName);
 
-
-                    $dom = null;
-                    $rootEntry = null;
-                    $this->SCM_API_prepareMethodForImport( $object, $dom, $rootEntry );
-
-                    // Start the conversion
-                    $this->SCM_API_arrayToXml($dom, $rootEntry, $object);
-
-                    $this->SCM_API_object_import($dom, $sub, 'SaasSecurityProfileStore');
-                }
+                if( $return === "continue" )
+                    continue;
             }
             elseif( $type === "vulnerability-protection-profiles" )
             {
-                if( isset( $object['id'] ) )
-                {
-                    $tmp_vulnerability = $sub->VulnerabilityProfileStore->find($object['name']);
-                    if ($tmp_vulnerability !== null)
-                        continue;
+                $profileStoreName = "VulnerabilityProfileStore";
+                $return = $this->SCM_API_object_import_preperation($object, $sub, $profileStoreName);
 
-
-                    $dom = null;
-                    $rootEntry = null;
-                    $this->SCM_API_prepareMethodForImport( $object, $dom, $rootEntry );
-
-                    // Start the conversion
-                    $this->SCM_API_arrayToXml($dom, $rootEntry, $object);
-
-                    $this->SCM_API_object_import($dom, $sub, 'VulnerabilityProfileStore');
-                }
+                if( $return === "continue" )
+                    continue;
             }
             elseif( $type === "wildfire-anti-virus-profiles" )
             {
-                if( isset( $object['id'] ) )
-                {
-                    $tmp_virus_wildfire = $sub->VirusAndWildfireProfileStore->find($object['name']);
-                    if ($tmp_virus_wildfire !== null)
-                        continue;
+                $profileStoreName = "VirusAndWildfireProfileStore";
+                $return = $this->SCM_API_object_import_preperation($object, $sub, $profileStoreName);
 
+                if( $return === "continue" )
+                    continue;
+            }
+            elseif( $type === "url-access-profiles" )
+            {
+                $profileStoreName = "URLProfileStore";
+                $return = $this->SCM_API_object_import_preperation($object, $sub, $profileStoreName);
 
-                    $dom = null;
-                    $rootEntry = null;
-                    $this->SCM_API_prepareMethodForImport( $object, $dom, $rootEntry );
-
-                    // Start the conversion
-                    $this->SCM_API_arrayToXml($dom, $rootEntry, $object);
-
-                    $this->SCM_API_object_import($dom, $sub, 'VirusAndWildfireProfileStore');
-                }
+                if( $return === "continue" )
+                    continue;
             }
             elseif( $type === "ai-security-profiles" )
             {
@@ -1406,27 +1386,11 @@ class PanSCMAPIConnector
             //Todo: specify profile-groups import
             elseif( $type === "profile-groups" )
             {
-                /*
-                Anti-Spyware Profile
-                Vulnerability Protection Profile
-                URL Access Management Profile
-                File Blocking Profile
-                WildFire and Antivirus Profile
-                DNS Security Profile
+                $profileStoreName = "securityProfileGroupStore";
+                $return = $this->SCM_API_object_import_preperation($object, $sub, $profileStoreName);
 
-                HTTP Header Insertion Profile
-                AI Security Profile
-                 */
-                if( isset( $object['id'] ) )
-                {
-                    $tmp_spg = $sub->securityProfileGroupStore->find($object['name']);
-                    if ($tmp_spg !== null)
-                        continue;
-
-                    $tmp_spg = $sub->securityProfileGroupStore->findOrCreate($object['name']);
-                }
-                PH::print_stdout($type . " - not finalised");
-                print_r( $object );
+                if( $return === "continue" )
+                    continue;
             }
 
 
@@ -1776,16 +1740,31 @@ class PanSCMAPIConnector
             $entry->setAttribute( 'uuid', $data['id'] );
     }
 
-    private function SCM_API_object_import($dom, $sub, $storeType)
+    private function SCM_API_object_import_preperation($object, $sub, $profileStoreName)
     {
-        $dom2 = new DOMDocument('1.0', 'utf-8');
-        $dom2->formatOutput = true;
+        if( isset( $object['id'] ) )
+        {
+            $tmp_url = $sub->$profileStoreName->find($object['name']);
+            if ($tmp_url !== null)
+                return "continue";
 
-        $rootEntry1 = $dom2->createElement('profiles');
-        $dom2->appendChild($rootEntry1);
-        $rootEntry1->appendChild($dom2->importNode($dom->firstChild, true));
 
+            $dom = null;
+            $rootEntry = null;
+            $this->SCM_API_prepareMethodForImport( $object, $dom, $rootEntry );
 
+            // Start the conversion
+            $this->SCM_API_arrayToXml($dom, $rootEntry, $object);
+
+            $this->SCM_API_SP_object_import($dom, $sub, $profileStoreName);
+
+            return true;
+        }
+
+        return false;
+    }
+    private function SCM_API_SP_object_import($dom, $sub, $storeType)
+    {
         if( $sub->$storeType->xmlroot == null)
         {
             if( $sub->$storeType->xmlroot == null)
@@ -1795,8 +1774,6 @@ class PanSCMAPIConnector
         $ownerDocument = $sub->$storeType->xmlroot->ownerDocument;
         $tmpNode = $ownerDocument->importNode($dom->firstChild, true);
 
-        print "test import\n";
-        DH::DEBUGprintDOMDocument($dom->firstChild);
 
         if( $storeType == 'AntiSpywareProfileStore' )
             $newProf = new AntiSpywareProfile('dummy', $sub->$storeType);
@@ -1808,16 +1785,33 @@ class PanSCMAPIConnector
             $newProf = new VulnerabilityProfile('dummy', $sub->$storeType);
         elseif( $storeType == 'VirusAndWildfireProfileStore' )
             $newProf = new VirusAndWildfireProfile('dummy', $sub->$storeType);
-        else
-        {
-            derr("implemenation needed");
-        }
+        elseif( $storeType == 'URLProfileStore' )
+            $newProf = new URLProfile('dummy', $sub->$storeType);
 
-        $newProf->load_from_domxml($dom->firstChild);
+
+        elseif( $storeType == 'securityProfileGroupStore' )
+            $newProf = new SecurityProfileGroup('dummy', $sub->$storeType);
+
+        else
+            derr("implementation needed");
+
 
         /** @var DeviceGroup $sub */
-        $newProf->owner = null;
-        $sub->AntiSpywareProfileStore->addSecurityProfile($newProf);
+
+        if( get_class($newProf) == 'SecurityProfileGroup' )
+        {
+            $newProf->load_from_domxml($tmpNode, $sub->securityProfileGroupStore);
+
+            $newProf->owner = null;
+            $sub->securityProfileGroupStore->addSecurityProfileGroup($newProf);
+        }
+        else
+        {
+            $newProf->load_from_domxml($tmpNode);
+
+            $newProf->owner = null;
+            $sub->$storeType->addSecurityProfile($newProf);
+        }
     }
 
 }

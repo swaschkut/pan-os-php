@@ -7,6 +7,7 @@ UTIL:
 * type=stats actions=display-available | extend for fawkes/buckbeakconf - in=sase-api:// - in=scm-api://
 * type=stats actions=display-bpa | extend for fawkes/buckbeakconf - in=sase-api:// - in=scm-api://
 * type=stats | move functions from four classes into trait StatCollectorTrait.php - SCM related
+* in=scm-api:// - get securityprofile / securityprofilegroup working
 
 BUGFIX:
 
