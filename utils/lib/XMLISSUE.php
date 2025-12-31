@@ -200,7 +200,7 @@ class XMLISSUE extends UTIL
             $tmpNodes = DH::findXPath('/config/devices/entry/vsys/entry', $this->xmlDoc);
         elseif( $this->configType == 'panorama' )
             $tmpNodes = DH::findXPath('/config/devices/entry/device-group/entry', $this->xmlDoc);
-        elseif( $this->configType == 'fawkes' )
+        elseif( $this->configType == 'fawkes' || $this->configType == 'buckbeak' )
         {
             $search_array = array( '/config/devices/entry/container/entry','/config/devices/entry/device/cloud/entry' );
             $tmpNodes = DH::findXPath($search_array, $this->xmlDoc);

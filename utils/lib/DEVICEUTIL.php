@@ -90,7 +90,7 @@ class DEVICEUTIL extends UTIL
                 if( array_search('any', $this->deviceTypes) !== FALSE || array_search('manageddevice', $this->deviceTypes) !== FALSE )
                     $this->objectsToProcess[] = array('store' => $this->pan->managedFirewallsStore, 'objects' => $this->pan->managedFirewallsStore->getAll());
             }
-            elseif( $this->configType == 'fawkes' )
+            elseif( $this->configType == 'fawkes' || $this->configType == 'buckbeak' )
             {
                 if( array_search('any', $this->deviceTypes) !== FALSE || array_search('container', $this->deviceTypes) !== FALSE )
                     $this->objectsToProcess[] = array('store' => $this->pan, 'objects' => $this->pan->getContainers());
@@ -121,7 +121,7 @@ class DEVICEUTIL extends UTIL
                 $tmpType = 'vsys';
             elseif( $this->configType == 'panorama' )
                 $tmpType = 'devicegroup';
-            elseif( $this->configType == 'fawkes' )
+            elseif( $this->configType == 'fawkes' || $this->configType == 'buckbeak' )
                 $tmpType = 'container';
             PH::print_stdout( " - No 'deviceType' specified, using '".$tmpType."' by default" );
             $this->deviceTypes = array($tmpType);

@@ -1279,21 +1279,37 @@ class PanSCMAPIConnector
                     if ($tmp_spyware !== null)
                         continue;
 
-                    $tmp_spyware = $sub->AntiSpywareProfileStore->findOrCreate($object['name']);
+
+                    $dom = null;
+                    $rootEntry = null;
+                    $this->SCM_API_prepareMethodForImport( $object, $dom, $rootEntry );
+
+                    // Start the conversion
+                    $this->SCM_API_arrayToXml($dom, $rootEntry, $object);
+
+                    mwarning("I am here 1");
+                    $this->SCM_API_object_import($dom, $sub, 'AntiSpywareProfileStore');
                 }
-                PH::print_stdout($type . " - not finalised");
             }
             elseif( $type === "dns-security-profiles" )
             {
                 if( isset( $object['id'] ) )
                 {
-                    $tmp_file_blocking = $sub->DNSSecurityProfileStore->find($object['name']);
-                    if ($tmp_file_blocking !== null)
+                    $tmp_dns_security = $sub->DNSSecurityProfileStore->find($object['name']);
+                    if ($tmp_dns_security !== null)
                         continue;
 
-                    $tmp_file_blocking = $sub->FileBlockingProfileStore->findOrCreate($object['name']);
+
+                    $dom = null;
+                    $rootEntry = null;
+                    $this->SCM_API_prepareMethodForImport( $object, $dom, $rootEntry );
+
+                    // Start the conversion
+                    $this->SCM_API_arrayToXml($dom, $rootEntry, $object);
+
+
+                    $this->SCM_API_object_import($dom, $sub, 'DNSSecurityProfileStore');
                 }
-                PH::print_stdout($type . " - not finalised");
             }
             elseif( $type === "file-blocking-profiles" )
             {
@@ -1303,9 +1319,16 @@ class PanSCMAPIConnector
                     if ($tmp_file_blocking !== null)
                         continue;
 
-                    $tmp_file_blocking = $sub->FileBlockingProfileStore->findOrCreate($object['name']);
+
+                    $dom = null;
+                    $rootEntry = null;
+                    $this->SCM_API_prepareMethodForImport( $object, $dom, $rootEntry );
+
+                    // Start the conversion
+                    $this->SCM_API_arrayToXml($dom, $rootEntry, $object);
+
+                    $this->SCM_API_object_import($dom, $sub, 'FileBlockingProfileStore');
                 }
-                PH::print_stdout($type . " - not finalised");
             }
             elseif( $type === "saas-security-profiles" )
             {
@@ -1316,9 +1339,16 @@ class PanSCMAPIConnector
                     if ($tmp_saas_security !== null)
                         continue;
 
-                    $tmp_saas_security = $sub->SaasSecurityProfileStore->findOrCreate($object['name']);
+
+                    $dom = null;
+                    $rootEntry = null;
+                    $this->SCM_API_prepareMethodForImport( $object, $dom, $rootEntry );
+
+                    // Start the conversion
+                    $this->SCM_API_arrayToXml($dom, $rootEntry, $object);
+
+                    $this->SCM_API_object_import($dom, $sub, 'SaasSecurityProfileStore');
                 }
-                PH::print_stdout($type . " - not finalised");
             }
             elseif( $type === "vulnerability-protection-profiles" )
             {
@@ -1328,9 +1358,16 @@ class PanSCMAPIConnector
                     if ($tmp_vulnerability !== null)
                         continue;
 
-                    $tmp_vulnerability = $sub->VulnerabilityProfileStore->findOrCreate($object['name']);
+
+                    $dom = null;
+                    $rootEntry = null;
+                    $this->SCM_API_prepareMethodForImport( $object, $dom, $rootEntry );
+
+                    // Start the conversion
+                    $this->SCM_API_arrayToXml($dom, $rootEntry, $object);
+
+                    $this->SCM_API_object_import($dom, $sub, 'VulnerabilityProfileStore');
                 }
-                PH::print_stdout($type . " - not finalised");
             }
             elseif( $type === "wildfire-anti-virus-profiles" )
             {
@@ -1340,9 +1377,16 @@ class PanSCMAPIConnector
                     if ($tmp_virus_wildfire !== null)
                         continue;
 
-                    $tmp_virus_wildfire = $sub->VirusAndWildfireProfileStore->findOrCreate($object['name']);
+
+                    $dom = null;
+                    $rootEntry = null;
+                    $this->SCM_API_prepareMethodForImport( $object, $dom, $rootEntry );
+
+                    // Start the conversion
+                    $this->SCM_API_arrayToXml($dom, $rootEntry, $object);
+
+                    $this->SCM_API_object_import($dom, $sub, 'VirusAndWildfireProfileStore');
                 }
-                PH::print_stdout($type . " - not finalised");
             }
             elseif( $type === "ai-security-profiles" )
             {
@@ -1355,6 +1399,7 @@ class PanSCMAPIConnector
                     #$tmp_ai_security = $sub->VirusAndWildfireProfileStore->findOrCreate($object['name']);
                 }
                 PH::print_stdout($type . " - not finalised");
+                print_r( $object );
             }
             //Todo: missing http-header-profiles
 
@@ -1381,6 +1426,7 @@ class PanSCMAPIConnector
                     $tmp_spg = $sub->securityProfileGroupStore->findOrCreate($object['name']);
                 }
                 PH::print_stdout($type . " - not finalised");
+                print_r( $object );
             }
 
 
@@ -1656,4 +1702,122 @@ class PanSCMAPIConnector
         }
 
     }
+
+
+    private function SCM_API_arrayToXml($dom, $parentNode, $data)
+    {
+        foreach ($data as $key => $value)
+        {
+            // Skip metadata keys not needed in the final XML tags
+            if (in_array($key, ['id', 'name', 'folder', 'snippet', 'description']))
+                continue;
+
+            // Handle naming convention: convert underscores to dashes
+            $tagName = str_replace('_', '-', $key);
+
+            if( is_array($value) )
+            {
+                // Check if this is a list of entries (numeric keys)
+                if( isset($value[0]) && is_array($value[0]) )
+                {
+                    $container = $dom->createElement($tagName);
+                    $parentNode->appendChild($container);
+
+                    foreach ($value as $item)
+                    {
+                        $entry = $dom->createElement('entry');
+                        // If the item has a 'name', use it as an attribute
+                        if (isset($item['name']))
+                        {
+                            $entry->setAttribute('name', $item['name']);
+                            unset($item['name']); // Remove so it doesn't become a child tag
+                        }
+                        $container->appendChild($entry);
+                        $this->SCM_API_arrayToXml($dom, $entry, $item);
+                    }
+                }
+                else
+                {
+                    // Regular associative nested array
+                    $element = $dom->createElement($tagName);
+                    $parentNode->appendChild($element);
+                    $this->SCM_API_arrayToXml($dom, $element, $value);
+                }
+            }
+            else
+            {
+                // It's a flat value
+                // Custom logic for specific values like cloud-inline-analysis
+                if( $value == '1' || $value == '0' )
+                    $value = ($value == '1') ? 'yes' : 'no';
+
+                if( is_numeric($tagName) )
+                    $tagName = "member";
+
+                $element = $dom->createElement($tagName, htmlspecialchars($value));
+                $parentNode->appendChild($element);
+            }
+        }
+    }
+
+    private function SCM_API_prepareMethodForImport( $data, &$dom, &$rootEntry)
+    {
+        $dom = new DOMDocument('1.0', 'utf-8');
+        $dom->formatOutput = true;
+
+        // Create the root entry element
+        $rootEntry = $dom->createElement('entry');
+        $dom->appendChild($rootEntry);
+
+        $entry = $dom->firstChild;
+        if( isset($data['name'] ) )
+            $entry->setAttribute( 'name', $data['name'] );
+        if( isset($data['id'] ) )
+            $entry->setAttribute( 'uuid', $data['id'] );
+    }
+
+    private function SCM_API_object_import($dom, $sub, $storeType)
+    {
+        $dom2 = new DOMDocument('1.0', 'utf-8');
+        $dom2->formatOutput = true;
+
+        $rootEntry1 = $dom2->createElement('profiles');
+        $dom2->appendChild($rootEntry1);
+        $rootEntry1->appendChild($dom2->importNode($dom->firstChild, true));
+
+
+        if( $sub->$storeType->xmlroot == null)
+        {
+            if( $sub->$storeType->xmlroot == null)
+                $sub->$storeType->createXmlRoot();
+        }
+
+        $ownerDocument = $sub->$storeType->xmlroot->ownerDocument;
+        $tmpNode = $ownerDocument->importNode($dom->firstChild, true);
+
+        print "test import\n";
+        DH::DEBUGprintDOMDocument($dom->firstChild);
+
+        if( $storeType == 'AntiSpywareProfileStore' )
+            $newProf = new AntiSpywareProfile('dummy', $sub->$storeType);
+        elseif( $storeType == 'DNSSecurityProfileStore' )
+            $newProf = new DNSSecurityProfile('dummy', $sub->$storeType);
+        elseif( $storeType == 'FileBlockingProfileStore' )
+            $newProf = new FileBlockingProfile('dummy', $sub->$storeType);
+        elseif( $storeType == 'VulnerabilityProfileStore' )
+            $newProf = new VulnerabilityProfile('dummy', $sub->$storeType);
+        elseif( $storeType == 'VirusAndWildfireProfileStore' )
+            $newProf = new VirusAndWildfireProfile('dummy', $sub->$storeType);
+        else
+        {
+            derr("implemenation needed");
+        }
+
+        $newProf->load_from_domxml($dom->firstChild);
+
+        /** @var DeviceGroup $sub */
+        $newProf->owner = null;
+        $sub->AntiSpywareProfileStore->addSecurityProfile($newProf);
+    }
+
 }

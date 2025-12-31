@@ -276,7 +276,7 @@ class NETWORKUTIL extends UTIL
             {
                 if( $this->configType == 'panorama' )
                     $subGroups = $this->pan->getDeviceGroups();
-                elseif( $this->configType == 'fawkes' )
+                elseif( $this->configType == 'fawkes' || $this->configType == 'buckbeak' )
                 {
                     $subGroups = $this->pan->getContainers();
                     $subGroups2 = $this->pan->getDeviceClouds();
