@@ -237,9 +237,9 @@ class Container
         $this->tagStore->name = 'tags';
 
         //Todo: swaschkut 20210718 each Container should also have its own zoneStore???
-        $this->zoneStore = $owner->zoneStore;
-        #$this->zoneStore = new ZoneStore($this);
-        #$this->zoneStore->setName('zoneStore');
+        #$this->zoneStore = $owner->zoneStore;
+        $this->zoneStore = new ZoneStore($this);
+        $this->zoneStore->setName('zoneStore');
 
         $this->appStore = new AppStore($this);
         $this->appStore->name = 'customApplication';

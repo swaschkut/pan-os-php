@@ -546,6 +546,14 @@ class PanSCMAPIConnector
 
             $this->typeArray[] = "security-rules";
         }
+        elseif( $utilType == "zone" )
+        {
+            $this->typeArray[] = "zones";
+        }
+        elseif( $utilType == "zone-protection-profile" )
+        {
+            $this->typeArray[] = "zone-protection-profiles";
+        }
         else
         {
             derr("PAN-OS-PHP connection method 'scm-api://' - do not yet support this UTIL type: '" . $utilType . "'", null, FALSE);
@@ -620,9 +628,12 @@ class PanSCMAPIConnector
 
         elseif( get_class($object) == "SecurityProfileGroup" )
             return "profile-groups";
-        #elseif( get_class($object) == "SecurityProfileGroup" )
 
 
+        elseif( get_class($object) == "Zone" )
+            return "zones";
+        elseif( get_class($object) == "ZoneProtectionProfile" )
+            return "zone-protection-profiles";
 
         #"hip-objects",
         #"hip-profiles",
@@ -834,6 +845,88 @@ class PanSCMAPIConnector
         return $jsonArray;
     }
 
+    function getNetworkResource($access_token, $type = "zones", $foldertype = "folder", $folderName = "Shared", $limit = 200, $prePost = "pre", $offset = 0, $runtime = 1)
+    {
+        $this->getAccessToken();
+
+        $url = $this->url_api;
+        //Fawkes
+        #$url .= "/sse/config/v1/" . $type . "?folder=" . $folder;
+        //Buckbeak
+        $url .= "/config/network/v1/" . $type . "?".$foldertype."=" . $folderName;
+
+
+        $url .= "&limit=" . $this->global_limit;
+
+        if( $offset !== "" )
+            $url .= "&offset=" . $offset;
+
+        if( strpos($type, "-rule") !== FALSE )
+        {
+            $url .= "&position=" . $prePost;
+        }
+
+        $url = str_replace(' ', '%20', $url);
+
+        if( $this->showApiCalls )
+        {
+            PH::print_stdout($url);
+        }
+
+
+        $header = array("Authorization: Bearer {$this->access_token}");
+
+
+        $this->_createOrRenewCurl();
+
+        curl_setopt($this->_curl_handle, CURLOPT_URL, $url);
+        curl_setopt($this->_curl_handle, CURLOPT_HTTPHEADER, $header);
+        curl_setopt($this->_curl_handle, CURLOPT_SSL_VERIFYPEER, FALSE);
+        curl_setopt($this->_curl_handle, CURLOPT_RETURNTRANSFER, TRUE);
+
+        if( $this->showApiCalls )
+        {
+            if( PH::$displayCurlRequest )
+            {
+                curl_setopt($this->_curl_handle, CURLOPT_FOLLOWLOCATION, TRUE);
+                curl_setopt($this->_curl_handle, CURLOPT_VERBOSE, TRUE);
+            }
+        }
+
+
+        $response = curl_exec($this->_curl_handle);
+        if( $this->showApiCalls )
+        {
+            print $response . "\n";
+        }
+
+        $jsonArray = json_decode($response, TRUE);
+
+        if( isset($jsonArray['_errors']) )
+        {
+            print_r($jsonArray['_errors']);
+            derr($jsonArray['_errors'][0]['message'], null, FALSE);
+        }
+
+
+        if( $jsonArray !== null
+            && isset($jsonArray['total'])
+            && $jsonArray['total'] > ($this->global_limit - 1)
+            && $jsonArray['total'] > ($runtime * $this->global_limit)
+        )
+        {
+            $offset = $this->global_limit * $runtime;
+            $runtime++;
+            $resource = $this->getNetworkResource($access_token, $type, $foldertype, $folderName, $this->global_limit, $prePost, $offset, $runtime);
+
+            foreach( $resource['data'] as $data )
+                $jsonArray['data'][] = $data;
+        }
+
+
+        return $jsonArray;
+    }
+
     function getSCMapi( $url_config, $runtime = 1)
     {
         $this->getAccessToken();
@@ -898,6 +991,9 @@ class PanSCMAPIConnector
             if( $folder == "Service Connections" && strpos($type, "-rule") !== FALSE )
                 continue;
 
+            if( $folder == "Shared" && strpos($type, "zones") !== FALSE )
+                continue;
+
             $foldertype = "folder";
             if( get_class($sub) == "Container" )
                 $foldertype = "folder";
@@ -906,7 +1002,10 @@ class PanSCMAPIConnector
             elseif( get_class($sub) == "Snippet" )
                 $foldertype = "snippet";
 
-            $resource = $this->getResource($this->access_token, $type, $foldertype, $folder, $this->global_limit);
+            if( $utilType == "zone" || $utilType == "zone-protection-profile" )
+                $resource = $this->getNetworkResource($this->access_token, $type, $foldertype, $folder, $this->global_limit);
+            else
+                $resource = $this->getResource($this->access_token, $type, $foldertype, $folder, $this->global_limit);
 
             if( $resource !== null )
             {
@@ -1393,6 +1492,181 @@ class PanSCMAPIConnector
                     continue;
             }
 
+            elseif( $type == "zones" )
+            {
+                $profileStoreName = "zoneStore";
+
+                /*
+                {"data":[
+                    {"folder":"ngfw-shared","id":"181394de-35a4-4c7c-b5d6-f57ee89500f8",
+                        "name":"zone-internal",
+                        "network":{"layer3":[]},
+                        "snippet":"Auto-VPN-Default-Snippet"},
+                    {"folder":"ngfw-shared","id":"d2063142-06dd-427d-8e6a-d13264fbc1fd","name":"zone-to-hub","network":{"layer3":[]},"snippet":"Auto-VPN-Default-Snippet"},
+                    {"folder":"ngfw-shared","id":"045298e9-f2ed-478b-9c89-25d7c2bbf4e1","name":"zone-to-branch","network":{"layer3":[]},"snippet":"Auto-VPN-Default-Snippet"},
+                    {"folder":"ngfw-shared","id":"7cb6c686-39bc-4bc4-9051-6a13f48bcb4e","name":"zone-to-pa-hub","network":{"layer3":[]},"snippet":"Auto-VPN-Default-Snippet"},
+                    {"enable_user_identification":true,"folder":"ngfw-shared","id":"4195a6c9-02ac-43cd-b66e-b3c76e654d6f","name":"local","network":{"layer3":["$eth-local"],"zone_protection_profile":"best-practice"}},
+                    {"folder":"ngfw-shared","id":"fd59fc14-aa1d-4ef6-a750-0812e78fcfdf","name":"internet","network":{"layer3":["$eth-internet"],"zone_protection_profile":"best-practice"}},
+                    {"folder":"ngfw-shared","id":"5fdba12a-cb1e-4332-9b63-f8179dfdaf5f","name":"proxy"},
+
+                    {   "enable_device_identification":false,
+                        "enable_user_identification":false,
+                        "folder":"parent1","id":"907d528f-b5bb-491d-b5fc-7050cf496282",
+                        "name":"zone_parent1",
+                        "network":{"enable_packet_buffer_protection":true,"layer2":[],"zone_protection_profile":"zpp_swaschkut"}
+                    }
+                ],
+                "limit":200,"offset":0,"total":8
+                }
+                 */
+
+                PH::print_stdout($type . " - not finalised");
+
+                if( isset( $object['id'] ) )
+                {
+                    //does CONTAINER/DEVICECLOUD/SNIPPET have zone/ interface directly attached?????
+                    $tmp_url = $sub->$profileStoreName->find($object['name']);
+                    if ($tmp_url !== null)
+                        return "continue";
+
+
+                    $dom = null;
+                    $rootEntry = null;
+                    $this->SCM_API_prepareMethodForImport( $object, $dom, $rootEntry );
+
+                    // Start the conversion
+                    $this->SCM_API_arrayToXml($dom, $rootEntry, $object);
+
+                    #DH::DEBUGprintDOMDocument($dom->firstChild);
+                    #$this->SCM_API_SP_object_import($dom, $sub, $profileStoreName);
+
+
+                    //Todo: wrong approach, where does zones need to be added???
+
+                    #if( $sub->$profileStoreName->xmlroot == null)
+                    #        $sub->$profileStoreName->createXmlRoot();
+
+                    $ownerDocument = $sub->$profileStoreName->owner->xmlroot->ownerDocument;
+                    $tmpNode = $ownerDocument->importNode($dom->firstChild, true);
+
+                    $newProf = null;
+                    if( $profileStoreName == 'zoneStore' )
+                        $newProf = new Zone('dummy', $sub->$profileStoreName);
+
+                    else
+                        derr("implementation needed");
+
+
+                    /** @var DeviceGroup $sub */
+                    if( $newProf != null )
+                    {
+                        $newProf->load_from_domxml($tmpNode);
+
+                        $newProf->owner = null;
+                        if( $profileStoreName == 'zoneStore' )
+                            $sub->$profileStoreName->addZone($newProf);
+
+                        return true;
+                    }
+                }
+
+            }
+            elseif( $type == "zone-protection-profiles" )
+            {
+                ///config/network/v1/zone-protection-profiles
+                $profileStoreName = "ZoneProtectionProfileStore";
+                /*
+                    {"data":[
+                        {"id":"4dc70ebd-d2f5-43cc-9151-0f3d5c440867",
+                        "name":"best-practice","folder":"All",
+                        "snippet":"default",
+                        "flood":{
+                            "tcp_syn":{"enable":false},"udp":{"enable":false},"icmp":{"enable":false},"icmpv6":{"enable":false},"other_ip":{"enable":false}
+                        },
+                        "scan":[
+                            {"name":"8001","action":{"alert":{}},"interval":2,"threshold":100},
+                            {"name":"8002","action":{"alert":{}},"interval":2,"threshold":100},
+                            {"name":"8003","action":{"alert":{}},"interval":2,"threshold":100}
+                        ],
+                "spoofed_ip_discard":false,"strict_ip_check":false,"fragmented_traffic_discard":false,
+                "strict_source_routing_discard":true,
+                "loose_source_routing_discard":true,"timestamp_discard":false,
+                "record_route_discard":false,
+                "security_discard":false,"stream_id_discard":false,
+                "unknown_option_discard":true,"malformed_option_discard":true,
+                "mismatched_overlapping_tcp_segment_discard":true,
+                "tcp_handshake_discard":true,"tcp_syn_with_data_discard":true,
+                "tcp_synack_with_data_discard":true,"reject_non_syn_tcp":"global",
+                "tcp_timestamp_strip":true,"tcp_fast_open_and_data_strip":false,
+                "mptcp_option_strip":"global","icmp_ping_zero_id_discard":false,
+                "icmp_frag_discard":false,"icmp_large_packet_discard":false,
+                "discard_icmp_embedded_error":false,"suppress_icmp_timeexceeded":false,
+                "suppress_icmp_needfrag":false,"ipv6":{"routing_header_0":false,"routing_header_1":false,
+                "routing_header_3":false,"routing_header_4_252":false,"routing_header_253":false,
+                "routing_header_254":false,"routing_header_255":false,"ipv4_compatible_address":false,
+                "filter_ext_hdr":{"hop_by_hop_hdr":false,"routing_hdr":false,"dest_option_hdr":false},
+                "options_invalid_ipv6_discard":false,"reserved_field_set_discard":false,
+                "anycast_source":false,"needless_fragment_hdr":false,"icmpv6_too_big_small_mtu_discard":false,
+                "ignore_inv_pkt":{"dest_unreach":false,"pkt_too_big":false,"time_exceeded":false,
+                "param_problem":false,"redirect":false}
+                }
+                },
+                {"id":"58508ad1-165f-46b9-b94f-4fb66a379702",
+                "name":"zpp_swaschkut","folder":"parent1",
+                "flood":{"tcp_syn":{"enable":false,"red":{"alarm_rate":10000,"activate_rate":10000,"maximal_rate":40000}},"udp":{"enable":false,"red":{"alarm_rate":10000,"activate_rate":10000,"maximal_rate":40000}},"icmp":{"enable":false,"red":{"alarm_rate":10000,"activate_rate":10000,"maximal_rate":40000}},"icmpv6":{"enable":false,"red":{"alarm_rate":10000,"activate_rate":10000,"maximal_rate":40000}},"other_ip":{"enable":false,"red":{"alarm_rate":10000,"activate_rate":10000,"maximal_rate":40000}}},"spoofed_ip_discard":false,"strict_ip_check":false,"fragmented_traffic_discard":false,"strict_source_routing_discard":false,"loose_source_routing_discard":false,"timestamp_discard":false,"record_route_discard":false,"security_discard":false,"stream_id_discard":false,"unknown_option_discard":false,"malformed_option_discard":false,"mismatched_overlapping_tcp_segment_discard":false,"tcp_handshake_discard":false,"tcp_syn_with_data_discard":false,"tcp_synack_with_data_discard":false,"reject_non_syn_tcp":"global","asymmetric_path":"global","tcp_timestamp_strip":false,"tcp_fast_open_and_data_strip":false,"mptcp_option_strip":"global","icmp_ping_zero_id_discard":false,"icmp_frag_discard":false,"icmp_large_packet_discard":false,"discard_icmp_embedded_error":false,"suppress_icmp_timeexceeded":false,"suppress_icmp_needfrag":false,"ipv6":{"routing_header_0":false,"routing_header_1":false,"routing_header_3":false,"routing_header_4_252":false,"routing_header_253":false,"routing_header_254":false,"routing_header_255":false,"ipv4_compatible_address":false,"filter_ext_hdr":{"hop_by_hop_hdr":false,"routing_hdr":false,"dest_option_hdr":false},"options_invalid_ipv6_discard":false,"reserved_field_set_discard":false,"anycast_source":false,"needless_fragment_hdr":false,"icmpv6_too_big_small_mtu_discard":false,"ignore_inv_pkt":{"dest_unreach":false,"pkt_too_big":false,"time_exceeded":false,"param_problem":false,"redirect":false}}}],"offset":0,"total":2,"limit":200}
+                 */
+
+                PH::print_stdout($type . " - not finalised");
+
+                if( isset( $object['id'] ) )
+                {
+                    //does CONTAINER/DEVICECLOUD/SNIPPET have zone/ interface directly attached?????
+                    $tmp_url = $sub->$profileStoreName->find($object['name']);
+                    if ($tmp_url !== null)
+                        return "continue";
+
+
+                    $dom = null;
+                    $rootEntry = null;
+                    $this->SCM_API_prepareMethodForImport( $object, $dom, $rootEntry );
+
+                    // Start the conversion
+                    $this->SCM_API_arrayToXml($dom, $rootEntry, $object);
+
+                    #DH::DEBUGprintDOMDocument($dom->firstChild);
+                    #$this->SCM_API_SP_object_import($dom, $sub, $profileStoreName);
+
+
+                    //Todo: wrong approach, where does zones need to be added???
+
+                    #if( $sub->$profileStoreName->xmlroot == null)
+                    #        $sub->$profileStoreName->createXmlRoot();
+
+                    $ownerDocument = $sub->$profileStoreName->owner->xmlroot->ownerDocument;
+                    $tmpNode = $ownerDocument->importNode($dom->firstChild, true);
+
+                    $newProf = null;
+                    if( $profileStoreName == 'ZoneProtectionProfileStore' )
+                        $newProf = new ZoneProtectionProfile('dummy', $sub->$profileStoreName);
+
+                    else
+                        derr("implementation needed");
+
+
+                    /** @var Container|DeviceCloud|DeviceOnPrem $sub */
+                    if( $newProf != null )
+                    {
+                        $newProf->load_from_domxml($tmpNode);
+
+                        $newProf->owner = null;
+                        $newProf->owner = null;
+                        if( $profileStoreName == 'ZoneProtectionProfileStore' )
+                            $sub->ZoneProtectionProfileStore->a($newProf);
+
+                        return true;
+                    }
+                }
+            }
 
             else
             {

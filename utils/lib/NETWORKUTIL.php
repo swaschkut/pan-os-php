@@ -433,6 +433,9 @@ class NETWORKUTIL extends UTIL
                                 if( $this->utilType == 'certificate' )
                                     $this->objectsToProcess[] = Array('store' => $vsys->certificateStore, 'objects' => $vsys->certificateStore->getAll());
                             */
+
+                            if( $this->utilType == 'zone' )
+                                $this->objectsToProcess[] = array('store' => $sub->zoneStore, 'objects' => $sub->zoneStore->getall());
                         }
                     }
                 }
