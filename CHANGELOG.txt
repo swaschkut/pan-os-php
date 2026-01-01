@@ -8,6 +8,7 @@ UTIL:
 * type=stats actions=display-bpa | extend for fawkes/buckbeakconf - in=sase-api:// - in=scm-api://
 * type=stats | move functions from four classes into trait StatCollectorTrait.php - SCM related
 * in=scm-api:// - get securityprofile / securityprofilegroup working
+* in=scm-api:// - extend class Container/DeviceCloud/DeviceOnPrem/Snippet with missing objects added over time to class Panorama
 
 BUGFIX:
 

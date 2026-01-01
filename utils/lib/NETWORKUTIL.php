@@ -436,6 +436,11 @@ class NETWORKUTIL extends UTIL
 
                             if( $this->utilType == 'zone' )
                                 $this->objectsToProcess[] = array('store' => $sub->zoneStore, 'objects' => $sub->zoneStore->getall());
+
+                            elseif( $this->utilType == 'zone-protection-profile' )
+                            {
+                                $this->objectsToProcess[] = Array('store' => $sub->network->zoneProtectionProfileStore, 'objects' => $sub->network->zoneProtectionProfileStore->zoneProtectionProfile());
+                            }
                         }
                     }
                 }

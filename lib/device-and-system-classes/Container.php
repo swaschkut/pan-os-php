@@ -136,6 +136,12 @@ class Container
     /** @var LogProfileStore */
     public $LogProfileStore = null;
 
+    /** @var CertificateStore */
+    public $certificateStore = null;
+
+    /** @var SSL_TLSServiceProfileStore */
+    public $SSL_TLSServiceProfileStore = null;
+
     //Todo: add secprofiles and secprofgroups| 20200312 swaschkut
   /*  public static $templateContainerxml = '<entry name="**Need a Name**"><address></address><post-rulebase><security><rules></rules></security><nat><rules></rules></nat></post-rulebase>
 									<pre-rulebase><security><rules></rules></security><nat><rules></rules></nat></pre-rulebase>
@@ -225,6 +231,11 @@ class Container
     public $version = null;
 
     public $sizeArray = array();
+
+
+    /** @var NetworkPropertiesContainer */
+    public $network;
+
 
     public function __construct($owner)
     {
@@ -340,6 +351,13 @@ class Container
         $this->LogProfileStore = new LogProfileStore($this);
         $this->LogProfileStore->setName('LogProfileStore');
 
+        $this->certificateStore = new CertificateStore($this);
+        $this->certificateStore->setName('certificateStore');
+
+        $this->SSL_TLSServiceProfileStore = new SSL_TLSServiceProfileStore($this);
+        $this->SSL_TLSServiceProfileStore->setName('SSL_TLSServiceStore');
+
+
         $this->securityRules = new RuleStore($this, 'SecurityRule', TRUE);
         $this->natRules = new RuleStore($this, 'NatRule', TRUE);
         $this->decryptionRules = new RuleStore($this, 'DecryptionRule', TRUE);
@@ -359,6 +377,9 @@ class Container
         $this->_fakeNetworkProperties = $this->owner->_fakeNetworkProperties;
         $this->dosRules->_networkStore = $this->_fakeNetworkProperties;
         $this->pbfRules->_networkStore = $this->_fakeNetworkProperties;
+
+
+        $this->network = new NetworkPropertiesContainer($this);
     }
 
     public function load_from_templateContainerXml( )
@@ -381,7 +402,7 @@ class Container
      * !! Should not be used outside of a PanoramaConf constructor. !!
      * @param DOMElement $xml
      */
-    public function load_from_domxml($xml)
+    public function load_from_domxml($xml, $debugLoadTime = false)
     {
         $this->xmlroot = $xml;
 
@@ -705,6 +726,27 @@ class Container
         if( $tmp2 !== FALSE && $tmp !== FALSE )
             $this->LogProfileStore->load_from_domxml($tmp);
         // End of LogProfile extraction
+
+        //
+        // Extract Certificate objects
+        //
+        $tmp = DH::findFirstElement('certificate', $xml);
+        if( $tmp !== FALSE )
+        {
+            $this->certificateStore->load_from_domxml($tmp);
+        }
+        // End of Certificate objects extraction
+
+        //
+        // Extract ssl-tls-service-profile objects
+        //
+        $tmp = DH::findFirstElement('ssl-tls-service-profile', $xml);
+        if( $tmp !== FALSE )
+        {
+            $this->SSL_TLSServiceProfileStore->load_from_domxml($tmp);
+        }
+        // End of SSL_TLSServiceProfile objects extraction
+
 
         //
         // Extracting policies
@@ -1083,6 +1125,19 @@ class Container
         $this->tagStore->nestedPointOfView();
         $this->scheduleStore->nestedPointOfView();
         $this->appStore->nestedPointOfView();
+
+        //
+        // Extract network related configs
+        //
+        //Todo: 20250101 - can network part be moved after vsys reading ?? - virutalsystem reading interfaces, must be done later to get address references
+        $tmp = DH::findFirstElement('network', $xml);
+        if( $tmp !== FALSE )
+        {
+            if( $debugLoadTime )
+                PH::print_DEBUG_loadtime("network");
+            $this->network->load_from_domxml($tmp);
+        }
+        //
     }
 
     public function &getXPath()

@@ -1574,7 +1574,7 @@ class PanSCMAPIConnector
             elseif( $type == "zone-protection-profiles" )
             {
                 ///config/network/v1/zone-protection-profiles
-                $profileStoreName = "ZoneProtectionProfileStore";
+                $profileStoreName = "zoneProtectionProfileStore";
                 /*
                     {"data":[
                         {"id":"4dc70ebd-d2f5-43cc-9151-0f3d5c440867",
@@ -1621,7 +1621,7 @@ class PanSCMAPIConnector
                 if( isset( $object['id'] ) )
                 {
                     //does CONTAINER/DEVICECLOUD/SNIPPET have zone/ interface directly attached?????
-                    $tmp_url = $sub->$profileStoreName->find($object['name']);
+                    $tmp_url = $sub->network->$profileStoreName->find($object['name']);
                     if ($tmp_url !== null)
                         return "continue";
 
@@ -1633,7 +1633,7 @@ class PanSCMAPIConnector
                     // Start the conversion
                     $this->SCM_API_arrayToXml($dom, $rootEntry, $object);
 
-                    #DH::DEBUGprintDOMDocument($dom->firstChild);
+                    DH::DEBUGprintDOMDocument($dom->firstChild);
                     #$this->SCM_API_SP_object_import($dom, $sub, $profileStoreName);
 
 
@@ -1642,12 +1642,12 @@ class PanSCMAPIConnector
                     #if( $sub->$profileStoreName->xmlroot == null)
                     #        $sub->$profileStoreName->createXmlRoot();
 
-                    $ownerDocument = $sub->$profileStoreName->owner->xmlroot->ownerDocument;
+                    $ownerDocument = $sub->network->$profileStoreName->owner->xmlroot->ownerDocument;
                     $tmpNode = $ownerDocument->importNode($dom->firstChild, true);
 
                     $newProf = null;
-                    if( $profileStoreName == 'ZoneProtectionProfileStore' )
-                        $newProf = new ZoneProtectionProfile('dummy', $sub->$profileStoreName);
+                    if( $profileStoreName == 'zoneProtectionProfileStore' )
+                        $newProf = new ZoneProtectionProfile('dummy', $sub->network->$profileStoreName);
 
                     else
                         derr("implementation needed");
@@ -1659,9 +1659,8 @@ class PanSCMAPIConnector
                         $newProf->load_from_domxml($tmpNode);
 
                         $newProf->owner = null;
-                        $newProf->owner = null;
-                        if( $profileStoreName == 'ZoneProtectionProfileStore' )
-                            $sub->ZoneProtectionProfileStore->a($newProf);
+                        if( $profileStoreName == 'zoneProtectionProfileStore' )
+                            $sub->network->$profileStoreName->addProfil($newProf);
 
                         return true;
                     }

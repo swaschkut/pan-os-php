@@ -75,7 +75,7 @@ class NetworkPropertiesContainer
 
     /**
      * NetworkPropertiesContainer constructor.
-     * @param PANConf|PanoramaConf $owner
+     * @param PANConf|PanoramaConf|Container|DeviceCloud|DeviceOnPrem $owner
      */
     function __construct($owner)
     {

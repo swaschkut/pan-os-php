@@ -128,6 +128,12 @@ class DeviceCloud
     /** @var LogProfileStore */
     public $LogProfileStore = null;
 
+    /** @var CertificateStore */
+    public $certificateStore = null;
+
+    /** @var SSL_TLSServiceProfileStore */
+    public $SSL_TLSServiceProfileStore = null;
+
 /*
     public static $templateCloudxml = '<entry name="**Need a Name**"><address></address>
                                     <rulebase><security><rules></rules></security><nat><rules></rules></nat></rulebase>
@@ -216,6 +222,11 @@ class DeviceCloud
 
     public $sizeArray = array();
 
+
+    /** @var NetworkPropertiesContainer */
+    public $network;
+
+
     /** @var FawkesConf|Buckbeak|null $owner */
     public function __construct( $owner, Container|null $applicableDG = null)
     {
@@ -228,6 +239,9 @@ class DeviceCloud
         $this->tagStore = new TagStore($this);
         $this->tagStore->name = 'tags';
 
+        $this->zoneStore = new ZoneStore($this);
+        $this->zoneStore->setName('zoneStore');
+
         #$this->importedInterfaces = new InterfaceContainer($this, $owner->network);
         #$this->importedVirtualRouter = new VirtualRouterContainer($this, $owner->network);
 
@@ -236,9 +250,6 @@ class DeviceCloud
         $this->appStore->name = 'customApplication';
 
         $this->threatStore = $owner->threatStore;
-
-        $this->zoneStore = new ZoneStore($this);
-        $this->zoneStore->setName('zoneStore');
 
 
         $this->serviceStore = new ServiceStore($this);
@@ -335,6 +346,13 @@ class DeviceCloud
         $this->LogProfileStore = new LogProfileStore($this);
         $this->LogProfileStore->setName('LogProfileStore');
 
+        $this->certificateStore = new CertificateStore($this);
+        $this->certificateStore->setName('certificateStore');
+
+        $this->SSL_TLSServiceProfileStore = new SSL_TLSServiceProfileStore($this);
+        $this->SSL_TLSServiceProfileStore->setName('SSL_TLSServiceStore');
+
+
         $this->securityRules = new RuleStore($this, 'SecurityRule');
         $this->securityRules->name = 'Security';
 
@@ -376,6 +394,8 @@ class DeviceCloud
 
         #$this->dosRules->_networkStore = $this->owner->network;
         #$this->pbfRules->_networkStore = $this->owner->network;
+
+        $this->network = new NetworkPropertiesContainer($this);
     }
 
     public function load_from_templateCloudeXml( )
@@ -397,7 +417,7 @@ class DeviceCloud
      * !! Should not be used outside of a PANConf constructor. !!
      *
      */
-    public function load_from_domxml($xml)
+    public function load_from_domxml($xml, $debugLoadTime = false)
     {
         $this->xmlroot = $xml;
 
@@ -777,6 +797,28 @@ class DeviceCloud
             if( $tmp2 !== FALSE && $tmp !== FALSE )
                 $this->LogProfileStore->load_from_domxml($tmp);
             // End of LogProfile extraction
+
+            //
+            // Extract Certificate objects
+            //
+            $tmp = DH::findFirstElement('certificate', $xml);
+            if( $tmp !== FALSE )
+            {
+                $this->certificateStore->load_from_domxml($tmp);
+            }
+            // End of Certificate objects extraction
+
+            //
+            // Extract ssl-tls-service-profile objects
+            //
+            $tmp = DH::findFirstElement('ssl-tls-service-profile', $xml);
+            if( $tmp !== FALSE )
+            {
+                $this->SSL_TLSServiceProfileStore->load_from_domxml($tmp);
+            }
+            // End of SSL_TLSServiceProfile objects extraction
+
+
         }
 
 
@@ -987,6 +1029,19 @@ class DeviceCloud
                     $this->$var->load_from_domxml($tmprulesroot);
             }
         }
+
+        //
+        // Extract network related configs
+        //
+        //Todo: 20250101 - can network part be moved after vsys reading ?? - virutalsystem reading interfaces, must be done later to get address references
+        $tmp = DH::findFirstElement('network', $xml);
+        if( $tmp !== FALSE )
+        {
+            if( $debugLoadTime )
+                PH::print_DEBUG_loadtime("network");
+            $this->network->load_from_domxml($tmp);
+        }
+        //
     }
 
     public function &getXPath()

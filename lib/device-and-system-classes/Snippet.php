@@ -91,6 +91,17 @@ class Snippet
     /** @var ScheduleStore */
     public $scheduleStore = null;
 
+    /** @var EDLStore */
+    public $EDLStore = null;
+
+    /** @var LogProfileStore */
+    public $LogProfileStore = null;
+
+    /** @var CertificateStore */
+    public $certificateStore = null;
+
+    /** @var SSL_TLSServiceProfileStore */
+    public $SSL_TLSServiceProfileStore = null;
 
 
     public static $templateSnippetxml = '<entry name="**Need a Name**"></entry>';
@@ -165,6 +176,11 @@ class Snippet
     public $devices = array();
 
     public $sizeArray = array();
+
+
+    /** @var NetworkPropertiesContainer */
+    public $network;
+
 
     /** @var FawkesConf|BuckbeakConf|null $owner */
     public function __construct( $owner, Container|null $applicableDG = null)
@@ -249,6 +265,19 @@ class Snippet
         $this->scheduleStore = new ScheduleStore($this);
         $this->scheduleStore->setName('scheduleStore');
 
+        $this->EDLStore = new EDLStore($this);
+        $this->EDLStore->setName('EDLStore');
+
+        $this->LogProfileStore = new LogProfileStore($this);
+        $this->LogProfileStore->setName('LogProfileStore');
+
+        $this->certificateStore = new CertificateStore($this);
+        $this->certificateStore->setName('certificateStore');
+
+        $this->SSL_TLSServiceProfileStore = new SSL_TLSServiceProfileStore($this);
+        $this->SSL_TLSServiceProfileStore->setName('SSL_TLSServiceStore');
+
+
 
         $this->securityRules = new RuleStore($this, 'SecurityRule');
         $this->securityRules->name = 'Security';
@@ -288,6 +317,8 @@ class Snippet
 
         #$this->dosRules->_networkStore = $this->owner->network;
         #$this->pbfRules->_networkStore = $this->owner->network;
+
+        $this->network = new NetworkPropertiesContainer($this);
     }
 
     public function load_from_templateSnippetXml( )

@@ -207,7 +207,12 @@ class DeviceOnPrem
     /** @var Array */
     public $devices = array();
 
-    /** @var FawkesConf|Buckbeak|null $owner */
+
+    /** @var NetworkPropertiesContainer */
+    public $network;
+
+
+    /** @var FawkesConf|BuckbeakConf|null $owner */
     public function __construct( $owner, Container|null $applicableDG = null)
     {
         $this->owner = $owner;
@@ -317,6 +322,16 @@ class DeviceOnPrem
         $this->EDLStore = new EDLStore($this);
         $this->EDLStore->setName('EDLStore');
 
+        $this->LogProfileStore = new LogProfileStore($this);
+        $this->LogProfileStore->setName('LogProfileStore');
+
+        $this->certificateStore = new CertificateStore($this);
+        $this->certificateStore->setName('certificateStore');
+
+        $this->SSL_TLSServiceProfileStore = new SSL_TLSServiceProfileStore($this);
+        $this->SSL_TLSServiceProfileStore->setName('SSL_TLSServiceStore');
+
+
         $this->securityRules = new RuleStore($this, 'SecurityRule');
         $this->securityRules->name = 'Security';
 
@@ -358,6 +373,8 @@ class DeviceOnPrem
 
         #$this->dosRules->_networkStore = $this->owner->network;
         #$this->pbfRules->_networkStore = $this->owner->network;
+
+        $this->network = new NetworkPropertiesContainer($this);
     }
 
     public function load_from_templateOnPremXml( )
@@ -379,7 +396,7 @@ class DeviceOnPrem
      * !! Should not be used outside of a PANConf constructor. !!
      *
      */
-    public function load_from_domxml($xml)
+    public function load_from_domxml($xml, $debugLoadTime = false)
     {
         $this->xmlroot = $xml;
 
@@ -431,6 +448,19 @@ class DeviceOnPrem
                 foreach( $storeType as $type )
                     $this->$type->parentCentralStore = $parentContainer->$type;
             }
+
+            //
+            // Extract network related configs
+            //
+            //Todo: 20250101 - can network part be moved after vsys reading ?? - virutalsystem reading interfaces, must be done later to get address references
+            $tmp = DH::findFirstElement('network', $xml);
+            if( $tmp !== FALSE )
+            {
+                if( $debugLoadTime )
+                    PH::print_DEBUG_loadtime("network");
+                $this->network->load_from_domxml($tmp);
+            }
+            //
         }
 
 
