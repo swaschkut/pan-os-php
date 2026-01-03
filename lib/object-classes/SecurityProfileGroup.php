@@ -178,9 +178,19 @@ class SecurityProfileGroup
                     }
                     else
                     {
-                        if( get_class( $this->owner->owner ) == "DeviceGroup" || get_class( $this->owner->owner ) == "VirtualSystem" )
+                        if( get_class( $this->owner->owner ) == "DeviceGroup"
+                            || get_class( $this->owner->owner ) == "VirtualSystem"
+                            || get_class( $this->owner->owner ) == "Container"
+                            || get_class( $this->owner->owner ) == "DeviceCloud"
+                            || get_class( $this->owner->owner ) == "DeviceOnPrem"
+                        )
                             $sub = $this->owner->owner->owner;
-                        elseif( get_class( $this->owner->owner ) == "PANConfig" || get_class( $this->owner->owner ) == "PanoramaConf" )
+
+                        elseif( get_class( $this->owner->owner ) == "PANConfig"
+                            || get_class( $this->owner->owner ) == "PanoramaConf"
+                            || get_class( $this->owner->owner ) == "FawkesConf"
+                            || get_class( $this->owner->owner ) == "BuckbeakConf"
+                        )
                             $sub = $this->owner->owner;
 
                         if( $tmp_store_name == 'AntiVirusProfileStore')

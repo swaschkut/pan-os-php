@@ -110,6 +110,21 @@ class FawkesConf
     /** @var SecurityProfileStore */
     public $urlStore;
 
+    public $AntiVirusPredefinedStore;
+    public $AntiSpywarePredefinedStore;
+    public $VulnerabilityPredefinedStore;
+    public $FileBlockingPredefinedStore;
+    public $WildfirePredefinedStore;
+    public $UrlFilteringPredefinedStore;
+
+
+    /** @var ThreatPolicyStore */
+    public $ThreatPolicyStore = null;
+
+    /** @var DNSPolicyStore */
+    public $DNSPolicyStore = null;
+
+
     /** @var ZoneStore */
     public $zoneStore = null;
 
@@ -146,6 +161,22 @@ class FawkesConf
 
 
         $this->managedFirewallsStore = new ManagedDeviceStore($this, 'managedFirewall', TRUE);
+
+
+        $this->ThreatPolicyStore = new ThreatPolicyStore($this, "ThreatPolicy");
+        $this->ThreatPolicyStore->name = 'ThreatPolicy';
+
+        $this->DNSPolicyStore = new DNSPolicyStore($this, "DNSPolicy");
+        $this->DNSPolicyStore->name = 'DNSPolicy';
+
+        $this->AntiVirusPredefinedStore = SecurityProfileStore::getVirusPredefinedStore( $this );
+        $this->AntiSpywarePredefinedStore = SecurityProfileStore::getSpywarePredefinedStore( $this );
+        $this->VulnerabilityPredefinedStore = SecurityProfileStore::getVulnerabilityPredefinedStore( $this );
+        $this->UrlFilteringPredefinedStore = SecurityProfileStore::getUrlFilteringPredefinedStore( $this );
+        $this->FileBlockingPredefinedStore = SecurityProfileStore::getFileBlockingPredefinedStore( $this );
+        $this->WildfirePredefinedStore = SecurityProfileStore::getWildfirePredefinedStore( $this );
+
+
     }
 
 
