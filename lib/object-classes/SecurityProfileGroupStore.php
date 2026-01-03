@@ -137,7 +137,13 @@ class SecurityProfileGroupStore extends ObjStore
         foreach( $this->secprof_array as $secprof )
         {
             if( isset( $secprofArray[$secprof] ) )
-                $str .= $secprof.':'.$secprofArray[$secprof];
+            {
+                if( is_object( $secprofArray[$secprof] ) )
+                    $str .= $secprof.':'.$secprofArray[$secprof]->name();
+                else
+                    $str .= $secprof.':'.$secprofArray[$secprof];
+            }
+
 
             if( $i < $counter )
             {
@@ -165,11 +171,22 @@ class SecurityProfileGroupStore extends ObjStore
         foreach( $secProf_array as $key => $secProf )
         {
             $string .= "<".$key.">\n";
-            $string .= "<member>".$secProf."</member>\n";
+            if( is_object($secProf) )
+                $string .= "<member>".$secProf->name()."</member>\n";
+            else
+                $string .= "<member>".$secProf."</member>\n";
             $string .= "</".$key.">\n";
 
-            if( isset( $secProfOBJ_array[$secProf] ) )
-                $secProfOBJ_array[$secProf]->addReference( $tmp_secProfGroup );
+            if( is_object($secProf) )
+            {
+                if( isset( $secProfOBJ_array[$secProf->name()] ) )
+                    $secProfOBJ_array[$secProf->name()]->addReference( $tmp_secProfGroup );
+            }
+            else
+            {
+                if( isset( $secProfOBJ_array[$secProf] ) )
+                    $secProfOBJ_array[$secProf]->addReference( $tmp_secProfGroup );
+            }
         }
 
         $string .= "</entry>\n";
@@ -226,7 +243,7 @@ class SecurityProfileGroupStore extends ObjStore
      * @param integer|string $startCount
      * @return string
      */
-    public function findAvailableSecurityProfileGroupName($base, $suffix = '', $startCount = '')
+    public function findAvailableSecurityProfileGroupName($base, $suffix = '', $startCount = 0)
     {
         $maxl = 31;
         $basel = strlen($base);

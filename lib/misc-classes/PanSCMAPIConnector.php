@@ -1616,7 +1616,6 @@ class PanSCMAPIConnector
                 "flood":{"tcp_syn":{"enable":false,"red":{"alarm_rate":10000,"activate_rate":10000,"maximal_rate":40000}},"udp":{"enable":false,"red":{"alarm_rate":10000,"activate_rate":10000,"maximal_rate":40000}},"icmp":{"enable":false,"red":{"alarm_rate":10000,"activate_rate":10000,"maximal_rate":40000}},"icmpv6":{"enable":false,"red":{"alarm_rate":10000,"activate_rate":10000,"maximal_rate":40000}},"other_ip":{"enable":false,"red":{"alarm_rate":10000,"activate_rate":10000,"maximal_rate":40000}}},"spoofed_ip_discard":false,"strict_ip_check":false,"fragmented_traffic_discard":false,"strict_source_routing_discard":false,"loose_source_routing_discard":false,"timestamp_discard":false,"record_route_discard":false,"security_discard":false,"stream_id_discard":false,"unknown_option_discard":false,"malformed_option_discard":false,"mismatched_overlapping_tcp_segment_discard":false,"tcp_handshake_discard":false,"tcp_syn_with_data_discard":false,"tcp_synack_with_data_discard":false,"reject_non_syn_tcp":"global","asymmetric_path":"global","tcp_timestamp_strip":false,"tcp_fast_open_and_data_strip":false,"mptcp_option_strip":"global","icmp_ping_zero_id_discard":false,"icmp_frag_discard":false,"icmp_large_packet_discard":false,"discard_icmp_embedded_error":false,"suppress_icmp_timeexceeded":false,"suppress_icmp_needfrag":false,"ipv6":{"routing_header_0":false,"routing_header_1":false,"routing_header_3":false,"routing_header_4_252":false,"routing_header_253":false,"routing_header_254":false,"routing_header_255":false,"ipv4_compatible_address":false,"filter_ext_hdr":{"hop_by_hop_hdr":false,"routing_hdr":false,"dest_option_hdr":false},"options_invalid_ipv6_discard":false,"reserved_field_set_discard":false,"anycast_source":false,"needless_fragment_hdr":false,"icmpv6_too_big_small_mtu_discard":false,"ignore_inv_pkt":{"dest_unreach":false,"pkt_too_big":false,"time_exceeded":false,"param_problem":false,"redirect":false}}}],"offset":0,"total":2,"limit":200}
                  */
 
-                PH::print_stdout($type . " - not finalised");
 
                 if( isset( $object['id'] ) )
                 {
@@ -1633,7 +1632,7 @@ class PanSCMAPIConnector
                     // Start the conversion
                     $this->SCM_API_arrayToXml($dom, $rootEntry, $object);
 
-                    DH::DEBUGprintDOMDocument($dom->firstChild);
+                    #DH::DEBUGprintDOMDocument($dom->firstChild);
                     #$this->SCM_API_SP_object_import($dom, $sub, $profileStoreName);
 
 

@@ -116,7 +116,8 @@ class FileBlockingProfile extends SecurityProfile2
                 $this->rules_obj[] = $threadPolicy_obj;
                 $threadPolicy_obj->addReference( $this );
 
-                $this->owner->owner->ThreatPolicyStore->add($threadPolicy_obj);
+                if( $this->owner !== null && $this->owner->owner !== null )
+                    $this->owner->owner->ThreatPolicyStore->add($threadPolicy_obj);
             }
         }
 
