@@ -137,7 +137,11 @@ class URLProfile extends SecurityProfile2
 
         if( $withOwner )
         {
-            if(  get_class($this->owner->owner) == "PanoramaConf" || get_class($this->owner->owner) == "PANConf" || get_class($this->owner->owner) == "FawkesConf" )
+            if(  get_class($this->owner->owner) == "PanoramaConf"
+                || get_class($this->owner->owner) == "PANConf"
+                || get_class($this->owner->owner) == "FawkesConf"
+                || get_class($this->owner->owner) == "BuckbeakConf"
+            )
                 $predefined_url_store = $this->owner->owner->urlStore;
             else
                 $predefined_url_store = $this->owner->owner->owner->urlStore;

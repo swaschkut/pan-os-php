@@ -117,6 +117,13 @@ class BuckbeakConf
     public $UrlFilteringPredefinedStore;
 
 
+    /** @var ThreatPolicyStore */
+    public $ThreatPolicyStore = null;
+
+    /** @var DNSPolicyStore */
+    public $DNSPolicyStore = null;
+
+
     /** @var ZoneStore */
     public $zoneStore = null;
 

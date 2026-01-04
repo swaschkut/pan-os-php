@@ -82,7 +82,13 @@ class SecurityProfileGroup
         }
 
         //Panorama
-        if( get_class( $owner->owner ) == "Container" || get_class( $owner->owner ) == "DeviceCloud" || get_class( $owner->owner ) == "FawkesConf" || get_class( $owner->owner ) == "DeviceOnPrem" || get_class( $owner->owner ) == "Snippet" )
+        if( get_class( $owner->owner ) == "FawkesConf"
+            || get_class( $owner->owner ) == "BuckbeakConf"
+            || get_class( $owner->owner ) == "Container"
+            || get_class( $owner->owner ) == "DeviceCloud"
+            || get_class( $owner->owner ) == "DeviceOnPrem"
+            || get_class( $owner->owner ) == "Snippet"
+        )
             $used_secprof_array = $this->secprof_fawkes_array;
         else
             $used_secprof_array = $this->secprof_array;
@@ -146,7 +152,13 @@ class SecurityProfileGroup
 
         $str = '';
 
-        if( get_class( $owner->owner ) == "Container" || get_class( $owner->owner ) == "DeviceCloud" || get_class( $owner->owner ) == "FawkesConf" || get_class( $owner->owner ) == "DeviceOnPrem" || get_class( $owner->owner ) == "Snippet" )
+        if( get_class( $owner->owner ) == "FawkesConf"
+            || get_class( $owner->owner ) == "BuckbeakConf"
+            || get_class( $owner->owner ) == "Container"
+            || get_class( $owner->owner ) == "DeviceCloud"
+            || get_class( $owner->owner ) == "DeviceOnPrem"
+            || get_class( $owner->owner ) == "Snippet"
+        )
             $used_secprof_array = $this->secprof_fawkes_array;
         else
             $used_secprof_array = $this->secprof_array;
@@ -163,7 +175,14 @@ class SecurityProfileGroup
                 if( $tmp_type != null )
                 {
                     //Panorama
-                    if( get_class( $owner->owner ) == "Container" || get_class( $owner->owner ) == "DeviceCloud" || get_class( $owner->owner ) == "FawkesConf" || get_class( $owner->owner ) == "DeviceOnPrem" || get_class( $owner->owner ) == "Snippet" )
+                    if(
+                        get_class( $owner->owner ) == "FawkesConf"
+                        || get_class( $owner->owner ) == "BuckbeakConf"
+                        || get_class( $owner->owner ) == "Container"
+                        || get_class( $owner->owner ) == "DeviceCloud"
+                        || get_class( $owner->owner ) == "DeviceOnPrem"
+                        || get_class( $owner->owner ) == "Snippet"
+                    )
                         $used_secprof_store = $this->secprof_fawkes_store;
                     else
                         $used_secprof_store = $this->secprof_store;
@@ -183,6 +202,7 @@ class SecurityProfileGroup
                             || get_class( $this->owner->owner ) == "Container"
                             || get_class( $this->owner->owner ) == "DeviceCloud"
                             || get_class( $this->owner->owner ) == "DeviceOnPrem"
+                            || get_class( $owner->owner ) == "Snippet"
                         )
                             $sub = $this->owner->owner->owner;
 
