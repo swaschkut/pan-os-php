@@ -11,6 +11,7 @@ UTIL:
 * in=scm-api:// - extend class Container/DeviceCloud/DeviceOnPrem/Snippet with missing objects added over time to class Panorama
 * migration - introduce panorama2fawkes | migrate Prisma Access from Panorama to Cloud managed - only file based
 * class BuckbeackConf/FawkesConf | optimisation for ThreatPolicyStore/DNSPolicyStore |
+* class ZoneStore | create xmlroot if not available - needed for Buckbeak config import
 
 BUGFIX:
 

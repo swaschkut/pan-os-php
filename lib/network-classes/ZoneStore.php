@@ -72,8 +72,15 @@ class ZoneStore extends ObjStore
 
         $ret = $this->add($zone);
 
-        if( $ret && $rewriteXML && !$zone->isTmp() && $this->xmlroot !== null )
+        if( $ret && $rewriteXML && !$zone->isTmp() )
         {
+            if( $this->xmlroot === null )
+            {
+                $xml = $this->owner->xmlroot;
+
+                $this->xmlroot = DH::findFirstElementOrCreate('zone', $xml);
+            }
+
             $this->xmlroot->appendChild($zone->xmlroot);
         }
         return $ret;
