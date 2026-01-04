@@ -1496,31 +1496,6 @@ class PanSCMAPIConnector
             {
                 $profileStoreName = "zoneStore";
 
-                /*
-                {"data":[
-                    {"folder":"ngfw-shared","id":"181394de-35a4-4c7c-b5d6-f57ee89500f8",
-                        "name":"zone-internal",
-                        "network":{"layer3":[]},
-                        "snippet":"Auto-VPN-Default-Snippet"},
-                    {"folder":"ngfw-shared","id":"d2063142-06dd-427d-8e6a-d13264fbc1fd","name":"zone-to-hub","network":{"layer3":[]},"snippet":"Auto-VPN-Default-Snippet"},
-                    {"folder":"ngfw-shared","id":"045298e9-f2ed-478b-9c89-25d7c2bbf4e1","name":"zone-to-branch","network":{"layer3":[]},"snippet":"Auto-VPN-Default-Snippet"},
-                    {"folder":"ngfw-shared","id":"7cb6c686-39bc-4bc4-9051-6a13f48bcb4e","name":"zone-to-pa-hub","network":{"layer3":[]},"snippet":"Auto-VPN-Default-Snippet"},
-                    {"enable_user_identification":true,"folder":"ngfw-shared","id":"4195a6c9-02ac-43cd-b66e-b3c76e654d6f","name":"local","network":{"layer3":["$eth-local"],"zone_protection_profile":"best-practice"}},
-                    {"folder":"ngfw-shared","id":"fd59fc14-aa1d-4ef6-a750-0812e78fcfdf","name":"internet","network":{"layer3":["$eth-internet"],"zone_protection_profile":"best-practice"}},
-                    {"folder":"ngfw-shared","id":"5fdba12a-cb1e-4332-9b63-f8179dfdaf5f","name":"proxy"},
-
-                    {   "enable_device_identification":false,
-                        "enable_user_identification":false,
-                        "folder":"parent1","id":"907d528f-b5bb-491d-b5fc-7050cf496282",
-                        "name":"zone_parent1",
-                        "network":{"enable_packet_buffer_protection":true,"layer2":[],"zone_protection_profile":"zpp_swaschkut"}
-                    }
-                ],
-                "limit":200,"offset":0,"total":8
-                }
-                 */
-
-                PH::print_stdout($type . " - not finalised");
 
                 if( isset( $object['id'] ) )
                 {
@@ -1538,36 +1513,7 @@ class PanSCMAPIConnector
                     $this->SCM_API_arrayToXml($dom, $rootEntry, $object);
 
                     #DH::DEBUGprintDOMDocument($dom->firstChild);
-                    #$this->SCM_API_SP_object_import($dom, $sub, $profileStoreName);
-
-
-                    //Todo: wrong approach, where does zones need to be added???
-
-                    #if( $sub->$profileStoreName->xmlroot == null)
-                    #        $sub->$profileStoreName->createXmlRoot();
-
-                    $ownerDocument = $sub->$profileStoreName->owner->xmlroot->ownerDocument;
-                    $tmpNode = $ownerDocument->importNode($dom->firstChild, true);
-
-                    $newProf = null;
-                    if( $profileStoreName == 'zoneStore' )
-                        $newProf = new Zone('dummy', $sub->$profileStoreName);
-
-                    else
-                        derr("implementation needed");
-
-
-                    /** @var DeviceGroup $sub */
-                    if( $newProf != null )
-                    {
-                        $newProf->load_from_domxml($tmpNode);
-
-                        $newProf->owner = null;
-                        if( $profileStoreName == 'zoneStore' )
-                            $sub->$profileStoreName->addZone($newProf);
-
-                        return true;
-                    }
+                    $this->SCM_API_SP_object_import($dom, $sub, $profileStoreName);
                 }
 
             }
@@ -1575,46 +1521,6 @@ class PanSCMAPIConnector
             {
                 ///config/network/v1/zone-protection-profiles
                 $profileStoreName = "zoneProtectionProfileStore";
-                /*
-                    {"data":[
-                        {"id":"4dc70ebd-d2f5-43cc-9151-0f3d5c440867",
-                        "name":"best-practice","folder":"All",
-                        "snippet":"default",
-                        "flood":{
-                            "tcp_syn":{"enable":false},"udp":{"enable":false},"icmp":{"enable":false},"icmpv6":{"enable":false},"other_ip":{"enable":false}
-                        },
-                        "scan":[
-                            {"name":"8001","action":{"alert":{}},"interval":2,"threshold":100},
-                            {"name":"8002","action":{"alert":{}},"interval":2,"threshold":100},
-                            {"name":"8003","action":{"alert":{}},"interval":2,"threshold":100}
-                        ],
-                "spoofed_ip_discard":false,"strict_ip_check":false,"fragmented_traffic_discard":false,
-                "strict_source_routing_discard":true,
-                "loose_source_routing_discard":true,"timestamp_discard":false,
-                "record_route_discard":false,
-                "security_discard":false,"stream_id_discard":false,
-                "unknown_option_discard":true,"malformed_option_discard":true,
-                "mismatched_overlapping_tcp_segment_discard":true,
-                "tcp_handshake_discard":true,"tcp_syn_with_data_discard":true,
-                "tcp_synack_with_data_discard":true,"reject_non_syn_tcp":"global",
-                "tcp_timestamp_strip":true,"tcp_fast_open_and_data_strip":false,
-                "mptcp_option_strip":"global","icmp_ping_zero_id_discard":false,
-                "icmp_frag_discard":false,"icmp_large_packet_discard":false,
-                "discard_icmp_embedded_error":false,"suppress_icmp_timeexceeded":false,
-                "suppress_icmp_needfrag":false,"ipv6":{"routing_header_0":false,"routing_header_1":false,
-                "routing_header_3":false,"routing_header_4_252":false,"routing_header_253":false,
-                "routing_header_254":false,"routing_header_255":false,"ipv4_compatible_address":false,
-                "filter_ext_hdr":{"hop_by_hop_hdr":false,"routing_hdr":false,"dest_option_hdr":false},
-                "options_invalid_ipv6_discard":false,"reserved_field_set_discard":false,
-                "anycast_source":false,"needless_fragment_hdr":false,"icmpv6_too_big_small_mtu_discard":false,
-                "ignore_inv_pkt":{"dest_unreach":false,"pkt_too_big":false,"time_exceeded":false,
-                "param_problem":false,"redirect":false}
-                }
-                },
-                {"id":"58508ad1-165f-46b9-b94f-4fb66a379702",
-                "name":"zpp_swaschkut","folder":"parent1",
-                "flood":{"tcp_syn":{"enable":false,"red":{"alarm_rate":10000,"activate_rate":10000,"maximal_rate":40000}},"udp":{"enable":false,"red":{"alarm_rate":10000,"activate_rate":10000,"maximal_rate":40000}},"icmp":{"enable":false,"red":{"alarm_rate":10000,"activate_rate":10000,"maximal_rate":40000}},"icmpv6":{"enable":false,"red":{"alarm_rate":10000,"activate_rate":10000,"maximal_rate":40000}},"other_ip":{"enable":false,"red":{"alarm_rate":10000,"activate_rate":10000,"maximal_rate":40000}}},"spoofed_ip_discard":false,"strict_ip_check":false,"fragmented_traffic_discard":false,"strict_source_routing_discard":false,"loose_source_routing_discard":false,"timestamp_discard":false,"record_route_discard":false,"security_discard":false,"stream_id_discard":false,"unknown_option_discard":false,"malformed_option_discard":false,"mismatched_overlapping_tcp_segment_discard":false,"tcp_handshake_discard":false,"tcp_syn_with_data_discard":false,"tcp_synack_with_data_discard":false,"reject_non_syn_tcp":"global","asymmetric_path":"global","tcp_timestamp_strip":false,"tcp_fast_open_and_data_strip":false,"mptcp_option_strip":"global","icmp_ping_zero_id_discard":false,"icmp_frag_discard":false,"icmp_large_packet_discard":false,"discard_icmp_embedded_error":false,"suppress_icmp_timeexceeded":false,"suppress_icmp_needfrag":false,"ipv6":{"routing_header_0":false,"routing_header_1":false,"routing_header_3":false,"routing_header_4_252":false,"routing_header_253":false,"routing_header_254":false,"routing_header_255":false,"ipv4_compatible_address":false,"filter_ext_hdr":{"hop_by_hop_hdr":false,"routing_hdr":false,"dest_option_hdr":false},"options_invalid_ipv6_discard":false,"reserved_field_set_discard":false,"anycast_source":false,"needless_fragment_hdr":false,"icmpv6_too_big_small_mtu_discard":false,"ignore_inv_pkt":{"dest_unreach":false,"pkt_too_big":false,"time_exceeded":false,"param_problem":false,"redirect":false}}}],"offset":0,"total":2,"limit":200}
-                 */
 
 
                 if( isset( $object['id'] ) )
@@ -1633,36 +1539,7 @@ class PanSCMAPIConnector
                     $this->SCM_API_arrayToXml($dom, $rootEntry, $object);
 
                     #DH::DEBUGprintDOMDocument($dom->firstChild);
-                    #$this->SCM_API_SP_object_import($dom, $sub, $profileStoreName);
-
-
-                    //Todo: wrong approach, where does zones need to be added???
-
-                    #if( $sub->$profileStoreName->xmlroot == null)
-                    #        $sub->$profileStoreName->createXmlRoot();
-
-                    $ownerDocument = $sub->network->$profileStoreName->owner->xmlroot->ownerDocument;
-                    $tmpNode = $ownerDocument->importNode($dom->firstChild, true);
-
-                    $newProf = null;
-                    if( $profileStoreName == 'zoneProtectionProfileStore' )
-                        $newProf = new ZoneProtectionProfile('dummy', $sub->network->$profileStoreName);
-
-                    else
-                        derr("implementation needed");
-
-
-                    /** @var Container|DeviceCloud|DeviceOnPrem $sub */
-                    if( $newProf != null )
-                    {
-                        $newProf->load_from_domxml($tmpNode);
-
-                        $newProf->owner = null;
-                        if( $profileStoreName == 'zoneProtectionProfileStore' )
-                            $sub->network->$profileStoreName->addProfil($newProf);
-
-                        return true;
-                    }
+                    $this->SCM_API_SP_object_import($dom, $sub, $profileStoreName);
                 }
             }
 
@@ -2037,13 +1914,22 @@ class PanSCMAPIConnector
     }
     private function SCM_API_SP_object_import($dom, $sub, $storeType)
     {
-        if( $sub->$storeType->xmlroot == null)
+        if( $storeType == 'zoneProtectionProfileStore' )
+        {}
+        else
         {
             if( $sub->$storeType->xmlroot == null)
-                $sub->$storeType->createXmlRoot();
+            {
+                if( $sub->$storeType->xmlroot == null)
+                    $sub->$storeType->createXmlRoot();
+            }
         }
 
-        $ownerDocument = $sub->$storeType->xmlroot->ownerDocument;
+        if( $storeType == 'zoneProtectionProfileStore' )
+            $ownerDocument = $sub->network->$storeType->owner->xmlroot->ownerDocument;
+        else
+            $ownerDocument = $sub->$storeType->xmlroot->ownerDocument;
+
         $tmpNode = $ownerDocument->importNode($dom->firstChild, true);
 
 
@@ -2064,11 +1950,17 @@ class PanSCMAPIConnector
         elseif( $storeType == 'securityProfileGroupStore' )
             $newProf = new SecurityProfileGroup('dummy', $sub->$storeType);
 
+        elseif( $storeType == 'zoneStore' )
+            $newProf = new Zone('dummy', $sub->$storeType);
+        
+        elseif( $storeType == 'zoneProtectionProfileStore' )
+            $newProf = new ZoneProtectionProfile('dummy', $sub->network->$storeType);
+
         else
             derr("implementation needed");
 
 
-        /** @var DeviceGroup $sub */
+        /** @var Container|DeviceCloud|DeviceOnPrem $sub */
 
         if( get_class($newProf) == 'SecurityProfileGroup' )
         {
@@ -2077,6 +1969,22 @@ class PanSCMAPIConnector
             $newProf->owner = null;
             $sub->securityProfileGroupStore->addSecurityProfileGroup($newProf);
         }
+
+        elseif( get_class($newProf) == 'Zone' )
+        {
+            $newProf->load_from_domxml($tmpNode);
+
+            $newProf->owner = null;
+            $sub->zoneStore->addZone($newProf);
+        }
+        elseif( get_class($newProf) == 'ZoneProtectionProfile' )
+        {
+            $newProf->load_from_domxml($tmpNode);
+
+            $newProf->owner = null;
+            $sub->network->zoneProtectionProfileStore->addProfil($newProf);
+        }
+
         else
         {
             $newProf->load_from_domxml($tmpNode);

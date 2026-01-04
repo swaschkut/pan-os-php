@@ -219,6 +219,18 @@ class ZoneStore extends ObjStore
 
     }
 
+    public function createXmlRoot()
+    {
+        if( $this->xmlroot === null )
+        {
+            if( $this->owner->isPanorama() || $this->owner->isFirewall() )
+                $xml = $this->owner->sharedroot;
+            else
+                $xml = $this->owner->xmlroot;
+
+            $this->xmlroot = DH::findFirstElementOrCreate('zone', $xml);
+        }
+    }
 
 }
 
