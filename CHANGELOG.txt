@@ -12,6 +12,7 @@ UTIL:
 * migration - introduce panorama2fawkes | migrate Prisma Access from Panorama to Cloud managed - only file based
 * class BuckbeackConf/FawkesConf | optimisation for ThreatPolicyStore/DNSPolicyStore |
 * class ZoneStore | create xmlroot if not available - needed for Buckbeak config import
+* type=stats in=scm-api:// | extend with AS / VP Rules and InLine ML - correction for class Snippet
 
 BUGFIX:
 

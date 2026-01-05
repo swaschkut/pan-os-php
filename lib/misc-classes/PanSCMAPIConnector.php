@@ -23,7 +23,7 @@ class PanSCMAPIConnector
     /** @var string */
     public $scope;
 
-    public $access_token;
+    public $access_token = null;
 
     /** @var bool */
     public $showApiCalls = FALSE;
@@ -285,59 +285,62 @@ class PanSCMAPIConnector
 
     public function getAccessToken( $debugAPI = false )
     {
-        /*
-        curl -d "grant_type=client_credentials&scope=tsg_id:<tsg_id>" \
-        -u <client_id>:<client_secret> \
-        -H "Content-Type: application/x-www-form-urlencoded" \
-        -X POST https://auth.apps.paloaltonetworks.com/oauth2/access_token
-        */
-        $content = "grant_type=client_credentials&scope=" . $this->scope . "&client_id=" . $this->client_id . "&client_secret=" . $this->client_secret;
-        $header = array("Content-Type: application/x-www-form-urlencoded");
-
-
-        $this->_createOrRenewCurl();
-
-        curl_setopt($this->_curl_handle, CURLOPT_URL, $this->url_token);
-        curl_setopt($this->_curl_handle, CURLOPT_HTTPHEADER, $header);
-        curl_setopt($this->_curl_handle, CURLOPT_SSL_VERIFYPEER, FALSE);
-        curl_setopt($this->_curl_handle, CURLOPT_RETURNTRANSFER, TRUE);
-        curl_setopt($this->_curl_handle, CURLOPT_POST, TRUE);
-        curl_setopt($this->_curl_handle, CURLOPT_POSTFIELDS, $content);
-
-        if( $this->showApiCalls )
+        if( $this->access_token === null )
         {
-            if( PH::$displayCurlRequest )
+            /*
+            curl -d "grant_type=client_credentials&scope=tsg_id:<tsg_id>" \
+            -u <client_id>:<client_secret> \
+            -H "Content-Type: application/x-www-form-urlencoded" \
+            -X POST https://auth.apps.paloaltonetworks.com/oauth2/access_token
+            */
+            $content = "grant_type=client_credentials&scope=" . $this->scope . "&client_id=" . $this->client_id . "&client_secret=" . $this->client_secret;
+            $header = array("Content-Type: application/x-www-form-urlencoded");
+
+
+            $this->_createOrRenewCurl();
+
+            curl_setopt($this->_curl_handle, CURLOPT_URL, $this->url_token);
+            curl_setopt($this->_curl_handle, CURLOPT_HTTPHEADER, $header);
+            curl_setopt($this->_curl_handle, CURLOPT_SSL_VERIFYPEER, FALSE);
+            curl_setopt($this->_curl_handle, CURLOPT_RETURNTRANSFER, TRUE);
+            curl_setopt($this->_curl_handle, CURLOPT_POST, TRUE);
+            curl_setopt($this->_curl_handle, CURLOPT_POSTFIELDS, $content);
+
+            if( $this->showApiCalls )
             {
-                print $this->url_token."?".$content."\n";
-                print "content: '".$content."'\n";
-                curl_setopt($this->_curl_handle, CURLOPT_FOLLOWLOCATION, TRUE);
-                curl_setopt($this->_curl_handle, CURLOPT_VERBOSE, TRUE);
-            }
-        }
-
-
-
-        $response = curl_exec($this->_curl_handle);
-
-        if( empty($response) )
-            derr("something went wrong - check internet connection", null, FALSE);
-
-        $jsonArray = json_decode($response, TRUE);
-        if( !isset($jsonArray['access_token']) )
-        {
-            if( isset($jsonArray['error']) )
-            {
-                PH::print_stdout( );
-                PH::print_stdout( PH::boldText("ERROR: " .$jsonArray['error'] ) );
-                PH::print_stdout( "if your tenant: ".$this->scope." is NOT running in production environment this is expected | for QA environment use additional argument 'shadow-saseapiqa'" );
+                if( PH::$displayCurlRequest )
+                {
+                    print $this->url_token."?".$content."\n";
+                    print "content: '".$content."'\n";
+                    curl_setopt($this->_curl_handle, CURLOPT_FOLLOWLOCATION, TRUE);
+                    curl_setopt($this->_curl_handle, CURLOPT_VERBOSE, TRUE);
+                }
             }
 
-            derr( "problem with SCM API connection - not possible to get 'access_token'", null, FALSE );
-        }
-        elseif( $debugAPI )
-            PH::print_stdout( "TOKEN: ".$jsonArray['access_token'] );
 
-        $this->access_token = $jsonArray['access_token'];
+
+            $response = curl_exec($this->_curl_handle);
+
+            if( empty($response) )
+                derr("something went wrong - check internet connection", null, FALSE);
+
+            $jsonArray = json_decode($response, TRUE);
+            if( !isset($jsonArray['access_token']) )
+            {
+                if( isset($jsonArray['error']) )
+                {
+                    PH::print_stdout( );
+                    PH::print_stdout( PH::boldText("ERROR: " .$jsonArray['error'] ) );
+                    PH::print_stdout( "if your tenant: ".$this->scope." is NOT running in production environment this is expected | for QA environment use additional argument 'shadow-saseapiqa'" );
+                }
+
+                derr( "problem with SCM API connection - not possible to get 'access_token'", null, FALSE );
+            }
+            elseif( $debugAPI )
+                PH::print_stdout( "TOKEN: ".$jsonArray['access_token'] );
+
+            $this->access_token = $jsonArray['access_token'];
+        }
     }
 
     function getTypeArray($utilType, $ruleType = "security")
@@ -544,6 +547,9 @@ class PanSCMAPIConnector
 
             $this->typeArray[] = "profile-groups";
 
+            $this->typeArray[] = "zones";
+            $this->typeArray[] = "zone-protection-profiles";
+
             $this->typeArray[] = "security-rules";
         }
         elseif( $utilType == "zone" )
@@ -676,6 +682,9 @@ class PanSCMAPIConnector
 
         $url = str_replace(' ', '%20', $url);
 
+
+        PH::print_stdout("   -1 '". $folderName. "' object: " . $type);
+
         if( $this->showApiCalls )
         {
             PH::print_stdout($url);
@@ -784,6 +793,9 @@ class PanSCMAPIConnector
 
         $url = str_replace(' ', '%20', $url);
 
+
+        PH::print_stdout("   -2 '". $folder. "' object: " . $type);
+
         if( $this->showApiCalls )
         {
             PH::print_stdout($url);
@@ -867,6 +879,9 @@ class PanSCMAPIConnector
         }
 
         $url = str_replace(' ', '%20', $url);
+
+
+        PH::print_stdout("   -3 '". $folderName. "' object: " . $type);
 
         if( $this->showApiCalls )
         {
@@ -1952,7 +1967,7 @@ class PanSCMAPIConnector
 
         elseif( $storeType == 'zoneStore' )
             $newProf = new Zone('dummy', $sub->$storeType);
-        
+
         elseif( $storeType == 'zoneProtectionProfileStore' )
             $newProf = new ZoneProtectionProfile('dummy', $sub->network->$storeType);
 

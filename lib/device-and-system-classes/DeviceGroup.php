@@ -1351,11 +1351,13 @@ class DeviceGroup
         $stdoutarray['Vulnerability objects'] = array();
         $stdoutarray['Vulnerability objects']['total'] = $this->VulnerabilityProfileStore->count();
 
+
         $stdoutarray['Antivirus objects'] = array();
         $stdoutarray['Antivirus objects']['total'] = $this->AntiVirusProfileStore->count();
 
         $stdoutarray['Wildfire objects'] = array();
         $stdoutarray['Wildfire objects']['total'] = $this->WildfireProfileStore->count();
+
 
         $stdoutarray['URL objects'] = array();
         $stdoutarray['URL objects']['total'] = $this->URLProfileStore->count();
@@ -1439,8 +1441,12 @@ class DeviceGroup
 
         $this->sizeArray['kb Anti-Spyware objects'] = &DH::dom_get_config_size($this->AntiSpywareProfileStore->xmlroot);
         $this->sizeArray['kb Vulnerability objects'] = &DH::dom_get_config_size($this->VulnerabilityProfileStore->xmlroot);
+
+
         $this->sizeArray['kb Antivirus objects'] = &DH::dom_get_config_size($this->AntiVirusProfileStore->xmlroot);
         $this->sizeArray['kb Wildfire objects'] = &DH::dom_get_config_size($this->WildfireProfileStore->xmlroot);
+
+
         $this->sizeArray['kb URL objects'] = &DH::dom_get_config_size($this->URLProfileStore->xmlroot);
         $this->sizeArray['kb custom URL objects'] = &DH::dom_get_config_size($this->customURLProfileStore->xmlroot);
         $this->sizeArray['kb File-Blocking objects'] = &DH::dom_get_config_size($this->FileBlockingProfileStore->xmlroot);
@@ -1448,6 +1454,9 @@ class DeviceGroup
         $this->sizeArray['kb Decryption objects'] = &DH::dom_get_config_size($this->DecryptionProfileStore->xmlroot);
         $this->sizeArray['kb HipObject objects'] = &DH::dom_get_config_size($this->HipObjectsProfileStore->xmlroot);
         $this->sizeArray['kb HipProfile objects'] = &DH::dom_get_config_size($this->HipProfilesProfileStore->xmlroot);
+
+
+
         $this->sizeArray['kb GTP objects'] = &DH::dom_get_config_size($this->GTPProfileStore->xmlroot);
         $this->sizeArray['kb SCEP objects'] = &DH::dom_get_config_size($this->SCEPProfileStore->xmlroot);
         $this->sizeArray['kb PacketBroker objects'] = &DH::dom_get_config_size($this->PacketBrokerProfileStore->xmlroot);
@@ -1456,6 +1465,7 @@ class DeviceGroup
         $this->sizeArray['kb SDWanSaasQuality objects'] = &DH::dom_get_config_size($this->SDWanSaasQualityProfileStore->xmlroot);
         $this->sizeArray['kb SDWanTrafficDistribution objects'] = &DH::dom_get_config_size($this->SDWanTrafficDistributionProfileStore->xmlroot);
         $this->sizeArray['kb DataObjects objects'] = &DH::dom_get_config_size($this->DataObjectsProfileStore->xmlroot);
+
         $this->sizeArray['kb LogProfile objects'] = &DH::dom_get_config_size($this->LogProfileStore->xmlroot);
 
 
@@ -1621,6 +1631,24 @@ class DeviceGroup
         else
             $stdoutarray['as visibility percentage'] = 0;
         //--
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "as.rules is.visibility" );
+        $stdoutarray['as visibility rules'] = count( $sub_ruleStore->rules( $filter_array ) );
+        $stdoutarray['as visibility rules calc'] = $stdoutarray['as visibility rules']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['as visibility rules percentage'] = floor( ( $stdoutarray['as visibility rules'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['as visibility rules percentage'] = 0;
+        //--
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "as.mica-engine is.visibility" );
+        $stdoutarray['as visibility mica-engine'] = count( $sub_ruleStore->rules( $filter_array ) );
+        $stdoutarray['as visibility mica-engine calc'] = $stdoutarray['as visibility mica-engine']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['as visibility mica-engine percentage'] = floor( ( $stdoutarray['as visibility mica-engine'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['as visibility mica-engine percentage'] = 0;
+        //--
+
+
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "as is.best-practice" );
         $stdoutarray['as best-practice'] = count( $sub_ruleStore->rules( $filter_array ) );
         $stdoutarray['as best-practice calc'] = $stdoutarray['as best-practice']."/".$ruleForCalculation;
@@ -1629,6 +1657,23 @@ class DeviceGroup
         else
             $stdoutarray['as best-practice percentage'] = 0;
         //--
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "as.rules is.visibility" );
+        $stdoutarray['as best-practice rules'] = count( $sub_ruleStore->rules( $filter_array ) );
+        $stdoutarray['as best-practice rules calc'] = $stdoutarray['as visibility rules']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['as best-practice rules percentage'] = floor( ( $stdoutarray['as visibility rules'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['as best-practice rules percentage'] = 0;
+        //--
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "as.mica-engine is.best-practice" );
+        $stdoutarray['as best-practice mica-engine'] = count( $sub_ruleStore->rules( $filter_array ) );
+        $stdoutarray['as best-practice mica-engine calc'] = $stdoutarray['as best-practice mica-engine']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['as best-practice mica-engine percentage'] = floor( ( $stdoutarray['as best-practice mica-engine'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['as best-practice mica-engine percentage'] = 0;
+        //--
+
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "as is.adoption" );
         $stdoutarray['as adoption'] = count( $sub_ruleStore->rules( $filter_array ) );
         $stdoutarray['as adoption calc'] = $stdoutarray['as adoption']."/".$ruleForCalculation;
@@ -1636,6 +1681,8 @@ class DeviceGroup
             $stdoutarray['as adoption percentage'] = floor( ( $stdoutarray['as adoption'] / $ruleForCalculation ) * 100 );
         else
             $stdoutarray['as adoption percentage'] = 0;
+
+
 
         //Vulnerability Profiles
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "vp is.visibility" );
@@ -1646,6 +1693,24 @@ class DeviceGroup
         else
             $stdoutarray['vp visibility percentage'] = 0;
         //--
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "vp.rules is.visibility" );
+        $stdoutarray['vp visibility rules'] = count( $sub_ruleStore->rules( $filter_array ) );
+        $stdoutarray['vp visibility rules calc'] = $stdoutarray['vp visibility rules']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['vp visibility rules percentage'] = floor( ( $stdoutarray['vp visibility rules'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['vp visibility rules percentage'] = 0;
+        //--
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "vp.mica-engine is.visibility" );
+        $stdoutarray['vp visibility mica-engine'] = count( $sub_ruleStore->rules( $filter_array ) );
+        $stdoutarray['vp visibility mica-engine calc'] = $stdoutarray['vp visibility mica-engine']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['vp visibility mica-engine percentage'] = floor( ( $stdoutarray['vp visibility mica-engine'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['vp visibility mica-engine percentage'] = 0;
+        //--
+
+
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "vp is.best-practice" );
         $stdoutarray['vp best-practice'] = count( $sub_ruleStore->rules( $filter_array ) );
         $stdoutarray['vp best-practice calc'] = $stdoutarray['vp best-practice']."/".$ruleForCalculation;
@@ -1654,6 +1719,23 @@ class DeviceGroup
         else
             $stdoutarray['vp best-practice percentage'] = 0;
         //--
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "vp.rules is.best-practice" );
+        $stdoutarray['vp best-practice rules'] = count( $sub_ruleStore->rules( $filter_array ) );
+        $stdoutarray['vp best-practice rules calc'] = $stdoutarray['vp best-practice rules']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['vp best-practice rules percentage'] = floor( ( $stdoutarray['vp best-practice rules'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['vp best-practice rules percentage'] = 0;
+        //--
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "vp.mica-engine is.best-practice" );
+        $stdoutarray['vp best-practice mica-engine'] = count( $sub_ruleStore->rules( $filter_array ) );
+        $stdoutarray['vp best-practice mica-engine calc'] = $stdoutarray['vp best-practice mica-engine']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['vp best-practice mica-engine percentage'] = floor( ( $stdoutarray['vp best-practice mica-engine'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['vp best-practice mica-engine percentage'] = 0;
+        //--
+
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "vp is.adoption" );
         $stdoutarray['vp adoption'] = count( $sub_ruleStore->rules( $filter_array ) );
         $stdoutarray['vp adoption calc'] = $stdoutarray['vp adoption']."/".$ruleForCalculation;
@@ -1838,7 +1920,7 @@ class DeviceGroup
         $percentageArray_adoption['URL Filtering Profiles']['group'] = 'URL Filtering';
         $percentageArray_adoption['Credential Theft Prevention']['value'] = $stdoutarray['url-credential adoption percentage'];
         $percentageArray_adoption['Credential Theft Prevention']['group'] = 'URL Filtering';
-        #$percentageArray_adoption['DNS List']['value'] = $stdoutarray['dns-list adoption percentage'];
+        $percentageArray_adoption['DNS List']['value'] = $stdoutarray['dns-list adoption percentage'];
         $percentageArray_adoption['DNS Security']['value'] = $stdoutarray['dns-security adoption percentage'];
         $percentageArray_adoption['DNS Security']['group'] = 'DNS Security';
 
@@ -1874,7 +1956,7 @@ class DeviceGroup
         $percentageArray_visibility['URL Filtering Profiles']['group'] = 'URL Filtering';
         $percentageArray_visibility['Credential Theft Prevention']['value'] = $stdoutarray['url-credential visibility percentage'];
         $percentageArray_visibility['Credential Theft Prevention']['group'] = 'URL Filtering';
-        #$percentageArray_visibility['DNS List']['value'] = $stdoutarray['dns-list visibility percentage'];
+        $percentageArray_visibility['DNS List']['value'] = $stdoutarray['dns-list visibility percentage'];
         $percentageArray_visibility['DNS Security']['value'] = $stdoutarray['dns-security visibility percentage'];
         $percentageArray_visibility['DNS Security']['group'] = 'DNS Security';
 
@@ -1905,7 +1987,7 @@ class DeviceGroup
         $percentageArray_best_practice['URL Filtering Profiles']['group'] = 'URL Filtering';
         $percentageArray_best_practice['Credential Theft Prevention']['value'] = $stdoutarray['url-credential best-practice percentage'];
         $percentageArray_best_practice['Credential Theft Prevention']['group'] = 'URL Filtering';
-        #$percentageArray_best_practice['DNS List']['value'] = $stdoutarray['dns-list best-practice percentage'];
+        $percentageArray_best_practice['DNS List']['value'] = $stdoutarray['dns-list best-practice percentage'];
         $percentageArray_best_practice['DNS Security']['value'] = $stdoutarray['dns-security best-practice percentage'];
         $percentageArray_best_practice['DNS Security']['group'] = 'DNS Security';
 

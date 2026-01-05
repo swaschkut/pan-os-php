@@ -87,6 +87,29 @@ class Snippet
     /** @var SecurityProfileStore */
     public $HipProfilesProfileStore = null;
 
+    /** @var SecurityProfileStore */
+    public $GTPProfileStore = null;
+
+    /** @var SecurityProfileStore */
+    public $SCEPProfileStore = null;
+
+    /** @var SecurityProfileStore */
+    public $PacketBrokerProfileStore = null;
+
+    /** @var SecurityProfileStore */
+    public $SDWanErrorCorrectionProfileStore = null;
+
+    /** @var SecurityProfileStore */
+    public $SDWanPathQualityProfileStore = null;
+
+    /** @var SecurityProfileStore */
+    public $SDWanSaasQualityProfileStore = null;
+
+    /** @var SecurityProfileStore */
+    public $SDWanTrafficDistributionProfileStore = null;
+
+    /** @var SecurityProfileStore */
+    public $DataObjectsProfileStore = null;
 
     /** @var ScheduleStore */
     public $scheduleStore = null;
@@ -150,6 +173,9 @@ class Snippet
 
     /** @var RuleStore */
     public $tunnelInspectionRules;
+
+    /** @var RuleStore */
+    public $defaultSecurityRules = null;
 
     /** @var RuleStore */
     public $networkPacketBrokerRules;
@@ -262,6 +288,31 @@ class Snippet
         $this->HipProfilesProfileStore->name = 'HipProfiles';
 
 
+        $this->GTPProfileStore = new SecurityProfileStore($this, "GTPProfile");
+        $this->GTPProfileStore->name = 'GTPProfiles';
+
+        $this->SCEPProfileStore = new SecurityProfileStore($this, "SCEPProfile");
+        $this->SCEPProfileStore->name = 'SCEPProfiles';
+
+        $this->PacketBrokerProfileStore = new SecurityProfileStore($this, "PacketBrokerProfile");
+        $this->PacketBrokerProfileStore->name = 'PacketBrokerProfiles';
+
+        $this->SDWanErrorCorrectionProfileStore = new SecurityProfileStore($this, "SDWanErrorCorrectionProfile");
+        $this->SDWanErrorCorrectionProfileStore->name = 'SDWanErrorCorrectionProfiles';
+
+        $this->SDWanPathQualityProfileStore = new SecurityProfileStore($this, "SDWanPathQualityProfile");
+        $this->SDWanPathQualityProfileStore->name = 'SDWanPathQualityProfiles';
+
+        $this->SDWanSaasQualityProfileStore = new SecurityProfileStore($this, "SDWanSaasQualityProfile");
+        $this->SDWanSaasQualityProfileStore->name = 'SDWanSaasQualityProfiles';
+
+        $this->SDWanTrafficDistributionProfileStore = new SecurityProfileStore($this, "SDWanTrafficDistributionProfile");
+        $this->SDWanTrafficDistributionProfileStore->name = 'SDWanTrafficDistributionProfiles';
+
+        $this->DataObjectsProfileStore = new SecurityProfileStore($this, "DataObjectsProfile");
+        $this->DataObjectsProfileStore->name = 'DataObjectsProfileStoreProfiles';
+
+
         $this->scheduleStore = new ScheduleStore($this);
         $this->scheduleStore->setName('scheduleStore');
 
@@ -308,6 +359,8 @@ class Snippet
 
         $this->tunnelInspectionRules = new RuleStore($this, 'TunnelInspectionRule');
         $this->tunnelInspectionRules->name = 'TunnelInspection';
+
+        $this->defaultSecurityRules = new RuleStore($this, 'DefaultSecurityRule', TRUE);
 
         $this->networkPacketBrokerRules = new RuleStore($this, 'NetworkPacketBrokerRule', TRUE);
         $this->networkPacketBrokerRules->name = 'NetworkPacketBroker';
@@ -611,6 +664,78 @@ class Snippet
                 {
                     $this->HipProfilesProfileStore->load_from_domxml($tmproot);
                 }
+
+                //
+                // GTP Profile extraction
+                //
+                $tmproot = DH::findFirstElement('gtp', $this->securityProfilebaseroot);
+                if( $tmproot !== FALSE )
+                {
+                    $this->GTPProfileStore->load_from_domxml($tmproot);
+                }
+
+                //
+                // SCEP Profile extraction
+                //
+                $tmproot = DH::findFirstElement('scep', $this->securityProfilebaseroot);
+                if( $tmproot !== FALSE )
+                {
+                    $this->SCEPProfileStore->load_from_domxml($tmproot);
+                }
+
+                //
+                // PacketBroker Profile extraction
+                //
+                $tmproot = DH::findFirstElement('packet-broker', $this->securityProfilebaseroot);
+                if( $tmproot !== FALSE )
+                {
+                    $this->PacketBrokerProfileStore->load_from_domxml($tmproot);
+                }
+
+                //
+                // SDWan Error Correction Profile extraction
+                //
+                $tmproot = DH::findFirstElement('sdwan-error-correction', $this->securityProfilebaseroot);
+                if( $tmproot !== FALSE )
+                {
+                    $this->SDWanErrorCorrectionProfileStore->load_from_domxml($tmproot);
+                }
+
+                //
+                // SDWan Path Quality Profile extraction
+                //
+                $tmproot = DH::findFirstElement('sdwan-path-quality', $this->securityProfilebaseroot);
+                if( $tmproot !== FALSE )
+                {
+                    $this->SDWanPathQualityProfileStore->load_from_domxml($tmproot);
+                }
+
+                //
+                // SDWan Saas Quality Profile extraction
+                //
+                $tmproot = DH::findFirstElement('sdwan-saas-quality', $this->securityProfilebaseroot);
+                if( $tmproot !== FALSE )
+                {
+                    $this->SDWanSaasQualityProfileStore->load_from_domxml($tmproot);
+                }
+
+                //
+                // SDWan Traffic Distribution Profile extraction
+                //
+                $tmproot = DH::findFirstElement('sdwan-traffic-distribution', $this->securityProfilebaseroot);
+                if( $tmproot !== FALSE )
+                {
+                    $this->SDWanTrafficDistributionProfileStore->load_from_domxml($tmproot);
+                }
+
+                //
+                // DataObjects Profile extraction
+                //
+                $tmproot = DH::findFirstElement('data-objects', $this->securityProfilebaseroot);
+                if( $tmproot !== FALSE )
+                {
+                    $this->DataObjectsProfileStore->load_from_domxml($tmproot);
+                }
             }
 
 
@@ -791,6 +916,19 @@ class Snippet
             //
             $xmlTagName = "tunnel-inspect";
             $var = "tunnelInspectionRules";
+            $tmproot = DH::findFirstElement($xmlTagName, $this->rulebaseroot);
+            if( $tmproot !== FALSE )
+            {
+                $tmprulesroot = DH::findFirstElement('rules', $tmproot);
+                if( $tmprulesroot !== FALSE )
+                    $this->$var->load_from_domxml($tmprulesroot);
+            }
+
+            //
+            // tunnelinspection Rules extraction
+            //
+            $xmlTagName = "default-security-rules";
+            $var = "defaultSecurityRules";
             $tmproot = DH::findFirstElement($xmlTagName, $this->rulebaseroot);
             if( $tmproot !== FALSE )
             {

@@ -24,28 +24,94 @@ trait StatCollectorTrait
     {
         $stdoutarray = array();
 
-        $stdoutarray['type'] = get_class( $this );
+        $stdoutarray['type'] = get_class($this);
 
-        $header = "Statistics for ".get_class($this)." '" . PH::boldText($this->name) . "' | '" . $this->toString() . "'";
+        $header = "Statistics for " . get_class($this) . " '" . PH::boldText($this->name) . "' | '" . $this->toString() . "'";
         $stdoutarray['header'] = $header;
 
-        $stdoutarray['security rules'] = $this->securityRules->count();
+        if(get_class($this) !== "Container" && get_class($this) !== "DeviceGroup")
+        {
+            $stdoutarray['security rules'] = $this->securityRules->count();
 
-        $stdoutarray['nat rules'] = $this->natRules->count();
+            $stdoutarray['nat rules'] = $this->natRules->count();
 
-        $stdoutarray['qos rules'] = $this->qosRules->count();
+            $stdoutarray['qos rules'] = $this->qosRules->count();
 
-        $stdoutarray['pbf rules'] = $this->pbfRules->count();
+            $stdoutarray['pbf rules'] = $this->pbfRules->count();
 
-        $stdoutarray['decryption rules'] = $this->decryptionRules->count();
+            $stdoutarray['decryption rules'] = $this->decryptionRules->count();
 
-        $stdoutarray['app-override rules'] = $this->appOverrideRules->count();
+            $stdoutarray['app-override rules'] = $this->appOverrideRules->count();
 
-        $stdoutarray['capt-portal rules'] = $this->captivePortalRules->count();
+            $stdoutarray['capt-portal rules'] = $this->captivePortalRules->count();
 
-        $stdoutarray['authentication rules'] = $this->authenticationRules->count();
+            $stdoutarray['authentication rules'] = $this->authenticationRules->count();
 
-        $stdoutarray['dos rules'] = $this->dosRules->count();
+            $stdoutarray['dos rules'] = $this->dosRules->count();
+
+            $stdoutarray['tunnel-inspection rules']['pre'] = $this->tunnelInspectionRules->count();
+
+            $stdoutarray['default-security rules']['pre'] = $this->defaultSecurityRules->count();
+
+            $stdoutarray['network-packet-broker rules']['pre'] = $this->networkPacketBrokerRules->count();
+
+            $stdoutarray['sdwan rules']['pre'] = $this->sdWanRules->count();
+
+        }
+        elseif( get_class($this) == "Container" || get_class($this) == "DeviceGroup" )
+        {
+            $stdoutarray['security rules'] = array();
+            $stdoutarray['security rules']['pre'] = $this->securityRules->countPreRules();
+            $stdoutarray['security rules']['post'] = $this->securityRules->countPostRules();
+
+            $stdoutarray['nat rules'] = array();
+            $stdoutarray['nat rules']['pre'] = $this->natRules->countPreRules();
+            $stdoutarray['nat rules']['post'] = $this->natRules->countPostRules();
+
+            $stdoutarray['qos rules'] = array();
+            $stdoutarray['qos rules']['pre'] = $this->qosRules->countPreRules();
+            $stdoutarray['qos rules']['post'] = $this->qosRules->countPostRules();
+
+            $stdoutarray['pbf rules'] = array();
+            $stdoutarray['pbf rules']['pre'] = $this->pbfRules->countPreRules();
+            $stdoutarray['pbf rules']['post'] = $this->pbfRules->countPostRules();
+
+            $stdoutarray['decrypt rules'] = array();
+            $stdoutarray['decrypt rules']['pre'] = $this->decryptionRules->countPreRules();
+            $stdoutarray['decrypt rules']['post'] = $this->decryptionRules->countPostRules();
+
+            $stdoutarray['app-override rules'] = array();
+            $stdoutarray['app-override rules']['pre'] = $this->appOverrideRules->countPreRules();
+            $stdoutarray['app-override rules']['post'] = $this->appOverrideRules->countPostRules();
+
+            $stdoutarray['captive-portal rules'] = array();
+            $stdoutarray['captive-portal rules']['pre'] = $this->captivePortalRules->countPreRules();
+            $stdoutarray['captive-portal rules']['post'] = $this->captivePortalRules->countPostRules();
+
+            $stdoutarray['authentication rules'] = array();
+            $stdoutarray['authentication rules']['pre'] = $this->authenticationRules->countPreRules();
+            $stdoutarray['authentication rules']['post'] = $this->authenticationRules->countPostRules();
+
+            $stdoutarray['dos rules'] = array();
+            $stdoutarray['dos rules']['pre'] = $this->dosRules->countPreRules();
+            $stdoutarray['dos rules']['post'] = $this->dosRules->countPostRules();
+
+            $stdoutarray['tunnel-inspection rules'] = array();
+            $stdoutarray['tunnel-inspection rules']['pre'] = $this->tunnelInspectionRules->countPreRules();
+            $stdoutarray['tunnel-inspection rules']['post'] = $this->tunnelInspectionRules->countPostRules();
+
+            $stdoutarray['default-security rules'] = array();
+            $stdoutarray['default-security rules']['pre'] = $this->defaultSecurityRules->countPreRules();
+            $stdoutarray['default-security rules']['post'] = $this->defaultSecurityRules->countPostRules();
+
+            $stdoutarray['network-packet-broker rules'] = array();
+            $stdoutarray['network-packet-broker rules']['pre'] = $this->networkPacketBrokerRules->countPreRules();
+            $stdoutarray['network-packet-broker rules']['post'] = $this->networkPacketBrokerRules->countPostRules();
+
+            $stdoutarray['sdwan rules'] = array();
+            $stdoutarray['sdwan rules']['pre'] = $this->sdWanRules->countPreRules();
+            $stdoutarray['sdwan rules']['post'] = $this->sdWanRules->countPostRules();
+        }
 
 
         $stdoutarray['address objects'] = array();
@@ -69,29 +135,41 @@ trait StatCollectorTrait
         $stdoutarray['securityProfileGroup objects'] = array();
         $stdoutarray['securityProfileGroup objects']['total'] = $this->securityProfileGroupStore->count();
 
-        /*
-        $stdoutarray['securityProfile objects'] = array();
-        $stdoutarray['securityProfile objects']['Anti-Spyware'] = $this->AntiSpywareProfileStore->count();
-        $stdoutarray['securityProfile objects']['Vulnerability'] = $this->VulnerabilityProfileStore->count();
-        $stdoutarray['securityProfile objects']['WildfireAndAntivirus'] = $this->VirusAndWildfireProfileStore->count();
-        $stdoutarray['securityProfile objects']['DNS-Security'] = $this->DNSSecurityProfileStore->count();
-        $stdoutarray['securityProfile objects']['Saas-Security'] = $this->SaasSecurityProfileStore->count();
-        $stdoutarray['securityProfile objects']['URL'] = $this->URLProfileStore->count();
-        $stdoutarray['securityProfile objects']['File-Blocking'] = $this->FileBlockingProfileStore->count();
-        $stdoutarray['securityProfile objects']['Decryption'] = $this->DecryptionProfileStore->count();
-        */
 
         $stdoutarray['Anti-Spyware objects'] = array();
         $stdoutarray['Anti-Spyware objects']['total'] = $this->AntiSpywareProfileStore->count();
         $stdoutarray['Vulnerability objects'] = array();
         $stdoutarray['Vulnerability objects']['total'] = $this->VulnerabilityProfileStore->count();
-        $stdoutarray['WildfireAndAntivirus objects'] = array();
-        $stdoutarray['WildfireAndAntivirus objects']['total'] = $this->VirusAndWildfireProfileStore->count();
 
-        $stdoutarray['DNS-Security objects'] = array();
-        $stdoutarray['DNS-Security objects']['total'] = $this->DNSSecurityProfileStore->count();
-        $stdoutarray['Saas-Security objects'] = array();
-        $stdoutarray['Saas-Security objects']['total'] = $this->SaasSecurityProfileStore->count();
+        if( get_class($this) == "Container"
+            || get_class($this) == "DeviceCloud"
+            || get_class($this) == "DeviceOnPrem"
+            || get_class($this) == "Snippet"
+        )
+        {
+            $stdoutarray['WildfireAndAntivirus objects'] = array();
+            $stdoutarray['WildfireAndAntivirus objects']['total'] = $this->VirusAndWildfireProfileStore->count();
+
+            $stdoutarray['DNS-Security objects'] = array();
+            $stdoutarray['DNS-Security objects']['total'] = $this->DNSSecurityProfileStore->count();
+            $stdoutarray['Saas-Security objects'] = array();
+            $stdoutarray['Saas-Security objects']['total'] = $this->SaasSecurityProfileStore->count();
+        }
+
+        if( get_class($this) == "DeviceGroup"
+            || get_class($this) == "VirtualSystem"
+        )
+        {
+            $stdoutarray['Antivirus objects'] = array();
+            $stdoutarray['Antivirus objects']['total'] = $this->AntiVirusProfileStore->count();
+
+            $stdoutarray['Wildfire objects'] = array();
+            $stdoutarray['Wildfire objects']['total'] = $this->WildfireProfileStore->count();
+        }
+
+
+
+
 
         $stdoutarray['URL objects'] = array();
         $stdoutarray['URL objects']['total'] = $this->URLProfileStore->count();
@@ -104,11 +182,48 @@ trait StatCollectorTrait
         $stdoutarray['Decryption objects'] = array();
         $stdoutarray['Decryption objects']['total'] = $this->DecryptionProfileStore->count();
 
+
+        $stdoutarray['HipObject objects'] = array();
+        $stdoutarray['HipObject objects']['total'] = $this->HipObjectsProfileStore->count();
+
+        $stdoutarray['HipProfile objects'] = array();
+        $stdoutarray['HipProfile objects']['total'] = $this->HipProfilesProfileStore->count();
+
+
+        $stdoutarray['GTP objects'] = array();
+        $stdoutarray['GTP objects']['total'] = $this->GTPProfileStore->count();
+
+        $stdoutarray['SCEP objects'] = array();
+        $stdoutarray['SCEP objects']['total'] = $this->SCEPProfileStore->count();
+
+        $stdoutarray['PacketBroker objects'] = array();
+        $stdoutarray['PacketBroker objects']['total'] = $this->PacketBrokerProfileStore->count();
+
+        $stdoutarray['SDWanErrorCorrection objects'] = array();
+        $stdoutarray['SDWanErrorCorrection objects']['total'] = $this->SDWanErrorCorrectionProfileStore->count();
+
+        $stdoutarray['SDWanPathQuality objects'] = array();
+        $stdoutarray['SDWanPathQuality objects']['total'] = $this->SDWanPathQualityProfileStore->count();
+
+        $stdoutarray['SDWanSaasQuality objects'] = array();
+        $stdoutarray['SDWanSaasQuality objects']['total'] = $this->SDWanSaasQualityProfileStore->count();
+
+        $stdoutarray['SDWanTrafficDistribution objects'] = array();
+        $stdoutarray['SDWanTrafficDistribution objects']['total'] = $this->SDWanTrafficDistributionProfileStore->count();
+
+        $stdoutarray['DataObjects objects'] = array();
+        $stdoutarray['DataObjects objects']['total'] = $this->DataObjectsProfileStore->count();
+
+
+        $stdoutarray['LogProfile objects'] = array();
+        $stdoutarray['LogProfile objects']['total'] = $this->LogProfileStore->count();
+
+
         $stdoutarray['zones'] = $this->zoneStore->count();
         $stdoutarray['apps'] = $this->appStore->count();
 
 
-        $this->sizeArray['type'] = get_class( $this );
+        $this->sizeArray['type'] = get_class($this);
         $this->sizeArray['statstype'] = "objects";
         $this->sizeArray['header'] = $header;
         $this->sizeArray['kb Container'] = &DH::dom_get_config_size($this->xmlroot);
@@ -122,25 +237,43 @@ trait StatCollectorTrait
         $this->sizeArray['kb authentication rules'] = &DH::dom_get_config_size($this->authenticationRules->xmlroot);
         $this->sizeArray['kb dos rules'] = &DH::dom_get_config_size($this->dosRules->xmlroot);
         $this->sizeArray['kb tunnel-inspection rules'] = &DH::dom_get_config_size($this->tunnelInspectionRules->xmlroot);
-        #$this->sizeArray['kb default-security rules'] = &DH::dom_get_config_size($this->defaultSecurityRules->xmlroot);
+        $this->sizeArray['kb default-security rules'] = &DH::dom_get_config_size($this->defaultSecurityRules->xmlroot);
         $this->sizeArray['kb network-packet-broker rules'] = &DH::dom_get_config_size($this->networkPacketBrokerRules->xmlroot);
         $this->sizeArray['kb sdwan rules'] = &DH::dom_get_config_size($this->sdWanRules->xmlroot);
 
         $tmp_adr = &DH::dom_get_config_size($this->addressStore->addressRoot);
         $tmp_adrgrp = &DH::dom_get_config_size($this->addressStore->addressGroupRoot);
         $tmp_region = &DH::dom_get_config_size($this->addressStore->regionRoot);
-        $this->sizeArray['kb address objects '] = $tmp_adr+$tmp_adrgrp+$tmp_region;
+        $this->sizeArray['kb address objects '] = $tmp_adr + $tmp_adrgrp + $tmp_region;
         $tmp_srv = &DH::dom_get_config_size($this->serviceStore->serviceRoot);
         $tmp_srvgrp = &DH::dom_get_config_size($this->serviceStore->serviceGroupRoot);
-        $this->sizeArray['kb address objects '] = $tmp_srv+$tmp_srvgrp;
+        $this->sizeArray['kb address objects '] = $tmp_srv + $tmp_srvgrp;
         $this->sizeArray['kb tag objects'] = &DH::dom_get_config_size($this->tagStore->xmlroot);
 
         $this->sizeArray['kb securityProfileGroup objects'] = &DH::dom_get_config_size($this->securityProfileGroupStore->xmlroot);
 
         $this->sizeArray['kb Anti-Spyware objects'] = &DH::dom_get_config_size($this->AntiSpywareProfileStore->xmlroot);
         $this->sizeArray['kb Vulnerability objects'] = &DH::dom_get_config_size($this->VulnerabilityProfileStore->xmlroot);
-        $this->sizeArray['kb Wildfire and Antivirus objects'] = &DH::dom_get_config_size($this->VirusAndWildfireProfileStore->xmlroot);
-        #$this->sizeArray['kb Wildfire objects'] = &DH::dom_get_config_size($this->WildfireProfileStore->xmlroot);
+
+        if( get_class($this) == "Container"
+            || get_class($this) == "DeviceCloud"
+            || get_class($this) == "DeviceOnPrem"
+            || get_class($this) == "Snippet"
+        )
+        {
+            $this->sizeArray['kb Wildfire and Antivirus objects'] = &DH::dom_get_config_size($this->VirusAndWildfireProfileStore->xmlroot);
+        }
+
+
+        if( get_class($this) == "DeviceGroup"
+            || get_class($this) == "VirtualSystem"
+        )
+        {
+            $this->sizeArray['kb Antivirus objects'] = &DH::dom_get_config_size($this->AntiVirusProfileStore->xmlroot);
+            $this->sizeArray['kb Wildfire objects'] = &DH::dom_get_config_size($this->WildfireProfileStore->xmlroot);
+        }
+
+
         $this->sizeArray['kb URL objects'] = &DH::dom_get_config_size($this->URLProfileStore->xmlroot);
         $this->sizeArray['kb custom URL objects'] = &DH::dom_get_config_size($this->customURLProfileStore->xmlroot);
         $this->sizeArray['kb File-Blocking objects'] = &DH::dom_get_config_size($this->FileBlockingProfileStore->xmlroot);
@@ -148,15 +281,18 @@ trait StatCollectorTrait
         $this->sizeArray['kb Decryption objects'] = &DH::dom_get_config_size($this->DecryptionProfileStore->xmlroot);
         $this->sizeArray['kb HipObject objects'] = &DH::dom_get_config_size($this->HipObjectsProfileStore->xmlroot);
         $this->sizeArray['kb HipProfile objects'] = &DH::dom_get_config_size($this->HipProfilesProfileStore->xmlroot);
-        #$this->sizeArray['kb GTP objects'] = &DH::dom_get_config_size($this->GTPProfileStore->xmlroot);
-        #$this->sizeArray['kb SCEP objects'] = &DH::dom_get_config_size($this->SCEPProfileStore->xmlroot);
-        #$this->sizeArray['kb PacketBroker objects'] = &DH::dom_get_config_size($this->PacketBrokerProfileStore->xmlroot);
-        #$this->sizeArray['kb SDWanErrorCorrection objects'] = &DH::dom_get_config_size($this->tagStore->xmlroot);
-        #$this->sizeArray['kb SDWanPathQuality objects'] = &DH::dom_get_config_size($this->SDWanPathQualityProfileStore->xmlroot);
-        #$this->sizeArray['kb SDWanSaasQuality objects'] = &DH::dom_get_config_size($this->SDWanSaasQualityProfileStore->xmlroot);
-        #$this->sizeArray['kb SDWanTrafficDistribution objects'] = &DH::dom_get_config_size($this->SDWanTrafficDistributionProfileStore->xmlroot);
-        #$this->sizeArray['kb DataObjects objects'] = &DH::dom_get_config_size($this->DataObjectsProfileStore->xmlroot);
-        #$this->sizeArray['kb LogProfile objects'] = &DH::dom_get_config_size($this->LogProfileStore->xmlroot);
+
+
+        $this->sizeArray['kb GTP objects'] = &DH::dom_get_config_size($this->GTPProfileStore->xmlroot);
+        $this->sizeArray['kb SCEP objects'] = &DH::dom_get_config_size($this->SCEPProfileStore->xmlroot);
+        $this->sizeArray['kb PacketBroker objects'] = &DH::dom_get_config_size($this->PacketBrokerProfileStore->xmlroot);
+        $this->sizeArray['kb SDWanErrorCorrection objects'] = &DH::dom_get_config_size($this->tagStore->xmlroot);
+        $this->sizeArray['kb SDWanPathQuality objects'] = &DH::dom_get_config_size($this->SDWanPathQualityProfileStore->xmlroot);
+        $this->sizeArray['kb SDWanSaasQuality objects'] = &DH::dom_get_config_size($this->SDWanSaasQualityProfileStore->xmlroot);
+        $this->sizeArray['kb SDWanTrafficDistribution objects'] = &DH::dom_get_config_size($this->SDWanTrafficDistributionProfileStore->xmlroot);
+        $this->sizeArray['kb DataObjects objects'] = &DH::dom_get_config_size($this->DataObjectsProfileStore->xmlroot);
+
+        $this->sizeArray['kb LogProfile objects'] = &DH::dom_get_config_size($this->LogProfileStore->xmlroot);
 
 
 
@@ -312,6 +448,7 @@ trait StatCollectorTrait
         else
             $stdoutarray['av adoption percentage'] = 0;
 
+
         //Anti-Spyware Profiles
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "as is.visibility" );
         $stdoutarray['as visibility'] = count( $sub_ruleStore->rules( $filter_array ) );
@@ -321,6 +458,23 @@ trait StatCollectorTrait
         else
             $stdoutarray['as visibility percentage'] = 0;
         //--
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "as.rules is.visibility" );
+        $stdoutarray['as visibility rules'] = count( $sub_ruleStore->rules( $filter_array ) );
+        $stdoutarray['as visibility rules calc'] = $stdoutarray['as visibility rules']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['as visibility rules percentage'] = floor( ( $stdoutarray['as visibility rules'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['as visibility rules percentage'] = 0;
+        //--
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "as.mica-engine is.visibility" );
+        $stdoutarray['as visibility mica-engine'] = count( $sub_ruleStore->rules( $filter_array ) );
+        $stdoutarray['as visibility mica-engine calc'] = $stdoutarray['as visibility mica-engine']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['as visibility mica-engine percentage'] = floor( ( $stdoutarray['as visibility mica-engine'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['as visibility mica-engine percentage'] = 0;
+        //--
+
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "as is.best-practice" );
         $stdoutarray['as best-practice'] = count( $sub_ruleStore->rules( $filter_array ) );
         $stdoutarray['as best-practice calc'] = $stdoutarray['as best-practice']."/".$ruleForCalculation;
@@ -329,6 +483,23 @@ trait StatCollectorTrait
         else
             $stdoutarray['as best-practice percentage'] = 0;
         //--
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "as.rules is.visibility" );
+        $stdoutarray['as best-practice rules'] = count( $sub_ruleStore->rules( $filter_array ) );
+        $stdoutarray['as best-practice rules calc'] = $stdoutarray['as visibility rules']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['as best-practice rules percentage'] = floor( ( $stdoutarray['as visibility rules'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['as best-practice rules percentage'] = 0;
+        //--
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "as.mica-engine is.best-practice" );
+        $stdoutarray['as best-practice mica-engine'] = count( $sub_ruleStore->rules( $filter_array ) );
+        $stdoutarray['as best-practice mica-engine calc'] = $stdoutarray['as best-practice mica-engine']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['as best-practice mica-engine percentage'] = floor( ( $stdoutarray['as best-practice mica-engine'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['as best-practice mica-engine percentage'] = 0;
+        //--
+
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "as is.adoption" );
         $stdoutarray['as adoption'] = count( $sub_ruleStore->rules( $filter_array ) );
         $stdoutarray['as adoption calc'] = $stdoutarray['as adoption']."/".$ruleForCalculation;
@@ -336,6 +507,7 @@ trait StatCollectorTrait
             $stdoutarray['as adoption percentage'] = floor( ( $stdoutarray['as adoption'] / $ruleForCalculation ) * 100 );
         else
             $stdoutarray['as adoption percentage'] = 0;
+
 
         //Vulnerability Profiles
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "vp is.visibility" );
@@ -346,6 +518,23 @@ trait StatCollectorTrait
         else
             $stdoutarray['vp visibility percentage'] = 0;
         //--
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "vp.rules is.visibility" );
+        $stdoutarray['vp visibility rules'] = count( $sub_ruleStore->rules( $filter_array ) );
+        $stdoutarray['vp visibility rules calc'] = $stdoutarray['vp visibility rules']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['vp visibility rules percentage'] = floor( ( $stdoutarray['vp visibility rules'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['vp visibility rules percentage'] = 0;
+        //--
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "vp.mica-engine is.visibility" );
+        $stdoutarray['vp visibility mica-engine'] = count( $sub_ruleStore->rules( $filter_array ) );
+        $stdoutarray['vp visibility mica-engine calc'] = $stdoutarray['vp visibility mica-engine']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['vp visibility mica-engine percentage'] = floor( ( $stdoutarray['vp visibility mica-engine'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['vp visibility mica-engine percentage'] = 0;
+        //--
+
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "vp is.best-practice" );
         $stdoutarray['vp best-practice'] = count( $sub_ruleStore->rules( $filter_array ) );
         $stdoutarray['vp best-practice calc'] = $stdoutarray['vp best-practice']."/".$ruleForCalculation;
@@ -354,6 +543,23 @@ trait StatCollectorTrait
         else
             $stdoutarray['vp best-practice percentage'] = 0;
         //--
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "vp.rules is.best-practice" );
+        $stdoutarray['vp best-practice rules'] = count( $sub_ruleStore->rules( $filter_array ) );
+        $stdoutarray['vp best-practice rules calc'] = $stdoutarray['vp best-practice rules']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['vp best-practice rules percentage'] = floor( ( $stdoutarray['vp best-practice rules'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['vp best-practice rules percentage'] = 0;
+        //--
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "vp.mica-engine is.best-practice" );
+        $stdoutarray['vp best-practice mica-engine'] = count( $sub_ruleStore->rules( $filter_array ) );
+        $stdoutarray['vp best-practice mica-engine calc'] = $stdoutarray['vp best-practice mica-engine']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['vp best-practice mica-engine percentage'] = floor( ( $stdoutarray['vp best-practice mica-engine'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['vp best-practice mica-engine percentage'] = 0;
+        //--
+
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "vp is.adoption" );
         $stdoutarray['vp adoption'] = count( $sub_ruleStore->rules( $filter_array ) );
         $stdoutarray['vp adoption calc'] = $stdoutarray['vp adoption']."/".$ruleForCalculation;
@@ -538,7 +744,7 @@ trait StatCollectorTrait
         $percentageArray_adoption['URL Filtering Profiles']['group'] = 'URL Filtering';
         $percentageArray_adoption['Credential Theft Prevention']['value'] = $stdoutarray['url-credential adoption percentage'];
         $percentageArray_adoption['Credential Theft Prevention']['group'] = 'URL Filtering';
-        #$percentageArray_adoption['DNS List']['value'] = $stdoutarray['dns-list adoption percentage'];
+        $percentageArray_adoption['DNS List']['value'] = $stdoutarray['dns-list adoption percentage'];
         $percentageArray_adoption['DNS Security']['value'] = $stdoutarray['dns-security adoption percentage'];
         $percentageArray_adoption['DNS Security']['group'] = 'DNS Security';
 
@@ -564,8 +770,16 @@ trait StatCollectorTrait
         $percentageArray_visibility['Antivirus Profiles']['group'] = 'Threat Prevention';
         $percentageArray_visibility['Anti-Spyware Profiles']['value'] = $stdoutarray['as visibility percentage'];
         $percentageArray_visibility['Anti-Spyware Profiles']['group'] = 'Threat Prevention';
+        $percentageArray_visibility['Anti-Spyware Rules']['value'] = $stdoutarray['as visibility rules percentage'];
+        $percentageArray_visibility['Anti-Spyware Rules']['group'] = 'Threat Prevention';
+        $percentageArray_visibility['Anti-Spyware InLine ML']['value'] = $stdoutarray['as visibility mica-engine percentage'];
+        $percentageArray_visibility['Anti-Spyware InLine ML']['group'] = 'Threat Prevention';
         $percentageArray_visibility['Vulnerability Profiles']['value'] = $stdoutarray['vp visibility percentage'];
         $percentageArray_visibility['Vulnerability Profiles']['group'] = 'Threat Prevention';
+        $percentageArray_visibility['Vulnerability Rules']['value'] = $stdoutarray['vp visibility rules percentage'];
+        $percentageArray_visibility['Vulnerability Rules']['group'] = 'Threat Prevention';
+        $percentageArray_visibility['Vulnerability InLine ML']['value'] = $stdoutarray['vp visibility mica-engine percentage'];
+        $percentageArray_visibility['Vulnerability InLine ML']['group'] = 'Threat Prevention';
         $percentageArray_visibility['File Blocking Profiles']['value'] = $stdoutarray['fb visibility percentage'];
         $percentageArray_visibility['File Blocking Profiles']['group'] = 'Data Loss Prevention';
         $percentageArray_visibility['Data Filtering']['value'] = $stdoutarray['data visibility percentage'];
@@ -574,7 +788,7 @@ trait StatCollectorTrait
         $percentageArray_visibility['URL Filtering Profiles']['group'] = 'URL Filtering';
         $percentageArray_visibility['Credential Theft Prevention']['value'] = $stdoutarray['url-credential visibility percentage'];
         $percentageArray_visibility['Credential Theft Prevention']['group'] = 'URL Filtering';
-        #$percentageArray_visibility['DNS List']['value'] = $stdoutarray['dns-list visibility percentage'];
+        $percentageArray_visibility['DNS List']['value'] = $stdoutarray['dns-list visibility percentage'];
         $percentageArray_visibility['DNS Security']['value'] = $stdoutarray['dns-security visibility percentage'];
         $percentageArray_visibility['DNS Security']['group'] = 'DNS Security';
 
@@ -596,8 +810,16 @@ trait StatCollectorTrait
         $percentageArray_best_practice['Antivirus Profiles']['group'] = 'Threat Prevention';
         $percentageArray_best_practice['Anti-Spyware Profiles']['value'] = $stdoutarray['as best-practice percentage'];
         $percentageArray_best_practice['Anti-Spyware Profiles']['group'] = 'Threat Prevention';
+        $percentageArray_best_practice['Anti-Spyware Rules']['value'] = $stdoutarray['as best-practice rules percentage'];
+        $percentageArray_best_practice['Anti-Spyware Rules']['group'] = 'Threat Prevention';
+        $percentageArray_best_practice['Anti-Spyware InLine ML']['value'] = $stdoutarray['as best-practice mica-engine percentage'];
+        $percentageArray_best_practice['Anti-Spyware InLine ML']['group'] = 'Threat Prevention';
         $percentageArray_best_practice['Vulnerability Profiles']['value'] = $stdoutarray['vp best-practice percentage'];
         $percentageArray_best_practice['Vulnerability Profiles']['group'] = 'Threat Prevention';
+        $percentageArray_best_practice['Vulnerability Rules']['value'] = $stdoutarray['vp best-practice rules percentage'];
+        $percentageArray_best_practice['Vulnerability Rules']['group'] = 'Threat Prevention';
+        $percentageArray_best_practice['Vulnerability InLine ML']['value'] = $stdoutarray['vp best-practice mica-engine percentage'];
+        $percentageArray_best_practice['Vulnerability InLine ML']['group'] = 'Threat Prevention';
         $percentageArray_best_practice['File Blocking Profiles']['value'] = $stdoutarray['fb best-practice percentage'];
         $percentageArray_best_practice['File Blocking Profiles']['group'] = 'Threat Prevention';
         #$percentageArray_best_practice['Data Filtering']['value'] = '---';
@@ -605,7 +827,7 @@ trait StatCollectorTrait
         $percentageArray_best_practice['URL Filtering Profiles']['group'] = 'URL Filtering';
         $percentageArray_best_practice['Credential Theft Prevention']['value'] = $stdoutarray['url-credential best-practice percentage'];
         $percentageArray_best_practice['Credential Theft Prevention']['group'] = 'URL Filtering';
-        #$percentageArray_best_practice['DNS List']['value'] = $stdoutarray['dns-list best-practice percentage'];
+        $percentageArray_best_practice['DNS List']['value'] = $stdoutarray['dns-list best-practice percentage'];
         $percentageArray_best_practice['DNS Security']['value'] = $stdoutarray['dns-security best-practice percentage'];
         $percentageArray_best_practice['DNS Security']['group'] = 'DNS Security';
 
