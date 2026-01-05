@@ -500,33 +500,33 @@
             "Service_Port": true,
             "Antivirus Profiles": true,
             "Anti-Spyware Profiles": true,
-            "Anti-Spyware Rules": true,
-            "Anti-Spyware InLine ML": true,
+            "Anti-Spyware Rules": false,
+            "Anti-Spyware InLine ML": false,
             "Vulnerability Profiles": true,
-            "Vulnerability Rules": true,
-            "Vulnerability InLine ML": true,
+            "Vulnerability Rules": false,
+            "Vulnerability InLine ML": false,
             "File Blocking Profiles": true,
             "Data Filtering": true,
             "URL Filtering Profiles": true,
             "Credential Theft Prevention": true,
             "DNS Security": true,
-            "DNS List": true
+            "DNS List": false
         },
         "best-practice": {
             "Logging": true,
             "Wildfire Analysis Profiles": true,
             "Antivirus Profiles": true,
             "Anti-Spyware Profiles": true,
-            "Anti-Spyware Rules": true,
-            "Anti-Spyware InLine ML": true,
+            "Anti-Spyware Rules": false,
+            "Anti-Spyware InLine ML": false,
             "Vulnerability Profiles": true,
-            "Vulnerability Rules": true,
-            "Vulnerability InLine ML": true,
+            "Vulnerability Rules": false,
+            "Vulnerability InLine ML": false,
             "File Blocking Profiles": true,
             "URL Filtering Profiles": true,
             "Credential Theft Prevention": true,
             "DNS Security": true,
-            "DNS List": true
+            "DNS List": false
         }
     }
 }
