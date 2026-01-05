@@ -119,6 +119,7 @@ trait StatCollectorTrait
         $stdoutarray['address objects']['address'] = $this->addressStore->countAddresses();
         $stdoutarray['address objects']['group'] = $this->addressStore->countAddressGroups();
         $stdoutarray['address objects']['tmp'] = $this->addressStore->countTmpAddresses();
+        $stdoutarray['address objects']['region'] = $this->addressStore->countRegionObjects();
         $stdoutarray['address objects']['unused'] = $this->addressStore->countUnused();
 
         $stdoutarray['service objects'] = array();
@@ -483,11 +484,11 @@ trait StatCollectorTrait
         else
             $stdoutarray['as best-practice percentage'] = 0;
         //--
-        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "as.rules is.visibility" );
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "as.rules is.best-practice" );
         $stdoutarray['as best-practice rules'] = count( $sub_ruleStore->rules( $filter_array ) );
-        $stdoutarray['as best-practice rules calc'] = $stdoutarray['as visibility rules']."/".$ruleForCalculation;
+        $stdoutarray['as best-practice rules calc'] = $stdoutarray['as best-practice rules']."/".$ruleForCalculation;
         if( $ruleForCalculation !== 0 )
-            $stdoutarray['as best-practice rules percentage'] = floor( ( $stdoutarray['as visibility rules'] / $ruleForCalculation ) * 100 );
+            $stdoutarray['as best-practice rules percentage'] = floor( ( $stdoutarray['as best-practice rules'] / $ruleForCalculation ) * 100 );
         else
             $stdoutarray['as best-practice rules percentage'] = 0;
         //--
@@ -745,6 +746,8 @@ trait StatCollectorTrait
         $percentageArray_adoption['Credential Theft Prevention']['value'] = $stdoutarray['url-credential adoption percentage'];
         $percentageArray_adoption['Credential Theft Prevention']['group'] = 'URL Filtering';
         $percentageArray_adoption['DNS List']['value'] = $stdoutarray['dns-list adoption percentage'];
+        $percentageArray_adoption['DNS List']['group'] = 'DNS Security';
+
         $percentageArray_adoption['DNS Security']['value'] = $stdoutarray['dns-security adoption percentage'];
         $percentageArray_adoption['DNS Security']['group'] = 'DNS Security';
 
@@ -789,6 +792,7 @@ trait StatCollectorTrait
         $percentageArray_visibility['Credential Theft Prevention']['value'] = $stdoutarray['url-credential visibility percentage'];
         $percentageArray_visibility['Credential Theft Prevention']['group'] = 'URL Filtering';
         $percentageArray_visibility['DNS List']['value'] = $stdoutarray['dns-list visibility percentage'];
+        $percentageArray_visibility['DNS List']['group'] = 'DNS Security';
         $percentageArray_visibility['DNS Security']['value'] = $stdoutarray['dns-security visibility percentage'];
         $percentageArray_visibility['DNS Security']['group'] = 'DNS Security';
 
@@ -828,6 +832,7 @@ trait StatCollectorTrait
         $percentageArray_best_practice['Credential Theft Prevention']['value'] = $stdoutarray['url-credential best-practice percentage'];
         $percentageArray_best_practice['Credential Theft Prevention']['group'] = 'URL Filtering';
         $percentageArray_best_practice['DNS List']['value'] = $stdoutarray['dns-list best-practice percentage'];
+        $percentageArray_best_practice['DNS List']['group'] = 'DNS Security';
         $percentageArray_best_practice['DNS Security']['value'] = $stdoutarray['dns-security best-practice percentage'];
         $percentageArray_best_practice['DNS Security']['group'] = 'DNS Security';
 
