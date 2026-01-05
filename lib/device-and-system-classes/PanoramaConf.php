@@ -2653,6 +2653,23 @@ class PanoramaConf
         else
             $stdoutarray['as visibility percentage'] = 0;
         //--
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "as.rules is.visibility" );
+        $stdoutarray['as visibility rules'] = count( $sub_ruleStore->rules( $filter_array ) );
+        $stdoutarray['as visibility rules calc'] = $stdoutarray['as visibility rules']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['as visibility rules percentage'] = floor( ( $stdoutarray['as visibility rules'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['as visibility rules percentage'] = 0;
+        //--
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "as.mica-engine is.visibility" );
+        $stdoutarray['as visibility mica-engine'] = count( $sub_ruleStore->rules( $filter_array ) );
+        $stdoutarray['as visibility mica-engine calc'] = $stdoutarray['as visibility mica-engine']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['as visibility mica-engine percentage'] = floor( ( $stdoutarray['as visibility mica-engine'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['as visibility mica-engine percentage'] = 0;
+        //--
+
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "as is.best-practice" );
         $stdoutarray['as best-practice'] = count( $sub_ruleStore->rules( $filter_array ) );
         $stdoutarray['as best-practice calc'] = $stdoutarray['as best-practice']."/".$ruleForCalculation;
@@ -2661,6 +2678,23 @@ class PanoramaConf
         else
             $stdoutarray['as best-practice percentage'] = 0;
         //--
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "as.rules is.best-practice" );
+        $stdoutarray['as best-practice rules'] = count( $sub_ruleStore->rules( $filter_array ) );
+        $stdoutarray['as best-practice rules calc'] = $stdoutarray['as best-practice rules']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['as best-practice rules percentage'] = floor( ( $stdoutarray['as best-practice rules'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['as best-practice rules percentage'] = 0;
+        //--
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "as.mica-engine is.best-practice" );
+        $stdoutarray['as best-practice mica-engine'] = count( $sub_ruleStore->rules( $filter_array ) );
+        $stdoutarray['as best-practice mica-engine calc'] = $stdoutarray['as best-practice mica-engine']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['as best-practice mica-engine percentage'] = floor( ( $stdoutarray['as best-practice mica-engine'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['as best-practice mica-engine percentage'] = 0;
+        //--
+
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "as is.adoption" );
         $stdoutarray['as adoption'] = count( $sub_ruleStore->rules( $filter_array ) );
         $stdoutarray['as adoption calc'] = $stdoutarray['as adoption']."/".$ruleForCalculation;
@@ -2678,6 +2712,23 @@ class PanoramaConf
         else
             $stdoutarray['vp visibility percentage'] = 0;
         //--
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "vp.rules is.visibility" );
+        $stdoutarray['vp visibility rules'] = count( $sub_ruleStore->rules( $filter_array ) );
+        $stdoutarray['vp visibility rules calc'] = $stdoutarray['vp visibility rules']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['vp visibility rules percentage'] = floor( ( $stdoutarray['vp visibility rules'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['vp visibility rules percentage'] = 0;
+        //--
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "vp.mica-engine is.visibility" );
+        $stdoutarray['vp visibility mica-engine'] = count( $sub_ruleStore->rules( $filter_array ) );
+        $stdoutarray['vp visibility mica-engine calc'] = $stdoutarray['vp visibility mica-engine']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['vp visibility mica-engine percentage'] = floor( ( $stdoutarray['vp visibility mica-engine'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['vp visibility mica-engine percentage'] = 0;
+        //--
+
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "vp is.best-practice" );
         $stdoutarray['vp best-practice'] = count( $sub_ruleStore->rules( $filter_array ) );
         $stdoutarray['vp best-practice calc'] = $stdoutarray['vp best-practice']."/".$ruleForCalculation;
@@ -2686,6 +2737,23 @@ class PanoramaConf
         else
             $stdoutarray['vp best-practice percentage'] = 0;
         //--
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "vp.rules is.best-practice" );
+        $stdoutarray['vp best-practice rules'] = count( $sub_ruleStore->rules( $filter_array ) );
+        $stdoutarray['vp best-practice rules calc'] = $stdoutarray['vp best-practice rules']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['vp best-practice rules percentage'] = floor( ( $stdoutarray['vp best-practice rules'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['vp best-practice rules percentage'] = 0;
+        //--
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "vp.mica-engine is.best-practice" );
+        $stdoutarray['vp best-practice mica-engine'] = count( $sub_ruleStore->rules( $filter_array ) );
+        $stdoutarray['vp best-practice mica-engine calc'] = $stdoutarray['vp best-practice mica-engine']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['vp best-practice mica-engine percentage'] = floor( ( $stdoutarray['vp best-practice mica-engine'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['vp best-practice mica-engine percentage'] = 0;
+        //--
+
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "vp is.adoption" );
         $stdoutarray['vp adoption'] = count( $sub_ruleStore->rules( $filter_array ) );
         $stdoutarray['vp adoption calc'] = $stdoutarray['vp adoption']."/".$ruleForCalculation;
@@ -2929,8 +2997,16 @@ class PanoramaConf
         $percentageArray_best_practice['Antivirus Profiles']['group'] = 'Threat Prevention';
         $percentageArray_best_practice['Anti-Spyware Profiles']['value'] = $stdoutarray['as best-practice percentage'];
         $percentageArray_best_practice['Anti-Spyware Profiles']['group'] = 'Threat Prevention';
+        $percentageArray_best_practice['Anti-Spyware Rules']['value'] = $stdoutarray['as best-practice rules percentage'];
+        $percentageArray_best_practice['Anti-Spyware Rules']['group'] = 'Threat Prevention';
+        $percentageArray_best_practice['Anti-Spyware InLine ML']['value'] = $stdoutarray['as best-practice mica-engine percentage'];
+        $percentageArray_best_practice['Anti-Spyware InLine ML']['group'] = 'Threat Prevention';
         $percentageArray_best_practice['Vulnerability Profiles']['value'] = $stdoutarray['vp best-practice percentage'];
         $percentageArray_best_practice['Vulnerability Profiles']['group'] = 'Threat Prevention';
+        $percentageArray_best_practice['Vulnerability Rules']['value'] = $stdoutarray['vp best-practice rules percentage'];
+        $percentageArray_best_practice['Vulnerability Rules']['group'] = 'Threat Prevention';
+        $percentageArray_best_practice['Vulnerability InLine ML']['value'] = $stdoutarray['vp best-practice mica-engine percentage'];
+        $percentageArray_best_practice['Vulnerability InLine ML']['group'] = 'Threat Prevention';
         $percentageArray_best_practice['File Blocking Profiles']['value'] = $stdoutarray['fb best-practice percentage'];
         $percentageArray_best_practice['File Blocking Profiles']['group'] = 'Data Loss Prevention';
         #$percentageArray_best_practice['Data Filtering']['value'] = '---';
@@ -3201,6 +3277,22 @@ class PanoramaConf
         $percentageArray_visibility['Anti-Spyware Profiles']['value'] = $stdoutarray['as visibility percentage'];
         $percentageArray_visibility['Anti-Spyware Profiles']['group'] = 'Threat Prevention';
 
+        $stdoutarray['as visibility rules calc'] = $stdoutarray['as visibility rules'] . "/" . $ruleForCalculation ;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['as visibility rules percentage'] = floor( ( $stdoutarray['as visibility rules'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['as visibility rules percentage'] = 0;
+        $percentageArray_visibility['Anti-Spyware Rules']['value'] = $stdoutarray['as visibility rules percentage'];
+        $percentageArray_visibility['Anti-Spyware Rules']['group'] = 'Threat Prevention';
+
+        $stdoutarray['as visibility mica-engine calc'] = $stdoutarray['as visibility mica-engine'] . "/" . $ruleForCalculation ;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['as visibility mica-engine percentage'] = floor( ( $stdoutarray['as visibility mica-engine'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['as visibility mica-engine percentage'] = 0;
+        $percentageArray_visibility['Anti-Spyware InLine ML']['value'] = $stdoutarray['as visibility mica-engine percentage'];
+        $percentageArray_visibility['Anti-Spyware InLine ML']['group'] = 'Threat Prevention';
+
         $stdoutarray['vp visibility calc'] = $stdoutarray['vp visibility'] ."/". $ruleForCalculation;
         if( $ruleForCalculation !== 0 )
             $stdoutarray['vp visibility percentage'] = floor( ( $stdoutarray['vp visibility'] / $ruleForCalculation ) * 100 );
@@ -3208,6 +3300,22 @@ class PanoramaConf
             $stdoutarray['vp visibility percentage'] = 0;
         $percentageArray_visibility['Vulnerability Profiles']['value'] = $stdoutarray['vp visibility percentage'];
         $percentageArray_visibility['Vulnerability Profiles']['group'] = 'Threat Prevention';
+
+        $stdoutarray['vp visibility rules calc'] = $stdoutarray['vp visibility rules'] ."/". $ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['vp visibility rules percentage'] = floor( ( $stdoutarray['vp visibility rules'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['vp visibility rules percentage'] = 0;
+        $percentageArray_visibility['Vulnerability Rules']['value'] = $stdoutarray['vp visibility rules percentage'];
+        $percentageArray_visibility['Vulnerability Rules']['group'] = 'Threat Prevention';
+
+        $stdoutarray['vp visibility mica-engine calc'] = $stdoutarray['vp visibility mica-engine'] ."/". $ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['vp visibility mica-engine percentage'] = floor( ( $stdoutarray['vp visibility mica-engine'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['vp visibility mica-engine percentage'] = 0;
+        $percentageArray_visibility['Vulnerability InLine ML']['value'] = $stdoutarray['vp visibility mica-engine percentage'];
+        $percentageArray_visibility['Vulnerability InLine ML']['group'] = 'Threat Prevention';
 
         $stdoutarray['fb visibility calc'] = $stdoutarray['fb visibility' ]." / " . $ruleForCalculation ;
         if( $ruleForCalculation !== 0 )
@@ -3299,6 +3407,23 @@ class PanoramaConf
         $percentageArray_best_practice['Anti-Spyware Profiles']['value'] = $stdoutarray['as best-practice percentage'];
         $percentageArray_best_practice['Anti-Spyware Profiles']['group'] = 'Threat Prevention';
 
+        $stdoutarray['as best-practice rules calc'] = $stdoutarray['as best-practice rules']." / " . $ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['as best-practice rules percentage'] = floor( ( $stdoutarray['as best-practice rules'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['as best-practice rules percentage'] = 0;
+        $percentageArray_best_practice['Anti-Spyware Rules']['value'] = $stdoutarray['as best-practice rules percentage'];
+        $percentageArray_best_practice['Anti-Spyware Rules']['group'] = 'Threat Prevention';
+
+        $stdoutarray['as best-practice mica-engine calc'] = $stdoutarray['as best-practice mica-engine']." / " . $ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['as best-practice mica-engine percentage'] = floor( ( $stdoutarray['as best-practice mica-engine'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['as best-practice mica-engine percentage'] = 0;
+        $percentageArray_best_practice['Anti-Spyware InLine ML']['value'] = $stdoutarray['as best-practice mica-engine percentage'];
+        $percentageArray_best_practice['Anti-Spyware InLine ML']['group'] = 'Threat Prevention';
+
+
         $stdoutarray['vp best-practice calc'] = $stdoutarray['vp best-practice'] ."/". $ruleForCalculation;
         if( $ruleForCalculation !== 0 )
             $stdoutarray['vp best-practice percentage'] = floor( ( $stdoutarray['vp best-practice'] / $ruleForCalculation ) * 100 );
@@ -3306,6 +3431,22 @@ class PanoramaConf
             $stdoutarray['vp best-practice percentage'] = 0;
         $percentageArray_best_practice['Vulnerability Profiles']['value'] = $stdoutarray['vp best-practice percentage'];
         $percentageArray_best_practice['Vulnerability Profiles']['group'] = 'Threat Prevention';
+
+        $stdoutarray['vp best-practice rules calc'] = $stdoutarray['vp best-practice rules'] ."/". $ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['vp best-practice rules percentage'] = floor( ( $stdoutarray['vp best-practice rules'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['vp best-practice rules percentage'] = 0;
+        $percentageArray_best_practice['Vulnerability Rules']['value'] = $stdoutarray['vp best-practice rules percentage'];
+        $percentageArray_best_practice['Vulnerability Rules']['group'] = 'Threat Prevention';
+
+        $stdoutarray['vp best-practice mica-engine calc'] = $stdoutarray['vp best-practice mica-engine'] ."/". $ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['vp best-practice mica-engine percentage'] = floor( ( $stdoutarray['vp best-practice mica-engine'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['vp best-practice mica-engine percentage'] = 0;
+        $percentageArray_best_practice['Vulnerability InLine ML']['value'] = $stdoutarray['vp best-practice mica-engine percentage'];
+        $percentageArray_best_practice['Vulnerability InLine ML']['group'] = 'Threat Prevention';
 
         $stdoutarray['fb best-practice calc'] = $stdoutarray['fb best-practice' ]." / " . $ruleForCalculation ;
         if( $ruleForCalculation !== 0 )

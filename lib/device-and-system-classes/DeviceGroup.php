@@ -1657,11 +1657,11 @@ class DeviceGroup
         else
             $stdoutarray['as best-practice percentage'] = 0;
         //--
-        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "as.rules is.visibility" );
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "as.rules is.best-practice" );
         $stdoutarray['as best-practice rules'] = count( $sub_ruleStore->rules( $filter_array ) );
-        $stdoutarray['as best-practice rules calc'] = $stdoutarray['as visibility rules']."/".$ruleForCalculation;
+        $stdoutarray['as best-practice rules calc'] = $stdoutarray['as best-practice rules']."/".$ruleForCalculation;
         if( $ruleForCalculation !== 0 )
-            $stdoutarray['as best-practice rules percentage'] = floor( ( $stdoutarray['as visibility rules'] / $ruleForCalculation ) * 100 );
+            $stdoutarray['as best-practice rules percentage'] = floor( ( $stdoutarray['as best-practice rules'] / $ruleForCalculation ) * 100 );
         else
             $stdoutarray['as best-practice rules percentage'] = 0;
         //--
@@ -1949,8 +1949,16 @@ class DeviceGroup
         $percentageArray_visibility['Antivirus Profiles']['group'] = 'Threat Prevention';
         $percentageArray_visibility['Anti-Spyware Profiles']['value'] = $stdoutarray['as visibility percentage'];
         $percentageArray_visibility['Anti-Spyware Profiles']['group'] = 'Threat Prevention';
+        $percentageArray_visibility['Anti-Spyware Rules']['value'] = $stdoutarray['as visibility rules percentage'];
+        $percentageArray_visibility['Anti-Spyware Rules']['group'] = 'Threat Prevention';
+        $percentageArray_visibility['Anti-Spyware InLine ML']['value'] = $stdoutarray['as visibility mica-engine percentage'];
+        $percentageArray_visibility['Anti-Spyware InLine ML']['group'] = 'Threat Prevention';
         $percentageArray_visibility['Vulnerability Profiles']['value'] = $stdoutarray['vp visibility percentage'];
         $percentageArray_visibility['Vulnerability Profiles']['group'] = 'Threat Prevention';
+        $percentageArray_visibility['Vulnerability Rules']['value'] = $stdoutarray['vp visibility rules percentage'];
+        $percentageArray_visibility['Vulnerability Rules']['group'] = 'Threat Prevention';
+        $percentageArray_visibility['Vulnerability InLine ML']['value'] = $stdoutarray['vp visibility mica-engine percentage'];
+        $percentageArray_visibility['Vulnerability InLine ML']['group'] = 'Threat Prevention';
         $percentageArray_visibility['File Blocking Profiles']['value'] = $stdoutarray['fb visibility percentage'];
         $percentageArray_visibility['File Blocking Profiles']['group'] = 'Data Loss Prevention';
         $percentageArray_visibility['Data Filtering']['value'] = $stdoutarray['data visibility percentage'];
@@ -1982,8 +1990,16 @@ class DeviceGroup
         $percentageArray_best_practice['Antivirus Profiles']['group'] = 'Threat Prevention';
         $percentageArray_best_practice['Anti-Spyware Profiles']['value'] = $stdoutarray['as best-practice percentage'];
         $percentageArray_best_practice['Anti-Spyware Profiles']['group'] = 'Threat Prevention';
+        $percentageArray_best_practice['Anti-Spyware Rules']['value'] = $stdoutarray['as best-practice rules percentage'];
+        $percentageArray_best_practice['Anti-Spyware Rules']['group'] = 'Threat Prevention';
+        $percentageArray_best_practice['Anti-Spyware InLine ML']['value'] = $stdoutarray['as best-practice mica-engine percentage'];
+        $percentageArray_best_practice['Anti-Spyware InLine ML']['group'] = 'Threat Prevention';
         $percentageArray_best_practice['Vulnerability Profiles']['value'] = $stdoutarray['vp best-practice percentage'];
         $percentageArray_best_practice['Vulnerability Profiles']['group'] = 'Threat Prevention';
+        $percentageArray_best_practice['Vulnerability Rules']['value'] = $stdoutarray['vp best-practice rules percentage'];
+        $percentageArray_best_practice['Vulnerability Rules']['group'] = 'Threat Prevention';
+        $percentageArray_best_practice['Vulnerability InLine ML']['value'] = $stdoutarray['vp best-practice mica-engine percentage'];
+        $percentageArray_best_practice['Vulnerability InLine ML']['group'] = 'Threat Prevention';
         $percentageArray_best_practice['File Blocking Profiles']['value'] = $stdoutarray['fb best-practice percentage'];
         $percentageArray_best_practice['File Blocking Profiles']['group'] = 'Threat Prevention';
         #$percentageArray_best_practice['Data Filtering']['value'] = '---';
