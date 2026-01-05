@@ -1920,7 +1920,10 @@ class DeviceGroup
         $percentageArray_adoption['URL Filtering Profiles']['group'] = 'URL Filtering';
         $percentageArray_adoption['Credential Theft Prevention']['value'] = $stdoutarray['url-credential adoption percentage'];
         $percentageArray_adoption['Credential Theft Prevention']['group'] = 'URL Filtering';
+
         $percentageArray_adoption['DNS List']['value'] = $stdoutarray['dns-list adoption percentage'];
+        $percentageArray_adoption['DNS List']['group'] = 'DNS Security';
+
         $percentageArray_adoption['DNS Security']['value'] = $stdoutarray['dns-security adoption percentage'];
         $percentageArray_adoption['DNS Security']['group'] = 'DNS Security';
 
@@ -1957,6 +1960,7 @@ class DeviceGroup
         $percentageArray_visibility['Credential Theft Prevention']['value'] = $stdoutarray['url-credential visibility percentage'];
         $percentageArray_visibility['Credential Theft Prevention']['group'] = 'URL Filtering';
         $percentageArray_visibility['DNS List']['value'] = $stdoutarray['dns-list visibility percentage'];
+        $percentageArray_visibility['DNS List']['group'] = 'DNS Security';
         $percentageArray_visibility['DNS Security']['value'] = $stdoutarray['dns-security visibility percentage'];
         $percentageArray_visibility['DNS Security']['group'] = 'DNS Security';
 
@@ -1988,6 +1992,7 @@ class DeviceGroup
         $percentageArray_best_practice['Credential Theft Prevention']['value'] = $stdoutarray['url-credential best-practice percentage'];
         $percentageArray_best_practice['Credential Theft Prevention']['group'] = 'URL Filtering';
         $percentageArray_best_practice['DNS List']['value'] = $stdoutarray['dns-list best-practice percentage'];
+        $percentageArray_best_practice['DNS List']['group'] = 'DNS Security';
         $percentageArray_best_practice['DNS Security']['value'] = $stdoutarray['dns-security best-practice percentage'];
         $percentageArray_best_practice['DNS Security']['group'] = 'DNS Security';
 

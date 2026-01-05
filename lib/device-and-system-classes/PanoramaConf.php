@@ -2869,7 +2869,8 @@ class PanoramaConf
         $percentageArray_adoption['URL Filtering Profiles']['group'] = 'URL Filtering';
         $percentageArray_adoption['Credential Theft Prevention']['value'] = $stdoutarray['url-credential adoption percentage'];
         $percentageArray_adoption['Credential Theft Prevention']['group'] = 'URL Filtering';
-        $percentageArray_adoption['DNS List'] = $stdoutarray['dns-list adoption percentage'];
+        $percentageArray_adoption['DNS List']['value'] = $stdoutarray['dns-list adoption percentage'];
+        $percentageArray_adoption['DNS List']['group'] = 'DNS Security';
         $percentageArray_adoption['DNS Security']['value'] = $stdoutarray['dns-security adoption percentage'];
         $percentageArray_adoption['DNS Security']['group'] = 'DNS Security';
 
@@ -2905,7 +2906,8 @@ class PanoramaConf
         $percentageArray_visibility['URL Filtering Profiles']['group'] = 'URL Filtering';
         $percentageArray_visibility['Credential Theft Prevention']['value'] = $stdoutarray['url-credential visibility percentage'];
         $percentageArray_visibility['Credential Theft Prevention']['group'] = 'URL Filtering';
-        $percentageArray_visibility['DNS List'] = $stdoutarray['dns-list visibility percentage'];
+        $percentageArray_visibility['DNS List']['value'] = $stdoutarray['dns-list visibility percentage'];
+        $percentageArray_visibility['DNS List']['group'] = 'DNS Security';
         $percentageArray_visibility['DNS Security']['value'] = $stdoutarray['dns-security visibility percentage'];
         $percentageArray_visibility['DNS Security']['group'] = 'DNS Security';
 
@@ -2937,6 +2939,7 @@ class PanoramaConf
         $percentageArray_best_practice['Credential Theft Prevention']['value'] = $stdoutarray['url-credential best-practice percentage'];
         $percentageArray_best_practice['Credential Theft Prevention']['group'] = 'URL Filtering';
         $percentageArray_best_practice['DNS List']['value'] = $stdoutarray['dns-list best-practice percentage'];
+        $percentageArray_best_practice['DNS List']['group'] = 'DNS Security';
         $percentageArray_best_practice['DNS Security']['value'] = $stdoutarray['dns-security best-practice percentage'];
         $percentageArray_best_practice['DNS Security']['group'] = 'DNS Security';
 
@@ -3108,6 +3111,7 @@ class PanoramaConf
         else
             $stdoutarray['dns-list adoption percentage'] = 0;
         $percentageArray_adoption['DNS List']['value'] = $stdoutarray['dns-list adoption percentage'];
+        $percentageArray_adoption['DNS List']['group'] = 'DNS Security';
 
         $stdoutarray['dns-security adoption calc'] =  $stdoutarray['dns-security adoption'] ."/". $ruleForCalculation;
         if( $ruleForCalculation !== 0 )
@@ -3243,6 +3247,7 @@ class PanoramaConf
         else
             $stdoutarray['dns-list visibility percentage'] = 0;
         $percentageArray_visibility['DNS List']['value'] = $stdoutarray['dns-list visibility percentage'];
+        $percentageArray_visibility['DNS List']['group'] = 'DNS Security';
 
         $stdoutarray['dns-security visibility calc'] =  $stdoutarray['dns-security visibility'] ."/". $ruleForCalculation;
         if( $ruleForCalculation !== 0 )
@@ -3334,6 +3339,7 @@ class PanoramaConf
         else
             $stdoutarray['dns-list best-practice percentage'] = 0;
         $percentageArray_best_practice['DNS List']['value'] = $stdoutarray['dns-list best-practice percentage'];
+        $percentageArray_best_practice['DNS List']['group'] = 'DNS Security';
 
         $stdoutarray['dns-security best-practice calc'] = $stdoutarray['dns-security best-practice'] ."/". $ruleForCalculation;
         if( $ruleForCalculation !== 0 )

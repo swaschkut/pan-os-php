@@ -13,6 +13,7 @@ UTIL:
 * class BuckbeackConf/FawkesConf | optimisation for ThreatPolicyStore/DNSPolicyStore |
 * class ZoneStore | create xmlroot if not available - needed for Buckbeak config import
 * type=stats in=scm-api:// | extend with AS / VP Rules and InLine ML - correction for class Snippet
+* type=stats | adjustment for DNS List
 
 BUGFIX:
 

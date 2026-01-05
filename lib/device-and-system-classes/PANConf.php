@@ -1518,6 +1518,7 @@ class PANConf
         else
             $stdoutarray['dns-list adoption percentage'] = 0;
         $percentageArray_adoption['DNS List']['value'] = $stdoutarray['dns-list adoption percentage'];
+        $percentageArray_adoption['DNS List']['group'] = 'DNS Security';
 
         $stdoutarray['dns-security adoption calc'] =  $stdoutarray['dns-security adoption'] ."/". $ruleForCalculation;
         if( $ruleForCalculation !== 0 )
@@ -1653,6 +1654,7 @@ class PANConf
         else
             $stdoutarray['dns-list visibility percentage'] = 0;
         $percentageArray_visibility['DNS List']['value'] = $stdoutarray['dns-list visibility percentage'];
+        $percentageArray_visibility['DNS List']['group'] = 'DNS Security';
 
         $stdoutarray['dns-security visibility calc'] =  $stdoutarray['dns-security visibility'] ."/". $ruleForCalculation;
         if( $ruleForCalculation !== 0 )
@@ -1744,6 +1746,7 @@ class PANConf
         else
             $stdoutarray['dns-list best-practice percentage'] = 0;
         $percentageArray_best_practice['DNS List']['value'] = $stdoutarray['dns-list best-practice percentage'];
+        $percentageArray_best_practice['DNS List']['group'] = 'DNS Security';
 
         $stdoutarray['dns-security best-practice calc'] = $stdoutarray['dns-security best-practice'] ."/". $ruleForCalculation;
         if( $ruleForCalculation !== 0 )
