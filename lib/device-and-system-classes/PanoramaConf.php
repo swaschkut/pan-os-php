@@ -3199,7 +3199,7 @@ class PanoramaConf
 
         $percentageArray['adoption'] = $percentageArray_adoption;
 
-//-------------
+        //-------------
         $percentageArray_visibility = array();
 
         $ruleForCalculation = $stdoutarray['security rules allow enabled'];
@@ -3505,8 +3505,6 @@ class PanoramaConf
 
         if( !PH::$shadow_json && $actions == "display-bpa")
         {
-            PH::getBPjsonFile();
-
             PH::print_stdout( $header );
 
             $string_check = "adoption";
@@ -3517,11 +3515,11 @@ class PanoramaConf
             );
             foreach( $percentageArray_adoption as $key => $value )
             {
-                if( isset( PH::$shadow_bp_jsonfile['included-in-bpa'][$string_check][$key] ) )
-                {
-                    if( PH::$shadow_bp_jsonfile['included-in-bpa'][$string_check][$key] === false )
-                        continue;
-                }
+                #if( isset( PH::$shadow_bp_jsonfile['included-in-bpa'][$string_check][$key] ) )
+                #{
+                #    if( PH::$shadow_bp_jsonfile['included-in-bpa'][$string_check][$key] === false )
+                #        continue;
+                #}
                 if( strpos($value['value'], "---") !== False )
                 {
                     $string = $value['value'];
@@ -3546,11 +3544,11 @@ class PanoramaConf
             );
             foreach( $percentageArray_visibility as $key => $value )
             {
-                if( isset( PH::$shadow_bp_jsonfile['included-in-bpa'][$string_check][$key] ) )
-                {
-                    if( PH::$shadow_bp_jsonfile['included-in-bpa'][$string_check][$key] === false )
-                        continue;
-                }
+                #if( isset( PH::$shadow_bp_jsonfile['included-in-bpa'][$string_check][$key] ) )
+                #{
+                #    if( PH::$shadow_bp_jsonfile['included-in-bpa'][$string_check][$key] === false )
+                #        continue;
+                #}
                 if( strpos($value['value'], "---") !== False )
                 {
                     $string = $value['value'];
@@ -3574,11 +3572,11 @@ class PanoramaConf
             );
             foreach( $percentageArray_best_practice as $key => $value )
             {
-                if( isset( PH::$shadow_bp_jsonfile['included-in-bpa'][$string_check][$key] ) )
-                {
-                    if( PH::$shadow_bp_jsonfile['included-in-bpa'][$string_check][$key] === false )
-                        continue;
-                }
+                #if( isset( PH::$shadow_bp_jsonfile['included-in-bpa'][$string_check][$key] ) )
+                #{
+                #    if( PH::$shadow_bp_jsonfile['included-in-bpa'][$string_check][$key] === false )
+                #        continue;
+                #}
                 if( strpos($value['value'], "---") !== False )
                 {
                     $string = $value['value'];
@@ -3611,6 +3609,8 @@ class PanoramaConf
         $stdoutarray['type'] = "DeviceGroup";
         $header = "BP/Visibility Statistics for PanoramaConf '" . PH::boldText("shared") . "' | ";
         $stdoutarray['header'] = $header;
+
+        PH::validateIncludedInBPA( $stdoutarray );
 
         $percentageArray_adoption = $stdoutarray['percentage']['adoption'];
         $percentageArray_visibility = $stdoutarray['percentage']['visibility'];

@@ -488,7 +488,7 @@
             "URL Filtering Profiles": true,
             "Credential Theft Prevention": true,
             "DNS Security": true,
-            "DNS List": true
+            "DNS List": false
         },
         "visibility": {
             "Logging": true,

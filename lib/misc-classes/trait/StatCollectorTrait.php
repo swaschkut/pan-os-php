@@ -870,11 +870,6 @@ trait StatCollectorTrait
             );
             foreach( $percentageArray_adoption as $key => $value )
             {
-                if( isset( PH::$shadow_bp_jsonfile['included-in-bpa'][$string_check][$key] ) )
-                {
-                    if( PH::$shadow_bp_jsonfile['included-in-bpa'][$string_check][$key] === false )
-                        continue;
-                }
                 if( strpos($value['value'], "---") !== False )
                 {
                     $string = $value['value'];
@@ -898,11 +893,6 @@ trait StatCollectorTrait
             );
             foreach( $percentageArray_visibility as $key => $value )
             {
-                if( isset( PH::$shadow_bp_jsonfile['included-in-bpa'][$string_check][$key] ) )
-                {
-                    if( PH::$shadow_bp_jsonfile['included-in-bpa'][$string_check][$key] === false )
-                        continue;
-                }
                 if( strpos($value['value'], "---") !== False )
                 {
                     $string = $value['value'];
@@ -926,11 +916,6 @@ trait StatCollectorTrait
             );
             foreach( $percentageArray_best_practice as $key => $value )
             {
-                if( isset( PH::$shadow_bp_jsonfile['included-in-bpa'][$string_check][$key] ) )
-                {
-                    if( PH::$shadow_bp_jsonfile['included-in-bpa'][$string_check][$key] === false )
-                        continue;
-                }
                 if( strpos($value['value'], "---") !== False )
                 {
                     $string = $value['value'];
@@ -950,12 +935,17 @@ trait StatCollectorTrait
         }
 
 
-        #PH::$JSON_TMP[$this->name] = $stdoutarray;
-        PH::$JSON_TMP[] = $stdoutarray;
-
-
         if( !PH::$shadow_json && $debug && $actions == "display-bpa" )
             PH::print_stdout( $stdoutarray, true );
+
+        if( $actions == "display-available" )
+        {
+            PH::stats_remove_zero_arrays($stdoutarray);
+            if( !PH::$shadow_json )
+                PH::print_stdout( $stdoutarray, true );
+        }
+
+        PH::$JSON_TMP[] = $stdoutarray;
 
     }
 
