@@ -856,161 +856,165 @@ class BuckbeakConf
         $stdoutarray = array();
 
         $header = "Statistics for BuckbeakConf '" . $this->name . "'";
+
+        $subName = "All";
+        $sub = $container_all;
+
         $stdoutarray['header'] = $header;
 
         $stdoutarray['pre security rules'] = array();
-        $stdoutarray['pre security rules']['All'] = $container_all->securityRules->countPreRules();
+        $stdoutarray['pre security rules'][$subName] = $sub->securityRules->countPreRules();
         $stdoutarray['pre security rules']['total_DGs'] = $gpreSecRules;
 
         $stdoutarray['post security rules'] = array();
-        $stdoutarray['post security rules']['All'] = $container_all->securityRules->countPostRules();
+        $stdoutarray['post security rules'][$subName] = $sub->securityRules->countPostRules();
         $stdoutarray['post security rules']['total_DGs'] = $gpostSecRules;
 
 
         $stdoutarray['pre nat rules'] = array();
-        $stdoutarray['pre nat rules']['All'] = $container_all->natRules->countPreRules();
+        $stdoutarray['pre nat rules'][$subName] = $sub->natRules->countPreRules();
         $stdoutarray['pre nat rules']['total_DGs'] = $gpreNatRules;
 
         $stdoutarray['post nat rules'] = array();
-        $stdoutarray['post nat rules']['All'] = $container_all->natRules->countPostRules();
+        $stdoutarray['post nat rules'][$subName] = $sub->natRules->countPostRules();
         $stdoutarray['post nat rules']['total_DGs'] = $gpostNatRules;
 
 
         $stdoutarray['pre qos rules'] = array();
-        $stdoutarray['pre qos rules']['All'] = $container_all->qosRules->countPreRules();
+        $stdoutarray['pre qos rules'][$subName] = $sub->qosRules->countPreRules();
         $stdoutarray['pre qos rules']['total_DGs'] = $gpreQoSRules;
 
         $stdoutarray['post qos rules'] = array();
-        $stdoutarray['post qos rules']['All'] = $container_all->qosRules->countPostRules();
+        $stdoutarray['post qos rules'][$subName] = $sub->qosRules->countPostRules();
         $stdoutarray['post qos rules']['total_DGs'] = $gpostQoSRules;
 
 
         $stdoutarray['pre pbf rules'] = array();
-        $stdoutarray['pre pbf rules']['All'] = $container_all->pbfRules->countPreRules();
+        $stdoutarray['pre pbf rules'][$subName] = $sub->pbfRules->countPreRules();
         $stdoutarray['pre pbf rules']['total_DGs'] = $gprePbfRules;
 
         $stdoutarray['post pbf rules'] = array();
-        $stdoutarray['post pbf rules']['All'] = $container_all->pbfRules->countPostRules();
+        $stdoutarray['post pbf rules'][$subName] = $sub->pbfRules->countPostRules();
         $stdoutarray['post pbf rules']['total_DGs'] = $gpostPbfRules;
 
 
         $stdoutarray['pre decryption rules'] = array();
-        $stdoutarray['pre decryption rules']['All'] = $container_all->decryptionRules->countPreRules();
+        $stdoutarray['pre decryption rules'][$subName] = $sub->decryptionRules->countPreRules();
         $stdoutarray['pre decryption rules']['total_DGs'] = $gpreDecryptRules;
 
         $stdoutarray['post decryption rules'] = array();
-        $stdoutarray['post decryption rules']['All'] = $container_all->decryptionRules->countPostRules();
+        $stdoutarray['post decryption rules'][$subName] = $sub->decryptionRules->countPostRules();
         $stdoutarray['post decryption rules']['total_DGs'] = $gpostDecryptRules;
 
 
         $stdoutarray['pre app-override rules'] = array();
-        $stdoutarray['pre app-override rules']['All'] = $container_all->appOverrideRules->countPreRules();
+        $stdoutarray['pre app-override rules'][$subName] = $sub->appOverrideRules->countPreRules();
         $stdoutarray['pre app-override rules']['total_DGs'] = $gpreAppOverrideRules;
 
         $stdoutarray['post app-override rules'] = array();
-        $stdoutarray['post app-override rules']['All'] = $container_all->appOverrideRules->countPostRules();
+        $stdoutarray['post app-override rules'][$subName] = $sub->appOverrideRules->countPostRules();
         $stdoutarray['post app-override rules']['total_DGs'] = $gpostAppOverrideRules;
 
 
         $stdoutarray['pre capt-portal rules'] = array();
-        $stdoutarray['pre capt-portal rules']['All'] = $container_all->captivePortalRules->countPreRules();
+        $stdoutarray['pre capt-portal rules'][$subName] = $sub->captivePortalRules->countPreRules();
         $stdoutarray['pre capt-portal rules']['total_DGs'] = $gpreCPRules;
 
         $stdoutarray['post capt-portal rules'] = array();
-        $stdoutarray['post capt-portal rules']['All'] = $container_all->captivePortalRules->countPostRules();
+        $stdoutarray['post capt-portal rules'][$subName] = $sub->captivePortalRules->countPostRules();
         $stdoutarray['post capt-portal rules']['total_DGs'] = $gpostCPRules;
 
 
         $stdoutarray['pre authentication rules'] = array();
-        $stdoutarray['pre authentication rules']['All'] = $container_all->authenticationRules->countPreRules();
+        $stdoutarray['pre authentication rules'][$subName] = $sub->authenticationRules->countPreRules();
         $stdoutarray['pre authentication rules']['total_DGs'] = $gpreAuthRules;
 
         $stdoutarray['post authentication rules'] = array();
-        $stdoutarray['post authentication rules']['All'] = $container_all->authenticationRules->countPostRules();
+        $stdoutarray['post authentication rules'][$subName] = $sub->authenticationRules->countPostRules();
         $stdoutarray['post authentication rules']['total_DGs'] = $gpostAuthRules;
 
 
         $stdoutarray['pre dos rules'] = array();
-        $stdoutarray['pre dos rules']['All'] = $container_all->dosRules->countPreRules();
+        $stdoutarray['pre dos rules'][$subName] = $sub->dosRules->countPreRules();
         $stdoutarray['pre dos rules']['total_DGs'] = $gpreDoSRules;
 
         $stdoutarray['post dos rules'] = array();
-        $stdoutarray['post dos rules']['All'] = $container_all->dosRules->countPostRules();
+        $stdoutarray['post dos rules'][$subName] = $sub->dosRules->countPostRules();
         $stdoutarray['post dos rules']['total_DGs'] = $gpostDoSRules;
 
 
 
         $stdoutarray['address objects'] = array();
-        $stdoutarray['address objects']['All'] = $container_all->addressStore->countAddresses();
+        $stdoutarray['address objects'][$subName] = $sub->addressStore->countAddresses();
         $stdoutarray['address objects']['total_DGs'] = $gnaddresss;
         $stdoutarray['address objects']['unused'] = $gnaddresssUnused;
 
         $stdoutarray['addressgroup objects'] = array();
-        $stdoutarray['addressgroup objects']['All'] = $container_all->addressStore->countAddressGroups();
+        $stdoutarray['addressgroup objects'][$subName] = $sub->addressStore->countAddressGroups();
         $stdoutarray['addressgroup objects']['total_DGs'] = $gnaddressGs;
         $stdoutarray['addressgroup objects']['unused'] = $gnaddressGsUnused;
 
         $stdoutarray['temporary address objects'] = array();
-        $stdoutarray['temporary address objects']['All'] = $container_all->addressStore->countTmpAddresses();
+        $stdoutarray['temporary address objects'][$subName] = $sub->addressStore->countTmpAddresses();
         $stdoutarray['temporary address objects']['total_DGs'] = $gnTmpAddresses;
 
 
         $stdoutarray['service objects'] = array();
-        $stdoutarray['service objects']['All'] = $container_all->serviceStore->countServices();
+        $stdoutarray['service objects'][$subName] = $sub->serviceStore->countServices();
         $stdoutarray['service objects']['total_DGs'] = $gnservices;
         $stdoutarray['service objects']['unused'] = $gnservicesUnused;
 
         $stdoutarray['servicegroup objects'] = array();
-        $stdoutarray['servicegroup objects']['All'] = $container_all->serviceStore->countServiceGroups();
+        $stdoutarray['servicegroup objects'][$subName] = $sub->serviceStore->countServiceGroups();
         $stdoutarray['servicegroup objects']['total_DGs'] = $gnserviceGs;
         $stdoutarray['servicegroup objects']['unused'] = $gnserviceGsUnused;
 
         $stdoutarray['temporary service objects'] = array();
-        $stdoutarray['temporary service objects']['All'] = $container_all->serviceStore->countTmpServices();
+        $stdoutarray['temporary service objects'][$subName] = $sub->serviceStore->countTmpServices();
         $stdoutarray['temporary service objects']['total_DGs'] = $gnTmpServices;
 
 
         $stdoutarray['tag objects'] = array();
-        $stdoutarray['tag objects']['All'] = $container_all->tagStore->count();
+        $stdoutarray['tag objects'][$subName] = $sub->tagStore->count();
         $stdoutarray['tag objects']['total_DGs'] = $gTagCount;
         $stdoutarray['tag objects']['unused'] = $gTagUnusedCount;
 
         $stdoutarray['securityProfileGroup objects'] = array();
-        $stdoutarray['securityProfileGroup objects']['All'] = $container_all->securityProfileGroupStore->count();
+        $stdoutarray['securityProfileGroup objects'][$subName] = $sub->securityProfileGroupStore->count();
         $stdoutarray['securityProfileGroup objects']['total_DGs'] = $gnsecprofgroups;
 
         $stdoutarray['securityProfile Anti-Spyware objects'] = array();
-        $stdoutarray['securityProfile Anti-Spyware objects']['All'] = $container_all->AntiSpywareProfileStore->count();
+        $stdoutarray['securityProfile Anti-Spyware objects'][$subName] = $sub->AntiSpywareProfileStore->count();
         $stdoutarray['securityProfile Anti-Spyware objects']['total_DGs'] = $gnsecprofAS;
 
         $stdoutarray['securityProfile Vulnerability objects'] = array();
-        $stdoutarray['securityProfile Vulnerability objects']['All'] = $container_all->VulnerabilityProfileStore->count();
+        $stdoutarray['securityProfile Vulnerability objects'][$subName] = $sub->VulnerabilityProfileStore->count();
         $stdoutarray['securityProfile Vulnerability objects']['total_DGs'] = $gnsecprofVB;
 
         $stdoutarray['securityProfile WildfireAndAnti-Virus objects'] = array();
-        $stdoutarray['securityProfile WildfireAndAnti-Virus objects']['All'] = $container_all->VirusAndWildfireProfileStore->count();
+        $stdoutarray['securityProfile WildfireAndAnti-Virus objects'][$subName] = $sub->VirusAndWildfireProfileStore->count();
         $stdoutarray['securityProfile WildfireAndAnti-Virus objects']['total_DGs'] = $gnsecprofAVWF;
 
         $stdoutarray['securityProfile DNS objects'] = array();
-        $stdoutarray['securityProfile DNS objects']['All'] = $container_all->DNSSecurityProfileStore->count();
+        $stdoutarray['securityProfile DNS objects'][$subName] = $sub->DNSSecurityProfileStore->count();
         $stdoutarray['securityProfile DNS objects']['total_DGs'] = $gnsecprofDNS;
 
         $stdoutarray['securityProfile Saas objects'] = array();
-        $stdoutarray['securityProfile Saas objects']['All'] = $container_all->SaasSecurityProfileStore->count();
+        $stdoutarray['securityProfile Saas objects'][$subName] = $sub->SaasSecurityProfileStore->count();
         $stdoutarray['securityProfile Saas objects']['total_DGs'] = $gnsecprofSaas;
 
         $stdoutarray['securityProfile URL objects'] = array();
-        $stdoutarray['securityProfile URL objects']['All'] = $container_all->URLProfileStore->count();
+        $stdoutarray['securityProfile URL objects'][$subName] = $sub->URLProfileStore->count();
         $stdoutarray['securityProfile URL objects']['total_DGs'] = $gnsecprofURL;
 
 
         $stdoutarray['securityProfile File-Blocking objects'] = array();
-        $stdoutarray['securityProfile File-Blocking objects']['All'] = $container_all->FileBlockingProfileStore->count();
+        $stdoutarray['securityProfile File-Blocking objects'][$subName] = $sub->FileBlockingProfileStore->count();
         $stdoutarray['securityProfile File-Blocking objects']['total_DGs'] = $gnsecprofFB;
 
 
         $stdoutarray['securityProfile Decryption objects'] = array();
-        $stdoutarray['securityProfile Decryption objects']['All'] = $container_all->DecryptionProfileStore->count();
+        $stdoutarray['securityProfile Decryption objects'][$subName] = $sub->DecryptionProfileStore->count();
         $stdoutarray['securityProfile Decryption objects']['total_DGs'] = $gnsecprofDecr;
 
 
@@ -1101,6 +1105,8 @@ class BuckbeakConf
         $stdoutarray['statstype'] = "adoption";
 
         $header = "BP/Visibility Statistics for BuckbeakConf '" . PH::boldText($this->name) . "' | '" . $this->toString() . "'";
+
+
         $stdoutarray['header'] = $header;
 
         $stdoutarray['security rules'] = $sub_ruleStore->count();

@@ -20,6 +20,252 @@
 
 trait StatCollectorTrait
 {
+
+    public function display_mainDevice_statistics( &$stdoutarray, $statsArray, $sub, $subName, $header): void
+    {
+        $stdoutarray['header'] = $header;
+
+        $stdoutarray['pre security rules'] = array();
+        $stdoutarray['pre security rules'][$subName] = $sub->securityRules->countPreRules();
+        $stdoutarray['pre security rules']['total_DGs'] = $statsArray['gpreSecRules'];
+
+        $stdoutarray['post security rules'] = array();
+        $stdoutarray['post security rules'][$subName] = $sub->securityRules->countPostRules();
+        $stdoutarray['post security rules']['total_DGs'] = $statsArray['gpostSecRules'];
+
+
+        $stdoutarray['pre nat rules'] = array();
+        $stdoutarray['pre nat rules'][$subName] = $sub->natRules->countPreRules();
+        $stdoutarray['pre nat rules']['total_DGs'] = $statsArray['gpreNatRules'];
+
+        $stdoutarray['post nat rules'] = array();
+        $stdoutarray['post nat rules'][$subName] = $sub->natRules->countPostRules();
+        $stdoutarray['post nat rules']['total_DGs'] = $statsArray['gpostNatRules'];
+
+
+        $stdoutarray['pre qos rules'] = array();
+        $stdoutarray['pre qos rules'][$subName] = $sub->qosRules->countPreRules();
+        $stdoutarray['pre qos rules']['total_DGs'] = $statsArray['gpreQoSRules'];
+
+        $stdoutarray['post qos rules'] = array();
+        $stdoutarray['post qos rules'][$subName] = $sub->qosRules->countPostRules();
+        $stdoutarray['post qos rules']['total_DGs'] = $statsArray['gpostQoSRules'];
+
+
+        $stdoutarray['pre pbf rules'] = array();
+        $stdoutarray['pre pbf rules'][$subName] = $sub->pbfRules->countPreRules();
+        $stdoutarray['pre pbf rules']['total_DGs'] = $statsArray['gprePbfRules'];
+
+        $stdoutarray['post pbf rules'] = array();
+        $stdoutarray['post pbf rules'][$subName] = $sub->pbfRules->countPostRules();
+        $stdoutarray['post pbf rules']['total_DGs'] = $statsArray['gpostPbfRules'];
+
+
+        $stdoutarray['pre decryption rules'] = array();
+        $stdoutarray['pre decryption rules'][$subName] = $sub->decryptionRules->countPreRules();
+        $stdoutarray['pre decryption rules']['total_DGs'] = $statsArray['gpreDecryptRules'];
+
+        $stdoutarray['post decryption rules'] = array();
+        $stdoutarray['post decryption rules'][$subName] = $sub->decryptionRules->countPostRules();
+        $stdoutarray['post decryption rules']['total_DGs'] = $statsArray['gpostDecryptRules'];
+
+
+        $stdoutarray['pre app-override rules'] = array();
+        $stdoutarray['pre app-override rules'][$subName] = $sub->appOverrideRules->countPreRules();
+        $stdoutarray['pre app-override rules']['total_DGs'] = $statsArray['gpreAppOverrideRules'];
+
+        $stdoutarray['post app-override rules'] = array();
+        $stdoutarray['post app-override rules'][$subName] = $sub->appOverrideRules->countPostRules();
+        $stdoutarray['post app-override rules']['total_DGs'] = $statsArray['gpostAppOverrideRules'];
+
+
+        $stdoutarray['pre capt-portal rules'] = array();
+        $stdoutarray['pre capt-portal rules'][$subName] = $sub->captivePortalRules->countPreRules();
+        $stdoutarray['pre capt-portal rules']['total_DGs'] = $statsArray['gpreCPRules'];
+
+        $stdoutarray['post capt-portal rules'] = array();
+        $stdoutarray['post capt-portal rules'][$subName] = $sub->captivePortalRules->countPostRules();
+        $stdoutarray['post capt-portal rules']['total_DGs'] = $statsArray['gpostCPRules'];
+
+
+        $stdoutarray['pre authentication rules'] = array();
+        $stdoutarray['pre authentication rules'][$subName] = $sub->authenticationRules->countPreRules();
+        $stdoutarray['pre authentication rules']['total_DGs'] = $statsArray['gpreAuthRules'];
+
+        $stdoutarray['post authentication rules'] = array();
+        $stdoutarray['post authentication rules'][$subName] = $sub->authenticationRules->countPostRules();
+        $stdoutarray['post authentication rules']['total_DGs'] = $statsArray['gpostAuthRules'];
+
+
+        $stdoutarray['pre dos rules'] = array();
+        $stdoutarray['pre dos rules'][$subName] = $sub->dosRules->countPreRules();
+        $stdoutarray['pre dos rules']['total_DGs'] = $statsArray['gpreDoSRules'];
+
+        $stdoutarray['post dos rules'] = array();
+        $stdoutarray['post dos rules'][$subName] = $sub->dosRules->countPostRules();
+        $stdoutarray['post dos rules']['total_DGs'] = $statsArray['gpostDoSRules'];
+
+        $stdoutarray['pre tunnel-inspection rules'] = array();
+        $stdoutarray['pre tunnel-inspection rules'][$subName] = $sub->tunnelInspectionRules->countPreRules();
+        $stdoutarray['pre tunnel-inspection rules']['total_DGs'] = $statsArray['gpreTunnelInspectionRules'];
+
+        $stdoutarray['post tunnel-inspection rules'] = array();
+        $stdoutarray['post tunnel-inspection rules'][$subName] = $sub->tunnelInspectionRules->countPostRules();
+        $stdoutarray['post tunnel-inspection rules']['total_DGs'] = $statsArray['gpostTunnelInspectionRules'];
+
+        #pre default-security not existent
+        #$stdoutarray['pre default-security rules'] = array();
+        #$stdoutarray['pre default-security rules'][$subName] = $sub->defaultSecurityRules->countPreRules();
+        #$stdoutarray['pre default-security rules']['total_DGs'] = $statsArray['gpreDefaultSecurityRules'];
+
+        $stdoutarray['post default-security rules'] = array();
+        $stdoutarray['post default-security rules'][$subName] = $sub->defaultSecurityRules->countPostRules();
+        $stdoutarray['post default-security rules']['total_DGs'] = $statsArray['gpostDefaultSecurityRules'];
+
+        $stdoutarray['pre network-packet-broker rules'] = array();
+        $stdoutarray['pre network-packet-broker rules'][$subName] = $sub->networkPacketBrokerRules->countPreRules();
+        $stdoutarray['pre network-packet-broker rules']['total_DGs'] = $statsArray['gpreNetworkPacketBrockerRules'];
+
+        $stdoutarray['post network-packet-broker rules'] = array();
+        $stdoutarray['post network-packet-broker rules'][$subName] = $sub->networkPacketBrokerRules->countPostRules();
+        $stdoutarray['post network-packet-broker rules']['total_DGs'] = $statsArray['gpostNetworkPacketBrockerRules'];
+
+        $stdoutarray['pre sdwan rules'] = array();
+        $stdoutarray['pre sdwan rules'][$subName] = $sub->sdWanRules->countPreRules();
+        $stdoutarray['pre sdwan rules']['total_DGs'] = $statsArray['gpreSDWanRules'];
+
+        $stdoutarray['post sdwan rules'] = array();
+        $stdoutarray['post sdwan rules'][$subName] = $sub->sdWanRules->countPostRules();
+        $stdoutarray['post sdwan rules']['total_DGs'] = $statsArray['gpostSDWanRules'];
+
+        $stdoutarray['address objects'] = array();
+        $stdoutarray['address objects'][$subName] = $sub->addressStore->countAddresses();
+        $stdoutarray['address objects']['total_DGs'] = $statsArray['gnaddresss'];
+        $stdoutarray['address objects']['unused'] = $statsArray['gnaddresssUnused'];
+
+        $stdoutarray['addressgroup objects'] = array();
+        $stdoutarray['addressgroup objects'][$subName] = $sub->addressStore->countAddressGroups();
+        $stdoutarray['addressgroup objects']['total_DGs'] = $statsArray['gnaddressGs'];
+        $stdoutarray['addressgroup objects']['unused'] = $statsArray['gnaddressGsUnused'];
+
+        $stdoutarray['temporary address objects'] = array();
+        $stdoutarray['temporary address objects'][$subName] = $sub->addressStore->countTmpAddresses();
+        $stdoutarray['temporary address objects']['total_DGs'] = $statsArray['gnTmpAddresses'];
+
+        $stdoutarray['region objects'] = array();
+        $stdoutarray['region objects'][$subName] = $sub->addressStore->countRegionObjects();
+        $stdoutarray['region objects']['total_DGs'] = $statsArray['gnRegionAddresses'];
+
+        $stdoutarray['service objects'] = array();
+        $stdoutarray['service objects'][$subName] = $sub->serviceStore->countServices();
+        $stdoutarray['service objects']['total_DGs'] = $statsArray['gnservices'];
+        $stdoutarray['service objects']['unused'] = $statsArray['gnservicesUnused'];
+
+        $stdoutarray['servicegroup objects'] = array();
+        $stdoutarray['servicegroup objects'][$subName] = $sub->serviceStore->countServiceGroups();
+        $stdoutarray['servicegroup objects']['total_DGs'] = $statsArray['gnserviceGs'];
+        $stdoutarray['servicegroup objects']['unused'] = $statsArray['gnserviceGsUnused'];
+
+        $stdoutarray['temporary service objects'] = array();
+        $stdoutarray['temporary service objects'][$subName] = $sub->serviceStore->countTmpServices();
+        $stdoutarray['temporary service objects']['total_DGs'] = $statsArray['gnTmpServices'];
+
+
+        $stdoutarray['tag objects'] = array();
+        $stdoutarray['tag objects'][$subName] = $sub->tagStore->count();
+        $stdoutarray['tag objects']['total_DGs'] = $statsArray['gTagCount'];
+        $stdoutarray['tag objects']['unused'] = $statsArray['gTagUnusedCount'];
+
+        $stdoutarray['securityProfileGroup objects'] = array();
+        $stdoutarray['securityProfileGroup objects'][$subName] = $sub->securityProfileGroupStore->count();
+        $stdoutarray['securityProfileGroup objects']['total_DGs'] = $statsArray['gnsecurityprofileGs'];
+
+
+        $stdoutarray['Anti-Spyware objects'] = array();
+        $stdoutarray['Anti-Spyware objects'][$subName] = $sub->AntiSpywareProfileStore->count();
+        $stdoutarray['Anti-Spyware objects']['total_DGs'] = $statsArray['gnantispyware'];
+        $stdoutarray['Vulnerability objects'] = array();
+        $stdoutarray['Vulnerability objects'][$subName] = $sub->VulnerabilityProfileStore->count();
+        $stdoutarray['Vulnerability objects']['total_DGs'] = $statsArray['gnvulnerability'];
+        $stdoutarray['Antivirus objects'] = array();
+        $stdoutarray['Antivirus objects'][$subName] = $sub->AntiVirusProfileStore->count();
+        $stdoutarray['Antivirus objects']['total_DGs'] = $statsArray['gnantivirus'];
+        $stdoutarray['Wildfire objects'] = array();
+        $stdoutarray['Wildfire objects'][$subName] = $sub->WildfireProfileStore->count();
+        $stdoutarray['Wildfire objects']['total_DGs'] = $statsArray['gnwildfire'];
+        $stdoutarray['URL objects'] = array();
+        $stdoutarray['URL objects'][$subName] = $sub->URLProfileStore->count();
+        $stdoutarray['URL objects']['total_DGs'] = $statsArray['gnurlprofil'];
+        $stdoutarray['custom URL objects'] = array();
+        $stdoutarray['custom URL objects'][$subName] = $sub->customURLProfileStore->count();
+        $stdoutarray['custom URL objects']['total_DGs'] = $statsArray['gncustomurlprofil'];
+
+        $stdoutarray['File-Blocking objects'] = array();
+        $stdoutarray['File-Blocking objects'][$subName] = $sub->FileBlockingProfileStore->count();
+        $stdoutarray['File-Blocking objects']['total_DGs'] = $statsArray['gnfileblocking'];
+        $stdoutarray['Decryption objects'] = array();
+        $stdoutarray['Decryption objects'][$subName] = $sub->DecryptionProfileStore->count();
+        $stdoutarray['Decryption objects']['total_DGs'] = $statsArray['gndecryption'];
+
+        $stdoutarray['HipObject objects'] = array();
+        $stdoutarray['HipObject objects'][$subName] = $sub->HipObjectsProfileStore->count();
+        $stdoutarray['HipObject objects']['total_DGs'] = $statsArray['gnhipobjects'];
+        $stdoutarray['HipProfile objects'] = array();
+        $stdoutarray['HipProfile objects'][$subName] = $sub->HipProfilesProfileStore->count();
+        $stdoutarray['HipProfile objects']['total_DGs'] = $statsArray['gnhipprofiles'];
+
+        $stdoutarray['GTP objects'] = array();
+        $stdoutarray['GTP objects'][$subName] = $sub->GTPProfileStore->count();
+        $stdoutarray['GTP objects']['total_DGs'] = $statsArray['gngtp'];
+        $stdoutarray['SCEP objects'] = array();
+        $stdoutarray['SCEP objects'][$subName] = $sub->SCEPProfileStore->count();
+        $stdoutarray['SCEP objects']['total_DGs'] = $statsArray['gnscep'];
+        $stdoutarray['PacketBroker objects'] = array();
+        $stdoutarray['PacketBroker objects'][$subName] = $sub->PacketBrokerProfileStore->count();
+        $stdoutarray['PacketBroker objects']['total_DGs'] = $statsArray['gnpacketbroker'];
+
+        $stdoutarray['SDWanErrorCorrection objects'] = array();
+        $stdoutarray['SDWanErrorCorrection objects'][$subName] = $sub->SDWanErrorCorrectionProfileStore->count();
+        $stdoutarray['SDWanErrorCorrection objects']['total_DGs'] = $statsArray['gnsdwanerrorcorrection'];
+        $stdoutarray['SDWanPathQuality objects'] = array();
+        $stdoutarray['SDWanPathQuality objects'][$subName] = $sub->SDWanPathQualityProfileStore->count();
+        $stdoutarray['SDWanPathQuality objects']['total_DGs'] = $statsArray['gnsdwanpathquality'];
+        $stdoutarray['SDWanSaasQuality objects'] = array();
+        $stdoutarray['SDWanSaasQuality objects'][$subName] = $sub->SDWanSaasQualityProfileStore->count();
+        $stdoutarray['SDWanSaasQuality objects']['total_DGs'] = $statsArray['gnsdwansaasquality'];
+        $stdoutarray['SDWanTrafficDistribution objects'] = array();
+        $stdoutarray['SDWanTrafficDistribution objects'][$subName] = $sub->SDWanTrafficDistributionProfileStore->count();
+        $stdoutarray['SDWanTrafficDistribution objects']['total_DGs'] = $statsArray['gnsdwantrafficdistribution'];
+
+        $stdoutarray['DataObjects objects'][$subName] = $sub->DataObjectsProfileStore->count();
+        $stdoutarray['DataObjects objects']['total_DGs'] = $statsArray['gndataobjects'];
+
+        $stdoutarray['LogProfile objects'] = array();
+        $stdoutarray['LogProfile objects'][$subName] = $sub->LogProfileStore->count();
+        $stdoutarray['LogProfile objects']['total_DGs'] = $statsArray['gLogProfileCount'];
+
+        $stdoutarray['zones'] = $sub->zoneStore->count();
+        #$stdoutarray['apps'] = $sub->appStore->count();
+
+        /*
+        $stdoutarray['interfaces'] = array();
+        $stdoutarray['interfaces']['total'] = $numInterfaces;
+        $stdoutarray['interfaces']['ethernet'] = $sub->network->ethernetIfStore->count();
+
+        $stdoutarray['sub-interfaces'] = array();
+        $stdoutarray['sub-interfaces']['total'] = $numSubInterfaces;
+        $stdoutarray['sub-interfaces']['ethernet'] = $sub->network->ethernetIfStore->countSubInterfaces();
+        */
+
+
+        #$stdoutarray['certificate objects'] = array();
+        #$stdoutarray['certificate objects']['total_Templates'] = $gCertificatCount;
+
+        #$stdoutarray['SSL_TLSServiceProfile objects'] = array();
+        #$stdoutarray['SSL_TLSServiceProfile objects']['total_Templates'] = $gSSL_TLSServiceProfileCount;
+
+    }
+
     public function display_statistics( $debug = false, $actions = "display")
     {
         $stdoutarray = array();

@@ -1833,107 +1833,109 @@ class PanoramaConf
     {
         //Todo: swaschkut 20251017 template / template-stack missing
 
-        $gpreSecRules = $this->securityRules->countPreRules();
-        $gpreNatRules = $this->natRules->countPreRules();
-        $gpreDecryptRules = $this->decryptionRules->countPreRules();
-        $gpreAppOverrideRules = $this->appOverrideRules->countPreRules();
-        $gpreCPRules = $this->captivePortalRules->countPreRules();
-        $gpreAuthRules = $this->authenticationRules->countPreRules();
-        $gprePbfRules = $this->pbfRules->countPreRules();
-        $gpreQoSRules = $this->qosRules->countPreRules();
-        $gpreDoSRules = $this->dosRules->countPreRules();
+        $statsArray = array();
 
-        $gpreTunnelInspectionRules = $this->tunnelInspectionRules->countPreRules();
-        #$gpreDefaultSecurityRules = $this->defaultSecurityRules->countPreRules();
-        $gpreNetworkPacketBrockerRules = $this->networkPacketBrokerRules->countPreRules();
-        $gpreSDWanRules = $this->sdWanRules->countPreRules();
+        $statsArray['gpreSecRules'] = $this->securityRules->countPreRules();
+        $statsArray['gpreNatRules'] = $this->natRules->countPreRules();
+        $statsArray['gpreDecryptRules'] = $this->decryptionRules->countPreRules();
+        $statsArray['gpreAppOverrideRules'] = $this->appOverrideRules->countPreRules();
+        $statsArray['gpreCPRules'] = $this->captivePortalRules->countPreRules();
+        $statsArray['gpreAuthRules'] = $this->authenticationRules->countPreRules();
+        $statsArray['gprePbfRules'] = $this->pbfRules->countPreRules();
+        $statsArray['gpreQoSRules'] = $this->qosRules->countPreRules();
+        $statsArray['gpreDoSRules'] = $this->dosRules->countPreRules();
+
+        $statsArray['gpreTunnelInspectionRules'] = $this->tunnelInspectionRules->countPreRules();
+        #$statsArray['gpreDefaultSecurityRules'] = $this->defaultSecurityRules->countPreRules();
+        $statsArray['gpreNetworkPacketBrockerRules'] = $this->networkPacketBrokerRules->countPreRules();
+        $statsArray['gpreSDWanRules'] = $this->sdWanRules->countPreRules();
 
 
-        $gpostSecRules = $this->securityRules->countPostRules();
-        $gpostNatRules = $this->natRules->countPostRules();
-        $gpostDecryptRules = $this->decryptionRules->countPostRules();
-        $gpostAppOverrideRules = $this->appOverrideRules->countPostRules();
-        $gpostCPRules = $this->captivePortalRules->countPostRules();
-        $gpostAuthRules = $this->authenticationRules->countPostRules();
-        $gpostPbfRules = $this->pbfRules->countPostRules();
-        $gpostQoSRules = $this->qosRules->countPostRules();
-        $gpostDoSRules = $this->dosRules->countPostRules();
+        $statsArray['gpostSecRules'] = $this->securityRules->countPostRules();
+        $statsArray['gpostNatRules'] = $this->natRules->countPostRules();
+        $statsArray['gpostDecryptRules'] = $this->decryptionRules->countPostRules();
+        $statsArray['gpostAppOverrideRules'] = $this->appOverrideRules->countPostRules();
+        $statsArray['gpostCPRules'] = $this->captivePortalRules->countPostRules();
+        $statsArray['gpostAuthRules'] = $this->authenticationRules->countPostRules();
+        $statsArray['gpostPbfRules'] = $this->pbfRules->countPostRules();
+        $statsArray['gpostQoSRules'] = $this->qosRules->countPostRules();
+        $statsArray['gpostDoSRules'] = $this->dosRules->countPostRules();
 
-        $gpostTunnelInspectionRules = $this->tunnelInspectionRules->countPostRules();
-        $gpostDefaultSecurityRules = $this->defaultSecurityRules->countPostRules();
-        $gpostNetworkPacketBrockerRules = $this->networkPacketBrokerRules->countPostRules();
-        $gpostSDWanRules = $this->sdWanRules->countPostRules();
+        $statsArray['gpostTunnelInspectionRules'] = $this->tunnelInspectionRules->countPostRules();
+        $statsArray['gpostDefaultSecurityRules'] = $this->defaultSecurityRules->countPostRules();
+        $statsArray['gpostNetworkPacketBrockerRules'] = $this->networkPacketBrokerRules->countPostRules();
+        $statsArray['gpostSDWanRules'] = $this->sdWanRules->countPostRules();
 
-        $size_securityRules = &DH::dom_get_config_size($this->securityRules->xmlroot);
-        $size_natRules = &DH::dom_get_config_size($this->natRules->xmlroot);
-        $size_decryptionRules = &DH::dom_get_config_size($this->decryptionRules->xmlroot);
-        $size_appOverrideRules = &DH::dom_get_config_size($this->appOverrideRules->xmlroot);
-        $size_captivePortalRules = &DH::dom_get_config_size($this->captivePortalRules->xmlroot);
-        $size_authenticationRules = &DH::dom_get_config_size($this->authenticationRules->xmlroot);
-        $size_pbfRules = &DH::dom_get_config_size($this->pbfRules->xmlroot);
-        $size_qosRules = &DH::dom_get_config_size($this->qosRules->xmlroot);
-        $size_dosRules = &DH::dom_get_config_size($this->dosRules->xmlroot);
-        $size_tunnelInspectionRules = &DH::dom_get_config_size($this->tunnelInspectionRules->xmlroot);
-        $size_defaultSecurityRules = &DH::dom_get_config_size($this->defaultSecurityRules->xmlroot);
-        $size_networkPacketBrokerRules = &DH::dom_get_config_size($this->networkPacketBrokerRules->xmlroot);
-        $size_sdWanRules = &DH::dom_get_config_size($this->sdWanRules->xmlroot);
+        $statsArray['size_securityRules'] = &DH::dom_get_config_size($this->securityRules->xmlroot);
+        $statsArray['size_natRules'] = &DH::dom_get_config_size($this->natRules->xmlroot);
+        $statsArray['size_decryptionRules'] = &DH::dom_get_config_size($this->decryptionRules->xmlroot);
+        $statsArray['size_appOverrideRules'] = &DH::dom_get_config_size($this->appOverrideRules->xmlroot);
+        $statsArray['size_captivePortalRules'] = &DH::dom_get_config_size($this->captivePortalRules->xmlroot);
+        $statsArray['size_authenticationRules'] = &DH::dom_get_config_size($this->authenticationRules->xmlroot);
+        $statsArray['size_pbfRules'] = &DH::dom_get_config_size($this->pbfRules->xmlroot);
+        $statsArray['size_qosRules'] = &DH::dom_get_config_size($this->qosRules->xmlroot);
+        $statsArray['size_dosRules'] = &DH::dom_get_config_size($this->dosRules->xmlroot);
+        $statsArray['size_tunnelInspectionRules'] = &DH::dom_get_config_size($this->tunnelInspectionRules->xmlroot);
+        $statsArray['size_defaultSecurityRules'] = &DH::dom_get_config_size($this->defaultSecurityRules->xmlroot);
+        $statsArray['size_networkPacketBrokerRules'] = &DH::dom_get_config_size($this->networkPacketBrokerRules->xmlroot);
+        $statsArray['size_sdWanRules'] = &DH::dom_get_config_size($this->sdWanRules->xmlroot);
 
-        $gnservices = $this->serviceStore->countServices();
-        $gnservicesUnused = $this->serviceStore->countUnusedServices();
-        $gnserviceGs = $this->serviceStore->countServiceGroups();
-        $gnserviceGsUnused = $this->serviceStore->countUnusedServiceGroups();
-        $gnTmpServices = $this->serviceStore->countTmpServices();
-        $size_srvRoot = &DH::dom_get_config_size($this->serviceStore->serviceRoot);
-        $size_srvgrpRoot = &DH::dom_get_config_size($this->serviceStore->serviceGroupRoot);
-        $size_serviceStore = $size_srvRoot+$size_srvgrpRoot;
+        $statsArray['gnservices'] = $this->serviceStore->countServices();
+        $statsArray['gnservicesUnused'] = $this->serviceStore->countUnusedServices();
+        $statsArray['gnserviceGs'] = $this->serviceStore->countServiceGroups();
+        $statsArray['gnserviceGsUnused'] = $this->serviceStore->countUnusedServiceGroups();
+        $statsArray['gnTmpServices'] = $this->serviceStore->countTmpServices();
+        $statsArray['size_srvRoot'] = &DH::dom_get_config_size($this->serviceStore->serviceRoot);
+        $statsArray['size_srvgrpRoot'] = &DH::dom_get_config_size($this->serviceStore->serviceGroupRoot);
+        $statsArray['size_serviceStore'] = $statsArray['size_srvRoot']+$statsArray['size_srvgrpRoot'];
 
-        $gnaddresss = $this->addressStore->countAddresses();
-        $gnaddresssUnused = $this->addressStore->countUnusedAddresses();
-        $gnaddressGs = $this->addressStore->countAddressGroups();
-        $gnaddressGsUnused = $this->addressStore->countUnusedAddressGroups();
-        $gnTmpAddresses = $this->addressStore->countTmpAddresses();
-        $gnRegionAddresses = $this->addressStore->countRegionObjects();
-        $size_adrRoot = &DH::dom_get_config_size($this->addressStore->addressRoot);
-        $size_adrgrpRoot = &DH::dom_get_config_size($this->addressStore->addressGroupRoot);
-        $size_regionRoot = &DH::dom_get_config_size($this->addressStore->regionRoot);
-        $size_addressStore = $size_adrRoot+$size_adrgrpRoot+$size_regionRoot;
+        $statsArray['gnaddresss'] = $this->addressStore->countAddresses();
+        $statsArray['gnaddresssUnused'] = $this->addressStore->countUnusedAddresses();
+        $statsArray['gnaddressGs'] = $this->addressStore->countAddressGroups();
+        $statsArray['gnaddressGsUnused'] = $this->addressStore->countUnusedAddressGroups();
+        $statsArray['gnTmpAddresses'] = $this->addressStore->countTmpAddresses();
+        $statsArray['gnRegionAddresses'] = $this->addressStore->countRegionObjects();
+        $statsArray['size_adrRoot'] = &DH::dom_get_config_size($this->addressStore->addressRoot);
+        $statsArray['size_adrgrpRoot'] = &DH::dom_get_config_size($this->addressStore->addressGroupRoot);
+        $statsArray['size_regionRoot'] = &DH::dom_get_config_size($this->addressStore->regionRoot);
+        $statsArray['size_addressStore'] = $statsArray['size_adrRoot']+$statsArray['size_adrgrpRoot']+$statsArray['size_regionRoot'];
 
-        $gTagCount = $this->tagStore->count();
-        $gTagUnusedCount = $this->tagStore->countUnused();
-        $size_tagStore = &DH::dom_get_config_size($this->tagStore->xmlroot);
+        $statsArray['gTagCount'] = $this->tagStore->count();
+        $statsArray['gTagUnusedCount'] = $this->tagStore->countUnused();
+        $statsArray['size_tagStore'] = &DH::dom_get_config_size($this->tagStore->xmlroot);
 
-        $gnsecurityprofileGs = $this->securityProfileGroupStore->count();
+        $statsArray['gnsecurityprofileGs'] = $this->securityProfileGroupStore->count();
 
-        $gnantispyware = $this->AntiSpywareProfileStore->count();
-        $gnvulnerability = $this->VulnerabilityProfileStore->count();
-        $gnantivirus = $this->AntiVirusProfileStore->count();
-        $gnwildfire = $this->WildfireProfileStore->count();
-        $gnurlprofil = $this->URLProfileStore->count();
-        $gncustomurlprofil = $this->customURLProfileStore->count();
-        $size_customURLProfileStore = &DH::dom_get_config_size($this->customURLProfileStore->xmlroot);
-        $gnfileblocking = $this->FileBlockingProfileStore->count();
-        $gndecryption = $this->DecryptionProfileStore->count();
+        $statsArray['gnantispyware'] = $this->AntiSpywareProfileStore->count();
+        $statsArray['gnvulnerability'] = $this->VulnerabilityProfileStore->count();
+        $statsArray['gnantivirus'] = $this->AntiVirusProfileStore->count();
+        $statsArray['gnwildfire'] = $this->WildfireProfileStore->count();
+        $statsArray['gnurlprofil'] = $this->URLProfileStore->count();
+        $statsArray['gncustomurlprofil'] = $this->customURLProfileStore->count();
+        $statsArray['size_customURLProfileStore'] = &DH::dom_get_config_size($this->customURLProfileStore->xmlroot);
+        $statsArray['gnfileblocking'] = $this->FileBlockingProfileStore->count();
+        $statsArray['gndecryption'] = $this->DecryptionProfileStore->count();
 
-        $gnhipobjects = $this->HipObjectsProfileStore->count();
-        $gnhipprofiles = $this->HipProfilesProfileStore->count();
+        $statsArray['gnhipobjects'] = $this->HipObjectsProfileStore->count();
+        $statsArray['gnhipprofiles'] = $this->HipProfilesProfileStore->count();
 
-        $gngtp = $this->GTPProfileStore->count();
-        $gnscep = $this->SCEPProfileStore->count();
-        $gnpacketbroker = $this->PacketBrokerProfileStore->count();
+        $statsArray['gngtp'] = $this->GTPProfileStore->count();
+        $statsArray['gnscep'] = $this->SCEPProfileStore->count();
+        $statsArray['gnpacketbroker'] = $this->PacketBrokerProfileStore->count();
 
-        $gnsdwanerrorcorrection = $this->SDWanErrorCorrectionProfileStore->count();
-        $gnsdwanpathquality = $this->SDWanPathQualityProfileStore->count();
-        $gnsdwansaasquality = $this->SDWanSaasQualityProfileStore->count();
-        $gnsdwantrafficdistribution = $this->SDWanTrafficDistributionProfileStore->count();
+        $statsArray['gnsdwanerrorcorrection'] = $this->SDWanErrorCorrectionProfileStore->count();
+        $statsArray['gnsdwanpathquality'] = $this->SDWanPathQualityProfileStore->count();
+        $statsArray['gnsdwansaasquality'] = $this->SDWanSaasQualityProfileStore->count();
+        $statsArray['gnsdwantrafficdistribution'] = $this->SDWanTrafficDistributionProfileStore->count();
 
-        $gndataobjects = $this->DataObjectsProfileStore->count();
+        $statsArray['gndataobjects'] = $this->DataObjectsProfileStore->count();
 
-        $gLogProfileCount = $this->LogProfileStore->count();
+        $statsArray['gLogProfileCount'] = $this->LogProfileStore->count();
 
         //Template
-        $gCertificatCount = 0;
+        $statsArray['gCertificatCount'] = 0;
 
-        $gSSL_TLSServiceProfileCount = 0;
+        $statsArray['gSSL_TLSServiceProfileCount'] = 0;
 
 
         if( PH::$shadow_loaddghierarchy )
@@ -1959,99 +1961,99 @@ class PanoramaConf
                     continue;
             }
 
-            $gpreSecRules += $cur->securityRules->countPreRules();
-            $gpreNatRules += $cur->natRules->countPreRules();
-            $gpreDecryptRules += $cur->decryptionRules->countPreRules();
-            $gpreAppOverrideRules += $cur->appOverrideRules->countPreRules();
-            $gpreCPRules += $cur->captivePortalRules->countPreRules();
-            $gpreAuthRules += $cur->authenticationRules->countPreRules();
-            $gprePbfRules += $cur->pbfRules->countPreRules();
-            $gpreQoSRules += $cur->qosRules->countPreRules();
-            $gpreDoSRules += $cur->dosRules->countPreRules();
+            $statsArray['gpreSecRules'] += $cur->securityRules->countPreRules();
+            $statsArray['gpreNatRules'] += $cur->natRules->countPreRules();
+            $statsArray['gpreDecryptRules'] += $cur->decryptionRules->countPreRules();
+            $statsArray['gpreAppOverrideRules'] += $cur->appOverrideRules->countPreRules();
+            $statsArray['gpreCPRules'] += $cur->captivePortalRules->countPreRules();
+            $statsArray['gpreAuthRules'] += $cur->authenticationRules->countPreRules();
+            $statsArray['gprePbfRules'] += $cur->pbfRules->countPreRules();
+            $statsArray['gpreQoSRules'] += $cur->qosRules->countPreRules();
+            $statsArray['gpreDoSRules'] += $cur->dosRules->countPreRules();
 
-            $gpreTunnelInspectionRules += $cur->tunnelInspectionRules->countPreRules();
-            #$gpreDefaultSecurityRules += $cur->defaultSecurityRules->countPreRules();
-            $gpreNetworkPacketBrockerRules += $cur->networkPacketBrokerRules->countPreRules();
-            $gpreSDWanRules += $cur->sdWanRules->countPreRules();
-
-
-            $gpostSecRules += $cur->securityRules->countPostRules();
-            $gpostNatRules += $cur->natRules->countPostRules();
-            $gpostDecryptRules += $cur->decryptionRules->countPostRules();
-            $gpostAppOverrideRules += $cur->appOverrideRules->countPostRules();
-            $gpostCPRules += $cur->captivePortalRules->countPostRules();
-            $gpostAuthRules += $cur->authenticationRules->countPostRules();
-            $gpostPbfRules += $cur->pbfRules->countPostRules();
-            $gpostQoSRules += $cur->qosRules->countPostRules();
-            $gpostDoSRules += $cur->dosRules->countPostRules();
-
-            $gpostTunnelInspectionRules += $cur->tunnelInspectionRules->countPostRules();
-            $gpostDefaultSecurityRules += $cur->defaultSecurityRules->countPostRules();
-            $gpostNetworkPacketBrockerRules += $cur->networkPacketBrokerRules->countPostRules();
-            $gpostSDWanRules += $cur->sdWanRules->countPostRules();
-
-            $size_securityRules += DH::dom_get_config_size($cur->securityRules->xmlroot);
-
-            $gnservices += $cur->serviceStore->countServices();
-            $gnservicesUnused += $cur->serviceStore->countUnusedServices();
-            $gnserviceGs += $cur->serviceStore->countServiceGroups();
-            $gnserviceGsUnused += $cur->serviceStore->countUnusedServiceGroups();
-            $gnTmpServices += $cur->serviceStore->countTmpServices();
-            $size_tmpsrvRoot = DH::dom_get_config_size($cur->serviceStore->serviceRoot);
-            $size_tmpsrvgrpRoot = DH::dom_get_config_size($cur->serviceStore->serviceGroupRoot);
-            $size_serviceStore += ($size_tmpsrvRoot+$size_tmpsrvgrpRoot);
-
-            $gnaddresss += $cur->addressStore->countAddresses();
-            $gnaddresssUnused += $cur->addressStore->countUnusedAddresses();
-            $gnaddressGs += $cur->addressStore->countAddressGroups();
-            $gnaddressGsUnused += $cur->addressStore->countUnusedAddressGroups();
-            $gnTmpAddresses += $cur->addressStore->countTmpAddresses();
-            $gnRegionAddresses += $cur->addressStore->countRegionObjects();
-            $size_tmpadrRoot = DH::dom_get_config_size($cur->addressStore->addressRoot);
-            $size_tmpadrgrpRoot = DH::dom_get_config_size($cur->addressStore->addressGroupRoot);
-            $size_tmpregionRoot = DH::dom_get_config_size($cur->addressStore->regionRoot);
-            $size_addressStore += ($size_tmpadrRoot+$size_tmpadrgrpRoot+$size_tmpregionRoot);
-
-            $gTagCount += $cur->tagStore->count();
-            $gTagUnusedCount += $cur->tagStore->countUnused();
-            $size_tagStore += DH::dom_get_config_size($cur->tagStore->xmlroot);
+            $statsArray['gpreTunnelInspectionRules'] += $cur->tunnelInspectionRules->countPreRules();
+            #$statsArray['gpreDefaultSecurityRules'] += $cur->defaultSecurityRules->countPreRules();
+            $statsArray['gpreNetworkPacketBrockerRules'] += $cur->networkPacketBrokerRules->countPreRules();
+            $statsArray['gpreSDWanRules'] += $cur->sdWanRules->countPreRules();
 
 
-            $gnsecurityprofileGs += $cur->securityProfileGroupStore->count();
+            $statsArray['gpostSecRules'] += $cur->securityRules->countPostRules();
+            $statsArray['gpostNatRules'] += $cur->natRules->countPostRules();
+            $statsArray['gpostDecryptRules'] += $cur->decryptionRules->countPostRules();
+            $statsArray['gpostAppOverrideRules'] += $cur->appOverrideRules->countPostRules();
+            $statsArray['gpostCPRules'] += $cur->captivePortalRules->countPostRules();
+            $statsArray['gpostAuthRules'] += $cur->authenticationRules->countPostRules();
+            $statsArray['gpostPbfRules'] += $cur->pbfRules->countPostRules();
+            $statsArray['gpostQoSRules'] += $cur->qosRules->countPostRules();
+            $statsArray['gpostDoSRules'] += $cur->dosRules->countPostRules();
 
-            $gnantispyware += $cur->AntiSpywareProfileStore->count();
-            $gnvulnerability += $cur->VulnerabilityProfileStore->count();
-            $gnantivirus += $cur->AntiVirusProfileStore->count();
-            $gnwildfire += $cur->WildfireProfileStore->count();
-            $gnurlprofil += $cur->URLProfileStore->count();
-            $gncustomurlprofil += $cur->customURLProfileStore->count();
-            $size_customURLProfileStore += DH::dom_get_config_size($cur->customURLProfileStore->xmlroot);
+            $statsArray['gpostTunnelInspectionRules'] += $cur->tunnelInspectionRules->countPostRules();
+            $statsArray['gpostDefaultSecurityRules'] += $cur->defaultSecurityRules->countPostRules();
+            $statsArray['gpostNetworkPacketBrockerRules'] += $cur->networkPacketBrokerRules->countPostRules();
+            $statsArray['gpostSDWanRules']  += $cur->sdWanRules->countPostRules();
 
-            $gnfileblocking += $cur->FileBlockingProfileStore->count();
-            $gndecryption += $cur->DecryptionProfileStore->count();
+            $statsArray['size_securityRules'] += DH::dom_get_config_size($cur->securityRules->xmlroot);
 
-            $gnhipobjects += $cur->HipObjectsProfileStore->count();
-            $gnhipprofiles += $cur->HipProfilesProfileStore->count();
+            $statsArray['gnservices']  += $cur->serviceStore->countServices();
+            $statsArray['gnservicesUnused']  += $cur->serviceStore->countUnusedServices();
+            $statsArray['gnserviceGs']  += $cur->serviceStore->countServiceGroups();
+            $statsArray['gnserviceGsUnused']  += $cur->serviceStore->countUnusedServiceGroups();
+            $statsArray['gnTmpServices']  += $cur->serviceStore->countTmpServices();
+            $statsArray['size_tmpsrvRoot'] = DH::dom_get_config_size($cur->serviceStore->serviceRoot);
+            $statsArray['size_tmpsrvgrpRoot'] = DH::dom_get_config_size($cur->serviceStore->serviceGroupRoot);
+            $statsArray['size_serviceStore'] += ($statsArray['size_tmpsrvRoot']+$statsArray['size_tmpsrvgrpRoot']);
 
-            $gngtp += $cur->GTPProfileStore->count();
-            $gnscep += $cur->SCEPProfileStore->count();
-            $gnpacketbroker += $cur->PacketBrokerProfileStore->count();
+            $statsArray['gnaddresss']  += $cur->addressStore->countAddresses();
+            $statsArray['gnaddresssUnused']  += $cur->addressStore->countUnusedAddresses();
+            $statsArray['gnaddressGs']  += $cur->addressStore->countAddressGroups();
+            $statsArray['gnaddressGsUnused']  += $cur->addressStore->countUnusedAddressGroups();
+            $statsArray['gnTmpAddresses']  += $cur->addressStore->countTmpAddresses();
+            $statsArray['gnRegionAddresses']  += $cur->addressStore->countRegionObjects();
+            $statsArray['size_tmpadrRoot'] = DH::dom_get_config_size($cur->addressStore->addressRoot);
+            $statsArray['size_tmpadrgrpRoot'] = DH::dom_get_config_size($cur->addressStore->addressGroupRoot);
+            $statsArray['size_tmpregionRoot'] = DH::dom_get_config_size($cur->addressStore->regionRoot);
+            $statsArray['size_addressStore'] += ($statsArray['size_tmpadrRoot']+$statsArray['size_tmpadrgrpRoot']+$statsArray['size_tmpregionRoot']);
 
-            $gnsdwanerrorcorrection += $cur->SDWanErrorCorrectionProfileStore->count();
-            $gnsdwanpathquality += $cur->SDWanPathQualityProfileStore->count();
-            $gnsdwansaasquality += $cur->SDWanSaasQualityProfileStore->count();
-            $gnsdwantrafficdistribution += $cur->SDWanTrafficDistributionProfileStore->count();
+            $statsArray['gTagCount']  += $cur->tagStore->count();
+            $statsArray['gTagUnusedCount']  += $cur->tagStore->countUnused();
+            $statsArray['size_tagStore'] += DH::dom_get_config_size($cur->tagStore->xmlroot);
 
-            $gndataobjects += $cur->DataObjectsProfileStore->count();
 
-            $gLogProfileCount += $cur->LogProfileStore->count();
+            $statsArray['gnsecurityprofileGs']  += $cur->securityProfileGroupStore->count();
+
+            $statsArray['gnantispyware']  += $cur->AntiSpywareProfileStore->count();
+            $statsArray['gnvulnerability']  += $cur->VulnerabilityProfileStore->count();
+            $statsArray['gnantivirus']  += $cur->AntiVirusProfileStore->count();
+            $statsArray['gnwildfire']  += $cur->WildfireProfileStore->count();
+            $statsArray['gnurlprofil']  += $cur->URLProfileStore->count();
+            $statsArray['gncustomurlprofil']  += $cur->customURLProfileStore->count();
+            $statsArray['size_customURLProfileStore'] += DH::dom_get_config_size($cur->customURLProfileStore->xmlroot);
+
+            $statsArray['gnfileblocking']  += $cur->FileBlockingProfileStore->count();
+            $statsArray['gndecryption']  += $cur->DecryptionProfileStore->count();
+
+            $statsArray['gnhipobjects']  += $cur->HipObjectsProfileStore->count();
+            $statsArray['gnhipprofiles']  += $cur->HipProfilesProfileStore->count();
+
+            $statsArray['gngtp']  += $cur->GTPProfileStore->count();
+            $statsArray['gnscep']  += $cur->SCEPProfileStore->count();
+            $statsArray['gnpacketbroker']  += $cur->PacketBrokerProfileStore->count();
+
+            $statsArray['gnsdwanerrorcorrection']  += $cur->SDWanErrorCorrectionProfileStore->count();
+            $statsArray['gnsdwanpathquality']  += $cur->SDWanPathQualityProfileStore->count();
+            $statsArray['gnsdwansaasquality']  += $cur->SDWanSaasQualityProfileStore->count();
+            $statsArray['gnsdwantrafficdistribution']  += $cur->SDWanTrafficDistributionProfileStore->count();
+
+            $statsArray['gndataobjects']  += $cur->DataObjectsProfileStore->count();
+
+            $statsArray['gLogProfileCount']  += $cur->LogProfileStore->count();
         }
 
         foreach( $this->templates as $template )
         {
-            #$gCertificatCount += $template->certificateStore->count();
+            #$statsArray['gCertificatCount'] += $template->certificateStore->count();
 
-            #$gSSL_TLSServiceProfileCount += $template->SSL_TLSServiceProfileStore->count();
+            #$statsArray['gSSL_TLSServiceProfileCount'] += $template->SSL_TLSServiceProfileStore->count();
         }
 
         $stdoutarray = array();
@@ -2064,239 +2066,245 @@ class PanoramaConf
         else
             $header = "Statistics for PanoramaConf: DG-Hierarchy location: '" .$location. "'";
 
+        $subName = "shared";
+        $sub = $this;
+
+        $this->display_mainDevice_statistics($stdoutarray, $statsArray, $sub, $subName, $header);
+
+        /*
         $stdoutarray['header'] = $header;
 
         $stdoutarray['pre security rules'] = array();
-        $stdoutarray['pre security rules']['shared'] = $this->securityRules->countPreRules();
+        $stdoutarray['pre security rules'][$subName] = $sub->securityRules->countPreRules();
         $stdoutarray['pre security rules']['total_DGs'] = $gpreSecRules;
 
         $stdoutarray['post security rules'] = array();
-        $stdoutarray['post security rules']['shared'] = $this->securityRules->countPostRules();
+        $stdoutarray['post security rules'][$subName] = $sub->securityRules->countPostRules();
         $stdoutarray['post security rules']['total_DGs'] = $gpostSecRules;
 
 
         $stdoutarray['pre nat rules'] = array();
-        $stdoutarray['pre nat rules']['shared'] = $this->natRules->countPreRules();
+        $stdoutarray['pre nat rules'][$subName] = $sub->natRules->countPreRules();
         $stdoutarray['pre nat rules']['total_DGs'] = $gpreNatRules;
 
         $stdoutarray['post nat rules'] = array();
-        $stdoutarray['post nat rules']['shared'] = $this->natRules->countPostRules();
+        $stdoutarray['post nat rules'][$subName] = $sub->natRules->countPostRules();
         $stdoutarray['post nat rules']['total_DGs'] = $gpostNatRules;
 
 
         $stdoutarray['pre qos rules'] = array();
-        $stdoutarray['pre qos rules']['shared'] = $this->qosRules->countPreRules();
+        $stdoutarray['pre qos rules'][$subName] = $sub->qosRules->countPreRules();
         $stdoutarray['pre qos rules']['total_DGs'] = $gpreQoSRules;
 
         $stdoutarray['post qos rules'] = array();
-        $stdoutarray['post qos rules']['shared'] = $this->qosRules->countPostRules();
+        $stdoutarray['post qos rules'][$subName] = $sub->qosRules->countPostRules();
         $stdoutarray['post qos rules']['total_DGs'] = $gpostQoSRules;
 
 
         $stdoutarray['pre pbf rules'] = array();
-        $stdoutarray['pre pbf rules']['shared'] = $this->pbfRules->countPreRules();
+        $stdoutarray['pre pbf rules'][$subName] = $sub->pbfRules->countPreRules();
         $stdoutarray['pre pbf rules']['total_DGs'] = $gprePbfRules;
 
         $stdoutarray['post pbf rules'] = array();
-        $stdoutarray['post pbf rules']['shared'] = $this->pbfRules->countPostRules();
+        $stdoutarray['post pbf rules'][$subName] = $sub->pbfRules->countPostRules();
         $stdoutarray['post pbf rules']['total_DGs'] = $gpostPbfRules;
 
 
         $stdoutarray['pre decryption rules'] = array();
-        $stdoutarray['pre decryption rules']['shared'] = $this->decryptionRules->countPreRules();
+        $stdoutarray['pre decryption rules'][$subName] = $sub->decryptionRules->countPreRules();
         $stdoutarray['pre decryption rules']['total_DGs'] = $gpreDecryptRules;
 
         $stdoutarray['post decryption rules'] = array();
-        $stdoutarray['post decryption rules']['shared'] = $this->decryptionRules->countPostRules();
+        $stdoutarray['post decryption rules'][$subName] = $sub->decryptionRules->countPostRules();
         $stdoutarray['post decryption rules']['total_DGs'] = $gpostDecryptRules;
 
 
         $stdoutarray['pre app-override rules'] = array();
-        $stdoutarray['pre app-override rules']['shared'] = $this->appOverrideRules->countPreRules();
+        $stdoutarray['pre app-override rules'][$subName] = $sub->appOverrideRules->countPreRules();
         $stdoutarray['pre app-override rules']['total_DGs'] = $gpreAppOverrideRules;
 
         $stdoutarray['post app-override rules'] = array();
-        $stdoutarray['post app-override rules']['shared'] = $this->appOverrideRules->countPostRules();
+        $stdoutarray['post app-override rules'][$subName] = $sub->appOverrideRules->countPostRules();
         $stdoutarray['post app-override rules']['total_DGs'] = $gpostAppOverrideRules;
 
 
         $stdoutarray['pre capt-portal rules'] = array();
-        $stdoutarray['pre capt-portal rules']['shared'] = $this->captivePortalRules->countPreRules();
+        $stdoutarray['pre capt-portal rules'][$subName] = $sub->captivePortalRules->countPreRules();
         $stdoutarray['pre capt-portal rules']['total_DGs'] = $gpreCPRules;
 
         $stdoutarray['post capt-portal rules'] = array();
-        $stdoutarray['post capt-portal rules']['shared'] = $this->captivePortalRules->countPostRules();
+        $stdoutarray['post capt-portal rules'][$subName] = $sub->captivePortalRules->countPostRules();
         $stdoutarray['post capt-portal rules']['total_DGs'] = $gpostCPRules;
 
 
         $stdoutarray['pre authentication rules'] = array();
-        $stdoutarray['pre authentication rules']['shared'] = $this->authenticationRules->countPreRules();
+        $stdoutarray['pre authentication rules'][$subName] = $sub->authenticationRules->countPreRules();
         $stdoutarray['pre authentication rules']['total_DGs'] = $gpreAuthRules;
 
         $stdoutarray['post authentication rules'] = array();
-        $stdoutarray['post authentication rules']['shared'] = $this->authenticationRules->countPostRules();
+        $stdoutarray['post authentication rules'][$subName] = $sub->authenticationRules->countPostRules();
         $stdoutarray['post authentication rules']['total_DGs'] = $gpostAuthRules;
 
 
         $stdoutarray['pre dos rules'] = array();
-        $stdoutarray['pre dos rules']['shared'] = $this->dosRules->countPreRules();
+        $stdoutarray['pre dos rules'][$subName] = $sub->dosRules->countPreRules();
         $stdoutarray['pre dos rules']['total_DGs'] = $gpreDoSRules;
 
         $stdoutarray['post dos rules'] = array();
-        $stdoutarray['post dos rules']['shared'] = $this->dosRules->countPostRules();
+        $stdoutarray['post dos rules'][$subName] = $sub->dosRules->countPostRules();
         $stdoutarray['post dos rules']['total_DGs'] = $gpostDoSRules;
 
         $stdoutarray['pre tunnel-inspection rules'] = array();
-        $stdoutarray['pre tunnel-inspection rules']['shared'] = $this->tunnelInspectionRules->countPreRules();
+        $stdoutarray['pre tunnel-inspection rules'][$subName] = $sub->tunnelInspectionRules->countPreRules();
         $stdoutarray['pre tunnel-inspection rules']['total_DGs'] = $gpreTunnelInspectionRules;
 
         $stdoutarray['post tunnel-inspection rules'] = array();
-        $stdoutarray['post tunnel-inspection rules']['shared'] = $this->tunnelInspectionRules->countPostRules();
+        $stdoutarray['post tunnel-inspection rules'][$subName] = $sub->tunnelInspectionRules->countPostRules();
         $stdoutarray['post tunnel-inspection rules']['total_DGs'] = $gpostTunnelInspectionRules;
 
         #pre default-security not existent
         #$stdoutarray['pre default-security rules'] = array();
-        #$stdoutarray['pre default-security rules']['shared'] = $this->defaultSecurityRules->countPreRules();
+        #$stdoutarray['pre default-security rules'][$subName] = $sub->defaultSecurityRules->countPreRules();
         #$stdoutarray['pre default-security rules']['total_DGs'] = $gpreDefaultSecurityRules;
 
         $stdoutarray['post default-security rules'] = array();
-        $stdoutarray['post default-security rules']['shared'] = $this->defaultSecurityRules->countPostRules();
+        $stdoutarray['post default-security rules'][$subName] = $sub->defaultSecurityRules->countPostRules();
         $stdoutarray['post default-security rules']['total_DGs'] = $gpostDefaultSecurityRules;
 
         $stdoutarray['pre network-packet-broker rules'] = array();
-        $stdoutarray['pre network-packet-broker rules']['shared'] = $this->networkPacketBrokerRules->countPreRules();
+        $stdoutarray['pre network-packet-broker rules'][$subName] = $sub->networkPacketBrokerRules->countPreRules();
         $stdoutarray['pre network-packet-broker rules']['total_DGs'] = $gpreNetworkPacketBrockerRules;
 
         $stdoutarray['post network-packet-broker rules'] = array();
-        $stdoutarray['post network-packet-broker rules']['shared'] = $this->networkPacketBrokerRules->countPostRules();
+        $stdoutarray['post network-packet-broker rules'][$subName] = $sub->networkPacketBrokerRules->countPostRules();
         $stdoutarray['post network-packet-broker rules']['total_DGs'] = $gpostNetworkPacketBrockerRules;
 
         $stdoutarray['pre sdwan rules'] = array();
-        $stdoutarray['pre sdwan rules']['shared'] = $this->sdWanRules->countPreRules();
+        $stdoutarray['pre sdwan rules'][$subName] = $sub->sdWanRules->countPreRules();
         $stdoutarray['pre sdwan rules']['total_DGs'] = $gpreSDWanRules;
 
         $stdoutarray['post sdwan rules'] = array();
-        $stdoutarray['post sdwan rules']['shared'] = $this->sdWanRules->countPostRules();
+        $stdoutarray['post sdwan rules'][$subName] = $sub->sdWanRules->countPostRules();
         $stdoutarray['post sdwan rules']['total_DGs'] = $gpostSDWanRules;
 
         $stdoutarray['address objects'] = array();
-        $stdoutarray['address objects']['shared'] = $this->addressStore->countAddresses();
+        $stdoutarray['address objects'][$subName] = $sub->addressStore->countAddresses();
         $stdoutarray['address objects']['total_DGs'] = $gnaddresss;
         $stdoutarray['address objects']['unused'] = $gnaddresssUnused;
 
         $stdoutarray['addressgroup objects'] = array();
-        $stdoutarray['addressgroup objects']['shared'] = $this->addressStore->countAddressGroups();
+        $stdoutarray['addressgroup objects'][$subName] = $sub->addressStore->countAddressGroups();
         $stdoutarray['addressgroup objects']['total_DGs'] = $gnaddressGs;
         $stdoutarray['addressgroup objects']['unused'] = $gnaddressGsUnused;
 
         $stdoutarray['temporary address objects'] = array();
-        $stdoutarray['temporary address objects']['shared'] = $this->addressStore->countTmpAddresses();
+        $stdoutarray['temporary address objects'][$subName] = $sub->addressStore->countTmpAddresses();
         $stdoutarray['temporary address objects']['total_DGs'] = $gnTmpAddresses;
 
         $stdoutarray['region objects'] = array();
-        $stdoutarray['region objects']['shared'] = $this->addressStore->countRegionObjects();
+        $stdoutarray['region objects'][$subName] = $sub->addressStore->countRegionObjects();
         $stdoutarray['region objects']['total_DGs'] = $gnRegionAddresses;
 
         $stdoutarray['service objects'] = array();
-        $stdoutarray['service objects']['shared'] = $this->serviceStore->countServices();
+        $stdoutarray['service objects'][$subName] = $sub->serviceStore->countServices();
         $stdoutarray['service objects']['total_DGs'] = $gnservices;
         $stdoutarray['service objects']['unused'] = $gnservicesUnused;
 
         $stdoutarray['servicegroup objects'] = array();
-        $stdoutarray['servicegroup objects']['shared'] = $this->serviceStore->countServiceGroups();
+        $stdoutarray['servicegroup objects'][$subName] = $sub->serviceStore->countServiceGroups();
         $stdoutarray['servicegroup objects']['total_DGs'] = $gnserviceGs;
         $stdoutarray['servicegroup objects']['unused'] = $gnserviceGsUnused;
 
         $stdoutarray['temporary service objects'] = array();
-        $stdoutarray['temporary service objects']['shared'] = $this->serviceStore->countTmpServices();
+        $stdoutarray['temporary service objects'][$subName] = $sub->serviceStore->countTmpServices();
         $stdoutarray['temporary service objects']['total_DGs'] = $gnTmpServices;
 
 
         $stdoutarray['tag objects'] = array();
-        $stdoutarray['tag objects']['shared'] = $this->tagStore->count();
+        $stdoutarray['tag objects'][$subName] = $sub->tagStore->count();
         $stdoutarray['tag objects']['total_DGs'] = $gTagCount;
         $stdoutarray['tag objects']['unused'] = $gTagUnusedCount;
 
         $stdoutarray['securityProfileGroup objects'] = array();
-        $stdoutarray['securityProfileGroup objects']['shared'] = $this->securityProfileGroupStore->count();
+        $stdoutarray['securityProfileGroup objects'][$subName] = $sub->securityProfileGroupStore->count();
         $stdoutarray['securityProfileGroup objects']['total_DGs'] = $gnsecurityprofileGs;
 
 
         $stdoutarray['Anti-Spyware objects'] = array();
-        $stdoutarray['Anti-Spyware objects']['shared'] = $this->AntiSpywareProfileStore->count();
+        $stdoutarray['Anti-Spyware objects'][$subName] = $sub->AntiSpywareProfileStore->count();
         $stdoutarray['Anti-Spyware objects']['total_DGs'] = $gnantispyware;
         $stdoutarray['Vulnerability objects'] = array();
-        $stdoutarray['Vulnerability objects']['shared'] = $this->VulnerabilityProfileStore->count();
+        $stdoutarray['Vulnerability objects'][$subName] = $sub->VulnerabilityProfileStore->count();
         $stdoutarray['Vulnerability objects']['total_DGs'] = $gnvulnerability;
         $stdoutarray['Antivirus objects'] = array();
-        $stdoutarray['Antivirus objects']['shared'] = $this->AntiVirusProfileStore->count();
+        $stdoutarray['Antivirus objects'][$subName] = $sub->AntiVirusProfileStore->count();
         $stdoutarray['Antivirus objects']['total_DGs'] = $gnantivirus;
         $stdoutarray['Wildfire objects'] = array();
-        $stdoutarray['Wildfire objects']['shared'] = $this->WildfireProfileStore->count();
+        $stdoutarray['Wildfire objects'][$subName] = $sub->WildfireProfileStore->count();
         $stdoutarray['Wildfire objects']['total_DGs'] = $gnwildfire;
         $stdoutarray['URL objects'] = array();
-        $stdoutarray['URL objects']['shared'] = $this->URLProfileStore->count();
+        $stdoutarray['URL objects'][$subName] = $sub->URLProfileStore->count();
         $stdoutarray['URL objects']['total_DGs'] = $gnurlprofil;
         $stdoutarray['custom URL objects'] = array();
-        $stdoutarray['custom URL objects']['shared'] = $this->customURLProfileStore->count();
+        $stdoutarray['custom URL objects'][$subName] = $sub->customURLProfileStore->count();
         $stdoutarray['custom URL objects']['total_DGs'] = $gncustomurlprofil;
 
         $stdoutarray['File-Blocking objects'] = array();
-        $stdoutarray['File-Blocking objects']['shared'] = $this->FileBlockingProfileStore->count();
+        $stdoutarray['File-Blocking objects'][$subName] = $sub->FileBlockingProfileStore->count();
         $stdoutarray['File-Blocking objects']['total_DGs'] = $gnfileblocking;
         $stdoutarray['Decryption objects'] = array();
-        $stdoutarray['Decryption objects']['shared'] = $this->DecryptionProfileStore->count();
+        $stdoutarray['Decryption objects'][$subName] = $sub->DecryptionProfileStore->count();
         $stdoutarray['Decryption objects']['total_DGs'] = $gndecryption;
 
         $stdoutarray['HipObject objects'] = array();
-        $stdoutarray['HipObject objects']['shared'] = $this->HipObjectsProfileStore->count();
+        $stdoutarray['HipObject objects'][$subName] = $sub->HipObjectsProfileStore->count();
         $stdoutarray['HipObject objects']['total_DGs'] = $gnhipobjects;
         $stdoutarray['HipProfile objects'] = array();
-        $stdoutarray['HipProfile objects']['shared'] = $this->HipProfilesProfileStore->count();
+        $stdoutarray['HipProfile objects'][$subName] = $sub->HipProfilesProfileStore->count();
         $stdoutarray['HipProfile objects']['total_DGs'] = $gnhipprofiles;
 
         $stdoutarray['GTP objects'] = array();
-        $stdoutarray['GTP objects']['shared'] = $this->GTPProfileStore->count();
+        $stdoutarray['GTP objects'][$subName] = $sub->GTPProfileStore->count();
         $stdoutarray['GTP objects']['total_DGs'] = $gngtp;
         $stdoutarray['SCEP objects'] = array();
-        $stdoutarray['SCEP objects']['shared'] = $this->SCEPProfileStore->count();
+        $stdoutarray['SCEP objects'][$subName] = $sub->SCEPProfileStore->count();
         $stdoutarray['SCEP objects']['total_DGs'] = $gnscep;
         $stdoutarray['PacketBroker objects'] = array();
-        $stdoutarray['PacketBroker objects']['shared'] = $this->PacketBrokerProfileStore->count();
+        $stdoutarray['PacketBroker objects'][$subName] = $sub->PacketBrokerProfileStore->count();
         $stdoutarray['PacketBroker objects']['total_DGs'] = $gnpacketbroker;
 
         $stdoutarray['SDWanErrorCorrection objects'] = array();
-        $stdoutarray['SDWanErrorCorrection objects']['shared'] = $this->SDWanErrorCorrectionProfileStore->count();
+        $stdoutarray['SDWanErrorCorrection objects'][$subName] = $sub->SDWanErrorCorrectionProfileStore->count();
         $stdoutarray['SDWanErrorCorrection objects']['total_DGs'] = $gnsdwanerrorcorrection;
         $stdoutarray['SDWanPathQuality objects'] = array();
-        $stdoutarray['SDWanPathQuality objects']['shared'] = $this->SDWanPathQualityProfileStore->count();
+        $stdoutarray['SDWanPathQuality objects'][$subName] = $sub->SDWanPathQualityProfileStore->count();
         $stdoutarray['SDWanPathQuality objects']['total_DGs'] = $gnsdwanpathquality;
         $stdoutarray['SDWanSaasQuality objects'] = array();
-        $stdoutarray['SDWanSaasQuality objects']['shared'] = $this->SDWanSaasQualityProfileStore->count();
+        $stdoutarray['SDWanSaasQuality objects'][$subName] = $sub->SDWanSaasQualityProfileStore->count();
         $stdoutarray['SDWanSaasQuality objects']['total_DGs'] = $gnsdwansaasquality;
         $stdoutarray['SDWanTrafficDistribution objects'] = array();
-        $stdoutarray['SDWanTrafficDistribution objects']['shared'] = $this->SDWanTrafficDistributionProfileStore->count();
+        $stdoutarray['SDWanTrafficDistribution objects'][$subName] = $sub->SDWanTrafficDistributionProfileStore->count();
         $stdoutarray['SDWanTrafficDistribution objects']['total_DGs'] = $gnsdwantrafficdistribution;
 
-        $stdoutarray['DataObjects objects']['shared'] = $this->DataObjectsProfileStore->count();
+        $stdoutarray['DataObjects objects'][$subName] = $sub->DataObjectsProfileStore->count();
         $stdoutarray['DataObjects objects']['total_DGs'] = $gndataobjects;
 
         $stdoutarray['LogProfile objects'] = array();
-        $stdoutarray['LogProfile objects']['shared'] = $this->LogProfileStore->count();
+        $stdoutarray['LogProfile objects'][$subName] = $sub->LogProfileStore->count();
         $stdoutarray['LogProfile objects']['total_DGs'] = $gLogProfileCount;
 
-        $stdoutarray['zones'] = $this->zoneStore->count();
-        #$stdoutarray['apps'] = $this->appStore->count();
+        $stdoutarray['zones'] = $sub->zoneStore->count();
+        #$stdoutarray['apps'] = $sub->appStore->count();
 
-        /*
-        $stdoutarray['interfaces'] = array();
-        $stdoutarray['interfaces']['total'] = $numInterfaces;
-        $stdoutarray['interfaces']['ethernet'] = $this->network->ethernetIfStore->count();
 
-        $stdoutarray['sub-interfaces'] = array();
-        $stdoutarray['sub-interfaces']['total'] = $numSubInterfaces;
-        $stdoutarray['sub-interfaces']['ethernet'] = $this->network->ethernetIfStore->countSubInterfaces();
-        */
+        #$stdoutarray['interfaces'] = array();
+        #$stdoutarray['interfaces']['total'] = $numInterfaces;
+        #$stdoutarray['interfaces']['ethernet'] = $sub->network->ethernetIfStore->count();
+
+        #$stdoutarray['sub-interfaces'] = array();
+        #$stdoutarray['sub-interfaces']['total'] = $numSubInterfaces;
+        #$stdoutarray['sub-interfaces']['ethernet'] = $sub->network->ethernetIfStore->countSubInterfaces();
+
 
 
         #$stdoutarray['certificate objects'] = array();
@@ -2304,26 +2312,26 @@ class PanoramaConf
 
         #$stdoutarray['SSL_TLSServiceProfile objects'] = array();
         #$stdoutarray['SSL_TLSServiceProfile objects']['total_Templates'] = $gSSL_TLSServiceProfileCount;
-
+        */
 
 
         if( !PH::$shadow_json && $actions == "display"  )
             PH::print_stdout( $stdoutarray, true );
 
-        $this->sizeArray['type'] = get_class( $this );
-        $this->sizeArray['statstype'] = "objects";
-        $this->sizeArray['header'] = $header;
-        $this->sizeArray['kb Panorama'] = DH::dom_get_config_size($this->xmlroot);
-        $this->sizeArray['kb security rules'] = $size_securityRules;
-        $this->sizeArray['kb address objects'] = $size_addressStore;
-        $this->sizeArray['kb service objects'] = $size_serviceStore;
-        $this->sizeArray['kb tag objects'] = $size_tagStore;
-        $this->sizeArray['kb custom URL objects'] = $size_customURLProfileStore;
+        $sub->sizeArray['type'] = get_class( $this );
+        $sub->sizeArray['statstype'] = "objects";
+        $sub->sizeArray['header'] = $header;
+        $sub->sizeArray['kb Panorama'] = DH::dom_get_config_size($sub->xmlroot);
+        $sub->sizeArray['kb security rules'] = $statsArray['size_securityRules'];
+        $sub->sizeArray['kb address objects'] = $statsArray['size_addressStore'];
+        $sub->sizeArray['kb service objects'] = $statsArray['size_serviceStore'];
+        $sub->sizeArray['kb tag objects'] = $statsArray['size_tagStore'];
+        $sub->sizeArray['kb custom URL objects'] = $statsArray['size_customURLProfileStore'];
 
         if( !PH::$shadow_json && $actions == "display-size"  )
         {
-            PH::stats_remove_zero_arrays($this->sizeArray);
-            PH::print_stdout( $this->sizeArray, true );
+            PH::stats_remove_zero_arrays($sub->sizeArray);
+            PH::print_stdout( $sub->sizeArray, true );
         }
 
         if( $actions == "display-available" )
@@ -2338,12 +2346,12 @@ class PanoramaConf
 
 
         if( !PH::$shadow_loaddghierarchy )
-            $this->display_bp_statistics( $debug, $actions );
+            $sub->display_bp_statistics( $debug, $actions );
         else
-            $this->display_bp_statistics( $debug, $actions, $location );
+            $sub->display_bp_statistics( $debug, $actions, $location );
 
         if( !PH::$shadow_loaddghierarchy )
-            $this->display_shared_statistics( $connector, $debug, $actions );
+            $sub->display_shared_statistics( $connector, $debug, $actions );
     }
 
     public function display_shared_statistics( $connector = null, $debug = false, $actions = "display" )
