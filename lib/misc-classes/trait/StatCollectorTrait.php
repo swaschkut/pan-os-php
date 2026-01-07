@@ -915,7 +915,7 @@ trait StatCollectorTrait
         if( $actions == "display-available" )
         {
             PH::stats_remove_zero_arrays($stdoutarray);
-            if( !PH::$shadow_json )
+            if( !PH::$shadow_json && !empty($stdoutarray) )
                 PH::print_stdout( $stdoutarray, true );
         }
 
