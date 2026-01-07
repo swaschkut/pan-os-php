@@ -921,11 +921,6 @@ trait StatCollectorTrait
 
         if( $actions == "display" || $actions == "display-available" )
             PH::$JSON_TMP[] = $stdoutarray;
-
-
-
-        if( !PH::$shadow_json and $actions == "display-bpa" )
-            $this->display_bp_statistics( $debug, $actions );
     }
 
 
