@@ -124,11 +124,11 @@ trait StatCollectorTrait
 
         $stdoutarray['pre network-packet-broker rules'] = array();
         $stdoutarray['pre network-packet-broker rules'][$subName] = $sub->networkPacketBrokerRules->countPreRules();
-        $stdoutarray['pre network-packet-broker rules']['total_DGs'] = $statsArray['gpreNetworkPacketBrockerRules'];
+        $stdoutarray['pre network-packet-broker rules']['total_DGs'] = $statsArray['gpreNetworkPacketBrokerRules'];
 
         $stdoutarray['post network-packet-broker rules'] = array();
         $stdoutarray['post network-packet-broker rules'][$subName] = $sub->networkPacketBrokerRules->countPostRules();
-        $stdoutarray['post network-packet-broker rules']['total_DGs'] = $statsArray['gpostNetworkPacketBrockerRules'];
+        $stdoutarray['post network-packet-broker rules']['total_DGs'] = $statsArray['gpostNetworkPacketBrokerRules'];
 
         $stdoutarray['pre sdwan rules'] = array();
         $stdoutarray['pre sdwan rules'][$subName] = $sub->sdWanRules->countPreRules();
@@ -187,12 +187,28 @@ trait StatCollectorTrait
         $stdoutarray['Vulnerability objects'] = array();
         $stdoutarray['Vulnerability objects'][$subName] = $sub->VulnerabilityProfileStore->count();
         $stdoutarray['Vulnerability objects']['total_DGs'] = $statsArray['gnvulnerability'];
-        $stdoutarray['Antivirus objects'] = array();
-        $stdoutarray['Antivirus objects'][$subName] = $sub->AntiVirusProfileStore->count();
-        $stdoutarray['Antivirus objects']['total_DGs'] = $statsArray['gnantivirus'];
-        $stdoutarray['Wildfire objects'] = array();
-        $stdoutarray['Wildfire objects'][$subName] = $sub->WildfireProfileStore->count();
-        $stdoutarray['Wildfire objects']['total_DGs'] = $statsArray['gnwildfire'];
+
+
+        if( get_class($this) == "PanoramaConf" )
+        {
+            $stdoutarray['Antivirus objects'] = array();
+            $stdoutarray['Antivirus objects'][$subName] = $sub->AntiVirusProfileStore->count();
+            $stdoutarray['Antivirus objects']['total_DGs'] = $statsArray['gnantivirus'];
+            $stdoutarray['Wildfire objects'] = array();
+            $stdoutarray['Wildfire objects'][$subName] = $sub->WildfireProfileStore->count();
+            $stdoutarray['Wildfire objects']['total_DGs'] = $statsArray['gnwildfire'];
+        }
+
+
+        if( get_class($this) == "BuckbeakConf" )
+        {
+            $stdoutarray['WildfireAndAnti-Virus objects'] = array();
+            $stdoutarray['WildfireAndAnti-Virus objects'][$subName] = $sub->VirusAndWildfireProfileStore->count();
+            $stdoutarray['WildfireAndAnti-Virus objects']['total_DGs'] = $statsArray['gnsecprofAVWF'];
+        }
+
+
+
         $stdoutarray['URL objects'] = array();
         $stdoutarray['URL objects'][$subName] = $sub->URLProfileStore->count();
         $stdoutarray['URL objects']['total_DGs'] = $statsArray['gnurlprofil'];
@@ -264,287 +280,631 @@ trait StatCollectorTrait
         #$stdoutarray['SSL_TLSServiceProfile objects'] = array();
         #$stdoutarray['SSL_TLSServiceProfile objects']['total_Templates'] = $gSSL_TLSServiceProfileCount;
 
+
+
+        //todo:
+        //missing part size calculation
     }
 
-    public function display_statistics( $debug = false, $actions = "display")
+    public function get_mainDevice_statistics( &$statsArray ): void
+    {
+
+        if( get_class($this) == "PANConf" )
+        {
+            $statsArray['gpreSecRules'] = 0;
+            $statsArray['gpreNatRules'] = 0;
+            $statsArray['gpreDecryptRules'] = 0;
+            $statsArray['gpreAppOverrideRules'] = 0;
+            $statsArray['gpreCPRules'] = 0;
+            $statsArray['gpreAuthRules'] = 0;
+            $statsArray['gprePbfRules'] = 0;
+            $statsArray['gpreQoSRules'] = 0;
+            $statsArray['gpreDoSRules'] = 0;
+
+            $statsArray['gpreTunnelInspectionRules'] = 0;
+            $statsArray['gpreDefaultSecurityRules'] = 0;
+            $statsArray['gpreNetworkPacketBrokerRules'] = 0;
+            $statsArray['gpreSDWanRules'] = 0;
+        }
+        else
+        {
+            $statsArray['gpreSecRules'] = $this->securityRules->countPreRules();
+            $statsArray['gpreNatRules'] = $this->natRules->countPreRules();
+            $statsArray['gpreDecryptRules'] = $this->decryptionRules->countPreRules();
+            $statsArray['gpreAppOverrideRules'] = $this->appOverrideRules->countPreRules();
+            $statsArray['gpreCPRules'] = $this->captivePortalRules->countPreRules();
+            $statsArray['gpreAuthRules'] = $this->authenticationRules->countPreRules();
+            $statsArray['gprePbfRules'] = $this->pbfRules->countPreRules();
+            $statsArray['gpreQoSRules'] = $this->qosRules->countPreRules();
+            $statsArray['gpreDoSRules'] = $this->dosRules->countPreRules();
+
+            $statsArray['gpreTunnelInspectionRules'] = $this->tunnelInspectionRules->countPreRules();
+            $statsArray['gpreDefaultSecurityRules'] = 0;
+            $statsArray['gpreNetworkPacketBrokerRules'] = $this->networkPacketBrokerRules->countPreRules();
+            $statsArray['gpreSDWanRules'] = $this->sdWanRules->countPreRules();
+
+
+            $statsArray['gpostSecRules'] = $this->securityRules->countPostRules();
+            $statsArray['gpostNatRules'] = $this->natRules->countPostRules();
+            $statsArray['gpostDecryptRules'] = $this->decryptionRules->countPostRules();
+            $statsArray['gpostAppOverrideRules'] = $this->appOverrideRules->countPostRules();
+            $statsArray['gpostCPRules'] = $this->captivePortalRules->countPostRules();
+            $statsArray['gpostAuthRules'] = $this->authenticationRules->countPostRules();
+            $statsArray['gpostPbfRules'] = $this->pbfRules->countPostRules();
+            $statsArray['gpostQoSRules'] = $this->qosRules->countPostRules();
+            $statsArray['gpostDoSRules'] = $this->dosRules->countPostRules();
+
+            $statsArray['gpostTunnelInspectionRules'] = $this->tunnelInspectionRules->countPostRules();
+            $statsArray['gpostDefaultSecurityRules'] = $this->defaultSecurityRules->countPostRules();
+            $statsArray['gpostNetworkPacketBrokerRules'] = $this->networkPacketBrokerRules->countPostRules();
+            $statsArray['gpostSDWanRules'] = $this->sdWanRules->countPostRules();
+        }
+
+
+
+        $this->get_combined_objectDevice_statistics($statsArray);
+
+
+
+
+        $this->get_size_statistics($statsArray );
+    }
+
+
+    public function get_combined_subDevice_statistics(array &$statsArray, $cur, bool $onlyPre = false): void
+    {
+        // Map of Stat Key Suffix => Property Name
+        $ruleMaps = [
+            'SecRules'                  => 'securityRules',
+            'NatRules'                  => 'natRules',
+            'DecryptRules'              => 'decryptionRules',
+            'AppOverrideRules'          => 'appOverrideRules',
+            'CPRules'                   => 'captivePortalRules',
+            'AuthRules'                 => 'authenticationRules',
+            'PbfRules'                  => 'pbfRules',
+            'QoSRules'                  => 'qosRules',
+            'DoSRules'                  => 'dosRules',
+            'TunnelInspectionRules'     => 'tunnelInspectionRules',
+            'DefaultSecurityRules'      => 'defaultSecurityRules',
+            'NetworkPacketBrokerRules' => 'networkPacketBrokerRules',
+            'SDWanRules'                => 'sdWanRules',
+        ];
+
+        foreach ($ruleMaps as $suffix => $prop)
+        {
+            // Ensure property exists on the object
+            if (!isset($cur->$prop)) {
+                continue;
+            }
+
+            if( $onlyPre )
+            {
+                $statsArray['gpre' . $suffix] += $cur->$prop->count();
+            }
+            else
+            {
+                $statsArray['gpre' . $suffix] += $cur->$prop->countPreRules();
+
+                $statsArray['gpost' . $suffix] += $cur->$prop->countPostRules();
+            }
+        }
+
+        $this->get_combined_objectDevice_statistics($statsArray, $cur, true);
+        $this->get_size_statistics($statsArray, $cur, true);
+    }
+
+
+
+    public function get_combined_objectDevice_statistics(array &$statsArray, $targetObj = null, bool $accumulate = false): void
+    {
+        $cur = $targetObj ?? $this;
+        $className = get_class($cur);
+
+        // --- 1. Define Standard Mappings (Key => [StoreProperty, MethodName]) ---
+        $standardMaps = [
+            // Service Store
+            'gnservices'        => ['serviceStore', 'countServices'],
+            'gnservicesUnused'  => ['serviceStore', 'countUnusedServices'],
+            'gnserviceGs'       => ['serviceStore', 'countServiceGroups'],
+            'gnserviceGsUnused' => ['serviceStore', 'countUnusedServiceGroups'],
+            'gnTmpServices'     => ['serviceStore', 'countTmpServices'],
+
+            // Address Store
+            'gnaddresss'        => ['addressStore', 'countAddresses'],
+            'gnaddresssUnused'  => ['addressStore', 'countUnusedAddresses'],
+            'gnaddressGs'       => ['addressStore', 'countAddressGroups'],
+            'gnaddressGsUnused' => ['addressStore', 'countUnusedAddressGroups'],
+            'gnTmpAddresses'    => ['addressStore', 'countTmpAddresses'],
+            'gnRegionAddresses' => ['addressStore', 'countRegionObjects'],
+
+            // Tag Store
+            'gTagCount'         => ['tagStore', 'count'],
+            'gTagUnusedCount'   => ['tagStore', 'countUnused'],
+
+            // Security Profile Group
+            'gnsecurityprofileGs' => ['securityProfileGroupStore', 'count'],
+
+            // Basic Profiles
+            'gnantispyware'   => ['AntiSpywareProfileStore', 'count'],
+            'gnvulnerability' => ['VulnerabilityProfileStore', 'count'],
+            'gnurlprofil'     => ['URLProfileStore', 'count'],
+            'gncustomurlprofil' => ['customURLProfileStore', 'count'],
+
+            // File & Decryption
+            'gnfileblocking' => ['FileBlockingProfileStore', 'count'],
+            'gndecryption'   => ['DecryptionProfileStore', 'count'],
+
+            // HIP (Using logic from Main function: Objects->Objects, Profiles->Profiles)
+            'gnhipobjects'    => ['HipObjectsProfileStore', 'count'],
+            'gnhipprofiles'   => ['HipProfilesProfileStore', 'count'],
+
+            // Logs
+            'gLogProfileCount' => ['LogProfileStore', 'count'],
+        ];
+
+        // --- 2. Process Standard Mappings ---
+        foreach ($standardMaps as $statKey => $map)
+        {
+            $store = $map[0];
+            $method = $map[1];
+
+            // Safety check: ensure store exists
+            if (isset($cur->$store))
+            {
+                $val = $cur->$store->$method();
+                if ($accumulate)
+                {
+                    if (!isset($statsArray[$statKey]))
+                        $statsArray[$statKey] = 0;
+                    $statsArray[$statKey] += $val;
+                } else {
+                    $statsArray[$statKey] = $val;
+                }
+            }
+        }
+
+        // --- 3. Handle Special Calculations (Size & Conditionals) ---
+
+        // Identify Class Type for Conditionals
+        $isPanConf = ($className === 'PANConf');
+        $isVirtualSystem = ($className === 'VirtualSystem');
+        $isPanoramaConf = ($className === 'PanoramaConf');
+        $isFawkesLike = in_array($className, ['FawkesConf', 'BuckbeakConf', 'DeviceCloud', 'Container', 'DeviceOnPrem']);
+
+        // Conditional: Interfaces (Only applicable to PANConf)
+        if($isPanConf)
+        {
+            $numInterfaces = $cur->network->ipsecTunnelStore->count() + $cur->network->ethernetIfStore->count();
+            $numSubInterfaces = $cur->network->ethernetIfStore->countSubInterfaces();
+
+            if ($accumulate) {
+                $statsArray['numInterfaces'] += $numInterfaces;
+                $statsArray['numSubInterfaces'] += $numSubInterfaces;
+            } else {
+                $statsArray['numInterfaces'] = $numInterfaces;
+                $statsArray['numSubInterfaces'] = $numSubInterfaces;
+            }
+        }
+
+        // Conditional: AV & Wildfire (PANConf, Panorama, VSYS)
+        if ($isPanConf || $isPanoramaConf || $isVirtualSystem)
+        {
+            $avCount = $cur->AntiVirusProfileStore->count();
+            $wfCount = $cur->WildfireProfileStore->count();
+
+            if ($accumulate)
+            {
+                $statsArray['gnantivirus'] = ($statsArray['gnantivirus'] ?? 0) + $avCount;
+                $statsArray['gnwildfire'] = ($statsArray['gnwildfire'] ?? 0) + $wfCount;
+            }
+            else
+            {
+                $statsArray['gnantivirus'] = $avCount;
+                $statsArray['gnwildfire'] = $wfCount;
+            }
+        }
+
+        // Conditional: NextGen/Cloud Profiles
+        if ($isFawkesLike)
+        {
+            $avWfCount = $cur->VirusAndWildfireProfileStore->count();
+            $dnsCount = $cur->DNSSecurityProfileStore->count();
+            $saasCount = $cur->SaasSecurityProfileStore->count();
+
+            if ($accumulate) {
+                $statsArray['gnsecprofAVWF'] += $avWfCount;
+                $statsArray['gnsecprofDNS'] += $dnsCount;
+                $statsArray['gnsecprofSaas'] += $saasCount;
+            } else {
+                $statsArray['gnsecprofAVWF'] = $avWfCount;
+                $statsArray['gnsecprofDNS'] = $dnsCount;
+                $statsArray['gnsecprofSaas'] = $saasCount;
+            }
+        }
+
+        // Conditional: Advanced Networking Profiles (Not PANConf, Not VSYS)
+        if (!$isPanConf && !$isVirtualSystem) {
+            $advancedMaps = [
+                'gngtp' => ['GTPProfileStore', 'count'],
+                'gnscep' => ['SCEPProfileStore', 'count'],
+                'gnpacketbroker' => ['PacketBrokerProfileStore', 'count'],
+                'gnsdwanerrorcorrection' => ['SDWanErrorCorrectionProfileStore', 'count'],
+                'gnsdwanpathquality' => ['SDWanPathQualityProfileStore', 'count'],
+                'gnsdwansaasquality' => ['SDWanSaasQualityProfileStore', 'count'],
+                'gnsdwantrafficdistribution' => ['SDWanTrafficDistributionProfileStore', 'count'],
+                'gndataobjects' => ['DataObjectsProfileStore', 'count']
+            ];
+
+            foreach ($advancedMaps as $statKey => $map)
+            {
+                $store = $map[0];
+                $method = $map[1];
+                if (isset($cur->$store))
+                {
+                    $val = $cur->$store->$method();
+                    if ($accumulate)
+                    {
+                        if (!isset($statsArray[$statKey]))
+                            $statsArray[$statKey] = 0;
+                        $statsArray[$statKey] += $val;
+                    }
+                    else
+                    {
+                        $statsArray[$statKey] = $val;
+                    }
+                }
+            }
+        }
+
+        // Conditional: Certificates & SSL (PANConf or VSYS)
+        if ($isPanConf || $isVirtualSystem)
+        {
+            $certCount = $cur->certificateStore->count();
+            $sslCount = $cur->SSL_TLSServiceProfileStore->count();
+
+            if ($accumulate)
+            {
+                $statsArray['gCertificatCount'] += $certCount;
+                $statsArray['gSSL_TLSServiceProfileCount'] += $sslCount;
+            }
+            else
+            {
+                $statsArray['gCertificatCount'] = $certCount;
+                $statsArray['gSSL_TLSServiceProfileCount'] = $sslCount;
+            }
+        }
+        else
+        {
+            // Explicitly set to 0 if not accumulating (Template behavior)
+            if (!$accumulate) {
+                $statsArray['gCertificatCount'] = 0;
+                $statsArray['gSSL_TLSServiceProfileCount'] = 0;
+            }
+        }
+    }
+
+
+    public function get_size_statistics(&$statsArray, $targetObj = null, $accumulate = false): void
+    {
+        if($targetObj === null)
+            $targetObj = $this;
+
+        // List of rule properties to process generically
+        $ruleTypes = [
+            'securityRules',
+            'natRules',
+            'decryptionRules',
+            'appOverrideRules',
+            'captivePortalRules',
+            'authenticationRules',
+            'pbfRules',
+            'qosRules',
+            'dosRules',
+            'tunnelInspectionRules',
+            'defaultSecurityRules',
+            'networkPacketBrokerRules',
+            'sdWanRules'
+        ];
+
+        // 1. Process Rules
+        foreach ($ruleTypes as $rule)
+        {
+            $key = 'size_' . $rule;
+            $size = 0;
+
+            if( get_class($targetObj) !== "PANConf" && isset($targetObj->$rule))
+            {
+                $size = DH::dom_get_config_size($targetObj->$rule->xmlroot);
+            }
+
+            // Apply Accumulation or Assignment
+            if( $accumulate )
+            {
+                // Ensure key exists before adding to avoid notices
+                if (!isset($statsArray[$key]))
+                    $statsArray[$key] = 0;
+                $statsArray[$key] += $size;
+            }
+            else
+            {
+                $statsArray[$key] = $size;
+            }
+        }
+
+        // 2. Process Service Store
+        $sRoot = isset($targetObj->serviceStore) ? DH::dom_get_config_size($targetObj->serviceStore->serviceRoot) : 0;
+        $sgRoot = isset($targetObj->serviceStore) ? DH::dom_get_config_size($targetObj->serviceStore->serviceGroupRoot) : 0;
+
+        $statsArray['size_srvRoot'] = $sRoot;
+        $statsArray['size_srvgrpRoot'] = $sgRoot;
+
+        $totalService = $sRoot + $sgRoot;
+
+        if( $accumulate )
+        {
+            if (!isset($statsArray['size_serviceStore']))
+                $statsArray['size_serviceStore'] = 0;
+            $statsArray['size_serviceStore'] += $totalService;
+        } else {
+            $statsArray['size_serviceStore'] = $totalService;
+        }
+
+        // 3. Process Address Store
+        $aRoot = isset($targetObj->addressStore) ? DH::dom_get_config_size($targetObj->addressStore->addressRoot) : 0;
+        $agRoot = isset($targetObj->addressStore) ? DH::dom_get_config_size($targetObj->addressStore->addressGroupRoot) : 0;
+        $rRoot = isset($targetObj->addressStore) ? DH::dom_get_config_size($targetObj->addressStore->regionRoot) : 0;
+
+        $statsArray['size_adrRoot'] = $aRoot;
+        $statsArray['size_adrgrpRoot'] = $agRoot;
+        $statsArray['size_regionRoot'] = $rRoot;
+
+        $totalAddress = $aRoot + $agRoot + $rRoot;
+
+        if($accumulate)
+        {
+            if (!isset($statsArray['size_addressStore']))
+                $statsArray['size_addressStore'] = 0;
+            $statsArray['size_addressStore'] += $totalAddress;
+        }
+        else
+        {
+            $statsArray['size_addressStore'] = $totalAddress;
+        }
+
+
+        /////////////////////////////////////
+
+        $storeTypes = [
+            'tagStore',
+            'customURLProfileStore'
+        ];
+
+        // 1. Process Rules
+        foreach ($storeTypes as $store)
+        {
+            $key = 'size_' . $store;
+            $size = 0;
+
+            if( isset($targetObj->$store) )
+            {
+                $size = DH::dom_get_config_size($targetObj->$store->xmlroot);
+            }
+
+            // Apply Accumulation or Assignment
+            if( $accumulate )
+            {
+                // Ensure key exists before adding to avoid notices
+                if (!isset($statsArray[$key]))
+                    $statsArray[$key] = 0;
+                $statsArray[$key] += $size;
+            }
+            else
+            {
+                $statsArray[$key] = $size;
+            }
+        }
+    }
+
+
+    public function display_statistics( $debug = false, $actions = 'display', $statsArray = array(), $connector = null  ): void
+    {
+        self::display_statistics_NEW( $debug, $actions, $statsArray, $connector );
+    }
+
+
+    public $stats_ruleTypes = [
+            'security rules'            => ['prop' => 'securityRules',           'stat' => 'gpreSecRules'],
+            'nat rules'                 => ['prop' => 'natRules',                'stat' => 'gpreNatRules'],
+            'qos rules'                 => ['prop' => 'qosRules',                'stat' => 'gpreQoSRules'],
+            'pbf rules'                 => ['prop' => 'pbfRules',                'stat' => 'gprePbfRules'],
+            'decryption rules'          => ['prop' => 'decryptionRules',         'stat' => 'gpreDecryptRules'],
+            'app-override rules'        => ['prop' => 'appOverrideRules',        'stat' => 'gpreAppOverrideRules'],
+            'capt-portal rules'         => ['prop' => 'captivePortalRules',      'stat' => 'gpreCPRules'],
+            'authentication rules'      => ['prop' => 'authenticationRules',     'stat' => 'gpreAuthRules'],
+            'dos rules'                 => ['prop' => 'dosRules',                'stat' => 'gpreDoSRules'],
+            'tunnel-inspection rules'   => ['prop' => 'tunnelInspectionRules',   'stat' => 'gpreTunnelInspectionRules'],
+            'default-security rules'    => ['prop' => 'defaultSecurityRules',    'stat' => 'gpreDefaultSecurityRules'],
+            'network-packet-broker rules' => ['prop' => 'networkPacketBrokerRules', 'stat' => 'gpreNetworkPacketBrokerRules'],
+            'sdwan rules'               => ['prop' => 'sdWanRules',               'stat' => 'gpreSDWanRules']
+        ];
+    public $stats_profileMaps = [
+            'tag objects' => ['store' => 'tagStore', 'sum_total' => 'gTagCount', 'sum_unused' => 'gTagUnusedCount'],
+            'securityProfileGroup objects' => ['store' => 'securityProfileGroupStore'],
+            'Anti-Spyware objects' => ['store' => 'AntiSpywareProfileStore'],
+            'Vulnerability objects' => ['store' => 'VulnerabilityProfileStore'],
+            'URL objects' => ['store' => 'URLProfileStore'],
+            'custom URL objects' => ['store' => 'customURLProfileStore'],
+            'File-Blocking objects' => ['store' => 'FileBlockingProfileStore'],
+            'Data-Filtering objects' => ['store' => 'DataFilteringProfileStore'],
+            'Decryption objects' => ['store' => 'DecryptionProfileStore'],
+            'HipObject objects' => ['store' => 'HipObjectsProfileStore'],
+            'HipProfile objects' => ['store' => 'HipProfilesProfileStore'],
+            'GTP objects' => ['store' => 'GTPProfileStore'],
+            'SCEP objects' => ['store' => 'SCEPProfileStore'],
+            'PacketBroker objects' => ['store' => 'PacketBrokerProfileStore'],
+            'SDWanErrorCorrection objects' => ['store' => 'SDWanErrorCorrectionProfileStore'],
+            'SDWanPathQuality objects' => ['store' => 'SDWanPathQualityProfileStore'],
+            'SDWanSaasQuality objects' => ['store' => 'SDWanSaasQualityProfileStore'],
+            'SDWanTrafficDistribution objects' => ['store' => 'SDWanTrafficDistributionProfileStore'],
+            'DataObjects objects' => ['store' => 'DataObjectsProfileStore'],
+            'LogProfile objects' => ['store' => 'LogProfileStore', 'sum_total' => 'gLogProfileCount'],
+            'certificate objects' => ['store' => 'certificateStore', 'sum_total' => 'gCertificatCount'],
+            'SSL_TLSServiceProfile objects' => ['store' => 'SSL_TLSServiceProfileStore', 'sum_total' => 'gSSL_TLSServiceProfileCount']
+        ];
+
+   public function display_statistics_NEW($debug = false, $actions = "display", $statsArray = array(), $connector = null, $location = false): void
     {
         $stdoutarray = array();
 
-        $stdoutarray['type'] = get_class($this);
+        $class = get_class($this);
+        $isPANConf = ($class === "PANConf");
+        $isPanoramaConf = ($class === "PanoramaConf");
+        $isContainerOrDG = ($class === "Container" || $class === "DeviceGroup");
 
-        $header = "Statistics for " . get_class($this) . " '" . PH::boldText($this->name) . "' | '" . $this->toString() . "'";
-        $stdoutarray['header'] = $header;
+        // Conditional Profile Logic
+        $isCloudOrSnippet = in_array($class, ["Container", "DeviceCloud", "DeviceOnPrem", "Snippet"]);
 
-        if(get_class($this) !== "Container" && get_class($this) !== "DeviceGroup")
+
+        // Check if we are in "Summary Mode" (data provided in $statsArray)
+        $isSummaryMode = !empty($statsArray);
+
+
+        if( $isPanoramaConf )
+            $stdoutarray['type'] = "DeviceGroup";
+        else
+            $stdoutarray['type'] = $class;
+        $stdoutarray['statstype'] = "objects";
+
+        $headerName = $isPANConf ? $this->name : PH::boldText($this->name);
+        if( $isPanoramaConf )
+            $stdoutarray['header'] = "Statistics for DG '".PH::boldText("shared")."'";
+        else
+            $stdoutarray['header'] = "Statistics for {$class} '{$headerName}'" . (!$isPANConf ? " | '" . $this->toString() . "'" : "");
+
+        // Handle Connector Info
+        if ($isPANConf && $connector !== null)
         {
-            $stdoutarray['security rules'] = $this->securityRules->count();
-
-            $stdoutarray['nat rules'] = $this->natRules->count();
-
-            $stdoutarray['qos rules'] = $this->qosRules->count();
-
-            $stdoutarray['pbf rules'] = $this->pbfRules->count();
-
-            $stdoutarray['decryption rules'] = $this->decryptionRules->count();
-
-            $stdoutarray['app-override rules'] = $this->appOverrideRules->count();
-
-            $stdoutarray['capt-portal rules'] = $this->captivePortalRules->count();
-
-            $stdoutarray['authentication rules'] = $this->authenticationRules->count();
-
-            $stdoutarray['dos rules'] = $this->dosRules->count();
-
-            $stdoutarray['tunnel-inspection rules']['pre'] = $this->tunnelInspectionRules->count();
-
-            $stdoutarray['default-security rules']['pre'] = $this->defaultSecurityRules->count();
-
-            $stdoutarray['network-packet-broker rules']['pre'] = $this->networkPacketBrokerRules->count();
-
-            $stdoutarray['sdwan rules']['pre'] = $this->sdWanRules->count();
-
-        }
-        elseif( get_class($this) == "Container" || get_class($this) == "DeviceGroup" )
-        {
-            $stdoutarray['security rules'] = array();
-            $stdoutarray['security rules']['pre'] = $this->securityRules->countPreRules();
-            $stdoutarray['security rules']['post'] = $this->securityRules->countPostRules();
-
-            $stdoutarray['nat rules'] = array();
-            $stdoutarray['nat rules']['pre'] = $this->natRules->countPreRules();
-            $stdoutarray['nat rules']['post'] = $this->natRules->countPostRules();
-
-            $stdoutarray['qos rules'] = array();
-            $stdoutarray['qos rules']['pre'] = $this->qosRules->countPreRules();
-            $stdoutarray['qos rules']['post'] = $this->qosRules->countPostRules();
-
-            $stdoutarray['pbf rules'] = array();
-            $stdoutarray['pbf rules']['pre'] = $this->pbfRules->countPreRules();
-            $stdoutarray['pbf rules']['post'] = $this->pbfRules->countPostRules();
-
-            $stdoutarray['decrypt rules'] = array();
-            $stdoutarray['decrypt rules']['pre'] = $this->decryptionRules->countPreRules();
-            $stdoutarray['decrypt rules']['post'] = $this->decryptionRules->countPostRules();
-
-            $stdoutarray['app-override rules'] = array();
-            $stdoutarray['app-override rules']['pre'] = $this->appOverrideRules->countPreRules();
-            $stdoutarray['app-override rules']['post'] = $this->appOverrideRules->countPostRules();
-
-            $stdoutarray['captive-portal rules'] = array();
-            $stdoutarray['captive-portal rules']['pre'] = $this->captivePortalRules->countPreRules();
-            $stdoutarray['captive-portal rules']['post'] = $this->captivePortalRules->countPostRules();
-
-            $stdoutarray['authentication rules'] = array();
-            $stdoutarray['authentication rules']['pre'] = $this->authenticationRules->countPreRules();
-            $stdoutarray['authentication rules']['post'] = $this->authenticationRules->countPostRules();
-
-            $stdoutarray['dos rules'] = array();
-            $stdoutarray['dos rules']['pre'] = $this->dosRules->countPreRules();
-            $stdoutarray['dos rules']['post'] = $this->dosRules->countPostRules();
-
-            $stdoutarray['tunnel-inspection rules'] = array();
-            $stdoutarray['tunnel-inspection rules']['pre'] = $this->tunnelInspectionRules->countPreRules();
-            $stdoutarray['tunnel-inspection rules']['post'] = $this->tunnelInspectionRules->countPostRules();
-
-            $stdoutarray['default-security rules'] = array();
-            $stdoutarray['default-security rules']['pre'] = $this->defaultSecurityRules->countPreRules();
-            $stdoutarray['default-security rules']['post'] = $this->defaultSecurityRules->countPostRules();
-
-            $stdoutarray['network-packet-broker rules'] = array();
-            $stdoutarray['network-packet-broker rules']['pre'] = $this->networkPacketBrokerRules->countPreRules();
-            $stdoutarray['network-packet-broker rules']['post'] = $this->networkPacketBrokerRules->countPostRules();
-
-            $stdoutarray['sdwan rules'] = array();
-            $stdoutarray['sdwan rules']['pre'] = $this->sdWanRules->countPreRules();
-            $stdoutarray['sdwan rules']['post'] = $this->sdWanRules->countPostRules();
+            $stdoutarray['model'] = ($connector->info_model == "PA-VM") ? $connector->info_vmlicense : $connector->info_model;
         }
 
-
-        $stdoutarray['address objects'] = array();
-        $stdoutarray['address objects']['total'] = $this->addressStore->count();
-        $stdoutarray['address objects']['address'] = $this->addressStore->countAddresses();
-        $stdoutarray['address objects']['group'] = $this->addressStore->countAddressGroups();
-        $stdoutarray['address objects']['tmp'] = $this->addressStore->countTmpAddresses();
-        $stdoutarray['address objects']['region'] = $this->addressStore->countRegionObjects();
-        $stdoutarray['address objects']['unused'] = $this->addressStore->countUnused();
-
-        $stdoutarray['service objects'] = array();
-        $stdoutarray['service objects']['total'] = $this->serviceStore->count();
-        $stdoutarray['service objects']['service'] = $this->serviceStore->countServices();
-        $stdoutarray['service objects']['group'] = $this->serviceStore->countServiceGroups();
-        $stdoutarray['service objects']['tmp'] = $this->serviceStore->countTmpServices();
-        $stdoutarray['service objects']['unused'] = $this->serviceStore->countUnused();
-
-        $stdoutarray['tag objects'] = array();
-        $stdoutarray['tag objects']['total'] = $this->tagStore->count();
-        $stdoutarray['tag objects']['unused'] = $this->tagStore->countUnused();
-
-        $stdoutarray['securityProfileGroup objects'] = array();
-        $stdoutarray['securityProfileGroup objects']['total'] = $this->securityProfileGroupStore->count();
-
-
-        $stdoutarray['Anti-Spyware objects'] = array();
-        $stdoutarray['Anti-Spyware objects']['total'] = $this->AntiSpywareProfileStore->count();
-        $stdoutarray['Vulnerability objects'] = array();
-        $stdoutarray['Vulnerability objects']['total'] = $this->VulnerabilityProfileStore->count();
-
-        if( get_class($this) == "Container"
-            || get_class($this) == "DeviceCloud"
-            || get_class($this) == "DeviceOnPrem"
-            || get_class($this) == "Snippet"
-        )
+        // --- 1. Rule Statistics ---
+        foreach ($this->stats_ruleTypes as $label => $conf)
         {
-            $stdoutarray['WildfireAndAntivirus objects'] = array();
-            $stdoutarray['WildfireAndAntivirus objects']['total'] = $this->VirusAndWildfireProfileStore->count();
+            $prop = $conf['prop'];
+            if (!isset($this->$prop))
+                continue;
 
-            $stdoutarray['DNS-Security objects'] = array();
-            $stdoutarray['DNS-Security objects']['total'] = $this->DNSSecurityProfileStore->count();
-            $stdoutarray['Saas-Security objects'] = array();
-            $stdoutarray['Saas-Security objects']['total'] = $this->SaasSecurityProfileStore->count();
+            if ($isSummaryMode && isset($statsArray[$conf['stat']]))
+            {
+                $stdoutarray[$label] = $statsArray[$conf['stat']];
+            }
+            elseif($isContainerOrDG || $isPanoramaConf)
+            {
+                $stdoutarray[$label] = [
+                    'pre' => $this->$prop->countPreRules(),
+                    'post' => $this->$prop->countPostRules()
+                ];
+            }
+            elseif (!$isPANConf)
+            {
+                $stdoutarray[$label] = $this->$prop->count();
+            }
         }
 
-        if( get_class($this) == "DeviceGroup"
-            || get_class($this) == "VirtualSystem"
-        )
-        {
-            $stdoutarray['Antivirus objects'] = array();
-            $stdoutarray['Antivirus objects']['total'] = $this->AntiVirusProfileStore->count();
+        // --- 2. Address & Service Store Statistics ---
+        $stores = [
+            'address objects' => [
+                'store' => 'addressStore',
+                'map' => [
+                    'total' => 'count', 'address' => 'countAddresses', 'group' => 'countAddressGroups',
+                    'tmp' => 'countTmpAddresses', 'region' => 'countRegionObjects', 'unused' => 'countUnused'
+                ],
+                'summary_map' => ['shared' => 'countAddresses', 'total VSYSs' => 'gnaddresss', 'unused' => 'gnaddresssUnused']
+            ],
+            'service objects' => [
+                'store' => 'serviceStore',
+                'map' => [
+                    'total' => 'count', 'service' => 'countServices', 'group' => 'countServiceGroups',
+                    'tmp' => 'countTmpServices', 'unused' => 'countUnused'
+                ],
+                'summary_map' => ['shared' => 'countServices', 'total VSYSs' => 'gnservices', 'unused' => 'gnservicesUnused']
+            ]
+        ];
 
-            $stdoutarray['Wildfire objects'] = array();
-            $stdoutarray['Wildfire objects']['total'] = $this->WildfireProfileStore->count();
+        foreach ($stores as $label => $conf)
+        {
+            $store = $this->{$conf['store']};
+            $stdoutarray[$label] = array();
+
+            if ($isSummaryMode) {
+                foreach ($conf['summary_map'] as $outKey => $source)
+                {
+                    $stdoutarray[$label][$outKey] = method_exists($store, $source) ? $store->$source() : ($statsArray[$source] ?? 0);
+                }
+            }
+            else
+            {
+                foreach ($conf['map'] as $outKey => $method)
+                {
+                    $stdoutarray[$label][$outKey] = $store->$method();
+                }
+            }
+        }
+
+
+        // --- 3. Profile & Other Object Statistics ---
+        foreach($this->stats_profileMaps as $label => $conf)
+        {
+            $storeName = $conf['store'];
+            if (!isset($this->$storeName)) continue;
+            $store = $this->$storeName;
+
+            if ($isSummaryMode && isset($conf['sum_total']))
+            {
+                $stdoutarray[$label] = ['shared' => $store->count(), 'total VSYSs' => $statsArray[$conf['sum_total']] ?? 0];
+                if (isset($conf['sum_unused']))
+                    $stdoutarray[$label]['unused'] = $statsArray[$conf['sum_unused']] ?? 0;
+            } else {
+                $stdoutarray[$label] = ['total' => $store->count()];
+                if (method_exists($store, 'countUnused'))
+                {
+                    $stdoutarray[$label]['unused'] = $store->countUnused();
+                }
+            }
         }
 
 
 
-
-
-        $stdoutarray['URL objects'] = array();
-        $stdoutarray['URL objects']['total'] = $this->URLProfileStore->count();
-        $stdoutarray['custom URL objects'] = array();
-        $stdoutarray['custom URL objects']['total'] = $this->customURLProfileStore->count();
-        $stdoutarray['File-Blocking objects'] = array();
-        $stdoutarray['File-Blocking objects']['total'] = $this->FileBlockingProfileStore->count();
-        $stdoutarray['Data-Filtering objects'] = array();
-        $stdoutarray['Data-Filtering objects']['total'] = $this->DataFilteringProfileStore->count();
-        $stdoutarray['Decryption objects'] = array();
-        $stdoutarray['Decryption objects']['total'] = $this->DecryptionProfileStore->count();
-
-
-        $stdoutarray['HipObject objects'] = array();
-        $stdoutarray['HipObject objects']['total'] = $this->HipObjectsProfileStore->count();
-
-        $stdoutarray['HipProfile objects'] = array();
-        $stdoutarray['HipProfile objects']['total'] = $this->HipProfilesProfileStore->count();
-
-
-        $stdoutarray['GTP objects'] = array();
-        $stdoutarray['GTP objects']['total'] = $this->GTPProfileStore->count();
-
-        $stdoutarray['SCEP objects'] = array();
-        $stdoutarray['SCEP objects']['total'] = $this->SCEPProfileStore->count();
-
-        $stdoutarray['PacketBroker objects'] = array();
-        $stdoutarray['PacketBroker objects']['total'] = $this->PacketBrokerProfileStore->count();
-
-        $stdoutarray['SDWanErrorCorrection objects'] = array();
-        $stdoutarray['SDWanErrorCorrection objects']['total'] = $this->SDWanErrorCorrectionProfileStore->count();
-
-        $stdoutarray['SDWanPathQuality objects'] = array();
-        $stdoutarray['SDWanPathQuality objects']['total'] = $this->SDWanPathQualityProfileStore->count();
-
-        $stdoutarray['SDWanSaasQuality objects'] = array();
-        $stdoutarray['SDWanSaasQuality objects']['total'] = $this->SDWanSaasQualityProfileStore->count();
-
-        $stdoutarray['SDWanTrafficDistribution objects'] = array();
-        $stdoutarray['SDWanTrafficDistribution objects']['total'] = $this->SDWanTrafficDistributionProfileStore->count();
-
-        $stdoutarray['DataObjects objects'] = array();
-        $stdoutarray['DataObjects objects']['total'] = $this->DataObjectsProfileStore->count();
-
-
-        $stdoutarray['LogProfile objects'] = array();
-        $stdoutarray['LogProfile objects']['total'] = $this->LogProfileStore->count();
-
-
-        $stdoutarray['zones'] = $this->zoneStore->count();
-        $stdoutarray['apps'] = $this->appStore->count();
-
-
-        $this->sizeArray['type'] = get_class($this);
-        $this->sizeArray['statstype'] = "objects";
-        $this->sizeArray['header'] = $header;
-        $this->sizeArray['kb Container'] = &DH::dom_get_config_size($this->xmlroot);
-        $this->sizeArray['kb security rules'] = &DH::dom_get_config_size($this->securityRules->xmlroot);
-        $this->sizeArray['kb nat rules'] = &DH::dom_get_config_size($this->natRules->xmlroot);
-        $this->sizeArray['kb qos rules'] = &DH::dom_get_config_size($this->qosRules->xmlroot);
-        $this->sizeArray['kb pbf rules'] = &DH::dom_get_config_size($this->pbfRules->xmlroot);
-        $this->sizeArray['kb decrypt rules'] = &DH::dom_get_config_size($this->decryptionRules->xmlroot);
-        $this->sizeArray['kb app-override rules'] = &DH::dom_get_config_size($this->appOverrideRules->xmlroot);
-        $this->sizeArray['kb captive-portal rules'] = &DH::dom_get_config_size($this->captivePortalRules->xmlroot);
-        $this->sizeArray['kb authentication rules'] = &DH::dom_get_config_size($this->authenticationRules->xmlroot);
-        $this->sizeArray['kb dos rules'] = &DH::dom_get_config_size($this->dosRules->xmlroot);
-        $this->sizeArray['kb tunnel-inspection rules'] = &DH::dom_get_config_size($this->tunnelInspectionRules->xmlroot);
-        $this->sizeArray['kb default-security rules'] = &DH::dom_get_config_size($this->defaultSecurityRules->xmlroot);
-        $this->sizeArray['kb network-packet-broker rules'] = &DH::dom_get_config_size($this->networkPacketBrokerRules->xmlroot);
-        $this->sizeArray['kb sdwan rules'] = &DH::dom_get_config_size($this->sdWanRules->xmlroot);
-
-        $tmp_adr = &DH::dom_get_config_size($this->addressStore->addressRoot);
-        $tmp_adrgrp = &DH::dom_get_config_size($this->addressStore->addressGroupRoot);
-        $tmp_region = &DH::dom_get_config_size($this->addressStore->regionRoot);
-        $this->sizeArray['kb address objects '] = $tmp_adr + $tmp_adrgrp + $tmp_region;
-        $tmp_srv = &DH::dom_get_config_size($this->serviceStore->serviceRoot);
-        $tmp_srvgrp = &DH::dom_get_config_size($this->serviceStore->serviceGroupRoot);
-        $this->sizeArray['kb address objects '] = $tmp_srv + $tmp_srvgrp;
-        $this->sizeArray['kb tag objects'] = &DH::dom_get_config_size($this->tagStore->xmlroot);
-
-        $this->sizeArray['kb securityProfileGroup objects'] = &DH::dom_get_config_size($this->securityProfileGroupStore->xmlroot);
-
-        $this->sizeArray['kb Anti-Spyware objects'] = &DH::dom_get_config_size($this->AntiSpywareProfileStore->xmlroot);
-        $this->sizeArray['kb Vulnerability objects'] = &DH::dom_get_config_size($this->VulnerabilityProfileStore->xmlroot);
-
-        if( get_class($this) == "Container"
-            || get_class($this) == "DeviceCloud"
-            || get_class($this) == "DeviceOnPrem"
-            || get_class($this) == "Snippet"
-        )
+        if ($isCloudOrSnippet)
         {
-            $this->sizeArray['kb Wildfire and Antivirus objects'] = &DH::dom_get_config_size($this->VirusAndWildfireProfileStore->xmlroot);
+            $stdoutarray['WildfireAndAntivirus objects'] = ['total' => $this->VirusAndWildfireProfileStore->count()];
+            $stdoutarray['DNS-Security objects'] = ['total' => $this->DNSSecurityProfileStore->count()];
+            $stdoutarray['Saas-Security objects'] = ['total' => $this->SaasSecurityProfileStore->count()];
         }
 
-
-        if( get_class($this) == "DeviceGroup"
-            || get_class($this) == "VirtualSystem"
-        )
+        if ($class === "DeviceGroup" || $class === "VirtualSystem")
         {
-            $this->sizeArray['kb Antivirus objects'] = &DH::dom_get_config_size($this->AntiVirusProfileStore->xmlroot);
-            $this->sizeArray['kb Wildfire objects'] = &DH::dom_get_config_size($this->WildfireProfileStore->xmlroot);
+            $stdoutarray['Antivirus objects'] = ['total' => $this->AntiVirusProfileStore->count()];
+            $stdoutarray['Wildfire objects'] = ['total' => $this->WildfireProfileStore->count()];
         }
 
+        if (!$isSummaryMode)
+        {
+            $stdoutarray['zones'] = $this->zoneStore->count();
+            $stdoutarray['apps'] = $this->appStore->count();
+        }
 
-        $this->sizeArray['kb URL objects'] = &DH::dom_get_config_size($this->URLProfileStore->xmlroot);
-        $this->sizeArray['kb custom URL objects'] = &DH::dom_get_config_size($this->customURLProfileStore->xmlroot);
-        $this->sizeArray['kb File-Blocking objects'] = &DH::dom_get_config_size($this->FileBlockingProfileStore->xmlroot);
-
-        $this->sizeArray['kb Decryption objects'] = &DH::dom_get_config_size($this->DecryptionProfileStore->xmlroot);
-        $this->sizeArray['kb HipObject objects'] = &DH::dom_get_config_size($this->HipObjectsProfileStore->xmlroot);
-        $this->sizeArray['kb HipProfile objects'] = &DH::dom_get_config_size($this->HipProfilesProfileStore->xmlroot);
-
-
-        $this->sizeArray['kb GTP objects'] = &DH::dom_get_config_size($this->GTPProfileStore->xmlroot);
-        $this->sizeArray['kb SCEP objects'] = &DH::dom_get_config_size($this->SCEPProfileStore->xmlroot);
-        $this->sizeArray['kb PacketBroker objects'] = &DH::dom_get_config_size($this->PacketBrokerProfileStore->xmlroot);
-        $this->sizeArray['kb SDWanErrorCorrection objects'] = &DH::dom_get_config_size($this->tagStore->xmlroot);
-        $this->sizeArray['kb SDWanPathQuality objects'] = &DH::dom_get_config_size($this->SDWanPathQualityProfileStore->xmlroot);
-        $this->sizeArray['kb SDWanSaasQuality objects'] = &DH::dom_get_config_size($this->SDWanSaasQualityProfileStore->xmlroot);
-        $this->sizeArray['kb SDWanTrafficDistribution objects'] = &DH::dom_get_config_size($this->SDWanTrafficDistributionProfileStore->xmlroot);
-        $this->sizeArray['kb DataObjects objects'] = &DH::dom_get_config_size($this->DataObjectsProfileStore->xmlroot);
-
-        $this->sizeArray['kb LogProfile objects'] = &DH::dom_get_config_size($this->LogProfileStore->xmlroot);
+        //size
+        if( $location == "shared" )
+            $this->display_size_NEW($stdoutarray, true );
+        else
+            $this->display_size_NEW($stdoutarray );
 
 
-
+        // --- 5. Output Handling ---
         if( !PH::$shadow_json && $actions == "display"  )
             PH::print_stdout( $stdoutarray, true );
+
 
         if( !PH::$shadow_json && $actions == "display-size"  )
         {
@@ -559,11 +919,100 @@ trait StatCollectorTrait
                 PH::print_stdout( $stdoutarray, true );
         }
 
-        PH::$JSON_TMP[] = $stdoutarray;
+        if( $actions == "display" || $actions == "display-available" )
+            PH::$JSON_TMP[] = $stdoutarray;
 
 
-        $this->display_bp_statistics( $debug, $actions );
 
+        if( !PH::$shadow_json and $actions == "display-bpa" )
+            $this->display_bp_statistics( $debug, $actions );
+    }
+
+
+    public function display_size_NEW( & $stdoutarray, $PanoramaShared = false )
+    {
+        $class = get_class($this);
+
+        // Conditional Profile Logic
+        $isCloudOrSnippet = in_array($class, ["Container", "DeviceCloud", "DeviceOnPrem", "Snippet"]);
+
+
+        // Check if we are in "Summary Mode" (data provided in $statsArray)
+        $isSummaryMode = !empty($statsArray);
+
+        // --- 4. Size Array Logic ---
+        $this->sizeArray = array();
+        if( $PanoramaShared )
+            $this->sizeArray['type'] = "DeviceGroup";
+        else
+            $this->sizeArray['type'] = $class;
+
+
+
+        $this->sizeArray['statstype'] = "objects";
+        $this->sizeArray['header'] = $stdoutarray['header'];
+        if( $PanoramaShared )
+            $this->sizeArray['kb ' . $class] = &DH::dom_get_config_size($this->sharedroot);
+        else
+            $this->sizeArray['kb ' . $class] = &DH::dom_get_config_size($this->xmlroot);
+
+        // Rule Sizes
+        foreach ($this->stats_ruleTypes as $label => $conf) {
+            $sizeKey = 'size_' . str_replace('Rules', '', $conf['prop']);
+            if ($isSummaryMode && isset($statsArray[$sizeKey])) {
+                $this->sizeArray['kb ' . $label] = $statsArray[$sizeKey];
+            } else {
+                $prop = $conf['prop'];
+                if (isset($this->$prop)) {
+                    $this->sizeArray['kb ' . $label] = &DH::dom_get_config_size($this->$prop->xmlroot);
+                }
+            }
+        }
+
+        // Store and Profile Sizes
+        if ($isSummaryMode)
+        {
+            $this->sizeArray['kb address objects'] = $statsArray['size_addressStore'] ?? 0;
+            $this->sizeArray['kb service objects'] = $statsArray['size_serviceStore'] ?? 0;
+            $this->sizeArray['kb tag objects'] = $statsArray['size_tagStore'] ?? 0;
+            $this->sizeArray['kb custom URL objects'] = $statsArray['size_customURLProfileStore'] ?? 0;
+        }
+        else
+        {
+            // Address Objects Size (Sum of addressRoot + groupRoot + regionRoot)
+            $tmp_adr = &DH::dom_get_config_size($this->addressStore->addressRoot);
+            $tmp_adrgrp = &DH::dom_get_config_size($this->addressStore->addressGroupRoot);
+            $tmp_region = &DH::dom_get_config_size($this->addressStore->regionRoot);
+            $sumAddressObjects = $tmp_adr + $tmp_adrgrp + $tmp_region;
+            $this->sizeArray['kb address objects '] = $sumAddressObjects;
+
+            // Service Objects Size (Sum of serviceRoot + groupRoot)
+            $tmp_srv = &DH::dom_get_config_size($this->serviceStore->serviceRoot);
+            $tmp_srvgrp = &DH::dom_get_config_size($this->serviceStore->serviceGroupRoot);
+            $sumServiceObjects = $tmp_srv + $tmp_srvgrp;
+            $this->sizeArray['kb service objects '] = $sumServiceObjects;
+
+            // General Profile Sizes loop
+            foreach ($this->stats_profileMaps as $label => $conf)
+            {
+                $storeName = $conf['store'];
+                if (isset($this->$storeName))
+                {
+                    $this->sizeArray['kb ' . $label] = &DH::dom_get_config_size($this->$storeName->xmlroot);
+                }
+            }
+
+            // Specific Conditionals for size
+            if ($isCloudOrSnippet)
+            {
+                $this->sizeArray['kb Wildfire and Antivirus objects'] = &DH::dom_get_config_size($this->VirusAndWildfireProfileStore->xmlroot);
+            }
+            if ($class === "DeviceGroup" || $class === "VirtualSystem")
+            {
+                $this->sizeArray['kb Antivirus objects'] = &DH::dom_get_config_size($this->AntiVirusProfileStore->xmlroot);
+                $this->sizeArray['kb Wildfire objects'] = &DH::dom_get_config_size($this->WildfireProfileStore->xmlroot);
+            }
+        }
     }
 
     public function get_bp_statistics()
@@ -1226,12 +1675,6 @@ trait StatCollectorTrait
         if( !PH::$shadow_json && $debug && $actions == "display-bpa" )
             PH::print_stdout( $stdoutarray, true );
 
-        if( $actions == "display-available" )
-        {
-            PH::stats_remove_zero_arrays($stdoutarray);
-            if( !PH::$shadow_json )
-                PH::print_stdout( $stdoutarray, true );
-        }
 
         if( $actions == "display-bpa" )
             PH::$JSON_TMP[] = $stdoutarray;

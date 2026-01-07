@@ -15,6 +15,7 @@ UTIL:
 * type=stats in=scm-api:// | extend with AS / VP Rules and InLine ML - correction for class Snippet
 * type=stats | adjustment for DNS List
 * type=stats actions=display-bpa | extend class PanoramaConf/PANConf/DeviceGroup/VirtualSystem with AS/VP Rules/InLine ML
+* type=stats | remove duplicate code - move it to StatCollectorTrait
 
 BUGFIX:
 
