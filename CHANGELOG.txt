@@ -17,6 +17,7 @@ UTIL:
 * type=stats actions=display-bpa | extend class PanoramaConf/PANConf/DeviceGroup/VirtualSystem with AS/VP Rules/InLine ML
 * type=stats | remove duplicate code - move it to StatCollectorTrait
 * type=html-merger | introduce index_assessment.html - skip this from adding to Excel
+* type=stats actions=display-bpa | correction for class PANConf
 
 BUGFIX:
 

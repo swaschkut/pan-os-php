@@ -697,7 +697,7 @@ class BuckbeakConf
             $this->get_combined_subDevice_statistics($statsArray, $cur, true );
         }
 
-        $stdoutarray = array();
+        #$stdoutarray = array();
 
         $header = "Statistics for ".get_class( $this )." '" . $this->name . "'";
 
@@ -749,7 +749,7 @@ class BuckbeakConf
 
     public function display_bp_statistics( $debug = false, $actions = "display", $location = false )
     {
-        $stdoutarray = $this->get_bp_statistics( $actions );
+        $stdoutarray = $this->get_bp_statistics( );
 
         $stdoutarray['type'] = get_class( $this );
 
@@ -802,6 +802,7 @@ class BuckbeakConf
 
         $stdoutarray['percentage'] = $percentageArray;
 
+        PH::$JSON_TMP[] = $stdoutarray;
 
         $this->generate_table($stdoutarray, $debug, $actions);
     }

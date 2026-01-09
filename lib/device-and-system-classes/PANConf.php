@@ -1068,8 +1068,22 @@ class PANConf
 
         }
 
+
         //$this->display_PANConf_statistics_NEW( $debug, $actions, $statsArray, $connector );
         $this->display_statistics_NEW( $debug, $actions, $statsArray, $connector );
+
+
+
+        if( !PH::$shadow_json and $actions == "display-bpa" )
+            $this->display_bp_statistics( $debug, $actions );
+
+
+
+        foreach( $this->virtualSystems as $vsys )
+        {
+            if( !PH::$shadow_json and $actions == "display-bpa" )
+                $vsys->display_bp_statistics( $debug, $actions );
+        }
     }
 
 
@@ -1079,19 +1093,30 @@ class PANConf
         $stdoutarray['type'] = get_class( $this );
 
         $header = "Statistics for ".get_class( $this )." '" . PH::boldText('Firewall full') . "'";
+
+
+
+
         $stdoutarray['header'] = $header;
         $stdoutarray['statstype'] = "adoption";
 
         foreach( $this->getVirtualSystems() as $virtualSystem )
         {
-            $stdoutarray2 = $virtualSystem->get_bp_statistics( $actions );
+            $stdoutarray2 = $virtualSystem->get_bp_statistics( );
             foreach ($stdoutarray2 as $key2 => $stdoutarray_value)
             {
                 if( $key2 == "header" || $key2 == "type" || $key2 == "statstype" )
                     continue;
 
-                if( strpos( $key2, "calc" ) !== FALSE || strpos( $key2, "percentage" ) !== FALSE )
+                if( strpos( $key2, "calc" ) !== FALSE
+                    || strpos( $key2, "percentage" ) !== FALSE
+
+                )
+                {
+
                     continue;
+                }
+
 
                 if (isset($stdoutarray[$key2]))
                     $stdoutarray[$key2] += intval($stdoutarray_value);
@@ -1107,7 +1132,7 @@ class PANConf
 
         $stdoutarray['percentage'] = $percentageArray;
 
-
+        PH::$JSON_TMP[] = $stdoutarray;
 
         $this->generate_table( $stdoutarray, $debug, $actions );
     }

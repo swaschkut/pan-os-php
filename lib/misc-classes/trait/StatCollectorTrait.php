@@ -1010,7 +1010,7 @@ trait StatCollectorTrait
         }
     }
 
-    public function get_bp_statistics()
+    public function get_bp_statistics(): array
     {
         if( get_class($this) == "BuckbeakConf" )
         {
@@ -1175,7 +1175,6 @@ trait StatCollectorTrait
 
 
         $this->bp_calculation( $stdoutarray );
-
 
 
         $percentageArray = $this->get_bp_percentageArray( $stdoutarray );
@@ -1486,7 +1485,6 @@ trait StatCollectorTrait
 
     public function get_bp_percentageArray( $stdoutarray ): array
     {
-
         $percentageArray = array();
 
         $percentageArray_adoption = array();

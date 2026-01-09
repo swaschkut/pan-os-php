@@ -1927,10 +1927,8 @@ class PanoramaConf
 
     public function display_bp_statistics( $debug = false, $actions = "display", $location = false )
     {
-        $stdoutarray = $this->get_bp_statistics( $actions );
-
+        $stdoutarray = $this->get_bp_statistics();
         $stdoutarray['type'] = get_class( $this );
-
 
         if( !PH::$shadow_loaddghierarchy )
             $header = "Statistics for ".get_class( $this )." '" . PH::boldText('Panorama full') . "'";
@@ -1948,7 +1946,10 @@ class PanoramaConf
                 if( $key2 == "header" || $key2 == "type" || $key2 == "statstype" )
                     continue;
 
-                if( strpos( $key2, "calc" ) !== FALSE || strpos( $key2, "percentage" ) !== FALSE || strpos( $key2, "type" ) !== FALSE )
+                if( strpos( $key2, "calc" ) !== FALSE
+                    || strpos( $key2, "percentage" ) !== FALSE
+                    || strpos( $key2, "type" ) !== FALSE
+                )
                 {
                     unset($stdoutarray[$key2]);
                     continue;
@@ -1962,16 +1963,14 @@ class PanoramaConf
             }
         }
 
-
-
         $this->bp_calculation( $stdoutarray );
-
 
 
         $percentageArray = $this->get_bp_percentageArray($stdoutarray);
 
         $stdoutarray['percentage'] = $percentageArray;
 
+        PH::$JSON_TMP[] = $stdoutarray;
 
         $this->generate_table($stdoutarray, $debug, $actions);
     }
