@@ -239,16 +239,50 @@
     },
     {
       "type": "address",
-      "actions": "actions=exportToExcel:9h-i_UnusedAddresses.html,WhereUsed|UsedInLocation|ResolveIP|NestedMembers",
+      "actions": "actions=exportToExcel:9h-i_Unused_Addresses.html,WhereUsed|UsedInLocation|ResolveIP|NestedMembers",
       "filter": "filter=(object is.unused.recursive)",
       "location": "location=any"
     },    
     {
       "type": "service",
-      "actions": "actions=exportToExcel:9h-ii_UnusedServices.html,WhereUsed|UsedInLocation|ResolveSRV|NestedMembers",
+      "actions": "actions=exportToExcel:9h-ii_Unused_Services.html,WhereUsed|UsedInLocation|ResolveSRV|NestedMembers",
       "filter": "filter=(object is.unused.recursive)",
       "location": "location=any"
-    },    
+    },
+    {
+      "type": "securityprofilegroup",
+      "actions": "actions=exportToExcel:9h-iii_UnusedSPG.html,WhereUsed|UsedInLocation",
+      "filter": "filter=(object is.unused)",
+      "location": "location=any"
+    },
+    {
+      "type": "securityprofile",
+      "securityprofiletype": "securityprofiletype=vulnerability",
+      "actions": "actions=exportToExcel:9h-iv_Unused_VP-SPs.html,WhereUsed|UsedInLocation",
+      "filter": "filter=(object is.unused)",
+      "location": "location=any"
+    },
+    {
+      "type": "securityprofile",
+      "securityprofiletype": "securityprofiletype=spyware",
+      "actions": "actions=exportToExcel:9h-v_Unused_AS_SPs.html,WhereUsed|UsedInLocation",
+      "filter": "filter=(object is.unused)",
+      "location": "location=any"
+    },
+    {
+      "type": "securityprofile",
+      "securityprofiletype": "securityprofiletype=virus",
+      "actions": "actions=exportToExcel:9h-vi_Unused_AV-SPs.html,WhereUsed|UsedInLocation",
+      "filter": "filter=(object is.unused)",
+      "location": "location=any"
+    },
+    {
+      "type": "securityprofile",
+      "securityprofiletype": "securityprofiletype=url-filtering",
+      "actions": "actions=exportToExcel:9h-vii_Unused_URL-SPs.html,WhereUsed|UsedInLocation",
+      "filter": "filter=(object is.unused)",
+      "location": "location=any"
+    },
     {
       "comment": "merge all previously created html files into one Excel sheet",
       "type": "html-merger",
