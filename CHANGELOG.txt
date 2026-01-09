@@ -16,6 +16,7 @@ UTIL:
 * type=stats | adjustment for DNS List
 * type=stats actions=display-bpa | extend class PanoramaConf/PANConf/DeviceGroup/VirtualSystem with AS/VP Rules/InLine ML
 * type=stats | remove duplicate code - move it to StatCollectorTrait
+* type=html-merger | introduce index_assessment.html - skip this from adding to Excel
 
 BUGFIX:
 

@@ -58,6 +58,9 @@ elements = []
 
 for file_str in sorted_directory_listing_with_os_scandir(cwd):
     if file_str.endswith('.html'):
+        if file_str.endswith('index_assessment.html'):
+            continue
+
         print("Found HTML file "+file_str+" in directory "+cwd)
         srcFile = cwd+"/"+file_str
         # Read HTML Files

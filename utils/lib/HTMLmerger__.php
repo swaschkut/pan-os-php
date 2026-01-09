@@ -103,6 +103,12 @@ class HTMLmerger__
             file_put_contents($this->projectfolder . "/".$defaultfilenname, $projectdefaultfile);
         }
 
+        //same approach as with Excel spreadsheet but with HTML file
+        $defaultfile = dirname(__FILE__) . '/../common/html/index_assessment.html';
+        $defaultfilenname = "index_assessment.html";
+        $projectdefaultfile = file_get_contents( $defaultfile );
+        file_put_contents($this->projectfolder . "/".$defaultfilenname, $projectdefaultfile);
+
         /*
         if( empty($excelfilename ) )
         {
