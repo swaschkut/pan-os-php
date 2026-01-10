@@ -18,6 +18,7 @@ UTIL:
 * type=stats | remove duplicate code - move it to StatCollectorTrait
 * type=html-merger | introduce index_assessment.html - skip this from adding to Excel
 * type=stats actions=display-bpa | correction for class PANConf
+* type=playbook | improvements for memory usage | use full Container current memory status for calculation
 
 BUGFIX:
 
