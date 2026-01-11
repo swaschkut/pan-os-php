@@ -691,11 +691,14 @@ class PLAYBOOK__
         $currentScriptMemory = memory_get_usage(true);
         $memMB = number_format($currentScriptMemory / 1024 / 1024, 2);
         $currentContainerTotalMemory = $this->get_container_memory_usage();
-        $memMBtotal = number_format($currentContainerTotalMemory / 1024 / 1024, 2);
+        if( $currentContainerTotalMemory !== null )
+            $memMBtotal = number_format($currentContainerTotalMemory / 1024 / 1024, 2);
+
         if( $this->debugMemory )
         {
             PH::print_stdout(" - currentScript-Memory=".$memMB." MB");
-            PH::print_stdout(" - currentTotalContainer-Memory=".$memMBtotal." MB");
+            if( $currentContainerTotalMemory !== null )
+                PH::print_stdout(" - currentTotalContainer-Memory=".$memMBtotal." MB");
         }
     }
 
