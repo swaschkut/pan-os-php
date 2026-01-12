@@ -20,6 +20,7 @@ UTIL:
 * type=stats actions=display-bpa | correction for class PANConf
 * type=playbook | improvements for memory usage | use full Container current memory status for calculation
 * type=playbook | check container memory only if pan-os-php is running in container
+* type=playbook shadow-loadreduce | implement support for all called playbook commands
 
 BUGFIX:
 

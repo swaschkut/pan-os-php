@@ -353,6 +353,8 @@ class PLAYBOOK__
                 $arguments[] = "projectfolder".$string;
             }
 
+            if( PH::$shadow_loadreduce )
+                $arguments[] = "shadow-loadreduce";
 
             ###############################################################################
             //IN / OUT specification
