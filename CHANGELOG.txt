@@ -28,6 +28,7 @@ GENERAL:
 * Device App-ID update to version: 9051-9808
 * class DeviceGroup/VirtualSystem | usage of StatCollectorTrait - duplicate code reduction
 * playbook file visibility_assessment.json - update to latest
+* Device App-ID update to version: 9055-9829
 
 
 2.1.46 (20251217)
