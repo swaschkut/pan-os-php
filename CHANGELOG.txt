@@ -21,6 +21,7 @@ UTIL:
 * type=playbook | improvements for memory usage | use full Container current memory status for calculation
 * type=playbook | check container memory only if pan-os-php is running in container
 * type=playbook shadow-loadreduce | implement support for all called playbook commands
+* type=playbook | introduce argument shadow-bpjsonfile - to support all called commands and add this argument
 
 BUGFIX:
 
