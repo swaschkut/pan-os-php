@@ -717,7 +717,10 @@ trait fawkes_migration_functions
             if( $profile != "DNSSecurityProfile" && $profile != "SaasSecurityProfile" )
             {
                 if( $profile == "URLProfile" )
-                    $fawkes_profile->load_from_domxml( $node, false );
+                {
+                    #$fawkes_profile->load_from_domxml( $node, false );
+                    $fawkes_profile->load_from_domxml( $node, false, $DEVICE );
+                }
                 else
                     $fawkes_profile->load_from_domxml( $node );
             }

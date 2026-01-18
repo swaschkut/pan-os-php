@@ -22,6 +22,7 @@ UTIL:
 * type=playbook | check container memory only if pan-os-php is running in container
 * type=playbook shadow-loadreduce | implement support for all called playbook commands
 * type=playbook | introduce argument shadow-bpjsonfile - to support all called commands and add this argument
+* class URLProfile - load_from_domxml - update to cover panorama2fawkes migration
 
 BUGFIX:
 
