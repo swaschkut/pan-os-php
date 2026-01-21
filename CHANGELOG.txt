@@ -1,6 +1,14 @@
 CHANGELOG
 
-2.1.47
+2.1.48
+UTIL:
+
+BUGFIX:
+
+GENERAL:
+
+
+2.1.47 (20260121)
 UTIL:
 * in=scm-api://{TSG-ID} | extend/validate if offline file is already available - bring rules back to working mode in same way as in=sase-api://
 * in=scm-api:// | extend with securityprofiles and securityprofilegroups - final implementation needed
