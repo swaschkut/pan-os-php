@@ -123,7 +123,7 @@ class URLProfile extends SecurityProfile2
      * @return bool TRUE if loaded ok, FALSE if not
      * @ignore
      */
-    public function load_from_domxml(DOMElement $xml, $withOwner = true )
+    public function load_from_domxml(DOMElement $xml, $withOwner = true, $owner_owner = null )
     {
         $this->secprof_type = "url-filtering";
 
@@ -137,7 +137,11 @@ class URLProfile extends SecurityProfile2
 
         if( $withOwner )
         {
-            if(  get_class($this->owner->owner) == "PanoramaConf" || get_class($this->owner->owner) == "PANConf" || get_class($this->owner->owner) == "FawkesConf" )
+            if(  get_class($this->owner->owner) == "PanoramaConf"
+                || get_class($this->owner->owner) == "PANConf"
+                || get_class($this->owner->owner) == "FawkesConf"
+                || get_class($this->owner->owner) == "BuckbeakConf"
+            )
                 $predefined_url_store = $this->owner->owner->urlStore;
             else
                 $predefined_url_store = $this->owner->owner->owner->urlStore;
@@ -183,9 +187,19 @@ class URLProfile extends SecurityProfile2
                     {
                         $is_custom = true;
                         # add references to custom url category
-                        $tmp_obj = $this->owner->owner->customURLProfileStore->find( $url_category );
-                        if( $tmp_obj !== null )
-                            $tmp_obj->addReference($this);
+                        if( isset( $this->owner->owner ) )
+                        {
+                            $tmp_obj = $this->owner->owner->customURLProfileStore->find( $url_category );
+                            if( $tmp_obj !== null )
+                                $tmp_obj->addReference($this);
+                        }
+                        elseif( $owner_owner !== null )
+                        {
+                            //this is needed for panorama2fawkes migration
+                            $tmp_obj = $owner_owner->customURLProfileStore->find( $url_category );
+                            if( $tmp_obj !== null )
+                                $tmp_obj->addReference($this);
+                        }
                     }
 
 
@@ -262,9 +276,19 @@ class URLProfile extends SecurityProfile2
                         {
                             $is_custom = true;
                             # add references to custom url category
-                            $tmp_obj = $this->owner->owner->customURLProfileStore->find( $url_category );
-                            if( $tmp_obj !== null )
-                                $tmp_obj->addReference($this);
+                            if( isset( $this->owner->owner ) )
+                            {
+                                $tmp_obj = $this->owner->owner->customURLProfileStore->find( $url_category );
+                                if( $tmp_obj !== null )
+                                    $tmp_obj->addReference($this);
+                            }
+                            elseif( $owner_owner !== null )
+                            {
+                                //this is needed for panorama2fawkes migration
+                                $tmp_obj = $owner_owner->customURLProfileStore->find( $url_category );
+                                if( $tmp_obj !== null )
+                                    $tmp_obj->addReference($this);
+                            }
                         }
 
 

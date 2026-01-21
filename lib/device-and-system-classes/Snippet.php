@@ -23,6 +23,7 @@ class Snippet
 {
     use PathableName;
     use PanSubHelperTrait;
+    use StatCollectorTrait;
 
     /** @var AddressStore */
     public $addressStore = null;
@@ -86,10 +87,44 @@ class Snippet
     /** @var SecurityProfileStore */
     public $HipProfilesProfileStore = null;
 
+    /** @var SecurityProfileStore */
+    public $GTPProfileStore = null;
+
+    /** @var SecurityProfileStore */
+    public $SCEPProfileStore = null;
+
+    /** @var SecurityProfileStore */
+    public $PacketBrokerProfileStore = null;
+
+    /** @var SecurityProfileStore */
+    public $SDWanErrorCorrectionProfileStore = null;
+
+    /** @var SecurityProfileStore */
+    public $SDWanPathQualityProfileStore = null;
+
+    /** @var SecurityProfileStore */
+    public $SDWanSaasQualityProfileStore = null;
+
+    /** @var SecurityProfileStore */
+    public $SDWanTrafficDistributionProfileStore = null;
+
+    /** @var SecurityProfileStore */
+    public $DataObjectsProfileStore = null;
 
     /** @var ScheduleStore */
     public $scheduleStore = null;
 
+    /** @var EDLStore */
+    public $EDLStore = null;
+
+    /** @var LogProfileStore */
+    public $LogProfileStore = null;
+
+    /** @var CertificateStore */
+    public $certificateStore = null;
+
+    /** @var SSL_TLSServiceProfileStore */
+    public $SSL_TLSServiceProfileStore = null;
 
 
     public static $templateSnippetxml = '<entry name="**Need a Name**"></entry>';
@@ -140,6 +175,9 @@ class Snippet
     public $tunnelInspectionRules;
 
     /** @var RuleStore */
+    public $defaultSecurityRules = null;
+
+    /** @var RuleStore */
     public $networkPacketBrokerRules;
 
     /** @var RuleStore */
@@ -162,6 +200,13 @@ class Snippet
 
     /** @var Array */
     public $devices = array();
+
+    public $sizeArray = array();
+
+
+    /** @var NetworkPropertiesContainer */
+    public $network;
+
 
     /** @var FawkesConf|BuckbeakConf|null $owner */
     public function __construct( $owner, Container|null $applicableDG = null)
@@ -243,8 +288,46 @@ class Snippet
         $this->HipProfilesProfileStore->name = 'HipProfiles';
 
 
+        $this->GTPProfileStore = new SecurityProfileStore($this, "GTPProfile");
+        $this->GTPProfileStore->name = 'GTPProfiles';
+
+        $this->SCEPProfileStore = new SecurityProfileStore($this, "SCEPProfile");
+        $this->SCEPProfileStore->name = 'SCEPProfiles';
+
+        $this->PacketBrokerProfileStore = new SecurityProfileStore($this, "PacketBrokerProfile");
+        $this->PacketBrokerProfileStore->name = 'PacketBrokerProfiles';
+
+        $this->SDWanErrorCorrectionProfileStore = new SecurityProfileStore($this, "SDWanErrorCorrectionProfile");
+        $this->SDWanErrorCorrectionProfileStore->name = 'SDWanErrorCorrectionProfiles';
+
+        $this->SDWanPathQualityProfileStore = new SecurityProfileStore($this, "SDWanPathQualityProfile");
+        $this->SDWanPathQualityProfileStore->name = 'SDWanPathQualityProfiles';
+
+        $this->SDWanSaasQualityProfileStore = new SecurityProfileStore($this, "SDWanSaasQualityProfile");
+        $this->SDWanSaasQualityProfileStore->name = 'SDWanSaasQualityProfiles';
+
+        $this->SDWanTrafficDistributionProfileStore = new SecurityProfileStore($this, "SDWanTrafficDistributionProfile");
+        $this->SDWanTrafficDistributionProfileStore->name = 'SDWanTrafficDistributionProfiles';
+
+        $this->DataObjectsProfileStore = new SecurityProfileStore($this, "DataObjectsProfile");
+        $this->DataObjectsProfileStore->name = 'DataObjectsProfileStoreProfiles';
+
+
         $this->scheduleStore = new ScheduleStore($this);
         $this->scheduleStore->setName('scheduleStore');
+
+        $this->EDLStore = new EDLStore($this);
+        $this->EDLStore->setName('EDLStore');
+
+        $this->LogProfileStore = new LogProfileStore($this);
+        $this->LogProfileStore->setName('LogProfileStore');
+
+        $this->certificateStore = new CertificateStore($this);
+        $this->certificateStore->setName('certificateStore');
+
+        $this->SSL_TLSServiceProfileStore = new SSL_TLSServiceProfileStore($this);
+        $this->SSL_TLSServiceProfileStore->setName('SSL_TLSServiceStore');
+
 
 
         $this->securityRules = new RuleStore($this, 'SecurityRule');
@@ -277,6 +360,8 @@ class Snippet
         $this->tunnelInspectionRules = new RuleStore($this, 'TunnelInspectionRule');
         $this->tunnelInspectionRules->name = 'TunnelInspection';
 
+        $this->defaultSecurityRules = new RuleStore($this, 'DefaultSecurityRule', TRUE);
+
         $this->networkPacketBrokerRules = new RuleStore($this, 'NetworkPacketBrokerRule', TRUE);
         $this->networkPacketBrokerRules->name = 'NetworkPacketBroker';
 
@@ -285,6 +370,8 @@ class Snippet
 
         #$this->dosRules->_networkStore = $this->owner->network;
         #$this->pbfRules->_networkStore = $this->owner->network;
+
+        $this->network = new NetworkPropertiesContainer($this);
     }
 
     public function load_from_templateSnippetXml( )
@@ -577,6 +664,78 @@ class Snippet
                 {
                     $this->HipProfilesProfileStore->load_from_domxml($tmproot);
                 }
+
+                //
+                // GTP Profile extraction
+                //
+                $tmproot = DH::findFirstElement('gtp', $this->securityProfilebaseroot);
+                if( $tmproot !== FALSE )
+                {
+                    $this->GTPProfileStore->load_from_domxml($tmproot);
+                }
+
+                //
+                // SCEP Profile extraction
+                //
+                $tmproot = DH::findFirstElement('scep', $this->securityProfilebaseroot);
+                if( $tmproot !== FALSE )
+                {
+                    $this->SCEPProfileStore->load_from_domxml($tmproot);
+                }
+
+                //
+                // PacketBroker Profile extraction
+                //
+                $tmproot = DH::findFirstElement('packet-broker', $this->securityProfilebaseroot);
+                if( $tmproot !== FALSE )
+                {
+                    $this->PacketBrokerProfileStore->load_from_domxml($tmproot);
+                }
+
+                //
+                // SDWan Error Correction Profile extraction
+                //
+                $tmproot = DH::findFirstElement('sdwan-error-correction', $this->securityProfilebaseroot);
+                if( $tmproot !== FALSE )
+                {
+                    $this->SDWanErrorCorrectionProfileStore->load_from_domxml($tmproot);
+                }
+
+                //
+                // SDWan Path Quality Profile extraction
+                //
+                $tmproot = DH::findFirstElement('sdwan-path-quality', $this->securityProfilebaseroot);
+                if( $tmproot !== FALSE )
+                {
+                    $this->SDWanPathQualityProfileStore->load_from_domxml($tmproot);
+                }
+
+                //
+                // SDWan Saas Quality Profile extraction
+                //
+                $tmproot = DH::findFirstElement('sdwan-saas-quality', $this->securityProfilebaseroot);
+                if( $tmproot !== FALSE )
+                {
+                    $this->SDWanSaasQualityProfileStore->load_from_domxml($tmproot);
+                }
+
+                //
+                // SDWan Traffic Distribution Profile extraction
+                //
+                $tmproot = DH::findFirstElement('sdwan-traffic-distribution', $this->securityProfilebaseroot);
+                if( $tmproot !== FALSE )
+                {
+                    $this->SDWanTrafficDistributionProfileStore->load_from_domxml($tmproot);
+                }
+
+                //
+                // DataObjects Profile extraction
+                //
+                $tmproot = DH::findFirstElement('data-objects', $this->securityProfilebaseroot);
+                if( $tmproot !== FALSE )
+                {
+                    $this->DataObjectsProfileStore->load_from_domxml($tmproot);
+                }
             }
 
 
@@ -766,6 +925,19 @@ class Snippet
             }
 
             //
+            // tunnelinspection Rules extraction
+            //
+            $xmlTagName = "default-security-rules";
+            $var = "defaultSecurityRules";
+            $tmproot = DH::findFirstElement($xmlTagName, $this->rulebaseroot);
+            if( $tmproot !== FALSE )
+            {
+                $tmprulesroot = DH::findFirstElement('rules', $tmproot);
+                if( $tmprulesroot !== FALSE )
+                    $this->$var->load_from_domxml($tmprulesroot);
+            }
+
+            //
             // network-packet-broker Rules extraction
             //
             $xmlTagName = "network-packet-broker";
@@ -805,109 +977,6 @@ class Snippet
         return TRUE;
     }
 
-    public function display_statistics()
-    {
-        $stdoutarray = array();
-
-        $stdoutarray['type'] = get_class( $this );
-
-        $header = "Statistics for VSYS '" . PH::boldText($this->name) . "' | '" . $this->toString() . "'";
-        $stdoutarray['header'] = $header;
-
-        $stdoutarray['security rules'] = $this->securityRules->count();
-
-        $stdoutarray['nat rules'] = $this->natRules->count();
-
-        $stdoutarray['qos rules'] = $this->qosRules->count();
-
-        $stdoutarray['pbf rules'] = $this->pbfRules->count();
-
-        $stdoutarray['decryption rules'] = $this->decryptionRules->count();
-
-        $stdoutarray['app-override rules'] = $this->appOverrideRules->count();
-
-        $stdoutarray['capt-portal rules'] = $this->captivePortalRules->count();
-
-        $stdoutarray['authentication rules'] = $this->authenticationRules->count();
-
-        $stdoutarray['dos rules'] = $this->dosRules->count();
-
-
-        $stdoutarray['address objects'] = array();
-        $stdoutarray['address objects']['total'] = $this->addressStore->count();
-        $stdoutarray['address objects']['address'] = $this->addressStore->countAddresses();
-        $stdoutarray['address objects']['group'] = $this->addressStore->countAddressGroups();
-        $stdoutarray['address objects']['tmp'] = $this->addressStore->countTmpAddresses();
-        $stdoutarray['address objects']['unused'] = $this->addressStore->countUnused();
-
-        $stdoutarray['service objects'] = array();
-        $stdoutarray['service objects']['total'] = $this->serviceStore->count();
-        $stdoutarray['service objects']['service'] = $this->serviceStore->countServices();
-        $stdoutarray['service objects']['group'] = $this->serviceStore->countServiceGroups();
-        $stdoutarray['service objects']['tmp'] = $this->serviceStore->countTmpServices();
-        $stdoutarray['service objects']['unused'] = $this->serviceStore->countUnused();
-
-        $stdoutarray['tag objects'] = array();
-        $stdoutarray['tag objects']['total'] = $this->tagStore->count();
-        $stdoutarray['tag objects']['unused'] = $this->tagStore->countUnused();
-
-        $stdoutarray['securityProfileGroup objects'] = array();
-        $stdoutarray['securityProfileGroup objects']['total'] = $this->securityProfileGroupStore->count();
-
-        /*
-        $stdoutarray['securityProfile objects'] = array();
-        $stdoutarray['securityProfile objects']['Anti-Spyware'] = $this->AntiSpywareProfileStore->count();
-        $stdoutarray['securityProfile objects']['Vulnerability'] = $this->VulnerabilityProfileStore->count();
-        $stdoutarray['securityProfile objects']['WildfireAndAntivirus'] = $this->VirusAndWildfireProfileStore->count();
-        $stdoutarray['securityProfile objects']['DNS-Security'] = $this->DNSSecurityProfileStore->count();
-        $stdoutarray['securityProfile objects']['Saas-Security'] = $this->SaasSecurityProfileStore->count();
-        $stdoutarray['securityProfile objects']['URL'] = $this->URLProfileStore->count();
-        $stdoutarray['securityProfile objects']['File-Blocking'] = $this->FileBlockingProfileStore->count();
-        $stdoutarray['securityProfile objects']['Decryption'] = $this->DecryptionProfileStore->count();
-        */
-
-        $stdoutarray['Anti-Spyware objects'] = array();
-        $stdoutarray['Anti-Spyware objects']['total'] = $this->AntiSpywareProfileStore->count();
-        $stdoutarray['Vulnerability objects'] = array();
-        $stdoutarray['Vulnerability objects']['total'] = $this->VulnerabilityProfileStore->count();
-        $stdoutarray['WildfireAndAntivirus objects'] = array();
-        $stdoutarray['WildfireAndAntivirus objects']['total'] = $this->VirusAndWildfireProfileStore->count();
-
-        $stdoutarray['DNS-Security objects'] = array();
-        $stdoutarray['DNS-Security objects']['total'] = $this->DNSSecurityProfileStore->count();
-        $stdoutarray['Saas-Security objects'] = array();
-        $stdoutarray['Saas-Security objects']['total'] = $this->SaasSecurityProfileStore->count();
-
-        $stdoutarray['URL objects'] = array();
-        $stdoutarray['URL objects']['total'] = $this->URLProfileStore->count();
-        $stdoutarray['custom URL objects'] = array();
-        $stdoutarray['custom URL objects']['total'] = $this->customURLProfileStore->count();
-        $stdoutarray['File-Blocking objects'] = array();
-        $stdoutarray['File-Blocking objects']['total'] = $this->FileBlockingProfileStore->count();
-        $stdoutarray['Data-Filtering objects'] = array();
-        $stdoutarray['Data-Filtering objects']['total'] = $this->DataFilteringProfileStore->count();
-        $stdoutarray['Decryption objects'] = array();
-        $stdoutarray['Decryption objects']['total'] = $this->DecryptionProfileStore->count();
-
-        $stdoutarray['zones'] = $this->zoneStore->count();
-        $stdoutarray['apps'] = $this->appStore->count();
-
-
-        PH::print_stdout( $stdoutarray, true );
-
-    }
-
-    public function display_bp_statistics( $debug = false )
-    {
-        $stdoutarray = array();
-        #PH::$JSON_TMP[$this->name] = $stdoutarray;
-        PH::$JSON_TMP[] = $stdoutarray;
-
-
-        if( !PH::$shadow_json && $debug )
-            PH::print_stdout( $stdoutarray, true );
-
-    }
 
     /**
      * @return string

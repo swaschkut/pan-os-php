@@ -59,7 +59,7 @@ class AddressStore
     public $regionRoot;
 
     /**
-     * @param VirtualSystem|DeviceCloud|DeviceGroup|Container|PanoramaConf|PANConf|FawkesConf|null $owner
+     * @param VirtualSystem|DeviceCloud|DeviceGroup|Container|PanoramaConf|PANConf|FawkesConf|BuckbeakConf|null $owner
      */
     public function __construct($owner)
     {

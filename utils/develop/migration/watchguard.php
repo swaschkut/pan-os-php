@@ -80,7 +80,7 @@ $util->location_filter();
 
 $pan = $util->pan;
 
-/** @var PanoramaConf|PANConf|BuckbeakConf|FawkesConf $v */
+/** @var PanoramaConf|PANConf|BuckbeakConf|FawkesConf|BuckbeakConf $v */
 if ($util->configType == 'panos')
 {
     // Did we find VSYS1 ?

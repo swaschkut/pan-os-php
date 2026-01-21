@@ -230,7 +230,7 @@ class PH
 
     private static $library_version_major = 2;
     private static $library_version_sub = 1;
-    private static $library_version_bugfix = 46;
+    private static $library_version_bugfix = 47;
 
     //BASIC AUTH PAN-OS 7.1
     public static $softwareupdate_key = "658d787f293e631196dac9fb29490f1cc1bb3827";
@@ -941,7 +941,7 @@ class PH
 
     /**
      * @param $panConfObject
-     * @return PANConf|PanoramaConf|DeviceGroup|VirtualSystem|FawkesConf|Container
+     * @return PANConf|PanoramaConf|DeviceGroup|VirtualSystem|FawkesConf|BuckbeakConf|Container
      * @throws Exception
      */
     public static function findLocationObjectOrDie($panConfObject)
@@ -965,7 +965,7 @@ class PH
 
     /**
      * @param $panConfObject
-     * @return PANConf|PanoramaConf|DeviceGroup|VirtualSystem|FawkesConf|Container
+     * @return PANConf|PanoramaConf|DeviceGroup|VirtualSystem|FawkesConf|BuckbeakConf|Container
      * @throws Exception
      */
     public static function findLocationObject($panConfObject)
@@ -991,7 +991,7 @@ class PH
      */
     public static function getLocationString($panConfObject)
     {
-        /** @var PANConf|PanoramaConf|DeviceGroup|VirtualSystem|FawkesConf|Container $panConfObject */
+        /** @var PANConf|PanoramaConf|DeviceGroup|VirtualSystem|FawkesConf|BuckbeakConf|Container $panConfObject */
         while( TRUE )
         {
             $class = get_class($panConfObject);

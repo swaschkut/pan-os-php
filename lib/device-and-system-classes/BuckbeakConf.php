@@ -37,6 +37,7 @@ class BuckbeakConf
 {
     use PathableName;
     use PanSubHelperTrait;
+    use StatCollectorTrait;
 
 
     /** @var DOMElement */
@@ -108,10 +109,29 @@ class BuckbeakConf
     /** @var SecurityProfileStore */
     public $urlStore;
 
+
+    public $AntiVirusPredefinedStore;
+    public $AntiSpywarePredefinedStore;
+    public $VulnerabilityPredefinedStore;
+    public $FileBlockingPredefinedStore;
+    public $WildfirePredefinedStore;
+    public $UrlFilteringPredefinedStore;
+
+
+    /** @var ThreatPolicyStore */
+    public $ThreatPolicyStore = null;
+
+    /** @var DNSPolicyStore */
+    public $DNSPolicyStore = null;
+
+
     /** @var ZoneStore */
     public $zoneStore = null;
 
     public $_fakeMode = FALSE;
+
+    public $sizeArray = array();
+    public $sizeArrayShared = array();
 
     /** @var NetworkPropertiesContainer */
     public $_fakeNetworkProperties;
@@ -141,6 +161,21 @@ class BuckbeakConf
 
 
         $this->managedFirewallsStore = new ManagedDeviceStore($this, 'managedFirewall', TRUE);
+
+
+        $this->ThreatPolicyStore = new ThreatPolicyStore($this, "ThreatPolicy");
+        $this->ThreatPolicyStore->name = 'ThreatPolicy';
+
+        $this->DNSPolicyStore = new DNSPolicyStore($this, "DNSPolicy");
+        $this->DNSPolicyStore->name = 'DNSPolicy';
+
+
+        $this->AntiVirusPredefinedStore = SecurityProfileStore::getVirusPredefinedStore( $this );
+        $this->AntiSpywarePredefinedStore = SecurityProfileStore::getSpywarePredefinedStore( $this );
+        $this->VulnerabilityPredefinedStore = SecurityProfileStore::getVulnerabilityPredefinedStore( $this );
+        $this->UrlFilteringPredefinedStore = SecurityProfileStore::getUrlFilteringPredefinedStore( $this );
+        $this->FileBlockingPredefinedStore = SecurityProfileStore::getFileBlockingPredefinedStore( $this );
+        $this->WildfirePredefinedStore = SecurityProfileStore::getWildfirePredefinedStore( $this );
     }
 
 
@@ -447,10 +482,6 @@ class BuckbeakConf
         //
 
 
-        //
-        // end of DeviceCloud
-        //
-
         #$this->managedFirewallsSerials = $this->managedFirewallsStore->get_serial_from_xml($tmp, TRUE);
         if( $tmp !== false )
             $this->managedFirewallsStore->load_from_domxml($tmp);
@@ -613,7 +644,7 @@ class BuckbeakConf
     public function save_to_file($fileName, $printMessage = TRUE, $lineReturn = TRUE, $indentingXml = 0, $indentingXmlIncreament = 1)
     {
         if( $printMessage )
-            PH::print_stdout( "Now saving FawkesConf to file '$fileName'..." );
+            PH::print_stdout( "Now saving BuckbeakConf to file '$fileName'..." );
 
         //Todo: swaschkut check
         //$indentingXmlIncreament was 2 per default for Panroama
@@ -640,114 +671,22 @@ class BuckbeakConf
 
     }
 
-    public function display_statistics( $return = false )
+    #public function display_statistics( $return = false )
+    public function display_statistics( $connector = null, $debug = false, $actions = "display", $location = false ): void
     {
 
         $container_all = $this->findContainer( "All");
-        
-        $gpreSecRules = $container_all->securityRules->countPreRules();
-        $gpreNatRules = $container_all->natRules->countPreRules();
-        $gpreDecryptRules = $container_all->decryptionRules->countPreRules();
-        $gpreAppOverrideRules = $container_all->appOverrideRules->countPreRules();
-        $gpreCPRules = $container_all->captivePortalRules->countPreRules();
-        $gpreAuthRules = $container_all->authenticationRules->countPreRules();
-        $gprePbfRules = $container_all->pbfRules->countPreRules();
-        $gpreQoSRules = $container_all->qosRules->countPreRules();
-        $gpreDoSRules = $container_all->dosRules->countPreRules();
 
-        $gpostSecRules = $container_all->securityRules->countPostRules();
-        $gpostNatRules = $container_all->natRules->countPostRules();
-        $gpostDecryptRules = $container_all->decryptionRules->countPostRules();
-        $gpostAppOverrideRules = $container_all->appOverrideRules->countPostRules();
-        $gpostCPRules = $container_all->captivePortalRules->countPostRules();
-        $gpostAuthRules = $container_all->authenticationRules->countPostRules();
-        $gpostPbfRules = $container_all->pbfRules->countPostRules();
-        $gpostQoSRules = $container_all->qosRules->countPostRules();
-        $gpostDoSRules = $container_all->dosRules->countPostRules();
-
-        $gnservices = $container_all->serviceStore->countServices();
-        $gnservicesUnused = $container_all->serviceStore->countUnusedServices();
-        $gnserviceGs = $container_all->serviceStore->countServiceGroups();
-        $gnserviceGsUnused = $container_all->serviceStore->countUnusedServiceGroups();
-        $gnTmpServices = $container_all->serviceStore->countTmpServices();
-
-        $gnaddresss = $container_all->addressStore->countAddresses();
-        $gnaddresssUnused = $container_all->addressStore->countUnusedAddresses();
-        $gnaddressGs = $container_all->addressStore->countAddressGroups();
-        $gnaddressGsUnused = $container_all->addressStore->countUnusedAddressGroups();
-        $gnTmpAddresses = $container_all->addressStore->countTmpAddresses();
-
-        $gTagCount = $container_all->tagStore->count();
-        $gTagUnusedCount = $container_all->tagStore->countUnused();
-
-        $gnsecprofgroups = $container_all->securityProfileGroupStore->count();
+        $container_all->get_mainDevice_statistics( $statsArray);
 
 
-        $gnsecprofAS = $container_all->AntiSpywareProfileStore->count();
-        $gnsecprofVB = $container_all->VulnerabilityProfileStore->count();
-        $gnsecprofAVWF = $container_all->VirusAndWildfireProfileStore->count();
-        $gnsecprofDNS = $container_all->DNSSecurityProfileStore->count();
-        $gnsecprofSaas = $container_all->SaasSecurityProfileStore->count();
-        $gnsecprofURL = $container_all->URLProfileStore->count();
-        $gnsecprofFB = $container_all->FileBlockingProfileStore->count();
-
-        $gnsecprofDecr = $container_all->DecryptionProfileStore->count();
-        $gnsecprofHipProf = $container_all->HipProfilesProfileStore->count();
-        $gnsecprofHipObj = $container_all->HipObjectsProfileStore->count();
 
         foreach( $this->containers as $cur )
         {
             if( $cur->name() == "All" )
                 continue;
 
-            $gpreSecRules += $cur->securityRules->countPreRules();
-            $gpreNatRules += $cur->natRules->countPreRules();
-            $gpreDecryptRules += $cur->decryptionRules->countPreRules();
-            $gpreAppOverrideRules += $cur->appOverrideRules->countPreRules();
-            $gpreCPRules += $cur->captivePortalRules->countPreRules();
-            $gpreAuthRules += $cur->authenticationRules->countPreRules();
-            $gprePbfRules += $cur->pbfRules->countPreRules();
-            $gpreQoSRules += $cur->qosRules->countPreRules();
-            $gpreDoSRules += $cur->dosRules->countPreRules();
-
-            $gpostSecRules += $cur->securityRules->countPostRules();
-            $gpostNatRules += $cur->natRules->countPostRules();
-            $gpostDecryptRules += $cur->decryptionRules->countPostRules();
-            $gpostAppOverrideRules += $cur->appOverrideRules->countPostRules();
-            $gpostCPRules += $cur->captivePortalRules->countPostRules();
-            $gpostAuthRules += $cur->authenticationRules->countPostRules();
-            $gpostPbfRules += $cur->pbfRules->countPostRules();
-            $gpostQoSRules += $cur->qosRules->countPostRules();
-            $gpostDoSRules += $cur->dosRules->countPostRules();
-
-            $gnservices += $cur->serviceStore->countServices();
-            $gnservicesUnused += $cur->serviceStore->countUnusedServices();
-            $gnserviceGs += $cur->serviceStore->countServiceGroups();
-            $gnserviceGsUnused += $cur->serviceStore->countUnusedServiceGroups();
-            $gnTmpServices += $cur->serviceStore->countTmpServices();
-
-            $gnaddresss += $cur->addressStore->countAddresses();
-            $gnaddresssUnused += $cur->addressStore->countUnusedAddresses();
-            $gnaddressGs += $cur->addressStore->countAddressGroups();
-            $gnaddressGsUnused += $cur->addressStore->countUnusedAddressGroups();
-            $gnTmpAddresses += $cur->addressStore->countTmpAddresses();
-
-            $gTagCount += $cur->tagStore->count();
-            $gTagUnusedCount += $cur->tagStore->countUnused();
-
-            $gnsecprofgroups += $cur->securityProfileGroupStore->count();
-
-            $gnsecprofAS += $cur->AntiSpywareProfileStore->count();
-            $gnsecprofVB += $cur->VulnerabilityProfileStore->count();
-            $gnsecprofAVWF += $cur->VirusAndWildfireProfileStore->count();
-            $gnsecprofDNS += $cur->DNSSecurityProfileStore->count();
-            $gnsecprofSaas += $cur->SaasSecurityProfileStore->count();
-            $gnsecprofURL += $cur->URLProfileStore->count();
-            $gnsecprofFB += $cur->FileBlockingProfileStore->count();
-
-            $gnsecprofDecr += $cur->DecryptionProfileStore->count();
-            $gnsecprofHipProf += $cur->HipProfilesProfileStore->count();
-            $gnsecprofHipObj += $cur->HipObjectsProfileStore->count();
+            $this->get_combined_subDevice_statistics($statsArray, $cur );
         }
 
         foreach( $this->clouds as $cur )
@@ -755,268 +694,117 @@ class BuckbeakConf
             if( $cur->name() == "All" )
                 continue;
 
-            $gpreSecRules += $cur->securityRules->count();
-            $gpreNatRules += $cur->natRules->count();
-            $gpreDecryptRules += $cur->decryptionRules->count();
-            $gpreAppOverrideRules += $cur->appOverrideRules->count();
-            $gpreCPRules += $cur->captivePortalRules->count();
-            $gpreAuthRules += $cur->authenticationRules->count();
-            $gprePbfRules += $cur->pbfRules->count();
-            $gpreQoSRules += $cur->qosRules->count();
-            $gpreDoSRules += $cur->dosRules->count();
-
-            /*
-            $gpreSecRules += $cur->securityRules->countPreRules();
-            $gpreNatRules += $cur->natRules->countPreRules();
-            $gpreDecryptRules += $cur->decryptionRules->countPreRules();
-            $gpreAppOverrideRules += $cur->appOverrideRules->countPreRules();
-            $gpreCPRules += $cur->captivePortalRules->countPreRules();
-            $gpreAuthRules += $cur->authenticationRules->countPreRules();
-            $gprePbfRules += $cur->pbfRules->countPreRules();
-            $gpreQoSRules += $cur->qosRules->countPreRules();
-            $gpreDoSRules += $cur->dosRules->countPreRules();
-
-            $gpostSecRules += $cur->securityRules->countPostRules();
-            $gpostNatRules += $cur->natRules->countPostRules();
-            $gpostDecryptRules += $cur->decryptionRules->countPostRules();
-            $gpostAppOverrideRules += $cur->appOverrideRules->countPostRules();
-            $gpostCPRules += $cur->captivePortalRules->countPostRules();
-            $gpostAuthRules += $cur->authenticationRules->countPostRules();
-            $gpostPbfRules += $cur->pbfRules->countPostRules();
-            $gpostQoSRules += $cur->qosRules->countPostRules();
-            $gpostDoSRules += $cur->dosRules->countPostRules();
-            */
-
-            $gnservices += $cur->serviceStore->countServices();
-            $gnservicesUnused += $cur->serviceStore->countUnusedServices();
-            $gnserviceGs += $cur->serviceStore->countServiceGroups();
-            $gnserviceGsUnused += $cur->serviceStore->countUnusedServiceGroups();
-            $gnTmpServices += $cur->serviceStore->countTmpServices();
-
-            $gnaddresss += $cur->addressStore->countAddresses();
-            $gnaddresssUnused += $cur->addressStore->countUnusedAddresses();
-            $gnaddressGs += $cur->addressStore->countAddressGroups();
-            $gnaddressGsUnused += $cur->addressStore->countUnusedAddressGroups();
-            $gnTmpAddresses += $cur->addressStore->countTmpAddresses();
-
-            $gTagCount += $cur->tagStore->count();
-            $gTagUnusedCount += $cur->tagStore->countUnused();
-
-            $gnsecprofgroups += $cur->securityProfileGroupStore->count();
-
-            $gnsecprofAS += $cur->AntiSpywareProfileStore->count();
-            $gnsecprofVB += $cur->VulnerabilityProfileStore->count();
-            $gnsecprofAVWF += $cur->VirusAndWildfireProfileStore->count();
-            $gnsecprofDNS += $cur->DNSSecurityProfileStore->count();
-            $gnsecprofSaas += $cur->SaasSecurityProfileStore->count();
-            $gnsecprofURL += $cur->URLProfileStore->count();
-            $gnsecprofFB += $cur->FileBlockingProfileStore->count();
-
-            $gnsecprofDecr += $cur->DecryptionProfileStore->count();
-            $gnsecprofHipProf += $cur->HipProfilesProfileStore->count();
-            $gnsecprofHipObj += $cur->HipObjectsProfileStore->count();
+            $this->get_combined_subDevice_statistics($statsArray, $cur, true );
         }
 
-        $stdoutarray = array();
+        #$stdoutarray = array();
 
-        $header = "Statistics for PanoramaConf '" . $this->name . "'";
-        $stdoutarray['header'] = $header;
+        $header = "Statistics for ".get_class( $this )." '" . $this->name . "'";
 
-        $stdoutarray['pre security rules'] = array();
-        $stdoutarray['pre security rules']['All'] = $container_all->securityRules->countPreRules();
-        $stdoutarray['pre security rules']['total_DGs'] = $gpreSecRules;
+        $subName = "All";
+        $sub = $container_all;
 
-        $stdoutarray['post security rules'] = array();
-        $stdoutarray['post security rules']['All'] = $container_all->securityRules->countPostRules();
-        $stdoutarray['post security rules']['total_DGs'] = $gpostSecRules;
+        $this->display_mainDevice_statistics($stdoutarray, $statsArray, $sub, $subName, $header);
 
 
-        $stdoutarray['pre nat rules'] = array();
-        $stdoutarray['pre nat rules']['All'] = $container_all->natRules->countPreRules();
-        $stdoutarray['pre nat rules']['total_DGs'] = $gpreNatRules;
-
-        $stdoutarray['post nat rules'] = array();
-        $stdoutarray['post nat rules']['All'] = $container_all->natRules->countPostRules();
-        $stdoutarray['post nat rules']['total_DGs'] = $gpostNatRules;
+        //how to handle Buckbeak config???
+        #$this->display_size_NEW($stdoutarray);
 
 
-        $stdoutarray['pre qos rules'] = array();
-        $stdoutarray['pre qos rules']['All'] = $container_all->qosRules->countPreRules();
-        $stdoutarray['pre qos rules']['total_DGs'] = $gpreQoSRules;
-
-        $stdoutarray['post qos rules'] = array();
-        $stdoutarray['post qos rules']['All'] = $container_all->qosRules->countPostRules();
-        $stdoutarray['post qos rules']['total_DGs'] = $gpostQoSRules;
+        $sub = $this;
+        if( !PH::$shadow_json && $actions == "display" )
+            PH::print_stdout( $stdoutarray, true );
 
 
-        $stdoutarray['pre pbf rules'] = array();
-        $stdoutarray['pre pbf rules']['All'] = $container_all->pbfRules->countPreRules();
-        $stdoutarray['pre pbf rules']['total_DGs'] = $gprePbfRules;
-
-        $stdoutarray['post pbf rules'] = array();
-        $stdoutarray['post pbf rules']['All'] = $container_all->pbfRules->countPostRules();
-        $stdoutarray['post pbf rules']['total_DGs'] = $gpostPbfRules;
-
-
-        $stdoutarray['pre decryption rules'] = array();
-        $stdoutarray['pre decryption rules']['All'] = $container_all->decryptionRules->countPreRules();
-        $stdoutarray['pre decryption rules']['total_DGs'] = $gpreDecryptRules;
-
-        $stdoutarray['post decryption rules'] = array();
-        $stdoutarray['post decryption rules']['All'] = $container_all->decryptionRules->countPostRules();
-        $stdoutarray['post decryption rules']['total_DGs'] = $gpostDecryptRules;
-
-
-        $stdoutarray['pre app-override rules'] = array();
-        $stdoutarray['pre app-override rules']['All'] = $container_all->appOverrideRules->countPreRules();
-        $stdoutarray['pre app-override rules']['total_DGs'] = $gpreAppOverrideRules;
-
-        $stdoutarray['post app-override rules'] = array();
-        $stdoutarray['post app-override rules']['All'] = $container_all->appOverrideRules->countPostRules();
-        $stdoutarray['post app-override rules']['total_DGs'] = $gpostAppOverrideRules;
-
-
-        $stdoutarray['pre capt-portal rules'] = array();
-        $stdoutarray['pre capt-portal rules']['All'] = $container_all->captivePortalRules->countPreRules();
-        $stdoutarray['pre capt-portal rules']['total_DGs'] = $gpreCPRules;
-
-        $stdoutarray['post capt-portal rules'] = array();
-        $stdoutarray['post capt-portal rules']['All'] = $container_all->captivePortalRules->countPostRules();
-        $stdoutarray['post capt-portal rules']['total_DGs'] = $gpostCPRules;
-
-
-        $stdoutarray['pre authentication rules'] = array();
-        $stdoutarray['pre authentication rules']['All'] = $container_all->authenticationRules->countPreRules();
-        $stdoutarray['pre authentication rules']['total_DGs'] = $gpreAuthRules;
-
-        $stdoutarray['post authentication rules'] = array();
-        $stdoutarray['post authentication rules']['All'] = $container_all->authenticationRules->countPostRules();
-        $stdoutarray['post authentication rules']['total_DGs'] = $gpostAuthRules;
-
-
-        $stdoutarray['pre dos rules'] = array();
-        $stdoutarray['pre dos rules']['All'] = $container_all->dosRules->countPreRules();
-        $stdoutarray['pre dos rules']['total_DGs'] = $gpreDoSRules;
-
-        $stdoutarray['post dos rules'] = array();
-        $stdoutarray['post dos rules']['All'] = $container_all->dosRules->countPostRules();
-        $stdoutarray['post dos rules']['total_DGs'] = $gpostDoSRules;
-
-
-
-        $stdoutarray['address objects'] = array();
-        $stdoutarray['address objects']['All'] = $container_all->addressStore->countAddresses();
-        $stdoutarray['address objects']['total_DGs'] = $gnaddresss;
-        $stdoutarray['address objects']['unused'] = $gnaddresssUnused;
-
-        $stdoutarray['addressgroup objects'] = array();
-        $stdoutarray['addressgroup objects']['All'] = $container_all->addressStore->countAddressGroups();
-        $stdoutarray['addressgroup objects']['total_DGs'] = $gnaddressGs;
-        $stdoutarray['addressgroup objects']['unused'] = $gnaddressGsUnused;
-
-        $stdoutarray['temporary address objects'] = array();
-        $stdoutarray['temporary address objects']['All'] = $container_all->addressStore->countTmpAddresses();
-        $stdoutarray['temporary address objects']['total_DGs'] = $gnTmpAddresses;
-
-
-        $stdoutarray['service objects'] = array();
-        $stdoutarray['service objects']['All'] = $container_all->serviceStore->countServices();
-        $stdoutarray['service objects']['total_DGs'] = $gnservices;
-        $stdoutarray['service objects']['unused'] = $gnservicesUnused;
-
-        $stdoutarray['servicegroup objects'] = array();
-        $stdoutarray['servicegroup objects']['All'] = $container_all->serviceStore->countServiceGroups();
-        $stdoutarray['servicegroup objects']['total_DGs'] = $gnserviceGs;
-        $stdoutarray['servicegroup objects']['unused'] = $gnserviceGsUnused;
-
-        $stdoutarray['temporary service objects'] = array();
-        $stdoutarray['temporary service objects']['All'] = $container_all->serviceStore->countTmpServices();
-        $stdoutarray['temporary service objects']['total_DGs'] = $gnTmpServices;
-
-
-        $stdoutarray['tag objects'] = array();
-        $stdoutarray['tag objects']['All'] = $container_all->tagStore->count();
-        $stdoutarray['tag objects']['total_DGs'] = $gTagCount;
-        $stdoutarray['tag objects']['unused'] = $gTagUnusedCount;
-
-        $stdoutarray['securityProfileGroup objects'] = array();
-        $stdoutarray['securityProfileGroup objects']['All'] = $container_all->securityProfileGroupStore->count();
-        $stdoutarray['securityProfileGroup objects']['total_DGs'] = $gnsecprofgroups;
-
-        $stdoutarray['securityProfile objects'] = array();
-        $stdoutarray['securityProfile Anti-Spyware objects']['All'] = $container_all->AntiSpywareProfileStore->count();
-        $stdoutarray['securityProfile Anti-Spyware objects']['total_DGs'] = $gnsecprofAS;
-
-        $stdoutarray['securityProfile objects'] = array();
-        $stdoutarray['securityProfile Vulnerability objects']['All'] = $container_all->VulnerabilityProfileStore->count();
-        $stdoutarray['securityProfile Vulnerability objects']['total_DGs'] = $gnsecprofVB;
-
-        $stdoutarray['securityProfile objects'] = array();
-        $stdoutarray['securityProfile WildfireAndAnti-Virus objects']['All'] = $container_all->VirusAndWildfireProfileStore->count();
-        $stdoutarray['securityProfile WildfireAndAnti-Virus objects']['total_DGs'] = $gnsecprofAVWF;
-
-        $stdoutarray['securityProfile objects'] = array();
-        $stdoutarray['securityProfile DNS objects']['All'] = $container_all->DNSSecurityProfileStore->count();
-        $stdoutarray['securityProfile DNS objects']['total_DGs'] = $gnsecprofDNS;
-
-        $stdoutarray['securityProfile objects'] = array();
-        $stdoutarray['securityProfile Saas objects']['All'] = $container_all->SaasSecurityProfileStore->count();
-        $stdoutarray['securityProfile Saas objects']['total_DGs'] = $gnsecprofSaas;
-
-        $stdoutarray['securityProfile objects'] = array();
-        $stdoutarray['securityProfile URL objects']['All'] = $container_all->URLProfileStore->count();
-        $stdoutarray['securityProfile URL objects']['total_DGs'] = $gnsecprofURL;
-
-
-        $stdoutarray['securityProfile objects'] = array();
-        $stdoutarray['securityProfile File-Blocking objects']['All'] = $container_all->FileBlockingProfileStore->count();
-        $stdoutarray['securityProfile File-Blocking objects']['total_DGs'] = $gnsecprofFB;
-
-
-        $stdoutarray['securityProfile objects'] = array();
-        $stdoutarray['securityProfile Decryption objects']['All'] = $container_all->DecryptionProfileStore->count();
-        $stdoutarray['securityProfile Decryption objects']['total_DGs'] = $gnsecprofDecr;
-
-
-        $stdoutarray['zones'] = $this->zoneStore->count();
-        #$stdoutarray['apps'] = $this->appStore->count();
-
-        /*
-        $stdoutarray['interfaces'] = array();
-        $stdoutarray['interfaces']['total'] = $numInterfaces;
-        $stdoutarray['interfaces']['ethernet'] = $this->network->ethernetIfStore->count();
-
-        $stdoutarray['sub-interfaces'] = array();
-        $stdoutarray['sub-interfaces']['total'] = $numSubInterfaces;
-        $stdoutarray['sub-interfaces']['ethernet'] = $this->network->ethernetIfStore->countSubInterfaces();
-        */
-
-        $return = array();
-        $return['PanoramaConf-stat'] = $stdoutarray;
-
-        if( $return )
+        if( !PH::$shadow_json && $actions == "display-size"  )
         {
-            return $stdoutarray;
+            PH::stats_remove_zero_arrays($sub->sizeArray);
+            PH::print_stdout( $sub->sizeArray, true );
         }
+
+        if( $actions == "display-available" )
+        {
+            PH::stats_remove_zero_arrays($stdoutarray);
+            if( !PH::$shadow_json )
+                PH::print_stdout( $stdoutarray, true );
+        }
+
+        if( $actions == "display" || $actions == "display-available" )
+            PH::$JSON_TMP[] = $stdoutarray;
+
+
+        if( !PH::$shadow_loaddghierarchy )
+            $sub->display_bp_statistics( $debug, $actions );
         else
-            {
-            #PH::print_stdout( $return );
-            PH::print_stdout( $stdoutarray, true  );
+            $sub->display_bp_statistics( $debug, $actions, $location );
+
+        if( get_class( $sub ) == 'PanoramaConf' )
+        {
+            if( !PH::$shadow_loaddghierarchy )
+                $sub->display_shared_statistics( $connector, $debug, $actions );
         }
-        return null;
     }
 
 
-    public function display_bp_statistics( $debug = false )
+
+    public function display_bp_statistics( $debug = false, $actions = "display", $location = false )
     {
-        $stdoutarray = array();
-        #PH::$JSON_TMP[$this->name] = $stdoutarray;
+        $stdoutarray = $this->get_bp_statistics( );
+
+        $stdoutarray['type'] = get_class( $this );
+
+
+        if( !PH::$shadow_loaddghierarchy )
+            $header = "Statistics for ".get_class( $this )." '" . PH::boldText('Buckbeak full') . "'";
+        else
+            $header = "Statistics for ".get_class( $this ).": Folder-Hierarchy location: '" .$location. "'";
+
+        $stdoutarray['header'] = $header;
+        $stdoutarray['statstype'] = "adoption";
+
+
+        $folderArray = $this->getContainers();
+        $tmpArray = $this->getDeviceClouds();
+        $folderArray = array_merge( $tmpArray, $folderArray );
+        $tmpArray = $this->getDeviceOnPrems();
+        $folderArray = array_merge( $tmpArray, $folderArray );
+
+        //Todo: swaschkut 20260106
+        // how to include snippets??? attach to folder/container??
+
+        foreach( $folderArray as $deviceGroup )
+        {
+            $stdoutarray2 = $deviceGroup->get_bp_statistics();
+            foreach ($stdoutarray2 as $key2 => $stdoutarray_value)
+            {
+                if( $key2 == "header" || $key2 == "type" || $key2 == "statstype" )
+                    continue;
+
+                if( strpos( $key2, "calc" ) !== FALSE || strpos( $key2, "percentage" ) !== FALSE || strpos( $key2, "type" ) !== FALSE )
+                {
+                    unset($stdoutarray[$key2]);
+                    continue;
+                }
+
+
+                if (isset($stdoutarray[$key2]))
+                    $stdoutarray[$key2] = intval($stdoutarray[$key2]) + intval($stdoutarray_value);
+                else
+                    $stdoutarray[$key2] = intval($stdoutarray_value);
+            }
+        }
+
+
+        $this->bp_calculation( $stdoutarray );
+
+        $percentageArray = $this->get_bp_percentageArray( $stdoutarray );
+
+
+        $stdoutarray['percentage'] = $percentageArray;
+
         PH::$JSON_TMP[] = $stdoutarray;
 
-
-        if( !PH::$shadow_json && $debug )
-            PH::print_stdout( $stdoutarray, true );
-
+        $this->generate_table($stdoutarray, $debug, $actions);
     }
 
     /**

@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline HTML Viewer</title>
+    <style>
+        body { font-family: sans-serif; display: flex; height: 100vh; margin: 0; overflow: hidden; background: #eee; }
+        
+        /* Sidebar Styles */
+        #sidebar { 
+            width: 200px; 
+            background: #f4f4f4; 
+            border-right: 1px solid #ccc; 
+            display: flex; 
+            flex-direction: column; 
+            padding: 8px; 
+            flex-shrink: 0;
+        }
+        #sidebar h3 { font-size: 13px; margin: 0 0 8px 0; color: #333; }
+        #folderInput { font-size: 10px; width: 100%; }
+
+        #file-list { list-style: none; padding: 0; overflow-y: auto; margin-top: 10px; flex-grow: 1; }
+        #file-list li { 
+            padding: 4px 6px; 
+            cursor: pointer; 
+            border-bottom: 1px solid #ddd; 
+            font-size: 11px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            line-height: 1.2;
+        }
+        #file-list li:hover { background: #e0e0e0; }
+        #file-list li.active { background: #d1e7dd; border-left: 3px solid #0f5132; }
+        
+        /* Main Content Area */
+        #main-content { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; }
+        
+        /* Navigation Bar */
+        #nav-bar { 
+            background: #fff; 
+            padding: 3px 8px; 
+            border-bottom: 1px solid #ccc; 
+            display: flex; 
+            gap: 4px; 
+            align-items: center; 
+            min-height: 24px;
+            z-index: 10;
+        }
+        
+        button { 
+            padding: 1px 6px; 
+            cursor: pointer; 
+            border: 1px solid #bbb; 
+            background: #fff; 
+            border-radius: 3px; 
+            font-size: 11px; 
+            color: #333;
+            flex-shrink: 0;
+            line-height: 1;
+        }
+        button:disabled { opacity: 0.4; cursor: not-allowed; }
+        button:hover:not(:disabled) { background: #f0f0f0; border-color: #888; }
+
+        #current-title { 
+            font-size: 11px; 
+            font-weight: bold; 
+            color: #333; 
+            margin-left: 8px; 
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            /* Restricted max-width so it doesn't push zoom buttons off screen */
+            max-width: 300px; 
+        }
+
+        /* Zoom Controls - REPOSITIONED */
+        .zoom-controls {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            margin-left: 12px; /* Small gap after the title */
+            border-left: 1px solid #ccc;
+            padding-left: 10px;
+        }
+        #zoomVal {
+            font-size: 10px;
+            min-width: 35px;
+            text-align: center;
+            cursor: pointer;
+            user-select: none;
+            color: #666;
+        }
+
+        /* Iframe Container */
+        #viewer-container {
+            flex-grow: 1;
+            position: relative;
+            overflow: auto; 
+            background: white;
+        }
+
+        #viewer { 
+            position: absolute;
+            top: 0;
+            left: 0;
+            border: none; 
+            transform-origin: 0 0; 
+            width: 100%;
+            height: 100%;
+        }
+        
+        .file-size { color: #999; font-size: 9px; margin-left: 8px; white-space: nowrap; }
+    </style>
+</head>
+<body>
+
+<div id="sidebar">
+    <h3>File Browser</h3>
+    <input type="file" id="folderInput" webkitdirectory directory multiple>
+    <ul id="file-list"></ul>
+</div>
+
+<div id="main-content">
+    <div id="nav-bar">
+        <button id="prevBtn" disabled>←</button>
+        <button id="nextBtn" disabled>→</button>
+        <div id="current-title">No file selected</div>
+        
+        <div class="zoom-controls">
+            <button id="zoomOut" title="Decrease Zoom">-</button>
+            <span id="zoomVal">80%</span>
+            <button id="zoomIn" title="Increase Zoom">+</button>
+        </div>
+    </div>
+    <div id="viewer-container">
+        <iframe id="viewer" name="viewer" src="about:blank"></iframe>
+    </div>
+</div>
+
+<script>
+    const folderInput = document.getElementById('folderInput');
+    const fileList = document.getElementById('file-list');
+    const viewer = document.getElementById('viewer');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const currentTitle = document.getElementById('current-title');
+    
+    const zoomOut = document.getElementById('zoomOut');
+    const zoomIn = document.getElementById('zoomIn');
+    const zoomVal = document.getElementById('zoomVal');
+
+    let htmlFiles = [];
+    let currentIndex = -1;
+    let currentZoom = 0.8; // Default 80%
+
+    const MIN_SIZE_BYTES = 94 * 1024;
+    const ALWAYS_SHOW = "0_introduction.html";
+
+    function formatBytes(bytes) {
+        if (bytes === 0) return '0 B';
+        const k = 1024;
+        const sizes = ['B', 'KB', 'MB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    }
+
+    function applyZoom() {
+        zoomVal.textContent = Math.round(currentZoom * 100) + '%';
+        viewer.style.transform = `scale(${currentZoom})`;
+        
+        const inverseScale = (1 / currentZoom) * 100;
+        viewer.style.width = `${inverseScale}%`;
+        viewer.style.height = `${inverseScale}%`;
+    }
+
+    zoomIn.onclick = () => {
+        if (currentZoom < 2.0) {
+            currentZoom += 0.1;
+            applyZoom();
+        }
+    };
+
+    zoomOut.onclick = () => {
+        if (currentZoom > 0.3) {
+            currentZoom -= 0.1;
+            applyZoom();
+        }
+    };
+
+    zoomVal.onclick = () => {
+        currentZoom = 1.0;
+        applyZoom();
+    };
+
+    function loadFile(index) {
+        if (index < 0 || index >= htmlFiles.length) return;
+        
+        currentIndex = index;
+        const file = htmlFiles[currentIndex];
+
+        if (viewer.src.startsWith('blob:')) URL.revokeObjectURL(viewer.src);
+        viewer.src = URL.createObjectURL(file);
+        currentTitle.textContent = file.name;
+
+        prevBtn.disabled = (currentIndex === 0);
+        nextBtn.disabled = (currentIndex === htmlFiles.length - 1);
+
+        const listItems = document.querySelectorAll('#file-list li');
+        listItems.forEach((li, idx) => {
+            li.className = (idx === currentIndex) ? 'active' : '';
+        });
+        
+        if(listItems[currentIndex]) {
+            listItems[currentIndex].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    }
+
+    folderInput.addEventListener('change', (event) => {
+        const files = Array.from(event.target.files);
+        const indexPattern = /^index.*\.html$/i;
+
+        htmlFiles = files.filter(file => {
+            const fileNameLow = file.name.toLowerCase();
+            const isHtml = fileNameLow.endsWith('.html') || fileNameLow.endsWith('.htm');
+            const isIndexFile = indexPattern.test(file.name);
+            const isRightSize = file.size >= MIN_SIZE_BYTES;
+            const isException = fileNameLow === ALWAYS_SHOW;
+            return isHtml && !isIndexFile && (isRightSize || isException);
+        }).sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true, sensitivity: 'base'}));
+
+        fileList.innerHTML = ''; 
+        htmlFiles.forEach((file, index) => {
+            const li = document.createElement('li');
+            li.innerHTML = `<span>${file.name}</span><span class="file-size">${formatBytes(file.size)}</span>`;
+            li.onclick = () => loadFile(index);
+            fileList.appendChild(li);
+        });
+
+        if (htmlFiles.length > 0) {
+            loadFile(0);
+        } else {
+            fileList.innerHTML = '<li>No matching files.</li>';
+            currentTitle.textContent = "No file selected";
+            prevBtn.disabled = nextBtn.disabled = true;
+        }
+    });
+
+    prevBtn.onclick = () => loadFile(currentIndex - 1);
+    nextBtn.onclick = () => loadFile(currentIndex + 1);
+    
+    applyZoom();
+</script>
+
+</body>
+</html>

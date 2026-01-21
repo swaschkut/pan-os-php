@@ -27,6 +27,7 @@ class Container
 
     use PathableName;
     use PanSubHelperTrait;
+    use StatCollectorTrait;
 
     /** String */
     protected $name;
@@ -135,6 +136,12 @@ class Container
     /** @var LogProfileStore */
     public $LogProfileStore = null;
 
+    /** @var CertificateStore */
+    public $certificateStore = null;
+
+    /** @var SSL_TLSServiceProfileStore */
+    public $SSL_TLSServiceProfileStore = null;
+
     //Todo: add secprofiles and secprofgroups| 20200312 swaschkut
   /*  public static $templateContainerxml = '<entry name="**Need a Name**"><address></address><post-rulebase><security><rules></rules></security><nat><rules></rules></nat></post-rulebase>
 									<pre-rulebase><security><rules></rules></security><nat><rules></rules></nat></pre-rulebase>
@@ -223,6 +230,12 @@ class Container
 
     public $version = null;
 
+    public $sizeArray = array();
+
+
+    /** @var NetworkPropertiesContainer */
+    public $network;
+
 
     public function __construct($owner)
     {
@@ -235,9 +248,9 @@ class Container
         $this->tagStore->name = 'tags';
 
         //Todo: swaschkut 20210718 each Container should also have its own zoneStore???
-        $this->zoneStore = $owner->zoneStore;
-        #$this->zoneStore = new ZoneStore($this);
-        #$this->zoneStore->setName('zoneStore');
+        #$this->zoneStore = $owner->zoneStore;
+        $this->zoneStore = new ZoneStore($this);
+        $this->zoneStore->setName('zoneStore');
 
         $this->appStore = new AppStore($this);
         $this->appStore->name = 'customApplication';
@@ -338,6 +351,13 @@ class Container
         $this->LogProfileStore = new LogProfileStore($this);
         $this->LogProfileStore->setName('LogProfileStore');
 
+        $this->certificateStore = new CertificateStore($this);
+        $this->certificateStore->setName('certificateStore');
+
+        $this->SSL_TLSServiceProfileStore = new SSL_TLSServiceProfileStore($this);
+        $this->SSL_TLSServiceProfileStore->setName('SSL_TLSServiceStore');
+
+
         $this->securityRules = new RuleStore($this, 'SecurityRule', TRUE);
         $this->natRules = new RuleStore($this, 'NatRule', TRUE);
         $this->decryptionRules = new RuleStore($this, 'DecryptionRule', TRUE);
@@ -357,6 +377,9 @@ class Container
         $this->_fakeNetworkProperties = $this->owner->_fakeNetworkProperties;
         $this->dosRules->_networkStore = $this->_fakeNetworkProperties;
         $this->pbfRules->_networkStore = $this->_fakeNetworkProperties;
+
+
+        $this->network = new NetworkPropertiesContainer($this);
     }
 
     public function load_from_templateContainerXml( )
@@ -379,7 +402,7 @@ class Container
      * !! Should not be used outside of a PanoramaConf constructor. !!
      * @param DOMElement $xml
      */
-    public function load_from_domxml($xml)
+    public function load_from_domxml($xml, $debugLoadTime = false)
     {
         $this->xmlroot = $xml;
 
@@ -703,6 +726,27 @@ class Container
         if( $tmp2 !== FALSE && $tmp !== FALSE )
             $this->LogProfileStore->load_from_domxml($tmp);
         // End of LogProfile extraction
+
+        //
+        // Extract Certificate objects
+        //
+        $tmp = DH::findFirstElement('certificate', $xml);
+        if( $tmp !== FALSE )
+        {
+            $this->certificateStore->load_from_domxml($tmp);
+        }
+        // End of Certificate objects extraction
+
+        //
+        // Extract ssl-tls-service-profile objects
+        //
+        $tmp = DH::findFirstElement('ssl-tls-service-profile', $xml);
+        if( $tmp !== FALSE )
+        {
+            $this->SSL_TLSServiceProfileStore->load_from_domxml($tmp);
+        }
+        // End of SSL_TLSServiceProfile objects extraction
+
 
         //
         // Extracting policies
@@ -1081,6 +1125,19 @@ class Container
         $this->tagStore->nestedPointOfView();
         $this->scheduleStore->nestedPointOfView();
         $this->appStore->nestedPointOfView();
+
+        //
+        // Extract network related configs
+        //
+        //Todo: 20250101 - can network part be moved after vsys reading ?? - virutalsystem reading interfaces, must be done later to get address references
+        $tmp = DH::findFirstElement('network', $xml);
+        if( $tmp !== FALSE )
+        {
+            if( $debugLoadTime )
+                PH::print_DEBUG_loadtime("network");
+            $this->network->load_from_domxml($tmp);
+        }
+        //
     }
 
     public function &getXPath()
@@ -1141,154 +1198,6 @@ class Container
         return TRUE;
     }
 
-
-    public function display_statistics()
-    {
-        $stdoutarray = array();
-
-        $stdoutarray['type'] = get_class( $this );
-
-        $header = "Statistics for Container '" . PH::boldText($this->name) . "'";
-        $stdoutarray['header'] = $header;
-
-        $stdoutarray['security rules'] = array();
-        $stdoutarray['security rules']['pre'] = $this->securityRules->countPreRules();
-        $stdoutarray['security rules']['post'] = $this->securityRules->countPostRules();
-
-        $stdoutarray['nat rules'] = array();
-        $stdoutarray['nat rules']['pre'] = $this->natRules->countPreRules();
-        $stdoutarray['nat rules']['post'] = $this->natRules->countPostRules();
-
-        $stdoutarray['qos rules'] = array();
-        $stdoutarray['qos rules']['pre'] = $this->qosRules->countPreRules();
-        $stdoutarray['qos rules']['post'] = $this->qosRules->countPostRules();
-
-        $stdoutarray['pbf rules'] = array();
-        $stdoutarray['pbf rules']['pre'] = $this->pbfRules->countPreRules();
-        $stdoutarray['pbf rules']['post'] = $this->pbfRules->countPostRules();
-
-        $stdoutarray['decrypt rules'] = array();
-        $stdoutarray['decrypt rules']['pre'] = $this->decryptionRules->countPreRules();
-        $stdoutarray['decrypt rules']['post'] = $this->decryptionRules->countPostRules();
-
-        $stdoutarray['app-override rules'] = array();
-        $stdoutarray['app-override rules']['pre'] = $this->appOverrideRules->countPreRules();
-        $stdoutarray['app-override rules']['post'] = $this->appOverrideRules->countPostRules();
-
-        $stdoutarray['captive-portal rules'] = array();
-        $stdoutarray['captive-portal rules']['pre'] = $this->captivePortalRules->countPreRules();
-        $stdoutarray['captive-portal rules']['post'] = $this->captivePortalRules->countPostRules();
-
-        $stdoutarray['authentication rules'] = array();
-        $stdoutarray['authentication rules']['pre'] = $this->authenticationRules->countPreRules();
-        $stdoutarray['authentication rules']['post'] = $this->authenticationRules->countPostRules();
-
-        $stdoutarray['dos rules'] = array();
-        $stdoutarray['dos rules']['pre'] = $this->dosRules->countPreRules();
-        $stdoutarray['dos rules']['post'] = $this->dosRules->countPostRules();
-
-        $stdoutarray['address objects'] = array();
-        $stdoutarray['address objects']['total'] = $this->addressStore->count();
-        $stdoutarray['address objects']['address'] = $this->addressStore->countAddresses();
-        $stdoutarray['address objects']['group'] = $this->addressStore->countAddressGroups();
-        $stdoutarray['address objects']['tmp'] = $this->addressStore->countTmpAddresses();
-        $stdoutarray['address objects']['unused'] = $this->addressStore->countUnused();
-
-        $stdoutarray['service objects'] = array();
-        $stdoutarray['service objects']['total'] = $this->serviceStore->count();
-        $stdoutarray['service objects']['service'] = $this->serviceStore->countServices();
-        $stdoutarray['service objects']['group'] = $this->serviceStore->countServiceGroups();
-        $stdoutarray['service objects']['tmp'] = $this->serviceStore->countTmpServices();
-        $stdoutarray['service objects']['unused'] = $this->serviceStore->countUnused();
-
-        $stdoutarray['tag objects'] = array();
-        $stdoutarray['tag objects']['total'] = $this->tagStore->count();
-        $stdoutarray['tag objects']['unused'] = $this->tagStore->countUnused();
-
-
-        $stdoutarray['securityProfileGroup objects'] = array();
-        $stdoutarray['securityProfileGroup objects']['total'] = $this->securityProfileGroupStore->count();
-
-        /*
-        $stdoutarray['securityProfile objects'] = array();
-        $stdoutarray['securityProfile objects']['Anti-Spyware'] = $this->AntiSpywareProfileStore->count();
-        $stdoutarray['securityProfile objects']['Vulnerability'] = $this->VulnerabilityProfileStore->count();
-        $stdoutarray['securityProfile objects']['WildfireAndAntivirus'] = $this->VirusAndWildfireProfileStore->count();
-        $stdoutarray['securityProfile objects']['DNS-Security'] = $this->DNSSecurityProfileStore->count();
-        $stdoutarray['securityProfile objects']['Saas-Security'] = $this->SaasSecurityProfileStore->count();
-        $stdoutarray['securityProfile objects']['URL'] = $this->URLProfileStore->count();
-        $stdoutarray['securityProfile objects']['File-Blocking'] = $this->FileBlockingProfileStore->count();
-        $stdoutarray['securityProfile objects']['Decryption'] = $this->DecryptionProfileStore->count();
-        */
-
-        $stdoutarray['Anti-Spyware objects'] = array();
-        $stdoutarray['Anti-Spyware objects']['total'] = $this->AntiSpywareProfileStore->count();
-        $stdoutarray['Vulnerability objects'] = array();
-        $stdoutarray['Vulnerability objects']['total'] = $this->VulnerabilityProfileStore->count();
-        $stdoutarray['WildfireAndAntivirus objects'] = array();
-        $stdoutarray['WildfireAndAntivirus objects']['total'] = $this->VirusAndWildfireProfileStore->count();
-
-        $stdoutarray['DNS-Security objects'] = array();
-        $stdoutarray['DNS-Security objects']['total'] = $this->DNSSecurityProfileStore->count();
-        $stdoutarray['Saas-Security objects'] = array();
-        $stdoutarray['Saas-Security objects']['total'] = $this->SaasSecurityProfileStore->count();
-
-        $stdoutarray['URL objects'] = array();
-        $stdoutarray['URL objects']['total'] = $this->URLProfileStore->count();
-        $stdoutarray['custom URL objects'] = array();
-        $stdoutarray['custom URL objects']['total'] = $this->customURLProfileStore->count();
-        $stdoutarray['File-Blocking objects'] = array();
-        $stdoutarray['File-Blocking objects']['total'] = $this->FileBlockingProfileStore->count();
-        $stdoutarray['Data-Filtering objects'] = array();
-        $stdoutarray['Data-Filtering objects']['total'] = $this->DataFilteringProfileStore->count();
-        $stdoutarray['Decryption objects'] = array();
-        $stdoutarray['Decryption objects']['total'] = $this->DecryptionProfileStore->count();
-
-        $stdoutarray['HipObject objects'] = array();
-        $stdoutarray['HipObject objects']['total'] = $this->HipObjectsProfileStore->count();
-        $stdoutarray['HipProfile objects'] = array();
-        $stdoutarray['HipProfile objects']['total'] = $this->HipProfilesProfileStore->count();
-
-        $stdoutarray['GTP objects'] = array();
-        $stdoutarray['GTP objects']['total'] = $this->GTPProfileStore->count();
-        $stdoutarray['SCEP objects'] = array();
-        $stdoutarray['SCEP objects']['total'] = $this->SCEPProfileStore->count();
-        $stdoutarray['PacketBroker objects'] = array();
-        $stdoutarray['PacketBroker objects']['total'] = $this->PacketBrokerProfileStore->count();
-
-        $stdoutarray['SDWanErrorCorrection objects'] = array();
-        $stdoutarray['SDWanErrorCorrection objects']['total'] = $this->SDWanErrorCorrectionProfileStore->count();
-        $stdoutarray['SDWanPathQuality objects'] = array();
-        $stdoutarray['SDWanPathQuality objects']['total'] = $this->SDWanPathQualityProfileStore->count();
-        $stdoutarray['SDWanSaasQuality objects'] = array();
-        $stdoutarray['SDWanSaasQuality objects']['total'] = $this->SDWanSaasQualityProfileStore->count();
-        $stdoutarray['SDWanTrafficDistribution objects'] = array();
-        $stdoutarray['SDWanTrafficDistribution objects']['total'] = $this->SDWanTrafficDistributionProfileStore->count();
-
-        $stdoutarray['DataObjects objects'] = array();
-        $stdoutarray['DataObjects objects']['total'] = $this->DataObjectsProfileStore->count();
-
-        #$stdoutarray['zones'] = $this->zoneStore->count();
-        #$stdoutarray['apps'] = $this->appStore->count();
-
-        $return = array();
-        $return['CONTAINER-stat'] = $stdoutarray;
-        #PH::print_stdout( $return );
-        PH::print_stdout( $stdoutarray, true );
-
-    }
-
-    public function display_bp_statistics( $debug = false )
-    {
-        $stdoutarray = array();
-        #PH::$JSON_TMP[$this->name] = $stdoutarray;
-        PH::$JSON_TMP[] = $stdoutarray;
-
-
-        if( !PH::$shadow_json && $debug )
-            PH::print_stdout( $stdoutarray, true );
-
-    }
 
     /**
      * @param bool $nested

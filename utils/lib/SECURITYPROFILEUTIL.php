@@ -255,7 +255,7 @@ class SECURITYPROFILEUTIL extends UTIL
 
                 if( $this->configType == 'panorama' )
                     $subGroups = $this->pan->getDeviceGroups();
-                elseif( $this->configType == 'fawkes' )
+                elseif( $this->configType == 'fawkes' || $this->configType == 'buckbeak' )
                 {
                     $subGroups = $this->pan->getContainers();
                     $subGroups2 = $this->pan->getDeviceClouds();
@@ -285,7 +285,7 @@ class SECURITYPROFILEUTIL extends UTIL
                         }
 
                         //Panorama
-                        if( $this->configType == 'fawkes' )
+                        if( $this->configType == 'fawkes' || $this->configType == 'buckbeak' )
                         {
                             if( array_search('any', $this->securityProfileTypes) !== FALSE || array_search('virusandwildfire', $this->securityProfileTypes) !== FALSE )
                             {

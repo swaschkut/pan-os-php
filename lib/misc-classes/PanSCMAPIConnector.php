@@ -23,7 +23,7 @@ class PanSCMAPIConnector
     /** @var string */
     public $scope;
 
-    public $access_token;
+    public $access_token = null;
 
     /** @var bool */
     public $showApiCalls = FALSE;
@@ -285,59 +285,62 @@ class PanSCMAPIConnector
 
     public function getAccessToken( $debugAPI = false )
     {
-        /*
-        curl -d "grant_type=client_credentials&scope=tsg_id:<tsg_id>" \
-        -u <client_id>:<client_secret> \
-        -H "Content-Type: application/x-www-form-urlencoded" \
-        -X POST https://auth.apps.paloaltonetworks.com/oauth2/access_token
-        */
-        $content = "grant_type=client_credentials&scope=" . $this->scope . "&client_id=" . $this->client_id . "&client_secret=" . $this->client_secret;
-        $header = array("Content-Type: application/x-www-form-urlencoded");
-
-
-        $this->_createOrRenewCurl();
-
-        curl_setopt($this->_curl_handle, CURLOPT_URL, $this->url_token);
-        curl_setopt($this->_curl_handle, CURLOPT_HTTPHEADER, $header);
-        curl_setopt($this->_curl_handle, CURLOPT_SSL_VERIFYPEER, FALSE);
-        curl_setopt($this->_curl_handle, CURLOPT_RETURNTRANSFER, TRUE);
-        curl_setopt($this->_curl_handle, CURLOPT_POST, TRUE);
-        curl_setopt($this->_curl_handle, CURLOPT_POSTFIELDS, $content);
-
-        if( $this->showApiCalls )
+        if( $this->access_token === null )
         {
-            if( PH::$displayCurlRequest )
+            /*
+            curl -d "grant_type=client_credentials&scope=tsg_id:<tsg_id>" \
+            -u <client_id>:<client_secret> \
+            -H "Content-Type: application/x-www-form-urlencoded" \
+            -X POST https://auth.apps.paloaltonetworks.com/oauth2/access_token
+            */
+            $content = "grant_type=client_credentials&scope=" . $this->scope . "&client_id=" . $this->client_id . "&client_secret=" . $this->client_secret;
+            $header = array("Content-Type: application/x-www-form-urlencoded");
+
+
+            $this->_createOrRenewCurl();
+
+            curl_setopt($this->_curl_handle, CURLOPT_URL, $this->url_token);
+            curl_setopt($this->_curl_handle, CURLOPT_HTTPHEADER, $header);
+            curl_setopt($this->_curl_handle, CURLOPT_SSL_VERIFYPEER, FALSE);
+            curl_setopt($this->_curl_handle, CURLOPT_RETURNTRANSFER, TRUE);
+            curl_setopt($this->_curl_handle, CURLOPT_POST, TRUE);
+            curl_setopt($this->_curl_handle, CURLOPT_POSTFIELDS, $content);
+
+            if( $this->showApiCalls )
             {
-                print $this->url_token."?".$content."\n";
-                print "content: '".$content."'\n";
-                curl_setopt($this->_curl_handle, CURLOPT_FOLLOWLOCATION, TRUE);
-                curl_setopt($this->_curl_handle, CURLOPT_VERBOSE, TRUE);
-            }
-        }
-
-
-
-        $response = curl_exec($this->_curl_handle);
-
-        if( empty($response) )
-            derr("something went wrong - check internet connection", null, FALSE);
-
-        $jsonArray = json_decode($response, TRUE);
-        if( !isset($jsonArray['access_token']) )
-        {
-            if( isset($jsonArray['error']) )
-            {
-                PH::print_stdout( );
-                PH::print_stdout( PH::boldText("ERROR: " .$jsonArray['error'] ) );
-                PH::print_stdout( "if your tenant: ".$this->scope." is NOT running in production environment this is expected | for QA environment use additional argument 'shadow-saseapiqa'" );
+                if( PH::$displayCurlRequest )
+                {
+                    print $this->url_token."?".$content."\n";
+                    print "content: '".$content."'\n";
+                    curl_setopt($this->_curl_handle, CURLOPT_FOLLOWLOCATION, TRUE);
+                    curl_setopt($this->_curl_handle, CURLOPT_VERBOSE, TRUE);
+                }
             }
 
-            derr( "problem with SCM API connection - not possible to get 'access_token'", null, FALSE );
-        }
-        elseif( $debugAPI )
-            PH::print_stdout( "TOKEN: ".$jsonArray['access_token'] );
 
-        $this->access_token = $jsonArray['access_token'];
+
+            $response = curl_exec($this->_curl_handle);
+
+            if( empty($response) )
+                derr("something went wrong - check internet connection", null, FALSE);
+
+            $jsonArray = json_decode($response, TRUE);
+            if( !isset($jsonArray['access_token']) )
+            {
+                if( isset($jsonArray['error']) )
+                {
+                    PH::print_stdout( );
+                    PH::print_stdout( PH::boldText("ERROR: " .$jsonArray['error'] ) );
+                    PH::print_stdout( "if your tenant: ".$this->scope." is NOT running in production environment this is expected | for QA environment use additional argument 'shadow-saseapiqa'" );
+                }
+
+                derr( "problem with SCM API connection - not possible to get 'access_token'", null, FALSE );
+            }
+            elseif( $debugAPI )
+                PH::print_stdout( "TOKEN: ".$jsonArray['access_token'] );
+
+            $this->access_token = $jsonArray['access_token'];
+        }
     }
 
     function getTypeArray($utilType, $ruleType = "security")
@@ -345,58 +348,84 @@ class PanSCMAPIConnector
         $this->typeArray = array();
         if( $utilType == "address" )
         {
-            #$this->typeArray[] = "tags";
+            $this->typeArray[] = "tags";
+
             $this->typeArray[] = "addresses";
-            #$this->typeArray[] = "address-groups";
-            #$this->typeArray[] = "regions";
-            #$this->typeArray[] = "security-rules";
+            $this->typeArray[] = "address-groups";
+            $this->typeArray[] = "regions";
+
+            $this->typeArray[] = "security-rules";
         }
         elseif( $utilType == "address-merger" )
         {
             $this->typeArray[] = "tags";
+
             $this->typeArray[] = "addresses";
             $this->typeArray[] = "address-groups";
             $this->typeArray[] = "regions";
+
             $this->typeArray[] = "security-rules";
         }
         elseif( $utilType == "addressgroup-merger" )
         {
             $this->typeArray[] = "tags";
+
             $this->typeArray[] = "addresses";
             $this->typeArray[] = "address-groups";
             $this->typeArray[] = "regions";
+
             $this->typeArray[] = "security-rules";
         }
         elseif( $utilType == "service" )
         {
             $this->typeArray[] = "tags";
+
             $this->typeArray[] = "services";
             $this->typeArray[] = "service-groups";
+
             $this->typeArray[] = "security-rules";
         }
         elseif( $utilType == "service-merger" )
         {
             $this->typeArray[] = "tags";
+
             $this->typeArray[] = "services";
             $this->typeArray[] = "service-groups";
+
             $this->typeArray[] = "security-rules";
         }
         elseif( $utilType == "servicegroup-merger" )
         {
             $this->typeArray[] = "tags";
+
             $this->typeArray[] = "services";
             $this->typeArray[] = "service-groups";
+
             $this->typeArray[] = "security-rules";
         }
         elseif( $utilType == "rule" )
         {
             $this->typeArray[] = "tags";
+
             $this->typeArray[] = "addresses";
             $this->typeArray[] = "address-groups";
             $this->typeArray[] = "regions";
 
             $this->typeArray[] = "services";
             $this->typeArray[] = "service-groups";
+
+
+            $this->typeArray[] = "anti-spyware-profiles";
+            $this->typeArray[] = "dns-security-profiles";
+            $this->typeArray[] = "file-blocking-profiles";
+            $this->typeArray[] = "saas-security-profiles";
+            $this->typeArray[] = "url-access-profiles";
+            $this->typeArray[] = "wildfire-anti-virus-profiles";
+            $this->typeArray[] = "vulnerability-protection-profiles";
+
+            $this->typeArray[] = "profile-groups";
+
+
             $this->typeArray[] = "security-rules";
             #$this->typeArray[] = "authentication-rules"; //problems reading config also in Shared
             #$this->typeArray[] = "qos-policy-rules"; // Access denied
@@ -406,17 +435,20 @@ class PanSCMAPIConnector
         elseif( $utilType == "tag" )
         {
             $this->typeArray[] = "tags";
+
             $this->typeArray[] = "addresses";
             $this->typeArray[] = "address-groups";
             $this->typeArray[] = "regions";
 
             $this->typeArray[] = "services";
             $this->typeArray[] = "service-groups";
+
             $this->typeArray[] = "security-rules";
         }
         elseif( $utilType == "tag-merger" )
         {
             $this->typeArray[] = "tags";
+
             $this->typeArray[] = "addresses";
             $this->typeArray[] = "address-groups";
             $this->typeArray[] = "regions";
@@ -444,6 +476,17 @@ class PanSCMAPIConnector
             $this->typeArray[] = "services";
             $this->typeArray[] = "service-groups";
 
+            $this->typeArray[] = "anti-spyware-profiles";
+            $this->typeArray[] = "dns-security-profiles";
+            $this->typeArray[] = "file-blocking-profiles";
+            $this->typeArray[] = "saas-security-profiles";
+            $this->typeArray[] = "url-access-profiles";
+            $this->typeArray[] = "wildfire-anti-virus-profiles";
+            $this->typeArray[] = "vulnerability-protection-profiles";
+
+            $this->typeArray[] = "profile-groups";
+
+
             $this->typeArray[] = "security-rules";
             #$this->typeArray[] = "authentication-rules"; //problems reading config also in Shared
             #$this->typeArray[] = "qos-policy-rules"; // Access denied
@@ -464,6 +507,58 @@ class PanSCMAPIConnector
         }
         elseif( $utilType == "custom" )
         {
+        }
+        elseif( $utilType == "securityprofile" )
+        {
+            $this->typeArray[] = "anti-spyware-profiles";
+            $this->typeArray[] = "dns-security-profiles";
+            $this->typeArray[] = "file-blocking-profiles";
+            $this->typeArray[] = "saas-security-profiles";
+            $this->typeArray[] = "url-access-profiles";
+            $this->typeArray[] = "wildfire-anti-virus-profiles";
+            $this->typeArray[] = "vulnerability-protection-profiles";
+
+            //Todo: missing:
+            //ai-security-profiles
+            //header-insertion-profiles
+        }
+        elseif( $utilType == "securityprofilegroup" )
+        {
+            $this->typeArray[] = "profile-groups";
+        }
+        elseif( $utilType == "stats" )
+        {
+            $this->typeArray[] = "tags";
+
+            $this->typeArray[] = "addresses";
+            $this->typeArray[] = "address-groups";
+            $this->typeArray[] = "regions";
+
+            $this->typeArray[] = "services";
+            $this->typeArray[] = "service-groups";
+
+            $this->typeArray[] = "anti-spyware-profiles";
+            $this->typeArray[] = "dns-security-profiles";
+            $this->typeArray[] = "file-blocking-profiles";
+            $this->typeArray[] = "saas-security-profiles";
+            $this->typeArray[] = "url-access-profiles";
+            $this->typeArray[] = "wildfire-anti-virus-profiles";
+            $this->typeArray[] = "vulnerability-protection-profiles";
+
+            $this->typeArray[] = "profile-groups";
+
+            $this->typeArray[] = "zones";
+            $this->typeArray[] = "zone-protection-profiles";
+
+            $this->typeArray[] = "security-rules";
+        }
+        elseif( $utilType == "zone" )
+        {
+            $this->typeArray[] = "zones";
+        }
+        elseif( $utilType == "zone-protection-profile" )
+        {
+            $this->typeArray[] = "zone-protection-profiles";
         }
         else
         {
@@ -518,6 +613,34 @@ class PanSCMAPIConnector
             return "application-groups";
 
 
+        elseif( get_class($object) == "AntiSpywareProfile" )
+            return "anti-spyware-profiles";
+        elseif( get_class($object) == "DNSSecurityProfile" )
+            return "dns-security-profiles";
+        elseif( get_class($object) == "FileBlockingProfile" )
+            return "file-blocking-profiles";
+        elseif( get_class($object) == "SaasSecurityProfile" )
+            return "saas-security-profiles";
+        elseif( get_class($object) == "URLProfile" )
+            return "url-access-profiles";
+        elseif( get_class($object) == "VirusAndWildfireProfile" )
+            return "wildfire-anti-virus-profiles";
+        elseif( get_class($object) == "VulnerabilityProfile" )
+            return "vulnerability-protection-profiles";
+        //Todo: implementation needed
+        elseif( get_class($object) == "AISecurityProfile" )
+            return "ai-security-profiles";
+        //Todo: Header insertion profile - implementation needed
+
+        elseif( get_class($object) == "SecurityProfileGroup" )
+            return "profile-groups";
+
+
+        elseif( get_class($object) == "Zone" )
+            return "zones";
+        elseif( get_class($object) == "ZoneProtectionProfile" )
+            return "zone-protection-profiles";
+
         #"hip-objects",
         #"hip-profiles",
 
@@ -542,7 +665,10 @@ class PanSCMAPIConnector
         //Fawkes
         #$url .= "/sse/config/v1/" . $type . "?folder=" . $folder;
         //Buckbeak
-        $url .= "/config/objects/v1/" . $type . "?".$foldertype."=" . $folderName;
+        if( strpos( $type, "-rules") !== FALSE || strpos( $type, "-profiles") !== FALSE || strpos( $type, "profile-groups") !== FALSE )
+            $url .= "/config/security/v1/" . $type . "?".$foldertype."=" . $folderName;
+        else
+            $url .= "/config/objects/v1/" . $type . "?".$foldertype."=" . $folderName;
 
         $url .= "&limit=" . $this->global_limit;
 
@@ -550,9 +676,14 @@ class PanSCMAPIConnector
             $url .= "&offset=" . $offset;
 
         if( strpos($type, "-rule") !== FALSE )
+        {
             $url .= "&position=" . $prePost;
+        }
 
         $url = str_replace(' ', '%20', $url);
+
+
+        PH::print_stdout("   -1 '". $folderName. "' object: " . $type);
 
         if( $this->showApiCalls )
         {
@@ -583,7 +714,7 @@ class PanSCMAPIConnector
         $response = curl_exec($this->_curl_handle);
         if( $this->showApiCalls )
         {
-            #print $response . "\n";
+            print $response . "\n";
         }
 
         $jsonArray = json_decode($response, TRUE);
@@ -634,6 +765,8 @@ class PanSCMAPIConnector
             else
                 $url .= "?".$foldertype."=" . $folder;
         }
+        #elseif( $type == null && $folder == null )
+        #    $url .= "&".$foldertype."=" . $folder;
 
         if( $limit !== null )
         {
@@ -659,6 +792,96 @@ class PanSCMAPIConnector
                 $url .= "&position=" . $prePost;
 
         $url = str_replace(' ', '%20', $url);
+
+
+        PH::print_stdout("   -2 '". $folder. "' object: " . $type);
+
+        if( $this->showApiCalls )
+        {
+            PH::print_stdout($url);
+        }
+
+        if( strpos($url, "parent1=200") !== FALSE )
+            derr( "check" );
+
+        $header = array("Authorization: Bearer {$this->access_token}");
+
+
+        $this->_createOrRenewCurl();
+
+        curl_setopt($this->_curl_handle, CURLOPT_URL, $url);
+        curl_setopt($this->_curl_handle, CURLOPT_HTTPHEADER, $header);
+        curl_setopt($this->_curl_handle, CURLOPT_SSL_VERIFYPEER, FALSE);
+        curl_setopt($this->_curl_handle, CURLOPT_RETURNTRANSFER, TRUE);
+
+        if( $this->showApiCalls )
+        {
+            if( PH::$displayCurlRequest )
+            {
+                curl_setopt($this->_curl_handle, CURLOPT_FOLLOWLOCATION, TRUE);
+                curl_setopt($this->_curl_handle, CURLOPT_VERBOSE, TRUE);
+            }
+        }
+
+
+        $response = curl_exec($this->_curl_handle);
+        if( $this->showApiCalls )
+        {
+            print $response . "\n";
+        }
+
+        $jsonArray = json_decode($response, TRUE);
+
+        if( isset($jsonArray['_errors']) )
+        {
+            print_r($jsonArray['_errors']);
+            derr($jsonArray['_errors'][0]['message'], null, FALSE);
+        }
+
+
+        if( $jsonArray !== null
+            && isset($jsonArray['total'])
+            && $jsonArray['total'] > ($this->global_limit - 1)
+            && $jsonArray['total'] > ($runtime * $this->global_limit)
+        )
+        {
+            $offset = $this->global_limit * $runtime;
+            $runtime++;
+            $resource = $this->getResource( $this->access_token, $type, $foldertype, $folder, $this->global_limit, $prePost, $offset, $runtime);
+
+            foreach( $resource['data'] as $data )
+                $jsonArray['data'][] = $data;
+        }
+
+
+        return $jsonArray;
+    }
+
+    function getNetworkResource($access_token, $type = "zones", $foldertype = "folder", $folderName = "Shared", $limit = 200, $prePost = "pre", $offset = 0, $runtime = 1)
+    {
+        $this->getAccessToken();
+
+        $url = $this->url_api;
+        //Fawkes
+        #$url .= "/sse/config/v1/" . $type . "?folder=" . $folder;
+        //Buckbeak
+        $url .= "/config/network/v1/" . $type . "?".$foldertype."=" . $folderName;
+
+
+        $url .= "&limit=" . $this->global_limit;
+
+        if( $offset !== "" )
+            $url .= "&offset=" . $offset;
+
+        if( strpos($type, "-rule") !== FALSE )
+        {
+            $url .= "&position=" . $prePost;
+        }
+
+        $url = str_replace(' ', '%20', $url);
+
+
+        PH::print_stdout("   -3 '". $folderName. "' object: " . $type);
 
         if( $this->showApiCalls )
         {
@@ -689,7 +912,7 @@ class PanSCMAPIConnector
         $response = curl_exec($this->_curl_handle);
         if( $this->showApiCalls )
         {
-            #print $response . "\n";
+            print $response . "\n";
         }
 
         $jsonArray = json_decode($response, TRUE);
@@ -709,7 +932,7 @@ class PanSCMAPIConnector
         {
             $offset = $this->global_limit * $runtime;
             $runtime++;
-            $resource = $this->getResource( $type, $foldertype, $folder, $this->global_limit, $prePost, $offset, $runtime);
+            $resource = $this->getNetworkResource($access_token, $type, $foldertype, $folderName, $this->global_limit, $prePost, $offset, $runtime);
 
             foreach( $resource['data'] as $data )
                 $jsonArray['data'][] = $data;
@@ -758,7 +981,7 @@ class PanSCMAPIConnector
         $response = curl_exec($this->_curl_handle);
         if( $this->showApiCalls )
         {
-            #print $response . "\n";
+            print $response . "\n";
         }
 
         $jsonArray = json_decode($response, TRUE);
@@ -783,6 +1006,9 @@ class PanSCMAPIConnector
             if( $folder == "Service Connections" && strpos($type, "-rule") !== FALSE )
                 continue;
 
+            if( $folder == "Shared" && strpos($type, "zones") !== FALSE )
+                continue;
+
             $foldertype = "folder";
             if( get_class($sub) == "Container" )
                 $foldertype = "folder";
@@ -791,7 +1017,10 @@ class PanSCMAPIConnector
             elseif( get_class($sub) == "Snippet" )
                 $foldertype = "snippet";
 
-            $resource = $this->getResource($this->access_token, $type, $foldertype, $folder, $this->global_limit);
+            if( $utilType == "zone" || $utilType == "zone-protection-profile" )
+                $resource = $this->getNetworkResource($this->access_token, $type, $foldertype, $folder, $this->global_limit);
+            else
+                $resource = $this->getResource($this->access_token, $type, $foldertype, $folder, $this->global_limit);
 
             if( $resource !== null )
             {
@@ -824,7 +1053,7 @@ class PanSCMAPIConnector
 
             if( strpos($type, '-rules') !== FALSE )
             {
-                $resource = $this->getResource($this->access_token, $type, $folder, $this->global_limit, 'post');
+                $resource = $this->getResource($this->access_token, $type, $foldertype, $folder, $this->global_limit, 'post');
 
                 if( $resource !== null )
                 {
@@ -924,6 +1153,10 @@ class PanSCMAPIConnector
                 {
                     if( isset($object['static']) )
                     {
+                        $tmp_addressgroup = $sub->addressStore->find($object['name']);
+                        if( $tmp_addressgroup !== null )
+                            continue;
+
                         $tmp_addressgroup = $sub->addressStore->newAddressGroup($object['name']);
                         foreach( $object['static'] as $member )
                         {
@@ -939,6 +1172,10 @@ class PanSCMAPIConnector
             }
             elseif( $type === "services" )
             {
+                $tmp_service = $sub->serviceStore->find($object['name']);
+                if( $tmp_service !== null )
+                    continue;
+
                 if( isset( $object['id'] ) )
                 {
                     foreach( $object['protocol'] as $prot => $entry )
@@ -956,6 +1193,10 @@ class PanSCMAPIConnector
             {
                 if( isset( $object['id'] ) )
                 {
+                    $tmp_servicegroup = $sub->serviceStore->find($object['name']);
+                    if( $tmp_servicegroup !== null )
+                        continue;
+
                     $tmp_servicegroup = $sub->serviceStore->newServiceGroup($object['name']);
                     foreach( $object['members'] as $member )
                     {
@@ -978,6 +1219,10 @@ class PanSCMAPIConnector
             }
             elseif( $type === "schedules" )
             {
+                $tmp_schedule = $sub->scheduleStore->find($object['name']);
+                if( $tmp_schedule !== null )
+                    continue;
+
                 $tmp_schedule = $sub->scheduleStore->createSchedule($object['name']);
 
                 if( isset($object['schedule_type']['non_recurring']) )
@@ -1037,6 +1282,10 @@ class PanSCMAPIConnector
             elseif( $type === "security-rules" )
             {
                 $tmp_rule = null;
+
+                $tmp_rule = $sub->securityRules->find($object['name']);
+                if( $tmp_rule !== null )
+                    continue;
 
                 if( isset($object['position']) && $object['position'] === "post" )
                     $tmp_rule = $sub->securityRules->newSecurityRule($object['name'], TRUE);
@@ -1155,7 +1404,160 @@ class PanSCMAPIConnector
 
                 if( isset($object['id']) )
                     $tmp_rule->setSaseID( $object['id'] );
+
+
+                if( isset($object['log_start']) )
+                    if( $object['log_start'] == FALSE )
+                        $tmp_rule->setLogStart(FALSE);
+                    else
+                        $tmp_rule->setLogStart(TRUE);
+                if( isset($object['log_end']) )
+                    if( $object['log_end'] == FALSE )
+                        $tmp_rule->setLogEnd(FALSE);
+                    else
+                        $tmp_rule->setLogEnd(TRUE);
+
+                if( isset($object['negate_source']) )
+                    if( $object['negate_source'] === TRUE )
+                        $tmp_rule->setSourceIsNegated(TRUE);
+                if( isset($object['negate_destination']) )
+                    if( $object['negate_destination'] === TRUE )
+                        $tmp_rule->setDestinationIsNegated(TRUE);
             }
+
+            //Todo: specify profiles import
+            elseif( $type === "anti-spyware-profiles" )
+            {
+                $profileStoreName = "AntiSpywareProfileStore";
+                $return = $this->SCM_API_object_import_preperation($object, $sub, $profileStoreName);
+
+                if( $return === "continue" )
+                    continue;
+            }
+            elseif( $type === "dns-security-profiles" )
+            {
+                $profileStoreName = "DNSSecurityProfileStore";
+                $return = $this->SCM_API_object_import_preperation($object, $sub, $profileStoreName);
+
+                if( $return === "continue" )
+                    continue;
+            }
+            elseif( $type === "file-blocking-profiles" )
+            {
+                $profileStoreName = "FileBlockingProfileStore";
+                $return = $this->SCM_API_object_import_preperation($object, $sub, $profileStoreName);
+
+                if( $return === "continue" )
+                    continue;
+            }
+            elseif( $type === "saas-security-profiles" )
+            {
+                $profileStoreName = "SaasSecurityProfileStore";
+                $return = $this->SCM_API_object_import_preperation($object, $sub, $profileStoreName);
+
+                if( $return === "continue" )
+                    continue;
+            }
+            elseif( $type === "vulnerability-protection-profiles" )
+            {
+                $profileStoreName = "VulnerabilityProfileStore";
+                $return = $this->SCM_API_object_import_preperation($object, $sub, $profileStoreName);
+
+                if( $return === "continue" )
+                    continue;
+            }
+            elseif( $type === "wildfire-anti-virus-profiles" )
+            {
+                $profileStoreName = "VirusAndWildfireProfileStore";
+                $return = $this->SCM_API_object_import_preperation($object, $sub, $profileStoreName);
+
+                if( $return === "continue" )
+                    continue;
+            }
+            elseif( $type === "url-access-profiles" )
+            {
+                $profileStoreName = "URLProfileStore";
+                $return = $this->SCM_API_object_import_preperation($object, $sub, $profileStoreName);
+
+                if( $return === "continue" )
+                    continue;
+            }
+            elseif( $type === "ai-security-profiles" )
+            {
+                if( isset( $object['id'] ) )
+                {
+                    #$tmp_ai_security = $sub->VirusAndWildfireProfileStore->find($object['name']);
+                    #if ($tmp_ai_security !== null)
+                    #    continue;
+
+                    #$tmp_ai_security = $sub->VirusAndWildfireProfileStore->findOrCreate($object['name']);
+                }
+                PH::print_stdout($type . " - not finalised");
+                print_r( $object );
+            }
+            //Todo: missing http-header-profiles
+
+            //Todo: specify profile-groups import
+            elseif( $type === "profile-groups" )
+            {
+                $profileStoreName = "securityProfileGroupStore";
+                $return = $this->SCM_API_object_import_preperation($object, $sub, $profileStoreName);
+
+                if( $return === "continue" )
+                    continue;
+            }
+
+            elseif( $type == "zones" )
+            {
+                $profileStoreName = "zoneStore";
+
+
+                if( isset( $object['id'] ) )
+                {
+                    //does CONTAINER/DEVICECLOUD/SNIPPET have zone/ interface directly attached?????
+                    $tmp_url = $sub->$profileStoreName->find($object['name']);
+                    if ($tmp_url !== null)
+                        return "continue";
+
+
+                    $dom = null;
+                    $rootEntry = null;
+                    $this->SCM_API_prepareMethodForImport( $object, $dom, $rootEntry );
+
+                    // Start the conversion
+                    $this->SCM_API_arrayToXml($dom, $rootEntry, $object);
+
+                    #DH::DEBUGprintDOMDocument($dom->firstChild);
+                    $this->SCM_API_SP_object_import($dom, $sub, $profileStoreName);
+                }
+
+            }
+            elseif( $type == "zone-protection-profiles" )
+            {
+                ///config/network/v1/zone-protection-profiles
+                $profileStoreName = "zoneProtectionProfileStore";
+
+
+                if( isset( $object['id'] ) )
+                {
+                    //does CONTAINER/DEVICECLOUD/SNIPPET have zone/ interface directly attached?????
+                    $tmp_url = $sub->network->$profileStoreName->find($object['name']);
+                    if ($tmp_url !== null)
+                        return "continue";
+
+
+                    $dom = null;
+                    $rootEntry = null;
+                    $this->SCM_API_prepareMethodForImport( $object, $dom, $rootEntry );
+
+                    // Start the conversion
+                    $this->SCM_API_arrayToXml($dom, $rootEntry, $object);
+
+                    #DH::DEBUGprintDOMDocument($dom->firstChild);
+                    $this->SCM_API_SP_object_import($dom, $sub, $profileStoreName);
+                }
+            }
+
             else
             {
                 PH::print_stdout($type . " - 2 not implemented yet");
@@ -1428,4 +1830,183 @@ class PanSCMAPIConnector
         }
 
     }
+
+
+    private function SCM_API_arrayToXml($dom, $parentNode, $data)
+    {
+        foreach ($data as $key => $value)
+        {
+            // Skip metadata keys not needed in the final XML tags
+            if (in_array($key, ['id', 'name', 'folder', 'snippet', 'description']))
+                continue;
+
+            // Handle naming convention: convert underscores to dashes
+            $tagName = str_replace('_', '-', $key);
+
+            if( is_array($value) )
+            {
+                // Check if this is a list of entries (numeric keys)
+                if( isset($value[0]) && is_array($value[0]) )
+                {
+                    $container = $dom->createElement($tagName);
+                    $parentNode->appendChild($container);
+
+                    foreach ($value as $item)
+                    {
+                        $entry = $dom->createElement('entry');
+                        // If the item has a 'name', use it as an attribute
+                        if (isset($item['name']))
+                        {
+                            $entry->setAttribute('name', $item['name']);
+                            unset($item['name']); // Remove so it doesn't become a child tag
+                        }
+                        $container->appendChild($entry);
+                        $this->SCM_API_arrayToXml($dom, $entry, $item);
+                    }
+                }
+                else
+                {
+                    // Regular associative nested array
+                    $element = $dom->createElement($tagName);
+                    $parentNode->appendChild($element);
+                    $this->SCM_API_arrayToXml($dom, $element, $value);
+                }
+            }
+            else
+            {
+                // It's a flat value
+                // Custom logic for specific values like cloud-inline-analysis
+                if( $value == '1' || $value == '0' )
+                    $value = ($value == '1') ? 'yes' : 'no';
+
+                if( is_numeric($tagName) )
+                    $tagName = "member";
+
+                $element = $dom->createElement($tagName, htmlspecialchars($value));
+                $parentNode->appendChild($element);
+            }
+        }
+    }
+
+    private function SCM_API_prepareMethodForImport( $data, &$dom, &$rootEntry)
+    {
+        $dom = new DOMDocument('1.0', 'utf-8');
+        $dom->formatOutput = true;
+
+        // Create the root entry element
+        $rootEntry = $dom->createElement('entry');
+        $dom->appendChild($rootEntry);
+
+        $entry = $dom->firstChild;
+        if( isset($data['name'] ) )
+            $entry->setAttribute( 'name', $data['name'] );
+        if( isset($data['id'] ) )
+            $entry->setAttribute( 'uuid', $data['id'] );
+    }
+
+    private function SCM_API_object_import_preperation($object, $sub, $profileStoreName)
+    {
+        if( isset( $object['id'] ) )
+        {
+            $tmp_url = $sub->$profileStoreName->find($object['name']);
+            if ($tmp_url !== null)
+                return "continue";
+
+
+            $dom = null;
+            $rootEntry = null;
+            $this->SCM_API_prepareMethodForImport( $object, $dom, $rootEntry );
+
+            // Start the conversion
+            $this->SCM_API_arrayToXml($dom, $rootEntry, $object);
+
+            $this->SCM_API_SP_object_import($dom, $sub, $profileStoreName);
+
+            return true;
+        }
+
+        return false;
+    }
+    private function SCM_API_SP_object_import($dom, $sub, $storeType)
+    {
+        if( $storeType == 'zoneProtectionProfileStore' )
+        {}
+        else
+        {
+            if( $sub->$storeType->xmlroot == null)
+            {
+                if( $sub->$storeType->xmlroot == null)
+                    $sub->$storeType->createXmlRoot();
+            }
+        }
+
+        if( $storeType == 'zoneProtectionProfileStore' )
+            $ownerDocument = $sub->network->$storeType->owner->xmlroot->ownerDocument;
+        else
+            $ownerDocument = $sub->$storeType->xmlroot->ownerDocument;
+
+        $tmpNode = $ownerDocument->importNode($dom->firstChild, true);
+
+
+        if( $storeType == 'AntiSpywareProfileStore' )
+            $newProf = new AntiSpywareProfile('dummy', $sub->$storeType);
+        elseif( $storeType == 'DNSSecurityProfileStore' )
+            $newProf = new DNSSecurityProfile('dummy', $sub->$storeType);
+        elseif( $storeType == 'FileBlockingProfileStore' )
+            $newProf = new FileBlockingProfile('dummy', $sub->$storeType);
+        elseif( $storeType == 'VulnerabilityProfileStore' )
+            $newProf = new VulnerabilityProfile('dummy', $sub->$storeType);
+        elseif( $storeType == 'VirusAndWildfireProfileStore' )
+            $newProf = new VirusAndWildfireProfile('dummy', $sub->$storeType);
+        elseif( $storeType == 'URLProfileStore' )
+            $newProf = new URLProfile('dummy', $sub->$storeType);
+
+
+        elseif( $storeType == 'securityProfileGroupStore' )
+            $newProf = new SecurityProfileGroup('dummy', $sub->$storeType);
+
+        elseif( $storeType == 'zoneStore' )
+            $newProf = new Zone('dummy', $sub->$storeType);
+
+        elseif( $storeType == 'zoneProtectionProfileStore' )
+            $newProf = new ZoneProtectionProfile('dummy', $sub->network->$storeType);
+
+        else
+            derr("implementation needed");
+
+
+        /** @var Container|DeviceCloud|DeviceOnPrem $sub */
+
+        if( get_class($newProf) == 'SecurityProfileGroup' )
+        {
+            $newProf->load_from_domxml($tmpNode, $sub->securityProfileGroupStore);
+
+            $newProf->owner = null;
+            $sub->securityProfileGroupStore->addSecurityProfileGroup($newProf);
+        }
+
+        elseif( get_class($newProf) == 'Zone' )
+        {
+            $newProf->load_from_domxml($tmpNode);
+
+            $newProf->owner = null;
+            $sub->zoneStore->addZone($newProf);
+        }
+        elseif( get_class($newProf) == 'ZoneProtectionProfile' )
+        {
+            $newProf->load_from_domxml($tmpNode);
+
+            $newProf->owner = null;
+            $sub->network->zoneProtectionProfileStore->addProfil($newProf);
+        }
+
+        else
+        {
+            $newProf->load_from_domxml($tmpNode);
+
+            $newProf->owner = null;
+            $sub->$storeType->addSecurityProfile($newProf);
+        }
+    }
+
 }

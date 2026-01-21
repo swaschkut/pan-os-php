@@ -1162,14 +1162,22 @@ class UTIL
             if( $this->configInput['type'] == 'sase-api' )
             {
                 //- load fawkes base config into $this->xmldoc
-                $fawkes_filename = dirname(__FILE__)."/../develop/fawkes_baseconfig.xml";
+                if( isset(PH::$args['out']) && file_exists($this->configOutput) )
+                    $fawkes_filename = $this->configOutput;
+                else
+                    $fawkes_filename = dirname(__FILE__)."/../develop/fawkes_baseconfig.xml";
+
                 $this->configType = 'fawkes';
                 $this->pan = new FawkesConf();
             }
             elseif( $this->configInput['type'] == 'scm-api' )
             {
                 //- load buckbeak base config into $this->xmldoc
-                $fawkes_filename = dirname(__FILE__)."/../develop/fawkes_baseconfig.xml";
+                if( isset(PH::$args['out']) && file_exists($this->configOutput) )
+                    $fawkes_filename = $this->configOutput;
+                else
+                    $fawkes_filename = dirname(__FILE__)."/../develop/buckbeak_baseconfig.xml";
+
                 $this->configType = 'buckbeak';
                 $this->pan = new BuckbeakConf();
             }
@@ -2285,7 +2293,7 @@ class UTIL
     {
         if( isset(PH::$args['stats']) )
         {
-            /** @var PANConf|PanoramaConf|FawkesConf $pan */
+            /** @var PANConf|PanoramaConf|VirtualSystem|DeviceGroup|FawkesConf|BuckbeakConf|Container|DeviceCloud|Snippet $pan */
             $pan = $this->pan;
 
             $mainConnector = null;

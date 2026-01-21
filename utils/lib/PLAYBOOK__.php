@@ -353,6 +353,11 @@ class PLAYBOOK__
                 $arguments[] = "projectfolder".$string;
             }
 
+            if( PH::$shadow_loadreduce )
+                $arguments[] = "shadow-loadreduce";
+
+            if( isset( $command['shadow-bpjsonfile'] ) )
+                $arguments[] = "shadow-bpjsonfile=".$command['shadow-bpjsonfile'];
 
             ###############################################################################
             //IN / OUT specification
@@ -456,17 +461,20 @@ class PLAYBOOK__
             // If memory threshold is set, check current memory usage
             if( !$useSubprocess && $this->memoryThreshold > 0 )
             {
-                $currentMemory = memory_get_usage(true);
-                $memMB = number_format($currentMemory / 1024 / 1024, 2);
-                if( $this->debugMemory )
-                    PH::print_stdout(" - currentMemory=".$memMB);
-                if( $currentMemory > $this->memoryThreshold )
+                /*
+                    memory_get_usage() only reports the memory managed by the PHP engine's memory manager for the current script.
+                    It does not account for the PHP binary itself, loaded extensions, shared libraries,
+                    or other processes (like Nginx or PHP-FPM workers) running in the same container.
+                 */
+                $this->display_container_memory_usage($currentContainerTotalMemory, $memMBtotal);
+
+                if( $currentContainerTotalMemory > $this->memoryThreshold )
                 {
                     $useSubprocess = true;
                     if( $this->debugMemory )
                     {
                         $threshMB = number_format($this->memoryThreshold / 1024 / 1024, 2);
-                        PH::print_stdout(" - Memory ({$memMB} MB) exceeds threshold ({$threshMB} MB), switching to subprocess mode for this step");
+                        PH::print_stdout(" - Memory ({$memMBtotal} MB) exceeds threshold ({$threshMB} MB), switching to subprocess mode for this step");
                     }
                 }
             }
@@ -480,6 +488,8 @@ class PLAYBOOK__
             {
                 // Run in-process
                 $util = PH::callPANOSPHP( $script, PH::$argv, $argc, $PHP_FILE );
+
+                $this->display_container_memory_usage($currentContainerTotalMemory, $memMBtotal);
 
                 // Enhanced memory cleanup between playbook steps
                 // Call cleanupMemory methods explicitly before nullifying to break circular references
@@ -658,6 +668,42 @@ class PLAYBOOK__
         if( $returnCode !== 0 )
         {
             PH::print_stdout(" ** WARNING: Subprocess exited with code $returnCode");
+        }
+
+        $this->display_container_memory_usage($currentContainerTotalMemory, $memMBtotal);
+    }
+
+
+    function get_container_memory_usage(): ?int
+    {
+        // Path for cgroup v2 (Modern systems, Docker Desktop, newer Linux distros)
+        $v2_path = '/sys/fs/cgroup/memory.current';
+
+        // Path for cgroup v1 (Older systems)
+        $v1_path = '/sys/fs/cgroup/memory/memory.usage_in_bytes';
+
+        if (file_exists($v2_path)) {
+            return (int)trim(file_get_contents($v2_path));
+        } elseif (file_exists($v1_path)) {
+            return (int)trim(file_get_contents($v1_path));
+        }
+
+        return null; // Could not determine
+    }
+
+    function display_container_memory_usage( &$currentContainerTotalMemory = 0, &$memMBtotal = 0 ): void
+    {
+        $currentScriptMemory = memory_get_usage(true);
+        $memMB = number_format($currentScriptMemory / 1024 / 1024, 2);
+        $currentContainerTotalMemory = $this->get_container_memory_usage();
+        if( $currentContainerTotalMemory !== null )
+            $memMBtotal = number_format($currentContainerTotalMemory / 1024 / 1024, 2);
+
+        if( $this->debugMemory )
+        {
+            PH::print_stdout(" - currentScript-Memory=".$memMB." MB");
+            if( $currentContainerTotalMemory !== null )
+                PH::print_stdout(" - currentTotalContainer-Memory=".$memMBtotal." MB");
         }
     }
 

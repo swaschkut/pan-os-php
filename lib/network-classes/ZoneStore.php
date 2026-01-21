@@ -37,7 +37,7 @@ class ZoneStore extends ObjStore
     public static $childn = 'Zone';
 
     /**
-     * @param VirtualSystem|DeviceCloud|DeviceGroup|PanoramaConf|Container|FawkesConf $owner
+     * @param VirtualSystem|DeviceCloud|DeviceGroup|PanoramaConf|Container|FawkesConf|BuckbeakConf $owner
      */
     public function __construct($owner)
     {
@@ -72,8 +72,15 @@ class ZoneStore extends ObjStore
 
         $ret = $this->add($zone);
 
-        if( $ret && $rewriteXML && !$zone->isTmp() && $this->xmlroot !== null )
+        if( $ret && $rewriteXML && !$zone->isTmp() )
         {
+            if( $this->xmlroot === null )
+            {
+                $xml = $this->owner->xmlroot;
+
+                $this->xmlroot = DH::findFirstElementOrCreate('zone', $xml);
+            }
+
             $this->xmlroot->appendChild($zone->xmlroot);
         }
         return $ret;
@@ -212,6 +219,18 @@ class ZoneStore extends ObjStore
 
     }
 
+    public function createXmlRoot()
+    {
+        if( $this->xmlroot === null )
+        {
+            if( $this->owner->isPanorama() || $this->owner->isFirewall() )
+                $xml = $this->owner->sharedroot;
+            else
+                $xml = $this->owner->xmlroot;
+
+            $this->xmlroot = DH::findFirstElementOrCreate('zone', $xml);
+        }
+    }
 
 }
 

@@ -23,12 +23,12 @@
 /**
  * Class ManagedDeviceStore
  * @property ManagedDevice[] $o
- * @property PanoramaConf|FawkesConf $owner
+ * @property PanoramaConf|FawkesConf|BuckbeakConf $owner
  * @method ManagedDevice[] getAll()
  */
 class ManagedDeviceStore extends ObjStore
 {
-    /** @var  PanoramaConf|FawkesConf */
+    /** @var  PanoramaConf|FawkesConf|BuckbeakConf */
     public $owner;
 
     /** @var null|TagStore */

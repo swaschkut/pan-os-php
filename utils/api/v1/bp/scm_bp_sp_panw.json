@@ -487,7 +487,8 @@
             "Data Filtering": true,
             "URL Filtering Profiles": true,
             "Credential Theft Prevention": true,
-            "DNS Security": true
+            "DNS Security": true,
+            "DNS List": false
         },
         "visibility": {
             "Logging": true,
@@ -499,23 +500,33 @@
             "Service_Port": true,
             "Antivirus Profiles": true,
             "Anti-Spyware Profiles": true,
+            "Anti-Spyware Rules": false,
+            "Anti-Spyware InLine ML": false,
             "Vulnerability Profiles": true,
+            "Vulnerability Rules": false,
+            "Vulnerability InLine ML": false,
             "File Blocking Profiles": true,
             "Data Filtering": true,
             "URL Filtering Profiles": true,
             "Credential Theft Prevention": true,
-            "DNS Security": true
+            "DNS Security": true,
+            "DNS List": false
         },
         "best-practice": {
             "Logging": true,
             "Wildfire Analysis Profiles": true,
             "Antivirus Profiles": true,
             "Anti-Spyware Profiles": true,
+            "Anti-Spyware Rules": false,
+            "Anti-Spyware InLine ML": false,
             "Vulnerability Profiles": true,
+            "Vulnerability Rules": false,
+            "Vulnerability InLine ML": false,
             "File Blocking Profiles": true,
             "URL Filtering Profiles": true,
             "Credential Theft Prevention": true,
-            "DNS Security": true
+            "DNS Security": true,
+            "DNS List": false
         }
     }
 }
