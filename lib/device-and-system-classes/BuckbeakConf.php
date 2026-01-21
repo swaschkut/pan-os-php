@@ -812,7 +812,7 @@ class BuckbeakConf
      * @param string $name
      * @return Container
      **/
-    public function createContainer($name, $parentContainerName)
+    public function createContainer($name, $parentContainerName = "All")
     {
         $newDG = new Container($this);
         $newDG->load_from_templateContainerXml();
