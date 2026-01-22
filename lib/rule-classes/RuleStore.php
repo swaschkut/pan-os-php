@@ -247,7 +247,8 @@ class RuleStore
                 $this->fastMemToIndex[$ser] = $index;
                 $this->fastNameToIndex[$rule->name()] = $index;
 
-                $this->fastUUIDToIndex[$rule->uuid()] = $index;
+                if( $rule->uuid() !== null )
+                    $this->fastUUIDToIndex[$rule->uuid()] = $index;
 
                 if( $this->xmlroot === null )
                     $this->createXmlRoot();
