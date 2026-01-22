@@ -279,6 +279,9 @@ sec_rule_migration( $data, $v, $print, 'ip firewall raw', 'raw_' );
 
 function nat_rule_migration( $data, $v, $print )
 {
+    /** @var VirtualSystem $v */
+    $untrustZone = $v->zoneStore->newZone("untrust", "Layer3");
+
     foreach( $data['ip firewall nat'] as $k => $rule )
     {
         foreach ($rule as $array_key => $info)
@@ -297,13 +300,15 @@ function nat_rule_migration( $data, $v, $print )
 
         if( $rule['chain'] == "dstnat" )
         {
-            /** @var VirtualSystem $v */
+
             PH::print_stdout("-------");
             $name = $v->natRules->findAvailableName("dnat"."Rule");
 
             /** @var NatRule $natrule */
             $natrule = $v->natRules->newNatRule($name );
             PH::print_stdout(" - create Rule: ".$name);
+
+            $natrule->to->addZone($untrustZone);
 
             $dstObj = $v->addressStore->find($rule['dst-address']);
             if($dstObj == null)
@@ -396,6 +401,8 @@ function nat_rule_migration( $data, $v, $print )
             $natrule = $v->natRules->newNatRule($name );
             PH::print_stdout(" - create Rule: ".$name);
             print_r($rule);
+
+            $natrule->to->addZone($untrustZone);
 
             if( isset($rule['src-address']) )
             {
@@ -616,6 +623,9 @@ function address_migration( $data, $v, $print ): void
  */
     foreach( $data['ip firewall address-list'] as $address )
     {
+        if( !isset( $address['address'] ) )
+            continue;
+        
         $name = str_replace("/","m",$address['address']);
 
         $tmp_address_grp = $v->addressStore->find($address['list']);
