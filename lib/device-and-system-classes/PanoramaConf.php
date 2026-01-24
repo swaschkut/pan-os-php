@@ -847,7 +847,7 @@ class PanoramaConf
                 {
                     $parentDG = $this->findDeviceGroup($dgToParent[$dgName]);
                     if( $parentDG === null )
-                        mwarning("DeviceGroup '$dgName' has DG '{$dgToParent[$dgName]}' listed as parent but it cannot be found in XML");
+                        mwarning("DeviceGroup '$dgName' has DG '{$dgToParent[$dgName]}' listed as parent but it cannot be found in XML",null, false);
                     else
                     {
                         $parentDG->_childDeviceGroups[$dgName] = $ldv;

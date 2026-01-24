@@ -434,7 +434,7 @@ class DeviceCloud
 
             $parentContainer = $this->owner->findContainer( $this->parentContainer );
             if( $parentContainer === null )
-                mwarning("DeviceCloud '$this->name' has Container '{$this->parentContainer}' listed as parent but it cannot be found in XML");
+                mwarning("DeviceCloud '$this->name' has Container '{$this->parentContainer}' listed as parent but it cannot be found in XML",null, false);
             else
             {
                 $parentContainer->_childContainers[$this->name] = $this;

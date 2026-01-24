@@ -4,6 +4,7 @@ CHANGELOG
 UTIL:
 * develop - start working on Mikrotik migration
 * develop mikrotik migration | adr/srv objects secRule and natRule, but w/o zones
+* class PanSCMAPIConnector | optimisation for downloading more than 200 Containers - still an issue if 1000nds of address objects are available at 'All'
 
 BUGFIX:
 

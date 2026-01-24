@@ -382,7 +382,10 @@ class BuckbeakConf
                 continue;
             }
 
-            $ldv = new Container($this);
+            $ldv = $this->findContainer($containerName);
+            if( $ldv === null )
+                $ldv = new Container($this);
+
             if( !isset($containerToParent[$containerName]) )
             {
                 mwarning("Container '$containerName' has not parent associated, assuming All");
@@ -397,9 +400,18 @@ class BuckbeakConf
                         // do nothing
                     }
                     else
-                        mwarning("Container '$containerName' has Container '{$containerToParent[$containerName]}' listed as parent but it cannot be found in XML");
+                    {
+                        $this->container_validation[$containerName] = $containerToParent[$containerName];
+
+                        $parentContainer = new Container($this);
+                        $parentContainer->setName( $containerToParent[$containerName] );
+
+                        mwarning("Container '$containerName' has Container '{$containerToParent[$containerName]}' listed as parent but it cannot be found in XML",null, false);
+                    }
+
                 }
-                else
+
+                if( $parentContainer !== null )
                 {
                     $parentContainer->_childContainers[$containerName] = $ldv;
                     $ldv->parentContainer = $parentContainer;
@@ -577,7 +589,7 @@ class BuckbeakConf
 
         $parentContainer = $this->findContainer( "All" );
         if( $parentContainer === null )
-            mwarning("Container '$name' has Container 'All' listed as parent but it cannot be found in XML");
+            mwarning("Container '$name' has Container 'All' listed as parent but it cannot be found in XML",null, false);
         else
         {
             $parentContainer->_childContainers[$name] = $newDG;
@@ -849,7 +861,7 @@ class BuckbeakConf
 
         $parentContainer = $this->findContainer( $parentContainerName );
         if( $parentContainer === null )
-            mwarning("Container '$name' has Container '{$parentContainerName}' listed as parent but it cannot be found in XML");
+            mwarning("Container '$name' has Container '{$parentContainerName}' listed as parent but it cannot be found in XML",null, false);
         else
         {
             $parentContainer->_childContainers[$name] = $newDG;
@@ -944,7 +956,7 @@ class BuckbeakConf
 
         $parentContainer = $this->findContainer( $parentContainer_txt );
         if( $parentContainer === null )
-            mwarning("Container '$name' has Container '{$parentContainer_txt}' listed as parent but it cannot be found in XML");
+            mwarning("Container '$name' has Container '{$parentContainer_txt}' listed as parent but it cannot be found in XML",null, false);
         else
         {
             $parentContainer->_childContainers[$name] = $newDG;
@@ -1039,7 +1051,7 @@ class BuckbeakConf
 
         $parentContainer = $this->findContainer( $parentContainer_txt );
         if( $parentContainer === null )
-            mwarning("Container '$name' has Container '{$parentContainer_txt}' listed as parent but it cannot be found in XML");
+            mwarning("Container '$name' has Container '{$parentContainer_txt}' listed as parent but it cannot be found in XML",null, false);
         else
         {
             $parentContainer->_childContainers[$name] = $newDG;
