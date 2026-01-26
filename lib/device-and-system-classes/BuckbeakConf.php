@@ -252,7 +252,7 @@ class BuckbeakConf
         $this->devicecloudroot = DH::findFirstElementOrCreate('device', $this->localhostroot);
         $this->cloudroot = DH::findFirstElementOrCreate('cloud', $this->devicecloudroot);
 
-        $this->onpremroot = DH::findFirstElement('on-prem', $this->devicecloudroot);
+        $this->onpremroot = DH::findFirstElementOrCreate('on-prem', $this->devicecloudroot);
 
 
 
@@ -1037,7 +1037,11 @@ class BuckbeakConf
             DH::setDomNodeText($dgMetaDataNode, "{$dgMaxID}");
 
             if( $this->version >= 80 )
+            {
                 $dgMetaDataNode = DH::findXPathSingleEntryOrDie('/config/readonly/devices/entry[@name="localhost.localdomain"]/device/on-prem', $this->xmlroot);
+                //$dgMetaDataNode = DH::findXPathSingleEntryOrCreate('/config/readonly/devices/entry[@name="localhost.localdomain"]/device/on-prem', $this->xmlroot);
+            }
+
             else
                 $dgMetaDataNode = DH::findXPathSingleEntryOrDie('/config/readonly/dg-meta-data/dg-info', $this->xmlroot);
 

@@ -179,6 +179,7 @@ class UTIL
 
 
     //TMP usage:
+    /** @var PanSCMAPIConnector|PanSaseAPIConnector $sase_connector */
     public $sase_connector = null;
 
     public $networkUsedObjects = array();
@@ -1814,15 +1815,20 @@ class UTIL
         {
             $folderArray = PanSCMAPIConnector::$folderArray;
 
-            //todo: download all folders / snippets name
+            //this part is downloading and creating snippets
             $responseArray = $this->sase_connector->getSnippetsavailable($this->pan);
 
+            //this part is downloading and creating folders, of different types: container, cloud/on-prem
             $responseArray = $this->sase_connector->getFolderavailable($this->pan);
+
+
+            //what about DeviceCloud???
+            //what about DeviceOnprem
+
 
             $folderArray = array_merge($folderArray, $responseArray);
 
         }
-
 
 
         if( $this->objectsLocation !== "any" )
@@ -1833,7 +1839,14 @@ class UTIL
 
 
         //Todo: swaschkut if location is set reduce/replce $folderArray with this
-        foreach( $folderArray as $folder )
+        $folder_array_max = count( $folderArray );
+        if( $this->debugAPI )
+        {
+            #PH::print_stdout( "count folders: ".count( $folderArray ) );
+            #print_r( $folderArray );
+        }
+
+        foreach( $folderArray as $key => $folder )
         {
             if( $folder === "Shared" )
                 $sub = $this->pan->findContainer( "Prisma Access");
@@ -1842,15 +1855,28 @@ class UTIL
                 $sub = $this->pan->findContainer( $folder);
                 if( $sub === null )
                 {
+                    //Todo: swaschkut 20260125 - how to find device on-prem????
                     $sub = $this->pan->findDeviceCloud( $folder);
                     if( $sub === null )
-                        $sub = $this->pan->createDeviceCloud( $folder, "Prisma Access" );
+                    {
+                        $sub = $this->pan->findDeviceOnPrem( $folder);
+                    }
+                        #$sub = $this->pan->createDeviceCloud( $folder, "Prisma Access" );
+
+                    #$sub = $this->pan->findDeviceOnPrem( $folder);
+                    #if( $sub === null )
+                    #    $sub = $this->pan->createDeviceOnPrem( $folder, "MUST be AVAILABLE" );
+                    if( $sub === null )
+                    {
+                        mwarning( "why there nothing found for: '".$folder."'" );
+                    }
                 }
             }
 
             if( $this->debugAPI )
             {
                 PH::print_stdout( "FOLDER: ".$folder );
+                PH::print_stdout( "     ".($key+1)." / ". $folder_array_max);
             }
 
             //Todo: 20240326 swaschkut - do not always load full config

@@ -937,6 +937,31 @@ class DH
         return $nodes->item(0);
     }
 
+    /**
+     * @param string $xpathString
+     * @param DOMDocument|DOMNode $contextNode
+     * @return DOMNode|bool returns FALSE if not found
+     */
+    static public function findXPathSingleEntryOrCreate($xpathString, $contextNode)
+    {
+        $nodes = DH::findXPath($xpathString, $contextNode);
+
+        if( $nodes === FALSE )
+            derr("XPath query evaluation error for '{$xpathString}'");
+
+        if( $nodes->length == 0 )
+        {
+            //get xpathString and extract
+            $xpathArray = explode( "/", $xpathString );
+        }
+
+
+        if( $nodes->length > 1 )
+            derr("more than 1 matching node found for xpath '{$xpathString}'");
+
+        return $nodes->item(0);
+    }
+
 
     /**
      * return

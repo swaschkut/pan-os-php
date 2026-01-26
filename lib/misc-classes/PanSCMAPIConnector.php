@@ -30,7 +30,7 @@ class PanSCMAPIConnector
     /** @var bool */
     public $showApiCalls = FALSE;
 
-    public $global_limit = 200;
+    public $global_limit = 10000; // default 200
 
 
     private $_curl_handle = null;
@@ -110,14 +110,19 @@ class PanSCMAPIConnector
         {
             $folderNameArray[] = $folder['name'];
 
-            #print "name: " . $folder['name'] . "\n";
-            #print "parent: " . $folder['parent'] . "\n";
-            #print "id: " . $folder['id'] . "\n";
-            #if( isset( $folder['display_name'] ) )
-            #    print "display_name: " . $folder['display_name'] . "\n";
-            #print "type: " . $folder['type'] . "\n";
-            #print_r($folder);
-            #PH::print_stdout("-----------");
+            $display_more = false;
+            if( $this->showApiCalls && $display_more )
+            {
+                print "name: " . $folder['name'] . "\n";
+                print "parent: " . $folder['parent'] . "\n";
+                print "id: " . $folder['id'] . "\n";
+                if( isset( $folder['display_name'] ) )
+                    print "display_name: " . $folder['display_name'] . "\n";
+                print "type: " . $folder['type'] . "\n";
+                print_r($folder);
+                PH::print_stdout("-----------");
+            }
+
 
             if( !empty($folder['parent']) )
             {
@@ -150,6 +155,26 @@ class PanSCMAPIConnector
                     $sub = $pan->createDeviceCloud( $folder['name'], $parent );
                 $sub->setSaseID($folder['id']);
             }
+            elseif( $folder['type'] == "on-prem" )
+            {
+                /*
+                Array
+                (
+                    [display_name] => RSNISFIRE01
+                    [id] => b6a795ac-9ad2-4b9a-96b8-449b58b85afa
+                    [model] => PA-440
+                    [name] => 021209061525
+                    [parent] => ZTP_LandingFolder
+                    [serial_number] => 021209061525
+                    [type] => on-prem
+                )
+                 */
+                $sub = $pan->findDeviceOnPrem( $folder['name'] );
+                if( $sub == null )
+                    $sub = $pan->createDeviceOnPrem( $folder['name'], $parent );
+                $sub->setSaseID($folder['id']);
+            }
+            //todo: swaschkut 20260125 - any other type???? what about on-prem???
 
             if( isset($folder['snippets']) )
             {
@@ -682,7 +707,7 @@ class PanSCMAPIConnector
         $response = curl_exec($this->_curl_handle);
         if( $this->showApiCalls )
         {
-            #print $response . "\n";
+            print $response . "\n";
         }
 
         $jsonArray = json_decode($response, TRUE);
@@ -718,7 +743,9 @@ class PanSCMAPIConnector
             $url .= "&position=" . $prePost;
         }
 
-        PH::print_stdout("   -1 '". $folderName. "' object: " . $type. " URL: '".$url."'");
+        $date = date('Y-m-d H:i:s');
+        PH::print_stdout( "     time: ".$date);
+        PH::print_stdout("     -1 '". $folderName. "' object: " . $type. " URL: '".$url."'");
 
 
 
@@ -857,7 +884,9 @@ class PanSCMAPIConnector
         }
 
 
-        PH::print_stdout("   -2 '". $folder. "' object: " . $type);
+        $date = date('Y-m-d H:i:s');
+        PH::print_stdout( "     time: ".$date);
+        PH::print_stdout("   -2 '". $folder. "' object: " . $type. " URL: '".$url."'");
 
 
         if( strpos($url, "parent1=200") !== FALSE )
@@ -971,6 +1000,8 @@ class PanSCMAPIConnector
             if( get_class($sub) == "Container" )
                 $foldertype = "folder";
             elseif( get_class($sub) == "DeviceCloud" )
+                $foldertype = "device";
+            elseif( get_class($sub) == "DeviceOnPrem" )
                 $foldertype = "device";
             elseif( get_class($sub) == "Snippet" )
                 $foldertype = "snippet";

@@ -119,6 +119,14 @@ class DeviceOnPrem
     /** @var EDLStore */
     public $EDLStore = null;
 
+    /** @var LogProfileStore */
+    public $LogProfileStore = null;
+
+    /** @var CertificateStore */
+    public $certificateStore = null;
+
+    /** @var SSL_TLSServiceProfileStore */
+    public $SSL_TLSServiceProfileStore = null;
 /*
     public static $templateCloudxml = '<entry name="**Need a Name**"><address></address>
                                     <rulebase><security><rules></rules></security><nat><rules></rules></nat></rulebase>
