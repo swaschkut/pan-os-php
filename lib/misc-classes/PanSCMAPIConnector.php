@@ -106,6 +106,14 @@ class PanSCMAPIConnector
 
 
         $folderNameArray = array();
+        $deviceCloudArray = array();
+        $deviceOnPremArray = array();
+
+        $parentContainerNotFound = array();
+        $parentContainerNotFound_2 = array();
+        $parentContainerNotFound_3 = array();
+        $parentContainerNotFound_4 = array();
+
         foreach( $responseArray['data'] as $folder )
         {
             $folderNameArray[] = $folder['name'];
@@ -143,17 +151,28 @@ class PanSCMAPIConnector
 
             if( $folder['type'] == "container" )
             {
-                $sub = $pan->findContainer( $folder['name'] );
-                if( $sub == null )
-                    $sub = $pan->createContainer( $folder['name'], $parent );
-                $sub->setSaseID($folder['id']);
+                $parentContainer = $pan->findContainer( $parent );
+                if( $parentContainer !== null )
+                {
+                    $sub = $pan->findContainer( $folder['name'] );
+                    if( $sub == null )
+                        $sub = $pan->createContainer( $folder['name'], $parent );
+                    $sub->setSaseID($folder['id']);
+                }
+                else
+                {
+                    $tmpArray = array();
+                    $tmpArray['folder'] = $folder;
+                    $tmpArray['parent'] = $parent;
+                    $parentContainerNotFound[] = $tmpArray;
+                }
             }
             elseif( $folder['type'] == "cloud" )
             {
-                $sub = $pan->findDeviceCloud( $folder['name'] );
-                if( $sub == null )
-                    $sub = $pan->createDeviceCloud( $folder['name'], $parent );
-                $sub->setSaseID($folder['id']);
+                $tmpArray = array();
+                $tmpArray['folder'] = $folder;
+                $tmpArray['parent'] = $parent;
+                $deviceCloudArray[] = $tmpArray;
             }
             elseif( $folder['type'] == "on-prem" )
             {
@@ -169,10 +188,11 @@ class PanSCMAPIConnector
                     [type] => on-prem
                 )
                  */
-                $sub = $pan->findDeviceOnPrem( $folder['name'] );
-                if( $sub == null )
-                    $sub = $pan->createDeviceOnPrem( $folder['name'], $parent );
-                $sub->setSaseID($folder['id']);
+
+                $tmpArray = array();
+                $tmpArray['folder'] = $folder;
+                $tmpArray['parent'] = $parent;
+                $deviceOnPremArray[] = $tmpArray;
             }
             //todo: swaschkut 20260125 - any other type???? what about on-prem???
 
@@ -185,6 +205,103 @@ class PanSCMAPIConnector
                 }
             }
         }
+
+        foreach( $parentContainerNotFound as $parentNotFound )
+        {
+            $folder = $parentNotFound['folder'];
+            $parent = $parentNotFound['parent'];
+
+            if( $pan->findContainer( $parent ) !== null )
+            {
+                $sub = $pan->findContainer( $folder['name'] );
+                if( $sub == null )
+                    $sub = $pan->createContainer( $folder['name'], $parent );
+                $sub->setSaseID($folder['id']);
+            }
+            else
+            {
+                $tmpArray = array();
+                $tmpArray['folder'] = $folder;
+                $tmpArray['parent'] = $parent;
+                $parentContainerNotFound_2[] = $tmpArray;
+            }
+        }
+
+        foreach( $parentContainerNotFound_2 as $parentNotFound_2 )
+        {
+            $folder = $parentNotFound_2['folder'];
+            $parent = $parentNotFound_2['parent'];
+
+            if( $pan->findContainer( $parent ) !== null )
+            {
+                $sub = $pan->findContainer( $folder['name'] );
+                if( $sub == null )
+                    $sub = $pan->createContainer( $folder['name'], $parent );
+                $sub->setSaseID($folder['id']);
+            }
+            else
+            {
+                $tmpArray = array();
+                $tmpArray['folder'] = $folder;
+                $tmpArray['parent'] = $parent;
+                $parentContainerNotFound_3[] = $tmpArray;
+            }
+        }
+
+        foreach( $parentContainerNotFound_3 as $parentNotFound_3 )
+        {
+            $folder = $parentNotFound_3['folder'];
+            $parent = $parentNotFound_3['parent'];
+
+            if( $pan->findContainer( $parent ) !== null )
+            {
+                $sub = $pan->findContainer( $folder['name'] );
+                if( $sub == null )
+                    $sub = $pan->createContainer( $folder['name'], $parent );
+                $sub->setSaseID($folder['id']);
+            }
+            else
+            {
+                $tmpArray = array();
+                $tmpArray['folder'] = $folder;
+                $tmpArray['parent'] = $parent;
+                $parentContainerNotFound_4[] = $tmpArray;
+            }
+        }
+
+        foreach( $parentContainerNotFound_4 as $parentNotFound_4 )
+        {
+            $folder = $parentNotFound_4['folder'];
+            $parent = $parentNotFound_4['parent'];
+
+            $sub = $pan->findContainer( $folder['name'] );
+            if( $sub == null )
+                $sub = $pan->createContainer( $folder['name'], $parent );
+            $sub->setSaseID($folder['id']);
+        }
+
+        foreach( $deviceOnPremArray as $deviceOnPrem )
+        {
+            $folder = $deviceOnPrem['folder'];
+            $parent = $deviceOnPrem['parent'];
+
+            $sub = $pan->findDeviceCloud( $folder['name'] );
+            if( $sub == null )
+                $sub = $pan->createDeviceCloud( $folder['name'], $parent );
+            $sub->setSaseID($folder['id']);
+        }
+
+        foreach( $deviceCloudArray as $deviceCloud )
+        {
+            $folder = $deviceCloud['folder'];
+            $parent = $deviceCloud['parent'];
+
+            $sub = $pan->findDeviceCloud( $folder['name'] );
+            if( $sub == null )
+                $sub = $pan->createDeviceCloud( $folder['name'], $parent );
+            $sub->setSaseID($folder['id']);
+        }
+
 
         return $folderNameArray;
     }
@@ -744,8 +861,8 @@ class PanSCMAPIConnector
         }
 
         $date = date('Y-m-d H:i:s');
-        PH::print_stdout( "     time: ".$date);
-        PH::print_stdout("     -1 '". $folderName. "' object: " . $type. " URL: '".$url."'");
+        #PH::print_stdout( "     time: ".$date);
+        #PH::print_stdout("     -1 '". $folderName. "' object: " . $type. " URL: '".$url."'");
 
 
 

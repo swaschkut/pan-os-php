@@ -1846,6 +1846,7 @@ class UTIL
             #print_r( $folderArray );
         }
 
+        $overall_runtime = 0;
         foreach( $folderArray as $key => $folder )
         {
             if( $folder === "Shared" )
@@ -1873,19 +1874,39 @@ class UTIL
                 }
             }
 
-            if( $this->debugAPI )
-            {
-                PH::print_stdout( "FOLDER: ".$folder );
+            //if( $this->debugAPI ) {
+            PH::print_stdout();
+            PH::print_stdout( "FOLDER: ".$folder );
                 PH::print_stdout( "     ".($key+1)." / ". $folder_array_max);
-            }
+                //time start
+            $date_start = time();
+            $date = date('Y-m-d H:i:s');
+            PH::print_stdout( "     starttime: ".$date);
+            //}
 
             //Todo: 20240326 swaschkut - do not always load full config
             if( $this->configInput['type'] == 'sase-api' )
                 $this->sase_connector->loadSaseConfig($folder, $sub, $this->utilType);
             elseif( $this->configInput['type'] == 'scm-api' )
                 $this->sase_connector->loadSCMConfig($folder, $sub, $this->utilType);
+
+            //time end
+            $date_end = time();
+            $date = date('Y-m-d H:i:s');
+            #PH::print_stdout( "     endtime: ".$date);
+            $runtime_seconds = $date_end-$date_start;
+            $overall_runtime += $runtime_seconds;
+            PH::print_stdout( "     runtime: ".$runtime_seconds." seconds"." [until now: ".($overall_runtime/60)." minutes]");
+
+
         }
+
+        PH::print_stdout();
+        PH::print_stdout( " overall runtime: ".$overall_runtime." seconds");
+        PH::print_stdout( " overall runtime: ".($overall_runtime/60)." minutes");
+        PH::print_stdout();
     }
+
     public function location_filter_object()
     {
         $sub = null;

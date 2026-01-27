@@ -215,6 +215,7 @@ class DeviceOnPrem
     /** @var Array */
     public $devices = array();
 
+    public $sizeArray = array();
 
     /** @var NetworkPropertiesContainer */
     public $network;

@@ -414,6 +414,10 @@ class STATSUTIL extends RULEUTIL
             PH::$JSON_OUT['log'] = PH::$JSON_OUTlog;
             //print json_encode( PH::$JSON_OUT, JSON_PRETTY_PRINT );
         }
+
+        //only if scmapi
+        if( $this->sase_connector !== null && $this->sase_connector->isSCMAPI() )
+            $this->save_our_work(TRUE);
     }
 
     public function supportedArguments()
