@@ -10,6 +10,7 @@ UTIL:
 * type=stats | update BP table - to remove entries not listed in bp json file
 
 BUGFIX:
+* class UTIL | bugfix to bring actions= with '/' for multiple actions back to working mode
 
 GENERAL:
 
