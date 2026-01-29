@@ -1896,14 +1896,14 @@ class UTIL
             #PH::print_stdout( "     endtime: ".$date);
             $runtime_seconds = $date_end-$date_start;
             $overall_runtime += $runtime_seconds;
-            PH::print_stdout( "     runtime: ".$runtime_seconds." seconds"." [until now: ".($overall_runtime/60)." minutes]");
+            PH::print_stdout( "     runtime: ".$runtime_seconds." seconds"." [until now: ".round($overall_runtime/60, 2)." minutes]");
 
 
         }
 
         PH::print_stdout();
         PH::print_stdout( " overall runtime: ".$overall_runtime." seconds");
-        PH::print_stdout( " overall runtime: ".($overall_runtime/60)." minutes");
+        PH::print_stdout( " overall runtime: ".round($overall_runtime/60, 2)." minutes");
         PH::print_stdout();
     }
 

@@ -7,6 +7,7 @@ UTIL:
 * class PanSCMAPIConnector | optimisation for downloading more than 200 Containers - still an issue if 1000nds of address objects are available at 'All'
 * type=address in=scm-api:// | improve for device on-prem config
 * in=scmapi:// | improvements to get container/deviceOnPrem/deviceCloud correctly working with SCM api folder hierarchy
+* type=stats | update BP table - to remove entries not listed in bp json file
 
 BUGFIX:
 

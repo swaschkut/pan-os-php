@@ -1411,6 +1411,8 @@ class PH
                     if( PH::$shadow_bp_jsonfile['included-in-bpa'][$bpa_key][$tmp_key] === false )
                         unset( $stdoutarray['percentage'][$bpa_key][$value_key] );
                 }
+                else
+                    unset( $stdoutarray['percentage'][$bpa_key][$value_key] );
 
             }
         }
