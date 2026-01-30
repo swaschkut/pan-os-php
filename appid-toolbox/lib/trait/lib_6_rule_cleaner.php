@@ -46,7 +46,7 @@ trait lib_6_rule_cleaner
         if( isset(PH::$args['help']) )
             $this->display_usage_and_exit_p5();
 
-        $supportedOptions = array('phase', 'in', 'out', 'location', 'confirm', 'dayssincelastreport', 'serial');
+        $supportedOptions = array('phase', 'in', 'out', 'location', 'confirm', 'dayssincelastreport', 'serial', 'debugapi');
         $supportedOptions = array_flip($supportedOptions);
 
         foreach( PH::$args as $arg => $argvalue )
@@ -60,6 +60,10 @@ trait lib_6_rule_cleaner
         $dryRun = TRUE;
         $skipIfLastReportIsMoreThanX_DaysOld = 1;
 
+        if( isset(PH::$args['debugapi']) )
+        {
+            $debugAPI = TRUE;
+        }
 
         $return = AppIDToolbox_common::location();
         $configInput = $return['configInput'];
