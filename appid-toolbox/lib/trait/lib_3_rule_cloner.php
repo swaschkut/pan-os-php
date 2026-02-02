@@ -302,10 +302,13 @@ trait lib_3_rule_cloner
             $newName = $legacyRule->owner->findAvailableName($legacyRule->name(), '-app');
             PH::print_stdout(" - cloned rule name will be '{$newName}'");
             /** @var Rule $appidRule */
+            /** @var RuleStore $ruleStore */
+            $ruleStore = $subSystem->securityRules;
+            $legacyIsPostRule = $legacyRule->isPostRule();
             if( !$bundleApiCalls )
-                $appidRule = $subSystem->securityRules->API_cloneRule($legacyRule, $newName);
+                $appidRule = $ruleStore->API_cloneRule($legacyRule, $newName, $legacyIsPostRule);
             else
-                $appidRule = $subSystem->securityRules->cloneRule($legacyRule, $newName);
+                $appidRule = $ruleStore->cloneRule($legacyRule, $newName, $legacyIsPostRule);
 
             PH::print_stdout(" - created rule '{$appidRule->name()}'");
             if( !$bundleApiCalls )
