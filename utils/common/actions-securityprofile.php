@@ -1451,6 +1451,24 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         }
 
                     }
+
+                    if( !empty( $object->additional['mica-engine-wildfire-rules'] ) )
+                    {
+                        $enabled = "[no]";
+                        if ($object->cloud_inline_analysis_enabled)
+                            $enabled = "[yes]";
+                        else {
+                            #if( $bestPractice )
+                            #    $enabled .= $bp_NOT_sign;
+                            #if( $visibility )
+                            #    $enabled .= $visible_NOT_sign;
+                        }
+
+                        $string_mica_engine[] = "mica-engine-wildfire-rules: " . $enabled;
+
+                        foreach( $object->additional['mica-engine-wildfire-rules'] as $rulename => $rule )
+                            $string_mica_engine[] = "'".$rulename."' | - application:'".implode(",", $rule['application'])."' - fileType:'".implode(",", $rule['file-type'])."' - direction:'".$rule['direction']."'  - action:'".$rule['action']."'";
+                    }
                 }
 
                 //<th>DNS lists</th>
