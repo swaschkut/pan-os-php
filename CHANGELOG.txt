@@ -9,6 +9,7 @@ UTIL:
 * in=scmapi:// | improvements to get container/deviceOnPrem/deviceCloud correctly working with SCM api folder hierarchy
 * type=stats | update BP table - to remove entries not listed in bp json file
 * type=appid-toolbox | introduce debugapi for all phases
+* type=securityprofile securityprofiletype=wildfire-analysis actions=display | extend with mica-engine settings
 
 BUGFIX:
 * class UTIL | bugfix to bring actions= with '/' for multiple actions back to working mode

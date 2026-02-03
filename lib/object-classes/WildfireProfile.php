@@ -25,6 +25,10 @@ class WildfireProfile extends SecurityProfile2
 
     public $rule_coverage = array();
 
+    public $cloud_inline_analysis_enabled = false;
+
+    public $additional = array();
+
     /**
      * you should not need this one for normal use
      * @param string $name
@@ -120,6 +124,77 @@ class WildfireProfile extends SecurityProfile2
             }
         }
 
+        $tmp_rule = DH::findFirstElement('cloud-inline-analysis', $xml);
+        if( $tmp_rule !== FALSE )
+        {
+            if( $tmp_rule->textContent == "yes")
+                $this->cloud_inline_analysis_enabled = true;
+        }
+
+        $tmp_rule = DH::findFirstElement('mica-engine-wildfire-rules', $xml);
+        if( $tmp_rule !== FALSE && !$tmp_rule->hasChildNodes() )
+        {
+            $xml->removeChild($tmp_rule);
+            $tmp_rule = DH::findFirstElement('mica-engine-wildfire-rules', $xml);
+        }
+        if( $tmp_rule !== FALSE )
+        {
+            $this->additional['mica-engine-wildfire-rules'] = array();
+            foreach( $tmp_rule->childNodes as $tmp_entry1 )
+            {
+                if ($tmp_entry1->nodeType != XML_ELEMENT_NODE)
+                    continue;
+
+                $name = DH::findAttribute("name", $tmp_entry1);
+
+                $tmp_action = DH::findFirstElement("action", $tmp_entry1);
+                if( $tmp_action !== FALSE )
+                    $this->additional['mica-engine-wildfire-rules'][$name]['action'] = $tmp_action->textContent;
+
+                $tmp_direction = DH::findFirstElement("direction", $tmp_entry1);
+                if( $tmp_direction !== FALSE )
+                    $this->additional['mica-engine-wildfire-rules'][$name]['direction'] = $tmp_direction->textContent;
+
+                $tmp_application = DH::findFirstElement("application", $tmp_entry1);
+                if( $tmp_application !== FALSE )
+                {
+                    $tmp_app_array = array();
+                    foreach( $tmp_application->childNodes as $tmp_entry_app )
+                    {
+                        if ($tmp_entry_app->nodeType != XML_ELEMENT_NODE)
+                            continue;
+
+                        $tmp_app_array[$tmp_entry_app->textContent] = $tmp_entry_app->textContent;
+                    }
+                    $this->additional['mica-engine-wildfire-rules'][$name]['application'] = $tmp_app_array;
+                }
+                $tmp_file_type = DH::findFirstElement("file-type", $tmp_entry1);
+                if( $tmp_file_type !== FALSE )
+                {
+                    $tmp_file_type_array = array();
+                    foreach( $tmp_file_type->childNodes as $tmp_entry_file_type )
+                    {
+                        if ($tmp_entry_file_type->nodeType != XML_ELEMENT_NODE)
+                            continue;
+
+                        $tmp_file_type_array[$tmp_entry_file_type->textContent] = $tmp_entry_file_type->textContent;
+                    }
+                    $this->additional['mica-engine-wildfire-rules'][$name]['file-type'] = $tmp_file_type_array;
+                }
+                /*
+                     <entry name="wf_inline_rule1">
+                      <application>
+                        <member>any</member>
+                      </application>
+                      <file-type>
+                        <member>any</member>
+                      </file-type>
+                      <direction>both</direction> //download/both
+                      <action>alert</action> //allow/alert/block
+                    </entry>
+                 */
+            }
+        }
         return TRUE;
     }
 
@@ -131,12 +206,24 @@ class WildfireProfile extends SecurityProfile2
 
         if( !empty( $this->rules_obj ) )
         {
-            PH::print_stdout("        - threat-rules:");
+            PH::print_stdout("        - wildfire-rules:");
 
             foreach ($this->rules_obj as $rulename => $rule)
             {
                 $rule->display();
             }
+        }
+
+        if( !empty( $this->additional['mica-engine-wildfire-rules'] ) )
+        {
+            PH::print_stdout("        ----------------------------------------");
+            $cloud_enabled = "no";
+            if( $this->cloud_inline_analysis_enabled )
+                $cloud_enabled = "yes";
+            PH::print_stdout("        - wildfire-inline-rules: [mica-engine-enabled: ".$cloud_enabled."]");
+
+            foreach ($this->additional['mica-engine-wildfire-rules'] as $rulename => $rule)
+                PH::print_stdout("          '".$rulename."': - fileType: '".implode(",", $rule['file-type'])."' - application: '".implode(",", $rule['application'])."' - direction: '".$rule['direction']."'  - action: '".$rule['action']."'" );
         }
     }
 
