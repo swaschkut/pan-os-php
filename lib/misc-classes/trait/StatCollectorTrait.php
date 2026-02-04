@@ -1015,7 +1015,7 @@ trait StatCollectorTrait
         //Todo: add missing stuff
         //AV actions
         //AV mica-engine
-        
+
         if( get_class($this) == "BuckbeakConf" )
         {
             $container_all = $this->findContainer( "All");
@@ -1088,8 +1088,20 @@ trait StatCollectorTrait
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "av is.visibility" );
         $stdoutarray['av visibility'] = count( $sub_ruleStore->rules( $filter_array ) );
 
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "av.actions is.visibility" );
+        $stdoutarray['av visibility actions'] = count( $sub_ruleStore->rules( $filter_array ) );
+
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "av.mica-engine is.visibility" );
+        $stdoutarray['av visibility mica-engine'] = count( $sub_ruleStore->rules( $filter_array ) );
+
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "av is.best-practice" );
         $stdoutarray['av best-practice'] = count( $sub_ruleStore->rules( $filter_array ) );
+
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "av.actions is.best-practice" );
+        $stdoutarray['av best-practice actions'] = count( $sub_ruleStore->rules( $filter_array ) );
+
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "av.mica-engine is.best-practice" );
+        $stdoutarray['av best-practice mica-engine'] = count( $sub_ruleStore->rules( $filter_array ) );
 
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "av is.adoption" );
         $stdoutarray['av adoption'] = count( $sub_ruleStore->rules( $filter_array ) );
@@ -1304,11 +1316,35 @@ trait StatCollectorTrait
         else
             $stdoutarray['av visibility percentage'] = 0;
         //--
+        $stdoutarray['av visibility actions calc'] = $stdoutarray['av visibility actions']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['av visibility actions percentage'] = floor( ( $stdoutarray['as visibility actions'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['av visibility actions percentage'] = 0;
+        //--
+        $stdoutarray['av visibility mica-engine calc'] = $stdoutarray['av visibility mica-engine']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['av visibility mica-engine percentage'] = floor( ( $stdoutarray['av visibility mica-engine'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['av visibility mica-engine percentage'] = 0;
+        //--
         $stdoutarray['av best-practice calc'] = $stdoutarray['av best-practice']."/".$ruleForCalculation;
         if( $ruleForCalculation !== 0 )
             $stdoutarray['av best-practice percentage'] = floor( ( $stdoutarray['av best-practice'] / $ruleForCalculation ) * 100 );
         else
             $stdoutarray['av best-practice percentage'] = 0;
+        //--
+        $stdoutarray['av best-practice actions calc'] = $stdoutarray['av best-practice actions']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['av best-practice actions percentage'] = floor( ( $stdoutarray['as best-practice actions'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['av best-practice actions percentage'] = 0;
+        //--
+        $stdoutarray['av best-practice mica-engine calc'] = $stdoutarray['av best-practice mica-engine']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['av best-practice mica-engine percentage'] = floor( ( $stdoutarray['av best-practice mica-engine'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['av best-practice mica-engine percentage'] = 0;
         //--
         $stdoutarray['av adoption calc'] = $stdoutarray['av adoption']."/".$ruleForCalculation;
         if( $ruleForCalculation !== 0 )
@@ -1589,6 +1625,11 @@ trait StatCollectorTrait
 
         $percentageArray_visibility['Antivirus Profiles']['value'] = $stdoutarray['av visibility percentage'];
         $percentageArray_visibility['Antivirus Profiles']['group'] = 'Threat Prevention';
+        $percentageArray_visibility['Antivirus Actions']['value'] = $stdoutarray['av visibility actions percentage'];
+        $percentageArray_visibility['Antivirus Actions']['group'] = 'Threat Prevention';
+        $percentageArray_visibility['Antivirus InLine ML']['value'] = $stdoutarray['as visibility mica-engine percentage'];
+        $percentageArray_visibility['Antivirus InLine ML']['group'] = 'Threat Prevention';
+
         $percentageArray_visibility['Anti-Spyware Profiles']['value'] = $stdoutarray['as visibility percentage'];
         $percentageArray_visibility['Anti-Spyware Profiles']['group'] = 'Threat Prevention';
         $percentageArray_visibility['Anti-Spyware Rules']['value'] = $stdoutarray['as visibility rules percentage'];
@@ -1639,6 +1680,11 @@ trait StatCollectorTrait
 
         $percentageArray_best_practice['Antivirus Profiles']['value'] = $stdoutarray['av best-practice percentage'];
         $percentageArray_best_practice['Antivirus Profiles']['group'] = 'Threat Prevention';
+        $percentageArray_best_practice['Antivirus Actions']['value'] = $stdoutarray['av best-practice actions percentage'];
+        $percentageArray_best_practice['Antivirus Actions']['group'] = 'Threat Prevention';
+        $percentageArray_best_practice['Antivirus InLine ML']['value'] = $stdoutarray['as best-practice mica-engine percentage'];
+        $percentageArray_best_practice['Antivirus InLine ML']['group'] = 'Threat Prevention';
+
         $percentageArray_best_practice['Anti-Spyware Profiles']['value'] = $stdoutarray['as best-practice percentage'];
         $percentageArray_best_practice['Anti-Spyware Profiles']['group'] = 'Threat Prevention';
         $percentageArray_best_practice['Anti-Spyware Rules']['value'] = $stdoutarray['as best-practice rules percentage'];
