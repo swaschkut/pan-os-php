@@ -1537,7 +1537,10 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 $lines .= $context->encloseFunction($string_mica_engine);
                 if( $bestPractice || $visibility)
                 {
-                    if( (get_class($object) == "AntiSpywareProfile" && $object->owner->owner->version >= 102 ) || (get_class($object) == "VulnerabilityProfile" && $object->owner->owner->version >= 110 ) || get_class($object) == "AntiVirusProfile" )
+                    if( (get_class($object) == "AntiSpywareProfile" && $object->owner->owner->version >= 102 )
+                        || (get_class($object) == "VulnerabilityProfile" && $object->owner->owner->version >= 110 )
+                        || (get_class($object) == "WildfireProfile" && $object->owner->owner->version >= 111 )
+                        || get_class($object) == "AntiVirusProfile" )
                     {
                         if( $bestPractice )
                         {
