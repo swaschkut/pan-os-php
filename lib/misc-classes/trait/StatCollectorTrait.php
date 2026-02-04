@@ -1318,7 +1318,7 @@ trait StatCollectorTrait
         //--
         $stdoutarray['av visibility actions calc'] = $stdoutarray['av visibility actions']."/".$ruleForCalculation;
         if( $ruleForCalculation !== 0 )
-            $stdoutarray['av visibility actions percentage'] = floor( ( $stdoutarray['as visibility actions'] / $ruleForCalculation ) * 100 );
+            $stdoutarray['av visibility actions percentage'] = floor( ( $stdoutarray['av visibility actions'] / $ruleForCalculation ) * 100 );
         else
             $stdoutarray['av visibility actions percentage'] = 0;
         //--
@@ -1336,7 +1336,7 @@ trait StatCollectorTrait
         //--
         $stdoutarray['av best-practice actions calc'] = $stdoutarray['av best-practice actions']."/".$ruleForCalculation;
         if( $ruleForCalculation !== 0 )
-            $stdoutarray['av best-practice actions percentage'] = floor( ( $stdoutarray['as best-practice actions'] / $ruleForCalculation ) * 100 );
+            $stdoutarray['av best-practice actions percentage'] = floor( ( $stdoutarray['av best-practice actions'] / $ruleForCalculation ) * 100 );
         else
             $stdoutarray['av best-practice actions percentage'] = 0;
         //--
