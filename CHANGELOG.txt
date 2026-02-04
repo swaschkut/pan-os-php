@@ -13,6 +13,7 @@ UTIL:
 * type=securityprofile securityprofiletype=wildfire-analysis 'actions=exporttoexcel:file.html' | extend with mica-engine
 * type=securityprofile securityprofiletype=wildfire-analysis 'filter=(cloud-inline-analysis XYZ)' - extend for wildfire
 * type=securityprofile securityprofiletype=wildfire-analysis 'actions=exporttoexcel:wf.html,visiblity|bestpractice' - extend for wildfire
+* type=stats actions=display-bpa | extend with wildfire rules / mica-engine
 
 BUGFIX:
 * class UTIL | bugfix to bring actions= with '/' for multiple actions back to working mode

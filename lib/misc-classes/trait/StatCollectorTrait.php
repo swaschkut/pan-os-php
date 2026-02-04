@@ -1055,10 +1055,21 @@ trait StatCollectorTrait
         $stdoutarray['log at end'] = count( $sub_ruleStore->rules( $generalFilter."(log at.end)" ) );
         $stdoutarray['log at not start'] = count( $sub_ruleStore->rules( $generalFilter."!(log at.start)" ) );
         $stdoutarray['log prof set'] = count( $sub_ruleStore->rules( $generalFilter."(logprof is.set)" ) );
+
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "wf is.visibility" );
         $stdoutarray['wf visibility'] = count( $sub_ruleStore->rules( $filter_array ) );
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "wf.rules is.visibility" );
+        $stdoutarray['wf visibility rules'] = count( $sub_ruleStore->rules( $filter_array ) );
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "wf.mica-engine is.visibility" );
+        $stdoutarray['wf visibility mica-engine'] = count( $sub_ruleStore->rules( $filter_array ) );
+
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "wf is.best-practice" );
         $stdoutarray['wf best-practice'] = count( $sub_ruleStore->rules( $filter_array ) );
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "wf.rules is.best-practice" );
+        $stdoutarray['wf best-practice rules'] = count( $sub_ruleStore->rules( $filter_array ) );
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "wf.mica-engine is.best-practice" );
+        $stdoutarray['wf best-practice mica-engine'] = count( $sub_ruleStore->rules( $filter_array ) );
+
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "wf is.adoption" );
         $stdoutarray['wf adoption'] = count( $sub_ruleStore->rules( $filter_array ) );
 
@@ -1216,6 +1227,18 @@ trait StatCollectorTrait
         else
             $stdoutarray['wf visibility percentage'] = 0;
         //--
+        $stdoutarray['wf visibility rules calc'] = $stdoutarray['wf visibility rules']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['wf visibility rules percentage'] = floor( ( $stdoutarray['wf visibility rules'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['wf visibility rules percentage'] = 0;
+        //--
+        $stdoutarray['wf visibility mica-engine calc'] = $stdoutarray['wf visibility mica-engine']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['wf visibility mica-engine percentage'] = floor( ( $stdoutarray['wf visibility mica-engine'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['wf visibility mica-engine percentage'] = 0;
+
 
         $stdoutarray['wf best-practice calc'] = $stdoutarray['wf best-practice']."/".$ruleForCalculation;
         if( $ruleForCalculation !== 0 )
@@ -1223,6 +1246,18 @@ trait StatCollectorTrait
         else
             $stdoutarray['wf best-practice percentage'] = 0;
         //--
+        $stdoutarray['wf best-practice rules calc'] = $stdoutarray['wf best-practice rules']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['wf best-practice rules percentage'] = floor( ( $stdoutarray['wf best-practice rules'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['wf best-practice rules percentage'] = 0;
+        //--
+        $stdoutarray['wf best-practice mica-engine calc'] = $stdoutarray['wf best-practice mica-engine']."/".$ruleForCalculation;
+        if( $ruleForCalculation !== 0 )
+            $stdoutarray['wf best-practice mica-engine percentage'] = floor( ( $stdoutarray['wf best-practice mica-engine'] / $ruleForCalculation ) * 100 );
+        else
+            $stdoutarray['wf best-practice mica-engine percentage'] = 0;
+
 
         $stdoutarray['wf adoption calc'] = $stdoutarray['wf adoption']."/".$ruleForCalculation;
         if( $ruleForCalculation !== 0 )
@@ -1534,6 +1569,11 @@ trait StatCollectorTrait
         $percentageArray_visibility['Log Forwarding Profiles']['group'] = 'Logging';
         $percentageArray_visibility['Wildfire Analysis Profiles']['value'] = $stdoutarray['wf visibility percentage'];
         $percentageArray_visibility['Wildfire Analysis Profiles']['group'] = 'Wildfire';
+        $percentageArray_visibility['Wildfire Analysis Rules']['value'] = $stdoutarray['wf visibility rules percentage'];
+        $percentageArray_visibility['Wildfire Analysis Rules']['group'] = 'Wildfire';
+        $percentageArray_visibility['Wildfire Analysis InLine ML']['value'] = $stdoutarray['wf visibility mica-engine percentage'];
+        $percentageArray_visibility['Wildfire Analysis InLine ML']['group'] = 'Wildfire';
+
         $percentageArray_visibility['Zone Protection']['value'] = $stdoutarray['zone protection percentage'];
         $percentageArray_visibility['Zone Protection']['group'] = 'Zone Protection';
         $percentageArray_visibility['App-ID']['value'] = $stdoutarray['app id percentage'];
@@ -1583,6 +1623,10 @@ trait StatCollectorTrait
         #$percentageArray_best_practice['Log Forwarding Profiles']['value'] = $stdoutarray['log prof set percentage'];
         $percentageArray_best_practice['Wildfire Analysis Profiles']['value'] = $stdoutarray['wf best-practice percentage'];
         $percentageArray_best_practice['Wildfire Analysis Profiles']['group'] = 'Wildfire';
+        $percentageArray_best_practice['Wildfire Analysis Rules']['value'] = $stdoutarray['wf best-practice rules percentage'];
+        $percentageArray_best_practice['Wildfire Analysis Rules']['group'] = 'Wildfire';
+        $percentageArray_best_practice['Wildfire Analysis InLine ML']['value'] = $stdoutarray['wf best-practice mica-engine percentage'];
+        $percentageArray_best_practice['Wildfire Analysis InLine ML']['group'] = 'Wildfire';
 
         #$percentageArray_best_practice['Zone Protection']['value'] = '---';
         #$percentageArray_best_practice['App-ID']['value'] = $stdoutarray['app id percentage'];

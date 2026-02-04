@@ -1528,6 +1528,58 @@ RQuery::$defaultFilters['securityprofile']['wf']['operators']['is.adoption'] = a
     'arg' => false,
     'help' => "'securityprofiletype=wildfire-analysis' e.g. 'filter=(wf is.adoption)'"
 );
+RQuery::$defaultFilters['securityprofile']['wf.rules']['operators']['is.best-practice'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var WildfireProfile $object */
+        $object = $context->object;
+
+        if( $object->secprof_type != 'wildfire' )
+            return null;
+
+        return $object->wildfire_rules_best_practice();
+    },
+    'arg' => false,
+    'help' => "'securityprofiletype=wildfire-analysis' e.g. 'filter=(wf.rules is.best-practice)'"
+);
+RQuery::$defaultFilters['securityprofile']['wf.rules']['operators']['is.visibility'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var WildfireProfile $object */
+        $object = $context->object;
+
+        if( $object->secprof_type != 'wildfire' )
+            return null;
+
+        return $object->wildfire_rules_visibility();
+    },
+    'arg' => false,
+    'help' => "'securityprofiletype=wildfire-analysis' e.g. 'filter=(wf.rules is.visibility)'"
+);
+RQuery::$defaultFilters['securityprofile']['wf.mica-engine']['operators']['is.best-practice'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var WildfireProfile $object */
+        $object = $context->object;
+
+        if( $object->secprof_type != 'wildfire' )
+            return null;
+
+        return $object->cloud_inline_analysis_best_practice($object->owner->bp_json_file);
+    },
+    'arg' => false,
+    'help' => "'securityprofiletype=wildfire-analysis' e.g. 'filter=(wf.mica-engine is.best-practice)'"
+);
+RQuery::$defaultFilters['securityprofile']['wf.mica-engine']['operators']['is.visibility'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var WildfireProfile $object */
+        $object = $context->object;
+
+        if( $object->secprof_type != 'wildfire' )
+            return null;
+
+        return $object->cloud_inline_analysis_visibility($object->owner->bp_json_file);
+    },
+    'arg' => false,
+    'help' => "'securityprofiletype=wildfire-analysis' e.g. 'filter=(wf.mica-engine is.visibility)'"
+);
 
 RQuery::$defaultFilters['securityprofile']['fb.rules']['operators']['is.best-practice'] = array(
     'Function' => function (SecurityProfileRQueryContext $context) {
