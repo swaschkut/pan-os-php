@@ -468,6 +468,32 @@
                     "analysis": "public-cloud"
                 }
             ]
+        },
+        "cloud-inline": {
+            "bp": {
+                "inline-policy-action": [
+                    {
+                        "type": [
+                            "any"
+                        ],
+                        "action": [
+                            "block"
+                        ]
+                    }
+                ]
+            },
+            "visibility": {
+                "inline-policy-action": [
+                    {
+                        "type": [
+                            "any"
+                        ],
+                        "action": [
+                            "!allow"
+                        ]
+                    }
+                ]
+            }
         }
     },
     "included-in-bpa":

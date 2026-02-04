@@ -37,7 +37,7 @@ class SecurityProfile2
 
         $bp_set = FALSE;
 
-        if( $this->secprof_type != 'spyware' and $this->secprof_type != 'vulnerability' and $this->secprof_type != 'virus' )
+        if( $this->secprof_type != 'spyware' and $this->secprof_type != 'vulnerability' and $this->secprof_type != 'virus' and $this->secprof_type != 'wildfire' )
             return null;
 
         $check_array = $this->bp_visibility_JSON( "bp", $this->secprof_type);
@@ -80,6 +80,24 @@ class SecurityProfile2
                         return false;
                 }
             }
+
+            if( isset($this->additional['mica-engine-wildfire-rules']) )
+            {
+                foreach( $this->additional['mica-engine-wildfire-rules'] as $name)
+                {
+                    foreach( $check_array['inline-policy-action'] as $validate )
+                    {
+                        if( isset($validate['type']) && $validate['type'][0] == 'any' )
+                        {
+                            $bp_set = $this->bp_stringValidation($name, 'action', $validate['action'][0]);
+                            if (!$bp_set)
+                                return FALSE;
+                        }
+                    }
+                    if($bp_set == FALSE)
+                        return false;
+                }
+            }
         }
 
         //AV iii) Wildfire Inline ML Tab
@@ -113,7 +131,7 @@ class SecurityProfile2
 
         $bp_set = FALSE;
 
-        if( $this->secprof_type != 'spyware' and $this->secprof_type != 'vulnerability' and $this->secprof_type != 'virus' )
+        if( $this->secprof_type != 'spyware' and $this->secprof_type != 'vulnerability' and $this->secprof_type != 'virus' and $this->secprof_type != 'wildfire' )
             return null;
 
         $check_array = $this->bp_visibility_JSON( "visibility", $this->secprof_type);
@@ -148,6 +166,30 @@ class SecurityProfile2
                         if( isset($validate['type']) && $validate['type'][0] == 'any' )
                         {
                             $bp_set = $this->visibility_stringValidation($name, 'inline-policy-action', $validate['action'][0]);
+                            if(!$bp_set)
+                                return FALSE;
+                        }
+                        else
+                        {
+                            //todo: speciall now for LDL
+                            #print_r($validate);
+                        }
+                    }
+
+                    if($bp_set == FALSE)
+                        return FALSE;
+                }
+            }
+
+            if( isset($this->additional['mica-engine-wildfire-rules']) )
+            {
+                foreach( $this->additional['mica-engine-wildfire-rules'] as $name)
+                {
+                    foreach( $check_array['inline-policy-action'] as $validate )
+                    {
+                        if( isset($validate['type']) && $validate['type'][0] == 'any' )
+                        {
+                            $bp_set = $this->visibility_stringValidation($name, 'action', $validate['action'][0]);
                             if(!$bp_set)
                                 return FALSE;
                         }
