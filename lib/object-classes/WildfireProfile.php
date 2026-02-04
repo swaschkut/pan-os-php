@@ -336,9 +336,10 @@ class WildfireProfile extends SecurityProfile2
 
     public function is_best_practice()
     {
-        if( $this->owner->owner->version >= 102 )
+        if( $this->owner->owner->version >= 111 )
         {
             if( $this->wildfire_rules_best_practice()
+                && $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file)
             )
                 return TRUE;
             else
@@ -356,10 +357,10 @@ class WildfireProfile extends SecurityProfile2
 
     public function is_visibility()
     {
-        if( $this->owner->owner->version >= 102 )
+        if( $this->owner->owner->version >= 111 )
         {
             if( $this->wildfire_rules_visibility()
-                #&& $this->cloud_inline_analysis_visibility($this->owner->bp_json_file)
+                && $this->cloud_inline_analysis_visibility($this->owner->bp_json_file)
                 #&& $this->spyware_dns_security_visibility() && $this->spyware_dnslist_visibility()
             )
                 return TRUE;
