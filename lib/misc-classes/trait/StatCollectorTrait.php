@@ -1214,8 +1214,93 @@ trait StatCollectorTrait
 
     public function bp_calculation( &$stdoutarray ): void
     {
-        $ruleForCalculation = $stdoutarray['security rules allow enabled'];
+        $dummy_stdoutarray = array();
+        //$ruleForCalculation = $stdoutarray['security rules allow enabled'];
+        $ruleForCalculation = 'security rules allow enabled';
 
+        $workingArray = array();
+        $workingArray[] = array( 'log at end', 'security rules enabled' );
+        $workingArray[] = array( 'log at not start', 'security rules enabled' );
+        $workingArray[] = array( 'log prof set', 'security rules enabled');
+
+        $workingArray[] = array( 'wf visibility', $ruleForCalculation);
+        $workingArray[] = array( 'wf visibility rules', $ruleForCalculation);
+        $workingArray[] = array( 'wf visibility mica-engine', $ruleForCalculation);
+        $workingArray[] = array( 'wf best-practice', $ruleForCalculation);
+        $workingArray[] = array( 'wf best-practice rules', $ruleForCalculation);
+        $workingArray[] = array( 'wf best-practice mica-engine', $ruleForCalculation);
+        $workingArray[] = array( 'wf adoption', $ruleForCalculation);
+
+        $workingArray[] = array( 'zone protection', 'security rules enabled');
+        $workingArray[] = array( 'app id', $ruleForCalculation);
+        $workingArray[] = array( 'user id', 'security rules enabled');
+        $workingArray[] = array( 'service port', $ruleForCalculation);
+
+        $workingArray[] = array( 'av visibility', $ruleForCalculation);
+        $workingArray[] = array( 'av visibility actions', $ruleForCalculation);
+        $workingArray[] = array( 'av visibility mica-engine', $ruleForCalculation);
+        $workingArray[] = array( 'av best-practice', $ruleForCalculation);
+        $workingArray[] = array( 'av best-practice actions', $ruleForCalculation);
+        $workingArray[] = array( 'av best-practice mica-engine', $ruleForCalculation);
+        $workingArray[] = array( 'av adoption', $ruleForCalculation);
+
+        $workingArray[] = array( 'as visibility', $ruleForCalculation);
+        $workingArray[] = array( 'as visibility rules', $ruleForCalculation);
+        $workingArray[] = array( 'as visibility mica-engine', $ruleForCalculation);
+        $workingArray[] = array( 'as best-practice', $ruleForCalculation);
+        $workingArray[] = array( 'as best-practice rules', $ruleForCalculation);
+        $workingArray[] = array( 'as best-practice mica-engine', $ruleForCalculation);
+        $workingArray[] = array( 'as adoption', $ruleForCalculation);
+
+        $workingArray[] = array( 'vp visibility', $ruleForCalculation);
+        $workingArray[] = array( 'vp visibility rules', $ruleForCalculation);
+        $workingArray[] = array( 'vp visibility mica-engine', $ruleForCalculation);
+        $workingArray[] = array( 'vp best-practice', $ruleForCalculation);
+        $workingArray[] = array( 'vp best-practice rules', $ruleForCalculation);
+        $workingArray[] = array( 'vp best-practice mica-engine', $ruleForCalculation);
+        $workingArray[] = array( 'vp adoption', $ruleForCalculation);
+
+        $workingArray[] = array( 'fb visibility', $ruleForCalculation);
+        $workingArray[] = array( 'fb best-practice', $ruleForCalculation);
+        $workingArray[] = array( 'fb adoption', $ruleForCalculation);
+
+        $workingArray[] = array( 'data visibility', $ruleForCalculation);
+        $workingArray[] = array( 'data best-practice', $ruleForCalculation);
+        $workingArray[] = array( 'data adoption', $ruleForCalculation);
+
+        $workingArray[] = array( 'url-site-access visibility', $ruleForCalculation);
+        $workingArray[] = array( 'url-site-access best-practice', $ruleForCalculation);
+        $workingArray[] = array( 'url-site-access adoption', $ruleForCalculation);
+
+        $workingArray[] = array( 'url-credential visibility', $ruleForCalculation);
+        $workingArray[] = array( 'url-credential best-practice', $ruleForCalculation);
+        $workingArray[] = array( 'url-credential adoption', $ruleForCalculation);
+
+        $workingArray[] = array( 'dns-list visibility', $ruleForCalculation);
+        $workingArray[] = array( 'dns-list best-practice', $ruleForCalculation);
+        $workingArray[] = array( 'dns-list adoption', $ruleForCalculation);
+
+        $workingArray[] = array( 'dns-security visibility', $ruleForCalculation);
+        $workingArray[] = array( 'dns-security best-practice', $ruleForCalculation);
+        $workingArray[] = array( 'dns-security adoption', $ruleForCalculation);
+
+        foreach( $workingArray as $entry )
+        {
+            if($entry[0] == 'data best-practice')
+            {
+                $stdoutarray['data best-practice'] = "NOT available";
+                continue;
+            }
+
+            $stdoutarray[$entry[0].' calc'] = $stdoutarray[$entry[0]]."/".$stdoutarray[$entry[1]];
+            if( $stdoutarray[$entry[1]] !== 0 )
+                $stdoutarray[$entry[0].' percentage'] = floor(( $stdoutarray[$entry[0]] / $stdoutarray[$entry[1]] ) * 100 );
+            else
+                $stdoutarray[$entry[0].' percentage'] = 0;
+        }
+
+
+        /*
         //Logging
         $stdoutarray['log at end calc'] = $stdoutarray['log at end']."/".$stdoutarray['security rules enabled'];
         if( $stdoutarray['security rules enabled'] !== 0 )
@@ -1555,6 +1640,7 @@ trait StatCollectorTrait
             $stdoutarray['dns-security adoption percentage'] = floor( ( $stdoutarray['dns-security adoption'] / $ruleForCalculation ) * 100 );
         else
             $stdoutarray['dns-security adoption percentage'] = 0;
+        */
     }
 
 
@@ -1567,8 +1653,10 @@ trait StatCollectorTrait
         $percentageArray_adoption['Logging']['group'] = 'Logging';
         $percentageArray_adoption['Log Forwarding Profiles']['value'] = $stdoutarray['log prof set percentage'];
         $percentageArray_adoption['Log Forwarding Profiles']['group'] = 'Logging';
+
         $percentageArray_adoption['Wildfire Analysis Profiles']['value'] = $stdoutarray['wf adoption percentage'];
         $percentageArray_adoption['Wildfire Analysis Profiles']['group'] = 'Wildfire';
+
         $percentageArray_adoption['Zone Protection']['value'] = $stdoutarray['zone protection percentage'];
         $percentageArray_adoption['Zone Protection']['group'] = 'Zone Protection';
         $percentageArray_adoption['App-ID']['value'] = $stdoutarray['app id percentage'];
@@ -1607,6 +1695,7 @@ trait StatCollectorTrait
         $percentageArray_visibility['Logging']['group'] = 'Logging';
         $percentageArray_visibility['Log Forwarding Profiles']['value'] = $stdoutarray['log prof set percentage'];
         $percentageArray_visibility['Log Forwarding Profiles']['group'] = 'Logging';
+
         $percentageArray_visibility['Wildfire Analysis Profiles']['value'] = $stdoutarray['wf visibility percentage'];
         $percentageArray_visibility['Wildfire Analysis Profiles']['group'] = 'Wildfire';
         $percentageArray_visibility['Wildfire Analysis Rules']['value'] = $stdoutarray['wf visibility rules percentage'];
@@ -1648,10 +1737,12 @@ trait StatCollectorTrait
         $percentageArray_visibility['File Blocking Profiles']['group'] = 'Data Loss Prevention';
         $percentageArray_visibility['Data Filtering']['value'] = $stdoutarray['data visibility percentage'];
         $percentageArray_visibility['Data Filtering']['group'] = 'Data Loss Prevention';
+
         $percentageArray_visibility['URL Filtering Profiles']['value'] = $stdoutarray['url-site-access visibility percentage'];
         $percentageArray_visibility['URL Filtering Profiles']['group'] = 'URL Filtering';
         $percentageArray_visibility['Credential Theft Prevention']['value'] = $stdoutarray['url-credential visibility percentage'];
         $percentageArray_visibility['Credential Theft Prevention']['group'] = 'URL Filtering';
+
         $percentageArray_visibility['DNS List']['value'] = $stdoutarray['dns-list visibility percentage'];
         $percentageArray_visibility['DNS List']['group'] = 'DNS Security';
 
@@ -1691,6 +1782,7 @@ trait StatCollectorTrait
         $percentageArray_best_practice['Anti-Spyware Rules']['group'] = 'Threat Prevention';
         $percentageArray_best_practice['Anti-Spyware InLine ML']['value'] = $stdoutarray['as best-practice mica-engine percentage'];
         $percentageArray_best_practice['Anti-Spyware InLine ML']['group'] = 'Threat Prevention';
+
         $percentageArray_best_practice['Vulnerability Profiles']['value'] = $stdoutarray['vp best-practice percentage'];
         $percentageArray_best_practice['Vulnerability Profiles']['group'] = 'Threat Prevention';
         $percentageArray_best_practice['Vulnerability Rules']['value'] = $stdoutarray['vp best-practice rules percentage'];
@@ -1708,6 +1800,7 @@ trait StatCollectorTrait
         $percentageArray_best_practice['URL Filtering Profiles']['group'] = 'URL Filtering';
         $percentageArray_best_practice['Credential Theft Prevention']['value'] = $stdoutarray['url-credential best-practice percentage'];
         $percentageArray_best_practice['Credential Theft Prevention']['group'] = 'URL Filtering';
+
         $percentageArray_best_practice['DNS List']['value'] = $stdoutarray['dns-list best-practice percentage'];
         $percentageArray_best_practice['DNS List']['group'] = 'DNS Security';
 

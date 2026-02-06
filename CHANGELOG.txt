@@ -21,6 +21,7 @@ BUGFIX:
 
 GENERAL:
 * class PanSaseAPIConnector | add DeviceCloud "Mobile Users Access Agent"
+* class StatCollecotrTrait | optimise code
 
 
 2.1.47 (20260121)
