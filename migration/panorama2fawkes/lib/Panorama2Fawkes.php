@@ -478,6 +478,11 @@ class Panorama2Fawkes
             #$this->expliciteProxypredefined( $DEVICE, $this->fawkes_doc );
         }
 
+        $DEVICEName = "Mobile Users Access Agent";
+        $DEVICE = $this->pan_fawkes->findDeviceCloud( $DEVICEName);
+        if( $DEVICE === null )
+            $DEVICE = $this->pan_fawkes->createDeviceCloud( $DEVICEName, "Mobile Users Container" );
+
 
         $DEVICEName = "Remote Networks";
         $DEVICE = $this->pan_fawkes->findDeviceCloud( $DEVICEName);
@@ -663,6 +668,11 @@ class Panorama2Fawkes
                     $this->expliciteProxypredefined( $DEVICE, $this->fawkes_doc );
                 }
 
+                $DEVICEName = "Mobile Users Access Agent";
+                $DEVICE = $this->pan_fawkes->findDeviceCloud( $DEVICEName);
+                if( $DEVICE === null )
+                    $DEVICE = $this->pan_fawkes->createDeviceCloud( $DEVICEName, "Mobile Users Container" );
+
             }
 
             if( $DEVICE != null )
@@ -785,6 +795,11 @@ class Panorama2Fawkes
                     $DEVICE = $this->pan_fawkes->createDeviceCloud( $DEVICEName, "Mobile Users Container" );
                     #$this->expliciteProxypredefined( $DEVICE, $this->fawkes_doc );
                 }
+
+                $DEVICEName = "Mobile Users Access Agent";
+                $DEVICE = $this->pan_fawkes->findDeviceCloud( $DEVICEName);
+                if( $DEVICE === null )
+                    $DEVICE = $this->pan_fawkes->createDeviceCloud( $DEVICEName, "Mobile Users Container" );
 
             }
 
