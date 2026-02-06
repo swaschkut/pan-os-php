@@ -520,6 +520,8 @@
             "Logging": true,
             "Log Forwarding Profiles": true,
             "Wildfire Analysis Profiles": true,
+            "Wildfire Analysis Rules": false,
+            "Wildfire Analysis InLine ML": false,
             "Zone Protection": true,
             "App-ID": true,
             "User-ID": true,
