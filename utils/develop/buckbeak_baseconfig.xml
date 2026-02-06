@@ -1003,15 +1003,6 @@
               </entry>
             </devices>
           </entry>
-          <entry name="Mobile Users Access Agent" help-string="Mobile Users - Access Agent">
-            <parent>Mobile Users Container</parent>
-              <devices>
-                <entry name="localhost.localdomain"/>
-              </devices>
-              <rulebase>
-                <security/>
-              </rulebase>
-          </entry>
         </cloud>
       </device>
         <plugins>
@@ -1073,9 +1064,6 @@
                   </entry>
                   <entry name="Mobile Users">
                       <id>65543</id>
-                  </entry>
-                  <entry name="Mobile Users Access Agent">
-                      <id>65544</id>
                   </entry>
               </cloud>
               <on-prem />

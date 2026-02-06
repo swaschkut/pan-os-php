@@ -61,8 +61,7 @@ class PanSaseAPIConnector
         "Remote Networks",
         "Service Connections",
         "Mobile Users Container",
-        "Mobile Users Explicit Proxy",
-        "Mobile Users Access Agent"
+        "Mobile Users Explicit Proxy"
     );
 
     private $typeArray = array();

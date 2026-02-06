@@ -20,7 +20,6 @@ BUGFIX:
 * class UTIL | bugfix to bring actions= with '/' for multiple actions back to working mode
 
 GENERAL:
-* class PanSaseAPIConnector | add DeviceCloud "Mobile Users Access Agent"
 * class StatCollecotrTrait | optimise code
 
 
