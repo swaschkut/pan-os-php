@@ -15,6 +15,8 @@ UTIL:
 * type=securityprofile securityprofiletype=wildfire-analysis 'actions=exporttoexcel:wf.html,visiblity|bestpractice' - extend for wildfire
 * type=stats actions=display-bpa | extend with wildfire rules / mica-engine
 * type=stats | extend with AV actions and mica-engine
+* type=securityprofile securityprofiletype=wildfire-analysis | introduce actions=wildfire.alert-only-set/wildfire.best-practice-set
+* playbook visibility.json | extend with wildfire.alert-only-set
 
 BUGFIX:
 * class UTIL | bugfix to bring actions= with '/' for multiple actions back to working mode

@@ -130,6 +130,15 @@ class WildfireProfile extends SecurityProfile2
             if( $tmp_rule->textContent == "yes")
                 $this->cloud_inline_analysis_enabled = true;
         }
+        else
+        {
+            if( $this->owner->owner->version >= 111 )
+            {
+                $tmp_rule = DH::findFirstElementOrCreate('cloud-inline-analysis', $xml);
+                $tmp_rule->textContent = "no";
+                $this->cloud_inline_analysis_enabled = false;
+            }
+        }
 
         $tmp_rule = DH::findFirstElement('mica-engine-wildfire-rules', $xml);
         if( $tmp_rule !== FALSE && !$tmp_rule->hasChildNodes() )

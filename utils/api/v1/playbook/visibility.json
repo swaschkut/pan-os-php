@@ -110,6 +110,12 @@
       "location": "location=any"
     },
     {
+      "type": "securityprofile",
+      "securityprofiletype": "securityprofiletype=wildfire-analysis",
+      "actions": "actions=wildfire.alert-only-set",
+      "location": "location=any"
+    },
+    {
       "type": "securityprofilegroup",
       "actions": "actions=securityprofile-set:virus,Alert-Only-AV",
       "filter": "filter=!(secprof av-profile.is.set )",

@@ -3015,6 +3015,179 @@ SecurityProfileCallContext::$supportedActions['vulnerability.alert-only-set'] = 
         }
     },
 );
+
+SecurityProfileCallContext::$supportedActions['wildfire.alert-only-set'] = array(
+    'name' => 'wildfire.alert-only-set',
+    'MainFunction' => function (SecurityProfileCallContext $context)
+    {
+        $object = $context->object;
+
+        if (get_class($object) !== "WildfireProfile")
+            return null;
+
+        $sendAPI = false;
+
+        $tmp_mlav_engine = DH::findFirstElement('cloud-inline-analysis', $object->xmlroot);
+        if ($object->owner->owner->version >= 111)
+        {
+            if ($tmp_mlav_engine === False)
+                $tmp_mlav_engine = DH::findFirstElementOrCreate('cloud-inline-analysis', $object->xmlroot);
+
+            $tmp_mlav_engine->textContent = "yes";
+            $sendAPI = true;
+        }
+
+
+        $tmp_mlav_engine = DH::findFirstElement('mica-engine-wildfire-rules', $object->xmlroot);
+        if ($object->owner->owner->version >= 111)
+        {
+            if ($tmp_mlav_engine === False)
+                $tmp_mlav_engine = DH::findFirstElementOrCreate('mica-engine-wildfire-rules', $object->xmlroot);
+        }
+        if ($tmp_mlav_engine !== False)
+        {
+            if (!$tmp_mlav_engine->hasChildNodes())
+            {
+                $xmlString1 = '<entry name="wf_inline_alert">
+   <application>
+    <member>any</member>
+   </application>
+   <file-type>
+    <member>any</member>
+   </file-type>
+   <direction>both</direction>
+   <action>alert</action>
+  </entry>';
+                $xmlString2 = '<entry name="wf_inline_allow">
+   <application>
+    <member>any</member>
+   </application>
+   <file-type>
+    <member>any</member>
+   </file-type>
+   <direction>both</direction>
+   <action>allow</action>
+  </entry>';
+                if ($object->owner->owner->version == 111 )
+                    $xmlElement = DH::importXmlStringOrDie($object->xmlroot->ownerDocument, $xmlString2);
+                elseif ($object->owner->owner->version >= 112 )
+                    $xmlElement = DH::importXmlStringOrDie($object->xmlroot->ownerDocument, $xmlString1);
+
+                $tmp_mlav_engine->appendChild($xmlElement);
+
+                $sendAPI = true;
+            }
+
+            $action_other_then_allow_alert = false;
+            foreach ($tmp_mlav_engine->childNodes as $mlav_engine_entry)
+            {
+                if ($mlav_engine_entry->nodeType != XML_ELEMENT_NODE)
+                    continue;
+
+                DH::DEBUGprintDOMDocument($mlav_engine_entry);
+
+                $name = DH::findAttribute("name", $mlav_engine_entry);
+
+                $action_xmlNode = DH::findFirstElementOrCreate("action", $mlav_engine_entry);
+                if ($action_xmlNode->textContent == "allow")
+                {
+                    if ($object->owner->owner->version >= 112)
+                    {
+                        $action_xmlNode->textContent = "alert";
+                        $object->additional['mica-engine-wildfire-rules'][$name]['action'] = "alert";
+
+                        $sendAPI = true;
+                    }
+                }
+                elseif ($action_xmlNode->textContent == "alert")
+                {
+
+                }
+                else
+                {
+                    $action_other_then_allow_alert = true;
+                }
+            }
+
+            if (!$action_other_then_allow_alert)
+            {
+                $tmp_mlav_engine = DH::findFirstElementOrCreate('cloud-inline-analysis', $object->xmlroot);
+                $tmp_mlav_engine->textContent = "yes";
+
+                $sendAPI = true;
+            }
+        }
+
+        if( $sendAPI && $context->isAPI )
+        {
+            $object->API_sync();
+        }
+    }
+);
+
+SecurityProfileCallContext::$supportedActions['wildfire.best-practice-set'] = array(
+    'name' => 'wildfire.best-practice-set',
+    'MainFunction' => function (SecurityProfileCallContext $context) {
+        $object = $context->object;
+
+        if (get_class($object) !== "WildfireProfile")
+            return null;
+
+        $tmp_mlav_engine = DH::findFirstElement('cloud-inline-analysis', $object->xmlroot);
+        if( $object->owner->owner->version >= 111 )
+        {
+            if( $tmp_mlav_engine === False )
+                $tmp_mlav_engine = DH::findFirstElementOrCreate('cloud-inline-analysis', $object->xmlroot);
+
+            $tmp_mlav_engine->textContent = "yes";
+        }
+
+
+        $tmp_mlav_engine = DH::findFirstElement('mica-engine-wildfire-rules', $object->xmlroot);
+        if( $object->owner->owner->version >= 111 )
+        {
+            if ($tmp_mlav_engine === False)
+                $tmp_mlav_engine = DH::findFirstElementOrCreate('mica-engine-wildfire-rules', $object->xmlroot);
+        }
+        if( $tmp_mlav_engine !== False )
+        {
+            if( !$tmp_mlav_engine->hasChildNodes() )
+            {
+                $xmlString1 = '<entry name="wf_inline_block">
+   <application>
+    <member>any</member>
+   </application>
+   <file-type>
+    <member>any</member>
+   </file-type>
+   <direction>both</direction>
+   <action>block</action>
+  </entry>';
+                $xmlElement = DH::importXmlStringOrDie($object->xmlroot->ownerDocument, $xmlString1);
+                $tmp_mlav_engine->appendChild($xmlElement);
+            }
+
+            foreach ($tmp_mlav_engine->childNodes as $mlav_engine_entry)
+            {
+                if( $mlav_engine_entry->nodeType != XML_ELEMENT_NODE )
+                    continue;
+
+                $name = DH::findAttribute( "name", $mlav_engine_entry);
+
+                $action_xmlNode = DH::findFirstElementOrCreate("action", $mlav_engine_entry);
+                $action_xmlNode->textContent = "block";
+
+                $object->additional['mica-engine-wildfire-rules'][$name]['action'] = "block";
+            }
+        }
+
+        if( $context->isAPI )
+        {
+            $object->API_sync();
+        }
+    },
+);
+
 SecurityProfileCallContext::$supportedActions['url.alert-only-set'] = array(
     'name' => 'url.alert-only-set',
     'MainFunction' => function (SecurityProfileCallContext $context) {
