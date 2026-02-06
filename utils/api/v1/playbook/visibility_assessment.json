@@ -206,13 +206,19 @@
       "location": "location=any"
     },
     {
+      "type": "securityprofile",
+      "securityprofiletype": "securityprofiletype=wildfire-analysis",
+      "actions": "actions=exportToExcel:9f-v_All_WF-SPs.html,UsedInLocation|WhereUsed|TotalUse|visibility|bestpractice",
+      "location": "location=any"
+    },
+    {
       "type": "securityprofilegroup",
-      "actions": "actions=exportToExcel:9f-v_SPG.html,UsedInLocation|TotalUse|visibility|bestpractice",
+      "actions": "actions=exportToExcel:9f-vi_SPG.html,UsedInLocation|TotalUse|visibility|bestpractice",
       "location": "location=any"
     },
     {
       "type": "threat-rule",
-      "actions": "actions=exportToExcel:9f-vi_ThreatRules.html,UsedInLocation|WhereUsed",
+      "actions": "actions=exportToExcel:9f-vii_ThreatRules.html,UsedInLocation|WhereUsed",
       "location": "location=any"
     },
     {
