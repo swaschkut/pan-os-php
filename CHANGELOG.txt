@@ -20,6 +20,7 @@ UTIL:
 
 BUGFIX:
 * class UTIL | bugfix to bring actions= with '/' for multiple actions back to working mode
+* type=securityprofile location=shared | actions=name-addsuffix | bugfix to provide correct xpath
 
 GENERAL:
 * class StatCollecotrTrait | optimise code

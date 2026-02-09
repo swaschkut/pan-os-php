@@ -1033,6 +1033,7 @@ class SecurityProfileStore extends ObjStore
         if( $this->owner->isPanorama() || $this->owner->isFirewall() )
         {
             $str = "/config/shared";
+            $str = $str . '/profiles/'.self::$storeNameByType[$this->type]['xpathRoot'];
         }
         else
             #$str = $this->owner->getXPath();
