@@ -64,6 +64,14 @@ RQuery::$defaultFilters['securityprofile']['name']['operators']['is.in.file'] = 
     },
     'arg' => TRUE
 );
+RQuery::$defaultFilters['securityprofile']['name.length']['operators']['>,<,=,!'] = array(
+    'eval' => "strlen(\$object->name()) !operator! !value!",
+    'arg' => TRUE,
+    'ci' => array(
+        'fString' => '(%PROP% 63)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
 RQuery::$defaultFilters['securityprofile']['object']['operators']['is.tmp'] = array(
     'Function' => function (SecurityProfileRQueryContext $context) {
         return $context->object->isTmp();

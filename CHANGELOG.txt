@@ -17,6 +17,7 @@ UTIL:
 * type=stats | extend with AV actions and mica-engine
 * type=securityprofile securityprofiletype=wildfire-analysis | introduce actions=wildfire.alert-only-set/wildfire.best-practice-set
 * playbook visibility.json | extend with wildfire.alert-only-set
+* type=securityprofile | introduce 'filter=(name.length >,<,!,= 63)'
 
 BUGFIX:
 * class UTIL | bugfix to bring actions= with '/' for multiple actions back to working mode
