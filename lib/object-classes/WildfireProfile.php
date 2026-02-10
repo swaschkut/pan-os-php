@@ -253,10 +253,20 @@ class WildfireProfile extends SecurityProfile2
             {
                 if( isset($this->rule_coverage[$bp_array]) )
                 {
-                    if( $checkBP_array[0]['analysis'] !== $this->rule_coverage[$bp_array]['analysis'] )
-                        return false;
+                    if( is_array($checkBP_array[0]['analysis']) )
+                    {
+                        if( !in_array($this->rule_coverage[$bp_array]['analysis'], $checkBP_array[0]['analysis']) )
+                            return false;
+                        else
+                            $bp_set = true;
+                    }
                     else
-                        $bp_set = true;
+                    {
+                        if( $checkBP_array[0]['analysis'] !== $this->rule_coverage[$bp_array]['analysis'] )
+                            return false;
+                        else
+                            $bp_set = true;
+                    }
                 }
                 #else
                 #    return false;
@@ -266,23 +276,33 @@ class WildfireProfile extends SecurityProfile2
             {
                 if( isset($this->rule_coverage[$bp_array]) )
                 {
+                    #print_r($this->rule_coverage[$bp_array]);
                     $checkAction = $check_array[0]['analysis'];
-                    if( strpos( $checkAction, "!" ) !== FALSE )
+                    if( is_array($checkAction) )
                     {
-                        $checkAction = str_replace("!", "", $checkAction);
-                        if( $checkAction === $this->rule_coverage[$bp_array]['analysis'] )
-                            return false;
-                        else
-                            $bp_set = true;
+                        //anything I need to do here:????
+                        #print_r( $checkAction );
                     }
                     else
                     {
-                        if( $checkAction !== $this->rule_coverage[$bp_array]['analysis'] )
-                            return false;
+                        if( strpos( $checkAction, "!" ) !== FALSE )
+                        {
+                            $checkAction = str_replace("!", "", $checkAction);
+                            if( $checkAction === $this->rule_coverage[$bp_array]['analysis'] )
+                                return false;
+                            else
+                                $bp_set = true;
+                        }
                         else
-                            $bp_set = true;
+                        {
+                            #print "checkAction: ".$checkAction."\n";
+                            #print "compare: ".$this->rule_coverage[$bp_array]['analysis']."\n";
+                            if( $checkAction !== $this->rule_coverage[$bp_array]['analysis'] )
+                                return false;
+                            else
+                                $bp_set = true;
+                        }
                     }
-
                 }
             }
 
@@ -347,6 +367,17 @@ class WildfireProfile extends SecurityProfile2
     {
         if( $this->owner->owner->version >= 111 )
         {
+            /*
+            if( $this->wildfire_rules_best_practice() )
+                print "WF rules: BP\n";
+            else
+                print "WF rules: NOT BP\n";
+
+            if( $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file) )
+                print "Cloud rules: BP\n";
+            else
+                print "Cloud rules: NOT BP\n";
+            */
             if( $this->wildfire_rules_best_practice()
                 && $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file)
             )

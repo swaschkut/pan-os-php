@@ -453,7 +453,10 @@
                         "any"
                     ],
                     "direction": "both",
-                    "analysis": "public-cloud"
+                    "analysis": [
+                        "public-cloud",
+                        "private-cloud"
+                    ]
                 }
             ],
             "visibility": [
@@ -465,7 +468,10 @@
                         "any"
                     ],
                     "direction": "both",
-                    "analysis": "public-cloud"
+                    "analysis": [
+                        "public-cloud",
+                        "private-cloud"
+                    ]
                 }
             ]
         },
