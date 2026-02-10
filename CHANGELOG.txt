@@ -18,10 +18,12 @@ UTIL:
 * type=securityprofile securityprofiletype=wildfire-analysis | introduce actions=wildfire.alert-only-set/wildfire.best-practice-set
 * playbook visibility.json | extend with wildfire.alert-only-set
 * type=securityprofile | introduce 'filter=(name.length >,<,!,= 63)'
+* class SecurityProfil2 | extend validation agains BP settings JSON file, if no cloud-inline info is available
 
 BUGFIX:
 * class UTIL | bugfix to bring actions= with '/' for multiple actions back to working mode
 * type=securityprofile location=shared | actions=name-addsuffix | bugfix to provide correct xpath
+* class PanoramaConf - in relation of argument usage 'loadpanoramapushedconfig' - fix the part which was partially removed with v2.1.42
 
 GENERAL:
 * class StatCollecotrTrait | optimise code

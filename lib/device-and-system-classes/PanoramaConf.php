@@ -1515,13 +1515,15 @@ class PanoramaConf
                 $lvname = $node->nodeName;
                 //PH::print_stdout(  "Device Group '$lvname' found" );
 
-                //already crated in part1
-                #$ldv = new DeviceGroup($this);
                 $ldv = $this->findDeviceGroup( $lvname );
+                if( $ldv === null )
+                {
+                    $ldv = new DeviceGroup($this);
+                    $this->deviceGroups[] = $ldv;
+                }
 
                 $ldv->load_from_domxml($node, $debugLoadTime);
-                //already added in part1
-                #$this->deviceGroups[] = $ldv;
+
             }
         }
         else
