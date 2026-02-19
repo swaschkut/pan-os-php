@@ -27,6 +27,7 @@ BUGFIX:
 
 GENERAL:
 * class StatCollecotrTrait | optimise code
+* Device App-ID update to version: 9068-9902
 
 
 2.1.47 (20260121)
