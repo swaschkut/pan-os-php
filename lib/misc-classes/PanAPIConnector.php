@@ -1456,7 +1456,7 @@ class PanAPIConnector
             while( TRUE )
             {
                 sleep(1);
-                $query = '&type=report&action=get&job-id=' . $jobid;
+                $query = 'type=report&action=get&job-id=' . $jobid;
                 $ret = $this->sendRequest($query);
                 //PH::print_stdout( DH::dom_to_xml($ret, 0, true, 5) );
 
@@ -1471,14 +1471,18 @@ class PanAPIConnector
                     derr("unsupported API answer", $ret);
 
                 $percent = DH::findFirstElement('percent', $jobcur);
+                $status = DH::findFirstElement('status', $jobcur);
 
                 if( $percent == FALSE )
                     derr("unsupported API answer", $cursor);
 
                 if( $percent->textContent != '100' )
                 {
-                    sleep(9);
-                    continue;
+                    if( $status->textContent != 'FIN' )
+                    {
+                        sleep(9);
+                        continue;
+                    }
                 }
 
                 $cursor = DH::findFirstElement('report', $cursor);
@@ -1840,18 +1844,21 @@ class PanAPIConnector
 
         $r = $this->sendCmdRequest($url, TRUE, $apiTimeOut);
 
-        $configRoot = DH::findFirstElement('result', $r);
-        if( $configRoot === FALSE )
-            derr("<result> was not found", $r);
-
-        $configRoot = DH::findFirstElement('config', $configRoot);
-        if( $configRoot === FALSE )
+        if( $r !== null )
         {
-            $configRoot = $this->APIresponseValidation($r);
+            $configRoot = DH::findFirstElement('result', $r);
+            if( $configRoot === FALSE )
+                derr("<result> was not found", $r);
+
+            $configRoot = DH::findFirstElement('config', $configRoot);
+            if( $configRoot === FALSE )
+            {
+                $configRoot = $this->APIresponseValidation($r);
+            }
+
+
+            DH::makeElementAsRoot($configRoot, $r);
         }
-
-
-        DH::makeElementAsRoot($configRoot, $r);
 
         return $r;
     }
