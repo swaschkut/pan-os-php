@@ -162,8 +162,12 @@ class DNSPolicy
 
     public function spyware_dns_security_rule_bestpractice()
     {
+        $tmp_debug = true;
+
         $check_array = $this->spyware_dns_bp_visibility_JSON( "bp");
 
+        if( $tmp_debug )
+            print_r( $check_array );
         foreach( $check_array['action'] as $validate )
         {
             $bp_action = FALSE;
@@ -173,20 +177,24 @@ class DNSPolicy
             {
                 if( $this->name() == $name )
                 {
-                    #print "0) name: ".$name."\n";
+                    if( $tmp_debug )
+                        print "0) name: ".$name."\n";
                     foreach( $validate['action'] as $final_action_check )
                     {
-                        #print "1) action: ".$this->action()." |validate: ".$final_action_check."\n";
+                        if( $tmp_debug )
+                            print "1) action: ".$this->action()." |validate: ".$final_action_check."\n";
                         if( $this->action() == $final_action_check )
                         {
                             $bp_action = TRUE;
-                            #print "1-0) true\n";
+                            if( $tmp_debug )
+                                print "1-0) true\n";
                             break;
                         }
                         else
                         {
                             $bp_action = FALSE;
-                            #print "1-1) false\n";
+                            if( $tmp_debug )
+                                print "1-1) false\n";
                         }
 
                     }
@@ -194,17 +202,20 @@ class DNSPolicy
 
                     foreach( $validate['packet-capture'] as $final_packet_check )
                     {
-                        #print "2) packet: ".$this->packetCapture()." |validate: ".$final_packet_check."\n";
+                        if( $tmp_debug )
+                            print "2) packet: ".$this->packetCapture()." |validate: ".$final_packet_check."\n";
                         if( $this->packetCapture() == $final_packet_check )
                         {
                             $bp_packet = TRUE;
-                            #print "2-0) true\n";
+                            if( $tmp_debug )
+                                print "2-0) true\n";
                             break;
                         }
                         else
                         {
                             $bp_packet = FALSE;
-                            #print "2-1) false\n";
+                            if( $tmp_debug )
+                                print "2-1) false\n";
                         }
                     }
 
