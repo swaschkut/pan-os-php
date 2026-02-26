@@ -4391,11 +4391,40 @@ RuleCallContext::$supportedActions[] = array(
     {
         $period = "last-7-days";
 
-        $req = '<type><threat>'.
-            '<sortby>repeatcnt</sortby>'.
+        if( $context->deviceType != null )
+        {
+            if( $context->deviceType == "firewall" )
+            {
+                $type = "threat";
+                $counterTXT = "repeatcnt";
+            }
+            elseif( $context->deviceType == "panorama" )
+            {
+                $type = "panorama-thsum";
+                $counterTXT = "count";
+            }
+            elseif( $context->deviceType == "scm" )
+            {
+                derr("SCM not supported yet");
+            }
+        }
+        else
+        {
+            $type = "threat";
+            $counterTXT = "repeatcnt";
+        }
+
+
+
+
+        $req = '<type>'.
+            '<'.$type.'>'.
+            '<sortby>'.$counterTXT.'</sortby>'.
             '<group-by>rule_uuid</group-by>'.
             '<aggregate-by><member>rule</member><member>threatid</member></aggregate-by>'.
-            '<values><member>repeatcnt</member></values></threat></type>'.
+            '<values><member>'.$counterTXT.'</member></values>'.
+            '</'.$type.'>'.
+            '</type>'.
             '<period>'.$period.'</period><topn>100</topn><topm>25</topm><caption>app-id-change</caption>'.
             '<query>(category-of-threatid eq app-id-change)</query>';
 

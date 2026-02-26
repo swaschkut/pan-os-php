@@ -1473,6 +1473,13 @@ class UTIL
                 $context->connector = $this->pan->connector;
             }
 
+            if( $this->pan->isFirewall() )
+                $context->deviceType = "firewall";
+            elseif( $this->pan->isPanorama() || $this->pan->isDeviceGroup() )
+                $context->deviceType = "panorama";
+            elseif( $this->pan->isBuckbeak() || $this->pan->isFawkes() || $this->pan->isContainer() || $this->pan->isDeviceCloud() || $this->pan->isDeviceOnPrem() )
+                $context->deviceType = "scm";
+
             if( $this->projectFolder !== null )
             {
                 $context->projectFolder = $this->projectFolder;

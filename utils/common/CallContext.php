@@ -38,6 +38,7 @@ class CallContext
     public $isSCMAPI = FALSE;
     public $projectFolder = null;
 
+    public $deviceType =  null;
     public $first;
     public $uuid;
 

@@ -19,6 +19,7 @@ UTIL:
 * playbook visibility.json | extend with wildfire.alert-only-set
 * type=securityprofile | introduce 'filter=(name.length >,<,!,= 63)'
 * class SecurityProfil2 | extend validation agains BP settings JSON file, if no cloud-inline info is available
+* type=rule actions=display-app-id-change | improvement to get separation between firewall and panorama
 
 BUGFIX:
 * class UTIL | bugfix to bring actions= with '/' for multiple actions back to working mode
