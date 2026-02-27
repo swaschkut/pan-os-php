@@ -132,7 +132,7 @@ class WildfireProfile extends SecurityProfile2
         }
         else
         {
-            if( $this->owner->owner->version >= 111 )
+            if( $this->owner->owner->version >= 112 )
             {
                 $tmp_rule = DH::findFirstElementOrCreate('cloud-inline-analysis', $xml);
                 $tmp_rule->textContent = "no";
@@ -365,7 +365,7 @@ class WildfireProfile extends SecurityProfile2
 
     public function is_best_practice()
     {
-        if( $this->owner->owner->version >= 111 )
+        if( $this->owner->owner->version >= 112 )
         {
             /*
             if( $this->wildfire_rules_best_practice() )
@@ -397,11 +397,10 @@ class WildfireProfile extends SecurityProfile2
 
     public function is_visibility()
     {
-        if( $this->owner->owner->version >= 111 )
+        if( $this->owner->owner->version >= 112 )
         {
             if( $this->wildfire_rules_visibility()
                 && $this->cloud_inline_analysis_visibility($this->owner->bp_json_file)
-                #&& $this->spyware_dns_security_visibility() && $this->spyware_dnslist_visibility()
             )
                 return TRUE;
             else
@@ -410,7 +409,6 @@ class WildfireProfile extends SecurityProfile2
         else
         {
             if( $this->wildfire_rules_visibility()
-                #&& $this->spyware_dns_security_visibility() && $this->spyware_dnslist_visibility()
             )
                 return TRUE;
             else

@@ -7,7 +7,10 @@
       "type": "zone",
       "actions": "actions=exportToExcel:1a_NoZPP_UsedinZone.html",
       "filter": "filter=!(zpp is.set)",
-      "location": "location=any"
+      "location": "location=any",
+      "html-merger-explanation": "These are the zones with no Zone Protection Profile applied to them. This reduces the visibility on the firewall. We recommend you to have a Zone Protection Profile attached to all Zones, Please review the Zones in the sheet &amp; apply the &#39;Alert_Only_Zone_Protection&#39; profile to them.",
+      "html-merger-action-needed": "Apply the &#39;Alert-Only_Zone_Protection_Profile&#39; ZPP to Zones mentioned.",
+      "html-merger-severity": "Critical"
     },
     {
       "type": "zone",
