@@ -162,7 +162,7 @@ class DNSPolicy
 
     public function spyware_dns_security_rule_bestpractice()
     {
-        $tmp_debug = true;
+        $tmp_debug = false;
 
         $check_array = $this->spyware_dns_bp_visibility_JSON( "bp");
 

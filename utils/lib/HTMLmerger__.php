@@ -87,6 +87,7 @@ class HTMLmerger__
             {
                 $defaultfile = dirname(__FILE__) . '/../common/html/Introduction.html';
                 $defaultfilenname = "0_Introduction.html";
+
             }
             else
             {
@@ -101,6 +102,31 @@ class HTMLmerger__
             $projectdefaultfile = file_get_contents( $defaultfile );
             #bug how to get only file name if $defaultfilename is specified
             file_put_contents($this->projectfolder . "/".$defaultfilenname, $projectdefaultfile);
+
+            /////////////////
+
+            $filename_generator = dirname(__FILE__) . '/../common/html/HTML_introduction.py';
+            $playbook_json_file = dirname(__FILE__) ."/../api/v1/playbook/visibility_assessment.json";
+            PH::enableExceptionSupport();
+            try
+            {
+                $cli = "python3 " . $filename_generator . " " . $this->projectfolder . " ". "0a_Introduction.html" ." ". $playbook_json_file;
+
+                exec($cli, $output, $retValue);
+            }
+            //catch exception
+            catch(Exception $e)
+            {
+                PH::disableExceptionSupport();
+                PH::print_stdout( " ***** an error occured : " . $e->getMessage() );
+                PH::print_stdout();
+            }
+            catch(Error $e)
+            {
+                PH::disableExceptionSupport();
+                PH::print_stdout( " ***** an error occured : " . $e->getMessage() );
+                PH::print_stdout();
+            }
         }
 
         //same approach as with Excel spreadsheet but with HTML file

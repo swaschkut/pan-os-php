@@ -157,6 +157,7 @@
 
     const MIN_SIZE_BYTES = 94 * 1024;
     const ALWAYS_SHOW = "0_introduction.html";
+    const ALWAYS_SHOW2 = "0a_introduction.html";
 
     function formatBytes(bytes) {
         if (bytes === 0) return '0 B';
@@ -227,7 +228,8 @@
             const isIndexFile = indexPattern.test(file.name);
             const isRightSize = file.size >= MIN_SIZE_BYTES;
             const isException = fileNameLow === ALWAYS_SHOW;
-            return isHtml && !isIndexFile && (isRightSize || isException);
+            const isException2 = fileNameLow === ALWAYS_SHOW2;
+            return isHtml && !isIndexFile && (isRightSize  || isException || isException2);
         }).sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true, sensitivity: 'base'}));
 
         fileList.innerHTML = ''; 
