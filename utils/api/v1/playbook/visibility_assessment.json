@@ -16,281 +16,419 @@
       "type": "zone",
       "actions": "actions=exportToExcel:1b_NoLFP_UsedinZone.html",
       "filter": "filter=!(logprof is.set)",
-      "location": "location=any"
+      "location": "location=any",
+      "html-merger-explanation": "These are the zones with no Log Forwarding Profile applied to them. This reduces the visibility on the firewall. We recommend you to have a Log Forwarding Profile attached to all Zones, Please review the Zones in the sheet &amp; apply the &#39;default&#39; Log Forwardign Profile to them.",
+      "html-merger-action-needed": "Apply the &#39;default&#39; Log Forwarding Profile to Zones mentioned.",
+      "html-merger-severity": "Critical"
     },
     {
       "type": "rule",
       "actions": "actions=exportToExcel:2_NoLFP_UsedinRule.html",
       "filter": "filter=!(logprof is.set) and (rule is.enabled)",
-      "location": "location=any"
+      "location": "location=any",
+      "html-merger-explanation": "These are the rules with no log forwarding profile attached to them. This reduces the visibility on the firewall. We recommend you to have log forwarding profiles attached to all the security rules. Please review the Rules in the sheet &amp; attach required log forwarding profiles to them.",
+      "html-merger-action-needed": "Apply the &#39;default&#39; Log Forwarding Profile to rules mentioned.",
+      "html-merger-severity": "Critical"
     },
     {
       "type": "rule",
       "actions": "actions=exportToExcel:3a_NoSPG_in_AllowRule.html",
       "filter": "filter=!(secprof is.set) and (action is.allow) and (rule is.enabled)",
-      "location": "location=any"
+      "location": "location=any",
+      "html-merger-explanation": "These are the allow rules which do not have either any Security Profile(s), or a Security Profile Group applied to them. This highly limits firewall threat prevention/detection capabilities. We recommend you to have the &#39;Alert-Only&#39; Security Profile Group applied to all rules mentioned.",
+      "html-merger-action-needed": "Apply the &#39;Alert-Only&#39; Security Profile Group to rules mentioned.",
+      "html-merger-severity": "Critical"
     },
     {
       "type": "rule",
       "actions": "actions=exportToExcel:3b_SPG_Undefined_in_AllowRule.html",
       "filter": "filter=(secprof group.is.undefined) and (action is.allow) and (rule is.enabled)",
-      "location": "location=any"
+      "location": "location=any",
+      "html-merger-explanation": "",
+      "html-merger-action-needed": "",
+      "html-merger-severity": "Critical"
     },
     {
       "type": "rule",
       "actions": "actions=exportToExcel:4a_NoVP_in_AllowRule.html",
       "filter": "filter=(secprof type.is.profile) and !(secprof vuln-profile.is.set) and (action is.allow)",
-      "location": "location=any"
+      "location": "location=any",
+      "html-merger-explanation": "These are the allow rules which have at least one Security Profile applied to them, but does not have a Vulnerability Protection Security Profile applied. This highly limits firewall threat prevention/detection capabilities. We recommend you to have the &#39;Alert-Only&#39; VP Security Profile applied to all rules mentioned.",
+      "html-merger-action-needed": "Apply the &#39;Alert-Only&#39; VP Security Profile to rules mentioned.",
+      "html-merger-severity": "Critical"
     },
     {
       "type": "rule",
       "actions": "actions=exportToExcel:4b_NoAS_in_AllowRule.html",
       "filter": "filter=(secprof type.is.profile) and !(secprof as-profile.is.set) and (action is.allow)",
-      "location": "location=any"
+      "location": "location=any",
+      "html-merger-explanation": "These are the allow rules which have at least one Security Profile applied to them, but does not have a Anti-Spyware Security Profile applied. This highly limits firewall threat prevention/detection capabilities. We recommend you to have the &#39;Alert-Only&#39; AS Security Profile applied to all rules mentioned.",
+      "html-merger-action-needed": "Apply the &#39;Alert-Only&#39; AS Security Profile to rules mentioned.",
+      "html-merger-severity": "Critical"
     },
     {
       "type": "rule",
       "actions": "actions=exportToExcel:4c_NoAV_in_AllowRule.html",
       "filter": "filter=(secprof type.is.profile) and !(secprof av-profile.is.set) and (action is.allow)",
-      "location": "location=any"
+      "location": "location=any",
+      "html-merger-explanation": "These are the allow rules which have at least one Security Profile applied to them, but does not have a Antivirus Security Profile applied. This highly limits firewall threat prevention/detection capabilities. We recommend you to have the &#39;Alert-Only&#39; AV Security Profile applied to all rules mentioned.",
+      "html-merger-action-needed": "Apply the &#39;Alert-Only&#39; AV Security Profile to rules mentioned.",
+      "html-merger-severity": "Critical"
     },
     {
       "type": "rule",
       "actions": "actions=exportToExcel:4d_NoURL_in_AllowRule.html",
       "filter": "filter=(secprof type.is.profile) and !(secprof url-profile.is.set) and (action is.allow)",
-      "location": "location=any"
+      "location": "location=any",
+      "html-merger-explanation": "These are the allow rules which have at least one Security Profile applied to them, but does not have a URL Filtering Security Profile applied. This highly limits firewall threat prevention/detection capabilities. We recommend you to have the &#39;Alert-Only&#39; URL Security Profile applied to all rules mentioned.",
+      "html-merger-action-needed": "Apply the &#39;Alert-Only&#39; URL Security Profile to rules mentioned.",
+      "html-merger-severity": "Critical"
     },
     {
       "type": "rule",
       "actions": "actions=exportToExcel:4e_NoFB_in_AllowRule.html",
       "filter": "filter=(secprof type.is.profile) and !(secprof file-profile.is.set) and (action is.allow)",
-      "location": "location=any"
+      "location": "location=any",
+      "html-merger-explanation": "These are the allow rules which have at least one Security Profile applied to them, but does not have a File Blocking Security Profile applied. This highly limits firewall threat prevention/detection capabilities. We recommend you to have the &#39;Alert-Only&#39; FB Security Profile applied to all rules mentioned.",
+      "html-merger-action-needed": "Apply the &#39;Alert-Only&#39; FB Security Profile to rules mentioned.",
+      "html-merger-severity": "Critical"
     },
     {
       "type": "rule",
       "actions": "actions=exportToExcel:4f_NoWF_in_AllowRule.html",
       "filter": "filter=(secprof type.is.profile) and !(secprof wf-profile.is.set) and (action is.allow)",
-      "location": "location=any"
+      "location": "location=any",
+      "html-merger-explanation": "These are the allow rules which have at least one Security Profile applied to them, but does not have a Wildfire Security Profile applied. This highly limits firewall threat prevention/detection capabilities. We recommend you to have the &#39;Alert-Only&#39; WF Security Profile applied to all rules mentioned.",
+      "html-merger-action-needed": "Apply the &#39;Alert-Only&#39; WF Security Profile to rules mentioned.",
+      "html-merger-severity": "Critical"
     },
     {
       "type": "securityprofilegroup",
       "actions": "actions=exportToExcel:5a_NoAV_Exists_in_SPG.html,adoption|visibility|bestpractice",
       "filter": "filter=!(secprof av-profile.is.set )",
-      "location": "location=any"
+      "location": "location=any",
+      "html-merger-explanation": "These are Security Profile Groups that do not have an AV Security Profile applied. This highly limits firewall threat prevention/detection capabilities. We recommend you to have the &#39;Alert-Only&#39; AV Security Profile applied to all Security Profile Groups mentioned.",
+      "html-merger-action-needed": "Add the &#39;Alert-Only&#39; AV Security Profile to the Security Profile Groups mentioned.",
+      "html-merger-severity": "Critical"
     },
     {
       "type": "securityprofilegroup",
       "actions": "actions=exportToExcel:5b_NoVP_Exists_in_SPG.html,adoption|visibility|bestpractice",
       "filter": "filter=!(secprof vuln-profile.is.set )",
-      "location": "location=any"
+      "location": "location=any",
+      "html-merger-explanation": "These are Security Profile Groups that do not have an VP Security Profile applied. This highly limits firewall threat prevention/detection capabilities. We recommend you to have the &#39;Alert-Only&#39; VP Security Profile applied to all Security Profile Groups mentioned.",
+      "html-merger-action-needed": "Add the &#39;Alert-Only&#39; VP Security Profile to the Security Profile Groups mentioned.",
+      "html-merger-severity": "Critical"
     },
     {
       "type": "securityprofilegroup",
       "actions": "actions=exportToExcel:5c_NoURL_Exists_in_SPG.html,adoption|visibility|bestpractice",
       "filter": "filter=!(secprof url-profile.is.set )",
-      "location": "location=any"
+      "location": "location=any",
+      "html-merger-explanation": "These are Security Profile Groups that do not have an URL Security Profile applied. This highly limits firewall threat prevention/detection capabilities. We recommend you to have the &#39;Alert-Only&#39; URL Security Profile applied to all Security Profile Groups mentioned.",
+      "html-merger-action-needed": "Add the &#39;Alert-Only&#39; URL Security Profile to the Security Profile Groups mentioned.",
+      "html-merger-severity": "Critical"
     },
     {
       "type": "securityprofilegroup",
       "actions": "actions=exportToExcel:5d_NoFB_Exists_in_SPG.html,adoption|visibility|bestpractice",
       "filter": "filter=!(secprof file-profile.is.set )",
-      "location": "location=any"
+      "location": "location=any",
+      "html-merger-explanation": "These are Security Profile Groups that do not have an FB Security Profile applied. This highly limits firewall threat prevention/detection capabilities. We recommend you to have the &#39;Alert-Only&#39; FB Security Profile applied to all Security Profile Groups mentioned.",
+      "html-merger-action-needed": "Add the &#39;Alert-Only&#39; FB Security Profile to the Security Profile Groups mentioned.",
+      "html-merger-severity": "Critical"
     },
     {
       "type": "securityprofilegroup",
       "actions": "actions=exportToExcel:5e_NoAS_Exists_in_SPG.html,adoption|visibility|bestpractice",
       "filter": "filter=!(secprof as-profile.is.set )",
-      "location": "location=any"
+      "location": "location=any",
+      "html-merger-explanation": "These are Security Profile Groups that do not have an AS Security Profile applied. This highly limits firewall threat prevention/detection capabilities. We recommend you to have the &#39;Alert-Only&#39; AS Security Profile applied to all Security Profile Groups mentioned.",
+      "html-merger-action-needed": "Add the &#39;Alert-Only&#39; AS Security Profile to the Security Profile Groups mentioned.",
+      "html-merger-severity": "Critical"
     },
     {
       "type": "securityprofilegroup",
       "actions": "actions=exportToExcel:5f_NoWF_Exists_in_SPG.html,adoption|visibility|bestpractice",
       "filter": "filter=!(secprof wf-profile.is.set )",
-      "location": "location=any"
+      "location": "location=any",
+      "html-merger-explanation": "These are Security Profile Groups that do not have an WF Security Profile applied. This highly limits firewall threat prevention/detection capabilities. We recommend you to have the &#39;Alert-Only&#39; WF Security Profile applied to all Security Profile Groups mentioned.",
+      "html-merger-action-needed": "Add the &#39;Alert-Only&#39; WF Security Profile to the Security Profile Groups mentioned.",
+      "html-merger-severity": "Critical"
     },
     {
       "type": "rule",
       "actions": "actions=exportToExcel:6_SPG_exists_in_DenyRule.html",
       "filter": "filter=(secprof is.set) and !(action is.allow) and (rule is.enabled)",
-      "location": "location=any"
+      "location": "location=any",
+      "html-merger-explanation": "Security profiles are not needed on the deny rules. We recommend you to remove the groups from the policy mentioned in the list.",
+      "html-merger-action-needed": "Remove the SPG or SP&#39;s from rules mentioned",
+      "html-merger-severity": "Critical"
     },
     {
       "type": "rule",
       "actions": "actions=exportToExcel:7a_Log-at-End_Missing_inRule.html",
       "filter": "filter=!(log at.end) and (rule is.enabled)",
-      "location": "location=any"
+      "location": "location=any",
+      "html-merger-explanation": "These rules are not being logged at session end. We recommend to have logging enabled at session end for visibility.",
+      "html-merger-action-needed": "Enable &#39;Log at session end&#39; on all rules mentioned",
+      "html-merger-severity": "Critical"
     },
     {
       "type": "rule",
       "actions": "actions=exportToExcel:7b_Log-at-Start_inRule.html",
       "filter": "filter=(log at.start) and (rule is.enabled)",
-      "location": "location=any"
+      "location": "location=any",
+      "html-merger-explanation": "",
+      "html-merger-action-needed": "",
+      "html-merger-severity": "Critical"
     },
     {
       "type": "rule",
       "ruletype": "ruletype=defaultsecurity",
       "actions": "actions=exportToExcel:8a_DefaultSec_NoLog-at-End.html",
       "filter": "filter=!(log at.end)",
-      "location": "location=any"
+      "location": "location=any",
+      "html-merger-explanation": "These default rules are not being logged at session end. We recommend to have logging enabled at session end for visibility.",
+      "html-merger-action-needed": "Enable &#39;Log at session end&#39; on all rules mentioned",
+      "html-merger-severity": "Critical"
     },
     {
       "type": "rule",
       "ruletype": "ruletype=defaultsecurity",
       "actions": "actions=exportToExcel:8b_DefaultSec_No_LFP.html",
       "filter": "filter=!(logprof is.set)",
-      "location": "location=any"
+      "location": "location=any",
+      "html-merger-explanation": "These are the default rules without Log Forwarding Profile applied to them. This reduces the visibility on the firewall. We recommend you to have a Log Forwarding Profile attached to all Security Rules. Please review the default rules in the sheet &amp; apply the &#39;default&#39; Log Forwardign Profile to them.",
+      "html-merger-action-needed": "Apply the &#39;default&#39; Log Forwarding Profile to rules mentioned.",
+      "html-merger-severity": "Critical"
     },
     {
       "type": "rule",
       "ruletype": "ruletype=defaultsecurity",
       "actions": "actions=exportToExcel:8c_DefaultSec_No_SPG-inAllow.html",
       "filter": "filter=!(secprof is.set) and (action is.allow)",
-      "location": "location=any"
+      "location": "location=any",
+      "html-merger-explanation": "This is the default allow rule which does not have either any Security Profile(s), or a Security Profile Group applied to it. This highly limits firewall threat prevention/detection capabilities. We recommend you to have the &#39;Alert-Only&#39; Security Profile Group applied to the default allow rule.",
+      "html-merger-action-needed": "Apply the &#39;Alert-Only&#39; Security Profile Group to rules mentioned.",
+      "html-merger-severity": "Critical"
     },
     {
       "type": "rule",
       "ruletype": "ruletype=defaultsecurity",
       "actions": "actions=exportToExcel:8d_DefaultSec_SPG-inDeny.html",
       "filter": "filter=(secprof is.set) and !(action is.allow)",
-      "location": "location=any"
+      "location": "location=any",
+      "html-merger-explanation": "Security profiles are not needed on the default deny rule. We recommend you to remove the groups from the default deny rule.",
+      "html-merger-action-needed": "Remove the SPG or SP&#39;s from rules mentioned",
+      "html-merger-severity": "Low"
     },
     {
       "type": "rule",
       "actions": "actions=exportToExcel:9a_Rule_is_Disabled.html",
       "filter": "filter=(rule is.disabled)",
-      "location": "location=any"
+      "location": "location=any",
+      "html-merger-explanation": "",
+      "html-merger-action-needed": "",
+      "html-merger-severity": ""
     },
     {
       "type": "rule",
       "actions": "actions=exportToExcel:9b_Rule_has_DoubleSpace.html",
       "filter": "filter=(name regex /  /)",
-      "location": "location=any"
+      "location": "location=any",
+      "html-merger-explanation": "",
+      "html-merger-action-needed": "",
+      "html-merger-severity": ""
     },
     {
       "type": "rule",
       "actions": "actions=exportToExcel:9c_block_applicationDefault.html",
       "filter": "filter=(service is.application-default) and !(action is.allow) and (rule is.enabled)",
-      "location": "location=any"
+      "location": "location=any",
+      "html-merger-explanation": "",
+      "html-merger-action-needed": "",
+      "html-merger-severity": ""
     },
     {
       "type": "rule",
       "actions": "actions=exportToExcel:9d_Rulename_contains_TestorTemp.html",
       "filter": "filter=((name contains test) or (name contains temp)) and (rule is.enabled)",
-      "location": "location=any"
+      "location": "location=any",
+      "html-merger-explanation": "",
+      "html-merger-action-needed": "",
+      "html-merger-severity": ""
     },
     {
       "type": "rule",
       "actions": "actions=exportToExcel:9e_Tag_contains_TestorTemp.html",
       "filter": "filter=((tag has.regex /temp/i ) or (tag has.regex /test/i )) and (rule is.enabled)",
-      "location": "location=any"
+      "location": "location=any",
+      "html-merger-explanation": "",
+      "html-merger-action-needed": "",
+      "html-merger-severity": ""
     },
     {
       "type": "securityprofile",
       "securityprofiletype": "securityprofiletype=vulnerability",
       "actions": "actions=exportToExcel:9f-i_All_VP-SPs.html,UsedInLocation|WhereUsed|TotalUse|visibility|bestpractice",
-      "location": "location=any"
+      "location": "location=any",
+      "html-merger-explanation": "",
+      "html-merger-action-needed": "",
+      "html-merger-severity": ""
     },
     {
       "type": "securityprofile",
       "securityprofiletype": "securityprofiletype=spyware",
       "actions": "actions=exportToExcel:9f-ii_All_AS-SPs.html,UsedInLocation|WhereUsed|TotalUse|visibility|bestpractice",
-      "location": "location=any"
+      "location": "location=any",
+      "html-merger-explanation": "",
+      "html-merger-action-needed": "",
+      "html-merger-severity": ""
     },
     {
       "type": "securityprofile",
       "securityprofiletype": "securityprofiletype=virus",
       "actions": "actions=exportToExcel:9f-iii_All_AV-SPs.html,UsedInLocation|WhereUsed|TotalUse|visibility|bestpractice",
-      "location": "location=any"
+      "location": "location=any",
+      "html-merger-explanation": "",
+      "html-merger-action-needed": "",
+      "html-merger-severity": ""
     },
     {
       "type": "securityprofile",
       "securityprofiletype": "securityprofiletype=url-filtering",
       "actions": "actions=exportToExcel:9f-iv_All_URL-SPs.html,UsedInLocation|WhereUsed|TotalUse|visibility|bestpractice",
-      "location": "location=any"
+      "location": "location=any",
+      "html-merger-explanation": "",
+      "html-merger-action-needed": "",
+      "html-merger-severity": ""
     },
     {
       "type": "securityprofile",
       "securityprofiletype": "securityprofiletype=wildfire-analysis",
       "actions": "actions=exportToExcel:9f-v_All_WF-SPs.html,UsedInLocation|WhereUsed|TotalUse|visibility|bestpractice",
-      "location": "location=any"
+      "location": "location=any",
+      "html-merger-explanation": "",
+      "html-merger-action-needed": "",
+      "html-merger-severity": ""
     },
     {
       "type": "securityprofilegroup",
       "actions": "actions=exportToExcel:9f-vi_SPG.html,UsedInLocation|TotalUse|visibility|bestpractice",
-      "location": "location=any"
+      "location": "location=any",
+      "html-merger-explanation": "",
+      "html-merger-action-needed": "",
+      "html-merger-severity": ""
     },
     {
       "type": "threat-rule",
       "actions": "actions=exportToExcel:9f-vii_ThreatRules.html,UsedInLocation|WhereUsed",
-      "location": "location=any"
+      "location": "location=any",
+      "html-merger-explanation": "",
+      "html-merger-action-needed": "",
+      "html-merger-severity": ""
     },
     {
       "type": "rule",
       "actions": "actions=exportToExcel:9g-i_All_sec_rules.html,visibility|bestpractice",
-      "location": "location=any"
+      "location": "location=any",
+      "html-merger-explanation": "",
+      "html-merger-action-needed": "",
+      "html-merger-severity": ""
     },
     {
       "type": "rule",
       "ruletype": "ruletype=nat",
       "actions": "actions=exportToExcel:9g-ii_All_nat_rules.html",
-      "location": "location=any"
+      "location": "location=any",
+      "html-merger-explanation": "",
+      "html-merger-action-needed": "",
+      "html-merger-severity": ""
     },
     {
       "type": "rule",
       "ruletype": "ruletype=decryption",
       "actions": "actions=exportToExcel:9g-iii_AllDecrypt_rules.html",
-      "location": "location=any"
+      "location": "location=any",
+      "html-merger-explanation": "",
+      "html-merger-action-needed": "",
+      "html-merger-severity": ""
     },
     {
       "type": "zone",
       "actions": "actions=exportToExcel:9g-iv_All_Zones.html",
-      "location": "location=any"
+      "location": "location=any",
+      "html-merger-explanation": "",
+      "html-merger-action-needed": "",
+      "html-merger-severity": ""
     },
     {
       "type": "address",
       "actions": "actions=exportToExcel:9h-i_Unused_Addresses.html,WhereUsed|UsedInLocation|ResolveIP|NestedMembers",
       "filter": "filter=(object is.unused.recursive)",
-      "location": "location=any"
+      "location": "location=any",
+      "html-merger-explanation": "",
+      "html-merger-action-needed": "",
+      "html-merger-severity": ""
     },    
     {
       "type": "service",
       "actions": "actions=exportToExcel:9h-ii_Unused_Services.html,WhereUsed|UsedInLocation|ResolveSRV|NestedMembers",
       "filter": "filter=(object is.unused.recursive)",
-      "location": "location=any"
+      "location": "location=any",
+      "html-merger-explanation": "",
+      "html-merger-action-needed": "",
+      "html-merger-severity": ""
     },
     {
       "type": "securityprofilegroup",
       "actions": "actions=exportToExcel:9h-iii_UnusedSPG.html,WhereUsed|UsedInLocation",
       "filter": "filter=(object is.unused)",
-      "location": "location=any"
+      "location": "location=any",
+      "html-merger-explanation": "",
+      "html-merger-action-needed": "",
+      "html-merger-severity": ""
     },
     {
       "type": "securityprofile",
       "securityprofiletype": "securityprofiletype=vulnerability",
       "actions": "actions=exportToExcel:9h-iv_Unused_VP-SPs.html,WhereUsed|UsedInLocation",
       "filter": "filter=(object is.unused)",
-      "location": "location=any"
+      "location": "location=any",
+      "html-merger-explanation": "",
+      "html-merger-action-needed": "",
+      "html-merger-severity": ""
     },
     {
       "type": "securityprofile",
       "securityprofiletype": "securityprofiletype=spyware",
       "actions": "actions=exportToExcel:9h-v_Unused_AS_SPs.html,WhereUsed|UsedInLocation",
       "filter": "filter=(object is.unused)",
-      "location": "location=any"
+      "location": "location=any",
+      "html-merger-explanation": "",
+      "html-merger-action-needed": "",
+      "html-merger-severity": ""
     },
     {
       "type": "securityprofile",
       "securityprofiletype": "securityprofiletype=virus",
       "actions": "actions=exportToExcel:9h-vi_Unused_AV-SPs.html,WhereUsed|UsedInLocation",
       "filter": "filter=(object is.unused)",
-      "location": "location=any"
+      "location": "location=any",
+      "html-merger-explanation": "",
+      "html-merger-action-needed": "",
+      "html-merger-severity": ""
     },
     {
       "type": "securityprofile",
       "securityprofiletype": "securityprofiletype=url-filtering",
       "actions": "actions=exportToExcel:9h-vii_Unused_URL-SPs.html,WhereUsed|UsedInLocation",
       "filter": "filter=(object is.unused)",
-      "location": "location=any"
+      "location": "location=any",
+      "html-merger-explanation": "",
+      "html-merger-action-needed": "",
+      "html-merger-severity": ""
     },
     {
       "comment": "merge all previously created html files into one Excel sheet",
