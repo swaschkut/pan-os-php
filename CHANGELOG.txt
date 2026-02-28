@@ -31,6 +31,7 @@ BUGFIX:
 GENERAL:
 * class StatCollecotrTrait | optimise code
 * Device App-ID update to version: 9072-9917
+* introduction of url-category browser-runtime-attack | for all kind of validation and settings
 
 
 2.1.47 (20260121)

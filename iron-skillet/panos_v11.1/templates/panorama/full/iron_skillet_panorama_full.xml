@@ -2191,7 +2191,7 @@
             <member>adult</member>
             <member>alcohol-and-tobacco</member>
             <member>artificial-intelligence</member>
-            <member>auctions</member>
+            <member>auctions</member><member>browser-runtime-attack</member>
             <member>business-and-economy</member>
             <member>command-and-control</member>
             <member>computer-and-internet-info</member>
@@ -2279,7 +2279,7 @@
           <member>adult</member>
           <member>alcohol-and-tobacco</member>
           <member>artificial-intelligence</member>
-          <member>auctions</member>
+          <member>auctions</member><member>browser-runtime-attack</member>
           <member>business-and-economy</member>
           <member>command-and-control</member>
           <member>computer-and-internet-info</member>
@@ -2368,7 +2368,7 @@
             <member>adult</member>
             <member>alcohol-and-tobacco</member>
             <member>artificial-intelligence</member>
-            <member>auctions</member>
+            <member>auctions</member><member>browser-runtime-attack</member>
             <member>business-and-economy</member>
             <member>command-and-control</member>
             <member>computer-and-internet-info</member>
@@ -2455,7 +2455,7 @@
           <member>adult</member>
           <member>alcohol-and-tobacco</member>
           <member>artificial-intelligence</member>
-          <member>auctions</member>
+          <member>auctions</member><member>browser-runtime-attack</member>
           <member>business-and-economy</member>
           <member>computer-and-internet-info</member>
           <member>content-delivery-networks</member>
