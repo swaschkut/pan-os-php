@@ -8531,19 +8531,47 @@
             },
             "spyware.botnet.alert-only-set": {
                 "name": "spyware.botnet.alert-only-set",
-                "MainFunction": {}
+                "MainFunction": {},
+                "args": {
+                    "has-DNS-license": {
+                        "type": "bool",
+                        "default": "true",
+                        "help": "[has-DNS-license] 'spyware.best-practice-set:FALSE' - define correct AS Profile setting if License is NOT available"
+                    }
+                }
             },
             "spyware.botnet.best-practice-set": {
                 "name": "spyware.botnet.best-practice-set",
-                "MainFunction": {}
+                "MainFunction": {},
+                "args": {
+                    "has-DNS-license": {
+                        "type": "bool",
+                        "default": "true",
+                        "help": "[has-DNS-license] 'spyware.best-practice-set:FALSE' - define correct AS Profile setting if License is NOT available"
+                    }
+                }
             },
             "spyware.dns.alert-only-set": {
                 "name": "spyware.dns.alert-only-set",
-                "MainFunction": {}
+                "MainFunction": {},
+                "args": {
+                    "has-DNS-license": {
+                        "type": "bool",
+                        "default": "true",
+                        "help": "[has-DNS-license] 'spyware.best-practice-set:FALSE' - define correct AS Profile setting if License is NOT available"
+                    }
+                }
             },
             "spyware.dns.best-practice-set": {
                 "name": "spyware.dns.best-practice-set",
-                "MainFunction": {}
+                "MainFunction": {},
+                "args": {
+                    "has-DNS-license": {
+                        "type": "bool",
+                        "default": "true",
+                        "help": "[has-DNS-license] 'spyware.best-practice-set:FALSE' - define correct AS Profile setting if License is NOT available"
+                    }
+                }
             },
             "spyware.inline-ml.best-practice-set": {
                 "name": "spyware.inline-ml.best-practice-set",

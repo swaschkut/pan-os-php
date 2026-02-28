@@ -2486,7 +2486,12 @@ SecurityProfileCallContext::$supportedActions['spyware.dns.best-practice-set'] =
                 }
             }
         }
-    }
+    },
+    'args' => array('has-DNS-license' =>
+        array('type' => 'bool', 'default' => 'true',
+            'help' => "[has-DNS-license] 'spyware.best-practice-set:FALSE' - define correct AS Profile setting if License is NOT available"
+        )
+    )
 );
 
 SecurityProfileCallContext::$supportedActions['spyware.botnet.best-practice-set'] = array(
@@ -2549,7 +2554,12 @@ SecurityProfileCallContext::$supportedActions['spyware.botnet.best-practice-set'
                 }
             }
         }
-    }
+    },
+    'args' => array('has-DNS-license' =>
+        array('type' => 'bool', 'default' => 'true',
+            'help' => "[has-DNS-license] 'spyware.best-practice-set:FALSE' - define correct AS Profile setting if License is NOT available"
+        )
+    )
 );
 
 SecurityProfileCallContext::$supportedActions['spyware.best-practice-set'] = array(
@@ -2827,7 +2837,12 @@ SecurityProfileCallContext::$supportedActions['spyware.dns.alert-only-set'] = ar
                 }
             }
         }
-    }
+    },
+    'args' => array('has-DNS-license' =>
+        array('type' => 'bool', 'default' => 'true',
+            'help' => "[has-DNS-license] 'spyware.best-practice-set:FALSE' - define correct AS Profile setting if License is NOT available"
+        )
+    )
 );
 SecurityProfileCallContext::$supportedActions['spyware.botnet.alert-only-set'] = array(
     'name' => 'spyware.botnet.alert-only-set',
@@ -2893,7 +2908,12 @@ SecurityProfileCallContext::$supportedActions['spyware.botnet.alert-only-set'] =
                 }
             }
         }
-    }
+    },
+    'args' => array('has-DNS-license' =>
+        array('type' => 'bool', 'default' => 'true',
+            'help' => "[has-DNS-license] 'spyware.best-practice-set:FALSE' - define correct AS Profile setting if License is NOT available"
+        )
+    )
 );
 
 SecurityProfileCallContext::$supportedActions['spyware.alert-only-set'] = array(
