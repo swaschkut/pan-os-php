@@ -8530,6 +8530,38 @@ var subjectObject =
                     }
                 }
             },
+            "spyware.botnet.alert-only-set": {
+                "name": "spyware.botnet.alert-only-set",
+                "MainFunction": {}
+            },
+            "spyware.botnet.best-practice-set": {
+                "name": "spyware.botnet.best-practice-set",
+                "MainFunction": {}
+            },
+            "spyware.dns.alert-only-set": {
+                "name": "spyware.dns.alert-only-set",
+                "MainFunction": {}
+            },
+            "spyware.dns.best-practice-set": {
+                "name": "spyware.dns.best-practice-set",
+                "MainFunction": {}
+            },
+            "spyware.inline-ml.best-practice-set": {
+                "name": "spyware.inline-ml.best-practice-set",
+                "MainFunction": {}
+            },
+            "spyware.inline_ml.alert-only-set": {
+                "name": "spyware.inline_ml.alert-only-set",
+                "MainFunction": {}
+            },
+            "spyware.rules.alert-only-set": {
+                "name": "spyware.rules.alert-only-set",
+                "MainFunction": {}
+            },
+            "spyware.rules.best-practice-set": {
+                "name": "spyware.rules.best-practice-set",
+                "MainFunction": {}
+            },
             "url-filtering-action-set": {
                 "name": "url-filtering-action-set",
                 "MainFunction": {},
@@ -8598,6 +8630,14 @@ var subjectObject =
                 "name": "virus.best-practice-set",
                 "MainFunction": {}
             },
+            "virus.decoder.alert-only-set": {
+                "name": "virus.decoder.alert-only-set",
+                "MainFunction": {}
+            },
+            "virus.inline-ml.alert-only-set": {
+                "name": "virus.inline-ml.alert-only-set",
+                "MainFunction": {}
+            },
             "vulnerability.alert-only-set": {
                 "name": "vulnerability.alert-only-set",
                 "MainFunction": {}
@@ -8606,12 +8646,36 @@ var subjectObject =
                 "name": "vulnerability.best-practice-set",
                 "MainFunction": {}
             },
+            "vulnerability.inline-ml.alert-only-set": {
+                "name": "vulnerability.inline-ml.alert-only-set",
+                "MainFunction": {}
+            },
+            "vulnerability.inline-ml.best-practice-set": {
+                "name": "vulnerability.inline-ml.best-practice-set",
+                "MainFunction": {}
+            },
+            "vulnerability.rules.alert-only-set": {
+                "name": "vulnerability.rules.alert-only-set",
+                "MainFunction": {}
+            },
+            "vulnerability.rules.best-practice-set": {
+                "name": "vulnerability.rules.best-practice-set",
+                "MainFunction": {}
+            },
             "wildfire.alert-only-set": {
                 "name": "wildfire.alert-only-set",
                 "MainFunction": {}
             },
             "wildfire.best-practice-set": {
                 "name": "wildfire.best-practice-set",
+                "MainFunction": {}
+            },
+            "wildfire.inline-ml.alert-only-set": {
+                "name": "wildfire.inline-ml.alert-only-set",
+                "MainFunction": {}
+            },
+            "wildfire.inline-ml.best-practice-set": {
+                "name": "wildfire.inline-ml.best-practice-set",
                 "MainFunction": {}
             }
         },

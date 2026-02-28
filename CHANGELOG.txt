@@ -23,6 +23,7 @@ UTIL:
 * type=playbook | introduction of html-merger-explanation / -action-needed / -severity - to skip in json playbook files
 * type=html-merger | update to use adddefaulthtml argument in an automatic way - to create 0_Introduction.html always dynamically based on the JSON playbook information
 * type=rule actions=exporttoexcel:file.html | extend spreadsheeting with separate SPs column and the used securityProfile
+* type=securityprofile actions=virus/spyware/vulnerability/wildfire - split all xyz.alert-only-set / .best-practice-set - introduce for each part single actions
 
 BUGFIX:
 * class UTIL | bugfix to bring actions= with '/' for multiple actions back to working mode
