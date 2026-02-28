@@ -582,6 +582,115 @@ class RuleCallContext extends CallContext
             return self::display_SP_details( $rule, $wrap, $sp_best_practice, $sp_visibility, $sp_adoption, $bp_NOT_sign, $visibility_NOT_sign, $adoption_NOT_sign );
         }
 
+
+        if( $fieldName == 'virus-profile' )
+        {
+            if (!$rule->isSecurityRule() && !$rule->isDefaultSecurityRule())
+                return self::enclose('');
+
+            if ($rule->securityProfileType() == 'none')
+                return self::enclose('');
+
+            $profType = 'virus';
+            return self::get_SP_name_and_display( $rule, $profType, $wrap);
+        }
+
+        if( $fieldName == 'spyware-profile' )
+        {
+            if (!$rule->isSecurityRule() && !$rule->isDefaultSecurityRule())
+                return self::enclose('');
+
+            if ($rule->securityProfileType() == 'none')
+                return self::enclose('');
+
+            $profType = 'spyware';
+            return self::get_SP_name_and_display( $rule, $profType, $wrap);
+        }
+
+        if( $fieldName == 'vulnerability-profile' )
+        {
+            if (!$rule->isSecurityRule() && !$rule->isDefaultSecurityRule())
+                return self::enclose('');
+
+            if ($rule->securityProfileType() == 'none')
+                return self::enclose('');
+
+            $profType = 'vulnerability';
+            return self::get_SP_name_and_display( $rule, $profType, $wrap);
+        }
+
+        if( $fieldName == 'url-filtering-profile' )
+        {
+            if (!$rule->isSecurityRule() && !$rule->isDefaultSecurityRule())
+                return self::enclose('');
+
+            if ($rule->securityProfileType() == 'none')
+                return self::enclose('');
+
+            $profType = 'url-filtering';
+            return self::get_SP_name_and_display( $rule, $profType, $wrap);
+        }
+
+        if( $fieldName == 'file-blocking-profile' )
+        {
+            if (!$rule->isSecurityRule() && !$rule->isDefaultSecurityRule())
+                return self::enclose('');
+
+            if ($rule->securityProfileType() == 'none')
+                return self::enclose('');
+
+            $profType = 'file-blocking';
+            return self::get_SP_name_and_display( $rule, $profType, $wrap);
+        }
+
+        if( $fieldName == 'wildfire-analysis-profile' )
+        {
+            if (!$rule->isSecurityRule() && !$rule->isDefaultSecurityRule())
+                return self::enclose('');
+
+            if ($rule->securityProfileType() == 'none')
+                return self::enclose('');
+
+            $profType = 'wildfire-analysis';
+            return self::get_SP_name_and_display( $rule, $profType, $wrap);
+        }
+
+        if( $fieldName == 'data-filtering-profile' )
+        {
+            if (!$rule->isSecurityRule() && !$rule->isDefaultSecurityRule())
+                return self::enclose('');
+
+            if ($rule->securityProfileType() == 'none')
+                return self::enclose('');
+
+            $profType = 'data-filtering';
+            return self::get_SP_name_and_display( $rule, $profType, $wrap);
+        }
+
+        if( $fieldName == 'dns-security-profile' )
+        {
+            if (!$rule->isSecurityRule() && !$rule->isDefaultSecurityRule())
+                return self::enclose('');
+
+            if ($rule->securityProfileType() == 'none')
+                return self::enclose('');
+
+            $profType = 'dns-security';
+            return self::get_SP_name_and_display( $rule, $profType, $wrap);
+        }
+
+        if( $fieldName == 'virus-and-wildfire-analysis-profile' )
+        {
+            if (!$rule->isSecurityRule() && !$rule->isDefaultSecurityRule())
+                return self::enclose('');
+
+            if ($rule->securityProfileType() == 'none')
+                return self::enclose('');
+
+            $profType = 'virus-and-wildfire-analysis';
+            return self::get_SP_name_and_display( $rule, $profType, $wrap);
+        }
+
         if($fieldName == 'sp_best_practice' )
         {
             if( !$rule->isSecurityRule() && !$rule->isDefaultSecurityRule() )
@@ -1458,6 +1567,23 @@ class RuleCallContext extends CallContext
                 return self::enclose("---", $wrap);
 
         }
+    }
+
+    public function get_SP_name_and_display( $rule, $profType, $wrap)
+    {
+        $secProfArray = $rule->securityProfiles_obj();
+
+        if( isset($secProfArray[$profType]) )
+        {
+            $profileName = $secProfArray[$profType];
+
+            if( !is_object($profileName) )
+                return self::enclose( $profileName, $wrap );
+            else
+                return self::enclose( $profileName->name(), $wrap );
+        }
+
+        return self::enclose( '' );
     }
 
     public function AddressResolveSummary( $rule, $typeSrcDst, &$unresolvedArray = array() )
