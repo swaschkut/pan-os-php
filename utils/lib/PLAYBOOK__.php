@@ -79,6 +79,8 @@ class PLAYBOOK__
         );
         $input = null;
         $output = null;
+
+        $jsonFile = null;
 ###############################################################################
 //PLAYBOOK
 ###############################################################################
@@ -369,6 +371,10 @@ class PLAYBOOK__
 
             if( isset( $command['shadow-bpjsonfile'] ) )
                 $arguments[] = "shadow-bpjsonfile=".$command['shadow-bpjsonfile'];
+
+
+            if( $script == "html-merger" )
+                $arguments[] = "json_playbook=".$jsonFile;
 
             ###############################################################################
             //IN / OUT specification

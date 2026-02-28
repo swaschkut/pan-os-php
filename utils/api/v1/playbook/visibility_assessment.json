@@ -163,7 +163,7 @@
       "location": "location=any",
       "html-merger-explanation": "Security profiles are not needed on the deny rules. We recommend you to remove the groups from the policy mentioned in the list.",
       "html-merger-action-needed": "Remove the SPG or SP&#39;s from rules mentioned",
-      "html-merger-severity": "Critical"
+      "html-merger-severity": "Low"
     },
     {
       "type": "rule",
