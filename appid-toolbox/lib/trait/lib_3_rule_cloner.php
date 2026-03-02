@@ -40,7 +40,7 @@ trait lib_3_rule_cloner
         if( isset(PH::$args['help']) )
             $this->display_usage_and_exit_p3();
 
-        $supportedOptions = array('phase', 'in', 'out', 'location', 'bundleapicalls', 'ignoreapps', 'serial');
+        $supportedOptions = array('phase', 'in', 'out', 'location', 'bundleapicalls', 'ignoreapps', 'serial', 'debugapi');
         $supportedOptions = array_flip($supportedOptions);
 
         foreach( PH::$args as $arg => $argvalue )
@@ -53,6 +53,10 @@ trait lib_3_rule_cloner
         $debugAPI = FALSE;
         $bundleApiCalls = FALSE;
 
+        if( isset(PH::$args['debugapi']) )
+        {
+            $debugAPI = TRUE;
+        }
 
         $return = AppIDToolbox_common::location();
         $configInput = $return['configInput'];
@@ -297,10 +301,14 @@ trait lib_3_rule_cloner
 
             $newName = $legacyRule->owner->findAvailableName($legacyRule->name(), '-app');
             PH::print_stdout(" - cloned rule name will be '{$newName}'");
+            /** @var Rule $appidRule */
+            /** @var RuleStore $ruleStore */
+            $ruleStore = $subSystem->securityRules;
+            $legacyIsPostRule = $legacyRule->isPostRule();
             if( !$bundleApiCalls )
-                $appidRule = $subSystem->securityRules->API_cloneRule($legacyRule, $newName);
+                $appidRule = $ruleStore->API_cloneRule($legacyRule, $newName, $legacyIsPostRule);
             else
-                $appidRule = $subSystem->securityRules->cloneRule($legacyRule, $newName);
+                $appidRule = $ruleStore->cloneRule($legacyRule, $newName, $legacyIsPostRule);
 
             PH::print_stdout(" - created rule '{$appidRule->name()}'");
             if( !$bundleApiCalls )

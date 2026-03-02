@@ -28,47 +28,52 @@ trait PanSubHelperTrait
         FALSE;
     }
 
-    public function isFirewall()
+    public function isFirewall(): void
     {
         FALSE;
     }
 
-    public function isVirtualSystem()
+    public function isVirtualSystem(): void
     {
         FALSE;
     }
 
-    public function isDeviceGroup()
+    public function isDeviceGroup(): void
     {
         FALSE;
     }
 
-    public function isTemplate()
+    public function isTemplate(): void
     {
         FALSE;
     }
 
-    public function isFawkes()
+    public function isFawkes(): void
     {
         FALSE;
     }
 
-    public function isBuckbeak()
+    public function isBuckbeak(): void
     {
         FALSE;
     }
 
-    public function isContainer()
+    public function isContainer(): void
     {
         FALSE;
     }
 
-    public function isDeviceCloud()
+    public function isDeviceCloud(): void
     {
         FALSE;
     }
 
-    public function isManagedDevice()
+    public function isDeviceOnPrem(): void
+    {
+        FALSE;
+    }
+
+    public function isManagedDevice(): void
     {
         FALSE;
     }

@@ -64,6 +64,10 @@ class ThreatPolicyWildfire extends ThreatPolicy
 
     public function check_bp_json( $check_array )
     {
+        $bp_debug = false;
+        if( $bp_debug )
+            print_r($check_array);
+
         foreach( $check_array as $check )
         {
             foreach( $check as $validate => $values )
@@ -72,10 +76,42 @@ class ThreatPolicyWildfire extends ThreatPolicy
                 {
                     //application
                     //filetype
+                    $checkArray = false;
+                    $bpCheckArray = false;
                     foreach( $values as $value )
                     {
-                        if( !in_array( $value, $this->$validate ) )
+                        if( is_array( $this->$validate) )
+                        {
+                            if( !in_array( $value, $this->$validate ) )
+                            {
+                                if( $bp_debug )
+                                    print "return FALSE\n";
+                                return false;
+                            }
+
+                        }
+                        else
+                        {
+                            if( $bp_debug )
+                                print_r($values);
+                            $checkArray = true;
+                            if( $bp_debug )
+                                print "value == validate: ".$value." ".$this->$validate."\n";
+                            if( $value == $this->$validate )
+                                $bpCheckArray = true;
+                        }
+                    }
+                    if( $checkArray )
+                    {
+                        if( $bp_debug )
+                            print "checkArray\n";
+                        if( $bpCheckArray == FALSE )
+                        {
+                            if( $bp_debug )
+                                print "return FALSE\n";
                             return false;
+                        }
+
                     }
                 }
                 else
@@ -83,10 +119,17 @@ class ThreatPolicyWildfire extends ThreatPolicy
                     //direction
                     //analysis
                     if( $this->$validate != $values )
+                    {
+                        if( $bp_debug )
+                            print "return FALSE\n";
                         return false;
+                    }
                 }
             }
         }
+
+        if( $bp_debug )
+            print "return TRUE\n";
 
         return TRUE;
     }
@@ -101,9 +144,25 @@ class ThreatPolicyWildfire extends ThreatPolicy
                 {
                     //application
                     //filetype
+                    $checkArray = false;
+                    $bpCheckArray = false;
                     foreach( $values as $value )
                     {
-                        if( !in_array( $value, $this->$validate ) )
+                        if( is_array( $this->$validate) )
+                        {
+                            if( !in_array( $value, $this->$validate ) )
+                                return false;
+                        }
+                        else
+                        {
+                            $checkArray = true;
+                            if( $value == $this->$validate )
+                                $bpCheckArray = true;
+                        }
+                    }
+                    if( $checkArray )
+                    {
+                        if( $bpCheckArray == FALSE )
                             return false;
                     }
                 }

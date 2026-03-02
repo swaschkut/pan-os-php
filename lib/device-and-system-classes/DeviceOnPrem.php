@@ -119,6 +119,14 @@ class DeviceOnPrem
     /** @var EDLStore */
     public $EDLStore = null;
 
+    /** @var LogProfileStore */
+    public $LogProfileStore = null;
+
+    /** @var CertificateStore */
+    public $certificateStore = null;
+
+    /** @var SSL_TLSServiceProfileStore */
+    public $SSL_TLSServiceProfileStore = null;
 /*
     public static $templateCloudxml = '<entry name="**Need a Name**"><address></address>
                                     <rulebase><security><rules></rules></security><nat><rules></rules></nat></rulebase>
@@ -207,6 +215,7 @@ class DeviceOnPrem
     /** @var Array */
     public $devices = array();
 
+    public $sizeArray = array();
 
     /** @var NetworkPropertiesContainer */
     public $network;
@@ -413,7 +422,7 @@ class DeviceOnPrem
 
             $parentContainer = $this->owner->findContainer( $this->parentContainer );
             if( $parentContainer === null )
-                mwarning("DeviceOnPrem '$this->name' has Container '{$this->parentContainer}' listed as parent but it cannot be found in XML");
+                mwarning("DeviceOnPrem '$this->name' has Container '{$this->parentContainer}' listed as parent but it cannot be found in XML", null, false);
             else
             {
                 $parentContainer->_childContainers[$this->name] = $this;

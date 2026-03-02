@@ -847,7 +847,7 @@ class PanoramaConf
                 {
                     $parentDG = $this->findDeviceGroup($dgToParent[$dgName]);
                     if( $parentDG === null )
-                        mwarning("DeviceGroup '$dgName' has DG '{$dgToParent[$dgName]}' listed as parent but it cannot be found in XML");
+                        mwarning("DeviceGroup '$dgName' has DG '{$dgToParent[$dgName]}' listed as parent but it cannot be found in XML",null, false);
                     else
                     {
                         $parentDG->_childDeviceGroups[$dgName] = $ldv;
@@ -1515,13 +1515,15 @@ class PanoramaConf
                 $lvname = $node->nodeName;
                 //PH::print_stdout(  "Device Group '$lvname' found" );
 
-                //already crated in part1
-                #$ldv = new DeviceGroup($this);
                 $ldv = $this->findDeviceGroup( $lvname );
+                if( $ldv === null )
+                {
+                    $ldv = new DeviceGroup($this);
+                    $this->deviceGroups[] = $ldv;
+                }
 
                 $ldv->load_from_domxml($node, $debugLoadTime);
-                //already added in part1
-                #$this->deviceGroups[] = $ldv;
+
             }
         }
         else

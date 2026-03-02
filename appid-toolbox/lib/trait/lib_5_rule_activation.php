@@ -46,7 +46,7 @@ trait lib_5_rule_activation
         if( isset(PH::$args['help']) )
             $this->display_usage_and_exit_p4();
 
-        $supportedOptions = array('phase', 'in', 'out', 'location', 'confirm');
+        $supportedOptions = array('phase', 'in', 'out', 'location', 'confirm', 'debugapi');
         $supportedOptions = array_flip($supportedOptions);
 
         foreach( PH::$args as $arg => $argvalue )
@@ -60,6 +60,10 @@ trait lib_5_rule_activation
         $dryRun = TRUE;
         $tagIssues = FALSE;
 
+        if( isset(PH::$args['debugapi']) )
+        {
+            $debugAPI = TRUE;
+        }
 
         $return = AppIDToolbox_common::location();
         $configInput = $return['configInput'];

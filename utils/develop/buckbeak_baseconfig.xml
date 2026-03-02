@@ -1066,6 +1066,7 @@
                       <id>65543</id>
                   </entry>
               </cloud>
+              <on-prem />
           </device>
       </entry>
   </devices>

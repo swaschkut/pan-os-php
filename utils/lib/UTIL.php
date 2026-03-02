@@ -179,6 +179,7 @@ class UTIL
 
 
     //TMP usage:
+    /** @var PanSCMAPIConnector|PanSaseAPIConnector $sase_connector */
     public $sase_connector = null;
 
     public $networkUsedObjects = array();
@@ -1349,7 +1350,7 @@ class UTIL
         if( $utilType != null )
             $this->utilType = $utilType;
 
-        $tmp_array = $this->supportedActions();
+        $supportedAction_array = $this->supportedActions();
 
         //
         // Extracting actions
@@ -1369,7 +1370,7 @@ class UTIL
 
             $actionName = strtolower($explodedAction[0]);
 
-            if( !isset($tmp_array[$actionName]) )
+            if( !isset($supportedAction_array[$actionName]) )
             {
                 $this->display_error_usage_exit('unsupported Action: "' . $actionName . '"');
             }
@@ -1379,76 +1380,76 @@ class UTIL
 
             //variable based on which util script is calling the method
             if( $this->utilType == 'tag' )
-                $context = new TagCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+                $context = new TagCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'address' )
-                $context = new AddressCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+                $context = new AddressCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'service' )
-                $context = new ServiceCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+                $context = new ServiceCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'rule' )
-                $context = new RuleCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+                $context = new RuleCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
 
             elseif( $this->utilType == 'securityprofile' )
-                $context = new SecurityProfileCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+                $context = new SecurityProfileCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'securityprofilegroup' )
-                $context = new SecurityProfileGroupCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+                $context = new SecurityProfileGroupCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'schedule' )
-                $context = new ScheduleCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+                $context = new ScheduleCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'edl' )
-                $context = new EDLCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+                $context = new EDLCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'application' )
-                $context = new ApplicationCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+                $context = new ApplicationCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'threat' )
-                $context = new ThreatCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+                $context = new ThreatCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'threat-rule' )
-                $context = new ThreatRuleCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+                $context = new ThreatRuleCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'dns-rule' )
-                $context = new DNSRuleCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+                $context = new DNSRuleCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
 
             elseif( $this->utilType == 'device' )
-                $context = new DeviceCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+                $context = new DeviceCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'vsys' )
-                $context = new VsysCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+                $context = new VsysCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
 
             elseif( $this->utilType == 'zone' )
-                $context = new ZoneCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+                $context = new ZoneCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'virtualwire' )
-                $context = new VirtualWireCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+                $context = new VirtualWireCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'routing' )
-                $context = new RoutingCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+                $context = new RoutingCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'interface' )
-                $context = new InterfaceCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+                $context = new InterfaceCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'dhcp' )
-                $context = new DHCPCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+                $context = new DHCPCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'certificate' )
-                $context = new CertificateCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+                $context = new CertificateCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'ssl-tls-service-profile' )
-                $context = new SSL_TLSServiceProfileCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+                $context = new SSL_TLSServiceProfileCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'static-route' )
-                $context = new StaticRouteCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+                $context = new StaticRouteCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'gp-gateway' )
-                $context = new GPGatewayCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+                $context = new GPGatewayCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'gp-portal' )
-                $context = new GPPortalCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+                $context = new GPPortalCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'ike-profile' )
-                $context = new IKEprofileCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+                $context = new IKEprofileCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'ike-gateway' )
-                $context = new IKEgatewayCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+                $context = new IKEgatewayCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'ipsec-profile' )
-                $context = new IPsecprofileCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+                $context = new IPsecprofileCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'ipsec-tunnel' )
-                $context = new IPsectunnelCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+                $context = new IPsectunnelCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'gre-tunnel' )
-                $context = new GREtunnelCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+                $context = new GREtunnelCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'gpgateway-tunnel' )
-                $context = new GPGatewaytunnelCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+                $context = new GPGatewaytunnelCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'zone-protection-profile' )
-                $context = new ZoneProtectionProfileCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+                $context = new ZoneProtectionProfileCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'interface-management-profile' )
-                $context = new InterfaceManagementProfileCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+                $context = new InterfaceManagementProfileCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'log-profile' )
-                $context = new LogProfileCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+                $context = new LogProfileCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
             elseif( $this->utilType == 'profile' )
-                $context = new ProfileCallContext($tmp_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
+                $context = new ProfileCallContext($supportedAction_array[$actionName], $explodedAction[1], $this->nestedQueries, $this);
 
             if( $this->debugAPI )
                 $context->debug = true;
@@ -1472,6 +1473,13 @@ class UTIL
                 $context->connector = $this->pan->connector;
             }
 
+            if( $this->pan->isFirewall() )
+                $context->deviceType = "firewall";
+            elseif( $this->pan->isPanorama() || $this->pan->isDeviceGroup() )
+                $context->deviceType = "panorama";
+            elseif( $this->pan->isBuckbeak() || $this->pan->isFawkes() || $this->pan->isContainer() || $this->pan->isDeviceCloud() || $this->pan->isDeviceOnPrem() )
+                $context->deviceType = "scm";
+
             if( $this->projectFolder !== null )
             {
                 $context->projectFolder = $this->projectFolder;
@@ -1479,7 +1487,6 @@ class UTIL
 
             $this->doActions[] = $context;
             unset($context);
-            unset($tmp_array);
         }
 //
 // ---------
@@ -1814,15 +1821,20 @@ class UTIL
         {
             $folderArray = PanSCMAPIConnector::$folderArray;
 
-            //todo: download all folders / snippets name
+            //this part is downloading and creating snippets
             $responseArray = $this->sase_connector->getSnippetsavailable($this->pan);
 
+            //this part is downloading and creating folders, of different types: container, cloud/on-prem
             $responseArray = $this->sase_connector->getFolderavailable($this->pan);
+
+
+            //what about DeviceCloud???
+            //what about DeviceOnprem
+
 
             $folderArray = array_merge($folderArray, $responseArray);
 
         }
-
 
 
         if( $this->objectsLocation !== "any" )
@@ -1833,7 +1845,15 @@ class UTIL
 
 
         //Todo: swaschkut if location is set reduce/replce $folderArray with this
-        foreach( $folderArray as $folder )
+        $folder_array_max = count( $folderArray );
+        if( $this->debugAPI )
+        {
+            #PH::print_stdout( "count folders: ".count( $folderArray ) );
+            #print_r( $folderArray );
+        }
+
+        $overall_runtime = 0;
+        foreach( $folderArray as $key => $folder )
         {
             if( $folder === "Shared" )
                 $sub = $this->pan->findContainer( "Prisma Access");
@@ -1842,24 +1862,57 @@ class UTIL
                 $sub = $this->pan->findContainer( $folder);
                 if( $sub === null )
                 {
+                    //Todo: swaschkut 20260125 - how to find device on-prem????
                     $sub = $this->pan->findDeviceCloud( $folder);
                     if( $sub === null )
-                        $sub = $this->pan->createDeviceCloud( $folder, "Prisma Access" );
+                    {
+                        $sub = $this->pan->findDeviceOnPrem( $folder);
+                    }
+                        #$sub = $this->pan->createDeviceCloud( $folder, "Prisma Access" );
+
+                    #$sub = $this->pan->findDeviceOnPrem( $folder);
+                    #if( $sub === null )
+                    #    $sub = $this->pan->createDeviceOnPrem( $folder, "MUST be AVAILABLE" );
+                    if( $sub === null )
+                    {
+                        mwarning( "why there nothing found for: '".$folder."'" );
+                    }
                 }
             }
 
-            if( $this->debugAPI )
-            {
-                PH::print_stdout( "FOLDER: ".$folder );
-            }
+            //if( $this->debugAPI ) {
+            PH::print_stdout();
+            PH::print_stdout( "FOLDER: ".$folder );
+                PH::print_stdout( "     ".($key+1)." / ". $folder_array_max);
+                //time start
+            $date_start = time();
+            $date = date('Y-m-d H:i:s');
+            PH::print_stdout( "     starttime: ".$date);
+            //}
 
             //Todo: 20240326 swaschkut - do not always load full config
             if( $this->configInput['type'] == 'sase-api' )
                 $this->sase_connector->loadSaseConfig($folder, $sub, $this->utilType);
             elseif( $this->configInput['type'] == 'scm-api' )
                 $this->sase_connector->loadSCMConfig($folder, $sub, $this->utilType);
+
+            //time end
+            $date_end = time();
+            $date = date('Y-m-d H:i:s');
+            #PH::print_stdout( "     endtime: ".$date);
+            $runtime_seconds = $date_end-$date_start;
+            $overall_runtime += $runtime_seconds;
+            PH::print_stdout( "     runtime: ".$runtime_seconds." seconds"." [until now: ".round($overall_runtime/60, 2)." minutes]");
+
+
         }
+
+        PH::print_stdout();
+        PH::print_stdout( " overall runtime: ".$overall_runtime." seconds");
+        PH::print_stdout( " overall runtime: ".round($overall_runtime/60, 2)." minutes");
+        PH::print_stdout();
     }
+
     public function location_filter_object()
     {
         $sub = null;

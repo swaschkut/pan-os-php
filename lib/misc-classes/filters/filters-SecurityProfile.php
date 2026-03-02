@@ -64,6 +64,14 @@ RQuery::$defaultFilters['securityprofile']['name']['operators']['is.in.file'] = 
     },
     'arg' => TRUE
 );
+RQuery::$defaultFilters['securityprofile']['name.length']['operators']['>,<,=,!'] = array(
+    'eval' => "strlen(\$object->name()) !operator! !value!",
+    'arg' => TRUE,
+    'ci' => array(
+        'fString' => '(%PROP% 63)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
 RQuery::$defaultFilters['securityprofile']['object']['operators']['is.tmp'] = array(
     'Function' => function (SecurityProfileRQueryContext $context) {
         return $context->object->isTmp();
@@ -731,10 +739,10 @@ RQuery::$defaultFilters['securityprofile']['exempt-ip.count']['operators']['>,<,
 
 RQuery::$defaultFilters['securityprofile']['cloud-inline-analysis']['operators']['is.enabled'] = array(
     'Function' => function (SecurityProfileRQueryContext $context) {
-        /** @var VulnerabilityProfile|AntiSpywareProfile $object */
+        /** @var VulnerabilityProfile|AntiSpywareProfile|WildfireProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'spyware' and $object->secprof_type != 'vulnerability' )
+        if( $object->secprof_type != 'spyware' and $object->secprof_type != 'vulnerability' and $object->secprof_type != 'wildfire' )
             return null;
 
         if( $object->cloud_inline_analysis_enabled )
@@ -747,16 +755,16 @@ RQuery::$defaultFilters['securityprofile']['cloud-inline-analysis']['operators']
         'fString' => '(%PROP% client )',
         'input' => 'input/panorama-8.0.xml'
     ),
-    'help' => "'securityprofiletype=spyware,vulnerability'"
+    'help' => "'securityprofiletype=spyware,vulnerability,wildfire'"
 );
 
 RQuery::$defaultFilters['securityprofile']['cloud-inline-analysis.action']['operators']['has'] = array(
     'Function' => function (SecurityProfileRQueryContext $context) {
-        /** @var VulnerabilityProfile|AntiSpywareProfile $object */
+        /** @var VulnerabilityProfile|AntiSpywareProfile|WildfireProfile $object */
         $object = $context->object;
         $value = $context->value;
 
-        if( $object->secprof_type != 'spyware' and $object->secprof_type != 'vulnerability' )
+        if( $object->secprof_type != 'spyware' and $object->secprof_type != 'vulnerability' and $object->secprof_type != 'wildfire' )
             return null;
 
         if( isset($object->additional['mica-engine-vulnerability-enabled']) )
@@ -777,6 +785,15 @@ RQuery::$defaultFilters['securityprofile']['cloud-inline-analysis.action']['oper
             }
         }
 
+        if( isset($object->additional['mica-engine-wildfire-rules']) )
+        {
+            foreach( $object->additional['mica-engine-wildfire-rules'] as $name)
+            {
+                if( $name['action'] == $value )
+                    return TRUE;
+            }
+        }
+
         return FALSE;
     },
     'arg' => true,
@@ -784,33 +801,33 @@ RQuery::$defaultFilters['securityprofile']['cloud-inline-analysis.action']['oper
         'fString' => '(%PROP% client )',
         'input' => 'input/panorama-8.0.xml'
     ),
-    'help' => "'securityprofiletype=spyware,vulnerability'"
+    'help' => "'securityprofiletype=spyware,vulnerability,wildfire'"
 );
 RQuery::$defaultFilters['securityprofile']['cloud-inline-analysis']['operators']['is.best-practice'] = array(
     'Function' => function (SecurityProfileRQueryContext $context) {
-        /** @var VulnerabilityProfile|AntiSpywareProfile|AntiVirusProfile $object */
+        /** @var VulnerabilityProfile|AntiSpywareProfile|AntiVirusProfile|WildfireProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'spyware' and $object->secprof_type != 'vulnerability' and $object->secprof_type != 'virus' )
+        if( $object->secprof_type != 'spyware' and $object->secprof_type != 'vulnerability' and $object->secprof_type != 'virus' and $object->secprof_type != 'wildfire' )
             return null;
 
         return $object->cloud_inline_analysis_best_practice($object->owner->bp_json_file);
     },
     'arg' => false,
-    'help' => "'securityprofiletype=spyware,vulnerability'"
+    'help' => "'securityprofiletype=spyware,vulnerability,wildfire'"
 );
 RQuery::$defaultFilters['securityprofile']['cloud-inline-analysis']['operators']['is.visibility'] = array(
     'Function' => function (SecurityProfileRQueryContext $context) {
-        /** @var VulnerabilityProfile|AntiSpywareProfile|AntiVirusProfile $object */
+        /** @var VulnerabilityProfile|AntiSpywareProfile|AntiVirusProfile|WildfireProfile $object */
         $object = $context->object;
 
-        if( $object->secprof_type != 'spyware' and $object->secprof_type != 'vulnerability' and $object->secprof_type != 'virus' )
+        if( $object->secprof_type != 'spyware' and $object->secprof_type != 'vulnerability' and $object->secprof_type != 'virus' and $object->secprof_type != 'wildfire' )
             return null;
 
         return $object->cloud_inline_analysis_visibility($object->owner->bp_json_file);
     },
     'arg' => false,
-    'help' => "'securityprofiletype=spyware,vulnerability'"
+    'help' => "'securityprofiletype=spyware,vulnerability,wildfire'"
 );
 RQuery::$defaultFilters['securityprofile']['av.action']['operators']['is.best-practice'] = array(
     'Function' => function (SecurityProfileRQueryContext $context) {
@@ -1518,6 +1535,58 @@ RQuery::$defaultFilters['securityprofile']['wf']['operators']['is.adoption'] = a
     },
     'arg' => false,
     'help' => "'securityprofiletype=wildfire-analysis' e.g. 'filter=(wf is.adoption)'"
+);
+RQuery::$defaultFilters['securityprofile']['wf.rules']['operators']['is.best-practice'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var WildfireProfile $object */
+        $object = $context->object;
+
+        if( $object->secprof_type != 'wildfire' )
+            return null;
+
+        return $object->wildfire_rules_best_practice();
+    },
+    'arg' => false,
+    'help' => "'securityprofiletype=wildfire-analysis' e.g. 'filter=(wf.rules is.best-practice)'"
+);
+RQuery::$defaultFilters['securityprofile']['wf.rules']['operators']['is.visibility'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var WildfireProfile $object */
+        $object = $context->object;
+
+        if( $object->secprof_type != 'wildfire' )
+            return null;
+
+        return $object->wildfire_rules_visibility();
+    },
+    'arg' => false,
+    'help' => "'securityprofiletype=wildfire-analysis' e.g. 'filter=(wf.rules is.visibility)'"
+);
+RQuery::$defaultFilters['securityprofile']['wf.mica-engine']['operators']['is.best-practice'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var WildfireProfile $object */
+        $object = $context->object;
+
+        if( $object->secprof_type != 'wildfire' )
+            return null;
+
+        return $object->cloud_inline_analysis_best_practice($object->owner->bp_json_file);
+    },
+    'arg' => false,
+    'help' => "'securityprofiletype=wildfire-analysis' e.g. 'filter=(wf.mica-engine is.best-practice)'"
+);
+RQuery::$defaultFilters['securityprofile']['wf.mica-engine']['operators']['is.visibility'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var WildfireProfile $object */
+        $object = $context->object;
+
+        if( $object->secprof_type != 'wildfire' )
+            return null;
+
+        return $object->cloud_inline_analysis_visibility($object->owner->bp_json_file);
+    },
+    'arg' => false,
+    'help' => "'securityprofiletype=wildfire-analysis' e.g. 'filter=(wf.mica-engine is.visibility)'"
 );
 
 RQuery::$defaultFilters['securityprofile']['fb.rules']['operators']['is.best-practice'] = array(

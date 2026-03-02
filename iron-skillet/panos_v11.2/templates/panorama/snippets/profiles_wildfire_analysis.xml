@@ -24,6 +24,19 @@
       <analysis>public-cloud</analysis>
     </entry>
   </rules>
+  <mica-engine-wildfire-rules>
+    <entry name="wf_inline_block">
+      <application>
+        <member>any</member>
+      </application>
+      <file-type>
+        <member>any</member>
+      </file-type>
+      <direction>both</direction>
+      <action>block</action>
+    </entry>
+  </mica-engine-wildfire-rules>
+  <cloud-inline-analysis>yes</cloud-inline-analysis>
 </entry><entry name="Internal-WF">
   <rules>
     <entry name="Forward-All">
@@ -37,6 +50,19 @@
       <analysis>public-cloud</analysis>
     </entry>
   </rules>
+  <mica-engine-wildfire-rules>
+    <entry name="wf_inline_block">
+      <application>
+        <member>any</member>
+      </application>
+      <file-type>
+        <member>any</member>
+      </file-type>
+      <direction>both</direction>
+      <action>block</action>
+    </entry>
+  </mica-engine-wildfire-rules>
+  <cloud-inline-analysis>yes</cloud-inline-analysis>
 </entry><entry name="Alert-Only-WF">
   <rules>
     <entry name="Forward-All">
@@ -50,4 +76,17 @@
       <analysis>public-cloud</analysis>
     </entry>
   </rules>
+  <mica-engine-wildfire-rules>
+    <entry name="wf_inline_alert">
+      <application>
+        <member>any</member>
+      </application>
+      <file-type>
+        <member>any</member>
+      </file-type>
+      <direction>both</direction>
+      <action>alert</action>
+    </entry>
+  </mica-engine-wildfire-rules>
+  <cloud-inline-analysis>yes</cloud-inline-analysis>
 </entry></root>

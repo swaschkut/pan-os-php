@@ -1,6 +1,45 @@
 CHANGELOG
 
-2.1.47
+2.1.48
+UTIL:
+* develop - start working on Mikrotik migration
+* develop mikrotik migration | adr/srv objects secRule and natRule, but w/o zones
+* class PanSCMAPIConnector | optimisation for downloading more than 200 Containers - still an issue if 1000nds of address objects are available at 'All'
+* type=address in=scm-api:// | improve for device on-prem config
+* in=scmapi:// | improvements to get container/deviceOnPrem/deviceCloud correctly working with SCM api folder hierarchy
+* type=stats | update BP table - to remove entries not listed in bp json file
+* type=appid-toolbox | introduce debugapi for all phases
+* type=securityprofile securityprofiletype=wildfire-analysis actions=display | extend with mica-engine settings
+* type=securityprofile securityprofiletype=wildfire-analysis 'actions=exporttoexcel:file.html' | extend with mica-engine
+* type=securityprofile securityprofiletype=wildfire-analysis 'filter=(cloud-inline-analysis XYZ)' - extend for wildfire
+* type=securityprofile securityprofiletype=wildfire-analysis 'actions=exporttoexcel:wf.html,visiblity|bestpractice' - extend for wildfire
+* type=stats actions=display-bpa | extend with wildfire rules / mica-engine
+* type=stats | extend with AV actions and mica-engine
+* type=securityprofile securityprofiletype=wildfire-analysis | introduce actions=wildfire.alert-only-set/wildfire.best-practice-set
+* playbook visibility.json | extend with wildfire.alert-only-set
+* type=securityprofile | introduce 'filter=(name.length >,<,!,= 63)'
+* class SecurityProfil2 | extend validation agains BP settings JSON file, if no cloud-inline info is available
+* type=rule actions=display-app-id-change | improvement to get separation between firewall and panorama
+* type=playbook | introduction of html-merger-explanation / -action-needed / -severity - to skip in json playbook files
+* type=html-merger | update to use adddefaulthtml argument in an automatic way - to create 0_Introduction.html always dynamically based on the JSON playbook information
+* type=rule actions=exporttoexcel:file.html | extend spreadsheeting with separate SPs column and the used securityProfile
+* type=securityprofile actions=virus/spyware/vulnerability/wildfire - split all xyz.alert-only-set / .best-practice-set - introduce for each part single actions
+
+BUGFIX:
+* class UTIL | bugfix to bring actions= with '/' for multiple actions back to working mode
+* type=securityprofile location=shared | actions=name-addsuffix | bugfix to provide correct xpath
+* class PanoramaConf - in relation of argument usage 'loadpanoramapushedconfig' - fix the part which was partially removed with v2.1.42
+* type=securityprofile | adjust name spyware.inline-ml.alert-only-set | consistent naming compare to others
+* type=securityprofile actions=virus.decoder.best-practice-set | bugfix for action naming
+* bugfix type=securityprofile actions=spyware.botnet.best-practice-set | correct handling in the same way as spyware.botnet.alert-only-set - avoid error out during action set
+
+GENERAL:
+* class StatCollecotrTrait | optimise code
+* Device App-ID update to version: 9072-9917
+* introduction of url-category browser-runtime-attack | for all kind of validation and settings
+
+
+2.1.47 (20260121)
 UTIL:
 * in=scm-api://{TSG-ID} | extend/validate if offline file is already available - bring rules back to working mode in same way as in=sase-api://
 * in=scm-api:// | extend with securityprofiles and securityprofilegroups - final implementation needed

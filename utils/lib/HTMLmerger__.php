@@ -58,6 +58,7 @@ class HTMLmerger__
         $this->supportedArguments['help'] = array('niceName' => 'help', 'shortHelp' => 'this message');
         $this->supportedArguments['exportcsv'] = array('niceName' => 'exportCSV', 'shortHelp' => 'when this argument is specified, it instructs the script to display the kept and removed objects per value');
         $this->supportedArguments['adddefaulthtml'] = array('niceName' => 'addDefaultHTML', 'shortHelp' => 'adding default HTML as an explanation for the EXCEL file');
+        $this->supportedArguments['json_playbook'] = array('niceName' => 'JSON_Playbook', 'shortHelp' => 'if triggered by type=playbook');
 
         $this->usageMsg = PH::boldText('USAGE: ')."php ".basename(__FILE__)." projectfolder=[DIRECTORY]";
 
@@ -83,10 +84,13 @@ class HTMLmerger__
 
         if( isset(PH::$args['adddefaulthtml']) )
         {
+            /*
+             * OLD logic with a fixed Introduction HTML file from 2022
             if( empty(PH::$args['adddefaulthtml']) || PH::$args['adddefaulthtml'] == "adddefaulthtml" )
             {
                 $defaultfile = dirname(__FILE__) . '/../common/html/Introduction.html';
                 $defaultfilenname = "0_Introduction.html";
+
             }
             else
             {
@@ -101,6 +105,37 @@ class HTMLmerger__
             $projectdefaultfile = file_get_contents( $defaultfile );
             #bug how to get only file name if $defaultfilename is specified
             file_put_contents($this->projectfolder . "/".$defaultfilenname, $projectdefaultfile);
+            */
+
+            /////////////////
+
+            $filename_generator = dirname(__FILE__) . '/../common/html/HTML_introduction.py';
+            //Todo:
+            //need to flexible based on the JSON file triggered
+            if( isset(PH::$args['json_playbook']) )
+                $playbook_json_file = PH::$args['json_playbook'];
+            else
+                $playbook_json_file = dirname(__FILE__) ."/../api/v1/playbook/visibility_assessment.json";
+            PH::enableExceptionSupport();
+            try
+            {
+                $cli = "python3 " . $filename_generator . " " . $this->projectfolder . " ". "0_Introduction.html" ." ". $playbook_json_file;
+
+                exec($cli, $output, $retValue);
+            }
+            //catch exception
+            catch(Exception $e)
+            {
+                PH::disableExceptionSupport();
+                PH::print_stdout( " ***** an error occured : " . $e->getMessage() );
+                PH::print_stdout();
+            }
+            catch(Error $e)
+            {
+                PH::disableExceptionSupport();
+                PH::print_stdout( " ***** an error occured : " . $e->getMessage() );
+                PH::print_stdout();
+            }
         }
 
         //same approach as with Excel spreadsheet but with HTML file
@@ -109,16 +144,7 @@ class HTMLmerger__
         $projectdefaultfile = file_get_contents( $defaultfile );
         file_put_contents($this->projectfolder . "/".$defaultfilenname, $projectdefaultfile);
 
-        /*
-        if( empty($excelfilename ) )
-        {
-            $help_string = PH::boldText('USAGE: ')."php ".basename(__FILE__)." exportCSV=[spreadsheet.xls] projectfolder=[DIRECTORY]";
 
-            PH::print_stdout( $help_string );
-
-            exit();
-        }
-        */
 
         if( file_exists($this->projectfolder . "" . $excelfilename) )
             $excelFileWasThere = true;

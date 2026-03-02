@@ -8530,6 +8530,66 @@ var subjectObject =
                     }
                 }
             },
+            "spyware.botnet.alert-only-set": {
+                "name": "spyware.botnet.alert-only-set",
+                "MainFunction": {},
+                "args": {
+                    "has-DNS-license": {
+                        "type": "bool",
+                        "default": "true",
+                        "help": "[has-DNS-license] 'spyware.best-practice-set:FALSE' - define correct AS Profile setting if License is NOT available"
+                    }
+                }
+            },
+            "spyware.botnet.best-practice-set": {
+                "name": "spyware.botnet.best-practice-set",
+                "MainFunction": {},
+                "args": {
+                    "has-DNS-license": {
+                        "type": "bool",
+                        "default": "true",
+                        "help": "[has-DNS-license] 'spyware.best-practice-set:FALSE' - define correct AS Profile setting if License is NOT available"
+                    }
+                }
+            },
+            "spyware.dns.alert-only-set": {
+                "name": "spyware.dns.alert-only-set",
+                "MainFunction": {},
+                "args": {
+                    "has-DNS-license": {
+                        "type": "bool",
+                        "default": "true",
+                        "help": "[has-DNS-license] 'spyware.best-practice-set:FALSE' - define correct AS Profile setting if License is NOT available"
+                    }
+                }
+            },
+            "spyware.dns.best-practice-set": {
+                "name": "spyware.dns.best-practice-set",
+                "MainFunction": {},
+                "args": {
+                    "has-DNS-license": {
+                        "type": "bool",
+                        "default": "true",
+                        "help": "[has-DNS-license] 'spyware.best-practice-set:FALSE' - define correct AS Profile setting if License is NOT available"
+                    }
+                }
+            },
+            "spyware.inline-ml.best-practice-set": {
+                "name": "spyware.inline-ml.best-practice-set",
+                "MainFunction": {}
+            },
+            "spyware.inline_ml.alert-only-set": {
+                "name": "spyware.inline_ml.alert-only-set",
+                "MainFunction": {}
+            },
+            "spyware.rules.alert-only-set": {
+                "name": "spyware.rules.alert-only-set",
+                "MainFunction": {}
+            },
+            "spyware.rules.best-practice-set": {
+                "name": "spyware.rules.best-practice-set",
+                "MainFunction": {}
+            },
             "url-filtering-action-set": {
                 "name": "url-filtering-action-set",
                 "MainFunction": {},
@@ -8598,12 +8658,52 @@ var subjectObject =
                 "name": "virus.best-practice-set",
                 "MainFunction": {}
             },
+            "virus.decoder.alert-only-set": {
+                "name": "virus.decoder.alert-only-set",
+                "MainFunction": {}
+            },
+            "virus.inline-ml.alert-only-set": {
+                "name": "virus.inline-ml.alert-only-set",
+                "MainFunction": {}
+            },
             "vulnerability.alert-only-set": {
                 "name": "vulnerability.alert-only-set",
                 "MainFunction": {}
             },
             "vulnerability.best-practice-set": {
                 "name": "vulnerability.best-practice-set",
+                "MainFunction": {}
+            },
+            "vulnerability.inline-ml.alert-only-set": {
+                "name": "vulnerability.inline-ml.alert-only-set",
+                "MainFunction": {}
+            },
+            "vulnerability.inline-ml.best-practice-set": {
+                "name": "vulnerability.inline-ml.best-practice-set",
+                "MainFunction": {}
+            },
+            "vulnerability.rules.alert-only-set": {
+                "name": "vulnerability.rules.alert-only-set",
+                "MainFunction": {}
+            },
+            "vulnerability.rules.best-practice-set": {
+                "name": "vulnerability.rules.best-practice-set",
+                "MainFunction": {}
+            },
+            "wildfire.alert-only-set": {
+                "name": "wildfire.alert-only-set",
+                "MainFunction": {}
+            },
+            "wildfire.best-practice-set": {
+                "name": "wildfire.best-practice-set",
+                "MainFunction": {}
+            },
+            "wildfire.inline-ml.alert-only-set": {
+                "name": "wildfire.inline-ml.alert-only-set",
+                "MainFunction": {}
+            },
+            "wildfire.inline-ml.best-practice-set": {
+                "name": "wildfire.inline-ml.best-practice-set",
                 "MainFunction": {}
             }
         },
@@ -8753,17 +8853,17 @@ var subjectObject =
                             "fString": "(%PROP% client )",
                             "input": "input\/panorama-8.0.xml"
                         },
-                        "help": "'securityprofiletype=spyware,vulnerability'"
+                        "help": "'securityprofiletype=spyware,vulnerability,wildfire'"
                     },
                     "is.best-practice": {
                         "Function": {},
                         "arg": false,
-                        "help": "'securityprofiletype=spyware,vulnerability'"
+                        "help": "'securityprofiletype=spyware,vulnerability,wildfire'"
                     },
                     "is.visibility": {
                         "Function": {},
                         "arg": false,
-                        "help": "'securityprofiletype=spyware,vulnerability'"
+                        "help": "'securityprofiletype=spyware,vulnerability,wildfire'"
                     }
                 }
             },
@@ -8776,7 +8876,7 @@ var subjectObject =
                             "fString": "(%PROP% client )",
                             "input": "input\/panorama-8.0.xml"
                         },
-                        "help": "'securityprofiletype=spyware,vulnerability'"
+                        "help": "'securityprofiletype=spyware,vulnerability,wildfire'"
                     }
                 }
             },
@@ -9033,6 +9133,18 @@ var subjectObject =
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% \/-group\/)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "name.length": {
+                "operators": {
+                    ">,<,=,!": {
+                        "eval": "strlen($object->name()) !operator! !value!",
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP% 63)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
@@ -9349,6 +9461,20 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=wildfire-analysis' e.g. 'filter=(wf is.adoption)'"
+                    }
+                }
+            },
+            "wf.mica-engine": {
+                "operators": {
+                    "is.best-practice": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=wildfire-analysis' e.g. 'filter=(wf.mica-engine is.best-practice)'"
+                    },
+                    "is.visibility": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=wildfire-analysis' e.g. 'filter=(wf.mica-engine is.visibility)'"
                     }
                 }
             },

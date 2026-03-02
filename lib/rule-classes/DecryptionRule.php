@@ -247,9 +247,13 @@ class DecryptionRule extends RuleWithUserID
                             else
                             {
                                 //if certificate is not found in Template / Template-Stack
-                                $f = $this->owner->owner->certificateStore->find($member->textContent, $this);
-                                if( $f !== FALSE && $f !== null )
-                                    $this->decryptionCertificateObjects[] = $f;
+
+                                //todo: swaschkut 20260220
+                                //todo this is still DG related, why searching in DeviceGroup???
+
+                                #$f = $this->owner->owner->certificateStore->find($member->textContent, $this);
+                                #if( $f !== FALSE && $f !== null )
+                                #    $this->decryptionCertificateObjects[] = $f;
                             }
                         }
                         else

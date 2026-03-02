@@ -24,11 +24,13 @@ class PanSCMAPIConnector
     public $scope;
 
     public $access_token = null;
+    public $access_token_timeout = 600; //seconds
+    public $access_token_refreshed_time = null;
 
     /** @var bool */
     public $showApiCalls = FALSE;
 
-    public $global_limit = 200;
+    public $global_limit = 10000; // default 200
 
 
     private $_curl_handle = null;
@@ -99,21 +101,36 @@ class PanSCMAPIConnector
         $url_config = "/config/setup/v1/folders";
 
         //$limit and $offset are running into 'Access denied
-        $responseArray = $this->getResourceURL( $url_config);
+        #$responseArray = $this->getResourceURL( $url_config);
+        $responseArray = $this->getResourceSetup( "folders" );
+
 
         $folderNameArray = array();
+        $deviceCloudArray = array();
+        $deviceOnPremArray = array();
+
+        $parentContainerNotFound = array();
+        $parentContainerNotFound_2 = array();
+        $parentContainerNotFound_3 = array();
+        $parentContainerNotFound_4 = array();
+
         foreach( $responseArray['data'] as $folder )
         {
             $folderNameArray[] = $folder['name'];
 
-            #print "name: " . $folder['name'] . "\n";
-            #print "parent: " . $folder['parent'] . "\n";
-            #print "id: " . $folder['id'] . "\n";
-            #if( isset( $folder['display_name'] ) )
-            #    print "display_name: " . $folder['display_name'] . "\n";
-            #print "type: " . $folder['type'] . "\n";
-            #print_r($folder);
-            #PH::print_stdout("-----------");
+            $display_more = false;
+            if( $this->showApiCalls && $display_more )
+            {
+                print "name: " . $folder['name'] . "\n";
+                print "parent: " . $folder['parent'] . "\n";
+                print "id: " . $folder['id'] . "\n";
+                if( isset( $folder['display_name'] ) )
+                    print "display_name: " . $folder['display_name'] . "\n";
+                print "type: " . $folder['type'] . "\n";
+                print_r($folder);
+                PH::print_stdout("-----------");
+            }
+
 
             if( !empty($folder['parent']) )
             {
@@ -134,18 +151,50 @@ class PanSCMAPIConnector
 
             if( $folder['type'] == "container" )
             {
-                $sub = $pan->findContainer( $folder['name'] );
-                if( $sub == null )
-                    $sub = $pan->createContainer( $folder['name'], $parent );
-                $sub->setSaseID($folder['id']);
+                $parentContainer = $pan->findContainer( $parent );
+                if( $parentContainer !== null )
+                {
+                    $sub = $pan->findContainer( $folder['name'] );
+                    if( $sub == null )
+                        $sub = $pan->createContainer( $folder['name'], $parent );
+                    $sub->setSaseID($folder['id']);
+                }
+                else
+                {
+                    $tmpArray = array();
+                    $tmpArray['folder'] = $folder;
+                    $tmpArray['parent'] = $parent;
+                    $parentContainerNotFound[] = $tmpArray;
+                }
             }
             elseif( $folder['type'] == "cloud" )
             {
-                $sub = $pan->findDeviceCloud( $folder['name'] );
-                if( $sub == null )
-                    $sub = $pan->createDeviceCloud( $folder['name'], $parent );
-                $sub->setSaseID($folder['id']);
+                $tmpArray = array();
+                $tmpArray['folder'] = $folder;
+                $tmpArray['parent'] = $parent;
+                $deviceCloudArray[] = $tmpArray;
             }
+            elseif( $folder['type'] == "on-prem" )
+            {
+                /*
+                Array
+                (
+                    [display_name] => RSNISFIRE01
+                    [id] => b6a795ac-9ad2-4b9a-96b8-449b58b85afa
+                    [model] => PA-440
+                    [name] => 021209061525
+                    [parent] => ZTP_LandingFolder
+                    [serial_number] => 021209061525
+                    [type] => on-prem
+                )
+                 */
+
+                $tmpArray = array();
+                $tmpArray['folder'] = $folder;
+                $tmpArray['parent'] = $parent;
+                $deviceOnPremArray[] = $tmpArray;
+            }
+            //todo: swaschkut 20260125 - any other type???? what about on-prem???
 
             if( isset($folder['snippets']) )
             {
@@ -157,6 +206,103 @@ class PanSCMAPIConnector
             }
         }
 
+        foreach( $parentContainerNotFound as $parentNotFound )
+        {
+            $folder = $parentNotFound['folder'];
+            $parent = $parentNotFound['parent'];
+
+            if( $pan->findContainer( $parent ) !== null )
+            {
+                $sub = $pan->findContainer( $folder['name'] );
+                if( $sub == null )
+                    $sub = $pan->createContainer( $folder['name'], $parent );
+                $sub->setSaseID($folder['id']);
+            }
+            else
+            {
+                $tmpArray = array();
+                $tmpArray['folder'] = $folder;
+                $tmpArray['parent'] = $parent;
+                $parentContainerNotFound_2[] = $tmpArray;
+            }
+        }
+
+        foreach( $parentContainerNotFound_2 as $parentNotFound_2 )
+        {
+            $folder = $parentNotFound_2['folder'];
+            $parent = $parentNotFound_2['parent'];
+
+            if( $pan->findContainer( $parent ) !== null )
+            {
+                $sub = $pan->findContainer( $folder['name'] );
+                if( $sub == null )
+                    $sub = $pan->createContainer( $folder['name'], $parent );
+                $sub->setSaseID($folder['id']);
+            }
+            else
+            {
+                $tmpArray = array();
+                $tmpArray['folder'] = $folder;
+                $tmpArray['parent'] = $parent;
+                $parentContainerNotFound_3[] = $tmpArray;
+            }
+        }
+
+        foreach( $parentContainerNotFound_3 as $parentNotFound_3 )
+        {
+            $folder = $parentNotFound_3['folder'];
+            $parent = $parentNotFound_3['parent'];
+
+            if( $pan->findContainer( $parent ) !== null )
+            {
+                $sub = $pan->findContainer( $folder['name'] );
+                if( $sub == null )
+                    $sub = $pan->createContainer( $folder['name'], $parent );
+                $sub->setSaseID($folder['id']);
+            }
+            else
+            {
+                $tmpArray = array();
+                $tmpArray['folder'] = $folder;
+                $tmpArray['parent'] = $parent;
+                $parentContainerNotFound_4[] = $tmpArray;
+            }
+        }
+
+        foreach( $parentContainerNotFound_4 as $parentNotFound_4 )
+        {
+            $folder = $parentNotFound_4['folder'];
+            $parent = $parentNotFound_4['parent'];
+
+            $sub = $pan->findContainer( $folder['name'] );
+            if( $sub == null )
+                $sub = $pan->createContainer( $folder['name'], $parent );
+            $sub->setSaseID($folder['id']);
+        }
+
+        foreach( $deviceOnPremArray as $deviceOnPrem )
+        {
+            $folder = $deviceOnPrem['folder'];
+            $parent = $deviceOnPrem['parent'];
+
+            $sub = $pan->findDeviceCloud( $folder['name'] );
+            if( $sub == null )
+                $sub = $pan->createDeviceCloud( $folder['name'], $parent );
+            $sub->setSaseID($folder['id']);
+        }
+
+        foreach( $deviceCloudArray as $deviceCloud )
+        {
+            $folder = $deviceCloud['folder'];
+            $parent = $deviceCloud['parent'];
+
+            $sub = $pan->findDeviceCloud( $folder['name'] );
+            if( $sub == null )
+                $sub = $pan->createDeviceCloud( $folder['name'], $parent );
+            $sub->setSaseID($folder['id']);
+        }
+
+
         return $folderNameArray;
     }
 
@@ -165,7 +311,8 @@ class PanSCMAPIConnector
         $url_config = "/config/setup/v1/snippets";
 
         //$limit and $offset are running into 'Access denied
-        $responseArray = $this->getResourceURL( $url_config);
+        #$responseArray = $this->getResourceURL( $url_config);
+        $responseArray = $this->getResourceSetup( "snippets" );
 
         $folderNameArray = array();
         foreach( $responseArray['data'] as $folder )
@@ -269,8 +416,8 @@ class PanSCMAPIConnector
     {
         if( (PHP_MAJOR_VERSION <= 5 && PHP_MINOR_VERSION < 5) || $this->_curl_handle === null || $this->_curl_count > 100 )
         {
-            if( $this->_curl_handle !== null )
-                curl_close($this->_curl_handle);
+            #if( $this->_curl_handle !== null )
+            #    curl_close($this->_curl_handle);
 
             $this->_curl_handle = curl_init();
             $this->_curl_count = 0;
@@ -285,7 +432,7 @@ class PanSCMAPIConnector
 
     public function getAccessToken( $debugAPI = false )
     {
-        if( $this->access_token === null )
+        if( $this->access_token === null || $this->access_token_refreshed_time = time() + $this->access_token_timeout )
         {
             /*
             curl -d "grant_type=client_credentials&scope=tsg_id:<tsg_id>" \
@@ -340,6 +487,7 @@ class PanSCMAPIConnector
                 PH::print_stdout( "TOKEN: ".$jsonArray['access_token'] );
 
             $this->access_token = $jsonArray['access_token'];
+            $this->access_token_refreshed_time = time();
         }
     }
 
@@ -657,58 +805,20 @@ class PanSCMAPIConnector
         return $this->typeArray;
     }
 
-    function getResource($access_token, $type = "address", $foldertype = "folder", $folderName = "Shared", $limit = 200, $prePost = "pre", $offset = 0, $runtime = 1)
+    function curl_request_SCM( $url )
     {
         $this->getAccessToken();
 
-        $url = $this->url_api;
-        //Fawkes
-        #$url .= "/sse/config/v1/" . $type . "?folder=" . $folder;
-        //Buckbeak
-        if( strpos( $type, "-rules") !== FALSE || strpos( $type, "-profiles") !== FALSE || strpos( $type, "profile-groups") !== FALSE )
-            $url .= "/config/security/v1/" . $type . "?".$foldertype."=" . $folderName;
-        else
-            $url .= "/config/objects/v1/" . $type . "?".$foldertype."=" . $folderName;
-
-        $url .= "&limit=" . $this->global_limit;
-
-        if( $offset !== "" )
-            $url .= "&offset=" . $offset;
-
-        if( strpos($type, "-rule") !== FALSE )
-        {
-            $url .= "&position=" . $prePost;
-        }
-
         $url = str_replace(' ', '%20', $url);
-
-
-        PH::print_stdout("   -1 '". $folderName. "' object: " . $type);
 
         if( $this->showApiCalls )
         {
             PH::print_stdout($url);
         }
 
-
         $header = array("Authorization: Bearer {$this->access_token}");
 
-
-        $this->_createOrRenewCurl();
-
-        curl_setopt($this->_curl_handle, CURLOPT_URL, $url);
-        curl_setopt($this->_curl_handle, CURLOPT_HTTPHEADER, $header);
-        curl_setopt($this->_curl_handle, CURLOPT_SSL_VERIFYPEER, FALSE);
-        curl_setopt($this->_curl_handle, CURLOPT_RETURNTRANSFER, TRUE);
-
-        if( $this->showApiCalls )
-        {
-            if( PH::$displayCurlRequest )
-            {
-                curl_setopt($this->_curl_handle, CURLOPT_FOLLOWLOCATION, TRUE);
-                curl_setopt($this->_curl_handle, CURLOPT_VERBOSE, TRUE);
-            }
-        }
+        $this->curlRequest( $url, $header );
 
 
         $response = curl_exec($this->_curl_handle);
@@ -725,7 +835,45 @@ class PanSCMAPIConnector
             derr($jsonArray['_errors'][0]['message'], null, FALSE);
         }
 
+        return $jsonArray;
+    }
 
+    #function getResource($access_token, $type = "address", $foldertype = "folder", $folderName = "Shared", $limit = 200, $prePost = "pre", $offset = 0, $runtime = 1)
+    function getResource( $type = null, $foldertype = "folder", $folderName = null, $limit = 200, $prePost = "pre", $offset = 0, $runtime = 1)
+    {
+        $url = $this->url_api;
+        //Fawkes
+        #$url .= "/sse/config/v1/" . $type . "?folder=" . $folder;
+        //Buckbeak
+        if( $type !== null && (strpos( $type, "-rules") !== FALSE || strpos( $type, "-profiles") !== FALSE || strpos( $type, "profile-groups") !== FALSE ) )
+            $url .= "/config/security/v1/" . $type . "?".$foldertype."=" . $folderName;
+        else
+            $url .= "/config/objects/v1/" . $type . "?".$foldertype."=" . $folderName;
+
+        $url .= "&limit=" . $this->global_limit;
+
+        if( $offset !== "" )
+            $url .= "&offset=" . $offset;
+
+        if( $type !== null && strpos($type, "-rule") !== FALSE )
+        {
+            $url .= "&position=" . $prePost;
+        }
+
+        $date = date('Y-m-d H:i:s');
+        #PH::print_stdout( "     time: ".$date);
+        #PH::print_stdout("     -1 '". $folderName. "' object: " . $type. " URL: '".$url."'");
+
+
+
+
+        $jsonArray = $this->curl_request_SCM( $url );
+
+
+        //first time working
+        //https://api.strata.paloaltonetworks.com/config/setup/v1/folders?limit=200&offset=0
+        //issue here:
+        //https://api.strata.paloaltonetworks.com/config/objects/v1/?folder=&limit=200&offset=200
         if( $jsonArray !== null
             && isset($jsonArray['total'])
             && $jsonArray['total'] > ($this->global_limit - 1)
@@ -734,7 +882,48 @@ class PanSCMAPIConnector
         {
             $offset = $this->global_limit * $runtime;
             $runtime++;
-            $resource = $this->getResource($access_token, $type, $foldertype, $folderName, $this->global_limit, $prePost, $offset, $runtime);
+            $resource = $this->getResource( $type, $foldertype, $folderName, $this->global_limit, $prePost, $offset, $runtime);
+
+            foreach( $resource['data'] as $data )
+                $jsonArray['data'][] = $data;
+        }
+
+
+        return $jsonArray;
+    }
+
+
+    function getResourceSetup( $type = null, $foldertype = "folder", $folderName = null, $limit = 200, $prePost = "pre", $offset = 0, $runtime = 1)
+    {
+        $url = $this->url_api;
+
+        //Buckbeak
+        $url .= "/config/setup/v1/" . $type . "?";
+
+
+        $url .= "limit=" . $this->global_limit;
+
+        if( $offset !== "" )
+            $url .= "&offset=" . $offset;
+
+
+
+        $jsonArray = $this->curl_request_SCM( $url );
+
+
+        //first time working
+        //https://api.strata.paloaltonetworks.com/config/setup/v1/folders?limit=200&offset=0
+        //issue here:
+        //https://api.strata.paloaltonetworks.com/config/objects/v1/?folder=&limit=200&offset=200
+        if( $jsonArray !== null
+            && isset($jsonArray['total'])
+            && $jsonArray['total'] > ($this->global_limit - 1)
+            && $jsonArray['total'] > ($runtime * $this->global_limit)
+        )
+        {
+            $offset = $this->global_limit * $runtime;
+            $runtime++;
+            $resource = $this->getResourceSetup( $type, $foldertype, $folderName, $this->global_limit, $prePost, $offset, $runtime);
 
             foreach( $resource['data'] as $data )
                 $jsonArray['data'][] = $data;
@@ -746,7 +935,10 @@ class PanSCMAPIConnector
 
     function getResourceURL( $url_config, $type = null, $foldertype = "folder", $folder = null, $limit = 200, $prePost = "pre", $offset = 0, $runtime = 1)
     {
-        $this->getAccessToken();
+        if( $this->showApiCalls )
+        {
+            PH::print_stdout("urlconfig: ".$url_config);
+        }
 
         $url = $this->url_api;
         $url .= "" . $url_config;
@@ -757,6 +949,8 @@ class PanSCMAPIConnector
             #$url .= "/sse/config/v1/" . $type . "?folder=" . $folder;
             //Buckbeak
             $url .= "/config/objects/v1/" . $type . "?".$foldertype."=" . $folder;
+            if( $this->showApiCalls )
+                PH::print_stdout("URL: ".$url);
         }
         elseif( $type == null && $folder !== null )
         {
@@ -764,6 +958,9 @@ class PanSCMAPIConnector
                 $url .= "&".$foldertype."=" . $folder;
             else
                 $url .= "?".$foldertype."=" . $folder;
+
+            if( $this->showApiCalls )
+                PH::print_stdout("URL: ".$url);
         }
         #elseif( $type == null && $folder == null )
         #    $url .= "&".$foldertype."=" . $folder;
@@ -775,6 +972,9 @@ class PanSCMAPIConnector
                 $url .= "&limit=" . $limit;
             else
                 $url .= "?limit=" . $limit;
+
+            if( $this->showApiCalls )
+                PH::print_stdout("URL: ".$url);
         }
 
 
@@ -784,59 +984,33 @@ class PanSCMAPIConnector
                 $url .= "&offset=" . $offset;
             else
                 $url .= "?offset=" . $limit;
+
+            if( $this->showApiCalls )
+                PH::print_stdout("URL: ".$url);
         }
 
 
         if( $type !== null )
-            if( strpos($type, "-rule") !== FALSE )
+        {
+            if (strpos($type, "-rule") !== FALSE) {
                 $url .= "&position=" . $prePost;
 
-        $url = str_replace(' ', '%20', $url);
-
-
-        PH::print_stdout("   -2 '". $folder. "' object: " . $type);
-
-        if( $this->showApiCalls )
-        {
-            PH::print_stdout($url);
-        }
-
-        if( strpos($url, "parent1=200") !== FALSE )
-            derr( "check" );
-
-        $header = array("Authorization: Bearer {$this->access_token}");
-
-
-        $this->_createOrRenewCurl();
-
-        curl_setopt($this->_curl_handle, CURLOPT_URL, $url);
-        curl_setopt($this->_curl_handle, CURLOPT_HTTPHEADER, $header);
-        curl_setopt($this->_curl_handle, CURLOPT_SSL_VERIFYPEER, FALSE);
-        curl_setopt($this->_curl_handle, CURLOPT_RETURNTRANSFER, TRUE);
-
-        if( $this->showApiCalls )
-        {
-            if( PH::$displayCurlRequest )
-            {
-                curl_setopt($this->_curl_handle, CURLOPT_FOLLOWLOCATION, TRUE);
-                curl_setopt($this->_curl_handle, CURLOPT_VERBOSE, TRUE);
+                if ($this->showApiCalls)
+                    PH::print_stdout("URL: " . $url);
             }
         }
 
 
-        $response = curl_exec($this->_curl_handle);
-        if( $this->showApiCalls )
-        {
-            print $response . "\n";
-        }
+        $date = date('Y-m-d H:i:s');
+        PH::print_stdout( "     time: ".$date);
+        PH::print_stdout("   -2 '". $folder. "' object: " . $type. " URL: '".$url."'");
 
-        $jsonArray = json_decode($response, TRUE);
 
-        if( isset($jsonArray['_errors']) )
-        {
-            print_r($jsonArray['_errors']);
-            derr($jsonArray['_errors'][0]['message'], null, FALSE);
-        }
+        if( strpos($url, "parent1=200") !== FALSE )
+            derr( "check" );
+
+
+        $jsonArray = $this->curl_request_SCM( $url);
 
 
         if( $jsonArray !== null
@@ -847,7 +1021,24 @@ class PanSCMAPIConnector
         {
             $offset = $this->global_limit * $runtime;
             $runtime++;
-            $resource = $this->getResource( $this->access_token, $type, $foldertype, $folder, $this->global_limit, $prePost, $offset, $runtime);
+
+            if( $this->showApiCalls )
+            {
+                PH::print_stdout("Type: '".$type."'");
+                PH::print_stdout("Foldertype: '".$foldertype."'");
+                PH::print_stdout("Folder: '".$folder."'");
+            }
+
+            $resource = $this->getResource( $type, $foldertype, $folder, $this->global_limit, $prePost, $offset, $runtime);
+
+
+            if( isset( $resource['msg'] ) && $resource['msg'] == "Access denied" )
+            {
+                PH::print_stdout("Type: '".$type."'");
+                PH::print_stdout("Foldertype: '".$foldertype."'");
+                PH::print_stdout("Folder: '".$folder."'");
+                derr( $resource['msg'], null, TRUE );
+            }
 
             foreach( $resource['data'] as $data )
                 $jsonArray['data'][] = $data;
@@ -857,10 +1048,8 @@ class PanSCMAPIConnector
         return $jsonArray;
     }
 
-    function getNetworkResource($access_token, $type = "zones", $foldertype = "folder", $folderName = "Shared", $limit = 200, $prePost = "pre", $offset = 0, $runtime = 1)
+    function getNetworkResource( $type = "zones", $foldertype = "folder", $folderName = "Shared", $limit = 200, $prePost = "pre", $offset = 0, $runtime = 1)
     {
-        $this->getAccessToken();
-
         $url = $this->url_api;
         //Fawkes
         #$url .= "/sse/config/v1/" . $type . "?folder=" . $folder;
@@ -878,50 +1067,11 @@ class PanSCMAPIConnector
             $url .= "&position=" . $prePost;
         }
 
-        $url = str_replace(' ', '%20', $url);
-
 
         PH::print_stdout("   -3 '". $folderName. "' object: " . $type);
 
-        if( $this->showApiCalls )
-        {
-            PH::print_stdout($url);
-        }
 
-
-        $header = array("Authorization: Bearer {$this->access_token}");
-
-
-        $this->_createOrRenewCurl();
-
-        curl_setopt($this->_curl_handle, CURLOPT_URL, $url);
-        curl_setopt($this->_curl_handle, CURLOPT_HTTPHEADER, $header);
-        curl_setopt($this->_curl_handle, CURLOPT_SSL_VERIFYPEER, FALSE);
-        curl_setopt($this->_curl_handle, CURLOPT_RETURNTRANSFER, TRUE);
-
-        if( $this->showApiCalls )
-        {
-            if( PH::$displayCurlRequest )
-            {
-                curl_setopt($this->_curl_handle, CURLOPT_FOLLOWLOCATION, TRUE);
-                curl_setopt($this->_curl_handle, CURLOPT_VERBOSE, TRUE);
-            }
-        }
-
-
-        $response = curl_exec($this->_curl_handle);
-        if( $this->showApiCalls )
-        {
-            print $response . "\n";
-        }
-
-        $jsonArray = json_decode($response, TRUE);
-
-        if( isset($jsonArray['_errors']) )
-        {
-            print_r($jsonArray['_errors']);
-            derr($jsonArray['_errors'][0]['message'], null, FALSE);
-        }
+        $jsonArray = $this->curl_request_SCM( $url);
 
 
         if( $jsonArray !== null
@@ -932,7 +1082,7 @@ class PanSCMAPIConnector
         {
             $offset = $this->global_limit * $runtime;
             $runtime++;
-            $resource = $this->getNetworkResource($access_token, $type, $foldertype, $folderName, $this->global_limit, $prePost, $offset, $runtime);
+            $resource = $this->getNetworkResource( $type, $foldertype, $folderName, $this->global_limit, $prePost, $offset, $runtime);
 
             foreach( $resource['data'] as $data )
                 $jsonArray['data'][] = $data;
@@ -944,62 +1094,16 @@ class PanSCMAPIConnector
 
     function getSCMapi( $url_config, $runtime = 1)
     {
-        $this->getAccessToken();
-
         $url = $this->url_api;
         $url .= "" . $url_config;
 
 
-        $url = str_replace(' ', '%20', $url);
 
-        if( $this->showApiCalls )
-        {
-            PH::print_stdout($url);
-        }
-
-
-        $header = array("Authorization: Bearer {$this->access_token}");
-
-
-        $this->_createOrRenewCurl();
-
-        curl_setopt($this->_curl_handle, CURLOPT_URL, $url);
-        curl_setopt($this->_curl_handle, CURLOPT_HTTPHEADER, $header);
-        curl_setopt($this->_curl_handle, CURLOPT_SSL_VERIFYPEER, FALSE);
-        curl_setopt($this->_curl_handle, CURLOPT_RETURNTRANSFER, TRUE);
-
-        if( $this->showApiCalls )
-        {
-            if( PH::$displayCurlRequest )
-            {
-                curl_setopt($this->_curl_handle, CURLOPT_FOLLOWLOCATION, TRUE);
-                curl_setopt($this->_curl_handle, CURLOPT_VERBOSE, TRUE);
-            }
-        }
-
-
-        $response = curl_exec($this->_curl_handle);
-        if( $this->showApiCalls )
-        {
-            print $response . "\n";
-        }
-
-        $jsonArray = json_decode($response, TRUE);
-
-        if( isset($jsonArray['_errors']) )
-        {
-            print_r($jsonArray['_errors']);
-            derr($jsonArray['_errors'][0]['message'], null, FALSE);
-        }
-
-
-        return $jsonArray;
+        return $this->curl_request_SCM( $url);
     }
 
     function loadSCMConfig($folder, $sub, $utilType, $ruleType = "security")
     {
-        $this->getAccessToken();
-
         $typeArray = $this->getTypeArray($utilType);
         foreach( $typeArray as $type )
         {
@@ -1014,13 +1118,15 @@ class PanSCMAPIConnector
                 $foldertype = "folder";
             elseif( get_class($sub) == "DeviceCloud" )
                 $foldertype = "device";
+            elseif( get_class($sub) == "DeviceOnPrem" )
+                $foldertype = "device";
             elseif( get_class($sub) == "Snippet" )
                 $foldertype = "snippet";
 
             if( $utilType == "zone" || $utilType == "zone-protection-profile" )
-                $resource = $this->getNetworkResource($this->access_token, $type, $foldertype, $folder, $this->global_limit);
+                $resource = $this->getNetworkResource( $type, $foldertype, $folder, $this->global_limit);
             else
-                $resource = $this->getResource($this->access_token, $type, $foldertype, $folder, $this->global_limit);
+                $resource = $this->getResource( $type, $foldertype, $folder, $this->global_limit);
 
             if( $resource !== null )
             {
@@ -1053,7 +1159,7 @@ class PanSCMAPIConnector
 
             if( strpos($type, '-rules') !== FALSE )
             {
-                $resource = $this->getResource($this->access_token, $type, $foldertype, $folder, $this->global_limit, 'post');
+                $resource = $this->getResource( $type, $foldertype, $folder, $this->global_limit, 'post');
 
                 if( $resource !== null )
                 {
@@ -1796,6 +1902,7 @@ class PanSCMAPIConnector
             PH::print_stdout( "URL: ".$url);
 
         $this->curlRequest( $url, $header );
+
         curl_setopt($this->_curl_handle, CURLOPT_CUSTOMREQUEST, 'DELETE');
 
         $response = curl_exec($this->_curl_handle);

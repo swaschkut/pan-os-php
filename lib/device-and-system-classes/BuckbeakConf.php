@@ -252,7 +252,7 @@ class BuckbeakConf
         $this->devicecloudroot = DH::findFirstElementOrCreate('device', $this->localhostroot);
         $this->cloudroot = DH::findFirstElementOrCreate('cloud', $this->devicecloudroot);
 
-        $this->onpremroot = DH::findFirstElement('on-prem', $this->devicecloudroot);
+        $this->onpremroot = DH::findFirstElementOrCreate('on-prem', $this->devicecloudroot);
 
 
 
@@ -382,7 +382,10 @@ class BuckbeakConf
                 continue;
             }
 
-            $ldv = new Container($this);
+            $ldv = $this->findContainer($containerName);
+            if( $ldv === null )
+                $ldv = new Container($this);
+
             if( !isset($containerToParent[$containerName]) )
             {
                 mwarning("Container '$containerName' has not parent associated, assuming All");
@@ -397,9 +400,18 @@ class BuckbeakConf
                         // do nothing
                     }
                     else
-                        mwarning("Container '$containerName' has Container '{$containerToParent[$containerName]}' listed as parent but it cannot be found in XML");
+                    {
+                        $this->container_validation[$containerName] = $containerToParent[$containerName];
+
+                        $parentContainer = new Container($this);
+                        $parentContainer->setName( $containerToParent[$containerName] );
+
+                        #mwarning("Container '$containerName' has Container '{$containerToParent[$containerName]}' listed as parent but it cannot be found in XML",null, false);
+                    }
+
                 }
-                else
+
+                if( $parentContainer !== null )
                 {
                     $parentContainer->_childContainers[$containerName] = $ldv;
                     $ldv->parentContainer = $parentContainer;
@@ -577,7 +589,7 @@ class BuckbeakConf
 
         $parentContainer = $this->findContainer( "All" );
         if( $parentContainer === null )
-            mwarning("Container '$name' has Container 'All' listed as parent but it cannot be found in XML");
+            mwarning("Container '$name' has Container 'All' listed as parent but it cannot be found in XML",null, true);
         else
         {
             $parentContainer->_childContainers[$name] = $newDG;
@@ -812,7 +824,7 @@ class BuckbeakConf
      * @param string $name
      * @return Container
      **/
-    public function createContainer($name, $parentContainerName)
+    public function createContainer($name, $parentContainerName = "All"): Container
     {
         $newDG = new Container($this);
         $newDG->load_from_templateContainerXml();
@@ -849,8 +861,9 @@ class BuckbeakConf
 
         $parentContainer = $this->findContainer( $parentContainerName );
         if( $parentContainer === null )
-            mwarning("Container '$name' has Container '{$parentContainerName}' listed as parent but it cannot be found in XML");
-        else
+            mwarning("Container '$name' has Container '{$parentContainerName}' listed as parent but it cannot be found in XML",null, true);
+
+        if( $parentContainer !== null )
         {
             $parentContainer->_childContainers[$name] = $newDG;
             $newDG->parentContainer = $parentContainer;
@@ -890,7 +903,7 @@ class BuckbeakConf
     /**
      * @return Container[]
      */
-    public function getContainers()
+    public function getContainers(): array
     {
         return $this->containers;
     }
@@ -944,7 +957,7 @@ class BuckbeakConf
 
         $parentContainer = $this->findContainer( $parentContainer_txt );
         if( $parentContainer === null )
-            mwarning("Container '$name' has Container '{$parentContainer_txt}' listed as parent but it cannot be found in XML");
+            mwarning("Container '$name' has Container '{$parentContainer_txt}' listed as parent but it cannot be found in XML",null, true);
         else
         {
             $parentContainer->_childContainers[$name] = $newDG;
@@ -1025,7 +1038,11 @@ class BuckbeakConf
             DH::setDomNodeText($dgMetaDataNode, "{$dgMaxID}");
 
             if( $this->version >= 80 )
+            {
                 $dgMetaDataNode = DH::findXPathSingleEntryOrDie('/config/readonly/devices/entry[@name="localhost.localdomain"]/device/on-prem', $this->xmlroot);
+                //$dgMetaDataNode = DH::findXPathSingleEntryOrCreate('/config/readonly/devices/entry[@name="localhost.localdomain"]/device/on-prem', $this->xmlroot);
+            }
+
             else
                 $dgMetaDataNode = DH::findXPathSingleEntryOrDie('/config/readonly/dg-meta-data/dg-info', $this->xmlroot);
 
@@ -1038,9 +1055,18 @@ class BuckbeakConf
         }
 
         $parentContainer = $this->findContainer( $parentContainer_txt );
+        //todo: issue
         if( $parentContainer === null )
-            mwarning("Container '$name' has Container '{$parentContainer_txt}' listed as parent but it cannot be found in XML");
-        else
+        {
+            mwarning("Container '$name' has Container '{$parentContainer_txt}' listed as parent but it cannot be found in XML",null, true);
+
+            #$this->container_validation[$containerName] = $containerToParent[$containerName];
+
+            #$parentContainer = new Container($this);
+            #$parentContainer->setName( $containerToParent[$containerName] );
+        }
+
+        if( $parentContainer !== null )
         {
             $parentContainer->_childContainers[$name] = $newDG;
             $newDG->parentContainer = $parentContainer;

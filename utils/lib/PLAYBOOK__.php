@@ -79,6 +79,8 @@ class PLAYBOOK__
         );
         $input = null;
         $output = null;
+
+        $jsonFile = null;
 ###############################################################################
 //PLAYBOOK
 ###############################################################################
@@ -295,6 +297,24 @@ class PLAYBOOK__
         $out_counter = 0;
         foreach( $command_array as $key => $command )
         {
+            if( isset( $command['comment'] ) )
+            {
+                $comment = $command['comment'];
+                unset( $command['comment'] );
+            }
+            else
+                $comment = "";
+
+            //remove None PAN-OS-PHP related commands
+            foreach( $command as $key1 => $value1 )
+            {
+                if( str_contains($key1, "html-merger-") )
+                    unset( $command[$key1] );
+            }
+            //Todo: swaschkut 20260227
+            //Todo introduce validation that only PAN-OS-PHP supported arguments are added
+
+
             $arguments = array();
             $arguments[0] = "";
 
@@ -303,13 +323,6 @@ class PLAYBOOK__
             unset( $command['type'] );
             $arg_string = "";
 
-            if( isset( $command['comment'] ) )
-            {
-                $comment = $command['comment'];
-                unset( $command['comment'] );
-            }
-            else
-                $comment = "";
 
             if( isset( $command['location'] ) )
             {
@@ -358,6 +371,10 @@ class PLAYBOOK__
 
             if( isset( $command['shadow-bpjsonfile'] ) )
                 $arguments[] = "shadow-bpjsonfile=".$command['shadow-bpjsonfile'];
+
+
+            if( $script == "html-merger" )
+                $arguments[] = "json_playbook=".$jsonFile;
 
             ###############################################################################
             //IN / OUT specification

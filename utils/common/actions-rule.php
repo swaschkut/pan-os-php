@@ -4391,11 +4391,40 @@ RuleCallContext::$supportedActions[] = array(
     {
         $period = "last-7-days";
 
-        $req = '<type><threat>'.
-            '<sortby>repeatcnt</sortby>'.
+        if( $context->deviceType != null )
+        {
+            if( $context->deviceType == "firewall" )
+            {
+                $type = "threat";
+                $counterTXT = "repeatcnt";
+            }
+            elseif( $context->deviceType == "panorama" )
+            {
+                $type = "panorama-thsum";
+                $counterTXT = "count";
+            }
+            elseif( $context->deviceType == "scm" )
+            {
+                derr("SCM not supported yet");
+            }
+        }
+        else
+        {
+            $type = "threat";
+            $counterTXT = "repeatcnt";
+        }
+
+
+
+
+        $req = '<type>'.
+            '<'.$type.'>'.
+            '<sortby>'.$counterTXT.'</sortby>'.
             '<group-by>rule_uuid</group-by>'.
             '<aggregate-by><member>rule</member><member>threatid</member></aggregate-by>'.
-            '<values><member>repeatcnt</member></values></threat></type>'.
+            '<values><member>'.$counterTXT.'</member></values>'.
+            '</'.$type.'>'.
+            '</type>'.
             '<period>'.$period.'</period><topn>100</topn><topm>25</topm><caption>app-id-change</caption>'.
             '<query>(category-of-threatid eq app-id-change)</query>';
 
@@ -5032,6 +5061,15 @@ RuleCallContext::$supportedActions[] = array(
             'application_seen' => 'application_seen',
             'action' => 'action',
             'security-profile' => 'security-profile',
+            'virus-profile' => 'virus-profile',
+            'spyware-profile' => 'spyware-profile',
+            'vulnerability-profile' => 'vulnerability-profile',
+            'url-filtering-profile' => 'url-filtering-profile',
+            'file-blocking-profile' => 'file-blocking-profile',
+            'wildfire-analysis-profile' => 'wildfire-analysis-profile',
+            'data-filtering-profile' => 'data-filtering-profile',
+            'dns-security-profile' => 'dns-security-profile',
+            'virus-and-wildfire-analysis-profile' => 'virus-and-wildfire-analysis-profile',
             'sp_best_practice' => 'sp_best_practice',
             'sp_best_practice_details' => 'sp_best_practice_details',
             'sp_visibility' => 'sp_visibility',

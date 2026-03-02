@@ -381,7 +381,7 @@ class FawkesConf
                         // do nothing
                     }
                     else
-                        mwarning("Container '$containerName' has Container '{$containerToParent[$containerName]}' listed as parent but it cannot be found in XML");
+                        mwarning("Container '$containerName' has Container '{$containerToParent[$containerName]}' listed as parent but it cannot be found in XML",null, false);
                 }
                 else
                 {
@@ -1007,7 +1007,7 @@ class FawkesConf
      * @param string $name
      * @return Container
      **/
-    public function createContainer($name, $parentContainerName)
+    public function createContainer($name, $parentContainerName = "All")
     {
         $newDG = new Container($this);
         $newDG->load_from_templateContainerXml();
@@ -1044,7 +1044,7 @@ class FawkesConf
 
         $parentContainer = $this->findContainer( $parentContainerName );
         if( $parentContainer === null )
-            mwarning("Container '$name' has Container '{$parentContainerName}' listed as parent but it cannot be found in XML");
+            mwarning("Container '$name' has Container '{$parentContainerName}' listed as parent but it cannot be found in XML",null, false);
         else
         {
             $parentContainer->_childContainers[$name] = $newDG;
@@ -1139,7 +1139,7 @@ class FawkesConf
 
         $parentContainer = $this->findContainer( $parentContainer_txt );
         if( $parentContainer === null )
-            mwarning("Container '$name' has Container '{$parentContainer_txt}' listed as parent but it cannot be found in XML");
+            mwarning("Container '$name' has Container '{$parentContainer_txt}' listed as parent but it cannot be found in XML",null, false);
         else
         {
             $parentContainer->_childContainers[$name] = $newDG;
@@ -1234,7 +1234,7 @@ class FawkesConf
 
         $parentContainer = $this->findContainer( $parentContainer_txt );
         if( $parentContainer === null )
-            mwarning("Container '$name' has Container '{$parentContainer_txt}' listed as parent but it cannot be found in XML");
+            mwarning("Container '$name' has Container '{$parentContainer_txt}' listed as parent but it cannot be found in XML",null, false);
         else
         {
             $parentContainer->_childContainers[$name] = $newDG;
@@ -1319,7 +1319,7 @@ class FawkesConf
 
         $parentContainer = $this->findContainer( $parentContainer_txt );
         if( $parentContainer === null )
-            mwarning("Container '$name' has Container '{$parentContainer_txt}' listed as parent but it cannot be found in XML");
+            mwarning("Container '$name' has Container '{$parentContainer_txt}' listed as parent but it cannot be found in XML",null, false);
         else
         {
             $parentContainer->_childContainers[$name] = $newDG;
