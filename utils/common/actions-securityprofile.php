@@ -2110,7 +2110,7 @@ SecurityProfileCallContext::$supportedActions['custom-url-category-fix-leading-d
 );
 
 SecurityProfileCallContext::$supportedActions['virus.decoder.best-practice-set'] = array(
-    'name' => 'virus.best-practice-set',
+    'name' => 'virus.decoder.best-practice-set',
     'MainFunction' => function (SecurityProfileCallContext $context) {
         $object = $context->object;
 
@@ -2153,7 +2153,7 @@ SecurityProfileCallContext::$supportedActions['virus.decoder.best-practice-set']
 );
 
 SecurityProfileCallContext::$supportedActions['virus.inline-ml.best-practice-set'] = array(
-    'name' => 'virus.best-practice-set',
+    'name' => 'virus.inline-ml.best-practice-set',
     'MainFunction' => function (SecurityProfileCallContext $context) {
         $object = $context->object;
 
