@@ -31,6 +31,7 @@ BUGFIX:
 * class PanoramaConf - in relation of argument usage 'loadpanoramapushedconfig' - fix the part which was partially removed with v2.1.42
 * type=securityprofile | adjust name spyware.inline-ml.alert-only-set | consistent naming compare to others
 * type=securityprofile actions=virus.decoder.best-practice-set | bugfix for action naming
+* bugfix type=securityprofile actions=spyware.botnet.best-practice-set | correct handling in the same way as spyware.botnet.alert-only-set - avoid error out during action set
 
 GENERAL:
 * class StatCollecotrTrait | optimise code

@@ -2515,6 +2515,7 @@ SecurityProfileCallContext::$supportedActions['spyware.botnet.best-practice-set'
                         continue;
 
                     $name = DH::findAttribute("name", $tmp_entry1);
+                    $tmp_dnsobj = $object->additional['botnet-domain']['lists'][$name];
                     if( $name == "default-paloalto-dns" )
                     {
                         $tmp = DH::findFirstElement("action", $tmp_entry1);
@@ -2536,7 +2537,7 @@ SecurityProfileCallContext::$supportedActions['spyware.botnet.best-practice-set'
                                 $xmlElement = DH::importXmlStringOrDie($object->xmlroot->ownerDocument, $xmlString);
                                 $tmp->appendChild($xmlElement);
 
-                                $object->additional['botnet-domain']['lists'][$name]['action'] = $tmp_actionString;
+                                $tmp_dnsobj->action = $tmp_actionString;
                             }
                         }
                         $tmp = DH::findFirstElement("packet-capture", $tmp_entry1);
