@@ -29,6 +29,7 @@ BUGFIX:
 * class UTIL | bugfix to bring actions= with '/' for multiple actions back to working mode
 * type=securityprofile location=shared | actions=name-addsuffix | bugfix to provide correct xpath
 * class PanoramaConf - in relation of argument usage 'loadpanoramapushedconfig' - fix the part which was partially removed with v2.1.42
+* type=securityprofile | adjust name spyware.inline-ml.alert-only-set | consistent naming compare to others
 
 GENERAL:
 * class StatCollecotrTrait | optimise code

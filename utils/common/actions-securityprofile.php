@@ -2601,8 +2601,8 @@ SecurityProfileCallContext::$supportedActions['spyware.best-practice-set'] = arr
         )
     )
 );
-SecurityProfileCallContext::$supportedActions['spyware.inline_ml.alert-only-set'] = array(
-    'name' => 'spyware.inline_ml.alert-only-set',
+SecurityProfileCallContext::$supportedActions['spyware.inline-ml.alert-only-set'] = array(
+    'name' => 'spyware.inline-ml.alert-only-set',
     'MainFunction' => function (SecurityProfileCallContext $context )
     {
         /** @var AntiSpywareProfile $object */
@@ -2931,7 +2931,7 @@ SecurityProfileCallContext::$supportedActions['spyware.alert-only-set'] = array(
 
         /////////////////////////////////////////////////////////
         /// InlineML
-        $f = SecurityProfileCallContext::$supportedActions['spyware.inline_ml.alert-only-set']['MainFunction'];
+        $f = SecurityProfileCallContext::$supportedActions['spyware.inline-ml.alert-only-set']['MainFunction'];
         $f($context);
 
 
