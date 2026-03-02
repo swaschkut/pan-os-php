@@ -1,6 +1,14 @@
 CHANGELOG
 
-2.1.48
+2.1.49
+UTIL:
+
+BUGFIX:
+
+GENERAL:
+
+
+2.1.48 (20260301)
 UTIL:
 * develop - start working on Mikrotik migration
 * develop mikrotik migration | adr/srv objects secRule and natRule, but w/o zones
