@@ -2,6 +2,7 @@ CHANGELOG
 
 2.1.49
 UTIL:
+* type=securityprofile | move virus/wildfire - actions alert-set-only/best-practice-set to trait files - improve WF >= 112
 
 BUGFIX:
 

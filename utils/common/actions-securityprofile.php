@@ -1539,7 +1539,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 {
                     if( (get_class($object) == "AntiSpywareProfile" && $object->owner->owner->version >= 102 )
                         || (get_class($object) == "VulnerabilityProfile" && $object->owner->owner->version >= 110 )
-                        || (get_class($object) == "WildfireProfile" && $object->owner->owner->version >= 111 )
+                        || (get_class($object) == "WildfireProfile" && $object->owner->owner->version >= 112 )
                         || get_class($object) == "AntiVirusProfile" )
                     {
                         if( $bestPractice )
@@ -3317,7 +3317,7 @@ SecurityProfileCallContext::$supportedActions['wildfire.inline-ml.alert-only-set
 
         $sendAPI = false;
         $tmp_mlav_engine = DH::findFirstElement('cloud-inline-analysis', $object->xmlroot);
-        if ($object->owner->owner->version >= 111)
+        if ($object->owner->owner->version >= 112)
         {
             if ($tmp_mlav_engine === False)
                 $tmp_mlav_engine = DH::findFirstElementOrCreate('cloud-inline-analysis', $object->xmlroot);
@@ -3328,7 +3328,7 @@ SecurityProfileCallContext::$supportedActions['wildfire.inline-ml.alert-only-set
 
 
         $tmp_mlav_engine = DH::findFirstElement('mica-engine-wildfire-rules', $object->xmlroot);
-        if ($object->owner->owner->version >= 111)
+        if ($object->owner->owner->version >= 112)
         {
             if ($tmp_mlav_engine === False)
                 $tmp_mlav_engine = DH::findFirstElementOrCreate('mica-engine-wildfire-rules', $object->xmlroot);
@@ -3357,9 +3357,10 @@ SecurityProfileCallContext::$supportedActions['wildfire.inline-ml.alert-only-set
    <direction>both</direction>
    <action>allow</action>
   </entry>';
-                if ($object->owner->owner->version == 111 )
-                    $xmlElement = DH::importXmlStringOrDie($object->xmlroot->ownerDocument, $xmlString2);
-                elseif ($object->owner->owner->version >= 112 )
+                //if ($object->owner->owner->version == 111 )
+                //    $xmlElement = DH::importXmlStringOrDie($object->xmlroot->ownerDocument, $xmlString2);
+                //else
+                if ($object->owner->owner->version >= 112 )
                     $xmlElement = DH::importXmlStringOrDie($object->xmlroot->ownerDocument, $xmlString1);
 
                 $tmp_mlav_engine->appendChild($xmlElement);
