@@ -7,6 +7,7 @@ UTIL:
 BUGFIX:
 
 GENERAL:
+* update playbook json | secops_autoreporter / visibbility_assessment
 
 
 2.1.48 (20260301)
