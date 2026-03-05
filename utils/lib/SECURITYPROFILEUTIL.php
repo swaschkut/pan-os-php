@@ -64,6 +64,7 @@ class SECURITYPROFILEUTIL extends UTIL
         parent::supportedArguments();
         $supportedSP = array('any','url-filtering','virus','vulnerability','spyware','file-blocking','data-filtering','wildfire-analysis','custom-url-category',
             'dns-security','saas-security',
+            'virus-and-wildfire-analysis',
             'predefined-url','predefined-url-filtering',
             'predefined-virus','predefined-spyware',
             'predefined-file-blocking',

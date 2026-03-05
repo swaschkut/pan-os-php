@@ -7,7 +7,8 @@ UTIL:
 BUGFIX:
 
 GENERAL:
-* update playbook json | secops_autoreporter / visibbility_assessment
+* update playbook json | secops_autoreporter / visibility_assessment
+* json playbook visibility_assessment | update to more detailed information
 
 
 2.1.48 (20260301)
