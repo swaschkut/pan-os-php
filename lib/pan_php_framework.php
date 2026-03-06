@@ -261,6 +261,8 @@ require_once $basedir . '/object-classes/LogProfileStore.php';
 
 require_once $basedir . '/object-classes/trait/sp_action_wildfire.php';
 require_once $basedir . '/object-classes/trait/sp_action_virus.php';
+require_once $basedir . '/object-classes/trait/sp_action_spyware.php';
+
 require_once $basedir . '/object-classes/SecurityProfileStore.php';
 require_once $basedir . '/object-classes/SecurityProfileGroupStore.php';
 require_once $basedir . '/object-classes/SecurityProfileGroup.php';

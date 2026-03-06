@@ -10,6 +10,7 @@ BUGFIX:
 GENERAL:
 * update playbook json | secops_autoreporter / visibility_assessment
 * json playbook visibility_assessment | update to more detailed information
+* class AntiSpywareProfile/DNSSecurityProfile | preparation for better SCM support as these profiles got splitted
 
 
 2.1.48 (20260301)
