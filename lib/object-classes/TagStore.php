@@ -137,10 +137,7 @@ class TagStore extends ObjStore
         {
             if( $this->xmlroot === null )
             {
-                if( $this->owner->isPanorama() || $this->owner->isFirewall() )
-                    $xml = $this->owner->sharedroot;
-                else
-                    $xml = $this->owner->xmlroot;
+                $xml = $this->findCreateXmlRoot();
 
                 $this->xmlroot = DH::findFirstElementOrCreate('tag', $xml);
             }
@@ -204,10 +201,7 @@ class TagStore extends ObjStore
 
         if( $this->xmlroot === null )
         {
-            if( $this->owner->isPanorama() || $this->owner->isFirewall() )
-                $xml = $this->owner->sharedroot;
-            else
-                $xml = $this->owner->xmlroot;
+            $xml = $this->findCreateXmlRoot();
 
             $this->xmlroot = DH::findFirstElementOrCreate('tag', $xml);
         }

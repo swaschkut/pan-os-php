@@ -176,12 +176,12 @@ class SecurityProfileGroup
                 {
                     //Panorama
                     if(
-                        get_class( $owner->owner ) == "FawkesConf"
-                        || get_class( $owner->owner ) == "BuckbeakConf"
-                        || get_class( $owner->owner ) == "Container"
-                        || get_class( $owner->owner ) == "DeviceCloud"
-                        || get_class( $owner->owner ) == "DeviceOnPrem"
-                        || get_class( $owner->owner ) == "Snippet"
+                        get_class( $this->owner->owner ) == "FawkesConf"
+                        || get_class( $this->owner->owner ) == "BuckbeakConf"
+                        || get_class( $this->owner->owner ) == "Container"
+                        || get_class( $this->owner->owner ) == "DeviceCloud"
+                        || get_class( $this->owner->owner ) == "DeviceOnPrem"
+                        || get_class( $this->owner->owner ) == "Snippet"
                     )
                         $used_secprof_store = $this->secprof_fawkes_store;
                     else
@@ -202,16 +202,17 @@ class SecurityProfileGroup
                             || get_class( $this->owner->owner ) == "Container"
                             || get_class( $this->owner->owner ) == "DeviceCloud"
                             || get_class( $this->owner->owner ) == "DeviceOnPrem"
-                            || get_class( $owner->owner ) == "Snippet"
+                            || get_class( $this->owner->owner ) == "Snippet"
                         )
                             $sub = $this->owner->owner->owner;
 
-                        elseif( get_class( $this->owner->owner ) == "PANConfig"
+                        elseif( get_class( $this->owner->owner ) == "PANConf"
                             || get_class( $this->owner->owner ) == "PanoramaConf"
                             || get_class( $this->owner->owner ) == "FawkesConf"
                             || get_class( $this->owner->owner ) == "BuckbeakConf"
                         )
                             $sub = $this->owner->owner;
+
 
                         if( $tmp_store_name == 'AntiVirusProfileStore')
                             $profile = $sub->AntiVirusPredefinedStore->find( $tmp_type->nodeValue );

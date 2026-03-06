@@ -298,6 +298,16 @@ class PANConf
         $this->SSL_TLSServiceProfileStore->setName('SSL_TLSServiceStore');
 
         $this->network = new NetworkPropertiesContainer($this);
+
+        if( $this->owner == null )
+        {
+            $this->AntiVirusPredefinedStore = SecurityProfileStore::getVirusPredefinedStore( $this );
+            $this->AntiSpywarePredefinedStore = SecurityProfileStore::getSpywarePredefinedStore( $this );
+            $this->VulnerabilityPredefinedStore = SecurityProfileStore::getVulnerabilityPredefinedStore( $this );
+            $this->UrlFilteringPredefinedStore = SecurityProfileStore::getUrlFilteringPredefinedStore( $this );
+            $this->FileBlockingPredefinedStore = SecurityProfileStore::getFileBlockingPredefinedStore( $this );
+            $this->WildfirePredefinedStore = SecurityProfileStore::getWildfirePredefinedStore( $this );
+        }
     }
 
     public function __destruct()
@@ -792,12 +802,7 @@ class PANConf
             // End of SSL_TLSServiceProfile objects extraction
         }
 
-        $this->AntiVirusPredefinedStore = SecurityProfileStore::getVirusPredefinedStore( $this );
-        $this->AntiSpywarePredefinedStore = SecurityProfileStore::getSpywarePredefinedStore( $this );
-        $this->VulnerabilityPredefinedStore = SecurityProfileStore::getVulnerabilityPredefinedStore( $this );
-        $this->UrlFilteringPredefinedStore = SecurityProfileStore::getUrlFilteringPredefinedStore( $this );
-        $this->FileBlockingPredefinedStore = SecurityProfileStore::getFileBlockingPredefinedStore( $this );
-        $this->WildfirePredefinedStore = SecurityProfileStore::getWildfirePredefinedStore( $this );
+
 
 
         //

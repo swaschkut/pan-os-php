@@ -84,17 +84,14 @@ class LogProfileStore extends ObjStore
      * @return bool
      */
 
-    public function addLogProfile( $Obj, $rewriteXML = TRUE)
+    public function addLogProfile( $Obj, $rewriteXML = TRUE): bool
     {
         $ret = $this->add($Obj);
         if( $ret && $rewriteXML )
         {
             if( $this->xmlroot === null )
             {
-                if( $this->owner->isPanorama() || $this->owner->isFirewall() )
-                    $xml = $this->owner->sharedroot;
-                else
-                    $xml = $this->owner->xmlroot;
+                $xml = $this->findCreateXmlRoot();
 
                 $tmp_xmlroot = DH::findFirstElementOrCreate('log-settings', $xml);
                 $this->xmlroot = DH::findFirstElementOrCreate('profiles', $tmp_xmlroot);
@@ -157,10 +154,7 @@ class LogProfileStore extends ObjStore
 
         if( $this->xmlroot === null )
         {
-            if( $this->owner->isPanorama() || $this->owner->isFirewall() )
-                $xml = $this->owner->sharedroot;
-            else
-                $xml = $this->owner->xmlroot;
+            $xml = $this->findCreateXmlRoot();
 
             $tmp_xmlroot = DH::findFirstElementOrCreate('log-settings', $xml);
             $this->xmlroot = DH::findFirstElementOrCreate('profiles', $tmp_xmlroot);
@@ -374,10 +368,7 @@ class LogProfileStore extends ObjStore
     {
         if( $this->xmlroot === null )
         {
-            if( $this->owner->isPanorama() || $this->owner->isFirewall() )
-                $xml = $this->owner->sharedroot;
-            else
-                $xml = $this->owner->xmlroot;
+            $xml = $this->findCreateXmlRoot();
 
             $xml = DH::findFirstElementOrCreate('log-settings', $this->owner->xmlroot);
             $xml = DH::findFirstElementOrCreate('profile-group', $xml);

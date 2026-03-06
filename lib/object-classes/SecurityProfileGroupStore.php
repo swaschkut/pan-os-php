@@ -224,10 +224,7 @@ class SecurityProfileGroupStore extends ObjStore
         {
             if( $this->xmlroot === null )
             {
-                if( $this->owner->isPanorama() || $this->owner->isFirewall() )
-                    $xml = $this->owner->sharedroot;
-                else
-                    $xml = $this->owner->xmlroot;
+                $xml = $this->findCreateXmlRoot();
 
                 $this->xmlroot = DH::findFirstElementOrCreate('profile-group', $xml);
             }
@@ -288,10 +285,7 @@ class SecurityProfileGroupStore extends ObjStore
 
         if( $this->xmlroot === null )
         {
-            if( $this->owner->isPanorama() || $this->owner->isFirewall() )
-                $xml = $this->owner->sharedroot;
-            else
-                $xml = $this->owner->xmlroot;
+            $xml = $this->findCreateXmlRoot();
 
             $this->xmlroot = DH::findFirstElementOrCreate('profile-group', $xml);
         }
@@ -435,10 +429,7 @@ class SecurityProfileGroupStore extends ObjStore
         {
             if( count($this->o) > 0 )
             {
-                if( $this->owner->isPanorama() || $this->owner->isFirewall() )
-                    $xml = $this->owner->sharedroot;
-                else
-                    $xml = $this->owner->xmlroot;
+                $xml = $this->findCreateXmlRoot();
 
                 $this->xmlroot = DH::findFirstElementOrCreate('profile-group', $xml);
             }
@@ -459,10 +450,7 @@ class SecurityProfileGroupStore extends ObjStore
     {
         if( $this->xmlroot === null )
         {
-            if( $this->owner->isPanorama() || $this->owner->isFirewall() )
-                $xml = $this->owner->sharedroot;
-            else
-                $xml = $this->owner->xmlroot;
+            $xml = $this->findCreateXmlRoot();
 
             $xml = DH::findFirstElementOrCreate('profile-group', $xml);
             $this->xmlroot = $xml;

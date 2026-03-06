@@ -375,5 +375,24 @@ class ObjStore
             $this->findParentCentralStore( $storeType );
     }
 
+    protected function findCreateXmlRoot(): DOMNode
+    {
+        $xml = new DOMNode();
+        if ($this->xmlroot === null)
+        {
+            if ($this->owner->isPanorama())
+                $xml = $this->owner->sharedroot;
+            elseif ($this->owner->isFirewall())
+            {
+                //Todo: multi-vsys => I assume shared!!!!!
+                //search vsys1 - if single vsys
+                $vsys = $this->owner->findVirtualSystem('vsys1');
+                $xml = $vsys->xmlroot;
+            }
+            else
+                $xml = $this->owner->xmlroot;
+        }
+        return $xml;
+    }
 }
 
