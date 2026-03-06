@@ -628,10 +628,12 @@ class ServiceStore
     {
         $class = get_class($this->owner);
 
-        if( $class == 'PanoramaConf' || $class == 'PANConf' )
+        if( $class == 'PanoramaConf' )
         {
             $str = "/config/shared";
         }
+        elseif( $class == 'PANConf' )
+            $str = "/config";
         else
             $str = $this->owner->getXPath();
 

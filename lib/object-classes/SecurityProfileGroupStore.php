@@ -383,8 +383,12 @@ class SecurityProfileGroupStore extends ObjStore
 
         if( $this->owner->isDeviceGroup() || $this->owner->isVirtualSystem() || $this->owner->isContainer() || $this->owner->isDeviceCloud() )
             $str = $this->owner->getXPath();
-        elseif( $this->owner->isPanorama() || $this->owner->isFirewall() )
+        elseif( $this->owner->isPanorama() )
             $str = '/config/shared';
+        elseif( $this->owner->isFirewall() )
+        {
+            $str = '/config';
+        }
         else
             derr('unsupported');
 
@@ -399,6 +403,9 @@ class SecurityProfileGroupStore extends ObjStore
         if( $this->owner->isPanorama() || $this->owner->isFirewall() )
         {
             $str = "/config/shared";
+            if( $this->owner->isFirewall() )
+                $str = "/config";
+            $str = $str . '/profile-group';
         }
         else
             $str = $this->owner->getXPath();
