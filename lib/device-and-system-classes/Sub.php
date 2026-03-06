@@ -56,7 +56,6 @@ class Sub
                 //Todo: only load if not already loaded earlier
                 if( $this->owner === null )
                 {
-
                 }
                 elseif( get_class($this->owner) == "PanoramaConf" )
                     $finalroot = $this->createPartialDefaultSecurityRule( $finalroot );
@@ -72,8 +71,7 @@ class Sub
                 }
                 elseif( get_class($this->owner) == "VirtualSystem" )
                 {
-                    //Todo: not working if empty - need better validation
-                    //$finalroot = $this->createPartialDefaultSecurityRule( $finalroot );
+                    $finalroot = $this->createPartialDefaultSecurityRule( $finalroot );
                 }
             }
         }
@@ -81,7 +79,13 @@ class Sub
         //Todo: check if any of the parentDG has already defaultSec set, if not create it
         if( $tmproot === FALSE )
         {
-            if( $this->owner !== null && get_class($this->owner) == "PanoramaConf" )
+            if( $this->owner === null )
+            {
+
+            }
+            elseif( $this->owner !== null && get_class($this->owner) == "PanoramaConf" )
+                $finalroot = $this->createDefaultSecurityRule( );
+            elseif( get_class($this->owner) == "VirtualSystem" )
                 $finalroot = $this->createDefaultSecurityRule( );
         }
 
@@ -110,7 +114,7 @@ class Sub
 
         //todo: swaschkut 20240320
         // this need to be improved, if originalRulenode is empty, there is no need to add it
-        if( get_class($this->owner) !== "PanoramaConf" )
+        if( $this->owner !== null && (get_class($this->owner) !== "PanoramaConf" && get_class($this->owner) !== "VirtualSystem" ) )
         {
             if( $originalRuleNode->hasChildNodes() === FALSE )
                 return null;
@@ -128,7 +132,7 @@ class Sub
                 continue;
 
             $newName = DH::findAttribute( 'name', $defaultRule);
-            $origName = DH::findFirstElementByNameAttr( "entry", $newName, $originalRuleNode);
+            $origName = DH::findFirstElementByNameAttr( "entry", $newName, $originalRuleNode );
             if( $origName === FALSE || $origName === null )
             {
                 $node = $ownerDocument->importNode($defaultRule, TRUE);

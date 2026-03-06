@@ -996,6 +996,7 @@ class DeviceCloud
             }
             */
             $sub = new Sub();
+            $sub->owner = $this;
             $sub->rulebaseroot = $this->rulebaseroot;
             $sub->defaultSecurityRules = $this->defaultSecurityRules;
             $tmprulesroot = $sub->load_defaultSecurityRule( );
