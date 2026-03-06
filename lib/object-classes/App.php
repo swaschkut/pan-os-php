@@ -444,6 +444,15 @@ class App
         return $ret;
     }
 
+    public function getAll_Dependencies( &$array_dependencies)
+    {
+        foreach( $this->calculateDependencies() as $dependency )
+        {
+            $array_dependencies[$dependency->name()] = $dependency->name();
+            $dependency->getAll_Dependencies( $array_dependencies );
+        }
+    }
+
     public function isApplicationCustom()
     {
         if( $this->type == 'application-custom' )

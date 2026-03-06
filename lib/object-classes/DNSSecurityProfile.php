@@ -23,6 +23,8 @@ class DNSSecurityProfile
 
     public $secprof_type;
 
+    public $dns_rules_obj = array();
+
     public $lists_obj = array();
     public $additional = array();
 

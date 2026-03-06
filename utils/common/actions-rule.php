@@ -2202,11 +2202,10 @@ RuleCallContext::$supportedActions[] = array(
         $app_array = array();
         foreach( $rule->apps->membersExpanded() as $app )
         {
+            /** @var App $app */
+
             $app_array[$app->name()] = $app->name();
-            foreach( $app->calculateDependencies() as $dependency )
-            {
-                $app_depends_on[$dependency->name()] = $dependency->name();
-            }
+            $app->getAll_Dependencies($app_depends_on);
         }
 
         foreach( $app_depends_on as $app => $dependencies )
