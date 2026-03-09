@@ -1526,9 +1526,6 @@ class RuleStore
 
         foreach( $this->_rules as $i => $rule )
         {
-            #$this->fastMemToIndex[spl_object_hash($rule)] = $i;
-            #$this->fastNameToIndex[$rule->name()] = $i;
-            #$this->fastUUIDToIndex[$rule->uuid()] = $i;
             if( !empty(spl_object_hash($rule)) )
                 $this->fastMemToIndex_forPost[spl_object_hash($rule)] = $i;
             if( !empty($rule->name()) )
