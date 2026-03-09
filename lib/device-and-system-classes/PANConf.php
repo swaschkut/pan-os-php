@@ -89,6 +89,8 @@ class PANConf
 
     /** @var AppStore */
     public $appStore;
+    /** @var AppStore */
+    public $predefinedappStore;
 
     /** @var ThreatStore */
     public $threatStore;
@@ -223,7 +225,10 @@ class PANConf
         $this->tagStore = new TagStore($this);
         $this->tagStore->setName('tagStore');
 
-        $this->appStore = AppStore::getPredefinedStore( $this );
+        $this->predefinedappStore = AppStore::getPredefinedStore( $this );
+        $this->appStore = new AppStore($this);
+        $this->appStore->name = 'applications';
+        $this->appStore->parentCentralStore = $this->predefinedappStore;
 
         $this->threatStore = ThreatStore::getPredefinedStore( $this );
 

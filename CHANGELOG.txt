@@ -7,9 +7,10 @@ UTIL:
 * type=application | introduce 'filter=(object is.unused / is.unused.recursive)'
 
 BUGFIX:
-* bugfix as PAN-OS XML API are working different to CLI set commands for single vsys firewall | type=device actions=sp_spg_create_xyz
-* bugfix class Sub | bugfix to get DefaultSecurity Rules working with single vsys firewall
-* bugfix - type=application actions=delete | missing implementation for offline XML file
+* as PAN-OS XML API are working different to CLI set commands for single vsys firewall | type=device actions=sp_spg_create_xyz
+* class Sub | bugfix to get DefaultSecurity Rules working with single vsys firewall
+* type=application actions=delete | missing implementation for offline XML file
+* type=application | bugfix to speparate predefinedAppStore with shared appStore for Panorama and Firewall
 
 GENERAL:
 * update playbook json | secops_autoreporter / visibility_assessment
