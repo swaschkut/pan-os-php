@@ -935,7 +935,35 @@ class AppStore extends ObjStore
     {
         if( $Obj->isApplicationCustom() || $Obj->isApplicationFilter() || $Obj->isApplicationGroup() )
         {
-            parent::remove( $Obj );
+            $ret = parent::remove( $Obj );
+
+
+            $tmp_xmlroot = null;
+            $tmp_count = 0;
+            if( $Obj->isApplicationCustom() )
+            {
+                $tmp_xmlroot = $this->appCustomRoot;
+                $tmp_count = count($this->apps_custom);
+            }
+            elseif( $Obj->isApplicationFilter() )
+            {
+                $tmp_xmlroot = $this->appFilterRoot;
+                $tmp_count = count($this->app_filters);
+            }
+            elseif( $Obj->isApplicationGroup() )
+            {
+                $tmp_xmlroot = $this->appGroupRoot;
+                $tmp_count = count($this->app_groups);
+            }
+
+            if( $ret && !$Obj->isTmp() && $tmp_xmlroot !== null )
+            {
+                if( $tmp_count > 0 )
+                    $tmp_xmlroot->removeChild($Obj->xmlroot);
+                else
+                    DH::clearDomNodeChilds($tmp_xmlroot);
+            }
+
             return True;
         }
         else

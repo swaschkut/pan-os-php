@@ -9,6 +9,7 @@ UTIL:
 BUGFIX:
 * bugfix as PAN-OS XML API are working different to CLI set commands for single vsys firewall | type=device actions=sp_spg_create_xyz
 * bugfix class Sub | bugfix to get DefaultSecurity Rules working with single vsys firewall
+* bugfix - type=application actions=delete | missing implementation for offline XML file
 
 GENERAL:
 * update playbook json | secops_autoreporter / visibility_assessment

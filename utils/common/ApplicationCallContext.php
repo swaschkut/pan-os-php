@@ -22,7 +22,7 @@
 class ApplicationCallContext extends CallContext
 {
     /** @var  App */
-
+    /** @var  App | AppCustom | AppFilter | AppGroup $object */
     public $counter_containers;
     public $tmpcounter;
     public $counter_predefined;

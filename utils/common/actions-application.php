@@ -669,6 +669,7 @@ ApplicationCallContext::$supportedActions['move'] = array(
 ApplicationCallContext::$supportedActions['delete'] = array(
     'name' => 'delete',
     'MainFunction' => function (ApplicationCallContext $context) {
+        /** @var  App | AppCustom | AppFilter | AppGroup $object */
         $object = $context->object;
 
         if( $object->countReferences() != 0 )
