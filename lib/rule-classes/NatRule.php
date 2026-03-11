@@ -1201,7 +1201,7 @@ class NatRule extends Rule
         return True;
     }
 
-    public function isNatRule()
+    public function isNatRule(): bool
     {
         return TRUE;
     }

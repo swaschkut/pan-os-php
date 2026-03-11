@@ -368,16 +368,16 @@ class DeviceOnPrem
         $this->dosRules = new RuleStore($this, 'DoSRule');
         $this->dosRules->name = 'DoS';
 
-        $this->tunnelInspectionRules = new RuleStore($this, 'TunnelInspectionRule', TRUE);
+        $this->tunnelInspectionRules = new RuleStore($this, 'TunnelInspectionRule');
         $this->tunnelInspectionRules->name = 'TunnelInspection';
 
-        $this->defaultSecurityRules = new RuleStore($this, 'DefaultSecurityRule', TRUE);
+        $this->defaultSecurityRules = new RuleStore($this, 'DefaultSecurityRule');
         $this->defaultSecurityRules->name = "DefaultSecurity";
 
-        $this->networkPacketBrokerRules = new RuleStore($this, 'NetworkPacketBrokerRule', TRUE);
+        $this->networkPacketBrokerRules = new RuleStore($this, 'NetworkPacketBrokerRule');
         $this->networkPacketBrokerRules->name = 'NetworkPacketBroker';
 
-        $this->sdWanRules = new RuleStore($this, 'SDWanRule', TRUE);
+        $this->sdWanRules = new RuleStore($this, 'SDWanRule');
         $this->sdWanRules->name = 'SDWan';
 
         #$this->dosRules->_networkStore = $this->owner->network;

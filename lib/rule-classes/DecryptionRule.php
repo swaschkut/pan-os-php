@@ -519,7 +519,7 @@ class DecryptionRule extends RuleWithUserID
         $this->owner = null;
     }
 
-    public function isDecryptionRule()
+    public function isDecryptionRule(): bool
     {
         return TRUE;
     }

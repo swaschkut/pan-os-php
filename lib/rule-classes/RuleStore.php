@@ -1527,11 +1527,11 @@ class RuleStore
         foreach( $this->_rules as $i => $rule )
         {
             if( !empty(spl_object_hash($rule)) )
-                $this->fastMemToIndex_forPost[spl_object_hash($rule)] = $i;
+                $this->fastMemToIndex[spl_object_hash($rule)] = $i;
             if( !empty($rule->name()) )
-                $this->fastNameToIndex_forPost[$rule->name()] = $i;
+                $this->fastNameToIndex[$rule->name()] = $i;
             if( !empty($rule->uuid()) )
-                $this->fastUUIDToIndex_forPost[$rule->uuid()] = $i;
+                $this->fastUUIDToIndex[$rule->uuid()] = $i;
         }
 
         if( !$this->isPreOrPost )
@@ -1581,7 +1581,7 @@ class RuleStore
         {
             if( $contextRule->isPreRule() )
                 $str = $this->owner->getXPath() . '/pre-rulebase';
-            else if( $contextRule->isPostRule() )
+            elseif( $contextRule->isPostRule() )
                 $str = $this->owner->getXPath() . '/post-rulebase';
             else
                 derr('unsupported mode');
@@ -1594,9 +1594,10 @@ class RuleStore
         {
             if( $contextRule->isPreRule() )
                 $str = "/config/shared/pre-rulebase";
-            else if( $contextRule->isPostRule() )
+            elseif( $contextRule->isPostRule() )
                 $str = "/config/shared/post-rulebase";
-            else derr('unsupported mode');
+            else
+                derr('unsupported mode');
         }
         else if( $class == 'FawkesConf' )
         {
@@ -1606,7 +1607,8 @@ class RuleStore
                 $str = "/config/shared/pre-rulebase";
             else if( $contextRule->isPostRule() )
                 $str = "/config/shared/post-rulebase";
-            else derr('unsupported mode');
+            else
+                derr('unsupported mode');
         }
         else
             derr('unsupported mode');
@@ -1646,7 +1648,7 @@ class RuleStore
      * @return bool
      * @throws Exception
      */
-    public function ruleIsPreRule(Rule $rule)
+    public function ruleIsPreRule(Rule $rule): bool
     {
         if( !$this->isPreOrPost )
             return FALSE;
@@ -1667,7 +1669,7 @@ class RuleStore
      * @return bool
      * @throws Exception
      */
-    public function ruleIsPostRule($rule)
+    public function ruleIsPostRule($rule): bool
     {
         if( !$this->isPreOrPost )
             return FALSE;

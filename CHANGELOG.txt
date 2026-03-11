@@ -14,6 +14,7 @@ BUGFIX:
 * type=application actions=delete | missing implementation for offline XML file
 * type=application | bugfix to speparate predefinedAppStore with shared appStore for Panorama and Firewall
 * class Zone | avoid error out for SharedGateway Zone reading regarding ZPP searching part
+* type=rule 'filter=(rule is.prerule)' | wrong array setting
 
 GENERAL:
 * update playbook json | secops_autoreporter / visibility_assessment

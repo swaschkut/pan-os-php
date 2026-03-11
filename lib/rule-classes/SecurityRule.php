@@ -1811,7 +1811,7 @@ class SecurityRule extends RuleWithUserID
         $this->owner = null;
     }
 
-    public function isSecurityRule()
+    public function isSecurityRule(): bool
     {
         return TRUE;
     }
