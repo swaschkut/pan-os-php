@@ -102,6 +102,8 @@ class BuckbeakConf
 
     /** @var AppStore */
     public $appStore;
+    /** @var AppStore */
+    public $predefinedappStore;
 
     /** @var ThreatStore */
     public $threatStore;
@@ -151,7 +153,10 @@ class BuckbeakConf
         $this->zoneStore->setName('zoneStore');
 
 
-        $this->appStore = AppStore::getPredefinedStore( $this );
+        $this->predefinedappStore = AppStore::getPredefinedStore( $this );
+        $this->appStore = new AppStore($this);
+        $this->appStore->name = 'apps';
+        $this->appStore->parentCentralStore = $this->predefinedappStore;
 
         $this->threatStore = ThreatStore::getPredefinedStore( $this );
 

@@ -30,6 +30,7 @@ class VirusAndWildfireProfile extends SecurityProfile2
 
     public $cloud_inline_analysis_enabled = false;
 
+    public $threatException = array();
     public $additional = array();
 
     /**

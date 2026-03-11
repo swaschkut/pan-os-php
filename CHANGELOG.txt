@@ -5,6 +5,8 @@ UTIL:
 * type=securityprofile | move virus/wildfire - actions alert-set-only/best-practice-set to trait files - improve WF >= 112
 * type=rule actions=app-fix-dependencies - display missing | actions=app-fix-dependencies:true - add missing | add recursive all missing
 * type=application | introduce 'filter=(object is.unused / is.unused.recursive)'
+* type=securityprofilegroup actions=create | extend to get working with PAN-OS XML API
+* type=log-profil actions=create | extend to get working with PAN-OS XML API
 
 BUGFIX:
 * as PAN-OS XML API are working different to CLI set commands for single vsys firewall | type=device actions=sp_spg_create_xyz
