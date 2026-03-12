@@ -1,6 +1,14 @@
 CHANGELOG
 
-2.1.49
+2.1.50
+UTIL:
+
+BUGFIX:
+
+GENERAL:
+
+
+2.1.49 (202603012)
 UTIL:
 * type=securityprofile | move virus/wildfire - actions alert-set-only/best-practice-set to trait files - improve WF >= 112
 * type=rule actions=app-fix-dependencies - display missing | actions=app-fix-dependencies:true - add missing | add recursive all missing
