@@ -5297,7 +5297,7 @@ RuleCallContext::$supportedActions[] = array(
                         (
                             $fieldName == 'application' || $fieldName == 'action'
                             || $fieldName == 'security-profile' || $fieldName == 'url_category' || $fieldName == 'log_start'
-                            || $fieldName == 'log_end' || $fieldName == 'log_prof' || $fieldName == 'log_prof_name'
+                            || $fieldName == 'log_end'
                             || $fieldName == 'schedule' || $fieldName == 'src_user'
                         )
 
@@ -5305,6 +5305,16 @@ RuleCallContext::$supportedActions[] = array(
                     )
                     {
                         $continue_text = "continue17";
+                        $continue = true;
+                    }
+                    elseif(
+                        (
+                            $fieldName == 'log_prof' || $fieldName == 'log_prof_name'
+                        )
+                        && !$context->arguments['tmp_secrule'] && !$context->arguments['tmp_decryptionrule']
+                    )
+                    {
+                        $continue_text = "continue17a";
                         $continue = true;
                     }
                     elseif(
@@ -5501,7 +5511,7 @@ RuleCallContext::$supportedActions[] = array(
                 (
                     ($fieldName == 'application') || ($fieldName == 'action')
                     || ($fieldName == 'security-profile') || ($fieldName == 'url_category') || ($fieldName == 'log_start')
-                    || ($fieldName == 'log_end') || ($fieldName == 'log_prof') || ($fieldName == 'log_prof_name')
+                    || ($fieldName == 'log_end')
                     || ($fieldName == 'schedule') || ($fieldName == 'src_user')
                 )
 
@@ -5509,6 +5519,16 @@ RuleCallContext::$supportedActions[] = array(
             )
             {
                 $continue_text = "continue17";
+                $continue = true;
+            }
+            elseif(
+                (
+                    $fieldName == 'log_prof' || $fieldName == 'log_prof_name'
+                )
+                && !$context->arguments['tmp_secrule'] && !$context->arguments['tmp_decryptionrule']
+            )
+            {
+                $continue_text = "continue17a";
                 $continue = true;
             }
             elseif(

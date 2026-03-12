@@ -1094,7 +1094,7 @@ class RuleCallContext extends CallContext
 
         if( $fieldName == 'log_profile' )
         {
-            if( !$rule->isSecurityRule() && !$rule->isDefaultSecurityRule() )
+            if( !$rule->isSecurityRule() && !$rule->isDefaultSecurityRule() && !$rule->isDecryptionRule() )
                 return self::enclose('');
 
             return self::enclose(boolYesNo($rule->logSetting()), $wrap);
@@ -1102,7 +1102,7 @@ class RuleCallContext extends CallContext
 
         if( $fieldName == 'log_profile_name' )
         {
-            if( !$rule->isSecurityRule() && !$rule->isDefaultSecurityRule() )
+            if( !$rule->isSecurityRule() && !$rule->isDefaultSecurityRule() && !$rule->isDecryptionRule() )
                 return self::enclose('');
 
             if( $rule->logSetting() === FALSE )

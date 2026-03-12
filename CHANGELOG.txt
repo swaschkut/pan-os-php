@@ -15,6 +15,7 @@ BUGFIX:
 * type=application | bugfix to speparate predefinedAppStore with shared appStore for Panorama and Firewall
 * class Zone | avoid error out for SharedGateway Zone reading regarding ZPP searching part
 * type=rule 'filter=(rule is.prerule)' | wrong array setting
+* type=rule actions=exporttoexcel:rule.html ruletype=decryption | bugfix to add log_prof field
 
 GENERAL:
 * update playbook json | secops_autoreporter / visibility_assessment
