@@ -28,6 +28,29 @@ IKEgatewayCallContext::$supportedActions['display'] = Array(
 
         $text = $context->padding."  -preSharedKey: " . $object->preSharedKey . " ";
 
+        if( $context->arguments['psk-cleartext'] )
+        {
+            $crypto = new PanosCrypto();
+
+            try
+            {
+                // Determine the key to use
+                $masterKey = ($context->arguments['master-key'] !== "--default--")
+                    ? $context->arguments['master-key']
+                    : null;
+
+                // Attempt decryption
+                $psk_cleartext = $crypto->decrypt($object->preSharedKey, $masterKey);
+
+            } catch (Exception $e) {
+                $psk_cleartext = "WRONG MASTER-KEY";
+            }
+
+            if( !empty($psk_cleartext) )
+                $text .= "['".$psk_cleartext."'] ";
+        }
+
+
         $text .= "-version: " . $object->version . " ";
 
         $text .= "-proposal: " . str_pad($object->proposal, 25) . " ";
@@ -39,6 +62,7 @@ IKEgatewayCallContext::$supportedActions['display'] = Array(
         $text = $context->padding."  -localAddress: " . $object->localAddress . " ";
         $text .= "-localInterface: " . $object->localInterface . " ";
         $text .= "-peerAddress: " . $object->peerAddress . " ";
+
         $text .= "-localID: " . $object->localID . " ";
         $text .= "-peerID: " . $object->peerID . " ";
 
@@ -58,5 +82,9 @@ IKEgatewayCallContext::$supportedActions['display'] = Array(
 
 
     },
+    'args' => array(
+        'psk-cleartext' => array('type' => 'bool', 'default' => FALSE),
+        'master-key' => array('type' => 'string', 'default' => "--default--"),
+    ),
 
 );
