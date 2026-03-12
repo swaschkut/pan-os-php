@@ -7,6 +7,7 @@ UTIL:
 * type=application | introduce 'filter=(object is.unused / is.unused.recursive)'
 * type=securityprofilegroup actions=create | extend to get working with PAN-OS XML API
 * type=log-profil actions=create | extend to get working with PAN-OS XML API
+* type=stats | improvement to display-bpa for Panroama | scm_bp_sp_panw.json per default do not display Data Filtering
 
 BUGFIX:
 * as PAN-OS XML API are working different to CLI set commands for single vsys firewall | type=device actions=sp_spg_create_xyz
