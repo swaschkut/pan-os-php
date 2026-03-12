@@ -105,7 +105,7 @@ class RuleStore
      * @param bool $countDisabledRules
      * @return bool
      */
-    public function countDyn_IP_and_Port_SNat($countDisabledRules = FALSE)
+    public function countDyn_IP_and_Port_SNat($countDisabledRules = FALSE): bool|int
     {
         if( $this->type != 'NatRule' )
         {
@@ -134,7 +134,7 @@ class RuleStore
      * @param DOMElement|null $xml
      * @param DOMElement|null $xmlPost
      */
-    public function load_from_domxml($xml, $xmlPost = null)
+    public function load_from_domxml($xml, $xmlPost = null): void
     {
         global $PANC_DEBUG;
 
@@ -214,11 +214,11 @@ class RuleStore
 
 
     /**
-     * @param SecurityRule|NatRule|DecryptionRule|AppOverrideRule|CaptivePortalRule|AuthenticationRule|PbfRule|QoSRule|DoSRule $rule
+     * @param NatRule|DecryptionRule|DoSRule|CaptivePortalRule|SecurityRule|QoSRule|PbfRule|AuthenticationRule|AppOverrideRule $rule
      * @param bool $inPost
      * @return bool
      */
-    public function addRule($rule, $inPost = FALSE)
+    public function addRule(NatRule|DecryptionRule|DoSRule|CaptivePortalRule|SecurityRule|QoSRule|PbfRule|AuthenticationRule|AppOverrideRule $rule, bool $inPost = FALSE): bool
     {
 
         if( !is_object($rule) )
@@ -293,7 +293,7 @@ class RuleStore
      * @param bool $inPost
      * @return bool
      */
-    public function API_addRule($rule, $inPost = FALSE)
+    public function API_addRule($rule, $inPost = FALSE): bool
     {
         if( !$this->addRule($rule, $inPost) )
             return FALSE;
@@ -310,7 +310,7 @@ class RuleStore
      * @param SecurityRule|NatRule|DecryptionRule|AppOverrideRule|CaptivePortalRule|AuthenticationRule|PbfRule|QoSRule|DoSRule $rule
      * @return bool
      */
-    function inStore($rule)
+    function inStore($rule): bool
     {
         $serial = spl_object_hash($rule);
 
@@ -326,7 +326,7 @@ class RuleStore
      * @param SecurityRule|NatRule|DecryptionRule|AppOverrideRule|CaptivePortalRule|AuthenticationRule|PbfRule|QoSRule|DoSRule $rule
      * @return bool
      */
-    public function moveRuleToPostRulebase($rule)
+    public function moveRuleToPostRulebase($rule): bool
     {
         if( !$this->isPreOrPost )
             derr('unsupported');
@@ -349,7 +349,7 @@ class RuleStore
      * @param SecurityRule|NatRule|DecryptionRule|AppOverrideRule|CaptivePortalRule|AuthenticationRule|PbfRule|QoSRule|DoSRule $rule
      * @return bool
      */
-    public function API_moveRuleToPostRulebase($rule)
+    public function API_moveRuleToPostRulebase($rule): bool
     {
         if( !$this->isPreOrPost )
             derr('unsupported');
@@ -373,7 +373,7 @@ class RuleStore
      * @param SecurityRule|NatRule|DecryptionRule|AppOverrideRule|CaptivePortalRule|AuthenticationRule|PbfRule|QoSRule|DoSRule $rule
      * @return bool
      */
-    public function moveRuleToPreRulebase($rule)
+    public function moveRuleToPreRulebase($rule): bool
     {
         if( !$this->isPreOrPost )
             derr('unsupported');
@@ -396,7 +396,7 @@ class RuleStore
      * @param SecurityRule|NatRule|DecryptionRule|AppOverrideRule|CaptivePortalRule|AuthenticationRule|PbfRule|QoSRule|DoSRule $rule
      * @return bool
      */
-    public function API_moveRuleToPreRulebase($rule)
+    public function API_moveRuleToPreRulebase($rule): bool
     {
         if( !$this->isPreOrPost )
             derr('unsupported');
@@ -422,7 +422,7 @@ class RuleStore
      * @param bool $nested
      * @return bool
      */
-    public function isRuleNameAvailable($name, $nested = TRUE)
+    public function isRuleNameAvailable($name, $nested = TRUE): bool
     {
         if( isset($this->fastNameToIndex[$name]) )
         {
@@ -487,7 +487,7 @@ class RuleStore
     /**
      * @return string
      */
-    function &getStoreVarName()
+    function &getStoreVarName(): string
     {
         $varName = self::$storeNameByType[$this->type]['varName'];
 
@@ -497,7 +497,7 @@ class RuleStore
     /**
      * @return string
      */
-    function &getStoreXpathName()
+    function &getStoreXpathName(): string
     {
         $varName = self::$storeNameByType[$this->type]['xpathRoot'];
 
