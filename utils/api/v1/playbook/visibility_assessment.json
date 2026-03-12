@@ -23,10 +23,20 @@
     },
     {
       "type": "rule",
-      "actions": "actions=exportToExcel:2_NoLFP_UsedinRule.html",
+      "actions": "actions=exportToExcel:2a_NoLFP_UsedinRule.html",
       "filter": "filter=!(logprof is.set) and (rule is.enabled)",
       "location": "location=any",
-      "html-merger-explanation": "These are the rules with no log forwarding profile attached to them. This reduces the visibility on the firewall. We recommend you to have log forwarding profiles attached to all the security rules. Please review the Rules in the sheet &amp; attach required log forwarding profiles to them.",
+      "html-merger-explanation": "These are the security rules with no log forwarding profile attached to them. This reduces the visibility on the firewall. We recommend you to have log forwarding profiles attached to all the security rules. Please review the Rules in the sheet &amp; attach required log forwarding profiles to them.",
+      "html-merger-action-needed": "Apply the &#39;default&#39; Log Forwarding Profile to rules mentioned.",
+      "html-merger-severity": "Critical"
+    },
+    {
+      "type": "rule",
+      "ruletype": "ruletype=decryption",
+      "actions": "actions=exportToExcel:2b_NoLFP_UsedinDecryptRule.html",
+      "filter": "filter=!(logprof is.set) and (rule is.enabled)",
+      "location": "location=any",
+      "html-merger-explanation": "These are the decryption rules with no log forwarding profile attached to them. This reduces the visibility on the firewall. We recommend you to have log forwarding profiles attached to all thedecryption rules. Please review the Rules in the sheet &amp; attach required log forwarding profiles to them.",
       "html-merger-action-needed": "Apply the &#39;default&#39; Log Forwarding Profile to rules mentioned.",
       "html-merger-severity": "Critical"
     },
