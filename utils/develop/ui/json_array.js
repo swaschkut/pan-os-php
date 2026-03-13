@@ -5637,6 +5637,14 @@ var subjectObject =
                 },
                 "help": ""
             },
+            "name-tolowercase": {
+                "name": "name-toLowerCase",
+                "MainFunction": {}
+            },
+            "name-touppercase": {
+                "name": "name-toUpperCase",
+                "MainFunction": {}
+            },
             "position-move-after": {
                 "name": "position-Move-After",
                 "MainFunction": {},
