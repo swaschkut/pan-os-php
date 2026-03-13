@@ -1,5 +1,5 @@
 {
-  "stagename": "secops-",
+  "stagename": "working-files/secops-",
   "command": [
     {
      "comment": "Enabled Rules allows you to observe the whole rulebase and look for things these filters may not cover.",
@@ -66,10 +66,26 @@
      "shadow-ignoreInvalidAddressObjects": "shadow-ignoreInvalidAddressObjects"
     },
     {
+     "comment": "Finds rules with app ID enabled.",
+     "type": "rule",
+     "actions": "actions=exportToExcel:AppRules.html",
+     "filter": "filter=(rule is.enabled) and !(app is.any)",
+     "location": "location=any",
+     "shadow-ignoreInvalidAddressObjects": "shadow-ignoreInvalidAddressObjects"
+    },
+    {
      "comment": "Finds rules with no App ID, but has Service Ports enabled. These should typicanyy be converted to app ID rules.",
      "type": "rule",
      "actions": "actions=exportToExcel:NoAppID.html",
      "filter": "filter=(rule is.enabled) and (app is.any) and !(service is.any)",
+     "location": "location=any",
+     "shadow-ignoreInvalidAddressObjects": "shadow-ignoreInvalidAddressObjects"
+    },
+    {
+     "comment": "Finds any rules with any source and any destination with an action of allow. Pay attention to Zones.",
+     "type": "rule",
+     "actions": "actions=exportToExcel:AnySrcAnyDstAnyZone.html",
+     "filter": "filter=(rule is.enabled) and (action is.allow) and (src is.any) and (from is.any) and (to is.any) and (dst is.any)",
      "location": "location=any",
      "shadow-ignoreInvalidAddressObjects": "shadow-ignoreInvalidAddressObjects"
     },
@@ -146,8 +162,24 @@
      "shadow-ignoreInvalidAddressObjects": "shadow-ignoreInvalidAddressObjects"
     },
     {
+     "comment": "Finds unused address objects.",
+     "type": "address",
+     "actions": "actions=exportToExcel:UnusedAddresses.html,WhereUsed|UsedInLocation|ResolveIP|NestedMembers",
+     "filter": "filter=(object is.unused.recursive)",
+     "location": "location=any"
+    },    
+    {
+      "comment": "Finds unused service objects.",
+      "type": "service",
+      "actions": "actions=exportToExcel:UnusedServices.html,WhereUsed|UsedInLocation|ResolveSRV|NestedMembers",
+      "filter": "filter=(object is.unused.recursive)",
+      "location": "location=any"
+    },    
+    {
       "comment": "merge all previously created html files into one Excel sheet",
-      "type": "html-merger"
+      "type": "html-merger",
+      "adddefaulthtml": "adddefaulthtml",
+      "exportCSV": "exportCSV=secops_autoreporter.xlsx"      
     }
   ]
 }

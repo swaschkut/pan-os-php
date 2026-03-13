@@ -89,6 +89,8 @@ class PANConf
 
     /** @var AppStore */
     public $appStore;
+    /** @var AppStore */
+    public $predefinedappStore;
 
     /** @var ThreatStore */
     public $threatStore;
@@ -223,7 +225,10 @@ class PANConf
         $this->tagStore = new TagStore($this);
         $this->tagStore->setName('tagStore');
 
-        $this->appStore = AppStore::getPredefinedStore( $this );
+        $this->predefinedappStore = AppStore::getPredefinedStore( $this );
+        $this->appStore = new AppStore($this);
+        $this->appStore->name = 'applications';
+        $this->appStore->parentCentralStore = $this->predefinedappStore;
 
         $this->threatStore = ThreatStore::getPredefinedStore( $this );
 
@@ -298,6 +303,16 @@ class PANConf
         $this->SSL_TLSServiceProfileStore->setName('SSL_TLSServiceStore');
 
         $this->network = new NetworkPropertiesContainer($this);
+
+        if( $this->owner == null )
+        {
+            $this->AntiVirusPredefinedStore = SecurityProfileStore::getVirusPredefinedStore( $this );
+            $this->AntiSpywarePredefinedStore = SecurityProfileStore::getSpywarePredefinedStore( $this );
+            $this->VulnerabilityPredefinedStore = SecurityProfileStore::getVulnerabilityPredefinedStore( $this );
+            $this->UrlFilteringPredefinedStore = SecurityProfileStore::getUrlFilteringPredefinedStore( $this );
+            $this->FileBlockingPredefinedStore = SecurityProfileStore::getFileBlockingPredefinedStore( $this );
+            $this->WildfirePredefinedStore = SecurityProfileStore::getWildfirePredefinedStore( $this );
+        }
     }
 
     public function __destruct()
@@ -574,7 +589,7 @@ class PANConf
             //
             // Shared address objects extraction
             //
-            $tmp = DH::findFirstElementorCreate('address', $this->sharedroot);
+            $tmp = DH::findFirstElement('address', $this->sharedroot);
             if( $tmp !== FALSE )
                 $this->addressStore->load_addresses_from_domxml($tmp);
             // end of address extraction
@@ -582,7 +597,7 @@ class PANConf
             //
             // Extract address groups
             //
-            $tmp = DH::findFirstElementorCreate('address-group', $this->sharedroot);
+            $tmp = DH::findFirstElement('address-group', $this->sharedroot);
             if( $tmp !== FALSE )
                 $this->addressStore->load_addressgroups_from_domxml($tmp);
             // End of address groups extraction
@@ -792,12 +807,7 @@ class PANConf
             // End of SSL_TLSServiceProfile objects extraction
         }
 
-        $this->AntiVirusPredefinedStore = SecurityProfileStore::getVirusPredefinedStore( $this );
-        $this->AntiSpywarePredefinedStore = SecurityProfileStore::getSpywarePredefinedStore( $this );
-        $this->VulnerabilityPredefinedStore = SecurityProfileStore::getVulnerabilityPredefinedStore( $this );
-        $this->UrlFilteringPredefinedStore = SecurityProfileStore::getUrlFilteringPredefinedStore( $this );
-        $this->FileBlockingPredefinedStore = SecurityProfileStore::getFileBlockingPredefinedStore( $this );
-        $this->WildfirePredefinedStore = SecurityProfileStore::getWildfirePredefinedStore( $this );
+
 
 
         //
@@ -1075,15 +1085,17 @@ class PANConf
 
 
         if( !PH::$shadow_json and $actions == "display-bpa" )
+        {
             $this->display_bp_statistics( $debug, $actions );
 
-
-
-        foreach( $this->virtualSystems as $vsys )
-        {
-            if( !PH::$shadow_json and $actions == "display-bpa" )
-                $vsys->display_bp_statistics( $debug, $actions );
+            $vsys1 = $this->findVirtualSystem('vsys1');
+            $vsys1->display_bp_statistics( $debug, $actions );
         }
+
+
+
+
+
     }
 
 

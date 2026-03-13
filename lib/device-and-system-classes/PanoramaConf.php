@@ -235,6 +235,8 @@ class PanoramaConf
 
     /** @var AppStore */
     public $appStore;
+    /** @var AppStore */
+    public $predefinedappStore;
 
     /** @var ThreatStore */
     public $threatStore;
@@ -286,7 +288,10 @@ class PanoramaConf
         $this->SSL_TLSServiceProfileStore = new SSL_TLSServiceProfileStore($this);
         $this->SSL_TLSServiceProfileStore->setName('SSL_TLSServiceStore');
 
-        $this->appStore = AppStore::getPredefinedStore( $this );
+        $this->predefinedappStore = AppStore::getPredefinedStore( $this );
+        $this->appStore = new AppStore($this);
+        $this->appStore->name = 'apps';
+        $this->appStore->parentCentralStore = $this->predefinedappStore;
 
         $this->threatStore = ThreatStore::getPredefinedStore( $this );
 

@@ -860,6 +860,9 @@ SecurityProfileGroupCallContext::$supportedActions['create'] = array(
         $secprofgrp = new SecurityProfileGroup($spg_name, $context->subSystem->securityProfileGroupStore, TRUE);
 
         $context->subSystem->securityProfileGroupStore->addSecurityProfileGroup($secprofgrp);
+
+        if( $context->isAPI )
+            $secprofgrp->API_sync();
     },
     'args' => array('spg-name' => array('type' => 'string', 'default' => '*nodefault*') )
 );

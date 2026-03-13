@@ -2830,28 +2830,28 @@ class Rule
 
         return $threatArray;
     }
-    public function isPreRule()
+    public function isPreRule(): bool
     {
         return $this->owner->ruleIsPreRule($this);
     }
 
-    public function isPostRule()
+    public function isPostRule(): bool
     {
         return $this->owner->ruleIsPostRule($this);
     }
 
 
-    public function isSecurityRule()
+    public function isSecurityRule(): bool
     {
         return FALSE;
     }
 
-    public function isNatRule()
+    public function isNatRule(): bool
     {
         return FALSE;
     }
 
-    public function isDecryptionRule()
+    public function isDecryptionRule(): bool
     {
         return FALSE;
     }

@@ -1561,7 +1561,7 @@ class UTIL
         PH::print_stdout( array( "value" => $this->loadArrayMem[0], "type" => $this->loadArrayMem[1]) , false, "loadmemory");
         // --------------------
 
-        $panc_version = $this->pan->appStore->predefinedStore_appid_version;
+        $panc_version = $this->pan->predefinedappStore->predefinedStore_appid_version;
         PH::print_stdout( " - PAN-OS-PHP APP-ID version: ".$panc_version );
         PH::print_stdout( array( $panc_version ), false, "PAN-OS-PHP APP-ID version" );
 
@@ -1943,7 +1943,10 @@ class UTIL
                     elseif( $this->utilType == 'edl' )
                         $this->objectsToProcess[] = array('store' => $this->pan->EDLStore, 'objects' => $this->pan->EDLStore->getall());
                     elseif( $this->utilType == 'application' )
+                    {
+                        $this->objectsToProcess[] = array('store' => $this->pan->predefinedappStore, 'objects' => $this->pan->predefinedappStore->apps());
                         $this->objectsToProcess[] = array('store' => $this->pan->appStore, 'objects' => $this->pan->appStore->apps());
+                    }
                     elseif( $this->utilType == 'threat' )
                         $this->objectsToProcess[] = array('store' => $this->pan->threatStore, 'objects' => $this->pan->threatStore->getAll());
                     elseif( $this->utilType == 'threat-rule' )
@@ -2061,7 +2064,10 @@ class UTIL
                     elseif( $this->utilType == 'edl' )
                         $this->objectsToProcess[] = array('store' => $this->pan->EDLStore, 'objects' => $this->pan->EDLStore->getall());
                     elseif( $this->utilType == 'application' )
+                    {
+                        $this->objectsToProcess[] = array('store' => $this->pan->predefinedappStore, 'objects' => $this->pan->predefinedappStore->apps());
                         $this->objectsToProcess[] = array('store' => $this->pan->appStore, 'objects' => $this->pan->appStore->apps());
+                    }
                     elseif( $this->utilType == 'threat' )
                         $this->objectsToProcess[] = array('store' => $this->pan->threatStore, 'objects' => $this->pan->threatStore->getAll());
                     elseif( $this->utilType == 'threat-rule' )

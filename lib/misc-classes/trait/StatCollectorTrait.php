@@ -921,6 +921,21 @@ trait StatCollectorTrait
 
         if( $actions == "display" || $actions == "display-available" )
             PH::$JSON_TMP[] = $stdoutarray;
+
+        if( $isContainerOrDG )
+        {
+            //in general print full Panorama / shared and here all specific DG
+            if( !PH::$shadow_loaddghierarchy )
+                $this->display_bp_statistics( $debug, $actions );
+            else
+                $this->display_bp_statistics( $debug, $actions, $location );
+        }
+        elseif( $class === "VirtualSystem" )
+        {
+            //in general print full Firewall /vsys1 and here all specific vsys
+            if( $this->name() !== "vsys1" )
+                $this->display_bp_statistics( $debug, $actions );
+        }
     }
 
 
@@ -1674,8 +1689,8 @@ trait StatCollectorTrait
         $percentageArray_adoption['Vulnerability Profiles']['group'] = 'Threat Prevention';
         $percentageArray_adoption['File Blocking Profiles']['value'] = $stdoutarray['fb adoption percentage'];
         $percentageArray_adoption['File Blocking Profiles']['group'] = 'Data Loss Prevention';
-        #$percentageArray_adoption['Data Filtering']['value'] = $stdoutarray['data adoption percentage'];
-        #$percentageArray_adoption['Data Filtering']['group'] = 'Data Loss Prevention';
+        $percentageArray_adoption['Data Filtering']['value'] = $stdoutarray['data adoption percentage'];
+        $percentageArray_adoption['Data Filtering']['group'] = 'Data Loss Prevention';
         $percentageArray_adoption['URL Filtering Profiles']['value'] = $stdoutarray['url-site-access adoption percentage'];
         $percentageArray_adoption['URL Filtering Profiles']['group'] = 'URL Filtering';
         $percentageArray_adoption['Credential Theft Prevention']['value'] = $stdoutarray['url-credential adoption percentage'];

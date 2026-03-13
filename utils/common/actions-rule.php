@@ -2202,11 +2202,10 @@ RuleCallContext::$supportedActions[] = array(
         $app_array = array();
         foreach( $rule->apps->membersExpanded() as $app )
         {
+            /** @var App $app */
+
             $app_array[$app->name()] = $app->name();
-            foreach( $app->calculateDependencies() as $dependency )
-            {
-                $app_depends_on[$dependency->name()] = $dependency->name();
-            }
+            $app->getAll_Dependencies($app_depends_on);
         }
 
         foreach( $app_depends_on as $app => $dependencies )
@@ -2661,7 +2660,7 @@ RuleCallContext::$supportedActions[] = array(
     'MainFunction' => function (RuleCallContext $context) {
         $rule = $context->object;
 
-        if( !$rule->isSecurityRule() && !$rule->isDefaultSecurityRule() )
+        if( !$rule->isSecurityRule() && !$rule->isDefaultSecurityRule() && !$rule->isDecryptionRule() )
         {
             $string = "this is not a security rule" ;
             PH::ACTIONstatus( $context, "SKIPPED", $string );
@@ -2698,7 +2697,7 @@ RuleCallContext::$supportedActions[] = array(
     'MainFunction' => function (RuleCallContext $context) {
         $rule = $context->object;
 
-        if( !$rule->isSecurityRule() && !$rule->isDefaultSecurityRule() )
+        if( !$rule->isSecurityRule() && !$rule->isDefaultSecurityRule() && !$rule->isDecryptionRule() )
         {
             $string = "this is not a security rule" ;
             PH::ACTIONstatus( $context, "SKIPPED", $string );
@@ -2730,7 +2729,7 @@ RuleCallContext::$supportedActions[] = array(
     'MainFunction' => function (RuleCallContext $context) {
         $rule = $context->object;
 
-        if( !$rule->isSecurityRule() && !$rule->isDefaultSecurityRule() )
+        if( !$rule->isSecurityRule() && !$rule->isDefaultSecurityRule() && !$rule->isDecryptionRule() )
         {
             $string = "this is not a security rule" ;
             PH::ACTIONstatus( $context, "SKIPPED", $string );
@@ -2764,7 +2763,7 @@ RuleCallContext::$supportedActions[] = array(
     'MainFunction' => function (RuleCallContext $context) {
         $rule = $context->object;
 
-        if( !$rule->isSecurityRule() && !$rule->isDefaultSecurityRule() )
+        if( !$rule->isSecurityRule() && !$rule->isDefaultSecurityRule() && !$rule->isDecryptionRule() )
         {
             $string = "this is not a security rule" ;
             PH::ACTIONstatus( $context, "SKIPPED", $string );
@@ -5298,7 +5297,7 @@ RuleCallContext::$supportedActions[] = array(
                         (
                             $fieldName == 'application' || $fieldName == 'action'
                             || $fieldName == 'security-profile' || $fieldName == 'url_category' || $fieldName == 'log_start'
-                            || $fieldName == 'log_end' || $fieldName == 'log_prof' || $fieldName == 'log_prof_name'
+                            || $fieldName == 'log_end'
                             || $fieldName == 'schedule' || $fieldName == 'src_user'
                         )
 
@@ -5306,6 +5305,16 @@ RuleCallContext::$supportedActions[] = array(
                     )
                     {
                         $continue_text = "continue17";
+                        $continue = true;
+                    }
+                    elseif(
+                        (
+                            $fieldName == 'log_prof' || $fieldName == 'log_prof_name'
+                        )
+                        && !$context->arguments['tmp_secrule'] && !$context->arguments['tmp_decryptionrule']
+                    )
+                    {
+                        $continue_text = "continue17a";
                         $continue = true;
                     }
                     elseif(
@@ -5502,7 +5511,7 @@ RuleCallContext::$supportedActions[] = array(
                 (
                     ($fieldName == 'application') || ($fieldName == 'action')
                     || ($fieldName == 'security-profile') || ($fieldName == 'url_category') || ($fieldName == 'log_start')
-                    || ($fieldName == 'log_end') || ($fieldName == 'log_prof') || ($fieldName == 'log_prof_name')
+                    || ($fieldName == 'log_end')
                     || ($fieldName == 'schedule') || ($fieldName == 'src_user')
                 )
 
@@ -5510,6 +5519,16 @@ RuleCallContext::$supportedActions[] = array(
             )
             {
                 $continue_text = "continue17";
+                $continue = true;
+            }
+            elseif(
+                (
+                    $fieldName == 'log_prof' || $fieldName == 'log_prof_name'
+                )
+                && !$context->arguments['tmp_secrule'] && !$context->arguments['tmp_decryptionrule']
+            )
+            {
+                $continue_text = "continue17a";
                 $continue = true;
             }
             elseif(

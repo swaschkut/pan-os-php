@@ -4240,6 +4240,10 @@ class MERGER extends UTIL
     function custom_url_category_merging()
     {
         $objectType = "Custom-Url-Category";
+        $objectClass = "customURLProfile";
+        $objectStore = "customURLProfileStore";
+
+        $objectTxt = "custome-url-category";
 
         foreach( $this->location_array as $tmp_location )
         {
@@ -4272,13 +4276,13 @@ class MERGER extends UTIL
                 foreach( $childDeviceGroups as $dg )
                 {
                     /** @var DeviceGroup $dg */
-                    foreach( $dg->customURLProfileStore->securityProfiles() as $object )
+                    foreach( $dg->$objectStore->securityProfiles() as $object )
                     {
                         /** @var customURLProfile $object */
 
 
                         #if( !$object->isCustomURL() )
-                        if( get_class($object) !== "customURLProfile" )
+                        if( get_class($object) !== $objectClass )
                             continue;
                         /*
                         if( $object->isTmp() )
@@ -4304,7 +4308,7 @@ class MERGER extends UTIL
 
 
                     #if( !$object->isCustomURL() )
-                    if( get_class($object) !== "customURLProfile" )
+                    if( get_class($object) !== $objectClass )
                         continue;
                     /*
                     if( $object->isTmp() )
@@ -4336,7 +4340,7 @@ class MERGER extends UTIL
                     {
                         $hashMap[$value][] = $object;
                         if( $parentStore !== null )
-                            $object->ancestor = self::findAncestor( $parentStore, $object, "customURLProfileStore");
+                            $object->ancestor = self::findAncestor( $parentStore, $object, $objectStore);
                     }
                     else
                         $upperHashMap[$value][] = $object;
@@ -4362,7 +4366,7 @@ class MERGER extends UTIL
                     {
                         $hashMap[$value][] = $object;
                         if( $parentStore !== null )
-                            $object->ancestor = self::findAncestor( $parentStore, $object, "customURLProfileStore");
+                            $object->ancestor = self::findAncestor( $parentStore, $object, $objectStore);
                     }
                     else
                         $upperHashMap[$value][] = $object;
@@ -4379,9 +4383,9 @@ class MERGER extends UTIL
             self::removeSingleEntries( $child_hashMap, $hashMap, $upperHashMap, $countConcernedChildObjects);
 
 
-            PH::print_stdout( " - found " . count($hashMap) . " duplicates values totalling {$countConcernedObjects} custom-url-category objects which are duplicate" );
+            PH::print_stdout( " - found " . count($hashMap) . " duplicates values totalling {$countConcernedObjects} {$objectTxt} objects which are duplicate" );
 
-            PH::print_stdout( " - found " . count($child_hashMap) . " duplicates childDG values totalling {$countConcernedChildObjects} custom-url-category objects which are duplicate" );
+            PH::print_stdout( " - found " . count($child_hashMap) . " duplicates childDG values totalling {$countConcernedChildObjects} {$objectTxt} objects which are duplicate" );
 
 
             PH::print_stdout( "\n\nNow going after each duplicates for a replacement" );
@@ -4433,6 +4437,7 @@ class MERGER extends UTIL
 
                     if( $this->action === "merge" )
                     {
+                        //Todo: how to replace this???
                         $tmp_tag = $store->newCustomSecurityProfileURL($pickedObject->name() );
                         foreach( $pickedObject->getmembers() as $member )
                             $tmp_tag->addMember( $member );
@@ -4502,7 +4507,7 @@ class MERGER extends UTIL
             }
 
             if( count( $child_hashMap ) >0 )
-                PH::print_stdout( "\n\nDuplicates ChildDG removal is now done. Number of objects after cleanup: '{$store->count()}' (removed/created {$countChildRemoved}/{$countChildCreated} customURLcategory)\n" );
+                PH::print_stdout( "\n\nDuplicates ChildDG removal is now done. Number of objects after cleanup: '{$store->count()}' (removed/created {$countChildRemoved}/{$countChildCreated} {$objectTxt})\n" );
 
             $countRemoved = 0;
             foreach( $hashMap as $index => &$hash )
@@ -4519,7 +4524,6 @@ class MERGER extends UTIL
                 foreach( $hash as $objectIndex => $object )
                 {
                     /** @var customURLProfile $object */
-
                     //Todo: swaschkut 20241124 bring in hash map validation as for other objects types
 
                     if( isset($object->ancestor) )
@@ -4527,20 +4531,24 @@ class MERGER extends UTIL
                         $ancestor = $object->ancestor;
                         $ancestor_different_color = "";
 
-                        if( get_class($ancestor) !== "customURLProfile" )
+                        if( get_class($ancestor) !== $objectClass )
                         {
-                            PH::print_stdout("    - SKIP: object name '{$object->_PANC_shortName()}' has one ancestor which is not customURLProfile object");
+                            PH::print_stdout("    - SKIP: object name '{$object->_PANC_shortName()}' has one ancestor which is not {$objectTxt} object");
                             continue;
                         }
 
                         /** @var customURLProfile $ancestor */
-                        if( $this->upperLevelSearch &&  get_class($ancestor) === "customURLProfile" )
+                        if( $this->upperLevelSearch &&  get_class($ancestor) === $objectClass )
                         {
                             //add addmissingobjects
                             if( $this->addMissingObjects )
                             {
                                 if( !$object->sameValue($ancestor) )
+                                {
+                                    //Todo: how to replace this for general usage???
                                     $this->customURLcategoryGetValueDiff( $ancestor, $object, true );
+                                }
+
                             }
 
                             if( $object->sameValue($ancestor) || $this->dupAlg == 'samename' ) //same color
@@ -4653,7 +4661,7 @@ class MERGER extends UTIL
 
             }
 
-            PH::print_stdout( "\n\nDuplicates removal is now done. Number of objects after cleanup: '{$store->count()}' (removed {$countRemoved} customURLcategory)\n" );
+            PH::print_stdout( "\n\nDuplicates removal is now done. Number of objects after cleanup: '{$store->count()}' (removed {$countRemoved} {$objectTxt})\n" );
 
         }
     }

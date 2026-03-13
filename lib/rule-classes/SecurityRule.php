@@ -505,7 +505,7 @@ class SecurityRule extends RuleWithUserID
                     {
                         if( get_class( $this->owner->owner ) == "DeviceGroup" || get_class( $this->owner->owner ) == "VirtualSystem" )
                             $sub = $this->owner->owner->owner;
-                        elseif( get_class( $this->owner->owner ) == "PANConfig" || get_class( $this->owner->owner ) == "PanoramaConf" )
+                        elseif( get_class( $this->owner->owner ) == "PANConf" || get_class( $this->owner->owner ) == "PanoramaConf" )
                             $sub = $this->owner->owner;
 
                         /** @var PanoramaConf|PANConf $sub */
@@ -1811,7 +1811,7 @@ class SecurityRule extends RuleWithUserID
         $this->owner = null;
     }
 
-    public function isSecurityRule()
+    public function isSecurityRule(): bool
     {
         return TRUE;
     }

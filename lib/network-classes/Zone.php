@@ -228,9 +228,16 @@ class Zone
                     //network not available for VirtualSystem::
                     if( get_class($this->owner->owner) == "VirtualSystem")
                     {
-                        $tmp_zpp =  $this->owner->owner->owner->network->zoneProtectionProfileStore->find( $this->zoneProtectionProfile );
-                        if( is_object( $tmp_zpp ) )
-                            $tmp_zpp->addReference( $this );
+                        if( isset($this->owner->owner->owner->network) )
+                        {
+                            $tmp_zpp =  $this->owner->owner->owner->network->zoneProtectionProfileStore->find( $this->zoneProtectionProfile );
+                            if( is_object( $tmp_zpp ) )
+                                $tmp_zpp->addReference( $this );
+                        }
+                        else
+                        {
+                            //Todo: 20260309 is it sharedgateway????
+                        }
                     }
                     else
                         mwarning("Zone-protection-profile: '".$this->zoneProtectionProfile."'  found in Zone: '".$this->name()."'. References for class: '".get_class($this->owner->owner)." not yet implemented", null, false);

@@ -1571,6 +1571,22 @@ var subjectObject =
                             "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
+                    },
+                    "is.unused": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.unused.recursive": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
                     }
                 }
             },
@@ -8574,12 +8590,12 @@ var subjectObject =
                     }
                 }
             },
-            "spyware.inline-ml.best-practice-set": {
-                "name": "spyware.inline-ml.best-practice-set",
+            "spyware.inline-ml.alert-only-set": {
+                "name": "spyware.inline-ml.alert-only-set",
                 "MainFunction": {}
             },
-            "spyware.inline_ml.alert-only-set": {
-                "name": "spyware.inline_ml.alert-only-set",
+            "spyware.inline-ml.best-practice-set": {
+                "name": "spyware.inline-ml.best-practice-set",
                 "MainFunction": {}
             },
             "spyware.rules.alert-only-set": {
@@ -8662,8 +8678,16 @@ var subjectObject =
                 "name": "virus.decoder.alert-only-set",
                 "MainFunction": {}
             },
+            "virus.decoder.best-practice-set": {
+                "name": "virus.decoder.best-practice-set",
+                "MainFunction": {}
+            },
             "virus.inline-ml.alert-only-set": {
                 "name": "virus.inline-ml.alert-only-set",
+                "MainFunction": {}
+            },
+            "virus.inline-ml.best-practice-set": {
+                "name": "virus.inline-ml.best-practice-set",
                 "MainFunction": {}
             },
             "vulnerability.alert-only-set": {

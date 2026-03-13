@@ -179,6 +179,13 @@
     },
     {
       "type": "rule",
+      "ruletype": "ruletype=decryption",
+      "actions": "actions=logsetting-set:default",
+      "filter": "filter=!(logprof is.set) and (rule is.enabled)",
+      "location": "location=any"
+    },
+    {
+      "type": "rule",
       "ruletype": "ruletype=defaultsecurity",
       "actions": "actions=securityprofile-group-set:Alert-Only",
       "location": "location=any",

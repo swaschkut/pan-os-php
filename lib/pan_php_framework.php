@@ -212,6 +212,8 @@ require_once $basedir . '/helper-classes/ServiceDstPortMapping.php';
 require_once $basedir . '/helper-classes/ServiceSrcPortMapping.php';
 require_once $basedir . '/helper-classes/cidr.php';
 require_once $basedir . '/helper-classes/ConsoleTable.php';
+require_once $basedir . '/helper-classes/PanosCrypto.php';
+require_once $basedir . '/helper-classes/PanosHasher.php';
 
 require_once $basedir . '/container-classes/ObjRuleContainer.php';
 require_once $basedir . '/container-classes/ZoneRuleContainer.php';
@@ -258,6 +260,10 @@ require_once $basedir . '/object-classes/EDL.php';
 
 require_once $basedir . '/object-classes/LogProfile.php';
 require_once $basedir . '/object-classes/LogProfileStore.php';
+
+require_once $basedir . '/object-classes/trait/sp_action_wildfire.php';
+require_once $basedir . '/object-classes/trait/sp_action_virus.php';
+require_once $basedir . '/object-classes/trait/sp_action_spyware.php';
 
 require_once $basedir . '/object-classes/SecurityProfileStore.php';
 require_once $basedir . '/object-classes/SecurityProfileGroupStore.php';

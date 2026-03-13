@@ -578,7 +578,7 @@ trait ReferenceableObject
         return $this->name;
     }
 
-    public function objectIsUnused()
+    public function objectIsUnused(): ?bool
     {
         $className = "";
 
@@ -586,6 +586,8 @@ trait ReferenceableObject
             $className = 'ServiceGroup';
         elseif( get_class($this) == 'Address' || get_class($this) == 'AddressGroup' )
             $className = 'AddressGroup';
+        elseif( get_class($this) == 'App' || get_class($this) == 'AppFilter' || get_class($this) == 'AppGroup')
+            $className = 'AppGroup';
         else
             return null;
 
@@ -611,7 +613,7 @@ trait ReferenceableObject
         return false;
     }
 
-    public function objectIsUnusedRecursive()
+    public function objectIsUnusedRecursive(): ?bool
     {
         $className = "";
 
@@ -619,6 +621,8 @@ trait ReferenceableObject
             $className = 'ServiceGroup';
         elseif( get_class($this) == 'Address' || get_class($this) == 'AddressGroup' )
             $className = 'AddressGroup';
+        elseif( get_class($this) == 'App' || get_class($this) == 'AppFilter' || get_class($this) == 'AppGroup')
+            $className = 'AppGroup';
         else
             return null;
 
@@ -648,7 +652,7 @@ trait ReferenceableObject
         foreach( $groups as $group )
         {
             /** @var ServiceGroup $group */
-            if( $group->objectIsUnusedRecursive() == FALSE )
+            if(!$group->objectIsUnusedRecursive())
                 return FALSE;
         }
 

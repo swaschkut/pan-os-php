@@ -643,4 +643,36 @@ RQuery::$defaultFilters['application']['tunnelapp']['operators']['has'] = array(
         'input' => 'input/panorama-8.0.xml'
     )
 );
+
+RQuery::$defaultFilters['application']['object']['operators']['is.unused'] = array(
+    'Function' => function (ApplicationRQueryContext $context) {
+        $object = $context->object;
+
+        if( $object->isPredefined() || $object->owner->name() == "predefined Apps")
+            return null;
+
+        return $object->objectIsUnused();
+        #return $context->object->countReferences() == 0;
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['application']['object']['operators']['is.unused.recursive'] = array(
+    'Function' => function (ApplicationRQueryContext $context) {
+        $object = $context->object;
+
+        if( $object->isPredefined() || $object->owner->name() == "predefined Apps")
+            return null;
+
+        return $object->objectIsUnusedRecursive();
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
 // </editor-fold>

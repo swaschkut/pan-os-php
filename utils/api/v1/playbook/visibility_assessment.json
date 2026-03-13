@@ -23,10 +23,20 @@
     },
     {
       "type": "rule",
-      "actions": "actions=exportToExcel:2_NoLFP_UsedinRule.html",
+      "actions": "actions=exportToExcel:2a_NoLFP_UsedinRule.html",
       "filter": "filter=!(logprof is.set) and (rule is.enabled)",
       "location": "location=any",
-      "html-merger-explanation": "These are the rules with no log forwarding profile attached to them. This reduces the visibility on the firewall. We recommend you to have log forwarding profiles attached to all the security rules. Please review the Rules in the sheet &amp; attach required log forwarding profiles to them.",
+      "html-merger-explanation": "These are the security rules with no log forwarding profile attached to them. This reduces the visibility on the firewall. We recommend you to have log forwarding profiles attached to all the security rules. Please review the Rules in the sheet &amp; attach required log forwarding profiles to them.",
+      "html-merger-action-needed": "Apply the &#39;default&#39; Log Forwarding Profile to rules mentioned.",
+      "html-merger-severity": "Critical"
+    },
+    {
+      "type": "rule",
+      "ruletype": "ruletype=decryption",
+      "actions": "actions=exportToExcel:2b_NoLFP_UsedinDecryptRule.html",
+      "filter": "filter=!(logprof is.set) and (rule is.enabled)",
+      "location": "location=any",
+      "html-merger-explanation": "These are the decryption rules with no log forwarding profile attached to them. This reduces the visibility on the firewall. We recommend you to have log forwarding profiles attached to all thedecryption rules. Please review the Rules in the sheet &amp; attach required log forwarding profiles to them.",
       "html-merger-action-needed": "Apply the &#39;default&#39; Log Forwarding Profile to rules mentioned.",
       "html-merger-severity": "Critical"
     },
@@ -303,11 +313,20 @@
       "html-merger-explanation": "",
       "html-merger-action-needed": "",
       "html-merger-severity": ""
-    },
+   },
+    {
+      "type": "securityprofile",
+      "securityprofiletype": "securityprofiletype=file-blocking",
+      "actions": "actions=exportToExcel:9f-v_All_FB-SPs.html,UsedInLocation|WhereUsed|TotalUse|visibility|bestpractice",
+      "location": "location=any",
+      "html-merger-explanation": "",
+      "html-merger-action-needed": "",
+      "html-merger-severity": ""
+   },
     {
       "type": "securityprofile",
       "securityprofiletype": "securityprofiletype=wildfire-analysis",
-      "actions": "actions=exportToExcel:9f-v_All_WF-SPs.html,UsedInLocation|WhereUsed|TotalUse|visibility|bestpractice",
+      "actions": "actions=exportToExcel:9f-vi_All_WF-SPs.html,UsedInLocation|WhereUsed|TotalUse|visibility|bestpractice",
       "location": "location=any",
       "html-merger-explanation": "",
       "html-merger-action-needed": "",
@@ -315,7 +334,7 @@
     },
     {
       "type": "securityprofilegroup",
-      "actions": "actions=exportToExcel:9f-vi_SPG.html,UsedInLocation|TotalUse|visibility|bestpractice",
+      "actions": "actions=exportToExcel:9f-vii_SPG.html,UsedInLocation|TotalUse|visibility|bestpractice",
       "location": "location=any",
       "html-merger-explanation": "",
       "html-merger-action-needed": "",
@@ -323,7 +342,7 @@
     },
     {
       "type": "threat-rule",
-      "actions": "actions=exportToExcel:9f-vii_ThreatRules.html,UsedInLocation|WhereUsed",
+      "actions": "actions=exportToExcel:9f-viii_ThreatRules.html,UsedInLocation|WhereUsed",
       "location": "location=any",
       "html-merger-explanation": "",
       "html-merger-action-needed": "",
