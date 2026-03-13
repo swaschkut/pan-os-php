@@ -88,3 +88,205 @@ IKEgatewayCallContext::$supportedActions['display'] = Array(
     ),
 
 );
+
+IKEgatewayCallContext::$supportedActions[] = array(
+    'name' => 'exportToExcel',
+    'MainFunction' => function (IKEgatewayCallContext $context) {
+        $object = $context->object;
+        $context->objectList[] = $object;
+    },
+    'GlobalInitFunction' => function (IKEgatewayCallContext $context) {
+        $context->objectList = array();
+    },
+    'GlobalFinishFunction' => function (IKEgatewayCallContext $context) {
+        $args = &$context->arguments;
+        $filename = $args['filename'];
+
+        if( isset( $_SERVER['REQUEST_METHOD'] ) )
+            $filename = "project/html/".$filename;
+
+        $lines = '';
+
+
+        $addWhereUsed = FALSE;
+        $addUsedInLocation = FALSE;
+        $showPSKcleartext = FALSE;
+
+        $optionalFields = &$context->arguments['additionalFields'];
+
+        if( isset($optionalFields['WhereUsed']) )
+            $addWhereUsed = TRUE;
+
+        if( isset($optionalFields['UsedInLocation']) )
+            $addUsedInLocation = TRUE;
+
+        if( isset($optionalFields['PSKcleartext']) )
+            $showPSKcleartext = TRUE;
+
+        $headers = '<th>ID</th><th>template</th><th>location</th><th>name</th><th>PSK</th><th>cleartext</th>';
+
+        $headers .= '<th>version</th><th>proposal</th><th>exchange-mode</th>';
+        $headers .= '<th>localAddress</th><th>localInterface</th><th>peerAddress</th>';
+        $headers .= '<th>localID</th><th>peerID</th><th>NatTraversal</th><th>fragmentation</th><th>disabled</th>';
+
+
+        if( $addWhereUsed )
+            $headers .= '<th>where used</th>';
+        if( $addUsedInLocation )
+            $headers .= '<th>location used</th>';
+
+        $count = 0;
+        if( isset($context->objectList) )
+        {
+            foreach( $context->objectList as $object )
+            {
+                $count++;
+
+                /** @var Tag $object */
+                if( $count % 2 == 1 )
+                    $lines .= "<tr>\n";
+                else
+                    $lines .= "<tr bgcolor=\"#DDDDDD\">";
+
+                $lines .= $context->encloseFunction( (string)$count );
+
+                if( get_class($object->owner->owner) == "PANConf" )
+                {
+                    if( isset($object->owner->owner)
+                        && $object->owner->owner !== null
+                        && (
+                            get_class($object->owner->owner) == "Template"
+                            || get_class($context->subSystem) == "TemplateStack" )
+                    )
+                    {
+                        #$lines .= $context->encloseFunction($object->owner->owner->owner->name());
+                        $lines .= $context->encloseFunction($object->owner->owner->name());
+
+                        $tmp_vsys = $object->owner->owner->network->findVsysInterfaceOwner($object->name());
+                        if( $tmp_vsys !==  null )
+                            $lines .= $context->encloseFunction($tmp_vsys->name());
+                        else
+                            $lines .= $context->encloseFunction(get_class($object->owner->owner));
+                    }
+                    else
+                    {
+                        $lines .= $context->encloseFunction("---");
+
+                        $tmp_vsys = $object->owner->owner->network->findVsysInterfaceOwner($object->name());
+                        if( $tmp_vsys !==  null )
+                            $lines .= $context->encloseFunction($tmp_vsys->name());
+                        else
+                        {
+                            #$lines .= $context->encloseFunction($object->owner->owner->name());
+                            $lines .= $context->encloseFunction(get_class($object->owner->owner));
+                        }
+                    }
+                }
+
+                //$lines .= $context->encloseFunction(PH::getLocationString($object));
+
+                $lines .= $context->encloseFunction($object->name());
+
+                $lines .= $context->encloseFunction($object->preSharedKey);
+
+                $crypto = new PanosCrypto();
+                try
+                {
+                    // Determine the key to use
+                    //$masterKey = ($context->arguments['master-key'] !== "--default--")
+                    //    ? $context->arguments['master-key']
+                    //    : null;
+
+                    // Attempt decryption
+                    //$psk_cleartext = $crypto->decrypt($object->preSharedKey, $masterKey);
+                    $psk_cleartext = $crypto->decrypt($object->preSharedKey);
+
+                } catch (Exception $e) {
+                    $psk_cleartext = "WRONG MASTER-KEY";
+                }
+
+                if( !empty($psk_cleartext) && $psk_cleartext != "WRONG MASTER-KEY" )
+                {
+                    if( $showPSKcleartext )
+                        $lines .= $context->encloseFunction($psk_cleartext);
+                    else
+                        $lines .= $context->encloseFunction("[PSK cleartext possible]");
+                }
+
+                else
+                    $lines .= $context->encloseFunction("---");
+
+
+
+
+                $lines .= $context->encloseFunction($object->version);
+                $lines .= $context->encloseFunction($object->proposal);
+
+                $lines .= $context->encloseFunction($object->exchangemode);
+
+
+                $lines .= $context->encloseFunction($object->localAddress);
+                $lines .= $context->encloseFunction($object->localInterface);
+                $lines .= $context->encloseFunction($object->peerAddress);
+
+                $lines .= $context->encloseFunction($object->localID);
+                $lines .= $context->encloseFunction($object->peerID);
+
+                $lines .= $context->encloseFunction($object->natTraversal);
+                $lines .= $context->encloseFunction($object->fragmentation);
+
+                $lines .= $context->encloseFunction($object->disabled);
+
+
+
+                if( $addWhereUsed )
+                {
+                    $refTextArray = array();
+                    foreach( $object->getReferences() as $ref )
+                        $refTextArray[] = $ref->_PANC_shortName();
+
+                    $lines .= $context->encloseFunction($refTextArray);
+                }
+                if( $addUsedInLocation )
+                {
+                    $refTextArray = array();
+                    foreach( $object->getReferences() as $ref )
+                    {
+                        $location = PH::getLocationString($object->owner);
+                        $refTextArray[$location] = $location;
+                    }
+
+                    $lines .= $context->encloseFunction($refTextArray);
+                }
+
+                $lines .= "</tr>\n";
+            }
+        }
+
+        $content = file_get_contents(dirname(__FILE__) . '/html/export-template.html');
+        $content = str_replace('%TableHeaders%', $headers, $content);
+
+        $content = str_replace('%lines%', $lines, $content);
+
+        $jscontent = file_get_contents(dirname(__FILE__) . '/html/jquery.min.js');
+        $jscontent .= "\n";
+        $jscontent .= file_get_contents(dirname(__FILE__) . '/html/jquery.stickytableheaders.min.js');
+        $jscontent .= "\n\$('table').stickyTableHeaders();\n";
+
+        $content = str_replace('%JSCONTENT%', $jscontent, $content);
+
+        file_put_contents($filename, $content);
+    },
+    'args' => array('filename' => array('type' => 'string', 'default' => '*nodefault*'),
+        'additionalFields' =>
+            array('type' => 'pipeSeparatedList',
+                'subtype' => 'string',
+                'default' => '*NONE*',
+                'choices' => array('WhereUsed', 'UsedInLocation', 'PSKcleartext'),
+                'help' =>
+                    "pipe(|) separated list of additional field to include in the report. The following is available:\n" .
+                    "  - WhereUsed : list places where object is used (rules, groups ...)\n" .
+                    "  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n" .
+                    "  - PSKcleartext : show IKE gateway PSK in cleartext\n")
+    )
+);

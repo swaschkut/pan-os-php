@@ -2,6 +2,7 @@ CHANGELOG
 
 2.1.50
 UTIL:
+* type=ike-gateway actions=exporttoexcel:ike.html - introduce new feature
 
 BUGFIX:
 
