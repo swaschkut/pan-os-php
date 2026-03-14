@@ -1470,6 +1470,13 @@ SecurityProfileCallContext::$supportedActions[] = array(
                             $string_mica_engine[] = "'".$rulename."' | - application:'".implode(",", $rule['application'])."' - fileType:'".implode(",", $rule['file-type'])."' - direction:'".$rule['direction']."'  - action:'".$rule['action']."'";
                     }
                 }
+                elseif( get_class($object) == "URLProfile" )
+                {
+                    if( $object->local_inline_cat !== null )
+                        $string_mica_engine[] = "local-inline-cat=".$object->local_inline_cat;
+                    if( $object->cloud_inline_cat !== null )
+                        $string_mica_engine[] = "cloud-inline-cat=".$object->cloud_inline_cat;
+                }
 
                 //<th>DNS lists</th>
                 $lines .= $context->encloseFunction($string_dns_list);
@@ -1534,27 +1541,59 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 //<th>DNS whitelist</th>
                 $lines .= $context->encloseFunction($string_dns_whitelist);
 
+                //mica-engine
                 $lines .= $context->encloseFunction($string_mica_engine);
                 if( $bestPractice || $visibility)
                 {
                     if( (get_class($object) == "AntiSpywareProfile" && $object->owner->owner->version >= 102 )
                         || (get_class($object) == "VulnerabilityProfile" && $object->owner->owner->version >= 110 )
                         || (get_class($object) == "WildfireProfile" && $object->owner->owner->version >= 112 )
-                        || get_class($object) == "AntiVirusProfile" )
+                        || get_class($object) == "AntiVirusProfile"
+                        || (get_class($object) == "URLProfile" && $object->owner->owner->version >= 102 )
+                    )
                     {
                         if( $bestPractice )
                         {
-                            if( $object->cloud_inline_analysis_best_practice($object->owner->bp_json_file) )
-                                $lines .= $context->encloseFunction($bp_text_yes.' BP mica_engine set');
+                            if( get_class($object) == "URLProfile" )
+                            {
+                                if( $object->local_inline_cat !== null
+                                    && $object->cloud_inline_cat !== null
+                                    && $object->local_inline_cat == "yes"
+                                    && $object->cloud_inline_cat == "yes"
+                                )
+                                    $lines .= $context->encloseFunction($bp_text_yes.' BP mica_engine set');
+                                else
+                                    $lines .= $context->encloseFunction($bp_text_no.' NO BP mica_engine');
+                            }
                             else
-                                $lines .= $context->encloseFunction($bp_text_no.' NO BP mica_engine');
+                            {
+                                if( $object->cloud_inline_analysis_best_practice($object->owner->bp_json_file) )
+                                    $lines .= $context->encloseFunction($bp_text_yes.' BP mica_engine set');
+                                else
+                                    $lines .= $context->encloseFunction($bp_text_no.' NO BP mica_engine');
+                            }
+
                         }
                         if( $visibility )
                         {
-                            if( $object->cloud_inline_analysis_visibility($object->owner->bp_json_file) )
-                                $lines .= $context->encloseFunction($bp_text_yes.' Visibility mica_engine set');
+                            if( get_class($object) == "URLProfile" )
+                            {
+                                if( $object->local_inline_cat !== null
+                                    && $object->cloud_inline_cat !== null
+                                    && $object->local_inline_cat == "yes"
+                                    && $object->cloud_inline_cat == "yes"
+                                )
+                                    $lines .= $context->encloseFunction($bp_text_yes . ' Visibility mica_engine set');
+                                else
+                                    $lines .= $context->encloseFunction($bp_text_no . ' NO Visibility mica_engine');
+                            }
                             else
-                                $lines .= $context->encloseFunction($bp_text_no.' NO Visibility mica_engine');
+                            {
+                                if ($object->cloud_inline_analysis_visibility($object->owner->bp_json_file))
+                                    $lines .= $context->encloseFunction($bp_text_yes . ' Visibility mica_engine set');
+                                else
+                                    $lines .= $context->encloseFunction($bp_text_no . ' NO Visibility mica_engine');
+                            }
                         }
                     }
                     else
