@@ -2845,6 +2845,9 @@ SecurityProfileCallContext::$supportedActions['spyware.dns.alert-only-set'] = ar
                         $tmp_action->textContent = "allow";
                     if( $tmp_packet_capture->textContent == "" )
                         $tmp_packet_capture->textContent = "disable";
+                    if( $tmp_log_level->textContent == "" )
+                        $tmp_log_level->textContent = "none";
+
                 }
                 else
                 {
@@ -2867,6 +2870,8 @@ SecurityProfileCallContext::$supportedActions['spyware.dns.alert-only-set'] = ar
                             $tmp_action->textContent = "allow";
                         if( $tmp_packet_capture->textContent == "" )
                             $tmp_packet_capture->textContent = "disable";
+                        if( $tmp_log_level->textContent == "" )
+                            $tmp_log_level->textContent = "none";
                     }
                     else
                     {
@@ -2874,6 +2879,24 @@ SecurityProfileCallContext::$supportedActions['spyware.dns.alert-only-set'] = ar
                         $tmp_packet_capture->textContent = "disable";
                         $tmp_log_level->textContent = "none";
                     }
+                }
+            }
+            elseif( $rule->action() == "sinkhole" )
+            {
+                if( $hasDNSlicense )
+                {
+                    if( $tmp_action->textContent == "" )
+                        $tmp_action->textContent = "sinkhole";
+                    if( $tmp_packet_capture->textContent == "" )
+                        $tmp_packet_capture->textContent = "disable";
+                    if( $tmp_log_level->textContent == "" )
+                        $tmp_log_level->textContent = "none";
+                }
+                else
+                {
+                    $tmp_action->textContent = "allow";
+                    $tmp_packet_capture->textContent = "disable";
+                    $tmp_log_level->textContent = "none";
                 }
             }
         }

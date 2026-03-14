@@ -7,6 +7,7 @@ UTIL:
 * type=securityprofile securityprofiletype=url-filtering actions=exporttoexcel:url.hmtl | extend mica-engine field with local-inline-cat / cloud-inline-cat
 
 BUGFIX:
+* type=securityprofile securityprofiletype=spyware actions=spyware.alert-only-set | bugfix for dns-security-categories
 
 GENERAL:
 
