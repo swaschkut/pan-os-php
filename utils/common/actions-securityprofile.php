@@ -3436,8 +3436,6 @@ SecurityProfileCallContext::$supportedActions['wildfire.inline-ml.alert-only-set
                 if ($mlav_engine_entry->nodeType != XML_ELEMENT_NODE)
                     continue;
 
-                DH::DEBUGprintDOMDocument($mlav_engine_entry);
-
                 $name = DH::findAttribute("name", $mlav_engine_entry);
 
                 $action_xmlNode = DH::findFirstElementOrCreate("action", $mlav_engine_entry);
