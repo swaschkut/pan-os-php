@@ -3034,7 +3034,7 @@ RQuery::$defaultFilters['rule']['logprof']['operators']['is.set'] = array(
     'Function' => function (RuleRQueryContext $context) {
         $rule = $context->object;
 
-        if( !$rule->isSecurityRule() && !$rule->isDefaultSecurityRule() )
+        if( !$rule->isSecurityRule() && !$rule->isDefaultSecurityRule() && !$rule->isDecryptionRule() )
             return FALSE;
 
         if( $rule->logSetting() === null || $rule->logSetting() == '' )

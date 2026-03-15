@@ -8,6 +8,7 @@ UTIL:
 
 BUGFIX:
 * type=securityprofile securityprofiletype=spyware actions=spyware.alert-only-set | bugfix for dns-security-categories
+* type=rule ruletype=decryption actions=display 'filter=!(logprof is.set) and (rule is.enabled)'
 
 GENERAL:
 
