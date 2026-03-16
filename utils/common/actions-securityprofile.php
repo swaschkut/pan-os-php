@@ -3479,6 +3479,8 @@ SecurityProfileCallContext::$supportedActions['wildfire.alert-only-set'] = array
         if (get_class($object) !== "WildfireProfile")
             return null;
 
+        //Todo - missing standard Wildfire Rules
+
         ///////////////////////////////////////////////////////////////////////////////////////
         /// InlineML
         $f = SecurityProfileCallContext::$supportedActions['wildfire.inline-ml.alert-only-set']['MainFunction'];
@@ -4017,4 +4019,131 @@ SecurityProfileCallContext::$supportedActions[] = array(
     'args' => array('location' => array('type' => 'string', 'default' => '*nodefault*'),
         'mode' => array('type' => 'string', 'default' => 'skipIfConflict', 'choices' => array('skipIfConflict', 'removeIfMatch'))
     ),
+);
+
+SecurityProfileCallContext::$supportedActions['file-blocking.rules.alert-only-set'] = array(
+    'name' => 'file-blocking.rules.alert-only-set',
+    'MainFunction' => function (SecurityProfileCallContext $context )
+    {
+        /** @var FileBlockingProfile $object */
+        $object = $context->object;
+
+        if (get_class($object) !== "FileBlockingProfile")
+        {
+            PH::print_stdout("skipped");
+            return null;
+        }
+
+        $add_FB_alert = true;
+        foreach( $object->rules_obj as $rule )
+        {
+            /** @var ThreatPolicyFileBlocking $rule */
+            if( $rule->action() == "alert"
+                && $rule->direction() == "both"
+                && in_array("any", $rule->application() )
+                && in_array("any", $rule->filetype() )
+            )
+            {
+                $add_FB_alert = false;
+                break;
+            }
+
+        }
+
+        if( $add_FB_alert )
+        {
+            $tmp_name = "alert_vcp";
+            $threadPolicy_obj = new ThreatPolicyFileBlocking( $tmp_name, $object);
+            $threadPolicy_obj->type = "ThreatPolicyFileBlocking";
+
+            $threadPolicy_obj->action = "alert";
+            $threadPolicy_obj->direction = "both";
+            $threadPolicy_obj->filetype[] = "any";
+            $threadPolicy_obj->application[] = "any";
+
+            $object->rules_obj[] = $threadPolicy_obj;
+            $threadPolicy_obj->addReference( $object );
+
+            $object->owner->owner->ThreatPolicyStore->add($threadPolicy_obj);
+
+            $threadPolicy_obj->newThreatPolicyXML($object->xmlroot, $tmp_name, null, $threadPolicy_obj->action);
+
+            if( $context->isAPI )
+                $object->API_sync();
+        }
+
+    }
+);
+
+SecurityProfileCallContext::$supportedActions['wildfire.rules.alert-only-set'] = array(
+    'name' => 'wildfire.rules.alert-only-set',
+    'MainFunction' => function (SecurityProfileCallContext $context )
+    {
+        /** @var WildfireProfile $object */
+        $object = $context->object;
+
+        if (get_class($object) !== "WildfireProfile")
+        {
+            PH::print_stdout("skipped");
+            return null;
+        }
+
+        $add_WF_alert = true;
+        foreach( $object->rules_obj as $rule )
+        {
+            /** @var ThreatPolicyWildfire $rule */
+
+            //$rule->display();
+            // 'Forward-All': - fileType: 'any' - application: 'any' - direction: 'both' - analysis: 'public-cloud'
+
+            /*
+            print "filetype: \n";
+            print_r( $rule->filetype() );
+
+            print "application: \n";
+            print_r( $rule->application() );
+
+            print "direction :".$rule->direction()."\n";
+            print "analysis :".$rule->analysis()."\n";
+
+
+            exit();
+            */
+
+            if( ($rule->analysis() == "public-cloud" || $rule->analysis() == "private-cloud" )
+                && $rule->direction() == "both"
+                && in_array("any", $rule->application() )
+                && in_array("any", $rule->filetype() )
+            )
+            {
+                $add_WF_alert = false;
+                break;
+            }
+
+
+        }
+
+        if( $add_WF_alert )
+        {
+            $tmp_name = "alert_vcp";
+            $threadPolicy_obj = new ThreatPolicyWildfire( $tmp_name, $object);
+            $threadPolicy_obj->type = "ThreatPolicyWildfire";
+
+            $threadPolicy_obj->analysis = "public-cloud";
+            $threadPolicy_obj->direction = "both";
+            $threadPolicy_obj->filetype[] = "any";
+            $threadPolicy_obj->application[] = "any";
+
+            $object->rules_obj[] = $threadPolicy_obj;
+            $threadPolicy_obj->addReference( $object );
+
+            $object->owner->owner->ThreatPolicyStore->add($threadPolicy_obj);
+
+            $threadPolicy_obj->newThreatPolicyXML($object->xmlroot, $tmp_name, null, $threadPolicy_obj->action);
+
+            if( $context->isAPI )
+                $object->API_sync();
+        }
+
+    }
 );

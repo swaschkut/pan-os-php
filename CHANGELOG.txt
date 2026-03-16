@@ -5,6 +5,7 @@ UTIL:
 * type=ike-gateway actions=exporttoexcel:ike.html - introduce new feature
 * type=rule actions=name-touppercase/name-tolowercase | introduce new actions
 * type=securityprofile securityprofiletype=url-filtering actions=exporttoexcel:url.hmtl | extend mica-engine field with local-inline-cat / cloud-inline-cat
+* type=securityprofile actions=file-blocking/wildfire.rules.alert-only-set | introduction of new feature
 
 BUGFIX:
 * type=securityprofile securityprofiletype=spyware actions=spyware.alert-only-set | bugfix for dns-security-categories
