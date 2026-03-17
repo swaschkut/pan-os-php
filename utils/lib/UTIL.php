@@ -2422,9 +2422,10 @@ class UTIL
             $indentingXmlIncreament = 0;
 
             //remove empty XML nodes
-            $xpath = new DOMXPath($this->pan->xmlroot->ownerDocument);
-            foreach( $xpath->query('//*[not(node())]') as $node )
-                $node->parentNode->removeChild($node);
+            //Todo: BUG 20260317 - available since
+            //$xpath = new DOMXPath($this->pan->xmlroot->ownerDocument);
+            //foreach( $xpath->query('//*[not(node())]') as $node )
+            //    $node->parentNode->removeChild($node);
 
         }
 

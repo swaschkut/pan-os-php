@@ -26,9 +26,11 @@ class CONFIGSIZE extends UTIL
     public $pad_length = 60;
     public $showalldg = false;
 
-    public $lineReturn = false;
-    public $indentingXml = -1;
-    public $indentingXmlIncreament = 0;
+    //these are the default values
+    //$xml = &DH::dom_to_xml( $this->xmlDoc, $indentingXml = 0, $lineReturn = TRUE, -1, $indentingXmlIncreament = 1 );
+    public $indentingXml = -1; //0
+    public $lineReturn = false; //TRUE
+    public $indentingXmlIncreament = 0; //1
 
     public function utilStart()
     {
@@ -98,8 +100,6 @@ class CONFIGSIZE extends UTIL
         $this->xmlDoc->preserveWhiteSpace = false;
         $this->xmlDoc->formatOutput = true;
 
-        //these are the default values
-        //$xml = &DH::dom_to_xml( $this->xmlDoc, $indentingXml = 0, $lineReturn = TRUE, -1, $indentingXmlIncreament = 1 );
         $xml = &DH::dom_to_xml( $this->xmlDoc);
         $xml_reduced = &DH::dom_to_xml( $this->xmlDoc, $this->indentingXml, $this->lineReturn, -1, $this->indentingXmlIncreament );
 
