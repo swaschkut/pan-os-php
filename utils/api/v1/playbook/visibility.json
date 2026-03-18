@@ -111,6 +111,12 @@
     },
     {
       "type": "securityprofile",
+      "securityprofiletype": "securityprofiletype=file-blocking",
+      "actions": "actions=file-blocking.alert-only-set",
+      "location": "location=any"
+    },
+    {
+      "type": "securityprofile",
       "securityprofiletype": "securityprofiletype=wildfire-analysis",
       "actions": "actions=wildfire.alert-only-set",
       "location": "location=any"

@@ -2,7 +2,8 @@ CHANGELOG
 
 2.1.51
 UTIL:
-
+* type=securityprofile actions=file-blocking.alert-only-set | introduce new action
+* type=securityprofile actions=wildfire.alert-only-set | extend with wildfire.rules.alert-only-set
 
 BUGFIX:
 
