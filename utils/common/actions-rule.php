@@ -4202,6 +4202,77 @@ RuleCallContext::$supportedActions[] = array(
     'help' => ''
 );
 
+RuleCallContext::$supportedActions['name-touppercase'] = array(
+    'name' => 'name-toUpperCase',
+    'MainFunction' => function (RuleCallContext $context) {
+        $object = $context->object;
+        #$newName = $context->arguments['prefix'].$object->name();
+        $newName = mb_strtoupper($object->name(), 'UTF8');
+
+
+        $string = "new name will be '{$newName}'";
+        PH::ACTIONlog( $context, $string );
+
+        $rootObject = PH::findRootObjectOrDie($object->owner->owner);
+
+        if( $newName === $object->name() )
+        {
+            $string = "Rule is already uppercase";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
+        if( $rootObject->isPanorama() && $object->owner->find($newName, null, FALSE) !== null ||
+            $rootObject->isFirewall() && $object->owner->find($newName, null, TRUE) !== null )
+        {
+            $string = "a Rule with same name already exists";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            #use existing uppercase TAG and replace old lowercase where used with this existing uppercase TAG
+            return;
+        }
+        if( $context->isAPI )
+            $object->API_setName($newName);
+        else
+
+            $object->setName($newName);
+    }
+);
+RuleCallContext::$supportedActions['name-tolowercase'] = array(
+    'name' => 'name-toLowerCase',
+    'MainFunction' => function (RuleCallContext $context) {
+        $object = $context->object;
+        #$newName = $context->arguments['prefix'].$object->name();
+        $newName = mb_strtolower($object->name(), 'UTF8');
+
+
+        $string = "new name will be '{$newName}'";
+        PH::ACTIONlog( $context, $string );
+
+        $rootObject = PH::findRootObjectOrDie($object->owner->owner);
+
+        if( $newName === $object->name() )
+        {
+            $string = "Rule is already lowercase";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
+        if( $rootObject->isPanorama() && $object->owner->find($newName, null, FALSE) !== null ||
+            $rootObject->isFirewall() && $object->owner->find($newName, null, TRUE) !== null )
+        {
+            $string = "a Rule with same name already exists";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            #use existing lowercase TAG and replace old uppercase where used with this
+            return;
+        }
+        if( $context->isAPI )
+            $object->API_setName($newName);
+        else
+
+            $object->setName($newName);
+    }
+);
+
 RuleCallContext::$supportedActions[] = array(
     'name' => 'ruleType-Change',
     'MainFunction' => function (RuleCallContext $context) {

@@ -379,6 +379,13 @@ class DecryptionRule extends RuleWithUserID
             #}
         }
 
+        $text = $padding . "  LogSetting: ";
+        if( !empty($this->logSetting()) )
+        {
+            $text .= "[LogProfile] => '" . $this->logSetting() . "'";
+            PH::$JSON_TMP['sub']['object'][$this->name()]['logsetting']['logprofile'] = $this->logSetting();
+        }
+        PH::print_stdout( $text );
 
         $text = $padding . "  URL Category: ";
         if( !empty($this->_urlCategories) )

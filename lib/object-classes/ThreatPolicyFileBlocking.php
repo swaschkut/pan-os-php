@@ -28,6 +28,27 @@ class ThreatPolicyFileBlocking extends ThreatPolicy
         parent::__construct($name, $owner);
     }
 
+    public function newThreatPolicyXML( $xmlroot, $name, $severity = null, $action = "alert", $host_type = 'any' )
+    {
+        $tmp_rules_xmlroot = DH::findFirstElementOrCreate('rules', $xmlroot);
+        $tmp_entry = DH::findFirstElementByNameAttrOrCreate("entry", $name, $tmp_rules_xmlroot, $xmlroot->ownerDocument);
+
+        $this->xmlroot = $tmp_rules_xmlroot;
+
+
+        $tmp_action = DH::findFirstElementOrCreate('action', $tmp_entry);
+        $tmp_action->textContent = $action;
+
+        $tmp_direction = DH::findFirstElementOrCreate('direction', $tmp_entry);
+        $tmp_direction->textContent = "both";
+
+        $tmp_application = DH::findFirstElementOrCreate('application', $tmp_entry);
+        $tmp_app_member = DH::createElement( $tmp_application, 'member', 'any' );
+
+        $tmp_file_type = DH::findFirstElementOrCreate('file-type', $tmp_entry);
+        $tmp_file_type_member = DH::createElement( $tmp_file_type, 'member', 'any' );
+
+    }
 
     public function fileblocking_rule_bp_visibility_JSON( $checkType, $secprof_type )
     {

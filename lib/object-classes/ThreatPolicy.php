@@ -273,7 +273,7 @@ class ThreatPolicy
         PH::print_stdout( $string );
     }
 
-    public function newThreatPolicyXML( $xmlroot, $name, $severity, $action, $host_type = 'any' )
+    public function newThreatPolicyXML( $xmlroot, $name, $severity = null, $action = "alert", $host_type = 'any' )
     {
         $packet_capture = "disable";
         $threat_name = "any";
@@ -285,10 +285,13 @@ class ThreatPolicy
 
         $this->xmlroot = $tmp_rules_xmlroot;
 
-        $tmp_severity = DH::findFirstElementOrCreate('severity', $tmp_entry);
-        $tmp_severity_member = DH::findFirstElementOrCreate('member', $tmp_severity);
-        $tmp_severity_member->textContent = $severity;
-        $this->severity[] = $severity;
+        if( $severity !== null )
+        {
+            $tmp_severity = DH::findFirstElementOrCreate('severity', $tmp_entry);
+            $tmp_severity_member = DH::findFirstElementOrCreate('member', $tmp_severity);
+            $tmp_severity_member->textContent = $severity;
+            $this->severity[] = $severity;
+        }
 
         $tmp_action = DH::findFirstElementOrCreate('action', $tmp_entry);
         $tmp_action_node = DH::findFirstElementOrCreate($action, $tmp_action);

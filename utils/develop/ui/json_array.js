@@ -3621,7 +3621,40 @@ var subjectObject =
         "action": {
             "display": {
                 "name": "display",
-                "MainFunction": {}
+                "MainFunction": {},
+                "args": {
+                    "psk-cleartext": {
+                        "type": "bool",
+                        "default": false
+                    },
+                    "master-key": {
+                        "type": "string",
+                        "default": "--default--"
+                    }
+                }
+            },
+            "exporttoexcel": {
+                "name": "exportToExcel",
+                "MainFunction": {},
+                "GlobalInitFunction": {},
+                "GlobalFinishFunction": {},
+                "args": {
+                    "filename": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "additionalFields": {
+                        "type": "pipeSeparatedList",
+                        "subtype": "string",
+                        "default": "*NONE*",
+                        "choices": [
+                            "WhereUsed",
+                            "UsedInLocation",
+                            "PSKcleartext"
+                        ],
+                        "help": "pipe(|) separated list of additional field to include in the report. The following is available:\n  - WhereUsed : list places where object is used (rules, groups ...)\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n  - PSKcleartext : show IKE gateway PSK in cleartext\n"
+                    }
+                }
             }
         },
         "filter": {
@@ -5603,6 +5636,14 @@ var subjectObject =
                     }
                 },
                 "help": ""
+            },
+            "name-tolowercase": {
+                "name": "name-toLowerCase",
+                "MainFunction": {}
+            },
+            "name-touppercase": {
+                "name": "name-toUpperCase",
+                "MainFunction": {}
             },
             "position-move-after": {
                 "name": "position-Move-After",

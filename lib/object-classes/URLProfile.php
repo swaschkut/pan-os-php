@@ -58,6 +58,9 @@ class URLProfile extends SecurityProfile2
     public $credential_mode = null;
     public $credential_log = null;
 
+    public $local_inline_cat = null;
+    public $cloud_inline_cat = null;
+
     public $tmp_url_prof_array = array('allow', 'alert', 'block', 'continue', 'override');
 
     /**
@@ -352,6 +355,26 @@ class URLProfile extends SecurityProfile2
                 $this->credential_log = $tmp_credential_log_severity->textContent;
         }
 
+        $tmp_local_inline_cat = DH::findFirstElement("local-inline-cat", $xml);
+        if( $tmp_local_inline_cat != null )
+            $this->local_inline_cat = $tmp_local_inline_cat->textContent;
+        elseif( $this->owner->owner->version >= 102  )
+        {
+            $tmp_local_inline_cat = DH::findFirstElementOrCreate("local-inline-cat", $xml);
+            $tmp_local_inline_cat->textContent = "no";
+            $this->local_inline_cat = $tmp_local_inline_cat->textContent;
+        }
+
+        $tmp_cloud_inline_cat = DH::findFirstElement("cloud-inline-cat", $xml);
+        if( $tmp_cloud_inline_cat != null )
+            $this->cloud_inline_cat = $tmp_cloud_inline_cat->textContent;
+        elseif( $this->owner->owner->version >= 102  )
+        {
+            $tmp_cloud_inline_cat = DH::findFirstElementOrCreate("cloud-inline-cat", $xml);
+            $tmp_cloud_inline_cat->textContent = "no";
+            $this->cloud_inline_cat = $tmp_cloud_inline_cat->textContent;
+        }
+
         return TRUE;
     }
 
@@ -386,6 +409,11 @@ class URLProfile extends SecurityProfile2
             PH::print_stdout(  "       - mode: " . $this->credential_mode );
         if( $this->credential_log !== null )
             PH::print_stdout(  "       - log-severity: " . $this->credential_log );
+
+        if( $this->local_inline_cat !== null )
+            PH::print_stdout(  "       - local-inline-cat: " . $this->local_inline_cat );
+        if( $this->cloud_inline_cat !== null )
+            PH::print_stdout(  "       - cloud-inline-cat: " . $this->cloud_inline_cat );
     }
 
     public function getAllow()

@@ -1470,6 +1470,13 @@ SecurityProfileCallContext::$supportedActions[] = array(
                             $string_mica_engine[] = "'".$rulename."' | - application:'".implode(",", $rule['application'])."' - fileType:'".implode(",", $rule['file-type'])."' - direction:'".$rule['direction']."'  - action:'".$rule['action']."'";
                     }
                 }
+                elseif( get_class($object) == "URLProfile" )
+                {
+                    if( $object->local_inline_cat !== null )
+                        $string_mica_engine[] = "local-inline-cat=".$object->local_inline_cat;
+                    if( $object->cloud_inline_cat !== null )
+                        $string_mica_engine[] = "cloud-inline-cat=".$object->cloud_inline_cat;
+                }
 
                 //<th>DNS lists</th>
                 $lines .= $context->encloseFunction($string_dns_list);
@@ -1534,27 +1541,59 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 //<th>DNS whitelist</th>
                 $lines .= $context->encloseFunction($string_dns_whitelist);
 
+                //mica-engine
                 $lines .= $context->encloseFunction($string_mica_engine);
                 if( $bestPractice || $visibility)
                 {
                     if( (get_class($object) == "AntiSpywareProfile" && $object->owner->owner->version >= 102 )
                         || (get_class($object) == "VulnerabilityProfile" && $object->owner->owner->version >= 110 )
                         || (get_class($object) == "WildfireProfile" && $object->owner->owner->version >= 112 )
-                        || get_class($object) == "AntiVirusProfile" )
+                        || get_class($object) == "AntiVirusProfile"
+                        || (get_class($object) == "URLProfile" && $object->owner->owner->version >= 102 )
+                    )
                     {
                         if( $bestPractice )
                         {
-                            if( $object->cloud_inline_analysis_best_practice($object->owner->bp_json_file) )
-                                $lines .= $context->encloseFunction($bp_text_yes.' BP mica_engine set');
+                            if( get_class($object) == "URLProfile" )
+                            {
+                                if( $object->local_inline_cat !== null
+                                    && $object->cloud_inline_cat !== null
+                                    && $object->local_inline_cat == "yes"
+                                    && $object->cloud_inline_cat == "yes"
+                                )
+                                    $lines .= $context->encloseFunction($bp_text_yes.' BP mica_engine set');
+                                else
+                                    $lines .= $context->encloseFunction($bp_text_no.' NO BP mica_engine');
+                            }
                             else
-                                $lines .= $context->encloseFunction($bp_text_no.' NO BP mica_engine');
+                            {
+                                if( $object->cloud_inline_analysis_best_practice($object->owner->bp_json_file) )
+                                    $lines .= $context->encloseFunction($bp_text_yes.' BP mica_engine set');
+                                else
+                                    $lines .= $context->encloseFunction($bp_text_no.' NO BP mica_engine');
+                            }
+
                         }
                         if( $visibility )
                         {
-                            if( $object->cloud_inline_analysis_visibility($object->owner->bp_json_file) )
-                                $lines .= $context->encloseFunction($bp_text_yes.' Visibility mica_engine set');
+                            if( get_class($object) == "URLProfile" )
+                            {
+                                if( $object->local_inline_cat !== null
+                                    && $object->cloud_inline_cat !== null
+                                    && $object->local_inline_cat == "yes"
+                                    && $object->cloud_inline_cat == "yes"
+                                )
+                                    $lines .= $context->encloseFunction($bp_text_yes . ' Visibility mica_engine set');
+                                else
+                                    $lines .= $context->encloseFunction($bp_text_no . ' NO Visibility mica_engine');
+                            }
                             else
-                                $lines .= $context->encloseFunction($bp_text_no.' NO Visibility mica_engine');
+                            {
+                                if ($object->cloud_inline_analysis_visibility($object->owner->bp_json_file))
+                                    $lines .= $context->encloseFunction($bp_text_yes . ' Visibility mica_engine set');
+                                else
+                                    $lines .= $context->encloseFunction($bp_text_no . ' NO Visibility mica_engine');
+                            }
                         }
                     }
                     else
@@ -2806,6 +2845,9 @@ SecurityProfileCallContext::$supportedActions['spyware.dns.alert-only-set'] = ar
                         $tmp_action->textContent = "allow";
                     if( $tmp_packet_capture->textContent == "" )
                         $tmp_packet_capture->textContent = "disable";
+                    if( $tmp_log_level->textContent == "" )
+                        $tmp_log_level->textContent = "none";
+
                 }
                 else
                 {
@@ -2828,6 +2870,8 @@ SecurityProfileCallContext::$supportedActions['spyware.dns.alert-only-set'] = ar
                             $tmp_action->textContent = "allow";
                         if( $tmp_packet_capture->textContent == "" )
                             $tmp_packet_capture->textContent = "disable";
+                        if( $tmp_log_level->textContent == "" )
+                            $tmp_log_level->textContent = "none";
                     }
                     else
                     {
@@ -2835,6 +2879,24 @@ SecurityProfileCallContext::$supportedActions['spyware.dns.alert-only-set'] = ar
                         $tmp_packet_capture->textContent = "disable";
                         $tmp_log_level->textContent = "none";
                     }
+                }
+            }
+            elseif( $rule->action() == "sinkhole" )
+            {
+                if( $hasDNSlicense )
+                {
+                    if( $tmp_action->textContent == "" )
+                        $tmp_action->textContent = "sinkhole";
+                    if( $tmp_packet_capture->textContent == "" )
+                        $tmp_packet_capture->textContent = "disable";
+                    if( $tmp_log_level->textContent == "" )
+                        $tmp_log_level->textContent = "none";
+                }
+                else
+                {
+                    $tmp_action->textContent = "allow";
+                    $tmp_packet_capture->textContent = "disable";
+                    $tmp_log_level->textContent = "none";
                 }
             }
         }
@@ -3374,8 +3436,6 @@ SecurityProfileCallContext::$supportedActions['wildfire.inline-ml.alert-only-set
                 if ($mlav_engine_entry->nodeType != XML_ELEMENT_NODE)
                     continue;
 
-                DH::DEBUGprintDOMDocument($mlav_engine_entry);
-
                 $name = DH::findAttribute("name", $mlav_engine_entry);
 
                 $action_xmlNode = DH::findFirstElementOrCreate("action", $mlav_engine_entry);
@@ -3418,6 +3478,8 @@ SecurityProfileCallContext::$supportedActions['wildfire.alert-only-set'] = array
 
         if (get_class($object) !== "WildfireProfile")
             return null;
+
+        //Todo - missing standard Wildfire Rules
 
         ///////////////////////////////////////////////////////////////////////////////////////
         /// InlineML
@@ -3957,4 +4019,131 @@ SecurityProfileCallContext::$supportedActions[] = array(
     'args' => array('location' => array('type' => 'string', 'default' => '*nodefault*'),
         'mode' => array('type' => 'string', 'default' => 'skipIfConflict', 'choices' => array('skipIfConflict', 'removeIfMatch'))
     ),
+);
+
+SecurityProfileCallContext::$supportedActions['file-blocking.rules.alert-only-set'] = array(
+    'name' => 'file-blocking.rules.alert-only-set',
+    'MainFunction' => function (SecurityProfileCallContext $context )
+    {
+        /** @var FileBlockingProfile $object */
+        $object = $context->object;
+
+        if (get_class($object) !== "FileBlockingProfile")
+        {
+            PH::print_stdout("skipped");
+            return null;
+        }
+
+        $add_FB_alert = true;
+        foreach( $object->rules_obj as $rule )
+        {
+            /** @var ThreatPolicyFileBlocking $rule */
+            if( $rule->action() == "alert"
+                && $rule->direction() == "both"
+                && in_array("any", $rule->application() )
+                && in_array("any", $rule->filetype() )
+            )
+            {
+                $add_FB_alert = false;
+                break;
+            }
+
+        }
+
+        if( $add_FB_alert )
+        {
+            $tmp_name = "alert_vcp";
+            $threadPolicy_obj = new ThreatPolicyFileBlocking( $tmp_name, $object);
+            $threadPolicy_obj->type = "ThreatPolicyFileBlocking";
+
+            $threadPolicy_obj->action = "alert";
+            $threadPolicy_obj->direction = "both";
+            $threadPolicy_obj->filetype[] = "any";
+            $threadPolicy_obj->application[] = "any";
+
+            $object->rules_obj[] = $threadPolicy_obj;
+            $threadPolicy_obj->addReference( $object );
+
+            $object->owner->owner->ThreatPolicyStore->add($threadPolicy_obj);
+
+            $threadPolicy_obj->newThreatPolicyXML($object->xmlroot, $tmp_name, null, $threadPolicy_obj->action);
+
+            if( $context->isAPI )
+                $object->API_sync();
+        }
+
+    }
+);
+
+SecurityProfileCallContext::$supportedActions['wildfire.rules.alert-only-set'] = array(
+    'name' => 'wildfire.rules.alert-only-set',
+    'MainFunction' => function (SecurityProfileCallContext $context )
+    {
+        /** @var WildfireProfile $object */
+        $object = $context->object;
+
+        if (get_class($object) !== "WildfireProfile")
+        {
+            PH::print_stdout("skipped");
+            return null;
+        }
+
+        $add_WF_alert = true;
+        foreach( $object->rules_obj as $rule )
+        {
+            /** @var ThreatPolicyWildfire $rule */
+
+            //$rule->display();
+            // 'Forward-All': - fileType: 'any' - application: 'any' - direction: 'both' - analysis: 'public-cloud'
+
+            /*
+            print "filetype: \n";
+            print_r( $rule->filetype() );
+
+            print "application: \n";
+            print_r( $rule->application() );
+
+            print "direction :".$rule->direction()."\n";
+            print "analysis :".$rule->analysis()."\n";
+
+
+            exit();
+            */
+
+            if( ($rule->analysis() == "public-cloud" || $rule->analysis() == "private-cloud" )
+                && $rule->direction() == "both"
+                && in_array("any", $rule->application() )
+                && in_array("any", $rule->filetype() )
+            )
+            {
+                $add_WF_alert = false;
+                break;
+            }
+
+
+        }
+
+        if( $add_WF_alert )
+        {
+            $tmp_name = "alert_vcp";
+            $threadPolicy_obj = new ThreatPolicyWildfire( $tmp_name, $object);
+            $threadPolicy_obj->type = "ThreatPolicyWildfire";
+
+            $threadPolicy_obj->analysis = "public-cloud";
+            $threadPolicy_obj->direction = "both";
+            $threadPolicy_obj->filetype[] = "any";
+            $threadPolicy_obj->application[] = "any";
+
+            $object->rules_obj[] = $threadPolicy_obj;
+            $threadPolicy_obj->addReference( $object );
+
+            $object->owner->owner->ThreatPolicyStore->add($threadPolicy_obj);
+
+            $threadPolicy_obj->newThreatPolicyXML($object->xmlroot, $tmp_name, null, $threadPolicy_obj->action);
+
+            if( $context->isAPI )
+                $object->API_sync();
+        }
+
+    }
 );
