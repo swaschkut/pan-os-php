@@ -13,6 +13,7 @@ BUGFIX:
 * class UTIL | bugfix for argument shadow-reducexml - DO NOT REMOVE empty XML node
 
 GENERAL:
+* update Device App-ID to version: 9079-9940
 
 
 2.1.49 (202603012)
