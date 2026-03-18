@@ -1,6 +1,16 @@
 CHANGELOG
 
-2.1.50
+2.1.51
+UTIL:
+
+
+BUGFIX:
+
+
+GENERAL:
+
+
+2.1.50 (202603018)
 UTIL:
 * type=ike-gateway actions=exporttoexcel:ike.html - introduce new feature
 * type=rule actions=name-touppercase/name-tolowercase | introduce new actions
