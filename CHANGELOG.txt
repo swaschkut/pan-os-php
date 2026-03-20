@@ -1,6 +1,14 @@
 CHANGELOG
 
-2.1.51
+2.1.52
+UTIL:
+
+BUGFIX:
+
+GENERAL:
+
+
+2.1.51 (20260326)
 UTIL:
 * type=securityprofile actions=file-blocking.alert-only-set | introduce new action
 * type=securityprofile actions=wildfire.alert-only-set | extend with wildfire.rules.alert-only-set
@@ -8,7 +16,6 @@ UTIL:
 * type=appid-enabler | taking care of parentApp - always enable parentApp before app is set to enable
 
 BUGFIX:
-
 
 GENERAL:
 
