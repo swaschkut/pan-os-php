@@ -4,6 +4,8 @@ CHANGELOG
 UTIL:
 * type=securityprofile actions=file-blocking.alert-only-set | introduce new action
 * type=securityprofile actions=wildfire.alert-only-set | extend with wildfire.rules.alert-only-set
+* class AppStore | implement 'parent-app' field
+* type=appid-enabler | taking care of parentApp - always enable parentApp before app is set to enable
 
 BUGFIX:
 
