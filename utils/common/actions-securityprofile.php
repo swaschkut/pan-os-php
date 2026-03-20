@@ -3470,6 +3470,61 @@ SecurityProfileCallContext::$supportedActions['wildfire.inline-ml.alert-only-set
     }
 );
 
+SecurityProfileCallContext::$supportedActions['wildfire.rules.alert-only-set'] = array(
+    'name' => 'wildfire.rules.alert-only-set',
+    'MainFunction' => function (SecurityProfileCallContext $context )
+    {
+        /** @var WildfireProfile $object */
+        $object = $context->object;
+
+        if (get_class($object) !== "WildfireProfile")
+        {
+            PH::print_stdout("skipped");
+            return null;
+        }
+
+        $add_WF_alert = true;
+        foreach( $object->rules_obj as $rule )
+        {
+            /** @var ThreatPolicyWildfire $rule */
+            if( ($rule->analysis() == "public-cloud" || $rule->analysis() == "private-cloud" )
+                && $rule->direction() == "both"
+                && in_array("any", $rule->application() )
+                && in_array("any", $rule->filetype() )
+            )
+            {
+                $add_WF_alert = false;
+                break;
+            }
+
+
+        }
+
+        if( $add_WF_alert )
+        {
+            $tmp_name = "alert_vcp";
+            $threadPolicy_obj = new ThreatPolicyWildfire( $tmp_name, $object);
+            $threadPolicy_obj->type = "ThreatPolicyWildfire";
+
+            $threadPolicy_obj->analysis = "public-cloud";
+            $threadPolicy_obj->direction = "both";
+            $threadPolicy_obj->filetype[] = "any";
+            $threadPolicy_obj->application[] = "any";
+
+            $object->rules_obj[] = $threadPolicy_obj;
+            $threadPolicy_obj->addReference( $object );
+
+            $object->owner->owner->ThreatPolicyStore->add($threadPolicy_obj);
+
+            $threadPolicy_obj->newThreatPolicyXML($object->xmlroot, $tmp_name, null, $threadPolicy_obj->action);
+
+            if( $context->isAPI )
+                $object->API_sync();
+        }
+
+    }
+);
+
 SecurityProfileCallContext::$supportedActions['wildfire.alert-only-set'] = array(
     'name' => 'wildfire.alert-only-set',
     'MainFunction' => function (SecurityProfileCallContext $context)
@@ -3479,14 +3534,18 @@ SecurityProfileCallContext::$supportedActions['wildfire.alert-only-set'] = array
         if (get_class($object) !== "WildfireProfile")
             return null;
 
-        //Todo - missing standard Wildfire Rules
-
         ///////////////////////////////////////////////////////////////////////////////////////
         /// InlineML
         $f = SecurityProfileCallContext::$supportedActions['wildfire.inline-ml.alert-only-set']['MainFunction'];
         $f($context );
 
-        //if( $sendAPI && $context->isAPI )
+
+        ///////////////////////////////////////////////////////////////////////////////////////
+        /// Rules
+        $f = SecurityProfileCallContext::$supportedActions['wildfire.rules.alert-only-set']['MainFunction'];
+        $f($context );
+
+
         if( $context->isAPI )
         {
             $object->API_sync();
@@ -4075,75 +4134,23 @@ SecurityProfileCallContext::$supportedActions['file-blocking.rules.alert-only-se
     }
 );
 
-SecurityProfileCallContext::$supportedActions['wildfire.rules.alert-only-set'] = array(
-    'name' => 'wildfire.rules.alert-only-set',
-    'MainFunction' => function (SecurityProfileCallContext $context )
-    {
-        /** @var WildfireProfile $object */
+SecurityProfileCallContext::$supportedActions['file-blocking.alert-only-set'] = array(
+    'name' => 'file-blocking.alert-only-set',
+    'MainFunction' => function (SecurityProfileCallContext $context) {
         $object = $context->object;
 
-        if (get_class($object) !== "WildfireProfile")
-        {
-            PH::print_stdout("skipped");
+        if( get_class( $object) !== "FileBlockingProfile")
             return null;
-        }
 
-        $add_WF_alert = true;
-        foreach( $object->rules_obj as $rule )
+        ///////////////////////////////////////////////////////////////
+        $f = SecurityProfileCallContext::$supportedActions['file-blocking.rules.alert-only-set']['MainFunction'];
+        $f($context);
+
+
+        if( $context->isAPI )
         {
-            /** @var ThreatPolicyWildfire $rule */
-
-            //$rule->display();
-            // 'Forward-All': - fileType: 'any' - application: 'any' - direction: 'both' - analysis: 'public-cloud'
-
-            /*
-            print "filetype: \n";
-            print_r( $rule->filetype() );
-
-            print "application: \n";
-            print_r( $rule->application() );
-
-            print "direction :".$rule->direction()."\n";
-            print "analysis :".$rule->analysis()."\n";
-
-
-            exit();
-            */
-
-            if( ($rule->analysis() == "public-cloud" || $rule->analysis() == "private-cloud" )
-                && $rule->direction() == "both"
-                && in_array("any", $rule->application() )
-                && in_array("any", $rule->filetype() )
-            )
-            {
-                $add_WF_alert = false;
-                break;
-            }
-
-
+            $object->API_sync();
         }
 
-        if( $add_WF_alert )
-        {
-            $tmp_name = "alert_vcp";
-            $threadPolicy_obj = new ThreatPolicyWildfire( $tmp_name, $object);
-            $threadPolicy_obj->type = "ThreatPolicyWildfire";
-
-            $threadPolicy_obj->analysis = "public-cloud";
-            $threadPolicy_obj->direction = "both";
-            $threadPolicy_obj->filetype[] = "any";
-            $threadPolicy_obj->application[] = "any";
-
-            $object->rules_obj[] = $threadPolicy_obj;
-            $threadPolicy_obj->addReference( $object );
-
-            $object->owner->owner->ThreatPolicyStore->add($threadPolicy_obj);
-
-            $threadPolicy_obj->newThreatPolicyXML($object->xmlroot, $tmp_name, null, $threadPolicy_obj->action);
-
-            if( $context->isAPI )
-                $object->API_sync();
-        }
-
-    }
+    },
 );

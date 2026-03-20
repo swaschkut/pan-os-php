@@ -287,6 +287,10 @@ class AppStore extends ObjStore
                 $app->apptag = $tag_array;
             }
 
+            // <parent-app>writesonic-base</parent-app>
+            $tmp = DH::findFirstElement('parent-app', $appx);
+            if( $tmp !== FALSE )
+                $app->parent_app = $tmp->textContent;
 
             $tmp = DH::findFirstElement('evasive-behavior', $appx);
             if( $tmp !== FALSE )

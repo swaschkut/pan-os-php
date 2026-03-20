@@ -33,6 +33,8 @@ class App
 
     public $type = 'tmp';
 
+    public $parent_app = null;
+
     public $tcp = null;
     public $udp = null;
     public $icmp = null;
@@ -522,6 +524,13 @@ class App
             $text .= $padding_above . " - " . str_pad(PH::boldText($this->name()), $padding) . " - ";
         }
         $subarray[$this->name()]['name'] = $this->name();
+
+
+        if( isset($this->parent_app) and $this->parent_app !== null )
+        {
+            $subarray[$this->name()]['parent_app'] = $this->parent_app;
+            PH::print_stdout( $padding_10 . "parentApp: ". $this->parent_app );
+        }
 
 
         if( isset($this->obsolete) and $this->obsolete !== null )

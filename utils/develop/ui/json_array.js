@@ -8495,6 +8495,14 @@ var subjectObject =
                     }
                 }
             },
+            "file-blocking.alert-only-set": {
+                "name": "file-blocking.alert-only-set",
+                "MainFunction": {}
+            },
+            "file-blocking.rules.alert-only-set": {
+                "name": "file-blocking.rules.alert-only-set",
+                "MainFunction": {}
+            },
             "move": {
                 "name": "move",
                 "MainFunction": {},
@@ -8769,6 +8777,10 @@ var subjectObject =
             },
             "wildfire.inline-ml.best-practice-set": {
                 "name": "wildfire.inline-ml.best-practice-set",
+                "MainFunction": {}
+            },
+            "wildfire.rules.alert-only-set": {
+                "name": "wildfire.rules.alert-only-set",
                 "MainFunction": {}
             }
         },

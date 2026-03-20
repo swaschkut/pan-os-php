@@ -1,6 +1,19 @@
 CHANGELOG
 
-2.1.50
+2.1.51
+UTIL:
+* type=securityprofile actions=file-blocking.alert-only-set | introduce new action
+* type=securityprofile actions=wildfire.alert-only-set | extend with wildfire.rules.alert-only-set
+* class AppStore | implement 'parent-app' field
+* type=appid-enabler | taking care of parentApp - always enable parentApp before app is set to enable
+
+BUGFIX:
+
+
+GENERAL:
+
+
+2.1.50 (202603018)
 UTIL:
 * type=ike-gateway actions=exporttoexcel:ike.html - introduce new feature
 * type=rule actions=name-touppercase/name-tolowercase | introduce new actions

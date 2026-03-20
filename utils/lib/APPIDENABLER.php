@@ -113,23 +113,45 @@ class APPIDENABLER extends UTIL
                 PH::print_stdout( " - status: " . DH::findAttribute('status', $app_status) );
             elseif( $this->actions == 'enable' )
             {
-                $apiArgs = array();
-                $apiArgs['type'] = 'op';
-                $apiArgs['cmd'] = '<request><set-application-status-recursive><application>' . DH::findAttribute('name', $app_status) . '</application><status>enabled</status></set-application-status-recursive></request>';
+                $appText = DH::findAttribute('name', $app_status);
+                $tmp_app_obj = $this->pan->predefinedappStore->find($appText);
+                if( $tmp_app_obj !== null )
+                {
+                    if( isset($tmp_app_obj->parent_app ) && $tmp_app_obj->parent_app != null )
+                    {
+                        $tmp_app_parent_obj = $this->pan->predefinedappStore->find($tmp_app_obj->parent_app);
+                        if( $tmp_app_parent_obj !== null && !$tmp_app_parent_obj->isTmp())
+                        {
+                            PH::print_stdout( " - enable parentApp: ". $tmp_app_obj->parent_app );
+                            $this->appidEnabler_sendAPI( $Connector, $tmp_app_obj->parent_app);
+                        }
+                    }
+                }
 
-                if( $this->configInput['type'] == 'api' )
-                {
-                    $response = $Connector->sendRequest($apiArgs);
-                    $text = " - status: enable";
-                }
-                else
-                {
-                    //Todo: remove the entry in the XML, then offline mode should be supported
-                    derr("this script is working only in API mode\n");
-                }
+                PH::print_stdout( " - enable App: ". $appText );
+                $this->appidEnabler_sendAPI( $Connector, $appText);
+
             }
 
             PH::print_stdout( $text );
+        }
+    }
+
+    public function appidEnabler_sendAPI( $Connector, $appText)
+    {
+        $apiArgs = array();
+        $apiArgs['type'] = 'op';
+        $apiArgs['cmd'] = '<request><set-application-status-recursive><enable-dependent-apps>yes</enable-dependent-apps><application>' . $appText . '</application><status>enabled</status></set-application-status-recursive></request>';
+
+        if( $this->configInput['type'] == 'api' )
+        {
+            $response = $Connector->sendRequest($apiArgs);
+            $text = " - status: enable";
+        }
+        else
+        {
+            //Todo: remove the entry in the XML, then offline mode should be supported
+            derr("this script is working only in API mode\n");
         }
     }
 }
