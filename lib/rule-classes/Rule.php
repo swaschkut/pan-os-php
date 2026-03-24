@@ -2385,7 +2385,12 @@ class Rule
                                 $operator = '==';
                             
                             $operator_string = $timestamp_value." ".$operator." ".$filter_timestamp;
-                            if( $operator == '==' && $timestamp_value == 0 )
+                            if( empty($filter_timestamp) )
+                            {
+                                if( !isset($sub->apiCache[$unused_flag][$ruleName]) )
+                                    $sub->apiCache[$unused_flag][$ruleName] = $ruleName;
+                            }
+                            elseif( $operator == '==' && $timestamp_value == 0 )
                             {
                                 //match, no unset
                                 if( !isset($sub->apiCache[$unused_flag][$ruleName]) )

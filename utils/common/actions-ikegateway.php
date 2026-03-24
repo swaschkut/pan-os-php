@@ -89,6 +89,15 @@ IKEgatewayCallContext::$supportedActions['display'] = Array(
 
 );
 
+IKEgatewayCallContext::$supportedActions['displayreferences'] = array(
+    'name' => 'displayReferences',
+    'MainFunction' => function (IKEgatewayCallContext $context) {
+        $object = $context->object;
+
+        $object->display_references(7);
+    },
+);
+
 IKEgatewayCallContext::$supportedActions[] = array(
     'name' => 'exportToExcel',
     'MainFunction' => function (IKEgatewayCallContext $context) {

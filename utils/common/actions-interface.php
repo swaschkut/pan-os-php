@@ -758,3 +758,39 @@ InterfaceCallContext::$supportedActions['remove'] = array(
         $object->owner->owner->network->ethernetIfStore->removeEthernetIf($object);
     }
 );
+
+InterfaceCallContext::$supportedActions['ethernet2aggregate'] = array(
+    'name' => 'remove',
+    'MainFunction' => function (InterfaceCallContext $context) {
+        $object = $context->object;
+
+        derr( "not working yet" );
+
+
+        $sub = $object->owner->owner->network->ethernetIfStore->find($object->name());
+        $pan = $object->owner->owner->network->ethernetIfStore->find($object->name());
+
+        $tmp_int_type = "aggregate-group";
+
+        if( $tmp_int_type == "aggregate-group" )
+        {
+            $name = "ae1";
+            $tmp_int_type2 = "ethernet"; //virtual-wire;
+
+            $tmp_VirtualWireIf2 = $pan->network->aggregateEthernetIfStore->newEthernetIf($name, $tmp_int_type2);
+            if( !$sub->importedInterfaces->hasInterfaceNamed( $tmp_VirtualWireIf2->name() ) )
+                $sub->importedInterfaces->addInterface( $tmp_VirtualWireIf2 );
+        }
+        else
+        {
+            $name = "ethernet1/1";
+            $tmp_int_type2 = "ethernet"; //virtual-wire;
+            $name2 = "dummy";
+
+            $tmp_VirtualWireIf = $pan->network->ethernetIfStore->newEthernetIf($name, $tmp_int_type, $name2);
+
+            if( !$sub->importedInterfaces->hasInterfaceNamed( $tmp_VirtualWireIf->name() ) )
+                $sub->importedInterfaces->addInterface( $tmp_VirtualWireIf );
+        }
+    }
+);

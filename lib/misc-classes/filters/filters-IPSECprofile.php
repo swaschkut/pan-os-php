@@ -9,3 +9,13 @@ RQuery::$defaultFilters['ipsec-profile']['name']['operators']['eq'] = array(
         'input' => 'input/panorama-8.0.xml'
     )
 );
+RQuery::$defaultFilters['ipsec-profile']['object']['operators']['is.unused'] = array(
+    'Function' => function (IPSECprofileRQueryContext $context) {
+        return $context->object->countReferences() == 0;
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
