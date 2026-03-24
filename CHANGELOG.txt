@@ -2,8 +2,8 @@ CHANGELOG
 
 2.1.52
 UTIL:
-* type=ike-gateway/ike-profile/ipsec-tunnel/ipsec-profile | introduce new 'filter=(object is.unused)'
-* type=ike-gateway/ike-profile/ipsec-tunnel/ipsec-profile | introduce new 'actions=displayreferences'
+* type=ike-gateway/ike-profile/ipsec-profile | introduce new 'filter=(object is.unused)'
+* type=ike-gateway/ike-profile/ipsec-profile | introduce new 'actions=displayreferences'
 * type=ike-gateway/ike-profile/ipsec-profile/ipsec-tunnel | add references to get 'filter=(object is.unused)' into working mode
 
 BUGFIX:

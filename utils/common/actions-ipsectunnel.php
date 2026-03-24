@@ -55,15 +55,6 @@ IPsectunnelCallContext::$supportedActions['display'] = Array(
 
 );
 
-IPsectunnelCallContext::$supportedActions['displayreferences'] = array(
-    'name' => 'displayReferences',
-    'MainFunction' => function (IPsectunnelCallContext $context) {
-        $object = $context->object;
-
-        $object->display_references(7);
-    },
-);
-
 IPsectunnelCallContext::$supportedActions[] = array(
     'name' => 'exportToExcel',
     'MainFunction' => function (IPsectunnelCallContext $context) {

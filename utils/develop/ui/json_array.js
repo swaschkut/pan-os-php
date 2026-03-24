@@ -4268,10 +4268,6 @@ var subjectObject =
                 "name": "display",
                 "MainFunction": {}
             },
-            "displayreferences": {
-                "name": "displayReferences",
-                "MainFunction": {}
-            },
             "exporttoexcel": {
                 "name": "exportToExcel",
                 "MainFunction": {},
@@ -4303,18 +4299,6 @@ var subjectObject =
                         "arg": true,
                         "ci": {
                             "fString": "(%PROP% grp.shared-group1)",
-                            "input": "input\/panorama-8.0.xml"
-                        }
-                    }
-                }
-            },
-            "object": {
-                "operators": {
-                    "is.unused": {
-                        "Function": {},
-                        "arg": false,
-                        "ci": {
-                            "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
