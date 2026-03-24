@@ -146,7 +146,14 @@ class IKEGateway
                 {
                     $proposalNode = DH::findFirstElement('ike-crypto-profile', $tmp_ikevX);
                     if( $proposalNode != null )
+                    {
                         $this->proposal = $proposalNode->textContent;
+
+                        $tmp_ike_profile = $this->owner->owner->network->ikeCryptoProfileStore->findIKECryptoProfil($this->proposal);
+                        if( $tmp_ike_profile != NULL )
+                            $tmp_ike_profile->addReference($this);
+                    }
+
 
                     $exchangemodeNode = DH::findFirstElement('exchange-mode', $tmp_ikevX);
                     if( $exchangemodeNode != null )

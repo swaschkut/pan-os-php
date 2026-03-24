@@ -180,6 +180,11 @@ require_once $basedir . '/misc-classes/InterfaceRQueryContext.php';
 require_once $basedir . '/misc-classes/RoutingRQueryContext.php';
 require_once $basedir . '/misc-classes/VirtualWireRQueryContext.php';
 
+require_once $basedir . '/misc-classes/IKEgatewayRQueryContext.php';
+require_once $basedir . '/misc-classes/IKEprofileRQueryContext.php';
+require_once $basedir . '/misc-classes/IPSECprofileRQueryContext.php';
+require_once $basedir . '/misc-classes/IPSECtunnelRQueryContext.php';
+
 require_once $basedir . '/misc-classes/SecurityProfileRQueryContext.php';
 require_once $basedir . '/misc-classes/SecurityProfileGroupRQueryContext.php';
 
