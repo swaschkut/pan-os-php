@@ -77,6 +77,7 @@ IPsectunnelCallContext::$supportedActions[] = array(
         $addWhereUsed = FALSE;
         $addUsedInLocation = FALSE;
 
+        $optionalFields = &$context->arguments['additionalFields'];
 
         if( isset($optionalFields['WhereUsed']) )
             $addWhereUsed = TRUE;

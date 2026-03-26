@@ -79,6 +79,7 @@ IKEprofileCallContext::$supportedActions[] = array(
         $addWhereUsed = FALSE;
         $addUsedInLocation = FALSE;
 
+        $optionalFields = &$context->arguments['additionalFields'];
 
         if( isset($optionalFields['WhereUsed']) )
             $addWhereUsed = TRUE;
@@ -89,7 +90,7 @@ IKEprofileCallContext::$supportedActions[] = array(
 
         $headers = '<th>ID</th><th>template</th><th>location</th><th>name</th>';
 
-        $headers .= '<th>hash</th><th>dhgroup</th><th>encryption</th><th>lifetime</th>';
+        $headers .= '<th>hash</th><th>dhgroup</th><th>encryption</th><th>lifetime</th><th>used count</th>';
 
         if( $addWhereUsed )
             $headers .= '<th>where used</th>';
@@ -165,6 +166,7 @@ IKEprofileCallContext::$supportedActions[] = array(
                     $text = $object->lifetime_days . " days";
                 $lines .= $context->encloseFunction($text);
 
+                $lines .= $context->encloseFunction((string)count($object->getReferences()));
 
                 if( $addWhereUsed )
                 {

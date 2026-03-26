@@ -93,6 +93,7 @@ IPsecprofileCallContext::$supportedActions[] = array(
         $addWhereUsed = FALSE;
         $addUsedInLocation = FALSE;
 
+        $optionalFields = &$context->arguments['additionalFields'];
 
         if( isset($optionalFields['WhereUsed']) )
             $addWhereUsed = TRUE;
@@ -105,7 +106,7 @@ IPsecprofileCallContext::$supportedActions[] = array(
 
         $headers .= '<th>ipsecProtocol</th><th>encryption</th><th>authentication</th><th>dhgroup</th>';
 
-        $headers .= '<th>lifetime</th><th>lifesize</th>';
+        $headers .= '<th>lifetime</th><th>lifesize</th><th>used count</th>';
 
 
         if( $addWhereUsed )
@@ -188,6 +189,8 @@ IPsecprofileCallContext::$supportedActions[] = array(
                 elseif( $object->lifesize_tb != "" )
                     $text =  $object->lifesize_tb . " tb";
                 $lines .= $context->encloseFunction($text);
+
+                $lines .= $context->encloseFunction((string)count($object->getReferences()));
 
 
                 if( $addWhereUsed )
