@@ -24,10 +24,10 @@ RQuery::$defaultFilters['ipsec-profile']['authentication']['operators']['eq'] = 
     'Function' => function (IPSECprofileRQueryContext $context) {
 
         if( !in_array( $context->value, IPSecCryptoProfil::$authentications ) )
-            derr( 'not supported hash: '.$context->value." | supported onces: ".implode(",", IPSecCryptoProfil::$authentications), null, false );
+            derr( 'not supported hash: '.$context->value." | supported once: ".implode(",", IPSecCryptoProfil::$authentications), null, false );
 
         //todo: migrate to array
-        return $context->object->hash == $context->value;
+        return $context->object->authentication == $context->value;
     },
     'arg' => TRUE,
     'ci' => array(
@@ -39,7 +39,7 @@ RQuery::$defaultFilters['ipsec-profile']['dhgroup']['operators']['eq'] = array(
     'Function' => function (IPSECprofileRQueryContext $context) {
 
         if( !in_array( $context->value, IPSecCryptoProfil::$dhgroups ) )
-            derr( 'not supported dhgroup: '.$context->value." | supported onces: ".implode(",", IPSecCryptoProfil::$dhgroups), null, false );
+            derr( 'not supported dhgroup: '.$context->value." | supported once: ".implode(",", IPSecCryptoProfil::$dhgroups), null, false );
 
         //todo: migrate to array
         return $context->object->dhgroup == $context->value;
@@ -54,7 +54,7 @@ RQuery::$defaultFilters['ipsec-profile']['encryption']['operators']['eq'] = arra
     'Function' => function (IPSECprofileRQueryContext $context) {
 
         if( !in_array( $context->value, IPSecCryptoProfil::$encryptions ) )
-            derr( 'not supported encryption: '.$context->value." | supported onces: ".implode(",", IPSecCryptoProfil::$encryptions), null, false );
+            derr( 'not supported encryption: '.$context->value." | supported once: ".implode(",", IPSecCryptoProfil::$encryptions), null, false );
 
         //todo: migrate to array
         return $context->object->encryption == $context->value;
