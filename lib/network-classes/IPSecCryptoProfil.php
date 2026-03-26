@@ -48,6 +48,7 @@ class IPSecCryptoProfil
     const sha256 = 'sha256';
     const sha384 = 'sha384';
     const sha512 = 'sha512';
+    const nonauth = 'non-auth';
 
     static public $authentications = array(
         self::md5 => 'md5',
@@ -65,6 +66,8 @@ class IPSecCryptoProfil
     const aes128cbc = 'aes-128-cbc';
     const aes192cbc = 'aes-192-cbc';
     const aes256cbc = 'aes-256-cbc';
+    const aes128gcm = 'aes-128-gcm';
+    const aes256gcm = 'aes-256-gcm';
 
     static public $encryptions = array(
         self::des => 'des',
@@ -91,8 +94,12 @@ class IPSecCryptoProfil
     const group2 = 'group2';
     const group5 = 'group5';
     const group14 = 'group14';
+    const group15 = 'group15';
+    const group16 = 'group16';
     const group19 = 'group19';
+
     const group20 = 'group20';
+    const group21 = 'group21';
 
     static public $dhgroups = array(
         self::nopfs => 'no-pfs',

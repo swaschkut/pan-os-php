@@ -157,7 +157,7 @@ IPsectunnelCallContext::$supportedActions[] = array(
                 $tmp_array = array();
                 foreach( $object->proxyIdList() as $proxyId )
                 {
-                    $text = $context->padding."   - Name: " . $proxyId['name'] . " - ";
+                    $text = " - " . $proxyId['name'] . " - ";
                     $text .= "local: " . $proxyId['local'] . " - ";
                     $text .= "remote: " . $proxyId['remote'] . " - ";
                     $text .= "protocol: " . $proxyId['protocol']['type'] . " - ";

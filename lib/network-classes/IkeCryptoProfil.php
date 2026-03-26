@@ -126,13 +126,22 @@ class IkeCryptoProfil
                 continue;
 
             if( $node->nodeName == 'hash' )
+            {
+                //Todo: could be one or more
                 $this->hash = DH::findFirstElementOrCreate('member', $node)->textContent;
+            }
 
             if( $node->nodeName == 'dh-group' )
+            {
+                //Todo: could be one or more
                 $this->dhgroup = DH::findFirstElementOrCreate('member', $node)->textContent;
+            }
 
             if( $node->nodeName == 'encryption' )
+            {
+                //Todo: could be one or more
                 $this->encryption = DH::findFirstElementOrCreate('member', $node)->textContent;
+            }
 
             if( $node->nodeName == 'lifetime' )
             {
