@@ -87,6 +87,8 @@ IPsectunnelCallContext::$supportedActions[] = array(
 
         $headers = '<th>ID</th><th>template</th><th>location</th><th>name</th>';
 
+        $headers .= '<th>gateway</th><th>interface</th><th>proposal</th><th>disabled</th><th>proxyID</th>';
+
         if( $addWhereUsed )
             $headers .= '<th>where used</th>';
         if( $addUsedInLocation )
@@ -99,7 +101,7 @@ IPsectunnelCallContext::$supportedActions[] = array(
             {
                 $count++;
 
-                /** @var Tag $object */
+                /** @var IPsecTunnel $object */
                 if( $count % 2 == 1 )
                     $lines .= "<tr>\n";
                 else
@@ -142,6 +144,28 @@ IPsectunnelCallContext::$supportedActions[] = array(
                 }
 
                 $lines .= $context->encloseFunction($object->name());
+
+                $lines .= $context->encloseFunction($object->gateway);
+
+                $lines .= $context->encloseFunction($object->interface);
+
+                $lines .= $context->encloseFunction($object->proposal);
+
+                $lines .= $context->encloseFunction($object->disabled);
+
+                $tmp_array = array();
+                foreach( $object->proxyIdList() as $proxyId )
+                {
+                    $text = $context->padding."   - Name: " . $proxyId['name'] . " - ";
+                    $text .= "local: " . $proxyId['local'] . " - ";
+                    $text .= "remote: " . $proxyId['remote'] . " - ";
+                    $text .= "protocol: " . $proxyId['protocol']['type'] . " - ";
+                    $text .= "local-port: " . $proxyId['protocol']['localport'] . " - ";
+                    $text .= "remote-port: " . $proxyId['protocol']['remoteport'] . " - ";
+                    $text .= "type: " . $proxyId['type'];
+                    $tmp_array[] = $text;
+                }
+                $lines .= $context->encloseFunction($tmp_array);
 
 
                 if( $addWhereUsed )

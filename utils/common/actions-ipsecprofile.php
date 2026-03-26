@@ -103,6 +103,11 @@ IPsecprofileCallContext::$supportedActions[] = array(
 
         $headers = '<th>ID</th><th>template</th><th>location</th><th>name</th>';
 
+        $headers .= '<th>ipsecProtocol</th><th>encryption</th><th>authentication</th><th>dhgroup</th>';
+
+        $headers .= '<th>lifetime</th><th>lifesize</th>';
+
+
         if( $addWhereUsed )
             $headers .= '<th>where used</th>';
         if( $addUsedInLocation )
@@ -115,7 +120,7 @@ IPsecprofileCallContext::$supportedActions[] = array(
             {
                 $count++;
 
-                /** @var Tag $object */
+                /** @var IkeCryptoProfil $object */
                 if( $count % 2 == 1 )
                     $lines .= "<tr>\n";
                 else
@@ -149,14 +154,40 @@ IPsecprofileCallContext::$supportedActions[] = array(
                         if( $tmp_vsys !==  null )
                             $lines .= $context->encloseFunction($tmp_vsys->name());
                         else
-                        {
-                            #$lines .= $context->encloseFunction($object->owner->owner->name());
                             $lines .= $context->encloseFunction(get_class($object->owner->owner));
-                        }
                     }
                 }
 
                 $lines .= $context->encloseFunction($object->name());
+
+                $lines .= $context->encloseFunction($object->ipsecProtocol);
+
+                $lines .= $context->encloseFunction($object->encryption);
+
+                $lines .= $context->encloseFunction($object->authentication);
+
+                $lines .= $context->encloseFunction($object->dhgroup);
+
+
+                if( $object->lifetime_seconds != "" )
+                    $text =  $object->lifetime_seconds . " seconds";
+                elseif( $object->lifetime_minutes != "" )
+                    $text =  $object->lifetime_minutes . " minutes";
+                elseif( $object->lifetime_hours != "" )
+                    $text =  $object->lifetime_hours . " hours";
+                elseif( $object->lifetime_days != "" )
+                    $text =  $object->lifetime_days . " days";
+                $lines .= $context->encloseFunction($text);
+
+                if( $object->lifesize_kb != "" )
+                    $text =  $object->lifesize_kb . " kb";
+                elseif( $object->lifesize_mb != "" )
+                    $text =  $object->lifesize_mb . " mb";
+                elseif( $object->lifesize_gb != "" )
+                    $text =  $object->lifesize_gb . " gb";
+                elseif( $object->lifesize_tb != "" )
+                    $text =  $object->lifesize_tb . " tb";
+                $lines .= $context->encloseFunction($text);
 
 
                 if( $addWhereUsed )

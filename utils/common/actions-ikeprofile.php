@@ -89,6 +89,8 @@ IKEprofileCallContext::$supportedActions[] = array(
 
         $headers = '<th>ID</th><th>template</th><th>location</th><th>name</th>';
 
+        $headers .= '<th>hash</th><th>dhgroup</th><th>encryption</th><th>lifetime</th>';
+
         if( $addWhereUsed )
             $headers .= '<th>where used</th>';
         if( $addUsedInLocation )
@@ -143,6 +145,25 @@ IKEprofileCallContext::$supportedActions[] = array(
                 }
 
                 $lines .= $context->encloseFunction($object->name());
+
+                $lines .= $context->encloseFunction($object->hash);
+
+                $lines .= $context->encloseFunction($object->dhgroup);
+
+                $lines .= $context->encloseFunction($object->encryption);
+
+                if( $object->lifetime_seconds != "" )
+                    $text = $object->lifetime_seconds . " seconds";
+
+                elseif( $object->lifetime_minutes != "" )
+                    $text = $object->lifetime_minutes . " minutes";
+
+                elseif( $object->lifetime_hours != "" )
+                    $text = $object->lifetime_hours . " hours";
+
+                elseif( $object->lifetime_days != "" )
+                    $text = $object->lifetime_days . " days";
+                $lines .= $context->encloseFunction($text);
 
 
                 if( $addWhereUsed )
