@@ -439,6 +439,24 @@ class IPSecCryptoProfil
         return $newProfile;
     }
 
+    /**
+     * remove a IPsecCryptoProfil from this store.
+     * @param IPSecCryptoProfil
+     *
+     * @return bool  True if IPsecCryptoProfile was found and removed. False if not found.
+     */
+    public function removeProfile(IPSecCryptoProfil $object)
+    {
+        $ret = $this->remove($object);
+
+        if( $ret && $this->xmlroot !== null )
+        {
+            $this->xmlroot->removeChild($object->xmlroot);
+        }
+
+        return $ret;
+    }
+
     static public $templatexml = '<entry name="**temporarynamechangeme**">
 <esp>
   <authentication>

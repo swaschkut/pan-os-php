@@ -31,7 +31,7 @@ class IPSecCryptoProfileStore extends ObjStore
 
     public static $childn = 'IPSecCryptoProfil';
 
-    /** @var Service[]|ServiceGroup[] */
+    /** @var IPSecCryptoProfil[] */
     protected $_all = array();
 
     protected $fastMemToIndex = null;
@@ -122,35 +122,22 @@ class IPSecCryptoProfileStore extends ObjStore
         }
     }
 
-
     /**
-     * @param IPSecCryptoProfil $s
-     * @param bool $cleanInMemory
-     * @return bool
+     * remove a IPSecCryptoProfil from this store.
+     * @param IPSecCryptoProfil
+     *
+     * @return bool  True if IPSecCryptoProfil was found and removed. False if not found.
      */
-    public function remove($s, $cleanInMemory = FALSE)
+    public function removeProfile(IPSecCryptoProfil $object)
     {
-        $class = get_class($s);
+        $ret = $this->remove($object);
 
-        $objectName = $s->name();
-
-
-        if( !isset($this->_all[$objectName]) )
+        if( $ret && $this->xmlroot !== null )
         {
-            mwarning('Tried to remove an object that is not part of this store', null, false);
-            return FALSE;
+            $this->xmlroot->removeChild($object->xmlroot);
         }
 
-        unset($this->_all[$objectName]);
-
-        $s->owner = null;
-
-        $this->xmlroot->removeChild($s->xmlroot);
-
-        if( $cleanInMemory )
-            $s->xmlroot = null;
-
-        return TRUE;
+        return $ret;
     }
 
     /**

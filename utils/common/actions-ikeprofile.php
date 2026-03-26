@@ -218,3 +218,38 @@ IKEprofileCallContext::$supportedActions[] = array(
                     "  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n")
     )
 );
+
+IKEprofileCallContext::$supportedActions['delete'] = array(
+    'name' => 'delete',
+    'MainFunction' => function (IKEprofileCallContext $context) {
+        $object = $context->object;
+
+        if( $object->countReferences() != 0 )
+        {
+            $string = "this object is used by other objects and cannot be deleted (use deleteForce to try anyway)";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+        if( $context->isAPI )
+            $object->owner->API_removeProfile($object);
+        else
+            $object->owner->removeProfile($object);
+    },
+);
+
+IKEprofileCallContext::$supportedActions['deleteforce'] = array(
+    'name' => 'deleteForce',
+    'MainFunction' => function (IKEprofileCallContext $context) {
+        $object = $context->object;
+
+        if( $object->countReferences() != 0 )
+        {
+            $string = "this object seems to be used so deletion may fail.";
+            PH::ACTIONstatus( $context, "WARNING", $string);
+        }
+        if( $context->isAPI )
+            $object->owner->API_removeProfile($object);
+        else
+            $object->owner->removeProfile($object);
+    },
+);
