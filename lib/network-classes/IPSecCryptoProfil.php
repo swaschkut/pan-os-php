@@ -53,6 +53,7 @@ class IPSecCryptoProfil
     static public $authentications = array(
         self::md5 => 'md5',
         self::sha1 => 'sha1',
+        self::nonauth => 'non-auth',
         self::sha256 => 'sha256',
         self::sha384 => 'sha384',
         self::sha512 => 'sha512'
@@ -74,7 +75,9 @@ class IPSecCryptoProfil
         self::tripledes => '3des',
         self::aes128cbc => 'aes-128-cbc',
         self::aes192cbc => 'aes-192-cbc',
-        self::aes256cbc => 'aes-256-cbc'
+        self::aes256cbc => 'aes-256-cbc',
+        self::aes128gcm => 'aes-128-gcm',
+        self::aes256gcm => 'aes-256-gcm'
     );
 
     public $dhgroup = 'notfound';
@@ -107,8 +110,11 @@ class IPSecCryptoProfil
         self::group2 => 'group2',
         self::group5 => 'group5',
         self::group14 => 'group14',
+        self::group15 => 'group15',
+        self::group16 => 'group16',
         self::group19 => 'group19',
-        self::group20 => 'group20'
+        self::group20 => 'group20',
+        self::group21 => 'group21'
     );
 
     /**

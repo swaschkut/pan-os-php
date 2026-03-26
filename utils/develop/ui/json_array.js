@@ -3723,6 +3723,42 @@ var subjectObject =
             }
         },
         "filter": {
+            "authentication": {
+                "operators": {
+                    "eq": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "dhgroup": {
+                "operators": {
+                    "eq": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "encryption": {
+                "operators": {
+                    "eq": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
             "name": {
                 "operators": {
                     "eq": {
@@ -4235,6 +4271,42 @@ var subjectObject =
             }
         },
         "filter": {
+            "authentication": {
+                "operators": {
+                    "eq": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "dhgroup": {
+                "operators": {
+                    "eq": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
+            "encryption": {
+                "operators": {
+                    "eq": {
+                        "Function": {},
+                        "arg": true,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
             "name": {
                 "operators": {
                     "eq": {

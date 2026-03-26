@@ -55,21 +55,28 @@ class IkeCryptoProfil
     const group2 = 'group2';
     const group5 = 'group5';
     const group14 = 'group14';
+    const group15 = 'group15';
+    const group16 = 'group16';
     const group19 = 'group19';
     const group20 = 'group20';
+    const group21 = 'group21';
 
     static public $dhgroups = array(
         self::group1 => 'group1',
         self::group2 => 'group2',
         self::group5 => 'group5',
         self::group14 => 'group14',
+        self::group15 => 'group15',
+        self::group16 => 'group16',
         self::group19 => 'group19',
-        self::group20 => 'group20'
+        self::group20 => 'group20',
+        self::group21 => 'group21'
     );
 
 
     const md5 = 'md5';
     const sha1 = 'sha1';
+    const nonauth = 'non-auth';
     const sha256 = 'sha256';
     const sha384 = 'sha384';
     const sha512 = 'sha512';
@@ -77,6 +84,7 @@ class IkeCryptoProfil
     static public $hashs = array(
         self::md5 => 'md5',
         self::sha1 => 'sha1',
+        self::nonauth => 'non-auth',
         self::sha256 => 'sha256',
         self::sha384 => 'sha384',
         self::sha512 => 'sha512'
@@ -89,12 +97,23 @@ class IkeCryptoProfil
     const aes192cbc = 'aes-192-cbc';
     const aes256cbc = 'aes-256-cbc';
 
+    const null = 'null';
+
+    const aes128ccm = 'aes-128-ccm';
+    const aes128gcm = 'aes-128-gcm';
+    const aes256gcm = 'aes-256-gcm';
+
     static public $encryptions = array(
         self::des => 'des',
         self::tripledes => '3des',
         self::aes128cbc => 'aes-128-cbc',
         self::aes192cbc => 'aes-192-cbc',
-        self::aes256cbc => 'aes-256-cbc'
+        self::aes256cbc => 'aes-256-cbc',
+        self::null => 'null',
+
+        self::aes128ccm => 'aes-128-ccm',
+        self::aes128gcm => 'aes-128-gcm',
+        self::aes256gcm => 'aes-256-gcm'
     );
 
     /**
