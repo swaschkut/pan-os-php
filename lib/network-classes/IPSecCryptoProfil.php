@@ -41,7 +41,7 @@ class IPSecCryptoProfil
     public $ipsecProtocol = 'notfound';
 
     //TODO: 20180403 these two variables are multi member, extend to array
-    public $authentication = 'notfound';
+    public $authentication = array();
 
     const md5 = 'md5';
     const sha1 = 'sha1';
@@ -60,7 +60,7 @@ class IPSecCryptoProfil
     );
 
 
-    public $encryption = 'notfound';
+    public $encryption = array();
 
     const des = 'des';
     const tripledes = '3des';
@@ -80,7 +80,7 @@ class IPSecCryptoProfil
         self::aes256gcm => 'aes-256-gcm'
     );
 
-    public $dhgroup = 'notfound';
+    public $dhgroup = "notfound";
 
     public $lifetime_seconds = '';
     public $lifetime_minutes = '';
@@ -149,17 +149,36 @@ class IPSecCryptoProfil
             {
                 $this->ipsecProtocol = 'esp';
                 $tmp_authentication = DH::findFirstElementOrCreate('authentication', $node);
-                $this->authentication = DH::findFirstElementOrCreate('member', $tmp_authentication)->textContent;
+                foreach( $tmp_authentication->childNodes as $node_member )
+                {
+                    if ($node_member->nodeType != 1)
+                        continue;
+
+                    $this->authentication[] = $node_member->textContent;
+                }
 
                 $tmp_encryption = DH::findFirstElementOrCreate('encryption', $node);
-                $this->encryption = DH::findFirstElementOrCreate('member', $tmp_encryption)->textContent;
+                foreach( $tmp_encryption->childNodes as $node_member )
+                {
+                    if ($node_member->nodeType != 1)
+                        continue;
+
+                    $this->encryption[] = $node_member->textContent;
+                }
             }
 
             if( $node->nodeName == 'ah' )
             {
                 $this->ipsecProtocol = 'ah';
+
                 $tmp_authentication = DH::findFirstElementOrCreate('authentication', $node);
-                $this->authentication = DH::findFirstElementOrCreate('member', $tmp_authentication)->textContent;
+                foreach( $tmp_authentication->childNodes as $node_member )
+                {
+                    if ($node_member->nodeType != 1)
+                        continue;
+
+                    $this->authentication[] = $node_member->textContent;
+                }
             }
 
             if( $node->nodeName == 'lifetime' )
@@ -234,7 +253,6 @@ class IPSecCryptoProfil
     {
         if( !isset(self::$dhgroups[$dhgroup]) )
         {
-
             $dhgroup = preg_replace('/\D/', '', $dhgroup);
             if( strlen($dhgroup) == 0 )
                 $dhgroup = "no-pfs";
@@ -257,8 +275,7 @@ class IPSecCryptoProfil
     public function setauthentication($authentication, $ipsecProtocol)
     {
         //Todo: validation of $ipsecProtocol needed
-
-        if( $this->authentication == $authentication )
+        if( in_array( $authentication, $this->authentication) )
             return TRUE;
 
         if( !isset(self::$authentications[$authentication]) )
@@ -268,7 +285,7 @@ class IPSecCryptoProfil
             #mwarning( 'authentication wrong' );
         }
 
-        $this->authentication = $authentication;
+        $this->authentication[] = $authentication;
 
         $tmp_gateway = DH::findFirstElementOrCreate($ipsecProtocol, $this->xmlroot);
         $tmp_gateway = DH::findFirstElementOrCreate('authentication', $tmp_gateway);
@@ -280,7 +297,7 @@ class IPSecCryptoProfil
 
     public function setencryption($encryption)
     {
-        if( $this->encryption == $encryption )
+        if( in_array( $encryption, $this->encryption) )
             return TRUE;
 
         if( !isset(self::$encryptions[$encryption]) )
@@ -290,7 +307,7 @@ class IPSecCryptoProfil
             #mwarning( 'authentication wrong' );
         }
 
-        $this->encryption = $encryption;
+        $this->encryption[] = $encryption;
 
         $tmp_gateway = DH::findFirstElementOrCreate('esp', $this->xmlroot);
         $tmp_gateway = DH::findFirstElementOrCreate('encryption', $tmp_gateway);

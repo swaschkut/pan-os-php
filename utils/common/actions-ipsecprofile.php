@@ -27,7 +27,7 @@ IPsecprofileCallContext::$supportedActions['display'] = Array(
         //PH::print_stdout("     * ".get_class($object)." '{$object->name()}'" );
 
         PH::print_stdout( $context->padding. " - protocol: " . $object->ipsecProtocol );
-        $text = $context->padding."      encryption: " . $object->encryption . " - authentication: " . $object->authentication . " - dhgroup: " . $object->dhgroup;
+        $text = $context->padding."      encryption: " . implode( ",",$object->encryption ) . " - authentication: " . implode( ",", $object->authentication ) . " - dhgroup: " . $object->dhgroup;
 
         if( $object->lifetime_seconds != "" )
             $text .= " - lifetime: " . $object->lifetime_seconds . " seconds";

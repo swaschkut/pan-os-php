@@ -26,7 +26,7 @@ IKEprofileCallContext::$supportedActions['display'] = Array(
         $object = $context->object;
         //PH::print_stdout("     * ".get_class($object)." '{$object->name()}'" );
 
-        $text = $context->padding."  hash: " . $object->hash . " - dhgroup: " . $object->dhgroup . " - encryption: " . $object->encryption . " - ";
+        $text = $context->padding."  hash: " . implode( ",", $object->hash) . " - dhgroup: " . implode( ",",$object->dhgroup ) . " - encryption: " . implode( ",", $object->encryption ) . " - ";
         if( $object->lifetime_seconds != "" )
             $text .= $object->lifetime_seconds . " seconds";
         elseif( $object->lifetime_minutes != "" )

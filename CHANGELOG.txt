@@ -9,6 +9,7 @@ UTIL:
 * type=ike-/ipsec-profile | introduce 'filter=(hash/dhgroup/encryption eq XYZ)'
 
 BUGFIX:
+* class IKE/IPsecCryptoProfile | support multiple values for encryption/authentication/dhgroup - finally implemented as mentioned already in 2018 :-)
 
 GENERAL:
 
