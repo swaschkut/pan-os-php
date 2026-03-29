@@ -58,7 +58,7 @@ class PanSCMAPIConnector
 
     static public $folderArray = array(
         "All",
-        "Shared",
+        "Prisma Access",
         "Mobile Users",
         "Remote Networks",
         "Service Connections",
@@ -674,16 +674,21 @@ class PanSCMAPIConnector
         {
             $this->typeArray[] = "profile-groups";
         }
+        elseif( $utilType == "log-profile" )
+        {
+            $this->typeArray[] = "log-forwarding-profiles";
+        }
         elseif( $utilType == "stats" )
         {
-            $this->typeArray[] = "tags";
+            //Todo: out for faster validation of BPA
+            #$this->typeArray[] = "tags";
 
-            $this->typeArray[] = "addresses";
-            $this->typeArray[] = "address-groups";
-            $this->typeArray[] = "regions";
+            #$this->typeArray[] = "addresses";
+            #$this->typeArray[] = "address-groups";
+            #$this->typeArray[] = "regions";
 
-            $this->typeArray[] = "services";
-            $this->typeArray[] = "service-groups";
+            #$this->typeArray[] = "services";
+            #$this->typeArray[] = "service-groups";
 
             $this->typeArray[] = "anti-spyware-profiles";
             $this->typeArray[] = "dns-security-profiles";
@@ -699,6 +704,8 @@ class PanSCMAPIConnector
             $this->typeArray[] = "zone-protection-profiles";
 
             $this->typeArray[] = "security-rules";
+
+            $this->typeArray[] = "log-forwarding-profiles";
         }
         elseif( $utilType == "zone" )
         {
@@ -845,7 +852,10 @@ class PanSCMAPIConnector
         //Fawkes
         #$url .= "/sse/config/v1/" . $type . "?folder=" . $folder;
         //Buckbeak
-        if( $type !== null && (strpos( $type, "-rules") !== FALSE || strpos( $type, "-profiles") !== FALSE || strpos( $type, "profile-groups") !== FALSE ) )
+        if( $type !== null
+            && ( strpos( $type, "-rules") !== FALSE || strpos( $type, "-profiles") !== FALSE || strpos( $type, "profile-groups") !== FALSE )
+            && $type !== "log-forwarding-profiles"
+        )
             $url .= "/config/security/v1/" . $type . "?".$foldertype."=" . $folderName;
         else
             $url .= "/config/objects/v1/" . $type . "?".$foldertype."=" . $folderName;
@@ -1048,7 +1058,7 @@ class PanSCMAPIConnector
         return $jsonArray;
     }
 
-    function getNetworkResource( $type = "zones", $foldertype = "folder", $folderName = "Shared", $limit = 200, $prePost = "pre", $offset = 0, $runtime = 1)
+    function getNetworkResource( $type = "zones", $foldertype = "folder", $folderName = "Prisma Access", $limit = 200, $prePost = "pre", $offset = 0, $runtime = 1)
     {
         $url = $this->url_api;
         //Fawkes
@@ -1110,7 +1120,7 @@ class PanSCMAPIConnector
             if( $folder == "Service Connections" && strpos($type, "-rule") !== FALSE )
                 continue;
 
-            if( $folder == "Shared" && strpos($type, "zones") !== FALSE )
+            if( ($folder == "Prisma Access" || $folder == "Shared") && strpos($type, "zones") !== FALSE )
                 continue;
 
             $foldertype = "folder";
@@ -1132,8 +1142,8 @@ class PanSCMAPIConnector
             {
                 if( $this->showApiCalls )
                 {
-                    #PH::print_stdout("|" . $folder . " - " . $type);
-                    #print_r($resource);
+                    //PH::print_stdout("|" . $folder . " - " . $type);
+                    //print_r($resource);
                 }
 
                 $this->importConfig($sub, $folder, $type, $resource);
@@ -1196,6 +1206,14 @@ class PanSCMAPIConnector
 
             if( $type === "addresses" )
             {
+                //Todo: import via:
+                /*
+                $profileStoreName = "AddressStore";
+                $return = $this->SCM_API_object_import_preperation($object, $sub, $profileStoreName);
+
+                if( $return === "continue" )
+                    continue;
+                 */
                 if( isset( $object['id'] ) )
                 {
                     $tmp_address = $sub->addressStore->find($object['name']);
@@ -1238,6 +1256,14 @@ class PanSCMAPIConnector
             }
             elseif( $type === "tags" )
             {
+                //Todo: import via:
+                /*
+                $profileStoreName = "TagStore";
+                $return = $this->SCM_API_object_import_preperation($object, $sub, $profileStoreName);
+
+                if( $return === "continue" )
+                    continue;
+                 */
                 if( isset( $object['id'] ) )
                 {
                     #$tmp_tag = $sub->tagStore->createTag($object['name']);
@@ -1255,6 +1281,14 @@ class PanSCMAPIConnector
             }
             elseif( $type === "address-groups" )
             {
+                //Todo: import via:
+                /*
+                $profileStoreName = "AddressStore";
+                $return = $this->SCM_API_object_import_preperation($object, $sub, $profileStoreName);
+
+                if( $return === "continue" )
+                    continue;
+                 */
                 if( isset( $object['id'] ) )
                 {
                     if( isset($object['static']) )
@@ -1278,6 +1312,14 @@ class PanSCMAPIConnector
             }
             elseif( $type === "services" )
             {
+                //Todo: import via:
+                /*
+                $profileStoreName = "SecurityRuleStore";
+                $return = $this->SCM_API_object_import_preperation($object, $sub, $profileStoreName);
+
+                if( $return === "continue" )
+                    continue;
+                 */
                 $tmp_service = $sub->serviceStore->find($object['name']);
                 if( $tmp_service !== null )
                     continue;
@@ -1297,6 +1339,14 @@ class PanSCMAPIConnector
             }
             elseif( $type === "service-groups" )
             {
+                //Todo: import via:
+                /*
+                $profileStoreName = "SecurityRuleStore";
+                $return = $this->SCM_API_object_import_preperation($object, $sub, $profileStoreName);
+
+                if( $return === "continue" )
+                    continue;
+                 */
                 if( isset( $object['id'] ) )
                 {
                     $tmp_servicegroup = $sub->serviceStore->find($object['name']);
@@ -1325,6 +1375,14 @@ class PanSCMAPIConnector
             }
             elseif( $type === "schedules" )
             {
+                //Todo: import via:
+                /*
+                $profileStoreName = "SecurityRuleStore";
+                $return = $this->SCM_API_object_import_preperation($object, $sub, $profileStoreName);
+
+                if( $return === "continue" )
+                    continue;
+                 */
                 $tmp_schedule = $sub->scheduleStore->find($object['name']);
                 if( $tmp_schedule !== null )
                     continue;
@@ -1385,8 +1443,24 @@ class PanSCMAPIConnector
                 //pan-os-php has no newhip-profiles method
                 PH::print_stdout($type . " - not implemented yet");
             }
+            elseif( $type === "log-forwarding-profiles" )
+            {
+                $profileStoreName = "LogProfileStore";
+                $return = $this->SCM_API_object_import_preperation($object, $sub, $profileStoreName);
+
+                if( $return === "continue" )
+                    continue;
+            }
             elseif( $type === "security-rules" )
             {
+                //Todo: import via:
+                /*
+                $profileStoreName = "SecurityRuleStore";
+                $return = $this->SCM_API_object_import_preperation($object, $sub, $profileStoreName);
+
+                if( $return === "continue" )
+                    continue;
+                 */
                 $tmp_rule = null;
 
                 $tmp_rule = $sub->securityRules->find($object['name']);
@@ -1633,7 +1707,6 @@ class PanSCMAPIConnector
                     // Start the conversion
                     $this->SCM_API_arrayToXml($dom, $rootEntry, $object);
 
-                    #DH::DEBUGprintDOMDocument($dom->firstChild);
                     $this->SCM_API_SP_object_import($dom, $sub, $profileStoreName);
                 }
 
@@ -1804,7 +1877,8 @@ class PanSCMAPIConnector
 
         $folder = $bodyArray['folder'];
         if($folder == "Prisma Access")
-            $folder = "Shared";
+            //Todo: validate, but it looks like to no longer needed
+            //$folder = "Shared";
         unset( $bodyArray['folder'] );
         $url = $this->url_api;
 
@@ -1847,7 +1921,8 @@ class PanSCMAPIConnector
 
         $folder = $bodyArray['folder'];
         if($folder == "Prisma Access")
-            $folder = "Shared";
+            //todo: validate, but it looks like no longer needed
+            //$folder = "Shared";
         unset( $bodyArray['folder'] );
         $url = $this->url_api;
 
@@ -1939,7 +2014,7 @@ class PanSCMAPIConnector
     }
 
 
-    private function SCM_API_arrayToXml($dom, $parentNode, $data)
+    private function SCM_API_arrayToXml(&$dom, &$parentNode, $data): void
     {
         foreach ($data as $key => $value)
         {
@@ -2036,6 +2111,8 @@ class PanSCMAPIConnector
     }
     private function SCM_API_SP_object_import($dom, $sub, $storeType)
     {
+        #print "STORE: ".$storeType."\n";
+
         if( $storeType == 'zoneProtectionProfileStore' )
         {}
         else
@@ -2077,10 +2154,15 @@ class PanSCMAPIConnector
 
         elseif( $storeType == 'zoneProtectionProfileStore' )
             $newProf = new ZoneProtectionProfile('dummy', $sub->network->$storeType);
-
+        elseif( $storeType == 'LogProfileStore' )
+            $newProf = new LogProfile( 'dummy', $sub->$storeType);
         else
+        {
+            print "StoreType: '".$storeType."\n";
             derr("implementation needed");
+        }
 
+        #print "CLASS: ".get_class($newProf)."\n";
 
         /** @var Container|DeviceCloud|DeviceOnPrem $sub */
 
@@ -2106,7 +2188,13 @@ class PanSCMAPIConnector
             $newProf->owner = null;
             $sub->network->zoneProtectionProfileStore->addProfil($newProf);
         }
+        elseif( get_class($newProf) == 'LogProfile' )
+        {
+            $newProf->load_from_domxml($tmpNode);
 
+            $newProf->owner = null;
+            $sub->LogProfileStore->addLogProfile($newProf);
+        }
         else
         {
             $newProf->load_from_domxml($tmpNode);
