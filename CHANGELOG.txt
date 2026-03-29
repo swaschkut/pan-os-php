@@ -11,6 +11,7 @@ UTIL:
 
 BUGFIX:
 * class IKE/IPsecCryptoProfile | support multiple values for encryption/authentication/dhgroup - finally implemented as mentioned already in 2018 :-)
+* class LogProfileStore | bugfix for "createXmlRoot()"
 
 GENERAL:
 

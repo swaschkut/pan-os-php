@@ -42,11 +42,16 @@ class LogProfile
         $this->name = $name;
 
         //with 810,910,100,121 there was also gtp,sctp??
-        if( $owner->owner->version < 100 )
-            $this->type_available = array('auth', 'data', 'threat', 'traffic', 'tunnel', 'url', 'wildfire');
-        elseif( $owner->owner->version >= 100 and $owner->owner->version < 120)
-            $this->type_available = array('auth', 'data', 'decryption', 'threat', 'traffic', 'tunnel', 'url', 'wildfire');
-        elseif( $owner->owner->version >= 120 )
+        if( isset($owner->owner->version) )
+        {
+            if( $owner->owner->version < 100 )
+                $this->type_available = array('auth', 'data', 'threat', 'traffic', 'tunnel', 'url', 'wildfire');
+            elseif( $owner->owner->version >= 100 and $owner->owner->version < 120)
+                $this->type_available = array('auth', 'data', 'decryption', 'threat', 'traffic', 'tunnel', 'url', 'wildfire');
+            elseif( $owner->owner->version >= 120 )
+                $this->type_available = array('auth', 'data', 'decryption', 'dns-security', 'threat', 'traffic', 'tunnel', 'url', 'wildfire');
+        }
+        else
             $this->type_available = array('auth', 'data', 'decryption', 'dns-security', 'threat', 'traffic', 'tunnel', 'url', 'wildfire');
 
         foreach( $this->type_available as $type )
