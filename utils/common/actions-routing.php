@@ -165,3 +165,72 @@ RoutingCallContext::$supportedActions[] = array(
                     "  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n")
     )
 );
+
+RoutingCallContext::$supportedActions['display'] = Array(
+    'name' => 'display-route-table-fast',
+    'MainFunction' => function ( RoutingCallContext $context )
+    {
+        $virtualRouter = $context->object;
+        PH::print_stdout("     * ".get_class($virtualRouter)." '{$virtualRouter->name()}'" );
+
+        $cmd = "<show><advanced-routing><route><logical-router>".$virtualRouter->name()."</logical-router></route></advanced-routing></show>";
+
+        $connector = findConnectorOrDie($virtualRouter);
+        $response = $connector->sendOpRequest($cmd, TRUE);
+
+        $result = DH::findFirstElement("result", $response);
+        $json = DH::findFirstElement("json", $result);
+
+        $filename = $connector->apihost."_".$virtualRouter->name().".txt";
+        file_put_contents($filename, $json->textContent);
+
+
+
+
+        $data = json_decode($json->textContent, true);
+
+        if (!isset($data[$virtualRouter->name()]))
+            derr("Error: ".$virtualRouter->name()." VRF not found in JSON data.\n", null, false );
+
+        // 1. Define column headers and widths
+        $mask = "| %-18s | %-10s | %-18s | %-15s | %-8s | %-8s | %-10s |\n";
+        $line = "+" . str_repeat("-", 20) . "+" . str_repeat("-", 12) . "+" . str_repeat("-", 20) . "+" . str_repeat("-", 17) . "+" . str_repeat("-", 10) . "+" . str_repeat("-", 10) . "+" . str_repeat("-", 12) . "+\n";
+
+        // 2. Print Header
+        echo $line;
+        printf($mask, 'Prefix', 'Protocol', 'Interface', 'NextHop', 'Distance', 'Metric', 'Uptime');
+        echo $line;
+
+        // 3. Iterate through routes
+        foreach ($data[$virtualRouter->name()] as $prefix => $routeEntries)
+        {
+            foreach ($routeEntries as $entry)
+            {
+                // Extract basic fields
+                $protocol = $entry['protocol'] ?? 'N/A';
+                $distance = $entry['distance'] ?? '0';
+                $metric   = $entry['metric'] ?? '0';
+                $uptime   = $entry['uptime'] ?? 'N/A';
+
+                // Handle cases where there might be multiple nexthops for one prefix
+                if (!empty($entry['nexthops']))
+                {
+                    foreach ($entry['nexthops'] as $nh)
+                    {
+                        $nexthopIP = $nh['ip'] ?? 'Direct';
+                        $interface = $nh['interfaceName'] ?? 'N/A';
+
+                        printf($mask, $prefix, $protocol, $interface, $nexthopIP, $distance, $metric, $uptime);
+                    }
+                }
+                else
+                {
+                    // Default if no nexthops array exists
+                    printf($mask, $prefix, $protocol, 'N/A', 'N/A', $distance, $metric, $uptime);
+                }
+            }
+        }
+
+        echo $line;
+    },
+);
