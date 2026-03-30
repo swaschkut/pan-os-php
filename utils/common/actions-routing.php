@@ -173,7 +173,10 @@ RoutingCallContext::$supportedActions['display'] = Array(
         $virtualRouter = $context->object;
         PH::print_stdout("     * ".get_class($virtualRouter)." '{$virtualRouter->name()}'" );
 
-        $cmd = "<show><advanced-routing><route><logical-router>".$virtualRouter->name()."</logical-router></route></advanced-routing></show>";
+        if( get_class($virtualRouter) == "LogicalRouter")
+            $cmd = "<show><advanced-routing><route><logical-router>".$virtualRouter->name()."</logical-router></route></advanced-routing></show>";
+        else
+            $cmd = "<show><routing><route><virtual-router>".$virtualRouter->name()."</virtual-router></route></routing></show>";
 
         $connector = findConnectorOrDie($virtualRouter);
         $response = $connector->sendOpRequest($cmd, TRUE);
