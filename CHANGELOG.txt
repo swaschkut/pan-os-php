@@ -8,6 +8,7 @@ UTIL:
 * type=ike-profile/ipsec-profile/tunnel | actions=exporttoexcel:file.html - extend with more content
 * type=ike-/ipsec-profile | introduce 'filter=(authentication/dhgroup/encryption eq XYZ)'
 * type=ike-/ipsec-profile | introduce actions=delete - mainly to delete unused objects
+* diagram | add possibility to load custom JSON data file
 
 BUGFIX:
 * class IKE/IPsecCryptoProfile | support multiple values for encryption/authentication/dhgroup - finally implemented as mentioned already in 2018 :-)

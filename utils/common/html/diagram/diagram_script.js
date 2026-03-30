@@ -836,7 +836,8 @@ async function generateAllJpgsAndStoreData() {
     // Clear any previous data
     window.allChartsData = [];
     const sampleKeys = Object.keys(samples);
-    for (const key of sampleKeys) {
+    const reversedKeys = sampleKeys.reverse();
+    for (const key of reversedKeys) {
         console.log(`Generating chart and capturing data for: ${key}`);
         loadSample(key);
         await delay(1500); // Wait for the chart to render fully
@@ -898,6 +899,47 @@ const generateAllJpgsManualClick = async () => {
     }
     console.log('All charts have been saved.');
 };
+
+
+function loadNewData() {
+    const fileInput = document.getElementById('fileInput');
+    const file = fileInput.files[0];
+
+    if (!file) {
+        alert("Please select a file first!");
+        return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onload = function(e) {
+        const content = e.target.result;
+
+        // Remove any old script instances if necessary
+        // Or simply evaluate the new content
+        try {
+            const scriptElement = document.createElement('script');
+            scriptElement.type = 'text/javascript';
+            scriptElement.text = content;
+            document.body.appendChild(scriptElement);
+
+            // IMPORTANT: Call your diagram's initialization/render function here
+            // Example: renderDiagram();
+            //alert("New data loaded successfully!");
+
+            if (typeof renderDiagram === "function") {
+                renderDiagram();
+            }
+        } catch (err) {
+            console.error("Error executing the JS file:", err);
+        }
+    };
+
+    reader.readAsText(file);
+
+    generateAllJpgs();
+    //generateAllJpgsManualClick();
+}
 
 
 // Load initial sample on page load
