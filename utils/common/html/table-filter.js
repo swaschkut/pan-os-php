@@ -1,19 +1,6 @@
 /**
  * PAN-OS-PHP HTML export — in-browser column filter + auto-pagination
- *
- * The index-progress widget (#panos-index-widget) is static HTML in the
- * template so it appears as soon as the browser starts rendering the page.
- * JS only updates its content and fades it out when indexing completes.
- *
- * Features
- * --------
- *  - In-memory index built in 250-row chunks (setTimeout) — UI stays
- *    responsive during load of large tables.
- *  - Per-column filter inputs injected into <thead> (AND logic,
- *    case-insensitive substring match), disabled until indexing completes.
- *  - Automatic pagination activated for tables > 1000 rows (100 / 250 /
- *    500 / 1000 rows-per-page, prev / next, numbered page buttons).
- *  - All DOM visibility changes batched inside requestAnimationFrame.
+ * Updated: Added dynamic dropdown filters per column.
  */
 (function ($) {
     'use strict';
@@ -23,7 +10,8 @@
     var CHUNK_SIZE     = 250;
     var INDEX          = [];    // [{domRow: <tr>, cells: ['lowercased text', …]}]
     var FILTERED_ROWS  = [];    // subset of INDEX matching current filters
-    var ACTIVE_FILTERS = {};    // {colIdx(number): 'needle string'}
+    var ACTIVE_FILTERS = {};    // {colIdx: {text: 'string', select: 'string'}}
+    var COLUMN_VALUES  = {};    // {colIdx: Set(unique values)}
     var PAGINATION     = { enabled: false, currentPage: 1, pageSize: 100 };
     var TOTAL_ROWS     = 0;
     var DEBOUNCE_ID    = null;
@@ -37,7 +25,7 @@
         $('#panos-progress-text').text(fmt(done) + ' / ' + fmt(TOTAL_ROWS) + ' rows');
     }
 
-    /* ─── Filter row ─────────────────────────────────────────────────── */
+    /* ─── Filter row injection ───────────────────────────────────────── */
 
     function injectFilterRow() {
         var colCount = $('table thead tr:first th').length;
@@ -46,11 +34,14 @@
         var cells = '';
         for (var i = 0; i < colCount; i++) {
             cells +=
-                '<td><input type="text" class="panos-col-filter"' +
-                ' data-col="' + i + '"' +
-                ' placeholder="\u22EF"' +
-                ' disabled' +
-                ' title="Filter column ' + (i + 1) + '" /></td>';
+                '<td>' +
+                '<div class="panos-filter-container">' +
+                '<input type="text" class="panos-col-filter" data-col="' + i + '" placeholder="\u22EF" disabled title="Search text" />' +
+                '<select class="panos-col-select" data-col="' + i + '" disabled title="Filter by value">' +
+                '<option value="">(All)</option>' +
+                '</select>' +
+                '</div>' +
+                '</td>';
         }
         $('table thead').append('<tr class="panos-filter-row">' + cells + '</tr>');
     }
@@ -164,7 +155,12 @@
                 var tds   = rows[i].getElementsByTagName('td');
                 var cells = [];
                 for (var c = 0; c < tds.length; c++) {
-                    cells.push((tds[c].textContent || '').toLowerCase());
+                    var val = (tds[c].textContent || '').trim();
+                    cells.push(val.toLowerCase());
+
+                    // Track unique values for the dropdown
+                    if (!COLUMN_VALUES[c]) COLUMN_VALUES[c] = new Set();
+                    if (val !== "") COLUMN_VALUES[c].add(val);
                 }
                 INDEX.push({ domRow: rows[i], cells: cells });
             }
@@ -173,19 +169,34 @@
             if (offset < TOTAL_ROWS) {
                 setTimeout(chunk, 0);
             } else {
+                populateDropdowns();
                 onIndexingComplete();
             }
         }());
+    }
+
+    function populateDropdowns() {
+        $('.panos-col-select').each(function() {
+            var colIdx = $(this).data('col');
+            var $select = $(this);
+            if (COLUMN_VALUES[colIdx]) {
+                var sortedVals = Array.from(COLUMN_VALUES[colIdx]).sort(function(a, b) {
+                    return a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'});
+                });
+                sortedVals.forEach(function(v) {
+                    $select.append($('<option>', { value: v.toLowerCase(), text: v }));
+                });
+            }
+        });
     }
 
     function onIndexingComplete() {
         var elapsed = ((Date.now() - T_START) / 1000).toFixed(1);
         FILTERED_ROWS = INDEX.slice();
 
-        // Enable filter inputs
-        $('.panos-col-filter')
-            .prop('disabled', false)
-            .attr('placeholder', 'filter\u2026');
+        // Enable filter inputs and selects
+        $('.panos-col-filter, .panos-col-select').prop('disabled', false);
+        $('.panos-col-filter').attr('placeholder', 'filter\u2026');
 
         // Activate pagination if needed
         if (TOTAL_ROWS > 1000) {
@@ -196,7 +207,7 @@
             updateRowInfo(1, TOTAL_ROWS, TOTAL_ROWS);
         }
 
-        // Update widget to show completion, then slow 2-second fade out
+        // Update widget UI
         $('#panos-progress-fill').css('width', '100%');
         $('#panos-index-title').text(
             '\u2713\u00A0' + fmt(TOTAL_ROWS) + ' rows \u00B7 ' + elapsed + 's'
@@ -204,32 +215,52 @@
         $('#panos-progress-text').text('Filters enabled');
         $('#panos-index-widget').delay(800).fadeOut(2000);
 
-        // Wire filter inputs
+        // Wire filter events
         $('.panos-col-filter').on('input', function () {
             clearTimeout(DEBOUNCE_ID);
             DEBOUNCE_ID = setTimeout(applyFilters, 200);
         });
+        $('.panos-col-select').on('change', applyFilters);
     }
 
     /* ─── Filter application ─────────────────────────────────────────── */
 
     function applyFilters() {
         ACTIVE_FILTERS = {};
-        $('.panos-col-filter').each(function () {
-            var v = this.value.trim().toLowerCase();
-            if (v) { ACTIVE_FILTERS[+$(this).data('col')] = v; }
-        });
 
-        var cols = Object.keys(ACTIVE_FILTERS).map(Number);
+        // Collect current state of all filters for each column
+        var colCount = $('table thead tr:first th').length;
+        var hasAnyFilter = false;
+
+        for (var c = 0; c < colCount; c++) {
+            var textVal = $('.panos-col-filter[data-col="' + c + '"]').val().trim().toLowerCase();
+            var selectVal = $('.panos-col-select[data-col="' + c + '"]').val(); // already lowercased in populate
+
+            if (textVal || selectVal) {
+                ACTIVE_FILTERS[c] = { text: textVal, select: selectVal };
+                hasAnyFilter = true;
+            }
+        }
+
+        var activeCols = Object.keys(ACTIVE_FILTERS).map(Number);
         FILTERED_ROWS = [];
 
         for (var i = 0; i < INDEX.length; i++) {
             var entry = INDEX[i];
             var match = true;
-            for (var f = 0; f < cols.length; f++) {
-                var col    = cols[f];
-                var needle = ACTIVE_FILTERS[col];
-                if (!entry.cells[col] || entry.cells[col].indexOf(needle) === -1) {
+
+            for (var f = 0; f < activeCols.length; f++) {
+                var col = activeCols[f];
+                var filter = ACTIVE_FILTERS[col];
+                var cellValue = entry.cells[col] || '';
+
+                // Text filter: substring match
+                if (filter.text && cellValue.indexOf(filter.text) === -1) {
+                    match = false;
+                    break;
+                }
+                // Dropdown filter: exact match
+                if (filter.select && cellValue !== filter.select) {
                     match = false;
                     break;
                 }
@@ -263,7 +294,6 @@
         var rows = $('table tbody tr').toArray();
         TOTAL_ROWS = rows.length;
 
-        // Minimize button is in the static template HTML — bind it here
         $('#panos-minimize-btn').on('click', function () {
             var $w = $('#panos-index-widget');
             $w.toggleClass('minimized');
@@ -273,14 +303,11 @@
         injectFilterRow();
         injectBottomBar();
 
-        // Re-init sticky headers so the new filter row is included in the
-        // sticky clone (the inline init ran before this row was added).
         if ($.fn.stickyTableHeaders) {
             try { $('table').stickyTableHeaders('destroy'); } catch (ignore) {}
             $('table').stickyTableHeaders();
         }
 
-        // Kick off indexing (progress widget already visible from static HTML)
         updateProgress(0);
         buildIndex(rows);
     });
