@@ -99,7 +99,41 @@ info "Installing bash completion to ${COMPLETION_DEST}..."
 ln -sf "${COMPLETION_SRC}" "${COMPLETION_DEST}"
 info "Bash completion installed: ${COMPLETION_DEST} -> ${COMPLETION_SRC}"
 
-# ── 6. Smoke test ─────────────────────────────────────────────────────────────
+# ── 6. Add completion to shell rc files (for the invoking user) ───────────────
+# Determine the real user when run via sudo
+REAL_USER="${SUDO_USER:-$USER}"
+REAL_HOME=$(getent passwd "${REAL_USER}" | cut -d: -f6)
+
+BASH_SNIPPET="source ${COMPLETION_DEST}"
+ZSH_SNIPPET="# pan-os-php completion (tab completion not yet supported in zsh upstream)
+autoload bashcompinit 2>/dev/null && bashcompinit 2>/dev/null
+source ${COMPLETION_DEST} 2>/dev/null"
+
+for RC in "${REAL_HOME}/.bashrc" "${REAL_HOME}/.bash_profile"; do
+    if [[ -f "${RC}" ]]; then
+        if ! grep -q "pan-os-php" "${RC}"; then
+            echo "" >> "${RC}"
+            echo "# pan-os-php completion" >> "${RC}"
+            echo "${BASH_SNIPPET}" >> "${RC}"
+            info "Added completion to ${RC}"
+        else
+            info "Completion already present in ${RC}"
+        fi
+    fi
+done
+
+ZSHRC="${REAL_HOME}/.zshrc"
+if [[ -f "${ZSHRC}" ]]; then
+    if ! grep -q "pan-os-php" "${ZSHRC}"; then
+        echo "" >> "${ZSHRC}"
+        echo "${ZSH_SNIPPET}" >> "${ZSHRC}"
+        info "Added completion to ${ZSHRC}"
+    else
+        info "Completion already present in ${ZSHRC}"
+    fi
+fi
+
+# ── 7. Smoke test ─────────────────────────────────────────────────────────────
 info "Running smoke test: pan-os-php version"
 "${WRAPPER}" version 2>&1 | head -3
 
@@ -108,8 +142,6 @@ info "Installation complete."
 echo
 echo "  Usage:  pan-os-php type=rule in=config.xml actions=display"
 echo
-echo "  To enable bash completion in your current shell:"
-echo "    source ${COMPLETION_DEST}"
+echo "  Note: tab completion works in bash; zsh support is not yet"
+echo "  implemented upstream (the command itself works fine in zsh)."
 echo
-echo "  To make it permanent, add to ~/.bashrc:"
-echo "    source ${COMPLETION_DEST}"
