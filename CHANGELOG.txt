@@ -1,6 +1,14 @@
 CHANGELOG
 
-2.1.52
+2.1.53
+UTIL:
+
+BUGFIX:
+
+GENERAL:
+
+
+2.1.52 (20260331)
 UTIL:
 * type=ike-gateway/ike-profile/ipsec-profile | introduce new 'filter=(object is.unused)'
 * type=ike-gateway/ike-profile/ipsec-profile | introduce new 'actions=displayreferences'
