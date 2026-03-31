@@ -320,20 +320,9 @@ foreach( $spreadSheetArray as $object )
 
 }
 
-$content = file_get_contents(dirname(__FILE__) . '/../../common/html/export-template.html');
-$content = str_replace('%TableHeaders%', $headers, $content);
-
-$content = str_replace('%lines%', $lines, $content);
-
-$jscontent = file_get_contents(dirname(__FILE__) . '/../../common/html/jquery.min.js');
-$jscontent .= "\n";
-$jscontent .= file_get_contents(dirname(__FILE__) . '/../../common/html/jquery.stickytableheaders.min.js');
-$jscontent .= "\n\$('table').stickyTableHeaders();\n";
-
-$content = str_replace('%JSCONTENT%', $jscontent, $content);
-
+require_once dirname(__FILE__) . '/../../lib/ExportToHtmlHelper.php';
 $filename = "bp_config_check.html";
-file_put_contents($filename, $content);
+ExportToHtmlHelper::writeHtmlExport($filename, $headers, $lines);
 
 
 

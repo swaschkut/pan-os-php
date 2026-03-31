@@ -347,20 +347,9 @@ class DeviceGroupRuleAppUsage
 
     public function exportToCSV($filename)
     {
-        $content = file_get_contents(dirname(__FILE__).'/../../utils/common/html/export-template.html');
-
-        $content = str_replace('%TableHeaders%',
-            '<th>app-name</th><th>count</th>',
-            $content);
-
-        //$content = str_replace('%lines%', $lines, $content);
-
-        $jscontent =  file_get_contents(dirname(__FILE__).'/../../utils/common/html/jquery.min.js');
-        $jscontent .= "\n";
-        $jscontent .= file_get_contents(dirname(__FILE__).'/../../utils/common/html/jquery.stickytableheaders.min.js');
-        $jscontent .= "\n\$('table').stickyTableHeaders();\n";
-
-        $content = str_replace('%JSCONTENT%', $jscontent, $content);
+        require_once dirname(__FILE__) . '/../../utils/lib/ExportToHtmlHelper.php';
+        // TODO: finalize CSV export - pass actual $lines once data retrieval is implemented
+        $content = ExportToHtmlHelper::buildHtmlExport('<th>app-name</th><th>count</th>', '');
 
         /*
          * TODO: finalize CSV export - get data

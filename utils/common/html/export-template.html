@@ -41,6 +41,7 @@
             font-weight: bold;
             text-align: left;
             white-space: nowrap;
+            min-width: 30px;
         }
 
         table tbody tr:nth-child(even) {
@@ -50,9 +51,151 @@
         table tbody tr:hover {
             background-color: #ddeeff;
         }
+
+        /* ── Filter row ──────────────────────────────────────────────── */
+        .panos-filter-row td {
+            background-color: #2a2a2a;
+            padding: 3px 4px;
+            border: 1px solid #1a1a1a;
+        }
+        .panos-col-filter {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 3px 6px;
+            font-size: 11px;
+            border: 1px solid #555;
+            border-radius: 3px;
+            background: #1e1e1e;
+            color: #ddd;
+            outline: none;
+            transition: border-color 0.15s, background 0.15s;
+        }
+        .panos-col-filter:focus {
+            border-color: #4a9eff;
+            background: #252525;
+        }
+        .panos-col-filter:disabled { opacity: 0.35; cursor: not-allowed; }
+
+        /* ── Index progress widget (top-right, static HTML, visible immediately) ── */
+        #panos-index-widget {
+            position: fixed;
+            top: 12px;
+            right: 12px;
+            background: rgba(24, 24, 28, 0.94);
+            color: #ddd;
+            border-radius: 6px;
+            padding: 8px 10px;
+            min-width: 210px;
+            max-width: 260px;
+            z-index: 9001;
+            font-size: 12px;
+            box-shadow: 0 4px 18px rgba(0,0,0,0.45);
+            border: 1px solid rgba(255,255,255,0.07);
+        }
+        #panos-index-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        #panos-index-title {
+            font-size: 11px;
+            font-weight: bold;
+            color: #bbb;
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        #panos-minimize-btn {
+            background: none;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            font-size: 17px;
+            line-height: 1;
+            padding: 0;
+            flex-shrink: 0;
+        }
+        #panos-minimize-btn:hover { color: #fff; }
+        #panos-progress-bar {
+            height: 4px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-bottom: 4px;
+        }
+        #panos-progress-fill {
+            height: 100%;
+            width: 0;
+            background: linear-gradient(90deg, #4a9eff, #00c4ff);
+            border-radius: 2px;
+            transition: width 0.25s ease;
+        }
+        #panos-progress-text {
+            font-size: 10px;
+            color: #777;
+        }
+        /* Minimized: hide the body, shrink the widget */
+        #panos-index-widget.minimized #panos-index-body { display: none; }
+        #panos-index-widget.minimized { min-width: auto; padding: 5px 10px; }
+        #panos-index-widget.minimized #panos-index-header { margin-bottom: 0; }
+
+        /* ── Bottom bar (row info + pagination) ──────────────────────── */
+        #panos-bottom-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 2px;
+            font-size: 12px;
+            color: #555;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 4px;
+        }
+        #panos-page-nav {
+            display: none;   /* shown via JS (.css('display','flex')) when pagination enabled */
+            align-items: center;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+        #panos-prev, #panos-next,
+        .panos-pg-btn {
+            padding: 3px 8px;
+            font-size: 12px;
+            border: 1px solid #bbb;
+            border-radius: 3px;
+            background: #f5f5f5;
+            cursor: pointer;
+            line-height: 1.4;
+        }
+        #panos-prev:hover:not(:disabled),
+        #panos-next:hover:not(:disabled),
+        .panos-pg-btn:hover { background: #e0ebff; border-color: #88aaf0; }
+        #panos-prev:disabled, #panos-next:disabled { opacity: 0.35; cursor: default; }
+        .panos-pg-active {
+            background: #0070e0 !important;
+            color: #fff !important;
+            border-color: #005bb5 !important;
+        }
+        .panos-ellipsis { padding: 0 4px; color: #999; user-select: none; }
+        .panos-page-size-label { font-size: 12px; color: #555; margin-left: 6px; }
+        #panos-page-size { font-size: 12px; }
     </style>
 </head>
 <body>
+<!-- Index progress widget: static HTML so it renders immediately on page load -->
+<div id="panos-index-widget">
+    <div id="panos-index-header">
+        <span id="panos-index-title">Building search index&hellip;</span>
+        <button id="panos-minimize-btn" title="Minimize">&minus;</button>
+    </div>
+    <div id="panos-index-body">
+        <div id="panos-progress-bar"><div id="panos-progress-fill"></div></div>
+        <div id="panos-progress-text">Starting&hellip;</div>
+    </div>
+</div>
 <table>
     <thead>
     <tr>
@@ -65,6 +208,9 @@
 </table>
 </body>
 <footer>
+    <!-- Load jQuery from CDN; fall back to the bundled inline copy for air-gapped environments -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js" crossorigin="anonymous"></script>
+    <script>if(!window.jQuery){%JQUERY_INLINE%}</script>
     <script type="text/javascript">
         %JSCONTENT%
     </script>
