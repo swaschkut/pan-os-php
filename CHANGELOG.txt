@@ -10,6 +10,7 @@ UTIL:
 * type=ike-/ipsec-profile | introduce actions=delete - mainly to delete unused objects
 * diagram | add possibility to load custom JSON data file
 * type=route | introduce actions=display-route-table-fast
+* type=ALL | introduce actions=exportToHtml
 
 BUGFIX:
 * class IKE/IPsecCryptoProfile | support multiple values for encryption/authentication/dhgroup - finally implemented as mentioned already in 2018 :-)
@@ -17,6 +18,7 @@ BUGFIX:
 * class SecurityProfile2 | bugfix for AS/AV/VP - xyz.mica-engine is.best-practice
 
 GENERAL:
+* update all actions=exporttoexcel
 
 
 2.1.51 (20260326)

@@ -234,6 +234,30 @@ var subjectObject =
                     }
                 }
             },
+            "exporttohtml": {
+                "name": "exportToHtml",
+                "MainFunction": {},
+                "GlobalInitFunction": {},
+                "GlobalFinishFunction": {},
+                "args": {
+                    "filename": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "additionalFields": {
+                        "type": "pipeSeparatedList",
+                        "subtype": "string",
+                        "default": "*NONE*",
+                        "choices": [
+                            "WhereUsed",
+                            "UsedInLocation",
+                            "ResolveIP",
+                            "NestedMembers"
+                        ],
+                        "help": "pipe(|) separated list of additional fields (ie: Arg1|Arg2|Arg3...) to include in the report. The following is available:\n  - NestedMembers: lists all members, even the ones that may be included in nested groups\n  - ResolveIP\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n  - WhereUsed : list places where object is used (rules, groups ...)\n"
+                    }
+                }
+            },
             "move": {
                 "name": "move",
                 "MainFunction": {},
@@ -1387,6 +1411,28 @@ var subjectObject =
                     }
                 }
             },
+            "exporttohtml": {
+                "name": "exportToHtml",
+                "MainFunction": {},
+                "GlobalInitFunction": {},
+                "GlobalFinishFunction": {},
+                "args": {
+                    "filename": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "additionalFields": {
+                        "type": "pipeSeparatedList",
+                        "subtype": "string",
+                        "default": "*NONE*",
+                        "choices": [
+                            "WhereUsed",
+                            "UsedInLocation"
+                        ],
+                        "help": "pipe(|) separated list of additional fields (ie: Arg1|Arg2|Arg3...) to include in the report. The following is available:\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n  - WhereUsed : list places where object is used (rules, groups ...)\n"
+                    }
+                }
+            },
             "move": {
                 "name": "move",
                 "MainFunction": {},
@@ -1819,6 +1865,18 @@ var subjectObject =
                         "default": "*nodefault*"
                     }
                 }
+            },
+            "exporttohtml": {
+                "name": "exportToHtml",
+                "MainFunction": {},
+                "GlobalInitFunction": {},
+                "GlobalFinishFunction": {},
+                "args": {
+                    "filename": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                }
             }
         },
         "filter": {
@@ -2171,6 +2229,28 @@ var subjectObject =
             },
             "exporttoexcel": {
                 "name": "exportToExcel",
+                "MainFunction": {},
+                "GlobalInitFunction": {},
+                "GlobalFinishFunction": {},
+                "args": {
+                    "filename": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "additionalFields": {
+                        "type": "pipeSeparatedList",
+                        "subtype": "string",
+                        "default": "*NONE*",
+                        "choices": [
+                            "WhereUsed",
+                            "UsedInLocation"
+                        ],
+                        "help": "pipe(|) separated list of additional field to include in the report. The following is available:\n  - WhereUsed : list places where object is used (rules, groups ...)\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n"
+                    }
+                }
+            },
+            "exporttohtml": {
+                "name": "exportToHtml",
                 "MainFunction": {},
                 "GlobalInitFunction": {},
                 "GlobalFinishFunction": {},
@@ -2667,6 +2747,30 @@ var subjectObject =
                         "help": "pipe(|) separated list of additional fields (ie: Arg1|Arg2|Arg3...) to include in the report. The following is available:\n  - NestedMembers: lists all members, even the ones that may be included in nested groups\n  - ResolveIP\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n  - WhereUsed : list places where object is used (rules, groups ...)\n"
                     }
                 }
+            },
+            "exporttohtml": {
+                "name": "exportToHtml",
+                "MainFunction": {},
+                "GlobalInitFunction": {},
+                "GlobalFinishFunction": {},
+                "args": {
+                    "filename": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "additionalFields": {
+                        "type": "pipeSeparatedList",
+                        "subtype": "string",
+                        "default": "*NONE*",
+                        "choices": [
+                            "WhereUsed",
+                            "UsedInLocation",
+                            "ResolveIP",
+                            "NestedMembers"
+                        ],
+                        "help": "pipe(|) separated list of additional fields (ie: Arg1|Arg2|Arg3...) to include in the report. The following is available:\n  - NestedMembers: lists all members, even the ones that may be included in nested groups\n  - ResolveIP\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n  - WhereUsed : list places where object is used (rules, groups ...)\n"
+                    }
+                }
             }
         },
         "filter": {
@@ -2706,6 +2810,28 @@ var subjectObject =
             },
             "exporttoexcel": {
                 "name": "exportToExcel",
+                "MainFunction": {},
+                "GlobalInitFunction": {},
+                "GlobalFinishFunction": {},
+                "args": {
+                    "filename": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "additionalFields": {
+                        "type": "pipeSeparatedList",
+                        "subtype": "string",
+                        "default": "*NONE*",
+                        "choices": [
+                            "WhereUsed",
+                            "UsedInLocation"
+                        ],
+                        "help": "pipe(|) separated list of additional field to include in the report. The following is available:\n  - WhereUsed : list places where object is used (rules, groups ...)\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n"
+                    }
+                }
+            },
+            "exporttohtml": {
+                "name": "exportToHtml",
                 "MainFunction": {},
                 "GlobalInitFunction": {},
                 "GlobalFinishFunction": {},
@@ -2946,6 +3072,28 @@ var subjectObject =
             },
             "exporttoexcel": {
                 "name": "exportToExcel",
+                "MainFunction": {},
+                "GlobalInitFunction": {},
+                "GlobalFinishFunction": {},
+                "args": {
+                    "filename": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "additionalFields": {
+                        "type": "pipeSeparatedList",
+                        "subtype": "string",
+                        "default": "*NONE*",
+                        "choices": [
+                            "WhereUsed",
+                            "UsedInLocation"
+                        ],
+                        "help": "pipe(|) separated list of additional field to include in the report. The following is available:\n  - WhereUsed : list places where object is used (rules, groups ...)\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n"
+                    }
+                }
+            },
+            "exporttohtml": {
+                "name": "exportToHtml",
                 "MainFunction": {},
                 "GlobalInitFunction": {},
                 "GlobalFinishFunction": {},
@@ -3659,6 +3807,29 @@ var subjectObject =
                         "help": "pipe(|) separated list of additional field to include in the report. The following is available:\n  - WhereUsed : list places where object is used (rules, groups ...)\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n  - PSKcleartext : show IKE gateway PSK in cleartext\n"
                     }
                 }
+            },
+            "exporttohtml": {
+                "name": "exportToHtml",
+                "MainFunction": {},
+                "GlobalInitFunction": {},
+                "GlobalFinishFunction": {},
+                "args": {
+                    "filename": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "additionalFields": {
+                        "type": "pipeSeparatedList",
+                        "subtype": "string",
+                        "default": "*NONE*",
+                        "choices": [
+                            "WhereUsed",
+                            "UsedInLocation",
+                            "PSKcleartext"
+                        ],
+                        "help": "pipe(|) separated list of additional field to include in the report. The following is available:\n  - WhereUsed : list places where object is used (rules, groups ...)\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n  - PSKcleartext : show IKE gateway PSK in cleartext\n"
+                    }
+                }
             }
         },
         "filter": {
@@ -3691,6 +3862,14 @@ var subjectObject =
     "ike-profile": {
         "name": "ike-profile",
         "action": {
+            "delete": {
+                "name": "delete",
+                "MainFunction": {}
+            },
+            "deleteforce": {
+                "name": "deleteForce",
+                "MainFunction": {}
+            },
             "display": {
                 "name": "display",
                 "MainFunction": {}
@@ -3701,6 +3880,28 @@ var subjectObject =
             },
             "exporttoexcel": {
                 "name": "exportToExcel",
+                "MainFunction": {},
+                "GlobalInitFunction": {},
+                "GlobalFinishFunction": {},
+                "args": {
+                    "filename": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "additionalFields": {
+                        "type": "pipeSeparatedList",
+                        "subtype": "string",
+                        "default": "*NONE*",
+                        "choices": [
+                            "WhereUsed",
+                            "UsedInLocation"
+                        ],
+                        "help": "pipe(|) separated list of additional field to include in the report. The following is available:\n  - WhereUsed : list places where object is used (rules, groups ...)\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n"
+                    }
+                }
+            },
+            "exporttohtml": {
+                "name": "exportToHtml",
                 "MainFunction": {},
                 "GlobalInitFunction": {},
                 "GlobalFinishFunction": {},
@@ -3812,6 +4013,30 @@ var subjectObject =
             },
             "exporttoexcel": {
                 "name": "exportToExcel",
+                "MainFunction": {},
+                "GlobalInitFunction": {},
+                "GlobalFinishFunction": {},
+                "args": {
+                    "filename": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "additionalFields": {
+                        "type": "pipeSeparatedList",
+                        "subtype": "string",
+                        "default": "*NONE*",
+                        "choices": [
+                            "WhereUsed",
+                            "UsedInLocation",
+                            "ResolveIP",
+                            "NestedMembers"
+                        ],
+                        "help": "pipe(|) separated list of additional fields (ie: Arg1|Arg2|Arg3...) to include in the report. The following is available:\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n  - WhereUsed : list places where object is used (rules, groups ...)\n"
+                    }
+                }
+            },
+            "exporttohtml": {
+                "name": "exportToHtml",
                 "MainFunction": {},
                 "GlobalInitFunction": {},
                 "GlobalFinishFunction": {},
@@ -4009,6 +4234,29 @@ var subjectObject =
             },
             "exporttoexcel": {
                 "name": "exportToExcel",
+                "MainFunction": {},
+                "GlobalInitFunction": {},
+                "GlobalFinishFunction": {},
+                "args": {
+                    "filename": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "additionalFields": {
+                        "type": "pipeSeparatedList",
+                        "subtype": "string",
+                        "default": "*NONE*",
+                        "choices": [
+                            "WhereUsed",
+                            "UsedInLocation",
+                            "TotalUse"
+                        ],
+                        "help": "pipe(|) separated list of additional field to include in the report. The following is available:\n  - WhereUsed : list places where object is used (rules, groups ...)\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n  - TotalUse : list a counter how often this object is used\n"
+                    }
+                }
+            },
+            "exporttohtml": {
+                "name": "exportToHtml",
                 "MainFunction": {},
                 "GlobalInitFunction": {},
                 "GlobalFinishFunction": {},
@@ -4239,6 +4487,14 @@ var subjectObject =
     "ipsec-profile": {
         "name": "ipsec-profile",
         "action": {
+            "delete": {
+                "name": "delete",
+                "MainFunction": {}
+            },
+            "deleteforce": {
+                "name": "deleteForce",
+                "MainFunction": {}
+            },
             "display": {
                 "name": "display",
                 "MainFunction": {}
@@ -4249,6 +4505,28 @@ var subjectObject =
             },
             "exporttoexcel": {
                 "name": "exportToExcel",
+                "MainFunction": {},
+                "GlobalInitFunction": {},
+                "GlobalFinishFunction": {},
+                "args": {
+                    "filename": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "additionalFields": {
+                        "type": "pipeSeparatedList",
+                        "subtype": "string",
+                        "default": "*NONE*",
+                        "choices": [
+                            "WhereUsed",
+                            "UsedInLocation"
+                        ],
+                        "help": "pipe(|) separated list of additional field to include in the report. The following is available:\n  - WhereUsed : list places where object is used (rules, groups ...)\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n"
+                    }
+                }
+            },
+            "exporttohtml": {
+                "name": "exportToHtml",
                 "MainFunction": {},
                 "GlobalInitFunction": {},
                 "GlobalFinishFunction": {},
@@ -4361,6 +4639,28 @@ var subjectObject =
                         "help": "pipe(|) separated list of additional field to include in the report. The following is available:\n  - WhereUsed : list places where object is used (rules, groups ...)\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n"
                     }
                 }
+            },
+            "exporttohtml": {
+                "name": "exportToHtml",
+                "MainFunction": {},
+                "GlobalInitFunction": {},
+                "GlobalFinishFunction": {},
+                "args": {
+                    "filename": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "additionalFields": {
+                        "type": "pipeSeparatedList",
+                        "subtype": "string",
+                        "default": "*NONE*",
+                        "choices": [
+                            "WhereUsed",
+                            "UsedInLocation"
+                        ],
+                        "help": "pipe(|) separated list of additional field to include in the report. The following is available:\n  - WhereUsed : list places where object is used (rules, groups ...)\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n"
+                    }
+                }
             }
         },
         "filter": {
@@ -4417,6 +4717,29 @@ var subjectObject =
             },
             "exporttoexcel": {
                 "name": "exportToExcel",
+                "MainFunction": {},
+                "GlobalInitFunction": {},
+                "GlobalFinishFunction": {},
+                "args": {
+                    "filename": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "additionalFields": {
+                        "type": "pipeSeparatedList",
+                        "subtype": "string",
+                        "default": "*NONE*",
+                        "choices": [
+                            "WhereUsed",
+                            "UsedInLocation",
+                            "TotalUse"
+                        ],
+                        "help": "pipe(|) separated list of additional field to include in the report. The following is available:\n  - WhereUsed : list places where object is used (rules, groups ...)\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n  - TotalUse : list a counter how often this object is used\n"
+                    }
+                }
+            },
+            "exporttohtml": {
+                "name": "exportToHtml",
                 "MainFunction": {},
                 "GlobalInitFunction": {},
                 "GlobalFinishFunction": {},
@@ -4704,6 +5027,28 @@ var subjectObject =
                     }
                 }
             },
+            "exporttohtml": {
+                "name": "exportToHtml",
+                "MainFunction": {},
+                "GlobalInitFunction": {},
+                "GlobalFinishFunction": {},
+                "args": {
+                    "filename": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "additionalFields": {
+                        "type": "pipeSeparatedList",
+                        "subtype": "string",
+                        "default": "*NONE*",
+                        "choices": [
+                            "WhereUsed",
+                            "UsedInLocation"
+                        ],
+                        "help": "pipe(|) separated list of additional field to include in the report. The following is available:\n  - WhereUsed : list places where object is used (rules, groups ...)\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n"
+                    }
+                }
+            },
             "name-addprefix": {
                 "name": "name-addPrefix",
                 "MainFunction": {},
@@ -4927,12 +5272,34 @@ var subjectObject =
     "routing": {
         "name": "routing",
         "action": {
-            "display": {
-                "name": "display",
+            "display-route-table-fast": {
+                "name": "display-route-table-fast",
                 "MainFunction": {}
             },
             "exporttoexcel": {
                 "name": "exportToExcel",
+                "MainFunction": {},
+                "GlobalInitFunction": {},
+                "GlobalFinishFunction": {},
+                "args": {
+                    "filename": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "additionalFields": {
+                        "type": "pipeSeparatedList",
+                        "subtype": "string",
+                        "default": "*NONE*",
+                        "choices": [
+                            "WhereUsed",
+                            "UsedInLocation"
+                        ],
+                        "help": "pipe(|) separated list of additional field to include in the report. The following is available:\n  - WhereUsed : list places where object is used (rules, groups ...)\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n"
+                    }
+                }
+            },
+            "exporttohtml": {
+                "name": "exportToHtml",
                 "MainFunction": {},
                 "GlobalInitFunction": {},
                 "GlobalFinishFunction": {},
@@ -5413,6 +5780,36 @@ var subjectObject =
             },
             "exporttoexcel": {
                 "name": "exportToExcel",
+                "GlobalInitFunction": {},
+                "MainFunction": {},
+                "GlobalFinishFunction": {},
+                "args": {
+                    "filename": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "additionalFields": {
+                        "type": "pipeSeparatedList",
+                        "subtype": "string",
+                        "default": "*NONE*",
+                        "choices": [
+                            "ResolveAddressSummary",
+                            "ResolveServiceSummary",
+                            "ResolveServiceAppDefaultSummary",
+                            "ResolveApplicationSummary",
+                            "ResolveScheduleSummary",
+                            "ApplicationSeen",
+                            "HitCount",
+                            "BestPractice",
+                            "Visibility",
+                            "Adoption"
+                        ],
+                        "help": "example: 'actions=exporttoexcel:file.html,HitCount|ApplicationSeen'\npipe(|) separated list of additional field to include in the report. The following is available:\n  - ResolveAddressSummary : fields with address objects will be resolved to IP addressed and summarized in a new column\n  - ResolveServiceSummary : fields with service objects will be resolved to their value and summarized in a new column\n  - ResolveServiceAppDefaultSummary : fields with application objects will be resolved to their service default value and summarized in a new column\n  - ResolveApplicationSummary : fields with application objects will be resolved to their category and risk\n  - ResolveScheduleSummary : fields with schedule objects will be resolved to their expire time\n  - ApplicationSeen : all App-ID seen on the Device SecurityRule will be listed\n  - HitCount : Rule - 'first-hit' - 'last-hit' - 'hit-count' - 'rule-creation will be listed\n  - BestPractice : show if BestPractice is configured\n  - Visibility : show if Visibility is configured\n  - Adoption : show if Adoption is configured\n"
+                    }
+                }
+            },
+            "exporttohtml": {
+                "name": "exportToHtml",
                 "GlobalInitFunction": {},
                 "MainFunction": {},
                 "GlobalFinishFunction": {},
@@ -8681,6 +9078,33 @@ var subjectObject =
                     }
                 }
             },
+            "exporttohtml": {
+                "name": "exportToHtml",
+                "MainFunction": {},
+                "GlobalInitFunction": {},
+                "GlobalFinishFunction": {},
+                "args": {
+                    "filename": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "additionalFields": {
+                        "type": "pipeSeparatedList",
+                        "subtype": "string",
+                        "default": "*NONE*",
+                        "choices": [
+                            "WhereUsed",
+                            "UsedInLocation",
+                            "TotalUse",
+                            "BestPractice",
+                            "Visibility",
+                            "Adoption",
+                            "URLmembers"
+                        ],
+                        "help": "pipe(|) separated list of additional fields (ie: Arg1|Arg2|Arg3...) to include in the report. The following is available:\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n  - WhereUsed : list places where object is used (rules, groups ...)\n  - TotalUse : list a counter how often this object is used\n  - BestPractice : show if BestPractice is configured\n  - Visibility : show if SP log is configured\n  - Adoption : show if SP log is used\n  - URLmembers : add URL members also if bestpractice or visibility is added\n"
+                    }
+                }
+            },
             "file-blocking.alert-only-set": {
                 "name": "file-blocking.alert-only-set",
                 "MainFunction": {}
@@ -9805,6 +10229,32 @@ var subjectObject =
                     }
                 }
             },
+            "exporttohtml": {
+                "name": "exportToHtml",
+                "MainFunction": {},
+                "GlobalInitFunction": {},
+                "GlobalFinishFunction": {},
+                "args": {
+                    "filename": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "additionalFields": {
+                        "type": "pipeSeparatedList",
+                        "subtype": "string",
+                        "default": "*NONE*",
+                        "choices": [
+                            "WhereUsed",
+                            "UsedInLocation",
+                            "TotalUse",
+                            "BestPractice",
+                            "Visibility",
+                            "Adoption"
+                        ],
+                        "help": "pipe(|) separated list of additional field to include in the report. The following is available:\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n  - WhereUsed : list places where object is used (rules, groups ...)\n  - TotalUse : list a counter how often this object is used\n  - BestPractice : show if BestPractice is configured\n  - Visibility : show if SP log is configured\n  - Adoption : show if SP log is used\n"
+                    }
+                }
+            },
             "securityprofile-remove": {
                 "name": "securityProfile-Remove",
                 "MainFunction": {},
@@ -10249,6 +10699,30 @@ var subjectObject =
             },
             "exporttoexcel": {
                 "name": "exportToExcel",
+                "MainFunction": {},
+                "GlobalInitFunction": {},
+                "GlobalFinishFunction": {},
+                "args": {
+                    "filename": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "additionalFields": {
+                        "type": "pipeSeparatedList",
+                        "subtype": "string",
+                        "default": "*NONE*",
+                        "choices": [
+                            "WhereUsed",
+                            "UsedInLocation",
+                            "ResolveSRV",
+                            "NestedMembers"
+                        ],
+                        "help": "pipe(|) separated list of additional field to include in the report. The following is available:\n  - WhereUsed : list places where object is used (rules, groups ...)\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n  - NestedMembers: lists all members, even the ones that may be included in nested groups\n  - ResolveSRV\n"
+                    }
+                }
+            },
+            "exporttohtml": {
+                "name": "exportToHtml",
                 "MainFunction": {},
                 "GlobalInitFunction": {},
                 "GlobalFinishFunction": {},
@@ -11169,6 +11643,18 @@ var subjectObject =
                         "default": "*nodefault*"
                     }
                 }
+            },
+            "exporttohtml": {
+                "name": "exportToHtml",
+                "MainFunction": {},
+                "GlobalInitFunction": {},
+                "GlobalFinishFunction": {},
+                "args": {
+                    "filename": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                }
             }
         },
         "filter": []
@@ -11192,6 +11678,30 @@ var subjectObject =
             },
             "exporttoexcel": {
                 "name": "exportToExcel",
+                "MainFunction": {},
+                "GlobalInitFunction": {},
+                "GlobalFinishFunction": {},
+                "args": {
+                    "filename": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "additionalFields": {
+                        "type": "pipeSeparatedList",
+                        "subtype": "string",
+                        "default": "*NONE*",
+                        "choices": [
+                            "WhereUsed",
+                            "UsedInLocation",
+                            "ResolveIP",
+                            "NestedMembers"
+                        ],
+                        "help": "pipe(|) separated list of additional fields (ie: Arg1|Arg2|Arg3...) to include in the report. The following is available:\n  - NestedMembers: lists all members, even the ones that may be included in nested groups\n  - ResolveIP\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n  - WhereUsed : list places where object is used (rules, groups ...)\n"
+                    }
+                }
+            },
+            "exporttohtml": {
+                "name": "exportToHtml",
                 "MainFunction": {},
                 "GlobalInitFunction": {},
                 "GlobalFinishFunction": {},
@@ -11384,6 +11894,28 @@ var subjectObject =
             },
             "exporttoexcel": {
                 "name": "exportToExcel",
+                "MainFunction": {},
+                "GlobalInitFunction": {},
+                "GlobalFinishFunction": {},
+                "args": {
+                    "filename": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "additionalFields": {
+                        "type": "pipeSeparatedList",
+                        "subtype": "string",
+                        "default": "*NONE*",
+                        "choices": [
+                            "WhereUsed",
+                            "UsedInLocation"
+                        ],
+                        "help": "pipe(|) separated list of additional field to include in the report. The following is available:\n  - WhereUsed : list places where object is used (rules, groups ...)\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n"
+                    }
+                }
+            },
+            "exporttohtml": {
+                "name": "exportToHtml",
                 "MainFunction": {},
                 "GlobalInitFunction": {},
                 "GlobalFinishFunction": {},
@@ -11738,6 +12270,28 @@ var subjectObject =
                         "help": "pipe(|) separated list of additional field to include in the report. The following is available:\n  - WhereUsed : list places where object is used (rules, groups ...)\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n"
                     }
                 }
+            },
+            "exporttohtml": {
+                "name": "exportToHtml",
+                "MainFunction": {},
+                "GlobalInitFunction": {},
+                "GlobalFinishFunction": {},
+                "args": {
+                    "filename": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "additionalFields": {
+                        "type": "pipeSeparatedList",
+                        "subtype": "string",
+                        "default": "*NONE*",
+                        "choices": [
+                            "WhereUsed",
+                            "UsedInLocation"
+                        ],
+                        "help": "pipe(|) separated list of additional field to include in the report. The following is available:\n  - WhereUsed : list places where object is used (rules, groups ...)\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n"
+                    }
+                }
             }
         },
         "filter": {
@@ -11937,6 +12491,28 @@ var subjectObject =
             },
             "exporttoexcel": {
                 "name": "exportToExcel",
+                "MainFunction": {},
+                "GlobalInitFunction": {},
+                "GlobalFinishFunction": {},
+                "args": {
+                    "filename": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "additionalFields": {
+                        "type": "pipeSeparatedList",
+                        "subtype": "string",
+                        "default": "*NONE*",
+                        "choices": [
+                            "WhereUsed",
+                            "UsedInLocation"
+                        ],
+                        "help": "pipe(|) separated list of additional field to include in the report. The following is available:\n  - WhereUsed : list places where object is used (rules, groups ...)\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n"
+                    }
+                }
+            },
+            "exporttohtml": {
+                "name": "exportToHtml",
                 "MainFunction": {},
                 "GlobalInitFunction": {},
                 "GlobalFinishFunction": {},
@@ -12390,6 +12966,30 @@ var subjectObject =
                     }
                 }
             },
+            "exporttohtml": {
+                "name": "exportToHtml",
+                "MainFunction": {},
+                "GlobalInitFunction": {},
+                "GlobalFinishFunction": {},
+                "args": {
+                    "filename": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "additionalFields": {
+                        "type": "pipeSeparatedList",
+                        "subtype": "string",
+                        "default": "*NONE*",
+                        "choices": [
+                            "WhereUsed",
+                            "UsedInLocation",
+                            "ResolveIP",
+                            "NestedMembers"
+                        ],
+                        "help": "pipe(|) separated list of additional fields (ie: Arg1|Arg2|Arg3...) to include in the report. The following is available:\n  - NestedMembers: lists all members, even the ones that may be included in nested groups\n  - ResolveIP\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n  - WhereUsed : list places where object is used (rules, groups ...)\n"
+                    }
+                }
+            },
             "logsetting-set": {
                 "name": "logsetting-Set",
                 "MainFunction": {},
@@ -12761,6 +13361,29 @@ var subjectObject =
             },
             "exporttoexcel": {
                 "name": "exportToExcel",
+                "MainFunction": {},
+                "GlobalInitFunction": {},
+                "GlobalFinishFunction": {},
+                "args": {
+                    "filename": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "additionalFields": {
+                        "type": "pipeSeparatedList",
+                        "subtype": "string",
+                        "default": "*NONE*",
+                        "choices": [
+                            "WhereUsed",
+                            "UsedInLocation",
+                            "TotalUse"
+                        ],
+                        "help": "pipe(|) separated list of additional field to include in the report. The following is available:\n  - WhereUsed : list places where object is used (rules, groups ...)\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n  - TotalUse : list a counter how often this object is used\n"
+                    }
+                }
+            },
+            "exporttohtml": {
+                "name": "exportToHtml",
                 "MainFunction": {},
                 "GlobalInitFunction": {},
                 "GlobalFinishFunction": {},
