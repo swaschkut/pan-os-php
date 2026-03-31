@@ -146,19 +146,8 @@ ThreatRuleCallContext::$supportedActions[] = array(
             }
         }
 
-        $content = file_get_contents(dirname(__FILE__) . '/html/export-template.html');
-        $content = str_replace('%TableHeaders%', $headers, $content);
-
-        $content = str_replace('%lines%', $lines, $content);
-
-        $jscontent = file_get_contents(dirname(__FILE__) . '/html/jquery.min.js');
-        $jscontent .= "\n";
-        $jscontent .= file_get_contents(dirname(__FILE__) . '/html/jquery.stickytableheaders.min.js');
-        $jscontent .= "\n\$('table').stickyTableHeaders();\n";
-
-        $content = str_replace('%JSCONTENT%', $jscontent, $content);
-
-        file_put_contents($filename, $content);
+        require_once dirname(__FILE__) . '/../lib/ExportToHtmlHelper.php';
+        ExportToHtmlHelper::writeHtmlExport($filename, $headers, $lines);
     },
     'args' => array('filename' => array('type' => 'string', 'default' => '*nodefault*'),
         'additionalFields' =>
@@ -172,6 +161,7 @@ ThreatRuleCallContext::$supportedActions[] = array(
                     "  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n")
     )
 );
+ThreatRuleCallContext::$supportedActions[] = array_merge(ThreatRuleCallContext::$supportedActions[array_key_last(ThreatRuleCallContext::$supportedActions)], array('name' => 'exportToHtml'));
 
 ThreatRuleCallContext::$supportedActions[] = array(
     'name' => 'display-xml',

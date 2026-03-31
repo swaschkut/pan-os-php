@@ -1,6 +1,25 @@
 CHANGELOG
 
-2.1.51
+2.1.52
+UTIL:
+* type=ike-gateway/ike-profile/ipsec-profile | introduce new 'filter=(object is.unused)'
+* type=ike-gateway/ike-profile/ipsec-profile | introduce new 'actions=displayreferences'
+* type=ike-gateway/ike-profile/ipsec-profile/ipsec-tunnel | add references to get 'filter=(object is.unused)' into working mode
+* type=ike-profile/ipsec-profile/tunnel | actions=exporttoexcel:file.html - extend with more content
+* type=ike-/ipsec-profile | introduce 'filter=(authentication/dhgroup/encryption eq XYZ)'
+* type=ike-/ipsec-profile | introduce actions=delete - mainly to delete unused objects
+* diagram | add possibility to load custom JSON data file
+* type=route | introduce actions=display-route-table-fast
+
+BUGFIX:
+* class IKE/IPsecCryptoProfile | support multiple values for encryption/authentication/dhgroup - finally implemented as mentioned already in 2018 :-)
+* class LogProfileStore | bugfix for "createXmlRoot()"
+* class SecurityProfile2 | bugfix for AS/AV/VP - xyz.mica-engine is.best-practice
+
+GENERAL:
+
+
+2.1.51 (20260326)
 UTIL:
 * type=securityprofile actions=file-blocking.alert-only-set | introduce new action
 * type=securityprofile actions=wildfire.alert-only-set | extend with wildfire.rules.alert-only-set
@@ -8,7 +27,6 @@ UTIL:
 * type=appid-enabler | taking care of parentApp - always enable parentApp before app is set to enable
 
 BUGFIX:
-
 
 GENERAL:
 

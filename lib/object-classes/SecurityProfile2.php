@@ -37,12 +37,6 @@ class SecurityProfile2
 
         $bp_set = FALSE;
 
-        if( $this->secprof_type != 'url-filtering' )
-        {
-            //do something here to check local-inline-cat and cloud-inline-cat
-            return null;
-        }
-
         if( $this->secprof_type != 'spyware' and $this->secprof_type != 'vulnerability' and $this->secprof_type != 'virus' and $this->secprof_type != 'wildfire'  )
             return null;
 

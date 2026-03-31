@@ -1560,19 +1560,8 @@ DeviceCallContext::$supportedActions['exportToExcel'] = array(
             }
         }
 
-        $content = file_get_contents(dirname(__FILE__) . '/html/export-template.html');
-        $content = str_replace('%TableHeaders%', $headers, $content);
-
-        $content = str_replace('%lines%', $lines, $content);
-
-        $jscontent = file_get_contents(dirname(__FILE__) . '/html/jquery.min.js');
-        $jscontent .= "\n";
-        $jscontent .= file_get_contents(dirname(__FILE__) . '/html/jquery.stickytableheaders.min.js');
-        $jscontent .= "\n\$('table').stickyTableHeaders();\n";
-
-        $content = str_replace('%JSCONTENT%', $jscontent, $content);
-
-        file_put_contents($filename, $content);
+        require_once dirname(__FILE__) . '/../lib/ExportToHtmlHelper.php';
+        ExportToHtmlHelper::writeHtmlExport($filename, $headers, $lines);
     },
     'args' => array('filename' => array('type' => 'string', 'default' => '*nodefault*'),
         'additionalFields' =>
@@ -1586,6 +1575,7 @@ DeviceCallContext::$supportedActions['exportToExcel'] = array(
                     "  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n")
     )
 );
+DeviceCallContext::$supportedActions['exportToHtml'] = array_merge(DeviceCallContext::$supportedActions['exportToExcel'], array('name' => 'exportToHtml'));
 
 DeviceCallContext::$supportedActions['template-add'] = array(
     'name' => 'template-add',
@@ -1724,19 +1714,8 @@ DeviceCallContext::$supportedActions['exportInventoryToExcel'] = array(
             foreach($context->fields as $fName => $value )
                 $tableHeaders .= "<th>{$fName}</th>\n";
 
-            $content = file_get_contents(dirname(__FILE__).'/html/export-template.html');
-
-
-            $content = str_replace('%TableHeaders%', $tableHeaders, $content);
-
-            $content = str_replace('%lines%', $lines, $content);
-
-            $jscontent =  file_get_contents(dirname(__FILE__).'/html/jquery.min.js');
-            $jscontent .= "\n";
-            $jscontent .= file_get_contents(dirname(__FILE__).'/html/jquery.stickytableheaders.min.js');
-            $jscontent .= "\n\$('table').stickyTableHeaders();\n";
-
-            $content = str_replace('%JSCONTENT%', $jscontent, $content);
+            require_once dirname(__FILE__) . '/../lib/ExportToHtmlHelper.php';
+            $content = ExportToHtmlHelper::buildHtmlExport($tableHeaders, $lines);
         }
         file_put_contents($context->arguments['filename'], $content);
     },
@@ -1870,21 +1849,8 @@ DeviceCallContext::$supportedActions['exportLicenseToExcel'] = array(
             foreach($context->fields as $fName => $value )
                 $tableHeaders .= "<th>{$fName}</th>\n";
 
-            $content = file_get_contents(dirname(__FILE__).'/html/export-template.html');
-
-
-            $content = str_replace('%TableHeaders%', $tableHeaders, $content);
-
-            $content = str_replace('%lines%', $lines, $content);
-
-            $jscontent =  file_get_contents(dirname(__FILE__).'/html/jquery.min.js');
-            $jscontent .= "\n";
-            $jscontent .= file_get_contents(dirname(__FILE__).'/html/jquery.stickytableheaders.min.js');
-            $jscontent .= "\n\$('table').stickyTableHeaders();\n";
-
-            $content = str_replace('%JSCONTENT%', $jscontent, $content);
-
-
+            require_once dirname(__FILE__) . '/../lib/ExportToHtmlHelper.php';
+            $content = ExportToHtmlHelper::buildHtmlExport($tableHeaders, $lines);
         }
 
         file_put_contents($context->arguments['filename'], $content);
@@ -2312,19 +2278,8 @@ DeviceCallContext::$supportedActions['display-shadowrule'] = array(
                     }
 
 
-                $content = file_get_contents(dirname(__FILE__) . '/html/export-template.html');
-                $content = str_replace('%TableHeaders%', $headers, $content);
-
-                $content = str_replace('%lines%', $lines, $content);
-
-                $jscontent = file_get_contents(dirname(__FILE__) . '/html/jquery.min.js');
-                $jscontent .= "\n";
-                $jscontent .= file_get_contents(dirname(__FILE__) . '/html/jquery.stickytableheaders.min.js');
-                $jscontent .= "\n\$('table').stickyTableHeaders();\n";
-
-                $content = str_replace('%JSCONTENT%', $jscontent, $content);
-
-                file_put_contents($filename, $content);
+                require_once dirname(__FILE__) . '/../lib/ExportToHtmlHelper.php';
+                ExportToHtmlHelper::writeHtmlExport($filename, $headers, $lines);
             }
     },
     'args' => array(

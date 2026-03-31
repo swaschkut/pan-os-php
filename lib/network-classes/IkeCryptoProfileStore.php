@@ -118,6 +118,24 @@ class IkeCryptoProfileStore extends ObjStore
     }
 
     /**
+     * remove a IkeCryptoProfil from this store.
+     * @param IkeCryptoProfil
+     *
+     * @return bool  True if IPsecCryptoProfile was found and removed. False if not found.
+     */
+    public function removeProfile(IkeCryptoProfil $object)
+    {
+        $ret = $this->remove($object);
+
+        if( $ret && $this->xmlroot !== null )
+        {
+            $this->xmlroot->removeChild($object->xmlroot);
+        }
+
+        return $ret;
+    }
+
+    /**
      * @param $IKeCryptoProfileName string
      * @return null|IKECryptoProfil
      */

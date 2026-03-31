@@ -38,10 +38,9 @@ class IkeCryptoProfil
 
     public $type = 'notfound';
 
-    //TODO: 20180403 these three variables are multi member, extend to array
-    public $hash = 'notfound';
-    public $dhgroup = 'notfound';
-    public $encryption = 'notfound';
+    public $hash = array();
+    public $dhgroup = array();
+    public $encryption = array();
 
     public $lifetime_seconds = '';
     public $lifetime_minutes = '';
@@ -55,21 +54,28 @@ class IkeCryptoProfil
     const group2 = 'group2';
     const group5 = 'group5';
     const group14 = 'group14';
+    const group15 = 'group15';
+    const group16 = 'group16';
     const group19 = 'group19';
     const group20 = 'group20';
+    const group21 = 'group21';
 
     static public $dhgroups = array(
         self::group1 => 'group1',
         self::group2 => 'group2',
         self::group5 => 'group5',
         self::group14 => 'group14',
+        self::group15 => 'group15',
+        self::group16 => 'group16',
         self::group19 => 'group19',
-        self::group20 => 'group20'
+        self::group20 => 'group20',
+        self::group21 => 'group21'
     );
 
 
     const md5 = 'md5';
     const sha1 = 'sha1';
+    const nonauth = 'non-auth';
     const sha256 = 'sha256';
     const sha384 = 'sha384';
     const sha512 = 'sha512';
@@ -77,6 +83,7 @@ class IkeCryptoProfil
     static public $hashs = array(
         self::md5 => 'md5',
         self::sha1 => 'sha1',
+        self::nonauth => 'non-auth',
         self::sha256 => 'sha256',
         self::sha384 => 'sha384',
         self::sha512 => 'sha512'
@@ -89,12 +96,23 @@ class IkeCryptoProfil
     const aes192cbc = 'aes-192-cbc';
     const aes256cbc = 'aes-256-cbc';
 
+    const null = 'null';
+
+    const aes128ccm = 'aes-128-ccm';
+    const aes128gcm = 'aes-128-gcm';
+    const aes256gcm = 'aes-256-gcm';
+
     static public $encryptions = array(
         self::des => 'des',
         self::tripledes => '3des',
         self::aes128cbc => 'aes-128-cbc',
         self::aes192cbc => 'aes-192-cbc',
-        self::aes256cbc => 'aes-256-cbc'
+        self::aes256cbc => 'aes-256-cbc',
+        self::null => 'null',
+
+        self::aes128ccm => 'aes-128-ccm',
+        self::aes128gcm => 'aes-128-gcm',
+        self::aes256gcm => 'aes-256-gcm'
     );
 
     /**
@@ -126,13 +144,37 @@ class IkeCryptoProfil
                 continue;
 
             if( $node->nodeName == 'hash' )
-                $this->hash = DH::findFirstElementOrCreate('member', $node)->textContent;
+            {
+                foreach( $node->childNodes as $node_member )
+                {
+                    if ($node_member->nodeType != 1)
+                        continue;
+
+                    $this->hash[] = $node_member->textContent;
+                }
+            }
 
             if( $node->nodeName == 'dh-group' )
-                $this->dhgroup = DH::findFirstElementOrCreate('member', $node)->textContent;
+            {
+                foreach( $node->childNodes as $node_member )
+                {
+                    if ($node_member->nodeType != 1)
+                        continue;
+
+                    $this->dhgroup[] = $node_member->textContent;
+                }
+            }
 
             if( $node->nodeName == 'encryption' )
-                $this->encryption = DH::findFirstElementOrCreate('member', $node)->textContent;
+            {
+                foreach( $node->childNodes as $node_member )
+                {
+                    if ($node_member->nodeType != 1)
+                        continue;
+
+                    $this->encryption[] = $node_member->textContent;
+                }
+            }
 
             if( $node->nodeName == 'lifetime' )
             {
@@ -188,30 +230,32 @@ class IkeCryptoProfil
     }
 
 
-    public function setDHgroup($dhgroup)
+    public function setDHgroup($tmp_dhgroup)
     {
-        if( $this->dhgroup == $dhgroup )
+        #if( $this->dhgroup == $dhgroup )
+        if( in_array( $tmp_dhgroup, $this->dhgroup) )
             return TRUE;
 
-        if( !isset(self::$dhgroups[$dhgroup]) )
+        if( !isset(self::$dhgroups[$tmp_dhgroup]) )
         {
-            $dhgroup = preg_replace('/\D/', '', $dhgroup);
-            $dhgroup = "group" . $dhgroup;
+            $tmp_dhgroup = preg_replace('/\D/', '', $tmp_dhgroup);
+            $tmp_dhgroup = "group" . $tmp_dhgroup;
             #PH::print_stdout( " *** new dhgroup name: ".$dhgroup );
         }
 
-        $this->dhgroup = $dhgroup;
+        $this->dhgroup[] = $tmp_dhgroup;
 
         $tmp_gateway = DH::findFirstElementOrCreate('dh-group', $this->xmlroot);
         $tmp_gateway = DH::findFirstElementOrCreate('member', $tmp_gateway);
-        DH::setDomNodeText($tmp_gateway, $dhgroup);
+        DH::setDomNodeText($tmp_gateway, $tmp_dhgroup);
 
         return TRUE;
     }
 
     public function sethash($hash)
     {
-        if( $this->hash == $hash )
+        #if( $this->hash == $hash )
+        if( in_array( $hash, $this->hash) )
             return TRUE;
 
         if( !isset(self::$hashs[$hash]) )
@@ -221,7 +265,7 @@ class IkeCryptoProfil
             mwarning('authentication wrong');
         }
 
-        $this->hash = $hash;
+        $this->hash[] = $hash;
 
         $tmp_gateway = DH::findFirstElementOrCreate('hash', $this->xmlroot);
         $tmp_gateway = DH::findFirstElementOrCreate('member', $tmp_gateway);
@@ -232,7 +276,7 @@ class IkeCryptoProfil
 
     public function setencryption($encryption)
     {
-        if( $this->encryption == $encryption )
+        if( in_array( $encryption, $this->encryption) )
             return TRUE;
 
         if( !isset(self::$encryptions[$encryption]) )

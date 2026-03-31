@@ -89,6 +89,15 @@ IKEgatewayCallContext::$supportedActions['display'] = Array(
 
 );
 
+IKEgatewayCallContext::$supportedActions['displayreferences'] = array(
+    'name' => 'displayReferences',
+    'MainFunction' => function (IKEgatewayCallContext $context) {
+        $object = $context->object;
+
+        $object->display_references(7);
+    },
+);
+
 IKEgatewayCallContext::$supportedActions[] = array(
     'name' => 'exportToExcel',
     'MainFunction' => function (IKEgatewayCallContext $context) {
@@ -263,19 +272,8 @@ IKEgatewayCallContext::$supportedActions[] = array(
             }
         }
 
-        $content = file_get_contents(dirname(__FILE__) . '/html/export-template.html');
-        $content = str_replace('%TableHeaders%', $headers, $content);
-
-        $content = str_replace('%lines%', $lines, $content);
-
-        $jscontent = file_get_contents(dirname(__FILE__) . '/html/jquery.min.js');
-        $jscontent .= "\n";
-        $jscontent .= file_get_contents(dirname(__FILE__) . '/html/jquery.stickytableheaders.min.js');
-        $jscontent .= "\n\$('table').stickyTableHeaders();\n";
-
-        $content = str_replace('%JSCONTENT%', $jscontent, $content);
-
-        file_put_contents($filename, $content);
+        require_once dirname(__FILE__) . '/../lib/ExportToHtmlHelper.php';
+        ExportToHtmlHelper::writeHtmlExport($filename, $headers, $lines);
     },
     'args' => array('filename' => array('type' => 'string', 'default' => '*nodefault*'),
         'additionalFields' =>
@@ -290,3 +288,4 @@ IKEgatewayCallContext::$supportedActions[] = array(
                     "  - PSKcleartext : show IKE gateway PSK in cleartext\n")
     )
 );
+IKEgatewayCallContext::$supportedActions[] = array_merge(IKEgatewayCallContext::$supportedActions[array_key_last(IKEgatewayCallContext::$supportedActions)], array('name' => 'exportToHtml'));

@@ -203,20 +203,8 @@ class TRAFFICLOG extends UTIL
             $tableHeaders .= "<th>{$fieldName}</th>\n";
         }
 
-        $content = file_get_contents(dirname(__FILE__) . '/../common/html/export-template.html');
-
-        $content = str_replace('%TableHeaders%', $tableHeaders, $content);
-
-        $content = str_replace('%lines%', $lines, $content);
-
-        $jscontent = file_get_contents(dirname(__FILE__) . '/../common/html/jquery.min.js');
-        $jscontent .= "\n";
-        $jscontent .= file_get_contents(dirname(__FILE__) . '/../common/html/jquery.stickytableheaders.min.js');
-        $jscontent .= "\n\$('table').stickyTableHeaders();\n";
-
-        $content = str_replace('%JSCONTENT%', $jscontent, $content);
-
-        file_put_contents($filename, $content);
+        require_once dirname(__FILE__) . '/ExportToHtmlHelper.php';
+        ExportToHtmlHelper::writeHtmlExport($filename, $tableHeaders, $lines);
     }
 
     public function encloseFunction( $value, $nowrap = TRUE )

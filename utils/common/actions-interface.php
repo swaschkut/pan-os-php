@@ -340,22 +340,8 @@ InterfaceCallContext::$supportedActions['exportToExcel'] = array(
             }
         }
 
-        $content = file_get_contents(dirname(__FILE__) . '/html/export-template.html');
-        $content = str_replace('%TableHeaders%', $headers, $content);
-
-        $content = str_replace('%lines%', $lines, $content);
-
-        $jscontent = file_get_contents(dirname(__FILE__) . '/html/jquery.min.js');
-        $jscontent .= "\n";
-        $jscontent .= file_get_contents(dirname(__FILE__) . '/html/jquery.stickytableheaders.min.js');
-        $jscontent .= "\n\$('table').stickyTableHeaders();\n";
-
-        $content = str_replace('%JSCONTENT%', $jscontent, $content);
-
-        file_put_contents($filename, $content);
-
-
-        file_put_contents($filename, $content);
+        require_once dirname(__FILE__) . '/../lib/ExportToHtmlHelper.php';
+        ExportToHtmlHelper::writeHtmlExport($filename, $headers, $lines);
     },
     'args' => array('filename' => array('type' => 'string', 'default' => '*nodefault*'),
         'additionalFields' =>
@@ -371,6 +357,7 @@ InterfaceCallContext::$supportedActions['exportToExcel'] = array(
     )
 
 );
+InterfaceCallContext::$supportedActions['exportToHtml'] = array_merge(InterfaceCallContext::$supportedActions['exportToExcel'], array('name' => 'exportToHtml'));
 
 InterfaceCallContext::$supportedActions['name-Rename'] = array(
     'name' => 'name-Rename',
@@ -756,5 +743,41 @@ InterfaceCallContext::$supportedActions['remove'] = array(
 
         $vsys_obj->importedInterfaces->removeInterface($object);
         $object->owner->owner->network->ethernetIfStore->removeEthernetIf($object);
+    }
+);
+
+InterfaceCallContext::$supportedActions['ethernet2aggregate'] = array(
+    'name' => 'remove',
+    'MainFunction' => function (InterfaceCallContext $context) {
+        $object = $context->object;
+
+        derr( "not working yet" );
+
+
+        $sub = $object->owner->owner->network->ethernetIfStore->find($object->name());
+        $pan = $object->owner->owner->network->ethernetIfStore->find($object->name());
+
+        $tmp_int_type = "aggregate-group";
+
+        if( $tmp_int_type == "aggregate-group" )
+        {
+            $name = "ae1";
+            $tmp_int_type2 = "ethernet"; //virtual-wire;
+
+            $tmp_VirtualWireIf2 = $pan->network->aggregateEthernetIfStore->newEthernetIf($name, $tmp_int_type2);
+            if( !$sub->importedInterfaces->hasInterfaceNamed( $tmp_VirtualWireIf2->name() ) )
+                $sub->importedInterfaces->addInterface( $tmp_VirtualWireIf2 );
+        }
+        else
+        {
+            $name = "ethernet1/1";
+            $tmp_int_type2 = "ethernet"; //virtual-wire;
+            $name2 = "dummy";
+
+            $tmp_VirtualWireIf = $pan->network->ethernetIfStore->newEthernetIf($name, $tmp_int_type, $name2);
+
+            if( !$sub->importedInterfaces->hasInterfaceNamed( $tmp_VirtualWireIf->name() ) )
+                $sub->importedInterfaces->addInterface( $tmp_VirtualWireIf );
+        }
     }
 );

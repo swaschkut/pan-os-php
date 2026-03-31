@@ -106,6 +106,10 @@ class IPsecTunnel
                         //it is possible to set no gateway, if flag is disabled in GUI
                         #if( $this->gateway === FALSE )
                         #    mwarning("ike-gateway not found", null, False);
+
+                        $tmp_ike_gateway = $this->owner->owner->network->ikeGatewayStore->findIKEGateway($this->gateway);
+                        if( $tmp_ike_gateway != NULL )
+                            $tmp_ike_gateway->addReference($this);
                     }
                 }
 
@@ -113,7 +117,13 @@ class IPsecTunnel
 
                 $tmp_proposal = DH::findFirstElement('ipsec-crypto-profile', $node);
                 if( $tmp_proposal != null )
+                {
                     $this->proposal = $tmp_proposal->textContent;
+
+                    $tmp_ipsec_profile = $this->owner->owner->network->ipsecCryptoProfileStore->findIpsecCryptoProfil($this->proposal);
+                    if( $tmp_ipsec_profile != NULL )
+                        $tmp_ipsec_profile->addReference($this);
+                }
 
                 // now extracts ProxyID
                 $this->proxyIdRoot = DH::findFirstElement('proxy-id', $node);

@@ -371,7 +371,7 @@ class LogProfileStore extends ObjStore
             $xml = $this->findCreateXmlRoot();
 
             $xml = DH::findFirstElementOrCreate('log-settings', $this->owner->xmlroot);
-            $xml = DH::findFirstElementOrCreate('profile-group', $xml);
+            $xml = DH::findFirstElementOrCreate('profiles', $xml);
             $this->xmlroot = $xml;
         }
     }

@@ -41,40 +41,46 @@ class IPSecCryptoProfil
     public $ipsecProtocol = 'notfound';
 
     //TODO: 20180403 these two variables are multi member, extend to array
-    public $authentication = 'notfound';
+    public $authentication = array();
 
     const md5 = 'md5';
     const sha1 = 'sha1';
     const sha256 = 'sha256';
     const sha384 = 'sha384';
     const sha512 = 'sha512';
+    const nonauth = 'non-auth';
 
     static public $authentications = array(
         self::md5 => 'md5',
         self::sha1 => 'sha1',
+        self::nonauth => 'non-auth',
         self::sha256 => 'sha256',
         self::sha384 => 'sha384',
         self::sha512 => 'sha512'
     );
 
 
-    public $encryption = 'notfound';
+    public $encryption = array();
 
     const des = 'des';
     const tripledes = '3des';
     const aes128cbc = 'aes-128-cbc';
     const aes192cbc = 'aes-192-cbc';
     const aes256cbc = 'aes-256-cbc';
+    const aes128gcm = 'aes-128-gcm';
+    const aes256gcm = 'aes-256-gcm';
 
     static public $encryptions = array(
         self::des => 'des',
         self::tripledes => '3des',
         self::aes128cbc => 'aes-128-cbc',
         self::aes192cbc => 'aes-192-cbc',
-        self::aes256cbc => 'aes-256-cbc'
+        self::aes256cbc => 'aes-256-cbc',
+        self::aes128gcm => 'aes-128-gcm',
+        self::aes256gcm => 'aes-256-gcm'
     );
 
-    public $dhgroup = 'notfound';
+    public $dhgroup = "notfound";
 
     public $lifetime_seconds = '';
     public $lifetime_minutes = '';
@@ -91,8 +97,12 @@ class IPSecCryptoProfil
     const group2 = 'group2';
     const group5 = 'group5';
     const group14 = 'group14';
+    const group15 = 'group15';
+    const group16 = 'group16';
     const group19 = 'group19';
+
     const group20 = 'group20';
+    const group21 = 'group21';
 
     static public $dhgroups = array(
         self::nopfs => 'no-pfs',
@@ -100,8 +110,11 @@ class IPSecCryptoProfil
         self::group2 => 'group2',
         self::group5 => 'group5',
         self::group14 => 'group14',
+        self::group15 => 'group15',
+        self::group16 => 'group16',
         self::group19 => 'group19',
-        self::group20 => 'group20'
+        self::group20 => 'group20',
+        self::group21 => 'group21'
     );
 
     /**
@@ -136,17 +149,36 @@ class IPSecCryptoProfil
             {
                 $this->ipsecProtocol = 'esp';
                 $tmp_authentication = DH::findFirstElementOrCreate('authentication', $node);
-                $this->authentication = DH::findFirstElementOrCreate('member', $tmp_authentication)->textContent;
+                foreach( $tmp_authentication->childNodes as $node_member )
+                {
+                    if ($node_member->nodeType != 1)
+                        continue;
+
+                    $this->authentication[] = $node_member->textContent;
+                }
 
                 $tmp_encryption = DH::findFirstElementOrCreate('encryption', $node);
-                $this->encryption = DH::findFirstElementOrCreate('member', $tmp_encryption)->textContent;
+                foreach( $tmp_encryption->childNodes as $node_member )
+                {
+                    if ($node_member->nodeType != 1)
+                        continue;
+
+                    $this->encryption[] = $node_member->textContent;
+                }
             }
 
             if( $node->nodeName == 'ah' )
             {
                 $this->ipsecProtocol = 'ah';
+
                 $tmp_authentication = DH::findFirstElementOrCreate('authentication', $node);
-                $this->authentication = DH::findFirstElementOrCreate('member', $tmp_authentication)->textContent;
+                foreach( $tmp_authentication->childNodes as $node_member )
+                {
+                    if ($node_member->nodeType != 1)
+                        continue;
+
+                    $this->authentication[] = $node_member->textContent;
+                }
             }
 
             if( $node->nodeName == 'lifetime' )
@@ -221,7 +253,6 @@ class IPSecCryptoProfil
     {
         if( !isset(self::$dhgroups[$dhgroup]) )
         {
-
             $dhgroup = preg_replace('/\D/', '', $dhgroup);
             if( strlen($dhgroup) == 0 )
                 $dhgroup = "no-pfs";
@@ -244,8 +275,7 @@ class IPSecCryptoProfil
     public function setauthentication($authentication, $ipsecProtocol)
     {
         //Todo: validation of $ipsecProtocol needed
-
-        if( $this->authentication == $authentication )
+        if( in_array( $authentication, $this->authentication) )
             return TRUE;
 
         if( !isset(self::$authentications[$authentication]) )
@@ -255,7 +285,7 @@ class IPSecCryptoProfil
             #mwarning( 'authentication wrong' );
         }
 
-        $this->authentication = $authentication;
+        $this->authentication[] = $authentication;
 
         $tmp_gateway = DH::findFirstElementOrCreate($ipsecProtocol, $this->xmlroot);
         $tmp_gateway = DH::findFirstElementOrCreate('authentication', $tmp_gateway);
@@ -267,7 +297,7 @@ class IPSecCryptoProfil
 
     public function setencryption($encryption)
     {
-        if( $this->encryption == $encryption )
+        if( in_array( $encryption, $this->encryption) )
             return TRUE;
 
         if( !isset(self::$encryptions[$encryption]) )
@@ -277,7 +307,7 @@ class IPSecCryptoProfil
             #mwarning( 'authentication wrong' );
         }
 
-        $this->encryption = $encryption;
+        $this->encryption[] = $encryption;
 
         $tmp_gateway = DH::findFirstElementOrCreate('esp', $this->xmlroot);
         $tmp_gateway = DH::findFirstElementOrCreate('encryption', $tmp_gateway);
@@ -407,6 +437,24 @@ class IPSecCryptoProfil
         $newProfile->lifesize_tb = $this->lifesize_tb;
 
         return $newProfile;
+    }
+
+    /**
+     * remove a IPsecCryptoProfil from this store.
+     * @param IPSecCryptoProfil
+     *
+     * @return bool  True if IPsecCryptoProfile was found and removed. False if not found.
+     */
+    public function removeProfile(IPSecCryptoProfil $object)
+    {
+        $ret = $this->remove($object);
+
+        if( $ret && $this->xmlroot !== null )
+        {
+            $this->xmlroot->removeChild($object->xmlroot);
+        }
+
+        return $ret;
     }
 
     static public $templatexml = '<entry name="**temporarynamechangeme**">
