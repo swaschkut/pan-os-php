@@ -491,4 +491,4 @@ ProfileCallContext::$supportedActions[] = array(
                     "  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n")
     )
 );
-ProfileCallContext::$supportedActions[] = array_merge(ProfileCallContext::$supportedActions[count(ProfileCallContext::$supportedActions)-1], array('name' => 'exportToHtml'));
+ProfileCallContext::$supportedActions[] = array_merge(ProfileCallContext::$supportedActions[array_key_last(ProfileCallContext::$supportedActions)], array('name' => 'exportToHtml'));

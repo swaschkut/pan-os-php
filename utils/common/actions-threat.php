@@ -221,7 +221,7 @@ ThreatCallContext::$supportedActions[] = array(
                     "  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n")
     )
 );
-ThreatCallContext::$supportedActions[] = array_merge(ThreatCallContext::$supportedActions[count(ThreatCallContext::$supportedActions)-1], array('name' => 'exportToHtml'));
+ThreatCallContext::$supportedActions[] = array_merge(ThreatCallContext::$supportedActions[array_key_last(ThreatCallContext::$supportedActions)], array('name' => 'exportToHtml'));
 
 ThreatCallContext::$supportedActions[] = array(
     'name' => 'display-xml',

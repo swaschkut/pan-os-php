@@ -313,4 +313,4 @@ ZoneProtectionProfileCallContext::$supportedActions[] = array(
             )
     )
 );
-ZoneProtectionProfileCallContext::$supportedActions[] = array_merge(ZoneProtectionProfileCallContext::$supportedActions[count(ZoneProtectionProfileCallContext::$supportedActions)-1], array('name' => 'exportToHtml'));
+ZoneProtectionProfileCallContext::$supportedActions[] = array_merge(ZoneProtectionProfileCallContext::$supportedActions[array_key_last(ZoneProtectionProfileCallContext::$supportedActions)], array('name' => 'exportToHtml'));

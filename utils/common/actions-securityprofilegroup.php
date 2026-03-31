@@ -845,7 +845,7 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
             )
     )
 );
-SecurityProfileGroupCallContext::$supportedActions[] = array_merge(SecurityProfileGroupCallContext::$supportedActions[count(SecurityProfileGroupCallContext::$supportedActions)-1], array('name' => 'exportToHtml'));
+SecurityProfileGroupCallContext::$supportedActions[] = array_merge(SecurityProfileGroupCallContext::$supportedActions[array_key_last(SecurityProfileGroupCallContext::$supportedActions)], array('name' => 'exportToHtml'));
 
 SecurityProfileGroupCallContext::$supportedActions['create'] = array(
     'name' => 'create',

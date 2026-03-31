@@ -1994,7 +1994,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
     )
 
 );
-SecurityProfileCallContext::$supportedActions[] = array_merge(SecurityProfileCallContext::$supportedActions[count(SecurityProfileCallContext::$supportedActions)-1], array('name' => 'exportToHtml'));
+SecurityProfileCallContext::$supportedActions[] = array_merge(SecurityProfileCallContext::$supportedActions[array_key_last(SecurityProfileCallContext::$supportedActions)], array('name' => 'exportToHtml'));
 
 SecurityProfileCallContext::$supportedActions['custom-url-category-add-ending-token'] = array(
     'name' => 'custom-url-category-add-ending-token',

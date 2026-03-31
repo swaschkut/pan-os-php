@@ -540,7 +540,7 @@ ServiceCallContext::$supportedActions[] = array(
             )
     )
 );
-ServiceCallContext::$supportedActions[] = array_merge(ServiceCallContext::$supportedActions[count(ServiceCallContext::$supportedActions)-1], array('name' => 'exportToHtml'));
+ServiceCallContext::$supportedActions[] = array_merge(ServiceCallContext::$supportedActions[array_key_last(ServiceCallContext::$supportedActions)], array('name' => 'exportToHtml'));
 
 // TODO replaceByApp with file list
 

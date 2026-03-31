@@ -167,7 +167,7 @@ DNSRuleCallContext::$supportedActions[] = array(
                     "  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n")
     )
 );
-DNSRuleCallContext::$supportedActions[] = array_merge(DNSRuleCallContext::$supportedActions[count(DNSRuleCallContext::$supportedActions)-1], array('name' => 'exportToHtml'));
+DNSRuleCallContext::$supportedActions[] = array_merge(DNSRuleCallContext::$supportedActions[array_key_last(DNSRuleCallContext::$supportedActions)], array('name' => 'exportToHtml'));
 
 DNSRuleCallContext::$supportedActions[] = array(
     'name' => 'display-xml',

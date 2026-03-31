@@ -477,7 +477,7 @@ ApplicationCallContext::$supportedActions[] = array(
     )
 
 );
-ApplicationCallContext::$supportedActions[] = array_merge(ApplicationCallContext::$supportedActions[count(ApplicationCallContext::$supportedActions)-1], array('name' => 'exportToHtml'));
+ApplicationCallContext::$supportedActions[] = array_merge(ApplicationCallContext::$supportedActions[array_key_last(ApplicationCallContext::$supportedActions)], array('name' => 'exportToHtml'));
 
 ApplicationCallContext::$supportedActions['move'] = array(
     'name' => 'move',

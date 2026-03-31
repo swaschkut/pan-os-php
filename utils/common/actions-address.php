@@ -937,7 +937,7 @@ AddressCallContext::$supportedActions[] = array(
     )
 
 );
-AddressCallContext::$supportedActions[] = array_merge(AddressCallContext::$supportedActions[count(AddressCallContext::$supportedActions)-1], array('name' => 'exportToHtml'));
+AddressCallContext::$supportedActions[] = array_merge(AddressCallContext::$supportedActions[array_key_last(AddressCallContext::$supportedActions)], array('name' => 'exportToHtml'));
 
 
 AddressCallContext::$supportedActions[] = array(

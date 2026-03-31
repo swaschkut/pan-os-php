@@ -187,4 +187,4 @@ InterfaceManagementProfileCallContext::$supportedActions[] = array(
             )
     )
 );
-InterfaceManagementProfileCallContext::$supportedActions[] = array_merge(InterfaceManagementProfileCallContext::$supportedActions[count(InterfaceManagementProfileCallContext::$supportedActions)-1], array('name' => 'exportToHtml'));
+InterfaceManagementProfileCallContext::$supportedActions[] = array_merge(InterfaceManagementProfileCallContext::$supportedActions[array_key_last(InterfaceManagementProfileCallContext::$supportedActions)], array('name' => 'exportToHtml'));
