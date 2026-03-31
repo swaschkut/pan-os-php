@@ -242,9 +242,8 @@
 </table>
 </body>
 <footer>
-    <!-- Load jQuery from CDN; fall back to the bundled inline copy for air-gapped environments -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js" crossorigin="anonymous"></script>
-    <script>if(!window.jQuery){%JQUERY_INLINE%}</script>
+    <!-- jQuery bundled inline — no external dependencies, works in air-gapped environments -->
+    <script>%JQUERY_INLINE%</script>
     <script type="text/javascript">
         %JSCONTENT%
     </script>

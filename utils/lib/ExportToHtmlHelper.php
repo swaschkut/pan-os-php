@@ -26,12 +26,15 @@
  * here so that template loading, jQuery CDN+fallback injection, sticky
  * headers initialisation, and file writing are defined exactly once.
  *
- * CDN strategy
- * ------------
- * The generated HTML tries to load jQuery from the CDN first.  If the
- * CDN is unreachable (e.g. air-gapped environments) the inline fallback
- * copy bundled inside the HTML file is used instead — so exports work
- * everywhere.
+ * jQuery strategy
+ * ----------------
+ * The local copy of jquery.min.js is embedded inline in every generated
+ * HTML file so exports are fully self-contained and work in air-gapped
+ * environments with no external dependencies.
+ *
+ * Note: the bundled copy is jQuery 3.6.0. jQuery 4.0 introduced breaking
+ * changes that may affect the stickyTableHeaders plugin, so an upgrade
+ * should be tested carefully before bumping the version.
  */
 class ExportToHtmlHelper
 {
@@ -60,7 +63,7 @@ class ExportToHtmlHelper
         $content = str_replace('%TableHeaders%', $headers, $content);
         $content = str_replace('%lines%', $lines, $content);
 
-        // Inline jQuery as CDN fallback (see export-template.html for the CDN tag)
+        // Embed jQuery inline — fully self-contained, no external requests
         $content = str_replace('%JQUERY_INLINE%', file_get_contents($htmlDir . 'jquery.min.js'), $content);
 
         $jscontent  = file_get_contents($htmlDir . 'jquery.stickytableheaders.min.js');
