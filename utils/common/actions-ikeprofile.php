@@ -218,6 +218,7 @@ IKEprofileCallContext::$supportedActions[] = array(
                     "  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n")
     )
 );
+IKEprofileCallContext::$supportedActions[] = array_merge(IKEprofileCallContext::$supportedActions[count(IKEprofileCallContext::$supportedActions)-1], array('name' => 'exportToHtml'));
 
 IKEprofileCallContext::$supportedActions['delete'] = array(
     'name' => 'delete',

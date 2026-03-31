@@ -695,6 +695,7 @@ TagCallContext::$supportedActions[] = array(
                     "  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n")
     )
 );
+TagCallContext::$supportedActions[] = array_merge(TagCallContext::$supportedActions[count(TagCallContext::$supportedActions)-1], array('name' => 'exportToHtml'));
 
 TagCallContext::$supportedActions['create'] = array(
     'name' => 'create',

@@ -1586,6 +1586,7 @@ DeviceCallContext::$supportedActions['exportToExcel'] = array(
                     "  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n")
     )
 );
+DeviceCallContext::$supportedActions['exportToHtml'] = array_merge(DeviceCallContext::$supportedActions['exportToExcel'], array('name' => 'exportToHtml'));
 
 DeviceCallContext::$supportedActions['template-add'] = array(
     'name' => 'template-add',

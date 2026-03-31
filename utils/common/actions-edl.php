@@ -503,6 +503,7 @@ EDLCallContext::$supportedActions[] = array(
                     "  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n")
     )
 );
+EDLCallContext::$supportedActions[] = array_merge(EDLCallContext::$supportedActions[count(EDLCallContext::$supportedActions)-1], array('name' => 'exportToHtml'));
 
 EDLCallContext::$supportedActions[] = array(
     'name' => 'move',

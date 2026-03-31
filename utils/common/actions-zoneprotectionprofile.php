@@ -313,3 +313,4 @@ ZoneProtectionProfileCallContext::$supportedActions[] = array(
             )
     )
 );
+ZoneProtectionProfileCallContext::$supportedActions[] = array_merge(ZoneProtectionProfileCallContext::$supportedActions[count(ZoneProtectionProfileCallContext::$supportedActions)-1], array('name' => 'exportToHtml'));

@@ -239,6 +239,7 @@ LogProfileCallContext::$supportedActions[] = array(
             )
     )
 );
+LogProfileCallContext::$supportedActions[] = array_merge(LogProfileCallContext::$supportedActions[count(LogProfileCallContext::$supportedActions)-1], array('name' => 'exportToHtml'));
 
 LogProfileCallContext::$supportedActions['create'] = array(
     'name' => 'create',

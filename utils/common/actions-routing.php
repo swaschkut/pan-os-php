@@ -165,6 +165,7 @@ RoutingCallContext::$supportedActions[] = array(
                     "  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n")
     )
 );
+RoutingCallContext::$supportedActions[] = array_merge(RoutingCallContext::$supportedActions[count(RoutingCallContext::$supportedActions)-1], array('name' => 'exportToHtml'));
 
 RoutingCallContext::$supportedActions['display'] = Array(
     'name' => 'display-route-table-fast',

@@ -202,6 +202,7 @@ StaticRouteCallContext::$supportedActions['exportToExcel'] = array(
     )
 
 );
+StaticRouteCallContext::$supportedActions['exportToHtml'] = array_merge(StaticRouteCallContext::$supportedActions['exportToExcel'], array('name' => 'exportToHtml'));
 
 StaticRouteCallContext::$supportedActions['display-nexthop-ips'] = array(
     'name' => 'display-nexthop-ips',

@@ -289,3 +289,4 @@ DHCPCallContext::$supportedActions['exportToExcel'] = array(
     )
 
 );
+DHCPCallContext::$supportedActions['exportToHtml'] = array_merge(DHCPCallContext::$supportedActions['exportToExcel'], array('name' => 'exportToHtml'));

@@ -243,6 +243,7 @@ IPsecprofileCallContext::$supportedActions[] = array(
                     "  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n")
     )
 );
+IPsecprofileCallContext::$supportedActions[] = array_merge(IPsecprofileCallContext::$supportedActions[count(IPsecprofileCallContext::$supportedActions)-1], array('name' => 'exportToHtml'));
 
 IPsecprofileCallContext::$supportedActions['delete'] = array(
     'name' => 'delete',

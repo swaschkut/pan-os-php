@@ -371,6 +371,7 @@ InterfaceCallContext::$supportedActions['exportToExcel'] = array(
     )
 
 );
+InterfaceCallContext::$supportedActions['exportToHtml'] = array_merge(InterfaceCallContext::$supportedActions['exportToExcel'], array('name' => 'exportToHtml'));
 
 InterfaceCallContext::$supportedActions['name-Rename'] = array(
     'name' => 'name-Rename',

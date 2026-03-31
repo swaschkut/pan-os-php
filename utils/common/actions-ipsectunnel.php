@@ -219,3 +219,4 @@ IPsectunnelCallContext::$supportedActions[] = array(
                     "  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n")
     )
 );
+IPsectunnelCallContext::$supportedActions[] = array_merge(IPsectunnelCallContext::$supportedActions[count(IPsectunnelCallContext::$supportedActions)-1], array('name' => 'exportToHtml'));

@@ -864,4 +864,5 @@ ZoneCallContext::$supportedActions['exportToExcel'] = array(
     )
 
 );
+ZoneCallContext::$supportedActions['exportToHtml'] = array_merge(ZoneCallContext::$supportedActions['exportToExcel'], array('name' => 'exportToHtml'));
 

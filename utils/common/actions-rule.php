@@ -5661,6 +5661,7 @@ RuleCallContext::$supportedActions[] = array(
             )
     )
 );
+RuleCallContext::$supportedActions[] = array_merge(RuleCallContext::$supportedActions[count(RuleCallContext::$supportedActions)-1], array('name' => 'exportToHtml'));
 
 RuleCallContext::$supportedActions[] = array(
     'name' => 'clone',

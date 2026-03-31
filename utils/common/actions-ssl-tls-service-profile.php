@@ -148,3 +148,4 @@ SSL_TLSServiceProfileCallContext::$supportedActions['exportToExcel'] = array(
     },
     'args' => array('filename' => array('type' => 'string', 'default' => '*nodefault*'))
 );
+SSL_TLSServiceProfileCallContext::$supportedActions['exportToHtml'] = array_merge(SSL_TLSServiceProfileCallContext::$supportedActions['exportToExcel'], array('name' => 'exportToHtml'));

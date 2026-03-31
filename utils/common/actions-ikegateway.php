@@ -299,3 +299,4 @@ IKEgatewayCallContext::$supportedActions[] = array(
                     "  - PSKcleartext : show IKE gateway PSK in cleartext\n")
     )
 );
+IKEgatewayCallContext::$supportedActions[] = array_merge(IKEgatewayCallContext::$supportedActions[count(IKEgatewayCallContext::$supportedActions)-1], array('name' => 'exportToHtml'));
