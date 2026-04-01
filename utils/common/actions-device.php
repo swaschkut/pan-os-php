@@ -1717,7 +1717,8 @@ DeviceCallContext::$supportedActions['exportInventoryToExcel'] = array(
             require_once dirname(__FILE__) . '/../lib/ExportToHtmlHelper.php';
             $content = ExportToHtmlHelper::buildHtmlExport($tableHeaders, $lines);
         }
-        file_put_contents($context->arguments['filename'], $content);
+        require_once dirname(__FILE__) . '/../lib/FilePutContents.php';
+        FilePutContents::putContents($context->arguments['filename'], $content);
     },
     'args' => array(
         'filename' => array('type' => 'string', 'default' => '*nodefault*',
@@ -1853,7 +1854,8 @@ DeviceCallContext::$supportedActions['exportLicenseToExcel'] = array(
             $content = ExportToHtmlHelper::buildHtmlExport($tableHeaders, $lines);
         }
 
-        file_put_contents($context->arguments['filename'], $content);
+        require_once dirname(__FILE__) . '/../lib/FilePutContents.php';
+        FilePutContents::putContents($context->arguments['filename'], $content);
     },
     'args' => array(
         'filename' => array('type' => 'string', 'default' => '*nodefault*',

@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>PAN-OS-PHP Playbook Architect Pro</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding: 20px; }
+        .container { max-width: 1400px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; margin-bottom: 20px; padding-bottom: 10px; }
+        .header-controls { display: flex; align-items: center; gap: 20px; }
+        .global-toggle-group { display: flex; gap: 15px; align-items: center; background: #edf2f7; padding: 8px 15px; border-radius: 6px; border: 1px solid #cbd5e0; }
+        .global-toggle-group label { margin: 0; text-transform: none; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 5px; font-weight: bold; color: #2d3748; }
+        .global-comments { background: #edf2f7; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #cbd5e0; }
+        .command-card { border: 1px solid #cbd5e0; padding: 15px; margin-bottom: 20px; border-radius: 8px; background: #fdfdfd; border-left: 5px solid #3182ce; }
+        .card-header { display: flex; gap: 8px; align-items: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #edf2f7; }
+        .step-label { font-size: 0.75rem; font-weight: bold; color: #718096; text-transform: uppercase; flex-grow: 1; text-align: center; }
+        .row { display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+        .input-group { flex: 1; min-width: 100px; }
+        .input-group-type { flex: 0 0 250px; }
+        .input-group-subtype { flex: 0 0 200px; }
+        .input-group-loc { flex: 0 0 200px; }
+        label { font-size: 0.7rem; font-weight: bold; color: #4a5568; text-transform: uppercase; display: block; margin-bottom: 4px; }
+        input, select, textarea { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.85rem; box-sizing: border-box; }
+
+        .filter-grid {
+            display: grid;
+            grid-template-columns: 40px min-content 160px min-content 1fr 40px;
+            gap: 15px;
+            align-items: flex-end;
+            margin-bottom: 8px;
+            border-bottom: 1px dashed #e2e8f0;
+            padding-bottom: 8px;
+        }
+        .filter-grid select { min-width: 100px; width: auto; }
+
+        .btn { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
+        .btn-add { background: #38a169; color: white; }
+        .btn-nav { background: #4a5568; color: white; }
+        .btn-nav:disabled { opacity: 0.4; cursor: not-allowed; }
+        .action-grid { display: flex; gap: 15px; align-items: flex-start; margin-bottom: 12px; border-bottom: 1px dashed #e2e8f0; padding-bottom: 12px; justify-content: space-between; }
+        .arg-inputs-container { display: flex; flex-wrap: wrap; gap: 10px; flex-grow: 1; }
+        .arg-field { min-width: 120px; flex: 1; }
+        .btn-remove-small { background: #e53e3e; color: white; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; margin-top: 18px; }
+        .btn-group-toggle { background: #edf2f7; color: #4a5568; border: 1px solid #cbd5e0; width: 32px; height: 32px; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; margin-top: 18px; cursor: pointer; border-radius: 4px; }
+        .btn-group-toggle.active { background: #805ad5; color: white; border-color: #6b46c1; }
+        .sub-section { margin-left: 20px; border-left: 2px solid #cbd5e0; padding-left: 15px; margin-top: 15px; }
+        .cli-preview-container { margin-top: 15px; background: #edf2f7; padding: 10px; border-radius: 6px; border: 1px solid #cbd5e0; display: flex; gap: 8px; align-items: center; }
+        .cli-input { font-family: 'Courier New', monospace; flex-grow: 1; border: 1px solid #3182ce; padding: 8px; background: #fff; color: #2d3748; }
+        .json-preview-container { margin-top: 10px; background: #fffaf0; border: 1px solid #ed8936; padding: 10px; border-radius: 6px; }
+        .json-input { font-family: 'Courier New', monospace; font-size: 0.8rem; background: #fff; color: #7b341e; min-height: 120px; border: 1px solid #ed8936; }
+        .unhandled-container { margin-top: 10px; background: #fdf2f2; border: 1px solid #feb2b2; padding: 10px; border-radius: 6px; }
+        .unhandled-input { font-family: 'Courier New', monospace; font-size: 0.8rem; background: #fff; color: #c53030; min-height: 60px; border: 1px solid #fc8181; }
+        .comment-field-area { margin-bottom: 15px; padding: 10px; background: #fffaf0; border: 1px dashed #ed8936; border-radius: 6px; }
+        .arg-toggle { display: flex; align-items: center; gap: 5px; margin-bottom: 4px; font-size: 0.65rem; color: #2d3748; white-space: nowrap; }
+        .arg-toggle input { width: auto !important; }
+        .multi-select-box { height: 120px; font-size: 0.8rem; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h2>PAN-OS-PHP Playbook Architect Pro</h2>
+        <div class="header-controls">
+            <div class="global-toggle-group">
+                <label><input type="checkbox" id="global-show-comments" onchange="toggleAllComments(this.checked)"> Comments</label>
+                <label><input type="checkbox" id="global-show-cli" onchange="toggleAllCli(this.checked)"> CLI</label>
+                <label><input type="checkbox" id="global-show-json" onchange="toggleAllJson(this.checked)"> JSON</label>
+                <label><input type="checkbox" id="global-show-unhandled" onchange="toggleAllUnhandled(this.checked)"> Unhandled Fields</label>
+                <label style="color: #e53e3e;"><input type="checkbox" id="global-disable-ui" onchange="toggleUiDisabled(this.checked)"> Lock UI</label>
+            </div>
+            <div>
+                <input type="file" id="filePicker" accept=".json" style="display:none">
+                <button class="btn" style="background:#3182ce; color:white" onclick="document.getElementById('filePicker').click()">📂 LOAD</button>
+                <button class="btn" style="background:#2d3748; color:white" onclick="exportJSON()">💾 SAVE</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="global-comment-section" class="global-comments" style="display:none">
+        <div class="row">
+            <div class="input-group"><label>Stage Name (Prefix)</label><input type="text" id="global-stagename" oninput="playbook.stagename=this.value"></div>
+        </div>
+        <div id="area-header" class="comment-field-area"><label>Header Comment</label><textarea id="text-header" oninput="playbook['header-comment']=this.value"></textarea></div>
+        <div id="area-footer" class="comment-field-area"><label>Footer Comment</label><textarea id="text-footer" oninput="playbook['footer-comment']=this.value"></textarea></div>
+    </div>
+
+    <div id="editor"></div>
+    <button class="btn btn-add" style="width:100%; padding:15px; margin-top:10px;" onclick="addNewStepAtEnd()">+ Add New Command at End</button>
+</div>
+
+<script src="json_array.js"></script>
+
+<script>
+    const subTypeConfig = {
+        "rule": { field: "ruletype", default: "security", choices: ["security", "nat", "decryption", "app-override", "pbf", "qos", "captive-portal", "authentication"] },
+        "securityprofile": { field: "securityprofiletype", default: "any", choices: ["any", "virus", "vulnerability", "url-filtering", "data-filtering", "file-blocking", "spyware", "wildfire"] },
+        "device": { field: "devicetype", default: "devicegroup", choices: ["devicegroup", "vsys", "template", "templatestack"] }
+    };
+
+    const mathSet = [">=", "<=", ">", "<", "!=", "="];
+    const triggerSymbols = [">", "<", "=", "!"];
+
+    let playbook = { "stagename": "", "header-comment": "", "footer-comment": "", "command": [] };
+    let globalShowComments = false, globalShowCli = false, globalShowJson = false, globalUiDisabled = false, globalShowUnhandled = false;
+
+    function toggleAllComments(isVisible) { globalShowComments = isVisible; render(); }
+    function toggleAllCli(isVisible) { globalShowCli = isVisible; render(); }
+    function toggleAllJson(isVisible) { globalShowJson = isVisible; render(); }
+    function toggleAllUnhandled(isVisible) { globalShowUnhandled = isVisible; render(); }
+    function toggleUiDisabled(isDisabled) { globalUiDisabled = isDisabled; render(); }
+
+    function parseSingleCommand(raw) {
+        const techType = Object.keys(subjectObject).find(k => subjectObject[k].name === raw.type || k === raw.type) || "rule";
+        const typeLib = subjectObject[techType] || {};
+        let internal = JSON.parse(JSON.stringify(raw));
+        internal.type = techType;
+        internal.location = (raw.location || "").replace(/^location=/, "");
+        internal.comment = (raw.comment || "").replace(/\\n/g, "\n");
+
+        internal._uiActions = [];
+        if (raw.actions) {
+            raw.actions.replace(/^actions=/, "").split('/').forEach(s => {
+                const [n, a] = s.split(':');
+                const tA = Object.keys(typeLib.action || {}).find(ak => typeLib.action[ak].name === n || ak === n);
+                if (tA) {
+                    const args = {}, v = a ? a.split(',') : [], keys = Object.keys(typeLib.action[tA].args || {});
+                    keys.forEach((k, i) => args[k] = v[i] || "");
+                    internal._uiActions.push({ name: tA, args: args });
+                }
+            });
+        }
+
+        internal._uiFilters = [];
+        if (raw.filter) {
+            const filterText = raw.filter.replace(/^filter=/, "");
+            const parts = filterText.split(/\s+(?=and|or)/i);
+            parts.forEach((p, idx) => {
+                let content = p.trim(), op = "and", isGrouped = content.startsWith('((');
+                if (idx === 0) { op = content.startsWith('!') ? "!" : "none"; if(content.startsWith('!')) content = content.substring(1).trim(); }
+                else { const m = content.match(/^(and\s*!|or\s*!|and|or)\s*/i); if (m) { op = m[1].toLowerCase().replace(/\s+/g, ' '); content = content.substring(m[0].length).trim(); } }
+                content = content.replace(/^\(+|\)+$/g, "");
+                const splitRegex = /(>=|<=|!=|>|<|=|\s+)/;
+                const pieces = content.split(splitRegex).filter(s => s.trim().length > 0);
+                const fieldName = pieces[0];
+                const operatorSymbol = pieces[1];
+                const tF = Object.keys(filterLib = typeLib.filter || {}).find(fk => fk === fieldName || filterLib[fk].name === fieldName);
+                if (tF) {
+                    const ops = filterLib[tF].operators || {};
+                    const tO = Object.keys(ops).find(ok => ok === operatorSymbol || ops[ok].name === operatorSymbol) || operatorSymbol;
+                    const manualVal = content.substring(content.indexOf(operatorSymbol) + operatorSymbol.length).trim();
+                    internal._uiFilters.push({ operator: op, mainType: tF, subFilter: tO, manualValue: manualVal, isGrouped: isGrouped });
+                }
+            });
+        }
+        if(subTypeConfig[techType]) {
+            const f = subTypeConfig[techType].field;
+            if(internal[f]) internal[f] = internal[f].replace(new RegExp(`^${f}=`), "");
+        }
+        return internal;
+    }
+
+    function handleJsonEdit(idx, val) { try { const parsed = JSON.parse(val); playbook.command[idx] = parseSingleCommand(parsed); render(); } catch (e) { } }
+
+    function handleCliEdit(idx, val) {
+        const parts = val.match(/'[^']*'|[^ ]+/g);
+        if (!parts) return;
+        let obj = { type: "rule" };
+        parts.forEach(p => {
+            const clean = p.replace(/^'|'$/g, "");
+            if (clean.startsWith("type=")) obj.type = clean.split("=")[1];
+            else if (clean.startsWith("location=")) obj.location = clean;
+            else if (clean.startsWith("actions=")) obj.actions = clean;
+            else if (clean.startsWith("filter=")) obj.filter = clean;
+            else if (clean.includes("=")) {
+                const split = clean.split("=");
+                if(subTypeConfig[obj.type] && split[0] === subTypeConfig[obj.type].field) obj[split[0]] = clean;
+            }
+        });
+        playbook.command[idx] = parseSingleCommand(obj); render();
+    }
+
+    function buildFilterString(cmd, typeLib) {
+        let fStr = "", inGroup = false;
+        const filters = cmd._uiFilters || [];
+        filters.forEach((f, idx) => {
+            if (!f.mainType) return;
+            const fL = typeLib.filter?.[f.mainType] || {}, oE = fL.operators?.[f.subFilter] || {};
+            let val = f.manualValue || "", opLabel = oE.name || f.subFilter;
+            let seg = (oE.arg === false) ? `${fL.name || f.mainType} ${opLabel}` : `${fL.name || f.mainType} ${opLabel} ${val}`;
+            let form = `(${seg.trim()})`, logic = idx > 0 ? f.operator + " " : (f.operator === "!" ? "!" : "");
+            if (f.isGrouped && !inGroup) { fStr += logic + "(" + form; inGroup = true; }
+            else if (f.isGrouped && inGroup) { fStr += " " + logic + form; }
+            else if (!f.isGrouped && inGroup) { fStr += " " + logic + form + ")"; inGroup = false; }
+            else { fStr += logic + form; }
+            if (idx < filters.length - 1 && !f.isGrouped && !inGroup) fStr += " ";
+        });
+        if (inGroup) fStr += ")";
+        return fStr.replace(/\s+/g, ' ').replace(/\( /g, '(').replace(/ \)/g, ')').replace(/! /g, '!').trim();
+    }
+
+    function cleanObject(obj, typeLib, techType) {
+        const out = JSON.parse(JSON.stringify(obj));
+        out.type = typeLib.name || techType;
+
+        if (obj.comment && obj.comment.trim() !== "") out.comment = obj.comment; else delete out.comment;
+        if (obj.location && obj.location.trim() !== "") out.location = "location=" + obj.location; else delete out.location;
+
+        if (subTypeConfig[techType]) {
+            const f = subTypeConfig[techType].field;
+            const val = obj[f] || subTypeConfig[techType].default;
+            out[f] = f + "=" + val;
+        }
+
+        const acts = (obj._uiActions || []).filter(a => a.name).map(a => {
+            const aN = typeLib.action?.[a.name]?.name || a.name;
+            const v = Object.values(a.args).filter(val => val !== "");
+            return v.length > 0 ? `${aN}:${v.join(',')}` : aN;
+        });
+        if(acts.length > 0) out.actions = "actions=" + acts.join('/'); else delete out.actions;
+
+        const fStr = buildFilterString(obj, typeLib);
+        if(fStr && fStr.trim() !== "") out.filter = "filter=" + fStr; else delete out.filter;
+
+        delete out._uiActions; delete out._uiFilters;
+        Object.keys(out).forEach(k => { if(k.startsWith('_show_')) delete out[k]; });
+        return out;
+    }
+
+    function getUnhandledFields(cmd, techType) {
+        const cleaned = cleanObject(cmd, subjectObject[techType] || {}, techType);
+        const managedKeys = ['type', 'location', 'actions', 'filter', 'comment'];
+        if(subTypeConfig[techType]) managedKeys.push(subTypeConfig[techType].field);
+
+        let unhandled = {};
+        Object.keys(cleaned).forEach(k => {
+            if(!managedKeys.includes(k)) unhandled[k] = cleaned[k];
+        });
+        return unhandled;
+    }
+
+    function handleUnhandledEdit(idx, val) {
+        try {
+            const parsed = JSON.parse(val);
+            // Remove current unhandled fields from the command object
+            const currentUnhandled = getUnhandledFields(playbook.command[idx], playbook.command[idx].type);
+            Object.keys(currentUnhandled).forEach(k => delete playbook.command[idx][k]);
+            // Apply new ones
+            Object.assign(playbook.command[idx], parsed);
+            updatePreviews(idx);
+        } catch(e) {}
+    }
+
+    function generateStepJson(cmd) {
+        const techType = cmd.type, typeLib = subjectObject[techType] || {};
+        return JSON.stringify(cleanObject(cmd, typeLib, techType), null, 2);
+    }
+
+    function generateFullCli(cmd) {
+        const typeLib = subjectObject[cmd.type] || {};
+        const acts = (cmd._uiActions || []).filter(a => a.name).map(a => {
+            const aN = typeLib.action?.[a.name]?.name || a.name;
+            const v = Object.values(a.args).filter(val => val !== "");
+            return v.length > 0 ? `${aN}:${v.join(',')}` : aN;
+        });
+        const actionPart = acts.length ? `'actions=${acts.join('/')}'` : "", filterPart = buildFilterString(cmd, typeLib) ? `'filter=${buildFilterString(cmd, typeLib)}'` : "", locPart = cmd.location ? `'location=${cmd.location}'` : "";
+        let subPart = ""; if(subTypeConfig[cmd.type]) { const cfg = subTypeConfig[cmd.type]; subPart = `'${cfg.field}=${cmd[cfg.field] || cfg.default}'`; }
+        return `pan-os-php type=${typeLib.name || cmd.type} ${subPart} ${locPart} ${actionPart} ${filterPart}`.replace(/\s+/g, ' ').trim();
+    }
+
+    function render() {
+        document.getElementById('global-comment-section').style.display = globalShowComments ? 'block' : 'none';
+        const container = document.getElementById('editor'); container.innerHTML = '';
+
+        playbook.command.forEach((cmd, cIdx) => {
+            const typeLib = subjectObject[cmd.type] || {};
+            const card = document.createElement('div'); card.className = 'command-card';
+            const hasActions = typeLib.action && Object.keys(typeLib.action).length > 0;
+            const hasFilters = typeLib.filter && Object.keys(typeLib.filter).length > 0;
+
+            let subTypeDropdown = "";
+            if(subTypeConfig[cmd.type]) {
+                const cfg = subTypeConfig[cmd.type];
+                subTypeDropdown = `<div class="input-group input-group-subtype"><label>${cfg.field}</label><select onchange="playbook.command[${cIdx}]['${cfg.field}']=this.value; updatePreviews(${cIdx});">${cfg.choices.map(c => `<option value="${c}" ${c === cmd[cfg.field] ? 'selected' : ''}>${c}</option>`).join('')}</select></div>`;
+            }
+
+            card.innerHTML = `
+        <div class="card-header">
+            <button class="btn btn-nav" onclick="moveStep(${cIdx}, -1)" ${cIdx === 0 ? 'disabled' : ''}>↑</button>
+            <button class="btn btn-nav" onclick="moveStep(${cIdx}, 1)" ${cIdx === playbook.command.length - 1 ? 'disabled' : ''}>↓</button>
+            <div class="step-label">STEP ${cIdx + 1} of ${playbook.command.length}</div>
+            <button class="btn btn-add" onclick="insertStep(${cIdx})">+ Insert</button>
+            <button class="btn" style="background:#e53e3e; color:white" onclick="removeStep(${cIdx})">Delete</button>
+        </div>
+        ${globalShowComments ? `<div class="comment-field-area"><label>Step Comment</label><textarea oninput="playbook.command[${cIdx}].comment=this.value; updatePreviews(${cIdx});">${cmd.comment || ''}</textarea></div>` : ''}
+        <div style="display: ${globalUiDisabled ? 'none' : 'block'}">
+            <div class="row">
+                <div class="input-group input-group-type"><label>Type</label><select onchange="updateType(${cIdx}, this.value)">${Object.keys(subjectObject).map(t => `<option value="${t}" ${t === cmd.type ? 'selected' : ''}>${subjectObject[t].name || t}</option>`).join('')}</select></div>
+                ${subTypeDropdown}
+                <div class="input-group input-group-loc"><label>Location</label><input type="text" value="${cmd.location || ''}" oninput="playbook.command[${cIdx}].location=this.value; updatePreviews(${cIdx});"></div>
+            </div>
+            ${hasActions ? `<div class="sub-section">
+                <label style="color:#2b6cb0; font-weight:bold;">Actions</label>
+                <div id="actions-${cIdx}">${cmd._uiActions.map((act, aIdx) => {
+                const actionLib = typeLib.action || {}, argDefs = actionLib[act.name]?.args || {};
+                return `<div class="action-grid">
+                        <div style="min-width:240px"><label>Action</label><select onchange="updateAction(${cIdx}, ${aIdx}, this.value)"><option value="">-- select --</option>${Object.keys(actionLib).map(k => `<option value="${k}" ${k===act.name?'selected':''}>${actionLib[k].name||k}</option>`).join('')}</select></div>
+                        <div class="arg-inputs-container">${Object.keys(argDefs).map(k => {
+                    const def = argDefs[k], isMandatory = def.default === "*nodefault*", isHidden = !isMandatory && act.args[k] === "" && !act[`_show_${k}`];
+                    return `<div class="arg-field">
+                                ${isMandatory ? `<label>${k}*</label>` : `<div class="arg-toggle"><input type="checkbox" ${!isHidden ? 'checked' : ''} onchange="toggleArgVisibility(${cIdx}, ${aIdx}, '${k}', this.checked)"> <span>Show ${k}</span></div>`}
+                                <div style="display: ${isHidden ? 'none' : 'block'}">${def.type === 'pipeSeparatedList' ? `<select class="multi-select-box" multiple onchange="updateMultiArg(${cIdx}, ${aIdx}, '${k}', this)">${def.choices.map(c => `<option value="${c}" ${act.args[k].split('|').includes(c)?'selected':''}>${c}</option>`).join('')}</select>` : `<input type="text" value="${act.args[k]||''}" oninput="playbook.command[${cIdx}]._uiActions[${aIdx}].args['${k}']=this.value; updatePreviews(${cIdx});">`}</div>
+                            </div>`;
+                }).join('')}</div>
+                        <button class="btn btn-remove-small" onclick="playbook.command[${cIdx}]._uiActions.splice(${aIdx},1); render();">&times;</button>
+                    </div>`;
+            }).join('')}</div>
+                <button class="btn btn-add" style="background:#a0aec0" onclick="playbook.command[${cIdx}]._uiActions.push({name:'', args:{}}); render();">+ Add Action</button>
+            </div>` : ''}
+            ${hasFilters ? `<div class="sub-section">
+                <label style="color:#2b6cb0; font-weight:bold;">Filters</label>
+                <div id="filters-${cIdx}">${cmd._uiFilters.map((f, fIdx) => {
+                const filterLib = typeLib.filter || {};
+                const libOps = filterLib[f.mainType]?.operators || {};
+                let finalOps = [];
+                const hasTrigger = Object.keys(libOps).some(k => triggerSymbols.includes(k) || triggerSymbols.includes(libOps[k].name));
+                if (hasTrigger) {
+                    const filteredLibKeys = Object.keys(libOps).filter(k => !triggerSymbols.includes(k) && !triggerSymbols.includes(libOps[k].name));
+                    finalOps = [...mathSet, ...filteredLibKeys];
+                } else { finalOps = Object.keys(libOps); }
+                const currentOpObj = libOps[f.subFilter] || {};
+                const showValueField = currentOpObj.arg !== false;
+                return `<div class="filter-grid">
+                        <button class="btn-group-toggle ${f.isGrouped ? 'active' : ''}" onclick="playbook.command[${cIdx}]._uiFilters[${fIdx}].isGrouped = !playbook.command[${cIdx}]._uiFilters[${fIdx}].isGrouped; render();">+</button>
+                        <div class="input-group" style="min-width: 90px;"><label>Logic</label><select onchange="playbook.command[${cIdx}]._uiFilters[${fIdx}].operator=this.value; render();">${fIdx===0?`<option value="none" ${!f.operator.includes('!')?'selected':''}>START</option><option value="!" ${f.operator.includes('!')?'selected':''}>NOT (!)</option>`:`<option value="and" ${f.operator==='and'?'selected':''}>AND</option><option value="and !" ${f.operator==='and !'?'selected':''}>AND NOT</option><option value="or" ${f.operator==='or'?'selected':''}>OR</option>`}</select></div>
+                        <div class="input-group"><label>Field</label><select onchange="playbook.command[${cIdx}]._uiFilters[${fIdx}].mainType=this.value; render();"><option value="">-- Field --</option>${Object.keys(filterLib).map(k=>(`<option value="${k}" ${k===f.mainType?'selected':''}>${filterLib[k].name||k}</option>`)).join('')}</select></div>
+                        <div class="input-group" style="min-width: 120px;"><label>Op</label><select onchange="playbook.command[${cIdx}]._uiFilters[${fIdx}].subFilter=this.value; render();"><option value="">-- Op --</option>${finalOps.map(k=>(`<option value="${k}" ${k===f.subFilter?'selected':''}>${libOps[k]?.name||k}</option>`)).join('')}</select></div>
+                        <div class="input-group" style="visibility: ${showValueField ? 'visible' : 'hidden'}"><label>Value</label><input type="text" value="${f.manualValue}" oninput="playbook.command[${cIdx}]._uiFilters[${fIdx}].manualValue=this.value; updatePreviews(${cIdx});"></div>
+                        <button class="btn btn-remove-small" onclick="playbook.command[${cIdx}]._uiFilters.splice(${fIdx},1); render();">&times;</button>
+                    </div>`;
+            }).join('')}</div>
+                <button class="btn btn-add" style="background:#a0aec0" onclick="playbook.command[${cIdx}]._uiFilters.push({operator:'and', mainType:'', subFilter:'', manualValue:'', isGrouped: false}); render();">+ Add Filter</button>
+            </div>` : ''}
+        </div>
+        <div class="cli-preview-container" style="display: ${globalShowCli ? 'flex' : 'none'}"><input type="text" id="cli-${cIdx}" class="cli-input" value="${generateFullCli(cmd)}" onchange="handleCliEdit(${cIdx}, this.value)"><button class="btn" style="background:#4a5568; color:white;" onclick="copyCli(${cIdx}, this)">COPY</button></div>
+        <div class="json-preview-container" style="display: ${globalShowJson ? 'block' : 'none'}"><textarea id="json-val-${cIdx}" class="json-input" onchange="handleJsonEdit(${cIdx}, this.value)">${generateStepJson(cmd)}</textarea></div>
+        <div class="unhandled-container" style="display: ${globalShowUnhandled ? 'block' : 'none'}"><label style="color:#c53030">Unhandled Arguments (JSON Only)</label><textarea id="unhandled-val-${cIdx}" class="unhandled-input" onchange="handleUnhandledEdit(${cIdx}, this.value)">${JSON.stringify(getUnhandledFields(cmd, cmd.type), null, 2)}</textarea></div>`;
+            container.appendChild(card);
+        });
+    }
+
+    document.getElementById('filePicker').addEventListener('change', function(e) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            try {
+                const raw = JSON.parse(event.target.result);
+                playbook.stagename = raw.stagename || "";
+                playbook['header-comment'] = raw['header-comment'] || "";
+                playbook['footer-comment'] = raw['footer-comment'] || "";
+                playbook.command = (raw.command || []).map(cmd => parseSingleCommand(cmd)); render();
+            } catch (err) { }
+        }; reader.readAsText(e.target.files[0]);
+    });
+
+    function updateMultiArg(cIdx, aIdx, key, selectEl) { playbook.command[cIdx]._uiActions[aIdx].args[key] = Array.from(selectEl.selectedOptions).map(opt => opt.value).join('|'); updatePreviews(cIdx); }
+    function updatePreviews(idx) {
+        const cli = document.getElementById(`cli-${idx}`); if(cli) cli.value = generateFullCli(playbook.command[idx]);
+        const jsn = document.getElementById(`json-val-${idx}`); if(jsn) jsn.value = generateStepJson(playbook.command[idx]);
+        const unh = document.getElementById(`unhandled-val-${idx}`); if(unh) unh.value = JSON.stringify(getUnhandledFields(playbook.command[idx], playbook.command[idx].type), null, 2);
+    }
+    function toggleArgVisibility(cIdx, aIdx, key, isVisible) { playbook.command[cIdx]._uiActions[aIdx][`_show_${key}`] = isVisible; render(); }
+    function updateAction(cIdx, aIdx, actionKey) { const argDefs = subjectObject[playbook.command[cIdx].type]?.action[actionKey]?.args || {}; let newArgs = {}; Object.keys(argDefs).forEach(k => newArgs[k] = ""); playbook.command[cIdx]._uiActions[aIdx] = { name: actionKey, args: newArgs }; render(); }
+    function updateType(cIdx, val) { playbook.command[cIdx].type = val; playbook.command[cIdx]._uiActions = []; playbook.command[cIdx]._uiFilters = []; render(); }
+    function addNewStepAtEnd() { playbook.command.push({ type: "rule", location: "", _uiActions: [], _uiFilters: [], comment: "" }); render(); }
+    function insertStep(idx) { playbook.command.splice(idx, 0, { type: "rule", location: "", _uiActions: [], _uiFilters: [], comment: "" }); render(); }
+    function removeStep(idx) { playbook.command.splice(idx, 1); render(); }
+    function moveStep(idx, dir) { const temp = playbook.command[idx]; playbook.command[idx] = playbook.command[idx+dir]; playbook.command[idx+dir] = temp; render(); }
+    function copyCli(idx, btn) { const input = document.getElementById(`cli-${idx}`); input.select(); navigator.clipboard.writeText(input.value); btn.innerText = "COPIED!"; setTimeout(() => btn.innerText = "COPY", 1500); }
+
+    function exportJSON() {
+        const out = JSON.parse(JSON.stringify(playbook));
+        if (!out.stagename || out.stagename.trim() === "") delete out.stagename;
+        if (!out['header-comment'] || out['header-comment'].trim() === "") delete out['header-comment'];
+        if (!out['footer-comment'] || out['footer-comment'].trim() === "") delete out['footer-comment'];
+
+        out.command = out.command.map(cmd => {
+            const typeLib = subjectObject[cmd.type] || {};
+            return cleanObject(cmd, typeLib, cmd.type);
+        });
+
+        const blob = new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' });
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = "playbook.json"; a.click();
+    }
+    render();
+</script>
+</body>
+</html>

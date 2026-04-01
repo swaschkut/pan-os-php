@@ -156,7 +156,7 @@ RoutingCallContext::$supportedActions[] = array(
 );
 RoutingCallContext::$supportedActions[] = array_merge(RoutingCallContext::$supportedActions[array_key_last(RoutingCallContext::$supportedActions)], array('name' => 'exportToHtml'));
 
-RoutingCallContext::$supportedActions['display'] = Array(
+RoutingCallContext::$supportedActions['display-route-table-fast'] = Array(
     'name' => 'display-route-table-fast',
     'MainFunction' => function ( RoutingCallContext $context )
     {
@@ -175,7 +175,10 @@ RoutingCallContext::$supportedActions['display'] = Array(
         $json = DH::findFirstElement("json", $result);
 
         $filename = $connector->apihost."_".$virtualRouter->name().".txt";
-        file_put_contents($filename, $json->textContent);
+
+
+        require_once dirname(__FILE__) . '/../lib/FilePutContents.php';
+        FilePutContents::putContents($filename, $json->textContent);
 
 
 

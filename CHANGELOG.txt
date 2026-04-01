@@ -2,6 +2,7 @@ CHANGELOG
 
 2.1.53
 UTIL:
+* adjustment to index_assessment.html
 
 BUGFIX:
 

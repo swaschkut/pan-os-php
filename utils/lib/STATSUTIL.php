@@ -24,7 +24,7 @@ class STATSUTIL extends RULEUTIL
 
     public $jsonToFolder_string = "";
 
-    function __construct($utilType, $argv, $argc, $PHP_FILE, $_supportedArguments = array(), $_usageMsg = "")
+    function __construct($utilType, $argv, $argc, $PHP_FILE, $_supportedArguments = array(), $_usageMsg = "", $projectFolder = "")
     {
         #PH::print_stdout("argv");
         #print_r($argv);
@@ -34,7 +34,7 @@ class STATSUTIL extends RULEUTIL
         #PH::print_stdout($PHP_FILE);
 
         $_usageMsg =  PH::boldText('USAGE: ')."php ".basename(__FILE__)." in=api:://[MGMT-IP] [location=vsys2]";;
-        parent::__construct($utilType, $argv, $argc, $PHP_FILE, $_supportedArguments, $_usageMsg);
+        parent::__construct($utilType, $argv, $argc, $PHP_FILE, $_supportedArguments, $_usageMsg, $projectFolder);
     }
 
     public function utilStart()
@@ -296,6 +296,12 @@ class STATSUTIL extends RULEUTIL
             $jsonContent = json_encode($mainArray, JSON_PRETTY_PRINT);
             $this->jsonToFolder_string .= "samples = ".$jsonContent.";";
             $filename = $outputFolder."/diagram_data.js";
+
+            if( isset( $_SERVER['REQUEST_METHOD'] ) )
+                $filename = "project/html/".$filename;
+            if( PanAPIConnector::$projectfolder !== "" )
+                $filename = PanAPIConnector::$projectfolder."/".$filename;
+
             file_put_contents($filename, $this->jsonToFolder_string);
 
 

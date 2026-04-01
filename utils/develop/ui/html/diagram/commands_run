@@ -1,0 +1,33 @@
+commands:
+
+
+docker build -t chart-exporter . --file Dockerfile_selenium
+
+
+#OLD one which contains diagram_data.js inside the container
+#docker run --rm -v $(pwd)/jpg:/app/jpg chart-exporter
+
+
+
+
+docker run --rm \
+    -v $(pwd)/jpg:/app/jpg \
+    -v $(pwd)/diagram_data.js:/app/diagram_data.js \
+    chart-exporter
+
+#one line:
+docker run --rm -v $(pwd)/jpg:/app/jpg -v $(pwd)/diagram_data.js:/app/diagram_data.js chart-exporter
+
+
+
+
+============
+You will need to save the Docker image as a tar file (below is for the 'latest' container - substitute appropriately for 'develop'):
+docker save -o <path for generated tar file> <image name>
+docker save -o latest.tar swaschkut/pan-os-php:latest
+
+Then copy your image to a new system with regular file transfer tools such as cp, scp, or rsync (preferred for big files).
+
+After that you will have to load the image into Docker:
+docker load -i <path to image tar file>
+docker load -i latest.tar
