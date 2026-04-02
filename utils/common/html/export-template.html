@@ -184,13 +184,16 @@
 
         /* ── Dropdown filter ─────────────────────────────────────────── */
         .panos-filter-cell {
+            position: relative;
             display: flex;
             align-items: center;
-            gap: 3px;
         }
-        .panos-filter-cell .panos-col-filter { flex: 1; min-width: 0; }
+        .panos-filter-cell .panos-col-filter { flex: 1; min-width: 0; padding-right: 20px; }
         .panos-dropdown-btn {
-            flex-shrink: 0;
+            position: absolute;
+            right: 3px;
+            top: 50%;
+            transform: translateY(-50%);
             width: 16px;
             height: 16px;
             padding: 2px;
