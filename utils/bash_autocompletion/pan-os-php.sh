@@ -34,7 +34,9 @@ _pan_os_php() {
     local type_val=""
     local w
     for w in "${words[@]}"; do
-        [[ "$w" == type=* ]] && { type_val="${w#type=}"; break; }
+        case "$w" in
+            type=*|\'type=*) type_val="${w#\'}" ; type_val="${type_val#type=}" ; break ;;
+        esac
     done
 
     # ── Build set of already-used arguments (to avoid repeating them) ──────
@@ -89,35 +91,296 @@ _pan_os_php() {
             compadd -S ' ' -- "${suggestions[@]}"
             ;;
 
-        actions=*)
-            local val="${cur#actions=}"
+        \'actions=*|actions=*)
+            # Strip leading single-quote if present
+            local raw="${cur#\'}"
+            local val="${raw#actions=}"
+            local quote_prefix=""
+            [[ "${cur}" == \'* ]] && quote_prefix="'"
+
             if [[ -n "${type_val}" ]]; then
                 local -a acts
                 acts=(${(f)"$(jq -r \
                     ".\"${type_val}\" | select(.action != null) | .action | keys[]" \
                     "${json_file}" 2>/dev/null)"})
-                local -a suggestions
-                local a
-                for a in "${acts[@]}"; do
-                    [[ "${a}" == ${val}* ]] && suggestions+=("actions=${a}")
-                done
-                compadd -S ' ' -- "${suggestions[@]}"
+
+                # Determine context: are we after a '/' (chained action) or ':' (action args)?
+                # Action syntax: actions=act1:arg1,arg2|arg3/act2:arg1/act3
+                # Find the last segment after the last '/'
+                local last_segment="${val##*/}"
+                local prefix_before=""
+                if [[ "${val}" == */* ]]; then
+                    prefix_before="${val%/*}/"
+                fi
+
+                if [[ "${last_segment}" == *:* ]]; then
+                    # ── After ':' — complete action arguments ──────────────
+                    local act_name="${last_segment%%:*}"
+                    local arg_part="${last_segment#*:}"
+
+                    # Get action arg info from JSON (choices arrays and arg names)
+                    local -a arg_suggestions
+                    local args_json
+                    args_json="$(jq -r \
+                        ".\"${type_val}\".action.\"${act_name}\".args // empty" \
+                        "${json_file}" 2>/dev/null)"
+
+                    if [[ -n "${args_json}" ]]; then
+                        # Collect all choices from all args
+                        local -a choices
+                        choices=(${(f)"$(echo "${args_json}" | jq -r \
+                            '[.[] | select(.choices != null) | .choices[]] | unique | .[]' \
+                            2>/dev/null)"})
+
+                        # Collect arg names with their types as hints
+                        local -a arg_names
+                        arg_names=(${(f)"$(echo "${args_json}" | jq -r \
+                            'to_entries[] | .key' 2>/dev/null)"})
+
+                        # Determine what's already been provided (split on , and |)
+                        local last_arg="${arg_part##*[,|]}"
+
+                        # Build the fixed prefix up to last delimiter
+                        local arg_prefix_before=""
+                        if [[ "${arg_part}" == *,* || "${arg_part}" == *\|* ]]; then
+                            # Everything up to and including the last , or |
+                            arg_prefix_before="${arg_part%[,|]*}"
+                            # Re-add the delimiter character
+                            local delim_char="${arg_part:${#arg_prefix_before}:1}"
+                            arg_prefix_before="${arg_prefix_before}${delim_char}"
+                        fi
+
+                        local full_prefix="${quote_prefix}actions=${prefix_before}${act_name}:${arg_prefix_before}"
+
+                        if [[ ${#choices[@]} -gt 0 ]]; then
+                            local -a suggestions
+                            local c
+                            for c in "${choices[@]}"; do
+                                [[ "${c}" == ${last_arg}* ]] && \
+                                    suggestions+=("${full_prefix}${c}")
+                            done
+                            compadd -S '' -- "${suggestions[@]}"
+                        else
+                            # No choices — show arg names as hints
+                            local -a suggestions
+                            local n
+                            for n in "${arg_names[@]}"; do
+                                [[ "${n}" == ${last_arg}* ]] && \
+                                    suggestions+=("${full_prefix}${n}")
+                            done
+                            compadd -S '' -- "${suggestions[@]}"
+                        fi
+                    fi
+
+                elif [[ "${val}" == */ ]]; then
+                    # ── Right after '/' — suggest next action name ─────────
+                    local -a suggestions
+                    local a
+                    for a in "${acts[@]}"; do
+                        suggestions+=("${quote_prefix}actions=${prefix_before}${a}")
+                    done
+                    compadd -S '' -- "${suggestions[@]}"
+
+                else
+                    # ── Completing an action name (possibly after '/') ─────
+                    local -a suggestions
+                    local a
+                    for a in "${acts[@]}"; do
+                        [[ "${a}" == ${last_segment}* ]] && \
+                            suggestions+=("${quote_prefix}actions=${prefix_before}${a}")
+                    done
+                    compadd -S '' -- "${suggestions[@]}"
+                fi
             fi
             ;;
 
-        filter=*)
-            local val="${cur#filter=}"
+        \'filter=*|filter=*)
+            # Strip leading single-quote if present
+            local raw="${cur#\'}"
+            local val="${raw#filter=}"
+            local quote_prefix=""
+            [[ "${cur}" == \'* ]] && quote_prefix="'"
+
             if [[ -n "${type_val}" ]]; then
                 local -a filts
                 filts=(${(f)"$(jq -r \
                     ".\"${type_val}\" | select(.filter != null) | .filter | keys[]" \
                     "${json_file}" 2>/dev/null)"})
-                local -a suggestions
-                local f
-                for f in "${filts[@]}"; do
-                    [[ "${f}" == ${val}* ]] && suggestions+=("filter=${f}")
+
+                # ── Filter syntax: (prop operator arg) and (prop2 operator2) ──
+                # We need to figure out where we are in the expression.
+
+                # Find the last opening '(' that hasn't been closed
+                local inside_paren=""
+                local paren_content=""
+                local before_paren=""
+                local depth=0
+                local i char last_open_pos=0
+
+                for (( i=0; i<${#val}; i++ )); do
+                    char="${val:$i:1}"
+                    if [[ "${char}" == "(" ]]; then
+                        (( depth++ ))
+                        last_open_pos=$(( i + 1 ))
+                    elif [[ "${char}" == ")" ]]; then
+                        (( depth-- ))
+                    fi
                 done
-                compadd -S ' ' -- "${suggestions[@]}"
+
+                if (( depth > 0 )); then
+                    # We're inside an unclosed parenthesis
+                    inside_paren="yes"
+                    paren_content="${val:$last_open_pos}"
+                    before_paren="${val:0:$last_open_pos}"
+                fi
+
+                local full_prefix="${quote_prefix}filter=${before_paren}"
+
+                if [[ -z "${val}" || "${val}" == "(" ]]; then
+                    # ── Empty or just '(' — suggest '(' then filter props ──
+                    if [[ -z "${val}" ]]; then
+                        compadd -S '' -- "${quote_prefix}filter=("
+                    else
+                        # Just typed '(' — suggest filter property names
+                        local -a suggestions
+                        local f
+                        for f in "${filts[@]}"; do
+                            suggestions+=("${full_prefix}${f}")
+                        done
+                        compadd -S ' ' -- "${suggestions[@]}"
+                    fi
+
+                elif [[ "${inside_paren}" == "yes" ]]; then
+                    # We're inside a parenthesized expression
+                    # Split paren_content into words
+                    local -a pwords
+                    pwords=("${(@s/ /)paren_content}")
+
+                    # Remove empty elements
+                    local -a pw_clean
+                    local pw
+                    for pw in "${pwords[@]}"; do
+                        [[ -n "${pw}" ]] && pw_clean+=("${pw}")
+                    done
+
+                    local nwords=${#pw_clean[@]}
+
+                    if (( nwords == 0 )); then
+                        # Just '(' with nothing after — suggest filter properties
+                        local -a suggestions
+                        local f
+                        for f in "${filts[@]}"; do
+                            suggestions+=("${full_prefix}${f}")
+                        done
+                        compadd -S ' ' -- "${suggestions[@]}"
+
+                    elif (( nwords == 1 )) && [[ "${paren_content}" != *" " ]]; then
+                        # Typing a filter property name — partial match
+                        local partial="${pw_clean[1]}"
+                        local -a suggestions
+                        local f
+                        for f in "${filts[@]}"; do
+                            [[ "${f}" == ${partial}* ]] && \
+                                suggestions+=("${full_prefix}${f}")
+                        done
+                        compadd -S ' ' -- "${suggestions[@]}"
+
+                    elif (( nwords == 1 )) && [[ "${paren_content}" == *" " ]]; then
+                        # Property typed, space after — suggest operators
+                        local prop="${pw_clean[1]}"
+                        local -a ops
+                        ops=(${(f)"$(jq -r \
+                            ".\"${type_val}\".filter.\"${prop}\".operators // empty | keys[]" \
+                            "${json_file}" 2>/dev/null)"})
+                        if [[ ${#ops[@]} -gt 0 ]]; then
+                            local -a suggestions
+                            local o
+                            for o in "${ops[@]}"; do
+                                suggestions+=("${full_prefix}${prop} ${o}")
+                            done
+                            compadd -S '' -- "${suggestions[@]}"
+                        fi
+
+                    elif (( nwords == 2 )) && [[ "${paren_content}" != *" " ]]; then
+                        # Typing an operator — partial match
+                        local prop="${pw_clean[1]}"
+                        local partial_op="${pw_clean[2]}"
+                        local -a ops
+                        ops=(${(f)"$(jq -r \
+                            ".\"${type_val}\".filter.\"${prop}\".operators // empty | keys[]" \
+                            "${json_file}" 2>/dev/null)"})
+                        local -a suggestions
+                        local o
+                        for o in "${ops[@]}"; do
+                            [[ "${o}" == ${partial_op}* ]] && \
+                                suggestions+=("${full_prefix}${prop} ${o}")
+                        done
+                        # Check if any matching operator takes no arg — if so, suffix with ')'
+                        # Otherwise suffix with space for the arg
+                        compadd -S '' -- "${suggestions[@]}"
+
+                    elif (( nwords >= 2 )); then
+                        # Operator typed — check if it takes an arg
+                        local prop="${pw_clean[1]}"
+                        local op="${pw_clean[2]}"
+                        local takes_arg
+                        takes_arg="$(jq -r \
+                            ".\"${type_val}\".filter.\"${prop}\".operators.\"${op}\".arg // false" \
+                            "${json_file}" 2>/dev/null)"
+
+                        if [[ "${takes_arg}" == "true" ]]; then
+                            if (( nwords == 2 )) && [[ "${paren_content}" == *" " ]]; then
+                                # After operator+space — hint that an argument is needed, then ')'
+                                compadd -S ')' -- "${full_prefix}${prop} ${op} "
+                            else
+                                # Argument is being typed or was typed — suggest closing ')'
+                                local arg_part="${paren_content#* ${op} }"
+                                compadd -S '' -- "${full_prefix}${prop} ${op} ${arg_part})"
+                            fi
+                        else
+                            # No arg — close with ')'
+                            compadd -S '' -- "${full_prefix}${prop} ${op})"
+                        fi
+                    fi
+
+                else
+                    # We're outside parentheses — suggest 'and'/'or' connectors or '('
+                    # Check if val ends with ')' possibly with trailing space
+                    local trimmed="${val%%[[:space:]]}"
+                    if [[ "${val}" == *")" || "${val}" == *") " || "${val}" == *")  " ]]; then
+                        # After a closed expression — suggest connectors
+                        local base="${val%%[[:space:]]#}"
+                        # Normalize: ensure single space after last ')'
+                        local stripped="${val%%)#*})}"
+                        # Suggest 'and (' or 'or ('
+                        local -a suggestions
+                        suggestions=(
+                            "${quote_prefix}filter=${val}and ("
+                            "${quote_prefix}filter=${val}or ("
+                        )
+                        compadd -S '' -- "${suggestions[@]}"
+                    elif [[ "${val}" == *"and " || "${val}" == *"or " ]]; then
+                        # After connector — suggest '('
+                        compadd -S '' -- "${quote_prefix}filter=${val}("
+                    elif [[ "${val}" == *"and (" || "${val}" == *"or (" ]]; then
+                        # After connector+open-paren — suggest filter properties
+                        local -a suggestions
+                        local f
+                        for f in "${filts[@]}"; do
+                            suggestions+=("${quote_prefix}filter=${val}${f}")
+                        done
+                        compadd -S ' ' -- "${suggestions[@]}"
+                    else
+                        # Fallback — offer filter property names
+                        local -a suggestions
+                        local f
+                        for f in "${filts[@]}"; do
+                            [[ "${f}" == ${val}* ]] && \
+                                suggestions+=("${quote_prefix}filter=${f}")
+                        done
+                        compadd -S ' ' -- "${suggestions[@]}"
+                    fi
+                fi
             fi
             ;;
 
