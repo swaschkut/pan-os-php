@@ -112,6 +112,22 @@
         }
         
         .file-size { color: #999; font-size: 9px; margin-left: 8px; white-space: nowrap; }
+
+        /* Empty-column toggle */
+        .empty-col-toggle {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-left: 12px;
+            border-left: 1px solid #ccc;
+            padding-left: 10px;
+            font-size: 10px;
+            color: #555;
+            white-space: nowrap;
+            cursor: pointer;
+            user-select: none;
+        }
+        .empty-col-toggle input { cursor: pointer; accent-color: #0070e0; }
     </style>
 </head>
 <body>
@@ -133,6 +149,11 @@
             <span id="zoomVal">80%</span>
             <button id="zoomIn" title="Increase Zoom">+</button>
         </div>
+
+        <label class="empty-col-toggle" title="Hide columns where every cell is empty or '---'">
+            <input type="checkbox" id="hideEmptyCols">
+            Exclude columns with all empty values
+        </label>
     </div>
     <div id="viewer-container">
         <iframe id="viewer" name="viewer" src="about:blank"></iframe>
@@ -194,14 +215,55 @@
         applyZoom();
     };
 
+    // Script injected into each loaded HTML file so the empty-column toggle
+    // can run inside the iframe (avoids Chrome's null-origin cross-origin block).
+    const INJECT_SCRIPT = `<script>
+(function(){
+    var _hiddenCols = [];
+    function applyHide(hide) {
+        var table = document.querySelector('table');
+        if (!table) return;
+        if (hide) {
+            var rows = table.querySelectorAll('tbody tr');
+            var headers = table.querySelectorAll('thead tr:first-child th');
+            var colCount = headers.length;
+            _hiddenCols = [];
+            for (var c = 0; c < colCount; c++) {
+                var allEmpty = true;
+                for (var r = 0; r < rows.length; r++) {
+                    var td = rows[r].children[c];
+                    if (!td) continue;
+                    var val = (td.textContent || '').trim();
+                    if (val !== '' && val !== '---' && val !== '--') { allEmpty = false; break; }
+                }
+                if (allEmpty) {
+                    _hiddenCols.push(c);
+                    var allTrs = table.querySelectorAll('tr');
+                    for (var i = 0; i < allTrs.length; i++) {
+                        var cell = allTrs[i].children[c];
+                        if (cell) cell.style.display = 'none';
+                    }
+                }
+            }
+        } else {
+            var allCells = table.querySelectorAll('th, td');
+            for (var i = 0; i < allCells.length; i++) { allCells[i].style.display = ''; }
+            _hiddenCols = [];
+        }
+    }
+    window.addEventListener('message', function(e) {
+        if (e.data && e.data.type === 'panos-hide-empty-cols') {
+            applyHide(e.data.hide);
+        }
+    });
+}());
+<\/script>`;
+
     function loadFile(index) {
         if (index < 0 || index >= htmlFiles.length) return;
-        
+
         currentIndex = index;
         const file = htmlFiles[currentIndex];
-
-        if (viewer.src.startsWith('blob:')) URL.revokeObjectURL(viewer.src);
-        viewer.src = URL.createObjectURL(file);
         currentTitle.textContent = file.name;
 
         prevBtn.disabled = (currentIndex === 0);
@@ -211,10 +273,27 @@
         listItems.forEach((li, idx) => {
             li.className = (idx === currentIndex) ? 'active' : '';
         });
-        
-        if(listItems[currentIndex]) {
+        if (listItems[currentIndex]) {
             listItems[currentIndex].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
+
+        // Read as text so we can inject the postMessage listener before creating
+        // the blob URL — this avoids Chrome's null-origin cross-origin restriction
+        // when trying to access contentDocument from the parent frame.
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            let html = e.target.result;
+            // Inject before </body> (fallback: append at end)
+            if (html.indexOf('</body>') !== -1) {
+                html = html.replace('</body>', INJECT_SCRIPT + '</body>');
+            } else {
+                html += INJECT_SCRIPT;
+            }
+            const blob = new Blob([html], { type: 'text/html' });
+            if (viewer.src.startsWith('blob:')) URL.revokeObjectURL(viewer.src);
+            viewer.src = URL.createObjectURL(blob);
+        };
+        reader.readAsText(file);
     }
 
     folderInput.addEventListener('change', (event) => {
@@ -249,7 +328,28 @@
 
     prevBtn.onclick = () => loadFile(currentIndex - 1);
     nextBtn.onclick = () => loadFile(currentIndex + 1);
-    
+
+    // ── Exclude columns with all empty values ───────────────────────
+    // Uses postMessage so the logic runs inside the iframe itself,
+    // avoiding Chrome's null-origin cross-origin block on contentDocument.
+    const hideEmptyCols = document.getElementById('hideEmptyCols');
+
+    function sendHideEmptyCols() {
+        if (viewer.contentWindow) {
+            viewer.contentWindow.postMessage(
+                { type: 'panos-hide-empty-cols', hide: hideEmptyCols.checked },
+                '*'
+            );
+        }
+    }
+
+    hideEmptyCols.addEventListener('change', sendHideEmptyCols);
+
+    // Re-apply after each new file loads (if checkbox is already checked)
+    viewer.addEventListener('load', () => {
+        if (hideEmptyCols.checked) sendHideEmptyCols();
+    });
+
     applyZoom();
 </script>
 

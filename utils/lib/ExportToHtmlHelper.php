@@ -66,8 +66,9 @@ class ExportToHtmlHelper
         // Embed jQuery inline — fully self-contained, no external requests
         $content = str_replace('%JQUERY_INLINE%', file_get_contents($htmlDir . 'jquery.min.js'), $content);
 
-        $jscontent  = file_get_contents($htmlDir . 'jquery.stickytableheaders.min.js');
-        $jscontent .= "\n\$('table').stickyTableHeaders();\n";
+        $jscontent = '';
+        //$jscontent  .= file_get_contents($htmlDir . 'jquery.stickytableheaders.min.js');
+        //$jscontent .= "\n\$('table').stickyTableHeaders();\n";
         $jscontent .= $extraJs;
         $jscontent .= "\n" . file_get_contents($htmlDir . 'table-filter.js');
 
