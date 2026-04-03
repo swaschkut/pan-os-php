@@ -312,8 +312,10 @@
 
         // Position below the anchor button
         var rect = anchorEl.getBoundingClientRect();
-        var panelLeft = rect.left + window.scrollX;
-        var panelTop = rect.bottom + window.scrollY + 2;
+        // Use the bounding rect directly for viewport-relative positioning
+        // and set the panel to 'fixed' to avoid scroll offset math issues.
+        var panelLeft = rect.left;
+        var panelTop = rect.bottom + 2;
 
         // Keep panel within viewport horizontally
         var panelWidth = $activePanel.outerWidth();
@@ -321,7 +323,11 @@
             panelLeft = window.innerWidth - panelWidth - 8;
         }
 
-        $activePanel.css({ top: panelTop + 'px', left: panelLeft + 'px' });
+        $activePanel.css({
+            position: 'fixed', // Change from absolute to fixed
+            top: panelTop + 'px',
+            left: panelLeft + 'px'
+        });
 
         // Wire search
         $activePanel.find('.panos-dropdown-search').on('input', function () {
