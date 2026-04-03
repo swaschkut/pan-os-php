@@ -5,6 +5,7 @@ UTIL:
 * adjustment to index_assessment.html
 
 BUGFIX:
+* SCM API - bring back the already implemented parts for SaseAPI, but now working for SCMAPI
 
 GENERAL:
 

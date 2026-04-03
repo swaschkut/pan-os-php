@@ -215,7 +215,7 @@ class Tag
 
         if( $c->isAPI() )
             $c->sendRenameRequest($xpath, $newName);
-        elseif( $c->isSaseAPI() )
+        elseif( $c->isSaseAPI() || $c->isSCMAPI() )
             $c->sendPUTRequest($this);
     }
 
@@ -301,14 +301,14 @@ class Tag
             $valueRoot = DH::findFirstElement('color', $this->xmlroot);
             if( $c->isAPI() )
                 $c->sendSetRequest($xpath, DH::dom_to_xml($valueRoot, -1, FALSE));
-            elseif( $c->isSaseAPI() )
+            elseif( $c->isSaseAPI() || $c->isSCMAPI() )
                 $c->sendPUTRequest($this);
         }
         else
         {
             if( $c->isAPI() )
                 $c->sendEditRequest($xpath, DH::dom_to_xml($this->xmlroot, -1, FALSE));
-            elseif( $c->isSaseAPI() )
+            elseif( $c->isSaseAPI() || $c->isSCMAPI() )
                 $c->sendPUTRequest($this);
         }
 
@@ -454,7 +454,7 @@ class Tag
 
         if( $c->isAPI() )
             $c->sendEditRequest($xpath . "/comments", DH::dom_to_xml($commentsRoot, -1, FALSE));
-        elseif( $c->isSaseAPI() )
+        elseif( $c->isSaseAPI() || $c->isSCMAPI() )
             $c->sendPUTRequest($this);
 
         return TRUE;
@@ -494,7 +494,7 @@ class Tag
 
         if( $c->isAPI() )
             $c->sendEditRequest($xpath, DH::dom_to_xml($this->xmlroot, -1, FALSE));
-        elseif( $c->isSaseAPI() )
+        elseif( $c->isSaseAPI() || $c->isSCMAPI() )
             $c->sendPUTRequest($this);
 
         return TRUE;

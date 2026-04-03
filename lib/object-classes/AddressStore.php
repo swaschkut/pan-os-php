@@ -546,7 +546,7 @@ class AddressStore
 
             if( $con->isAPI())
                 $con->sendSetRequest($xpath, DH::domlist_to_xml($s->xmlroot->childNodes, -1, FALSE));
-            elseif( $con->isSaseAPI())
+            elseif( $con->isSaseAPI() || $con->isSCMAPI() )
             {
                 //how to add multiple objects???
             }
@@ -629,7 +629,7 @@ class AddressStore
             $con = findConnectorOrDie($this);
             if( $con->isAPI())
                 $con->sendDeleteRequest($xpath);
-            elseif( $con->isSaseAPI() )
+            elseif( $con->isSaseAPI() || $con->isSCMAPI() )
                 $con->sendDELETERequest($s);
         }
 
@@ -787,7 +787,7 @@ class AddressStore
         $xpath = $newObject->getXPath();
         if( $con->isAPI() )
             $con->sendSetRequest($xpath, $newObject, TRUE);
-        elseif( $con->isSaseAPI() )
+        elseif( $con->isSaseAPI() || $con->isSCMAPI() )
             $con->sendCreateRequest($newObject);
 
         return $newObject;
@@ -835,7 +835,7 @@ class AddressStore
         $xpath = $newObject->getXPath();
         if( $con->isAPI() )
             $con->sendSetRequest($xpath, $newObject, TRUE);
-        elseif( $con->isSaseAPI() )
+        elseif( $con->isSaseAPI() || $con->isSCMAPI() )
             $con->sendCreateRequest($newObject);
 
 

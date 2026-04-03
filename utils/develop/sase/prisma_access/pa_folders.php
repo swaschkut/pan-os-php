@@ -65,7 +65,7 @@ $connector = $pan->connector;
 #DISPLAY
 ###########
 
-/* @var PanSaseAPIConnector $connector */
+/* @var PanSaseAPIConnector|PanSCMAPIConnector $connector */
 
 $accessToken =  $connector->getAccessToken();
 $folder = "Remote Networks";

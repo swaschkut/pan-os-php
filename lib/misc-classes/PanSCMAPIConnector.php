@@ -1840,6 +1840,10 @@ class PanSCMAPIConnector
 
     private function curlRequest($url, $header = null)
     {
+        //GET
+        //List
+        //get an address
+
         $this->_createOrRenewCurl();
 
         curl_setopt($this->_curl_handle, CURLOPT_URL, $url);
@@ -1863,9 +1867,11 @@ class PanSCMAPIConnector
             }
         }
     }
-
     public function sendCreateRequest( $element )
     {
+        //sendPOSTRequest()
+        //CREATE
+
         $this->getAccessToken();
 
         $header = array( "Content-Type: application/json", "Authorization: Bearer {$this->access_token}");
@@ -1895,10 +1901,12 @@ class PanSCMAPIConnector
         {
             PH::print_stdout( "URL: ".$url);
             PH::print_stdout( "BODY: ".$body );
+            PH::print_stdout( "METHOD: POST" );
         }
 
         $this->curlRequest( $url, $header );
 
+        curl_setopt($this->_curl_handle, CURLOPT_CUSTOMREQUEST, "POST");
         curl_setopt($this->_curl_handle, CURLOPT_POST,           1 );
         curl_setopt($this->_curl_handle, CURLOPT_POSTFIELDS,     $body );
 
@@ -1910,6 +1918,9 @@ class PanSCMAPIConnector
 
     public function sendPUTRequest( $element )
     {
+        //UPDATE
+        //PUT
+
         $this->getAccessToken();
 
         $header = array( "Content-Type: application/json", "Authorization: Bearer {$this->access_token}");
@@ -1939,6 +1950,7 @@ class PanSCMAPIConnector
         {
             PH::print_stdout( "URL: ".$url);
             PH::print_stdout( "BODY: ".$body );
+            PH::print_stdout( "METHOD: PUT" );
         }
 
         $this->curlRequest( $url, $header );
@@ -1956,6 +1968,8 @@ class PanSCMAPIConnector
 
     public function sendDELETERequest( $element )
     {
+        //DELETE
+
         $this->getAccessToken();
 
         $header = array( "Authorization: Bearer {$this->access_token}");
@@ -1974,7 +1988,12 @@ class PanSCMAPIConnector
         $url .= "/config/objects/v1/" . $type . "/" . $saseID;
 
         if( $this->showApiCalls )
+        {
             PH::print_stdout( "URL: ".$url);
+            PH::print_stdout( "ID: ".$saseID );
+            PH::print_stdout( "METHOD: DELETE" );
+        }
+
 
         $this->curlRequest( $url, $header );
 
