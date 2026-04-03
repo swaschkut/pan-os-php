@@ -176,8 +176,17 @@
     let currentIndex = -1;
     let currentZoom = 1; // Default 80%
 
-    const MIN_SIZE_BYTES = 112 * 1024;
     const ALWAYS_SHOW = "0_introduction.html";
+
+    /** Count <tr> elements inside <tbody> without parsing the full DOM. */
+    function countDataRows(file) {
+        return file.text().then(function (text) {
+            var m = text.match(/<tbody[\s>][\s\S]*?<\/tbody>/i);
+            if (!m) return 0;
+            var trs = m[0].match(/<tr[\s>]/gi);
+            return trs ? trs.length : 0;
+        });
+    }
 
     function formatBytes(bytes) {
         if (bytes === 0) return '0 B';
@@ -219,36 +228,35 @@
     // can run inside the iframe (avoids Chrome's null-origin cross-origin block).
     const INJECT_SCRIPT = `<script>
 (function(){
-    var _hiddenCols = [];
     function applyHide(hide) {
+        var existing = document.getElementById('panos-hide-cols-style');
+        if (existing) existing.remove();
+        if (!hide) return;
+
         var table = document.querySelector('table');
         if (!table) return;
-        if (hide) {
-            var rows = table.querySelectorAll('tbody tr');
-            var headers = table.querySelectorAll('thead tr:first-child th');
-            var colCount = headers.length;
-            _hiddenCols = [];
-            for (var c = 0; c < colCount; c++) {
-                var allEmpty = true;
-                for (var r = 0; r < rows.length; r++) {
-                    var td = rows[r].children[c];
-                    if (!td) continue;
-                    var val = (td.textContent || '').trim();
-                    if (val !== '' && val !== '---' && val !== '--') { allEmpty = false; break; }
-                }
-                if (allEmpty) {
-                    _hiddenCols.push(c);
-                    var allTrs = table.querySelectorAll('tr');
-                    for (var i = 0; i < allTrs.length; i++) {
-                        var cell = allTrs[i].children[c];
-                        if (cell) cell.style.display = 'none';
-                    }
-                }
+        var rows = table.querySelectorAll('tbody tr');
+        var headers = table.querySelectorAll('thead tr:first-child th');
+        var colCount = headers.length;
+        var rules = [];
+        for (var c = 0; c < colCount; c++) {
+            var allEmpty = true;
+            for (var r = 0; r < rows.length; r++) {
+                var td = rows[r].children[c];
+                if (!td) continue;
+                var val = (td.textContent || '').trim();
+                if (val !== '' && val !== '---' && val !== '--') { allEmpty = false; break; }
             }
-        } else {
-            var allCells = table.querySelectorAll('th, td');
-            for (var i = 0; i < allCells.length; i++) { allCells[i].style.display = ''; }
-            _hiddenCols = [];
+            if (allEmpty) {
+                var n = c + 1;
+                rules.push('table tr th:nth-child('+n+'),table tr td:nth-child('+n+'){display:none!important}');
+            }
+        }
+        if (rules.length) {
+            var s = document.createElement('style');
+            s.id = 'panos-hide-cols-style';
+            s.textContent = rules.join('\\n');
+            document.head.appendChild(s);
         }
     }
     window.addEventListener('message', function(e) {
@@ -296,20 +304,31 @@
         reader.readAsText(file);
     }
 
-    folderInput.addEventListener('change', (event) => {
+    folderInput.addEventListener('change', async (event) => {
         const files = Array.from(event.target.files);
         const indexPattern = /^index.*\.html$/i;
 
-        htmlFiles = files.filter(file => {
-            const fileNameLow = file.name.toLowerCase();
-            const isHtml = fileNameLow.endsWith('.html') || fileNameLow.endsWith('.htm');
-            const isIndexFile = indexPattern.test(file.name);
-            const isRightSize = file.size >= MIN_SIZE_BYTES;
-            const isException = fileNameLow === ALWAYS_SHOW;
-            return isHtml && !isIndexFile && (isRightSize  || isException );
-        }).sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true, sensitivity: 'base'}));
+        // Initial fast filter: HTML files, not index files
+        const candidates = files.filter(file => {
+            const n = file.name.toLowerCase();
+            return (n.endsWith('.html') || n.endsWith('.htm')) && !indexPattern.test(file.name);
+        });
 
-        fileList.innerHTML = ''; 
+        // Count actual data rows in each file (filters out zero-row exports
+        // whose file size exceeds the old threshold due to inline jQuery).
+        fileList.innerHTML = '<li>Scanning files\u2026</li>';
+        const withRows = await Promise.all(candidates.map(async (file) => {
+            const isException = file.name.toLowerCase() === ALWAYS_SHOW;
+            const rows = isException ? 1 : await countDataRows(file);
+            return { file, rows };
+        }));
+
+        htmlFiles = withRows
+            .filter(e => e.rows > 0)
+            .sort((a, b) => a.file.name.localeCompare(b.file.name, undefined, {numeric: true, sensitivity: 'base'}))
+            .map(e => e.file);
+
+        fileList.innerHTML = '';
         htmlFiles.forEach((file, index) => {
             const li = document.createElement('li');
             li.innerHTML = `<span>${file.name}</span><span class="file-size">${formatBytes(file.size)}</span>`;

@@ -324,13 +324,7 @@
             panelLeft = window.innerWidth - panelWidth - 8;
         }
 
-        $activePanel.css({
-            position: 'fixed', // Change from absolute to fixed
-            top: panelTop + 'px',
-            left: panelLeft + 'px'
-        });
-
-        $activePanel.css({ top: panelTop + 'px', left: panelLeft + 'px' });
+        $activePanel.css({ position: 'fixed', top: panelTop + 'px', left: panelLeft + 'px' });
 
         // Wire search
         $activePanel.find('.panos-dropdown-search').on('input', function () {
