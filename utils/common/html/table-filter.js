@@ -506,6 +506,26 @@
         }
     }
 
+    function adjustFilterRowPosition() {
+        // 1. Find the height of the first header row
+        var firstRowHeight = $('thead tr:first-child').outerHeight();
+
+        // 2. Apply that height as the 'top' offset for the sticky filter row
+        $('.panos-filter-row td').css('top', firstRowHeight + 'px');
+    }
+
+    // Listen for messages from the parent (index_assessment.html)
+    window.addEventListener('message', function(event) {
+        if (event.data && event.data.type === 'panos-hide-empty-cols') {
+            // Wait a tiny bit for the columns to finish hiding/showing
+            setTimeout(function() {
+                if (typeof adjustFilterRowPosition === 'function') {
+                    adjustFilterRowPosition();
+                }
+            }, 50);
+        }
+    });
+    
     /* ─── Bootstrap ──────────────────────────────────────────────────── */
 
     $(document).ready(function () {
@@ -532,12 +552,10 @@
         injectFilterRow();
         injectBottomBar();
 
-        // Re-init sticky headers so the new filter row is included in the
-        // sticky clone (the inline init ran before this row was added).
-        if ($.fn.stickyTableHeaders) {
-            try { $('table').stickyTableHeaders('destroy'); } catch (ignore) {}
-            $('table').stickyTableHeaders();
-        }
+        adjustFilterRowPosition(); // This fixes the row in place
+
+        // Optional: Recalculate if the window is resized (e.g., text wraps)
+        $(window).on('resize', adjustFilterRowPosition);
 
         // Kick off indexing (progress widget already visible from static HTML)
         updateProgress(0);
