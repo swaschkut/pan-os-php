@@ -897,9 +897,9 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 else
                     $lines .= $context->encloseFunction(get_class($object) );
 
+                $tmp_array = array();
                 if( !empty( $object->rules_obj ) )
                 {
-                    $tmp_array = array();
                     foreach( $object->rules_obj as $rulename => $rule )
                     {
                         $stringSeverity = "";
@@ -973,13 +973,11 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         }
                         $tmp_array[] = $tmp_string;
                     }
-
-
-                    $lines .= $context->encloseFunction( $tmp_array );
                 }
-                elseif( !empty( $object->tmp_virus_prof_array ) )
+
+                $array = array();
+                if( !empty( $object->tmp_virus_prof_array ) )
                 {
-                    $array = array();
                     foreach( $object->tmp_virus_prof_array as $key => $type )
                     {
                         $string = $type;
@@ -1017,7 +1015,13 @@ SecurityProfileCallContext::$supportedActions[] = array(
 
                         $array[] = $string;
                     }
-                    $lines .= $context->encloseFunction($array);
+
+                }
+
+                if( !empty( $object->rules_obj ) || !empty( $object->tmp_virus_prof_array ) )
+                {
+                    $tmp_array2 = array_merge( $tmp_array, $array );
+                    $lines .= $context->encloseFunction($tmp_array2);
                 }
                 else
                     $lines .= $context->encloseFunction('');
@@ -1149,14 +1153,16 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     {
                         if( $bestPractice )
                         {
-                            if( $object->wildfire_rules_best_practice() )
+                            if( $object->av_action_best_practice() && $object->av_wildfireaction_best_practice()
+                                && $object->av_mlavaction_best_practice() && $object->wildfire_rules_best_practice() )
                                 $lines .= $context->encloseFunction($bp_text_yes.' BP AV/WF rules set');
                             else
                                 $lines .= $context->encloseFunction($bp_text_no.' NO BP AV/WF rules');
                         }
                         if( $visibility )
                         {
-                            if( $object->wildfire_rules_visibility() )
+                            if( $object->av_action_visibility() && $object->av_wildfireaction_visibility()
+                                && $object->av_mlavaction_is_visibility() && $object->wildfire_rules_visibility() )
                                 $lines .= $context->encloseFunction($bp_text_yes.' Visibility AV/WF rules set');
                             else
                                 $lines .= $context->encloseFunction($bp_text_no.' NO Visibility AV/WF rules');
