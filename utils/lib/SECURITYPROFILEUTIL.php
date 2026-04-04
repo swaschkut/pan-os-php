@@ -71,7 +71,7 @@ class SECURITYPROFILEUTIL extends UTIL
             'predefined-vulnerability',
             'predefined-wildfire-analysis'
         );
-        $this->supportedArguments['securityprofiletype'] = array('niceName' => 'securityProfileType', 'shortHelp' => 'specify which type(s) of you rule want to edit, (default is "security". ie: securityprofiletype=any  securityprofiletype=url-filtering, custom-url-category', 'argDesc' => 'any|url-filtering|virus|vulnerability|spyware|file-blocking|data-filtering|wildfire-analysis|custom-url-category|dns-security|saas-security|predefined-url|predefined-url-filtering|');
+        $this->supportedArguments['securityprofiletype'] = array('niceName' => 'securityProfileType', 'shortHelp' => 'specify which type(s) of you rule want to edit, (default is "security". ie: securityprofiletype=any  securityprofiletype=url-filtering, custom-url-category', 'argDesc' => 'any|url-filtering|virus|vulnerability|spyware|file-blocking|data-filtering|wildfire-analysis|custom-url-category|dns-security|virus-and-wildfire-analysis|saas-security|predefined-url|predefined-url-filtering|');
     }
 
     public function location_filter_object()
@@ -288,7 +288,7 @@ class SECURITYPROFILEUTIL extends UTIL
                         //Panorama
                         if( $this->configType == 'fawkes' || $this->configType == 'buckbeak' )
                         {
-                            if( array_search('any', $this->securityProfileTypes) !== FALSE || array_search('virusandwildfire', $this->securityProfileTypes) !== FALSE )
+                            if( array_search('any', $this->securityProfileTypes) !== FALSE || array_search('virus-and-wildfire-analysis', $this->securityProfileTypes) !== FALSE )
                             {
                                 $this->objectsToProcess[] = array('store' => $sub->VirusAndWildfireProfileStore, 'rules' => $sub->VirusAndWildfireProfileStore->securityProfiles());
                             }
@@ -355,7 +355,9 @@ class SECURITYPROFILEUTIL extends UTIL
         // Determine rule types
         //
         #$supportedSecurityProfileTypes = array('all', 'any', 'url-filtering', 'virus', 'vulnerability', 'spyware', 'file-blocking', 'wildfire-analysis', 'custom-url-category', 'predefined-url');
-        $supportedSecurityProfileTypes = array('any', 'url-filtering', 'virus', 'vulnerability', 'spyware', 'file-blocking', 'wildfire-analysis', 'custom-url-category', 'data-filtering',
+        $supportedSecurityProfileTypes = array('any', 'url-filtering', 'virus', 'vulnerability', 'spyware', 'file-blocking',
+            'wildfire-analysis', 'custom-url-category', 'data-filtering',
+            'dns-security', 'virus-and-wildfire-analysis',
             'predefined-url',
             'predefined-virus',
             'predefined-spyware',

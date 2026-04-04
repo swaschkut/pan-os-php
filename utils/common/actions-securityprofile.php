@@ -700,7 +700,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     {
                         if( $bestPractice )
                         {
-                            if( $object->is_best_practice() && $object->spyware_dns_security_best_practice() && $object->spyware_dnslist_best_practice() )
+                            if( $object->is_best_practice()  )
                                 $lines .= $context->encloseFunction($bp_text_yes);
                             else
                                 $lines .= $context->encloseFunction($bp_text_no);
@@ -708,7 +708,33 @@ SecurityProfileCallContext::$supportedActions[] = array(
 
                         if( $visibility )
                         {
-                            if( $object->is_visibility() && $object->spyware_dns_security_visibility() && $object->spyware_dnslist_visibility() )
+                            if ($object->is_visibility() )
+                                $lines .= $context->encloseFunction($bp_text_yes);
+                            else
+                                $lines .= $context->encloseFunction($bp_text_no);
+                        }
+
+                        if( $adoption )
+                        {
+                            if( $object->is_adoption() )
+                                $lines .= $context->encloseFunction($bp_text_yes);
+                            else
+                                $lines .= $context->encloseFunction($bp_text_no);
+                        }
+                    }
+                    elseif( get_class($object) == "DNSSecurityProfile")
+                    {
+                        if( $bestPractice )
+                        {
+                            if( $object->is_best_practice()  )
+                                $lines .= $context->encloseFunction($bp_text_yes);
+                            else
+                                $lines .= $context->encloseFunction($bp_text_no);
+                        }
+
+                        if( $visibility )
+                        {
+                            if ($object->is_visibility() )
                                 $lines .= $context->encloseFunction($bp_text_yes);
                             else
                                 $lines .= $context->encloseFunction($bp_text_no);
@@ -749,6 +775,32 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         }
                     }
                     elseif( get_class($object) == "WildfireProfile")
+                    {
+                        if( $bestPractice )
+                        {
+                            if( $object->is_best_practice() )
+                                $lines .= $context->encloseFunction($bp_text_yes);
+                            else
+                                $lines .= $context->encloseFunction($bp_text_no);
+                        }
+
+                        if( $visibility )
+                        {
+                            if( $object->is_visibility() )
+                                $lines .= $context->encloseFunction($bp_text_yes);
+                            else
+                                $lines .= $context->encloseFunction($bp_text_no);
+                        }
+
+                        if( $adoption )
+                        {
+                            if( $object->is_adoption() )
+                                $lines .= $context->encloseFunction($bp_text_yes);
+                            else
+                                $lines .= $context->encloseFunction($bp_text_no);
+                        }
+                    }
+                    elseif( get_class($object) == "VirusAndWildfireProfile")
                     {
                         if( $bestPractice )
                         {
@@ -1091,6 +1143,30 @@ SecurityProfileCallContext::$supportedActions[] = array(
                                 $lines .= $context->encloseFunction($bp_text_yes.' Adoption WF set');
                             else
                                 $lines .= $context->encloseFunction($bp_text_no.' NO Adoption WF set');
+                        }
+                    }
+                    elseif( get_class($object) == "VirusAndWildfireProfile" )
+                    {
+                        if( $bestPractice )
+                        {
+                            if( $object->wildfire_rules_best_practice() )
+                                $lines .= $context->encloseFunction($bp_text_yes.' BP AV/WF rules set');
+                            else
+                                $lines .= $context->encloseFunction($bp_text_no.' NO BP AV/WF rules');
+                        }
+                        if( $visibility )
+                        {
+                            if( $object->wildfire_rules_visibility() )
+                                $lines .= $context->encloseFunction($bp_text_yes.' Visibility AV/WF rules set');
+                            else
+                                $lines .= $context->encloseFunction($bp_text_no.' NO Visibility AV/WF rules');
+                        }
+                        if( $adoption )
+                        {
+                            if( $object->is_adoption() )
+                                $lines .= $context->encloseFunction($bp_text_yes.' Adoption AV/WF set');
+                            else
+                                $lines .= $context->encloseFunction($bp_text_no.' NO Adoption AV/WF set');
                         }
                     }
                     else
@@ -1482,7 +1558,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 $lines .= $context->encloseFunction($string_dns_list);
                 if( $bestPractice || $visibility)
                 {
-                    if( get_class($object) == "AntiSpywareProfile" )
+                    if( get_class($object) == "AntiSpywareProfile" ||  get_class($object) == "DNSSecurityProfile" )
                     {
                         if( $bestPractice )
                         {
@@ -1513,7 +1589,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 $lines .= $context->encloseFunction($string_dns_security);
                 if( $bestPractice || $visibility)
                 {
-                    if( get_class($object) == "AntiSpywareProfile" && $object->owner->owner->version >= 102 )
+                    if( (get_class($object) == "AntiSpywareProfile" || get_class($object) == "DNSSecurityProfile") && $object->owner->owner->version >= 102 )
                     {
                         if( $bestPractice )
                         {
@@ -1550,6 +1626,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         || (get_class($object) == "WildfireProfile" && $object->owner->owner->version >= 112 )
                         || get_class($object) == "AntiVirusProfile"
                         || (get_class($object) == "URLProfile" && $object->owner->owner->version >= 102 )
+                        || get_class($object) == "VirusAndWildfireProfile"
                     )
                     {
                         if( $bestPractice )

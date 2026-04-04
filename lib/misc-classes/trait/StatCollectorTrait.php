@@ -1843,6 +1843,10 @@ trait StatCollectorTrait
 
         PH::validateIncludedInBPA( $stdoutarray );
 
+        //Todo:
+        //if SCM remove virus / wildfire
+        //if Panorama remvoe virus-and-wildfire
+
         $percentageArray_adoption = $stdoutarray['percentage']['adoption'];
         $percentageArray_visibility = $stdoutarray['percentage']['visibility'];
         $percentageArray_best_practice = $stdoutarray['percentage']['best-practice'];

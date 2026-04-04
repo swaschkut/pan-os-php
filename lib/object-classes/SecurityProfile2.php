@@ -13,6 +13,8 @@ class SecurityProfile2
     const TypeDNS_security = 8;
     const TypeSaas_security = 9;
 
+    const TypeVirus_and_Wildfire_analysis = 10;
+
     static public $SecurityProfileTypes = array(
         self::TypeTmp => 'tmp',
         self::TypeVirus => 'virus',
@@ -23,7 +25,8 @@ class SecurityProfile2
         self::TypeUrl_filtering => 'url-filtering',
         self::TypeData_filtering => 'data-filtering',
         self::TypeDNS_security => 'dns-security',
-        self::TypeSaas_security => 'saas-security'
+        self::TypeSaas_security => 'saas-security',
+        self::TypeVirus_and_Wildfire_analysis => 'virus-and-wildfire-analysis'
     );
 
     public $type = self::TypeTmp;
@@ -37,7 +40,10 @@ class SecurityProfile2
 
         $bp_set = FALSE;
 
-        if( $this->secprof_type != 'spyware' and $this->secprof_type != 'vulnerability' and $this->secprof_type != 'virus' and $this->secprof_type != 'wildfire'  )
+        if( $this->secprof_type != 'spyware' and $this->secprof_type != 'vulnerability'
+            and $this->secprof_type != 'virus' and $this->secprof_type != 'wildfire'
+            and $this->secprof_type != 'dns-security' and $this->secprof_type != 'virus-and-wildfire-analysis'
+        )
             return null;
 
         $check_array = $this->bp_visibility_JSON( "bp", $this->secprof_type);
@@ -137,7 +143,10 @@ class SecurityProfile2
 
         $bp_set = FALSE;
 
-        if( $this->secprof_type != 'spyware' and $this->secprof_type != 'vulnerability' and $this->secprof_type != 'virus' and $this->secprof_type != 'wildfire' )
+        if( $this->secprof_type != 'spyware' and $this->secprof_type != 'vulnerability'
+            and $this->secprof_type != 'virus' and $this->secprof_type != 'wildfire'
+            and $this->secprof_type != 'dns-security' and $this->secprof_type != 'virus-and-wildfire-analysis'
+        )
             return null;
 
         $check_array = $this->bp_visibility_JSON( "visibility", $this->secprof_type);
