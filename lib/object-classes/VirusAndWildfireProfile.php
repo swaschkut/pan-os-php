@@ -131,6 +131,21 @@ class VirusAndWildfireProfile extends SecurityProfile2
         $this->display_wildfire();
     }
 
+    public function is_best_practice(): bool
+    {
+        return false;
+    }
+
+    public function is_visible(): bool
+    {
+        return false;
+    }
+
+    public function is_adaption(): bool
+    {
+        return false;
+    }
+
     static $templatexml = '<entry name="**temporarynamechangeme**"></entry>';
 
 }

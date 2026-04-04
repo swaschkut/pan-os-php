@@ -57,6 +57,12 @@ class Snippet
     /** @var SecurityProfileStore */
     public $SaasSecurityProfileStore = null;
 
+    /** @var ThreatPolicyStore */
+    public $ThreatPolicyStore = null;
+
+    /** @var DNSPolicyStore */
+    public $DNSPolicyStore = null;
+
     /** @var SecurityProfileStore */
     public $VulnerabilityProfileStore = null;
 
@@ -257,6 +263,12 @@ class Snippet
 
         $this->SaasSecurityProfileStore = new SecurityProfileStore($this, "SaasSecurityProfile");
         $this->SaasSecurityProfileStore->name = 'SaasSecurity';
+
+        $this->ThreatPolicyStore = new ThreatPolicyStore($this, "ThreatPolicy");
+        $this->ThreatPolicyStore->name = 'ThreatPolicy';
+
+        $this->DNSPolicyStore = new DNSPolicyStore($this, "DNSPolicy");
+        $this->DNSPolicyStore->name = 'DNSPolicy';
 
         $this->VulnerabilityProfileStore = new SecurityProfileStore($this, "VulnerabilityProfile");
         $this->VulnerabilityProfileStore->name = 'Vulnerability';
@@ -973,7 +985,7 @@ class Snippet
         return $str;
     }
 
-    public function isDeviceOnPrem()
+    public function isSnippet()
     {
         return TRUE;
     }

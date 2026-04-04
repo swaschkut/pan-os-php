@@ -243,8 +243,8 @@ LogProfileCallContext::$supportedActions['create'] = array(
 
         $log_prof_obj = $context->subSystem->LogProfileStore->createLogProfile($log_name);
 
-        if( $context->isAPI )
-            $log_prof_obj->API_sync();
+        if( $context->isAPI || $context->isSCMAPI )
+            $log_prof_obj->API_sync(true);
     },
     'args' => array('logprofile-name' => array('type' => 'string', 'default' => '*nodefault*') )
 );

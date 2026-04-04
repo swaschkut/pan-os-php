@@ -1809,6 +1809,12 @@ class RuleStore
                 $xml = DH::findFirstElementOrCreate('pre-rulebase', $this->owner->xmlroot);
             elseif( $this->owner->isPanorama() )
                 $xml = DH::findFirstElementOrCreate('pre-rulebase', $this->owner->sharedroot);
+            elseif( $this->owner->isSnippet() )
+                $xml = DH::findFirstElementOrCreate('pre-rulebase', $this->owner->xmlroot);
+            elseif( $this->owner->isDeviceOnPrem() )
+            {
+                $xml = DH::findFirstElementOrCreate('rulebase', $this->owner->xmlroot);
+            }
 
             $xml = DH::findFirstElementOrCreate($ruleTypeForXml, $xml);
             $this->xmlroot = DH::findFirstElementOrCreate('rules', $xml);

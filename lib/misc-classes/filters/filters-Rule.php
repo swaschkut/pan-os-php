@@ -3244,6 +3244,67 @@ RQuery::$defaultFilters['rule']['location']['operators']['is'] = array(
         'input' => 'input/panorama-8.0.xml'
     )
 );
+
+RQuery::$defaultFilters['rule']['location']['operators']['is.type.snippet'] = array(
+    'Function' => function (RuleRQueryContext $context) {
+        $owner = $context->object->owner->owner;
+
+        if( get_class($owner) === "Snippet" )
+            return TRUE;
+
+        return FALSE;
+    },
+    'arg' => FALSE,
+    'help' => 'returns TRUE if object location is Snippet'
+);
+RQuery::$defaultFilters['rule']['location']['operators']['is.type.folder'] = array(
+    'Function' => function (RuleRQueryContext $context) {
+        $owner = $context->object->owner->owner;
+
+        if( get_class($owner) === "Container" || get_class($owner) === "DeviceCloud" || get_class($owner) === "DeviceOnPrem" )
+            return TRUE;
+
+        return FALSE;
+    },
+    'arg' => FALSE,
+    'help' => 'returns TRUE if object location is Folder'
+);
+RQuery::$defaultFilters['rule']['location']['operators']['is.type.container'] = array(
+    'Function' => function (RuleRQueryContext $context) {
+        $owner = $context->object->owner->owner;
+
+        if( get_class($owner) === "Container" )
+            return TRUE;
+
+        return FALSE;
+    },
+    'arg' => FALSE,
+    'help' => 'returns TRUE if object location is Container'
+);
+RQuery::$defaultFilters['rule']['location']['operators']['is.type.devicecloud'] = array(
+    'Function' => function (RuleRQueryContext $context) {
+        $owner = $context->object->owner->owner;
+
+        if( get_class($owner) === "DeviceCloud" )
+            return TRUE;
+
+        return FALSE;
+    },
+    'arg' => FALSE,
+    'help' => 'returns TRUE if object location is DeviceCloud'
+);
+RQuery::$defaultFilters['rule']['location']['operators']['is.type.deviceonprem'] = array(
+    'Function' => function (RuleRQueryContext $context) {
+        $owner = $context->object->owner->owner;
+
+        if( get_class($owner) === "DeviceOnPrem" )
+            return TRUE;
+
+        return FALSE;
+    },
+    'arg' => FALSE,
+    'help' => 'returns TRUE if object location is DeviceOnPrem'
+);
 RQuery::$defaultFilters['rule']['location']['operators']['regex'] = array(
     'Function' => function (RuleRQueryContext $context) {
         $name = $context->object->getLocationString();

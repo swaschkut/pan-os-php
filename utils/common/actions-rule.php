@@ -5140,6 +5140,8 @@ RuleCallContext::$supportedActions[] = array(
             'sp_file_bp' => 'sp_file_bp',
             'sp_data_bp' => 'sp_data_bp',
             'sp_wf_bp' => 'sp_wf_bp',
+            'sp_dns_sec_bp' => 'sp_dns_sec_bp',
+            'sp_av_and_wf_bp' => 'sp_av_and_wf_bp',
             'sp_av_visible' => 'sp_av_visible',
             'sp_as_visible' => 'sp_as_visible',
             'sp_vp_visible' => 'sp_vp_visible',
@@ -5147,6 +5149,8 @@ RuleCallContext::$supportedActions[] = array(
             'sp_file_visible' => 'sp_file_visible',
             'sp_data_visible' => 'sp_data_visible',
             'sp_wf_visible' => 'sp_wf_visible',
+            'sp_dns_sec_visible' => 'sp_dns_sec_visible',
+            'sp_av_and_wf_visible' => 'sp_av_and_wf_visible',
             'sp_av_adoption' => 'sp_av_adoption',
             'sp_as_adoption' => 'sp_as_adoption',
             'sp_vp_adoption' => 'sp_vp_adoption',
@@ -5154,6 +5158,8 @@ RuleCallContext::$supportedActions[] = array(
             'sp_file_adoption' => 'sp_file_adoption',
             'sp_data_adoption' => 'sp_data_adoption',
             'sp_wf_adoption' => 'sp_wf_adoption',
+            'sp_dns_sec_adoption' => 'sp_dns_sec_adoption',
+            'sp_av_and_wf_adoption' => 'sp_av_and_wf_adoption',
             'disabled' => 'disabled',
             'src_user' => 'src-user',
             'url_category' => 'url-category',
@@ -5306,7 +5312,9 @@ RuleCallContext::$supportedActions[] = array(
                     }
                     elseif(
                         ($fieldName == 'sp_av_bp' || $fieldName == 'sp_as_bp' || $fieldName == 'sp_vp_bp' || $fieldName == 'sp_url_bp'
-                            || $fieldName == 'sp_file_bp' || $fieldName == 'sp_data_bp' || $fieldName == 'sp_wf_bp')
+                            || $fieldName == 'sp_file_bp' || $fieldName == 'sp_data_bp' || $fieldName == 'sp_wf_bp'
+                            || $fieldName == 'sp_dns_sec_bp' || $fieldName == 'sp_av_and_wf_bp'
+                        )
                         &&
                         (!$bestPractice || !$context->arguments['tmp_secrule'] )
                     )
@@ -5317,7 +5325,9 @@ RuleCallContext::$supportedActions[] = array(
                     elseif(
                         ($fieldName == 'sp_av_visible' || $fieldName == 'sp_as_visible' || $fieldName == 'sp_vp_visible'
                             || $fieldName == 'sp_url_visible' || $fieldName == 'sp_file_visible' || $fieldName == 'sp_data_visible'
-                            || $fieldName == 'sp_wf_visible')
+                            || $fieldName == 'sp_wf_visible'
+                            || $fieldName == 'sp_dns_sec_visible' || $fieldName == 'sp_av_and_wf_visible'
+                        )
                         &&
                         (!$visibility || !$context->arguments['tmp_secrule'] )
                     )
@@ -5328,7 +5338,9 @@ RuleCallContext::$supportedActions[] = array(
                     elseif(
                         ($fieldName == 'sp_av_adoption' || $fieldName == 'sp_as_adoption' || $fieldName == 'sp_vp_adoption'
                             || $fieldName == 'sp_url_adoption' || $fieldName == 'sp_file_adoption' || $fieldName == 'sp_data_adoption'
-                            || $fieldName == 'sp_wf_adoption')
+                            || $fieldName == 'sp_wf_adoption'
+                            || $fieldName == 'sp_dns_sec_adoption' || $fieldName == 'sp_av_and_wf_adoption'
+                        )
                         &&
                         ( !$adoption || !$context->arguments['tmp_secrule'] )
                     )
@@ -5387,6 +5399,32 @@ RuleCallContext::$supportedActions[] = array(
                     )
                     {
                         $continue_text = "continue18";
+                        $continue = true;
+                    }
+
+                    if(
+                        ($context->deviceType === "scm")
+                        &&
+                        ($fieldName == 'virus-profile' || $fieldName == 'wildfire-analysis-profile'
+                            || $fieldName == 'sp_av_bp' || $fieldName == 'sp_av_visible' || $fieldName == 'sp_av_adoption'
+                            ||$fieldName == 'sp_wf_bp' || $fieldName == 'sp_wf_visible' || $fieldName == 'sp_wf_adoption'
+                        )
+                    )
+                    {
+                        $continue_text = "continueLast1";
+                        $continue = true;
+                    }
+                    elseif(
+
+                        ($context->deviceType !== "scm")
+                        &&
+                        ($fieldName == 'dns-security-profile' || $fieldName == 'virus-and-wildfire-analysis-profile'
+                            || $fieldName == 'sp_av_and_wf_bp' || $fieldName == 'sp_av_and_wf_visible' || $fieldName == 'sp_av_and_wf_adoption'
+                            || $fieldName == 'sp_dns_sec_bp' || $fieldName == 'sp_dns_sec_visible' || $fieldName == 'sp_dns_sec_adoption'
+                        )
+                    )
+                    {
+                        $continue_text = "continueLast2";
                         $continue = true;
                     }
 
@@ -5518,7 +5556,9 @@ RuleCallContext::$supportedActions[] = array(
             }
             elseif(
                 ($fieldName == 'sp_av_bp' || $fieldName == 'sp_as_bp' || $fieldName == 'sp_vp_bp' || $fieldName == 'sp_url_bp'
-                        || $fieldName == 'sp_file_bp' || $fieldName == 'sp_data_bp' || $fieldName == 'sp_wf_bp')
+                        || $fieldName == 'sp_file_bp' || $fieldName == 'sp_data_bp' || $fieldName == 'sp_wf_bp'
+                        || $fieldName == 'sp_av_and_wf_bp' || $fieldName == 'sp_dns_sec_bp'
+                )
                 &&
                 (!$bestPractice || !$context->arguments['tmp_secrule'] )
             )
@@ -5529,7 +5569,9 @@ RuleCallContext::$supportedActions[] = array(
             elseif(
                 ($fieldName == 'sp_av_visible' || $fieldName == 'sp_as_visible' || $fieldName == 'sp_vp_visible'
                         || $fieldName == 'sp_url_visible' || $fieldName == 'sp_file_visible' || $fieldName == 'sp_data_visible'
-                        || $fieldName == 'sp_wf_visible')
+                        || $fieldName == 'sp_wf_visible'
+                        || $fieldName == 'sp_av_and_wf_visible' || $fieldName == 'sp_dns_sec_visible'
+                )
                 &&
                 (!$visibility || !$context->arguments['tmp_secrule'] )
             )
@@ -5540,7 +5582,9 @@ RuleCallContext::$supportedActions[] = array(
             elseif(
                 ($fieldName == 'sp_av_adoption' || $fieldName == 'sp_as_adoption' || $fieldName == 'sp_vp_adoption'
                         || $fieldName == 'sp_url_adoption' || $fieldName == 'sp_file_adoption' || $fieldName == 'sp_data_adoption'
-                        || $fieldName == 'sp_wf_adoption')
+                        || $fieldName == 'sp_wf_adoption'
+                        || $fieldName == 'sp_av_and_wf_adoption' || $fieldName == 'sp_dns_sec_adoption'
+                )
                 &&
                 ( !$adoption || !$context->arguments['tmp_secrule'] )
             )
@@ -5601,6 +5645,32 @@ RuleCallContext::$supportedActions[] = array(
             )
             {
                 $continue_text = "continue18";
+                $continue = true;
+            }
+
+            if(
+                ($context->deviceType === "scm")
+                &&
+                ($fieldName == 'virus-profile' || $fieldName == 'wildfire-analysis-profile'
+                    || $fieldName == 'sp_av_bp' || $fieldName == 'sp_av_visible' || $fieldName == 'sp_av_adoption'
+                    ||$fieldName == 'sp_wf_bp' || $fieldName == 'sp_wf_visible' || $fieldName == 'sp_wf_adoption'
+                )
+            )
+            {
+                $continue_text = "continueLast1";
+                $continue = true;
+            }
+            elseif(
+
+                ($context->deviceType !== "scm")
+                &&
+                ($fieldName == 'dns-security-profile' || $fieldName == 'virus-and-wildfire-analysis-profile'
+                    || $fieldName == 'sp_av_and_wf_bp' || $fieldName == 'sp_av_and_wf_visible' || $fieldName == 'sp_av_and_wf_adoption'
+                    || $fieldName == 'sp_dns_sec_bp' || $fieldName == 'sp_dns_sec_visible' || $fieldName == 'sp_dns_sec_adoption'
+                )
+            )
+            {
+                $continue_text = "continueLast2";
                 $continue = true;
             }
 

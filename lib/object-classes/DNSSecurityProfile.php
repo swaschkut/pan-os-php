@@ -23,6 +23,7 @@ class DNSSecurityProfile
 
     public $secprof_type;
 
+    public $rules_obj = array();
     public $dns_rules_obj = array();
 
     public $lists_obj = array();
@@ -126,6 +127,20 @@ class DNSSecurityProfile
 
     }
 
+    public function is_best_practice(): bool
+    {
+        return false;
+    }
+
+    public function is_visible(): bool
+    {
+        return false;
+    }
+
+    public function is_adaption(): bool
+    {
+        return false;
+    }
 
     static $templatexml = '<entry name="**temporarynamechangeme**"></entry>';
 

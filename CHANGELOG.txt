@@ -3,6 +3,7 @@ CHANGELOG
 2.1.53
 UTIL:
 * adjustment to index_assessment.html
+* optimise type=rule/securityprofilegroup | for 'actions=exporttoexcel:file.html,visiblity|bestpractice'
 
 BUGFIX:
 * SCM API - bring back the already implemented parts for SaseAPI, but now working for SCMAPI
