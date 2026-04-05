@@ -76,7 +76,20 @@
         $('table thead').append('<tr class="panos-filter-row">' + cells + '</tr>');
     }
 
-    /* ─── Bottom bar (row info + pagination controls) ────────────────── */
+    /* ─── Top row info bar (attached to table header) ──────────────── */
+
+    function injectTopRowInfo() {
+        $('table').before(
+            '<div id="panos-top-rowinfo">' +
+                '<div id="panos-top-rowinfo-left">' +
+                    '<span id="panos-top-rowinfo-count"></span>' +
+                    '<span id="panos-top-rowinfo-page"></span>' +
+                '</div>' +
+            '</div>'
+        );
+    }
+
+    /* ─── Bottom bar (pagination controls only) ─────────────────────── */
 
     function injectBottomBar() {
         $('table').after(
@@ -162,13 +175,19 @@
     }
 
     function updateRowInfo(from, to, total) {
-        var txt;
+        var txt, topCountTxt, topPageTxt;
         if (PAGINATION.enabled) {
             txt = 'Showing ' + fmt(from) + '\u2013' + fmt(to) + ' of ' + fmt(total) + ' rows';
+            topCountTxt = fmt(total) + ' rows';
+            topPageTxt = 'Page ' + PAGINATION.currentPage + '/' + totalPages();
         } else {
             txt = fmt(total) + '\u00A0/\u00A0' + fmt(TOTAL_ROWS) + ' rows';
+            topCountTxt = fmt(total) + ' / ' + fmt(TOTAL_ROWS) + ' rows';
+            topPageTxt = '';
         }
         $('#panos-row-info').text(txt);
+        $('#panos-top-rowinfo-count').text(topCountTxt);
+        $('#panos-top-rowinfo-page').text(topPageTxt);
     }
 
     function fmt(n) { return n.toLocaleString(); }
@@ -189,11 +208,18 @@
                     var low = raw.toLowerCase();
                     cells.push(low);
 
-                    // Track unique values per column
+                    // Track unique values per column (split multi-line values)
                     if (!COLUMN_VALUES[c]) { COLUMN_VALUES[c] = {}; }
-                    var key = low || '\x00blank';
-                    if (!COLUMN_VALUES[c][key]) {
-                        COLUMN_VALUES[c][key] = { value: raw || '', lower: low, isBlank: !raw };
+
+                    // E5: Treat multi-line cell values as separate filterable values
+                    var lines = raw ? raw.split(/\r?\n/) : [''];
+                    for (var l = 0; l < lines.length; l++) {
+                        var lineRaw = lines[l].trim();
+                        var lineLow = lineRaw.toLowerCase();
+                        var key = lineLow || '\x00blank';
+                        if (!COLUMN_VALUES[c][key]) {
+                            COLUMN_VALUES[c][key] = { value: lineRaw, lower: lineLow, isBlank: !lineRaw };
+                        }
                     }
                 }
                 INDEX.push({ domRow: rows[i], cells: cells });
@@ -532,6 +558,7 @@
             if (e.key === 'Escape') { closeDropdown(); }
         });
 
+        injectTopRowInfo();
         injectFilterRow();
         injectBottomBar();
 
