@@ -53,7 +53,7 @@ class CallContext
     /** @var  $ruletype array */
     public $ruletype;
 
-    /** @var PanAPIConnector */
+    /** @var PanAPIConnector|PanSaseAPIConnector|PanSCMAPIConnector */
     public $connector = null;
 
     public $padding = '';

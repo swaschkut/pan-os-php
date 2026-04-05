@@ -202,6 +202,8 @@ class LogProfileStore extends ObjStore
 
             if( $con->isAPI() )
                 $con->sendSetRequest($xpath, $element);
+            elseif ($con->isSCMAPI() || $con->isSaseAPI() )
+                $con->sendCreateRequest($element);
         }
 
         return $newLogProfile;
@@ -247,6 +249,8 @@ class LogProfileStore extends ObjStore
 
             if( $con->isAPI() )
                 $con->sendDeleteRequest($xpath);
+            elseif ($con->isSCMAPI() || $con->isSaseAPI() )
+                $con->sendDELETERequest($LogProfile);
         }
 
         return $ret;

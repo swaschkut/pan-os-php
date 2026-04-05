@@ -1218,7 +1218,10 @@ class PanSCMAPIConnector
 
 
             if( $this->showApiCalls )
-                print_r($object);
+            {
+                #print_r($object);
+            }
+
             if( $type === "addresses" )
             {
                 //Todo: import via:
@@ -1722,7 +1725,7 @@ class PanSCMAPIConnector
                     // Start the conversion
                     $this->SCM_API_arrayToXml($dom, $rootEntry, $object);
 
-                    $this->SCM_API_SP_object_import($dom, $sub, $profileStoreName);
+                    $this->SCM_API_SP_object_import($dom, $sub, $profileStoreName, $object);
                 }
 
             }
@@ -1748,7 +1751,7 @@ class PanSCMAPIConnector
                     $this->SCM_API_arrayToXml($dom, $rootEntry, $object);
 
                     #DH::DEBUGprintDOMDocument($dom->firstChild);
-                    $this->SCM_API_SP_object_import($dom, $sub, $profileStoreName);
+                    $this->SCM_API_SP_object_import($dom, $sub, $profileStoreName, $object);
                 }
             }
 
@@ -1851,9 +1854,26 @@ class PanSCMAPIConnector
         }
         elseif( get_class( $object ) == "LogProfile" )
         {
-            $bodyArray['match-list'] = array();
+            $tmp_match_list_array = array();
+            foreach( $object->type() as $key => $name )
+            {
+                if( isset($name['notSet']))
+                    continue;
+                else
+                {
+                    foreach ($name as $name_key => $type)
+                    {
+                        $tmp_array = array( "name" => $name_key, "log_type" => $name_key );
 
-            print_r( $bodyArray  );
+                        foreach ($type as $type_key => $type_value)
+                        {
+                            $tmp_array[$type_key] =  $type_value ;
+                        }
+                        $tmp_match_list_array[] = $tmp_array;
+                    }
+                }
+            }
+            $bodyArray['match_list'] = $tmp_match_list_array;
 
             return $bodyArray;
         }
@@ -2010,7 +2030,7 @@ class PanSCMAPIConnector
         $this->displayCurlResponse( $response );
     }
 
-    public function sendDELETERequest( $element )
+    public function sendDELETERequest($object )
     {
         //DELETE
 
@@ -2020,9 +2040,9 @@ class PanSCMAPIConnector
 
         $url = $this->url_api;
 
-        $type = $this->getTypeURL($element);
+        $type = $this->getTypeURL($object);
 
-        $saseID = $element->getSaseID();
+        $saseID = $object->getSaseID();
         if( empty($saseID) )
             derr( "for DELETE request SaseID must be present", null, FALSE );
 
@@ -2165,14 +2185,14 @@ class PanSCMAPIConnector
             // Start the conversion
             $this->SCM_API_arrayToXml($dom, $rootEntry, $object);
 
-            $this->SCM_API_SP_object_import($dom, $sub, $profileStoreName);
+            $this->SCM_API_SP_object_import($dom, $sub, $profileStoreName, $object);
 
             return true;
         }
 
         return false;
     }
-    private function SCM_API_SP_object_import($dom, $sub, $storeType)
+    private function SCM_API_SP_object_import($dom, $sub, $storeType, $object)
     {
         #print "STORE: ".$storeType."\n";
 
@@ -2265,6 +2285,9 @@ class PanSCMAPIConnector
             $newProf->owner = null;
             $sub->$storeType->addSecurityProfile($newProf);
         }
+
+        if( isset($object['id']) )
+            $newProf->setSaseID($object['id']);
     }
 
 }

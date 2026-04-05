@@ -248,3 +248,182 @@ LogProfileCallContext::$supportedActions['create'] = array(
     },
     'args' => array('logprofile-name' => array('type' => 'string', 'default' => '*nodefault*') )
 );
+LogProfileCallContext::$supportedActions[] = array(
+    'name' => 'move',
+    'MainFunction' => function (LogProfileCallContext $context) {
+        $object = $context->object;
+
+        $localLocation = 'shared';
+
+        if( !$object->owner->owner->isPanorama() && !$object->owner->owner->isFirewall() )
+            $localLocation = $object->owner->owner->name();
+
+        $targetLocation = $context->arguments['location'];
+        $targetStore = null;
+
+        if( $localLocation == $targetLocation )
+        {
+            $string = "because original and target destinations are the same: $targetLocation";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
+        $rootObject = PH::findRootObjectOrDie($object->owner->owner);
+
+        if( $targetLocation == 'shared' )
+        {
+            $findSubSystem = $rootObject;
+            $targetStore = $rootObject->LogProfileStore;
+        }
+        else
+        {
+            $findSubSystem = $rootObject->findSubSystemByName($targetLocation);
+            if( $findSubSystem === null )
+                derr("cannot find VSYS/DG named '$targetLocation'");
+
+            $targetStore = $findSubSystem->LogProfileStore;
+        }
+
+        if( $localLocation == 'shared' )
+        {
+            $reflocations = $object->getReferencesLocation();
+
+            foreach( $object->getReferences() as $ref )
+            {
+                if( PH::getLocationString($ref) != $targetLocation )
+                {
+                    $skipped = TRUE;
+                    //check if targetLocation is parent of reflocation
+                    if( $findSubSystem->owner->isPanorama() )
+                        $locations = $findSubSystem->childDeviceGroups(TRUE);
+                    elseif( $findSubSystem->owner->isFirewall() )
+                    {
+                        $locations = array();
+                        $skipped = TRUE;
+                    }
+
+                    foreach( $locations as $childloc )
+                    {
+                        if( PH::getLocationString($ref) == $childloc->name() )
+                            $skipped = FALSE;
+                    }
+
+                    if( $skipped )
+                    {
+                        $string = "moving from SHARED to sub-level is NOT possible because of references";
+                        PH::ACTIONstatus( $context, "SKIPPED", $string );
+                        return;
+                    }
+                }
+            }
+        }
+
+        if( $localLocation != 'shared' && $targetLocation != 'shared' )
+        {
+            if( $context->baseObject->isFirewall() )
+            {
+                $string = "moving between VSYS is not supported";
+                PH::ACTIONstatus( $context, "SKIPPED", $string );
+                return;
+            }
+
+            foreach( $object->getReferences() as $ref )
+            {
+                if( PH::getLocationString($ref) != $targetLocation )
+                {
+                    $skipped = TRUE;
+                    //check if targetLocation is parent of reflocation
+                    $locations = $findSubSystem->childDeviceGroups(TRUE);
+                    foreach( $locations as $childloc )
+                    {
+                        if( PH::getLocationString($ref) == $childloc->name() )
+                            $skipped = FALSE;
+                    }
+
+                    if( $skipped )
+                    {
+                        $string = "moving between 2 VSYS/DG is not possible because of references on higher DG level";
+                        PH::ACTIONstatus( $context, "SKIPPED", $string );
+                        return;
+                    }
+                }
+            }
+        }
+
+        $conflictObject = $targetStore->find($object->name(), null, FALSE);
+        if( $conflictObject === null )
+        {
+            $string = "moved, no conflict";
+            PH::ACTIONlog( $context, $string );
+
+            if( $context->isAPI )
+            {
+                $oldXpath = $object->getXPath();
+                $object->owner->removeLogProfile($object);
+                $targetStore->addLogProfile($object);
+                if( $context->isSaseAPI || $context->isSCMAPI )
+                {
+                    $object->API_sync(true);
+
+                    $context->connector->sendDELETERequest($object);
+                }
+                else
+                {
+                    $object->API_sync();
+                    $context->connector->sendDeleteRequest($oldXpath);
+                }
+
+            }
+            else
+            {
+                $object->owner->removeLogProfile($object);
+                $targetStore->addLogProfile($object);
+            }
+            return;
+        }
+
+        if( $context->arguments['mode'] == 'skipifconflict' )
+        {
+            $string = "there is an object with same name. Choose another mode to to resolve this conflict";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
+        $string = "there is a conflict with an object of same name";
+        PH::ACTIONlog( $context, $string );
+
+        if( $object->equals($conflictObject) )
+        {
+            $string = "Removed because target has same content";
+            PH::ACTIONlog( $context, $string );
+            $object->replaceMeGlobally($conflictObject);
+
+            if( $context->isAPI )
+                $object->owner->API_removeLogProfile($object);
+            else
+                $object->owner->removeLogProfile($object);
+            return;
+        }
+
+    },
+    'args' => array('location' => array('type' => 'string', 'default' => '*nodefault*'),
+        'mode' => array('type' => 'string', 'default' => 'skipIfConflict', 'choices' => array('skipIfConflict', 'removeIfMatch'))
+    ),
+);
+LogProfileCallContext::$supportedActions['delete'] = array(
+    'name' => 'delete',
+    'MainFunction' => function (LogProfileCallContext $context) {
+        $object = $context->object;
+
+        if( $object->countReferences() != 0 )
+        {
+            $string = "this object is used by other objects and cannot be deleted (use deleteForce to try anyway)";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+        if( $context->isAPI )
+            $object->owner->API_removeLogProfile($object);
+        else
+            $object->owner->removeLogProfile($object);
+    },
+);
