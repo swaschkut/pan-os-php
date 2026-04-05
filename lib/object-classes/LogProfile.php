@@ -248,5 +248,15 @@ class LogProfile
     {
         return $this->recurring;
     }
+
+    public function add_log_filter( $logType, $name, $filter = "All Logs", $sendToPanorama = true )
+    {
+        unset( $this->type[$logType]['notSet'] );
+        $this->type[$logType][$name] = array();
+        $this->type[$logType][$name]['filter'] = $filter;
+
+        $this->type[$logType][$name]['send_to_panorama'] = $sendToPanorama;
+
+    }
 }
 

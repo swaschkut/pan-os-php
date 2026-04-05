@@ -1863,7 +1863,7 @@ class PanSCMAPIConnector
                 {
                     foreach ($name as $name_key => $type)
                     {
-                        $tmp_array = array( "name" => $name_key, "log_type" => $name_key );
+                        $tmp_array = array( "name" => $name_key, "log_type" => $key );
 
                         foreach ($type as $type_key => $type_value)
                         {

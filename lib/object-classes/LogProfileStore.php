@@ -165,6 +165,8 @@ class LogProfileStore extends ObjStore
         if( $ref !== null )
             $newLogProfile->addReference($ref);
 
+        $newLogProfile->add_log_filter('traffic', 'all traffic', "All Logs");
+
         $this->addLogProfile($newLogProfile);
 
         //todo: continue here 20260404
