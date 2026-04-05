@@ -430,7 +430,7 @@ class PanSCMAPIConnector
     }
 
 
-    public function getAccessToken( $debugAPI = false )
+    public function getAccessToken()
     {
         if( $this->access_token === null || $this->access_token_refreshed_time = time() + $this->access_token_timeout )
         {
@@ -483,7 +483,7 @@ class PanSCMAPIConnector
 
                 derr( "problem with SCM API connection - not possible to get 'access_token'", null, FALSE );
             }
-            elseif( $debugAPI )
+            elseif( $this->showApiCalls )
                 PH::print_stdout( "TOKEN: ".$jsonArray['access_token'] );
 
             $this->access_token = $jsonArray['access_token'];
@@ -1217,6 +1217,8 @@ class PanSCMAPIConnector
             }
 
 
+            if( $this->showApiCalls )
+                print_r($object);
             if( $type === "addresses" )
             {
                 //Todo: import via:

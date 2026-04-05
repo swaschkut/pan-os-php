@@ -852,6 +852,19 @@ trait StatCollectorTrait
         }
 
 
+        if ($isCloudOrSnippet)
+        {
+            $this->stats_profileMaps['WildfireAndAntivirus objects'] = array('store' => 'VirusAndWildfireProfileStore');
+            $this->stats_profileMaps['DNS-Security objects'] = array('store' => 'DNSSecurityProfileStore');
+            $this->stats_profileMaps['Saas-Security objects'] = array('store' => 'SaasSecurityProfileStore');
+        }
+        if ($class === "DeviceGroup" || $class === "VirtualSystem")
+        {
+            $this->stats_profileMaps['Antivirus objects'] = array('store' => 'AntiVirusProfileStore');
+            $this->stats_profileMaps['Wildfire objects'] = array('store' => 'WildfireProfileStore');
+        }
+
+
         // --- 3. Profile & Other Object Statistics ---
         foreach($this->stats_profileMaps as $label => $conf)
         {
@@ -873,20 +886,6 @@ trait StatCollectorTrait
             }
         }
 
-
-
-        if ($isCloudOrSnippet)
-        {
-            $stdoutarray['WildfireAndAntivirus objects'] = ['total' => $this->VirusAndWildfireProfileStore->count()];
-            $stdoutarray['DNS-Security objects'] = ['total' => $this->DNSSecurityProfileStore->count()];
-            $stdoutarray['Saas-Security objects'] = ['total' => $this->SaasSecurityProfileStore->count()];
-        }
-
-        if ($class === "DeviceGroup" || $class === "VirtualSystem")
-        {
-            $stdoutarray['Antivirus objects'] = ['total' => $this->AntiVirusProfileStore->count()];
-            $stdoutarray['Wildfire objects'] = ['total' => $this->WildfireProfileStore->count()];
-        }
 
         if (!$isSummaryMode)
         {
