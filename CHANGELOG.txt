@@ -3,8 +3,13 @@ CHANGELOG
 2.1.53
 UTIL:
 * adjustment to index_assessment.html
+* optimise type=rule/securityprofilegroup | for 'actions=exporttoexcel:file.html,visiblity|bestpractice'
+* extend SecurityProfile filters | to cross function - AS with DNS Security profile | Virus / Wildfire with VirusAndWildfire for SCM
+* class FawkesConf | optimise type=stats
+* type=log-profile | introduce actions=delete/move:LOCATION
 
 BUGFIX:
+* SCM API - bring back the already implemented parts for SaseAPI, but now working for SCMAPI
 
 GENERAL:
 

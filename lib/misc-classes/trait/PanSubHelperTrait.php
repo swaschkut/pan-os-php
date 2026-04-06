@@ -73,6 +73,11 @@ trait PanSubHelperTrait
         FALSE;
     }
 
+    public function isSnippet(): void
+    {
+        FALSE;
+    }
+
     public function isManagedDevice(): void
     {
         FALSE;

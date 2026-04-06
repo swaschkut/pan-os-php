@@ -243,7 +243,7 @@ class TagStore extends ObjStore
             $element = $newTag->getXmlText_inline();
             if( $con->isAPI())
                 $con->sendSetRequest($xpath, $element);
-            elseif( $con->isSaseAPI() )
+            elseif( $con->isSaseAPI() || $con->isSCMAPI() )
                 $con->sendCreateRequest($newTag);
         }
 
@@ -289,7 +289,7 @@ class TagStore extends ObjStore
             $con = findConnectorOrDie($this);
             if( $con->isAPI())
                 $con->sendDeleteRequest($xpath);
-            elseif( $con->isSaseAPI())
+            elseif( $con->isSaseAPI() || $con->isSCMAPI() )
                 $con->sendDELETERequest($tag);
         }
 

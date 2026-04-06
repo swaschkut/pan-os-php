@@ -254,7 +254,7 @@ class Address
 
         if( $c->isAPI() )
             $c->sendEditRequest($xpath, DH::dom_to_xml($this->xmlroot, -1, FALSE));
-        elseif( $c->isSaseAPI() )
+        elseif( $c->isSaseAPI() || $c->isSCMAPI() )
             $c->sendPUTRequest($this);
 
         return TRUE;
@@ -274,7 +274,7 @@ class Address
 
         if( $c->isAPI() )
             $c->sendEditRequest($xpath, DH::dom_to_xml($this->xmlroot, -1, FALSE));
-        elseif( $c->isSaseAPI() )
+        elseif( $c->isSaseAPI() || $c->isSCMAPI() )
             $c->sendPUTRequest($this);
 
         $this->setValue($newValue);
@@ -296,7 +296,7 @@ class Address
 
         if( $c->isAPI() )
             $c->sendEditRequest($xpath, DH::dom_to_xml($this->xmlroot, -1, FALSE));
-        elseif( $c->isSaseAPI() )
+        elseif( $c->isSaseAPI() || $c->isSCMAPI() )
             $c->sendPUTRequest($this);
 
         return TRUE;
@@ -364,7 +364,7 @@ class Address
 
         if( $c->isAPI() )
             $c->sendRenameRequest($xpath, $newName);
-        elseif( $c->isSaseAPI() )
+        elseif( $c->isSaseAPI() || $c->isSCMAPI() )
             $c->sendPUTRequest($this);
 
         return TRUE;

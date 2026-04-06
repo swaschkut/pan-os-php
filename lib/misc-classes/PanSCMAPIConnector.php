@@ -430,7 +430,7 @@ class PanSCMAPIConnector
     }
 
 
-    public function getAccessToken( $debugAPI = false )
+    public function getAccessToken()
     {
         if( $this->access_token === null || $this->access_token_refreshed_time = time() + $this->access_token_timeout )
         {
@@ -483,7 +483,7 @@ class PanSCMAPIConnector
 
                 derr( "problem with SCM API connection - not possible to get 'access_token'", null, FALSE );
             }
-            elseif( $debugAPI )
+            elseif( $this->showApiCalls )
                 PH::print_stdout( "TOKEN: ".$jsonArray['access_token'] );
 
             $this->access_token = $jsonArray['access_token'];
@@ -795,6 +795,10 @@ class PanSCMAPIConnector
             return "zones";
         elseif( get_class($object) == "ZoneProtectionProfile" )
             return "zone-protection-profiles";
+
+
+        elseif( get_class($object) == "LogProfile" )
+            return "log-forwarding-profiles";
 
         #"hip-objects",
         #"hip-profiles",
@@ -1198,11 +1202,25 @@ class PanSCMAPIConnector
         /** @var Container|DeviceCloud $sub */
         foreach( $jsonArray['data'] as $object )
         {
-            if( $object['folder'] === "predefined" )
-                continue;
+            if( isset( $object['folder'] ) )
+            {
+                if( $object['folder'] === "predefined" )
+                    continue;
 
-            if( $object['folder'] !== $folder )
-                continue;
+                if( $object['folder'] !== $folder )
+                    continue;
+            }
+            elseif( isset( $object['snippet'] ) )
+            {
+                if( $object['snippet'] !== $folder )
+                    continue;
+            }
+
+
+            if( $this->showApiCalls )
+            {
+                #print_r($object);
+            }
 
             if( $type === "addresses" )
             {
@@ -1707,7 +1725,7 @@ class PanSCMAPIConnector
                     // Start the conversion
                     $this->SCM_API_arrayToXml($dom, $rootEntry, $object);
 
-                    $this->SCM_API_SP_object_import($dom, $sub, $profileStoreName);
+                    $this->SCM_API_SP_object_import($dom, $sub, $profileStoreName, $object);
                 }
 
             }
@@ -1733,7 +1751,7 @@ class PanSCMAPIConnector
                     $this->SCM_API_arrayToXml($dom, $rootEntry, $object);
 
                     #DH::DEBUGprintDOMDocument($dom->firstChild);
-                    $this->SCM_API_SP_object_import($dom, $sub, $profileStoreName);
+                    $this->SCM_API_SP_object_import($dom, $sub, $profileStoreName, $object);
                 }
             }
 
@@ -1762,12 +1780,20 @@ class PanSCMAPIConnector
     {
         #print get_class($object);
         $bodyArray = array();
+
+        if( get_class($object->owner->owner) == "Container" || get_class($object->owner->owner) == "DeviceCloud"
+            || get_class($object->owner->owner) == "DeviceOnPrem" )
+            $bodyArray['folder'] = $object->owner->owner->name();
+        elseif( get_class($object->owner->owner) == "Snippet" )
+            $bodyArray['snippet'] = $object->owner->owner->name();
+        $bodyArray['name'] = $object->name();
+
+
         if( get_class( $object ) == "Address" )
         {
             //SCM-API
 
             $bodyArray['description'] = $object->description();
-            $bodyArray['name'] = $object->name();
             $tagArray = $object->tags->getAll();
             foreach($tagArray as $tag)
                 $bodyArray['tag'][] = $tag->name();
@@ -1776,8 +1802,6 @@ class PanSCMAPIConnector
             elseif( $object->isType_FQDN() )
                 $bodyArray['fqdn'] = $object->value();
 
-            $bodyArray['folder'] = $object->owner->owner->name();
-
             return $bodyArray;
         }
         if( get_class( $object ) == "AddressGroup" )
@@ -1785,8 +1809,7 @@ class PanSCMAPIConnector
             //SCM-API
 
             $bodyArray['description'] = $object->description();
-            $bodyArray['name'] = $object->name();
-            $bodyArray['folder'] = $object->owner->owner->name();
+
             $memberArray = $object->members();
             if( !$object->isDynamic() )
             {
@@ -1805,7 +1828,6 @@ class PanSCMAPIConnector
             //SCM-API
 
             $bodyArray['description'] = $object->description();
-            $bodyArray['name'] = $object->name();
             $tagArray = $object->tags->getAll();
             foreach($tagArray as $tag)
                 $bodyArray['tag'][] = $tag->name();
@@ -1814,8 +1836,6 @@ class PanSCMAPIConnector
             elseif( $object->isUdp() )
                 $bodyArray['protocol']['udp']['port'] = $object->getDestPort();
 
-            $bodyArray['folder'] = $object->owner->owner->name();
-
             return $bodyArray;
         }
         elseif( get_class( $object ) == "Tag" )
@@ -1823,8 +1843,6 @@ class PanSCMAPIConnector
             //SCM-API
 
             $bodyArray['comments'] = $object->getComments();
-            $bodyArray['name'] = $object->name();
-            $bodyArray['folder'] = $object->owner->owner->name();
 
             $color = $object->getColor();
             $color = ucwords($color);
@@ -1834,12 +1852,46 @@ class PanSCMAPIConnector
 
             return $bodyArray;
         }
-        else
+        elseif( get_class( $object ) == "LogProfile" )
+        {
+            $tmp_match_list_array = array();
+            foreach( $object->type() as $key => $name )
+            {
+                if( isset($name['notSet']))
+                    continue;
+                else
+                {
+                    foreach ($name as $name_key => $type)
+                    {
+                        $tmp_array = array( "name" => $name_key, "log_type" => $key );
+
+                        foreach ($type as $type_key => $type_value)
+                        {
+                            $tmp_array[$type_key] =  $type_value ;
+                        }
+                        $tmp_match_list_array[] = $tmp_array;
+                    }
+                }
+            }
+            $bodyArray['match_list'] = $tmp_match_list_array;
+
             return $bodyArray;
+        }
+        else
+        {
+            mwarning( "object: ".get_class($object)." not implemented yet", null, false);
+            DH::DEBUGprintDOMDocument($object->xmlroot);
+            return $bodyArray;
+        }
+
     }
 
     private function curlRequest($url, $header = null)
     {
+        //GET
+        //List
+        //get an address
+
         $this->_createOrRenewCurl();
 
         curl_setopt($this->_curl_handle, CURLOPT_URL, $url);
@@ -1863,23 +1915,44 @@ class PanSCMAPIConnector
             }
         }
     }
-
     public function sendCreateRequest( $element )
     {
+        //sendPOSTRequest()
+        //CREATE
+
         $this->getAccessToken();
 
         $header = array( "Content-Type: application/json", "Authorization: Bearer {$this->access_token}");
 
         $bodyArray = $this->getDataFromObject( $element );
         if( empty($bodyArray) )
+        {
             derr( "empty object - check", $element, false );
+        }
 
 
-        $folder = $bodyArray['folder'];
-        if($folder == "Prisma Access")
-            //Todo: validate, but it looks like to no longer needed
-            //$folder = "Shared";
-        unset( $bodyArray['folder'] );
+        $sub_type = null;
+        $folder = null;
+        if( isset($bodyArray['folder']) )
+        {
+            $sub_type = "folder";
+
+            $folder = $bodyArray['folder'];
+            if($folder == "Prisma Access")
+                //Todo: validate, but it looks like to no longer needed
+                //$folder = "Shared";
+            unset( $bodyArray['folder'] );
+        }
+        elseif( isset($bodyArray['snippet']) )
+        {
+            $sub_type = "snippet";
+            $folder = $bodyArray['snippet'];
+
+            unset( $bodyArray['snippet'] );
+        }
+
+
+
         $url = $this->url_api;
 
         $type = $this->getTypeURL($element);
@@ -1887,7 +1960,14 @@ class PanSCMAPIConnector
         //Fawkes
         #$url .= "/sse/config/v1/" . $type . "?folder=" . $folder;
         //Buckbeak
-        $url .= "/config/objects/v1/" . $type . "?folder=" . $folder;
+        if( $this->showApiCalls )
+        {
+            #PH::print_stdout( $type );
+            #PH::print_stdout( $sub_type );
+            #PH::print_stdout( $folder );
+            #PH::print_stdout();
+        }
+        $url .= "/config/objects/v1/" . $type . "?".$sub_type."=" . $folder;
 
         $body = json_encode($bodyArray);
 
@@ -1895,10 +1975,12 @@ class PanSCMAPIConnector
         {
             PH::print_stdout( "URL: ".$url);
             PH::print_stdout( "BODY: ".$body );
+            PH::print_stdout( "METHOD: POST" );
         }
 
         $this->curlRequest( $url, $header );
 
+        curl_setopt($this->_curl_handle, CURLOPT_CUSTOMREQUEST, "POST");
         curl_setopt($this->_curl_handle, CURLOPT_POST,           1 );
         curl_setopt($this->_curl_handle, CURLOPT_POSTFIELDS,     $body );
 
@@ -1910,6 +1992,9 @@ class PanSCMAPIConnector
 
     public function sendPUTRequest( $element )
     {
+        //UPDATE
+        //PUT
+
         $this->getAccessToken();
 
         $header = array( "Content-Type: application/json", "Authorization: Bearer {$this->access_token}");
@@ -1918,12 +2003,6 @@ class PanSCMAPIConnector
         if( empty($bodyArray) )
             derr( "empty object - check", $element, false );
 
-
-        $folder = $bodyArray['folder'];
-        if($folder == "Prisma Access")
-            //todo: validate, but it looks like no longer needed
-            //$folder = "Shared";
-        unset( $bodyArray['folder'] );
         $url = $this->url_api;
 
         $type = $this->getTypeURL($element);
@@ -1939,6 +2018,7 @@ class PanSCMAPIConnector
         {
             PH::print_stdout( "URL: ".$url);
             PH::print_stdout( "BODY: ".$body );
+            PH::print_stdout( "METHOD: PUT" );
         }
 
         $this->curlRequest( $url, $header );
@@ -1954,17 +2034,19 @@ class PanSCMAPIConnector
         $this->displayCurlResponse( $response );
     }
 
-    public function sendDELETERequest( $element )
+    public function sendDELETERequest($object )
     {
+        //DELETE
+
         $this->getAccessToken();
 
         $header = array( "Authorization: Bearer {$this->access_token}");
 
         $url = $this->url_api;
 
-        $type = $this->getTypeURL($element);
+        $type = $this->getTypeURL($object);
 
-        $saseID = $element->getSaseID();
+        $saseID = $object->getSaseID();
         if( empty($saseID) )
             derr( "for DELETE request SaseID must be present", null, FALSE );
 
@@ -1974,7 +2056,12 @@ class PanSCMAPIConnector
         $url .= "/config/objects/v1/" . $type . "/" . $saseID;
 
         if( $this->showApiCalls )
+        {
             PH::print_stdout( "URL: ".$url);
+            #PH::print_stdout( "ID: ".$saseID );
+            PH::print_stdout( "METHOD: DELETE" );
+        }
+
 
         $this->curlRequest( $url, $header );
 
@@ -2102,14 +2189,14 @@ class PanSCMAPIConnector
             // Start the conversion
             $this->SCM_API_arrayToXml($dom, $rootEntry, $object);
 
-            $this->SCM_API_SP_object_import($dom, $sub, $profileStoreName);
+            $this->SCM_API_SP_object_import($dom, $sub, $profileStoreName, $object);
 
             return true;
         }
 
         return false;
     }
-    private function SCM_API_SP_object_import($dom, $sub, $storeType)
+    private function SCM_API_SP_object_import($dom, $sub, $storeType, $object)
     {
         #print "STORE: ".$storeType."\n";
 
@@ -2202,6 +2289,9 @@ class PanSCMAPIConnector
             $newProf->owner = null;
             $sub->$storeType->addSecurityProfile($newProf);
         }
+
+        if( isset($object['id']) )
+            $newProf->setSaseID($object['id']);
     }
 
 }

@@ -21,7 +21,7 @@
 
 class LogProfileCallContext extends CallContext
 {
-    /** @var  ZoneProtectionProfile */
+    /** @var  LogProfile */
     public $object;
 
 

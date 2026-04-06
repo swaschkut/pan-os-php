@@ -732,7 +732,13 @@ class RuleCallContext extends CallContext
                 $group_name = $rule->securityProfileGroup();
                 /** @var SecurityProfileGroup $group */
                 $group = $rule->owner->owner->securityProfileGroupStore->find($group_name);
-                $sp_working_array = array( 'virus', 'spyware', 'vulnerability', 'file-blocking', 'url-filtering', 'data-filtering', 'wildfire-analysis' );
+                $sp_working_array = array(
+                    'virus-and-wildfire-analysis',
+                    'virus',
+                    'spyware', 'dns-security',
+                    'vulnerability', 'file-blocking',
+                    'url-filtering', 'data-filtering', 'wildfire-analysis',
+                );
 
                 if( $group === NULL )
                 {
@@ -753,14 +759,20 @@ class RuleCallContext extends CallContext
                     if( is_string($profile) )
                     {
                         $bp_check = "";
-                        if( $profType == "virus" || $profType == "spyware" || $profType == "vulnerability" || $profType == "file-blocking" || $profType == "url-filtering" || $profType == "wildfire-analysis" )
+                        if( $profType == "virus" || $profType == "spyware" || $profType == "vulnerability" || $profType == "file-blocking"
+                            || $profType == "url-filtering" || $profType == "wildfire-analysis"
+                            || $profType == "virus-and-wildfire-analysis" || $profType == "dns-security"
+                        )
                             $bp_check = " | **no check possible**";
                         $profiles[] = $profType . ':' . $profile.$bp_check;
                     }
                     elseif( $profile === null )
                     {
                         $bp_check = "";
-                        if( $profType == "virus" || $profType == "spyware" || $profType == "vulnerability" || $profType == "file-blocking" || $profType == "url-filtering" || $profType == "wildfire-analysis" )
+                        if( $profType == "virus" || $profType == "spyware" || $profType == "vulnerability" || $profType == "file-blocking"
+                            || $profType == "url-filtering" || $profType == "wildfire-analysis"
+                            || $profType == "virus-and-wildfire-analysis" || $profType == "dns-security"
+                        )
                         {
                             if( $sp_best_practice )
                                 $bp_check .= $bp_NOT_sign;
@@ -776,7 +788,10 @@ class RuleCallContext extends CallContext
                     else
                     {
                         $bp_check = "";
-                        if( $profType == "virus" || $profType == "spyware" || $profType == "vulnerability" || $profType == "file-blocking" || $profType == "url-filtering" || $profType == "wildfire-analysis" )
+                        if( $profType == "virus" || $profType == "spyware" || $profType == "vulnerability" || $profType == "file-blocking"
+                            || $profType == "url-filtering" || $profType == "wildfire-analysis"
+                            || $profType == "virus-and-wildfire-analysis" || $profType == "dns-security"
+                        )
                         {
                             /** @var AntiVirusProfile|AntiSpywareProfile|VulnerabilityProfile */
                             if( !$profile->is_best_practice() )
@@ -1049,6 +1064,62 @@ class RuleCallContext extends CallContext
                 return self::enclose('');
             return self::display_SP_details_Y_N( $rule, $wrap, $sp_best_practice, $sp_visibility, $sp_adoption, $sp_type, $check_type);
         }
+        if($fieldName == 'sp_dns_sec_bp' )
+        {
+            $sp_type = "dns-security";
+            $check_type = "bp";
+            if (!$rule->isSecurityRule() && !$rule->isDefaultSecurityRule())
+                return self::enclose('');
+
+            return self::display_SP_details_Y_N( $rule, $wrap, $sp_best_practice, $sp_visibility, $sp_adoption, $sp_type, $check_type);
+        }
+        if($fieldName == 'sp_dns_sec_visible' )
+        {
+            $sp_type = "dns-security";
+            $check_type = "visible";
+            if (!$rule->isSecurityRule() && !$rule->isDefaultSecurityRule())
+                return self::enclose('');
+
+            return self::display_SP_details_Y_N( $rule, $wrap, $sp_best_practice, $sp_visibility, $sp_adoption, $sp_type, $check_type);
+        }
+        if($fieldName == 'sp_dns_sec_adoption' )
+        {
+            $sp_type = "dns-security";
+            $check_type = "adoption";
+            if (!$rule->isSecurityRule() && !$rule->isDefaultSecurityRule())
+                return self::enclose('');
+
+            return self::display_SP_details_Y_N( $rule, $wrap, $sp_best_practice, $sp_visibility, $sp_adoption, $sp_type, $check_type);
+        }
+        if($fieldName == 'sp_av_and_wf_bp' )
+        {
+            //'virus-and-wildfire-analysis', 'dns-security'
+            $sp_type = "virus-and-wildfire-analysis";
+            $check_type = "bp";
+            if (!$rule->isSecurityRule() && !$rule->isDefaultSecurityRule())
+                return self::enclose('');
+
+            return self::display_SP_details_Y_N( $rule, $wrap, $sp_best_practice, $sp_visibility, $sp_adoption, $sp_type, $check_type);
+        }
+        if($fieldName == 'sp_av_and_wf_visible' )
+        {
+            $sp_type = "virus-and-wildfire-analysis";
+            $check_type = "visible";
+            if (!$rule->isSecurityRule() && !$rule->isDefaultSecurityRule())
+                return self::enclose('');
+
+            return self::display_SP_details_Y_N( $rule, $wrap, $sp_best_practice, $sp_visibility, $sp_adoption, $sp_type, $check_type);
+        }
+        if($fieldName == 'sp_av_and_wf_adoption' )
+        {
+            $sp_type = "virus-and-wildfire-analysis";
+            $check_type = "adoption";
+            if (!$rule->isSecurityRule() && !$rule->isDefaultSecurityRule())
+                return self::enclose('');
+
+            return self::display_SP_details_Y_N( $rule, $wrap, $sp_best_practice, $sp_visibility, $sp_adoption, $sp_type, $check_type);
+        }
+
         if( $fieldName == 'action' )
         {
             if( !$rule->isSecurityRule() && !$rule->isDefaultSecurityRule() && !$rule->isCaptivePortalRule() )
@@ -1386,7 +1457,10 @@ class RuleCallContext extends CallContext
     {
         $profiles = array();
 
-        $sp_working_array = array( 'virus', 'spyware', 'vulnerability', 'url-filtering', 'file-blocking', 'data-filtering', 'wildfire-analysis' );
+        $sp_working_array = array( 'virus', 'spyware', 'vulnerability', 'url-filtering', 'file-blocking',
+            'data-filtering', 'wildfire-analysis',
+            'virus-and-wildfire-analysis', 'dns-security'
+        );
         $rule_profiles = $rule->securityProfiles();
 
         foreach( $sp_working_array as $profType )
@@ -1403,7 +1477,10 @@ class RuleCallContext extends CallContext
             }
 
             #if( $profType == "virus" || $profType == "spyware" || $profType == "vulnerability" )
-            if( $profType == "virus" || $profType == "spyware" || $profType == "vulnerability" || $profType == "wildfire-analysis" || $profType == "file-blocking" || $profType == "url-filtering" )
+            if( $profType == "virus" || $profType == "spyware" || $profType == "vulnerability" || $profType == "wildfire-analysis"
+                || $profType == "file-blocking" || $profType == "url-filtering"
+                || $profType == "virus-and-wildfire-analysis" || $profType == "dns-security"
+            )
             {
                 if( is_string($profileName) )
                 {
@@ -1419,6 +1496,10 @@ class RuleCallContext extends CallContext
                         $profile = $rule->owner->owner->FileBlockingProfileStore->find($profileName);
                     elseif( $profType == "url-filtering" )
                         $profile = $rule->owner->owner->URLProfileStore->find($profileName);
+                    elseif( $profType == "virus-and-wildfire-analysis" )
+                        $profile = $rule->owner->owner->VirusAndWildfireProfileStore->find($profileName);
+                    elseif( $profType == "dns-security" )
+                        $profile = $rule->owner->owner->DNSSecurityProfileStore->find($profileName);
                 }
                 else
                     $profile = $profileName;
@@ -1432,7 +1513,10 @@ class RuleCallContext extends CallContext
                     $bp_check = "";
 
                     #if( $profType == "virus" || $profType == "spyware" || $profType == "vulnerability" )
-                    if( $profType == "virus" || $profType == "spyware" || $profType == "vulnerability" || $profType == "wildfire-analysis" || $profType == "file-blocking" || $profType == "url-filtering" )
+                    if( $profType == "virus" || $profType == "spyware" || $profType == "vulnerability" || $profType == "wildfire-analysis"
+                        || $profType == "file-blocking" || $profType == "url-filtering"
+                        || $profType == "virus-and-wildfire-analysis" || $profType == "dns-security"
+                    )
                     {
                         /** @var AntiVirusProfile|AntiSpywareProfile|VulnerabilityProfile */
                         if( !$profile->is_best_practice() )
@@ -1488,7 +1572,10 @@ class RuleCallContext extends CallContext
             $rule_profiles = $rule->securityProfiles();
 
 
-        $sp_working_array = array( 'virus', 'spyware', 'vulnerability', 'url-filtering', 'file-blocking', 'data-filtering', 'wildfire-analysis' );
+        $sp_working_array = array( 'virus', 'spyware', 'vulnerability', 'url-filtering', 'file-blocking',
+            'data-filtering', 'wildfire-analysis',
+            'virus-and-wildfire-analysis', 'dns-security'
+        );
         foreach( $sp_working_array as $profType )
         {
             if( $sp_Type !== $profType )
@@ -1506,7 +1593,10 @@ class RuleCallContext extends CallContext
                 return self::enclose("not set", $wrap);
             }
 
-            if( $profType == "virus" || $profType == "spyware" || $profType == "vulnerability" || $profType == "wildfire-analysis" || $profType == "file-blocking" || $profType == "url-filtering" )
+            if( $profType == "virus" || $profType == "spyware" || $profType == "vulnerability"
+                || $profType == "wildfire-analysis" || $profType == "file-blocking" || $profType == "url-filtering"
+                || $profType == "virus-and-wildfire-analysis" || $profType == "dns-security"
+                )
             {
                 if( is_string($profileName) )
                 {
@@ -1522,6 +1612,10 @@ class RuleCallContext extends CallContext
                         $profile = $rule->owner->owner->FileBlockingProfileStore->find($profileName);
                     elseif( $profType == "url-filtering" )
                         $profile = $rule->owner->owner->URLProfileStore->find($profileName);
+                    elseif( $profType == "virus-and-wildfire-analysis" )
+                        $profile = $rule->owner->owner->VirusAndWildfireProfileStore->find($profileName);
+                    elseif( $profType == "dns-security" )
+                        $profile = $rule->owner->owner->DNSSecurityProfileStore->find($profileName);
                 }
                 else
                     $profile = $profileName;
@@ -1534,7 +1628,9 @@ class RuleCallContext extends CallContext
                 else
                 {
 
-                    if( $profType == "virus" || $profType == "spyware" || $profType == "vulnerability" || $profType == "wildfire-analysis" || $profType == "file-blocking" || $profType == "url-filtering" )
+                    if( $profType == "virus" || $profType == "spyware" || $profType == "vulnerability" || $profType == "wildfire-analysis" || $profType == "file-blocking" || $profType == "url-filtering"
+                        || $profType == "virus-and-wildfire-analysis" || $profType == "dns-security"
+                    )
                     {
                         /** @var AntiVirusProfile|AntiSpywareProfile|VulnerabilityProfile|WildfireProfile|FileBlockingProfile|URLProfile */
                         if( $sp_best_practice && $checkType == "bp" )

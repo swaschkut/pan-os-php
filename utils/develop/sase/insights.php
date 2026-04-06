@@ -65,32 +65,38 @@ $connector = $pan->connector;
 #DISPLAY
 ###########
 
-/* @var PanSaseAPIConnector|PanSCMAPIConnector $connector */
+/* @var PanSCMAPIConnector $connector */
 
-$accessToken =  $connector->getAccessToken();
-$folder = "Remote Networks";
 
-$typeArray = array();
-//Todo:
-//need to check RN API parts
+//curl -L 'https://api.strata.paloaltonetworks.com/config/setup/v1/folders' \
+//-H 'Accept: application/json' \
+//-H 'Authorization: Bearer <token>'
 
-$typeArray[] = "locations";
+$url_config = "/insights/v3.0/resource/query/users/agent/device_list";
+
+//validation:
+$connector->url_api = "https://api.sase.paloaltonetworks.com";
+
+//$limit and $offset are running into 'Access denied
+$MUjsonArray = $connector->getResourceURL( $url_config);
+print_r($MUjsonArray);
+
+
 /*
-$typeArray[] = "mobile-agent/agent-profiles";
-$typeArray[] = "mobile-agent/global-settings";
-$typeArray[] = "mobile-agent/infrastructure-settings";
-$typeArray[] = "mobile-agent/locations";
-$typeArray[] = "mobile-agent/tunnel-profiles";
-$typeArray[] = "mobile-agent/agent-versions";
-$typeArray[] = "mobile-agent/authentication-settings";
-$typeArray[] = "mobile-agent/enable";
-*/
-foreach( $typeArray as $type )
-{
-    $MUjsonArray = $connector->getResource( $accessToken, $type, $folder );
-    print_r($MUjsonArray);
-}
 
+       Array
+(
+    [backbone_routing] => asymmetric-routing-with-load-share
+    [withdraw_static_route] => 1
+    [outbound_routes_for_services] => Array
+        (
+        )
+
+    [accept_route_over_SC] =>
+    [add_host_route_to_ike_peer] =>
+)
+
+ */
 
 ########################################################################################################################
 

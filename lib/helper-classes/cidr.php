@@ -371,10 +371,17 @@ class cidr
         }
         else
         {
-            //Todo:
-            //interfaces with address name, need to used the IP
-            derr( "not a valid IPv4 or IPv6 address: ".$ex[0] );
-            mwarning( "not a valid IPv4 or IPv6 address: ".$ex[0], null, FALSE );
+            if( str_contains($ex[0], '$') )
+            {
+                //something need to be done for SCM
+            }
+            else
+            {
+                //Todo:
+                //interfaces with address name, need to used the IP
+                derr( "not a valid IPv4 or IPv6 address: ".$ex[0] );
+                mwarning( "not a valid IPv4 or IPv6 address: ".$ex[0], null, FALSE );
+            }
 
             $result['start'] = null;
             $result['end'] = null;

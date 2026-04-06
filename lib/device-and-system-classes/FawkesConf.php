@@ -37,6 +37,7 @@ class FawkesConf
 {
     use PathableName;
     use PanSubHelperTrait;
+    use StatCollectorTrait;
 
 
     /** @var DOMElement */
@@ -587,7 +588,8 @@ class FawkesConf
     {
 
         $container_all = $this->findContainer( "All");
-        
+
+        /*
         $gpreSecRules = $container_all->securityRules->countPreRules();
         $gpreNatRules = $container_all->natRules->countPreRules();
         $gpreDecryptRules = $container_all->decryptionRules->countPreRules();
@@ -637,12 +639,16 @@ class FawkesConf
         $gnsecprofDecr = $container_all->DecryptionProfileStore->count();
         $gnsecprofHipProf = $container_all->HipProfilesProfileStore->count();
         $gnsecprofHipObj = $container_all->HipObjectsProfileStore->count();
+        */
+        $container_all->get_mainDevice_statistics( $statsArray);
 
         foreach( $this->containers as $cur )
         {
             if( $cur->name() == "All" )
                 continue;
 
+            $this->get_combined_subDevice_statistics($statsArray, $cur );
+            /*
             $gpreSecRules += $cur->securityRules->countPreRules();
             $gpreNatRules += $cur->natRules->countPreRules();
             $gpreDecryptRules += $cur->decryptionRules->countPreRules();
@@ -691,6 +697,7 @@ class FawkesConf
             $gnsecprofDecr += $cur->DecryptionProfileStore->count();
             $gnsecprofHipProf += $cur->HipProfilesProfileStore->count();
             $gnsecprofHipObj += $cur->HipObjectsProfileStore->count();
+            */
         }
 
         foreach( $this->clouds as $cur )
@@ -698,6 +705,7 @@ class FawkesConf
             if( $cur->name() == "All" )
                 continue;
 
+            /*
             $gpreSecRules += $cur->securityRules->count();
             $gpreNatRules += $cur->natRules->count();
             $gpreDecryptRules += $cur->decryptionRules->count();
@@ -708,7 +716,7 @@ class FawkesConf
             $gpreQoSRules += $cur->qosRules->count();
             $gpreDoSRules += $cur->dosRules->count();
 
-            /*
+            ///*
             $gpreSecRules += $cur->securityRules->countPreRules();
             $gpreNatRules += $cur->natRules->countPreRules();
             $gpreDecryptRules += $cur->decryptionRules->countPreRules();
@@ -730,6 +738,7 @@ class FawkesConf
             $gpostDoSRules += $cur->dosRules->countPostRules();
             */
 
+            /*
             $gnservices += $cur->serviceStore->countServices();
             $gnservicesUnused += $cur->serviceStore->countUnusedServices();
             $gnserviceGs += $cur->serviceStore->countServiceGroups();
@@ -758,11 +767,22 @@ class FawkesConf
             $gnsecprofDecr += $cur->DecryptionProfileStore->count();
             $gnsecprofHipProf += $cur->HipProfilesProfileStore->count();
             $gnsecprofHipObj += $cur->HipObjectsProfileStore->count();
+            */
+
+            $this->get_combined_subDevice_statistics($statsArray, $cur, true );
         }
 
         $stdoutarray = array();
 
-        $header = "Statistics for FawkesConf '" . $this->name . "'";
+        //$header = "Statistics for FawkesConf '" . $this->name . "'";
+        $header = "Statistics for ".get_class( $this )." '" . $this->name . "'";
+
+        $subName = "All";
+        $sub = $container_all;
+
+        $this->display_mainDevice_statistics($stdoutarray, $statsArray, $sub, $subName, $header);
+
+        /*
         $stdoutarray['header'] = $header;
 
         $stdoutarray['pre security rules'] = array();
@@ -923,6 +943,7 @@ class FawkesConf
 
         $stdoutarray['zones'] = $this->zoneStore->count();
         #$stdoutarray['apps'] = $this->appStore->count();
+        */
 
         /*
         $stdoutarray['interfaces'] = array();
@@ -951,9 +972,11 @@ class FawkesConf
         return null;
         */
 
+        $sub = $this;
         if( !PH::$shadow_json && $actions == "display"  )
             PH::print_stdout( $stdoutarray, true );
 
+        /*
         $this->sizeArray['type'] = get_class( $this );
         $this->sizeArray['statstype'] = "objects";
         $this->sizeArray['header'] = $header;
@@ -985,9 +1008,38 @@ class FawkesConf
             $this->display_bp_statistics( $debug, $actions );
         else
             $this->display_bp_statistics( $debug, $actions, $location );
-
+        */
         #if( !PH::$shadow_loaddghierarchy )
         #    $this->display_shared_statistics( $connector, $debug, $actions );
+
+
+        if( !PH::$shadow_json && $actions == "display-size"  )
+        {
+            PH::stats_remove_zero_arrays($sub->sizeArray);
+            PH::print_stdout( $sub->sizeArray, true );
+        }
+
+        if( $actions == "display-available" )
+        {
+            PH::stats_remove_zero_arrays($stdoutarray);
+            if( !PH::$shadow_json )
+                PH::print_stdout( $stdoutarray, true );
+        }
+
+        if( $actions == "display" || $actions == "display-available" )
+            PH::$JSON_TMP[] = $stdoutarray;
+
+
+        if( !PH::$shadow_loaddghierarchy )
+            $sub->display_bp_statistics( $debug, $actions );
+        else
+            $sub->display_bp_statistics( $debug, $actions, $location );
+
+        if( get_class( $sub ) == 'PanoramaConf' )
+        {
+            if( !PH::$shadow_loaddghierarchy )
+                $sub->display_shared_statistics( $connector, $debug, $actions );
+        }
     }
 
     public function display_bp_statistics( $debug = false )
