@@ -416,9 +416,14 @@
         // Wire E5 toggle (split multiline values)
         $activePanel.find('.e5-toggle-row input').on('change', function () {
             E5_SPLIT_MULTILINE = this.checked;
+            // Clear dropdown filter for this column when toggle changes
+            // (filter values from old mode won't match new mode items)
+            delete DROPDOWN_FILTERS[colIdx];
             // Refresh the dropdown to show/hide split values
             closeDropdown();
             openDropdown(colIdx, anchorEl);
+            // Re-apply filters to update table display
+            applyFilters();
         });
 
         // Wire (Select All)
