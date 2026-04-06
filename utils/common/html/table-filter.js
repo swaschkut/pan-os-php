@@ -121,12 +121,6 @@
         $('table').after(
             '<div id="panos-bottom-bar">' +
                 '<span id="panos-row-info"></span>' +
-                '<div id="panos-bottom-controls">' +
-                    '<label class="panos-e5-toggle" title="Split multi-line cell values into separate filter items">' +
-                        '<input type="checkbox" id="panos-e5-toggle" checked>' +
-                        'Split multiline values' +
-                    '</label>' +
-                '</div>' +
                 '<div id="panos-page-nav">' +
                     '<button id="panos-prev" disabled>\u2039\u00A0Prev</button>' +
                     '<span id="panos-page-nums"></span>' +
@@ -153,13 +147,6 @@
             PAGINATION.pageSize = +this.value;
             PAGINATION.currentPage = 1;
             renderPage();
-        });
-
-        // E5 toggle: Enable/disable splitting multi-line values in dropdowns
-        $('#panos-e5-toggle').on('change', function () {
-            E5_SPLIT_MULTILINE = this.checked;
-            // Close any open dropdown to force refresh on next open
-            closeDropdown();
         });
     }
 
@@ -364,6 +351,12 @@
         html += '<input type="text" class="panos-dropdown-search" placeholder="Search\u2026" />';
         html += '<div class="panos-dropdown-list">';
 
+        // E5 toggle: Split multiline values (behavior control - appears first)
+        html += '<div class="panos-dropdown-item e5-toggle-row" title="Split multi-line cell values into separate filterable items">' +
+                '<input type="checkbox" id="panos-e5-toggle-' + colIdx + '"' +
+                (E5_SPLIT_MULTILINE ? ' checked' : '') + ' />' +
+                '<label for="panos-e5-toggle-' + colIdx + '">Split multiline values</label></div>';
+
         // (Select All)
         var allChecked = !currentFilter; // if no filter, everything is selected
         html += '<div class="panos-dropdown-item select-all">' +
@@ -417,16 +410,24 @@
         // Wire search
         $activePanel.find('.panos-dropdown-search').on('input', function () {
             var q = this.value.trim().toLowerCase();
-            $activePanel.find('.panos-dropdown-item:not(.select-all)').each(function () {
+            $activePanel.find('.panos-dropdown-item:not(.select-all):not(.e5-toggle-row)').each(function () {
                 var text = $(this).find('label').text().toLowerCase();
                 $(this).css('display', text.indexOf(q) !== -1 ? '' : 'none');
             });
         });
 
+        // Wire E5 toggle (split multiline values)
+        $activePanel.find('.e5-toggle-row input').on('change', function () {
+            E5_SPLIT_MULTILINE = this.checked;
+            // Refresh the dropdown to show/hide split values
+            closeDropdown();
+            openDropdown(colIdx, anchorEl);
+        });
+
         // Wire (Select All)
         $activePanel.find('.select-all input').on('change', function () {
             var isChecked = this.checked;
-            $activePanel.find('.panos-dropdown-item:not(.select-all) input[type=checkbox]').each(function () {
+            $activePanel.find('.panos-dropdown-item:not(.select-all):not(.e5-toggle-row) input[type=checkbox]').each(function () {
                 // Only affect visible items
                 if ($(this).closest('.panos-dropdown-item').css('display') !== 'none') {
                     this.checked = isChecked;

@@ -182,31 +182,6 @@
         .panos-page-size-label { font-size: 12px; color: #555; margin-left: 6px; }
         #panos-page-size { font-size: 12px; }
 
-        /* ── E5 toggle (split multiline values) ─────────────────────── */
-        #panos-bottom-controls {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .panos-e5-toggle {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            font-size: 11px;
-            color: #666;
-            cursor: pointer;
-            user-select: none;
-            padding: 2px 8px;
-            border-radius: 3px;
-            background: #f5f5f5;
-            border: 1px solid #ddd;
-        }
-        .panos-e5-toggle:hover { background: #e8e8e8; border-color: #ccc; }
-        .panos-e5-toggle input[type="checkbox"] {
-            cursor: pointer;
-            accent-color: #0070e0;
-        }
-
         /* ── Floating row info widget (top-right, auto-fade) ─────────── */
         #panos-top-rowinfo {
             position: fixed;
@@ -342,6 +317,23 @@
             padding-bottom: 5px;
             margin-bottom: 2px;
             font-weight: bold;
+        }
+        /* E5 toggle: distinct styling as behavior control vs selection checkboxes */
+        .panos-dropdown-item.e5-toggle-row {
+            background: #1e3a5f;
+            border-bottom: 1px solid #2a4a6f;
+            padding: 5px 8px;
+            margin-bottom: 3px;
+            font-size: 10px;
+            color: #a8c5e8;
+        }
+        .panos-dropdown-item.e5-toggle-row:hover { background: #254a75; }
+        .panos-dropdown-item.e5-toggle-row input[type=checkbox] {
+            accent-color: #4a9eff;
+        }
+        .panos-dropdown-item.e5-toggle-row label {
+            color: #a8c5e8;
+            font-weight: 500;
         }
     </style>
 </head>
