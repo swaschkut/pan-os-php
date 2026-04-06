@@ -179,6 +179,29 @@
     const MIN_SIZE_BYTES = 112 * 1024;
     const ALWAYS_SHOW = "0_introduction.html";
 
+    // Quick row count check: count <tbody><tr> elements in HTML content
+    // Returns Promise that resolves to { file: File, rowCount: number }
+    function countDataRows(file) {
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const content = e.target.result;
+                // Count <tbody><tr> occurrences (data rows, not header rows)
+                // Using regex to find <tr> tags inside <tbody> sections
+                const tbodyMatch = content.match(/<tbody[^>]*>([\s\S]*?)<\/tbody>/i);
+                let rowCount = 0;
+                if (tbodyMatch) {
+                    // Count <tr> tags within tbody content
+                    const trMatches = tbodyMatch[1].match(/<tr[\s>]/gi);
+                    rowCount = trMatches ? trMatches.length : 0;
+                }
+                resolve({ file: file, rowCount: rowCount });
+            };
+            reader.onerror = () => resolve({ file: file, rowCount: 0 });
+            reader.readAsText(file);
+        });
+    }
+
     function formatBytes(bytes) {
         if (bytes === 0) return '0 B';
         const k = 1024;
@@ -296,18 +319,27 @@
         reader.readAsText(file);
     }
 
-    folderInput.addEventListener('change', (event) => {
+    folderInput.addEventListener('change', async (event) => {
         const files = Array.from(event.target.files);
         const indexPattern = /^index.*\.html$/i;
 
-        htmlFiles = files.filter(file => {
+        // Filter HTML files and check row counts
+        const htmlFilesList = files.filter(file => {
             const fileNameLow = file.name.toLowerCase();
             const isHtml = fileNameLow.endsWith('.html') || fileNameLow.endsWith('.htm');
             const isIndexFile = indexPattern.test(file.name);
-            const isRightSize = file.size >= MIN_SIZE_BYTES;
-            const isException = fileNameLow === ALWAYS_SHOW;
-            return isHtml && !isIndexFile && (isRightSize  || isException );
-        }).sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true, sensitivity: 'base'}));
+            return isHtml && !isIndexFile;
+        });
+
+        // Check row counts for all files (with progress indication)
+        fileList.innerHTML = '<li>Scanning files...</li>';
+        const fileRowCounts = await Promise.all(htmlFilesList.map(countDataRows));
+
+        // Filter: keep files with > 0 data rows OR the exception file
+        htmlFiles = fileRowCounts
+            .filter(item => item.rowCount > 0 || item.file.name.toLowerCase() === ALWAYS_SHOW)
+            .map(item => item.file)
+            .sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true, sensitivity: 'base'}));
 
         fileList.innerHTML = ''; 
         htmlFiles.forEach((file, index) => {
