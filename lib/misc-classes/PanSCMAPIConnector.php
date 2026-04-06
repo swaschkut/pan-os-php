@@ -1960,9 +1960,13 @@ class PanSCMAPIConnector
         //Fawkes
         #$url .= "/sse/config/v1/" . $type . "?folder=" . $folder;
         //Buckbeak
-        print_r( $type );
-        print_r( $sub_type );
-        print_r( $folder );
+        if( $this->showApiCalls )
+        {
+            #PH::print_stdout( $type );
+            #PH::print_stdout( $sub_type );
+            #PH::print_stdout( $folder );
+            #PH::print_stdout();
+        }
         $url .= "/config/objects/v1/" . $type . "?".$sub_type."=" . $folder;
 
         $body = json_encode($bodyArray);
@@ -2054,7 +2058,7 @@ class PanSCMAPIConnector
         if( $this->showApiCalls )
         {
             PH::print_stdout( "URL: ".$url);
-            PH::print_stdout( "ID: ".$saseID );
+            #PH::print_stdout( "ID: ".$saseID );
             PH::print_stdout( "METHOD: DELETE" );
         }
 
