@@ -1866,22 +1866,17 @@ class UTIL
                     $sub = $this->pan->findSnippet( $folder);
                     if( $sub === null )
                     {
-                        //Todo: swaschkut 20260125 - how to find device on-prem????
                         $sub = $this->pan->findDeviceCloud( $folder);
                         if( $sub === null )
                         {
                             $sub = $this->pan->findDeviceOnPrem( $folder);
                         }
-                        #$sub = $this->pan->createDeviceCloud( $folder, "Prisma Access" );
                     }
 
-
-                    #$sub = $this->pan->findDeviceOnPrem( $folder);
-                    #if( $sub === null )
-                    #    $sub = $this->pan->createDeviceOnPrem( $folder, "MUST be AVAILABLE" );
                     if( $sub === null )
                     {
-                        mwarning( "why there nothing found for: '".$folder."'" );
+                        #mwarning( "why there nothing found for: '".$folder."'" );
+                        $this->locationNotFound($folder);
                     }
                 }
             }

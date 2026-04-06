@@ -1215,7 +1215,11 @@ class PanSCMAPIConnector
                 if( $object['snippet'] !== $folder )
                     continue;
             }
-
+            elseif( isset( $object['device'] ) )
+            {
+                if( $object['device'] !== $folder )
+                    continue;
+            }
 
             if( $this->showApiCalls )
             {
@@ -1552,8 +1556,8 @@ class PanSCMAPIConnector
                         $tmp_obj = $sub->appStore->findorCreate($obj);
                         $tmp_rule->apps->addApp($tmp_obj);
                     }
-                if( isset($object['log-setting']) )
-                    $tmp_rule->setLogSetting($object['log-setting']);
+                if( isset($object['log_setting']) )
+                    $tmp_rule->setLogSetting($object['log_setting']);
                 if( isset($object['tag']) )
                     foreach( $object['tag'] as $obj )
                     {
@@ -1781,11 +1785,15 @@ class PanSCMAPIConnector
         #print get_class($object);
         $bodyArray = array();
 
-        if( get_class($object->owner->owner) == "Container" || get_class($object->owner->owner) == "DeviceCloud"
-            || get_class($object->owner->owner) == "DeviceOnPrem" )
+        #if( get_class($object->owner->owner) == "Container" || get_class($object->owner->owner) == "DeviceCloud"
+        #    || get_class($object->owner->owner) == "DeviceOnPrem" )
+        if( get_class($object->owner->owner) == "Container" )
             $bodyArray['folder'] = $object->owner->owner->name();
         elseif( get_class($object->owner->owner) == "Snippet" )
             $bodyArray['snippet'] = $object->owner->owner->name();
+        elseif( get_class($object->owner->owner) == "DeviceCloud"
+            || get_class($object->owner->owner) == "DeviceOnPrem" )
+            $bodyArray['device'] = $object->owner->owner->name();
         $bodyArray['name'] = $object->name();
 
 
@@ -1950,7 +1958,13 @@ class PanSCMAPIConnector
 
             unset( $bodyArray['snippet'] );
         }
+        elseif( isset($bodyArray['device']) )
+        {
+            $sub_type = "device";
+            $folder = $bodyArray['device'];
 
+            unset( $bodyArray['device'] );
+        }
 
 
         $url = $this->url_api;
@@ -2106,7 +2120,7 @@ class PanSCMAPIConnector
         foreach ($data as $key => $value)
         {
             // Skip metadata keys not needed in the final XML tags
-            if (in_array($key, ['id', 'name', 'folder', 'snippet', 'description']))
+            if (in_array($key, ['id', 'name', 'folder', 'snippet', 'device', 'description']))
                 continue;
 
             // Handle naming convention: convert underscores to dashes
