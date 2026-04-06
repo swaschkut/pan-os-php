@@ -182,6 +182,31 @@
         .panos-page-size-label { font-size: 12px; color: #555; margin-left: 6px; }
         #panos-page-size { font-size: 12px; }
 
+        /* ── E5 toggle (split multiline values) ─────────────────────── */
+        #panos-bottom-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .panos-e5-toggle {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 11px;
+            color: #666;
+            cursor: pointer;
+            user-select: none;
+            padding: 2px 8px;
+            border-radius: 3px;
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+        }
+        .panos-e5-toggle:hover { background: #e8e8e8; border-color: #ccc; }
+        .panos-e5-toggle input[type="checkbox"] {
+            cursor: pointer;
+            accent-color: #0070e0;
+        }
+
         /* ── Floating row info widget (top-right, auto-fade) ─────────── */
         #panos-top-rowinfo {
             position: fixed;

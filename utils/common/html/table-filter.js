@@ -35,6 +35,7 @@
     var T_START          = 0;
     var MAX_DROPDOWN_UNIQUES = 20;
     var ROWINFO_FADE_TIMER = null;  // Timer for row info widget fade
+    var E5_SPLIT_MULTILINE = true;  // Toggle for splitting multi-line values (default: on)
 
     /* ─── SVG icon for the dropdown button ───────────────────────────── */
 
@@ -120,6 +121,12 @@
         $('table').after(
             '<div id="panos-bottom-bar">' +
                 '<span id="panos-row-info"></span>' +
+                '<div id="panos-bottom-controls">' +
+                    '<label class="panos-e5-toggle" title="Split multi-line cell values into separate filter items">' +
+                        '<input type="checkbox" id="panos-e5-toggle" checked>' +
+                        'Split multiline values' +
+                    '</label>' +
+                '</div>' +
                 '<div id="panos-page-nav">' +
                     '<button id="panos-prev" disabled>\u2039\u00A0Prev</button>' +
                     '<span id="panos-page-nums"></span>' +
@@ -146,6 +153,13 @@
             PAGINATION.pageSize = +this.value;
             PAGINATION.currentPage = 1;
             renderPage();
+        });
+
+        // E5 toggle: Enable/disable splitting multi-line values in dropdowns
+        $('#panos-e5-toggle').on('change', function () {
+            E5_SPLIT_MULTILINE = this.checked;
+            // Close any open dropdown to force refresh on next open
+            closeDropdown();
         });
     }
 
@@ -236,17 +250,24 @@
                     var low = raw.toLowerCase();
                     cells.push(low);
 
-                    // Track unique values per column (split multi-line values)
+                    // Track unique values per column (with E5 multi-line split support)
                     if (!COLUMN_VALUES[c]) { COLUMN_VALUES[c] = {}; }
 
-                    // E5: Treat multi-line cell values as separate filterable values
+                    // E5: Always store the full value for display when toggle is off
+                    var fullKey = low || '\x00blank';
+                    if (!COLUMN_VALUES[c][fullKey]) {
+                        COLUMN_VALUES[c][fullKey] = { value: raw, lower: low, isBlank: !raw, isFullValue: true };
+                    }
+
+                    // E5: Also store split values (for when toggle is on)
                     var lines = raw ? raw.split(/\r?\n/) : [''];
                     for (var l = 0; l < lines.length; l++) {
                         var lineRaw = lines[l].trim();
                         var lineLow = lineRaw.toLowerCase();
                         var key = lineLow || '\x00blank';
-                        if (!COLUMN_VALUES[c][key]) {
-                            COLUMN_VALUES[c][key] = { value: lineRaw, lower: lineLow, isBlank: !lineRaw };
+                        // Only store split value if it's different from full value
+                        if (key !== fullKey && !COLUMN_VALUES[c][key]) {
+                            COLUMN_VALUES[c][key] = { value: lineRaw, lower: lineLow, isBlank: !lineRaw, isSplitValue: true };
                         }
                     }
                 }
@@ -317,12 +338,19 @@
         var keys = Object.keys(vals);
 
         // Separate blanks from real values, sort real values
+        // E5: Filter based on multiline split toggle
         var realItems = [];
         var hasBlank = false;
         for (var k = 0; k < keys.length; k++) {
             var item = vals[keys[k]];
             if (item.isBlank) { hasBlank = true; }
-            else { realItems.push(item); }
+            else {
+                // Skip split values if E5 toggle is off
+                if (item.isSplitValue && !E5_SPLIT_MULTILINE) {
+                    continue;
+                }
+                realItems.push(item);
+            }
         }
         realItems.sort(function (a, b) {
             return a.value.localeCompare(b.value, undefined, { numeric: true, sensitivity: 'base' });
