@@ -34,6 +34,7 @@
     var DEBOUNCE_ID      = null;
     var T_START          = 0;
     var MAX_DROPDOWN_UNIQUES = 20;
+    var ROWINFO_FADE_TIMER = null;  // Timer for row info widget fade
 
     /* ─── SVG icon for the dropdown button ───────────────────────────── */
 
@@ -76,10 +77,11 @@
         $('table thead').append('<tr class="panos-filter-row">' + cells + '</tr>');
     }
 
-    /* ─── Top row info bar (attached to table header) ──────────────── */
+    /* ─── Floating row info widget (top-right, auto-fade) ──────────── */
 
     function injectTopRowInfo() {
-        $('table').before(
+        // Insert into body so it's fixed-positioned relative to viewport
+        $('body').append(
             '<div id="panos-top-rowinfo">' +
                 '<div id="panos-top-rowinfo-left">' +
                     '<span id="panos-top-rowinfo-count"></span>' +
@@ -87,6 +89,29 @@
                 '</div>' +
             '</div>'
         );
+    }
+
+    function showRowInfoWidget() {
+        var $widget = $('#panos-top-rowinfo');
+        $widget.removeClass('faded').addClass('visible');
+
+        // Clear existing timer
+        if (ROWINFO_FADE_TIMER) {
+            clearTimeout(ROWINFO_FADE_TIMER);
+        }
+
+        // Start fade timer: 3.5 seconds delay, then fade over 1 second
+        ROWINFO_FADE_TIMER = setTimeout(function () {
+            $widget.addClass('faded');
+        }, 3500);
+    }
+
+    function hideRowInfoWidget() {
+        $('#panos-top-rowinfo').removeClass('visible faded');
+        if (ROWINFO_FADE_TIMER) {
+            clearTimeout(ROWINFO_FADE_TIMER);
+            ROWINFO_FADE_TIMER = null;
+        }
     }
 
     /* ─── Bottom bar (pagination controls only) ─────────────────────── */
@@ -188,6 +213,9 @@
         $('#panos-row-info').text(txt);
         $('#panos-top-rowinfo-count').text(topCountTxt);
         $('#panos-top-rowinfo-page').text(topPageTxt);
+
+        // Show widget and restart fade timer whenever row info updates
+        showRowInfoWidget();
     }
 
     function fmt(n) { return n.toLocaleString(); }
@@ -458,6 +486,12 @@
         );
         $('#panos-progress-text').text('Filters enabled');
         $('#panos-index-widget').delay(800).fadeOut(2000);
+
+        // Show row info widget after indexing widget has completely faded out
+        // Indexing fade: 800ms delay + 2000ms fade = 2800ms total
+        setTimeout(function () {
+            showRowInfoWidget();
+        }, 3000);
 
         // Wire filter inputs
         $('.panos-col-filter').on('input', function () {
