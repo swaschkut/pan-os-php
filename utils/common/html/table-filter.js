@@ -627,10 +627,26 @@
 
         // Re-init sticky headers so the new filter row is included in the
         // sticky clone (the inline init ran before this row was added).
+        // B7: Configure for iframe context with proper z-index and background
         if ($.fn.stickyTableHeaders) {
             try { $('table').stickyTableHeaders('destroy'); } catch (ignore) {}
-            $('table').stickyTableHeaders();
+            $('table').stickyTableHeaders({
+                scrollableArea: window,
+                zIndex: 100
+            });
         }
+
+        // B7: Ensure sticky header has solid background (fixes transparency issue)
+        $('table').on('stickystart', function() {
+            $('.tableFloatingHeaderOriginal, .tableFloatingHeader').css({
+                'background-color': '#3a3a3a',
+                'border-collapse': 'collapse'
+            });
+            // Fix gap between header rows in sticky clone
+            $('.tableFloatingHeaderOriginal tr, .tableFloatingHeader tr').css({
+                'display': 'table-row'
+            });
+        });
 
         // Kick off indexing (progress widget already visible from static HTML)
         updateProgress(0);
