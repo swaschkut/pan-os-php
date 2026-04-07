@@ -894,9 +894,10 @@ trait sp_action_spyware
 
     public function is_best_practice(): bool
     {
+        print "AS bestpractice: CLASS:".get_class($this->owner->owner)."\n";
         if( $this->owner->owner->isPanorama()
             || $this->owner->owner->isDeviceGroup()
-            || $this->owner->owner->owner->isFirewall()
+            || $this->owner->owner->isFirewall()
             || $this->owner->owner->isVirtualSystem() )
         {
             if( $this->owner->owner->version >= 102 )
@@ -964,9 +965,10 @@ trait sp_action_spyware
 
     public function is_visibility(): bool
     {
+        print "visibility: CLASS:".get_class($this->owner->owner)."\n";
         if( $this->owner->owner->isPanorama()
             || $this->owner->owner->isDeviceGroup()
-            || $this->owner->owner->owner->isFirewall()
+            || $this->owner->owner->isFirewall()
             || $this->owner->owner->isVirtualSystem() )
         {
             if( $this->owner->owner->version >= 102 )

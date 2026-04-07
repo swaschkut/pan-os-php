@@ -562,6 +562,7 @@ class PanSCMAPIConnector
             $this->typeArray[] = "services";
             $this->typeArray[] = "service-groups";
 
+            $this->typeArray[] = "log-forwarding-profiles";
 
             $this->typeArray[] = "anti-spyware-profiles";
             $this->typeArray[] = "dns-security-profiles";
@@ -572,6 +573,8 @@ class PanSCMAPIConnector
             $this->typeArray[] = "vulnerability-protection-profiles";
 
             $this->typeArray[] = "profile-groups";
+
+            $this->typeArray[] = "schedules";
 
 
             $this->typeArray[] = "security-rules";
@@ -1146,8 +1149,8 @@ class PanSCMAPIConnector
             {
                 if( $this->showApiCalls )
                 {
-                    //PH::print_stdout("|" . $folder . " - " . $type);
-                    //print_r($resource);
+                    #PH::print_stdout("|" . $folder . " - " . $type);
+                    #print_r($resource);
                 }
 
                 $this->importConfig($sub, $folder, $type, $resource);
@@ -1603,6 +1606,9 @@ class PanSCMAPIConnector
                     ]
                 },
                  */
+
+                if( isset($object['schedule']) )
+                    $tmp_rule->setSchedule($object['schedule']);
 
                 if( isset($object['id']) )
                     $tmp_rule->setSaseID( $object['id'] );

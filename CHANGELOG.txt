@@ -11,6 +11,7 @@ UTIL:
 BUGFIX:
 * SCM API - bring back the already implemented parts for SaseAPI, but now working for SCMAPI
 * in=scm-api://TSGID type=rule | bugfix for log_setting reading
+* class PanSCMAPIConnector | bugfix type=rule include log-forwarding-profiles / schedule
 
 GENERAL:
 
