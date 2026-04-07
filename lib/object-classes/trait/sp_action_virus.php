@@ -484,8 +484,8 @@ trait sp_action_virus
 
         $bestpractise = FALSE;
 
-        if( $this->secprof_type != 'virus' )
-            return null;
+        #if( $this->secprof_type != 'virus' )
+        #    return null;
 
         $check_array = $this->virus_bp_visibility_JSON( "bp", "virus", $av_action_type );
 
@@ -513,8 +513,8 @@ trait sp_action_virus
 
         $bestpractise = FALSE;
 
-        if( $this->secprof_type != 'virus' )
-            return null;
+        #if( $this->secprof_type != 'virus' )
+        #    return null;
 
         $check_array = $this->virus_bp_visibility_JSON( "visibility", "virus", $av_action_type );
 
