@@ -21,9 +21,16 @@
 
 class Snippet
 {
+    //Todo:
+    //optimisation to all parts where snippets can be used
+    //e.g. snippet store for all object types as parent
     use PathableName;
     use PanSubHelperTrait;
     use StatCollectorTrait;
+
+
+    /** @var DOMElement */
+    public $devicesRoot;
 
     /** @var AddressStore */
     public $addressStore = null;
@@ -406,6 +413,7 @@ class Snippet
      * !! Should not be used outside of a PANConf constructor. !!
      *
      */
+    /*
     public function load_from_domxml($xml)
     {
         $this->xmlroot = $xml;
@@ -415,6 +423,7 @@ class Snippet
         if( $this->name === FALSE )
             derr("DeviceOnPrem name not found\n", $xml);
 
+        PH::print_stdout("Snippet: load|".$this->name."\n");
 
         $tmp_parentContainer = DH::findFirstElement('parent', $xml);
         if( $tmp_parentContainer !== FALSE )
@@ -439,7 +448,7 @@ class Snippet
                 */
                 //Todo: swaschkut 20210505 - check if other Stores must be added
                 //- appStore;scheduleStore/securityProfileGroupStore/all kind of SecurityProfile
-
+/*
                 $storeType = array(
                     'addressStore', 'serviceStore', 'tagStore', 'scheduleStore', 'appStore',
 
@@ -480,7 +489,7 @@ class Snippet
         $this->importedVirtualRouter->load_from_domxml($tmp);
         */
         //
-
+/*
         if( $this->owner->owner === null )
         {
 
@@ -507,9 +516,18 @@ class Snippet
             //
             // Extract address objects
             //
+            PH::print_stdout("Snippet: load address|\n");
             $tmp = DH::findFirstElement('address', $xml);
             if( $tmp !== FALSE )
+            {
+                PH::print_stdout("Snippet: load address from_domxml|\n");
                 $this->addressStore->load_addresses_from_domxml($tmp);
+            }
+            else
+            {
+                DH::DEBUGprintDOMDocument($xml);
+            }
+
             // End of address objects extraction
 
 
@@ -806,7 +824,7 @@ class Snippet
         */
         //Todo: addressobject reference missing for: IKE gateway / GP Portal / GP Gateway (where GP is not implemented at all)
 
-
+/*
         //
         // Extract Zone objects
         //
@@ -977,10 +995,754 @@ class Snippet
             }
         }
     }
+    */
+
+    /**
+     * !! Should not be used outside of a PanoramaConf constructor. !!
+     * @param DOMElement $xml
+     */
+    public function load_from_domxml($xml, $debugLoadTime = false)
+    {
+        $this->xmlroot = $xml;
+
+        $tmp = DH::findFirstElement('snippets', $xml);
+        if( $tmp !== FALSE )
+        {
+            #DH::DEBUGprintDOMDocument($tmp);
+            foreach( $tmp->childNodes as $member )
+            {
+                if ($member->nodeType != 1)
+                    continue;
+
+                $snippetObj = $this->owner->findSnippet($member->textContent);
+                if( $snippetObj !== null )
+                    $this->attachedSnippets[] = $snippetObj;
+            }
+        }
+
+
+        // this VirtualSystem has a name ?
+        $this->name = DH::findAttribute('name', $xml);
+        if( $this->name === FALSE )
+            derr("VirtualSystem name not found\n");
+
+        //
+        // Extract Tag objects
+        //
+
+        $tmp = DH::findFirstElement('tag', $xml);
+        if( $tmp !== FALSE )
+            $this->tagStore->load_from_domxml($tmp);
+        // End of Tag objects extraction
+
+
+        //
+        // Extract region objects
+        //
+        $tmp = DH::findFirstElement('region', $xml);
+        if( $tmp !== FALSE )
+            $this->addressStore->load_regions_from_domxml($tmp);
+        // End of region objects extraction
+
+        //
+        // Extract address objects
+        //
+        $tmp = DH::findFirstElement('address', $xml);
+        if( $tmp !== FALSE )
+            $this->addressStore->load_addresses_from_domxml($tmp);
+        // End of address objects extraction
+
+
+        //
+        // Extract address groups in this DV
+        //
+        $tmp = DH::findFirstElement('address-group', $xml);
+        if( $tmp !== FALSE )
+            $this->addressStore->load_addressgroups_from_domxml($tmp);
+        // End of address groups extraction
+
+
+        //												//
+        // Extract service objects in this VirtualSystem			//
+        //												//
+        $tmp = DH::findFirstElement('service', $xml);
+        if( $tmp !== FALSE )
+            $this->serviceStore->load_services_from_domxml($tmp);
+        // End of <service> extraction
+
+
+        //												//
+        // Extract service groups in this VirtualSystem			//
+        //												//
+        $tmp = DH::findFirstElement('service-group', $xml);
+        if( $tmp !== FALSE )
+            $this->serviceStore->load_servicegroups_from_domxml($tmp);
+        // End of <service-group> extraction
+
+        //
+        // Extract application
+        //
+        $tmp = DH::findFirstElement('application', $xml);
+        if( $tmp !== FALSE )
+            $this->appStore->load_application_custom_from_domxml($tmp);
+        // End of application extraction
+
+        //
+        // Extract application filter
+        //
+        $tmp = DH::findFirstElement('application-filter', $xml);
+        if( $tmp !== FALSE )
+            $this->appStore->load_application_filter_from_domxml($tmp);
+        // End of application filter groups extraction
+
+        //
+        // Extract application groups
+        //
+        $tmp = DH::findFirstElement('application-group', $xml);
+        if( $tmp !== FALSE )
+            $this->appStore->load_application_group_from_domxml($tmp);
+        // End of application groups extraction
+
+
+        // Extract SecurityProfiles objects
+        //
+        $this->securityProfilebaseroot = DH::findFirstElement('profiles', $xml);
+        if( $this->securityProfilebaseroot === FALSE )
+            $this->securityProfilebaseroot = null;
+
+        if( $this->securityProfilebaseroot !== null )
+        {
+            //
+            // custom URL category extraction
+            //
+            $tmproot = DH::findFirstElement('custom-url-category', $this->securityProfilebaseroot);
+            if( $tmproot !== FALSE )
+            {
+                $this->customURLProfileStore->load_from_domxml($tmproot);
+            }
+
+            //
+            // URL Profile extraction
+            //
+            $tmproot = DH::findFirstElement('url-filtering', $this->securityProfilebaseroot);
+            if( $tmproot !== FALSE )
+            {
+                $this->URLProfileStore->load_from_domxml($tmproot);
+            }
+
+            //
+            // AntiVirus Profile extraction
+            //
+            $tmproot = DH::findFirstElement('virus-and-wildfire-analysis', $this->securityProfilebaseroot);
+            if( $tmproot !== FALSE )
+            {
+                $this->VirusAndWildfireProfileStore->load_from_domxml($tmproot);
+            }
+
+            //
+            // FileBlocking Profile extraction
+            //
+            $tmproot = DH::findFirstElement('file-blocking', $this->securityProfilebaseroot);
+            if( $tmproot !== FALSE )
+            {
+                $this->FileBlockingProfileStore->load_from_domxml($tmproot);
+            }
+
+            //
+            // DataFiltering Profile extraction
+            //
+            $tmproot = DH::findFirstElement('data-filtering', $this->securityProfilebaseroot);
+            if( $tmproot !== FALSE )
+                $this->DataFilteringProfileStore->load_from_domxml($tmproot);
+
+            //
+            // vulnerability Profile extraction
+            //
+            $tmproot = DH::findFirstElement('vulnerability', $this->securityProfilebaseroot);
+            if( $tmproot !== FALSE )
+            {
+                $this->VulnerabilityProfileStore->load_from_domxml($tmproot);
+            }
+
+            //
+            // spyware Profile extraction
+            //
+            $tmproot = DH::findFirstElement('spyware', $this->securityProfilebaseroot);
+            if( $tmproot !== FALSE )
+            {
+                $this->AntiSpywareProfileStore->load_from_domxml($tmproot);
+            }
+
+            //
+            // DNSSecurity Profile extraction
+            //
+            $tmproot = DH::findFirstElement('dns-security', $this->securityProfilebaseroot);
+            if( $tmproot !== FALSE )
+            {
+                $this->DNSSecurityProfileStore->load_from_domxml($tmproot);
+            }
+
+            //
+            // SaasSecurity Profile extraction
+            //
+            $tmproot = DH::findFirstElement('saas-security', $this->securityProfilebaseroot);
+            if( $tmproot !== FALSE )
+            {
+                $this->SaasSecurityProfileStore->load_from_domxml($tmproot);
+            }
+
+            //
+            // Decryption Profile extraction
+            //
+            $tmproot = DH::findFirstElement('decryption', $this->securityProfilebaseroot);
+            if( $tmproot !== FALSE )
+            {
+                $this->DecryptionProfileStore->load_from_domxml($tmproot);
+            }
+
+            //
+            // HipObjects Profile extraction
+            //
+            $tmproot = DH::findFirstElement('hip-objects', $this->securityProfilebaseroot);
+            if( $tmproot !== FALSE )
+            {
+                $this->HipObjectsProfileStore->load_from_domxml($tmproot);
+            }
+
+            //
+            // HipProfiles Profile extraction
+            //
+            $tmproot = DH::findFirstElement('hip-profiles', $this->securityProfilebaseroot);
+            if( $tmproot !== FALSE )
+            {
+                $this->HipProfilesProfileStore->load_from_domxml($tmproot);
+            }
+
+            //
+            // GTP Profile extraction
+            //
+            $tmproot = DH::findFirstElement('gtp', $this->securityProfilebaseroot);
+            if( $tmproot !== FALSE )
+            {
+                $this->GTPProfileStore->load_from_domxml($tmproot);
+            }
+
+            //
+            // SCEP Profile extraction
+            //
+            $tmproot = DH::findFirstElement('scep', $this->securityProfilebaseroot);
+            if( $tmproot !== FALSE )
+            {
+                $this->SCEPProfileStore->load_from_domxml($tmproot);
+            }
+
+            //
+            // PacketBroker Profile extraction
+            //
+            $tmproot = DH::findFirstElement('packet-broker', $this->securityProfilebaseroot);
+            if( $tmproot !== FALSE )
+            {
+                $this->PacketBrokerProfileStore->load_from_domxml($tmproot);
+            }
+
+            //
+            // SDWan Error Correction Profile extraction
+            //
+            $tmproot = DH::findFirstElement('sdwan-error-correction', $this->securityProfilebaseroot);
+            if( $tmproot !== FALSE )
+            {
+                $this->SDWanErrorCorrectionProfileStore->load_from_domxml($tmproot);
+            }
+
+            //
+            // SDWan Path Quality Profile extraction
+            //
+            $tmproot = DH::findFirstElement('sdwan-path-quality', $this->securityProfilebaseroot);
+            if( $tmproot !== FALSE )
+            {
+                $this->SDWanPathQualityProfileStore->load_from_domxml($tmproot);
+            }
+
+            //
+            // SDWan Saas Quality Profile extraction
+            //
+            $tmproot = DH::findFirstElement('sdwan-saas-quality', $this->securityProfilebaseroot);
+            if( $tmproot !== FALSE )
+            {
+                $this->SDWanSaasQualityProfileStore->load_from_domxml($tmproot);
+            }
+
+            //
+            // SDWan Traffic Distribution Profile extraction
+            //
+            $tmproot = DH::findFirstElement('sdwan-traffic-distribution', $this->securityProfilebaseroot);
+            if( $tmproot !== FALSE )
+            {
+                $this->SDWanTrafficDistributionProfileStore->load_from_domxml($tmproot);
+            }
+
+            //
+            // DataObjects Profile extraction
+            //
+            $tmproot = DH::findFirstElement('data-objects', $this->securityProfilebaseroot);
+            if( $tmproot !== FALSE )
+            {
+                $this->DataObjectsProfileStore->load_from_domxml($tmproot);
+            }
+        }
+
+
+        //
+        // Extract SecurityProfile groups in this DV
+        //
+        $tmp = DH::findFirstElement('profile-group', $xml);
+        if( $tmp !== FALSE )
+            $this->securityProfileGroupStore->load_securityprofile_groups_from_domxml($tmp);
+        // End of address groups extraction
+
+        //
+        // Extract schedule objects
+        //
+        $tmp = DH::findFirstElement('schedule', $xml);
+        if( $tmp !== FALSE )
+            $this->scheduleStore->load_from_domxml($tmp);
+        // End of address groups extraction
+
+        //
+        // Extract EDL objects
+        //
+        $tmp = DH::findFirstElement('external-list', $xml);
+        if( $tmp !== FALSE )
+            $this->EDLStore->load_from_domxml($tmp);
+        // End of EDL extraction
+
+        //
+        // Extract LogProfile objects
+        //
+        $tmp2 = DH::findFirstElement('log-settings', $xml);
+        if( $tmp2 !== FALSE )
+            $tmp = DH::findFirstElement('profiles', $tmp2);
+        if( $tmp2 !== FALSE && $tmp !== FALSE )
+            $this->LogProfileStore->load_from_domxml($tmp);
+        // End of LogProfile extraction
+
+        //
+        // Extract Certificate objects
+        //
+        $tmp = DH::findFirstElement('certificate', $xml);
+        if( $tmp !== FALSE )
+        {
+            $this->certificateStore->load_from_domxml($tmp);
+        }
+        // End of Certificate objects extraction
+
+        //
+        // Extract ssl-tls-service-profile objects
+        //
+        $tmp = DH::findFirstElement('ssl-tls-service-profile', $xml);
+        if( $tmp !== FALSE )
+        {
+            $this->SSL_TLSServiceProfileStore->load_from_domxml($tmp);
+        }
+        // End of SSL_TLSServiceProfile objects extraction
+
+
+        //
+        // Extracting policies
+        //
+        $prerulebase = DH::findFirstElement('pre-rulebase', $xml);
+        $postrulebase = DH::findFirstElement('post-rulebase', $xml);
+
+        if( $prerulebase === FALSE )
+            $tmp = null;
+        else
+        {
+            $tmp = DH::findFirstElement('security', $prerulebase);
+            if( $tmp !== FALSE )
+                $tmp = DH::findFirstElement('rules', $tmp);
+
+            if( $tmp === FALSE )
+                $tmp = null;
+        }
+        if( $postrulebase === FALSE )
+            $tmpPost = null;
+        else
+        {
+            $tmpPost = DH::findFirstElement('security', $postrulebase);
+            if( $tmpPost !== FALSE )
+                $tmpPost = DH::findFirstElement('rules', $tmpPost);
+
+            if( $tmpPost === FALSE )
+                $tmpPost = null;
+        }
+        $this->securityRules->load_from_domxml($tmp, $tmpPost);
+
+
+        if( $prerulebase === FALSE )
+            $tmp = null;
+        else
+        {
+            $tmp = DH::findFirstElement('nat', $prerulebase);
+            if( $tmp !== FALSE )
+                $tmp = DH::findFirstElement('rules', $tmp);
+
+            if( $tmp === FALSE )
+                $tmp = null;
+        }
+        if( $postrulebase === FALSE )
+            $tmpPost = null;
+        else
+        {
+            $tmpPost = DH::findFirstElement('nat', $postrulebase);
+            if( $tmpPost !== FALSE )
+                $tmpPost = DH::findFirstElement('rules', $tmpPost);
+
+            if( $tmpPost === FALSE )
+                $tmpPost = null;
+        }
+        $this->natRules->load_from_domxml($tmp, $tmpPost);
+
+
+        if( $prerulebase === FALSE )
+            $tmp = null;
+        else
+        {
+            $tmp = DH::findFirstElement('decryption', $prerulebase);
+            if( $tmp !== FALSE )
+                $tmp = DH::findFirstElement('rules', $tmp);
+
+            if( $tmp === FALSE )
+                $tmp = null;
+        }
+        if( $postrulebase === FALSE )
+            $tmpPost = null;
+        else
+        {
+            $tmpPost = DH::findFirstElement('decryption', $postrulebase);
+            if( $tmpPost !== FALSE )
+                $tmpPost = DH::findFirstElement('rules', $tmpPost);
+
+            if( $tmpPost === FALSE )
+                $tmpPost = null;
+        }
+        $this->decryptionRules->load_from_domxml($tmp, $tmpPost);
+
+
+        if( $prerulebase === FALSE )
+            $tmp = null;
+        else
+        {
+            $tmp = DH::findFirstElement('application-override', $prerulebase);
+            if( $tmp !== FALSE )
+                $tmp = DH::findFirstElement('rules', $tmp);
+
+            if( $tmp === FALSE )
+                $tmp = null;
+        }
+        if( $postrulebase === FALSE )
+            $tmpPost = null;
+        else
+        {
+            $tmpPost = DH::findFirstElement('application-override', $postrulebase);
+            if( $tmpPost !== FALSE )
+                $tmpPost = DH::findFirstElement('rules', $tmpPost);
+
+            if( $tmpPost === FALSE )
+                $tmpPost = null;
+        }
+        $this->appOverrideRules->load_from_domxml($tmp, $tmpPost);
+
+
+        if( $prerulebase === FALSE )
+            $tmp = null;
+        else
+        {
+            $tmp = DH::findFirstElement('captive-portal', $prerulebase);
+            if( $tmp !== FALSE )
+                $tmp = DH::findFirstElement('rules', $tmp);
+
+            if( $tmp === FALSE )
+                $tmp = null;
+        }
+        if( $postrulebase === FALSE )
+            $tmpPost = null;
+        else
+        {
+            $tmpPost = DH::findFirstElement('captive-portal', $postrulebase);
+            if( $tmpPost !== FALSE )
+                $tmpPost = DH::findFirstElement('rules', $tmpPost);
+
+            if( $tmpPost === FALSE )
+                $tmpPost = null;
+        }
+        $this->captivePortalRules->load_from_domxml($tmp, $tmpPost);
+
+
+        if( $prerulebase === FALSE )
+            $tmp = null;
+        else
+        {
+            $tmp = DH::findFirstElement('authentication', $prerulebase);
+            if( $tmp !== FALSE )
+                $tmp = DH::findFirstElement('rules', $tmp);
+
+            if( $tmp === FALSE )
+                $tmp = null;
+        }
+        if( $postrulebase === FALSE )
+            $tmpPost = null;
+        else
+        {
+            $tmpPost = DH::findFirstElement('authentication', $postrulebase);
+            if( $tmpPost !== FALSE )
+                $tmpPost = DH::findFirstElement('rules', $tmpPost);
+
+            if( $tmpPost === FALSE )
+                $tmpPost = null;
+        }
+        $this->authenticationRules->load_from_domxml($tmp, $tmpPost);
+
+
+        if( $prerulebase === FALSE )
+            $tmp = null;
+        else
+        {
+            $tmp = DH::findFirstElement('pbf', $prerulebase);
+            if( $tmp !== FALSE )
+                $tmp = DH::findFirstElement('rules', $tmp);
+
+            if( $tmp === FALSE )
+                $tmp = null;
+        }
+        if( $postrulebase === FALSE )
+            $tmpPost = null;
+        else
+        {
+            $tmpPost = DH::findFirstElement('pbf', $postrulebase);
+            if( $tmpPost !== FALSE )
+                $tmpPost = DH::findFirstElement('rules', $tmpPost);
+
+            if( $tmpPost === FALSE )
+                $tmpPost = null;
+        }
+        $this->pbfRules->load_from_domxml($tmp, $tmpPost);
+
+
+        if( $prerulebase === FALSE )
+            $tmp = null;
+        else
+        {
+            $tmp = DH::findFirstElement('qos', $prerulebase);
+            if( $tmp !== FALSE )
+                $tmp = DH::findFirstElement('rules', $tmp);
+
+            if( $tmp === FALSE )
+                $tmp = null;
+        }
+        if( $postrulebase === FALSE )
+            $tmpPost = null;
+        else
+        {
+            $tmpPost = DH::findFirstElement('qos', $postrulebase);
+            if( $tmpPost !== FALSE )
+                $tmpPost = DH::findFirstElement('rules', $tmpPost);
+
+            if( $tmpPost === FALSE )
+                $tmpPost = null;
+        }
+        $this->qosRules->load_from_domxml($tmp, $tmpPost);
+
+
+        if( $prerulebase === FALSE )
+            $tmp = null;
+        else
+        {
+            $tmp = DH::findFirstElement('dos', $prerulebase);
+            if( $tmp !== FALSE )
+                $tmp = DH::findFirstElement('rules', $tmp);
+
+            if( $tmp === FALSE )
+                $tmp = null;
+        }
+        if( $postrulebase === FALSE )
+            $tmpPost = null;
+        else
+        {
+            $tmpPost = DH::findFirstElement('dos', $postrulebase);
+            if( $tmpPost !== FALSE )
+                $tmpPost = DH::findFirstElement('rules', $tmpPost);
+
+            if( $tmpPost === FALSE )
+                $tmpPost = null;
+        }
+        $this->dosRules->load_from_domxml($tmp, $tmpPost);
+
+        if( $prerulebase === FALSE )
+            $tmp = null;
+        else
+        {
+            $tmp = DH::findFirstElement('tunnel-inspect', $prerulebase);
+            if( $tmp !== FALSE )
+                $tmp = DH::findFirstElement('rules', $tmp);
+
+            if( $tmp === FALSE )
+                $tmp = null;
+        }
+        if( $postrulebase === FALSE )
+            $tmpPost = null;
+        else
+        {
+            $tmpPost = DH::findFirstElement('tunnel-inspect', $postrulebase);
+            if( $tmpPost !== FALSE )
+                $tmpPost = DH::findFirstElement('rules', $tmpPost);
+
+            if( $tmpPost === FALSE )
+                $tmpPost = null;
+        }
+        $this->tunnelInspectionRules->load_from_domxml($tmp, $tmpPost);
+
+        //default-security-Rules are only available on POST
+        if( $prerulebase === FALSE )
+            $tmp = null;
+        else
+            $tmp = null;
+        if( $postrulebase === FALSE )
+            $tmpPost = null;
+        else
+        {
+            $tmpPost = DH::findFirstElement('default-security-rules', $postrulebase);
+            if( $tmpPost !== FALSE )
+                $tmpPost = DH::findFirstElement('rules', $tmpPost);
+
+            if( $tmpPost === FALSE )
+            {
+                $sub = new Sub();
+                $sub->owner = $this;
+                $sub->rulebaseroot = $postrulebase;
+                $sub->defaultSecurityRules = $this->defaultSecurityRules;
+                $tmpPost = $sub->load_defaultSecurityRule( );
+            }
+        }
+        if( $tmpPost !== FALSE )
+            $this->defaultSecurityRules->load_from_domxml($tmp, $tmpPost);
+
+        //network-packet-broker
+        $xmlTagName = "network-packet-broker";
+        $var = "networkPacketBrokerRules";
+        if( $prerulebase === FALSE )
+            $tmp = null;
+        else
+        {
+            $tmp = DH::findFirstElement($xmlTagName, $prerulebase);
+            if( $tmp !== FALSE )
+                $tmp = DH::findFirstElement('rules', $tmp);
+
+            if( $tmp === FALSE )
+                $tmp = null;
+        }
+        if( $postrulebase === FALSE )
+            $tmpPost = null;
+        else
+        {
+            $tmpPost = DH::findFirstElement($xmlTagName, $postrulebase);
+            if( $tmpPost !== FALSE )
+                $tmpPost = DH::findFirstElement('rules', $tmpPost);
+
+            if( $tmpPost === FALSE )
+                $tmpPost = null;
+        }
+        $this->$var->load_from_domxml($tmp, $tmpPost);
+
+        //sdwan
+        $xmlTagName = "sdwan";
+        $var = "sdWanRules";
+        if( $prerulebase === FALSE )
+            $tmp = null;
+        else
+        {
+            $tmp = DH::findFirstElement($xmlTagName, $prerulebase);
+            if( $tmp !== FALSE )
+                $tmp = DH::findFirstElement('rules', $tmp);
+
+            if( $tmp === FALSE )
+                $tmp = null;
+        }
+        if( $postrulebase === FALSE )
+            $tmpPost = null;
+        else
+        {
+            $tmpPost = DH::findFirstElement($xmlTagName, $postrulebase);
+            if( $tmpPost !== FALSE )
+                $tmpPost = DH::findFirstElement('rules', $tmpPost);
+
+            if( $tmpPost === FALSE )
+                $tmpPost = null;
+        }
+        $this->$var->load_from_domxml($tmp, $tmpPost);
+        //
+        // end of policies extraction
+        //
+
+
+        // Devices extraction
+        $this->devicesRoot = DH::findFirstElement('devices', $xml);
+
+        /*
+        foreach( $this->devicesRoot->childNodes as $device )
+        {
+            if( $device->nodeType != 1 ) continue;
+            $devname = DH::findAttribute('name', $device);
+            $vsyslist = array();
+
+            $vsysChild = DH::firstChildElement($device);
+
+            if( $vsysChild !== FALSE )
+            {
+                foreach( $vsysChild->childNodes as $vsysentry )
+                {
+                    if( $vsysentry->nodeType != 1 ) continue;
+                    $vname = DH::findAttribute('name', $vsysentry);
+                    $vsyslist[$vname] = $vname;
+                }
+            }
+            else
+            {
+                $vsyslist['vsys1'] = 'vsys1';
+            }
+
+            $this->devices[$devname] = array('serial' => $devname, 'vsyslist' => $vsyslist);
+            foreach( $this->devices as $serial => $array )
+            {
+                $managedFirewall = $this->owner->managedFirewallsStore->find($serial);
+                if( $managedFirewall !== null )
+                    $managedFirewall->addDeviceGroup($this->name);
+            }
+        }
+        */
+
+        $this->addressStore->nestedPointOfView();
+        $this->serviceStore->nestedPointOfView();
+        $this->tagStore->nestedPointOfView();
+        $this->scheduleStore->nestedPointOfView();
+        $this->appStore->nestedPointOfView();
+
+        //
+        // Extract network related configs
+        //
+        //Todo: 20250101 - can network part be moved after vsys reading ?? - virutalsystem reading interfaces, must be done later to get address references
+        $tmp = DH::findFirstElement('network', $xml);
+        if( $tmp !== FALSE )
+        {
+            if( $debugLoadTime )
+                PH::print_DEBUG_loadtime("network");
+            $this->network->load_from_domxml($tmp);
+        }
+        //
+    }
 
     public function &getXPath()
     {
-        $str = "/config/devices/entry[@name='localhost.localdomain']/vsys/entry[@name='" . $this->name . "']";
+        $str = "/config/devices/entry[@name='localhost.localdomain']/snippet/entry[@name='" . $this->name . "']";
 
         return $str;
     }

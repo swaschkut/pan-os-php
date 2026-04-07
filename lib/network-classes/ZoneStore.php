@@ -37,7 +37,7 @@ class ZoneStore extends ObjStore
     public static $childn = 'Zone';
 
     /**
-     * @param VirtualSystem|DeviceCloud|DeviceGroup|PanoramaConf|Container|FawkesConf|BuckbeakConf $owner
+     * @param VirtualSystem|DeviceCloud|DeviceGroup|PanoramaConf|Container|FawkesConf|BuckbeakConf|Snippet $owner
      */
     public function __construct($owner)
     {
