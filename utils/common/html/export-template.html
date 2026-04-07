@@ -18,7 +18,7 @@
 
         table {
             border-collapse: collapse;
-            width: 100%;
+            width: auto;
             background-color: #fff;
             box-shadow: 0 1px 4px rgba(0,0,0,0.12);
         }
@@ -29,6 +29,7 @@
             vertical-align: middle;
             font-size: 12px;
             line-height: 1.4;
+            min-width: 30px;
         }
 
         table th {
@@ -192,13 +193,58 @@
         .panos-page-size-label { font-size: 12px; color: #555; margin-left: 6px; }
         #panos-page-size { font-size: 12px; }
 
+        /* ── Floating row info widget (top-right, auto-fade) ─────────── */
+        #panos-top-rowinfo {
+            position: fixed;
+            top: 12px;
+            right: 12px;
+            display: flex;
+            align-items: center;
+            padding: 8px 14px;
+            font-size: 12px;
+            font-weight: normal;
+            color: #fff;
+            background: rgba(58, 58, 58, 0.95);
+            border: 1px solid rgba(34, 34, 34, 0.9);
+            border-radius: 6px;
+            box-shadow: 0 4px 18px rgba(0,0,0,0.45);
+            z-index: 9000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 1s ease, background 0.3s ease;
+            pointer-events: none;
+        }
+        #panos-top-rowinfo.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+        #panos-top-rowinfo.faded {
+            opacity: 0.1;
+        }
+        #panos-top-rowinfo-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        #panos-top-rowinfo-count {
+            font-weight: normal;
+            color: #fff;
+        }
+        #panos-top-rowinfo-page {
+            font-size: 11px;
+            color: #ccc;
+            background: rgba(255,255,255,0.15);
+            padding: 2px 8px;
+            border-radius: 3px;
+        }
+
         /* ── Dropdown filter ─────────────────────────────────────────── */
         .panos-filter-cell {
             position: relative;
             display: flex;
             align-items: center;
         }
-        .panos-filter-cell .panos-col-filter { flex: 1; min-width: 0; padding-right: 20px; }
+        .panos-filter-cell .panos-col-filter { flex: 1; width: 0; min-width: 0; padding-right: 20px; }
         .panos-dropdown-btn {
             position: absolute;
             right: 3px;
