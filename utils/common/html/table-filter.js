@@ -237,12 +237,19 @@
                     var low = raw.toLowerCase();
                     cells.push(low);
 
-                    // Track unique values per column (split multi-line values)
+                    // Track unique values per column (split multi-line values by <br>)
                     if (!COLUMN_VALUES[c]) { COLUMN_VALUES[c] = {}; }
 
-                    var lines = raw ? raw.split(/\r?\n/) : [''];
+                    var html = tds[c].innerHTML || '';
+                    var lines = html ? html.split(/<br\s*\/?>/i) : [''];
                     for (var l = 0; l < lines.length; l++) {
-                        var lineRaw = lines[l].trim();
+                        // Strip any remaining HTML tags, then decode entities
+                        var lineRaw = lines[l].replace(/<[^>]*>/g, '').trim();
+                        // Decode HTML entities (&amp; &lt; &gt; &quot;)
+                        var tmp = document.createElement('span');
+                        tmp.innerHTML = lineRaw;
+                        lineRaw = tmp.textContent || tmp.innerText || '';
+                        lineRaw = lineRaw.trim();
                         var lineLow = lineRaw.toLowerCase();
                         var key = lineLow || '\x00blank';
                         if (!COLUMN_VALUES[c][key]) {
@@ -531,16 +538,18 @@
                 }
             }
 
-            // Dropdown filter: split cell by newlines, match if ANY part is allowed
+            // Dropdown filter: split cell by <br>, match if ANY part is allowed
             if (match) {
                 for (var d = 0; d < dropCols.length; d++) {
                     var dc = dropCols[d];
                     var allowed = DROPDOWN_FILTERS[dc];
-                    var cellVal = entry.cells[dc] || '';
-                    var parts = cellVal.split(/\r?\n/);
+                    var cellHtml = entry.domRow.getElementsByTagName('td')[dc];
+                    var cellInner = cellHtml ? cellHtml.innerHTML : '';
+                    var parts = cellInner.split(/<br\s*\/?>/i);
                     var anyMatch = false;
                     for (var p = 0; p < parts.length; p++) {
-                        if (allowed.has(parts[p].trim())) { anyMatch = true; break; }
+                        var pt = parts[p].replace(/<[^>]*>/g, '').trim().toLowerCase();
+                        if (allowed.has(pt)) { anyMatch = true; break; }
                     }
                     if (!anyMatch) {
                         match = false;
