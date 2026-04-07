@@ -12,8 +12,9 @@
  *  - Per-column filter inputs injected into <thead> (AND logic,
  *    case-insensitive substring match), disabled until indexing completes.
  *  - Per-column dropdown multi-select filter (Excel-style) with checkboxes
- *    for unique values. Disabled when >20 unique values unless the column
- *    header ends with "-profile".
+ *    for unique values. Multi-line cell values are split by newline so each
+ *    sub-value appears as a separate filterable item. Disabled when >20
+ *    unique values unless the column header ends with "-profile".
  *  - Automatic pagination activated for tables > 1000 rows (100 / 250 /
  *    500 / 1000 rows-per-page, prev / next, numbered page buttons).
  *  - All DOM visibility changes batched inside requestAnimationFrame.
@@ -35,7 +36,6 @@
     var T_START          = 0;
     var MAX_DROPDOWN_UNIQUES = 20;
     var ROWINFO_FADE_TIMER = null;  // Timer for row info widget fade
-    var E5_SPLIT_MULTILINE = true;  // Toggle for splitting multi-line values (default: on)
 
     /* ─── SVG icon for the dropdown button ───────────────────────────── */
 
@@ -237,24 +237,16 @@
                     var low = raw.toLowerCase();
                     cells.push(low);
 
-                    // Track unique values per column (with E5 multi-line split support)
+                    // Track unique values per column (split multi-line values)
                     if (!COLUMN_VALUES[c]) { COLUMN_VALUES[c] = {}; }
 
-                    // E5: Always store the full value for display when toggle is off
-                    var fullKey = low || '\x00blank';
-                    if (!COLUMN_VALUES[c][fullKey]) {
-                        COLUMN_VALUES[c][fullKey] = { value: raw, lower: low, isBlank: !raw, isFullValue: true };
-                    }
-
-                    // E5: Also store split values (for when toggle is on)
                     var lines = raw ? raw.split(/\r?\n/) : [''];
                     for (var l = 0; l < lines.length; l++) {
                         var lineRaw = lines[l].trim();
                         var lineLow = lineRaw.toLowerCase();
                         var key = lineLow || '\x00blank';
-                        // Only store split value if it's different from full value
-                        if (key !== fullKey && !COLUMN_VALUES[c][key]) {
-                            COLUMN_VALUES[c][key] = { value: lineRaw, lower: lineLow, isBlank: !lineRaw, isSplitValue: true };
+                        if (!COLUMN_VALUES[c][key]) {
+                            COLUMN_VALUES[c][key] = { value: lineRaw, lower: lineLow, isBlank: !lineRaw };
                         }
                     }
                 }
@@ -325,19 +317,12 @@
         var keys = Object.keys(vals);
 
         // Separate blanks from real values, sort real values
-        // E5: Filter based on multiline split toggle
         var realItems = [];
         var hasBlank = false;
         for (var k = 0; k < keys.length; k++) {
             var item = vals[keys[k]];
             if (item.isBlank) { hasBlank = true; }
-            else {
-                // Skip split values if E5 toggle is off
-                if (item.isSplitValue && !E5_SPLIT_MULTILINE) {
-                    continue;
-                }
-                realItems.push(item);
-            }
+            else { realItems.push(item); }
         }
         realItems.sort(function (a, b) {
             return a.value.localeCompare(b.value, undefined, { numeric: true, sensitivity: 'base' });
@@ -350,12 +335,6 @@
         var html = '<div class="panos-dropdown-panel">';
         html += '<input type="text" class="panos-dropdown-search" placeholder="Search\u2026" />';
         html += '<div class="panos-dropdown-list">';
-
-        // E5 toggle: Split multiline values (behavior control - appears first)
-        html += '<div class="panos-dropdown-item e5-toggle-row" title="Split multi-line cell values into separate filterable items">' +
-                '<input type="checkbox" id="panos-e5-toggle-' + colIdx + '"' +
-                (E5_SPLIT_MULTILINE ? ' checked' : '') + ' />' +
-                '<label for="panos-e5-toggle-' + colIdx + '">Split multiline values</label></div>';
 
         // (Select All)
         var allChecked = !currentFilter; // if no filter, everything is selected
@@ -407,29 +386,16 @@
         // Wire search
         $activePanel.find('.panos-dropdown-search').on('input', function () {
             var q = this.value.trim().toLowerCase();
-            $activePanel.find('.panos-dropdown-item:not(.select-all):not(.e5-toggle-row)').each(function () {
+            $activePanel.find('.panos-dropdown-item:not(.select-all)').each(function () {
                 var text = $(this).find('label').text().toLowerCase();
                 $(this).css('display', text.indexOf(q) !== -1 ? '' : 'none');
             });
         });
 
-        // Wire E5 toggle (split multiline values)
-        $activePanel.find('.e5-toggle-row input').on('change', function () {
-            E5_SPLIT_MULTILINE = this.checked;
-            // Clear dropdown filter for this column when toggle changes
-            // (filter values from old mode won't match new mode items)
-            delete DROPDOWN_FILTERS[colIdx];
-            // Refresh the dropdown to show/hide split values
-            closeDropdown();
-            openDropdown(colIdx, anchorEl);
-            // Re-apply filters to update table display
-            applyFilters();
-        });
-
         // Wire (Select All)
         $activePanel.find('.select-all input').on('change', function () {
             var isChecked = this.checked;
-            $activePanel.find('.panos-dropdown-item:not(.select-all):not(.e5-toggle-row) input[type=checkbox]').each(function () {
+            $activePanel.find('.panos-dropdown-item:not(.select-all) input').each(function () {
                 // Only affect visible items
                 if ($(this).closest('.panos-dropdown-item').css('display') !== 'none') {
                     this.checked = isChecked;
@@ -439,7 +405,7 @@
         });
 
         // Wire individual checkboxes
-        $activePanel.find('.panos-dropdown-item:not(.select-all) input[type=checkbox]').on('change', function () {
+        $activePanel.find('.panos-dropdown-item:not(.select-all) input').on('change', function () {
             updateSelectAllState(colIdx);
             onDropdownSelectionChange(colIdx);
         });
@@ -448,7 +414,7 @@
     function updateSelectAllState(colIdx) {
         if (!$activePanel) { return; }
         var allChecked = true;
-        $activePanel.find('.panos-dropdown-item:not(.select-all) input[type=checkbox]').each(function () {
+        $activePanel.find('.panos-dropdown-item:not(.select-all) input').each(function () {
             if (!this.checked) { allChecked = false; }
         });
         $activePanel.find('.select-all input').prop('checked', allChecked);
@@ -458,8 +424,9 @@
         if (!$activePanel) { return; }
 
         var allChecked = $activePanel.find('.select-all input').prop('checked');
-        var totalItems = $activePanel.find('.panos-dropdown-item:not(.select-all)').length;
-        var checkedItems = $activePanel.find('.panos-dropdown-item:not(.select-all) input:checked').length;
+        var $items = $activePanel.find('.panos-dropdown-item:not(.select-all)');
+        var totalItems = $items.length;
+        var checkedItems = $items.find('input:checked').length;
 
         if (allChecked || checkedItems === totalItems) {
             // All selected — remove dropdown filter for this column
@@ -467,7 +434,7 @@
         } else {
             // Build set of allowed values
             var allowed = new Set();
-            $activePanel.find('.panos-dropdown-item:not(.select-all)').each(function () {
+            $items.each(function () {
                 if ($(this).find('input').prop('checked')) {
                     allowed.add($(this).data('lower') + '');
                 }
@@ -564,13 +531,18 @@
                 }
             }
 
-            // Dropdown filter: value must be in allowed set (AND across columns)
+            // Dropdown filter: split cell by newlines, match if ANY part is allowed
             if (match) {
                 for (var d = 0; d < dropCols.length; d++) {
                     var dc = dropCols[d];
                     var allowed = DROPDOWN_FILTERS[dc];
                     var cellVal = entry.cells[dc] || '';
-                    if (!allowed.has(cellVal)) {
+                    var parts = cellVal.split(/\r?\n/);
+                    var anyMatch = false;
+                    for (var p = 0; p < parts.length; p++) {
+                        if (allowed.has(parts[p].trim())) { anyMatch = true; break; }
+                    }
+                    if (!anyMatch) {
                         match = false;
                         break;
                     }
