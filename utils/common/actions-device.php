@@ -2567,8 +2567,13 @@ DeviceCallContext::$supportedActions['sp_spg-create-alert-only-BP'] = array(
                     //if( $context->arguments['shared'] && !$context->subSystem->isFirewall() )
                     if( $context->subSystem->isFirewall() )
                     {
-                        //Todo: check if multi-vsys, if not create it at vsys1
-                        $sharedStore = $sub->owner;
+                        if( count($context->subSystem->getVirtualSystems()) > 1 )
+                        {
+                            //Todo: check if multi-vsys, if not create it at vsys1
+                            $sharedStore = $sub->owner;
+                        }
+                        else
+                            $sharedStore = $sub;
                     }
                     else
                     {

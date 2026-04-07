@@ -3759,7 +3759,6 @@ SecurityProfileCallContext::$supportedActions['url.alert-only-set'] = array(
 
         $credential_xmlnode = DH::findFirstElementOrCreate("credential-enforcement", $object->xmlroot);
         $allow_credential_xmlnode = DH::findFirstElement("allow", $credential_xmlnode);
-        $alert_credential_xmlnode = DH::findFirstElementOrCreate("alert", $credential_xmlnode);
         if( $allow_credential_xmlnode !== False )
         {
             foreach( $allow_credential_xmlnode->childNodes as $allow_node )
@@ -3778,6 +3777,7 @@ SecurityProfileCallContext::$supportedActions['url.alert-only-set'] = array(
                     continue;
 
                 $clone_node = $allow_node->cloneNode(true);
+                $alert_credential_xmlnode = DH::findFirstElementOrCreate("alert", $credential_xmlnode);
                 $alert_credential_xmlnode->appendChild($clone_node);
                 $allow_credential_xmlnode->removeChild($allow_node);
 
@@ -3802,6 +3802,7 @@ SecurityProfileCallContext::$supportedActions['url.alert-only-set'] = array(
 
             $xmlString = '<member>'.$allow.'</member>';
             $xmlElement = DH::importXmlStringOrDie($object->xmlroot->ownerDocument, $xmlString);
+            $alert_credential_xmlnode = DH::findFirstElementOrCreate("alert", $credential_xmlnode);
             $alert_credential_xmlnode->appendChild($xmlElement);
         }
         $object->allow_credential = array();
