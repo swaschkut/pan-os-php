@@ -9,6 +9,7 @@ UTIL:
 BUGFIX:
 
 GENERAL:
+* update Device App-ID to version: 9087-9979
 
 
 2.1.53 (20260409)
