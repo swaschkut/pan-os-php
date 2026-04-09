@@ -53,7 +53,7 @@ class CallContext
     /** @var  $ruletype array */
     public $ruletype;
 
-    /** @var PanAPIConnector */
+    /** @var PanAPIConnector|PanSaseAPIConnector|PanSCMAPIConnector */
     public $connector = null;
 
     public $padding = '';
@@ -293,7 +293,8 @@ class CallContext
         if( $value == NULL )
             $output = "---";
         elseif( is_string($value) )
-            $output = htmlspecialchars($value);
+            // Convert newlines to <br /> for proper HTML display of multi-line values
+            $output = nl2br(htmlspecialchars($value));
         elseif( is_array($value) )
         {
             $output = '';

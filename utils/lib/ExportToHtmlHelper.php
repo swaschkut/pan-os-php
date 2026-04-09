@@ -66,8 +66,9 @@ class ExportToHtmlHelper
         // Embed jQuery inline — fully self-contained, no external requests
         $content = str_replace('%JQUERY_INLINE%', file_get_contents($htmlDir . 'jquery.min.js'), $content);
 
-        $jscontent  = file_get_contents($htmlDir . 'jquery.stickytableheaders.min.js');
-        $jscontent .= "\n\$('table').stickyTableHeaders();\n";
+        $jscontent = '';
+        //$jscontent  .= file_get_contents($htmlDir . 'jquery.stickytableheaders.min.js');
+        //$jscontent .= "\n\$('table').stickyTableHeaders();\n";
         $jscontent .= $extraJs;
         $jscontent .= "\n" . file_get_contents($htmlDir . 'table-filter.js');
 
@@ -89,21 +90,9 @@ class ExportToHtmlHelper
      */
     public static function writeHtmlExport(string $filename, string $headers, string $lines, string $extraJs = ''): void
     {
-        file_put_contents($filename, self::buildHtmlExport($headers, $lines, $extraJs));
-    }
+        #file_put_contents($filename, self::buildHtmlExport($headers, $lines, $extraJs));
 
-    /**
-     * Resolve the output filename, prepending the web project path when
-     * the script is running inside a web-request context.
-     *
-     * @param string $filename  Raw filename argument from action args
-     * @return string           Resolved file path
-     */
-    public static function resolveFilename(string $filename): string
-    {
-        if (isset($_SERVER['REQUEST_METHOD'])) {
-            return 'project/html/' . $filename;
-        }
-        return $filename;
+        require_once dirname(__FILE__) . '/FilePutContents.php';
+        FilePutContents::putContents($filename, self::buildHtmlExport($headers, $lines, $extraJs));
     }
 }

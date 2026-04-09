@@ -5272,6 +5272,10 @@ var subjectObject =
     "routing": {
         "name": "routing",
         "action": {
+            "display": {
+                "name": "display",
+                "MainFunction": {}
+            },
             "display-route-table-fast": {
                 "name": "display-route-table-fast",
                 "MainFunction": {}

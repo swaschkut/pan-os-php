@@ -1,6 +1,23 @@
 CHANGELOG
 
-2.1.52
+2.1.53
+UTIL:
+* adjustment to index_assessment.html
+* optimise type=rule/securityprofilegroup | for 'actions=exporttoexcel:file.html,visiblity|bestpractice'
+* extend SecurityProfile filters | to cross function - AS with DNS Security profile | Virus / Wildfire with VirusAndWildfire for SCM
+* class FawkesConf | optimise type=stats
+* type=log-profile | introduce actions=delete/move:LOCATION
+
+BUGFIX:
+* SCM API - bring back the already implemented parts for SaseAPI, but now working for SCMAPI
+* in=scm-api://TSGID type=rule | bugfix for log_setting reading
+* class PanSCMAPIConnector | bugfix type=rule include log-forwarding-profiles / schedule
+* type=securityprofile securityprofiletype=url-filtering actions=url.salert-only-set | do not create addition xml node e.g. alert if everything is set to block
+
+GENERAL:
+
+
+2.1.52 (20260331)
 UTIL:
 * type=ike-gateway/ike-profile/ipsec-profile | introduce new 'filter=(object is.unused)'
 * type=ike-gateway/ike-profile/ipsec-profile | introduce new 'actions=displayreferences'

@@ -98,9 +98,9 @@ trait ObjectWithDescription
                 else
                     $con->sendSetRequest($this->getXPath(), '<' . $tagName . '>' . htmlspecialchars($this->_description) . '</' . $tagName . '>');
             }
-            elseif( $con->isSaseAPI() )
+            elseif( $con->isSaseAPI() || $con->isSCMAPI() )
             {
-                /** @var PanSaseAPIConnector $con */
+                /** @var PanSaseAPIConnector|PanSCMAPIConnector $con */
                 $con->sendPUTRequest($this);
             }
 

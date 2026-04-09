@@ -1823,6 +1823,7 @@ class UTIL
 
             //this part is downloading and creating snippets
             $responseArray = $this->sase_connector->getSnippetsavailable($this->pan);
+            $folderArray = array_merge($folderArray, $responseArray);
 
             //this part is downloading and creating folders, of different types: container, cloud/on-prem
             $responseArray = $this->sase_connector->getFolderavailable($this->pan);
@@ -1862,20 +1863,20 @@ class UTIL
                 $sub = $this->pan->findContainer( $folder);
                 if( $sub === null )
                 {
-                    //Todo: swaschkut 20260125 - how to find device on-prem????
-                    $sub = $this->pan->findDeviceCloud( $folder);
+                    $sub = $this->pan->findSnippet( $folder);
                     if( $sub === null )
                     {
-                        $sub = $this->pan->findDeviceOnPrem( $folder);
+                        $sub = $this->pan->findDeviceCloud( $folder);
+                        if( $sub === null )
+                        {
+                            $sub = $this->pan->findDeviceOnPrem( $folder);
+                        }
                     }
-                        #$sub = $this->pan->createDeviceCloud( $folder, "Prisma Access" );
 
-                    #$sub = $this->pan->findDeviceOnPrem( $folder);
-                    #if( $sub === null )
-                    #    $sub = $this->pan->createDeviceOnPrem( $folder, "MUST be AVAILABLE" );
                     if( $sub === null )
                     {
-                        mwarning( "why there nothing found for: '".$folder."'" );
+                        #mwarning( "why there nothing found for: '".$folder."'" );
+                        $this->locationNotFound($folder);
                     }
                 }
             }

@@ -633,7 +633,7 @@ trait sp_action_spyware
 
     public function spyware_dnslist_best_practice(): ?bool
     {
-        if( $this->secprof_type != 'spyware' )
+        if( $this->secprof_type != 'spyware' && $this->secprof_type != 'dns-security' )
             return null;
 
         $bp_set = false;
@@ -653,7 +653,7 @@ trait sp_action_spyware
 
     public function spyware_dnslist_visibility(): ?bool
     {
-        if( $this->secprof_type != 'spyware' )
+        if( $this->secprof_type != 'spyware' && $this->secprof_type != 'dns-security' )
             return null;
 
         $bp_set = false;
@@ -894,56 +894,129 @@ trait sp_action_spyware
 
     public function is_best_practice(): bool
     {
-        if( $this->owner->owner->version >= 102 )
+        if( $this->owner->owner->isPanorama()
+            || $this->owner->owner->isDeviceGroup()
+            || $this->owner->owner->isFirewall()
+            || $this->owner->owner->isVirtualSystem() )
         {
-            if( $this->spyware_rules_best_practice() && $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file)
-                && $this->spyware_dnslist_best_practice()
-                #this is DNS security
-                && $this->spyware_dns_security_best_practice()
-                && $this->spyware_rules_visibility()
-            )
-                return TRUE;
+            if( $this->owner->owner->version >= 102 )
+            {
+                if( $this->spyware_rules_best_practice() && $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file)
+                    && $this->spyware_rules_visibility()
+
+                    && $this->spyware_dnslist_best_practice()
+                    #this is DNS security
+                    && $this->spyware_dns_security_best_practice()
+
+                )
+                    return TRUE;
+                else
+                    return FALSE;
+            }
             else
-                return FALSE;
+            {
+                if( $this->spyware_rules_best_practice()
+                    && $this->spyware_rules_visibility()
+
+                    && $this->spyware_dnslist_best_practice()
+                    #this is DNS security
+                    && $this->spyware_dns_security_best_practice()
+
+                )
+                    return TRUE;
+                else
+                    return FALSE;
+            }
         }
         else
         {
-            if( $this->spyware_rules_best_practice()
-                && $this->spyware_dnslist_best_practice()
-                #this is DNS security
-                && $this->spyware_dns_security_best_practice()
-                #&& $this->vulnerability_exception_best_practice()
-                && $this->spyware_rules_visibility()
-            )
-                return TRUE;
+            if( $this->owner->owner->version >= 102 )
+            {
+                if( $this->spyware_rules_best_practice() && $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file)
+                    && $this->spyware_rules_visibility()
+
+                    #&& $this->spyware_dnslist_best_practice()
+                    #this is DNS security
+                    #&& $this->spyware_dns_security_best_practice()
+
+                )
+                    return TRUE;
+                else
+                    return FALSE;
+            }
             else
-                return FALSE;
+            {
+                if( $this->spyware_rules_best_practice()
+                    && $this->spyware_rules_visibility()
+
+                    #&& $this->spyware_dnslist_best_practice()
+                    #this is DNS security
+                    #&& $this->spyware_dns_security_best_practice()
+
+                )
+                    return TRUE;
+                else
+                    return FALSE;
+            }
         }
+
     }
 
     public function is_visibility(): bool
     {
-        if( $this->owner->owner->version >= 102 )
+        if( $this->owner->owner->isPanorama()
+            || $this->owner->owner->isDeviceGroup()
+            || $this->owner->owner->isFirewall()
+            || $this->owner->owner->isVirtualSystem() )
         {
-            if( $this->spyware_rules_visibility() && $this->cloud_inline_analysis_visibility($this->owner->bp_json_file)
-                && $this->spyware_dnslist_visibility()
-                #this is DNS Security
-                #&& $this->spyware_dns_security_visibility()
-            )
-                return TRUE;
+            if( $this->owner->owner->version >= 102 )
+            {
+                if( $this->spyware_rules_visibility() && $this->cloud_inline_analysis_visibility($this->owner->bp_json_file)
+                    && $this->spyware_dnslist_visibility()
+                    #this is DNS Security
+                    #&& $this->spyware_dns_security_visibility()
+                )
+                    return TRUE;
+                else
+                    return FALSE;
+            }
             else
-                return FALSE;
+            {
+                if( $this->spyware_rules_visibility()
+                    && $this->spyware_dnslist_visibility()
+                    #this is DNS Security
+                    #&& $this->spyware_dns_security_visibility()
+                )
+                    return TRUE;
+                else
+                    return FALSE;
+            }
         }
         else
         {
-            if( $this->spyware_rules_visibility()
-                && $this->spyware_dnslist_visibility()
-                #this is DNS Security
-                #&& $this->spyware_dns_security_visibility()
-            )
-                return TRUE;
+            //Todo: validation for SCM needed - what version
+            if( $this->owner->owner->version >= 102 )
+            {
+                if( $this->spyware_rules_visibility() && $this->cloud_inline_analysis_visibility($this->owner->bp_json_file)
+                    #&& $this->spyware_dnslist_visibility()
+                    #this is DNS Security
+                    #&& $this->spyware_dns_security_visibility()
+                )
+                    return TRUE;
+                else
+                    return FALSE;
+            }
             else
-                return FALSE;
+            {
+                if( $this->spyware_rules_visibility()
+                    #&& $this->spyware_dnslist_visibility()
+                    #this is DNS Security
+                    #&& $this->spyware_dns_security_visibility()
+                )
+                    return TRUE;
+                else
+                    return FALSE;
+            }
         }
     }
 

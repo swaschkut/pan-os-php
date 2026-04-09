@@ -33,6 +33,10 @@ class VirusAndWildfireProfile extends SecurityProfile2
     public $threatException = array();
     public $additional = array();
 
+    public $tmp_virus_prof_array = array('http', 'http2','smtp', 'imap', 'pop3', 'ftp', 'smb');
+
+    public $tmp_virus_prof_mica_array = array('Windows Executables', 'PowerShell Script 1', 'PowerShell Script 2', 'Executable Linked Format', 'MSOffice', 'Shell', 'OOXML', 'MachO');
+
     /**
      * you should not need this one for normal use
      * @param string $name
@@ -128,7 +132,32 @@ class VirusAndWildfireProfile extends SecurityProfile2
         PH::$JSON_TMP['sub']['object'][$this->name()]['type'] = get_class($this);
         //Todo: continue for PH::print_stdout( ); out
 
+        $this->display_virus_decoder();
+
+        PH::print_stdout();
+
+        $this->display_virus_threat_exception();
+
+        $this->display_virus_inlineml();
+
+        PH::print_stdout();
+        PH::print_stdout();
         $this->display_wildfire();
+    }
+
+    public function is_best_practice(): bool
+    {
+        return false;
+    }
+
+    public function is_visible(): bool
+    {
+        return false;
+    }
+
+    public function is_adaption(): bool
+    {
+        return false;
     }
 
     static $templatexml = '<entry name="**temporarynamechangeme**"></entry>';

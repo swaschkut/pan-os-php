@@ -174,6 +174,12 @@ ZoneProtectionProfileCallContext::$supportedActions[] = array(
                         $lines .= $context->encloseFunction($object->owner->owner->name());
                     }
                 }
+                else
+                {
+                    $lines .= $context->encloseFunction("---");
+                    $lines .= $context->encloseFunction("---");
+                }
+
 
                 #$lines .= $context->encloseFunction(PH::getLocationString($object));
 

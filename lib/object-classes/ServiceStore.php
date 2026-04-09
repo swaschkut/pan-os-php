@@ -538,7 +538,7 @@ class ServiceStore
             $con = findConnectorOrDie($this);
             if( $con->isAPI())
                 $con->sendDeleteRequest($xpath);
-            elseif( $con->isSaseAPI() )
+            elseif( $con->isSaseAPI() || $con->isSCMAPI() )
                 $con->sendDELETERequest($s);
         }
 
@@ -693,7 +693,7 @@ class ServiceStore
         $xpath = $newObject->getXPath();
         if( $con->isAPI())
             $con->sendSetRequest($xpath, $newObject, TRUE);
-        elseif( $con->isSaseAPI() )
+        elseif( $con->isSaseAPI() || $con->isSCMAPI() )
             $con->sendCreateRequest($newObject);
 
         return $newObject;
@@ -738,7 +738,7 @@ class ServiceStore
 
         if( $con->isAPI() )
             $con->sendSetRequest($xpath, $newObject, TRUE);
-        elseif( $con->isSaseAPI() )
+        elseif( $con->isSaseAPI() || $con->isSCMAPI() )
             $con->sendCreateRequest( $newObject );
 
         return $newObject;

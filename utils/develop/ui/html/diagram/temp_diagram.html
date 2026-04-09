@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>D3.js Coxcomb Chart Generator v28</title>
+    <script src="d3.v7.min.js"></script>
+    <script src="html2canvas.min.js"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="diagram_styles.css">
+    <script src="diagram_data.js"></script>
+    <script src="diagram_script.js"></script>
+
+</head>
+<body>
+
+<div class="menu" style="border:1px solid black; padding: 10px;">
+    <table class="table table-bordered" style="width:100%">
+        <tr>
+        <tr>
+            <td><a href="index.php">MAIN page</a></td>
+            <td><a href="bp_config.php">BP config page</a></td>
+            <td><a href="bp_secprof.php">BP secprof page</a></td>
+            <td><a href="single.php">single command</a></td>
+            <td><a href="playbook.php">JSON PLAYBOOK</a></td>
+            <td><a href="preparation.php">upload file / store APIkey</a></td>
+
+            <td><a href="html/diagram/temp_diagram.html">Diagram</a></td>
+            <td><a href="html/editor/bp_setting/bp_setting-editor.html">BP Setting Editor</a></td>
+            <td><a href="html/editor/playbook/playbook-editor.html">Playbook Editor</a></td>
+
+            <td><a href="help.php">action / filter help</a></td>
+            <?php
+                if( isset($_SESSION['folder']) && isset($_SESSION['id']) )
+                {
+                    echo '<td>logged in as: <a href="test/home.php">'.$_SESSION['name'].'</a>  |  <a href="test/logout.php">LOGOUT</a></td>';
+            }
+            ?>
+        </tr>
+    </table>
+</div>
+
+<div class="container">
+    <div class="controls">
+        <h3>JSON Data Input</h3>
+
+        <div class="mode-toggle-container">
+            <span class="mode-toggle-label">Light Mode</span>
+            <label class="toggle-switch">
+                <input type="checkbox" id="lightModeToggle" onchange="toggleLightMode()">
+                <span class="toggle-slider"></span>
+            </label>
+        </div>
+        <div style="margin-bottom: 20px; padding: 10px; border: 1px solid #ccc;">
+            <label for="fileInput">Load New Diagram Data: </label>
+            <input type="file" id="fileInput" accept=".json">
+            <button onclick="loadNewData()">Upload and Refresh</button>
+        </div>
+
+        <div class="input-container">
+            <div id="sampleButtonsContainer" class="sample-buttons"></div>
+            <textarea id="jsonInput" placeholder='Enter your JSON data here...
+        Example format:
+        {
+          "title": "Overall Adoption",
+          "categories": [
+            {"name": "Logging", "value": 100, "shortName": "Logging", "group": "Logging"},
+            {"name": "DNS Security", "value": 100, "shortName": "DNS Security", "group": "DNS Security"},
+            {"name": "Wildfire Analysis Profiles", "value": 75, "shortName": "Wildfire Analysis", "group": "Wildfire"}
+          ]
+        }'></textarea>
+        </div>
+        <button onclick="generateChart()">Generate Chart</button>
+        <button onclick="resetChart()" style="background: #666;">Reset Chart</button>
+        <button onclick="saveChartAsJpg()" style="background: #2578B1;">Save as JPG</button>
+        <button onclick="generateAllJpgs()" style="background: #2578B1;">Generate all JPGs</button>
+        <button onclick="generateAllJpgsManualClick()" style="background: #2578B1;">Generate all JPGs manual Click</button>
+        <div id="error" class="error"></div>
+    </div>
+
+    <div class="chart-container">
+        <div class="chart-title" id="chartTitle">Overall Adoption</div>
+        <div id="chart"></div>
+        <div class="tooltip" id="tooltip"></div>
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #25B197;"></div>
+                <div class="legend-text">Excellent (75-100%)</div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #FBB441;"></div>
+                <div class="legend-text">Good (50-75%)</div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #F06A0A;"></div>
+                <div class="legend-text">Fair (25-50%)</div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #E8121C;"></div>
+                <div class="legend-text">Poor (0-25%)</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

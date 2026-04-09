@@ -84,6 +84,11 @@ else
                 <td><a href="single.php">single command</a></td>
                 <td><a href="playbook.php">JSON PLAYBOOK</a></td>
                 <td><a href="preparation.php">upload file / store APIkey</a></td>
+
+                <td><a href="html/diagram/temp_diagram.html">Diagram</a></td>
+                <td><a href="html/editor/bp_setting/bp_setting-editor.html">BP Setting Editor</a></td>
+                <td><a href="html/editor/playbook/playbook-editor.html">Playbook Editor</a></td>
+
                 <td><a href="help.php">action / filter help</a></td>
                 <?php
                 if( isset($_SESSION['folder']) && isset($_SESSION['id']) )

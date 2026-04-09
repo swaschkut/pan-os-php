@@ -165,7 +165,19 @@ class LogProfileStore extends ObjStore
         if( $ref !== null )
             $newLogProfile->addReference($ref);
 
+        $newLogProfile->add_log_filter('traffic', 'all traffic', "All Logs");
+
         $this->addLogProfile($newLogProfile);
+
+        //todo: continue here 20260404
+        //$newLogProfile->type['traffic'] = $this->xmlroot;
+
+            //"match_list":[
+            //{"filter":"All Logs","log_type":"traffic","name":"traffic-enhanced-app-logging","quarantine":false,"send_to_panorama":true},
+            //{"filter":"All Logs","log_type":"threat","name":"threat-enhanced-app-logging","quarantine":false,"send_to_panorama":true},
+            //{"filter":"All Logs","log_type":"wildfire","name":"wildfire-enhanced-app-logging","quarantine":false,"send_to_panorama":true},
+            //{"filter":"All Logs","log_type":"url","name":"url-enhanced-app-logging","quarantine":false,"send_to_panorama":true},
+            //{"filter":"All Logs","log_type":"data","name":"data-enhanced-app-logging","quarantine":false,"s
 
         return $newLogProfile;
     }
@@ -192,6 +204,8 @@ class LogProfileStore extends ObjStore
 
             if( $con->isAPI() )
                 $con->sendSetRequest($xpath, $element);
+            elseif ($con->isSCMAPI() || $con->isSaseAPI() )
+                $con->sendCreateRequest($element);
         }
 
         return $newLogProfile;
@@ -237,6 +251,8 @@ class LogProfileStore extends ObjStore
 
             if( $con->isAPI() )
                 $con->sendDeleteRequest($xpath);
+            elseif ($con->isSCMAPI() || $con->isSaseAPI() )
+                $con->sendDELETERequest($LogProfile);
         }
 
         return $ret;

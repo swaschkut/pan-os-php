@@ -4,7 +4,7 @@
 /**
  * @property $_ip4Map IP4Map cached ip start and end value for fast optimization
  */
-class DNSSecurityProfile
+class DNSSecurityProfile extends SecurityProfile2
 {
     use ReferenceableObject;
     use PathableName;
@@ -23,6 +23,7 @@ class DNSSecurityProfile
 
     public $secprof_type;
 
+    public $rules_obj = array();
     public $dns_rules_obj = array();
 
     public $lists_obj = array();
@@ -126,6 +127,32 @@ class DNSSecurityProfile
 
     }
 
+    public function is_best_practice(): bool
+    {
+        if( $this->spyware_dnslist_best_practice()
+            #this is DNS security
+            && $this->spyware_dns_security_best_practice()
+        )
+            return TRUE;
+        else
+            return FALSE;
+    }
+
+    public function is_visibility(): bool
+    {
+        if( $this->spyware_dnslist_visibility()
+            #this is DNS Security
+            && $this->spyware_dns_security_visibility()
+        )
+            return TRUE;
+        else
+            return FALSE;
+    }
+
+    public function is_adaption(): bool
+    {
+        return false;
+    }
 
     static $templatexml = '<entry name="**temporarynamechangeme**"></entry>';
 

@@ -226,7 +226,7 @@ class AddressRuleContainer extends ObjRuleContainer
                     $con->sendEditRequest($xpath, $this->getXmlText_inline());
             }
         }
-        elseif( $con->isSaseAPI() )
+        elseif( $con->isSaseAPI() || $con->isSCMAPI() )
         {
             if( $new )
                 $con->sendCreateRequest($this);

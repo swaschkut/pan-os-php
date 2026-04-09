@@ -269,13 +269,19 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
         if( $adoption )
             $headers .= '<th>adoption group</th>';
 
-        $headers .= '<th>Antivirus</th>';
-        if( $bestPractice )
-            $headers .= '<th>BP AV</th>';
-        if( $visibility )
-            $headers .= '<th>visibility</th>';
-        if( $adoption )
-            $headers .= '<th>AV adoption</th>';
+
+        if( $context->deviceType !== "scm" )
+        {
+            //only add if no Snippet/Container/DeviceOnPrem/DeviceCloud
+            $headers .= '<th>Antivirus</th>';
+            if( $bestPractice )
+                $headers .= '<th>BP AV</th>';
+            if( $visibility )
+                $headers .= '<th>visibility</th>';
+            if( $adoption )
+                $headers .= '<th>AV adoption</th>';
+        }
+
 
         $headers .= '<th>Anti-Spyware</th>';
         if( $bestPractice )
@@ -309,13 +315,17 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
         if( $adoption )
             $headers .= '<th>FB adoption</th>';
 
-        $headers .= '<th>WildFire Analysis</th>';
-        if( $bestPractice )
-            $headers .= '<th>BP WF</th>';
-        if( $visibility )
-            $headers .= '<th>visibility</th>';
-        if( $adoption )
-            $headers .= '<th>WF adoption</th>';
+        if( $context->deviceType !== "scm" )
+        {
+            $headers .= '<th>WildFire Analysis</th>';
+            if( $bestPractice )
+                $headers .= '<th>BP WF</th>';
+            if( $visibility )
+                $headers .= '<th>visibility</th>';
+            if( $adoption )
+                $headers .= '<th>WF adoption</th>';
+        }
+
 
         $headers .= '<th>Data Filtering</th>';
 
@@ -328,449 +338,442 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
         if( $addCountDisabledRules )
             $headers .= '<th>count disabled Rules</th>';
 
+        //Todo: only add if container/DeviceCloud/DeviceOnPrem/Snippet
+        if( $context->deviceType === "scm" )
+        {
+            $headers .= '<th>WildFire and Virus</th>';
+            if( $bestPractice )
+                $headers .= '<th>BP WF/AV</th>';
+            if( $visibility )
+                $headers .= '<th>visibility</th>';
+            if( $adoption )
+                $headers .= '<th>WF/AV adoption</th>';
+
+            //Todo: add DNS Security
+            $headers .= '<th>DNS Security</th>';
+            if( $bestPractice )
+                $headers .= '<th>BP DNS Security</th>';
+            if( $visibility )
+                $headers .= '<th>visibility</th>';
+            if( $adoption )
+                $headers .= '<th>DNS Security adoption</th>';
+        }
+
         $bp_text_yes = "yes";
         $bp_text_no = "no";
 
         $count = 0;
         if( isset($context->objectList) )
         {
-            foreach( $context->objectList as $object )
-            {
+            foreach( $context->objectList as $object ) {
                 /** @var SecurityProfileGroup $object */
                 $count++;
 
-                if( $count % 2 == 1 )
+                if ($count % 2 == 1)
                     $lines .= "<tr>\n";
                 else
                     $lines .= "<tr bgcolor=\"#DDDDDD\">";
 
-                $lines .= $context->encloseFunction( (string)$count );
+                $lines .= $context->encloseFunction((string)$count);
 
                 $lines .= $context->encloseFunction(PH::getLocationString($object));
 
                 $lines .= $context->encloseFunction($object->name());
 
-                if( $bestPractice )
-                {
+                if ($bestPractice) {
                     if ($object->is_best_practice())
                         $lines .= $context->encloseFunction($bp_text_yes);
                     else
                         $lines .= $context->encloseFunction($bp_text_no);
                 }
-                if( $visibility )
-                {
+                if ($visibility) {
                     if ($object->is_visibility())
                         $lines .= $context->encloseFunction($bp_text_yes);
                     else
                         $lines .= $context->encloseFunction($bp_text_no);
                 }
-                if( $adoption )
-                {
+                if ($adoption) {
                     if ($object->is_adoption())
                         $lines .= $context->encloseFunction($bp_text_yes);
                     else
                         $lines .= $context->encloseFunction($bp_text_no);
                 }
                 //private $secprof_array = array('virus', 'spyware', 'vulnerability', 'file-blocking', 'wildfire-analysis', 'url-filtering', 'data-filtering');
+                if ($context->deviceType !== "scm") {
+                    if (isset($object->secprofProfiles_obj['virus'])) {
+                        $lines .= $context->encloseFunction($object->secprofProfiles_obj['virus']);
+                        if ($bestPractice || $visibility || $adoption) {
 
-                if(isset($object->secprofProfiles_obj['virus']))
-                {
-                    $lines .= $context->encloseFunction($object->secprofProfiles_obj['virus']);
-                    if( $bestPractice || $visibility || $adoption )
-                    {
+                            if (is_object($object->secprofProfiles_obj['virus']))
+                                $profile = $object->secprofProfiles_obj['virus'];
+                            else
+                                $profile = $context->object->owner->owner->AntiVirusProfileStore->find($object->secprofProfiles_obj['virus']);
 
-                        if( is_object($object->secprofProfiles_obj['virus']) )
-                            $profile = $object->secprofProfiles_obj['virus'];
-                        else
-                            $profile = $context->object->owner->owner->AntiVirusProfileStore->find($object->secprofProfiles_obj['virus']);
-
-                        if( is_object( $profile ) )
-                        {
-                            if( $bestPractice )
-                            {
-                                if ($profile->is_best_practice())
-                                    $lines .= $context->encloseFunction($bp_text_yes);
-                                else
-                                    $lines .= $context->encloseFunction($bp_text_no);
+                            if (is_object($profile)) {
+                                if ($bestPractice) {
+                                    if ($profile->is_best_practice())
+                                        $lines .= $context->encloseFunction($bp_text_yes);
+                                    else
+                                        $lines .= $context->encloseFunction($bp_text_no);
+                                }
+                                if ($visibility) {
+                                    if ($profile->is_visibility())
+                                        $lines .= $context->encloseFunction($bp_text_yes);
+                                    else
+                                        $lines .= $context->encloseFunction($bp_text_no);
+                                }
+                                if ($adoption) {
+                                    if ($profile->is_adoption())
+                                        $lines .= $context->encloseFunction($bp_text_yes);
+                                    else
+                                        $lines .= $context->encloseFunction($bp_text_no);
+                                }
+                            } else {
+                                if ($bestPractice)
+                                    $lines .= $context->encloseFunction("- check not possible -");
+                                if ($visibility)
+                                    $lines .= $context->encloseFunction("- check not possible -");
+                                if ($adoption)
+                                    $lines .= $context->encloseFunction("- check not possible -");
                             }
-                            if( $visibility)
-                            {
-                                if ($profile->is_visibility())
-                                    $lines .= $context->encloseFunction($bp_text_yes);
-                                else
-                                    $lines .= $context->encloseFunction($bp_text_no);
-                            }
-                            if( $adoption)
-                            {
-                                if ($profile->is_adoption())
-                                    $lines .= $context->encloseFunction($bp_text_yes);
-                                else
-                                    $lines .= $context->encloseFunction($bp_text_no);
-                            }
+                        } else {
+                            if ($bestPractice)
+                                $lines .= $context->encloseFunction($bp_text_no);
+                            if ($visibility)
+                                $lines .= $context->encloseFunction($bp_text_no);
+                            if ($adoption)
+                                $lines .= $context->encloseFunction($bp_text_no);
                         }
-                        else
-                        {
-                            if( $bestPractice)
-                                $lines .= $context->encloseFunction("- check not possible -");
-                            if( $visibility)
-                                $lines .= $context->encloseFunction("- check not possible -");
-                            if( $adoption)
-                                $lines .= $context->encloseFunction("- check not possible -");
-                        }
-                    }
-                    else
-                    {
-                        if( $bestPractice )
-                            $lines .= $context->encloseFunction($bp_text_no);
-                        if( $visibility )
-                            $lines .= $context->encloseFunction($bp_text_no);
-                        if( $adoption )
-                            $lines .= $context->encloseFunction($bp_text_no);
+                    } else {
+                        $lines .= $context->encloseFunction("---");
+
+                        if ($bestPractice)
+                            $lines .= $context->encloseFunction("---");
+                        if ($visibility)
+                            $lines .= $context->encloseFunction("---");
+                        if ($adoption)
+                            $lines .= $context->encloseFunction("---");
                     }
                 }
-                else
-                {
-                    $lines .= $context->encloseFunction("---");
 
-                    if( $bestPractice )
-                        $lines .= $context->encloseFunction("---");
-                    if( $visibility )
-                        $lines .= $context->encloseFunction("---");
-                    if( $adoption )
-                        $lines .= $context->encloseFunction("---");
-                }
 
-                if(isset($object->secprofProfiles_obj['spyware']))
-                {
+                if (isset($object->secprofProfiles_obj['spyware'])) {
                     $lines .= $context->encloseFunction($object->secprofProfiles_obj['spyware']);
-                    if( $bestPractice || $visibility || $adoption )
-                    {
-                        if( is_object($object->secprofProfiles_obj['spyware']) )
+                    if ($bestPractice || $visibility || $adoption) {
+                        if (is_object($object->secprofProfiles_obj['spyware']))
                             $profile = $object->secprofProfiles_obj['spyware'];
                         else
                             $profile = $context->object->owner->owner->AntiSpywareProfileStore->find($object->secprofProfiles_obj['spyware']);
 
-                        if( is_object( $profile ) )
-                        {
-                            if( $bestPractice )
-                            {
+                        if (is_object($profile)) {
+                            if ($bestPractice) {
                                 if ($profile->is_best_practice())
                                     $lines .= $context->encloseFunction($bp_text_yes);
                                 else
                                     $lines .= $context->encloseFunction($bp_text_no);
                             }
-                            if( $visibility )
-                            {
+                            if ($visibility) {
                                 if ($profile->is_visibility())
                                     $lines .= $context->encloseFunction($bp_text_yes);
                                 else
                                     $lines .= $context->encloseFunction($bp_text_no);
                             }
-                            if( $adoption)
-                            {
+                            if ($adoption) {
                                 if ($profile->is_adoption())
                                     $lines .= $context->encloseFunction($bp_text_yes);
                                 else
                                     $lines .= $context->encloseFunction($bp_text_no);
                             }
-                        }
-                        else
-                        {
-                            if( $bestPractice)
+                        } else {
+                            if ($bestPractice)
                                 $lines .= $context->encloseFunction("- check not possible -");
-                            if( $visibility)
+                            if ($visibility)
                                 $lines .= $context->encloseFunction("- check not possible -");
-                            if( $adoption)
+                            if ($adoption)
                                 $lines .= $context->encloseFunction("- check not possible -");
                         }
-                    }
-                    else
-                    {
-                        if( $bestPractice )
+                    } else {
+                        if ($bestPractice)
                             $lines .= $context->encloseFunction($bp_text_no);
-                        if( $visibility )
+                        if ($visibility)
                             $lines .= $context->encloseFunction($bp_text_no);
-                        if( $adoption )
+                        if ($adoption)
                             $lines .= $context->encloseFunction($bp_text_no);
                     }
-                }
-                else
-                {
+                } else {
                     $lines .= $context->encloseFunction("---");
 
-                    if( $bestPractice )
+                    if ($bestPractice)
                         $lines .= $context->encloseFunction("---");
-                    if( $visibility )
+                    if ($visibility)
                         $lines .= $context->encloseFunction("---");
-                    if( $adoption )
+                    if ($adoption)
                         $lines .= $context->encloseFunction("---");
                 }
 
-                if(isset($object->secprofProfiles_obj['vulnerability']))
-                {
+                if (isset($object->secprofProfiles_obj['vulnerability'])) {
                     $lines .= $context->encloseFunction($object->secprofProfiles_obj['vulnerability']);
-                    if( $bestPractice || $visibility || $adoption )
-                    {
-                        if( is_object($object->secprofProfiles_obj['vulnerability']) )
+                    if ($bestPractice || $visibility || $adoption) {
+                        if (is_object($object->secprofProfiles_obj['vulnerability']))
                             $profile = $object->secprofProfiles_obj['vulnerability'];
                         else
                             $profile = $context->object->owner->owner->VulnerabilityProfileStore->find($object->secprofProfiles_obj['vulnerability']);
-                        if( is_object( $profile ) )
-                        {
-                            if( $bestPractice )
-                            {
-                                if( $profile->is_best_practice() )
+                        if (is_object($profile)) {
+                            if ($bestPractice) {
+                                if ($profile->is_best_practice())
                                     $lines .= $context->encloseFunction($bp_text_yes);
                                 else
                                     $lines .= $context->encloseFunction($bp_text_no);
                             }
-                            if( $visibility )
-                            {
-                                if( $profile->is_visibility() )
+                            if ($visibility) {
+                                if ($profile->is_visibility())
                                     $lines .= $context->encloseFunction($bp_text_yes);
                                 else
                                     $lines .= $context->encloseFunction($bp_text_no);
                             }
-                            if( $adoption)
-                            {
+                            if ($adoption) {
                                 if ($profile->is_adoption())
                                     $lines .= $context->encloseFunction($bp_text_yes);
                                 else
                                     $lines .= $context->encloseFunction($bp_text_no);
                             }
-                        }
-                        else
-                        {
-                            if( $bestPractice)
+                        } else {
+                            if ($bestPractice)
                                 $lines .= $context->encloseFunction("- check not possible -");
-                            if( $visibility)
+                            if ($visibility)
                                 $lines .= $context->encloseFunction("- check not possible -");
-                            if( $adoption)
+                            if ($adoption)
                                 $lines .= $context->encloseFunction("- check not possible -");
                         }
-                    }
-                    else
-                    {
-                        if( $bestPractice )
+                    } else {
+                        if ($bestPractice)
                             $lines .= $context->encloseFunction($bp_text_no);
-                        if( $visibility )
+                        if ($visibility)
                             $lines .= $context->encloseFunction($bp_text_no);
-                        if( $adoption )
+                        if ($adoption)
                             $lines .= $context->encloseFunction($bp_text_no);
                     }
-                }
-                else
-                {
+                } else {
                     $lines .= $context->encloseFunction("---");
 
-                    if( $bestPractice )
+                    if ($bestPractice)
                         $lines .= $context->encloseFunction("---");
-                    if( $visibility )
+                    if ($visibility)
                         $lines .= $context->encloseFunction("---");
-                    if( $adoption )
+                    if ($adoption)
                         $lines .= $context->encloseFunction("---");
                 }
 
-                if(isset($object->secprofProfiles_obj['url-filtering']))
-                {
+                if (isset($object->secprofProfiles_obj['url-filtering'])) {
                     $lines .= $context->encloseFunction($object->secprofProfiles_obj['url-filtering']);
-                    if( $bestPractice || $visibility || $adoption )
-                    {
-                        if( is_object($object->secprofProfiles_obj['url-filtering']) )
+                    if ($bestPractice || $visibility || $adoption) {
+                        if (is_object($object->secprofProfiles_obj['url-filtering']))
                             $profile = $object->secprofProfiles_obj['url-filtering'];
                         else
                             $profile = $context->object->owner->owner->URLProfileStore->find($object->secprofProfiles_obj['url-filtering']);
-                        if( is_object( $profile ) )
-                        {
-                            if( $bestPractice )
-                            {
-                                if( $profile->is_best_practice() )
+                        if (is_object($profile)) {
+                            if ($bestPractice) {
+                                if ($profile->is_best_practice())
                                     $lines .= $context->encloseFunction($bp_text_yes);
                                 else
                                     $lines .= $context->encloseFunction($bp_text_no);
                             }
-                            if( $visibility )
-                            {
-                                if( $profile->is_visibility() )
+                            if ($visibility) {
+                                if ($profile->is_visibility())
                                     $lines .= $context->encloseFunction($bp_text_yes);
                                 else
                                     $lines .= $context->encloseFunction($bp_text_no);
                             }
-                            if( $adoption)
-                            {
+                            if ($adoption) {
                                 if ($profile->is_adoption())
                                     $lines .= $context->encloseFunction($bp_text_yes);
                                 else
                                     $lines .= $context->encloseFunction($bp_text_no);
                             }
-                        }
-                        else
-                        {
-                            if( $bestPractice)
+                        } else {
+                            if ($bestPractice)
                                 $lines .= $context->encloseFunction("- check not possible -");
-                            if( $visibility)
+                            if ($visibility)
                                 $lines .= $context->encloseFunction("- check not possible -");
-                            if( $adoption)
+                            if ($adoption)
                                 $lines .= $context->encloseFunction("- check not possible -");
                         }
-                    }
-                    else
-                    {
-                        if( $bestPractice )
+                    } else {
+                        if ($bestPractice)
                             $lines .= $context->encloseFunction($bp_text_no);
-                        if( $visibility )
+                        if ($visibility)
                             $lines .= $context->encloseFunction($bp_text_no);
-                        if( $adoption )
+                        if ($adoption)
                             $lines .= $context->encloseFunction($bp_text_no);
                     }
-                }
-                else
-                {
+                } else {
                     $lines .= $context->encloseFunction("---");
 
-                    if( $bestPractice )
+                    if ($bestPractice)
                         $lines .= $context->encloseFunction("---");
-                    if( $visibility )
+                    if ($visibility)
                         $lines .= $context->encloseFunction("---");
-                    if( $adoption )
+                    if ($adoption)
                         $lines .= $context->encloseFunction("---");
                 }
 
-                if(isset($object->secprofProfiles_obj['file-blocking']))
-                {
+                if (isset($object->secprofProfiles_obj['file-blocking'])) {
                     $lines .= $context->encloseFunction($object->secprofProfiles_obj['file-blocking']);
-                    if( $bestPractice || $visibility || $adoption )
-                    {
-                        if( is_object($object->secprofProfiles_obj['file-blocking']) )
+                    if ($bestPractice || $visibility || $adoption) {
+                        if (is_object($object->secprofProfiles_obj['file-blocking']))
                             $profile = $object->secprofProfiles_obj['file-blocking'];
                         else
                             $profile = $context->object->owner->owner->FileBlockingProfileStore->find($object->secprofProfiles_obj['file-blocking']);
-                        if( is_object( $profile ) )
-                        {
-                            if( $bestPractice )
-                            {
-                                if( $profile->is_best_practice() )
+                        if (is_object($profile)) {
+                            if ($bestPractice) {
+                                if ($profile->is_best_practice())
                                     $lines .= $context->encloseFunction($bp_text_yes);
                                 else
                                     $lines .= $context->encloseFunction($bp_text_no);
                             }
-                            if( $visibility )
-                            {
-                                if( $profile->is_visibility() )
+                            if ($visibility) {
+                                if ($profile->is_visibility())
                                     $lines .= $context->encloseFunction($bp_text_yes);
                                 else
                                     $lines .= $context->encloseFunction($bp_text_no);
                             }
-                            if( $adoption)
-                            {
+                            if ($adoption) {
                                 if ($profile->is_adoption())
                                     $lines .= $context->encloseFunction($bp_text_yes);
                                 else
                                     $lines .= $context->encloseFunction($bp_text_no);
                             }
-                        }
-                        else
-                        {
-                            if( $bestPractice)
+                        } else {
+                            if ($bestPractice)
                                 $lines .= $context->encloseFunction("- check not possible -");
-                            if( $visibility)
+                            if ($visibility)
                                 $lines .= $context->encloseFunction("- check not possible -");
-                            if( $adoption)
+                            if ($adoption)
                                 $lines .= $context->encloseFunction("- check not possible -");
                         }
-                    }
-                    else
-                    {
-                        if( $bestPractice )
+                    } else {
+                        if ($bestPractice)
                             $lines .= $context->encloseFunction($bp_text_no);
-                        if( $visibility )
+                        if ($visibility)
                             $lines .= $context->encloseFunction($bp_text_no);
-                        if( $adoption )
+                        if ($adoption)
                             $lines .= $context->encloseFunction($bp_text_no);
                     }
-                }
-                else
-                {
+                } else {
                     $lines .= $context->encloseFunction("---");
 
-                    if( $bestPractice )
+                    if ($bestPractice)
                         $lines .= $context->encloseFunction("---");
-                    if( $visibility )
+                    if ($visibility)
                         $lines .= $context->encloseFunction("---");
-                    if( $adoption )
+                    if ($adoption)
                         $lines .= $context->encloseFunction("---");
                 }
 
-                if(isset($object->secprofProfiles_obj['wildfire-analysis']))
-                {
-                    $lines .= $context->encloseFunction($object->secprofProfiles_obj['wildfire-analysis']);
-                    if( $bestPractice || $visibility || $adoption )
-                    {
+                if ($context->deviceType !== "scm") {
+                    if (isset($object->secprofProfiles_obj['wildfire-analysis'])) {
+                        $lines .= $context->encloseFunction($object->secprofProfiles_obj['wildfire-analysis']);
+                        if ($bestPractice || $visibility || $adoption) {
 
-                        if( is_object($object->secprofProfiles_obj['wildfire-analysis']) )
-                            $profile = $object->secprofProfiles_obj['wildfire-analysis'];
-                        else
-                            $profile = $context->object->owner->owner->WildfireProfileStore->find($object->secprofProfiles_obj['wildfire-analysis']);
-                        if( is_object( $profile ) )
-                        {
-                            if( $bestPractice )
-                            {
-                                if( $profile->is_best_practice() )
-                                    $lines .= $context->encloseFunction($bp_text_yes);
-                                else
-                                    $lines .= $context->encloseFunction($bp_text_no);
+                            if (is_object($object->secprofProfiles_obj['wildfire-analysis']))
+                                $profile = $object->secprofProfiles_obj['wildfire-analysis'];
+                            else
+                                $profile = $context->object->owner->owner->WildfireProfileStore->find($object->secprofProfiles_obj['wildfire-analysis']);
+                            if (is_object($profile)) {
+                                if ($bestPractice) {
+                                    if ($profile->is_best_practice())
+                                        $lines .= $context->encloseFunction($bp_text_yes);
+                                    else
+                                        $lines .= $context->encloseFunction($bp_text_no);
+                                }
+                                if ($visibility) {
+                                    if ($profile->is_visibility())
+                                        $lines .= $context->encloseFunction($bp_text_yes);
+                                    else
+                                        $lines .= $context->encloseFunction($bp_text_no);
+                                }
+                                if ($adoption) {
+                                    if ($profile->is_adoption())
+                                        $lines .= $context->encloseFunction($bp_text_yes);
+                                    else
+                                        $lines .= $context->encloseFunction($bp_text_no);
+                                }
+                            } else {
+                                if ($bestPractice)
+                                    $lines .= $context->encloseFunction("- check not possible -");
+                                if ($visibility)
+                                    $lines .= $context->encloseFunction("- check not possible -");
+                                if ($adoption)
+                                    $lines .= $context->encloseFunction("- check not possible -");
                             }
-                            if( $visibility )
-                            {
-                                if( $profile->is_visibility() )
-                                    $lines .= $context->encloseFunction($bp_text_yes);
-                                else
-                                    $lines .= $context->encloseFunction($bp_text_no);
-                            }
-                            if( $adoption)
-                            {
-                                if ($profile->is_adoption())
-                                    $lines .= $context->encloseFunction($bp_text_yes);
-                                else
-                                    $lines .= $context->encloseFunction($bp_text_no);
-                            }
+                        } else {
+                            if ($bestPractice)
+                                $lines .= $context->encloseFunction($bp_text_no);
+                            if ($visibility)
+                                $lines .= $context->encloseFunction($bp_text_no);
+                            if ($adoption)
+                                $lines .= $context->encloseFunction($bp_text_no);
                         }
-                        else
-                        {
-                            if( $bestPractice)
-                                $lines .= $context->encloseFunction("- check not possible -");
-                            if( $visibility)
-                                $lines .= $context->encloseFunction("- check not possible -");
-                            if( $adoption)
-                                $lines .= $context->encloseFunction("- check not possible -");
-                        }
-                    }
-                    else
-                    {
-                        if( $bestPractice )
-                            $lines .= $context->encloseFunction($bp_text_no);
-                        if( $visibility )
-                            $lines .= $context->encloseFunction($bp_text_no);
-                        if( $adoption )
-                            $lines .= $context->encloseFunction($bp_text_no);
+                    } else {
+                        $lines .= $context->encloseFunction("---");
+
+                        if ($bestPractice)
+                            $lines .= $context->encloseFunction("---");
+                        if ($visibility)
+                            $lines .= $context->encloseFunction("---");
+                        if ($adoption)
+                            $lines .= $context->encloseFunction("---");
                     }
                 }
-                else
-                {
-                    $lines .= $context->encloseFunction("---");
 
-                    if( $bestPractice )
-                        $lines .= $context->encloseFunction("---");
-                    if( $visibility )
-                        $lines .= $context->encloseFunction("---");
-                    if( $adoption )
-                        $lines .= $context->encloseFunction("---");
-                }
-
-                if(isset($object->secprofProfiles_obj['data-filtering']))
+                if (isset($object->secprofProfiles_obj['data-filtering']))
                     $lines .= $context->encloseFunction($object->secprofProfiles_obj['data-filtering']);
                 else
                     $lines .= $context->encloseFunction("---");
+
+                if ($context->deviceType === "scm")
+                {
+                    if (isset($object->secprofProfiles_obj['virus-and-wildfire-analysis'])) {
+                        $lines .= $context->encloseFunction($object->secprofProfiles_obj['virus-and-wildfire-analysis']);
+
+                        if ($bestPractice)
+                            $lines .= $context->encloseFunction("validation needed");
+                        if ($visibility)
+                            $lines .= $context->encloseFunction("validation needed");
+                        if ($adoption)
+                            $lines .= $context->encloseFunction("validation needed");
+                    } else {
+                        $lines .= $context->encloseFunction("---");
+
+                        if ($bestPractice)
+                            $lines .= $context->encloseFunction("---");
+                        if ($visibility)
+                            $lines .= $context->encloseFunction("---");
+                        if ($adoption)
+                            $lines .= $context->encloseFunction("---");
+                    }
+
+                    if (isset($object->secprofProfiles_obj['dns-security'])) {
+                        $lines .= $context->encloseFunction($object->secprofProfiles_obj['dns-security']);
+
+                        if ($bestPractice)
+                            $lines .= $context->encloseFunction("validation needed");
+                        if ($visibility)
+                            $lines .= $context->encloseFunction("validation needed");
+                        if ($adoption)
+                            $lines .= $context->encloseFunction("validation needed");
+                    } else {
+                        $lines .= $context->encloseFunction("---");
+
+                        if ($bestPractice)
+                            $lines .= $context->encloseFunction("---");
+                        if ($visibility)
+                            $lines .= $context->encloseFunction("---");
+                        if ($adoption)
+                            $lines .= $context->encloseFunction("---");
+                    }
+                }
+
 
                 if( $addWhereUsed )
                 {

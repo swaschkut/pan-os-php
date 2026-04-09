@@ -9,6 +9,8 @@ else
 {
     $projects_folder = dirname(__FILE__) ."/project";
 }
+#print "PROJECT: ".$projects_folder."\n";
+#/var/www/html/utils/api/v1/project
     /**
  * ISC License
  *
