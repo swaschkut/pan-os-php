@@ -179,6 +179,8 @@ class XMLISSUE extends UTIL
         $fixedReadOnlyTemplateStackobjects=0;
 
         $fixedImportNetworkInterfaceWithSameInterface = 0;
+        $fixedGroupIncludeListWithSameNode = 0;
+        $fixedScheduleCount = 0;
 
         $totalApplicationGroupsFixed = 0;
         $totalApplicationFiltersFixed = 0;
@@ -2006,39 +2008,48 @@ class XMLISSUE extends UTIL
         ////////////////////////////////////////////////////////////
         ///scanning for all import/network/interfaces
 
-        PH::print_stdout( " - Scanning for import/network/interface for duplicate entries ...");
+        PH::print_stdout(" - Scanning for import/network/interface for duplicate entries ...");
+        $importNodes = $this->xmlDoc->getElementsByTagName("import");
 
-        $nodeList = $this->xmlDoc->getElementsByTagName("import");
-        $nodeArray = iterator_to_array($nodeList);
-
-        foreach( $nodeArray as $item )
+        foreach ($importNodes as $import)
         {
-            $network = DH::findFirstElement("network", $item);
-            if( $network !== FALSE )
+            $network = DH::findFirstElement("network", $import);
+            if ($network)
             {
                 $interfaces = DH::findFirstElement("interface", $network);
-
-                if( $interfaces !== FALSE )
+                if ($interfaces)
                 {
-                    $interfaceArray = array();
-                    foreach( $interfaces->childNodes as $interface )
-                    {
-                        /** @var DOMElement $interface */
-                        if( $interface->nodeType != XML_ELEMENT_NODE )
-                            continue;
+                    $fixedImportNetworkInterfaceWithSameInterface += $this->removeDuplicateChildNodes($interfaces, "interface");
+                }
+            }
+        }
 
-                        $interfaceName = $interface->textContent;
-                        if( isset($interfaceArray[$interfaceName]) )
-                        {
-                            $xpath = $interface->getNodePath();
-                            //remove node
-                            PH::print_stdout( "    - remove interface: '<member>".$interfaceName."</member>' from xPath: '".$xpath."' as it is a duplicate entry ... *FIXED*");
-                            $interface->parentNode->removeChild($interface);
-                            $fixedImportNetworkInterfaceWithSameInterface++;
-                        }
-                        else
-                            $interfaceArray[$interfaceName] = $interfaceName;
-                    }
+        ////////////////////////////////////////////////////////////
+        ///scanning for all group-include-list
+
+        PH::print_stdout(" - Scanning for group-include-list for duplicate entries ...");
+        $groupLists = $this->xmlDoc->getElementsByTagName("group-include-list");
+
+        foreach ($groupLists as $groupList)
+        {
+            $fixedGroupIncludeListWithSameNode += $this->removeDuplicateChildNodes($groupList, "group-include-list entry");
+        }
+
+
+        ////////////////////////////////////////////////////////////
+        ///scanning for all schedule weekly
+        PH::print_stdout(" - Scanning for schedule weekly duplicates ...");
+
+        $weeklyNodes = $this->xmlDoc->getElementsByTagName("weekly");
+
+        foreach ($weeklyNodes as $weekly)
+        {
+            // Iterate through each day (sunday, monday, etc.)
+            foreach ($weekly->childNodes as $dayNode)
+            {
+                if ($dayNode->nodeType === XML_ELEMENT_NODE) {
+                    // Use the function on each day node
+                    $fixedScheduleCount += $this->removeDuplicateChildNodes($dayNode, "schedule member");
                 }
             }
         }
@@ -2117,6 +2128,10 @@ class XMLISSUE extends UTIL
         if( $fixedImportNetworkInterfaceWithSameInterface > 0 )
             PH::print_stdout( "\n - FIXED: import/network/interface : {$fixedImportNetworkInterfaceWithSameInterface}");
 
+        if( $fixedGroupIncludeListWithSameNode > 0 )
+            PH::print_stdout( "\n - FIXED: group-include-list : {$fixedGroupIncludeListWithSameNode}");
+        if( $fixedScheduleCount > 0 )
+            PH::print_stdout( "\n - FIXED: schedule recurring weekly : {$fixedScheduleCount}");
 
         PH::print_stdout( "\n\nIssues that could not be fixed (look in logs for FIX_MANUALLY keyword):");
 
@@ -2342,4 +2357,42 @@ class XMLISSUE extends UTIL
         }
     }
 
+    /**
+     * Removes duplicate child elements based on their text content.
+     * @return int The number of removed duplicates.
+     */
+    private function removeDuplicateChildNodes(DOMElement $parent, string $label): int
+    {
+        $seenEntries = [];
+        $toRemove = [];
+        $removedCount = 0;
+
+        // Pass 1: Identify duplicates
+        foreach ($parent->childNodes as $node)
+        {
+            if ($node->nodeType !== XML_ELEMENT_NODE)
+                continue;
+
+            $nodeValue = trim($node->textContent);
+
+            if (isset($seenEntries[$nodeValue]))
+                $toRemove[] = $node;
+            else
+                $seenEntries[$nodeValue] = true;
+        }
+
+        // Pass 2: Remove duplicates
+        foreach ($toRemove as $node)
+        {
+            $nodeName = $node->textContent;
+            $xpath = $node->getNodePath();
+
+            PH::print_stdout("    - remove $label: '<member>".$nodeName."</member>' from xPath: '".$xpath."' as it is a duplicate entry ... *FIXED*");
+
+            $node->parentNode->removeChild($node);
+            $removedCount++;
+        }
+
+        return $removedCount;
+    }
 }
