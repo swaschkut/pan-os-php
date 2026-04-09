@@ -1711,7 +1711,7 @@ class UTIL
 
             $this->objectsLocation = array();
 
-            $optArgArray = array( "includechilddgs", "excludemaindg" );
+            $optArgArray = array( "includechilddgs", "excludemaindg", "exclude-scm-ngfw-shared-and-childs", "exclude-scm-prisma-access-and-childs" );
             if( !in_array( $opt_argument, $optArgArray ) )
                 derr( "location has an optional argument which is not supported: '".$opt_argument."' - supported onces: ".implode( ", ", $optArgArray ), null, FALSE );
 

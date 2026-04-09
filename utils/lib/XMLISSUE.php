@@ -181,6 +181,7 @@ class XMLISSUE extends UTIL
         $fixedImportNetworkInterfaceWithSameInterface = 0;
 
         $totalApplicationGroupsFixed = 0;
+        $totalApplicationFiltersFixed = 0;
         $totalCustomUrlCategoryFixed = 0;
 
         $countRulesWithAppDefault = 0;
@@ -1047,6 +1048,15 @@ class XMLISSUE extends UTIL
             $applicationGroups = array();
             $applicationIndex = array();
             $this->checkRemoveDuplicateMembers( $locationNode, $locationName, 'application-group', $applicationGroups, $applicationIndex, $totalApplicationGroupsFixed );
+//
+            //
+            //
+            //
+            //
+            //
+            $applicationFilters = array();
+            $applicationFiltersIndex = array();
+            $this->checkRemoveDuplicateMembers( $locationNode, $locationName, 'application-filter', $applicationFilters, $applicationFiltersIndex, $totalApplicationFiltersFixed );
 
             //
             //
@@ -2060,6 +2070,8 @@ class XMLISSUE extends UTIL
 
         if( $totalApplicationGroupsFixed > 0 )
             PH::print_stdout( "\n - FIXED: duplicate application-group members: {$totalApplicationGroupsFixed}");
+        if( $totalApplicationFiltersFixed > 0 )
+            PH::print_stdout( "\n - FIXED: duplicate application-filter members: {$totalApplicationFiltersFixed}");
         if( $totalCustomUrlCategoryFixed > 0 )
             PH::print_stdout( " - FIXED: duplicate custom-url-category members: {$totalCustomUrlCategoryFixed}");
 
@@ -2293,7 +2305,14 @@ class XMLISSUE extends UTIL
                     //application-group and all other address-group/service-group
                     $staticNode = DH::findFirstElement('members', $node);
                     if( $staticNode === FALSE )
-                        continue;
+                    {
+                        //application-filter
+                        $staticNode = DH::findFirstElement('exclude', $node);
+
+                        if( $staticNode === FALSE )
+                            continue;
+                    }
+
                 }
 
                 $membersIndex = array();

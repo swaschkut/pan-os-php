@@ -3,6 +3,8 @@ CHANGELOG
 2.1.54
 UTIL:
 * type=key-manager | introduce add=scm-service-account file=FILENAME.csv
+* class UTIL working on SCM location=All:exclude-scm-ngfw-shared-and-childs / exclude-scm-prisma-access-and-childs
+* type=xml-issue | extend with application-filter find duplicates in exclude
 
 BUGFIX:
 
