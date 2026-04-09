@@ -1448,7 +1448,7 @@ class XMLISSUE extends UTIL
                                     $objectName = $objectNode->getAttribute('name');
 
                                     $this->check_name( $objectName, $objectNode, $natrule_name );
-                                    $this->check_name( $objectName, $objectNode, $natrule_wrong_name );
+                                    $this->check_wrong_name( $objectName, $objectNode, $natrule_wrong_name );
 
                                     $natRules[$objectName][] = $objectNode;
 
