@@ -33,8 +33,9 @@ class KEYMANGER extends UTIL
     - php " . basename(__FILE__) . " add=bpa-apikey 'apikey=[ PAN-OS BPA key can be request via: https://customersuccess.paloaltonetworks.com/api-signup/ ]' 
     - php " . basename(__FILE__) . " add=ldap-password 'apikey=[ LDAP password to interact with organisational ldap server ]'
     - php " . basename(__FILE__) . " add=gcp-mysql-password 'apikey=[ mysql password to interact with organisational GCP mysql server ]'
-    - php " . basename(__FILE__) . " add=maxmind-licensekey apikey=[ Maxmind license to download Maxmind geo2ip lite database. create free account: https://www.maxmind.com ]
-    - php " . basename(__FILE__) . " add=tsg_id{{TSGID}} 'apikey={{CLIENT_ID}}%{{CLIENT_SECRET}}'  | character '%' must be used as separator between client_id and client_secret";
+    - php " . basename(__FILE__) . " add=maxmind-licensekey apikey=[ Maxmind license to download Maxmind geo2ip lite database. create free account: https://www.maxmind.com ]'
+    - php " . basename(__FILE__) . " add=tsg_id{{TSGID}} 'apikey={{CLIENT_ID}}%{{CLIENT_SECRET}}'  | character '%' must be used as separator between client_id and client_secret'
+    - php " . basename(__FILE__) . " add=scm-service-account 'file=FILENAME.csv'  | as file argument please provide SCM created Service Account file";
 
         $this->prepareSupportedArgumentsArray();
         PH::processCliArgs();
@@ -133,6 +134,53 @@ class KEYMANGER extends UTIL
             PH::$JSON_TMP = array();
             PH::$JSON_TMP['header'] = $string;
             PH::$JSON_TMP[$addHost]['name'] = $addHost;
+
+            if( $addHost == "scm-service-account"  )
+            {
+                if( isset(PH::$args['file']) )
+                {
+                    $content = file_get_contents(PH::$args['file']);
+
+                    $lines = explode("\n", trim($content));
+
+                    // 2. Validate the Header
+                    if ($lines[0] !== "client_id,client_secret") {
+                        derr("Error: Header is invalid.", null, false);
+                    }
+
+                    // 3. Process the second line
+                    if( !isset($lines[1]))
+                        derr("'file=FILENAME.csv' is not a valid SCM Service Account file", null, false);
+
+                    $data = explode(",", $lines[1]);
+
+                    $clientID = $data[0];
+                    $clientSecret = $data[1];
+
+                    // 4. Extract TSGID
+                    // Using explode() to get the part after '@', then before the first '.'
+                    $parts = explode('@', $clientID);
+                    $domainParts = explode('.', $parts[1]);
+                    $tsgID = $domainParts[0];
+
+                    $addHost = "tsg_id".$tsgID;
+
+                    ////////////////
+
+                    $string = "requested to add Host/IP '{$addHost}'";
+
+                    PH::print_stdout( " - ".$string );
+
+                    PH::$JSON_TMP['header'] = $string;
+                    PH::$JSON_TMP[$addHost]['name'] = $addHost;
+
+                    PH::$args['apikey'] = $clientID."%".$clientSecret;
+                }
+                else
+                {
+                    derr( "'add=scm-service-account' requires additional argument called 'file=FILENAME.csv'", null, false );
+                }
+            }
 
             if( $addHost == "bpa-apikey" || $addHost == "license-apikey" || $addHost == "ldap-password" || $addHost == "maxmind-licensekey" || $addHost == "gcp-mysql-password" || strpos($addHost, "tsg_id" ) !== FALSE )
             {
@@ -375,6 +423,7 @@ class KEYMANGER extends UTIL
         $this->supportedArguments[] = array('niceName' => 'user', 'shortHelp' => 'can be used in combination with "add" argument to use specific Username provided as an argument.', 'argDesc' => '[USERNAME]');
         $this->supportedArguments[] = array('niceName' => 'pw', 'shortHelp' => 'can be used in combination with "add" argument to use specific Password provided as an argument.', 'argDesc' => '[PASSWORD]');
         $this->supportedArguments[] = array('niceName' => 'shadow-apikeynohidden', 'shortHelp' => 'send API-KEY in clear text via URL. this is needed for all PAN-OS version <9.0 if API mode is used. ');
+        $this->supportedArguments[] = array('niceName' => 'file', 'shortHelp' => 'in combination with argument add=scm-service-account this argument is needed', 'argDesc' => '[FILENAME]');
     }
 
 }
