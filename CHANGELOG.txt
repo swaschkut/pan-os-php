@@ -1,6 +1,14 @@
 CHANGELOG
 
-2.1.53
+2.1.54
+UTIL:
+
+BUGFIX:
+
+GENERAL:
+
+
+2.1.53 (20260409)
 UTIL:
 * adjustment to index_assessment.html
 * optimise type=rule/securityprofilegroup | for 'actions=exporttoexcel:file.html,visiblity|bestpractice'
