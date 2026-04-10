@@ -219,6 +219,13 @@ trait sp_action_spyware
             if( $tmp_rule->textContent == "yes")
                 $this->cloud_inline_analysis_enabled = true;
         }
+        else
+        {
+            $tmp_rule = DH::findFirstElementOrCreate('cloud-inline-analysis', $xml);
+            $tmp_rule->textContent = "no";
+
+            $this->cloud_inline_analysis_enabled = false;
+        }
     }
 
     public function load_from_domxml_spyware_threat_exception(DOMElement $xml ): void
@@ -283,7 +290,7 @@ trait sp_action_spyware
 
     public function load_from_domxml_spyware_botnet(DOMElement $xml ): void
     {
-        $tmp_rule = DH::findFirstElement('botnet-domains', $xml);
+        $tmp_rule = DH::findFirstElementorCreate('botnet-domains', $xml);
         if( $tmp_rule !== FALSE )
         {
             $this->additional['botnet-domain'] = array();

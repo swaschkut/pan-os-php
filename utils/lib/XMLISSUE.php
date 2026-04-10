@@ -24,6 +24,13 @@ class XMLISSUE extends UTIL
 
     public $pregMatch_pattern_wrong_characters = '/[^\w $\-.]/';
 
+    public $htmlOutput = [];
+    public $summaryOutput = [
+        'total_findings' => 0,
+        'fixed' => 0,
+        'not_fixed' => 0
+    ];
+
     public function utilStart()
     {
         $this->usageMsg = PH::boldText("USAGE: ") . "php " . basename(__FILE__) . " in=api://[MGMT-IP-Address] ";
@@ -47,6 +54,9 @@ class XMLISSUE extends UTIL
         $this->load_config();
 
         $this->main();
+
+        // Generate the HTML file at the end
+        $this->generateHTML();
 
         $this->save_our_work( true );
     }
@@ -2394,5 +2404,74 @@ class XMLISSUE extends UTIL
         }
 
         return $removedCount;
+    }
+
+
+
+    /**
+     * Helper to log findings to both stdout and HTML buffer
+     */
+    private function logFinding($location, $objectName, $issue, $isFixed = false)
+    {
+        PH::print_stdout("    - [{$location}] Object: {$objectName} | {$issue} " . ($isFixed ? "*FIXED*" : "*FIX_MANUALLY*"));
+
+        $this->htmlOutput[] = [
+            'location' => $location,
+            'object' => $objectName,
+            'issue' => $issue,
+            'status' => $isFixed ? 'Fixed' : 'Manual Fix Required'
+        ];
+
+        $this->summaryOutput['total_findings']++;
+        if ($isFixed) {
+            $this->summaryOutput['fixed']++;
+        } else {
+            $this->summaryOutput['not_fixed']++;
+        }
+    }
+
+    private function generateHTML()
+    {
+        $html = "<html><head><style>
+            table { border-collapse: collapse; width: 100%; margin-bottom: 30px; font-family: sans-serif; }
+            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+            th { background-color: #f2f2f2; }
+            .fixed { color: green; font-weight: bold; }
+            .manual { color: red; font-weight: bold; }
+            h2 { font-family: sans-serif; }
+        </style></head><body>";
+
+        // Table 1: Detailed Findings
+        $html .= "<h2>Detailed Misconfigurations</h2>";
+        $html .= "<table><tr><th>Location</th><th>Object</th><th>Issue Description</th><th>Status</th></tr>";
+
+        if (empty($this->htmlOutput)) {
+            $html .= "<tr><td colspan='4'>No misconfigurations found.</td></tr>";
+        } else {
+            foreach ($this->htmlOutput as $row) {
+                $class = ($row['status'] == 'Fixed') ? 'fixed' : 'manual';
+                $html .= "<tr>
+                    <td>{$row['location']}</td>
+                    <td>{$row['object']}</td>
+                    <td>{$row['issue']}</td>
+                    <td class='{$class}'>{$row['status']}</td>
+                </tr>";
+            }
+        }
+        $html .= "</table>";
+
+        // Table 2: Summary
+        $html .= "<h2>Summary Report</h2>";
+        $html .= "<table>
+            <tr><th>Metric</th><th>Count</th></tr>
+            <tr><td>Total Issues Found</td><td>{$this->summaryOutput['total_findings']}</td></tr>
+            <tr><td>Automatically Fixed</td><td class='fixed'>{$this->summaryOutput['fixed']}</td></tr>
+            <tr><td>Remaining (Manual Fix)</td><td class='manual'>{$this->summaryOutput['not_fixed']}</td></tr>
+        </table>";
+
+        $html .= "</body></html>";
+
+        file_put_contents("xml_issue_report.html", $html);
+        PH::print_stdout("\n** HTML Report generated: xml_issue_report.html **\n");
     }
 }
