@@ -96,8 +96,15 @@ class PH
                     $argc--;
                 continue;
             }
-            elseif( $arg == 'shadow-json' )
+            elseif( str_contains($arg, 'shadow-json') )
             {
+                //Todo: check if shadow-json=file
+                if( str_contains($arg, '=') )
+                {
+                    $arg_array = explode( "=", $arg );
+                    PH::$shadow_json_filename = $arg_array[1];
+                }
+
                 PH::disableOutputFormatting();
                 PH::$shadow_json = TRUE;
                 PH::$PANC_WARN = FALSE;
@@ -211,6 +218,7 @@ class PH
     public static $shadow_reducexml = FALSE;
 
     public static $shadow_json = FALSE;
+    public static $shadow_json_filename = FALSE;
 
     public static $shadow_bp_jsonfilename = FALSE;
     public static $shadow_bp_jsonfile = FALSE;

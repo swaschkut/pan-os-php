@@ -2623,7 +2623,17 @@ class UTIL
         {
             PH::$JSON_OUT['log'] = PH::$JSON_OUTlog;
             if( !isset(PH::$args['actions']) || ( isset(PH::$args['actions']) && PH::$args['actions'] !== "display-available" ) )
+            {
                 print json_encode( PH::$JSON_OUT, JSON_PRETTY_PRINT );
+
+                if( PH::$shadow_json_filename !== FALSE )
+                {
+                    $string = json_encode( PH::$JSON_OUT, JSON_PRETTY_PRINT );
+                    file_put_contents(PH::$shadow_json_filename, $string);
+                }
+
+            }
+
             #print json_encode( PH::$JSON_OUT, JSON_PRETTY_PRINT|JSON_FORCE_OBJECT );
         }
 
