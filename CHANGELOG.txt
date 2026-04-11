@@ -8,6 +8,7 @@ UTIL:
 
 BUGFIX:
 * type=securityprofile securityprofiletype=spyware actions=spyware.alert-only-set | bugfix to add default config
+* type=appid-toolbox phase=rule-cleaner | bugfix if API mode - to only send if security-rule store has a rule available
 
 GENERAL:
 * update Device App-ID to version: 9087-9979

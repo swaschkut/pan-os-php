@@ -375,21 +375,31 @@ trait lib_6_rule_cleaner
             {
                 if( $pan->isPanorama() )
                 {
-                    $xpath = $subSystem->getXPath() . '/pre-rulebase/security/rules';
-                    PH::print_stdout(" - syncing pre-rulebase ... ");
-                    $pan->connector->sendEditRequest($xpath, DH::dom_to_xml($subSystem->securityRules->xmlroot));
+                    //Todo: swaschkut 20260411
+                    /** @var DeviceGroup $subSystem */
+                    if( count($subSystem->securityRules->preRules() ) > 0 )
+                    {
+                        $xpath = $subSystem->getXPath() . '/pre-rulebase/security/rules';
+                        PH::print_stdout(" - syncing pre-rulebase ... ");
+                        $pan->connector->sendEditRequest($xpath, DH::dom_to_xml($subSystem->securityRules->xmlroot));
+                    }
 
-
-                    $xpath = $subSystem->getXPath() . '/post-rulebase/security/rules';
-                    PH::print_stdout(" - syncing post-rulebase ... ");
-                    $pan->connector->sendEditRequest($xpath, DH::dom_to_xml($subSystem->securityRules->postRulesRoot));
-
+                    if( count( $subSystem->securityRules->postRules() ) > 0)
+                    {
+                        $xpath = $subSystem->getXPath() . '/post-rulebase/security/rules';
+                        PH::print_stdout(" - syncing post-rulebase ... ");
+                        $pan->connector->sendEditRequest($xpath, DH::dom_to_xml($subSystem->securityRules->postRulesRoot));
+                    }
                 }
                 else
                 {
-                    $xpath = $subSystem->getXPath() . '/rulebase/security/rules';
-                    PH::print_stdout(" - syncing rulebase ... ");
-                    $pan->connector->sendEditRequest($xpath, DH::dom_to_xml($subSystem->securityRules->xmlroot));
+                    /** @var VirtualSystem $subSystem */
+                    if( count( $subSystem->securityRules->rules() ) > 0)
+                    {
+                        $xpath = $subSystem->getXPath() . '/rulebase/security/rules';
+                        PH::print_stdout(" - syncing rulebase ... ");
+                        $pan->connector->sendEditRequest($xpath, DH::dom_to_xml($subSystem->securityRules->xmlroot));
+                    }
 
                 }
             }
