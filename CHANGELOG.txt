@@ -6,6 +6,7 @@ UTIL:
 * class UTIL working on SCM location=All:exclude-scm-ngfw-shared-and-childs / exclude-scm-prisma-access-and-childs
 * type=xml-issue | extend with application-filter/group-include-list/'schedule recurring weekly' find duplicates in exclude
 * type=XYZ shadow-json=FILENAME | introduce extended argument to store JSON output to file
+* type=xml-issue | extend html-report with all available information
 
 BUGFIX:
 * type=securityprofile securityprofiletype=spyware actions=spyware.alert-only-set | bugfix to add default config

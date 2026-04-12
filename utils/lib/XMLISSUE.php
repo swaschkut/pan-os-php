@@ -31,6 +31,96 @@ class XMLISSUE extends UTIL
         'not_fixed' => 0
     ];
 
+    public $counters = array();
+
+    public $totalAddressGroupsFixed = 0;
+    public $totalServiceGroupsFixed = 0;
+
+
+    public $totalAddressGroupsSubGroupFixed = 0;
+    public $totalDynamicAddressGroupsTagFixed = 0;
+    public $totalServiceGroupsSubGroupFixed = 0;
+
+    public $countDuplicateAddressObjects = 0;
+    public $fixedDuplicateAddressObjects = 0;
+    public $countDuplicateServiceObjects = 0;
+    public $fixedDuplicateServiceObjects = 0;
+
+    public $countDuplicateTagObjects = 0;
+    public $fixedDuplicateTagObjects = 0;
+
+    public $countDuplicateSecRuleObjects = 0;
+    public $countDuplicateNATRuleObjects = 0;
+
+    public $countSecRuleObjectsWithDoubleSpaces = 0;
+    public $countSecRuleObjectsWithWrongCharacters = 0;
+    public $countNATRuleObjectsWithDoubleSpaces = 0;
+    public $countNATRuleObjectsWithWrongCharacters = 0;
+
+    public $countMissconfiguredSecRuleServiceObjects=0;
+    public $fixedSecRuleServiceObjects=0;
+    public $countMissconfiguredSecRuleApplicationObjects=0;
+    public $fixedSecRuleApplicationObjects=0;
+
+    public $countMissconfiguredSecRuleTagObjects=0;
+    public $fixedSecRuleTagObjects=0;
+
+    public $countMissconfiguredSecRuleSourceObjects=0;
+    public $fixedSecRuleSourceObjects=0;
+    public $countMissconfiguredSecRuleDestinationObjects=0;
+    public $fixedSecRuleDestinationObjects=0;
+
+    public $countMissconfiguredSecRuleFromObjects=0;
+    public $fixedSecRuleFromObjects=0;
+    public $countMissconfiguredSecRuleToObjects=0;
+    public $fixedSecRuleToObjects=0;
+
+    public $countMissconfiguredSecRuleCategoryObjects=0;
+    public $fixedSecRuleCategoryObjects=0;
+
+    public $countMissconfiguredNatRuleSourceObjects=0;
+    public $fixedNatRuleSourceObjects=0;
+    public $countMissconfiguredNatRuleDestinationObjects=0;
+    public $fixedNatRuleDestinationObjects=0;
+
+    public $countMissconfiguredAddressObjects = 0;
+    public $countMissconfiguredAddressRegionObjects = 0;
+    public $countAddressObjectsWithDoubleSpaces = 0;
+    public $countAddressObjectsWithWrongCharacters = 0;
+
+    public $countMissconfiguredServiceObjects = 0;
+    public $countServiceObjectsWithDoubleSpaces = 0;
+    public $countServiceObjectsWithWrongCharacters = 0;
+    public $countServiceObjectsWithNameappdefault = 0;
+    public $fixedServiceObjectsWithSameTag = 0;
+
+    public $countMissconfiguredSecruleSourceUserObjects = 0;
+    public $fixedSecruleSourceUserObjects = 0;
+
+    public $countEmptyAddressGroup = 0;
+    public $countEmptyServiceGroup = 0;
+
+    public $service_app_default_available = false;
+    public $countMissconfiguredSecRuleServiceAppDefaultObjects = 0;
+
+    public $fixedReadOnlyDeviceGroupobjects=0;
+    public $fixedReadOnlyAddressGroupobjects=0;
+    public $fixedReadOnlyTemplateobjects=0;
+    public $fixedReadOnlyTemplateStackobjects=0;
+
+    public $fixedImportNetworkInterfaceWithSameInterface = 0;
+    public $fixedGroupIncludeListWithSameNode = 0;
+    public $fixedScheduleCount = 0;
+
+    public $totalApplicationGroupsFixed = 0;
+    public $totalApplicationFiltersFixed = 0;
+    public $totalCustomUrlCategoryFixed = 0;
+
+    public $countRulesWithAppDefault = 0;
+
+    public $address_region = array();
+    public $address_name = array();
+
     public function utilStart()
     {
         $this->usageMsg = PH::boldText("USAGE: ") . "php " . basename(__FILE__) . " in=api://[MGMT-IP-Address] ";
@@ -63,7 +153,8 @@ class XMLISSUE extends UTIL
 
     public function main()
     {
-
+        $this->counters['fixed'] = array();
+        $this->counters['manual'] = array();
 
 ///////////////////////////////////////////////////////////
 //clean stage config / delete all <deleted> entries
@@ -113,93 +204,6 @@ class XMLISSUE extends UTIL
 //
 
 
-        $totalAddressGroupsFixed = 0;
-        $totalServiceGroupsFixed = 0;
-
-
-        $totalAddressGroupsSubGroupFixed = 0;
-        $totalDynamicAddressGroupsTagFixed = 0;
-        $totalServiceGroupsSubGroupFixed = 0;
-
-        $countDuplicateAddressObjects = 0;
-        $fixedDuplicateAddressObjects = 0;
-        $countDuplicateServiceObjects = 0;
-        $fixedDuplicateServiceObjects = 0;
-
-        $countDuplicateTagObjects = 0;
-        $fixedDuplicateTagObjects = 0;
-
-        $countDuplicateSecRuleObjects = 0;
-        $countDuplicateNATRuleObjects = 0;
-
-        $countSecRuleObjectsWithDoubleSpaces = 0;
-        $countSecRuleObjectsWithWrongCharacters = 0;
-        $countNATRuleObjectsWithDoubleSpaces = 0;
-        $countNATRuleObjectsWithWrongCharacters = 0;
-
-        $countMissconfiguredSecRuleServiceObjects=0;
-        $fixedSecRuleServiceObjects=0;
-        $countMissconfiguredSecRuleApplicationObjects=0;
-        $fixedSecRuleApplicationObjects=0;
-
-        $countMissconfiguredSecRuleTagObjects=0;
-        $fixedSecRuleTagObjects=0;
-
-        $countMissconfiguredSecRuleSourceObjects=0;
-        $fixedSecRuleSourceObjects=0;
-        $countMissconfiguredSecRuleDestinationObjects=0;
-        $fixedSecRuleDestinationObjects=0;
-
-        $countMissconfiguredSecRuleFromObjects=0;
-        $fixedSecRuleFromObjects=0;
-        $countMissconfiguredSecRuleToObjects=0;
-        $fixedSecRuleToObjects=0;
-
-        $countMissconfiguredSecRuleCategoryObjects=0;
-        $fixedSecRuleCategoryObjects=0;
-
-        $countMissconfiguredNatRuleSourceObjects=0;
-        $fixedNatRuleSourceObjects=0;
-        $countMissconfiguredNatRuleDestinationObjects=0;
-        $fixedNatRuleDestinationObjects=0;
-
-        $countMissconfiguredAddressObjects = 0;
-        $countMissconfiguredAddressRegionObjects = 0;
-        $countAddressObjectsWithDoubleSpaces = 0;
-        $countAddressObjectsWithWrongCharacters = 0;
-
-        $countMissconfiguredServiceObjects = 0;
-        $countServiceObjectsWithDoubleSpaces = 0;
-        $countServiceObjectsWithWrongCharacters = 0;
-        $countServiceObjectsWithNameappdefault = 0;
-        $fixedServiceObjectsWithSameTag = 0;
-
-        $countMissconfiguredSecruleSourceUserObjects = 0;
-        $fixedSecruleSourceUserObjects = 0;
-
-        $countEmptyAddressGroup = 0;
-        $countEmptyServiceGroup = 0;
-
-        $service_app_default_available = false;
-        $countMissconfiguredSecRuleServiceAppDefaultObjects = 0;
-
-        $fixedReadOnlyDeviceGroupobjects=0;
-        $fixedReadOnlyAddressGroupobjects=0;
-        $fixedReadOnlyTemplateobjects=0;
-        $fixedReadOnlyTemplateStackobjects=0;
-
-        $fixedImportNetworkInterfaceWithSameInterface = 0;
-        $fixedGroupIncludeListWithSameNode = 0;
-        $fixedScheduleCount = 0;
-
-        $totalApplicationGroupsFixed = 0;
-        $totalApplicationFiltersFixed = 0;
-        $totalCustomUrlCategoryFixed = 0;
-
-        $countRulesWithAppDefault = 0;
-
-        $address_region = array();
-        $address_name = array();
 
 
 
@@ -326,8 +330,15 @@ class XMLISSUE extends UTIL
             PH::print_stdout( " - Scanning for address / addressgroup with same name as REGION objects...");
             foreach( $address_region as $objectName => $node )
             {
-                PH::print_stdout( "    - address object '{$objectName}' from DG/VSYS {$locationName} has lower precedence as REGION object ... (*FIX_MANUALLY*) at XML line #{$node->getLineNo()}");
-                $countMissconfiguredAddressRegionObjects++;
+                $text = "address object '{$objectName}' from DG/VSYS {$locationName} ";
+                $text1 = "has lower precedence as REGION object";
+                $text1 .= " at XML line #{$node->getLineNo()}";
+                $text2 = " ... (*FIX_MANUALLY*)";
+                PH::print_stdout( "    - ".$text.$text1.$text2);
+                $this->logFinding($locationName, $objectName, $text1, false);
+
+                $this->counters['manual']['Address Region misconfiguration'] = ($this->counters['manual']['Address Region misconfiguration'] ?? 0) + 1;
+                $this->countMissconfiguredAddressRegionObjects++;
             }
 
             //
@@ -336,8 +347,15 @@ class XMLISSUE extends UTIL
             PH::print_stdout( " - Scanning for address / addressgroup with double spaces in name...");
             foreach( $address_name as $objectName => $node )
             {
-                PH::print_stdout( "    - address object '{$objectName}' from DG/VSYS {$locationName} has '  ' double Spaces in name, this causes problems by copy&past 'set commands' ... (*FIX_MANUALLY*) at XML line #{$node->getLineNo()}");
-                $countAddressObjectsWithDoubleSpaces++;
+                $text = "address object '{$objectName}' from DG/VSYS {$locationName} ";
+                $text1 = "has '  ' double Spaces in name, this causes problems by copy&past 'set commands'";
+                $text1 .= " at XML line #{$node->getLineNo()}";
+                $text2 = " ... (*FIX_MANUALLY*)";
+                PH::print_stdout( "    - ".$text.$text1.$text2);
+                $this->logFinding($locationName, $objectName, $text1, false);
+
+                $this->counters['manual']['Address Objects doubleSpace'] = ($this->counters['manual']['Address Objects doubleSpace'] ?? 0) + 1;
+                $this->countAddressObjectsWithDoubleSpaces++;
             }
 
             //
@@ -351,8 +369,13 @@ class XMLISSUE extends UTIL
                 $findings = array();
                 foreach( $matches as $match )
                     $findings[$match[0]] = $match[0];
-                #print_r($findings);
-                PH::print_stdout( "    - address object '{$objectName}' from DG/VSYS {$locationName} has wrong characters in name, '".implode('', $findings)."' this causes commit issues  (*FIX_MANUALLY*) at XML line #{$node->getLineNo()}");
+
+                $text = "address object '{$objectName}' from DG/VSYS {$locationName} ";
+                $text1 = "has wrong characters in name, '".implode('', $findings)."' this causes commit issues";
+                $text1 .= " at XML line #{$node->getLineNo()}";
+                $text2 = " ... (*FIX_MANUALLY*)";
+                PH::print_stdout( "    - ".$text.$text1.$text2);
+                $this->logFinding($locationName, $objectName, $text1, false);
 
                 $newName = $objectName;
                 foreach( $findings as $replace )
@@ -362,8 +385,8 @@ class XMLISSUE extends UTIL
                 //xml-issue can not work on objects here :-)
                 #$node->setName($newName);
 
-
-                $countAddressObjectsWithWrongCharacters++;
+                $this->counters['manual']['Address Objects wrongCharacters'] = ($this->counters['manual']['Address Objects wrongCharacters'] ?? 0) + 1;
+                $this->countAddressObjectsWithWrongCharacters++;
             }
 
             //
@@ -380,9 +403,15 @@ class XMLISSUE extends UTIL
                     $ip_wildcardNode = DH::findFirstElement('ip-wildcard', $node);
                     if( $ip_netmaskNode === FALSE && $ip_rangeNode === FALSE && $fqdnNode === FALSE && $ip_wildcardNode === FALSE )
                     {
-                        PH::print_stdout( "    - address object '{$objectName}' from DG/VSYS {$locationName} has missing IP configuration ... (*FIX_MANUALLY*)");
-                        PH::print_stdout( "       - type 'Address' at XML line #{$node->getLineNo()}");
-                        $countMissconfiguredAddressObjects++;
+                        $text = "address object '{$objectName}' from DG/VSYS {$locationName} ";
+                        $text1 = "has missing IP configuration";
+                        $text1 .= " at XML line #{$node->getLineNo()}";
+                        $text2 = " ... (*FIX_MANUALLY*)";
+                        PH::print_stdout( "    - ".$text.$text1.$text2);
+                        $this->logFinding($locationName, $objectName, $text1, false);
+
+                        $this->counters['fixed']['Address Objects misconfigured'] = ($this->counters['fixed']['Address Objects misconfigured'] ?? 0) + 1;
+                        $this->countMissconfiguredAddressObjects++;
                     }
                 }
             }
@@ -399,9 +428,15 @@ class XMLISSUE extends UTIL
                     $dynamicNode = DH::findFirstElement('dynamic', $node);
                     if( $staticNode === FALSE && $dynamicNode === FALSE )
                     {
-                        PH::print_stdout( "    - addressgroup object '{$objectName}' from DG/VSYS {$locationName} has no member ... (*FIX_MANUALLY*)");
-                        PH::print_stdout( "       - type 'AddressGroup' at XML line #{$node->getLineNo()}");
-                        $countEmptyAddressGroup++;
+                        $text = "addressgroup object '{$objectName}' from DG/VSYS {$locationName} ";
+                        $text1 = "has no member";
+                        $text1 .= " at XML line #{$node->getLineNo()}";
+                        $text2 = " ... (*FIX_MANUALLY*)";
+                        PH::print_stdout( "    - ".$text.$text1.$text2);
+                        $this->logFinding($locationName, $objectName, $text1, false);
+
+                        $this->counters['manual']['Address Group empty'] = ($this->counters['manual']['Address Group empty'] ?? 0) + 1;
+                        $this->countEmptyAddressGroup++;
                     }
                 }
             }
@@ -433,9 +468,16 @@ class XMLISSUE extends UTIL
 
                         if( isset($membersIndex[$memberName]) )
                         {
-                            PH::print_stdout( "    - group '{$objectName}' from DG/VSYS {$locationName} has a duplicate member named '{$memberName}' ... *FIXED*");
+                            $text = "addressgroup '{$objectName}' from DG/VSYS {$locationName} ";
+                            $text1 = "has a duplicate member named '{$memberName}'";
+                            $text2 = " ... *FIXED*";
+                            PH::print_stdout( "    - ".$text.$text1.$text2);
+                            $this->logFinding($locationName, $objectName, $text1, true);
+
                             $nodesToRemove[] = $staticNodeMember;
-                            $totalAddressGroupsFixed++;
+
+                            $this->counters['fixed']['Address Group'] = ($this->counters['fixed']['Address Group'] ?? 0) + 1;
+                            $this->totalAddressGroupsFixed++;
                             continue;
                         }
 
@@ -473,9 +515,16 @@ class XMLISSUE extends UTIL
 
                         if( strcmp( $objectName, $memberName) === 0 )
                         {
-                            PH::print_stdout( "    - group '{$objectName}' from DG/VSYS {$locationName} has itself as member '{$memberName}' ... *FIXED*");
+                            $text = "group '{$objectName}' from DG/VSYS {$locationName} ";
+                            $text1 = "has itself as member '{$memberName}'";
+                            $text2 = " ... *FIXED*";
+                            PH::print_stdout( "    - ".$text.$text1.$text2);
+                            $this->logFinding($locationName, $objectName, $text1, true);
+
                             $staticNodeMember->parentNode->removeChild($staticNodeMember);
-                            $totalAddressGroupsSubGroupFixed++;
+
+                            $this->counters['fixed']['Address Group SubGroup'] = ($this->counters['fixed']['Address Group SubGroup'] ?? 0) + 1;
+                            $this->totalAddressGroupsSubGroupFixed++;
                             continue;
                         }
                     }
@@ -570,11 +619,17 @@ class XMLISSUE extends UTIL
 
                     if( $filterType == "single" && in_array( array_key_first($tagArray), $filterArray ) )
                     {
-                        PH::print_stdout( "    - group '{$objectName}' from DG/VSYS {$locationName} has its own filter as tag: '{$memberName}' ... *FIXED*");
+                        $text = "group '{$objectName}' from DG/VSYS {$locationName} ";
+                        $text1 = "has its own filter as tag: '{$memberName}'";
+                        $text2 = " ... *FIXED*";
+                        PH::print_stdout( "    - ".$text.$text1.$text2);
+                        $this->logFinding($locationName, $objectName, $text1, true);
 
                         $node = reset( $tagArray );
                         $node->parentNode->removeChild($node);
-                        $totalDynamicAddressGroupsTagFixed++;
+
+                        $this->counters['fixed']['Address Group Dynamic'] = ($this->counters['fixed']['Address Group Dynamic'] ?? 0) + 1;
+                        $this->totalDynamicAddressGroupsTagFixed++;
                         continue;
                     }
                     elseif( $filterType == "and" )
@@ -584,9 +639,17 @@ class XMLISSUE extends UTIL
 
                         if( count( $filterArray ) == 0 )
                         {
-                            PH::print_stdout( "    - group '{$objectName}' from DG/VSYS {$locationName} has its own filter as tag: '{$memberName}' ... *FIXED*");
+                            $text = "group '{$objectName}' from DG/VSYS {$locationName} ";
+                            $text1 = "has its own filter as tag: '{$memberName}'";
+                            $text2 = " ... *FIXED*";
+                            PH::print_stdout( "    - ".$text.$text1.$text2);
+                            $this->logFinding($locationName, $objectName, $text1, true);
+
                             $value->parentNode->removeChild($value);
-                            $totalDynamicAddressGroupsTagFixed++;
+
+
+                            $this->counters['fixed']['Address Group Dynamic Tag'] = ($this->counters['fixed']['Address Group Dynamic Tag'] ?? 0) + 1;
+                            $this->totalDynamicAddressGroupsTagFixed++;
                             continue;
                         }
                     }
@@ -596,9 +659,16 @@ class XMLISSUE extends UTIL
                         {
                             if( in_array( $tag, $filterArray ) )
                             {
-                                PH::print_stdout( "    - group '{$objectName}' from DG/VSYS {$locationName} has its own filter as tag: '{$memberName}' ... *FIXED*");
+                                $text = "group '{$objectName}' from DG/VSYS {$locationName} ";
+                                $text1 = "has its own filter as tag: '{$memberName}'";
+                                $text2 = " ... *FIXED*";
+                                PH::print_stdout( "    - ".$text.$text1.$text2);
+                                $this->logFinding($locationName, $objectName, $text1, true);
+
                                 $tagNodeMember->parentNode->removeChild($tagNodeMember);
-                                $totalDynamicAddressGroupsTagFixed++;
+
+                                $this->counters['fixed']['Address Group Dynamic Tag'] = ($this->counters['fixed']['Address Group Dynamic Tag'] ?? 0) + 1;
+                                $this->totalDynamicAddressGroupsTagFixed++;
                                 continue;
                             }
                         }
@@ -627,10 +697,11 @@ class XMLISSUE extends UTIL
                     if( $ip_netmaskNode === FALSE )
                         $ip_netmaskNode = DH::findFirstElement('ip-range', $objectNode);
                     $ip_fqdnNode = DH::findFirstElement('fqdn', $objectNode);
+
                     if( $ip_netmaskNode !== FALSE )
                     {
                         /** @var DOMElement $objectNode */
-                        $text = "       - type 'Address' value: '" . $ip_netmaskNode->nodeValue . "' at XML line #{$objectNode->getLineNo()}";
+                        $text = "type 'Address' value: '" . $ip_netmaskNode->nodeValue . "' at XML line #{$objectNode->getLineNo()}";
 
                         //Todo: check if address object value is same, then delete it
                         //TODO: VALIDATION needed if working as expected
@@ -643,24 +714,32 @@ class XMLISSUE extends UTIL
                         if( !isset($tmp_addr_array[$tmp_ipvalue]) )
                         {
                             $tmp_addr_array[$tmp_ipvalue] = $tmp_ipvalue;
-                            $countDuplicateAddressObjects++;
+                            $this->countDuplicateAddressObjects++;
                         }
                         else
                         {
                             $objectNode->parentNode->removeChild($objectNode);
-                            $text .= PH::boldText(" (removed - no manual fix needed)");
-                            $countDuplicateAddressObjects--;
-                            $fixedDuplicateAddressObjects++;
-                        }
 
-                        PH::print_stdout( $text );
+                            $this->logFinding($locationName, $objectName, $text, true);
+                            $text .= PH::boldText(" (removed - no manual fix needed)");
+
+                            $this->countDuplicateAddressObjects--;
+                            $this->counters['fixed']['Address Object duplicate'] = ($this->counters['fixed']['Address Object duplicate'] ?? 0) + 1;
+                            $this->fixedDuplicateAddressObjects++;
+                        }
+                        PH::print_stdout( "       - ".$text );
                     }
                     elseif( $ip_fqdnNode !== FALSE )
                     {
                         /** @var DOMElement $objectNode */
-                        PH::print_stdout( "       - type 'Address' value: '" . $ip_fqdnNode->nodeValue . "' at XML line #{$objectNode->getLineNo()}");
 
-                        $countDuplicateAddressObjects++;
+                        $text = "type 'Address' value: '" . $ip_fqdnNode->nodeValue . "' at XML line #{$objectNode->getLineNo()}";
+
+                        $this->logFinding($locationName, $objectName, $text, false);
+
+                        PH::print_stdout( "       - ".$text );
+
+                        $this->countDuplicateAddressObjects++;
                     }
                     else
                         continue;
@@ -686,7 +765,7 @@ class XMLISSUE extends UTIL
                     }
 
                     /** @var DOMElement $objectNode */
-                    $text = "       - type 'AddressGroup' at XML line #{$objectNode->getLineNo()}";
+                    $text = "type 'AddressGroup' at XML line #{$objectNode->getLineNo()}";
 
                     //Todo: check if servicegroup object value is same, then delete it
                     //TODO: VALIDATION needed if working as expected
@@ -694,18 +773,22 @@ class XMLISSUE extends UTIL
                     if( !isset($tmp_srv_array[$txt]) )
                     {
                         $tmp_srv_array[$txt] = $txt;
-                        $countDuplicateAddressObjects++;
+                        $this->countDuplicateAddressObjects++;
                     }
                     else
                     {
                         $objectNode->parentNode->removeChild($objectNode);
+
+                        $this->logFinding($locationName, $objectName, $text, true);
                         $text .= PH::boldText(" (removed - no manual fix needed)");
-                        $countDuplicateAddressObjects--;
-                        $fixedDuplicateAddressObjects++;
+
+                        $this->countDuplicateAddressObjects--;
+                        $this->counters['fixed']['Address Object duplicate'] = ($this->counters['fixed']['Address Object duplicate'] ?? 0) + 1;
+                        $this->fixedDuplicateAddressObjects++;
                     }
-                    PH::print_stdout( $text);
+                    PH::print_stdout( "       - ".$text);
                 }
-                #$countDuplicateAddressObjects--;
+                #$this->countDuplicateAddressObjects--;
             }
 
 
@@ -732,7 +815,7 @@ class XMLISSUE extends UTIL
                     $this->check_service_name_appdefault( $objectName, $objectNode, $service_name_appdefault );
 
                     if( strcmp( $objectName, "application-default") === 0 )
-                        $service_app_default_available = true;
+                        $this->service_app_default_available = true;
 
                     $serviceObjects[$objectName][] = $objectNode;
 
@@ -779,8 +862,14 @@ class XMLISSUE extends UTIL
             PH::print_stdout( " - Scanning for service / servicegroup with double spaces in name...");
             foreach( $service_name as $objectName => $node )
             {
-                PH::print_stdout( "    - service object '{$objectName}' from DG/VSYS {$locationName} has '  ' double Spaces in name, this causes problems by copy&past 'set commands' ... (*FIX_MANUALLY*) at XML line #{$node->getLineNo()}");
-                $countServiceObjectsWithDoubleSpaces++;
+                $text = "service object '{$objectName}' from DG/VSYS {$locationName} ";
+                $text1 = "has '  ' double Spaces in name, this causes problems by copy&past 'set commands' at XML line #{$node->getLineNo()}";
+
+                $this->logFinding($locationName, $objectName, $text1, false);
+                $text2 = " ... (*FIX_MANUALLY*)";
+                PH::print_stdout( "    - ".$text.$text1.$text2 );
+
+                $this->countServiceObjectsWithDoubleSpaces++;
             }
 
             //
@@ -796,7 +885,9 @@ class XMLISSUE extends UTIL
                     $findings[$match[0]] = $match[0];
                 #print_r($findings);
 
-                PH::print_stdout( "    - service object '{$objectName}' from DG/VSYS {$locationName} has wrong characters in name, '".implode('', $findings)."' this causes commit issues  (*FIX_MANUALLY*) at XML line #{$node->getLineNo()}");
+                $text = "    - service object '{$objectName}' from DG/VSYS {$locationName} has wrong characters in name, '".implode('', $findings)."' this causes commit issues  (*FIX_MANUALLY*) at XML line #{$node->getLineNo()}";
+                PH::print_stdout( $text);
+                $this->logFinding($locationName, $objectName, $text, false);
 
                 $newName = $objectName;
                 foreach( $findings as $replace )
@@ -804,7 +895,7 @@ class XMLISSUE extends UTIL
 
                 PH::print_stdout( "       oldname: '".$objectName."' | suggested newname: '".$newName."'\n" );
 
-                $countServiceObjectsWithWrongCharacters++;
+                $this->countServiceObjectsWithWrongCharacters++;
             }
 
             //
@@ -814,8 +905,12 @@ class XMLISSUE extends UTIL
             foreach( $service_name_appdefault as $objectName => $node )
             {
                 //PH::print_stdout( "    - service object '{$objectName}' from DG/VSYS {$locationName} has name 'application-default' this causes problems with the default behaviour of the firewall ... (*FIX_MANUALLY*) at XML line #{$node->getLineNo()}");
-                PH::print_stdout( "    - service object 'application-default' from DG/VSYS {$locationName} has name 'application-default' this causes problems with the default behaviour of the firewall ... (*FIX_MANUALLY*) at XML line #{$node->getLineNo()}");
-                $countServiceObjectsWithNameappdefault++;
+                $text = "    - service object 'application-default' from DG/VSYS {$locationName} has name 'application-default' this causes problems with the default behaviour of the firewall ... (*FIX_MANUALLY*) at XML line #{$node->getLineNo()}";
+                PH::print_stdout( $text);
+
+                $this->logFinding($locationName, $objectName, $text, false);
+
+                $this->countServiceObjectsWithNameappdefault++;
             }
 
             //
@@ -829,9 +924,15 @@ class XMLISSUE extends UTIL
                     $protocolNode = DH::findFirstElement('protocol', $node);
                     if( $protocolNode === FALSE )
                     {
-                        PH::print_stdout( "    - service object '{$objectName}' from DG/VSYS {$locationName} has missing protocol configuration ... (*FIX_MANUALLY*)");
-                        PH::print_stdout( "       - type 'Service' at XML line #{$node->getLineNo()}");
-                        $countMissconfiguredServiceObjects++;
+                        $text = "    - service object '{$objectName}' from DG/VSYS {$locationName} has missing protocol configuration ... (*FIX_MANUALLY*)";
+                        PH::print_stdout( $text );
+                        $text = "       - type 'Service' at XML line #{$node->getLineNo()}";
+                        PH::print_stdout( $text );
+
+                        $this->logFinding($locationName, $objectName, $text, false);
+
+                        $this->counters['manual']['Service Object misconfigured'] = ($this->counters['manual']['Service Object misconfigured'] ?? 0) + 1;
+                        $this->countMissconfiguredServiceObjects++;
                     }
                 }
             }
@@ -850,7 +951,7 @@ class XMLISSUE extends UTIL
                         $tagArray = array();
                         #PH::print_stdout( "    - service object '{$objectName}' from DG/VSYS {$locationName} has missing protocol configuration ... (*FIX_MANUALLY*)");
                         #PH::print_stdout( "       - type 'Service' at XML line #{$node->getLineNo()}");
-                        #$countMissconfiguredServiceObjects++;
+                        #$this->countMissconfiguredServiceObjects++;
 
                         foreach( $tagNode->childNodes as $tagNodeMember )
                         {
@@ -862,9 +963,18 @@ class XMLISSUE extends UTIL
                             $tagName = $tagNodeMember->textContent;
                             if( isset( $tagArray[$tagName] ) )
                             {
-                                PH::print_stdout( "    - service object '{$objectName}' from DG/VSYS {$locationName} has duplicate TAG: ".$tagName." configured ... *FIXED*");
+                                $text = "service object '{$objectName}' from DG/VSYS {$locationName} ";
+                                $text1 = "has duplicate TAG: ".$tagName." configured";
+
                                 $tagNodeMember->parentNode->removeChild($tagNodeMember);
-                                $fixedServiceObjectsWithSameTag++;
+
+                                $this->logFinding($locationName, $objectName, $text1, true);
+
+                                $text2 = " ... *FIXED*";
+                                PH::print_stdout( "    - ".$text.$text1.$text2);
+
+                                $this->counters['fixed']['Service Object SameTag'] = ($this->counters['fixed']['Service Object SameTag'] ?? 0) + 1;
+                                $this->fixedServiceObjectsWithSameTag++;
                             }
                             else
                             {
@@ -886,9 +996,15 @@ class XMLISSUE extends UTIL
                     $staticNode = DH::findFirstElement('members', $node);
                     if( $staticNode === FALSE )
                     {
-                        PH::print_stdout( "    - servicegroup object '{$objectName}' from DG/VSYS {$locationName} has no member ... (*FIX_MANUALLY*)");
-                        PH::print_stdout( "       - type 'ServiceGroup' at XML line #{$node->getLineNo()}");
-                        $countEmptyServiceGroup++;
+                        $text = "    - servicegroup object '{$objectName}' from DG/VSYS {$locationName} has no member ... (*FIX_MANUALLY*)";
+                        PH::print_stdout( $text );
+                        $text = "       - type 'ServiceGroup' at XML line #{$node->getLineNo()}";
+                        PH::print_stdout( $text );
+
+                        $this->logFinding($locationName, $objectName, $text, false);
+
+                        $this->counters['manual']['Service Group empty'] = ($this->counters['manual']['Service Group empty'] ?? 0) + 1;
+                        $this->countEmptyServiceGroup++;
                     }
                 }
             }
@@ -916,9 +1032,17 @@ class XMLISSUE extends UTIL
 
                         if( isset($membersIndex[$memberName]) )
                         {
-                            PH::print_stdout( "    - group '{$objectName}' from DG/VSYS {$locationName} has a duplicate member named '{$memberName}' ... *FIXED*");
+                            $text = "group '{$objectName}' from DG/VSYS {$locationName} ";
+                            $text1 = "has a duplicate member named '{$memberName}'";
+
                             $nodesToRemove[] = $staticNodeMember;
-                            $totalServiceGroupsFixed++;
+                            $this->logFinding($locationName, $objectName, $text1, true);
+
+                            $text2 = " ... *FIXED*";
+                            PH::print_stdout( "    - ".$text.$text1.$text2 );
+
+                            $this->counters['fixed']['Service Group'] = ($this->counters['fixed']['Service Group'] ?? 0) + 1;
+                            $this->totalServiceGroupsFixed++;
                             continue;
                         }
 
@@ -957,9 +1081,17 @@ class XMLISSUE extends UTIL
 
                         if( strcmp( $objectName, $memberName) === 0 )
                         {
-                            PH::print_stdout( "    - group '{$objectName}' from DG/VSYS {$locationName} has itself as member '{$memberName}' ... *FIXED*");
+                            $text = "group '{$objectName}' from DG/VSYS {$locationName} ";
+                            $text1 = "has itself as member '{$memberName}'";
+
                             $staticNodeMember->parentNode->removeChild($staticNodeMember);
-                            $totalServiceGroupsSubGroupFixed++;
+                            $this->logFinding($locationName, $objectName, $text, true);
+
+                            $text2 = " ... *FIXED*";
+                            PH::print_stdout( "    - ".$text.$text1.$text2 );
+
+                            $this->counters['fixed']['Service Group SubGroup'] = ($this->counters['fixed']['Service Group SubGroup'] ?? 0) + 1;
+                            $this->totalServiceGroupsSubGroupFixed++;
                             continue;
                         }
                     }
@@ -984,7 +1116,7 @@ class XMLISSUE extends UTIL
                         continue;
 
                     /** @var DOMElement $objectNode */
-                    $text = "       - type 'Service' value: '" . $protocolNode->nodeValue . "' at XML line #{$objectNode->getLineNo()}";
+                    $text = "type 'Service' value: '" . $protocolNode->nodeValue . "' at XML line #{$objectNode->getLineNo()}";
 
                     //Todo: check if service object value is same, then delete it
                     //TODO: VALIDATION needed if working as expected
@@ -992,16 +1124,20 @@ class XMLISSUE extends UTIL
                     if( !isset($tmp_srv_array[$protocolNode->nodeValue]) )
                     {
                         $tmp_srv_array[$protocolNode->nodeValue] = $protocolNode->nodeValue;
-                        $countDuplicateServiceObjects++;
+                        $this->countDuplicateServiceObjects++;
                     }
                     else
                     {
                         $objectNode->parentNode->removeChild($objectNode);
+
+                        $this->logFinding($locationName, $objectName, $text, true);
                         $text .= PH::boldText(" (removed - no manual fix needed)");
-                        $countDuplicateServiceObjects--;
-                        $fixedDuplicateServiceObjects++;
+
+                        $this->countDuplicateServiceObjects--;
+                        $this->counters['fixed']['Service Object duplicate'] = ($this->counters['fixed']['Service Object duplicate'] ?? 0) + 1;
+                        $this->fixedDuplicateServiceObjects++;
                     }
-                    PH::print_stdout( $text);
+                    PH::print_stdout( "       - ".$text);
                 }
 
                 $tmp_srv_array = array();
@@ -1022,7 +1158,7 @@ class XMLISSUE extends UTIL
                     }
 
                     /** @var DOMElement $objectNode */
-                    $text = "       - type 'ServiceGroup' at XML line #{$objectNode->getLineNo()}";
+                    $text = "type 'ServiceGroup' at XML line #{$objectNode->getLineNo()}";
 
                     //Todo: check if servicegroup object value is same, then delete it
                     //TODO: VALIDATION needed if working as expected
@@ -1031,24 +1167,28 @@ class XMLISSUE extends UTIL
                     if( !isset($tmp_srv_array[$protocolNode->nodeValue]) )
                     {
                         $tmp_srv_array[$protocolNode->nodeValue] = $protocolNode->nodeValue;
-                        $countDuplicateServiceObjects++;
+                        $this->countDuplicateServiceObjects++;
                     }
                     */
                     if( !isset($tmp_srv_array[$txt]) )
                     {
                         $tmp_srv_array[$txt] = $txt;
-                        $countDuplicateAddressObjects++;
+                        $this->countDuplicateAddressObjects++;
                     }
                     else
                     {
                         $objectNode->parentNode->removeChild($objectNode);
-                        $text .= PH::boldText("(removed - no manual fix needed)" );
-                        $countDuplicateServiceObjects--;
-                        $fixedDuplicateServiceObjects++;
+
+                        $this->logFinding($locationName, $objectName, $text, true);
+                        $text .= PH::boldText(" (removed - no manual fix needed)");
+
+                        $this->countDuplicateServiceObjects--;
+                        $this->counters['fixed']['Service Object duplicate'] = ($this->counters['fixed']['Service Object duplicate'] ?? 0) + 1;
+                        $this->fixedDuplicateServiceObjects++;
                     }
-                    PH::print_stdout( $text);
+                    PH::print_stdout( "       - ".$text);
                 }
-                #$countDuplicateServiceObjects--;
+                #$this->countDuplicateServiceObjects--;
             }
 
             //
@@ -1059,7 +1199,7 @@ class XMLISSUE extends UTIL
             //
             $applicationGroups = array();
             $applicationIndex = array();
-            $this->checkRemoveDuplicateMembers( $locationNode, $locationName, 'application-group', $applicationGroups, $applicationIndex, $totalApplicationGroupsFixed );
+            $this->checkRemoveDuplicateMembers( $locationNode, $locationName, 'application-group', $applicationGroups, $applicationIndex, $this->totalApplicationGroupsFixed );
 //
             //
             //
@@ -1068,7 +1208,7 @@ class XMLISSUE extends UTIL
             //
             $applicationFilters = array();
             $applicationFiltersIndex = array();
-            $this->checkRemoveDuplicateMembers( $locationNode, $locationName, 'application-filter', $applicationFilters, $applicationFiltersIndex, $totalApplicationFiltersFixed );
+            $this->checkRemoveDuplicateMembers( $locationNode, $locationName, 'application-filter', $applicationFilters, $applicationFiltersIndex, $this->totalApplicationFiltersFixed );
 
             //
             //
@@ -1076,7 +1216,7 @@ class XMLISSUE extends UTIL
             $customURLcategoryIndex = array();
             $locationNode_profiles = DH::findFirstElement('profiles', $locationNode);
             if( $locationNode_profiles !== FALSE )
-                $this->checkRemoveDuplicateMembers( $locationNode_profiles, $locationName, 'custom-url-category', $customURLcategory, $customURLcategoryIndex, $totalCustomUrlCategoryFixed );
+                $this->checkRemoveDuplicateMembers( $locationNode_profiles, $locationName, 'custom-url-category', $customURLcategory, $customURLcategoryIndex, $this->totalCustomUrlCategoryFixed );
 
             //
             //
@@ -1169,9 +1309,13 @@ class XMLISSUE extends UTIL
                                             //Secrule service has twice same service added
                                             $text = "     - Secrule: ".$objectName." has same service defined twice: ".$objectServiceName;
                                             $objectNode_services->removeChild($objectService);
+
+                                            $this->logFinding($locationName, $objectName, $text, true);
+
                                             $text .= PH::boldText(" (removed - no manual fix needed)");
                                             PH::print_stdout( $text );
-                                            $fixedSecRuleServiceObjects++;
+                                            $this->counters['fixed']['SecRule Service Object duplicate'] = ($this->counters['fixed']['SecRule Service Object duplicate'] ?? 0) + 1;
+                                            $this->fixedSecRuleServiceObjects++;
                                         }
                                         else
                                             $secRuleServices[$objectServiceName] = $objectService;
@@ -1209,8 +1353,10 @@ class XMLISSUE extends UTIL
                                                 $text = "     - Secrule: ".$objectName." has same tag defined twice: ".$objectTagName;
                                                 $objectNode_tags->removeChild($objectTag);
                                                 $text .= PH::boldText(" (removed - no manual fix needed)");
+                                                $this->logFinding($locationName, $objectName, $text, true);
                                                 PH::print_stdout( $text );
-                                                $fixedSecRuleTagObjects++;
+                                                $this->counters['fixed']['SecRule Tag Object duplicate'] = ($this->counters['fixed']['SecRule Tag Object duplicate'] ?? 0) + 1;
+                                                $this->fixedSecRuleTagObjects++;
                                             }
                                             else
                                                 $secRuleTags[$objectTagName] = $objectTag;
@@ -1231,9 +1377,12 @@ class XMLISSUE extends UTIL
                                         {
                                             $text = "     - Secrule: ".$objectName." has same application defined twice: ".$objectApplicationName;
                                             $objectNode_applications->removeChild($objectApplication);
+
+                                            $this->logFinding($locationName, $objectName, $text, true);
                                             $text .=PH::boldText(" (removed)")."\n";
                                             PH::print_stdout( $text );
-                                            $fixedSecRuleApplicationObjects++;
+                                            $this->counters['fixed']['SecRule Application Object duplicate'] = ($this->counters['fixed']['SecRule Application Object duplicate'] ?? 0) + 1;
+                                            $this->fixedSecRuleApplicationObjects++;
                                         }
                                         else
                                             $secRuleApplication[$objectApplicationName] = $objectApplication;
@@ -1265,9 +1414,12 @@ class XMLISSUE extends UTIL
                                             {
                                                 $text = "     - Secrule: ".$objectName." has same category defined twice: ".$objectCategoryName;
                                                 $objectNode_category->removeChild($objectCategory);
-                                                $text .=PH::boldText(" (removed)");
+
+                                                $this->logFinding($locationName, $objectName, $text, true);
+                                                $text .= PH::boldText(" (removed)");
                                                 PH::print_stdout( $text );
-                                                $fixedSecRuleCategoryObjects++;
+                                                $this->counters['fixed']['SecRule Category Object duplicate'] = ($this->counters['fixed']['SecRule Category Object duplicate'] ?? 0) + 1;
+                                                $this->fixedSecRuleCategoryObjects++;
                                             }
                                             else
                                             {
@@ -1297,9 +1449,12 @@ class XMLISSUE extends UTIL
                                         {
                                             $text = "     - Secrule: ".$objectName." has same source defined twice: ".$objectSourceName;
                                             $objectNode_sources->removeChild($objectSource);
-                                            $text .=PH::boldText(" (removed)");
+
+                                            $this->logFinding($locationName, $objectName, $text, true);
+                                            $text .= PH::boldText(" (removed)");
                                             PH::print_stdout( $text );
-                                            $fixedSecRuleSourceObjects++;
+                                            $this->counters['fixed']['SecRule Source Object duplicate'] = ($this->counters['fixed']['SecRule Source Object duplicate'] ?? 0) + 1;
+                                            $this->fixedSecRuleSourceObjects++;
                                         }
                                         else
                                         {
@@ -1329,9 +1484,12 @@ class XMLISSUE extends UTIL
                                         {
                                             $text = "     - Secrule: ".$objectName." has same destination defined twice: ".$objectDestinationName;
                                             $objectNode_destinations->removeChild($objectDestination);
+
+                                            $this->logFinding($locationName, $objectName, $text, true);
                                             $text .= PH::boldText(" (removed)")."\n";
                                             PH::print_stdout( $text );
-                                            $fixedSecRuleDestinationObjects++;
+                                            $this->counters['fixed']['SecRule Destination Object duplicate'] = ($this->counters['fixed']['SecRule Destination Object duplicate'] ?? 0) + 1;
+                                            $this->fixedSecRuleDestinationObjects++;
                                         }
                                         else
                                             $secRuleDestination[$objectDestinationName] = $objectDestination;
@@ -1358,9 +1516,11 @@ class XMLISSUE extends UTIL
                                         {
                                             $text = "     - Secrule: ".$objectName." has same from defined twice: ".$objectFromName;
                                             $objectNode_froms->removeChild($objectFrom);
+                                            $this->logFinding($locationName, $objectName, $text, true);
                                             $text .= PH::boldText(" (removed)")."\n";
                                             PH::print_stdout( $text );
-                                            $fixedSecRuleFromObjects++;
+                                            $this->counters['fixed']['SecRule From Object duplicate'] = ($this->counters['fixed']['SecRule From Object duplicate'] ?? 0) + 1;
+                                            $this->fixedSecRuleFromObjects++;
                                         }
                                         else
                                             $secRuleFrom[$objectFromName] = $objectFrom;
@@ -1387,9 +1547,12 @@ class XMLISSUE extends UTIL
                                         {
                                             $text = "     - Secrule: ".$objectName." has same to defined twice: ".$objectToName;
                                             $objectNode_tos->removeChild($objectTo);
+
+                                            $this->logFinding($locationName, $objectName, $text, true);
                                             $text .= PH::boldText(" (removed)")."\n";
                                             PH::print_stdout( $text );
-                                            $fixedSecRuleToObjects++;
+                                            $this->counters['fixed']['SecRule To Object duplicate'] = ($this->counters['fixed']['SecRule To Object duplicate'] ?? 0) + 1;
+                                            $this->fixedSecRuleToObjects++;
                                         }
                                         else
                                             $secRuleTo[$objectToName] = $objectTo;
@@ -1418,9 +1581,12 @@ class XMLISSUE extends UTIL
                                             {
                                                 $text = "     - Secrule: ".$objectName." has same source-user defined twice: ".$objectSourceUserName;
                                                 $objectNode_source_users->removeChild($objectSourceUser);
+
+                                                $this->logFinding($locationName, $objectName, $text, true);
                                                 $text .= PH::boldText(" (removed)")."\n";
                                                 PH::print_stdout( $text );
-                                                $fixedSecruleSourceUserObjects++;
+                                                $this->counters['fixed']['SecRule SourceUser Object duplicate'] = ($this->counters['fixed']['SecRule SourceUser Object duplicate'] ?? 0) + 1;
+                                                $this->fixedSecruleSourceUserObjects++;
                                             }
                                             else
                                                 $secRuleSourceUser[$objectSourceUserName] = $objectSourceUser;
@@ -1482,9 +1648,12 @@ class XMLISSUE extends UTIL
                                         {
                                             $text = "     - Secrule: ".$objectName." has same source defined twice: ".$objectSourceName;
                                             $objectNode_sources->removeChild($objectSource);
-                                            $text .=PH::boldText(" (removed)");
+
+                                            $this->logFinding($locationName, $objectName, $text, true);
+                                            $text .= PH::boldText(" (removed)");
                                             PH::print_stdout( $text );
-                                            $fixedNatRuleSourceObjects++;
+                                            $this->counters['fixed']['NatRule Source Object duplicate'] = ($this->counters['fixed']['NatRule Source Object duplicate'] ?? 0) + 1;
+                                            $this->fixedNatRuleSourceObjects++;
                                         }
                                         else
                                         {
@@ -1514,9 +1683,12 @@ class XMLISSUE extends UTIL
                                         {
                                             $text = "     - Secrule: ".$objectName." has same destination defined twice: ".$objectDestinationName;
                                             $objectNode_destinations->removeChild($objectDestination);
+
+                                            $this->logFinding($locationName, $objectName, $text, true);
                                             $text .= PH::boldText(" (removed)")."\n";
                                             PH::print_stdout( $text );
-                                            $fixedNatRuleDestinationObjects++;
+                                            $this->counters['fixed']['NatRule Destination Object duplicate'] = ($this->counters['fixed']['NatRule Destination Object duplicate'] ?? 0) + 1;
+                                            $this->fixedNatRuleDestinationObjects++;
                                         }
                                         else
                                             $natRuleDestination[$objectDestinationName] = $objectDestination;
@@ -1545,15 +1717,21 @@ class XMLISSUE extends UTIL
                     PH::print_stdout( " - Scanning for Security Rules with double spaces in name...");
                     foreach( $secrule_name as $objectName => $node )
                     {
-                        PH::print_stdout( "    - Security Rules object '{$objectName}' from DG/VSYS {$locationName} has '  ' double Spaces in name, this causes problems by copy&past 'set commands' ... (*FIX_MANUALLY*) at XML line #{$node->getLineNo()}");
-                        $countSecRuleObjectsWithDoubleSpaces++;
+                        $text = "    - Security Rules object '{$objectName}' from DG/VSYS {$locationName} has '  ' double Spaces in name, this causes problems by copy&past 'set commands' ... (*FIX_MANUALLY*) at XML line #{$node->getLineNo()}";
+                        PH::print_stdout( $text);
+                        $this->logFinding($locationName, $objectName, $text, false);
+                        $this->counters['fixed']['NatRule Name doubleSpace'] = ($this->counters['fixed']['NatRule Name doubleSpace'] ?? 0) + 1;
+                        $this->countSecRuleObjectsWithDoubleSpaces++;
                     }
 
                     PH::print_stdout( " - Scanning for Security Rules with wrong characters in name...");
                     foreach( $secrule_wrong_name as $objectName => $node )
                     {
-                        PH::print_stdout( "    - Security Rules object '{$objectName}' from DG/VSYS {$locationName} has wrong characters in name ... (*FIX_MANUALLY*) at XML line #{$node->getLineNo()}");
-                        $countSecRuleObjectsWithWrongCharacters++;
+                        $text = "    - Security Rules object '{$objectName}' from DG/VSYS {$locationName} has wrong characters in name ... (*FIX_MANUALLY*) at XML line #{$node->getLineNo()}";
+                        PH::print_stdout( $text);
+                        $this->logFinding($locationName, $objectName, $text, false);
+                        $this->counters['fixed']['NatRule Name wrongCharacter'] = ($this->counters['fixed']['NatRule Name wrongCharacter'] ?? 0) + 1;
+                        $this->countSecRuleObjectsWithWrongCharacters++;
                     }
 
                     PH::print_stdout( " - Scanning for duplicate Security Rules...");
@@ -1578,16 +1756,18 @@ class XMLISSUE extends UTIL
                             {
                                 $objectNode->setAttribute('name', $newName);
                                 $text .= PH::boldText(" - new name: " . $newName . " (fixed)");
+                                $this->logFinding($locationName, $objectName, $text, true);
                                 PH::print_stdout( $text );
                             }
                             else
                             {
                                 $text .= " - Rulename can not be fixed: '" . $newName . "' is also available";
+                                $this->logFinding($locationName, $objectName, $text, false);
                                 PH::print_stdout( $text );
                             }
 
-
-                            $countDuplicateSecRuleObjects++;
+                            $this->counters['manual']['SecRule duplicate'] = ($this->counters['manual']['SecRule duplicate'] ?? 0) + 1;
+                            $this->countDuplicateSecRuleObjects++;
                         }
                     }
 
@@ -1597,14 +1777,20 @@ class XMLISSUE extends UTIL
                     PH::print_stdout( " - Scanning for NAT Rules with double spaces in name...");
                     foreach( $natrule_name as $objectName => $node )
                     {
-                        PH::print_stdout( "    - NAT Rules object '{$objectName}' from DG/VSYS {$locationName} has '  ' double Spaces in name, this causes problems by copy&past 'set commands' ... (*FIX_MANUALLY*) at XML line #{$node->getLineNo()}");
-                        $countNATRuleObjectsWithDoubleSpaces++;
+                        $text = "    - NAT Rules object '{$objectName}' from DG/VSYS {$locationName} has '  ' double Spaces in name, this causes problems by copy&past 'set commands' ... (*FIX_MANUALLY*) at XML line #{$node->getLineNo()}";
+                        PH::print_stdout( $text);
+                        $this->logFinding($locationName, $objectName, $text, false);
+                        $this->counters['manual']['NatRule Name doubleSpace'] = ($this->counters['manual']['NatRule Name doubleSpace'] ?? 0) + 1;
+                        $this->countNATRuleObjectsWithDoubleSpaces++;
                     }
                     PH::print_stdout( " - Scanning for NAT Rules with wrong characters in name...");
                     foreach( $natrule_wrong_name as $objectName => $node )
                     {
-                        PH::print_stdout( "    - NAT Rules object '{$objectName}' from DG/VSYS {$locationName} has wrong characters in name ... (*FIX_MANUALLY*) at XML line #{$node->getLineNo()}");
-                        $countNATRuleObjectsWithWrongCharacters++;
+                        $text = "    - NAT Rules object '{$objectName}' from DG/VSYS {$locationName} has wrong characters in name ... (*FIX_MANUALLY*) at XML line #{$node->getLineNo()}";
+                        PH::print_stdout( $text);
+                        $this->logFinding($locationName, $objectName, $text, false);
+                        $this->counters['manual']['NatRule Name wrongCharacter'] = ($this->counters['manual']['NatRule Name wrongCharacter'] ?? 0) + 1;
+                        $this->countNATRuleObjectsWithWrongCharacters++;
                     }
 
                     PH::print_stdout( "\n - Scanning for duplicate NAT Rules...");
@@ -1621,7 +1807,7 @@ class XMLISSUE extends UTIL
                         {
 
                             /** @var DOMElement $objectNode */
-                            $text = "       - type 'NAT Rules' at XML line #{$objectNode->getLineNo()}";
+                            $text = "type 'NAT Rules' at XML line #{$objectNode->getLineNo()}";
 
 
                             $newName = $key . $objectNode->getAttribute('name');
@@ -1629,98 +1815,145 @@ class XMLISSUE extends UTIL
                             {
                                 $objectNode->setAttribute('name', $newName);
                                 $text .= PH::boldText(" - new name: " . $newName . " (fixed)\n");
-                                PH::print_stdout( $text );
+                                $this->logFinding($locationName, $objectName, $text, true);
+                                PH::print_stdout( "       - ".$text );
                             }
                             else
                             {
                                 $text .= " - Rulename can not be fixed: '" . $newName . "' is also available";
-                                PH::print_stdout( $text );
+                                $this->logFinding($locationName, $objectName, $text, false);
+                                PH::print_stdout( "       - ".$text );
                             }
 
-
-                            $countDuplicateNATRuleObjects++;
+                            $this->counters['manual']['NatRule duplicate'] = ($this->counters['manual']['NatRule duplicate'] ?? 0) + 1;
+                            $this->countDuplicateNATRuleObjects++;
                         }
                     }
 
                     PH::print_stdout( "\n - Scanning for missconfigured From Field in Security Rules...");
                     foreach( $secRuleFromIndex as $objectName => $objectNode )
                     {
-                        PH::print_stdout( "   - found Security Rule named '{$objectName}' that has from 'any' and additional from configured at XML line #{$objectNode->getLineNo()}");
-                        $countMissconfiguredSecRuleFromObjects++;
+                        $text = "found Security Rule named '{$objectName}' that has from 'any' and additional from configured at XML line #{$objectNode->getLineNo()}";
+                        PH::print_stdout( "   - ".$text );
+                        $this->logFinding($locationName, $objectName, $text, false);
+
+                        $this->counters['manual']['SecRule From misconfigured'] = ($this->counters['manual']['SecRule From misconfigured'] ?? 0) + 1;
+                        $this->countMissconfiguredSecRuleFromObjects++;
                     }
 
                     PH::print_stdout( " - Scanning for missconfigured To Field in Security Rules...");
                     foreach( $secRuleToIndex as $objectName => $objectNode )
                     {
-                        PH::print_stdout( "   - found Security Rule named '{$objectName}' that has to 'any' and additional to configured at XML line #{$objectNode->getLineNo()}");
-                        $countMissconfiguredSecRuleToObjects++;
+                        $text = "found Security Rule named '{$objectName}' that has to 'any' and additional to configured at XML line #{$objectNode->getLineNo()}";
+                        PH::print_stdout( "   - ".$text );
+                        $this->logFinding($locationName, $objectName, $text, false);
+
+                        $this->counters['manual']['SecRule To misconfigured'] = ($this->counters['manual']['SecRule To misconfigured'] ?? 0) + 1;
+                        $this->countMissconfiguredSecRuleToObjects++;
                     }
 
                     PH::print_stdout( "\n - Scanning for missconfigured Source Field in Security Rules...");
                     foreach( $secRuleSourceIndex as $objectName => $objectNode )
                     {
-                        PH::print_stdout( "   - found Security Rule named '{$objectName}' that has source 'any' and additional source configured at XML line #{$objectNode->getLineNo()}");
-                        $countMissconfiguredSecRuleSourceObjects++;
+                        $text = "found Security Rule named '{$objectName}' that has source 'any' and additional source configured at XML line #{$objectNode->getLineNo()}";
+                        PH::print_stdout( $text);
+                        $this->logFinding($locationName, $objectName, $text, false);
+
+                        $this->counters['manual']['SecRule Source misconfigured'] = ($this->counters['manual']['SecRule Source misconfigured'] ?? 0) + 1;
+                        $this->countMissconfiguredSecRuleSourceObjects++;
                     }
 
                     PH::print_stdout( " - Scanning for missconfigured Destination Field in Security Rules...");
                     foreach( $secRuleDestinationIndex as $objectName => $objectNode )
                     {
-                        PH::print_stdout( "   - found Security Rule named '{$objectName}' that has destination 'any' and additional destination configured at XML line #{$objectNode->getLineNo()}");
-                        $countMissconfiguredSecRuleDestinationObjects++;
+                        $text = "found Security Rule named '{$objectName}' that has destination 'any' and additional destination configured at XML line #{$objectNode->getLineNo()}";
+                        PH::print_stdout( "   - ".$text);
+                        $this->logFinding($locationName, $objectName, $text, false);
+
+                        $this->counters['manual']['SecRule Destination misconfigured'] = ($this->counters['manual']['SecRule Destination misconfigured'] ?? 0) + 1;
+                        $this->countMissconfiguredSecRuleDestinationObjects++;
                     }
 
                     PH::print_stdout( " - Scanning for missconfigured Service Field in Security Rules...");
                     foreach( $secRuleServiceIndex as $objectName => $objectNode )
                     {
-                        PH::print_stdout( "   - found Security Rule named '{$objectName}' that has service 'application-default' and an additional service configured at XML line #{$objectNode->getLineNo()}");
-                        $countMissconfiguredSecRuleServiceObjects++;
+                        $text = "found Security Rule named '{$objectName}' that has service 'application-default' and an additional service configured at XML line #{$objectNode->getLineNo()}";
+                        PH::print_stdout( "   - ".$text);
+                        $this->logFinding($locationName, $objectName, $text, false);
+
+                        $this->counters['manual']['SecRule Service misconfigured'] = ($this->counters['manual']['SecRule Service misconfigured'] ?? 0) + 1;
+                        $this->countMissconfiguredSecRuleServiceObjects++;
                     }
 
 
                     PH::print_stdout( " - Scanning for missconfigured Application Field in Security Rules...");
                     foreach( $secRuleApplicationIndex as $objectName => $objectNode )
                     {
-                        PH::print_stdout( "   - found Security Rule named '{$objectName}' that has application 'any' and additional application configured at XML line #{$objectNode->getLineNo()}");
-                        $countMissconfiguredSecRuleApplicationObjects++;
+                        $text = "found Security Rule named '{$objectName}' that has application 'any' and additional application configured at XML line #{$objectNode->getLineNo()}";
+                        PH::print_stdout( "   - ".$text);
+                        $this->logFinding($locationName, $objectName, $text, false);
+
+                        $this->counters['manual']['SecRule Application misconfigured'] = ($this->counters['manual']['SecRule Application misconfigured'] ?? 0) + 1;
+                        $this->countMissconfiguredSecRuleApplicationObjects++;
                     }
 
                     PH::print_stdout( " - Scanning for missconfigured Category Field in Security Rules...");
                     foreach( $secRuleCategoryIndex as $objectName => $objectNode )
                     {
                         #PH::print_stdout( "   - found Security Rule named '{$objectName}' that has XML element 'category' but not child element 'member' configured at XML line #{$objectNode->getLineNo()}");
-                        PH::print_stdout( "   - found Security Rule named '{$objectName}' that has category 'any' and additional category configured at XML line #{$objectNode->getLineNo()}");
-                        $countMissconfiguredSecRuleCategoryObjects++;
+                        $text = "found Security Rule named '{$objectName}' that has category 'any' and additional category configured at XML line #{$objectNode->getLineNo()}";
+                        PH::print_stdout( "   - ".$text);
+                        $this->logFinding($locationName, $objectName, $text, false);
+
+                        $this->counters['manual']['SecRule Category misconfigured'] = ($this->counters['manual']['SecRule Categroy misconfigured'] ?? 0) + 1;
+                        $this->countMissconfiguredSecRuleCategoryObjects++;
                     }
 
                     PH::print_stdout( " - Scanning for missconfigured SourceUser Field in Security Rules...");
                     foreach( $secRuleSourceUserIndex as $objectName => $objectNode )
                     {
-                        PH::print_stdout( "   - found Security Rule named '{$objectName}' that has source-user 'any' and additional source-user configured at XML line #{$objectNode->getLineNo()}");
-                        $countMissconfiguredSecruleSourceUserObjects++;
+                        $text = "found Security Rule named '{$objectName}' that has source-user 'any' and additional source-user configured at XML line #{$objectNode->getLineNo()}";
+                        PH::print_stdout( "   - ".$text);
+                        $this->logFinding($locationName, $objectName, $text, false);
+
+                        $this->counters['manual']['SecRule SourceUser misconfigured'] = ($this->counters['manual']['SecRule SourceUser misconfigured'] ?? 0) + 1;
+                        $this->countMissconfiguredSecruleSourceUserObjects++;
                     }
 
                     PH::print_stdout( "\n - Scanning for missconfigured Source Field in NAT Rules...");
                     foreach( $natRuleSourceIndex as $objectName => $objectNode )
                     {
-                        PH::print_stdout( "   - found NAT Rule named '{$objectName}' that has source 'any' and additional source configured at XML line #{$objectNode->getLineNo()}");
-                        $countMissconfiguredNatRuleSourceObjects++;
+                        $text = "found NAT Rule named '{$objectName}' that has source 'any' and additional source configured at XML line #{$objectNode->getLineNo()}";
+                        PH::print_stdout( "   - ".$text);
+                        $this->logFinding($locationName, $objectName, $text, false);
+
+                        $this->counters['manual']['NatRule Source misconfigured'] = ($this->counters['manual']['NatRule Source misconfigured'] ?? 0) + 1;
+                        $this->countMissconfiguredNatRuleSourceObjects++;
                     }
 
                     PH::print_stdout( " - Scanning for missconfigured Destination Field in NAT Rules...");
                     foreach( $natRuleDestinationIndex as $objectName => $objectNode )
                     {
-                        PH::print_stdout( "   - found NAT Rule named '{$objectName}' that has destination 'any' and additional destination configured at XML line #{$objectNode->getLineNo()}");
-                        $countMissconfiguredNatRuleDestinationObjects++;
+                        $text = "found NAT Rule named '{$objectName}' that has destination 'any' and additional destination configured at XML line #{$objectNode->getLineNo()}";
+                        PH::print_stdout( "   - ".$text);
+                        $this->logFinding($locationName, $objectName, $text, false);
+
+                        $this->counters['manual']['NatRule Destination misconfigured'] = ($this->counters['manual']['NatRule Destination misconfigured'] ?? 0) + 1;
+                        $this->countMissconfiguredNatRuleDestinationObjects++;
                     }
 
-                    if( $service_app_default_available )
+                    if( $this->service_app_default_available )
                     {
                         PH::print_stdout( " - Scanning for Security Rules with 'application-default' set | service object 'application-default' is available ...");
                         foreach( $secRuleServiceAppDefaultIndex as $objectName => $objectNode )
                         {
-                            PH::print_stdout( "   - found Security Rule named '{$objectName}' that is using SERVICE OBJECT at XML line #{$objectNode->getLineNo()}");
-                            $countMissconfiguredSecRuleServiceAppDefaultObjects++;
+                            $text = "found Security Rule named '{$objectName}' that is using SERVICE OBJECT at XML line #{$objectNode->getLineNo()}";
+
+                            $this->logFinding($locationName, $objectName, $text, false);
+                            PH::print_stdout( "   - ".$text);
+
+                            $this->counters['manual']['SecRule ServiceAppDefault misconfigured'] = ($this->counters['manual']['SecRule ServiceAppDefault misconfigured'] ?? 0) + 1;
+                            $this->countMissconfiguredSecRuleServiceAppDefaultObjects++;
                         }
                     }
                 }
@@ -1759,11 +1992,15 @@ class XMLISSUE extends UTIL
                 $objectAddressGroupName = $objectAddressGroup->getAttribute('name');
                 if( isset($readonlyDGAddressgroups[$objectAddressGroupName]) )
                 {
-                    $text = "     - readOnly DG: ".$locationName." has same addressgroup defined twice: ".$objectAddressGroupName;
+                    $text = "readOnly DG: ".$locationName." has same addressgroup defined twice: ".$objectAddressGroupName;
                     $readonlyAddressgroups->removeChild($objectAddressGroup);
+
+                    $this->logFinding($locationName, $objectName, $text, true);
                     $text .= PH::boldText(" (removed)");
-                    PH::print_stdout($text);
-                    $fixedReadOnlyAddressGroupobjects++;
+                    PH::print_stdout("     - ".$text);
+
+                    $this->counters['fixed']['ReadOnly Address Group'] = ($this->counters['fixed']['ReadOnly Address Group'] ?? 0) + 1;
+                    $this->fixedReadOnlyAddressGroupobjects++;
                 }
                 else
                     $readonlyDGAddressgroups[$objectAddressGroupName] = $objectAddressGroup;
@@ -1827,7 +2064,9 @@ class XMLISSUE extends UTIL
                             {
                                 if( isset($results[0][0]) )
                                 {
-                                    PH::print_stdout("       - type 'Zone' name: '" . $node->getAttribute('name') . "' - '" . $results[0][0] . "' at XML line #{$zone_type->getLineNo()} (*FIX_MANUALLY*)");
+                                    $text = "type 'Zone' name: '" . $node->getAttribute('name') . "' - '" . $results[0][0] . "' at XML line #{$zone_type->getLineNo()} (*FIX_MANUALLY*)";
+                                    PH::print_stdout( "       - ".$text );
+                                    $this->logFinding($locationName, $objectName, $text, false);
                                 }
                             }
                         }
@@ -1873,11 +2112,15 @@ class XMLISSUE extends UTIL
             $objectAddressGroupName = $objectAddressGroup->getAttribute('name');
             if( isset($readonlyDGAddressgroups[$objectAddressGroupName]) )
             {
-                $text = "     - readOnly shared has same addressgroup defined twice: ".$objectAddressGroupName;
+                $text = "readOnly shared has same addressgroup defined twice: ".$objectAddressGroupName;
                 $readonlyAddressgroups->removeChild($objectAddressGroup);
+
+                $this->logFinding($locationName, $objectName, $text, true);
                 $text .=PH::boldText(" (removed)");
-                PH::print_stdout($text);
-                $fixedReadOnlyAddressGroupobjects++;
+                PH::print_stdout("     - ".$text);
+
+                $this->counters['fixed']['ReadOnly Address Group'] = ($this->counters['fixed']['ReadOnly Address Group'] ?? 0) + 1;
+                $this->fixedReadOnlyAddressGroupobjects++;
             }
             else
                 $readonlyDGAddressgroups[$objectAddressGroupName] = $objectAddressGroup;
@@ -1915,11 +2158,15 @@ class XMLISSUE extends UTIL
             $objectDeviceGroupName = $objectDeviceGroup->getAttribute('name');
             if( isset($readonlyDeviceGroupsArray[$objectDeviceGroupName]) )
             {
-                $text = "     - readOnly /config/readonly/devices/entry[@name='localhost.localdomain']/device-group has same DeviceGroup defined twice: ".$objectDeviceGroupName;
+                $text = "readOnly /config/readonly/devices/entry[@name='localhost.localdomain']/device-group has same DeviceGroup defined twice: ".$objectDeviceGroupName;
                 $readonlyDeviceGroups->removeChild($objectDeviceGroup);
+
+                $this->logFinding($locationName, $objectName, $text, true);
                 $text .=PH::boldText(" (removed)");
-                PH::print_stdout($text);
-                $fixedReadOnlyDeviceGroupobjects++;
+                PH::print_stdout("     - ".$text);
+
+                $this->counters['fixed']['ReadOnly Device Group'] = ($this->counters['fixed']['ReadOnly Device Group'] ?? 0) + 1;
+                $this->fixedReadOnlyDeviceGroupobjects++;
             }
             else
                 $readonlyDeviceGroupsArray[$objectDeviceGroupName] = $objectDeviceGroup;
@@ -1958,11 +2205,15 @@ class XMLISSUE extends UTIL
             $objectTemplateName = $objectTemplate->getAttribute('name');
             if( isset($readonlyTemplatesArray[$objectTemplateName]) )
             {
-                $text = "     - readOnly /config/readonly/devices/entry[@name='localhost.localdomain']/template has same Template defined twice: ".$objectTemplateName;
+                $text = "readOnly /config/readonly/devices/entry[@name='localhost.localdomain']/template has same Template defined twice: ".$objectTemplateName;
                 $readonlyTemplates->removeChild($objectTemplate);
+
+                $this->logFinding($locationName, $objectName, $text, true);
                 $text .=PH::boldText(" (removed)");
-                PH::print_stdout($text);
-                $fixedReadOnlyTemplateobjects++;
+                PH::print_stdout("     - ".$text);
+
+                $this->counters['fixed']['ReadOnly Template'] = ($this->counters['fixed']['ReadOnly Template'] ?? 0) + 1;
+                $this->fixedReadOnlyTemplateobjects++;
             }
             else
                 $readonlyTemplatesArray[$objectTemplateName] = $objectTemplate;
@@ -2001,11 +2252,14 @@ class XMLISSUE extends UTIL
             $objectTemplateStackName = $objectTemplateStack->getAttribute('name');
             if( isset($readonlyTemplateStacksArray[$objectTemplateStackName]) )
             {
-                $text = "     - readOnly /config/readonly/devices/entry[@name='localhost.localdomain']/template-stack has same Template-Stack defined twice: ".$objectTemplateName;
+                $text = "readOnly /config/readonly/devices/entry[@name='localhost.localdomain']/template-stack has same Template-Stack defined twice: ".$objectTemplateName;
                 $readonlyTemplateStacks->removeChild($objectTemplateStack);
+                $this->logFinding($locationName, $objectName, $text, true);
                 $text .=PH::boldText(" (removed)");
-                PH::print_stdout($text);
-                $fixedReadOnlyTemplateStackobjects++;
+                PH::print_stdout("     - ".$text);
+
+                $this->counters['fixed']['ReadOnly TemplateStack'] = ($this->counters['fixed']['ReadOnly TemplateStack'] ?? 0) + 1;
+                $this->fixedReadOnlyTemplateStackobjects++;
             }
             else
                 $readonlyTemplateStacksArray[$objectTemplateStackName] = $objectTemplateStack;
@@ -2029,7 +2283,7 @@ class XMLISSUE extends UTIL
                 $interfaces = DH::findFirstElement("interface", $network);
                 if ($interfaces)
                 {
-                    $fixedImportNetworkInterfaceWithSameInterface += $this->removeDuplicateChildNodes($interfaces, "interface");
+                    $this->fixedImportNetworkInterfaceWithSameInterface += $this->removeDuplicateChildNodes($locationName, $objectName, $interfaces, "interface");
                 }
             }
         }
@@ -2042,7 +2296,7 @@ class XMLISSUE extends UTIL
 
         foreach ($groupLists as $groupList)
         {
-            $fixedGroupIncludeListWithSameNode += $this->removeDuplicateChildNodes($groupList, "group-include-list entry");
+            $this->fixedGroupIncludeListWithSameNode += $this->removeDuplicateChildNodes($locationName, $objectName, $groupList, "group-include-list entry");
         }
 
 
@@ -2059,7 +2313,7 @@ class XMLISSUE extends UTIL
             {
                 if ($dayNode->nodeType === XML_ELEMENT_NODE) {
                     // Use the function on each day node
-                    $fixedScheduleCount += $this->removeDuplicateChildNodes($dayNode, "schedule member");
+                    $this->fixedScheduleCount += $this->removeDuplicateChildNodes($locationName, $objectName, $dayNode, "schedule member");
                 }
             }
         }
@@ -2069,154 +2323,154 @@ class XMLISSUE extends UTIL
         PH::print_stdout();
 
         PH::print_stdout( "Summary:" );
-        if( $fixedDuplicateAddressObjects > 0 )
-            PH::print_stdout( " - FIXED: duplicate address objects: {$fixedDuplicateAddressObjects}");
-        if( $fixedDuplicateServiceObjects > 0 )
-            PH::print_stdout( " - FIXED: duplicate service objects: {$fixedDuplicateServiceObjects}");
+        if( $this->fixedDuplicateAddressObjects > 0 )
+            PH::print_stdout( " - FIXED: duplicate address objects: {$this->fixedDuplicateAddressObjects}");
+        if( $this->fixedDuplicateServiceObjects > 0 )
+            PH::print_stdout( " - FIXED: duplicate service objects: {$this->fixedDuplicateServiceObjects}");
 
-        if( $totalAddressGroupsFixed > 0 )
-            PH::print_stdout( "\n - FIXED: duplicate address-group members: {$totalAddressGroupsFixed}");
-        if( $totalServiceGroupsFixed > 0 )
-            PH::print_stdout( " - FIXED: duplicate service-group members: {$totalServiceGroupsFixed}");
-        if( $totalAddressGroupsSubGroupFixed > 0 )
-            PH::print_stdout( " - FIXED: own address-group as subgroup member: {$totalAddressGroupsSubGroupFixed}");
-        if( $totalDynamicAddressGroupsTagFixed > 0 )
-            PH::print_stdout( " - FIXED: own dynamic address-group as tag member: {$totalDynamicAddressGroupsTagFixed}");
+        if( $this->totalAddressGroupsFixed > 0 )
+            PH::print_stdout( "\n - FIXED: duplicate address-group members: {$this->totalAddressGroupsFixed}");
+        if( $this->totalServiceGroupsFixed > 0 )
+            PH::print_stdout( " - FIXED: duplicate service-group members: {$this->totalServiceGroupsFixed}");
+        if( $this->totalAddressGroupsSubGroupFixed > 0 )
+            PH::print_stdout( " - FIXED: own address-group as subgroup member: {$this->totalAddressGroupsSubGroupFixed}");
+        if( $this->totalDynamicAddressGroupsTagFixed > 0 )
+            PH::print_stdout( " - FIXED: own dynamic address-group as tag member: {$this->totalDynamicAddressGroupsTagFixed}");
 
-        if( $fixedServiceObjectsWithSameTag > 0 )
-            PH::print_stdout( "\n - FIXED: service objects with multiple times same tag: {$fixedServiceObjectsWithSameTag}");
+        if( $this->fixedServiceObjectsWithSameTag > 0 )
+            PH::print_stdout( "\n - FIXED: service objects with multiple times same tag: {$this->fixedServiceObjectsWithSameTag}");
 
-        if( $totalServiceGroupsSubGroupFixed > 0 )
-            PH::print_stdout( "\n - FIXED: own service-group as subgroup members: {$totalServiceGroupsSubGroupFixed}");
+        if( $this->totalServiceGroupsSubGroupFixed > 0 )
+            PH::print_stdout( "\n - FIXED: own service-group as subgroup members: {$this->totalServiceGroupsSubGroupFixed}");
 
-        if( $totalApplicationGroupsFixed > 0 )
-            PH::print_stdout( "\n - FIXED: duplicate application-group members: {$totalApplicationGroupsFixed}");
-        if( $totalApplicationFiltersFixed > 0 )
-            PH::print_stdout( "\n - FIXED: duplicate application-filter members: {$totalApplicationFiltersFixed}");
-        if( $totalCustomUrlCategoryFixed > 0 )
-            PH::print_stdout( " - FIXED: duplicate custom-url-category members: {$totalCustomUrlCategoryFixed}");
-
-        PH::print_stdout();
-
-        if( $fixedSecRuleFromObjects > 0 )
-            PH::print_stdout( "\n - FIXED: SecRule with duplicate from members: {$fixedSecRuleFromObjects}");
-        if( $fixedSecRuleToObjects > 0 )
-            PH::print_stdout( " - FIXED: SecRule with duplicate to members: {$fixedSecRuleToObjects}");
-        if( $fixedSecRuleSourceObjects > 0 )
-            PH::print_stdout( " - FIXED: SecRule with duplicate source members: {$fixedSecRuleSourceObjects}");
-        if( $fixedSecRuleDestinationObjects > 0 )
-            PH::print_stdout( " - FIXED: SecRule with duplicate destination members: {$fixedSecRuleDestinationObjects}");
-        if( $fixedSecRuleServiceObjects > 0 )
-            PH::print_stdout( " - FIXED: SecRule with duplicate service members: {$fixedSecRuleServiceObjects}");
-        if( $fixedSecRuleApplicationObjects > 0 )
-            PH::print_stdout( " - FIXED: SecRule with duplicate application members: {$fixedSecRuleApplicationObjects}");
-        if( $fixedSecRuleCategoryObjects > 0 )
-            PH::print_stdout( " - FIXED: SecRule with duplicate category members: {$fixedSecRuleCategoryObjects}");
-        if( $fixedSecRuleTagObjects > 0 )
-            PH::print_stdout( " - FIXED: SecRule with duplicate tag members: {$fixedSecRuleTagObjects}");
-        if( $fixedSecruleSourceUserObjects > 0 )
-            PH::print_stdout( " - FIXED: SecRule with duplicate source-user members: {$fixedSecruleSourceUserObjects}");
+        if( $this->totalApplicationGroupsFixed > 0 )
+            PH::print_stdout( "\n - FIXED: duplicate application-group members: {$this->totalApplicationGroupsFixed}");
+        if( $this->totalApplicationFiltersFixed > 0 )
+            PH::print_stdout( "\n - FIXED: duplicate application-filter members: {$this->totalApplicationFiltersFixed}");
+        if( $this->totalCustomUrlCategoryFixed > 0 )
+            PH::print_stdout( " - FIXED: duplicate custom-url-category members: {$this->totalCustomUrlCategoryFixed}");
 
         PH::print_stdout();
 
-        if( $fixedNatRuleSourceObjects > 0 )
-            PH::print_stdout( " - FIXED: NatRule with duplicate source members: {$fixedNatRuleSourceObjects}");
-        if( $fixedNatRuleDestinationObjects > 0 )
-            PH::print_stdout( " - FIXED: NatRule with duplicate destination members: {$fixedNatRuleDestinationObjects}");
+        if( $this->fixedSecRuleFromObjects > 0 )
+            PH::print_stdout( "\n - FIXED: SecRule with duplicate from members: {$this->fixedSecRuleFromObjects}");
+        if( $this->fixedSecRuleToObjects > 0 )
+            PH::print_stdout( " - FIXED: SecRule with duplicate to members: {$this->fixedSecRuleToObjects}");
+        if( $this->fixedSecRuleSourceObjects > 0 )
+            PH::print_stdout( " - FIXED: SecRule with duplicate source members: {$this->fixedSecRuleSourceObjects}");
+        if( $this->fixedSecRuleDestinationObjects > 0 )
+            PH::print_stdout( " - FIXED: SecRule with duplicate destination members: {$this->fixedSecRuleDestinationObjects}");
+        if( $this->fixedSecRuleServiceObjects > 0 )
+            PH::print_stdout( " - FIXED: SecRule with duplicate service members: {$this->fixedSecRuleServiceObjects}");
+        if( $this->fixedSecRuleApplicationObjects > 0 )
+            PH::print_stdout( " - FIXED: SecRule with duplicate application members: {$this->fixedSecRuleApplicationObjects}");
+        if( $this->fixedSecRuleCategoryObjects > 0 )
+            PH::print_stdout( " - FIXED: SecRule with duplicate category members: {$this->fixedSecRuleCategoryObjects}");
+        if( $this->fixedSecRuleTagObjects > 0 )
+            PH::print_stdout( " - FIXED: SecRule with duplicate tag members: {$this->fixedSecRuleTagObjects}");
+        if( $this->fixedSecruleSourceUserObjects > 0 )
+            PH::print_stdout( " - FIXED: SecRule with duplicate source-user members: {$this->fixedSecruleSourceUserObjects}");
 
         PH::print_stdout();
 
-        if( $fixedReadOnlyAddressGroupobjects > 0 )
-            PH::print_stdout( "\n - FIXED: ReadOnly duplicate AddressGroup : {$fixedReadOnlyAddressGroupobjects}");
-        if( $fixedReadOnlyDeviceGroupobjects > 0 )
-            PH::print_stdout( " - FIXED: ReadOnly duplicate DeviceGroup : {$fixedReadOnlyDeviceGroupobjects}");
-        if( $fixedReadOnlyTemplateobjects > 0 )
-            PH::print_stdout( " - FIXED: ReadOnly duplicate Template : {$fixedReadOnlyTemplateobjects}");
-        if( $fixedReadOnlyTemplateStackobjects > 0 )
-            PH::print_stdout( " - FIXED: ReadOnly duplicate TemplateStack : {$fixedReadOnlyTemplateStackobjects}");
+        if( $this->fixedNatRuleSourceObjects > 0 )
+            PH::print_stdout( " - FIXED: NatRule with duplicate source members: {$this->fixedNatRuleSourceObjects}");
+        if( $this->fixedNatRuleDestinationObjects > 0 )
+            PH::print_stdout( " - FIXED: NatRule with duplicate destination members: {$this->fixedNatRuleDestinationObjects}");
 
-        if( $fixedImportNetworkInterfaceWithSameInterface > 0 )
-            PH::print_stdout( "\n - FIXED: import/network/interface : {$fixedImportNetworkInterfaceWithSameInterface}");
+        PH::print_stdout();
 
-        if( $fixedGroupIncludeListWithSameNode > 0 )
-            PH::print_stdout( "\n - FIXED: group-include-list : {$fixedGroupIncludeListWithSameNode}");
-        if( $fixedScheduleCount > 0 )
-            PH::print_stdout( "\n - FIXED: schedule recurring weekly : {$fixedScheduleCount}");
+        if( $this->fixedReadOnlyAddressGroupobjects > 0 )
+            PH::print_stdout( "\n - FIXED: ReadOnly duplicate AddressGroup : {$this->fixedReadOnlyAddressGroupobjects}");
+        if( $this->fixedReadOnlyDeviceGroupobjects > 0 )
+            PH::print_stdout( " - FIXED: ReadOnly duplicate DeviceGroup : {$this->fixedReadOnlyDeviceGroupobjects}");
+        if( $this->fixedReadOnlyTemplateobjects > 0 )
+            PH::print_stdout( " - FIXED: ReadOnly duplicate Template : {$this->fixedReadOnlyTemplateobjects}");
+        if( $this->fixedReadOnlyTemplateStackobjects > 0 )
+            PH::print_stdout( " - FIXED: ReadOnly duplicate TemplateStack : {$this->fixedReadOnlyTemplateStackobjects}");
+
+        if( $this->fixedImportNetworkInterfaceWithSameInterface > 0 )
+            PH::print_stdout( "\n - FIXED: import/network/interface : {$this->fixedImportNetworkInterfaceWithSameInterface}");
+
+        if( $this->fixedGroupIncludeListWithSameNode > 0 )
+            PH::print_stdout( "\n - FIXED: group-include-list : {$this->fixedGroupIncludeListWithSameNode}");
+        if( $this->fixedScheduleCount > 0 )
+            PH::print_stdout( "\n - FIXED: schedule recurring weekly : {$this->fixedScheduleCount}");
 
         PH::print_stdout( "\n\nIssues that could not be fixed (look in logs for FIX_MANUALLY keyword):");
 
 
-        if( $countDuplicateAddressObjects > 0 )
-            PH::print_stdout( " - FIX_MANUALLY: duplicate address objects: {$countDuplicateAddressObjects} (look in the logs )");
-        if( $countDuplicateServiceObjects > 0 )
-            PH::print_stdout( " - FIX_MANUALLY: duplicate service objects: {$countDuplicateServiceObjects} (look in the logs)");
+        if( $this->countDuplicateAddressObjects > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: duplicate address objects: {$this->countDuplicateAddressObjects} (look in the logs )");
+        if( $this->countDuplicateServiceObjects > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: duplicate service objects: {$this->countDuplicateServiceObjects} (look in the logs)");
         PH::print_stdout();
 
-        if( $countMissconfiguredAddressObjects > 0 )
-            PH::print_stdout( " - FIX_MANUALLY: missconfigured address objects: {$countMissconfiguredAddressObjects} (look in the logs)");
-        if( $countAddressObjectsWithDoubleSpaces > 0 )
-            PH::print_stdout( " - FIX_MANUALLY: address objects with double spaces in name: {$countAddressObjectsWithDoubleSpaces} (look in the logs)");
-        if( $countAddressObjectsWithWrongCharacters > 0 )
-            PH::print_stdout( " - FIX_MANUALLY: address objects with wrong Characters in name: {$countAddressObjectsWithWrongCharacters} (look in the logs)");
-        if( $countMissconfiguredAddressRegionObjects > 0 )
-            PH::print_stdout( " - FIX_MANUALLY: address objects with same name as REGION: {$countMissconfiguredAddressRegionObjects} (look in the logs)");
-        if( $countEmptyAddressGroup > 0 )
-            PH::print_stdout( " - FIX_MANUALLY: empty address-group: {$countEmptyAddressGroup} (look in the logs)");
+        if( $this->countMissconfiguredAddressObjects > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: missconfigured address objects: {$this->countMissconfiguredAddressObjects} (look in the logs)");
+        if( $this->countAddressObjectsWithDoubleSpaces > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: address objects with double spaces in name: {$this->countAddressObjectsWithDoubleSpaces} (look in the logs)");
+        if( $this->countAddressObjectsWithWrongCharacters > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: address objects with wrong Characters in name: {$this->countAddressObjectsWithWrongCharacters} (look in the logs)");
+        if( $this->countMissconfiguredAddressRegionObjects > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: address objects with same name as REGION: {$this->countMissconfiguredAddressRegionObjects} (look in the logs)");
+        if( $this->countEmptyAddressGroup > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: empty address-group: {$this->countEmptyAddressGroup} (look in the logs)");
         PH::print_stdout();
 
-        if( $countMissconfiguredServiceObjects > 0 )
-            PH::print_stdout( " - FIX_MANUALLY: missconfigured service objects: {$countMissconfiguredServiceObjects} (look in the logs)");
-        if( $countServiceObjectsWithDoubleSpaces > 0 )
-            PH::print_stdout( " - FIX_MANUALLY: service objects with double spaces in name: {$countServiceObjectsWithDoubleSpaces} (look in the logs)");
-        if( $countServiceObjectsWithWrongCharacters > 0 )
-            PH::print_stdout( " - FIX_MANUALLY: service objects with wrong Characters in name: {$countServiceObjectsWithWrongCharacters} (look in the logs)");
-        if( $countServiceObjectsWithNameappdefault > 0 )
-            PH::print_stdout( " - FIX_MANUALLY: service objects with name 'application-default': {$countServiceObjectsWithNameappdefault} (look in the logs)");
-        if( $countEmptyServiceGroup > 0 )
-            PH::print_stdout( " - FIX_MANUALLY: empty service-group: {$countEmptyServiceGroup} (look in the logs)");
+        if( $this->countMissconfiguredServiceObjects > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: missconfigured service objects: {$this->countMissconfiguredServiceObjects} (look in the logs)");
+        if( $this->countServiceObjectsWithDoubleSpaces > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: service objects with double spaces in name: {$this->countServiceObjectsWithDoubleSpaces} (look in the logs)");
+        if( $this->countServiceObjectsWithWrongCharacters > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: service objects with wrong Characters in name: {$this->countServiceObjectsWithWrongCharacters} (look in the logs)");
+        if( $this->countServiceObjectsWithNameappdefault > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: service objects with name 'application-default': {$this->countServiceObjectsWithNameappdefault} (look in the logs)");
+        if( $this->countEmptyServiceGroup > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: empty service-group: {$this->countEmptyServiceGroup} (look in the logs)");
         PH::print_stdout();
 
-        if( $countSecRuleObjectsWithDoubleSpaces > 0 )
-            PH::print_stdout( " - FIX_MANUALLY: Security Rules with double spaces in name: {$countSecRuleObjectsWithDoubleSpaces} (look in the logs )");
-        if( $countSecRuleObjectsWithWrongCharacters > 0 )
-            PH::print_stdout( " - FIX_MANUALLY: Security Rules with wrong characters in name: {$countSecRuleObjectsWithWrongCharacters} (look in the logs )");
-        if( $countDuplicateSecRuleObjects > 0 )
-            PH::print_stdout( " - FIX_MANUALLY: duplicate Security Rules: {$countDuplicateSecRuleObjects} (look in the logs )");
-        if( $countNATRuleObjectsWithDoubleSpaces > 0 )
-            PH::print_stdout( " - FIX_MANUALLY: NAT Rules with double spaces in name: {$countNATRuleObjectsWithDoubleSpaces} (look in the logs )");
-        if( $countNATRuleObjectsWithWrongCharacters > 0 )
-            PH::print_stdout( " - FIX_MANUALLY: NAT Rules with wrong characters in name: {$countNATRuleObjectsWithWrongCharacters} (look in the logs )");
-        if( $countDuplicateNATRuleObjects > 0 )
-            PH::print_stdout( " - FIX_MANUALLY: duplicate NAT Rules: {$countDuplicateNATRuleObjects} (look in the logs )");
+        if( $this->countSecRuleObjectsWithDoubleSpaces > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: Security Rules with double spaces in name: {$this->countSecRuleObjectsWithDoubleSpaces} (look in the logs )");
+        if( $this->countSecRuleObjectsWithWrongCharacters > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: Security Rules with wrong characters in name: {$this->countSecRuleObjectsWithWrongCharacters} (look in the logs )");
+        if( $this->countDuplicateSecRuleObjects > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: duplicate Security Rules: {$this->countDuplicateSecRuleObjects} (look in the logs )");
+        if( $this->countNATRuleObjectsWithDoubleSpaces > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: NAT Rules with double spaces in name: {$this->countNATRuleObjectsWithDoubleSpaces} (look in the logs )");
+        if( $this->countNATRuleObjectsWithWrongCharacters > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: NAT Rules with wrong characters in name: {$this->countNATRuleObjectsWithWrongCharacters} (look in the logs )");
+        if( $this->countDuplicateNATRuleObjects > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: duplicate NAT Rules: {$this->countDuplicateNATRuleObjects} (look in the logs )");
         PH::print_stdout();
 
-        if( $countMissconfiguredSecRuleFromObjects > 0 )
-            PH::print_stdout( " - FIX_MANUALLY: missconfigured From Field in Security Rules: {$countMissconfiguredSecRuleFromObjects} (look in the logs )");
-        if( $countMissconfiguredSecRuleToObjects > 0 )
-            PH::print_stdout( " - FIX_MANUALLY: missconfigured To Field in Security Rules: {$countMissconfiguredSecRuleToObjects} (look in the logs )");
-        if( $countMissconfiguredSecRuleSourceObjects > 0 )
-            PH::print_stdout( " - FIX_MANUALLY: missconfigured Source Field in Security Rules: {$countMissconfiguredSecRuleSourceObjects} (look in the logs )");
-        if( $countMissconfiguredSecRuleDestinationObjects > 0 )
-            PH::print_stdout( " - FIX_MANUALLY: missconfigured Destination Field in Security Rules: {$countMissconfiguredSecRuleDestinationObjects} (look in the logs )");
-        if( $countMissconfiguredSecRuleServiceObjects > 0 )
-            PH::print_stdout( " - FIX_MANUALLY: missconfigured Service Field in Security Rules: {$countMissconfiguredSecRuleServiceObjects} (look in the logs )");
-        if( $countMissconfiguredSecRuleApplicationObjects > 0 )
-            PH::print_stdout( " - FIX_MANUALLY: missconfigured Application Field in Security Rules: {$countMissconfiguredSecRuleApplicationObjects} (look in the logs )");
-        if( $countMissconfiguredSecRuleCategoryObjects > 0 )
-            PH::print_stdout( " - FIX_MANUALLY: missconfigured Category Field in Security Rules: {$countMissconfiguredSecRuleCategoryObjects} (look in the logs )");
-        if( $countMissconfiguredSecruleSourceUserObjects > 0 )
-            PH::print_stdout( " - FIX_MANUALLY: missconfigured SourceUser Field in Security Rules: {$countMissconfiguredSecruleSourceUserObjects} (look in the logs )");
+        if( $this->countMissconfiguredSecRuleFromObjects > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: missconfigured From Field in Security Rules: {$this->countMissconfiguredSecRuleFromObjects} (look in the logs )");
+        if( $this->countMissconfiguredSecRuleToObjects > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: missconfigured To Field in Security Rules: {$this->countMissconfiguredSecRuleToObjects} (look in the logs )");
+        if( $this->countMissconfiguredSecRuleSourceObjects > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: missconfigured Source Field in Security Rules: {$this->countMissconfiguredSecRuleSourceObjects} (look in the logs )");
+        if( $this->countMissconfiguredSecRuleDestinationObjects > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: missconfigured Destination Field in Security Rules: {$this->countMissconfiguredSecRuleDestinationObjects} (look in the logs )");
+        if( $this->countMissconfiguredSecRuleServiceObjects > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: missconfigured Service Field in Security Rules: {$this->countMissconfiguredSecRuleServiceObjects} (look in the logs )");
+        if( $this->countMissconfiguredSecRuleApplicationObjects > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: missconfigured Application Field in Security Rules: {$this->countMissconfiguredSecRuleApplicationObjects} (look in the logs )");
+        if( $this->countMissconfiguredSecRuleCategoryObjects > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: missconfigured Category Field in Security Rules: {$this->countMissconfiguredSecRuleCategoryObjects} (look in the logs )");
+        if( $this->countMissconfiguredSecruleSourceUserObjects > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: missconfigured SourceUser Field in Security Rules: {$this->countMissconfiguredSecruleSourceUserObjects} (look in the logs )");
         PH::print_stdout();
-        if( $countMissconfiguredNatRuleSourceObjects > 0 )
-            PH::print_stdout( " - FIX_MANUALLY: missconfigured Source Field in NAT Rules: {$countMissconfiguredNatRuleSourceObjects} (look in the logs )");
-        if( $countMissconfiguredNatRuleDestinationObjects > 0 )
-            PH::print_stdout( " - FIX_MANUALLY: missconfigured Destination Field in NAT Rules: {$countMissconfiguredNatRuleDestinationObjects} (look in the logs )");
+        if( $this->countMissconfiguredNatRuleSourceObjects > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: missconfigured Source Field in NAT Rules: {$this->countMissconfiguredNatRuleSourceObjects} (look in the logs )");
+        if( $this->countMissconfiguredNatRuleDestinationObjects > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: missconfigured Destination Field in NAT Rules: {$this->countMissconfiguredNatRuleDestinationObjects} (look in the logs )");
         PH::print_stdout();
 
-        if( $service_app_default_available )
+        if( $this->service_app_default_available )
         {
-            if( $countMissconfiguredSecRuleServiceAppDefaultObjects > 0 )
-                PH::print_stdout( " - FIX_MANUALLY: SERVICE OBJECT 'application-default' available and used in Security Rules: {$countMissconfiguredSecRuleServiceAppDefaultObjects} (look in the logs )");
+            if( $this->countMissconfiguredSecRuleServiceAppDefaultObjects > 0 )
+                PH::print_stdout( " - FIX_MANUALLY: SERVICE OBJECT 'application-default' available and used in Security Rules: {$this->countMissconfiguredSecRuleServiceAppDefaultObjects} (look in the logs )");
             PH::print_stdout();
         }
 
@@ -2355,9 +2609,14 @@ class XMLISSUE extends UTIL
 
                     if( isset($membersIndex[$memberName]) )
                     {
-                        PH::print_stdout( "    - group '{$objectName}' from DG/VSYS {$locationName} has a duplicate member named '{$memberName}' ... *FIXED*" );
+                        $text = "    - group '{$objectName}' from DG/VSYS {$locationName} has a duplicate member named '{$memberName}'";
+
                         $staticNode->removeChild($NodeMember);
+                        $this->logFinding($locationName, $objectName, $text, true);
+                        $text .= " ... *FIXED*";
+                        PH::print_stdout( $text );
                         $totalTagNameFixed++;
+                        $this->counters['fixed'][$tagName.' duplicate'] = ($this->counters['fixed'][$tagName.' duplicate'] ?? 0) + 1;
                         continue;
                     }
 
@@ -2371,7 +2630,7 @@ class XMLISSUE extends UTIL
      * Removes duplicate child elements based on their text content.
      * @return int The number of removed duplicates.
      */
-    private function removeDuplicateChildNodes(DOMElement $parent, string $label): int
+    private function removeDuplicateChildNodes($locationName, $objectName, DOMElement $parent, string $label): int
     {
         $seenEntries = [];
         $toRemove = [];
@@ -2397,9 +2656,14 @@ class XMLISSUE extends UTIL
             $nodeName = $node->textContent;
             $xpath = $node->getNodePath();
 
-            PH::print_stdout("    - remove $label: '<member>".$nodeName."</member>' from xPath: '".$xpath."' as it is a duplicate entry ... *FIXED*");
+            $text = "remove $label: '<member>".$nodeName."</member>' from xPath: '".$xpath."' as it is a duplicate entry";
+
 
             $node->parentNode->removeChild($node);
+            $this->logFinding($locationName, $objectName, $text, true);
+            $text .= " ... *FIXED*";
+            PH::print_stdout("    - ".$text);
+
             $removedCount++;
         }
 
@@ -2430,7 +2694,7 @@ class XMLISSUE extends UTIL
         }
     }
 
-    private function generateHTML()
+    private function generateHTMLold()
     {
         $html = "<html><head><style>
             table { border-collapse: collapse; width: 100%; margin-bottom: 30px; font-family: sans-serif; }
@@ -2470,6 +2734,50 @@ class XMLISSUE extends UTIL
         </table>";
 
         $html .= "</body></html>";
+
+        file_put_contents("xml_issue_report.html", $html);
+        PH::print_stdout("\n** HTML Report generated: xml_issue_report.html **\n");
+    }
+
+    private function generateHTML()
+    {
+        $html = "<html><head><style>
+            body { font-family: sans-serif; }
+            table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }
+            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+            th { background-color: #f2f2f2; }
+            .fixed { color: green; font-weight: bold; }
+            .manual { color: red; font-weight: bold; }
+        </style></head><body>";
+
+        // Table 1: Detailed Findings (Row by Row)
+        $html .= "<h2>Detailed Misconfigurations</h2>";
+        $html .= "<table><tr><th>Location</th><th>Object</th><th>Issue</th><th>Status</th></tr>";
+        foreach ($this->htmlOutput as $row) {
+            $statusClass = ($row['status'] == 'Fixed') ? 'fixed' : 'manual';
+            $html .= "<tr><td>{$row['location']}</td><td>{$row['object']}</td><td>{$row['issue']}</td><td class='{$statusClass}'>{$row['status']}</td></tr>";
+        }
+        $html .= "</table>";
+
+        // Table 2: Detailed Summary (The part you requested)
+        $html .= "<h2>Detailed Metric Summary</h2>";
+        $html .= "<table><tr><th>Issue Category</th><th>Count</th><th>Type</th></tr>";
+
+        foreach ($this->counters['fixed'] as $name => $count) {
+            $html .= "<tr><td>{$name}</td><td>{$count}</td><td class='fixed'>FIXED</td></tr>";
+        }
+        foreach ($this->counters['manual'] as $name => $count) {
+            $html .= "<tr><td>{$name}</td><td>{$count}</td><td class='manual'>FIX_MANUALLY</td></tr>";
+        }
+        $html .= "</table>";
+
+        // Table 3: Global Totals
+        $html .= "<h2>Global Summary</h2>";
+        $html .= "<table><tr><th>Metric</th><th>Count</th></tr>
+            <tr><td>Total Issues</td><td>{$this->summaryOutput['total_findings']}</td></tr>
+            <tr><td>Total Fixed</td><td class='fixed'>{$this->summaryOutput['fixed']}</td></tr>
+            <tr><td>Total Manual</td><td class='manual'>{$this->summaryOutput['not_fixed']}</td></tr>
+        </table></body></html>";
 
         file_put_contents("xml_issue_report.html", $html);
         PH::print_stdout("\n** HTML Report generated: xml_issue_report.html **\n");
