@@ -390,7 +390,7 @@ class XMLISSUE extends UTIL
                 PH::print_stdout( "    - ".$text.$text1.$text2);
                 $this->logFinding($locationName, $objectName, $objectType, $text1, false);
 
-                $this->counters['manual']['Address Objects doubleSpace'] = ($this->counters['manual']['Address Objects doubleSpace'] ?? 0) + 1;
+                $this->counters['manual'][$objectType.' Objects doubleSpace'] = ($this->counters['manual'][$objectType.' Objects doubleSpace'] ?? 0) + 1;
                 $this->countAddressObjectsWithDoubleSpaces++;
             }
 
@@ -800,6 +800,8 @@ class XMLISSUE extends UTIL
 
                         PH::print_stdout( "       - ".$text );
 
+                        $this->counters['manual']['Address Object duplicate'] = ($this->counters['manual']['Address Object duplicate'] ?? 0) + 1;
+
                         $this->countDuplicateAddressObjects++;
                     }
                     else
@@ -934,6 +936,7 @@ class XMLISSUE extends UTIL
                 $text2 = " ... (*FIX_MANUALLY*)";
                 PH::print_stdout( "    - ".$text.$text1.$text2 );
 
+                $this->counters['manual'][$objectType.' Objects doubleSpace'] = ($this->counters['manual'][$objectType.' Objects doubleSpace'] ?? 0) + 1;
                 $this->countServiceObjectsWithDoubleSpaces++;
             }
 
@@ -964,6 +967,8 @@ class XMLISSUE extends UTIL
 
                 PH::print_stdout( "       oldname: '".$objectName."' | suggested newname: '".$newName."'\n" );
 
+                $this->counters['manual']['Service Objects wrongCharacters'] = ($this->counters['manual']['Service Objects wrongCharacters'] ?? 0) + 1;
+
                 $this->countServiceObjectsWithWrongCharacters++;
             }
 
@@ -982,6 +987,8 @@ class XMLISSUE extends UTIL
                 PH::print_stdout( "    - ".$text.$text1.$text2 );
 
                 $this->logFinding($locationName, $objectName, $objectType, $text1, false);
+
+                $this->counters['manual']['Service Objects appdefault'] = ($this->counters['manual']['Service Objects appdefault'] ?? 0) + 1;
 
                 $this->countServiceObjectsWithNameappdefault++;
             }
@@ -2508,6 +2515,8 @@ class XMLISSUE extends UTIL
 
                                     $this->logFinding($locationName, $objectName, $objectType, $text.$text1, false);
                                     PH::print_stdout( "       - ".$text.$text1.$text2 );
+
+                                    $this->counters['manual']['Zone wrong type'] = ($this->counters['manual']['Zone wrong type'] ?? 0) + 1;
                                 }
                             }
                         }
