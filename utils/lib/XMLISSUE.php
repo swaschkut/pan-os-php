@@ -51,12 +51,17 @@ class XMLISSUE extends UTIL
 
     public $countDuplicateSecRuleObjects = 0;
     public $countDuplicateNATRuleObjects = 0;
+    public $countDuplicateDecryptRuleObjects = 0;
 
     public $countSecRuleObjectsWithDoubleSpaces = 0;
     public $countSecRuleObjectsWithWrongCharacters = 0;
     public $countNATRuleObjectsWithDoubleSpaces = 0;
     public $countNATRuleObjectsWithWrongCharacters = 0;
 
+    
+    public $countDecryptRuleObjectsWithDoubleSpaces = 0;
+    public $countDecryptRuleObjectsWithWrongCharacters = 0;
+    
     public $countMissconfiguredSecRuleServiceObjects=0;
     public $fixedSecRuleServiceObjects=0;
     public $countMissconfiguredSecRuleApplicationObjects=0;
@@ -82,6 +87,22 @@ class XMLISSUE extends UTIL
     public $fixedNatRuleSourceObjects=0;
     public $countMissconfiguredNatRuleDestinationObjects=0;
     public $fixedNatRuleDestinationObjects=0;
+
+
+
+    public $countMissconfiguredDecryptRuleSourceObjects=0;
+    public $fixedDecryptionRuleSourceObjects=0;
+    public $countMissconfiguredDecryptRuleDestinationObjects=0;
+    public $fixedDecryptionRuleDestinationObjects=0;
+    public $countMissconfiguredDecryptRuleServiceObjects=0;
+    public $fixedDecryptionRuleServiceObjects=0;
+
+
+    public $countMissconfiguredappoverrideRuleSourceObjects=0;
+    public $fixedappoverrideRuleSourceObjects=0;
+    public $countMissconfiguredappoverrideRuleDestinationObjects=0;
+    public $fixedappoverrideRuleDestinationObjects=0;
+
 
     public $countMissconfiguredAddressObjects = 0;
     public $countMissconfiguredAddressRegionObjects = 0;
@@ -110,6 +131,9 @@ class XMLISSUE extends UTIL
 
     public $fixedImportNetworkInterfaceWithSameInterface = 0;
     public $fixedGroupIncludeListWithSameNode = 0;
+    public $fixedExcludeAccessRouteWithSameNode = 0;
+    public $fixedRedistRulesWithSameNode = 0;
+
     public $fixedScheduleCount = 0;
 
     public $totalApplicationGroupsFixed = 0;
@@ -275,6 +299,8 @@ class XMLISSUE extends UTIL
             $secrule_wrong_name = array();
             $natrule_name = array();
             $natrule_wrong_name = array();
+            $decryptrule_name = array();
+            $decryptrule_wrong_name = array();
 
             $objectTypeNode = DH::findFirstElement('address', $locationNode);
             if( $objectTypeNode !== FALSE )
@@ -1294,12 +1320,19 @@ class XMLISSUE extends UTIL
                 $secRuleIndex = array();
                 $natRules = array();
                 $natRuleIndex = array();
+
+                $decryptRules = array();
+                $decryptRuleIndex = array();
+                $appoverrideRules = array();
+                $appoverrideRuleIndex = array();
+
                 $secRuleSourceIndex = array();
                 $secRuleDestinationIndex = array();
                 $secRuleServiceIndex = array();
                 $secRuleApplicationIndex = array();
                 $secRuleCategoryIndex = array();
                 $secRuleServiceAppDefaultIndex = array();
+
                 $secRuleFromIndex = array();
                 $secRuleToIndex = array();
 
@@ -1307,6 +1340,13 @@ class XMLISSUE extends UTIL
 
                 $natRuleSourceIndex = array();
                 $natRuleDestinationIndex = array();
+
+                $decryptRuleSourceIndex = array();
+                $decryptRuleDestinationIndex = array();
+                $decryptRuleServiceIndex = array();
+
+                $appoverrideRuleSourceIndex = array();
+                $appoverrideRuleDestinationIndex = array();
 
                 if( $objectTypeNode_rulebase !== FALSE )
                 {
@@ -1684,7 +1724,6 @@ class XMLISSUE extends UTIL
 
                         elseif( $objectNode_ruletype->nodeName == "nat" )
                         {
-
                             $objectTypeNode = DH::findFirstElement('rules', $objectNode_ruletype);
                             if( $objectTypeNode !== FALSE )
                             {
@@ -1788,7 +1827,249 @@ class XMLISSUE extends UTIL
                             PH::print_stdout( " - parsed " . count($natRules) . " NAT Rules");
                             PH::print_stdout( "");
                         }
+                        elseif( $objectNode_ruletype->nodeName == "decryption" )
+                        {
 
+                            $objectTypeNode = DH::findFirstElement('rules', $objectNode_ruletype);
+                            if( $objectTypeNode !== FALSE )
+                            {
+                                foreach( $objectTypeNode->childNodes as $objectNode )
+                                {
+                                    $RuleSource = array();
+                                    $RuleDestination = array();
+                                    $RuleService = array();
+
+                                    /** @var DOMElement $objectNode */
+                                    if( $objectNode->nodeType != XML_ELEMENT_NODE )
+                                        continue;
+
+                                    $objectName = $objectNode->getAttribute('name');
+
+                                    $this->check_name( $objectName, $objectNode, $decryptrule_name );
+                                    $this->check_wrong_name( $objectName, $objectNode, $decryptrule_wrong_name );
+
+                                    $decryptRules[$objectName][] = $objectNode;
+
+                                    if( !isset($RuleIndex[$objectName]) )
+                                        $RuleIndex[$objectName] = array('regular' => array(), 'group' => array());
+
+                                    $decryptRuleIndex[$objectName]['regular'][] = $objectNode;
+
+
+                                    //check if source has 'any' and additional
+                                    $objectNode_sources = DH::findFirstElement('source', $objectNode);
+                                    $demo = iterator_to_array($objectNode_sources->childNodes);
+                                    foreach( $demo as $objectSource )
+                                    {
+                                        /** @var DOMElement $objectSource */
+                                        if( $objectSource->nodeType != XML_ELEMENT_NODE )
+                                            continue;
+
+                                        $objectSourceName = $objectSource->textContent;
+                                        if( isset($decryptRuleSource[$objectSourceName]) )
+                                        {
+                                            $objectNode_sources->removeChild($objectSource);
+
+                                            $objectType = "DecryptionRule";
+                                            $text = $objectType." ".$objectName." has same source defined twice: ".$objectSourceName;
+                                            $this->logFinding($locationName, $objectName, $objectType, $text, true);
+                                            $text2 = PH::boldText(" (removed)");
+                                            PH::print_stdout( "     - ".$text.$text2 );
+
+                                            $this->counters['fixed'][$objectType.' Source Object duplicate'] = ($this->counters['fixed'][$objectType.' Source Object duplicate'] ?? 0) + 1;
+                                            $this->fixedDecryptionRuleSourceObjects++;
+                                        }
+                                        else
+                                        {
+                                            $decryptRuleSource[$objectSourceName] = $objectSource;
+                                            #PH::print_stdout( $objectName.'add to array: '.$objectSourceName );
+                                        }
+
+                                    }
+                                    if( isset($decryptRuleSource['any']) and count($decryptRuleSource) > 1 )
+                                    {
+                                        $decryptRuleSourceIndex[$objectName] = $decryptRuleSource['any'];
+                                        PH::print_stdout( "     - Rule: '".$objectName."' has source 'any' + something else defined." );
+                                    }
+
+                                    //check if destination has 'any' and additional
+                                    $objectNode_destinations = DH::findFirstElement('destination', $objectNode);
+                                    $demo = iterator_to_array($objectNode_destinations->childNodes);
+                                    foreach( $demo as $objectDestination )
+                                    {
+                                        /** @var DOMElement $objectDestination */
+                                        if( $objectDestination->nodeType != XML_ELEMENT_NODE )
+                                            continue;
+
+                                        $objectDestinationName = $objectDestination->textContent;
+                                        #PH::print_stdout( "rule: ".$objectName." name: ".$objectDestinationName);
+                                        if( isset($decryptRuleDestination[$objectDestinationName]) )
+                                        {
+                                            $objectNode_destinations->removeChild($objectDestination);
+
+                                            $objectType = "DecryptionRule";
+                                            $text = $objectType." ".$objectName." has same destination defined twice: ".$objectDestinationName;
+                                            $this->logFinding($locationName, $objectName, $objectType, $text, true);
+                                            $text2 = PH::boldText(" (removed)");
+                                            PH::print_stdout( "     - ".$text.$text2 );
+
+                                            $this->counters['fixed'][$objectType.' Destination Object duplicate'] = ($this->counters['fixed'][$objectType.' Destination Object duplicate'] ?? 0) + 1;
+                                            $this->fixedDecryptionRuleDestinationObjects++;
+                                        }
+                                        else
+                                            $decryptRuleDestination[$objectDestinationName] = $objectDestination;
+                                    }
+
+
+                                    if( isset($decryptRuleDestination['any']) and count($decryptRuleDestination) > 1 )
+                                    {
+                                        $decryptRuleDestinationIndex[$objectName] = $decryptRuleDestination['any'];
+                                        #PH::print_stdout( "     - Rule: '".$objectName."' has application 'any' + something else defined.") ;
+                                    }
+
+                                    //Todo:
+                                    //check if service has 'application-default' and additional
+                                    $objectNode_services = DH::findFirstElement('service', $objectNode);
+                                    if( $objectNode_services === False )
+                                        continue;
+                                    $demo = iterator_to_array($objectNode_services->childNodes);
+                                    foreach( $demo as $objectService )
+                                    {
+                                        /** @var DOMElement $objectService */
+                                        if( $objectService->nodeType != XML_ELEMENT_NODE )
+                                            continue;
+
+                                        $objectServiceName = $objectService->textContent;
+                                        if( isset($decryptRuleServices[$objectServiceName]) )
+                                        {
+                                            $objectNode_services->removeChild($objectService);
+
+                                            //Secrule service has twice same service added
+                                            $objectType = "DecryptionRule";
+                                            $text = $objectType." '".$objectName."' has same service defined twice: ".$objectServiceName;
+                                            $this->logFinding($locationName, $objectName, $objectType, $text, true);
+                                            $text2 = PH::boldText(" (removed)");
+                                            PH::print_stdout( "     - ".$text.$text2 );
+
+                                            $this->counters['fixed'][$objectType.' Service Object duplicate'] = ($this->counters['fixed'][$objectType.' Service Object duplicate'] ?? 0) + 1;
+                                            $this->fixedDecryptionRuleServiceObjects++;
+                                        }
+                                        else
+                                            $decryptRuleServices[$objectServiceName] = $objectService;
+                                    }
+                                }
+
+                            }
+
+
+                            PH::print_stdout( " - parsed " . count($decryptRules) . " decryption Rules");
+                            PH::print_stdout( "");
+                        }
+                        elseif( $objectNode_ruletype->nodeName == "application-override" )
+                        {
+                            $objectTypeNode = DH::findFirstElement('rules', $objectNode_ruletype);
+                            if( $objectTypeNode !== FALSE )
+                            {
+                                foreach( $objectTypeNode->childNodes as $objectNode )
+                                {
+                                    $appoverrideRuleSource = array();
+                                    $appoverrideRuleDestination = array();
+
+                                    /** @var DOMElement $objectNode */
+                                    if( $objectNode->nodeType != XML_ELEMENT_NODE )
+                                        continue;
+
+                                    $objectName = $objectNode->getAttribute('name');
+
+                                    $this->check_name( $objectName, $objectNode, $appoverriderule_name );
+                                    $this->check_wrong_name( $objectName, $objectNode, $appoverriderule_wrong_name );
+
+                                    $appoverrideRules[$objectName][] = $objectNode;
+
+                                    if( !isset($appoverrideRuleIndex[$objectName]) )
+                                        $appoverrideRuleIndex[$objectName] = array('regular' => array(), 'group' => array());
+
+                                    $appoverrideRuleIndex[$objectName]['regular'][] = $objectNode;
+
+
+                                    //check if source has 'any' and additional
+                                    $objectNode_sources = DH::findFirstElement('source', $objectNode);
+                                    $demo = iterator_to_array($objectNode_sources->childNodes);
+                                    foreach( $demo as $objectSource )
+                                    {
+                                        /** @var DOMElement $objectSource */
+                                        if( $objectSource->nodeType != XML_ELEMENT_NODE )
+                                            continue;
+
+                                        $objectSourceName = $objectSource->textContent;
+                                        if( isset($appoverrideRuleSource[$objectSourceName]) )
+                                        {
+                                            $objectNode_sources->removeChild($objectSource);
+
+                                            $objectType = "AppOverrideRule";
+                                            $text = $objectType." ".$objectName." has same source defined twice: ".$objectSourceName;
+                                            $this->logFinding($locationName, $objectName, $objectType, $text, true);
+                                            $text2 = PH::boldText(" (removed)");
+                                            PH::print_stdout( "     - ".$text.$text2 );
+
+                                            $this->counters['fixed'][$objectType.' Source Object duplicate'] = ($this->counters['fixed'][$objectType.' Source Object duplicate'] ?? 0) + 1;
+                                            $this->fixedappoverrideRuleSourceObjects++;
+                                        }
+                                        else
+                                        {
+                                            $appoverrideRuleSource[$objectSourceName] = $objectSource;
+                                            #PH::print_stdout( $objectName.'add to array: '.$objectSourceName );
+                                        }
+
+                                    }
+                                    if( isset($appoverrideRuleSource['any']) and count($appoverrideRuleSource) > 1 )
+                                    {
+                                        $appoverrideRuleSourceIndex[$objectName] = $appoverrideRuleSource['any'];
+                                        PH::print_stdout( "     - Rule: '".$objectName."' has source 'any' + something else defined." );
+                                    }
+
+                                    //check if destination has 'any' and additional
+                                    $objectNode_destinations = DH::findFirstElement('destination', $objectNode);
+                                    $demo = iterator_to_array($objectNode_destinations->childNodes);
+                                    foreach( $demo as $objectDestination )
+                                    {
+                                        /** @var DOMElement $objectDestination */
+                                        if( $objectDestination->nodeType != XML_ELEMENT_NODE )
+                                            continue;
+
+                                        $objectDestinationName = $objectDestination->textContent;
+                                        #PH::print_stdout( "rule: ".$objectName." name: ".$objectDestinationName);
+                                        if( isset($appoverrideRuleDestination[$objectDestinationName]) )
+                                        {
+                                            $objectNode_destinations->removeChild($objectDestination);
+
+                                            $objectType = "AppOverrideRule";
+                                            $text = $objectType." ".$objectName." has same destination defined twice: ".$objectDestinationName;
+                                            $this->logFinding($locationName, $objectName, $objectType, $text, true);
+                                            $text2 = PH::boldText(" (removed)");
+                                            PH::print_stdout( "     - ".$text.$text2 );
+
+                                            $this->counters['fixed'][$objectType.' Destination Object duplicate'] = ($this->counters['fixed'][$objectType.' Destination Object duplicate'] ?? 0) + 1;
+                                            $this->fixedappoverrideRuleDestinationObjects++;
+                                        }
+                                        else
+                                            $appoverrideRuleDestination[$objectDestinationName] = $objectDestination;
+                                    }
+
+                                    if( isset($appoverrideRuleDestination['any']) and count($appoverrideRuleDestination) > 1 )
+                                    {
+                                        $appoverrideRuleDestinationIndex[$objectName] = $appoverrideRuleDestination['any'];
+                                        #PH::print_stdout( "     - Rule: '".$objectName."' has application 'any' + something else defined.") ;
+                                    }
+
+                                }
+
+                            }
+
+
+                            PH::print_stdout( " - parsed " . count($appoverrideRules) . " Application-Override Rules");
+                            PH::print_stdout( "");
+                        }
                     }
 
                     //
@@ -1938,6 +2219,83 @@ class XMLISSUE extends UTIL
                         }
                     }
 
+                    //
+                    //
+                    //
+                    PH::print_stdout( " - Scanning for Decryption Rules with double spaces in name...");
+                    foreach( $decryptrule_name as $objectName => $node )
+                    {
+                        $objectType = "DecryptRule";
+                        $text = $objectType." '{$objectName}' from DG/VSYS {$locationName} ";
+                        $text1 = "has '  ' double Spaces in name, this causes problems by copy&past 'set commands'";
+
+                        $text1 .= " at XML line #{$node->getLineNo()}";
+                        $text2 = " ... (*FIX_MANUALLY*)";
+
+                        $this->logFinding($locationName, $objectName, $objectType, $text1, false);
+                        PH::print_stdout( "    - ".$text.$text1.$text2);
+
+                        $this->counters['manual'][$objectType.' Name doubleSpace'] = ($this->counters['manual'][$objectType.' Name doubleSpace'] ?? 0) + 1;
+                        $this->countDecryptRuleObjectsWithDoubleSpaces++;
+                    }
+                    PH::print_stdout( " - Scanning for Decryption Rules with wrong characters in name...");
+                    foreach( $decryptrule_wrong_name as $objectName => $node )
+                    {
+                        $objectType = "DecryptionRule";
+                        $text = $objectType." '{$objectName}' from DG/VSYS {$locationName} ";
+                        $text1 = "has wrong characters in name";
+                        $text1 .= " at XML line #{$node->getLineNo()}";
+                        $text2 = " ... (*FIX_MANUALLY*)";
+                        $this->logFinding($locationName, $objectName, $objectType, $text.$text1, false);
+
+                        PH::print_stdout( "    - ".$text.$text1.$text2);
+
+                        $this->counters['manual'][$objectType.' Name wrongCharacter'] = ($this->counters['manual'][$objectType.' Name wrongCharacter'] ?? 0) + 1;
+                        $this->countDecryptRuleObjectsWithWrongCharacters++;
+                    }
+
+                    PH::print_stdout( "\n - Scanning for duplicate Decryption Rules...");
+                    foreach( $decryptRuleIndex as $objectName => $objectNodes )
+                    {
+                        $dupCount = count($objectNodes['regular']);
+
+                        if( $dupCount < 2 )
+                            continue;
+
+                        PH::print_stdout( "   - found Decryption Rule named '{$objectName}' that exists " . $dupCount . " time:");
+                        $tmp_natrule_array = array();
+                        foreach( $objectNodes['regular'] as $key => $objectNode )
+                        {
+
+                            /** @var DOMElement $objectNode */
+                            $objectType = "DecryptionRule";
+                            $text = $objectType." at XML line #{$objectNode->getLineNo()}";
+
+
+                            $newName = $key . $objectNode->getAttribute('name');
+                            if( !isset($natRuleIndex[$newName]) )
+                            {
+                                $objectNode->setAttribute('name', $newName);
+                                $text .= PH::boldText(" - new name: " . $newName . " (fixed)\n");
+                                $this->logFinding($locationName, $objectName, $objectType, $text, true);
+                                PH::print_stdout( "       - ".$text );
+                            }
+                            else
+                            {
+                                $text .= " - Rulename can not be fixed: '" . $newName . "' is also available";
+                                $this->logFinding($locationName, $objectName, $objectType, $text, false);
+                                PH::print_stdout( "       - ".$text );
+                            }
+
+                            $this->counters['manual'][$objectType.' duplicate'] = ($this->counters['manual'][$objectType.' duplicate'] ?? 0) + 1;
+                            $this->countDuplicateDecryptRuleObjects++;
+                        }
+                    }
+
+                    //
+                    //
+                    //
+
                     PH::print_stdout( "\n - Scanning for misconfigured From Field in Security Rules...");
                     foreach( $secRuleFromIndex as $objectName => $objectNode )
                     {
@@ -2079,53 +2437,11 @@ class XMLISSUE extends UTIL
             }
 
 
-            ///config/readonly/devices/entry[@name='localhost.localdomain']/device-group/entry[@name='mn053-mnr-int']/address-group
-            ///
-            ///
-            PH::print_stdout( " - Scanning for /config/readonly/devices/entry[@name='localhost.localdomain']/device-group/entry[@name='".$locationName."'] for duplicate address-group ...");
-            $tmpReadOnly = DH::findXPath("/config/readonly/devices/entry[@name='localhost.localdomain']/device-group/entry[@name='".$locationName."']", $this->xmlDoc);
-            $readOnly = array();
+            $dgPath = "/config/readonly/devices/entry[@name='localhost.localdomain']/device-group/entry[@name='".$locationName."']";
 
-            foreach( $tmpReadOnly as $node )
-                $readOnly[] = $node;
-
-            $readonlyDGAddressgroups = array();
-
-            if( isset( $readOnly[0] ) )
-            {
-                $readonlyAddressgroups = DH::findFirstElement('address-group', $readOnly[0]);
-                if( $readonlyAddressgroups !== false )
-                    $demo = iterator_to_array($readonlyAddressgroups->childNodes);
-                else
-                    $demo = array();
-            }
-            else
-                $demo = array();
-
-            foreach( $demo as $objectAddressGroup )
-            {
-                /** @var DOMElement $objectApplication */
-                if( $objectAddressGroup->nodeType != XML_ELEMENT_NODE )
-                    continue;
-
-                $objectAddressGroupName = $objectAddressGroup->getAttribute('name');
-                if( isset($readonlyDGAddressgroups[$objectAddressGroupName]) )
-                {
-                    $objectType = "addressgroup";
-                    $text = "readOnly DG: ".$locationName." has same {$objectType} defined twice: ".$objectAddressGroupName;
-                    $readonlyAddressgroups->removeChild($objectAddressGroup);
-
-                    $this->logFinding($locationName, $objectName, $objectType, $text, true);
-                    //$text .= PH::boldText(" (removed)");
-                    //PH::print_stdout("     - ".$text);
-
-                    $this->counters['fixed']['ReadOnly Address Group'] = ($this->counters['fixed']['ReadOnly Address Group'] ?? 0) + 1;
-                    $this->fixedReadOnlyAddressGroupobjects++;
-                }
-                else
-                    $readonlyDGAddressgroups[$objectAddressGroupName] = $objectAddressGroup;
-            }
-
+            $this->ReadonlyRemoveDuplicateElements($dgPath, "address-group","Address Group", $locationName,
+                "readOnly DG: " . $locationName // This matches your specific log format
+            );
 
             //
             //
@@ -2207,199 +2523,33 @@ class XMLISSUE extends UTIL
 ///
 ///
 ///
-        $xpath = "/config/readonly/shared";
-        $objectType = "address-group";
-        $locationName = "readonly";
-        PH::print_stdout( " - Scanning for {$xpath} for duplicate {$objectType} ...");
-        $tmpReadOnly = DH::findXPath($xpath, $this->xmlDoc);
-        $readOnly = array();
 
-        foreach( $tmpReadOnly as $node )
-            $readOnly[] = $node;
+        $localhostPath = "/config/readonly/devices/entry[@name='localhost.localdomain']";
 
-        $readonlyDGAddressgroups = array();
+        // 1. Address Groups
+        $this->ReadonlyRemoveDuplicateElements("/config/readonly/shared", "address-group", "Address Group");
 
-        if( isset( $readOnly[0] ) )
-        {
-            $readonlyAddressgroups = DH::findFirstElement( $objectType, $readOnly[0]);
-            if( $readonlyAddressgroups !== false )
-                $demo = iterator_to_array($readonlyAddressgroups->childNodes);
-            else
-                $demo = array();
-        }
-        else
-            $demo = array();
+        // 2. Device Groups
+        $this->ReadonlyRemoveDuplicateElements($localhostPath, "device-group", "Device Group");
 
-        foreach( $demo as $objectAddressGroup )
-        {
-            /** @var DOMElement $objectApplication */
-            if( $objectAddressGroup->nodeType != XML_ELEMENT_NODE )
-                continue;
+        // 3. Templates
+        $this->ReadonlyRemoveDuplicateElements($localhostPath, "template", "Template");
 
-            $objectName = $objectAddressGroup->getAttribute('name');
-            if( isset($readonlyDGAddressgroups[$objectName]) )
-            {
-                $text = $locationName." shared has same {$objectType} defined twice: ".$objectName;
-                $readonlyAddressgroups->removeChild($objectAddressGroup);
-
-                $this->logFinding($locationName, $objectName, $objectType, $text, true);
-                $text .=PH::boldText(" (removed)");
-                PH::print_stdout("     - ".$text);
-
-                $this->counters['fixed']['ReadOnly Address Group'] = ($this->counters['fixed']['ReadOnly Address Group'] ?? 0) + 1;
-                $this->fixedReadOnlyAddressGroupobjects++;
-            }
-            else
-                $readonlyDGAddressgroups[$objectAddressGroupName] = $objectAddressGroup;
-        }
-
-        ////////////////////////////////////////////////////////////
-        ///config/readonly/devices/entry[@name='localhost.localdomain']/device-group
-
-        $xpath = "/config/readonly/devices/entry[@name='localhost.localdomain']";
-        $objectType = "device-group";
-        $locationName = "readonly";
-        PH::print_stdout( " - Scanning for {$xpath} for duplicate devicegroup ...");
-        $tmpReadOnly = DH::findXPath($xpath, $this->xmlDoc);
-        $readOnly = array();
-
-        foreach( $tmpReadOnly as $node )
-            $readOnly[] = $node;
-
-        $readonlyDeviceGroupsArray = array();
-
-        if( isset( $readOnly[0] ) )
-        {
-            $readonlyDeviceGroups = DH::findFirstElement($objectType, $readOnly[0]);
-            if( $readonlyDeviceGroups !== false )
-                $demo = iterator_to_array($readonlyDeviceGroups->childNodes);
-            else
-                $demo = array();
-        }
-        else
-            $demo = array();
-
-        foreach( $demo as $objectDeviceGroup )
-        {
-            /** @var DOMElement $objectDeviceGroup */
-            if( $objectDeviceGroup->nodeType != XML_ELEMENT_NODE )
-                continue;
-
-            $objectName = $objectDeviceGroup->getAttribute('name');
-            if( isset($readonlyDeviceGroupsArray[$objectName]) )
-            {
-                $text = $locationName." {$xpath}/{$objectType} has same {$objectType} defined twice: ".$objectName;
-                $readonlyDeviceGroups->removeChild($objectDeviceGroup);
-
-                $this->logFinding($locationName, $objectName, $objectType, $text, true);
-                $text .=PH::boldText(" (removed)");
-                PH::print_stdout("     - ".$text);
-
-                $this->counters['fixed']['ReadOnly Device Group'] = ($this->counters['fixed']['ReadOnly Device Group'] ?? 0) + 1;
-                $this->fixedReadOnlyDeviceGroupobjects++;
-            }
-            else
-                $readonlyDeviceGroupsArray[$objectName] = $objectDeviceGroup;
-        }
+        // 4. Template Stacks
+        $this->ReadonlyRemoveDuplicateElements($localhostPath, "template-stack", "TemplateStack");
 
 
-        ////////////////////////////////////////////////////////////
-        ///config/readonly/devices/entry[@name='localhost.localdomain']/template
-
-        $xpath = "/config/readonly/devices/entry[@name='localhost.localdomain']";
-        $objectType = "template";
-        $locationName = "readonly";
-        PH::print_stdout( " - Scanning for {$xpath} for duplicate template ...");
-        $tmpReadOnly = DH::findXPath($xpath, $this->xmlDoc);
-        $readOnly = array();
-
-        foreach( $tmpReadOnly as $node )
-            $readOnly[] = $node;
-
-        $readonlyTemplatesArray = array();
-
-        if( isset( $readOnly[0] ) )
-        {
-            $readonlyTemplates = DH::findFirstElement($objectType, $readOnly[0]);
-            if( $readonlyTemplates !== false )
-                $demo = iterator_to_array($readonlyTemplates->childNodes);
-            else
-                $demo = array();
-        }
-        else
-            $demo = array();
-
-        foreach( $demo as $objectTemplate )
-        {
-            /** @var DOMElement $objectTemplate */
-            if( $objectTemplate->nodeType != XML_ELEMENT_NODE )
-                continue;
-
-            $objectName = $objectTemplate->getAttribute('name');
-            if( isset($readonlyTemplatesArray[$objectName]) )
-            {
-                $text = $locationName." {$xpath}/{$objectType} has same {$objectType} defined twice: ".$objectName;
-                $readonlyTemplates->removeChild($objectTemplate);
-
-                $this->logFinding($locationName, $objectName, $objectType, $text, true);
-                $text .=PH::boldText(" (removed)");
-                PH::print_stdout("     - ".$text);
-
-                $this->counters['fixed']['ReadOnly Template'] = ($this->counters['fixed']['ReadOnly Template'] ?? 0) + 1;
-                $this->fixedReadOnlyTemplateobjects++;
-            }
-            else
-                $readonlyTemplatesArray[$objectName] = $objectTemplate;
-        }
+        //Todo: counting missing
+        $this->ReadonlyRemoveDuplicateElements("/config/readonly/devices/entry[@name='localhost.localdomain']/plugins/cloud_services/mobile-users/onboarding/entry",
+            "entry",            // We are looking for duplicate <entry> tags
+            "Onboarding Entry",
+            "readonly",
+            "Cloud Services Onboarding",
+            true                // Set to TRUE because 'entry' nodes are direct children of the XPath
+        );
 
 
-        ////////////////////////////////////////////////////////////
-        ///config/readonly/devices/entry[@name='localhost.localdomain']/template-stack
-
-        $xpath = "/config/readonly/devices/entry[@name='localhost.localdomain']";
-        $objectType = "template-stack";
-        $locationName = "readonly";
-        PH::print_stdout( " - Scanning for {$xpath} for duplicate {$objectType} ...");
-        $tmpReadOnly = DH::findXPath($xpath, $this->xmlDoc);
-        $readOnly = array();
-
-        foreach( $tmpReadOnly as $node )
-            $readOnly[] = $node;
-
-        $readonlyTemplateStacksArray = array();
-
-        if( isset( $readOnly[0] ) )
-        {
-            $readonlyTemplateStacks = DH::findFirstElement($objectType, $readOnly[0]);
-            if( $readonlyTemplateStacks !== false )
-                $demo = iterator_to_array($readonlyTemplateStacks->childNodes);
-            else
-                $demo = array();
-        }
-        else
-            $demo = array();
-
-        foreach( $demo as $object )
-        {
-            /** @var DOMElement $object */
-            if( $object->nodeType != XML_ELEMENT_NODE )
-                continue;
-
-            $objectName = $object->getAttribute('name');
-            if( isset($readonlyTemplateStacksArray[$objectName]) )
-            {
-                $text = $locationName." $xpath/{$objectType} has same {$objectType} defined twice: ".$objectName;
-                $readonlyTemplateStacks->removeChild($object);
-                $this->logFinding($locationName, $objectName, $objectType, $text, true);
-                $text .=PH::boldText(" (removed)");
-                PH::print_stdout("     - ".$text);
-
-                $this->counters['fixed']['ReadOnly TemplateStack'] = ($this->counters['fixed']['ReadOnly TemplateStack'] ?? 0) + 1;
-                $this->fixedReadOnlyTemplateStackobjects++;
-            }
-            else
-                $readonlyTemplateStacksArray[$objectName] = $object;
-        }
+        ///////////
 
 
         PH::print_stdout( "");
@@ -2434,6 +2584,30 @@ class XMLISSUE extends UTIL
         foreach ($groupLists as $groupList)
         {
             $this->fixedGroupIncludeListWithSameNode += $this->removeDuplicateChildNodes( $groupList, "group-include-list entry");
+        }
+
+        ////////////////////////////////////////////////////////////
+        ///scanning for all exclude-access-route
+
+        $objectType = "exclude-access-route";
+        PH::print_stdout(" - Scanning for {$objectType} for duplicate entries ...");
+        $groupLists = $this->xmlDoc->getElementsByTagName($objectType);
+
+        foreach ($groupLists as $groupList)
+        {
+            $this->fixedExcludeAccessRouteWithSameNode += $this->removeDuplicateChildNodes( $groupList, "exclude-access-route entry");
+        }
+
+        ////////////////////////////////////////////////////////////
+        ///scanning for all redist-rules
+
+        $objectType = "redist-rules";
+        PH::print_stdout(" - Scanning for {$objectType} for duplicate entries ...");
+        $groupLists = $this->xmlDoc->getElementsByTagName($objectType);
+
+        foreach ($groupLists as $groupList)
+        {
+            $this->fixedRedistRulesWithSameNode += $this->removeDuplicateChildNodes( $groupList, "redist-rules entry");
         }
 
 
@@ -2516,6 +2690,22 @@ class XMLISSUE extends UTIL
             PH::print_stdout( " - FIXED: NatRule with duplicate destination members: {$this->fixedNatRuleDestinationObjects}");
 
         PH::print_stdout( "----------");
+        
+        if( $this->fixedDecryptionRuleSourceObjects > 0 )
+            PH::print_stdout( " - FIXED: DecryptionRule with duplicate source members: {$this->fixedDecryptionRuleSourceObjects}");
+        if( $this->fixedDecryptionRuleDestinationObjects > 0 )
+            PH::print_stdout( " - FIXED: DecryptionRule with duplicate destination members: {$this->fixedDecryptionRuleDestinationObjects}");
+        if( $this->fixedDecryptionRuleServiceObjects > 0 )
+            PH::print_stdout( " - FIXED: DecryptionRule with duplicate service members: {$this->fixedDecryptionRuleServiceObjects}");
+        
+        PH::print_stdout( "----------");
+
+        if( $this->fixedappoverrideRuleSourceObjects > 0 )
+            PH::print_stdout( " - FIXED: AppOverrideRule with duplicate source members: {$this->fixedappoverrideRuleSourceObjects}");
+        if( $this->fixedappoverrideRuleDestinationObjects > 0 )
+            PH::print_stdout( " - FIXED: AppOverrideRule with duplicate destination members: {$this->fixedappoverrideRuleDestinationObjects}");
+
+        PH::print_stdout( "----------");
 
         if( $this->fixedReadOnlyAddressGroupobjects > 0 )
             PH::print_stdout( "\n - FIXED: ReadOnly duplicate AddressGroup : {$this->fixedReadOnlyAddressGroupobjects}");
@@ -2531,6 +2721,11 @@ class XMLISSUE extends UTIL
 
         if( $this->fixedGroupIncludeListWithSameNode > 0 )
             PH::print_stdout( "\n - FIXED: group-include-list : {$this->fixedGroupIncludeListWithSameNode}");
+        if( $this->fixedExcludeAccessRouteWithSameNode > 0 )
+            PH::print_stdout( "\n - FIXED: exclude-access-route : {$this->fixedExcludeAccessRouteWithSameNode}");
+        if( $this->fixedRedistRulesWithSameNode > 0 )
+            PH::print_stdout( "\n - FIXED: redist-rules : {$this->fixedRedistRulesWithSameNode}");
+
         if( $this->fixedScheduleCount > 0 )
             PH::print_stdout( "\n - FIXED: schedule recurring weekly : {$this->fixedScheduleCount}");
 
@@ -2579,6 +2774,13 @@ class XMLISSUE extends UTIL
             PH::print_stdout( " - FIX_MANUALLY: NAT Rules with wrong characters in name: {$this->countNATRuleObjectsWithWrongCharacters} (look in the logs )");
         if( $this->countDuplicateNATRuleObjects > 0 )
             PH::print_stdout( " - FIX_MANUALLY: duplicate NAT Rules: {$this->countDuplicateNATRuleObjects} (look in the logs )");
+
+        if( $this->countDecryptRuleObjectsWithDoubleSpaces > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: Decryption Rules with double spaces in name: {$this->countDecryptRuleObjectsWithDoubleSpaces} (look in the logs )");
+        if( $this->countDecryptRuleObjectsWithWrongCharacters > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: Decryption Rules with wrong characters in name: {$this->countDecryptRuleObjectsWithWrongCharacters} (look in the logs )");
+        if( $this->countDuplicateDecryptRuleObjects > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: duplicate Decryption Rules: {$this->countDuplicateDecryptRuleObjects} (look in the logs )");
         PH::print_stdout( "----------");
 
         if( $this->countMissconfiguredSecRuleFromObjects > 0 )
@@ -2779,46 +2981,134 @@ class XMLISSUE extends UTIL
      * Removes duplicate child elements based on their text content.
      * @return int The number of removed duplicates.
      */
-    private function removeDuplicateChildNodes( DOMElement $parent, string $label): int
+    private function removeDuplicateChildNodes(DOMElement $parent, string $label): int
     {
-        $seenEntries = [];
+        $seenValues = [];
         $toRemove = [];
         $removedCount = 0;
 
-        // Pass 1: Identify duplicates
         foreach ($parent->childNodes as $node)
         {
-            if ($node->nodeType !== XML_ELEMENT_NODE)
+            if ($node->nodeType !== XML_ELEMENT_NODE) {
                 continue;
+            }
 
-            $nodeValue = trim($node->textContent);
+            /** @var DOMElement $node */
 
-            if (isset($seenEntries[$nodeValue]))
+            // 1. Try to get the 'name' attribute (for <entry name="...">)
+            // 2. If empty, fall back to textContent (for <member>value</member>)
+            $identifier = $node->getAttribute('name');
+            if ($identifier === '') {
+                $identifier = trim($node->textContent);
+            }
+
+            if (isset($seenValues[$identifier])) {
                 $toRemove[] = $node;
-            else
-                $seenEntries[$nodeValue] = true;
+            } else {
+                $seenValues[$identifier] = true;
+            }
         }
 
-        // Pass 2: Remove duplicates
         foreach ($toRemove as $node)
         {
-            $nodeName = $node->textContent;
+            // Re-identify for the log message
+            $logName = $node->getAttribute('name');
+            if ($logName === '') {
+                $logName = trim($node->textContent);
+            }
+
             $xpath = $node->getNodePath();
 
-            $node->parentNode->removeChild($node);
+            if ($node->parentNode) {
+                $node->parentNode->removeChild($node);
 
-            $text = "remove $label: '<member>".$nodeName."</member>' from xPath: '".$xpath."' as it is a duplicate entry";
-            $this->logFinding("general", "[check text]", $label, $text, true);
+                $text = "remove $label: '{$logName}' from xPath: '{$xpath}' as it is a duplicate";
+                $this->logFinding("general", $logName, $label, $text, true);
 
-            $text .= " ... *FIXED*";
-            PH::print_stdout("    - ".$text);
+                $counterKey = "general {$label}";
+                $this->counters['fixed'][$counterKey] = ($this->counters['fixed'][$counterKey] ?? 0) + 1;
 
-            $removedCount++;
+                PH::print_stdout("    - " . $text . PH::boldText(" ... *FIXED*"));
+                $removedCount++;
+            }
         }
 
         return $removedCount;
     }
 
+
+    /**
+     * @param string $xpath The search path
+     * @param string $objectType The element tag name to look for (e.g., 'template')
+     * @param string $displayName The name used for counters and logs (e.g., 'Template')
+     * @param string $locationName Usually 'readonly'
+     */
+    //this is likely for the readonly seciont
+    private function ReadonlyRemoveDuplicateElements(string $xpath, string $objectType, string $displayName, string $locationName = "readonly", $logContext = null, $isEntryDeduplication = false): void
+    {
+        PH::print_stdout(" - Scanning for {$xpath} for duplicate {$objectType} ...");
+
+        $nodes = DH::findXPath($xpath, $this->xmlDoc);
+
+        if( count($nodes) === 0)
+        {
+            return;
+        }
+
+        $itemsToProcess = array();
+
+        if ($isEntryDeduplication) {
+            // We are deduplicating the entries found directly by XPath
+            $itemsToProcess = $nodes;
+        } else {
+            // Standard mode: Find the container first (like your previous examples)
+            $container = DH::findFirstElement($objectType, $nodes[0]);
+            if (!$container)
+                return;
+            $itemsToProcess = iterator_to_array($container->childNodes);
+        }
+
+        $seenNames = array();
+        $toRemove = array();
+
+
+        foreach ($itemsToProcess as $node)
+        {
+            if ($node->nodeType !== XML_ELEMENT_NODE)
+                continue;
+
+
+            /** @var DOMElement $node */
+            $name = $node->getAttribute('name');
+
+            if( isset($seenNames[$name]) ) {
+                $toRemove[] = $node;
+            } else {
+                $seenNames[$name] = $node;
+            }
+        }
+
+        foreach ($toRemove as $node) {
+            $name = $node->getAttribute('name');
+            $contextText = $logContext ? $logContext : "{$locationName} {$xpath}";
+            $text = "{$contextText} has same {$objectType} defined twice: {$name}";
+
+            if ($node->parentNode) {
+                $node->parentNode->removeChild($node);
+
+                $this->logFinding($locationName, $name, $objectType, $text, true);
+                PH::print_stdout("     - " . $text . PH::boldText(" (removed)"));
+
+                $counterKey = "ReadOnly {$displayName}";
+                $this->counters['fixed'][$counterKey] = ($this->counters['fixed'][$counterKey] ?? 0) + 1;
+
+                $propertyName = "fixedReadOnly" . str_replace([' ', '-'], '', $displayName) . "objects";
+                if (property_exists($this, $propertyName)) {
+                    $this->$propertyName++;
+                }
+            }
+        }
+    }
 
 
     /**
