@@ -133,6 +133,7 @@ class XMLISSUE extends UTIL
     public $fixedGroupIncludeListWithSameNode = 0;
     public $fixedExcludeAccessRouteWithSameNode = 0;
     public $fixedRedistRulesWithSameNode = 0;
+    public $fixedZoneWithSameNode = 0;
 
     public $fixedScheduleCount = 0;
 
@@ -2612,6 +2613,17 @@ class XMLISSUE extends UTIL
 
 
         ////////////////////////////////////////////////////////////
+        ///scanning for all vsys/zone
+
+        PH::print_stdout(" - Scanning for zone for duplicate entries ...");
+        $zoneNodes = $this->xmlDoc->getElementsByTagName("zone");
+
+        foreach ($zoneNodes as $zone)
+        {
+            $this->fixedZoneWithSameNode += $this->removeDuplicateChildNodes( $zone, "zone");
+        }
+
+        ////////////////////////////////////////////////////////////
         ///scanning for all schedule weekly
         PH::print_stdout(" - Scanning for schedule weekly duplicates ...");
 
@@ -2725,6 +2737,9 @@ class XMLISSUE extends UTIL
             PH::print_stdout( "\n - FIXED: exclude-access-route : {$this->fixedExcludeAccessRouteWithSameNode}");
         if( $this->fixedRedistRulesWithSameNode > 0 )
             PH::print_stdout( "\n - FIXED: redist-rules : {$this->fixedRedistRulesWithSameNode}");
+
+        if( $this->fixedZoneWithSameNode > 0 )
+            PH::print_stdout( "\n - FIXED: zone : {$this->fixedZoneWithSameNode}");
 
         if( $this->fixedScheduleCount > 0 )
             PH::print_stdout( "\n - FIXED: schedule recurring weekly : {$this->fixedScheduleCount}");
