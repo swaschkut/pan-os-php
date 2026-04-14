@@ -105,6 +105,8 @@ class FawkesConf
     /** @var AppStore */
     public $appStore;
 
+    public $predefinedappStore;
+
     /** @var ThreatStore */
     public $threatStore;
 
@@ -152,7 +154,10 @@ class FawkesConf
         $this->zoneStore->setName('zoneStore');
 
 
-        $this->appStore = AppStore::getPredefinedStore( $this );
+        $this->predefinedappStore = AppStore::getPredefinedStore( $this );
+        $this->appStore = new AppStore($this);
+        $this->appStore->name = 'apps';
+        $this->appStore->parentCentralStore = $this->predefinedappStore;
 
         $this->threatStore = ThreatStore::getPredefinedStore( $this );
 

@@ -24,6 +24,14 @@ class VirusAndWildfireProfile extends SecurityProfile2
 
     public $secprof_type;
 
+    public $ftp = array();
+    public $http = array();
+    public $http2 = array();
+    public $imap = array();
+    public $pop3 = array();
+    public $smb = array();
+    public $smtp = array();
+
     public $rules_obj = array();
 
     public $rule_coverage = array();
