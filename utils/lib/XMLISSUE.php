@@ -52,6 +52,8 @@ class XMLISSUE extends UTIL
     public $countDuplicateSecRuleObjects = 0;
     public $countDuplicateNATRuleObjects = 0;
     public $countDuplicateDecryptRuleObjects = 0;
+    public $countDuplicateAppOverrideRuleObjects = 0;
+    public $countDuplicateAuthRuleObjects = 0;
 
     public $countSecRuleObjectsWithDoubleSpaces = 0;
     public $countSecRuleObjectsWithWrongCharacters = 0;
@@ -61,7 +63,13 @@ class XMLISSUE extends UTIL
     
     public $countDecryptRuleObjectsWithDoubleSpaces = 0;
     public $countDecryptRuleObjectsWithWrongCharacters = 0;
-    
+
+    public $countAppOverrideRuleObjectsWithDoubleSpaces = 0;
+    public $countAppOverrideRuleObjectsWithWrongCharacters = 0;
+
+    public $countAuthRuleObjectsWithDoubleSpaces = 0;
+    public $countAuthRuleObjectsWithWrongCharacters = 0;
+
     public $countMissconfiguredSecRuleServiceObjects=0;
     public $fixedSecRuleServiceObjects=0;
     public $countMissconfiguredSecRuleApplicationObjects=0;
@@ -133,6 +141,8 @@ class XMLISSUE extends UTIL
     public $fixedGroupIncludeListWithSameNode = 0;
     public $fixedExcludeAccessRouteWithSameNode = 0;
     public $fixedRedistRulesWithSameNode = 0;
+    public $fixedGPappConfigWithSameValue = 0;
+
     public $fixedZoneWithSameNode = 0;
 
     public $fixedScheduleCount = 0;
@@ -302,6 +312,10 @@ class XMLISSUE extends UTIL
             $natrule_wrong_name = array();
             $decryptrule_name = array();
             $decryptrule_wrong_name = array();
+            $appoverriderule_name = array();
+            $appoverriderule_wrong_name = array();
+            $authrule_name = array();
+            $authrule_wrong_name = array();
 
             $objectTypeNode = DH::findFirstElement('address', $locationNode);
             if( $objectTypeNode !== FALSE )
@@ -1333,6 +1347,8 @@ class XMLISSUE extends UTIL
                 $decryptRuleIndex = array();
                 $appoverrideRules = array();
                 $appoverrideRuleIndex = array();
+                $authRules = array();
+                $authRuleIndex = array();
 
                 $secRuleSourceIndex = array();
                 $secRuleDestinationIndex = array();
@@ -1355,6 +1371,9 @@ class XMLISSUE extends UTIL
 
                 $appoverrideRuleSourceIndex = array();
                 $appoverrideRuleDestinationIndex = array();
+
+                $authRuleSourceIndex = array();
+                $authRuleDestinationIndex = array();
 
                 if( $objectTypeNode_rulebase !== FALSE )
                 {
@@ -1843,9 +1862,9 @@ class XMLISSUE extends UTIL
                             {
                                 foreach( $objectTypeNode->childNodes as $objectNode )
                                 {
-                                    $RuleSource = array();
-                                    $RuleDestination = array();
-                                    $RuleService = array();
+                                    $decryptRuleSource = array();
+                                    $decryptRuleDestination = array();
+                                    $decryptRuleService = array();
 
                                     /** @var DOMElement $objectNode */
                                     if( $objectNode->nodeType != XML_ELEMENT_NODE )
@@ -1858,8 +1877,8 @@ class XMLISSUE extends UTIL
 
                                     $decryptRules[$objectName][] = $objectNode;
 
-                                    if( !isset($RuleIndex[$objectName]) )
-                                        $RuleIndex[$objectName] = array('regular' => array(), 'group' => array());
+                                    if( !isset($decryptRuleIndex[$objectName]) )
+                                        $decryptRuleIndex[$objectName] = array('regular' => array(), 'group' => array());
 
                                     $decryptRuleIndex[$objectName]['regular'][] = $objectNode;
 
@@ -1948,7 +1967,7 @@ class XMLISSUE extends UTIL
                                             continue;
 
                                         $objectServiceName = $objectService->textContent;
-                                        if( isset($decryptRuleServices[$objectServiceName]) )
+                                        if( isset($decryptRuleServics[$objectServiceName]) )
                                         {
                                             $objectNode_services->removeChild($objectService);
 
@@ -1963,7 +1982,7 @@ class XMLISSUE extends UTIL
                                             $this->fixedDecryptionRuleServiceObjects++;
                                         }
                                         else
-                                            $decryptRuleServices[$objectServiceName] = $objectService;
+                                            $decryptRuleService[$objectServiceName] = $objectService;
                                     }
                                 }
 
@@ -2076,6 +2095,111 @@ class XMLISSUE extends UTIL
 
 
                             PH::print_stdout( " - parsed " . count($appoverrideRules) . " Application-Override Rules");
+                            PH::print_stdout( "");
+                        }
+                        elseif( $objectNode_ruletype->nodeName == "authentication" )
+                        {
+                            $objectTypeNode = DH::findFirstElement('rules', $objectNode_ruletype);
+                            if( $objectTypeNode !== FALSE )
+                            {
+                                foreach( $objectTypeNode->childNodes as $objectNode )
+                                {
+                                    $authRuleSource = array();
+                                    $authRuleDestination = array();
+
+                                    /** @var DOMElement $objectNode */
+                                    if( $objectNode->nodeType != XML_ELEMENT_NODE )
+                                        continue;
+
+                                    $objectName = $objectNode->getAttribute('name');
+
+                                    $this->check_name( $objectName, $objectNode, $authrule_name );
+                                    $this->check_wrong_name( $objectName, $objectNode, $authrule_wrong_name );
+
+                                    $authRules[$objectName][] = $objectNode;
+
+                                    if( !isset($authRuleIndex[$objectName]) )
+                                        $authRuleIndex[$objectName] = array('regular' => array(), 'group' => array());
+
+                                    $authRuleIndex[$objectName]['regular'][] = $objectNode;
+
+
+                                    //check if source has 'any' and additional
+                                    $objectNode_sources = DH::findFirstElement('source', $objectNode);
+                                    $demo = iterator_to_array($objectNode_sources->childNodes);
+                                    foreach( $demo as $objectSource )
+                                    {
+                                        /** @var DOMElement $objectSource */
+                                        if( $objectSource->nodeType != XML_ELEMENT_NODE )
+                                            continue;
+
+                                        $objectSourceName = $objectSource->textContent;
+                                        if( isset($authRuleSource[$objectSourceName]) )
+                                        {
+                                            $objectNode_sources->removeChild($objectSource);
+
+                                            $objectType = "AppOverrideRule";
+                                            $text = $objectType." ".$objectName." has same source defined twice: ".$objectSourceName;
+                                            $this->logFinding($locationName, $objectName, $objectType, $text, true);
+                                            $text2 = PH::boldText(" (removed)");
+                                            PH::print_stdout( "     - ".$text.$text2 );
+
+                                            $this->counters['fixed'][$objectType.' Source Object duplicate'] = ($this->counters['fixed'][$objectType.' Source Object duplicate'] ?? 0) + 1;
+                                            $this->fixedappoverrideRuleSourceObjects++;
+                                        }
+                                        else
+                                        {
+                                            $authRuleSource[$objectSourceName] = $objectSource;
+                                            #PH::print_stdout( $objectName.'add to array: '.$objectSourceName );
+                                        }
+
+                                    }
+                                    if( isset($authRuleSource['any']) and count($authRuleSource) > 1 )
+                                    {
+                                        $authRuleSourceIndex[$objectName] = $authRuleSource['any'];
+                                        PH::print_stdout( "     - Rule: '".$objectName."' has source 'any' + something else defined." );
+                                    }
+
+                                    //check if destination has 'any' and additional
+                                    $objectNode_destinations = DH::findFirstElement('destination', $objectNode);
+                                    $demo = iterator_to_array($objectNode_destinations->childNodes);
+                                    foreach( $demo as $objectDestination )
+                                    {
+                                        /** @var DOMElement $objectDestination */
+                                        if( $objectDestination->nodeType != XML_ELEMENT_NODE )
+                                            continue;
+
+                                        $objectDestinationName = $objectDestination->textContent;
+                                        #PH::print_stdout( "rule: ".$objectName." name: ".$objectDestinationName);
+                                        if( isset($authRuleDestination[$objectDestinationName]) )
+                                        {
+                                            $objectNode_destinations->removeChild($objectDestination);
+
+                                            $objectType = "AppOverrideRule";
+                                            $text = $objectType." ".$objectName." has same destination defined twice: ".$objectDestinationName;
+                                            $this->logFinding($locationName, $objectName, $objectType, $text, true);
+                                            $text2 = PH::boldText(" (removed)");
+                                            PH::print_stdout( "     - ".$text.$text2 );
+
+                                            $this->counters['fixed'][$objectType.' Destination Object duplicate'] = ($this->counters['fixed'][$objectType.' Destination Object duplicate'] ?? 0) + 1;
+                                            $this->fixedappoverrideRuleDestinationObjects++;
+                                        }
+                                        else
+                                            $authRuleDestination[$objectDestinationName] = $objectDestination;
+                                    }
+
+                                    if( isset($authRuleDestination['any']) and count($authRuleDestination) > 1 )
+                                    {
+                                        $authRuleDestinationIndex[$objectName] = $authRuleDestination['any'];
+                                        #PH::print_stdout( "     - Rule: '".$objectName."' has application 'any' + something else defined.") ;
+                                    }
+
+                                }
+
+                            }
+
+
+                            PH::print_stdout( " - parsed " . count($authRules) . " Authentication Rules");
                             PH::print_stdout( "");
                         }
                     }
@@ -2281,7 +2405,7 @@ class XMLISSUE extends UTIL
 
 
                             $newName = $key . $objectNode->getAttribute('name');
-                            if( !isset($natRuleIndex[$newName]) )
+                            if( !isset($decryptRuleIndex[$newName]) )
                             {
                                 $objectNode->setAttribute('name', $newName);
                                 $text .= PH::boldText(" - new name: " . $newName . " (fixed)\n");
@@ -2299,6 +2423,155 @@ class XMLISSUE extends UTIL
                             $this->countDuplicateDecryptRuleObjects++;
                         }
                     }
+
+                    ///////////////////////////////
+
+                    //
+                    //
+                    //
+                    PH::print_stdout( " - Scanning for Application-Override Rules with double spaces in name...");
+                    foreach( $appoverriderule_name as $objectName => $node )
+                    {
+                        $objectType = "AppOverrideRule";
+                        $text = $objectType." '{$objectName}' from DG/VSYS {$locationName} ";
+                        $text1 = "has '  ' double Spaces in name, this causes problems by copy&past 'set commands'";
+
+                        $text1 .= " at XML line #{$node->getLineNo()}";
+                        $text2 = " ... (*FIX_MANUALLY*)";
+
+                        $this->logFinding($locationName, $objectName, $objectType, $text1, false);
+                        PH::print_stdout( "    - ".$text.$text1.$text2);
+
+                        $this->counters['manual'][$objectType.' Name doubleSpace'] = ($this->counters['manual'][$objectType.' Name doubleSpace'] ?? 0) + 1;
+                        $this->countAppOverrideRuleObjectsWithDoubleSpaces++;
+                    }
+                    PH::print_stdout( " - Scanning for Application-Override Rules with wrong characters in name...");
+                    foreach( $appoverriderule_wrong_name as $objectName => $node )
+                    {
+                        $objectType = "AppOverrideRule";
+                        $text = $objectType." '{$objectName}' from DG/VSYS {$locationName} ";
+                        $text1 = "has wrong characters in name";
+                        $text1 .= " at XML line #{$node->getLineNo()}";
+                        $text2 = " ... (*FIX_MANUALLY*)";
+                        $this->logFinding($locationName, $objectName, $objectType, $text.$text1, false);
+
+                        PH::print_stdout( "    - ".$text.$text1.$text2);
+
+                        $this->counters['manual'][$objectType.' Name wrongCharacter'] = ($this->counters['manual'][$objectType.' Name wrongCharacter'] ?? 0) + 1;
+                        $this->countAppOverrideRuleObjectsWithWrongCharacters++;
+                    }
+
+                    PH::print_stdout( "\n - Scanning for duplicate Application-Override Rules...");
+                    foreach( $appoverrideRuleIndex as $objectName => $objectNodes )
+                    {
+                        $dupCount = count($objectNodes['regular']);
+
+                        if( $dupCount < 2 )
+                            continue;
+
+                        PH::print_stdout( "   - found Application-Override Rule named '{$objectName}' that exists " . $dupCount . " time:");
+                        foreach( $objectNodes['regular'] as $key => $objectNode )
+                        {
+
+                            /** @var DOMElement $objectNode */
+                            $objectType = "AppOverrideRule";
+                            $text = $objectType." at XML line #{$objectNode->getLineNo()}";
+
+
+                            $newName = $key . $objectNode->getAttribute('name');
+                            if( !isset($appoverrideRuleIndex[$newName]) )
+                            {
+                                $objectNode->setAttribute('name', $newName);
+                                $text .= PH::boldText(" - new name: " . $newName . " (fixed)\n");
+                                $this->logFinding($locationName, $objectName, $objectType, $text, true);
+                                PH::print_stdout( "       - ".$text );
+                            }
+                            else
+                            {
+                                $text .= " - Rulename can not be fixed: '" . $newName . "' is also available";
+                                $this->logFinding($locationName, $objectName, $objectType, $text, false);
+                                PH::print_stdout( "       - ".$text );
+                            }
+
+                            $this->counters['manual'][$objectType.' duplicate'] = ($this->counters['manual'][$objectType.' duplicate'] ?? 0) + 1;
+                            $this->countDuplicateAppOverrideRuleObjects++;
+                        }
+                    }
+
+                    ///////////////////////////////
+                    //
+                    //
+                    //
+                    PH::print_stdout( " - Scanning for Authentication Rules with double spaces in name...");
+                    foreach( $authrule_name as $objectName => $node )
+                    {
+                        $objectType = "AuthenticationRule";
+                        $text = $objectType." '{$objectName}' from DG/VSYS {$locationName} ";
+                        $text1 = "has '  ' double Spaces in name, this causes problems by copy&past 'set commands'";
+
+                        $text1 .= " at XML line #{$node->getLineNo()}";
+                        $text2 = " ... (*FIX_MANUALLY*)";
+
+                        $this->logFinding($locationName, $objectName, $objectType, $text1, false);
+                        PH::print_stdout( "    - ".$text.$text1.$text2);
+
+                        $this->counters['manual'][$objectType.' Name doubleSpace'] = ($this->counters['manual'][$objectType.' Name doubleSpace'] ?? 0) + 1;
+                        $this->countAuthRuleObjectsWithDoubleSpaces++;
+                    }
+                    PH::print_stdout( " - Scanning for Authentication Rules with wrong characters in name...");
+                    foreach( $authrule_wrong_name as $objectName => $node )
+                    {
+                        $objectType = "AuthenticationRule";
+                        $text = $objectType." '{$objectName}' from DG/VSYS {$locationName} ";
+                        $text1 = "has wrong characters in name";
+                        $text1 .= " at XML line #{$node->getLineNo()}";
+                        $text2 = " ... (*FIX_MANUALLY*)";
+                        $this->logFinding($locationName, $objectName, $objectType, $text.$text1, false);
+
+                        PH::print_stdout( "    - ".$text.$text1.$text2);
+
+                        $this->counters['manual'][$objectType.' Name wrongCharacter'] = ($this->counters['manual'][$objectType.' Name wrongCharacter'] ?? 0) + 1;
+                        $this->countAuthRuleObjectsWithWrongCharacters++;
+                    }
+
+                    PH::print_stdout( "\n - Scanning for duplicate Authentication Rules...");
+                    foreach( $authRuleIndex as $objectName => $objectNodes )
+                    {
+                        $dupCount = count($objectNodes['regular']);
+
+                        if( $dupCount < 2 )
+                            continue;
+
+                        PH::print_stdout( "   - found Authentication Rule named '{$objectName}' that exists " . $dupCount . " time:");
+                        foreach( $objectNodes['regular'] as $key => $objectNode )
+                        {
+
+                            /** @var DOMElement $objectNode */
+                            $objectType = "AuthenticationRule";
+                            $text = $objectType." at XML line #{$objectNode->getLineNo()}";
+
+
+                            $newName = $key . $objectNode->getAttribute('name');
+                            if( !isset($authRuleIndex[$newName]) )
+                            {
+                                $objectNode->setAttribute('name', $newName);
+                                $text .= PH::boldText(" - new name: " . $newName . " (fixed)\n");
+                                $this->logFinding($locationName, $objectName, $objectType, $text, true);
+                                PH::print_stdout( "       - ".$text );
+                            }
+                            else
+                            {
+                                $text .= " - Rulename can not be fixed: '" . $newName . "' is also available";
+                                $this->logFinding($locationName, $objectName, $objectType, $text, false);
+                                PH::print_stdout( "       - ".$text );
+                            }
+
+                            $this->counters['manual'][$objectType.' duplicate'] = ($this->counters['manual'][$objectType.' duplicate'] ?? 0) + 1;
+                            $this->countDuplicateAuthRuleObjects++;
+                        }
+                    }
+
+                    ///////////////////////////////
 
                     //
                     //
@@ -2633,6 +2906,31 @@ class XMLISSUE extends UTIL
         }
 
         ////////////////////////////////////////////////////////////
+        ///scanning for all gp-app-config/config/entry/value
+
+        PH::print_stdout(" - Scanning for gp-app-config/config/entry/value for duplicate entries ...");
+        $importNodes = $this->xmlDoc->getElementsByTagName("gp-app-config");
+
+        foreach ($importNodes as $import)
+        {
+            $network = DH::findFirstElement("config", $import);
+            if ($network)
+            {
+                foreach( $network->childNodes as $entry )
+                {
+                    /** @var DOMElement $entry */
+                    if( $entry->nodeType != XML_ELEMENT_NODE )
+                        continue;
+
+                    $value = DH::findFirstElement("value", $entry);
+
+                    $this->fixedGPappConfigWithSameValue += $this->removeDuplicateChildNodes( $value, "gp-app-config");
+                }
+
+            }
+        }
+
+        ////////////////////////////////////////////////////////////
         ///scanning for all schedule weekly
         PH::print_stdout(" - Scanning for schedule weekly duplicates ...");
 
@@ -2750,6 +3048,10 @@ class XMLISSUE extends UTIL
         if( $this->fixedZoneWithSameNode > 0 )
             PH::print_stdout( "\n - FIXED: zone : {$this->fixedZoneWithSameNode}");
 
+        if( $this->fixedGPappConfigWithSameValue > 0 )
+            PH::print_stdout( "\n - FIXED: gp-app-config : {$this->fixedGPappConfigWithSameValue}");
+
+
         if( $this->fixedScheduleCount > 0 )
             PH::print_stdout( "\n - FIXED: schedule recurring weekly : {$this->fixedScheduleCount}");
 
@@ -2805,6 +3107,21 @@ class XMLISSUE extends UTIL
             PH::print_stdout( " - FIX_MANUALLY: Decryption Rules with wrong characters in name: {$this->countDecryptRuleObjectsWithWrongCharacters} (look in the logs )");
         if( $this->countDuplicateDecryptRuleObjects > 0 )
             PH::print_stdout( " - FIX_MANUALLY: duplicate Decryption Rules: {$this->countDuplicateDecryptRuleObjects} (look in the logs )");
+
+
+        if( $this->countAppOverrideRuleObjectsWithDoubleSpaces > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: App-Override Rules with double spaces in name: {$this->countAppOverrideRuleObjectsWithDoubleSpaces} (look in the logs )");
+        if( $this->countAppOverrideRuleObjectsWithWrongCharacters > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: App-Override Rules with wrong characters in name: {$this->countAppOverrideRuleObjectsWithWrongCharacters} (look in the logs )");
+        if( $this->countDuplicateAppOverrideRuleObjects > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: duplicate App-Override Rules: {$this->countDuplicateAppOverrideRuleObjects} (look in the logs )");
+
+        if( $this->countAuthRuleObjectsWithDoubleSpaces > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: Authentication Rules with double spaces in name: {$this->countAuthRuleObjectsWithDoubleSpaces} (look in the logs )");
+        if( $this->countAuthRuleObjectsWithWrongCharacters > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: Authentication Rules with wrong characters in name: {$this->countAuthRuleObjectsWithWrongCharacters} (look in the logs )");
+        if( $this->countDuplicateAuthRuleObjects > 0 )
+            PH::print_stdout( " - FIX_MANUALLY: duplicate Authentication Rules: {$this->countDuplicateAuthRuleObjects} (look in the logs )");
         PH::print_stdout( "----------");
 
         if( $this->countMissconfiguredSecRuleFromObjects > 0 )
