@@ -2745,6 +2745,13 @@ SecurityProfileCallContext::$supportedActions['spyware.inline-ml.alert-only-set'
                 elseif( $action_xmlNode->textContent == "alert" )
                 {
                 }
+                elseif( !$object->cloud_inline_analysis_enabled )
+                {
+                    //explanation:
+                    //inline analysis is disabled -> but action is set to block -> not enabled, will not help
+                    $action_xmlNode->textContent = "alert";
+                    $object->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action'] = "alert";
+                }
                 else
                 {
                     $action_other_then_allow_alert = true;
