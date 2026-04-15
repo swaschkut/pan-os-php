@@ -1724,6 +1724,8 @@ class Snippet
         $this->serviceStore->nestedPointOfView();
         $this->tagStore->nestedPointOfView();
         $this->scheduleStore->nestedPointOfView();
+        $this->EDLStore->nestedPointOfView();
+        $this->LogProfileStore->nestedPointOfView();
         $this->appStore->nestedPointOfView();
 
         //

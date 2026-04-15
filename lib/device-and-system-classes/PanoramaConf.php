@@ -2194,9 +2194,13 @@ class PanoramaConf
 
                     'securityProfileGroupStore',
 
-                    'URLProfileStore', 'AntiVirusProfileStore', 'FileBlockingProfileStore', 'DataFilteringProfileStore',
-                    'VulnerabilityProfileStore', 'AntiSpywareProfileStore', 'WildfireProfileStore',
-                    'DecryptionProfileStore', 'HipObjectsProfileStore', 'customURLProfileStore'
+                    'URLProfileStore', 'AntiVirusProfileStore', 'FileBlockingProfileStore',
+                    'DataFilteringProfileStore',
+                    'VulnerabilityProfileStore', 'AntiSpywareProfileStore',
+                    'WildfireProfileStore',
+                    'DecryptionProfileStore', 'HipObjectsProfileStore', 'customURLProfileStore',
+
+                    'LogProfileStore'
 
                 );
 

@@ -226,11 +226,24 @@ class Zone
                     //Todo: swaschkut 20250918
                     //add reference
                     //network not available for VirtualSystem::
-                    if( get_class($this->owner->owner) == "VirtualSystem")
+                    if( get_class($this->owner->owner) == "VirtualSystem" )
                     {
                         if( isset($this->owner->owner->owner->network) )
                         {
                             $tmp_zpp =  $this->owner->owner->owner->network->zoneProtectionProfileStore->find( $this->zoneProtectionProfile );
+                            if( is_object( $tmp_zpp ) )
+                                $tmp_zpp->addReference( $this );
+                        }
+                        else
+                        {
+                            //Todo: 20260309 is it sharedgateway????
+                        }
+                    }
+                    elseif( get_class($this->owner->owner) == "DeviceCloud" )
+                    {
+                        if( isset($this->owner->owner->network) )
+                        {
+                            $tmp_zpp =  $this->owner->owner->network->zoneProtectionProfileStore->find( $this->zoneProtectionProfile );
                             if( is_object( $tmp_zpp ) )
                                 $tmp_zpp->addReference( $this );
                         }
@@ -247,7 +260,7 @@ class Zone
                 {
                     $this->logsetting = $node->textContent;
 
-                    if( get_class($this->owner->owner) == "VirtualSystem")
+                    if( get_class($this->owner->owner) == "VirtualSystem" || get_class($this->owner->owner) == "DeviceCloud" )
                     {
                         $tmp_logprof =  $this->owner->owner->LogProfileStore->find( $this->logsetting );
                         if( is_object( $tmp_logprof ) )

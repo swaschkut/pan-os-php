@@ -666,6 +666,13 @@ ZoneCallContext::$supportedActions['logsetting-set'] = array(
         $object = $context->object;
         $newLogSetting = $context->arguments['logforwardingprofile-name'];
 
+        if( $object->isTmp() )
+        {
+            $string = "because object is temporary";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
         $string = "new Log Setting will be '{$newLogSetting}'";
         PH::ACTIONlog( $context, $string );
 

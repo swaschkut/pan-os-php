@@ -458,6 +458,16 @@ class DeviceOnPrem
                     $this->$type->parentCentralStore = $parentContainer->$type;
             }
 
+
+            $this->addressStore->nestedPointOfView();
+            $this->serviceStore->nestedPointOfView();
+            $this->tagStore->nestedPointOfView();
+            $this->scheduleStore->nestedPointOfView();
+            $this->EDLStore->nestedPointOfView();
+            $this->LogProfileStore->nestedPointOfView();
+            $this->appStore->nestedPointOfView();
+
+
             //
             // Extract network related configs
             //

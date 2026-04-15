@@ -443,7 +443,9 @@ class BuckbeakConf
                         //'WildfireProfileStore',
                         'DecryptionProfileStore', 'HipObjectsProfileStore', 'customURLProfileStore',
 
-                        'DNSSecurityProfileStore', 'SaasSecurityProfileStore'
+                        'DNSSecurityProfileStore', 'SaasSecurityProfileStore',
+
+                        'LogProfileStore'
 
                     );
 
