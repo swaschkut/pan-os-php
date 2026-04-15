@@ -77,12 +77,23 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
 
         $ret = TRUE;
 
+        $rootObject = PH::findRootObjectOrDie($context->object->owner->owner);
+
         //Todo: check if $profName is available
         if( $type == 'virus' )
         {
-            $found = $secprofgroup->owner->owner->AntiVirusProfileStore->find( $profName, null, true );
-            if( $found )
-                $ret = $secprofgroup->setSecProf_AV($profName);
+            if( $rootObject->isBuckbeak() || $rootObject->isFawkes() )
+            {
+                $found = $secprofgroup->owner->owner->VirusAndWildfireProfileStore->find( $profName, null, true );
+                if( $found )
+                    $ret = $secprofgroup->setSecProf_AV($profName);
+            }
+            else
+            {
+                $found = $secprofgroup->owner->owner->AntiVirusProfileStore->find( $profName, null, true );
+                if( $found )
+                    $ret = $secprofgroup->setSecProf_AV($profName);
+            }
         }
         elseif( $type == 'vulnerability' )
         {
@@ -116,9 +127,28 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
         }
         elseif( $type == 'wildfire' )
         {
-            $found = $secprofgroup->owner->owner->WildfireProfileStore->find( $profName, null, true );
-            if( $found )
-                $ret = $secprofgroup->setSecProf_Wildfire($profName);
+            if( $rootObject->isBuckbeak() || $rootObject->isFawkes() )
+            {
+                $found = $secprofgroup->owner->owner->VirusAndWildfireProfileStore->find( $profName, null, true );
+                if( $found )
+                    $ret = $secprofgroup->setSecProf_AV($profName);
+            }
+            else
+            {
+                $found = $secprofgroup->owner->owner->WildfireProfileStore->find( $profName, null, true );
+                if( $found )
+                    $ret = $secprofgroup->setSecProf_Wildfire($profName);
+            }
+
+        }
+        elseif( $type == 'virus-and-wildfire-analysis' )
+        {
+            if( $rootObject->isBuckbeak() || $rootObject->isFawkes() )
+            {
+                $found = $secprofgroup->owner->owner->VirusAndWildfireProfileStore->find( $profName, null, true );
+                if( $found )
+                    $ret = $secprofgroup->setSecProf_AV($profName);
+            }
         }
         else
             derr("unsupported profile type '{$type}'");

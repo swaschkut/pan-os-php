@@ -64,6 +64,7 @@ class SecurityProfileStore extends ObjStore
         'PredefinedSecurityProfileFileBlocking' => array('name' => 'predefinedFileblocking', 'varName' => 'predefinedFileblockingSecProf', 'xpathRoot' => 'predefined-Fileblocking'),
         'PredefinedSecurityProfileWildfire' => array('name' => 'predefinedWildfire', 'varName' => 'predefinedWildfireSecProf', 'xpathRoot' => 'predefined-Wildfire'),
         'PredefinedSecurityProfileUrlFiltering' => array('name' => 'predefinedURLProfile', 'varName' => 'predefinedUrlFilteringSecProfiles', 'xpathRoot' => 'predefined-url-filtering '),
+        'PredefinedSecurityProfileVirusAndWildfire' => array('name' => 'predefinedVirusAndWildfire', 'varName' => 'predefinedVirusAndWildfireSecProf', 'xpathRoot' => 'predefined-VirusAndWildfire'),
 
 
         'DecryptionProfile' => array('name' => 'Decryption', 'varName' => 'decryptProf', 'xpathRoot' => 'decryption'),
@@ -128,6 +129,8 @@ class SecurityProfileStore extends ObjStore
     public static $predefinedWildfireStore = null;
     public static $predefinedUrlFitleringStore = null;
 
+    public static $predefinedVirusAndWildfireStore = null;
+
     /**
      * @return SecurityProfileStore|null
      */
@@ -171,6 +174,19 @@ class SecurityProfileStore extends ObjStore
         self::$predefinedVirusStore->load_virus_rules_from_predefinedfile();
 
         return self::$predefinedVirusStore;
+    }
+
+    public static function getVirusAndWildfirePredefinedStore( $owner )
+    {
+        if( self::$predefinedVirusAndWildfireStore !== null )
+            return self::$predefinedVirusAndWildfireStore;
+
+
+        self::$predefinedVirusAndWildfireStore = new SecurityProfileStore( $owner, "PredefinedSecurityProfileVirusAndWildfire");
+        self::$predefinedVirusAndWildfireStore->setName('predefined VirusAndWildfire');
+        self::$predefinedVirusAndWildfireStore->load_virusAndWildfire_rules_from_predefinedfile();
+
+        return self::$predefinedVirusAndWildfireStore;
     }
 
     public static function getSpywarePredefinedStore( $owner )
@@ -320,6 +336,22 @@ class SecurityProfileStore extends ObjStore
         $this->load_predefined_virus_rules_from_domxml( $cursor );
     }
 
+    public function load_virusAndWildfire_rules_from_predefinedfile($filename = null)
+    {
+        if( $filename === null )
+        {
+            $filename = dirname(__FILE__) . '/predefined.xml';
+        }
+
+        $xmlDoc = new DOMDocument();
+        $xmlDoc->load($filename, XML_PARSE_BIG_LINES);
+
+
+        $cursor = DH::findXPathSingleEntryOrDie('/predefined/profiles/virus', $xmlDoc);
+
+        $this->load_predefined_virusAndWildfire_rules_from_domxml( $cursor );
+    }
+    //
     public function load_spyware_rules_from_predefinedfile($filename = null)
     {
         if( $filename === null )
@@ -791,6 +823,45 @@ class SecurityProfileStore extends ObjStore
 
             #DH::DEBUGprintDOMDocument($appx);
             $app = new AntiVirusProfile( $appName, $this );
+            $app->load_from_domxml($appx);
+
+            #$app = $this->newPredefinedSecurityProfileURL($appName);
+            ##$app->type = 'predefined';
+
+            $this->nameIndex[$app->name()] = $app;
+            $this->fastNameToIndex[$app->name()] = $app;
+
+            //
+            $this->_SecurityProfiles[ $app->name() ] = $app;
+            #$this->_SecurityProfiles[$this->name] = $app;
+            $this->_all[] = $app;
+            #$this->_all[$this->name] = $app;
+            $this->o[] = $app;
+
+            $this->add($app);
+        }
+
+        sort($this->o);
+    }
+
+    public function load_predefined_virusAndWildfire_rules_from_domxml(DOMElement $xml)
+    {
+        foreach( $xml->childNodes as $appx )
+        {
+            if( $appx->nodeType != XML_ELEMENT_NODE )
+                continue;
+
+
+            $nodeName1 = $appx->nodeName;
+            if( $nodeName1 == "hidden-entries" )
+                continue;
+
+            $appName = DH::findAttribute('name', $appx);
+            if( $appName === FALSE )
+                derr("Predefined VirusAndWildfire rule name not found\n");
+
+            #DH::DEBUGprintDOMDocument($appx);
+            $app = new VirusAndWildfireProfile( $appName, $this );
             $app->load_from_domxml($appx);
 
             #$app = $this->newPredefinedSecurityProfileURL($appName);

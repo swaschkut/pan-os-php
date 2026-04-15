@@ -8,6 +8,7 @@ UTIL:
 * type=XYZ shadow-json=FILENAME | introduce extended argument to store JSON output to file
 * type=xml-issue | extend html-report with all available information
 * SCM related config adjust parentstore for objects - still problems with Snippet reading
+* class SecurityProfileGroup | adjustment for Buckbeack config SCM
 
 BUGFIX:
 * type=securityprofile securityprofiletype=spyware actions=spyware.alert-only-set | bugfix to add default config

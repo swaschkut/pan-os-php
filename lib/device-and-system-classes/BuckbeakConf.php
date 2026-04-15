@@ -118,6 +118,7 @@ class BuckbeakConf
     public $FileBlockingPredefinedStore;
     public $WildfirePredefinedStore;
     public $UrlFilteringPredefinedStore;
+    public $VirusAndWildfireProfileStore;
 
 
     /** @var ThreatPolicyStore */
@@ -181,6 +182,7 @@ class BuckbeakConf
         $this->UrlFilteringPredefinedStore = SecurityProfileStore::getUrlFilteringPredefinedStore( $this );
         $this->FileBlockingPredefinedStore = SecurityProfileStore::getFileBlockingPredefinedStore( $this );
         $this->WildfirePredefinedStore = SecurityProfileStore::getWildfirePredefinedStore( $this );
+        $this->VirusAndWildfireProfileStore = SecurityProfileStore::getVirusAndWildfirePredefinedStore( $this );
     }
 
 
