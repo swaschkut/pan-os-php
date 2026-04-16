@@ -270,11 +270,25 @@ trait ReferenceableObject
                 #Panorama - AddressGroup
                 if( isset($cur->owner->owner) && $cur->owner->owner !== null && method_exists($cur->owner->owner,'name') )
                 {
-                    if( $cur->owner->owner->name() !== "" )
-                        $tmp_name = $cur->owner->owner->name();
-                    else
+                    if( get_class($cur->owner->owner) !== "PanoramaConf"
+                        && get_class($cur->owner->owner) !== "DeviceGroup"
+                        && get_class($cur->owner->owner) !== "PANConf"
+                        && get_class($cur->owner->owner) !== "VirtualSystem"
+                        && get_class($cur->owner->owner) !== "Container"
+                        && get_class($cur->owner->owner) !== "DeviceCloud"
+                        && get_class($cur->owner->owner) !== "DeviceOnPrem"
+                        && get_class($cur->owner->owner) !== "Snippet"
+                    )
+                    {
                         $tmp_name = "shared";
-
+                    }
+                    else
+                    {
+                        if ($cur->owner->owner->name() !== "")
+                            $tmp_name = $cur->owner->owner->name();
+                        else
+                            $tmp_name = "shared";
+                    }
                     #print "pan-fw | ".$cur->owner->owner->name()."\n";
                     $location_array[$tmp_name] = $tmp_name;
                     if( isset($counter_array[$tmp_name]))
@@ -288,10 +302,26 @@ trait ReferenceableObject
                 //possible to be on FW?????
                 if( isset($cur->owner->owner->owner) && $cur->owner->owner->owner !== null && method_exists($cur->owner->owner->owner,'name') && $cur->owner->owner->owner->name() !== "")
                 {
-                    if( $cur->owner->owner->owner->name() !== "" )
-                        $tmp_name = $cur->owner->owner->owner->name();
-                    else
+                    if( get_class($cur->owner->owner->owner) !== "PanoramaConf"
+                        && get_class($cur->owner->owner->owner) !== "DeviceGroup"
+                        && get_class($cur->owner->owner->owner) !== "PANConf"
+                        && get_class($cur->owner->owner->owner) !== "VirtualSystem"
+                        && get_class($cur->owner->owner->owner) !== "Container"
+                        && get_class($cur->owner->owner->owner) !== "DeviceCloud"
+                        && get_class($cur->owner->owner->owner) !== "DeviceOnPrem"
+                        && get_class($cur->owner->owner->owner) !== "Snippet"
+                    )
+                    {
                         $tmp_name = "shared";
+                    }
+                    else
+                    {
+                        if( $cur->owner->owner->owner->name() !== "" )
+                            $tmp_name = $cur->owner->owner->owner->name();
+                        else
+                            $tmp_name = "shared";
+                    }
+
 
                     #print "fw-pan | ".$cur->owner->owner->owner->name()."\n";
                     $location_array[$tmp_name] = $tmp_name;
@@ -303,10 +333,25 @@ trait ReferenceableObject
                 //Firewall
                 elseif( isset($cur->owner->owner) && $cur->owner->owner !== null && method_exists($cur->owner->owner,'name') )
                 {
-                    if( $cur->owner->owner->name() !== "" )
-                        $tmp_name = $cur->owner->owner->name();
-                    else
+                    if( get_class($cur->owner->owner) !== "PanoramaConf"
+                        && get_class($cur->owner->owner) !== "DeviceGroup"
+                        && get_class($cur->owner->owner) !== "PANConf"
+                        && get_class($cur->owner->owner) !== "VirtualSystem"
+                        && get_class($cur->owner->owner) !== "Container"
+                        && get_class($cur->owner->owner) !== "DeviceCloud"
+                        && get_class($cur->owner->owner) !== "DeviceOnPrem"
+                        && get_class($cur->owner->owner) !== "Snippet"
+                    )
+                    {
                         $tmp_name = "shared";
+                    }
+                    else
+                    {
+                        if ($cur->owner->owner->name() !== "")
+                            $tmp_name = $cur->owner->owner->name();
+                        else
+                            $tmp_name = "shared";
+                    }
 
                     #print "fw | ".$cur->owner->owner->name()."\n";
                     $location_array[$tmp_name] = $tmp_name;

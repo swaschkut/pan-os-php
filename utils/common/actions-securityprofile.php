@@ -4232,3 +4232,191 @@ SecurityProfileCallContext::$supportedActions['file-blocking.alert-only-set'] = 
 
     },
 );
+
+
+SecurityProfileCallContext::$supportedActions[] = array(
+    'name' => 'move_from-shared_to_lowest_possible_DG',
+    'MainFunction' => function (SecurityProfileCallContext $context) {
+        $object = $context->object;
+
+        $localLocation = 'shared';
+
+        if( !$object->owner->owner->isPanorama() && !$object->owner->owner->isFirewall() )
+            $localLocation = $object->owner->owner->name();
+
+        if( $localLocation !== 'shared' )
+        {
+            $string = "because original location is NOT shared";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+        }
+
+
+        $reflocations = $object->getReferencesLocation();
+        $rootObject = PH::findRootObjectOrDie($object->owner->owner);
+        $spStore = get_class($object)."Store";
+
+        if( count($reflocations) > 1 )
+        {
+            //calculate foreach reflocation the DG hierarchy array;
+            $data = array();
+            foreach( $reflocations as $reflocation )
+            {
+                /** @var DeviceGroup $findSubSystem */
+                $findSubSystem = $rootObject->findSubSystemByName($reflocation);
+                if( $findSubSystem === null )
+                    derr("cannot find VSYS/DG named '$reflocation'");
+
+                if( get_class($findSubSystem) == "DeviceGroup" )
+                {
+                    $parentDGS = $findSubSystem->parentDeviceGroups();
+                    $parentDGS['shared'] = $findSubSystem->owner;
+
+
+                    $tmp_padding = "";
+
+                    $data[] = array_reverse(array_keys($parentDGS));
+                }
+            }
+
+            $common = array_values(array_intersect(...$data));
+            $lastKey = array_key_last($common);
+            $lastValue = $common[$lastKey];
+
+            PH::print_stdout("       * targetLocation: ".$lastValue);
+
+            $targetLocation = $lastValue;
+            $targetStore = null;
+
+            if( $localLocation == $targetLocation )
+            {
+                $string = "because original and target destinations are the same: $targetLocation";
+                PH::ACTIONstatus( $context, "SKIPPED", $string );
+                return;
+            }
+
+            if( $targetLocation == 'shared' )
+            {
+                $findSubSystem = $rootObject;
+
+                $targetStore = $rootObject->$spStore;
+            }
+            else
+            {
+                $findSubSystem = $rootObject->findSubSystemByName($targetLocation);
+                if( $findSubSystem === null )
+                    derr("cannot find VSYS/DG named '$targetLocation'");
+
+                $targetStore = $findSubSystem->$spStore;
+            }
+        }
+        elseif( count($reflocations) == 1 )
+        {
+            $targetLocation = array_key_last($reflocations);
+
+            if( $localLocation == $targetLocation )
+            {
+                $string = "because original and target destinations are the same: $targetLocation";
+                PH::ACTIONstatus( $context, "SKIPPED", $string );
+                return;
+            }
+
+            $findSubSystem = $rootObject->findSubSystemByName($targetLocation);
+            if( $findSubSystem === null )
+                derr("cannot find VSYS/DG named '$targetLocation'");
+
+            $targetStore = $findSubSystem->$spStore;
+        }
+        elseif( count($reflocations) == 0 )
+        {
+            $string = "because object is NOT used - can be deleted";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
+
+
+
+        /////////////////////////////////////////////////
+        if( $localLocation == 'shared' )
+        {
+            foreach( $object->getReferences() as $ref )
+            {
+                if( PH::getLocationString($ref) != $targetLocation )
+                {
+                    $skipped = TRUE;
+                    //check if targetLocation is parent of reflocation
+                    if( $findSubSystem->owner->isPanorama() )
+                        $locations = $findSubSystem->childDeviceGroups(TRUE);
+                    elseif( $findSubSystem->owner->isFirewall() )
+                    {
+                        $locations = array();
+                        $skipped = TRUE;
+                    }
+
+                    foreach( $locations as $childloc )
+                    {
+                        if( PH::getLocationString($ref) == $childloc->name() )
+                            $skipped = FALSE;
+                    }
+
+                    if( $skipped )
+                    {
+                        $string = "moving from SHARED to sub-level is NOT possible because of references";
+                        PH::ACTIONstatus( $context, "SKIPPED", $string );
+                        return;
+                    }
+                }
+            }
+        }
+
+        /////////////////////////////////////////////////////////
+        //Todo - move action from there
+
+        $conflictObject = $targetStore->find($object->name(), null, FALSE);
+        if( $conflictObject === null )
+        {
+            $string = "moved, no conflict";
+            PH::ACTIONlog( $context, $string );
+
+            //Todo: update remove and add SP object
+            if( $context->isAPI )
+            {
+                $oldXpath = $object->getXPath();
+                $object->owner->API_removeSecurityProfile($object);
+                $targetStore->API_addSecurityProfile($object);
+
+                $object->API_sync();
+                $context->connector->sendDeleteRequest($oldXpath);
+            }
+            else
+            {
+                $object->owner->removeSecurityProfile($object);
+                $targetStore->addSecurityProfile($object);
+            }
+            return;
+        }
+
+        if( $context->arguments['mode'] == 'skipifconflict' )
+        {
+            $string = "there is an object with same name. Choose another mode to to resolve this conflict";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
+        $string = "there is a conflict with an object of same name";
+        PH::ACTIONlog( $context, $string );
+
+        if( $object->equals($conflictObject) )
+        {
+            $string = "Removed because target has same content";
+            PH::ACTIONlog( $context, $string );
+            $object->replaceMeGlobally($conflictObject);
+
+            if( $context->isAPI )
+                $object->owner->API_removeSecurityProfile($object);
+            else
+                $object->owner->removeSecurityProfile($object);
+        }
+
+    }
+);

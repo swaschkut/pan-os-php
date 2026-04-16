@@ -9,6 +9,7 @@ UTIL:
 * type=xml-issue | extend html-report with all available information
 * SCM related config adjust parentstore for objects - still problems with Snippet reading
 * class SecurityProfileGroup | adjustment for Buckbeack config SCM
+* type=securityprofile actions=move_from-shared_to_lowest_possible_DG | introduce new action
 
 BUGFIX:
 * type=securityprofile securityprofiletype=spyware actions=spyware.alert-only-set | bugfix to add default config
