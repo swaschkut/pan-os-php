@@ -267,15 +267,6 @@ RQuery::$defaultFilters['interface-management-profile']['reflocation']['operator
 
         $reflocation_array = $object->getReferencesLocation();
 
-        if( strtolower($context->value) == 'shared' )
-        {
-            if( $owner->isPanorama() )
-                return TRUE;
-            if( $owner->isFirewall() )
-                return TRUE;
-            return FALSE;
-        }
-
         if( $owner->isPanorama() )
         {
             $DG = $owner->findDeviceGroup($context->value);

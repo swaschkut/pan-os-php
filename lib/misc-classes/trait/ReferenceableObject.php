@@ -250,27 +250,37 @@ trait ReferenceableObject
             if( isset($cur->owner->owner->owner->owner) && get_class( $cur->owner->owner->owner->owner ) == "PanoramaConf" )
             {
                 //Panorama - Rule
-                if( isset($cur->owner->owner->owner) && $cur->owner->owner->owner !== null && method_exists($cur->owner->owner->owner,'name') && $cur->owner->owner->owner->name() !== "")
+                if( isset($cur->owner->owner->owner) && $cur->owner->owner->owner !== null && method_exists($cur->owner->owner->owner,'name') )
                 {
-                    #print "pan | ".$cur->owner->owner->owner->name()."\n";
-                    $location_array[$cur->owner->owner->owner->name()] = $cur->owner->owner->owner->name();
-                    if( isset($counter_array[$cur->owner->owner->owner->name()]))
-                        $counter_array[$cur->owner->owner->owner->name()] += 1;
+                    if( $cur->owner->owner->owner->name() !== "" )
+                        $tmp_name = $cur->owner->owner->owner->name();
                     else
-                        $counter_array[$cur->owner->owner->owner->name()] = 1;
+                        $tmp_name = "shared";
+
+                    #print "pan | ".$cur->owner->owner->owner->name()."\n";
+                    $location_array[$tmp_name] = $tmp_name;
+                    if( isset($counter_array[$tmp_name]))
+                        $counter_array[$tmp_name] += 1;
+                    else
+                        $counter_array[$tmp_name] = 1;
                 }
             }
             elseif( isset($cur->owner->owner->owner) && get_class( $cur->owner->owner->owner ) == "PanoramaConf" )
             {
                 #Panorama - AddressGroup
-                if( isset($cur->owner->owner) && $cur->owner->owner !== null && method_exists($cur->owner->owner,'name') && $cur->owner->owner->name() !== "")
+                if( isset($cur->owner->owner) && $cur->owner->owner !== null && method_exists($cur->owner->owner,'name') )
                 {
-                    #print "pan-fw | ".$cur->owner->owner->name()."\n";
-                    $location_array[$cur->owner->owner->name()] = $cur->owner->owner->name();
-                    if( isset($counter_array[$cur->owner->owner->name()]))
-                        $counter_array[$cur->owner->owner->name()] += 1;
+                    if( $cur->owner->owner->name() !== "" )
+                        $tmp_name = $cur->owner->owner->name();
                     else
-                        $counter_array[$cur->owner->owner->name()] = 1;
+                        $tmp_name = "shared";
+
+                    #print "pan-fw | ".$cur->owner->owner->name()."\n";
+                    $location_array[$tmp_name] = $tmp_name;
+                    if( isset($counter_array[$tmp_name]))
+                        $counter_array[$tmp_name] += 1;
+                    else
+                        $counter_array[$tmp_name] = 1;
                 }
             }
             else
@@ -278,22 +288,32 @@ trait ReferenceableObject
                 //possible to be on FW?????
                 if( isset($cur->owner->owner->owner) && $cur->owner->owner->owner !== null && method_exists($cur->owner->owner->owner,'name') && $cur->owner->owner->owner->name() !== "")
                 {
-                    #print "fw-pan | ".$cur->owner->owner->owner->name()."\n";
-                    $location_array[$cur->owner->owner->owner->name()] = $cur->owner->owner->owner->name();
-                    if( isset($counter_array[$cur->owner->owner->owner->name()]))
-                        $counter_array[$cur->owner->owner->owner->name()] += 1;
+                    if( $cur->owner->owner->owner->name() !== "" )
+                        $tmp_name = $cur->owner->owner->owner->name();
                     else
-                        $counter_array[$cur->owner->owner->owner->name()] = 1;
+                        $tmp_name = "shared";
+
+                    #print "fw-pan | ".$cur->owner->owner->owner->name()."\n";
+                    $location_array[$tmp_name] = $tmp_name;
+                    if( isset($counter_array[$tmp_name]))
+                        $counter_array[$tmp_name] += 1;
+                    else
+                        $counter_array[$tmp_name] = 1;
                 }
                 //Firewall
-                elseif( isset($cur->owner->owner) && $cur->owner->owner !== null && method_exists($cur->owner->owner,'name') && $cur->owner->owner->name() !== "")
+                elseif( isset($cur->owner->owner) && $cur->owner->owner !== null && method_exists($cur->owner->owner,'name') )
                 {
-                    #print "fw | ".$cur->owner->owner->name()."\n";
-                    $location_array[$cur->owner->owner->name()] = $cur->owner->owner->name();
-                    if( isset($counter_array[$cur->owner->owner->name()]))
-                        $counter_array[$cur->owner->owner->name()] += 1;
+                    if( $cur->owner->owner->name() !== "" )
+                        $tmp_name = $cur->owner->owner->name();
                     else
-                        $counter_array[$cur->owner->owner->name()] = 1;
+                        $tmp_name = "shared";
+
+                    #print "fw | ".$cur->owner->owner->name()."\n";
+                    $location_array[$tmp_name] = $tmp_name;
+                    if( isset($counter_array[$tmp_name]))
+                        $counter_array[$tmp_name] += 1;
+                    else
+                        $counter_array[$tmp_name] = 1;
                 }
             }
 
