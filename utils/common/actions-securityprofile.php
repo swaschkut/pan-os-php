@@ -1564,7 +1564,13 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 $lines .= $context->encloseFunction($string_dns_list);
                 if( $bestPractice || $visibility)
                 {
-                    if( get_class($object) == "AntiSpywareProfile" ||  get_class($object) == "DNSSecurityProfile" )
+                    if( ( get_class($object) == "AntiSpywareProfile" &&
+                            (get_class($object->owner->owner ) == "PanoramaConf"
+                                || get_class($object->owner->owner ) == "DeviceGroup"
+                                || get_class($object->owner->owner ) == "PANConf"
+                                || get_class($object->owner->owner ) == "VirtualSystem")
+                        )
+                        ||  get_class($object) == "DNSSecurityProfile" )
                     {
                         if( $bestPractice )
                         {
@@ -1595,7 +1601,16 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 $lines .= $context->encloseFunction($string_dns_security);
                 if( $bestPractice || $visibility)
                 {
-                    if( (get_class($object) == "AntiSpywareProfile" || get_class($object) == "DNSSecurityProfile") && $object->owner->owner->version >= 102 )
+                    if( (
+                        ( get_class($object) == "AntiSpywareProfile" &&
+                            (get_class($object->owner->owner ) == "PanoramaConf"
+                                || get_class($object->owner->owner ) == "DeviceGroup"
+                                || get_class($object->owner->owner ) == "PANConf"
+                                || get_class($object->owner->owner ) == "VirtualSystem")
+                        )
+                            || get_class($object) == "DNSSecurityProfile")
+                        && $object->owner->owner->version >= 102
+                    )
                     {
                         if( $bestPractice )
                         {
