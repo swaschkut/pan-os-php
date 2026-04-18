@@ -417,7 +417,7 @@ class Container
 
                 $snippetObj = $this->owner->findSnippet($member->textContent);
                 if( $snippetObj !== null )
-                    $this->attachedSnippets[] = $snippetObj;
+                    $this->addSnippet($snippetObj);
             }
         }
 
@@ -1249,12 +1249,16 @@ class Container
         return $containers;
     }
 
-    public function addSnippet( $snippetObj)
+    public function addSnippet( $snippetObj )
     {
-        $this->attachedSnippets[] = $snippetObj;
+        $attachedSnippetsName = $this->getAttachedSnippetNames();
+        if( !isset($attachedSnippetsName[$snippetObj->name()]) )
+        {
+            $this->attachedSnippets[] = $snippetObj;
 
-        $snippetsXMLNode = DH::findFirstElementOrCreate( 'snippets', $this->xmlroot);
-        DH::createElement($snippetsXMLNode, 'member', $snippetObj->name());
+            $snippetsXMLNode = DH::findFirstElementOrCreate( 'snippets', $this->xmlroot);
+            DH::createElement($snippetsXMLNode, 'member', $snippetObj->name());
+        }
     }
 
     public function getAttachedSnippets()
@@ -1267,7 +1271,7 @@ class Container
         $name = array();
         foreach( $this->attachedSnippets as $snippet )
         {
-            $name[] = $snippet->name();
+            $name[$snippet->name()] = $snippet->name();
         }
 
         return $name;

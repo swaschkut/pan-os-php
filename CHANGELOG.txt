@@ -17,6 +17,7 @@ BUGFIX:
 * class VirusAndWildfireProfile | define missing variables
 * type=securityprofile actions=spyware.inline-ml.alert-only-set | improve corner case if inline analysis is disabled but actions are set to block -> set action to alert and enable analysis
 * type=XYZ 'filter=(reflocation is shared)' | bugfix to get specific search working
+* in=scm-api:// | improvements to read/add snippets to memory | sp spyware - dns-security fix
 
 GENERAL:
 * update Device App-ID to version: 9087-9979

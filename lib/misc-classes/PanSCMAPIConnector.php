@@ -36,6 +36,8 @@ class PanSCMAPIConnector
     private $_curl_handle = null;
     private $_curl_count = 0;
 
+    private $loadedSnippets = array();
+
 
     /**
      * @var PanAPIConnector[]
@@ -196,14 +198,6 @@ class PanSCMAPIConnector
             }
             //todo: swaschkut 20260125 - any other type???? what about on-prem???
 
-            if( isset($folder['snippets']) )
-            {
-                foreach( $folder['snippets'] as $snippet )
-                {
-                    $snippet = $pan->findSnippet( $snippet );
-                    $sub->addSnippet( $snippet );
-                }
-            }
         }
 
         foreach( $parentContainerNotFound as $parentNotFound )
@@ -278,6 +272,8 @@ class PanSCMAPIConnector
             if( $sub == null )
                 $sub = $pan->createContainer( $folder['name'], $parent );
             $sub->setSaseID($folder['id']);
+
+            $this->Connector_addSnippet($pan, $sub, $folder);
         }
 
         foreach( $deviceOnPremArray as $deviceOnPrem )
@@ -289,6 +285,8 @@ class PanSCMAPIConnector
             if( $sub == null )
                 $sub = $pan->createDeviceCloud( $folder['name'], $parent );
             $sub->setSaseID($folder['id']);
+
+            $this->Connector_addSnippet($pan, $sub, $folder);
         }
 
         foreach( $deviceCloudArray as $deviceCloud )
@@ -300,10 +298,23 @@ class PanSCMAPIConnector
             if( $sub == null )
                 $sub = $pan->createDeviceCloud( $folder['name'], $parent );
             $sub->setSaseID($folder['id']);
+
+            $this->Connector_addSnippet($pan, $sub, $folder);
         }
 
-
         return $folderNameArray;
+    }
+
+    public function Connector_addSnippet($pan, $sub, $folder)
+    {
+        if( isset($folder['snippets']) )
+        {
+            foreach( $folder['snippets'] as $snippet )
+            {
+                $snippet = $pan->findSnippet( $snippet );
+                $sub->addSnippet( $snippet );
+            }
+        }
     }
 
     public function getSnippetsavailable( BuckbeakConf $pan)
@@ -484,7 +495,13 @@ class PanSCMAPIConnector
                 derr( "problem with SCM API connection - not possible to get 'access_token'", null, FALSE );
             }
             elseif( $this->showApiCalls )
-                PH::print_stdout( "TOKEN: ".$jsonArray['access_token'] );
+            {
+                PH::print_stdout("---------");
+                PH::print_stdout( "TOKEN: ");
+                PH::print_stdout( $jsonArray['access_token'] );
+                PH::print_stdout();
+            }
+
 
             $this->access_token = $jsonArray['access_token'];
             $this->access_token_refreshed_time = time();
@@ -827,7 +844,9 @@ class PanSCMAPIConnector
 
         if( $this->showApiCalls )
         {
+            PH::print_stdout( "URL:");
             PH::print_stdout($url);
+            PH::print_stdout();
         }
 
         $header = array("Authorization: Bearer {$this->access_token}");
@@ -838,7 +857,15 @@ class PanSCMAPIConnector
         $response = curl_exec($this->_curl_handle);
         if( $this->showApiCalls )
         {
-            print $response . "\n";
+            PH::print_stdout("RESPONSE:");
+
+            if (json_validate($response))
+            {
+                $data = json_decode($response);
+                echo json_encode($data, JSON_PRETTY_PRINT);
+            }
+            else
+                PH::print_stdout($response);
         }
 
         $jsonArray = json_decode($response, TRUE);
@@ -1119,8 +1146,23 @@ class PanSCMAPIConnector
         return $this->curl_request_SCM( $url);
     }
 
+    function loadResources( $folder, $sub, $utilType, $type, $foldertype)
+    {
+        if( $utilType == "zone" || $utilType == "zone-protection-profile" )
+            $resource = $this->getNetworkResource( $type, $foldertype, $folder, $this->global_limit);
+        else
+            $resource = $this->getResource( $type, $foldertype, $folder, $this->global_limit);
+
+        return $resource;
+    }
+
     function loadSCMConfig($folder, $sub, $utilType, $ruleType = "security")
     {
+        if( get_class($sub) == "Snippet" )
+        {
+            $this->loadedSnippets[$sub->name()] = $sub->name();
+        }
+
         $typeArray = $this->getTypeArray($utilType);
         foreach( $typeArray as $type )
         {
@@ -1140,10 +1182,25 @@ class PanSCMAPIConnector
             elseif( get_class($sub) == "Snippet" )
                 $foldertype = "snippet";
 
-            if( $utilType == "zone" || $utilType == "zone-protection-profile" )
-                $resource = $this->getNetworkResource( $type, $foldertype, $folder, $this->global_limit);
-            else
-                $resource = $this->getResource( $type, $foldertype, $folder, $this->global_limit);
+            if( get_class($sub) !== "Snippet" )
+            {
+                $snippets = $sub->getAttachedSnippets();
+                if( count($snippets) > 0 )
+                {
+
+                    foreach( $snippets as $snippet )
+                    {
+                        if( !isset( $this->loadedSnippets[$snippet->name()] ) )
+                        {
+                            $resource = $this->loadResources($snippet->name(), $snippet, $utilType, $type, "snippet");
+                            $this->loadedSnippets[$snippet->name()] = $snippet->name();
+                        }
+                    }
+                }
+            }
+
+
+            $resource = $this->loadResources($folder, $sub, $utilType, $type, $foldertype);
 
             if( $resource !== null )
             {

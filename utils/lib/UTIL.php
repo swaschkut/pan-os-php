@@ -1883,8 +1883,8 @@ class UTIL
 
             //if( $this->debugAPI ) {
             PH::print_stdout();
-            PH::print_stdout( "FOLDER: ".$folder );
-                PH::print_stdout( "     ".($key+1)." / ". $folder_array_max);
+            PH::print_stdout( strtoupper(get_class($sub)).": ".$folder );
+            PH::print_stdout( "     ".($key+1)." / ". $folder_array_max);
                 //time start
             $date_start = time();
             $date = date('Y-m-d H:i:s');

@@ -39,12 +39,10 @@
         </setting>
       </deviceconfig>
       <snippet>
-        <entry name="predefined-snippet"/>
       </snippet>
       <container>
         <entry name="All">
           <snippets>
-            <member>predefined-snippet</member>
           </snippets>
           <devices>
             <entry name="localhost.localdomain">
