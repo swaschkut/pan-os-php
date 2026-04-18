@@ -645,7 +645,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
             {
                 $count++;
 
-                /** @var AntiVirusProfile|AntiSpywareProfile|customURLProfile|DataFilteringProfile|FileBlockingProfile|PredefinedSecurityProfileURL|URLProfile|VulnerabilityProfile|WildfireProfile $object */
+                /** @var AntiVirusProfile|AntiSpywareProfile|customURLProfile|DataFilteringProfile|FileBlockingProfile|PredefinedSecurityProfileURL|URLProfile|VulnerabilityProfile|WildfireProfile|DNSSecurityProfile|VirusAndWildfireProfile $object */
                 if( $count % 2 == 1 )
                     $lines .= "<tr>\n";
                 else

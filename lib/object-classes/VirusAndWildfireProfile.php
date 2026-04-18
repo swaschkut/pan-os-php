@@ -158,12 +158,12 @@ class VirusAndWildfireProfile extends SecurityProfile2
         return false;
     }
 
-    public function is_visible(): bool
+    public function is_visibility(): bool
     {
         return false;
     }
 
-    public function is_adaption(): bool
+    public function is_adoption(): bool
     {
         return false;
     }

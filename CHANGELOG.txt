@@ -19,6 +19,7 @@ BUGFIX:
 * type=XYZ 'filter=(reflocation is shared)' | bugfix to get specific search working
 * in=scm-api:// | improvements to read/add snippets to memory | sp spyware - dns-security fix
 * type=securityprofile actions=exportToHtml:file.html in=scm-api:// | fix for AS profile as dns parts are moved to SP dns-security
+* class VirusAndWildfireProfile | bugfix type in function name
 
 GENERAL:
 * update Device App-ID to version: 9087-9979
