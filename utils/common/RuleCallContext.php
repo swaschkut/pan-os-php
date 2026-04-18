@@ -1566,7 +1566,10 @@ class RuleCallContext extends CallContext
             /** @var SecurityProfileGroup $group */
             $group = $rule->owner->owner->securityProfileGroupStore->find($group_name);
 
-            $rule_profiles = $group->securityProfiles();
+            if( $group !== null )
+                $rule_profiles = $group->securityProfiles();
+            else
+                $rule_profiles = array();
         }
         else
             $rule_profiles = $rule->securityProfiles();
