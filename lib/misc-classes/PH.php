@@ -1007,10 +1007,13 @@ class PH
                 return 'shared';
             if( $class == 'DeviceGroup' || $class == 'VirtualSystem' )
                 return $panConfObject->name();
+            if( $class == 'Container' || $class == 'DeviceOnPrem' || $class == 'DeviceCloud' || $class == 'Snippet' )
+                return $panConfObject->name();
 
             if( isset($panConfObject->owner) && is_object($panConfObject->owner) )
                 $panConfObject = $panConfObject->owner;
             else
+                #return "---";
                 return FALSE;
 
         }

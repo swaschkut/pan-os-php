@@ -11,6 +11,7 @@ UTIL:
 * class SecurityProfileGroup | adjustment for Buckbeack config SCM
 * type=securityprofile actions=move_from-shared_to_lowest_possible_DG | introduce new action
 * class Snippet | extend as Referenceableobject - to display it with type=device devicetype=snippet
+* type=xyz actions=exportToHtml:file.html | unique method to get location string
 
 BUGFIX:
 * type=securityprofile securityprofiletype=spyware actions=spyware.alert-only-set | bugfix to add default config

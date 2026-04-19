@@ -653,17 +653,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
 
                 $lines .= $context->encloseFunction( (string)$count );
 
-                if( $object->owner->owner === null )
-                {
-                    $lines .= $context->encloseFunction('predefined');
-                }
-                else
-                {
-                    if( $object->owner->owner !== null && ( $object->owner->owner->isPanorama() || $object->owner->owner->isFirewall() ) )
-                        $lines .= $context->encloseFunction('shared');
-                    else
-                        $lines .= $context->encloseFunction($object->owner->owner->name());
-                }
+                $lines .= $context->encloseFunction(PH::getLocationString($object));
 
 
                 $lines .= $context->encloseFunction($object->name());
