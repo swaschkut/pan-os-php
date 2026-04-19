@@ -344,7 +344,7 @@ class PanSCMAPIConnector
                 $sub = $pan->createSnippet( $folder['name'] );
             $sub->setSaseID($folder['id']);
             if( isset($folder['type']) && $folder['type'] == "predefined" )
-                $sub-setPredefined( true );
+                $sub->setPredefined( true );
 
         }
 
