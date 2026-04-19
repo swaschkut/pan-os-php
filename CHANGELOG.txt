@@ -22,6 +22,7 @@ BUGFIX:
 * type=securityprofile actions=exportToHtml:file.html in=scm-api:// | fix for AS profile as dns parts are moved to SP dns-security
 * class VirusAndWildfireProfile | bugfix type in function name
 * class Rule | RuleCallContext - bugfix to handle not correct found SPG / SP because of SCM Snippets
+* type=stats json-to-folder | extend to support SCM config
 
 GENERAL:
 * update Device App-ID to version: 9087-9979

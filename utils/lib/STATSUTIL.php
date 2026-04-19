@@ -193,41 +193,42 @@ class STATSUTIL extends RULEUTIL
                     else
                         $filePrefix = "Panorama-DG-Hierarchy_".$this->location;
                 }
-                elseif( $type == 'DeviceGroup' )
+                elseif( $type == 'BuckbeakConf' )
+                {
+                    if( !PH::$shadow_loaddghierarchy )
+                        $filePrefix = "Buckbeak-full";
+                    else
+                        $filePrefix = "Buckbeak-Folder-Hierarchy_".$this->location;
+                }
+                elseif( $type == 'FawkesConf' )
+                {
+                    if( !PH::$shadow_loaddghierarchy )
+                        $filePrefix = "Fawkes-full";
+                    else
+                        $filePrefix = "Fawkes-Folder-Hierarchy_".$this->location;
+                }
+                elseif( $type == 'DeviceGroup' || $type == 'VirtualSystem'
+                    || $type == 'Container' || $type == 'DeviceOnPrem' || $type == 'DeviceCloud' || $type == 'Snippet'
+                )
                 {
                     // Extract device group name from header or use a counter
-                    $dgName = "DeviceGroup";
+                    $tmpName = $type;
                     if( isset($stat['header']) )
                     {
                         // Try to extract name from header like "BP/Visibility Statistics for VSYS 'DG1' | 'xxx'"
                         if( preg_match("/'([^']+)'/", $stat['header'], $matches) )
                         {
-                            $dgName = $matches[1];
+                            $tmpName = $matches[1];
                             // Strip ANSI escape codes and other non-printable characters
-                            $dgName = preg_replace('/\033\[[0-9;]*m/', '', $dgName);
-                            $dgName = trim($dgName);
+                            $tmpName = preg_replace('/\033\[[0-9;]*m/', '', $tmpName);
+                            $tmpName = trim($tmpName);
                         }
                     }
-                    $filePrefix = $dgName;
+                    $filePrefix = $tmpName;
                 }
                 elseif( $type == 'PANConf' )
                 {
                     $filePrefix = "Firewall-full";
-                }
-                elseif( $type == 'VirtualSystem' )
-                {
-                    $vsysName = "VirtualSystem";
-                    if( isset($stat['header']) )
-                    {
-                        if( preg_match("/'([^']+)'/", $stat['header'], $matches) )
-                        {
-                            $vsysName = $matches[1];
-                            // Strip ANSI escape codes and other non-printable characters
-                            $vsysName = preg_replace('/\033\[[0-9;]*m/', '', $vsysName);
-                            $vsysName = trim($vsysName);
-                        }
-                    }
-                    $filePrefix = $vsysName;
                 }
                 else
                 {
