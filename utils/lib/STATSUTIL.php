@@ -196,7 +196,11 @@ class STATSUTIL extends RULEUTIL
                 elseif( $type == 'BuckbeakConf' )
                 {
                     if( !PH::$shadow_loaddghierarchy )
-                        $filePrefix = "Buckbeak-full";
+                    {
+                        //Todo: this is only to get it working with VCP right now!!!!!
+                        #$filePrefix = "Buckbeak-full";
+                        $filePrefix = "Panorama-full";
+                    }
                     else
                         $filePrefix = "Buckbeak-Folder-Hierarchy_".$this->location;
                 }
