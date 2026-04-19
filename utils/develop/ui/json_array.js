@@ -4707,6 +4707,10 @@ var subjectObject =
                     }
                 }
             },
+            "delete": {
+                "name": "delete",
+                "MainFunction": {}
+            },
             "display": {
                 "name": "display",
                 "MainFunction": {}
@@ -4758,6 +4762,24 @@ var subjectObject =
                             "TotalUse"
                         ],
                         "help": "pipe(|) separated list of additional field to include in the report. The following is available:\n  - WhereUsed : list places where object is used (rules, groups ...)\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n  - TotalUse : list a counter how often this object is used\n"
+                    }
+                }
+            },
+            "move": {
+                "name": "move",
+                "MainFunction": {},
+                "args": {
+                    "location": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    },
+                    "mode": {
+                        "type": "string",
+                        "default": "skipIfConflict",
+                        "choices": [
+                            "skipIfConflict",
+                            "removeIfMatch"
+                        ]
                     }
                 }
             }
@@ -7574,6 +7596,31 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
+                    "is.type.snippet": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "returns TRUE if object location is Snippet"
+                    },
+                    "is.type.folder": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "returns TRUE if object location is Folder"
+                    },
+                    "is.type.container": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "returns TRUE if object location is Container"
+                    },
+                    "is.type.devicecloud": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "returns TRUE if object location is DeviceCloud"
+                    },
+                    "is.type.deviceonprem": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "returns TRUE if object location is DeviceOnPrem"
+                    },
                     "regex": {
                         "Function": {},
                         "arg": true,
@@ -9134,6 +9181,10 @@ var subjectObject =
                         ]
                     }
                 }
+            },
+            "move_from-shared_to_lowest_possible_dg": {
+                "name": "move_from-shared_to_lowest_possible_DG",
+                "MainFunction": {}
             },
             "name-addprefix": {
                 "name": "name-addPrefix",
