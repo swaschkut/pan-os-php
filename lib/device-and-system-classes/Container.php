@@ -1249,8 +1249,9 @@ class Container
         return $containers;
     }
 
-    public function addSnippet( $snippetObj )
+    public function addSnippet( $snippetObj ): void
     {
+        /** @var Snippet $snippetObj */
         $attachedSnippetsName = $this->getAttachedSnippetNames();
         if( !isset($attachedSnippetsName[$snippetObj->name()]) )
         {
@@ -1258,6 +1259,8 @@ class Container
 
             $snippetsXMLNode = DH::findFirstElementOrCreate( 'snippets', $this->xmlroot);
             DH::createElement($snippetsXMLNode, 'member', $snippetObj->name());
+
+            $snippetObj->addReference($this);
         }
     }
 
