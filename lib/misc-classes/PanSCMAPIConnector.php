@@ -704,14 +704,14 @@ class PanSCMAPIConnector
         elseif( $utilType == "stats" )
         {
             //Todo: out for faster validation of BPA
-            #$this->typeArray[] = "tags";
+            $this->typeArray[] = "tags";
 
-            #$this->typeArray[] = "addresses";
-            #$this->typeArray[] = "address-groups";
-            #$this->typeArray[] = "regions";
+            $this->typeArray[] = "addresses";
+            $this->typeArray[] = "address-groups";
+            $this->typeArray[] = "regions";
 
-            #$this->typeArray[] = "services";
-            #$this->typeArray[] = "service-groups";
+            $this->typeArray[] = "services";
+            $this->typeArray[] = "service-groups";
 
             $this->typeArray[] = "anti-spyware-profiles";
             $this->typeArray[] = "dns-security-profiles";
@@ -858,6 +858,11 @@ class PanSCMAPIConnector
 
 
         $response = curl_exec($this->_curl_handle);
+
+        $this->displayCurlResponse($response, $url);
+        $jsonArray = json_decode($response, TRUE);
+
+        /*
         if( $this->showApiCalls )
         {
             PH::print_stdout("RESPONSE:");
@@ -877,7 +882,7 @@ class PanSCMAPIConnector
         {
             print_r($jsonArray['_errors']);
             derr($jsonArray['_errors'][0]['message'], null, FALSE);
-        }
+        }*/
 
         return $jsonArray;
     }
@@ -911,7 +916,16 @@ class PanSCMAPIConnector
         #PH::print_stdout( "     time: ".$date);
         #PH::print_stdout("     -1 '". $folderName. "' object: " . $type. " URL: '".$url."'");
 
-
+        if( $type !== null )
+        {
+            if( $foldertype == "snippet" )
+            {
+                if( !isset( $this->loadedSnippets[$foldertype][$folderName][$type] ) )
+                    PH::print_stdout( "       - ".$type." - ".$foldertype." - ".$folderName);
+            }
+            else
+                PH::print_stdout( "       - ".$type." - ".$foldertype." - ".$folderName);
+        }
 
 
         $jsonArray = $this->curl_request_SCM( $url );
@@ -1161,11 +1175,6 @@ class PanSCMAPIConnector
 
     function loadSCMConfig($folder, $sub, $utilType, $ruleType = "security")
     {
-        if( get_class($sub) == "Snippet" )
-        {
-            $this->loadedSnippets[$sub->name()] = $sub->name();
-        }
-
         $typeArray = $this->getTypeArray($utilType);
         foreach( $typeArray as $type )
         {
@@ -1193,17 +1202,21 @@ class PanSCMAPIConnector
 
                     foreach( $snippets as $snippet )
                     {
-                        if( !isset( $this->loadedSnippets[$snippet->name()] ) )
+                        if( !isset( $this->loadedSnippets[strtolower(get_class($sub))][$snippet->name()][$type] ) )
                         {
                             $resource = $this->loadResources($snippet->name(), $snippet, $utilType, $type, "snippet");
-                            $this->loadedSnippets[$snippet->name()] = $snippet->name();
+                            $this->loadedSnippets["snippet"][$snippet->name()][$type] = $snippet->name();
                         }
                     }
                 }
             }
 
-
-            $resource = $this->loadResources($folder, $sub, $utilType, $type, $foldertype);
+            $resource = null;
+            if( !isset( $this->loadedSnippets[$foldertype][$sub->name()][$type] ) )
+            {
+                $resource = $this->loadResources($folder, $sub, $utilType, $type, $foldertype);
+                $this->loadedSnippets[$foldertype][$sub->name()][$type] = $sub->name();
+            }
 
             if( $resource !== null )
             {
@@ -2067,7 +2080,7 @@ class PanSCMAPIConnector
 
         $response = curl_exec($this->_curl_handle);
 
-        $this->displayCurlResponse( $response );
+        $this->displayCurlResponse( $response, $url );
     }
 
     public function sendPUTRequest( $element )
@@ -2111,7 +2124,7 @@ class PanSCMAPIConnector
 
         $response = curl_exec($this->_curl_handle);
 
-        $this->displayCurlResponse( $response );
+        $this->displayCurlResponse( $response, $url );
     }
 
     public function sendDELETERequest($object )
@@ -2149,10 +2162,10 @@ class PanSCMAPIConnector
 
         $response = curl_exec($this->_curl_handle);
 
-        $this->displayCurlResponse( $response );
+        $this->displayCurlResponse( $response, $url );
     }
 
-    private function displayCurlResponse( $response )
+    private function displayCurlResponse( $response, $url )
     {
         $jsonArray = json_decode($response, TRUE);
 
@@ -2162,6 +2175,10 @@ class PanSCMAPIConnector
             derr($jsonArray['_errors'][0]['message'], null, FALSE);
         }
 
+        if( isset($jsonArray['msg']) && $jsonArray['msg'] == "Access denied" )
+        {
+            PH::print_stdout( "         x wrong Access rights for: '".$url."'");
+        }
 
         if( $this->showApiCalls )
         {
