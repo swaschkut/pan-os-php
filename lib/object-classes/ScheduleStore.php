@@ -83,7 +83,7 @@ class ScheduleStore extends ObjStore
                         $f = $snippet->$storeType->findbyName($name, $ref, false);
                         if( $f !== null )
                         {
-                            PH::print_stdout("found Snippet: ".$snippet->name());
+                            #PH::print_stdout("found Snippet: ".$snippet->name());
                             return $f;
                         }
                     }

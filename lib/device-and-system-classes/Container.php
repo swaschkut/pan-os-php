@@ -1296,7 +1296,7 @@ class Container
         $attachedSnippetsName = $this->getAttachedSnippetNames();
         if( !isset($attachedSnippetsName[$snippetObj->name()]) )
         {
-            $this->attachedSnippets[] = $snippetObj;
+            $this->attachedSnippets[$snippetObj->name()] = $snippetObj;
 
             $snippetsXMLNode = DH::findFirstElementOrCreate( 'snippets', $this->xmlroot);
             DH::createElement($snippetsXMLNode, 'member', $snippetObj->name());

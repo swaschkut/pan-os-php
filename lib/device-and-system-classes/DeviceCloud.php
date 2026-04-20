@@ -1122,7 +1122,7 @@ class DeviceCloud
 
     public function addSnippet( $snippetObj)
     {
-        $this->attachedSnippets[] = $snippetObj;
+        $this->attachedSnippets[$snippetObj->name()] = $snippetObj;
     }
 
     public function getAttachedSnippets()

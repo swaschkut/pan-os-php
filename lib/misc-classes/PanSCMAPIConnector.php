@@ -1280,15 +1280,33 @@ class PanSCMAPIConnector
         {
             if( isset( $object['folder'] ) )
             {
-                if( $object['folder'] === "predefined" )
-                    continue;
+                if( !isset( $object['snippet'] ) )
+                {
+                    if( $object['folder'] === "predefined" )
+                        continue;
 
-                if( $object['folder'] !== $folder )
-                    continue;
+                    if( $object['folder'] !== $folder )
+                        continue;
+                }
+                else
+                {
+                    //todo: find correct snippet
+                    $tmp_snippetName = $object['snippet'];
+                    if( $object['snippet'] == "predefined" )
+                        $tmp_snippetName .= "-snippet";
+
+                    $sub = $sub->owner->findSnippet($tmp_snippetName);
+                }
+
             }
             elseif( isset( $object['snippet'] ) )
             {
-                if( $object['snippet'] !== $folder )
+                if( $object['snippet'] == "predefined" )
+                {
+                    $tmp_snippetName .= "-snippet";
+                    $sub = $sub->owner->findSnippet($tmp_snippetName);
+                }
+                elseif( $object['snippet'] !== $folder )
                     continue;
             }
             elseif( isset( $object['device'] ) )

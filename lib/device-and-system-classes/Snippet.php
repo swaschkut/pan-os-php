@@ -433,7 +433,7 @@ class Snippet
 
                 $snippetObj = $this->owner->findSnippet($member->textContent);
                 if( $snippetObj !== null )
-                    $this->attachedSnippets[] = $snippetObj;
+                    $this->attachedSnippets[$snippetObj->name()] = $snippetObj;
             }
         }
 

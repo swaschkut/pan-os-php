@@ -429,7 +429,7 @@ class ServiceStore
                         $f = $snippet->$storeType->findbyName($objectName, $ref, false);
                         if( $f !== null )
                         {
-                            PH::print_stdout("found Snippet: ".$snippet->name());
+                            #PH::print_stdout("found Snippet: ".$snippet->name());
                             return $f;
                         }
                     }

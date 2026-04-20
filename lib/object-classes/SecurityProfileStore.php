@@ -490,11 +490,11 @@ class SecurityProfileStore extends ObjStore
                 {
                     foreach( $attachedSnippets as $snippet )
                     {
-                        $storeType = get_class( $this );
+                        $storeType = self::$storeNameByType[$this->type]['name']."ProfileStore";
+
                         $f = $snippet->$storeType->findbyName($objectName, $ref, false);
                         if( $f !== null )
                         {
-                            PH::print_stdout("found Snippet: ".$snippet->name());
                             return $f;
                         }
                     }
