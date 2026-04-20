@@ -359,15 +359,6 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
 
         $headers .= '<th>Data Filtering</th>';
 
-        if( $addWhereUsed )
-            $headers .= '<th>where used</th>';
-        if( $addUsedInLocation )
-            $headers .= '<th>location used</th>';
-        if( $addTotalUse )
-            $headers .= '<th>total use</th>';
-        if( $addCountDisabledRules )
-            $headers .= '<th>count disabled Rules</th>';
-
         //Todo: only add if container/DeviceCloud/DeviceOnPrem/Snippet
         if( $context->deviceType === "scm" )
         {
@@ -388,6 +379,15 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
             if( $adoption )
                 $headers .= '<th>DNS Security adoption</th>';
         }
+
+        if( $addWhereUsed )
+            $headers .= '<th>where used</th>';
+        if( $addUsedInLocation )
+            $headers .= '<th>location used</th>';
+        if( $addTotalUse )
+            $headers .= '<th>total use</th>';
+        if( $addCountDisabledRules )
+            $headers .= '<th>count disabled Rules</th>';
 
         $bp_text_yes = "yes";
         $bp_text_no = "no";

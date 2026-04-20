@@ -463,12 +463,15 @@ class SecurityRule extends RuleWithUserID
                 if( is_object( $tmp_group ) )
                 {
                     $this->secprofgroup = $firstE->textContent;
-                    //Todo: swaschkut 20210422
+                    //Todo: swaschkut 20210422 - 20260420 - how to validate if this is still an issue??
                     //- not working due to parentcentralStore implementation wrong
                     $tmp_group->addReference( $this );
+                    #mwarning( "SPG object found - add reference" );
                 }
                 else
                 {
+                    //TodoSCM config not working
+                    #mwarning( "SPG is text" );
                     //todo: not an object - default object not yet created
                     $this->secprofgroup = $firstE->textContent;
                 }

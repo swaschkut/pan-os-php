@@ -24,6 +24,7 @@ BUGFIX:
 * class VirusAndWildfireProfile | bugfix type in function name
 * class Rule | RuleCallContext - bugfix to handle not correct found SPG / SP because of SCM Snippets
 * type=stats json-to-folder | extend to support SCM config
+* type=securityprofilegroup actions=exporttoexcel | correction of table export
 
 GENERAL:
 * update Device App-ID to version: 9087-9979

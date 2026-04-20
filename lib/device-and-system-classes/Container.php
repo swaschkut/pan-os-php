@@ -406,6 +406,21 @@ class Container
     {
         $this->xmlroot = $xml;
 
+
+        // this VirtualSystem has a name ?
+        $this->name = DH::findAttribute('name', $xml);
+        if( $this->name === FALSE )
+            derr("VirtualSystem name not found\n");
+
+
+        if( $this->name() == "All" )
+        {
+            $snippetObj = $this->owner->findSnippet("predefined-snippet");
+            if( $snippetObj !== null )
+                $this->addSnippet($snippetObj);
+        }
+
+
         $tmp = DH::findFirstElement('snippets', $xml);
         if( $tmp !== FALSE )
         {
@@ -421,11 +436,6 @@ class Container
             }
         }
 
-
-        // this VirtualSystem has a name ?
-        $this->name = DH::findAttribute('name', $xml);
-        if( $this->name === FALSE )
-            derr("VirtualSystem name not found\n");
 
         //
         // Extract Tag objects
