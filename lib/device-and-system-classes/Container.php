@@ -437,6 +437,8 @@ class Container
         }
 
 
+        if( $debugLoadTime )
+            PH::print_DEBUG_loadtime("tag");
         //
         // Extract Tag objects
         //
@@ -447,6 +449,8 @@ class Container
         // End of Tag objects extraction
 
 
+        if( $debugLoadTime )
+            PH::print_DEBUG_loadtime("region");
         //
         // Extract region objects
         //
@@ -455,6 +459,9 @@ class Container
             $this->addressStore->load_regions_from_domxml($tmp);
         // End of region objects extraction
 
+
+        if( $debugLoadTime )
+            PH::print_DEBUG_loadtime("address");
         //
         // Extract address objects
         //
@@ -464,6 +471,8 @@ class Container
         // End of address objects extraction
 
 
+        if( $debugLoadTime )
+            PH::print_DEBUG_loadtime("address-group");
         //
         // Extract address groups in this DV
         //
@@ -473,6 +482,8 @@ class Container
         // End of address groups extraction
 
 
+        if( $debugLoadTime )
+            PH::print_DEBUG_loadtime("service");
         //												//
         // Extract service objects in this VirtualSystem			//
         //												//
@@ -482,6 +493,8 @@ class Container
         // End of <service> extraction
 
 
+        if( $debugLoadTime )
+            PH::print_DEBUG_loadtime("service-group");
         //												//
         // Extract service groups in this VirtualSystem			//
         //												//
@@ -490,6 +503,8 @@ class Container
             $this->serviceStore->load_servicegroups_from_domxml($tmp);
         // End of <service-group> extraction
 
+        if( $debugLoadTime )
+            PH::print_DEBUG_loadtime("application");
         //
         // Extract application
         //
@@ -498,6 +513,8 @@ class Container
             $this->appStore->load_application_custom_from_domxml($tmp);
         // End of application extraction
 
+        if( $debugLoadTime )
+            PH::print_DEBUG_loadtime("application-filter");
         //
         // Extract application filter
         //
@@ -506,6 +523,8 @@ class Container
             $this->appStore->load_application_filter_from_domxml($tmp);
         // End of application filter groups extraction
 
+        if( $debugLoadTime )
+            PH::print_DEBUG_loadtime("application-group");
         //
         // Extract application groups
         //
@@ -515,6 +534,8 @@ class Container
         // End of application groups extraction
 
 
+        if( $debugLoadTime )
+            PH::print_DEBUG_loadtime("profiles");
         // Extract SecurityProfiles objects
         //
         $this->securityProfilebaseroot = DH::findFirstElement('profiles', $xml);
@@ -703,6 +724,8 @@ class Container
         }
 
 
+        if( $debugLoadTime )
+            PH::print_DEBUG_loadtime("profile-group");
         //
         // Extract SecurityProfile groups in this DV
         //
@@ -711,6 +734,9 @@ class Container
             $this->securityProfileGroupStore->load_securityprofile_groups_from_domxml($tmp);
         // End of address groups extraction
 
+
+        if( $debugLoadTime )
+            PH::print_DEBUG_loadtime("schedule");
         //
         // Extract schedule objects
         //
@@ -758,6 +784,8 @@ class Container
         // End of SSL_TLSServiceProfile objects extraction
 
 
+        if( $debugLoadTime )
+            PH::print_DEBUG_loadtime("pre-/post-rulebase");
         //
         // Extracting policies
         //
@@ -1130,7 +1158,8 @@ class Container
             }
         }
         */
-
+        if( $debugLoadTime )
+            PH::print_DEBUG_loadtime("nestedPointOfView");
         $this->addressStore->nestedPointOfView();
         $this->serviceStore->nestedPointOfView();
         $this->tagStore->nestedPointOfView();
@@ -1138,6 +1167,8 @@ class Container
         $this->EDLStore->nestedPointOfView();
         $this->LogProfileStore->nestedPointOfView();
         $this->appStore->nestedPointOfView();
+
+        #$this->securityProfileGroupStore->nes
 
         //
         // Extract network related configs

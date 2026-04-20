@@ -2177,15 +2177,7 @@ class PanoramaConf
             else
             {
                 $parentDG->_childDeviceGroups[$name] = $newDG;
-                /*
-                $newDG->parentDeviceGroup = $parentDG;
-                $newDG->addressStore->parentCentralStore = $parentDG->addressStore;
-                $newDG->serviceStore->parentCentralStore = $parentDG->serviceStore;
-                $newDG->tagStore->parentCentralStore = $parentDG->tagStore;
-                $newDG->scheduleStore->parentCentralStore = $parentDG->scheduleStore;
-                $newDG->appStore->parentCentralStore = $parentDG->appStore;
-                $newDG->securityProfileGroupStore->parentCentralStore = $parentDG->securityProfileGroupStore;
-                */
+
                 //Todo: swaschkut 20210505 - check if other Stores must be added
                 //- appStore;scheduleStore/securityProfileGroupStore/all kind of SecurityProfile
 

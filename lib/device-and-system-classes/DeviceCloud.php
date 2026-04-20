@@ -227,7 +227,7 @@ class DeviceCloud
     public $network;
 
 
-    /** @var FawkesConf|Buckbeak|null $owner */
+    /** @var FawkesConf|BuckbeakConf|null $owner */
     public function __construct( $owner, Container|null $applicableDG = null)
     {
         $this->owner = $owner;

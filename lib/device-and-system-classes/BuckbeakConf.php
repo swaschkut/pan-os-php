@@ -133,6 +133,8 @@ class BuckbeakConf
 
     public $_fakeMode = FALSE;
 
+    public $debugLoadTime = false;
+
     public $sizeArray = array();
     public $sizeArrayShared = array();
 
@@ -200,8 +202,10 @@ class BuckbeakConf
      * @param DOMElement|DOMDocument $xml
      * @throws Exception
      */
-    public function load_from_domxml($xml)
+    public function load_from_domxml($xml, $debugLoadTime)
     {
+        $this->debugLoadTime = $debugLoadTime;
+
         if( $xml->nodeType == XML_DOCUMENT_NODE )
         {
             $this->xmldoc = $xml;
@@ -275,7 +279,7 @@ class BuckbeakConf
 
             $ldv = new Snippet( $this );
 
-            $ldv->load_from_domxml( $node );
+            $ldv->load_from_domxml( $node, $this->debugLoadTime );
             $this->snippets[] = $ldv;
         }
 
@@ -343,6 +347,9 @@ class BuckbeakConf
             $containerNodes[$nodeNameAttr] = $node;
         }
 
+        #PH::print_stdout("container validate parent");
+        #print_r( array_keys( $containerNodes ) );
+        #print_r( array_keys( $parentToContainer ) );
 
         $containerLoadOrder = array('All');
 
@@ -375,6 +382,8 @@ class BuckbeakConf
 
 
         }
+
+        #print_r( $containerLoadOrder );
 
         foreach( $containerLoadOrder as $containerIndex => &$containerName )
         {
@@ -423,14 +432,6 @@ class BuckbeakConf
                     $parentContainer->_childContainers[$containerName] = $ldv;
                     $ldv->parentContainer = $parentContainer;
 
-                    /*
-                    $ldv->addressStore->parentCentralStore = $parentContainer->addressStore;
-                    $ldv->serviceStore->parentCentralStore = $parentContainer->serviceStore;
-                    $ldv->tagStore->parentCentralStore = $parentContainer->tagStore;
-                    $ldv->scheduleStore->parentCentralStore = $parentContainer->scheduleStore;
-                    $ldv->appStore->parentCentralStore = $parentContainer->appStore;
-                    $ldv->securityProfileGroupStore->parentCentralStore = $parentContainer->securityProfileGroupStore;
-                    */
                     //Todo: swaschkut 20210505 - check if other Stores must be added
                     //- appStore;scheduleStore/securityProfileGroupStore/all kind of SecurityProfile
 
@@ -452,11 +453,22 @@ class BuckbeakConf
                     );
 
                     foreach( $storeType as $type )
+                    {
+                        #PH::print_stdout("------------------------");
+                        #PH::print_stdout( "validate container: ".$containerName );
+                        #PH::print_stdout( "Container parent: ".$containerToParent[$containerName] );
+
+                        #PH::print_stdout( "found parent container: ".$parentContainer->name() );
+
+                        #PH::print_stdout( "store type: ".$type );
                         $ldv->$type->parentCentralStore = $parentContainer->$type;
+                    }
+
                 }
             }
             
-            $ldv->load_from_domxml($containerNodes[$containerName]);
+            $ldv->load_from_domxml($containerNodes[$containerName], $this->debugLoadTime);
+            #PH::print_stdout( "found container: ".$ldv->name() );
             $this->containers[] = $ldv;
 
         }
@@ -474,7 +486,7 @@ class BuckbeakConf
 
             $ldv = new DeviceCloud( $this );
 
-            $ldv->load_from_domxml( $node );
+            $ldv->load_from_domxml( $node, $this->debugLoadTime );
             $this->clouds[] = $ldv;
         }
         //
@@ -493,7 +505,7 @@ class BuckbeakConf
 
                 $ldv = new DeviceOnPrem( $this );
 
-                $ldv->load_from_domxml( $node );
+                $ldv->load_from_domxml( $node, $this->debugLoadTime );
                 $this->onprems[] = $ldv;
             }
         }
@@ -505,7 +517,7 @@ class BuckbeakConf
 
         #$this->managedFirewallsSerials = $this->managedFirewallsStore->get_serial_from_xml($tmp, TRUE);
         if( $tmp !== false )
-            $this->managedFirewallsStore->load_from_domxml($tmp);
+            $this->managedFirewallsStore->load_from_domxml($tmp, $this->debugLoadTime);
     }
 
 

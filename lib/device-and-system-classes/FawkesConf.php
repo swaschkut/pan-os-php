@@ -394,14 +394,6 @@ class FawkesConf
                     $parentContainer->_childContainers[$containerName] = $ldv;
                     $ldv->parentContainer = $parentContainer;
 
-                    /*
-                    $ldv->addressStore->parentCentralStore = $parentContainer->addressStore;
-                    $ldv->serviceStore->parentCentralStore = $parentContainer->serviceStore;
-                    $ldv->tagStore->parentCentralStore = $parentContainer->tagStore;
-                    $ldv->scheduleStore->parentCentralStore = $parentContainer->scheduleStore;
-                    $ldv->appStore->parentCentralStore = $parentContainer->appStore;
-                    $ldv->securityProfileGroupStore->parentCentralStore = $parentContainer->securityProfileGroupStore;
-                    */
                     //Todo: swaschkut 20210505 - check if other Stores must be added
                     //- appStore;scheduleStore/securityProfileGroupStore/all kind of SecurityProfile
 
