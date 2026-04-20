@@ -448,6 +448,27 @@ class AddressStore
 
         if( $nested && $this->parentCentralStore !== null )
         {
+            if( get_class($this->owner) == "Container"
+                || get_class($this->owner) == "DeviceOnPrem"
+                || get_class($this->owner) == "DeviceCloud"
+            )
+            {
+                $attachedSnippets = $this->owner->getAttachedSnippets();
+                if( count( $attachedSnippets ) > 1 )
+                {
+                    foreach( $attachedSnippets as $snippet )
+                    {
+                        $storeType = get_class( $this );
+                        $f = $snippet->$storeType->findbyName($objectName, $ref, false);
+                        if( $f !== null )
+                        {
+                            PH::print_stdout("found Snippet: ".$snippet->name());
+                            return $f;
+                        }
+                    }
+                }
+            }
+
             $f = $this->parentCentralStore->find($objectName, $ref, $nested);
         }
 

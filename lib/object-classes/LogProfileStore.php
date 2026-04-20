@@ -65,8 +65,33 @@ class LogProfileStore extends ObjStore
         if( $f !== null )
             return $f;
 
+        #if( $nested && $this->parentCentralStore !== null )
+        #    return $this->parentCentralStore->find($name, $ref, $nested);
         if( $nested && $this->parentCentralStore !== null )
+        {
+            if( get_class($this->owner) == "Container"
+                || get_class($this->owner) == "DeviceOnPrem"
+                || get_class($this->owner) == "DeviceCloud"
+            )
+            {
+                $attachedSnippets = $this->owner->getAttachedSnippets();
+                if( count( $attachedSnippets ) > 1 )
+                {
+                    foreach( $attachedSnippets as $snippet )
+                    {
+                        $storeType = get_class( $this );
+                        $f = $snippet->$storeType->findbyName($name, $ref, false);
+                        if( $f !== null )
+                        {
+                            PH::print_stdout("found Snippet: ".$snippet->name());
+                            return $f;
+                        }
+                    }
+                }
+            }
+
             return $this->parentCentralStore->find($name, $ref, $nested);
+        }
 
         return null;
     }

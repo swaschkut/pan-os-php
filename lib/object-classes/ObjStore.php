@@ -85,6 +85,53 @@ class ObjStore
 
         if( $nested && isset($this->parentCentralStore) && $this->parentCentralStore !== null )
         {
+            if( get_class($this->owner) == "Container"
+                    || get_class($this->owner) == "DeviceOnPrem"
+                    || get_class($this->owner) == "DeviceCloud"
+            )
+            {
+                $storeType = get_class( $this );
+
+                #if( $storeType !== "AppStore" )
+                if( $storeType === "SecurityProfileGroupStore" )
+                {
+                    #PH::print_stdout("owner: ".get_class($this->owner));
+                    #PH::print_stdout("check Store: ".$storeType );
+                    #PH::print_stdout("check OWNER: ".$this->owner->name());
+                    #PH::print_stdout("search: '".$name."'");
+                }
+
+
+                $attachedSnippets = $this->owner->getAttachedSnippets();
+                if( count( $attachedSnippets ) > 1 )
+                {
+                    foreach( $attachedSnippets as $snippet )
+                    {
+                        #if( $storeType !== "AppStore" )
+                        if( $storeType === "SecurityProfileGroupStore" )
+                        {
+                            #PH::print_stdout("has Snippets attached: ".count($attachedSnippets) );
+                        }
+
+
+                        if( !isset($snippet->$storeType) )
+                        {
+                            #PH::print_stdout("store ".$storeType." not found - continue");
+                            continue;
+                        }
+
+                        #PH::print_stdout("check Snippet: ".$snippet->name());
+                        #PH::print_stdout("check Store: ".$snippet->$storeType );
+                        $f = $snippet->$storeType->findbyName($name, $ref, false);
+                        if( $f !== null )
+                        {
+                            #PH::print_stdout("found Snippet: ".$snippet->name());
+                            return $f;
+                        }
+                    }
+                }
+            }
+
             $f = $this->parentCentralStore->findbyName($name, $ref, $nested);
             if( $f !== null )
                 return $f;
