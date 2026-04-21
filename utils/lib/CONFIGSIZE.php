@@ -36,7 +36,7 @@ class CONFIGSIZE extends UTIL
     //from UTIL
     public $indentingXml = 0;
     public $lineReturn = TRUE;
-    public $indentingXmlIncreament = 1;//2
+    public $indentingXmlIncreament = 2;
 
     public function utilStart()
     {
@@ -65,6 +65,11 @@ class CONFIGSIZE extends UTIL
             $this->minKiloByte = PH::$args['minkilobyte'];
             if( $this->minKiloByte <= 5 )
                 $this->pad_length = 80;
+        }
+
+        if( isset(PH::$args['indentingXmlIncreament'])  )
+        {
+            $this->indentingXmlIncreament = PH::$args['indentingXmlIncreament'];
         }
 
         #$minKiloByte = $minKiloByte*1000;
@@ -169,6 +174,7 @@ class CONFIGSIZE extends UTIL
         $this->supportedArguments['minkilobyte'] = Array('niceName' => 'MinKilobyte', 'shortHelp' => 'the amount of kB, where script start displaying XML information', 'argDesc' => '1000');
         $this->supportedArguments['padlength'] = Array('niceName' => 'PadLength', 'shortHelp' => 'this is extending the padding for the middle line', 'argDesc' => '60');
         $this->supportedArguments['showalldg'] = Array('niceName' => 'ShowAllDG', 'shortHelp' => 'display all DG / template also if size is smaller as MinKiloByte');
+        $this->supportedArguments['indentingxmlincreament'] = Array('niceName' => 'indentingXmlIncreament', 'shortHelp' => 'the amount of space characters for the pretty XML output file. PANW default 2', 'argDesc' => '2');
     }
 
     function print_length( $xmlRoot, $depth = -1, $padding = "", $previousNode = "" )
