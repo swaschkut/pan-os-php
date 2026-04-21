@@ -42,7 +42,11 @@ class CONFIGSIZE extends UTIL
 
         $this->main();
 
-        $this->save_our_work();
+        $indentingXml = 0;
+        $lineReturn = TRUE;
+        $indentingXmlIncreament = 1;//2
+        //save_our_work($additional_output = FALSE, $printMessage = TRUE, $lineReturn = TRUE, $indentingXml = 0, $indentingXmlIncreament = 2)
+        $this->save_our_work(FALSE, TRUE, $lineReturn, $indentingXml, $indentingXmlIncreament);
 
         
     }

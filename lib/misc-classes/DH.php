@@ -404,7 +404,7 @@ class DH
      * @param int $limitSubLevels
      * @return string
      */
-    static function &dom_to_xml(DOMNode $node, $indenting = 0, $lineReturn = TRUE, $limitSubLevels = -1, $indentingIncrement = 1)
+    static function &dom_to_xml(DOMNode $node, $indenting = 0, $lineReturn = TRUE, $limitSubLevels = -1, $indentingIncrement = 2)
     {
         $ind = '';
         $out = '';

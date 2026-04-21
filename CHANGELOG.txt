@@ -32,6 +32,7 @@ BUGFIX:
 GENERAL:
 * update Device App-ID to version: 9087-9979
 * update Device App-ID to version: 9090-9993
+* XML output indentingIncreament default is 2 | type=config-size flexible
 
 
 2.1.53 (20260409)

@@ -246,9 +246,9 @@ class XPATH extends UTIL
             {
                 $lineReturn = TRUE;
                 $indentingXml = 0;
-                $indentingXmlIncreament = 1;
+                $indentingXmlIncreament = 2;
 
-                $xml = &DH::dom_to_xml($this->xmlDoc->documentElement, $indentingXml, $lineReturn, -1, $indentingXmlIncreament + 1);
+                $xml = &DH::dom_to_xml($this->xmlDoc->documentElement, $indentingXml, $lineReturn, -1, $indentingXmlIncreament );
 
                 file_put_contents(PH::$args['out'], $xml);
             }
