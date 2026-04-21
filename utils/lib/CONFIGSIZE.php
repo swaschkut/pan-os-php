@@ -71,9 +71,9 @@ class CONFIGSIZE extends UTIL
         PH::print_stdout( " - display only XML content which is greater then: ".$this->minKiloByte."kB");
 
 
-        if( isset(PH::$args['indentingXmlIncreament'])  )
+        if( isset(PH::$args['indentingxmlincreament'])  )
         {
-            $this->indentingXmlIncreament = PH::$args['indentingXmlIncreament'];
+            $this->indentingXmlIncreament = PH::$args['indentingxmlincreament'];
         }
         PH::print_stdout( " - save XML indenting Increment: ".$this->indentingXmlIncreament." space characters");
 
