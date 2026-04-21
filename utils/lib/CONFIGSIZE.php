@@ -67,13 +67,16 @@ class CONFIGSIZE extends UTIL
                 $this->pad_length = 80;
         }
 
+        #$minKiloByte = $minKiloByte*1000;
+        PH::print_stdout( " - display only XML content which is greater then: ".$this->minKiloByte."kB");
+
+
         if( isset(PH::$args['indentingXmlIncreament'])  )
         {
             $this->indentingXmlIncreament = PH::$args['indentingXmlIncreament'];
         }
+        PH::print_stdout( " - save XML indenting Increment: ".$this->indentingXmlIncreament." space characters");
 
-        #$minKiloByte = $minKiloByte*1000;
-        PH::print_stdout( " - display only XML content which is greater then: ".$this->minKiloByte."kB");
 
         if( isset(PH::$args['padlength'])  )
             $this->pad_length = PH::$args['padlength'];
