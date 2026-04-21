@@ -413,30 +413,45 @@ class ServiceStore
 
         #if( $nested && $this->parentCentralStore !== null )
         #    $f = $this->parentCentralStore->find($objectName, $ref, $nested);
-        if( $nested && $this->parentCentralStore !== null )
+        if( $nested )
         {
             if( get_class($this->owner) == "Container"
                 || get_class($this->owner) == "DeviceOnPrem"
                 || get_class($this->owner) == "DeviceCloud"
-            )
+                || get_class($this->owner) == "Snippet" )
             {
-                $attachedSnippets = $this->owner->getAttachedSnippets();
-                if( count( $attachedSnippets ) > 1 )
+                $storeType = get_class($this);
+
+                if( get_class($this->owner) !== "Snippet" )
                 {
-                    foreach( $attachedSnippets as $snippet )
+                    $attachedSnippets = $this->owner->getAttachedSnippets();
+                    if (count($attachedSnippets) > 1)
                     {
-                        $storeType = get_class( $this );
-                        $f = $snippet->$storeType->findbyName($objectName, $ref, false);
-                        if( $f !== null )
+                        foreach ($attachedSnippets as $snippet)
                         {
-                            #PH::print_stdout("found Snippet: ".$snippet->name());
-                            return $f;
+                            if (!isset($snippet->$storeType))
+                            {
+                                PH::print_stdout( "STORE: ".$storeType." NOT set");
+                                continue;
+                            }
+
+                            $f = $snippet->$storeType->findbyName($objectName, $ref, false);
+                            if ($f !== null)
+                                return $f;
                         }
                     }
                 }
+                else
+                {
+                    $snippet = $this->owner->owner->findSnippet("predefined-snippet");
+                    $f = $snippet->$storeType->findbyName($objectName, $ref, false);
+                    if ($f !== null)
+                        return $f;
+                }
             }
 
-            $f = $this->parentCentralStore->find($objectName, $ref, $nested);
+            if( $this->parentCentralStore !== null )
+                $f = $this->parentCentralStore->find($objectName, $ref, $nested);
         }
 
         return $f;

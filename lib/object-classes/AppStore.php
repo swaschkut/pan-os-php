@@ -93,8 +93,47 @@ class AppStore extends ObjStore
         if( $f !== null )
             return $f;
 
-        if( $nested && $this->parentCentralStore )
-            return $this->parentCentralStore->find($name, $ref, $nested);
+        if( $nested )
+        {
+            if( get_class($this->owner) == "Container"
+                || get_class($this->owner) == "DeviceOnPrem"
+                || get_class($this->owner) == "DeviceCloud"
+                || get_class($this->owner) == "Snippet" )
+            {
+                #$storeType = get_class($this);
+                $storeType = "appStore";
+                if( get_class($this->owner) !== "Snippet" )
+                {
+                    $attachedSnippets = $this->owner->getAttachedSnippets();
+                    if (count($attachedSnippets) > 1)
+                    {
+                        foreach ($attachedSnippets as $snippet)
+                        {
+                            if (!isset($snippet->$storeType))
+                            {
+                                PH::print_stdout( "STORE: ".$storeType." NOT set");
+                                continue;
+                            }
+
+                            $f = $snippet->$storeType->findbyName($name, $ref, false);
+                            if ($f !== null)
+                                return $f;
+                        }
+                    }
+                }
+                else
+                {
+                    $snippet = $this->owner->owner->findSnippet("predefined-snippet");
+                    $f = $snippet->$storeType->findbyName($name, $ref, false);
+                    if ($f !== null)
+                        return $f;
+                }
+            }
+
+            if( $this->parentCentralStore !== null )
+                return $this->parentCentralStore->find($name, $ref, $nested);
+        }
+
 
         return null;
     }

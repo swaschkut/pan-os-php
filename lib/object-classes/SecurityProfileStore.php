@@ -450,58 +450,46 @@ class SecurityProfileStore extends ObjStore
             return $foundObject;
         }
 
-        /*
-        if( isset($this->_all[$objectName]) )
-        {
-            $foundObject = $this->_all[$objectName];
-            $foundObject->addReference($ref);
-            return $foundObject;
-        }*/
 
-        /*
-        // when load a PANOS firewall attached to a Panorama
-        if( $nested && isset($this->panoramaShared) )
-        {
-            $f = $this->panoramaShared->find($objectName, $ref, FALSE);
-
-            if( $f !== null )
-                return $f;
-        }
-        // when load a PANOS firewall attached to a Panorama
-        if( $nested && isset($this->panoramaDG) )
-        {
-            $f = $this->panoramaDG->find($objectName, $ref, FALSE);
-            if( $f !== null )
-                return $f;
-        }
-        */
-
-        #if( $nested && $this->parentCentralStore !== null )
-        #    $f = $this->parentCentralStore->find($objectName, $ref, $nested);
-        if( $nested && $this->parentCentralStore !== null )
+        if( $nested )
         {
             if( get_class($this->owner) == "Container"
-                    || get_class($this->owner) == "DeviceOnPrem"
-                    || get_class($this->owner) == "DeviceCloud"
-            )
+                || get_class($this->owner) == "DeviceOnPrem"
+                || get_class($this->owner) == "DeviceCloud"
+                || get_class($this->owner) == "Snippet" )
             {
-                $attachedSnippets = $this->owner->getAttachedSnippets();
-                if( count( $attachedSnippets ) > 1 )
-                {
-                    foreach( $attachedSnippets as $snippet )
-                    {
-                        $storeType = self::$storeNameByType[$this->type]['name']."ProfileStore";
+                $storeType = self::$storeNameByType[$this->type]['name']."ProfileStore";
 
-                        $f = $snippet->$storeType->findbyName($objectName, $ref, false);
-                        if( $f !== null )
+                if( get_class($this->owner) !== "Snippet" )
+                {
+                    $attachedSnippets = $this->owner->getAttachedSnippets();
+                    if (count($attachedSnippets) > 1)
+                    {
+                        foreach ($attachedSnippets as $snippet)
                         {
-                            return $f;
+                            if (!isset($snippet->$storeType))
+                            {
+                                PH::print_stdout( "STORE: ".$storeType." NOT set");
+                                continue;
+                            }
+
+                            $f = $snippet->$storeType->findbyName($objectName, $ref, false);
+                            if ($f !== null)
+                                return $f;
                         }
                     }
                 }
+                else
+                {
+                    $snippet = $this->owner->owner->findSnippet("predefined-snippet");
+                    $f = $snippet->$storeType->findbyName($objectName, $ref, false);
+                    if ($f !== null)
+                        return $f;
+                }
             }
 
-            $f = $this->parentCentralStore->find($objectName, $ref, $nested);
+            if( $this->parentCentralStore !== null )
+                $f = $this->parentCentralStore->find($objectName, $ref, $nested);
         }
 
         return $f;

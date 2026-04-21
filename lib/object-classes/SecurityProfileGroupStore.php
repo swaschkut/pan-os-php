@@ -9,7 +9,7 @@
 class SecurityProfileGroupStore extends ObjStore
 {
 
-    /** @var VirtualSystem|DeviceGroup|PanoramaConf|PANConf|null */
+    /** @var VirtualSystem|DeviceGroup|PanoramaConf|PANConf|Container|DeviceCloud|DeviceOnPrem|null */
     public $owner;
     public $name = 'temporaryname';
 
@@ -97,11 +97,11 @@ class SecurityProfileGroupStore extends ObjStore
 
             $name = DH::findAttribute('name', $node);
             $tmp_secgroup = new SecurityProfileGroup( $name, $this, true );
+            $tmp_secgroup->load_from_domxml( $node, $this);
 
             $this->o[] = $tmp_secgroup;
             $this->nameIndex[$name] = $tmp_secgroup;
 
-            $tmp_secgroup->load_from_domxml( $node, $this);
 
             $this->addSecurityProfileGroup( $tmp_secgroup );
             #$this->xmlroot->appendChild($tmp_secgroup->xmlroot);

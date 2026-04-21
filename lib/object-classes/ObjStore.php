@@ -83,58 +83,56 @@ class ObjStore
         if( get_class( $this ) == "EthernetIfStore" || get_class( $this ) == "AggregateEthernetIfStore" || get_class( $this ) == "VirtuelWireStore" )
             return null;
 
-        if( $nested && isset($this->parentCentralStore) && $this->parentCentralStore !== null )
+
+        if( $nested )
         {
             if( get_class($this->owner) == "Container"
-                    || get_class($this->owner) == "DeviceOnPrem"
-                    || get_class($this->owner) == "DeviceCloud"
-            )
+                || get_class($this->owner) == "DeviceOnPrem"
+                || get_class($this->owner) == "DeviceCloud"
+                || get_class($this->owner) == "Snippet" )
             {
-                $storeType = get_class( $this );
+                $storeType = get_class($this);
+                if( $storeType == "SecurityProfileGroupStore" )
+                    $storeType = "securityProfileGroupStore";
+                elseif( $storeType == "AppStore" )
+                    $storeType = "appStore";
+                elseif( $storeType == "ZoneStore" )
+                    $storeType = "zoneStore";
 
-                #if( $storeType !== "AppStore" )
-                if( $storeType === "SecurityProfileGroupStore" )
+                if( get_class($this->owner) !== "Snippet" )
                 {
-                    #PH::print_stdout("owner: ".get_class($this->owner));
-                    #PH::print_stdout("check Store: ".$storeType );
-                    #PH::print_stdout("check OWNER: ".$this->owner->name());
-                    #PH::print_stdout("search: '".$name."'");
-                }
-
-
-                $attachedSnippets = $this->owner->getAttachedSnippets();
-                if( count( $attachedSnippets ) > 1 )
-                {
-                    foreach( $attachedSnippets as $snippet )
+                    $attachedSnippets = $this->owner->getAttachedSnippets();
+                    if (count($attachedSnippets) > 1)
                     {
-                        #if( $storeType !== "AppStore" )
-                        if( $storeType === "SecurityProfileGroupStore" )
+                        foreach ($attachedSnippets as $snippet)
                         {
-                            #PH::print_stdout("has Snippets attached: ".count($attachedSnippets) );
-                        }
+                            if (!isset($snippet->$storeType))
+                            {
+                                PH::print_stdout( "STORE: ".$storeType." NOT set");
+                                continue;
+                            }
 
-
-                        if( !isset($snippet->$storeType) )
-                        {
-                            #PH::print_stdout("store ".$storeType." not found - continue");
-                            continue;
-                        }
-
-                        #PH::print_stdout("check Snippet: ".$snippet->name());
-                        #PH::print_stdout("check Store: ".$snippet->$storeType );
-                        $f = $snippet->$storeType->findbyName($name, $ref, false);
-                        if( $f !== null )
-                        {
-                            #PH::print_stdout("found Snippet: ".$snippet->name());
-                            return $f;
+                            $f = $snippet->$storeType->findbyName($name, $ref, false);
+                            if ($f !== null)
+                                return $f;
                         }
                     }
                 }
+                else
+                {
+                    $snippet = $this->owner->owner->findSnippet("predefined-snippet");
+                    $f = $snippet->$storeType->findbyName($name, $ref, false);
+                    if ($f !== null)
+                        return $f;
+                }
             }
 
-            $f = $this->parentCentralStore->findbyName($name, $ref, $nested);
-            if( $f !== null )
-                return $f;
+            if( isset($this->parentCentralStore) && $this->parentCentralStore !== null )
+            {
+                $f = $this->parentCentralStore->findbyName($name, $ref, $nested);
+                if( $f !== null )
+                    return $f;
+            }
         }
 
         return null;
