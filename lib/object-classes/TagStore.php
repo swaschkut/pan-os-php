@@ -69,7 +69,8 @@ class TagStore extends ObjStore
                 || get_class($this->owner) == "DeviceCloud"
                 || get_class($this->owner) == "Snippet" )
             {
-                $storeType = get_class($this);
+                #$storeType = get_class($this);
+                $storeType = "tagStore";
 
                 if( get_class($this->owner) !== "Snippet" )
                 {
@@ -84,7 +85,7 @@ class TagStore extends ObjStore
                                 continue;
                             }
 
-                            $f = $snippet->$storeType->findbyName($objectName, $ref, false);
+                            $f = $snippet->$storeType->find($name, $ref, false);
                             if ($f !== null)
                                 return $f;
                         }
@@ -93,7 +94,7 @@ class TagStore extends ObjStore
                 else
                 {
                     $snippet = $this->owner->owner->findSnippet("predefined-snippet");
-                    $f = $snippet->$storeType->findbyName($objectName, $ref, false);
+                    $f = $snippet->$storeType->find($name, $ref, false);
                     if ($f !== null)
                         return $f;
                 }

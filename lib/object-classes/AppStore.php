@@ -115,7 +115,7 @@ class AppStore extends ObjStore
                                 continue;
                             }
 
-                            $f = $snippet->$storeType->findbyName($name, $ref, false);
+                            $f = $snippet->$storeType->find($name, $ref, false);
                             if ($f !== null)
                                 return $f;
                         }
@@ -124,7 +124,7 @@ class AppStore extends ObjStore
                 else
                 {
                     $snippet = $this->owner->owner->findSnippet("predefined-snippet");
-                    $f = $snippet->$storeType->findbyName($name, $ref, false);
+                    $f = $snippet->$storeType->find($name, $ref, false);
                     if ($f !== null)
                         return $f;
                 }

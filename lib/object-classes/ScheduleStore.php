@@ -74,7 +74,8 @@ class ScheduleStore extends ObjStore
                 || get_class($this->owner) == "DeviceCloud"
                 || get_class($this->owner) == "Snippet" )
             {
-                $storeType = get_class($this);
+                #$storeType = get_class($this);
+                $storeType = "scheduleStore";
 
                 if( get_class($this->owner) !== "Snippet" )
                 {
@@ -89,7 +90,7 @@ class ScheduleStore extends ObjStore
                                 continue;
                             }
 
-                            $f = $snippet->$storeType->findbyName($name, $ref, false);
+                            $f = $snippet->$storeType->find($name, $ref, false);
                             if ($f !== null)
                                 return $f;
                         }
@@ -98,7 +99,7 @@ class ScheduleStore extends ObjStore
                 else
                 {
                     $snippet = $this->owner->owner->findSnippet("predefined-snippet");
-                    $f = $snippet->$storeType->findbyName($name, $ref, false);
+                    $f = $snippet->$storeType->find($name, $ref, false);
                     if ($f !== null)
                         return $f;
                 }

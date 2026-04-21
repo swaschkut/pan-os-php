@@ -1301,6 +1301,7 @@ class PanSCMAPIConnector
             }
             elseif( isset( $object['snippet'] ) )
             {
+                $tmp_snippetName = $object['snippet'];
                 if( $object['snippet'] == "predefined" )
                 {
                     $tmp_snippetName .= "-snippet";

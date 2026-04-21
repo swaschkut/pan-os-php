@@ -98,6 +98,12 @@ class ObjStore
                     $storeType = "appStore";
                 elseif( $storeType == "ZoneStore" )
                     $storeType = "zoneStore";
+                elseif( $storeType == "TagStore" )
+                    $storeType = "tagStore";
+                elseif( $storeType == "ServiceStore" )
+                    $storeType = "serviceStore";
+                elseif( $storeType == "ScheduleStore" )
+                    $storeType = "scheduleStore";
 
                 if( get_class($this->owner) !== "Snippet" )
                 {
