@@ -27,16 +27,16 @@ class CONFIGSIZE extends UTIL
     public $showalldg = false;
 
     //these are the default values
-    //$xml = &DH::dom_to_xml( $this->xmlDoc, $indentingXml = 0, $lineReturn = TRUE, -1, $indentingXmlIncreament = 1 );
+    //$xml = &DH::dom_to_xml( $this->xmlDoc, $indentingXml = 0, $lineReturn = TRUE, -1, $indentingXmlIncrement = 1 );
     public $reduced_indentingXml = -1; //0
     public $reduced_lineReturn = false; //TRUE
-    public $reduced_indentingXmlIncreament = 0; //1
+    public $reduced_indentingXmlIncrement = 0; //1
 
     ////////////////////
     //from UTIL
     public $indentingXml = 0;
     public $lineReturn = TRUE;
-    public $indentingXmlIncreament = 2;
+    public $indentingXmlIncrement = 2;
 
     public function utilStart()
     {
@@ -48,8 +48,8 @@ class CONFIGSIZE extends UTIL
 
         $this->main();
 
-        //save_our_work($additional_output = FALSE, $printMessage = TRUE, $lineReturn = TRUE, $indentingXml = 0, $indentingXmlIncreament = 2)
-        $this->save_our_work(FALSE, TRUE, $this->lineReturn, $this->indentingXml, $this->indentingXmlIncreament);
+        //save_our_work($additional_output = FALSE, $printMessage = TRUE, $lineReturn = TRUE, $indentingXml = 0, $indentingXmlIncrement = 2)
+        $this->save_our_work(FALSE, TRUE, $this->lineReturn, $this->indentingXml, $this->indentingXmlIncrement);
 
         
     }
@@ -71,11 +71,11 @@ class CONFIGSIZE extends UTIL
         PH::print_stdout( " - display only XML content which is greater then: ".$this->minKiloByte."kB");
 
 
-        if( isset(PH::$args['indentingxmlincreament'])  )
+        if( isset(PH::$args['indentingxmlincrement'])  )
         {
-            $this->indentingXmlIncreament = PH::$args['indentingxmlincreament'];
+            $this->indentingXmlIncrement = PH::$args['indentingxmlincrement'];
         }
-        PH::print_stdout( " - save XML indenting Increment: ".$this->indentingXmlIncreament." space characters");
+        PH::print_stdout( " - save XML indenting Increment: ".$this->indentingXmlIncrement." space characters");
 
 
         if( isset(PH::$args['padlength'])  )
@@ -116,14 +116,14 @@ class CONFIGSIZE extends UTIL
         $this->xmlDoc->formatOutput = true;
 
 
-        $xml = &DH::dom_to_xml( $this->xmlDoc, $this->indentingXml, $this->lineReturn, -1, $this->indentingXmlIncreament);
+        $xml = &DH::dom_to_xml( $this->xmlDoc, $this->indentingXml, $this->lineReturn, -1, $this->indentingXmlIncrement);
 
         /*
         $indentingXml = -1; //0
         $lineReturn = false; //TRUE
-        $indentingXmlIncreament = 0; //1
+        $indentingXmlIncrement = 0; //1
         */
-        $xml_reduced = &DH::dom_to_xml( $this->xmlDoc, $this->reduced_indentingXml, $this->reduced_lineReturn, -1, $this->reduced_indentingXmlIncreament );
+        $xml_reduced = &DH::dom_to_xml( $this->xmlDoc, $this->reduced_indentingXml, $this->reduced_lineReturn, -1, $this->reduced_indentingXmlIncrement );
 
         $len_xml = strlen( $xml );
         $len_xml_reduced = strlen( $xml_reduced );
@@ -144,21 +144,21 @@ class CONFIGSIZE extends UTIL
             $filesize = filesize( $this->configInput['filename'] );
 
             $reduce_percent = round( ($len_xml_reduced/$filesize)*100 );
-            PH::print_stdout( "The size of your original file is ".convert($filesize )." [100%]. It can be reduces by pan-os-php type=config-size to ".convert($len_xml_reduced)." [".$reduce_percent."%] (which is a reduction of ".convert($filesize-$len_xml_reduced)." [".(100-$reduce_percent)."%])");
+            PH::print_stdout( "The size of your original file is ".convert($filesize )." [100%]. It can be reduces by 'pan-os-php type=config-size shadow-reducexml' [indentingXmlIncrement=0; NO newlines] to ".convert($len_xml_reduced)." [".$reduce_percent."%] (which is a reduction of ".convert($filesize-$len_xml_reduced)." [".(100-$reduce_percent)."%])");
 
             PH::print_stdout();
-            PH::print_stdout( "pan-os-php XML pretty config size is: ".convert( $len_xml ) );
+            PH::print_stdout( "pan-os-php XML pretty config size is: ".convert( $len_xml )." [indentingXmlIncrement=".$this->indentingXmlIncrement."]" );
             if( $len_xml < $filesize )
             {
                 $reduce_percent2 = round( ($len_xml/$filesize)*100 );
-                PH::print_stdout( "By using pan-os-php your config can be reduced to ".convert($len_xml)." [".$reduce_percent2."%] (which is a reduction of ".convert($filesize-$len_xml)." [".(100-$reduce_percent2)."%])");
-                PH::print_stdout( "By using pan-os-php with argument shadow-reducexml your config can be reduced to ".convert($len_xml_reduced)." [".$reduce_percent."%] (which is a reduction of ".convert($filesize-$len_xml_reduced)." [".(100-$reduce_percent)."%])");
+                PH::print_stdout( "By using pan-os-php [indentingXmlIncrement=".$this->indentingXmlIncrement."] your config can be reduced to ".convert($len_xml)." [".$reduce_percent2."%] (which is a reduction of ".convert($filesize-$len_xml)." [".(100-$reduce_percent2)."%])");
+                PH::print_stdout( "By using pan-os-php with argument shadow-reducexml [indentingXmlIncrement=0; NO newlines] your config can be reduced to ".convert($len_xml_reduced)." [".$reduce_percent."%] (which is a reduction of ".convert($filesize-$len_xml_reduced)." [".(100-$reduce_percent)."%])");
             }
             else
             {
                 $reduce_percent2 = round( ($filesize/$len_xml)*100 );
-                PH::print_stdout( "By using pan-os-php your config will be expanded to  ".convert($len_xml)." [".$reduce_percent2."%] (which is an expand of ".convert($len_xml-$filesize)." [".(100-$reduce_percent2)."%])");
-                PH::print_stdout( "By using pan-os-php with argument shadow-reducexml your config can be reduced to ".convert($len_xml_reduced)." [".$reduce_percent."%] (which is a reduction of ".convert($filesize-$len_xml_reduced)." [".(100-$reduce_percent)."%])");
+                PH::print_stdout( "By using pan-os-php [indentingXmlIncrement=".$this->indentingXmlIncrement."] your config will be expanded to  ".convert($len_xml)." [".$reduce_percent2."%] (which is an expand of ".convert($len_xml-$filesize)." [".(100-$reduce_percent2)."%])");
+                PH::print_stdout( "By using pan-os-php with argument shadow-reducexml [indentingXmlIncrement=0; NO newlines] your config can be reduced to ".convert($len_xml_reduced)." [".$reduce_percent."%] (which is a reduction of ".convert($filesize-$len_xml_reduced)." [".(100-$reduce_percent)."%])");
             }
             PH::print_stdout();
         }
@@ -177,7 +177,7 @@ class CONFIGSIZE extends UTIL
         $this->supportedArguments['minkilobyte'] = Array('niceName' => 'MinKilobyte', 'shortHelp' => 'the amount of kB, where script start displaying XML information', 'argDesc' => '1000');
         $this->supportedArguments['padlength'] = Array('niceName' => 'PadLength', 'shortHelp' => 'this is extending the padding for the middle line', 'argDesc' => '60');
         $this->supportedArguments['showalldg'] = Array('niceName' => 'ShowAllDG', 'shortHelp' => 'display all DG / template also if size is smaller as MinKiloByte');
-        $this->supportedArguments['indentingxmlincreament'] = Array('niceName' => 'indentingXmlIncreament', 'shortHelp' => 'the amount of space characters for the pretty XML output file. PANW default 2', 'argDesc' => '2');
+        $this->supportedArguments['indentingxmlincrement'] = Array('niceName' => 'indentingXmlIncrement', 'shortHelp' => 'the amount of space characters for the pretty XML output file. PANW default 2', 'argDesc' => '2');
     }
 
     function print_length( $xmlRoot, $depth = -1, $padding = "", $previousNode = "" )
@@ -192,7 +192,7 @@ class CONFIGSIZE extends UTIL
             $nodeValue = $node->nodeValue;
 
             $xml = &DH::dom_to_xml( $node );
-            $xml_reduced = &DH::dom_to_xml( $node, $this->reduced_indentingXml, $this->reduced_lineReturn, -1, $this->reduced_indentingXmlIncreament );
+            $xml_reduced = &DH::dom_to_xml( $node, $this->reduced_indentingXml, $this->reduced_lineReturn, -1, $this->reduced_indentingXmlIncrement );
 
             $length2 = strlen( $xml );
             $length2 = round( $length2/1000 );
