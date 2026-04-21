@@ -13,6 +13,7 @@ UTIL:
 * class Snippet | extend as Referenceableobject - to display it with type=device devicetype=snippet
 * type=xyz actions=exportToHtml:file.html | unique method to get location string
 * class PanSCMAPIConnector | improve function importConfig to support loading objects from snippet "predefined" which shoulde be part of "predefined-snippet"
+* type=config-size | adjust to get correct calculation about what pan-os-php is generating config file
 
 BUGFIX:
 * type=securityprofile securityprofiletype=spyware actions=spyware.alert-only-set | bugfix to add default config

@@ -100,7 +100,18 @@ class CONFIGSIZE extends UTIL
         $this->xmlDoc->preserveWhiteSpace = false;
         $this->xmlDoc->formatOutput = true;
 
-        $xml = &DH::dom_to_xml( $this->xmlDoc);
+        //this is save our work using:
+        $indentingXml = 0;
+        $lineReturn = TRUE;
+        $indentingXmlIncreament = 2;
+
+        $xml = &DH::dom_to_xml( $this->xmlDoc, $indentingXml, $lineReturn, -1, $indentingXmlIncreament);
+
+        /*
+        $indentingXml = -1; //0
+        $lineReturn = false; //TRUE
+        $indentingXmlIncreament = 0; //1
+        */
         $xml_reduced = &DH::dom_to_xml( $this->xmlDoc, $this->indentingXml, $this->lineReturn, -1, $this->indentingXmlIncreament );
 
         $len_xml = strlen( $xml );
