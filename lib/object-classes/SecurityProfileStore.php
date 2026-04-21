@@ -482,7 +482,8 @@ class SecurityProfileStore extends ObjStore
                 else
                 {
                     $snippet = $this->owner->owner->findSnippet("predefined-snippet");
-                    $f = $snippet->$storeType->findbyName($objectName, $ref, false);
+                    if ($snippet !== null)
+                        $f = $snippet->$storeType->find($objectName, $ref, false);
                     if ($f !== null)
                         return $f;
                 }

@@ -94,7 +94,8 @@ class TagStore extends ObjStore
                 else
                 {
                     $snippet = $this->owner->owner->findSnippet("predefined-snippet");
-                    $f = $snippet->$storeType->find($name, $ref, false);
+                    if ($snippet !== null)
+                        $f = $snippet->$storeType->find($name, $ref, false);
                     if ($f !== null)
                         return $f;
                 }
