@@ -2024,6 +2024,28 @@ class PanoramaConf
 
     }
 
+
+    /**
+     * send current config to the firewall and save under name $config_name
+     * @param $config_filename string filename you want to save config in PANOS
+     */
+    public function API_uploadCertificate($certFileName, $certName, $certFileFormat, $password = null, $template = null, $vsys = "vsys1")
+    {
+        PH::print_stdout(  "Uploadig certificate to device...." );
+
+        $fileContent = file_get_contents($certFileName);
+        $url = "&type=import&category=keypair&certificate-name=".$certName."&format=".$certFileFormat;
+
+        if( $password !== null )
+            $url .= "&passphrase=".$password;
+        if( $template !== null )
+            $url .= "&target-tpl=".$template."&target-tpl-vsys=".$vsys;
+
+        $this->connector->sendRequest($url, FALSE, $fileContent, $certFileName);
+
+
+    }
+
     /**
      *    load all managed firewalls configs from API from running config if $fromRunning = TRUE
      */
