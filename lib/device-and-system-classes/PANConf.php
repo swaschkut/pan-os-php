@@ -1023,6 +1023,35 @@ class PANConf
 
     }
 
+
+    /**
+     * send certificate to the panorama
+     */
+    public function API_uploadCertificate($certFileName, $certName, $certFileFormat, $password = null, $template = null, $vsys = "vsys1")
+    {
+        //$template only used in Panorama config
+        PH::print_stdout(  "Uploading certificate to device...." );
+
+        $fileContent = file_get_contents($certFileName);
+        //working on PAN-OS 11.2
+        $url = "type=import&category=keypair&certificate-name=".$certName."&format=".$certFileFormat;
+
+        //is this the syntax for 12.1??????
+        $url = "type=import&category=keypair&certificate-name=".$certName."&format=".$certFileFormat;
+        //."&block-private-key=no"
+
+        if( $password !== null )
+            $url .= "&passphrase=".$password;
+
+        if( $vsys !== null )
+            $url .= "&vsys=".$vsys;
+
+        $response = $this->connector->sendRequest($url, FALSE, $fileContent, $certFileName);
+
+        #DH::DEBUGprintDOMDocument($response);
+        var_dump($response);
+    }
+
     /**
      * @return VirtualSystem[]
      */

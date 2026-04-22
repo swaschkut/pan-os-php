@@ -2026,24 +2026,23 @@ class PanoramaConf
 
 
     /**
-     * send current config to the firewall and save under name $config_name
-     * @param $config_filename string filename you want to save config in PANOS
+     * send certificate to the panorama
      */
     public function API_uploadCertificate($certFileName, $certName, $certFileFormat, $password = null, $template = null, $vsys = "vsys1")
     {
-        PH::print_stdout(  "Uploadig certificate to device...." );
+        PH::print_stdout(  "Uploading certificate to device...." );
 
         $fileContent = file_get_contents($certFileName);
-        $url = "&type=import&category=keypair&certificate-name=".$certName."&format=".$certFileFormat;
+        $url = "type=import&category=keypair&certificate-name=".$certName."&format=".$certFileFormat;
 
         if( $password !== null )
             $url .= "&passphrase=".$password;
         if( $template !== null )
             $url .= "&target-tpl=".$template."&target-tpl-vsys=".$vsys;
 
-        $this->connector->sendRequest($url, FALSE, $fileContent, $certFileName);
+        $response = $this->connector->sendRequest($url, FALSE, $fileContent, $certFileName);
 
-
+        #DH::DEBUGprintDOMDocument($response);
     }
 
     /**

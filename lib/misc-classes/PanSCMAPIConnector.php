@@ -936,14 +936,14 @@ class PanSCMAPIConnector
         //issue here:
         //https://api.strata.paloaltonetworks.com/config/objects/v1/?folder=&limit=200&offset=200
         if( $jsonArray !== null
-            && isset($jsonArray['total'])
-            && $jsonArray['total'] > ($this->global_limit - 1)
-            && $jsonArray['total'] > ($runtime * $this->global_limit)
+            && isset($jsonArray['total']) && isset($jsonArray['limit'])
+            && $jsonArray['total'] > ($jsonArray['limit'] - 1)
+            && $jsonArray['total'] > ($runtime * $jsonArray['limit'])
         )
         {
-            $offset = $this->global_limit * $runtime;
+            $offset = $jsonArray['limit'] * $runtime;
             $runtime++;
-            $resource = $this->getResource( $type, $foldertype, $folderName, $this->global_limit, $prePost, $offset, $runtime);
+            $resource = $this->getResource( $type, $foldertype, $folderName, $jsonArray['limit'], $prePost, $offset, $runtime);
 
             foreach( $resource['data'] as $data )
                 $jsonArray['data'][] = $data;
