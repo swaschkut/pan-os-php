@@ -43,8 +43,8 @@ ScheduleCallContext::$supportedActions['delete'] = array(
     },
 );
 
-ScheduleCallContext::$supportedActions['deleteforce'] = array(
-    'name' => 'deleteForce',
+ScheduleCallContext::$supportedActions['delete-force'] = array(
+    'name' => 'delete-Force',
     'MainFunction' => function (ScheduleCallContext $context) {
         $object = $context->object;
 
@@ -65,7 +65,13 @@ ScheduleCallContext::$supportedActions['deleteforce'] = array(
         }
     },
 );
-
+ScheduleCallContext::$supportedActions['deleteforce'] = array_merge(ScheduleCallContext::$supportedActions['delete-force'], 
+    array(
+        'name' => 'deleteForce',
+        'deprecated' => 'this action "deleteForce" is deprecated, you should use "delete-Fore" instead!',
+        'help' => 'this action "deleteForce" is deprecated, you should use "delete-Fore" instead!'
+    )
+);
 
 ScheduleCallContext::$supportedActions['name-addprefix'] = array(
     'name' => 'name-addPrefix',

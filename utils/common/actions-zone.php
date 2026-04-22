@@ -37,8 +37,8 @@ ZoneCallContext::$supportedActions['delete'] = array(
     },
 );
 
-ZoneCallContext::$supportedActions['deleteforce'] = array(
-    'name' => 'deleteForce',
+ZoneCallContext::$supportedActions['delete-force'] = array(
+    'name' => 'delete-Force',
     'MainFunction' => function (ZoneCallContext $context) {
         $object = $context->object;
 
@@ -53,7 +53,13 @@ ZoneCallContext::$supportedActions['deleteforce'] = array(
             $object->owner->removeZone($object);
     },
 );
-
+ZoneCallContext::$supportedActions['deleteforce'] = array_merge(ZoneCallContext::$supportedActions['delete-force'], 
+    array(
+        'name' => 'deleteForce',
+        'deprecated' => 'this action "deleteForce" is deprecated, you should use "delete-Fore" instead!',
+        'help' => 'this action "deleteForce" is deprecated, you should use "delete-Fore" instead!'
+    )
+);
 
 ZoneCallContext::$supportedActions['name-addprefix'] = array(
     'name' => 'name-addPrefix',

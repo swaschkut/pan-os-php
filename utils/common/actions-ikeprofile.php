@@ -227,8 +227,8 @@ IKEprofileCallContext::$supportedActions['delete'] = array(
     },
 );
 
-IKEprofileCallContext::$supportedActions['deleteforce'] = array(
-    'name' => 'deleteForce',
+IKEprofileCallContext::$supportedActions['delete-force'] = array(
+    'name' => 'delete-Force',
     'MainFunction' => function (IKEprofileCallContext $context) {
         $object = $context->object;
 
@@ -242,4 +242,11 @@ IKEprofileCallContext::$supportedActions['deleteforce'] = array(
         else
             $object->owner->removeProfile($object);
     },
+);
+IKEprofileCallContext::$supportedActions['deleteforce'] = array_merge(IKEprofileCallContext::$supportedActions['delete-force'], 
+    array(
+        'name' => 'deleteForce',
+        'deprecated' => 'this action "deleteForce" is deprecated, you should use "delete-Fore" instead!',
+        'help' => 'this action "deleteForce" is deprecated, you should use "delete-Fore" instead!'
+    )
 );

@@ -3058,9 +3058,15 @@ var subjectObject =
                 "name": "delete",
                 "MainFunction": {}
             },
+            "delete-force": {
+                "name": "delete-Force",
+                "MainFunction": {}
+            },
             "deleteforce": {
                 "name": "deleteForce",
-                "MainFunction": {}
+                "MainFunction": {},
+                "deprecated": "this action \"deleteForce\" is deprecated, you should use \"delete-Fore\" instead!",
+                "help": "this action \"deleteForce\" is deprecated, you should use \"delete-Fore\" instead!"
             },
             "display": {
                 "name": "display",
@@ -3866,9 +3872,15 @@ var subjectObject =
                 "name": "delete",
                 "MainFunction": {}
             },
+            "delete-force": {
+                "name": "delete-Force",
+                "MainFunction": {}
+            },
             "deleteforce": {
                 "name": "deleteForce",
-                "MainFunction": {}
+                "MainFunction": {},
+                "deprecated": "this action \"deleteForce\" is deprecated, you should use \"delete-Fore\" instead!",
+                "help": "this action \"deleteForce\" is deprecated, you should use \"delete-Fore\" instead!"
             },
             "display": {
                 "name": "display",
@@ -4491,9 +4503,15 @@ var subjectObject =
                 "name": "delete",
                 "MainFunction": {}
             },
+            "delete-force": {
+                "name": "delete-Force",
+                "MainFunction": {}
+            },
             "deleteforce": {
                 "name": "deleteForce",
-                "MainFunction": {}
+                "MainFunction": {},
+                "deprecated": "this action \"deleteForce\" is deprecated, you should use \"delete-Fore\" instead!",
+                "help": "this action \"deleteForce\" is deprecated, you should use \"delete-Fore\" instead!"
             },
             "display": {
                 "name": "display",
@@ -5015,9 +5033,15 @@ var subjectObject =
                 "name": "delete",
                 "MainFunction": {}
             },
+            "delete-force": {
+                "name": "delete-Force",
+                "MainFunction": {}
+            },
             "deleteforce": {
                 "name": "deleteForce",
-                "MainFunction": {}
+                "MainFunction": {},
+                "deprecated": "this action \"deleteForce\" is deprecated, you should use \"delete-Fore\" instead!",
+                "help": "this action \"deleteForce\" is deprecated, you should use \"delete-Fore\" instead!"
             },
             "display": {
                 "name": "display",
@@ -8792,9 +8816,15 @@ var subjectObject =
                 "name": "delete",
                 "MainFunction": {}
             },
+            "delete-force": {
+                "name": "delete-Force",
+                "MainFunction": {}
+            },
             "deleteforce": {
                 "name": "deleteForce",
-                "MainFunction": {}
+                "MainFunction": {},
+                "deprecated": "this action \"deleteForce\" is deprecated, you should use \"delete-Fore\" instead!",
+                "help": "this action \"deleteForce\" is deprecated, you should use \"delete-Fore\" instead!"
             },
             "display": {
                 "name": "display",
@@ -9086,9 +9116,15 @@ var subjectObject =
                 "name": "delete",
                 "MainFunction": {}
             },
+            "delete-force": {
+                "name": "delete-Force",
+                "MainFunction": {}
+            },
             "deleteforce": {
                 "name": "deleteForce",
-                "MainFunction": {}
+                "MainFunction": {},
+                "deprecated": "this action \"deleteForce\" is deprecated, you should use \"delete-Fore\" instead!",
+                "help": "this action \"deleteForce\" is deprecated, you should use \"delete-Fore\" instead!"
             },
             "display": {
                 "name": "display",
@@ -11935,9 +11971,15 @@ var subjectObject =
                 "name": "delete",
                 "MainFunction": {}
             },
+            "delete-force": {
+                "name": "delete-Force",
+                "MainFunction": {}
+            },
             "deleteforce": {
                 "name": "deleteForce",
-                "MainFunction": {}
+                "MainFunction": {},
+                "deprecated": "this action \"deleteForce\" is deprecated, you should use \"delete-Fore\" instead!",
+                "help": "this action \"deleteForce\" is deprecated, you should use \"delete-Fore\" instead!"
             },
             "display": {
                 "name": "display",
@@ -12985,9 +13027,15 @@ var subjectObject =
                 "name": "delete",
                 "MainFunction": {}
             },
+            "delete-force": {
+                "name": "delete-Force",
+                "MainFunction": {}
+            },
             "deleteforce": {
                 "name": "deleteForce",
-                "MainFunction": {}
+                "MainFunction": {},
+                "deprecated": "this action \"deleteForce\" is deprecated, you should use \"delete-Fore\" instead!",
+                "help": "this action \"deleteForce\" is deprecated, you should use \"delete-Fore\" instead!"
             },
             "display": {
                 "name": "display",

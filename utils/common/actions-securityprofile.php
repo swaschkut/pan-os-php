@@ -52,8 +52,8 @@ SecurityProfileCallContext::$supportedActions['delete'] = array(
     },
 );
 
-SecurityProfileCallContext::$supportedActions['deleteforce'] = array(
-    'name' => 'deleteForce',
+SecurityProfileCallContext::$supportedActions['delete-force'] = array(
+    'name' => 'delete-Force',
     'MainFunction' => function (SecurityProfileCallContext $context) {
         $object = $context->object;
 
@@ -84,7 +84,14 @@ SecurityProfileCallContext::$supportedActions['deleteforce'] = array(
 
     },
 );
-
+SecurityProfileCallContext::$supportedActions['deleteforce'] = array_merge(
+    SecurityProfileCallContext::$supportedActions['delete-force'],
+    array(
+        'name' => 'deleteForce',
+        'deprecated' => 'this action "deleteForce" is deprecated, you should use "delete-Fore" instead!',
+        'help' => 'this action "deleteForce" is deprecated, you should use "delete-Fore" instead!'
+    )
+);
 
 SecurityProfileCallContext::$supportedActions['name-addprefix'] = array(
     'name' => 'name-addPrefix',

@@ -43,8 +43,8 @@ EDLCallContext::$supportedActions['delete'] = array(
     },
 );
 
-EDLCallContext::$supportedActions['deleteforce'] = array(
-    'name' => 'deleteForce',
+EDLCallContext::$supportedActions['delete-force'] = array(
+    'name' => 'delete-Force',
     'MainFunction' => function (EDLCallContext $context) {
         $object = $context->object;
 
@@ -65,7 +65,13 @@ EDLCallContext::$supportedActions['deleteforce'] = array(
         }
     },
 );
-
+EDLCallContext::$supportedActions['deleteforce'] = array_merge(EDLCallContext::$supportedActions['delete-force'], 
+    array(
+        'name' => 'deleteForce',
+        'deprecated' => 'this action "deleteForce" is deprecated, you should use "delete-Fore" instead!',
+        'help' => 'this action "deleteForce" is deprecated, you should use "delete-Fore" instead!'
+    )
+);
 
 EDLCallContext::$supportedActions['name-addprefix'] = array(
     'name' => 'name-addPrefix',

@@ -252,8 +252,8 @@ IPsecprofileCallContext::$supportedActions['delete'] = array(
     },
 );
 
-IPsecprofileCallContext::$supportedActions['deleteforce'] = array(
-    'name' => 'deleteForce',
+IPsecprofileCallContext::$supportedActions['delete-force'] = array(
+    'name' => 'delete-Force',
     'MainFunction' => function (IPsecprofileCallContext $context) {
         $object = $context->object;
 
@@ -268,4 +268,10 @@ IPsecprofileCallContext::$supportedActions['deleteforce'] = array(
             $object->owner->removeProfile($object);
     },
 );
-
+IPsecprofileCallContext::$supportedActions['deleteforce'] = array_merge(IPsecprofileCallContext::$supportedActions['delete-force'], 
+    array(
+        'name' => 'deleteForce',
+        'deprecated' => 'this action "deleteForce" is deprecated, you should use "delete-Fore" instead!',
+        'help' => 'this action "deleteForce" is deprecated, you should use "delete-Fore" instead!'
+    )
+);
