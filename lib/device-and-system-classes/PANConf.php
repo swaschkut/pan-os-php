@@ -1033,12 +1033,19 @@ class PANConf
         PH::print_stdout(  "Uploading certificate to device...." );
 
         $fileContent = file_get_contents($certFileName);
-        //working on PAN-OS 11.2
-        $url = "type=import&category=keypair&certificate-name=".$certName."&format=".$certFileFormat;
 
-        //is this the syntax for 12.1??????
-        $url = "type=import&category=keypair&certificate-name=".$certName."&format=".$certFileFormat;
-        //."&block-private-key=no"
+        if( $this->version < 121 )
+        {
+            $url = "type=import&category=keypair&certificate-name=".$certName."&format=".$certFileFormat;
+        }
+        elseif( $this->version >= 121 )
+        {
+            //is this the syntax for 12.1??????
+            $url = "type=import&category=keypair&certificate-name=".$certName."&format=".$certFileFormat;
+            //."&block-private-key=no"
+        }
+
+
 
         if( $password !== null )
             $url .= "&passphrase=".$password;
@@ -1048,8 +1055,8 @@ class PANConf
 
         $response = $this->connector->sendRequest($url, FALSE, $fileContent, $certFileName);
 
-        #DH::DEBUGprintDOMDocument($response);
-        var_dump($response);
+
+        #var_dump($response);
     }
 
     /**

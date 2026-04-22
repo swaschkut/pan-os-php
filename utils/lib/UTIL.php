@@ -2369,9 +2369,9 @@ class UTIL
             foreach( $this->objectsToProcess as &$record )
             {
 
-                if( (get_class($record['store']->owner) != 'PanoramaConf' && get_class($record['store']->owner) != 'PANConf') )
+                if( (get_class($record['store']->owner) != 'PanoramaConf' && get_class($record['store']->owner) != 'PANConf') && get_class($record['store']->owner) != 'BuckbeakConf' )
                 {
-                    /** @var DeviceGroup|VirtualSystem|Container|DeviceCloud $sub */
+                    /** @var DeviceGroup|VirtualSystem|Container|DeviceCloud|DeviceOnPrem|Snippet $sub */
                     $sub = $record['store']->owner;
                     if( isset($processedLocations[$sub->name()]) )
                         continue;

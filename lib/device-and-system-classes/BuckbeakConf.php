@@ -730,6 +730,23 @@ class BuckbeakConf
             $this->get_combined_subDevice_statistics($statsArray, $cur, true );
         }
 
+        foreach( $this->onprems as $cur )
+        {
+            if( $cur->name() == "All" )
+                continue;
+
+            $this->get_combined_subDevice_statistics($statsArray, $cur, true );
+        }
+
+        foreach( $this->snippets as $cur )
+        {
+            /** @var Snippet $cur */
+            if( count($cur->getReferences() ) == 0 )
+                continue;
+
+            $this->get_combined_subDevice_statistics($statsArray, $cur, true );
+        }
+
         #$stdoutarray = array();
 
         $header = "Statistics for ".get_class( $this )." '" . $this->name . "'";
