@@ -7126,9 +7126,9 @@ RuleCallContext::$supportedActions[] = array(
                         $string = "";
                         foreach ($newdoc->documentElement->childNodes as $childnode) {
                             $lineReturn = false;
-                            $indentingXmlIncreament = 1;
+                            $indentingXmlIncrement = 2;
                             $indentingXml = 0;
-                            $xml = &DH::dom_to_xml($childnode, $indentingXml, $lineReturn, -1, $indentingXmlIncreament);
+                            $xml = &DH::dom_to_xml($childnode, $indentingXml, $lineReturn, -1, $indentingXmlIncrement);
                             #print $xml;
                             $string .= $xml;
                         }

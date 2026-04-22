@@ -1087,9 +1087,9 @@ class DH
             $newdoc->appendChild($node);
 
             $lineReturn = TRUE;
-            $indentingXmlIncreament = 1;
+            $indentingXmlIncrement = 2;
             $indentingXml = 0;
-            $xml = &DH::dom_to_xml($newdoc->documentElement, $indentingXml, $lineReturn, -1, $indentingXmlIncreament);
+            $xml = &DH::dom_to_xml($newdoc->documentElement, $indentingXml, $lineReturn, -1, $indentingXmlIncrement);
             print $xml;
             #print $newdoc->saveXML($newdoc->documentElement);
         }
@@ -1105,9 +1105,9 @@ class DH
             #$newdoc->appendChild($node);
 
             $lineReturn = TRUE;
-            $indentingXmlIncreament = 1;
+            $indentingXmlIncrement = 2;
             $indentingXml = 0;
-            $xml = &DH::dom_to_xml($newdoc->documentElement, $indentingXml, $lineReturn, -1, $indentingXmlIncreament);
+            $xml = &DH::dom_to_xml($newdoc->documentElement, $indentingXml, $lineReturn, -1, $indentingXmlIncrement);
             //print $xml;
             $string = $xml;
         }
@@ -1198,9 +1198,9 @@ class DH
             if( $entry === false )
             {
                 $lineReturn = TRUE;
-                $indentingXmlIncreament = 3;
+                $indentingXmlIncrement = 3;
                 $indentingXml = 0;
-                $xml = &DH::dom_to_xml($newdoc->documentElement, $indentingXml, $lineReturn, -1, $indentingXmlIncreament);
+                $xml = &DH::dom_to_xml($newdoc->documentElement, $indentingXml, $lineReturn, -1, $indentingXmlIncrement);
 
                 $tmp_string = $padding."      * VALUE: ";
                 $string .= $padding.$tmp_string."\n";

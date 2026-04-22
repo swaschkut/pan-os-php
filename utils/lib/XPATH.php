@@ -246,9 +246,9 @@ class XPATH extends UTIL
             {
                 $lineReturn = TRUE;
                 $indentingXml = 0;
-                $indentingXmlIncreament = 2;
+                $indentingXmlIncrement = 2;
 
-                $xml = &DH::dom_to_xml($this->xmlDoc->documentElement, $indentingXml, $lineReturn, -1, $indentingXmlIncreament );
+                $xml = &DH::dom_to_xml($this->xmlDoc->documentElement, $indentingXml, $lineReturn, -1, $indentingXmlIncrement );
 
                 file_put_contents(PH::$args['out'], $xml);
             }
@@ -502,9 +502,9 @@ class XPATH extends UTIL
             if( $entry === false )
             {
                 $lineReturn = TRUE;
-                $indentingXmlIncreament = 3;
+                $indentingXmlIncrement = 3;
                 $indentingXml = 0;
-                $xml = &DH::dom_to_xml($newdoc->documentElement, $indentingXml, $lineReturn, -1, $indentingXmlIncreament);
+                $xml = &DH::dom_to_xml($newdoc->documentElement, $indentingXml, $lineReturn, -1, $indentingXmlIncrement);
 
                 $tmp_string = "      * VALUE: ";
                 $string .= $tmp_string."\n";

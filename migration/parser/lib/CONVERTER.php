@@ -689,7 +689,7 @@ class CONVERTER extends UTIL
         $tmp_template_vsys = &$this->template_vsys;
     }
 
-    public function global_end($lineReturn = TRUE, $indentingXml = 0, $indentingXmlIncreament = 1)
+    public function global_end($lineReturn = TRUE, $indentingXml = 0, $indentingXmlIncrement = 2)
     {
         print "\n\n";
         $this->loadEnd();
@@ -707,7 +707,7 @@ class CONVERTER extends UTIL
 
         print "\n";
 
-        $this->save_our_work(FALSE, TRUE, $lineReturn, $indentingXml, $indentingXmlIncreament);
+        $this->save_our_work(FALSE, TRUE, $lineReturn, $indentingXml, $indentingXmlIncrement);
 
         print "########################################################\n\n";
         print "MIGRATION configuration exported\n\n";

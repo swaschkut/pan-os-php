@@ -674,14 +674,14 @@ class BuckbeakConf
      * @param bool $printMessage
      * @param int $indentingXml
      */
-    public function save_to_file($fileName, $printMessage = TRUE, $lineReturn = TRUE, $indentingXml = 0, $indentingXmlIncreament = 2)
+    public function save_to_file($fileName, $printMessage = TRUE, $lineReturn = TRUE, $indentingXml = 0, $indentingXmlIncrement = 2)
     {
         if( $printMessage )
             PH::print_stdout( "Now saving BuckbeakConf to file '$fileName'..." );
 
         //Todo: swaschkut check
-        //$indentingXmlIncreament was 2 per default for Panroama
-        $xml = &DH::dom_to_xml($this->xmlroot, $indentingXml, $lineReturn, -1, $indentingXmlIncreament );
+        //$indentingXmlIncrement was 2 per default for Panroama
+        $xml = &DH::dom_to_xml($this->xmlroot, $indentingXml, $lineReturn, -1, $indentingXmlIncrement );
 
         $path_parts = pathinfo($fileName);
         if (!is_dir($path_parts['dirname']))

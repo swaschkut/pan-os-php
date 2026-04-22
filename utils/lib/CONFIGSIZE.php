@@ -27,10 +27,10 @@ class CONFIGSIZE extends UTIL
     public $showalldg = false;
 
     //these are the default values
-    //$xml = &DH::dom_to_xml( $this->xmlDoc, $indentingXml = 0, $lineReturn = TRUE, -1, $indentingXmlIncrement = 1 );
+    //$xml = &DH::dom_to_xml( $this->xmlDoc, $indentingXml = 0, $lineReturn = TRUE, -1, $indentingXmlIncrement = 2 );
     public $reduced_indentingXml = -1; //0
     public $reduced_lineReturn = false; //TRUE
-    public $reduced_indentingXmlIncrement = 0; //1
+    public $reduced_indentingXmlIncrement = 0; //2
 
     ////////////////////
     //from UTIL

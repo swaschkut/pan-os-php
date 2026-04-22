@@ -1597,9 +1597,9 @@ class UTIL
             $printMessage = TRUE;
             $lineReturn = TRUE;
             $indentingXml = 0;
-            $indentingXmlIncreament = 1;
+            $indentingXmlIncrement = 2;
 
-            $this->pan->save_to_file($directory."/".$filename, $printMessage, $lineReturn, $indentingXml, $indentingXmlIncreament);
+            $this->pan->save_to_file($directory."/".$filename, $printMessage, $lineReturn, $indentingXml, $indentingXmlIncrement);
 
 
             /** @var Git $git */
@@ -2414,13 +2414,13 @@ class UTIL
         }
     }
 
-    public function save_our_work($additional_output = FALSE, $printMessage = TRUE, $lineReturn = TRUE, $indentingXml = 0, $indentingXmlIncreament = 1)
+    public function save_our_work($additional_output = FALSE, $printMessage = TRUE, $lineReturn = TRUE, $indentingXml = 0, $indentingXmlIncrement = 2)
     {
         if( PH::$shadow_reducexml )
         {
             $lineReturn = false;
             $indentingXml = -1;
-            $indentingXmlIncreament = 0;
+            $indentingXmlIncrement = 0;
 
             //remove empty XML nodes
             //Todo: BUG 20260317 - available since
@@ -2465,7 +2465,7 @@ class UTIL
                     if( PH::$shadow_json )
                     {
                         //store it JSON out
-                        PH::$JSON_TMP['xmldoc'] = &DH::dom_to_xml($this->pan->xmlroot, $indentingXml, $lineReturn, -1, $indentingXmlIncreament);
+                        PH::$JSON_TMP['xmldoc'] = &DH::dom_to_xml($this->pan->xmlroot, $indentingXml, $lineReturn, -1, $indentingXmlIncrement);
                         PH::print_stdout(PH::$JSON_TMP, false, "out");
                         PH::$JSON_TMP = array();
                     }
@@ -2476,7 +2476,7 @@ class UTIL
                         unlink($this->configOutput);
 
 
-                    $this->pan->save_to_file($this->configOutput, $printMessage, $lineReturn, $indentingXml, $indentingXmlIncreament);
+                    $this->pan->save_to_file($this->configOutput, $printMessage, $lineReturn, $indentingXml, $indentingXmlIncrement);
 
                     if( isset(PH::$args['git']) && PH::$args['git'] )
                     {

@@ -1434,7 +1434,7 @@ class XMLISSUE extends UTIL
 
                                             //Secrule service has twice same service added
                                             $objectType = "SecRule";
-                                            $text = $objectType." '".$objectName."' has same service defined twice: ".$objectServiceName;
+                                            $text = $objectType." '".$objectName."' has same SERVICE defined twice: ".$objectServiceName;
                                             $this->logFinding($locationName, $objectName, $objectType, $text, true);
                                             $text2 = PH::boldText(" (removed)");
                                             PH::print_stdout( "     - ".$text.$text2 );
@@ -1478,7 +1478,7 @@ class XMLISSUE extends UTIL
 
                                                 //Secrule service has twice same service added
                                                 $objectType = "SecRule";
-                                                $text = $objectType." ".$objectName." has same tag defined twice: ".$objectTagName;
+                                                $text = $objectType." ".$objectName." has same TAG defined twice: ".$objectTagName;
                                                 $this->logFinding($locationName, $objectName, $objectType, $text, true);
                                                 $text2 = PH::boldText(" (removed)");
                                                 PH::print_stdout( "     - ".$text.$text2 );
@@ -1506,7 +1506,7 @@ class XMLISSUE extends UTIL
                                             $objectNode_applications->removeChild($objectApplication);
 
                                             $objectType = "SecRule";
-                                            $text = $objectType." ".$objectName." has same application defined twice: ".$objectApplicationName;
+                                            $text = $objectType." ".$objectName." has same APPLICATION defined twice: ".$objectApplicationName;
                                             $this->logFinding($locationName, $objectName, $objectType, $text, true);
                                             $text2 = PH::boldText(" (removed)");
                                             PH::print_stdout( "     - ".$text.$text2 );
@@ -1545,7 +1545,7 @@ class XMLISSUE extends UTIL
                                                 $objectNode_category->removeChild($objectCategory);
 
                                                 $objectType = "SecRule";
-                                                $text = $objectType." ".$objectName." has same category defined twice: ".$objectCategoryName;
+                                                $text = $objectType." ".$objectName." has same CATEGORY defined twice: ".$objectCategoryName;
                                                 $this->logFinding($locationName, $objectName, $objectType, $text, true);
                                                 $text2 = PH::boldText(" (removed)");
                                                 PH::print_stdout( "     - ".$text.$text2 );
@@ -1582,7 +1582,7 @@ class XMLISSUE extends UTIL
                                             $objectNode_sources->removeChild($objectSource);
 
                                             $objectType = "SecRule";
-                                            $text = $objectType." ".$objectName." has same source defined twice: ".$objectSourceName;
+                                            $text = $objectType." ".$objectName." has same SOURCE defined twice: ".$objectSourceName;
                                             $this->logFinding($locationName, $objectName, $objectType, $text, true);
                                             $text2 = PH::boldText(" (removed)");
                                             PH::print_stdout( "     - ".$text.$text2 );
@@ -1619,7 +1619,7 @@ class XMLISSUE extends UTIL
                                             $objectNode_destinations->removeChild($objectDestination);
 
                                             $objectType = "SecRule";
-                                            $text = $objectType." ".$objectName." has same destination defined twice: ".$objectDestinationName;
+                                            $text = $objectType." ".$objectName." has same DESTINATION defined twice: ".$objectDestinationName;
                                             $this->logFinding($locationName, $objectName, $objectType, $text, true);
                                             $text2 = PH::boldText(" (removed)");
                                             PH::print_stdout( "     - ".$text.$text2 );
@@ -1653,7 +1653,7 @@ class XMLISSUE extends UTIL
                                             $objectNode_froms->removeChild($objectFrom);
 
                                             $objectType = "SecRule";
-                                            $text = $objectType." ".$objectName." has same from defined twice: ".$objectFromName;
+                                            $text = $objectType." ".$objectName." has same FROM zone defined twice: ".$objectFromName;
                                             $this->logFinding($locationName, $objectName, $objectType, $text, true);
                                             $text2 = PH::boldText(" (removed)");
                                             PH::print_stdout( "     - ".$text.$text2 );
@@ -1687,7 +1687,7 @@ class XMLISSUE extends UTIL
                                             $objectNode_tos->removeChild($objectTo);
 
                                             $objectType = "SecRule";
-                                            $text = $objectType." ".$objectName." has same to defined twice: ".$objectToName;
+                                            $text = $objectType." ".$objectName." has same TO zone defined twice: ".$objectToName;
                                             $this->logFinding($locationName, $objectName, $objectType, $text, true);
                                             $text2 = PH::boldText(" (removed)");
                                             PH::print_stdout( "     - ".$text.$text2 );
@@ -1723,7 +1723,7 @@ class XMLISSUE extends UTIL
                                                 $objectNode_source_users->removeChild($objectSourceUser);
 
                                                 $objectType = "SecRule";
-                                                $text = $objectType." ".$objectName." has same source-user defined twice: ".$objectSourceUserName;
+                                                $text = $objectType." ".$objectName." has same SOURCE-USER defined twice: ".$objectSourceUserName;
                                                 $this->logFinding($locationName, $objectName, $objectType, $text, true);
                                                 $text2 = PH::boldText(" (removed)");
                                                 PH::print_stdout( "     - ".$text.$text2 );
@@ -1791,7 +1791,7 @@ class XMLISSUE extends UTIL
                                             $objectNode_sources->removeChild($objectSource);
 
                                             $objectType = "NatRule";
-                                            $text = $objectType." ".$objectName." has same source defined twice: ".$objectSourceName;
+                                            $text = $objectType." ".$objectName." has same SOURCE defined twice: ".$objectSourceName;
                                             $this->logFinding($locationName, $objectName, $objectType, $text, true);
                                             $text2 = PH::boldText(" (removed)");
                                             PH::print_stdout( "     - ".$text.$text2 );
@@ -1828,7 +1828,7 @@ class XMLISSUE extends UTIL
                                             $objectNode_destinations->removeChild($objectDestination);
 
                                             $objectType = "NatRule";
-                                            $text = $objectType." ".$objectName." has same destination defined twice: ".$objectDestinationName;
+                                            $text = $objectType." ".$objectName." has same DESTINATION defined twice: ".$objectDestinationName;
                                             $this->logFinding($locationName, $objectName, $objectType, $text, true);
                                             $text2 = PH::boldText(" (removed)");
                                             PH::print_stdout( "     - ".$text.$text2 );
@@ -1898,7 +1898,7 @@ class XMLISSUE extends UTIL
                                             $objectNode_sources->removeChild($objectSource);
 
                                             $objectType = "DecryptionRule";
-                                            $text = $objectType." ".$objectName." has same source defined twice: ".$objectSourceName;
+                                            $text = $objectType." ".$objectName." has same SOURCE defined twice: ".$objectSourceName;
                                             $this->logFinding($locationName, $objectName, $objectType, $text, true);
                                             $text2 = PH::boldText(" (removed)");
                                             PH::print_stdout( "     - ".$text.$text2 );
@@ -1935,7 +1935,7 @@ class XMLISSUE extends UTIL
                                             $objectNode_destinations->removeChild($objectDestination);
 
                                             $objectType = "DecryptionRule";
-                                            $text = $objectType." ".$objectName." has same destination defined twice: ".$objectDestinationName;
+                                            $text = $objectType." ".$objectName." has same DESTINATION defined twice: ".$objectDestinationName;
                                             $this->logFinding($locationName, $objectName, $objectType, $text, true);
                                             $text2 = PH::boldText(" (removed)");
                                             PH::print_stdout( "     - ".$text.$text2 );
@@ -1973,7 +1973,7 @@ class XMLISSUE extends UTIL
 
                                             //Secrule service has twice same service added
                                             $objectType = "DecryptionRule";
-                                            $text = $objectType." '".$objectName."' has same service defined twice: ".$objectServiceName;
+                                            $text = $objectType." '".$objectName."' has same SERVICE defined twice: ".$objectServiceName;
                                             $this->logFinding($locationName, $objectName, $objectType, $text, true);
                                             $text2 = PH::boldText(" (removed)");
                                             PH::print_stdout( "     - ".$text.$text2 );
@@ -2034,7 +2034,7 @@ class XMLISSUE extends UTIL
                                             $objectNode_sources->removeChild($objectSource);
 
                                             $objectType = "AppOverrideRule";
-                                            $text = $objectType." ".$objectName." has same source defined twice: ".$objectSourceName;
+                                            $text = $objectType." ".$objectName." has same SOURCE defined twice: ".$objectSourceName;
                                             $this->logFinding($locationName, $objectName, $objectType, $text, true);
                                             $text2 = PH::boldText(" (removed)");
                                             PH::print_stdout( "     - ".$text.$text2 );
@@ -2071,7 +2071,7 @@ class XMLISSUE extends UTIL
                                             $objectNode_destinations->removeChild($objectDestination);
 
                                             $objectType = "AppOverrideRule";
-                                            $text = $objectType." ".$objectName." has same destination defined twice: ".$objectDestinationName;
+                                            $text = $objectType." ".$objectName." has same DESTINATION defined twice: ".$objectDestinationName;
                                             $this->logFinding($locationName, $objectName, $objectType, $text, true);
                                             $text2 = PH::boldText(" (removed)");
                                             PH::print_stdout( "     - ".$text.$text2 );
@@ -2139,7 +2139,7 @@ class XMLISSUE extends UTIL
                                             $objectNode_sources->removeChild($objectSource);
 
                                             $objectType = "AppOverrideRule";
-                                            $text = $objectType." ".$objectName." has same source defined twice: ".$objectSourceName;
+                                            $text = $objectType." ".$objectName." has same SOURCE defined twice: ".$objectSourceName;
                                             $this->logFinding($locationName, $objectName, $objectType, $text, true);
                                             $text2 = PH::boldText(" (removed)");
                                             PH::print_stdout( "     - ".$text.$text2 );
@@ -2176,7 +2176,7 @@ class XMLISSUE extends UTIL
                                             $objectNode_destinations->removeChild($objectDestination);
 
                                             $objectType = "AppOverrideRule";
-                                            $text = $objectType." ".$objectName." has same destination defined twice: ".$objectDestinationName;
+                                            $text = $objectType." ".$objectName." has same DESTINATION defined twice: ".$objectDestinationName;
                                             $this->logFinding($locationName, $objectName, $objectType, $text, true);
                                             $text2 = PH::boldText(" (removed)");
                                             PH::print_stdout( "     - ".$text.$text2 );
@@ -3432,7 +3432,7 @@ class XMLISSUE extends UTIL
         foreach ($toRemove as $node) {
             $name = $node->getAttribute('name');
             $contextText = $logContext ? $logContext : "{$locationName} {$xpath}";
-            $text = "{$contextText} has same {$objectType} defined twice: {$name}";
+            $text = "{$contextText} has same ".strtoupper($objectType)." defined twice: {$name}";
 
             if ($node->parentNode) {
                 $node->parentNode->removeChild($node);
