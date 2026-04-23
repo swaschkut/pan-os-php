@@ -3368,6 +3368,7 @@ SecurityProfileCallContext::$supportedActions['vulnerability.rules.alert-only-se
                 {
                     foreach ($result as $rule)
                     {
+                        //Todo: bug if threat-name != any
                         if ($rule == "any")
                             continue;
 
