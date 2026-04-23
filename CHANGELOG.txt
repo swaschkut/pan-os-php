@@ -31,6 +31,7 @@ BUGFIX:
 * type=securityprofilegroup actions=exporttoexcel | correction of table export
 * scm snippets related - correct hierarchy search of objects if objects is from snippet
 * in=scm-api:// | adjustment if total object is greater than limit
+* class VulnerabilityProfile | bugfix for VP rules visibility method
 
 GENERAL:
 * update Device App-ID to version: 9087-9979
