@@ -100,7 +100,7 @@ class PREDEFINED extends UTIL
         $cursor = DH::findXPathSingleEntryOrDie('/predefined/application-version', $xmlDoc);
         $exernal_version = $cursor->nodeValue;
 
-        $panc_version = $this->pan->appStore->predefinedStore_appid_version;
+        $panc_version = $this->pan->predefinedappStore->predefinedStore_appid_version;
 
 
         $external_appid = explode("-", $exernal_version);

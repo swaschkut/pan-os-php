@@ -1122,7 +1122,17 @@ class DeviceCloud
 
     public function addSnippet( $snippetObj)
     {
-        $this->attachedSnippets[$snippetObj->name()] = $snippetObj;
+        /** @var Snippet $snippetObj */
+        $attachedSnippetsName = $this->getAttachedSnippetNames();
+        if( !isset($attachedSnippetsName[$snippetObj->name()]) )
+        {
+            $this->attachedSnippets[$snippetObj->name()] = $snippetObj;
+
+            $snippetsXMLNode = DH::findFirstElementOrCreate( 'snippets', $this->xmlroot);
+            DH::createElement($snippetsXMLNode, 'member', $snippetObj->name());
+
+            $snippetObj->addReference($this);
+        }
     }
 
     public function getAttachedSnippets()
