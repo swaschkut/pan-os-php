@@ -86,12 +86,16 @@ class InterfaceContainer extends ObjRuleContainer
 
     public function rewriteXML()
     {
-        DH::clearDomNodeChilds($this->xmlroot);
-
-        foreach( $this->o as $entry )
+        if( $this->xmlroot !== null )
         {
-            $tmp = DH::createElement($this->xmlroot, "member", $entry->name());
+            DH::clearDomNodeChilds($this->xmlroot);
+
+            foreach( $this->o as $entry )
+            {
+                $tmp = DH::createElement($this->xmlroot, "member", $entry->name());
+            }
         }
+
         #PH::print_stdout(get_class($this->owner));
         #PH::print_stdout($this->owner->name());
     }
