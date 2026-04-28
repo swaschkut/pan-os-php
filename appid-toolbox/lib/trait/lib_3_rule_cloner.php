@@ -132,11 +132,11 @@ trait lib_3_rule_cloner
         //
         // REAL JOB STARTS HERE
         //
-        $this->ruleCloner_Phase3_main($subSystem, $configInput, $pan, $inputConnector, $configOutput, $ruleStats, $bundleApiCalls);
+        $this->ruleCloner_Phase3_main($subSystem, $configInput, $pan, $inputConnector, $configOutput, $ruleStats, $bundleApiCalls, $debugAPI);
     }
 
 
-    function ruleCloner_Phase3_main($subSystem, $configInput, $pan, $inputConnector, $configOutput, $ruleStats, $bundleApiCalls)
+    function ruleCloner_Phase3_main($subSystem, $configInput, $pan, $inputConnector, $configOutput, $ruleStats, $bundleApiCalls, $debugAPI = false)
     {
         $rules = $subSystem->securityRules->rules("(description regex /" . RuleIDTagLibrary::$tagBaseName . "/) and !(tag has " . TH::$tag_misc_convertedRule . ") and !(tag has " . TH::$tag_misc_ignore . ") and !(tag has.regex /^" . TH::$tagNtbrBase . "/) and !(tag has " . TH::$tag_misc_clonedRule . ")");
 
@@ -277,11 +277,10 @@ trait lib_3_rule_cloner
 
 
             $string = " - The following apps will be added : ";
-            foreach( $appsToPutInRule as $app )
-            {
-                $string .= $app . ',';
-            }
+
+            $string .= implode(",", $appsToPutInRule);
             PH::print_stdout($string);
+
             PH::print_stdout(" - now calculating dependencies");
             foreach( $appsToPutInRule as $app )
             {
@@ -299,8 +298,12 @@ trait lib_3_rule_cloner
                 }
             }
 
+            if( $debugAPI )
+                PH::print_stdout( "  - search App-Rulename for: ".$legacyRule->name());
+
             $newName = $legacyRule->owner->findAvailableName($legacyRule->name(), '-app');
             PH::print_stdout(" - cloned rule name will be '{$newName}'");
+
             /** @var Rule $appidRule */
             /** @var RuleStore $ruleStore */
             $ruleStore = $subSystem->securityRules;

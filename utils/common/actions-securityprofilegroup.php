@@ -44,8 +44,18 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
         {
             if( is_object( $prof ) )
             {
-                PH::print_stdout( "          - {$key}  '{$prof->name()}'" );
-                PH::$JSON_TMP['sub']['object'][$object->name()]['securityprofiles'][$key] = $prof->name();
+
+                if( str_contains($prof->owner->name(), "predefined") )
+                {
+                    PH::print_stdout( "          - {$key}  '{$prof->name()}' [predefined]" );
+                    PH::$JSON_TMP['sub']['object'][$object->name()]['securityprofiles'][$key] = $prof->name()." [predefined]";
+                }
+                else
+                {
+                    PH::print_stdout( "          - {$key}  '{$prof->name()}'" );
+                    PH::$JSON_TMP['sub']['object'][$object->name()]['securityprofiles'][$key] = $prof->name();
+                }
+
             }
 
             else
@@ -260,6 +270,8 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
 
         $lines = '';
 
+        $predefined_str = " [predefined]";
+
         $addWhereUsed = FALSE;
         $addUsedInLocation = FALSE;
         $addCountDisabledRules = FALSE;
@@ -430,8 +442,10 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
                 }
                 //private $secprof_array = array('virus', 'spyware', 'vulnerability', 'file-blocking', 'wildfire-analysis', 'url-filtering', 'data-filtering');
                 if ($context->deviceType !== "scm") {
-                    if (isset($object->secprofProfiles_obj['virus'])) {
+                    if (isset($object->secprofProfiles_obj['virus']))
+                    {
                         $lines .= $context->encloseFunction($object->secprofProfiles_obj['virus']);
+
                         if ($bestPractice || $visibility || $adoption) {
 
                             if (is_object($object->secprofProfiles_obj['virus']))
@@ -487,8 +501,10 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
                 }
 
 
-                if (isset($object->secprofProfiles_obj['spyware'])) {
+                if (isset($object->secprofProfiles_obj['spyware']))
+                {
                     $lines .= $context->encloseFunction($object->secprofProfiles_obj['spyware']);
+
                     if ($bestPractice || $visibility || $adoption) {
                         if (is_object($object->secprofProfiles_obj['spyware']))
                             $profile = $object->secprofProfiles_obj['spyware'];
@@ -541,8 +557,10 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
                         $lines .= $context->encloseFunction("---");
                 }
 
-                if (isset($object->secprofProfiles_obj['vulnerability'])) {
+                if (isset($object->secprofProfiles_obj['vulnerability']))
+                {
                     $lines .= $context->encloseFunction($object->secprofProfiles_obj['vulnerability']);
+
                     if ($bestPractice || $visibility || $adoption) {
                         if (is_object($object->secprofProfiles_obj['vulnerability']))
                             $profile = $object->secprofProfiles_obj['vulnerability'];
@@ -594,8 +612,10 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
                         $lines .= $context->encloseFunction("---");
                 }
 
-                if (isset($object->secprofProfiles_obj['url-filtering'])) {
+                if (isset($object->secprofProfiles_obj['url-filtering']))
+                {
                     $lines .= $context->encloseFunction($object->secprofProfiles_obj['url-filtering']);
+
                     if ($bestPractice || $visibility || $adoption) {
                         if (is_object($object->secprofProfiles_obj['url-filtering']))
                             $profile = $object->secprofProfiles_obj['url-filtering'];
@@ -647,8 +667,10 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
                         $lines .= $context->encloseFunction("---");
                 }
 
-                if (isset($object->secprofProfiles_obj['file-blocking'])) {
+                if (isset($object->secprofProfiles_obj['file-blocking']))
+                {
                     $lines .= $context->encloseFunction($object->secprofProfiles_obj['file-blocking']);
+
                     if ($bestPractice || $visibility || $adoption) {
                         if (is_object($object->secprofProfiles_obj['file-blocking']))
                             $profile = $object->secprofProfiles_obj['file-blocking'];
@@ -701,8 +723,10 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
                 }
 
                 if ($context->deviceType !== "scm") {
-                    if (isset($object->secprofProfiles_obj['wildfire-analysis'])) {
+                    if (isset($object->secprofProfiles_obj['wildfire-analysis']))
+                    {
                         $lines .= $context->encloseFunction($object->secprofProfiles_obj['wildfire-analysis']);
+
                         if ($bestPractice || $visibility || $adoption) {
 
                             if (is_object($object->secprofProfiles_obj['wildfire-analysis']))
@@ -757,13 +781,17 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
                 }
 
                 if (isset($object->secprofProfiles_obj['data-filtering']))
+                {
                     $lines .= $context->encloseFunction($object->secprofProfiles_obj['data-filtering']);
+                }
+
                 else
                     $lines .= $context->encloseFunction("---");
 
                 if ($context->deviceType === "scm")
                 {
-                    if (isset($object->secprofProfiles_obj['virus-and-wildfire-analysis'])) {
+                    if (isset($object->secprofProfiles_obj['virus-and-wildfire-analysis']))
+                    {
                         $lines .= $context->encloseFunction($object->secprofProfiles_obj['virus-and-wildfire-analysis']);
 
                         if ($bestPractice)
@@ -783,7 +811,8 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
                             $lines .= $context->encloseFunction("---");
                     }
 
-                    if (isset($object->secprofProfiles_obj['dns-security'])) {
+                    if (isset($object->secprofProfiles_obj['dns-security']))
+                    {
                         $lines .= $context->encloseFunction($object->secprofProfiles_obj['dns-security']);
 
                         if ($bestPractice)

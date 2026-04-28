@@ -645,4 +645,26 @@ RQuery::$defaultFilters['securityprofilegroup']['secprof']['operators']['data-pr
     )
 );
 
+RQuery::$defaultFilters['securityprofilegroup']['object']['operators']['has.predefined.secprof'] = array(
+    'Function' => function (SecurityprofilegroupRQueryContext $context) {
+        $secprofgroup = $context->object;
+
+        $profiles = $secprofgroup->securityProfiles();
+        foreach( $profiles as $key => $profile )
+        {
+            if( is_object($profile) )
+            {
+                if( str_contains($profile->owner->name(), "predefined") )
+                    return TRUE;
+            }
+        }
+
+        return FALSE;
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP% av-production)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
 // </editor-fold>
