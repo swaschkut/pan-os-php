@@ -16,7 +16,7 @@ UTIL:
 * type=config-size | adjust to get correct calculation about what pan-os-php is generating config file
 * type=edl/ike-profile/ipsec-profile/schedule/securityprofile/tag/zone | actions=delete-Force instead of actions=deleteforce
 * type=stats in=scm-api:// | correct to get full objects usage, if snippet is references by a folder
-* type=securityprofilegroup | introduce 'filter=(object has.predefined.secprof)' | extend actions=display - with [predefined]
+* type=securityprofilegroup | introduce 'filter=(object has.predefined.secprof)' | extend actions=display/exporttohtml - with [predefined]
 
 BUGFIX:
 * type=securityprofile securityprofiletype=spyware actions=spyware.alert-only-set | bugfix to add default config
