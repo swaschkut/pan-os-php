@@ -4326,6 +4326,8 @@ SecurityProfileCallContext::$supportedActions[] = array(
         {
             $targetLocation = array_key_last($reflocations);
 
+            PH::print_stdout("       * targetLocation: ".$targetLocation);
+
             if( $localLocation == $targetLocation )
             {
                 $string = "because original and target destinations are the same: $targetLocation";

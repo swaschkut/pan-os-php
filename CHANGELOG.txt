@@ -17,6 +17,7 @@ UTIL:
 * type=edl/ike-profile/ipsec-profile/schedule/securityprofile/tag/zone | actions=delete-Force instead of actions=deleteforce
 * type=stats in=scm-api:// | correct to get full objects usage, if snippet is references by a folder
 * type=securityprofilegroup | introduce 'filter=(object has.predefined.secprof)' | extend actions=display/exporttohtml - with [predefined]
+* type=securityprofile securityprofiletype=customer-url-category actions=move_from-shared_to_lowest_possible_DG | print targetLocation also if refcount == 1
 
 BUGFIX:
 * type=securityprofile securityprofiletype=spyware actions=spyware.alert-only-set | bugfix to add default config
