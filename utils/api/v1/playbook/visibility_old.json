@@ -15,7 +15,6 @@
     },
     {
       "type": "device",
-      "outputformatset": "outputformatset=file11-create-alert-only-SP_SPG.txt",
       "actions": "actions=sp_spg-create-alert-only-bp:true",
       "comment": "*****************************************************************************************************************\n*                                                                                                               *\n*  The next pan-os-php command (below) will create the Best Practice Security Profiles called 'Alert-Only-XX'.  *\n*  (ie; 'Alert-Only-AS',' Alert-Only-AV','Alert-Only-FB','Alert-Only-URL','Alert-Only-VP','Alert-Only-WF')      *\n*                                                                                                               *\n*  This command will also create the Best Practice Security Profile Group called 'Alert-Only'.                  *\n*  This config is sourced from the relevant snippets on https://github.com/PaloAltoNetworks/iron-skillet.       *\n*                                                                                                               *\n*****************************************************************************************************************"
     },
@@ -172,13 +171,6 @@
     },
     {
       "type": "rule",
-      "ruletype": "ruletype=decryption",
-      "actions": "actions=logsetting-set:default",
-      "filter": "filter=!(logprof is.set) and (rule is.enabled)",
-      "location": "location=any"
-    },    
-    {
-      "type": "rule",
       "ruletype": "ruletype=defaultsecurity",
       "actions": "actions=logend-Enable",
       "filter": "filter=(rule is.enabled)",
@@ -189,6 +181,13 @@
       "ruletype": "ruletype=defaultsecurity",
       "actions": "actions=logsetting-set:default",
       "filter": "filter=!(logprof is.set)",
+      "location": "location=any"
+    },
+    {
+      "type": "rule",
+      "ruletype": "ruletype=decryption",
+      "actions": "actions=logsetting-set:default",
+      "filter": "filter=!(logprof is.set) and (rule is.enabled)",
       "location": "location=any"
     },
     {
