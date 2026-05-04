@@ -36,6 +36,7 @@ BUGFIX:
 * class VulnerabilityProfile | bugfix for VP rules visibility method
 * class InterfaceContainer | bugfix if node == null
 * phpseclib | class Hash/Rijndael - add none defined variables
+* type=schedule | actions=exporttohtml:file.html | bugfix for 'daily'
 
 GENERAL:
 * update Device App-ID to version: 9087-9979

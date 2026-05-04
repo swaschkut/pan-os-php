@@ -2315,7 +2315,8 @@ class RuleCallContext extends CallContext
             }
             elseif( isset($recurring['daily']) )
             {
-                $timestampString = 'daily | '.$recurring['daily']['start'].'-'.$recurring['daily']['end'];
+                foreach( $recurring['daily'] as $entry )
+                    $timestampString[] = $entry['start']."-".$entry['end'];
             }
 
 

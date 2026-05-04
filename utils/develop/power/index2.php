@@ -131,7 +131,7 @@ function () {
   name="meeting-time"
   value="2025-01-26T11:53"
   min="2024-01-01T00:00"
-  max="2026-01-01T00:00" />
+  max="2027-01-01T00:00" />
   
 <label for="meeting-time">graph2:</label>
 
@@ -141,7 +141,7 @@ function () {
   name="meeting-time"
   value="2025-01-26T10:00"
   min="2024-01-01T00:00"
-  max="2026-01-01T00:00" />
+  max="2027-01-01T00:00" />
 
 
 <input

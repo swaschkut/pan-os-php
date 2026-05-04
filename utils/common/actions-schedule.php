@@ -406,10 +406,20 @@ ScheduleCallContext::$supportedActions['display'] = array(
                 $string = $key." | ";
                 foreach( $entry as $day_entry )
                 {
-                    $string2 = $day_entry['start']."-".$day_entry['end'];
-                    PH::print_stdout( $context->padding . "   - ".$string.$string2 );
-                    PH::$JSON_TMP['sub']['object'][$object->name()]['weekly'][$key][$string2]['start'] = $day_entry['start'];
-                    PH::$JSON_TMP['sub']['object'][$object->name()]['weekly'][$key][$string2]['end'] = $day_entry['end'];
+                    if( isset($startEnd['start']) && isset($startEnd['end']) )
+                    {
+                        $string2 = $day_entry['start']."-".$day_entry['end'];
+                        PH::print_stdout( $context->padding . "   - ".$string.$string2 );
+                        PH::$JSON_TMP['sub']['object'][$object->name()]['weekly'][$key][$string2]['start'] = $day_entry['start'];
+                        PH::$JSON_TMP['sub']['object'][$object->name()]['weekly'][$key][$string2]['end'] = $day_entry['end'];
+                    }
+                    else
+                    {
+                        print_r( $tmp_array['weekly'] );
+                        mwarning( "something wrong with weekly schedule object: ".$object->name() );
+                    }
+
+
                 }
             }
         }
