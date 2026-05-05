@@ -72,7 +72,7 @@ require_once(dirname(__FILE__)."/CONFIG_COMMIT__.php");
 require_once dirname(__FILE__)."/MAXMIND__.php";
 require_once dirname(__FILE__)."/PLAYBOOK__.php";
 require_once dirname(__FILE__)."/UTIL_GET_ACTION_FILTER.php";
-require_once dirname(__FILE__)."/IRONSKILLET_UPDATE__.php";
+#require_once dirname(__FILE__)."/IRONSKILLET_UPDATE__.php";
 
 require_once(dirname(__FILE__)."/PROTOCOLL_NUMBERS__.php");
 

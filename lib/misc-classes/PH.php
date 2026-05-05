@@ -1107,7 +1107,7 @@ class PH
         "xml-op-json",
         "bpa-generator",
         "playbook",
-        "ironskillet-update",
+        #"ironskillet-update",
         "maxmind-update",
         "util_get-action-filter",
         "software-remove",
@@ -1138,7 +1138,7 @@ class PH
 
 
     public static $in_exclude = array(
-        'ironskillet-update',
+        #'ironskillet-update',
         "maxmind-update",
         "util_get-action-filter",
         "protocoll-number-download",
@@ -1151,7 +1151,7 @@ class PH
         'config-size',
         "xml-op-json",
         "bpa-generator",
-        "ironskillet-update",
+        #"ironskillet-update",
         "maxmind-update",
         "util_get-action-filter",
         "software-remove",
@@ -1260,8 +1260,8 @@ class PH
         elseif( $type == "util_get-action-filter" )
             $util = new UTIL_GET_ACTION_FILTER( $argv, $argc );
 
-        elseif( $type == "ironskillet-update" )
-            $util = new IRONSKILLET_UPDATE__( );
+        #elseif( $type == "ironskillet-update" )
+        #    $util = new IRONSKILLET_UPDATE__( );
 
         elseif( $type == "maxmind-update" )
             $util = new MAXMIND__( );

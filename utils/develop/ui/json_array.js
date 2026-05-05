@@ -4696,11 +4696,6 @@ var subjectObject =
             }
         }
     },
-    "ironskillet-update": {
-        "name": "ironskillet-update",
-        "action": [],
-        "filter": []
-    },
     "key-manager": {
         "name": "key-manager",
         "action": [],
@@ -10508,6 +10503,14 @@ var subjectObject =
                         "arg": false,
                         "ci": {
                             "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "has.predefined.secprof": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP% av-production)",
                             "input": "input\/panorama-8.0.xml"
                         }
                     }
