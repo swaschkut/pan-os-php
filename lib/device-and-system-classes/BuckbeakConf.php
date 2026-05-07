@@ -202,7 +202,7 @@ class BuckbeakConf
      * @param DOMElement|DOMDocument $xml
      * @throws Exception
      */
-    public function load_from_domxml($xml, $debugLoadTime)
+    public function load_from_domxml($xml, $debugLoadTime = false)
     {
         $this->debugLoadTime = $debugLoadTime;
 

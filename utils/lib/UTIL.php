@@ -1193,7 +1193,9 @@ class UTIL
 
             PH::print_stdout( " - Loading configuration through PAN-OS-PHP library... " );
 
-            $this->pan->load_from_domxml($this->xmlDoc, XML_PARSE_BIG_LINES);
+            //second argument is not debugLoadTime!!!
+            #$this->pan->load_from_domxml($this->xmlDoc, XML_PARSE_BIG_LINES);
+            $this->pan->load_from_domxml($this->xmlDoc);
 
             ##############################################
             PanAPIConnector::loadConnectorsFromUserHome();
