@@ -20,6 +20,7 @@ UTIL:
 * type=securityprofile securityprofiletype=customer-url-category actions=move_from-shared_to_lowest_possible_DG | print targetLocation also if refcount == 1
 * type=ironskillet-update | decommission | iron-skillet AV files >=11.1 update to add MachO / OOXML
 * iron-skillet - spyware PAN-OS >=11.2 | class UTIL/BuckbeackConf - correction for $debugLoadTime
+* type=playbook | allow JSOn playbook file "pie_sliece" and ignore it for pan-os-php
 
 BUGFIX:
 * type=securityprofile securityprofiletype=spyware actions=spyware.alert-only-set | bugfix to add default config

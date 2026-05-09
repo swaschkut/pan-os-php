@@ -297,6 +297,9 @@ class PLAYBOOK__
         $out_counter = 0;
         foreach( $command_array as $key => $command )
         {
+            if( isset( $command['pie_slice'] ) )
+                unset( $command['pie_slice'] );
+
             if( isset( $command['comment'] ) )
             {
                 $comment = $command['comment'];
