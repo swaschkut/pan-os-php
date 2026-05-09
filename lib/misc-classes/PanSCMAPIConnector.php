@@ -2026,10 +2026,6 @@ class PanSCMAPIConnector
         //sendPOSTRequest()
         //CREATE
 
-        $this->getAccessToken();
-
-        $header = array( "Content-Type: application/json", "Authorization: Bearer {$this->access_token}");
-
         $bodyArray = $this->getDataFromObject( $element );
         if( empty($bodyArray) )
         {
@@ -2083,12 +2079,18 @@ class PanSCMAPIConnector
 
         $body = json_encode($bodyArray);
 
+        $this->sendSCMAPIRequest( "POST", $url, $body);
+
+        /*
         if( $this->showApiCalls )
         {
             PH::print_stdout( "URL: ".$url);
             PH::print_stdout( "BODY: ".$body );
             PH::print_stdout( "METHOD: POST" );
         }
+
+        $this->getAccessToken();
+        $header = array( "Content-Type: application/json", "Authorization: Bearer {$this->access_token}");
 
         $this->curlRequest( $url, $header );
 
@@ -2100,16 +2102,13 @@ class PanSCMAPIConnector
         $response = curl_exec($this->_curl_handle);
 
         $this->displayCurlResponse( $response, $url );
+        */
     }
 
     public function sendPUTRequest( $element )
     {
         //UPDATE
         //PUT
-
-        $this->getAccessToken();
-
-        $header = array( "Content-Type: application/json", "Authorization: Bearer {$this->access_token}");
 
         $bodyArray = $this->getDataFromObject( $element );
         if( empty($bodyArray) )
@@ -2126,12 +2125,19 @@ class PanSCMAPIConnector
 
         $body = json_encode($bodyArray);
 
+        $this->sendSCMAPIRequest( "PUT", $url, $body);
+        /*
+
         if( $this->showApiCalls )
         {
             PH::print_stdout( "URL: ".$url);
             PH::print_stdout( "BODY: ".$body );
             PH::print_stdout( "METHOD: PUT" );
         }
+
+        $this->getAccessToken();
+
+        $header = array( "Content-Type: application/json", "Authorization: Bearer {$this->access_token}");
 
         $this->curlRequest( $url, $header );
 
@@ -2144,15 +2150,13 @@ class PanSCMAPIConnector
         $response = curl_exec($this->_curl_handle);
 
         $this->displayCurlResponse( $response, $url );
+        */
     }
 
     public function sendDELETERequest($object )
     {
         //DELETE
 
-        $this->getAccessToken();
-
-        $header = array( "Authorization: Bearer {$this->access_token}");
 
         $url = $this->url_api;
 
@@ -2167,6 +2171,10 @@ class PanSCMAPIConnector
         //Buckbeak
         $url .= "/config/objects/v1/" . $type . "/" . $saseID;
 
+        $this->sendSCMAPIRequest( "DELETE", $url);
+
+        /*
+
         if( $this->showApiCalls )
         {
             PH::print_stdout( "URL: ".$url);
@@ -2174,6 +2182,9 @@ class PanSCMAPIConnector
             PH::print_stdout( "METHOD: DELETE" );
         }
 
+        $this->getAccessToken();
+
+        $header = array( "Authorization: Bearer {$this->access_token}");
 
         $this->curlRequest( $url, $header );
 
@@ -2182,7 +2193,39 @@ class PanSCMAPIConnector
         $response = curl_exec($this->_curl_handle);
 
         $this->displayCurlResponse( $response, $url );
+        */
     }
+
+
+    public function sendSCMAPIRequest($requestMethod, $url, $body = false  )
+    {
+        if( $this->showApiCalls )
+        {
+            PH::print_stdout( "URL: ".$url);
+            if( $body !== false )
+                PH::print_stdout( "BODY: ".$body );
+            PH::print_stdout( "METHOD: ".$requestMethod );
+        }
+
+        $this->getAccessToken();
+
+        $header = array( "Authorization: Bearer {$this->access_token}");
+
+        $this->curlRequest( $url, $header );
+
+        curl_setopt($this->_curl_handle, CURLOPT_CUSTOMREQUEST, $requestMethod);
+
+        if( $requestMethod == "PUT" || $requestMethod == "POST"  )
+        {
+            curl_setopt($this->_curl_handle, CURLOPT_POST,           1 );
+            curl_setopt($this->_curl_handle, CURLOPT_POSTFIELDS,     $body );
+        }
+
+        $response = curl_exec($this->_curl_handle);
+
+        $this->displayCurlResponse( $response, $url );
+    }
+
 
     private function displayCurlResponse( $response, $url )
     {
