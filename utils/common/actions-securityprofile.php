@@ -3878,7 +3878,7 @@ SecurityProfileCallContext::$supportedActions['url.alert-only-set'] = array(
 );
 
 SecurityProfileCallContext::$supportedActions['url.siteaccess.alert-only-set'] = array(
-    'name' => 'url.alert-only-set',
+    'name' => 'url.siteaccess.alert-only-set',
     'MainFunction' => function (SecurityProfileCallContext $context) {
         $object = $context->object;
 
@@ -3895,7 +3895,7 @@ SecurityProfileCallContext::$supportedActions['url.siteaccess.alert-only-set'] =
 );
 
 SecurityProfileCallContext::$supportedActions['url.credential-enforcement.alert-only-set'] = array(
-    'name' => 'url.alert-only-set',
+    'name' => 'url.credential-enforcement.alert-only-set',
     'MainFunction' => function (SecurityProfileCallContext $context) {
         $object = $context->object;
 
@@ -3912,7 +3912,7 @@ SecurityProfileCallContext::$supportedActions['url.credential-enforcement.alert-
 );
 
 SecurityProfileCallContext::$supportedActions['url.credential-enforcement.mode.alert-only-set'] = array(
-    'name' => 'url.alert-only-set',
+    'name' => 'url.credential-enforcement.mode.alert-only-set',
     'MainFunction' => function (SecurityProfileCallContext $context) {
         $object = $context->object;
 
@@ -3928,8 +3928,8 @@ SecurityProfileCallContext::$supportedActions['url.credential-enforcement.mode.a
     },
 );
 
-SecurityProfileCallContext::$supportedActions['url..inline-ml.alert-only-set'] = array(
-    'name' => 'url.alert-only-set',
+SecurityProfileCallContext::$supportedActions['url.inline-ml.alert-only-set'] = array(
+    'name' => 'url.inline-ml.alert-only-set',
     'MainFunction' => function (SecurityProfileCallContext $context) {
         $object = $context->object;
 

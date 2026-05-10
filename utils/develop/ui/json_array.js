@@ -9389,6 +9389,10 @@ var subjectObject =
                 "name": "url.best-practice-set",
                 "MainFunction": {}
             },
+            "url.credential-enforcement.alert-only-set": {
+                "name": "url.credential-enforcement.alert-only-set",
+                "MainFunction": {}
+            },
             "url.credential-enforcement.log-severity": {
                 "name": "url.credential-enforcement.log-severity",
                 "MainFunction": {},
@@ -9410,6 +9414,18 @@ var subjectObject =
                         "help": "\"disabled\", \"ip-user\",\"domain-credentials\",\"group-mapping\""
                     }
                 }
+            },
+            "url.credential-enforcement.mode.alert-only-set": {
+                "name": "url.credential-enforcement.mode.alert-only-set",
+                "MainFunction": {}
+            },
+            "url.inline-ml.alert-only-set": {
+                "name": "url.inline-ml.alert-only-set",
+                "MainFunction": {}
+            },
+            "url.siteaccess.alert-only-set": {
+                "name": "url.siteaccess.alert-only-set",
+                "MainFunction": {}
             },
             "virus.alert-only-set": {
                 "name": "virus.alert-only-set",
