@@ -3850,7 +3850,7 @@ SecurityProfileCallContext::$supportedActions['url.alert-only-set'] = array(
         */
 
         ////////////
-        $object->url_credential_set_alertonly();
+        $object->url_credential_mode_alertonly();
         /*
         $credential_xmlnode = DH::findFirstElementOrCreate("credential-enforcement", $object->xmlroot);
         $mode_credential_xmlnode = DH::findFirstElementOrCreate("mode", $credential_xmlnode);
