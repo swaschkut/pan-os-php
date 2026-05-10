@@ -21,6 +21,7 @@ UTIL:
 * type=ironskillet-update | decommission | iron-skillet AV files >=11.1 update to add MachO / OOXML
 * iron-skillet - spyware PAN-OS >=11.2 | class UTIL/BuckbeackConf - correction for $debugLoadTime
 * type=playbook | allow JSOn playbook file "pie_sliece" and ignore it for pan-os-php
+* type=securityprofile actions=url.siteaccess./credential-enforcement./credential-enforcement.mode./inline-ml./.alert-only-set | introduce new separate actions
 
 BUGFIX:
 * type=securityprofile securityprofiletype=spyware actions=spyware.alert-only-set | bugfix to add default config

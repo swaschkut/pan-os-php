@@ -3728,6 +3728,9 @@ SecurityProfileCallContext::$supportedActions['url.alert-only-set'] = array(
         if (get_class($object) !== "URLProfile")
             return null;
 
+        /////////////////
+        $object->url_siteaccess_set_alertonly();
+        /*
         $allow_xmlnode = DH::findFirstElement("allow", $object->xmlroot);
         $alert_xmlnode = DH::findFirstElementOrCreate("alert", $object->xmlroot);
         if( $allow_xmlnode !== False )
@@ -3776,7 +3779,11 @@ SecurityProfileCallContext::$supportedActions['url.alert-only-set'] = array(
             $alert_xmlnode->appendChild($xmlElement);
         }
         $object->allow = array();
+        */
 
+        /////////////////
+        $object->url_credential_set_alertonly();
+        /*
         $credential_xmlnode = DH::findFirstElementOrCreate("credential-enforcement", $object->xmlroot);
         $allow_credential_xmlnode = DH::findFirstElement("allow", $credential_xmlnode);
         if( $allow_credential_xmlnode !== False )
@@ -3826,7 +3833,12 @@ SecurityProfileCallContext::$supportedActions['url.alert-only-set'] = array(
             $alert_credential_xmlnode->appendChild($xmlElement);
         }
         $object->allow_credential = array();
+        */
 
+        ////////////////////////////
+        $object->url_inline_cat_set(true);
+
+        /*
         if( $context->object->owner->owner->version >= 102 )
         {
             $xmlnode = DH::findFirstElementOrCreate("local-inline-cat", $object->xmlroot);
@@ -3835,7 +3847,11 @@ SecurityProfileCallContext::$supportedActions['url.alert-only-set'] = array(
             $xmlnode = DH::findFirstElementOrCreate("cloud-inline-cat", $object->xmlroot);
             $xmlnode->textContent = "yes";
         }
+        */
 
+        ////////////
+        $object->url_credential_set_alertonly();
+        /*
         $credential_xmlnode = DH::findFirstElementOrCreate("credential-enforcement", $object->xmlroot);
         $mode_credential_xmlnode = DH::findFirstElementOrCreate("mode", $credential_xmlnode);
         $mode_child_xmlnode = DH::firstChildElement($mode_credential_xmlnode);
@@ -3852,6 +3868,75 @@ SecurityProfileCallContext::$supportedActions['url.alert-only-set'] = array(
             $logseverity_credential_xmlnode->textContent = "medium";
             $mode_credential_xmlnode->removeChild($mode_child_xmlnode);
         }
+        */
+
+        if( $context->isAPI )
+        {
+            $object->API_sync();
+        }
+    },
+);
+
+SecurityProfileCallContext::$supportedActions['url.siteaccess.alert-only-set'] = array(
+    'name' => 'url.alert-only-set',
+    'MainFunction' => function (SecurityProfileCallContext $context) {
+        $object = $context->object;
+
+        if (get_class($object) !== "URLProfile")
+            return null;
+
+        $object->url_siteaccess_set_alertonly();
+
+        if( $context->isAPI )
+        {
+            $object->API_sync();
+        }
+    },
+);
+
+SecurityProfileCallContext::$supportedActions['url.credential-enforcement.alert-only-set'] = array(
+    'name' => 'url.alert-only-set',
+    'MainFunction' => function (SecurityProfileCallContext $context) {
+        $object = $context->object;
+
+        if (get_class($object) !== "URLProfile")
+            return null;
+
+        $object->url_credential_set_alertonly();
+
+        if( $context->isAPI )
+        {
+            $object->API_sync();
+        }
+    },
+);
+
+SecurityProfileCallContext::$supportedActions['url.credential-enforcement.mode.alert-only-set'] = array(
+    'name' => 'url.alert-only-set',
+    'MainFunction' => function (SecurityProfileCallContext $context) {
+        $object = $context->object;
+
+        if (get_class($object) !== "URLProfile")
+            return null;
+
+        $object->url_credential_mode_alertonly();
+
+        if( $context->isAPI )
+        {
+            $object->API_sync();
+        }
+    },
+);
+
+SecurityProfileCallContext::$supportedActions['url..inline-ml.alert-only-set'] = array(
+    'name' => 'url.alert-only-set',
+    'MainFunction' => function (SecurityProfileCallContext $context) {
+        $object = $context->object;
+
+        if (get_class($object) !== "URLProfile")
+            return null;
+
+        $object->url_inline_cat_set(true);
 
         if( $context->isAPI )
         {
@@ -3863,6 +3948,7 @@ SecurityProfileCallContext::$supportedActions['url.alert-only-set'] = array(
 SecurityProfileCallContext::$supportedActions['url.best-practice-set'] = array(
     'name' => 'url.best-practice-set',
     'MainFunction' => function (SecurityProfileCallContext $context) {
+        /** @var URLProfile $object */
         $object = $context->object;
 
         if (get_class($object) !== "URLProfile")
