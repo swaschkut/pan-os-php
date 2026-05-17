@@ -96,8 +96,15 @@ class PH
                     $argc--;
                 continue;
             }
-            elseif( $arg == 'shadow-json' )
+            elseif( str_contains($arg, 'shadow-json') )
             {
+                //Todo: check if shadow-json=file
+                if( str_contains($arg, '=') )
+                {
+                    $arg_array = explode( "=", $arg );
+                    PH::$shadow_json_filename = $arg_array[1];
+                }
+
                 PH::disableOutputFormatting();
                 PH::$shadow_json = TRUE;
                 PH::$PANC_WARN = FALSE;
@@ -211,6 +218,7 @@ class PH
     public static $shadow_reducexml = FALSE;
 
     public static $shadow_json = FALSE;
+    public static $shadow_json_filename = FALSE;
 
     public static $shadow_bp_jsonfilename = FALSE;
     public static $shadow_bp_jsonfile = FALSE;
@@ -230,7 +238,7 @@ class PH
 
     private static $library_version_major = 2;
     private static $library_version_sub = 1;
-    private static $library_version_bugfix = 53;
+    private static $library_version_bugfix = 54;
 
     //BASIC AUTH PAN-OS 7.1
     public static $softwareupdate_key = "658d787f293e631196dac9fb29490f1cc1bb3827";
@@ -999,10 +1007,13 @@ class PH
                 return 'shared';
             if( $class == 'DeviceGroup' || $class == 'VirtualSystem' )
                 return $panConfObject->name();
+            if( $class == 'Container' || $class == 'DeviceOnPrem' || $class == 'DeviceCloud' || $class == 'Snippet' )
+                return $panConfObject->name();
 
             if( isset($panConfObject->owner) && is_object($panConfObject->owner) )
                 $panConfObject = $panConfObject->owner;
             else
+                #return "---";
                 return FALSE;
 
         }
@@ -1096,7 +1107,7 @@ class PH
         "xml-op-json",
         "bpa-generator",
         "playbook",
-        "ironskillet-update",
+        #"ironskillet-update",
         "maxmind-update",
         "util_get-action-filter",
         "software-remove",
@@ -1127,7 +1138,7 @@ class PH
 
 
     public static $in_exclude = array(
-        'ironskillet-update',
+        #'ironskillet-update',
         "maxmind-update",
         "util_get-action-filter",
         "protocoll-number-download",
@@ -1140,7 +1151,7 @@ class PH
         'config-size',
         "xml-op-json",
         "bpa-generator",
-        "ironskillet-update",
+        #"ironskillet-update",
         "maxmind-update",
         "util_get-action-filter",
         "software-remove",
@@ -1249,8 +1260,8 @@ class PH
         elseif( $type == "util_get-action-filter" )
             $util = new UTIL_GET_ACTION_FILTER( $argv, $argc );
 
-        elseif( $type == "ironskillet-update" )
-            $util = new IRONSKILLET_UPDATE__( );
+        #elseif( $type == "ironskillet-update" )
+        #    $util = new IRONSKILLET_UPDATE__( );
 
         elseif( $type == "maxmind-update" )
             $util = new MAXMIND__( );

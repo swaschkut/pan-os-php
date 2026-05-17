@@ -227,7 +227,7 @@ class DeviceCloud
     public $network;
 
 
-    /** @var FawkesConf|Buckbeak|null $owner */
+    /** @var FawkesConf|BuckbeakConf|null $owner */
     public function __construct( $owner, Container|null $applicableDG = null)
     {
         $this->owner = $owner;
@@ -1031,6 +1031,16 @@ class DeviceCloud
             }
         }
 
+
+        $this->addressStore->nestedPointOfView();
+        $this->serviceStore->nestedPointOfView();
+        $this->tagStore->nestedPointOfView();
+        $this->scheduleStore->nestedPointOfView();
+        $this->EDLStore->nestedPointOfView();
+        $this->LogProfileStore->nestedPointOfView();
+        $this->appStore->nestedPointOfView();
+
+
         //
         // Extract network related configs
         //
@@ -1112,7 +1122,17 @@ class DeviceCloud
 
     public function addSnippet( $snippetObj)
     {
-        $this->attachedSnippets[] = $snippetObj;
+        /** @var Snippet $snippetObj */
+        $attachedSnippetsName = $this->getAttachedSnippetNames();
+        if( !isset($attachedSnippetsName[$snippetObj->name()]) )
+        {
+            $this->attachedSnippets[$snippetObj->name()] = $snippetObj;
+
+            $snippetsXMLNode = DH::findFirstElementOrCreate( 'snippets', $this->xmlroot);
+            DH::createElement($snippetsXMLNode, 'member', $snippetObj->name());
+
+            $snippetObj->addReference($this);
+        }
     }
 
     public function getAttachedSnippets()

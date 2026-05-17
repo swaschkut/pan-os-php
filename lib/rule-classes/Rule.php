@@ -2624,7 +2624,7 @@ class Rule
             /** @var SecurityProfileGroup $group */
             $group = $this->owner->owner->securityProfileGroupStore->find($group_name);
 
-            if( $group->is_visibility() )
+            if( $group !== null && $group->is_visibility() )
                 return TRUE;
             else
                 return FALSE;

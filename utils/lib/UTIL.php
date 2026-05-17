@@ -72,7 +72,7 @@ require_once(dirname(__FILE__)."/CONFIG_COMMIT__.php");
 require_once dirname(__FILE__)."/MAXMIND__.php";
 require_once dirname(__FILE__)."/PLAYBOOK__.php";
 require_once dirname(__FILE__)."/UTIL_GET_ACTION_FILTER.php";
-require_once dirname(__FILE__)."/IRONSKILLET_UPDATE__.php";
+#require_once dirname(__FILE__)."/IRONSKILLET_UPDATE__.php";
 
 require_once(dirname(__FILE__)."/PROTOCOLL_NUMBERS__.php");
 
@@ -1193,7 +1193,9 @@ class UTIL
 
             PH::print_stdout( " - Loading configuration through PAN-OS-PHP library... " );
 
-            $this->pan->load_from_domxml($this->xmlDoc, XML_PARSE_BIG_LINES);
+            //second argument is not debugLoadTime!!!
+            #$this->pan->load_from_domxml($this->xmlDoc, XML_PARSE_BIG_LINES);
+            $this->pan->load_from_domxml($this->xmlDoc);
 
             ##############################################
             PanAPIConnector::loadConnectorsFromUserHome();
@@ -1597,9 +1599,9 @@ class UTIL
             $printMessage = TRUE;
             $lineReturn = TRUE;
             $indentingXml = 0;
-            $indentingXmlIncreament = 1;
+            $indentingXmlIncrement = 2;
 
-            $this->pan->save_to_file($directory."/".$filename, $printMessage, $lineReturn, $indentingXml, $indentingXmlIncreament);
+            $this->pan->save_to_file($directory."/".$filename, $printMessage, $lineReturn, $indentingXml, $indentingXmlIncrement);
 
 
             /** @var Git $git */
@@ -1711,7 +1713,7 @@ class UTIL
 
             $this->objectsLocation = array();
 
-            $optArgArray = array( "includechilddgs", "excludemaindg" );
+            $optArgArray = array( "includechilddgs", "excludemaindg", "exclude-scm-ngfw-shared-and-childs", "exclude-scm-prisma-access-and-childs" );
             if( !in_array( $opt_argument, $optArgArray ) )
                 derr( "location has an optional argument which is not supported: '".$opt_argument."' - supported onces: ".implode( ", ", $optArgArray ), null, FALSE );
 
@@ -1883,8 +1885,8 @@ class UTIL
 
             //if( $this->debugAPI ) {
             PH::print_stdout();
-            PH::print_stdout( "FOLDER: ".$folder );
-                PH::print_stdout( "     ".($key+1)." / ". $folder_array_max);
+            PH::print_stdout( strtoupper(get_class($sub)).": ".$folder );
+            PH::print_stdout( "     ".($key+1)." / ". $folder_array_max);
                 //time start
             $date_start = time();
             $date = date('Y-m-d H:i:s');
@@ -2369,9 +2371,9 @@ class UTIL
             foreach( $this->objectsToProcess as &$record )
             {
 
-                if( (get_class($record['store']->owner) != 'PanoramaConf' && get_class($record['store']->owner) != 'PANConf') )
+                if( (get_class($record['store']->owner) != 'PanoramaConf' && get_class($record['store']->owner) != 'PANConf') && get_class($record['store']->owner) != 'BuckbeakConf' )
                 {
-                    /** @var DeviceGroup|VirtualSystem|Container|DeviceCloud $sub */
+                    /** @var DeviceGroup|VirtualSystem|Container|DeviceCloud|DeviceOnPrem|Snippet $sub */
                     $sub = $record['store']->owner;
                     if( isset($processedLocations[$sub->name()]) )
                         continue;
@@ -2414,13 +2416,13 @@ class UTIL
         }
     }
 
-    public function save_our_work($additional_output = FALSE, $printMessage = TRUE, $lineReturn = TRUE, $indentingXml = 0, $indentingXmlIncreament = 1)
+    public function save_our_work($additional_output = FALSE, $printMessage = TRUE, $lineReturn = TRUE, $indentingXml = 0, $indentingXmlIncrement = 2)
     {
         if( PH::$shadow_reducexml )
         {
             $lineReturn = false;
             $indentingXml = -1;
-            $indentingXmlIncreament = 0;
+            $indentingXmlIncrement = 0;
 
             //remove empty XML nodes
             //Todo: BUG 20260317 - available since
@@ -2465,7 +2467,7 @@ class UTIL
                     if( PH::$shadow_json )
                     {
                         //store it JSON out
-                        PH::$JSON_TMP['xmldoc'] = &DH::dom_to_xml($this->pan->xmlroot, $indentingXml, $lineReturn, -1, $indentingXmlIncreament);
+                        PH::$JSON_TMP['xmldoc'] = &DH::dom_to_xml($this->pan->xmlroot, $indentingXml, $lineReturn, -1, $indentingXmlIncrement);
                         PH::print_stdout(PH::$JSON_TMP, false, "out");
                         PH::$JSON_TMP = array();
                     }
@@ -2476,7 +2478,7 @@ class UTIL
                         unlink($this->configOutput);
 
 
-                    $this->pan->save_to_file($this->configOutput, $printMessage, $lineReturn, $indentingXml, $indentingXmlIncreament);
+                    $this->pan->save_to_file($this->configOutput, $printMessage, $lineReturn, $indentingXml, $indentingXmlIncrement);
 
                     if( isset(PH::$args['git']) && PH::$args['git'] )
                     {
@@ -2623,7 +2625,17 @@ class UTIL
         {
             PH::$JSON_OUT['log'] = PH::$JSON_OUTlog;
             if( !isset(PH::$args['actions']) || ( isset(PH::$args['actions']) && PH::$args['actions'] !== "display-available" ) )
+            {
                 print json_encode( PH::$JSON_OUT, JSON_PRETTY_PRINT );
+
+                if( PH::$shadow_json_filename !== FALSE )
+                {
+                    $string = json_encode( PH::$JSON_OUT, JSON_PRETTY_PRINT );
+                    file_put_contents(PH::$shadow_json_filename, $string);
+                }
+
+            }
+
             #print json_encode( PH::$JSON_OUT, JSON_PRETTY_PRINT|JSON_FORCE_OBJECT );
         }
 

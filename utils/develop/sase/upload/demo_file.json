@@ -1,0 +1,10 @@
+[
+  {
+    "url": "https:\/\/api.strata.paloaltonetworks.com\/config\/objects\/v1\/addresses?device=Remote Networks",
+    "requestMethod": "POST",
+    "body": {
+        "name": "dummy_test2",
+        "ip_netmask": "192.168.10.2\/32"
+    }
+  }
+]

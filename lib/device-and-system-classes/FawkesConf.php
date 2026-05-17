@@ -105,6 +105,8 @@ class FawkesConf
     /** @var AppStore */
     public $appStore;
 
+    public $predefinedappStore;
+
     /** @var ThreatStore */
     public $threatStore;
 
@@ -152,7 +154,10 @@ class FawkesConf
         $this->zoneStore->setName('zoneStore');
 
 
-        $this->appStore = AppStore::getPredefinedStore( $this );
+        $this->predefinedappStore = AppStore::getPredefinedStore( $this );
+        $this->appStore = new AppStore($this);
+        $this->appStore->name = 'apps';
+        $this->appStore->parentCentralStore = $this->predefinedappStore;
 
         $this->threatStore = ThreatStore::getPredefinedStore( $this );
 
@@ -389,14 +394,6 @@ class FawkesConf
                     $parentContainer->_childContainers[$containerName] = $ldv;
                     $ldv->parentContainer = $parentContainer;
 
-                    /*
-                    $ldv->addressStore->parentCentralStore = $parentContainer->addressStore;
-                    $ldv->serviceStore->parentCentralStore = $parentContainer->serviceStore;
-                    $ldv->tagStore->parentCentralStore = $parentContainer->tagStore;
-                    $ldv->scheduleStore->parentCentralStore = $parentContainer->scheduleStore;
-                    $ldv->appStore->parentCentralStore = $parentContainer->appStore;
-                    $ldv->securityProfileGroupStore->parentCentralStore = $parentContainer->securityProfileGroupStore;
-                    */
                     //Todo: swaschkut 20210505 - check if other Stores must be added
                     //- appStore;scheduleStore/securityProfileGroupStore/all kind of SecurityProfile
 
@@ -553,14 +550,14 @@ class FawkesConf
      * @param bool $printMessage
      * @param int $indentingXml
      */
-    public function save_to_file($fileName, $printMessage = TRUE, $lineReturn = TRUE, $indentingXml = 0, $indentingXmlIncreament = 1)
+    public function save_to_file($fileName, $printMessage = TRUE, $lineReturn = TRUE, $indentingXml = 0, $indentingXmlIncrement = 2)
     {
         if( $printMessage )
             PH::print_stdout( "Now saving FawkesConf to file '$fileName'..." );
 
         //Todo: swaschkut check
-        //$indentingXmlIncreament was 2 per default for Panroama
-        $xml = &DH::dom_to_xml($this->xmlroot, $indentingXml, $lineReturn, -1, $indentingXmlIncreament + 1);
+        //$indentingXmlIncrement was 2 per default for Panroama
+        $xml = &DH::dom_to_xml($this->xmlroot, $indentingXml, $lineReturn, -1, $indentingXmlIncrement );
 
         $path_parts = pathinfo($fileName);
         if (!is_dir($path_parts['dirname']))

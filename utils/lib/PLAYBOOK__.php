@@ -56,7 +56,7 @@ class PLAYBOOK__
 
 
         $in_exclude = array(
-            'ironskillet-update',
+            #'ironskillet-update',
             "maxmind-update",
             "util_get-action-filter",
             "protocoll-number-download",
@@ -69,7 +69,7 @@ class PLAYBOOK__
             'config-size',
             "xml-op-json",
             "bpa-generator",
-            "ironskillet-update",
+            #"ironskillet-update",
             "maxmind-update",
             "util_get-action-filter",
             "protocoll-number-download",
@@ -297,6 +297,9 @@ class PLAYBOOK__
         $out_counter = 0;
         foreach( $command_array as $key => $command )
         {
+            if( isset( $command['pie_slice'] ) )
+                unset( $command['pie_slice'] );
+
             if( isset( $command['comment'] ) )
             {
                 $comment = $command['comment'];

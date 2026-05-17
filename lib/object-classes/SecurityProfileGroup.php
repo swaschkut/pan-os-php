@@ -226,6 +226,8 @@ class SecurityProfileGroup
                             $profile = $sub->WildfirePredefinedStore->find( $tmp_type->nodeValue );
                         elseif( $tmp_store_name == 'URLProfileStore' )
                             $profile = $sub->UrlFilteringPredefinedStore->find( $tmp_type->nodeValue );
+                        elseif( $tmp_store_name == 'VirusAndWildfireProfileStore' )
+                            $profile = $sub->VirusAndWildfireProfileStore->find( $tmp_type->nodeValue );
 
                         if( $profile != null )
                         {
@@ -397,6 +399,29 @@ class SecurityProfileGroup
                 $this->secprofProfiles_obj['virus'] = $newAVprof;
             else
                 $this->secprofiles['virus'] = $newAVproftxt;
+        }
+
+
+        $this->rewriteXML();
+
+        return TRUE;
+    }
+
+    public function setSecProf_AVWF($newAVWFprof)
+    {
+        if( $newAVWFprof == null )
+        {
+            unset($this->secprofiles['virus-and-wildfire-analysis']);
+            unset($this->secprofProfiles_obj['virus-and-wildfire-analysis']);
+        }
+        else
+        {
+            $newAVWFproftxt = $newAVWFprof;
+            $newAVWFprof = $this->owner->owner->AntiVirusProfileStore->find( $newAVWFproftxt );
+            if( $newAVWFprof !== null )
+                $this->secprofProfiles_obj['virus-and-wildfire-analysis'] = $newAVWFprof;
+            else
+                $this->secprofiles['virus-and-wildfire-analysis'] = $newAVWFproftxt;
         }
 
 

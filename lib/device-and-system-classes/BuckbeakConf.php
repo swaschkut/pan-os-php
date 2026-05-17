@@ -118,6 +118,7 @@ class BuckbeakConf
     public $FileBlockingPredefinedStore;
     public $WildfirePredefinedStore;
     public $UrlFilteringPredefinedStore;
+    public $VirusAndWildfireProfileStore;
 
 
     /** @var ThreatPolicyStore */
@@ -131,6 +132,8 @@ class BuckbeakConf
     public $zoneStore = null;
 
     public $_fakeMode = FALSE;
+
+    public $debugLoadTime = false;
 
     public $sizeArray = array();
     public $sizeArrayShared = array();
@@ -181,6 +184,7 @@ class BuckbeakConf
         $this->UrlFilteringPredefinedStore = SecurityProfileStore::getUrlFilteringPredefinedStore( $this );
         $this->FileBlockingPredefinedStore = SecurityProfileStore::getFileBlockingPredefinedStore( $this );
         $this->WildfirePredefinedStore = SecurityProfileStore::getWildfirePredefinedStore( $this );
+        $this->VirusAndWildfireProfileStore = SecurityProfileStore::getVirusAndWildfirePredefinedStore( $this );
     }
 
 
@@ -198,8 +202,10 @@ class BuckbeakConf
      * @param DOMElement|DOMDocument $xml
      * @throws Exception
      */
-    public function load_from_domxml($xml)
+    public function load_from_domxml($xml, $debugLoadTime = false)
     {
+        $this->debugLoadTime = $debugLoadTime;
+
         if( $xml->nodeType == XML_DOCUMENT_NODE )
         {
             $this->xmldoc = $xml;
@@ -273,7 +279,7 @@ class BuckbeakConf
 
             $ldv = new Snippet( $this );
 
-            $ldv->load_from_domxml( $node );
+            $ldv->load_from_domxml( $node, $this->debugLoadTime );
             $this->snippets[] = $ldv;
         }
 
@@ -341,6 +347,9 @@ class BuckbeakConf
             $containerNodes[$nodeNameAttr] = $node;
         }
 
+        #PH::print_stdout("container validate parent");
+        #print_r( array_keys( $containerNodes ) );
+        #print_r( array_keys( $parentToContainer ) );
 
         $containerLoadOrder = array('All');
 
@@ -373,6 +382,8 @@ class BuckbeakConf
 
 
         }
+
+        #print_r( $containerLoadOrder );
 
         foreach( $containerLoadOrder as $containerIndex => &$containerName )
         {
@@ -421,14 +432,6 @@ class BuckbeakConf
                     $parentContainer->_childContainers[$containerName] = $ldv;
                     $ldv->parentContainer = $parentContainer;
 
-                    /*
-                    $ldv->addressStore->parentCentralStore = $parentContainer->addressStore;
-                    $ldv->serviceStore->parentCentralStore = $parentContainer->serviceStore;
-                    $ldv->tagStore->parentCentralStore = $parentContainer->tagStore;
-                    $ldv->scheduleStore->parentCentralStore = $parentContainer->scheduleStore;
-                    $ldv->appStore->parentCentralStore = $parentContainer->appStore;
-                    $ldv->securityProfileGroupStore->parentCentralStore = $parentContainer->securityProfileGroupStore;
-                    */
                     //Todo: swaschkut 20210505 - check if other Stores must be added
                     //- appStore;scheduleStore/securityProfileGroupStore/all kind of SecurityProfile
 
@@ -443,16 +446,29 @@ class BuckbeakConf
                         //'WildfireProfileStore',
                         'DecryptionProfileStore', 'HipObjectsProfileStore', 'customURLProfileStore',
 
-                        'DNSSecurityProfileStore', 'SaasSecurityProfileStore'
+                        'DNSSecurityProfileStore', 'SaasSecurityProfileStore',
+
+                        'LogProfileStore'
 
                     );
 
                     foreach( $storeType as $type )
+                    {
+                        #PH::print_stdout("------------------------");
+                        #PH::print_stdout( "validate container: ".$containerName );
+                        #PH::print_stdout( "Container parent: ".$containerToParent[$containerName] );
+
+                        #PH::print_stdout( "found parent container: ".$parentContainer->name() );
+
+                        #PH::print_stdout( "store type: ".$type );
                         $ldv->$type->parentCentralStore = $parentContainer->$type;
+                    }
+
                 }
             }
             
-            $ldv->load_from_domxml($containerNodes[$containerName]);
+            $ldv->load_from_domxml($containerNodes[$containerName], $this->debugLoadTime);
+            #PH::print_stdout( "found container: ".$ldv->name() );
             $this->containers[] = $ldv;
 
         }
@@ -470,7 +486,7 @@ class BuckbeakConf
 
             $ldv = new DeviceCloud( $this );
 
-            $ldv->load_from_domxml( $node );
+            $ldv->load_from_domxml( $node, $this->debugLoadTime );
             $this->clouds[] = $ldv;
         }
         //
@@ -489,7 +505,7 @@ class BuckbeakConf
 
                 $ldv = new DeviceOnPrem( $this );
 
-                $ldv->load_from_domxml( $node );
+                $ldv->load_from_domxml( $node, $this->debugLoadTime );
                 $this->onprems[] = $ldv;
             }
         }
@@ -501,7 +517,7 @@ class BuckbeakConf
 
         #$this->managedFirewallsSerials = $this->managedFirewallsStore->get_serial_from_xml($tmp, TRUE);
         if( $tmp !== false )
-            $this->managedFirewallsStore->load_from_domxml($tmp);
+            $this->managedFirewallsStore->load_from_domxml($tmp, $this->debugLoadTime);
     }
 
 
@@ -658,14 +674,14 @@ class BuckbeakConf
      * @param bool $printMessage
      * @param int $indentingXml
      */
-    public function save_to_file($fileName, $printMessage = TRUE, $lineReturn = TRUE, $indentingXml = 0, $indentingXmlIncreament = 1)
+    public function save_to_file($fileName, $printMessage = TRUE, $lineReturn = TRUE, $indentingXml = 0, $indentingXmlIncrement = 2)
     {
         if( $printMessage )
             PH::print_stdout( "Now saving BuckbeakConf to file '$fileName'..." );
 
         //Todo: swaschkut check
-        //$indentingXmlIncreament was 2 per default for Panroama
-        $xml = &DH::dom_to_xml($this->xmlroot, $indentingXml, $lineReturn, -1, $indentingXmlIncreament + 1);
+        //$indentingXmlIncrement was 2 per default for Panroama
+        $xml = &DH::dom_to_xml($this->xmlroot, $indentingXml, $lineReturn, -1, $indentingXmlIncrement );
 
         $path_parts = pathinfo($fileName);
         if (!is_dir($path_parts['dirname']))
@@ -709,6 +725,23 @@ class BuckbeakConf
         foreach( $this->clouds as $cur )
         {
             if( $cur->name() == "All" )
+                continue;
+
+            $this->get_combined_subDevice_statistics($statsArray, $cur, true );
+        }
+
+        foreach( $this->onprems as $cur )
+        {
+            if( $cur->name() == "All" )
+                continue;
+
+            $this->get_combined_subDevice_statistics($statsArray, $cur, true );
+        }
+
+        foreach( $this->snippets as $cur )
+        {
+            /** @var Snippet $cur */
+            if( count($cur->getReferences() ) == 0 )
                 continue;
 
             $this->get_combined_subDevice_statistics($statsArray, $cur, true );

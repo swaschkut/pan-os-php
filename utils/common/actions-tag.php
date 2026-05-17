@@ -38,8 +38,8 @@ TagCallContext::$supportedActions['delete'] = array(
     },
 );
 
-TagCallContext::$supportedActions['deleteforce'] = array(
-    'name' => 'deleteForce',
+TagCallContext::$supportedActions['delete-force'] = array(
+    'name' => 'delete-Force',
     'MainFunction' => function (TagCallContext $context) {
         $object = $context->object;
 
@@ -55,7 +55,13 @@ TagCallContext::$supportedActions['deleteforce'] = array(
             $object->owner->removeTag($object);
     },
 );
-
+TagCallContext::$supportedActions['deleteforce'] = array_merge(TagCallContext::$supportedActions['delete-force'], 
+    array(
+        'name' => 'deleteForce',
+        'deprecated' => 'this action "deleteForce" is deprecated, you should use "delete-Fore" instead!',
+        'help' => 'this action "deleteForce" is deprecated, you should use "delete-Fore" instead!'
+    )
+);
 
 TagCallContext::$supportedActions['name-addprefix'] = array(
     'name' => 'name-addPrefix',

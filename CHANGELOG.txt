@@ -1,6 +1,57 @@
 CHANGELOG
 
-2.1.53
+2.1.54
+UTIL:
+* type=key-manager | introduce add=scm-service-account file=FILENAME.csv
+* class UTIL working on SCM location=All:exclude-scm-ngfw-shared-and-childs / exclude-scm-prisma-access-and-childs
+* type=xml-issue | extend with application-filter/group-include-list/'schedule recurring weekly' find duplicates in exclude
+* type=XYZ shadow-json=FILENAME | introduce extended argument to store JSON output to file
+* type=xml-issue | extend html-report with all available information
+* SCM related config adjust parentstore for objects - still problems with Snippet reading
+* class SecurityProfileGroup | adjustment for Buckbeack config SCM
+* type=securityprofile actions=move_from-shared_to_lowest_possible_DG | introduce new action
+* class Snippet | extend as Referenceableobject - to display it with type=device devicetype=snippet
+* type=xyz actions=exportToHtml:file.html | unique method to get location string
+* class PanSCMAPIConnector | improve function importConfig to support loading objects from snippet "predefined" which shoulde be part of "predefined-snippet"
+* type=config-size | adjust to get correct calculation about what pan-os-php is generating config file
+* type=edl/ike-profile/ipsec-profile/schedule/securityprofile/tag/zone | actions=delete-Force instead of actions=deleteforce
+* type=stats in=scm-api:// | correct to get full objects usage, if snippet is references by a folder
+* type=securityprofilegroup | introduce 'filter=(object has.predefined.secprof)' | extend actions=display/exporttohtml - with [predefined]
+* type=securityprofile securityprofiletype=customer-url-category actions=move_from-shared_to_lowest_possible_DG | print targetLocation also if refcount == 1
+* type=ironskillet-update | decommission | iron-skillet AV files >=11.1 update to add MachO / OOXML
+* iron-skillet - spyware PAN-OS >=11.2 | class UTIL/BuckbeackConf - correction for $debugLoadTime
+* type=playbook | allow JSOn playbook file "pie_sliece" and ignore it for pan-os-php
+* type=securityprofile actions=url.siteaccess./credential-enforcement./credential-enforcement.mode./inline-ml./.alert-only-set | introduce new separate actions
+
+BUGFIX:
+* type=securityprofile securityprofiletype=spyware actions=spyware.alert-only-set | bugfix to add default config
+* type=appid-toolbox phase=rule-cleaner | bugfix if API mode - to only send if security-rule store has a rule available
+* class VirusAndWildfireProfile | define missing variables
+* type=securityprofile actions=spyware.inline-ml.alert-only-set | improve corner case if inline analysis is disabled but actions are set to block -> set action to alert and enable analysis
+* type=XYZ 'filter=(reflocation is shared)' | bugfix to get specific search working
+* in=scm-api:// | improvements to read/add snippets to memory | sp spyware - dns-security fix
+* type=securityprofile actions=exportToHtml:file.html in=scm-api:// | fix for AS profile as dns parts are moved to SP dns-security
+* class VirusAndWildfireProfile | bugfix type in function name
+* class Rule | RuleCallContext - bugfix to handle not correct found SPG / SP because of SCM Snippets
+* type=stats json-to-folder | extend to support SCM config
+* type=securityprofilegroup actions=exporttoexcel | correction of table export
+* scm snippets related - correct hierarchy search of objects if objects is from snippet
+* in=scm-api:// | adjustment if total object is greater than limit
+* class VulnerabilityProfile | bugfix for VP rules visibility method
+* class InterfaceContainer | bugfix if node == null
+* phpseclib | class Hash/Rijndael - add none defined variables
+* type=schedule | actions=exporttohtml:file.html | bugfix for 'daily'
+
+GENERAL:
+* update Device App-ID to version: 9087-9979
+* update Device App-ID to version: 9090-9993
+* XML output indentingIncreament default is 2 | type=config-size flexible
+* introduce new develop script - importCert.php
+* update Device App-ID to version: 9092-10001
+* Device App-ID updated to version: 9102-10055
+
+
+2.1.53 (20260409)
 UTIL:
 * adjustment to index_assessment.html
 * optimise type=rule/securityprofilegroup | for 'actions=exporttoexcel:file.html,visiblity|bestpractice'

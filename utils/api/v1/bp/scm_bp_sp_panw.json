@@ -395,18 +395,6 @@
         "rule": {
             "bp": {
                 "block": {
-                    "filetype_blocked_also_before": [
-                        "cab",
-                        "exe",
-                        "flash",
-                        "msi",
-                        "Multi-Level-Encoding",
-                        "PE",
-                        "rar",
-                        "tar",
-                        "encrypted-rar",
-                        "encrypted-zip"
-                    ],
                     "filetype": [
                         "7z",
                         "bat",

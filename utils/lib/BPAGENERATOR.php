@@ -260,9 +260,9 @@ class BPAGENERATOR extends UTIL
             $newdoc->loadXML($xmlString, XML_PARSE_BIG_LINES);
 
             $lineReturn = TRUE;
-            $indentingXmlIncreament = 1;
+            $indentingXmlIncrement = 2;
             $indentingXml = 0;
-            $xml = &DH::dom_to_xml($newdoc->documentElement, $indentingXml, $lineReturn, -1, $indentingXmlIncreament);
+            $xml = &DH::dom_to_xml($newdoc->documentElement, $indentingXml, $lineReturn, -1, $indentingXmlIncrement);
             $config .= '<result>'.$xml.'</result>';
         }
         $config .= $response_end;

@@ -43,8 +43,8 @@ ScheduleCallContext::$supportedActions['delete'] = array(
     },
 );
 
-ScheduleCallContext::$supportedActions['deleteforce'] = array(
-    'name' => 'deleteForce',
+ScheduleCallContext::$supportedActions['delete-force'] = array(
+    'name' => 'delete-Force',
     'MainFunction' => function (ScheduleCallContext $context) {
         $object = $context->object;
 
@@ -65,7 +65,13 @@ ScheduleCallContext::$supportedActions['deleteforce'] = array(
         }
     },
 );
-
+ScheduleCallContext::$supportedActions['deleteforce'] = array_merge(ScheduleCallContext::$supportedActions['delete-force'], 
+    array(
+        'name' => 'deleteForce',
+        'deprecated' => 'this action "deleteForce" is deprecated, you should use "delete-Fore" instead!',
+        'help' => 'this action "deleteForce" is deprecated, you should use "delete-Fore" instead!'
+    )
+);
 
 ScheduleCallContext::$supportedActions['name-addprefix'] = array(
     'name' => 'name-addPrefix',
@@ -400,10 +406,20 @@ ScheduleCallContext::$supportedActions['display'] = array(
                 $string = $key." | ";
                 foreach( $entry as $day_entry )
                 {
-                    $string2 = $day_entry['start']."-".$day_entry['end'];
-                    PH::print_stdout( $context->padding . "   - ".$string.$string2 );
-                    PH::$JSON_TMP['sub']['object'][$object->name()]['weekly'][$key][$string2]['start'] = $day_entry['start'];
-                    PH::$JSON_TMP['sub']['object'][$object->name()]['weekly'][$key][$string2]['end'] = $day_entry['end'];
+                    if( isset($startEnd['start']) && isset($startEnd['end']) )
+                    {
+                        $string2 = $day_entry['start']."-".$day_entry['end'];
+                        PH::print_stdout( $context->padding . "   - ".$string.$string2 );
+                        PH::$JSON_TMP['sub']['object'][$object->name()]['weekly'][$key][$string2]['start'] = $day_entry['start'];
+                        PH::$JSON_TMP['sub']['object'][$object->name()]['weekly'][$key][$string2]['end'] = $day_entry['end'];
+                    }
+                    else
+                    {
+                        print_r( $tmp_array['weekly'] );
+                        mwarning( "something wrong with weekly schedule object: ".$object->name() );
+                    }
+
+
                 }
             }
         }

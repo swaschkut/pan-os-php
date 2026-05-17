@@ -183,13 +183,13 @@ const BP_VALIDATION = {
                 "application": { "multi": true, "options": ["any"], "allowCustom": true },
                 "filetype": { "multi": true, "options": ["any", "pe", "apk", "pdf", "ms-office"], "allowCustom": true },
                 "direction": { "multi": false, "options": ["both", "upload", "download"] },
-                "analysis": { "multi": false, "options": ["public-cloud", "private-cloud"] }
+                "analysis": { "multi": true, "options": ["public-cloud", "private-cloud"] }
             },
             "visibility": {
                 "application": { "multi": true, "options": ["any"], "allowCustom": true },
                 "filetype": { "multi": true, "options": ["any"], "allowCustom": true },
                 "direction": { "multi": false, "options": ["both"] },
-                "analysis": { "multi": false, "options": ["public-cloud"] }
+                "analysis": { "multi": true, "options": ["public-cloud"] }
             }
         },
         "cloud-inline": {

@@ -873,18 +873,8 @@ RQuery::$defaultFilters['address']['reflocation']['operators']['is'] = array(
         $object = $context->object;
         $owner = $context->object->owner->owner;
 
-        #print "NAME: ".$object->name()."\n";
         $reflocation_array = $object->getReferencesLocation();
-        #print_r( $reflocation_array );
 
-        if( strtolower($context->value) == 'shared' )
-        {
-            if( $owner->isPanorama() )
-                return TRUE;
-            if( $owner->isFirewall() )
-                return TRUE;
-            return FALSE;
-        }
         if( $owner->isPanorama() )
         {
             $DG = $owner->findDeviceGroup($context->value);
@@ -1101,14 +1091,6 @@ RQuery::$defaultFilters['address']['reflocation']['operators']['is.only'] = arra
                 }
         */
 
-        if( strtolower($context->value) == 'shared' )
-        {
-            if( $owner->isPanorama() )
-                return TRUE;
-            if( $owner->isFirewall() )
-                return TRUE;
-            return FALSE;
-        }
 
         $return = FALSE;
         foreach( $reflocation_array as $reflocation )

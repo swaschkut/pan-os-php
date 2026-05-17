@@ -380,9 +380,9 @@ function DEBUGprintDOMDocument( $node )
         $newdoc->appendChild($node);
 
         $lineReturn = TRUE;
-        $indentingXmlIncreament = 1;
+        $indentingXmlIncrement = 2;
         $indentingXml = 0;
-        $xml = &DH::dom_to_xml($newdoc->documentElement, $indentingXml, $lineReturn, -1, $indentingXmlIncreament);
+        $xml = &DH::dom_to_xml($newdoc->documentElement, $indentingXml, $lineReturn, -1, $indentingXmlIncrement);
         return $xml;
         #print $newdoc->saveXML($newdoc->documentElement);
     }

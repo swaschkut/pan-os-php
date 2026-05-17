@@ -738,6 +738,152 @@ class URLProfile extends SecurityProfile2
         return $ret;
     }
 
+    ////////////////////////////
+    /// alert only setting
+
+    public function url_siteaccess_set_alertonly()
+    {
+        $allow_xmlnode = DH::findFirstElement("allow", $this->xmlroot);
+        $alert_xmlnode = DH::findFirstElementOrCreate("alert", $this->xmlroot);
+        if( $allow_xmlnode !== False )
+        {
+            foreach( $allow_xmlnode->childNodes as $allow_node )
+            {
+                if( $allow_node->nodeType != XML_ELEMENT_NODE )
+                    continue;
+
+                $tmp_name = $allow_node->textContent;
+
+                //Todo: not working correclty
+                $custom_url_category_obj = $this->owner->owner->customURLProfileStore->find($tmp_name);
+                if( $custom_url_category_obj !== NULL )
+                    continue;
+                //workaround
+                if(isset( $this->allow_custom[$tmp_name] ) )
+                    continue;
+
+                $clone_node = $allow_node->cloneNode(true);
+                $alert_xmlnode->appendChild($clone_node);
+                $allow_xmlnode->removeChild($allow_node);
+
+
+                $key = array_search ($tmp_name, $this->allow);
+                unset($this->allow[$key]);
+            }
+            if( empty($this->allow) and empty($this->allow_custom) )
+                $this->xmlroot->removeChild($allow_xmlnode);
+        }
+
+        foreach( $this->allow as $allow )
+        {
+            //Todo: not working correclty
+            $custom_url_category_obj = $this->owner->owner->customURLProfileStore->find($allow);
+            if( $custom_url_category_obj !== NULL )
+                continue;
+            //workaround
+            if(isset( $this->allow_custom[$allow] ) )
+                continue;
+
+            $this->alert[] = $allow;
+
+            $xmlString = '<member>'.$allow.'</member>';
+            $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $xmlString);
+            $alert_xmlnode->appendChild($xmlElement);
+        }
+        $this->allow = array();
+    }
+
+    public function url_credential_set_alertonly()
+    {
+        $credential_xmlnode = DH::findFirstElementOrCreate("credential-enforcement", $this->xmlroot);
+        $allow_credential_xmlnode = DH::findFirstElement("allow", $credential_xmlnode);
+        if( $allow_credential_xmlnode !== False )
+        {
+            foreach( $allow_credential_xmlnode->childNodes as $allow_node )
+            {
+                if( $allow_node->nodeType != XML_ELEMENT_NODE )
+                    continue;
+
+                $tmp_name = $allow_node->textContent;
+
+                //Todo: not working correclty
+                $custom_url_category_obj = $this->owner->owner->customURLProfileStore->find($tmp_name);
+                if( $custom_url_category_obj !== NULL )
+                    continue;
+                //workaround
+                if(isset( $this->allow_credential_custom[$tmp_name] ) )
+                    continue;
+
+                $clone_node = $allow_node->cloneNode(true);
+                $alert_credential_xmlnode = DH::findFirstElementOrCreate("alert", $credential_xmlnode);
+                $alert_credential_xmlnode->appendChild($clone_node);
+                $allow_credential_xmlnode->removeChild($allow_node);
+
+                $key = array_search ($tmp_name, $this->allow_credential);
+                unset($this->allow_credential[$key]);
+            }
+            if( empty($this->allow_credential) and empty($this->allow_credential_custom) )
+                $credential_xmlnode->removeChild($allow_credential_xmlnode);
+        }
+
+        foreach( $this->allow_credential as $allow )
+        {
+            //Todo: not working correclty
+            $custom_url_category_obj = $this->owner->owner->customURLProfileStore->find($allow);
+            if( $custom_url_category_obj !== NULL )
+                continue;
+            //workaround
+            if(isset( $this->allow_credential_custom[$allow] ) )
+                continue;
+
+            $this->alert_credential[] = $allow;
+
+            $xmlString = '<member>'.$allow.'</member>';
+            $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $xmlString);
+            $alert_credential_xmlnode = DH::findFirstElementOrCreate("alert", $credential_xmlnode);
+            $alert_credential_xmlnode->appendChild($xmlElement);
+        }
+        $this->allow_credential = array();
+    }
+
+    public function url_inline_cat_set( $bool = true )
+    {
+        $bool_value = "no";
+        if($bool)
+            $bool_value = "yes";
+
+        if( $this->owner->owner->version >= 102 )
+        {
+            $xmlnode = DH::findFirstElementOrCreate("local-inline-cat", $this->xmlroot);
+            $xmlnode->textContent = $bool_value;
+
+            $xmlnode = DH::findFirstElementOrCreate("cloud-inline-cat", $this->xmlroot);
+            $xmlnode->textContent = $bool_value;
+        }
+    }
+
+    public function url_credential_mode_alertonly()
+    {
+        $credential_xmlnode = DH::findFirstElementOrCreate("credential-enforcement", $this->xmlroot);
+        $mode_credential_xmlnode = DH::findFirstElementOrCreate("mode", $credential_xmlnode);
+        $mode_child_xmlnode = DH::firstChildElement($mode_credential_xmlnode);
+        if( $mode_child_xmlnode == false )
+        {
+            DH::findFirstElementOrCreate("ip-user", $mode_credential_xmlnode);
+            $logseverity_credential_xmlnode = DH::findFirstElementOrCreate("log-severity", $credential_xmlnode);
+            $logseverity_credential_xmlnode->textContent = "medium";
+        }
+        elseif( $mode_child_xmlnode !== false && $mode_child_xmlnode->nodeName == "disabled" )
+        {
+            DH::findFirstElementOrCreate("ip-user", $mode_credential_xmlnode);
+            $logseverity_credential_xmlnode = DH::findFirstElementOrCreate("log-severity", $credential_xmlnode);
+            $logseverity_credential_xmlnode->textContent = "medium";
+            $mode_credential_xmlnode->removeChild($mode_child_xmlnode);
+        }
+    }
+
+    ////////////////////////////
+    /// visibility bp checks
 
     public function url_siteaccess_bp_visibility_JSON( $checkType, $secprof_type )
     {

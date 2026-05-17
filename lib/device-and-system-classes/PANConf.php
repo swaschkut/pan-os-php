@@ -963,12 +963,12 @@ class PANConf
      * @param string $fileName
      * @param bool $printMessage
      */
-    public function save_to_file($fileName, $printMessage = TRUE, $lineReturn = TRUE, $indentingXml = 0, $indentingXmlIncreament = 1)
+    public function save_to_file($fileName, $printMessage = TRUE, $lineReturn = TRUE, $indentingXml = 0, $indentingXmlIncrement = 2)
     {
         if( $printMessage )
             PH::print_stdout( "Now saving PANConf to file '$fileName'...");
 
-        $xml = &DH::dom_to_xml($this->xmlroot, $indentingXml, $lineReturn, -1, $indentingXmlIncreament + 1);
+        $xml = &DH::dom_to_xml($this->xmlroot, $indentingXml, $lineReturn, -1, $indentingXmlIncrement );
 
         $path_parts = pathinfo($fileName);
         if (!is_dir($path_parts['dirname']))
@@ -1021,6 +1021,42 @@ class PANConf
 
 
 
+    }
+
+
+    /**
+     * send certificate to the panorama
+     */
+    public function API_uploadCertificate($certFileName, $certName, $certFileFormat, $password = null, $template = null, $vsys = "vsys1")
+    {
+        //$template only used in Panorama config
+        PH::print_stdout(  "Uploading certificate to device...." );
+
+        $fileContent = file_get_contents($certFileName);
+
+        if( $this->version < 121 )
+        {
+            $url = "type=import&category=keypair&certificate-name=".$certName."&format=".$certFileFormat;
+        }
+        elseif( $this->version >= 121 )
+        {
+            //is this the syntax for 12.1??????
+            $url = "type=import&category=keypair&certificate-name=".$certName."&format=".$certFileFormat;
+            //."&block-private-key=no"
+        }
+
+
+
+        if( $password !== null )
+            $url .= "&passphrase=".$password;
+
+        if( $vsys !== null )
+            $url .= "&vsys=".$vsys;
+
+        $response = $this->connector->sendRequest($url, FALSE, $fileContent, $certFileName);
+
+
+        #var_dump($response);
     }
 
     /**

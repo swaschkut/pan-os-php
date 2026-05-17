@@ -8,10 +8,19 @@
       <member>abortion</member>
       <member>abused-drugs</member>
       <member>adult</member>
+            <member>AI-code-assistant</member>
+            <member>AI-conversational-assistant</member>
+            <member>AI-data-and-workflow-optimizer</member>
+            <member>AI-media-service</member>
+            <member>AI-meeting-assistant</member>
+            <member>AI-platform-service</member>
+            <member>AI-website-generator</member>
+            <member>AI-writing-assistant</member>
       <member>alcohol-and-tobacco</member>
       <member>auctions</member><member>browser-runtime-attack</member>
       <member>business-and-economy</member>
       <member>command-and-control</member>
+            <member>compromised-website</member>
       <member>computer-and-internet-info</member>
       <member>content-delivery-networks</member>
       <member>copyright-infringement</member>
@@ -20,7 +29,7 @@
       <member>educational-institutions</member>
       <member>entertainment-and-arts</member>
       <member>extremism</member>
-      <member>financial-services</member>
+      <member>file-converter</member><member>financial-services</member>
       <member>gambling</member>
       <member>games</member>
       <member>government</member>
@@ -54,6 +63,7 @@
       <member>recreation-and-hobbies</member>
       <member>reference-and-research</member>
       <member>religion</member>
+
       <member>remote-access</member>
       <member>search-engines</member>
       <member>sex-education</member>
@@ -85,6 +95,14 @@
     <member>abortion</member>
     <member>abused-drugs</member>
     <member>adult</member>
+            <member>AI-code-assistant</member>
+            <member>AI-conversational-assistant</member>
+            <member>AI-data-and-workflow-optimizer</member>
+            <member>AI-media-service</member>
+            <member>AI-meeting-assistant</member>
+            <member>AI-platform-service</member>
+            <member>AI-website-generator</member>
+            <member>AI-writing-assistant</member>
     <member>alcohol-and-tobacco</member>
     <member>auctions</member><member>browser-runtime-attack</member>
     <member>business-and-economy</member>
@@ -96,7 +114,7 @@
     <member>educational-institutions</member>
     <member>entertainment-and-arts</member>
     <member>extremism</member>
-    <member>financial-services</member>
+    <member>file-converter</member><member>file-converter</member><member>financial-services</member>
     <member>gambling</member>
     <member>games</member>
     <member>government</member>
@@ -126,6 +144,7 @@
     <member>recreation-and-hobbies</member>
     <member>reference-and-research</member>
     <member>religion</member>
+
     <member>remote-access</member>
     <member>search-engines</member>
     <member>sex-education</member>
@@ -149,6 +168,7 @@
   </alert>
   <block>
     <member>command-and-control</member>
+            <member>compromised-website</member>
     <member>grayware</member>
     <member>hacking</member>
     <member>malware</member>
@@ -166,10 +186,19 @@
       <member>abortion</member>
       <member>abused-drugs</member>
       <member>adult</member>
+            <member>AI-code-assistant</member>
+            <member>AI-conversational-assistant</member>
+            <member>AI-data-and-workflow-optimizer</member>
+            <member>AI-media-service</member>
+            <member>AI-meeting-assistant</member>
+            <member>AI-platform-service</member>
+            <member>AI-website-generator</member>
+            <member>AI-writing-assistant</member>
       <member>alcohol-and-tobacco</member>
       <member>auctions</member><member>browser-runtime-attack</member>
       <member>business-and-economy</member>
       <member>command-and-control</member>
+            <member>compromised-website</member>
       <member>computer-and-internet-info</member>
       <member>content-delivery-networks</member>
       <member>copyright-infringement</member>
@@ -178,7 +207,7 @@
       <member>educational-institutions</member>
       <member>entertainment-and-arts</member>
       <member>extremism</member>
-      <member>financial-services</member>
+      <member>file-converter</member><member>financial-services</member>
       <member>gambling</member>
       <member>games</member>
       <member>government</member>
@@ -212,6 +241,7 @@
       <member>recreation-and-hobbies</member>
       <member>reference-and-research</member>
       <member>religion</member>
+
       <member>remote-access</member>
       <member>search-engines</member>
       <member>sex-education</member>
@@ -240,10 +270,19 @@
     <member>abortion</member>
     <member>abused-drugs</member>
     <member>adult</member>
+            <member>AI-code-assistant</member>
+            <member>AI-conversational-assistant</member>
+            <member>AI-data-and-workflow-optimizer</member>
+            <member>AI-media-service</member>
+            <member>AI-meeting-assistant</member>
+            <member>AI-platform-service</member>
+            <member>AI-website-generator</member>
+            <member>AI-writing-assistant</member>
     <member>alcohol-and-tobacco</member>
     <member>auctions</member><member>browser-runtime-attack</member>
     <member>business-and-economy</member>
     <member>command-and-control</member>
+            <member>compromised-website</member>
     <member>computer-and-internet-info</member>
     <member>content-delivery-networks</member>
     <member>copyright-infringement</member>
@@ -252,7 +291,7 @@
     <member>educational-institutions</member>
     <member>entertainment-and-arts</member>
     <member>extremism</member>
-    <member>financial-services</member>
+    <member>file-converter</member><member>financial-services</member>
     <member>gambling</member>
     <member>games</member>
     <member>government</member>
@@ -286,6 +325,7 @@
     <member>recreation-and-hobbies</member>
     <member>reference-and-research</member>
     <member>religion</member>
+
     <member>remote-access</member>
     <member>search-engines</member>
     <member>sex-education</member>
@@ -319,10 +359,19 @@
       <member>abortion</member>
       <member>abused-drugs</member>
       <member>adult</member>
+            <member>AI-code-assistant</member>
+            <member>AI-conversational-assistant</member>
+            <member>AI-data-and-workflow-optimizer</member>
+            <member>AI-media-service</member>
+            <member>AI-meeting-assistant</member>
+            <member>AI-platform-service</member>
+            <member>AI-website-generator</member>
+            <member>AI-writing-assistant</member>
       <member>alcohol-and-tobacco</member>
       <member>auctions</member><member>browser-runtime-attack</member>
       <member>business-and-economy</member>
       <member>command-and-control</member>
+            <member>compromised-website</member>
       <member>computer-and-internet-info</member>
       <member>content-delivery-networks</member>
       <member>copyright-infringement</member>
@@ -331,7 +380,7 @@
       <member>educational-institutions</member>
       <member>entertainment-and-arts</member>
       <member>extremism</member>
-      <member>financial-services</member>
+      <member>file-converter</member><member>financial-services</member>
       <member>gambling</member>
       <member>games</member>
       <member>government</member>
@@ -365,6 +414,7 @@
       <member>recreation-and-hobbies</member>
       <member>reference-and-research</member>
       <member>religion</member>
+
       <member>remote-access</member>
       <member>search-engines</member>
       <member>sex-education</member>
@@ -396,6 +446,14 @@
     <member>abortion</member>
     <member>abused-drugs</member>
     <member>adult</member>
+            <member>AI-code-assistant</member>
+            <member>AI-conversational-assistant</member>
+            <member>AI-data-and-workflow-optimizer</member>
+            <member>AI-media-service</member>
+            <member>AI-meeting-assistant</member>
+            <member>AI-platform-service</member>
+            <member>AI-website-generator</member>
+            <member>AI-writing-assistant</member>
     <member>alcohol-and-tobacco</member>
     <member>auctions</member><member>browser-runtime-attack</member>
     <member>business-and-economy</member>
@@ -407,7 +465,7 @@
     <member>educational-institutions</member>
     <member>entertainment-and-arts</member>
     <member>extremism</member>
-    <member>financial-services</member>
+    <member>file-converter</member><member>financial-services</member>
     <member>gambling</member>
     <member>games</member>
     <member>government</member>
@@ -437,7 +495,7 @@
     <member>recreation-and-hobbies</member>
     <member>reference-and-research</member>
     <member>religion</member>
-    <member>remote-access</member>
+            <member>remote-access</member>
     <member>search-engines</member>
     <member>sex-education</member>
     <member>shareware-and-freeware</member>
@@ -460,6 +518,7 @@
   </alert>
   <block>
     <member>command-and-control</member>
+            <member>compromised-website</member>
     <member>grayware</member>
     <member>hacking</member>
     <member>malware</member>

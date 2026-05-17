@@ -162,6 +162,8 @@ class Crypt_Hash
      */
     var $engine;
 
+    public $name;
+
     /**
      * Default Constructor.
      *

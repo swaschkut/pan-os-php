@@ -751,6 +751,8 @@ AddressCallContext::$supportedActions[] = array(
 
                 $lines .= $context->encloseFunction( (string)$count );
 
+                $lines .= $context->encloseFunction(PH::getLocationString($object));
+                /*
                 if( isset($object->owner) && isset($object->owner->owner) )
                 {
                     if($object->owner->owner->isPanorama() || $object->owner->owner->isFirewall() )
@@ -760,7 +762,7 @@ AddressCallContext::$supportedActions[] = array(
                 }
                 else
                     $lines .= $context->encloseFunction("---");
-
+                */
 
                 $lines .= $context->encloseFunction($object->name());
 

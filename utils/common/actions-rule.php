@@ -2671,7 +2671,8 @@ RuleCallContext::$supportedActions[] = array(
         $LogProfObject = $rule->owner->owner->LogProfileStore->find( $LogprofName );
         if( $LogProfObject === null )
         {
-            derr( "LogProfile: '".$LogprofName."' not available in this configuration", null, False );
+            mwarning( "LogProfile: '".$LogprofName."' not available in this configuration", null, False );
+            return;
         }
         if( $context->isAPI )
         {
@@ -2808,7 +2809,8 @@ RuleCallContext::$supportedActions[] = array(
         $secprofgroupObject = $rule->owner->owner->securityProfileGroupStore->find( $secprofgroupName );
         if( $secprofgroupObject === null )
         {
-            derr( "SecurityProfileGroup: '".$secprofgroupName."' not available in this configuration", null, False );
+            mwarning( "SecurityProfileGroup: '".$secprofgroupName."' not available in this configuration", null, False );
+            return;
         }
 
         if( $context->isAPI )
@@ -7124,9 +7126,9 @@ RuleCallContext::$supportedActions[] = array(
                         $string = "";
                         foreach ($newdoc->documentElement->childNodes as $childnode) {
                             $lineReturn = false;
-                            $indentingXmlIncreament = 1;
+                            $indentingXmlIncrement = 2;
                             $indentingXml = 0;
-                            $xml = &DH::dom_to_xml($childnode, $indentingXml, $lineReturn, -1, $indentingXmlIncreament);
+                            $xml = &DH::dom_to_xml($childnode, $indentingXml, $lineReturn, -1, $indentingXmlIncrement);
                             #print $xml;
                             $string .= $xml;
                         }

@@ -258,6 +258,20 @@ DeviceCallContext::$supportedActions['display'] = array(
                 PH::$JSON_TMP['sub']['object'][$object->name()]['serial'][$serial] = $serial;
             }
         }
+        elseif( get_class($object) == "Snippet" )
+        {
+            /** @var Snippet $object */
+
+            $padding = "       ";
+
+            if( $object->isPredefined() )
+                PH::print_stdout($padding."predefined");
+
+            $references = $object->getReferences();
+            PH::print_stdout($padding."used in:");
+            foreach( $references as $ref )
+                PH::print_stdout( $padding."  - ".get_class($ref).": name: ".$ref->name());
+        }
 
         $length = &DH::dom_get_config_size($object->xmlroot);
         PH::print_stdout($context->padding."---");

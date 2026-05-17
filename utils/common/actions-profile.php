@@ -43,8 +43,8 @@ ProfileCallContext::$supportedActions['delete'] = array(
     },
 );
 
-ProfileCallContext::$supportedActions['deleteforce'] = array(
-    'name' => 'deleteForce',
+ProfileCallContext::$supportedActions['delete-force'] = array(
+    'name' => 'delete-Force',
     'MainFunction' => function (ProfileCallContext $context) {
         $object = $context->object;
 
@@ -65,7 +65,13 @@ ProfileCallContext::$supportedActions['deleteforce'] = array(
         }
     },
 );
-
+ProfileCallContext::$supportedActions['deleteforce'] = array_merge(ProfileCallContext::$supportedActions['delete-force'], 
+    array(
+        'name' => 'deleteForce',
+        'deprecated' => 'this action "deleteForce" is deprecated, you should use "delete-Fore" instead!',
+        'help' => 'this action "deleteForce" is deprecated, you should use "delete-Fore" instead!'
+    )
+);
 
 ProfileCallContext::$supportedActions['name-addprefix'] = array(
     'name' => 'name-addPrefix',

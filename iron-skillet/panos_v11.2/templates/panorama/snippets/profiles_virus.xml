@@ -55,6 +55,12 @@
     <entry name="Shell">
       <mlav-policy-action>enable(alert-only)</mlav-policy-action>
     </entry>
+    <entry name="MachO">
+      <mlav-policy-action>enable(alert-only)</mlav-policy-action>
+    </entry>
+    <entry name="OOXML">
+      <mlav-policy-action>enable(alert-only)</mlav-policy-action>
+    </entry>
   </mlav-engine-filebased-enabled>
 </entry><entry name="Outbound-AV">
   <decoder>
@@ -111,6 +117,12 @@
       <mlav-policy-action>enable</mlav-policy-action>
     </entry>
     <entry name="Shell">
+      <mlav-policy-action>enable</mlav-policy-action>
+    </entry>
+    <entry name="MachO">
+      <mlav-policy-action>enable</mlav-policy-action>
+    </entry>
+    <entry name="OOXML">
       <mlav-policy-action>enable</mlav-policy-action>
     </entry>
   </mlav-engine-filebased-enabled>
@@ -171,6 +183,12 @@
     <entry name="Shell">
       <mlav-policy-action>enable</mlav-policy-action>
     </entry>
+    <entry name="MachO">
+      <mlav-policy-action>enable</mlav-policy-action>
+    </entry>
+    <entry name="OOXML">
+      <mlav-policy-action>enable</mlav-policy-action>
+    </entry>
   </mlav-engine-filebased-enabled>
 </entry><entry name="Internal-AV">
   <decoder>
@@ -227,6 +245,12 @@
       <mlav-policy-action>enable</mlav-policy-action>
     </entry>
     <entry name="Shell">
+      <mlav-policy-action>enable</mlav-policy-action>
+    </entry>
+    <entry name="MachO">
+      <mlav-policy-action>enable</mlav-policy-action>
+    </entry>
+    <entry name="OOXML">
       <mlav-policy-action>enable</mlav-policy-action>
     </entry>
   </mlav-engine-filebased-enabled>

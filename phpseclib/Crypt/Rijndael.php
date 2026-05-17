@@ -241,6 +241,9 @@ class Crypt_Rijndael extends Crypt_Base
      */
     var $kl;
 
+    public $key_size;
+    public $name;
+
     /**
      * Sets the key.
      *

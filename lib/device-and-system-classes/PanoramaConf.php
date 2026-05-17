@@ -1794,14 +1794,14 @@ class PanoramaConf
      * @param bool $printMessage
      * @param int $indentingXml
      */
-    public function save_to_file($fileName, $printMessage = TRUE, $lineReturn = TRUE, $indentingXml = 0, $indentingXmlIncreament = 1)
+    public function save_to_file($fileName, $printMessage = TRUE, $lineReturn = TRUE, $indentingXml = 0, $indentingXmlIncrement = 2)
     {
         if( $printMessage )
             PH::print_stdout( "Now saving PANConf to file '$fileName'..." );
 
         //Todo: swaschkut check
-        //$indentingXmlIncreament was 2 per default for Panroama
-        $xml = &DH::dom_to_xml($this->xmlroot, $indentingXml, $lineReturn, -1, $indentingXmlIncreament + 1);
+        //$indentingXmlIncrement was 2 per default for Panroama
+        $xml = &DH::dom_to_xml($this->xmlroot, $indentingXml, $lineReturn, -1, $indentingXmlIncrement);
 
         $path_parts = pathinfo($fileName);
         if (!is_dir($path_parts['dirname']))
@@ -2024,6 +2024,27 @@ class PanoramaConf
 
     }
 
+
+    /**
+     * send certificate to the panorama
+     */
+    public function API_uploadCertificate($certFileName, $certName, $certFileFormat, $password = null, $template = null, $vsys = "vsys1")
+    {
+        PH::print_stdout(  "Uploading certificate to device...." );
+
+        $fileContent = file_get_contents($certFileName);
+        $url = "type=import&category=keypair&certificate-name=".$certName."&format=".$certFileFormat;
+
+        if( $password !== null )
+            $url .= "&passphrase=".$password;
+        if( $template !== null )
+            $url .= "&target-tpl=".$template."&target-tpl-vsys=".$vsys;
+
+        $response = $this->connector->sendRequest($url, FALSE, $fileContent, $certFileName);
+
+        #DH::DEBUGprintDOMDocument($response);
+    }
+
     /**
      *    load all managed firewalls configs from API from running config if $fromRunning = TRUE
      */
@@ -2177,15 +2198,7 @@ class PanoramaConf
             else
             {
                 $parentDG->_childDeviceGroups[$name] = $newDG;
-                /*
-                $newDG->parentDeviceGroup = $parentDG;
-                $newDG->addressStore->parentCentralStore = $parentDG->addressStore;
-                $newDG->serviceStore->parentCentralStore = $parentDG->serviceStore;
-                $newDG->tagStore->parentCentralStore = $parentDG->tagStore;
-                $newDG->scheduleStore->parentCentralStore = $parentDG->scheduleStore;
-                $newDG->appStore->parentCentralStore = $parentDG->appStore;
-                $newDG->securityProfileGroupStore->parentCentralStore = $parentDG->securityProfileGroupStore;
-                */
+
                 //Todo: swaschkut 20210505 - check if other Stores must be added
                 //- appStore;scheduleStore/securityProfileGroupStore/all kind of SecurityProfile
 
@@ -2194,9 +2207,13 @@ class PanoramaConf
 
                     'securityProfileGroupStore',
 
-                    'URLProfileStore', 'AntiVirusProfileStore', 'FileBlockingProfileStore', 'DataFilteringProfileStore',
-                    'VulnerabilityProfileStore', 'AntiSpywareProfileStore', 'WildfireProfileStore',
-                    'DecryptionProfileStore', 'HipObjectsProfileStore', 'customURLProfileStore'
+                    'URLProfileStore', 'AntiVirusProfileStore', 'FileBlockingProfileStore',
+                    'DataFilteringProfileStore',
+                    'VulnerabilityProfileStore', 'AntiSpywareProfileStore',
+                    'WildfireProfileStore',
+                    'DecryptionProfileStore', 'HipObjectsProfileStore', 'customURLProfileStore',
+
+                    'LogProfileStore'
 
                 );
 

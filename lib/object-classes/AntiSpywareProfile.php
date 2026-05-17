@@ -114,7 +114,12 @@ class AntiSpywareProfile extends SecurityProfile2
         $this->load_from_domxml_spyware_threat_exception( $xml );
 
         //Todo: not for SCM
-        $this->load_from_domxml_spyware_botnet( $xml );
+        if( get_class( $this->owner->owner ) == "PanoramaConf"
+            || get_class( $this->owner->owner ) == "DeviceGroup"
+            || get_class( $this->owner->owner ) == "PANConf"
+            || get_class( $this->owner->owner ) == "VirtualSystem"
+        )
+            $this->load_from_domxml_spyware_botnet( $xml );
 
         return TRUE;
     }
@@ -125,117 +130,16 @@ class AntiSpywareProfile extends SecurityProfile2
         PH::$JSON_TMP['sub']['object'][$this->name()]['name'] = $this->name();
         PH::$JSON_TMP['sub']['object'][$this->name()]['type'] = get_class($this);
 
-        #PH::print_stdout();
-        //Todo: continue for display out
+        $this->display_as_rules();
 
-        if( !empty( $this->rules_obj ) )
-        {
-            PH::print_stdout("        - Signature Policies:");
-            foreach ($this->rules_obj as $rulename => $rule)
-                $rule->display();
-        }
+        $this->display_as_threatException();
 
-        if( !empty( $this->threatException ) )
-        {
-            PH::print_stdout("        - Signature Exceptions:" );
-
-            foreach( $this->threatException as $threatname => $threat )
-            {
-                PH::$JSON_TMP['sub']['object'][$this->name()]['threat-exception'][$threatname]['name'] = $threat['name'];
-
-                $string = "             '" . $threat['name'] . "'";
-                if( isset( $threat['action'] ) )
-                {
-                    $string .= "  - action : '".$threat['action']."'";
-                    PH::$JSON_TMP['sub']['object'][$this->name()]['threat-exception'][$threatname]['action'] = $threat['action'];
-                }
-                if( isset( $threat['default-action'] ) )
-                {
-                    $string .= "  - default-action : '".$threat['default-action']."'";
-                    PH::$JSON_TMP['sub']['object'][$this->name()]['threat-exception'][$threatname]['default-action'] = $threat['default-action'];
-                }
-                if( isset( $threat['exempt-ip'] ) )
-                {
-                    $string .= "  - exempt-ip: ".implode( ",", $threat['exempt-ip'] );
-                    PH::$JSON_TMP['sub']['object'][$this->name()]['threat-exception'][$threatname]['exempt-ip'] = $threat['exempt-ip'];
-                }
-                PH::print_stdout(  $string );
-            }
-        }
-
-        if( !empty( $this->additional ) )
-        {
-            if( !empty( $this->additional['botnet-domain'] ) )
-            {
-                PH::print_stdout("        ----------------------------------------");
-                PH::print_stdout("        - DNS Policies:" );
-
-                foreach( $this->additional['botnet-domain'] as $type => $threat )
-                {
-                    PH::print_stdout("          * ".$type.":" );
-                    if( $type == "lists" )
-                    {
-                        #print_r($this->additional['botnet-domain'][$type]);
-                        foreach( $this->additional['botnet-domain']['lists'] as $name => $value )
-                        {
-                            $padding = "    ";
-                            $value->display( $padding);
-                        }
-                    }
-                    elseif( $type == "sinkhole" )
-                    {
-                        foreach( $this->additional['botnet-domain'][$type] as $name => $value )
-                        {
-                            PH::print_stdout("            - ".$name.": ".$value );
-                        }
-                    }
-                    elseif( $type == "dns-security-categories" )
-                    {
-                        foreach( $this->additional['botnet-domain'][$type] as $name => $value )
-                        {
-                            $padding = "    ";
-                            $value->display( $padding);
-                        }
-                    }
-                    elseif( $type == "whitelist" )
-                    {
-                        foreach( $this->additional['botnet-domain'][$type] as $name => $value )
-                        {
-                            $string = "            - '".$value['name']."'";
-                            if(isset($value['description']))
-                                $string .= "| description:'".$value['description']."'";
-                            PH::print_stdout( $string );
-                        }
-                    }
-                    elseif( $type == "advanced-dns-security-categories" )
-                    {
-                        foreach( $this->additional['botnet-domain'][$type] as $name => $value )
-                        {
-                            $padding = "    ";
-                            $value->display( $padding);
-                        }
-                    }
-                }
-            }
-
-            if( !empty( $this->additional['mica-engine-spyware-enabled'] ) )
-            {
-                PH::print_stdout("        ----------------------------------------");
-                $enabled = "[no]";
-                if( $this->cloud_inline_analysis_enabled )
-                    $enabled = "[yes]";
-                PH::print_stdout("        - mica-engine-spyware-enabled: ". $enabled);
-
-                foreach ($this->additional['mica-engine-spyware-enabled'] as $name => $threat)
-                {
-                    $string = "          * " . $name . " - inline-policy-action :" . $this->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action'];
-                    if( isset($this->additional['mica-engine-spyware-enabled'][$name]['local-deep-learning']) )
-                        $string .= " - local-deep-learning :" . $this->additional['mica-engine-spyware-enabled'][$name]['local-deep-learning'];
-                    PH::print_stdout( $string );
-                }
-            }
-        }
-        #PH::print_stdout();
+        if( get_class( $this->owner->owner ) == "PanoramaConf"
+            || get_class( $this->owner->owner ) == "DeviceGroup"
+            || get_class( $this->owner->owner ) == "PANConf"
+            || get_class( $this->owner->owner ) == "VirtualSystem"
+        )
+            $this->display_as_additional();
     }
 
 

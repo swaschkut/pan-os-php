@@ -52,8 +52,8 @@ SecurityProfileCallContext::$supportedActions['delete'] = array(
     },
 );
 
-SecurityProfileCallContext::$supportedActions['deleteforce'] = array(
-    'name' => 'deleteForce',
+SecurityProfileCallContext::$supportedActions['delete-force'] = array(
+    'name' => 'delete-Force',
     'MainFunction' => function (SecurityProfileCallContext $context) {
         $object = $context->object;
 
@@ -84,7 +84,14 @@ SecurityProfileCallContext::$supportedActions['deleteforce'] = array(
 
     },
 );
-
+SecurityProfileCallContext::$supportedActions['deleteforce'] = array_merge(
+    SecurityProfileCallContext::$supportedActions['delete-force'],
+    array(
+        'name' => 'deleteForce',
+        'deprecated' => 'this action "deleteForce" is deprecated, you should use "delete-Fore" instead!',
+        'help' => 'this action "deleteForce" is deprecated, you should use "delete-Fore" instead!'
+    )
+);
 
 SecurityProfileCallContext::$supportedActions['name-addprefix'] = array(
     'name' => 'name-addPrefix',
@@ -645,7 +652,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
             {
                 $count++;
 
-                /** @var AntiVirusProfile|AntiSpywareProfile|customURLProfile|DataFilteringProfile|FileBlockingProfile|PredefinedSecurityProfileURL|URLProfile|VulnerabilityProfile|WildfireProfile $object */
+                /** @var AntiVirusProfile|AntiSpywareProfile|customURLProfile|DataFilteringProfile|FileBlockingProfile|PredefinedSecurityProfileURL|URLProfile|VulnerabilityProfile|WildfireProfile|DNSSecurityProfile|VirusAndWildfireProfile $object */
                 if( $count % 2 == 1 )
                     $lines .= "<tr>\n";
                 else
@@ -653,17 +660,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
 
                 $lines .= $context->encloseFunction( (string)$count );
 
-                if( $object->owner->owner === null )
-                {
-                    $lines .= $context->encloseFunction('predefined');
-                }
-                else
-                {
-                    if( $object->owner->owner !== null && ( $object->owner->owner->isPanorama() || $object->owner->owner->isFirewall() ) )
-                        $lines .= $context->encloseFunction('shared');
-                    else
-                        $lines .= $context->encloseFunction($object->owner->owner->name());
-                }
+                $lines .= $context->encloseFunction(PH::getLocationString($object));
 
 
                 $lines .= $context->encloseFunction($object->name());
@@ -1564,7 +1561,13 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 $lines .= $context->encloseFunction($string_dns_list);
                 if( $bestPractice || $visibility)
                 {
-                    if( get_class($object) == "AntiSpywareProfile" ||  get_class($object) == "DNSSecurityProfile" )
+                    if( ( get_class($object) == "AntiSpywareProfile" &&
+                            (get_class($object->owner->owner ) == "PanoramaConf"
+                                || get_class($object->owner->owner ) == "DeviceGroup"
+                                || get_class($object->owner->owner ) == "PANConf"
+                                || get_class($object->owner->owner ) == "VirtualSystem")
+                        )
+                        ||  get_class($object) == "DNSSecurityProfile" )
                     {
                         if( $bestPractice )
                         {
@@ -1595,7 +1598,16 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 $lines .= $context->encloseFunction($string_dns_security);
                 if( $bestPractice || $visibility)
                 {
-                    if( (get_class($object) == "AntiSpywareProfile" || get_class($object) == "DNSSecurityProfile") && $object->owner->owner->version >= 102 )
+                    if( (
+                        ( get_class($object) == "AntiSpywareProfile" &&
+                            (get_class($object->owner->owner ) == "PanoramaConf"
+                                || get_class($object->owner->owner ) == "DeviceGroup"
+                                || get_class($object->owner->owner ) == "PANConf"
+                                || get_class($object->owner->owner ) == "VirtualSystem")
+                        )
+                            || get_class($object) == "DNSSecurityProfile")
+                        && $object->owner->owner->version >= 102
+                    )
                     {
                         if( $bestPractice )
                         {
@@ -2745,6 +2757,13 @@ SecurityProfileCallContext::$supportedActions['spyware.inline-ml.alert-only-set'
                 elseif( $action_xmlNode->textContent == "alert" )
                 {
                 }
+                elseif( !$object->cloud_inline_analysis_enabled )
+                {
+                    //explanation:
+                    //inline analysis is disabled -> but action is set to block -> not enabled, will not help
+                    $action_xmlNode->textContent = "alert";
+                    $object->additional['mica-engine-spyware-enabled'][$name]['inline-policy-action'] = "alert";
+                }
                 else
                 {
                     $action_other_then_allow_alert = true;
@@ -3349,6 +3368,7 @@ SecurityProfileCallContext::$supportedActions['vulnerability.rules.alert-only-se
                 {
                     foreach ($result as $rule)
                     {
+                        //Todo: bug if threat-name != any
                         if ($rule == "any")
                             continue;
 
@@ -3708,6 +3728,9 @@ SecurityProfileCallContext::$supportedActions['url.alert-only-set'] = array(
         if (get_class($object) !== "URLProfile")
             return null;
 
+        /////////////////
+        $object->url_siteaccess_set_alertonly();
+        /*
         $allow_xmlnode = DH::findFirstElement("allow", $object->xmlroot);
         $alert_xmlnode = DH::findFirstElementOrCreate("alert", $object->xmlroot);
         if( $allow_xmlnode !== False )
@@ -3756,7 +3779,11 @@ SecurityProfileCallContext::$supportedActions['url.alert-only-set'] = array(
             $alert_xmlnode->appendChild($xmlElement);
         }
         $object->allow = array();
+        */
 
+        /////////////////
+        $object->url_credential_set_alertonly();
+        /*
         $credential_xmlnode = DH::findFirstElementOrCreate("credential-enforcement", $object->xmlroot);
         $allow_credential_xmlnode = DH::findFirstElement("allow", $credential_xmlnode);
         if( $allow_credential_xmlnode !== False )
@@ -3806,7 +3833,12 @@ SecurityProfileCallContext::$supportedActions['url.alert-only-set'] = array(
             $alert_credential_xmlnode->appendChild($xmlElement);
         }
         $object->allow_credential = array();
+        */
 
+        ////////////////////////////
+        $object->url_inline_cat_set(true);
+
+        /*
         if( $context->object->owner->owner->version >= 102 )
         {
             $xmlnode = DH::findFirstElementOrCreate("local-inline-cat", $object->xmlroot);
@@ -3815,7 +3847,11 @@ SecurityProfileCallContext::$supportedActions['url.alert-only-set'] = array(
             $xmlnode = DH::findFirstElementOrCreate("cloud-inline-cat", $object->xmlroot);
             $xmlnode->textContent = "yes";
         }
+        */
 
+        ////////////
+        $object->url_credential_mode_alertonly();
+        /*
         $credential_xmlnode = DH::findFirstElementOrCreate("credential-enforcement", $object->xmlroot);
         $mode_credential_xmlnode = DH::findFirstElementOrCreate("mode", $credential_xmlnode);
         $mode_child_xmlnode = DH::firstChildElement($mode_credential_xmlnode);
@@ -3832,6 +3868,75 @@ SecurityProfileCallContext::$supportedActions['url.alert-only-set'] = array(
             $logseverity_credential_xmlnode->textContent = "medium";
             $mode_credential_xmlnode->removeChild($mode_child_xmlnode);
         }
+        */
+
+        if( $context->isAPI )
+        {
+            $object->API_sync();
+        }
+    },
+);
+
+SecurityProfileCallContext::$supportedActions['url.siteaccess.alert-only-set'] = array(
+    'name' => 'url.siteaccess.alert-only-set',
+    'MainFunction' => function (SecurityProfileCallContext $context) {
+        $object = $context->object;
+
+        if (get_class($object) !== "URLProfile")
+            return null;
+
+        $object->url_siteaccess_set_alertonly();
+
+        if( $context->isAPI )
+        {
+            $object->API_sync();
+        }
+    },
+);
+
+SecurityProfileCallContext::$supportedActions['url.credential-enforcement.alert-only-set'] = array(
+    'name' => 'url.credential-enforcement.alert-only-set',
+    'MainFunction' => function (SecurityProfileCallContext $context) {
+        $object = $context->object;
+
+        if (get_class($object) !== "URLProfile")
+            return null;
+
+        $object->url_credential_set_alertonly();
+
+        if( $context->isAPI )
+        {
+            $object->API_sync();
+        }
+    },
+);
+
+SecurityProfileCallContext::$supportedActions['url.credential-enforcement.mode.alert-only-set'] = array(
+    'name' => 'url.credential-enforcement.mode.alert-only-set',
+    'MainFunction' => function (SecurityProfileCallContext $context) {
+        $object = $context->object;
+
+        if (get_class($object) !== "URLProfile")
+            return null;
+
+        $object->url_credential_mode_alertonly();
+
+        if( $context->isAPI )
+        {
+            $object->API_sync();
+        }
+    },
+);
+
+SecurityProfileCallContext::$supportedActions['url.inline-ml.alert-only-set'] = array(
+    'name' => 'url.inline-ml.alert-only-set',
+    'MainFunction' => function (SecurityProfileCallContext $context) {
+        $object = $context->object;
+
+        if (get_class($object) !== "URLProfile")
+            return null;
+
+        $object->url_inline_cat_set(true);
 
         if( $context->isAPI )
         {
@@ -3843,6 +3948,7 @@ SecurityProfileCallContext::$supportedActions['url.alert-only-set'] = array(
 SecurityProfileCallContext::$supportedActions['url.best-practice-set'] = array(
     'name' => 'url.best-practice-set',
     'MainFunction' => function (SecurityProfileCallContext $context) {
+        /** @var URLProfile $object */
         $object = $context->object;
 
         if (get_class($object) !== "URLProfile")
@@ -4224,4 +4330,194 @@ SecurityProfileCallContext::$supportedActions['file-blocking.alert-only-set'] = 
         }
 
     },
+);
+
+
+SecurityProfileCallContext::$supportedActions[] = array(
+    'name' => 'move_from-shared_to_lowest_possible_DG',
+    'MainFunction' => function (SecurityProfileCallContext $context) {
+        $object = $context->object;
+
+        $localLocation = 'shared';
+
+        if( !$object->owner->owner->isPanorama() && !$object->owner->owner->isFirewall() )
+            $localLocation = $object->owner->owner->name();
+
+        if( $localLocation !== 'shared' )
+        {
+            $string = "because original location is NOT shared";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+        }
+
+
+        $reflocations = $object->getReferencesLocation();
+        $rootObject = PH::findRootObjectOrDie($object->owner->owner);
+        $spStore = get_class($object)."Store";
+
+        if( count($reflocations) > 1 )
+        {
+            //calculate foreach reflocation the DG hierarchy array;
+            $data = array();
+            foreach( $reflocations as $reflocation )
+            {
+                /** @var DeviceGroup $findSubSystem */
+                $findSubSystem = $rootObject->findSubSystemByName($reflocation);
+                if( $findSubSystem === null )
+                    derr("cannot find VSYS/DG named '$reflocation'");
+
+                if( get_class($findSubSystem) == "DeviceGroup" )
+                {
+                    $parentDGS = $findSubSystem->parentDeviceGroups();
+                    $parentDGS['shared'] = $findSubSystem->owner;
+
+
+                    $tmp_padding = "";
+
+                    $data[] = array_reverse(array_keys($parentDGS));
+                }
+            }
+
+            $common = array_values(array_intersect(...$data));
+            $lastKey = array_key_last($common);
+            $lastValue = $common[$lastKey];
+
+            PH::print_stdout("       * targetLocation: ".$lastValue);
+
+            $targetLocation = $lastValue;
+            $targetStore = null;
+
+            if( $localLocation == $targetLocation )
+            {
+                $string = "because original and target destinations are the same: $targetLocation";
+                PH::ACTIONstatus( $context, "SKIPPED", $string );
+                return;
+            }
+
+            if( $targetLocation == 'shared' )
+            {
+                $findSubSystem = $rootObject;
+
+                $targetStore = $rootObject->$spStore;
+            }
+            else
+            {
+                $findSubSystem = $rootObject->findSubSystemByName($targetLocation);
+                if( $findSubSystem === null )
+                    derr("cannot find VSYS/DG named '$targetLocation'");
+
+                $targetStore = $findSubSystem->$spStore;
+            }
+        }
+        elseif( count($reflocations) == 1 )
+        {
+            $targetLocation = array_key_last($reflocations);
+
+            PH::print_stdout("       * targetLocation: ".$targetLocation);
+
+            if( $localLocation == $targetLocation )
+            {
+                $string = "because original and target destinations are the same: $targetLocation";
+                PH::ACTIONstatus( $context, "SKIPPED", $string );
+                return;
+            }
+
+            $findSubSystem = $rootObject->findSubSystemByName($targetLocation);
+            if( $findSubSystem === null )
+                derr("cannot find VSYS/DG named '$targetLocation'");
+
+            $targetStore = $findSubSystem->$spStore;
+        }
+        elseif( count($reflocations) == 0 )
+        {
+            $string = "because object is NOT used - can be deleted";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
+
+
+
+        /////////////////////////////////////////////////
+        if( $localLocation == 'shared' )
+        {
+            foreach( $object->getReferences() as $ref )
+            {
+                if( PH::getLocationString($ref) != $targetLocation )
+                {
+                    $skipped = TRUE;
+                    //check if targetLocation is parent of reflocation
+                    if( $findSubSystem->owner->isPanorama() )
+                        $locations = $findSubSystem->childDeviceGroups(TRUE);
+                    elseif( $findSubSystem->owner->isFirewall() )
+                    {
+                        $locations = array();
+                        $skipped = TRUE;
+                    }
+
+                    foreach( $locations as $childloc )
+                    {
+                        if( PH::getLocationString($ref) == $childloc->name() )
+                            $skipped = FALSE;
+                    }
+
+                    if( $skipped )
+                    {
+                        $string = "moving from SHARED to sub-level is NOT possible because of references";
+                        PH::ACTIONstatus( $context, "SKIPPED", $string );
+                        return;
+                    }
+                }
+            }
+        }
+
+        /////////////////////////////////////////////////////////
+        //Todo - move action from there
+
+        $conflictObject = $targetStore->find($object->name(), null, FALSE);
+        if( $conflictObject === null )
+        {
+            $string = "moved, no conflict";
+            PH::ACTIONlog( $context, $string );
+
+            //Todo: update remove and add SP object
+            if( $context->isAPI )
+            {
+                $oldXpath = $object->getXPath();
+                $object->owner->API_removeSecurityProfile($object);
+                $targetStore->API_addSecurityProfile($object);
+
+                $object->API_sync();
+                $context->connector->sendDeleteRequest($oldXpath);
+            }
+            else
+            {
+                $object->owner->removeSecurityProfile($object);
+                $targetStore->addSecurityProfile($object);
+            }
+            return;
+        }
+
+        if( $context->arguments['mode'] == 'skipifconflict' )
+        {
+            $string = "there is an object with same name. Choose another mode to to resolve this conflict";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+
+        $string = "there is a conflict with an object of same name";
+        PH::ACTIONlog( $context, $string );
+
+        if( $object->equals($conflictObject) )
+        {
+            $string = "Removed because target has same content";
+            PH::ACTIONlog( $context, $string );
+            $object->replaceMeGlobally($conflictObject);
+
+            if( $context->isAPI )
+                $object->owner->API_removeSecurityProfile($object);
+            else
+                $object->owner->removeSecurityProfile($object);
+        }
+
+    }
 );
