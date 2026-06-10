@@ -506,7 +506,7 @@ class DNSPolicy
         }
 
 
-        return TRUE;
+        return null;
     }
 
     public function spyware_advanced_dns_security_rule_visibility()
@@ -620,7 +620,7 @@ class DNSPolicy
         }
 
 
-        return TRUE;
+        return null;
     }
 
 
