@@ -1388,7 +1388,7 @@ trait StatCollectorTrait
         $percentageArray_visibility['Antivirus Profiles']['group'] = 'Threat Prevention';
         $percentageArray_visibility['Antivirus Actions']['value'] = $stdoutarray['av visibility actions percentage'];
         $percentageArray_visibility['Antivirus Actions']['group'] = 'Threat Prevention';
-        $percentageArray_visibility['Antivirus InLine ML']['value'] = $stdoutarray['as visibility mica-engine percentage'];
+        $percentageArray_visibility['Antivirus InLine ML']['value'] = $stdoutarray['av visibility mica-engine percentage'];
         $percentageArray_visibility['Antivirus InLine ML']['group'] = 'Threat Prevention';
 
         $percentageArray_visibility['Anti-Spyware Profiles']['value'] = $stdoutarray['as visibility percentage'];
