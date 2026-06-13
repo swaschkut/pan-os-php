@@ -2833,6 +2833,33 @@ RQuery::$defaultFilters['rule']['secprof']['operators']['wf-profile.is.set'] = a
         'input' => 'input/panorama-8.0.xml'
     )
 );
+RQuery::$defaultFilters['rule']['secprof']['operators']['avwf-profile.is.set'] = array(
+    'Function' => function (RuleRQueryContext $context) {
+        $rule = $context->object;
+        if( !$rule->isSecurityRule() && !$rule->isDefaultSecurityRule() )
+            return FALSE;
+
+        if( $rule->securityProfileIsBlank() )
+            return FALSE;
+
+        if( $rule->securityProfileType() == "group" )
+        {
+            /** @var SecurityProfileGroup $tmp_group */
+            $tmp_group =  $rule->owner->owner->securityProfileGroupStore->find( $rule->securityProfileGroup() );
+            if( $tmp_group !== null )
+                $secprof_objects = $tmp_group->securityProfiles();
+        }
+        else
+            $secprof_objects = $rule->securityProfiles();
+
+        return isset($secprof_objects['virus-and-wildfire-analysis']);
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
 RQuery::$defaultFilters['rule']['secprof']['operators']['vuln-profile.is.set'] = array(
     'Function' => function (RuleRQueryContext $context) {
         $rule = $context->object;
@@ -2907,6 +2934,33 @@ RQuery::$defaultFilters['rule']['secprof']['operators']['data-profile.is.set'] =
             $secprof_objects = $rule->securityProfiles();
 
         return isset($secprof_objects['data-filtering']);
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['rule']['secprof']['operators']['dnssec-profile.is.set'] = array(
+    'Function' => function (RuleRQueryContext $context) {
+        $rule = $context->object;
+        if( !$rule->isSecurityRule() && !$rule->isDefaultSecurityRule() )
+            return FALSE;
+
+        if( $rule->securityProfileIsBlank() )
+            return FALSE;
+
+        if( $rule->securityProfileType() == "group" )
+        {
+            /** @var SecurityProfileGroup $tmp_group */
+            $tmp_group =  $rule->owner->owner->securityProfileGroupStore->find( $rule->securityProfileGroup() );
+            if( $tmp_group !== null )
+                $secprof_objects = $tmp_group->securityProfiles();
+        }
+        else
+            $secprof_objects = $rule->securityProfiles();
+
+        return isset($secprof_objects['dns-security']);
     },
     'arg' => FALSE,
     'ci' => array(
@@ -3668,6 +3722,45 @@ RQuery::$defaultFilters['rule']['name']['operators']['has.wrong.characters'] = a
         'fString' => '(%PROP%)',
         'input' => 'input/panorama-8.0.xml'
     )
+);
+
+RQuery::$defaultFilters['rule']['name']['operators']['is.in.csv-report-file'] = array(
+    'Function' => function (RuleRQueryContext $context) {
+        $object = $context->object;
+
+        if( !isset($context->cachedList) )
+        {
+            if( !file_exists($context->value) )
+                derr("cannot find file '{$context->value}'", null, FALSE);
+
+            $text = file_get_contents($context->value);
+
+            if( $text === FALSE )
+                derr("cannot open file '{$context->value}");
+
+            $lines = explode("\n", $text);
+            foreach( $lines as $key => $line )
+            {
+                if($key == 0)
+                    continue;
+
+                $line = trim($line);
+                if( strlen($line) == 0 )
+                    continue;
+                $line_exploded = explode(",", $line);
+                $text = str_replace('"', '', $line_exploded[0]);
+                $list[$text] = TRUE;
+            }
+
+            $context->cachedList = &$list;
+        }
+        else
+            $list = &$context->cachedList;
+
+        return isset($list[$object->name()]);
+    },
+    'arg' => TRUE,
+    'help' => 'returns TRUE if rule name matches one of the names found in text file provided in argument'
 );
 
 //                                              //
@@ -4660,6 +4753,20 @@ RQuery::$defaultFilters['rule']['decryption-certificate']['operators']['has.rege
         return $matching;
     },
     'arg' => TRUE
+);
+
+RQuery::$defaultFilters['rule']['device']['operators']['is.buckbeak'] = array(
+    'Function' => function (RuleRQueryContext $context) {
+        $object = $context->object;
+
+        $rootObject = PH::findRootObjectOrDie($context->object->owner->owner);
+
+        if ( $rootObject->isBuckbeak() )
+            return TRUE;
+
+        return FALSE;
+    },
+    'arg' => FALSE
 );
 // </editor-fold>
 

@@ -792,6 +792,34 @@ class SecurityRule extends RuleWithUserID
         return TRUE;
     }
 
+    public function setSecProf_AVWF($newAVprof)
+    {
+        $this->secproftype = 'profile';
+        $this->secprofgroup = null;
+        if( $newAVprof == null )
+            unset($this->secprofProfiles_obj['virus-and-wildfire-analysis']);
+        else
+            $this->secprofProfiles_obj['virus-and-wildfire-analysis'] = $newAVprof;
+
+        $this->rewriteSecProfXML();
+
+        return TRUE;
+    }
+
+    public function setSecProf_DNSSEC($newAVprof)
+    {
+        $this->secproftype = 'profile';
+        $this->secprofgroup = null;
+        if( $newAVprof == null )
+            unset($this->secprofProfiles_obj['dns-security']);
+        else
+            $this->secprofProfiles_obj['dns-security'] = $newAVprof;
+
+        $this->rewriteSecProfXML();
+
+        return TRUE;
+    }
+
     public function rewriteSecProfXML()
     {
 
@@ -1400,7 +1428,8 @@ class SecurityRule extends RuleWithUserID
             $dvq = '(' . array_to_devicequery($devices) . ')';
         }
 
-        $query = 'type=report&reporttype=dynamic&reportname=custom-dynamic-report&async=yes&cmd=<type>'
+        #$query = 'type=report&reporttype=dynamic&reportname=custom-dynamic-report&async=yes&cmd=<type>'
+        $query = ''
             . '<' . $type . '><aggregate-by><member>app</member></aggregate-by>'
             . '<values><member>sessions</member></values></' . $type . '></type><period>' . $timePeriod . '</period>'
             . '<topn>500</topn><topm>10</topm><caption>untitled</caption>'
@@ -1408,7 +1437,14 @@ class SecurityRule extends RuleWithUserID
 
         //print "Query: $query\n";
 
-        $ret = $con->getReport($query);
+        $apiArgs = Array();
+        $apiArgs['type'] = 'report';
+        $apiArgs['reporttype'] = 'dynamic';
+        $apiArgs['reportname'] = 'custom-dynamic-report';
+        $apiArgs['async'] = 'yes';
+        $apiArgs['cmd'] = $query;
+
+        $ret = $con->getReport($apiArgs);
 
         return $ret;
     }
@@ -1467,16 +1503,24 @@ class SecurityRule extends RuleWithUserID
         if( !$fastMode )
             $repeatOrCount = 'repeatcnt';
 
-        $query = 'type=report&reporttype=dynamic&reportname=custom-dynamic-report&async=yes&cmd=<type>'
-            . "<{$type}>\n<aggregate-by><member>container-of-app</member><member>app</member></aggregate-by>\n"
+        #$query = 'type=report&reporttype=dynamic&reportname=custom-dynamic-report&async=yes&cmd=<type>'
+        $query = ''
+            . "<{$type}><aggregate-by><member>container-of-app</member><member>app</member></aggregate-by>"
             . "<values><member>{$repeatOrCount}</member></values></{$type}></type><period>{$timePeriod}</period>"
-            . "<topn>{$limit}</topn>\n<topm>50</topm>\n<caption>untitled</caption>\n"
-            . "<query>(rule eq '{$this->name}') {$dvq} {$excludedAppsString}</query>\n"
-            . "<runnow>yes</runnow>\n";
+            . "<topn>{$limit}</topn><topm>50</topm><caption>untitled</caption>"
+            . "<query>(rule eq '{$this->name}') {$dvq} {$excludedAppsString}</query>"
+            . "<runnow>yes</runnow>";
 
         //print "Query: $query\n";
 
-        $ret = $con->getReport($query);
+        $apiArgs = Array();
+        $apiArgs['type'] = 'report';
+        $apiArgs['reporttype'] = 'dynamic';
+        $apiArgs['reportname'] = 'custom-dynamic-report';
+        $apiArgs['async'] = 'yes';
+        $apiArgs['cmd'] = $query;
+
+        $ret = $con->getReport($apiArgs);
 
         return $ret;
     }

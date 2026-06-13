@@ -133,6 +133,7 @@ class DNSSecurityProfile extends SecurityProfile2
         if( $this->spyware_dnslist_best_practice()
             #this is DNS security
             && $this->spyware_dns_security_best_practice()
+            && $this->spyware_advanced_dns_security_best_practice()
         )
             return TRUE;
         else
@@ -144,6 +145,7 @@ class DNSSecurityProfile extends SecurityProfile2
         if( $this->spyware_dnslist_visibility()
             #this is DNS Security
             && $this->spyware_dns_security_visibility()
+            && $this->spyware_advanced_dns_security_visibility()
         )
             return TRUE;
         else

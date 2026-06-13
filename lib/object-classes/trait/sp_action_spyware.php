@@ -1008,6 +1008,49 @@ trait sp_action_spyware
         return null;
     }
 
+    public function spyware_advanced_dns_security_best_practice(): ?bool
+    {
+        if( $this->owner->owner->version >= 102 )
+        {
+            $bp_set = false;
+            if( isset($this->additional['botnet-domain']['advanced-dns-security-categories']) )
+            {
+                foreach ($this->additional['botnet-domain']['advanced-dns-security-categories'] as $name => $value)
+                {
+                    /** @var DNSPolicy $value */
+                    if ($value->spyware_advanced_dns_security_rule_bestpractice())
+                        $bp_set = true;
+                    else
+                        return false;
+                }
+            }
+            return $bp_set;
+        }
+        return null;
+    }
+
+    public function spyware_advanced_dns_security_visibility(): ?bool
+    {
+        if( $this->owner->owner->version >= 102 )
+        {
+            $bp_set = false;
+            if( isset($this->additional['botnet-domain']['advanced-dns-security-categories']) )
+            {
+                foreach ($this->additional['botnet-domain']['advanced-dns-security-categories'] as $name => $value)
+                {
+                    /** @var DNSPolicy $value */
+                    if ($value->spyware_advanced_dns_security_rule_visibility())
+                        $bp_set = true;
+                    else
+                        return false;
+                }
+            }
+
+            return $bp_set;
+        }
+        return null;
+    }
+
     public function spyware_dns_security_adoption(): ?bool
     {
         if( $this->owner->owner->version >= 102 )
@@ -1032,6 +1075,7 @@ trait sp_action_spyware
                     && $this->spyware_dnslist_best_practice()
                     #this is DNS security
                     && $this->spyware_dns_security_best_practice()
+                    && $this->spyware_advanced_dns_security_best_practice()
 
                 )
                     return TRUE;
@@ -1062,7 +1106,8 @@ trait sp_action_spyware
 
                     #&& $this->spyware_dnslist_best_practice()
                     #this is DNS security
-                    #&& $this->spyware_dns_security_best_practice()
+                    && $this->spyware_dns_security_best_practice()
+                    && $this->spyware_advanced_dns_security_best_practice()
 
                 )
                     return TRUE;
@@ -1099,7 +1144,8 @@ trait sp_action_spyware
                 if( $this->spyware_rules_visibility() && $this->cloud_inline_analysis_visibility($this->owner->bp_json_file)
                     && $this->spyware_dnslist_visibility()
                     #this is DNS Security
-                    #&& $this->spyware_dns_security_visibility()
+                    && $this->spyware_dns_security_visibility()
+                    && $this->spyware_advanced_dns_security_visibility()
                 )
                     return TRUE;
                 else
@@ -1123,9 +1169,10 @@ trait sp_action_spyware
             if( $this->owner->owner->version >= 102 )
             {
                 if( $this->spyware_rules_visibility() && $this->cloud_inline_analysis_visibility($this->owner->bp_json_file)
-                    #&& $this->spyware_dnslist_visibility()
+                    && $this->spyware_dnslist_visibility()
                     #this is DNS Security
-                    #&& $this->spyware_dns_security_visibility()
+                    && $this->spyware_dns_security_visibility()
+                    && $this->spyware_advanced_dns_security_visibility()
                 )
                     return TRUE;
                 else

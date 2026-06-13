@@ -377,8 +377,16 @@ class DefaultSecurityRule extends Rule
 
     public function securityProfiles_obj()
     {
-        if( $this->secproftype != 'profile' )
+        if( $this->secproftype == 'none' )
             return array();
+
+        if( $this->secproftype != 'profile' )
+        {
+            $secprofgroup_obj = $this->owner->owner->securityProfileGroupStore->find( $this->secprofgroup );
+
+            if( $secprofgroup_obj != null )
+                return $secprofgroup_obj->secprofProfiles_obj;
+        }
 
         return $this->secprofProfiles_obj;
     }

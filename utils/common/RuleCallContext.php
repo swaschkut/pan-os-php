@@ -1757,6 +1757,7 @@ class RuleCallContext extends CallContext
 
     public function get_SP_name_and_display( $rule, $profType, $wrap)
     {
+        /** @var SecurityRule|DefaultSecurityRule $secProfArray */
         $secProfArray = $rule->securityProfiles_obj();
 
         if( isset($secProfArray[$profType]) )

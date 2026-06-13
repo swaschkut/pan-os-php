@@ -2968,6 +2968,22 @@ RuleCallContext::$supportedActions[] = array(
             else
                 $ret = $rule->setSecProf_Wildfire($profName);
         }
+        elseif( $type == 'virus-and-wildfire' )
+        {
+            $profName_obj = $rule->owner->owner->VirusAndWildfireProfileStore->find($profName);
+            if( $profName_obj !== null )
+                $ret = $rule->setSecProf_AVWF($profName_obj);
+            else
+                $ret = $rule->setSecProf_AVWF($profName);
+        }
+        elseif( $type == 'dns-security' )
+        {
+            $profName_obj = $rule->owner->owner->DNSSecurityProfileStore->find($profName);
+            if( $profName_obj !== null )
+                $ret = $rule->setSecProf_DNSSEC($profName_obj);
+            else
+                $ret = $rule->setSecProf_DNSSEC($profName);
+        }
         else
             derr("unsupported profile type '{$type}'");
 
@@ -2990,7 +3006,7 @@ RuleCallContext::$supportedActions[] = array(
 
     },
     'args' => array('type' => array('type' => 'string', 'default' => '*nodefault*',
-        'choices' => array('virus', 'vulnerability', 'url-filtering', 'data-filtering', 'file-blocking', 'spyware', 'wildfire')),
+        'choices' => array('virus', 'vulnerability', 'url-filtering', 'data-filtering', 'file-blocking', 'spyware', 'wildfire', "virus-and-wildfire", "dns-security")),
         'profName' => array('type' => 'string', 'default' => '*nodefault*'))
 );
 RuleCallContext::$supportedActions[] = array(
@@ -3030,6 +3046,10 @@ RuleCallContext::$supportedActions[] = array(
             $ret = $rule->setSecProf_Spyware($profName);
         elseif( $type == 'wildfire' )
             $ret = $rule->setSecProf_Wildfire($profName);
+        elseif( $type == 'virus-and-wildfire' )
+            $ret = $rule->setSecProf_AVWF($profName);
+        elseif( $type == 'dns-security' )
+            $ret = $rule->setSecProf_DNSSEC($profName);
         else
             derr("unsupported profile type '{$type}'");
 
@@ -3055,7 +3075,7 @@ RuleCallContext::$supportedActions[] = array(
 
     },
     'args' => array('type' => array('type' => 'string', 'default' => 'any',
-        'choices' => array('any', 'virus', 'vulnerability', 'url-filtering', 'data-filtering', 'file-blocking', 'spyware', 'wildfire'))
+        'choices' => array('any', 'virus', 'vulnerability', 'url-filtering', 'data-filtering', 'file-blocking', 'spyware', 'wildfire', "virus-and-wildfire", "dns-security"))
     )
 );
 RuleCallContext::$supportedActions[] = array(
@@ -5023,7 +5043,7 @@ RuleCallContext::$supportedActions[] = array(
 
         if( is_object( $rule ) )
         {
-            if( $rule->isSecurityRule() )
+            if( $rule->isSecurityRule() || $rule->isDefaultSecurityRule())
                 $context->arguments['tmp_secrule'] = true;
             elseif( $rule->isNatRule() )
                 $context->arguments['tmp_natrule'] = true;

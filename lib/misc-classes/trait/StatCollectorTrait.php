@@ -1388,7 +1388,7 @@ trait StatCollectorTrait
         $percentageArray_visibility['Antivirus Profiles']['group'] = 'Threat Prevention';
         $percentageArray_visibility['Antivirus Actions']['value'] = $stdoutarray['av visibility actions percentage'];
         $percentageArray_visibility['Antivirus Actions']['group'] = 'Threat Prevention';
-        $percentageArray_visibility['Antivirus InLine ML']['value'] = $stdoutarray['as visibility mica-engine percentage'];
+        $percentageArray_visibility['Antivirus InLine ML']['value'] = $stdoutarray['av visibility mica-engine percentage'];
         $percentageArray_visibility['Antivirus InLine ML']['group'] = 'Threat Prevention';
 
         $percentageArray_visibility['Anti-Spyware Profiles']['value'] = $stdoutarray['as visibility percentage'];
@@ -1559,5 +1559,54 @@ trait StatCollectorTrait
         }
 
         echo $tbl->getTable();
+    }
+
+    public function &API_getThreats_BP_changeplan($timePeriod = 'last-30-days', $fastMode = TRUE, $limit = 50)
+    {
+        $con = findConnectorOrDie($this);
+
+        $parentClass = get_class($this);
+
+        if( $fastMode )
+            $type = 'panorama-thsum';
+        else
+            $type = 'panorama-threat';
+
+        if( $parentClass == 'PANConf' )
+        {
+            if( $fastMode )
+                $type = 'thsum';
+            else
+                $type = 'threat';
+        }
+
+
+        $query = '<type>'
+            . "<{$type}>"
+            . "<sortby>count</sortby><group-by>rule</group-by>"
+            . "<aggregate-by>"
+            . "<member>action</member>"
+            . "</aggregate-by>"
+            . "<values><member>count</member></values>"
+            . "</{$type}></type>"
+            . "<period>{$timePeriod}</period>"
+            . "<topn>{$limit}</topn><topm>500</topm>"
+            . "<caption>Threats-sorted_by_rule-ONLY</caption>"
+            . "<description>Threat Reports</description>"
+            . "<query>((action eq alert) or (action eq allow)) and (threat-type neq scan) and (severity neq informational) and (severity neq low) and (name-of-threatid neq 0)  and (category-of-threatid neq 'N/A')</query>"
+            . "<runnow>yes</runnow>";
+
+        $apiArgs = Array();
+        $apiArgs['type'] = 'report';
+        $apiArgs['reporttype'] = 'dynamic';
+        $apiArgs['reportname'] = 'custom-dynamic-report';
+        $apiArgs['async'] = 'yes';
+        $apiArgs['cmd'] = $query;
+
+        //print "Query: $query\n";
+
+        $ret = $con->getReport($apiArgs);
+
+        return $ret;
     }
 }

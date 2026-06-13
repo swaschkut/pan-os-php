@@ -39,11 +39,73 @@ class ZoneProtectionProfile
     public $flood = array();
     public $scan = array();
 
+    /*
     public $discard_ip_spoof = false;
     public $discard_malformed_option = false;
     public $remove_tcp_timestamp = false;
     public $strip_tcp_fast_open_and_data = false;
     public $strip_mptcp_option = false;
+*/
+    public ?string $discard_ip_spoof = null;
+    public ?string $discard_malformed_option = null;
+    public ?string $remove_tcp_timestamp = null;
+    public ?string $strip_tcp_fast_open_and_data = null;
+    public ?string $strip_mptcp_option = null;
+
+    public ?string $discard_ip_frag = null;
+    public ?string $strict_ip_check = null;
+    public ?string $discard_strict_source_routing = null;
+    public ?string $discard_security = null;
+    public ?string $discard_loose_source_routing = null;
+    public ?string $discard_stream_id = null;
+    public ?string $discard_timestamp = null;
+    public ?string $discard_unknown_option = null;
+    public ?string $discard_record_route = null;
+    public ?string $discard_tcp_split_handshake = null;
+    public ?string $discard_overlapping_tcp_segment_mismatch = null;
+    public ?string $discard_icmp_ping_zero_id = null;
+    public ?string $discard_icmp_frag = null;
+    public ?string $discard_icmp_large_packet = null;
+    public ?string $suppress_icmp_timeexceeded = null;
+    public ?string $suppress_icmp_needfrag = null;
+    public ?string $discard_icmp_error = null;
+
+    // --- Missing TCP Drop Properties ---
+    public ?string $discard_tcp_syn_with_data = null;
+    public ?string $discard_tcp_synack_with_data = null;
+    public ?string $tcp_reject_non_syn = null;
+    public ?string $asymmetric_path = null;
+
+// --- Missing IPv6 Drop Properties ---
+    public ?string $ipv6_routing_header_0 = null;
+    public ?string $ipv6_routing_header_1 = null;
+    public ?string $ipv6_routing_header_3 = null;
+    public ?string $ipv6_routing_header_4_252 = null;
+    public ?string $ipv6_routing_header_253 = null;
+    public ?string $ipv6_routing_header_254 = null;
+    public ?string $ipv6_routing_header_255 = null;
+    public ?string $ipv6_ipv4_compatible_address = null;
+    public ?string $ipv6_options_invalid_discard = null;
+    public ?string $ipv6_reserved_field_discard = null;
+    public ?string $ipv6_anycast_source = null;
+    public ?string $ipv6_needless_fragment_hdr = null;
+    public ?string $ipv6_icmp_too_big_discard = null;
+
+// --- Missing IPv6 Filter Ext Hdr Properties ---
+    public ?string $ipv6_hop_by_hop_hdr = null;
+    public ?string $ipv6_routing_hdr = null;
+    public ?string $ipv6_dest_option_hdr = null;
+
+// --- Missing ICMPv6 Drop Properties ---
+    public ?string $icmpv6_dest_unreach = null;
+    public ?string $icmpv6_pkt_too_big = null;
+    public ?string $icmpv6_time_exceeded = null;
+    public ?string $icmpv6_param_problem = null;
+    public ?string $icmpv6_redirect = null;
+
+
+    public $xmlMap = array();
+
 
     /**
      * ZoneProtectionProfile constructor.
@@ -118,6 +180,8 @@ class ZoneProtectionProfile
         $scan_Node = DH::findFirstElement('scan', $xml);
         if( $scan_Node !== FALSE )
         {
+            //Todo: on parts which are enabled are visible in the XML
+            // add default config to be able to compare if something is disabled
             foreach( $scan_Node->childNodes as $scan_entry_Node )
             {
                 if( $scan_entry_Node->nodeType != 1 )
@@ -185,48 +249,104 @@ class ZoneProtectionProfile
         }
 
 
-        /*
-            <discard-ip-spoof>yes</discard-ip-spoof>
-            <discard-malformed-option>yes</discard-malformed-option>
-            <remove-tcp-timestamp>yes</remove-tcp-timestamp>
-            <strip-tcp-fast-open-and-data>no</strip-tcp-fast-open-and-data>
-            <strip-mptcp-option>global</strip-mptcp-option>
-        */
-        $discard_ip_spoof_Node = DH::findFirstElement('discard-ip-spoof', $xml);
-        if( $discard_ip_spoof_Node !== FALSE )
-            $this->discard_ip_spoof = $discard_ip_spoof_Node->textContent;
-        $discard_malformed_option_Node = DH::findFirstElement('discard-malformed-option', $xml);
-        if( $discard_malformed_option_Node !== FALSE )
-            $this->discard_malformed_option = $discard_malformed_option_Node->textContent;
-        $remove_tcp_timestamp_Node = DH::findFirstElement('remove-tcp-timestamp', $xml);
-        if( $remove_tcp_timestamp_Node !== FALSE )
-            $this->remove_tcp_timestamp = $remove_tcp_timestamp_Node->textContent;
-        $strip_tcp_fast_open_Node = DH::findFirstElement('strip-tcp-fast-open-and-data', $xml);
-        if( $strip_tcp_fast_open_Node !== FALSE )
-            $this->strip_tcp_fast_open_and_data = $strip_tcp_fast_open_Node->textContent;
-        $strip_mptcp_option_Node = DH::findFirstElement('strip-mptcp-option', $xml);
-        if( $strip_mptcp_option_Node !== FALSE )
-            $this->strip_mptcp_option = $strip_mptcp_option_Node->textContent;
-        //Todo: missing - swaschkut 20250714
-        /*
-         <discard-ip-frag>yes</discard-ip-frag>
-         <strict-ip-check>yes</strict-ip-check>
-         <discard-strict-source-routing>yes</discard-strict-source-routing>
-         <discard-security>yes</discard-security>
-         <discard-loose-source-routing>yes</discard-loose-source-routing>
-         <discard-stream-id>yes</discard-stream-id>
-         <discard-timestamp>yes</discard-timestamp>
-         <discard-unknown-option>yes</discard-unknown-option>
-         <discard-record-route>yes</discard-record-route>
-         <discard-tcp-split-handshake>yes</discard-tcp-split-handshake>
-         <discard-overlapping-tcp-segment-mismatch>yes</discard-overlapping-tcp-segment-mismatch>
-         <discard-icmp-ping-zero-id>yes</discard-icmp-ping-zero-id>
-         <discard-icmp-frag>yes</discard-icmp-frag>
-         <discard-icmp-large-packet>yes</discard-icmp-large-packet>
-         <suppress-icmp-timeexceeded>yes</suppress-icmp-timeexceeded>
-         <suppress-icmp-needfrag>yes</suppress-icmp-needfrag>
-         <discard-icmp-error>yes</discard-icmp-error>
-         */
+        $this->xmlMap = [
+            // --- IP DROP ---
+            ['tag' => 'discard-ip-spoof', 'prop' => 'discard_ip_spoof', 'parents' => [], 'section' => 'IP Drop'],
+            ['tag' => 'strict-ip-check', 'prop' => 'strict_ip_check', 'parents' => [], 'section' => 'IP Drop'],
+            ['tag' => 'discard-ip-frag', 'prop' => 'discard_ip_frag', 'parents' => [], 'section' => 'IP Drop'],
+            ['tag' => 'discard-strict-source-routing', 'prop' => 'discard_strict_source_routing', 'parents' => [], 'section' => 'IP Drop'],
+            ['tag' => 'discard-loose-source-routing', 'prop' => 'discard_loose_source_routing', 'parents' => [], 'section' => 'IP Drop'],
+            ['tag' => 'discard-timestamp', 'prop' => 'discard_timestamp', 'parents' => [], 'section' => 'IP Drop'],
+            ['tag' => 'discard-record-route', 'prop' => 'discard_record_route', 'parents' => [], 'section' => 'IP Drop'],
+            ['tag' => 'discard-security', 'prop' => 'discard_security', 'parents' => [], 'section' => 'IP Drop'],
+            ['tag' => 'discard-stream-id', 'prop' => 'discard_stream_id', 'parents' => [], 'section' => 'IP Drop'],
+            ['tag' => 'discard-unknown-option', 'prop' => 'discard_unknown_option', 'parents' => [], 'section' => 'IP Drop'],
+            ['tag' => 'discard-malformed-option', 'prop' => 'discard_malformed_option', 'parents' => [], 'section' => 'IP Drop'],
+
+            // --- TCP DROP ---
+            ['tag' => 'discard-overlapping-tcp-segment-mismatch', 'prop' => 'discard_overlapping_tcp_segment_mismatch', 'parents' => [], 'section' => 'TCP Drop'],
+            ['tag' => 'discard-tcp-split-handshake', 'prop' => 'discard_tcp_split_handshake', 'parents' => [], 'section' => 'TCP Drop'],
+            ['tag' => 'discard-tcp-syn-with-data', 'prop' => 'discard_tcp_syn_with_data', 'parents' => [], 'section' => 'TCP Drop'],
+            ['tag' => 'discard-tcp-synack-with-data', 'prop' => 'discard_tcp_synack_with_data', 'parents' => [], 'section' => 'TCP Drop'],
+            ['tag' => 'tcp-reject-non-syn', 'prop' => 'tcp_reject_non_syn', 'parents' => [], 'section' => 'TCP Drop'],
+            ['tag' => 'asymmetric-path', 'prop' => 'asymmetric_path', 'parents' => [], 'section' => 'TCP Drop'],
+            ['tag' => 'remove-tcp-timestamp', 'prop' => 'remove_tcp_timestamp', 'parents' => [], 'section' => 'TCP Drop'],
+            ['tag' => 'strip-tcp-fast-open-and-data', 'prop' => 'strip_tcp_fast_open_and_data', 'parents' => [], 'section' => 'TCP Drop'],
+            ['tag' => 'strip-mptcp-option', 'prop' => 'strip_mptcp_option', 'parents' => [], 'section' => 'TCP Drop'],
+
+            // --- ICMP DROP ---
+            ['tag' => 'discard-icmp-ping-zero-id', 'prop' => 'discard_icmp_ping_zero_id', 'parents' => [], 'section' => 'ICMP Drop'],
+            ['tag' => 'discard-icmp-frag', 'prop' => 'discard_icmp_frag', 'parents' => [], 'section' => 'ICMP Drop'],
+            ['tag' => 'discard-icmp-large-packet', 'prop' => 'discard_icmp_large_packet', 'parents' => [], 'section' => 'ICMP Drop'],
+            ['tag' => 'discard-icmp-error', 'prop' => 'discard_icmp_error', 'parents' => [], 'section' => 'ICMP Drop'],
+            ['tag' => 'suppress-icmp-timeexceeded', 'prop' => 'suppress_icmp_timeexceeded', 'parents' => [], 'section' => 'ICMP Drop'],
+            ['tag' => 'suppress-icmp-needfrag', 'prop' => 'suppress_icmp_needfrag', 'parents' => [], 'section' => 'ICMP Drop'],
+
+            // --- IPV6 DROP ---
+            ['tag' => 'routing-header-0', 'prop' => 'ipv6_routing_header_0', 'parents' => ['ipv6'], 'section' => 'IPv6 Drop'],
+            ['tag' => 'routing-header-1', 'prop' => 'ipv6_routing_header_1', 'parents' => ['ipv6'], 'section' => 'IPv6 Drop'],
+            ['tag' => 'routing-header-3', 'prop' => 'ipv6_routing_header_3', 'parents' => ['ipv6'], 'section' => 'IPv6 Drop'],
+            ['tag' => 'routing-header-4-252', 'prop' => 'ipv6_routing_header_4_252', 'parents' => ['ipv6'], 'section' => 'IPv6 Drop'],
+            ['tag' => 'routing-header-253', 'prop' => 'ipv6_routing_header_253', 'parents' => ['ipv6'], 'section' => 'IPv6 Drop'],
+            ['tag' => 'routing-header-254', 'prop' => 'ipv6_routing_header_254', 'parents' => ['ipv6'], 'section' => 'IPv6 Drop'],
+            ['tag' => 'routing-header-255', 'prop' => 'ipv6_routing_header_255', 'parents' => ['ipv6'], 'section' => 'IPv6 Drop'],
+            ['tag' => 'ipv4-compatible-address', 'prop' => 'ipv6_ipv4_compatible_address', 'parents' => ['ipv6'], 'section' => 'IPv6 Drop'],
+            ['tag' => 'options-invalid-ipv6-discard', 'prop' => 'ipv6_options_invalid_discard', 'parents' => ['ipv6'], 'section' => 'IPv6 Drop'],
+            ['tag' => 'reserved-field-set-discard', 'prop' => 'ipv6_reserved_field_discard', 'parents' => ['ipv6'], 'section' => 'IPv6 Drop'],
+            ['tag' => 'anycast-source', 'prop' => 'ipv6_anycast_source', 'parents' => ['ipv6'], 'section' => 'IPv6 Drop'],
+            ['tag' => 'needless-fragment-hdr', 'prop' => 'ipv6_needless_fragment_hdr', 'parents' => ['ipv6'], 'section' => 'IPv6 Drop'],
+            ['tag' => 'icmpv6-too-big-small-mtu-discard', 'prop' => 'ipv6_icmp_too_big_discard', 'parents' => ['ipv6'], 'section' => 'IPv6 Drop'],
+
+            // --- IPV6 FILTER HDR ---
+            ['tag' => 'hop-by-hop-hdr', 'prop' => 'ipv6_hop_by_hop_hdr', 'parents' => ['ipv6', 'filter-ext-hdr'], 'section' => 'IPv6 filter HDR'],
+            ['tag' => 'routing-hdr', 'prop' => 'ipv6_routing_hdr', 'parents' => ['ipv6', 'filter-ext-hdr'], 'section' => 'IPv6 filter HDR'],
+            ['tag' => 'dest-option-hdr', 'prop' => 'ipv6_dest_option_hdr', 'parents' => ['ipv6', 'filter-ext-hdr'], 'section' => 'IPv6 filter HDR'],
+
+            // --- ICMPV6 ---
+            ['tag' => 'dest-unreach', 'prop' => 'icmpv6_dest_unreach', 'parents' => ['ipv6', 'ignore-inv-pkt'], 'section' => 'ICMPv6'],
+            ['tag' => 'pkt-too-big', 'prop' => 'icmpv6_pkt_too_big', 'parents' => ['ipv6', 'ignore-inv-pkt'], 'section' => 'ICMPv6'],
+            ['tag' => 'time-exceeded', 'prop' => 'icmpv6_time_exceeded', 'parents' => ['ipv6', 'ignore-inv-pkt'], 'section' => 'ICMPv6'],
+            ['tag' => 'param-problem', 'prop' => 'icmpv6_param_problem', 'parents' => ['ipv6', 'ignore-inv-pkt'], 'section' => 'ICMPv6'],
+            ['tag' => 'redirect', 'prop' => 'icmpv6_redirect', 'parents' => ['ipv6', 'ignore-inv-pkt'], 'section' => 'ICMPv6'],
+        ];
+// Cache parent paths as strings (e.g., "ipv6/filter-ext-hdr") to avoid repeat lookups
+        $cachedContexts = [];
+
+        foreach ($this->xmlMap as $item)
+        {
+            $context = $xml; // Default search space is the main XML root
+            $parents = $item['parents'];
+
+            if (!empty($parents)) {
+                $pathKey = implode('/', $parents); // Creates a unique key like "ipv6/filter-ext-hdr"
+
+                if (!isset($cachedContexts[$pathKey])) {
+                    // Drill down level by level dynamically
+                    $currentContext = $xml;
+                    foreach ($parents as $parentTag) {
+                        $currentContext = DH::findFirstElement($parentTag, $currentContext);
+                        if ($currentContext === false) {
+                            break; // One of the parent wrappers is missing entirely
+                        }
+                    }
+                    $cachedContexts[$pathKey] = $currentContext;
+                }
+
+                // If the path successfully resolved, update our search context
+                if ($cachedContexts[$pathKey] !== false) {
+                    $context = $cachedContexts[$pathKey];
+                } else {
+                    continue; // Path is broken in this XML config, skip searching for the leaf child
+                }
+            }
+
+            // Safely look up the exact child tag within its true parent block
+            $node = DH::findFirstElement($item['tag'], $context);
+            if ($node !== false) {
+                $this->{$item['prop']} = $node->textContent;
+            }
+        }
+
 
 
         /*

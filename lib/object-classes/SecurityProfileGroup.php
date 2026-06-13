@@ -433,11 +433,37 @@ class SecurityProfileGroup
         else
         {
             $newAVWFproftxt = $newAVWFprof;
-            $newAVWFprof = $this->owner->owner->AntiVirusProfileStore->find( $newAVWFproftxt );
+            $newAVWFprof = $this->owner->owner->VirusAndWildfireProfileStore->find( $newAVWFproftxt );
             if( $newAVWFprof !== null )
                 $this->secprofProfiles_obj['virus-and-wildfire-analysis'] = $newAVWFprof;
             else
                 $this->secprofiles['virus-and-wildfire-analysis'] = $newAVWFproftxt;
+        }
+
+
+        $this->rewriteXML();
+
+        return TRUE;
+    }
+    public function setSecProf_DNSSEC($newDNSSECprof)
+    {
+        if( $newDNSSECprof == null )
+        {
+            unset($this->secprofiles['dns-security']);
+            unset($this->secprofProfiles_obj['dns-security']);
+        }
+        else
+        {
+            $newDNSSEcproftxt = $newDNSSECprof;
+            $newDNSSECprof = $this->owner->owner->DNSSecurityProfileStore->find( $newDNSSEcproftxt );
+            if( $newDNSSECprof !== null )
+                $this->secprofProfiles_obj['dns-security'] = $newDNSSECprof;
+            else
+            {
+                PH::print_stdout("object DNSSECURITY not found");
+                $this->secprofiles['dns-security'] = $newDNSSEcproftxt;
+            }
+
         }
 
 

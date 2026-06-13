@@ -592,14 +592,14 @@ class DIFF extends UTIL
 
 
 
-    public function runDiff( $doc1, $doc2 )
+    public function runDiff( $doc1, $doc2, $multiVSYS = false )
     {
         if( empty( $this->filters ) )
         {
             $doc1Root = DH::firstChildElement($doc1);
             $doc2Root = DH::firstChildElement($doc2);
 
-            $this->compareElements($doc1Root, $doc2Root);
+            $this->compareElements($doc1Root, $doc2Root, null, $multiVSYS);
         }
         else
         {
@@ -653,7 +653,7 @@ class DIFF extends UTIL
                     PH::print_stdout( "doc2Root : false" );
                 }
 
-                $this->compareElements($doc1Root, $doc2Root, $filter);
+                $this->compareElements($doc1Root, $doc2Root, $filter, $multiVSYS);
             }
         }
     }
@@ -705,7 +705,7 @@ class DIFF extends UTIL
      * @param DOMElement $el1
      * @param DOMElement $el2
      */
-    function compareElements($el1, $el2, $xpath = null)
+    function compareElements($el1, $el2, $xpath = null, $multiVSYS = false)
     {
         //PH::print_stdout( "argument XPATH: ".$xpath );
         if( $xpath == null )
@@ -799,7 +799,7 @@ class DIFF extends UTIL
                 PH::$JSON_TMP = array();
 
                 //same xpath different content
-                $this->displayDIFF( $xpath, $text, array( $el2 ), array( $el1 ), array( $el1 ) );
+                $this->displayDIFF( $xpath, $text, array( $el2 ), array( $el1 ), array( $el1 ), $multiVSYS );
                 $this->failStatus_diff = TRUE;
             }
             return;
@@ -934,7 +934,7 @@ class DIFF extends UTIL
             {
                 if( is_object($el1BasicNode) && is_object($el2BasicNode) )
                 {
-                    $this->compareElements($el1BasicNode, $el2BasicNode);
+                    $this->compareElements($el1BasicNode, $el2BasicNode, null, $multiVSYS);
                 }
                 else
                 {
@@ -1052,7 +1052,7 @@ class DIFF extends UTIL
                 {
                     $node2 = $el2NameSorted[$nodeName];
 
-                    $this->compareElements($node1, $node2);
+                    $this->compareElements($node1, $node2, null, $multiVSYS);
                 }
             }
 
@@ -1120,10 +1120,10 @@ class DIFF extends UTIL
 
         PH::$JSON_TMP = array();
 
-        $this->displayDIFF( $xpath, $text, $plus, $minus );
+        $this->displayDIFF( $xpath, $text, $plus, $minus, array(), $multiVSYS );
     }
 
-    public function displayDIFF( $xpath, $text, $plus, $minus, $edit = array() )
+    public function displayDIFF( $xpath, $text, $plus, $minus, $edit = array(), $multiVSYS = false )
     {
         if( $text != '' )
         {
@@ -1138,7 +1138,8 @@ class DIFF extends UTIL
                     }
 
 
-                $multiVSYS = FALSE;
+                //use VARIABLE
+                #$multiVSYS = FALSE;
                 //Todo: bug configType not working here
                 if( $this->debugAPI )
                     PH::print_stdout("configtype: '".$this->configType);

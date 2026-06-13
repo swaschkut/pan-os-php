@@ -1,6 +1,29 @@
 CHANGELOG
 
-2.1.55
+2.1.56
+UTIL:
+* type=rule | introduce 'filter=(name is.in.csv-report-file XYZ)'
+* type=device | new actions=threat-report-bp-change-plan:FILENAME.csv in=api://MGTM-IP
+* type=zone-protection-profile actions=display/exporttoexcel | extend with additional fields
+* type=device actions=sp_spg-create-alert-only-BP | extend for SCM
+* type=rule/securityprofile/securityprofilegroup | introduce 'filter=(device is.buckbeack)' | better validation for a combined playbook for Panorama / SCM
+* type=rule | extend 'actions=securityProfile-Profile-Set:virus-and-wildfire/dns-security | to cover SCM
+* type=rule/securityprofile/securityprofilegroup | extend filters to use for SCM profiles avwf/dnssec
+* type=securityprofile/securityprofilegroup | extend actions to cover SCM SP avwf / dnssec
+* type=diff | introduce argument 'shadow-multivsys'
+
+BUGFIX:
+* type=securityprofile actions=vulnerability.rules.alert-only-set | to cover corner case
+* type=rule ruletype=defaultsecurity actions=exporttoexcel | bugfix to add SP info corner case
+* type=securityprofile securityprofiletype=spyware 'filter=(dns-security is.visibility)' | bugfix introduce logic
+* type=securityprofile | extend spyware validation for advanced-dns-security
+* type=securityprofile securityprofiletype=spyware actions=spyware.dns.alert-only-set | bugfix to set log-level for visibility
+
+GENERAL:
+* update Device App-ID to version: 9113-10104
+
+
+2.1.55 (20260607)
 UTIL:
 * type=rule | extend secprof information with [predefined] - new 'filter=(secprof has.predefined)'
 * type=securityprofile | display all predefined profiles

@@ -1352,7 +1352,7 @@ RQuery::$defaultFilters['securityprofile']['dns-security']['operators']['is.best
         if( $object->secprof_type != 'spyware' && $object->secprof_type != 'dns-security' )
             return null;
 
-        return $object->spyware_dns_security_best_practice();
+        return $object->spyware_dns_security_best_practice() && $object->spyware_advanced_dns_security_best_practice();
     },
     'arg' => false,
     'help' => "'securityprofiletype=spyware' e.g. 'filter=(dns-security is.best-practice)'"
@@ -1365,7 +1365,7 @@ RQuery::$defaultFilters['securityprofile']['dns-security']['operators']['is.visi
         if( $object->secprof_type != 'spyware' && $object->secprof_type != 'dns-security' )
             return null;
 
-        return $object->spyware_dns_security_visibility();
+        return $object->spyware_dns_security_visibility() && $object->spyware_advanced_dns_security_visibility();
     },
     'arg' => false,
     'help' => "'securityprofiletype=spyware' e.g. 'filter=(dns-security is.visibility)'"
@@ -1820,6 +1820,20 @@ RQuery::$defaultFilters['securityprofile']['object']['operators']['is.predefined
         $object = $context->object;
 
         if( str_contains($object->owner->name(), "predefined"))
+            return TRUE;
+
+        return FALSE;
+    },
+    'arg' => FALSE
+);
+
+RQuery::$defaultFilters['securityprofile']['device']['operators']['is.buckbeak'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        $object = $context->object;
+
+        $rootObject = PH::findRootObjectOrDie($context->object->owner->owner);
+
+        if ( $rootObject->isBuckbeak() )
             return TRUE;
 
         return FALSE;

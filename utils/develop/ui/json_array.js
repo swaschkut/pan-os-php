@@ -2573,6 +2573,22 @@ var subjectObject =
                 "name": "templatestack-removeserial-any",
                 "MainFunction": {}
             },
+            "threat-report-bp-change-plan": {
+                "name": "threat-report-bp-change-plan",
+                "GlobalInitFunction": {},
+                "MainFunction": {},
+                "args": {
+                    "csvfilename": {
+                        "type": "string",
+                        "default": "bp_threat_report.csv"
+                    },
+                    "days": {
+                        "type": "string",
+                        "default": "30"
+                    }
+                },
+                "help": "enable function: possible values: 'yes' or 'no'"
+            },
             "virtualsystem-delete": {
                 "name": "virtualsystem-delete",
                 "MainFunction": {}
@@ -5847,7 +5863,9 @@ var subjectObject =
                             "HitCount",
                             "BestPractice",
                             "Visibility",
-                            "Adoption"
+                            "Adoption",
+                            "Visibility-from-ZPP",
+                            "Visibility-from-LFP"
                         ],
                         "help": "example: 'actions=exporttoexcel:file.html,HitCount|ApplicationSeen'\npipe(|) separated list of additional field to include in the report. The following is available:\n  - ResolveAddressSummary : fields with address objects will be resolved to IP addressed and summarized in a new column\n  - ResolveServiceSummary : fields with service objects will be resolved to their value and summarized in a new column\n  - ResolveServiceAppDefaultSummary : fields with application objects will be resolved to their service default value and summarized in a new column\n  - ResolveApplicationSummary : fields with application objects will be resolved to their category and risk\n  - ResolveScheduleSummary : fields with schedule objects will be resolved to their expire time\n  - ApplicationSeen : all App-ID seen on the Device SecurityRule will be listed\n  - HitCount : Rule - 'first-hit' - 'last-hit' - 'hit-count' - 'rule-creation will be listed\n  - BestPractice : show if BestPractice is configured\n  - Visibility : show if Visibility is configured\n  - Adoption : show if Adoption is configured\n"
                     }
@@ -5877,7 +5895,9 @@ var subjectObject =
                             "HitCount",
                             "BestPractice",
                             "Visibility",
-                            "Adoption"
+                            "Adoption",
+                            "Visibility-from-ZPP",
+                            "Visibility-from-LFP"
                         ],
                         "help": "example: 'actions=exporttoexcel:file.html,HitCount|ApplicationSeen'\npipe(|) separated list of additional field to include in the report. The following is available:\n  - ResolveAddressSummary : fields with address objects will be resolved to IP addressed and summarized in a new column\n  - ResolveServiceSummary : fields with service objects will be resolved to their value and summarized in a new column\n  - ResolveServiceAppDefaultSummary : fields with application objects will be resolved to their service default value and summarized in a new column\n  - ResolveApplicationSummary : fields with application objects will be resolved to their category and risk\n  - ResolveScheduleSummary : fields with schedule objects will be resolved to their expire time\n  - ApplicationSeen : all App-ID seen on the Device SecurityRule will be listed\n  - HitCount : Rule - 'first-hit' - 'last-hit' - 'hit-count' - 'rule-creation will be listed\n  - BestPractice : show if BestPractice is configured\n  - Visibility : show if Visibility is configured\n  - Adoption : show if Adoption is configured\n"
                     }
@@ -6402,7 +6422,9 @@ var subjectObject =
                             "data-filtering",
                             "file-blocking",
                             "spyware",
-                            "wildfire"
+                            "wildfire",
+                            "virus-and-wildfire",
+                            "dns-security"
                         ]
                     },
                     "profName": {
@@ -6426,7 +6448,9 @@ var subjectObject =
                             "data-filtering",
                             "file-blocking",
                             "spyware",
-                            "wildfire"
+                            "wildfire",
+                            "virus-and-wildfire",
+                            "dns-security"
                         ]
                     }
                 }
@@ -7238,6 +7262,14 @@ var subjectObject =
                     }
                 }
             },
+            "device": {
+                "operators": {
+                    "is.buckbeak": {
+                        "Function": {},
+                        "arg": false
+                    }
+                }
+            },
             "dnat": {
                 "operators": {
                     "is.set": {
@@ -7758,6 +7790,11 @@ var subjectObject =
                             "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
+                    },
+                    "is.in.csv-report-file": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "returns TRUE if rule name matches one of the names found in text file provided in argument"
                     }
                 }
             },
@@ -8086,6 +8123,14 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
+                    "avwf-profile.is.set": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
                     "vuln-profile.is.set": {
                         "Function": {},
                         "arg": false,
@@ -8103,6 +8148,14 @@ var subjectObject =
                         }
                     },
                     "data-profile.is.set": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "dnssec-profile.is.set": {
                         "Function": {},
                         "arg": false,
                         "ci": {
@@ -9141,6 +9194,28 @@ var subjectObject =
                 "name": "displayReferences",
                 "MainFunction": {}
             },
+            "dns-security.alert-only-set": {
+                "name": "dns-security.alert-only-set",
+                "MainFunction": {},
+                "args": {
+                    "has-DNS-license": {
+                        "type": "bool",
+                        "default": "true",
+                        "help": "[has-DNS-license] 'dns-security.alert-only-set:FALSE' - define correct DNSSecurity Profile setting if License is NOT available"
+                    }
+                }
+            },
+            "dns-security.best-practice-set": {
+                "name": "dns-security.best-practice-set",
+                "MainFunction": {},
+                "args": {
+                    "has-DNS-license": {
+                        "type": "bool",
+                        "default": "true",
+                        "help": "[has-DNS-license] 'dns-security.best-practice-set:FALSE' - define correct AS Profile setting if License is NOT available"
+                    }
+                }
+            },
             "exporttoexcel": {
                 "name": "exportToExcel",
                 "MainFunction": {},
@@ -9435,6 +9510,10 @@ var subjectObject =
                 "name": "url.siteaccess.alert-only-set",
                 "MainFunction": {}
             },
+            "virus-and-wildfire.alert-only-set": {
+                "name": "virus-and-wildfire.alert-only-set",
+                "MainFunction": {}
+            },
             "virus.alert-only-set": {
                 "name": "virus.alert-only-set",
                 "MainFunction": {}
@@ -9477,6 +9556,10 @@ var subjectObject =
             },
             "vulnerability.rules.alert-only-set": {
                 "name": "vulnerability.rules.alert-only-set",
+                "MainFunction": {}
+            },
+            "vulnerability.rules.alert-only-set_old": {
+                "name": "vulnerability.rules.alert-only-set_OLD",
                 "MainFunction": {}
             },
             "vulnerability.rules.best-practice-set": {
@@ -9674,6 +9757,14 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         },
                         "help": "'securityprofiletype=spyware,vulnerability,wildfire'"
+                    }
+                }
+            },
+            "device": {
+                "operators": {
+                    "is.buckbeak": {
+                        "Function": {},
+                        "arg": false
                     }
                 }
             },
@@ -10403,7 +10494,9 @@ var subjectObject =
                             "data-filtering",
                             "file-blocking",
                             "spyware",
-                            "wildfire"
+                            "wildfire",
+                            "virus-and-wildfire",
+                            "dns-security"
                         ]
                     },
                     "profName": {
@@ -10414,6 +10507,14 @@ var subjectObject =
             }
         },
         "filter": {
+            "device": {
+                "operators": {
+                    "is.buckbeak": {
+                        "Function": {},
+                        "arg": false
+                    }
+                }
+            },
             "location": {
                 "operators": {
                     "is": {
@@ -10691,6 +10792,22 @@ var subjectObject =
                         }
                     },
                     "wf-profile.is.set": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "avwf-profile.is.set": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "dnssec-profile.is.set": {
                         "Function": {},
                         "arg": false,
                         "ci": {
@@ -13374,6 +13491,14 @@ var subjectObject =
                         }
                     },
                     "is.tmp": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.visible": {
                         "Function": {},
                         "arg": false,
                         "ci": {

@@ -151,13 +151,22 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
             }
 
         }
-        elseif( $type == 'virus-and-wildfire-analysis' )
+        elseif( $type == 'virus-and-wildfire' )
         {
             if( $rootObject->isBuckbeak() || $rootObject->isFawkes() )
             {
                 $found = $secprofgroup->owner->owner->VirusAndWildfireProfileStore->find( $profName, null, true );
                 if( $found )
-                    $ret = $secprofgroup->setSecProf_AV($profName);
+                    $ret = $secprofgroup->setSecProf_AVWF($profName);
+            }
+        }
+        elseif( $type == 'dns-security' )
+        {
+            if( $rootObject->isBuckbeak() || $rootObject->isFawkes() )
+            {
+                $found = $secprofgroup->owner->owner->DNSSecurityProfileStore->find( $profName, null, true );
+                if( $found )
+                    $ret = $secprofgroup->setSecProf_DNSSEC($profName);
             }
         }
         else
@@ -189,7 +198,7 @@ SecurityProfileGroupCallContext::$supportedActions[] = array(
         }
     },
     'args' => array('type' => array('type' => 'string', 'default' => '*nodefault*',
-        'choices' => array('virus', 'vulnerability', 'url-filtering', 'data-filtering', 'file-blocking', 'spyware', 'wildfire')),
+        'choices' => array('virus', 'vulnerability', 'url-filtering', 'data-filtering', 'file-blocking', 'spyware', 'wildfire', 'virus-and-wildfire', 'dns-security')),
         'profName' => array('type' => 'string', 'default' => '*nodefault*'))
 );
 SecurityProfileGroupCallContext::$supportedActions[] = array(

@@ -127,10 +127,14 @@ class DNSPolicy
         PH::print_stdout( $string );
     }
 
-    public function spyware_dns_bp_visibility_JSON( $checkType )
+    public function spyware_dns_bp_visibility_JSON( $checkType, $advanced = false )
     {
         $secprof_type = "spyware";
         $checkArray = array();
+
+        $dns_string = "dns";
+        if( $advanced )
+            $dns_string = "advanced-dns";
 
         if( $checkType !== "bp" && $checkType !== "visibility" )
             derr( "only 'bp' or 'visibility' argument allowed" );
@@ -138,19 +142,19 @@ class DNSPolicy
         ###############################
         $details = PH::getBPjsonFile( );
 
-        if( isset($details[$secprof_type]['dns']) )
+        if( isset($details[$secprof_type][$dns_string]) )
         {
             if( $checkType == "bp" )
             {
-                if( isset($details[$secprof_type]['dns']['bp']))
-                    $checkArray = $details[$secprof_type]['dns']['bp'];
+                if( isset($details[$secprof_type][$dns_string]['bp']))
+                    $checkArray = $details[$secprof_type][$dns_string]['bp'];
                 else
-                    derr( "this JSON bp/visibility JSON file does not have 'bp' -> 'dns' defined correctly for: '".$secprof_type, null, FALSE );
+                    derr( "this JSON bp/visibility JSON file does not have 'bp' -> '".$dns_string."' defined correctly for: '".$secprof_type, null, FALSE );
             }
             elseif( $checkType == "visibility")
             {
-                if( isset($details[$secprof_type]['dns']['visibility']))
-                    $checkArray = $details[$secprof_type]['dns']['visibility'];
+                if( isset($details[$secprof_type][$dns_string]['visibility']))
+                    $checkArray = $details[$secprof_type][$dns_string]['visibility'];
                 #else
                 //until now all settings are visibilty
                 #    derr( "this JSON bp/visibility JSON file does not have 'visibility' -> 'dns' defined correctly for: '".$secprof_type, null, FALSE );
@@ -168,91 +172,457 @@ class DNSPolicy
 
         if( $tmp_debug )
             print_r( $check_array );
-        foreach( $check_array['action'] as $validate )
+        if( isset( $check_array['action'] ) )
         {
-            $bp_action = FALSE;
-            $bp_packet = FALSE;
-
-            foreach( $validate['type'] as $name )
+            foreach( $check_array['action'] as $validate )
             {
-                if( $this->name() == $name )
+                $bp_action = FALSE;
+                $bp_packet = FALSE;
+                $bp_loglevel = FALSE;
+
+                foreach( $validate['type'] as $name )
                 {
-                    if( $tmp_debug )
-                        print "0) name: ".$name."\n";
-                    foreach( $validate['action'] as $final_action_check )
+                    if( $this->name() == $name )
                     {
                         if( $tmp_debug )
-                            print "1) action: ".$this->action()." |validate: ".$final_action_check."\n";
-                        if( $this->action() == $final_action_check )
+                            print "0) name: ".$name."\n";
+
+                        if( isset( $validate['action'] ) )
                         {
+                            foreach( $validate['action'] as $final_action_check )
+                            {
+                                if( $tmp_debug )
+                                    print "1) action: ".$this->action()." |validate: ".$final_action_check."\n";
+                                if( $this->action() == $final_action_check )
+                                {
+                                    $bp_action = TRUE;
+                                    if( $tmp_debug )
+                                        print "1-0) true\n";
+                                    break;
+                                }
+                                else
+                                {
+                                    $bp_action = FALSE;
+                                    if( $tmp_debug )
+                                        print "1-1) false\n";
+                                }
+
+                            }
+                        }
+                        else
                             $bp_action = TRUE;
-                            if( $tmp_debug )
-                                print "1-0) true\n";
-                            break;
+
+
+                        if( isset( $validate['packet-capture'] ) )
+                        {
+                            foreach( $validate['packet-capture'] as $final_packet_check )
+                            {
+                                if( $tmp_debug )
+                                    print "2) packet: ".$this->packetCapture()." |validate: ".$final_packet_check."\n";
+                                if( $this->packetCapture() == $final_packet_check )
+                                {
+                                    $bp_packet = TRUE;
+                                    if( $tmp_debug )
+                                        print "2-0) true\n";
+                                    break;
+                                }
+                                else
+                                {
+                                    $bp_packet = FALSE;
+                                    if( $tmp_debug )
+                                        print "2-1) false\n";
+                                }
+                            }
                         }
                         else
-                        {
-                            $bp_action = FALSE;
-                            if( $tmp_debug )
-                                print "1-1) false\n";
-                        }
-
-                    }
-
-
-                    foreach( $validate['packet-capture'] as $final_packet_check )
-                    {
-                        if( $tmp_debug )
-                            print "2) packet: ".$this->packetCapture()." |validate: ".$final_packet_check."\n";
-                        if( $this->packetCapture() == $final_packet_check )
-                        {
                             $bp_packet = TRUE;
-                            if( $tmp_debug )
-                                print "2-0) true\n";
-                            break;
-                        }
-                        else
+
+                        if( isset( $validate['log-level'] ) )
                         {
-                            $bp_packet = FALSE;
-                            if( $tmp_debug )
-                                print "2-1) false\n";
+                            foreach( $validate['log-level'] as $final_loglevel_check )
+                            {
+                                if( $tmp_debug )
+                                    print "3) log-level: ".$this->logLevel()." |validate: ".$final_loglevel_check."\n";
+                                $negate_string = "";
+                                if( strpos($final_loglevel_check, '!') !== FALSE )
+                                    $negate_string = "!";
+                                if( $negate_string.$this->logLevel == $final_loglevel_check )
+                                {
+                                    $bp_loglevel = FALSE;
+                                    if( $tmp_debug )
+                                        print "3-0) false\n";
+                                    break;
+                                }
+                                else
+                                {
+                                    $bp_loglevel = TRUE;
+                                    if( $tmp_debug )
+                                        print "3-1) true\n";
+                                }
+                            }
                         }
+
+
+
+                        if( $bp_action && $bp_packet && $bp_loglevel )
+                            return TRUE;
+                        else
+                            return FALSE;
                     }
-
-
-                    if( $bp_action && $bp_packet )
-                        return TRUE;
-                    else
-                        return FALSE;
                 }
             }
         }
 
-        /*
-        if( ( $this->name() == "pan-dns-sec-malware"
-                || $this->name() == "pan-dns-sec-phishing"
-            )
-            && ( $this->action() != "sinkhole"
-            || $this->packetCapture() != "single-packet" )
-        )
-            return false;
-        elseif( ( $this->name() == "pan-dns-sec-cc"
-                )
-                && ( $this->action() != "sinkhole"
-                    || $this->packetCapture() != "extended-capture" )
-            )
-            return false;
-        else
-            return true;
-        */
+
         return TRUE;
     }
 
     public function spyware_dns_security_rule_visibility()
     {
-        //every setting is visibility
-        return true;
+        $tmp_debug = false;
+
+        $check_array = $this->spyware_dns_bp_visibility_JSON( "visibility");
+
+        if( $tmp_debug )
+            print_r( $check_array );
+        if( isset($check_array['action']) )
+        {
+            foreach( $check_array['action'] as $validate )
+            {
+                $bp_action = FALSE;
+                $bp_packet = FALSE;
+                $bp_loglevel = FALSE;
+
+                foreach( $validate['type'] as $name )
+                {
+                    if( $this->name() == $name )
+                    {
+                        if( $tmp_debug )
+                            print "0) name: ".$name."\n";
+
+                        if( isset( $validate['action'] ) )
+                        {
+                            foreach( $validate['action'] as $final_action_check )
+                            {
+                                if( $tmp_debug )
+                                    print "1) action: ".$this->action()." |validate: ".$final_action_check."\n";
+                                if( $this->action() == $final_action_check )
+                                {
+                                    $bp_action = TRUE;
+                                    if( $tmp_debug )
+                                        print "1-0) true\n";
+                                    break;
+                                }
+                                else
+                                {
+                                    $bp_action = FALSE;
+                                    if( $tmp_debug )
+                                        print "1-1) false\n";
+                                }
+
+                            }
+                        }
+                        else
+                            $bp_action = TRUE;
+
+
+                        if( isset( $validate['packet-capture'] ) )
+                        {
+                            foreach( $validate['packet-capture'] as $final_packet_check )
+                            {
+                                if( $tmp_debug )
+                                    print "2) packet: ".$this->packetCapture()." |validate: ".$final_packet_check."\n";
+                                if( $this->packetCapture() == $final_packet_check )
+                                {
+                                    $bp_packet = TRUE;
+                                    if( $tmp_debug )
+                                        print "2-0) true\n";
+                                    break;
+                                }
+                                else
+                                {
+                                    $bp_packet = FALSE;
+                                    if( $tmp_debug )
+                                        print "2-1) false\n";
+                                }
+                            }
+                        }
+                        else
+                            $bp_packet = TRUE;
+
+                        if( isset( $validate['log-level'] ) )
+                        {
+                            foreach( $validate['log-level'] as $final_loglevel_check )
+                            {
+                                if( $tmp_debug )
+                                    print "3) log-level: ".$this->logLevel()." |validate: ".$final_loglevel_check."\n";
+                                $negate_string = "";
+                                if( strpos($final_loglevel_check, '!') !== FALSE )
+                                    $negate_string = "!";
+                                if( $negate_string.$this->logLevel == $final_loglevel_check )
+                                {
+                                    $bp_loglevel = FALSE;
+                                    if( $tmp_debug )
+                                        print "3-0) false\n";
+                                    break;
+                                }
+                                else
+                                {
+                                    $bp_loglevel = TRUE;
+                                    if( $tmp_debug )
+                                        print "3-1) true\n";
+                                }
+                            }
+                        }
+                        else
+                            $bp_loglevel = TRUE;
+
+
+
+                        #if( $bp_action && $bp_packet && $bp_loglevel )
+                        if( $bp_action && $bp_packet && $bp_loglevel )
+                            return TRUE;
+                        else
+                            return FALSE;
+                    }
+                }
+            }
+        }
+
+
+        return TRUE;
     }
+
+    public function spyware_advanced_dns_security_rule_bestpractice()
+    {
+        $tmp_debug = false;
+
+        $check_array = $this->spyware_dns_bp_visibility_JSON( "bp", true);
+
+        if( $tmp_debug )
+            print_r( $check_array );
+
+        if( isset($check_array['action']) )
+        {
+            foreach( $check_array['action'] as $validate )
+            {
+                $bp_action = FALSE;
+                $bp_packet = FALSE;
+                $bp_loglevel = FALSE;
+
+                foreach( $validate['type'] as $name )
+                {
+                    if( $this->name() == $name )
+                    {
+                        if( $tmp_debug )
+                            print "0) name: ".$name."\n";
+
+                        if( isset( $validate['action'] ) )
+                        {
+                            foreach( $validate['action'] as $final_action_check )
+                            {
+                                if( $tmp_debug )
+                                    print "1) action: ".$this->action()." |validate: ".$final_action_check."\n";
+                                if( $this->action() == $final_action_check )
+                                {
+                                    $bp_action = TRUE;
+                                    if( $tmp_debug )
+                                        print "1-0) true\n";
+                                    break;
+                                }
+                                else
+                                {
+                                    $bp_action = FALSE;
+                                    if( $tmp_debug )
+                                        print "1-1) false\n";
+                                }
+
+                            }
+                        }
+                        else
+                            $bp_action = TRUE;
+
+
+                        if( isset( $validate['packet-capture'] ) )
+                        {
+                            foreach( $validate['packet-capture'] as $final_packet_check )
+                            {
+                                if( $tmp_debug )
+                                    print "2) packet: ".$this->packetCapture()." |validate: ".$final_packet_check."\n";
+                                if( $this->packetCapture() == $final_packet_check )
+                                {
+                                    $bp_packet = TRUE;
+                                    if( $tmp_debug )
+                                        print "2-0) true\n";
+                                    break;
+                                }
+                                else
+                                {
+                                    $bp_packet = FALSE;
+                                    if( $tmp_debug )
+                                        print "2-1) false\n";
+                                }
+                            }
+                        }
+                        else
+                            $bp_packet = TRUE;
+
+                        if( isset( $validate['log-level'] ) )
+                        {
+                            foreach( $validate['log-level'] as $final_loglevel_check )
+                            {
+                                if( $tmp_debug )
+                                    print "3) log-level: ".$this->logLevel()." |validate: ".$final_loglevel_check."\n";
+                                $negate_string = "";
+                                if( strpos($final_loglevel_check, '!') !== FALSE )
+                                    $negate_string = "!";
+                                if( $negate_string.$this->logLevel == $final_loglevel_check )
+                                {
+                                    $bp_loglevel = FALSE;
+                                    if( $tmp_debug )
+                                        print "3-0) false\n";
+                                    break;
+                                }
+                                else
+                                {
+                                    $bp_loglevel = TRUE;
+                                    if( $tmp_debug )
+                                        print "3-1) true\n";
+                                }
+                            }
+                        }
+                        else
+                            $bp_loglevel = TRUE;
+
+
+
+                        if( $bp_action && $bp_packet && $bp_loglevel )
+                            return TRUE;
+                        else
+                            return FALSE;
+                    }
+                }
+            }
+        }
+
+
+        return null;
+    }
+
+    public function spyware_advanced_dns_security_rule_visibility()
+    {
+        $tmp_debug = false;
+
+        $check_array = $this->spyware_dns_bp_visibility_JSON( "visibility", true);
+
+        if( $tmp_debug )
+            print_r( $check_array );
+        if( isset( $check_array['action']) )
+        {
+            foreach( $check_array['action'] as $validate )
+            {
+                $bp_action = FALSE;
+                $bp_packet = FALSE;
+                $bp_loglevel = FALSE;
+
+                foreach( $validate['type'] as $name )
+                {
+                    if( $this->name() == $name )
+                    {
+                        if( $tmp_debug )
+                            print "0) name: ".$name."\n";
+
+                        if( isset( $validate['action'] ) )
+                        {
+                            foreach( $validate['action'] as $final_action_check )
+                            {
+                                if( $tmp_debug )
+                                    print "1) action: ".$this->action()." |validate: ".$final_action_check."\n";
+                                if( $this->action() == $final_action_check )
+                                {
+                                    $bp_action = TRUE;
+                                    if( $tmp_debug )
+                                        print "1-0) true\n";
+                                    break;
+                                }
+                                else
+                                {
+                                    $bp_action = FALSE;
+                                    if( $tmp_debug )
+                                        print "1-1) false\n";
+                                }
+
+                            }
+                        }
+                        else
+                            $bp_action = TRUE;
+
+
+                        if( isset( $validate['packet-capture'] ) )
+                        {
+                            foreach( $validate['packet-capture'] as $final_packet_check )
+                            {
+                                if( $tmp_debug )
+                                    print "2) packet: ".$this->packetCapture()." |validate: ".$final_packet_check."\n";
+                                if( $this->packetCapture() == $final_packet_check )
+                                {
+                                    $bp_packet = TRUE;
+                                    if( $tmp_debug )
+                                        print "2-0) true\n";
+                                    break;
+                                }
+                                else
+                                {
+                                    $bp_packet = FALSE;
+                                    if( $tmp_debug )
+                                        print "2-1) false\n";
+                                }
+                            }
+                        }
+                        else
+                            $bp_packet = TRUE;
+
+                        if( isset( $validate['log-level'] ) )
+                        {
+                            foreach( $validate['log-level'] as $final_loglevel_check )
+                            {
+                                if( $tmp_debug )
+                                    print "3) log-level: ".$this->logLevel()." |validate: ".$final_loglevel_check."\n";
+                                $negate_string = "";
+                                if( strpos($final_loglevel_check, '!') !== FALSE )
+                                    $negate_string = "!";
+                                if( $negate_string.$this->logLevel == $final_loglevel_check )
+                                {
+                                    $bp_loglevel = FALSE;
+                                    if( $tmp_debug )
+                                        print "3-0) false\n";
+                                    break;
+                                }
+                                else
+                                {
+                                    $bp_loglevel = TRUE;
+                                    if( $tmp_debug )
+                                        print "3-1) true\n";
+                                }
+                            }
+                        }
+                        else
+                            $bp_loglevel = TRUE;
+
+
+                        if( $bp_action && $bp_packet && $bp_loglevel )
+                            return TRUE;
+                        else
+                            return FALSE;
+                    }
+                }
+            }
+        }
+
+
+        return null;
+    }
+
 
     public function spyware_lists_bp_visibility_JSON( $checkType )
     {
@@ -291,55 +661,58 @@ class DNSPolicy
     {
         $check_array = $this->spyware_lists_bp_visibility_JSON( "bp");
 
-        foreach( $check_array['action'] as $validate )
+        if( isset( $check_array['action'] ) )
         {
-            $bp_action = FALSE;
-            $bp_packet = FALSE;
-
-            foreach( $validate['type'] as $name )
+            foreach( $check_array['action'] as $validate )
             {
-                if( $this->name() == $name )
+                $bp_action = FALSE;
+                $bp_packet = FALSE;
+
+                foreach( $validate['type'] as $name )
                 {
-                    #print "0) name: ".$name."\n";
-                    foreach( $validate['action'] as $final_action_check )
+                    if( $this->name() == $name )
                     {
-                        #print "1) action: ".$this->action()." |validate: ".$final_action_check."\n";
-                        if( $this->action() == $final_action_check )
+                        #print "0) name: ".$name."\n";
+                        foreach( $validate['action'] as $final_action_check )
                         {
-                            $bp_action = TRUE;
-                            #print "1-0) true\n";
-                            break;
+                            #print "1) action: ".$this->action()." |validate: ".$final_action_check."\n";
+                            if( $this->action() == $final_action_check )
+                            {
+                                $bp_action = TRUE;
+                                #print "1-0) true\n";
+                                break;
+                            }
+                            else
+                            {
+                                $bp_action = FALSE;
+                                #print "1-1) false\n";
+                            }
+
                         }
+
+
+                        foreach( $validate['packet-capture'] as $final_packet_check )
+                        {
+                            #print "2) packet: ".$this->packetCapture()." |validate: ".$final_packet_check."\n";
+                            if( $this->packetCapture() == $final_packet_check )
+                            {
+                                $bp_packet = TRUE;
+                                #print "2-0) true\n";
+                                break;
+                            }
+                            else
+                            {
+                                $bp_packet = FALSE;
+                                #print "2-1) false\n";
+                            }
+                        }
+
+
+                        if( $bp_action && $bp_packet )
+                            return TRUE;
                         else
-                        {
-                            $bp_action = FALSE;
-                            #print "1-1) false\n";
-                        }
-
+                            return FALSE;
                     }
-
-
-                    foreach( $validate['packet-capture'] as $final_packet_check )
-                    {
-                        #print "2) packet: ".$this->packetCapture()." |validate: ".$final_packet_check."\n";
-                        if( $this->packetCapture() == $final_packet_check )
-                        {
-                            $bp_packet = TRUE;
-                            #print "2-0) true\n";
-                            break;
-                        }
-                        else
-                        {
-                            $bp_packet = FALSE;
-                            #print "2-1) false\n";
-                        }
-                    }
-
-
-                    if( $bp_action && $bp_packet )
-                        return TRUE;
-                    else
-                        return FALSE;
                 }
             }
         }

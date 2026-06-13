@@ -1303,10 +1303,10 @@ SecurityProfileCallContext::$supportedActions[] = array(
                                     //$string .= " - packet-capture: '".$rule->packetCapture()."'";
                                     /** @var DNSPolicy $rule */
                                     //Todo: TBD
-                                    #if( $bestPractice && !$rule->spyware_dns_security_rule_bestpractice() )
-                                    #    $string .= $bp_NOT_sign;
-                                    #if( $visibility && !$rule->spyware_dns_security_rule_visibility() )
-                                    #    $string .= $visible_NOT_sign;
+                                    if( $bestPractice && !$rule->spyware_advanced_dns_security_rule_bestpractice() )
+                                        $string .= $bp_NOT_sign;
+                                    if( $visibility && !$rule->spyware_advanced_dns_security_rule_visibility() )
+                                        $string .= $visible_NOT_sign;
                                     $string_dns_security[] = $string;
                                 }
                             }
@@ -1605,20 +1605,21 @@ SecurityProfileCallContext::$supportedActions[] = array(
                                 || get_class($object->owner->owner ) == "PANConf"
                                 || get_class($object->owner->owner ) == "VirtualSystem")
                         )
+                        //Todo: something wrong with the SCM version validation
                             || get_class($object) == "DNSSecurityProfile")
-                        && $object->owner->owner->version >= 102
+                       // && $object->owner->owner->version >= 102
                     )
                     {
                         if( $bestPractice )
                         {
-                            if( $object->spyware_dns_security_best_practice() )
+                            if( $object->spyware_dns_security_best_practice() && $object->spyware_advanced_dns_security_best_practice())
                                 $lines .= $context->encloseFunction($bp_text_yes.' BP AS dns_security set');
                             else
                                 $lines .= $context->encloseFunction($bp_text_no.' NO BP AS dns_security');
                         }
                         if( $visibility )
                         {
-                            if( $object->spyware_dns_security_visibility() )
+                            if( $object->spyware_dns_security_visibility() && $object->spyware_advanced_dns_security_visibility() )
                                 $lines .= $context->encloseFunction($bp_text_yes.' Visibility AS dns_security set');
                             else
                                 $lines .= $context->encloseFunction($bp_text_no.' NO Visibility AS dns_security');
@@ -2333,10 +2334,13 @@ SecurityProfileCallContext::$supportedActions['virus.decoder.alert-only-set'] = 
     'MainFunction' => function (SecurityProfileCallContext $context) {
         $object = $context->object;
 
-        if (get_class($object) !== "AntiVirusProfile")
+        if (get_class($object) !== "AntiVirusProfile" && get_class( $object) !== "VirusAndWildfireProfile" )
             return null;
 
         $tmp_decoder = DH::findFirstElement('decoder', $object->xmlroot);
+        if( $tmp_decoder === False)
+            return null;
+
         foreach($object->tmp_virus_prof_array as $decoder )
         {
             $xmlNode = DH::findFirstElementByNameAttr("entry", $decoder, $tmp_decoder);
@@ -2361,7 +2365,7 @@ SecurityProfileCallContext::$supportedActions['virus.inline-ml.alert-only-set'] 
     {
         $object = $context->object;
 
-        if (get_class($object) !== "AntiVirusProfile")
+        if (get_class($object) !== "AntiVirusProfile" && get_class( $object) !== "VirusAndWildfireProfile" )
             return null;
 
         $tmp_mlav_engine = DH::findFirstElement('mlav-engine-filebased-enabled', $object->xmlroot);
@@ -2529,7 +2533,11 @@ SecurityProfileCallContext::$supportedActions['spyware.dns.best-practice-set'] =
     {
         $object = $context->object;
 
-        if (get_class($object) !== "AntiSpywareProfile")
+        if (get_class($object) !== "AntiSpywareProfile" && get_class($object) !== "DNSSecurityProfile")
+            return null;
+
+        $rootObject = PH::findRootObjectOrDie($context->object->owner->owner);
+        if ( get_class($object) == "AntiSpywareProfile" && $rootObject->isBuckbeak() )
             return null;
 
         $hasDNSlicense = $context->arguments['has-DNS-license'];
@@ -2623,7 +2631,11 @@ SecurityProfileCallContext::$supportedActions['spyware.botnet.best-practice-set'
     'MainFunction' => function (SecurityProfileCallContext $context) {
         $object = $context->object;
 
-        if (get_class($object) !== "AntiSpywareProfile")
+        if (get_class($object) !== "AntiSpywareProfile" && get_class($object) !== "DNSSecurityProfile")
+            return null;
+
+        $rootObject = PH::findRootObjectOrDie($context->object->owner->owner);
+        if ( get_class($object) == "AntiSpywareProfile" && $rootObject->isBuckbeak() )
             return null;
 
         $hasDNSlicense = $context->arguments['has-DNS-license'];
@@ -2723,6 +2735,36 @@ SecurityProfileCallContext::$supportedActions['spyware.best-practice-set'] = arr
     'args' => array('has-DNS-license' =>
         array('type' => 'bool', 'default' => 'true',
             'help' => "[has-DNS-license] 'spyware.best-practice-set:FALSE' - define correct AS Profile setting if License is NOT available"
+        )
+    )
+);
+SecurityProfileCallContext::$supportedActions['dns-security.best-practice-set'] = array(
+    'name' => 'dns-security.best-practice-set',
+    'MainFunction' => function (SecurityProfileCallContext $context) {
+        $object = $context->object;
+
+        if (get_class($object) !== "DNSSecurityProfile")
+            return null;
+
+
+        ////////////////////////////////////////
+        //dns
+        $f = SecurityProfileCallContext::$supportedActions['spyware.dns.best-practice-set']['MainFunction'];
+        $f($context);
+
+        ////////////////////////////////////////
+        //botnet
+        $f = SecurityProfileCallContext::$supportedActions['spyware.botnet.best-practice-set']['MainFunction'];
+        $f($context);
+
+        if( $context->isAPI )
+        {
+            $object->API_sync();
+        }
+    },
+    'args' => array('has-DNS-license' =>
+        array('type' => 'bool', 'default' => 'true',
+            'help' => "[has-DNS-license] 'dns-security.best-practice-set:FALSE' - define correct AS Profile setting if License is NOT available"
         )
     )
 );
@@ -2903,11 +2945,15 @@ SecurityProfileCallContext::$supportedActions['spyware.dns.alert-only-set'] = ar
         /** @var AntiSpywareProfile $object */
         $object = $context->object;
 
-        if (get_class($object) !== "AntiSpywareProfile")
+        if (get_class($object) !== "AntiSpywareProfile" && get_class($object) !== "DNSSecurityProfile")
         {
             PH::print_stdout("skipped");
             return null;
         }
+
+        $rootObject = PH::findRootObjectOrDie($context->object->owner->owner);
+        if ( get_class($object) == "AntiSpywareProfile" && $rootObject->isBuckbeak() )
+            return null;
 
         $hasDNSlicense = $context->arguments['has-DNS-license'];
         foreach( $object->dns_rules_obj as $rule )
@@ -2937,8 +2983,8 @@ SecurityProfileCallContext::$supportedActions['spyware.dns.alert-only-set'] = ar
                         $tmp_action->textContent = "allow";
                     if( $tmp_packet_capture->textContent == "" )
                         $tmp_packet_capture->textContent = "disable";
-                    if( $tmp_log_level->textContent == "" )
-                        $tmp_log_level->textContent = "none";
+                    if( $tmp_log_level->textContent == "" || $tmp_log_level->textContent == "none" )
+                        $tmp_log_level->textContent = "default";
 
                 }
                 else
@@ -2962,8 +3008,26 @@ SecurityProfileCallContext::$supportedActions['spyware.dns.alert-only-set'] = ar
                             $tmp_action->textContent = "allow";
                         if( $tmp_packet_capture->textContent == "" )
                             $tmp_packet_capture->textContent = "disable";
-                        if( $tmp_log_level->textContent == "" )
-                            $tmp_log_level->textContent = "none";
+                        if( $tmp_log_level->textContent == "" || $tmp_log_level->textContent == "none" )
+                            $tmp_log_level->textContent = "default";
+                    }
+                    else
+                    {
+                        $tmp_action->textContent = "allow";
+                        $tmp_packet_capture->textContent = "disable";
+                        $tmp_log_level->textContent = "none";
+                    }
+                }
+                else
+                {
+                    if( $hasDNSlicense )
+                    {
+                        if( $tmp_action->textContent == "" )
+                            $tmp_action->textContent = "allow";
+                        if( $tmp_packet_capture->textContent == "" )
+                            $tmp_packet_capture->textContent = "disable";
+                        if( $tmp_log_level->textContent == "" || $tmp_log_level->textContent == "none" )
+                            $tmp_log_level->textContent = "default";
                     }
                     else
                     {
@@ -2981,8 +3045,8 @@ SecurityProfileCallContext::$supportedActions['spyware.dns.alert-only-set'] = ar
                         $tmp_action->textContent = "sinkhole";
                     if( $tmp_packet_capture->textContent == "" )
                         $tmp_packet_capture->textContent = "disable";
-                    if( $tmp_log_level->textContent == "" )
-                        $tmp_log_level->textContent = "none";
+                    if( $tmp_log_level->textContent == "" || $tmp_log_level->textContent == "none" )
+                        $tmp_log_level->textContent = "default";
                 }
                 else
                 {
@@ -2999,6 +3063,7 @@ SecurityProfileCallContext::$supportedActions['spyware.dns.alert-only-set'] = ar
         )
     )
 );
+
 SecurityProfileCallContext::$supportedActions['spyware.botnet.alert-only-set'] = array(
     'name' => 'spyware.botnet.alert-only-set',
     'MainFunction' => function (SecurityProfileCallContext $context )
@@ -3006,11 +3071,15 @@ SecurityProfileCallContext::$supportedActions['spyware.botnet.alert-only-set'] =
         /** @var AntiSpywareProfile $object */
         $object = $context->object;
 
-        if (get_class($object) !== "AntiSpywareProfile")
+        if (get_class($object) !== "AntiSpywareProfile" && get_class($object) !== "DNSSecurityProfile")
         {
             PH::print_stdout("skipped");
             return null;
         }
+
+        $rootObject = PH::findRootObjectOrDie($context->object->owner->owner);
+        if ( get_class($object) == "AntiSpywareProfile" && $rootObject->isBuckbeak() )
+            return null;
 
         $hasDNSlicense = $context->arguments['has-DNS-license'];
         $tmp_rule = DH::findFirstElement('botnet-domains', $object->xmlroot);
@@ -3117,7 +3186,41 @@ SecurityProfileCallContext::$supportedActions['spyware.alert-only-set'] = array(
         )
     )
 );
+SecurityProfileCallContext::$supportedActions['dns-security.alert-only-set'] = array(
+    'name' => 'dns-security.alert-only-set',
+    'MainFunction' => function (SecurityProfileCallContext $context) {
+        /** @var DNSSecurityProfile $object */
+        $object = $context->object;
 
+        if (get_class($object) !== "DNSSecurityProfile")
+        {
+            PH::print_stdout("skipped");
+            return null;
+        }
+
+
+
+        /////////////////////////////////////////////////////////
+        $f = SecurityProfileCallContext::$supportedActions['spyware.dns.alert-only-set']['MainFunction'];
+        $f($context);
+
+
+        /////////////////////////////////////////////////////////
+        $f = SecurityProfileCallContext::$supportedActions['spyware.botnet.alert-only-set']['MainFunction'];
+        $f($context );
+
+
+        if( $context->isAPI )
+        {
+            $object->API_sync();
+        }
+    },
+    'args' => array('has-DNS-license' =>
+        array('type' => 'bool', 'default' => 'true',
+            'help' => "[has-DNS-license] 'dns-security.alert-only-set:FALSE' - define correct DNSSecurity Profile setting if License is NOT available"
+        )
+    )
+);
 SecurityProfileCallContext::$supportedActions['vulnerability.inline-ml.best-practice-set'] = array(
     'name' => 'vulnerability.inline-ml.best-practice-set',
     'MainFunction' => function (SecurityProfileCallContext $context) {
@@ -3323,14 +3426,18 @@ SecurityProfileCallContext::$supportedActions['vulnerability.inline-ml.alert-onl
     }
 );
 
-SecurityProfileCallContext::$supportedActions['vulnerability.rules.alert-only-set'] = array(
-    'name' => 'vulnerability.rules.alert-only-set',
+SecurityProfileCallContext::$supportedActions['vulnerability.rules.alert-only-set_OLD'] = array(
+    'name' => 'vulnerability.rules.alert-only-set_OLD',
     'MainFunction' => function (SecurityProfileCallContext $context )
     {
         $object = $context->object;
 
         if (get_class($object) !== "VulnerabilityProfile")
             return null;
+
+        $object->vulnerability_rules_coverage();
+
+        #print_r($object->rule_coverage);
 
         $sp_severity = array();
         foreach( $object->rules_obj as $rule )
@@ -3363,24 +3470,33 @@ SecurityProfileCallContext::$supportedActions['vulnerability.rules.alert-only-se
         $sp_severity_default = array( "any", "critical", "high", "medium", "low", "informational" );
         $result = array_diff($sp_severity_default, $sp_severity);
 
-        if( !in_array("any", $sp_severity) )
+        if( !in_array("any", $sp_severity) ||
+            ( isset($object->rule_coverage["any"]['any'] ) && $object->rule_coverage["any"]['any']['threat-name'] != "any"  ||
+              isset($object->rule_coverage["any"]['client'] ) && $object->rule_coverage["any"]['client']['threat-name'] != "any"  ||
+              isset($object->rule_coverage["any"]['server'] ) && $object->rule_coverage["any"]['server']['threat-name'] != "any"
+            )
+        )
         {
             if( !empty($result) )
             {
                 if( in_array("any", $result) )
                 {
-                    foreach ($result as $rule)
+                    foreach ($result as $severity)
                     {
                         //Todo: bug if threat-name != any
-                        if ($rule == "any")
+                        if ($severity == "any")
+                        {
+                            print "continue\n";
                             continue;
+                        }
+
 
                         $threadPolicy_obj = new ThreatPolicyVulnerability($rule, $object);
                         $threadPolicy_obj->type = "ThreatPolicyVulnerability";
 
-                        if( $rule == "critical" || $rule == "high" || $rule == "medium" )
+                        if( $severity == "critical" || $severity == "high" || $severity == "medium" )
                             $threadPolicy_obj->action = "alert";
-                        elseif( $rule == "low" || $rule == "informational" )
+                        elseif( $severity == "low" || $severity == "informational" )
                             $threadPolicy_obj->action = "default";
 
                         $object->rules_obj[] = $threadPolicy_obj;
@@ -3388,7 +3504,7 @@ SecurityProfileCallContext::$supportedActions['vulnerability.rules.alert-only-se
 
                         $object->owner->owner->ThreatPolicyStore->add($threadPolicy_obj);
 
-                        $threadPolicy_obj->newThreatPolicyXML($object->xmlroot, $rule, $rule, $threadPolicy_obj->action);
+                        $threadPolicy_obj->newThreatPolicyXML($object->xmlroot, $severity, $severity, $threadPolicy_obj->action);
 
                         $sendAPI = true;
                     }
@@ -3400,12 +3516,19 @@ SecurityProfileCallContext::$supportedActions['vulnerability.rules.alert-only-se
                     continue;
 
                 $object->vulnerability_rules_coverage();
-                if( !isset($object->rule_coverage[$severity]['any']) )
+                if( !isset($object->rule_coverage[$severity]['any']) ||
+                    ( isset($object->rule_coverage[$severity]['any'] ) && $object->rule_coverage[$severity]['any']['category'] != "any"  ||
+                        isset($object->rule_coverage[$severity]['client'] ) && $object->rule_coverage[$severity]['client']['category'] != "any"  ||
+                        isset($object->rule_coverage[$severity]['server'] ) && $object->rule_coverage[$severity]['server']['category'] != "any"
+                    )
+                )
                 {
                     $host_types = array("client", "server");
                     foreach($host_types as $host_type)
                     {
-                        if( !isset($object->rule_coverage[$severity][$host_type]))
+                        if( !isset($object->rule_coverage[$severity][$host_type]) ||
+                            isset($object->rule_coverage[$severity][$host_type]) && $object->rule_coverage[$severity][$host_type]['category'] != "any"
+                        )
                         {
                             $threadPolicy_obj = new ThreatPolicyVulnerability($severity."_".$host_type, $object);
                             $threadPolicy_obj->type = "ThreatPolicyVulnerability";
@@ -3426,12 +3549,323 @@ SecurityProfileCallContext::$supportedActions['vulnerability.rules.alert-only-se
 
                             $sendAPI = true;
                         }
+                        #else
+                        #    print "severity already set: ".$severity."\n";
                     }
                 }
             }
         }
+        #else
+        #    print "exit as any is available as severity\n";
     }
 );
+
+SecurityProfileCallContext::$supportedActions['vulnerability.rules.alert-only-set_NEW1'] = array(
+    'name' => 'vulnerability.rules.alert-only-set',
+    'MainFunction' => function (SecurityProfileCallContext $context)
+    {
+        /** @var VulnerabilityProfile $object */
+        $object = $context->object;
+
+        if (get_class($object) !== "VulnerabilityProfile")
+            return null;
+
+        $sendAPI = false;
+
+        // 1. Normalize existing rules to "alert" if they are set to "allow"
+        $sp_severity = array();
+        foreach ($object->rules_obj as $rule)
+        {
+            /** @var ThreatPolicy $rule */
+            $sp_severity = array_merge($sp_severity, $rule->severity());
+
+            if ($rule->action() === "allow")
+            {
+                $rule->action = "alert";
+
+                $tmp = DH::findFirstElement("action", $rule->xmlroot);
+                if ($tmp !== false)
+                {
+                    $tmp_action = DH::firstChildElement($tmp);
+                    if ($tmp_action !== false)
+                    {
+                        $tmp->removeChild($tmp_action);
+                        $xmlElement = DH::importXmlStringOrDie($rule->xmlroot->ownerDocument, '<alert/>');
+                        $tmp->appendChild($xmlElement);
+                        $sendAPI = true;
+                    }
+                }
+            }
+        }
+
+        // Calculate initial rule coverage once action normalizations are complete
+        $object->vulnerability_rules_coverage();
+
+        // 2. Check if a valid global 'any' severity threat catch-all rule exists
+        $hasValidAnySeverity = false;
+        if (in_array("any", $sp_severity))
+        {
+            $anyCoverage = $object->rule_coverage['any'] ?? [];
+            $hasInvalidAnyThreat = false;
+
+            foreach (['any', 'client', 'server'] as $hostType)
+            {
+                if (isset($anyCoverage[$hostType]))
+                {
+                    $cfg = $anyCoverage[$hostType];
+
+                    // Global layer validation: check threat-name, cve, and vendor-id safely
+                    if (($cfg['threat-name'] ?? 'any') !== 'any' ||
+                        ($cfg['cve'] ?? 'any')         !== 'any' ||
+                        ($cfg['vendor-id'] ?? 'any')   !== 'any')
+                    {
+                        $hasInvalidAnyThreat = true;
+                        break;
+                    }
+                }
+            }
+            if (!$hasInvalidAnyThreat)
+                $hasValidAnySeverity = true;
+        }
+
+        // 3. Process missing coverages ONLY if a global 'any' catch-all doesn't already handle it
+        if (!$hasValidAnySeverity)
+        {
+            $requiredSeverities = ["critical", "high", "medium", "low", "informational"];
+            $actionMap = [
+                "critical"      => "alert",
+                "high"          => "alert",
+                "medium"        => "alert",
+                "low"           => "default",
+                "informational" => "default"
+            ];
+
+            foreach ($requiredSeverities as $severity)
+            {
+                $coverage = $object->rule_coverage[$severity] ?? [];
+
+                // If a host 'any' rule exists for this specific severity and passes all catch-all checks, skip
+                $anyHost = $coverage['any'] ?? null;
+                if ($anyHost !== null &&
+                    ($anyHost['category'] ?? 'any')  === 'any' &&
+                    ($anyHost['cve'] ?? 'any')       === 'any' &&
+                    ($anyHost['vendor-id'] ?? 'any') === 'any')
+                {
+                    continue;
+                }
+
+                // Check specific client/server profiles if no host 'any' catch-all is present
+                foreach (['client', 'server'] as $host_type)
+                {
+                    $hostCfg = $coverage[$host_type] ?? null;
+
+                    // Trigger rule creation if the specific host configuration is missing,
+                    // or if it exists but narrows down by category, cve, or vendor-id.
+                    if ($hostCfg === null ||
+                        ($hostCfg['category'] ?? 'any')  !== 'any' ||
+                        ($hostCfg['cve'] ?? 'any')       !== 'any' ||
+                        ($hostCfg['vendor-id'] ?? 'any') !== 'any')
+                    {
+                        $ruleName = $severity . "_" . $host_type;
+                        $action = $actionMap[$severity] ?? 'default';
+
+                        $threadPolicy_obj = new ThreatPolicyVulnerability($ruleName, $object);
+                        $threadPolicy_obj->type = "ThreatPolicyVulnerability";
+                        $threadPolicy_obj->action = $action;
+                        $threadPolicy_obj->host = $host_type;
+
+                        $object->rules_obj[] = $threadPolicy_obj;
+                        $threadPolicy_obj->addReference($object);
+                        $object->owner->owner->ThreatPolicyStore->add($threadPolicy_obj);
+
+                        $threadPolicy_obj->newThreatPolicyXML(
+                            $object->xmlroot,
+                            $ruleName,
+                            $severity,
+                            $action,
+                            $host_type
+                        );
+
+                        $sendAPI = true;
+                    }
+                }
+            }
+
+            // Refresh coverage mapping one final time to update cache state
+            $object->vulnerability_rules_coverage();
+
+            #if( $sendAPI && $context->isAPI )
+            #    $object->API_sync();
+        }
+    }
+);
+
+SecurityProfileCallContext::$supportedActions['vulnerability.rules.alert-only-set'] = array(
+    'name' => 'vulnerability.rules.alert-only-set',
+    'MainFunction' => function (SecurityProfileCallContext $context)
+    {
+        /** @var VulnerabilityProfile $object */
+        $object = $context->object;
+
+        if (get_class($object) !== "VulnerabilityProfile")
+            return null;
+
+        $sendAPI = false;
+
+        // 1. Normalize existing rules to "alert" if they are set to "allow"
+        $sp_severity = array();
+        foreach ($object->rules_obj as $rule)
+        {
+            /** @var ThreatPolicy $rule */
+            $sp_severity = array_merge($sp_severity, $rule->severity());
+
+            if ($rule->action() === "allow")
+            {
+                $rule->action = "alert";
+
+                $tmp = DH::findFirstElement("action", $rule->xmlroot);
+                if ($tmp !== false)
+                {
+                    $tmp_action = DH::firstChildElement($tmp);
+                    if ($tmp_action !== false)
+                    {
+                        $tmp->removeChild($tmp_action);
+                        $xmlElement = DH::importXmlStringOrDie($rule->xmlroot->ownerDocument, '<alert/>');
+                        $tmp->appendChild($xmlElement);
+                        $sendAPI = true;
+                    }
+                }
+            }
+        }
+
+        // Calculate initial rule coverage once action normalizations are complete
+        $object->vulnerability_rules_coverage();
+
+        // 2. Check if a valid global 'any' severity threat catch-all rule exists
+        $hasValidAnySeverity = false;
+        if (in_array("any", $sp_severity))
+        {
+            $anyCoverage = $object->rule_coverage['any'] ?? [];
+            $hasInvalidAnyThreat = false;
+
+            foreach (['any', 'client', 'server'] as $hostType)
+            {
+                if (isset($anyCoverage[$hostType]))
+                {
+                    $cfg = $anyCoverage[$hostType];
+
+                    // Global layer validation: check threat-name, cve, and vendor-id safely
+                    if (($cfg['threat-name'] ?? 'any') !== 'any' ||
+                        ($cfg['cve'] ?? 'any')         !== 'any' ||
+                        ($cfg['vendor-id'] ?? 'any')   !== 'any')
+                    {
+                        $hasInvalidAnyThreat = true;
+                        break;
+                    }
+                }
+            }
+            if (!$hasInvalidAnyThreat)
+                $hasValidAnySeverity = true;
+        }
+
+        // 3. Process missing coverages ONLY if a global 'any' catch-all doesn't already handle it
+        if (!$hasValidAnySeverity)
+        {
+            $requiredSeverities = ["critical", "high", "medium", "low", "informational"];
+            $actionMap = [
+                "critical"      => "alert",
+                "high"          => "alert",
+                "medium"        => "alert",
+                "low"           => "default",
+                "informational" => "default"
+            ];
+
+            foreach ($requiredSeverities as $severity)
+            {
+                $coverage = $object->rule_coverage[$severity] ?? [];
+
+                // A. If a host 'any' rule already exists and passes all catch-all checks, skip entirely
+                $anyHost = $coverage['any'] ?? null;
+                if ($anyHost !== null &&
+                    ($anyHost['category'] ?? 'any')  === 'any' &&
+                    ($anyHost['cve'] ?? 'any')       === 'any' &&
+                    ($anyHost['vendor-id'] ?? 'any') === 'any')
+                {
+                    continue;
+                }
+
+                // B. OPTIMIZATION: If this severity is completely missing,
+                // create ONE clean catch-all rule with host = any.
+                if (empty($coverage))
+                {
+                    $ruleName = $severity;
+                    $action = $actionMap[$severity] ?? 'default';
+
+                    $threadPolicy_obj = new ThreatPolicyVulnerability($ruleName, $object);
+                    $threadPolicy_obj->type = "ThreatPolicyVulnerability";
+                    $threadPolicy_obj->action = $action;
+                    $threadPolicy_obj->host = "any";
+
+                    $object->rules_obj[] = $threadPolicy_obj;
+                    $threadPolicy_obj->addReference($object);
+                    $object->owner->owner->ThreatPolicyStore->add($threadPolicy_obj);
+
+                    $threadPolicy_obj->newThreatPolicyXML(
+                        $object->xmlroot,
+                        $ruleName,
+                        $severity,
+                        $action,
+                        "any"
+                    );
+
+                    $sendAPI = true;
+                    continue; // Skip the client/server split loop below
+                }
+
+                // C. Fallback: If partial custom rules exist, evaluate client/server individually
+                foreach (['client', 'server'] as $host_type)
+                {
+                    $hostCfg = $coverage[$host_type] ?? null;
+
+                    if ($hostCfg === null ||
+                        ($hostCfg['category'] ?? 'any')  !== 'any' ||
+                        ($hostCfg['cve'] ?? 'any')       !== 'any' ||
+                        ($hostCfg['vendor-id'] ?? 'any') !== 'any')
+                    {
+                        $ruleName = $severity . "_" . $host_type;
+                        $action = $actionMap[$severity] ?? 'default';
+
+                        $threadPolicy_obj = new ThreatPolicyVulnerability($ruleName, $object);
+                        $threadPolicy_obj->type = "ThreatPolicyVulnerability";
+                        $threadPolicy_obj->action = $action;
+                        $threadPolicy_obj->host = $host_type;
+
+                        $object->rules_obj[] = $threadPolicy_obj;
+                        $threadPolicy_obj->addReference($object);
+                        $object->owner->owner->ThreatPolicyStore->add($threadPolicy_obj);
+
+                        $threadPolicy_obj->newThreatPolicyXML(
+                            $object->xmlroot,
+                            $ruleName,
+                            $severity,
+                            $action,
+                            $host_type
+                        );
+
+                        $sendAPI = true;
+                    }
+                }
+            }
+
+            // Refresh coverage mapping one final time to update cache state
+            $object->vulnerability_rules_coverage();
+
+            if( $sendAPI && $context->isAPI )
+                $object->API_sync();
+        }
+    }
+);
+
 SecurityProfileCallContext::$supportedActions['vulnerability.alert-only-set'] = array(
     'name' => 'vulnerability.alert-only-set',
     'MainFunction' => function (SecurityProfileCallContext $context) {
@@ -3467,7 +3901,7 @@ SecurityProfileCallContext::$supportedActions['wildfire.inline-ml.alert-only-set
     {
         $object = $context->object;
 
-        if (get_class($object) !== "WildfireProfile")
+        if (get_class($object) !== "WildfireProfile" && get_class( $object) !== "VirusAndWildfireProfile" )
             return null;
 
         $sendAPI = false;
@@ -3570,7 +4004,7 @@ SecurityProfileCallContext::$supportedActions['wildfire.rules.alert-only-set'] =
         /** @var WildfireProfile $object */
         $object = $context->object;
 
-        if (get_class($object) !== "WildfireProfile")
+        if (get_class($object) !== "WildfireProfile" && get_class( $object) !== "VirusAndWildfireProfile" )
         {
             PH::print_stdout("skipped");
             return null;
@@ -3651,7 +4085,7 @@ SecurityProfileCallContext::$supportedActions['wildfire.inline-ml.best-practice-
     'MainFunction' => function (SecurityProfileCallContext $context) {
         $object = $context->object;
 
-        if (get_class($object) !== "WildfireProfile")
+        if (get_class($object) !== "WildfireProfile" && get_class( $object) !== "VirusAndWildfireProfile" )
             return null;
 
         $tmp_mlav_engine = DH::findFirstElement('cloud-inline-analysis', $object->xmlroot);
@@ -3723,6 +4157,68 @@ SecurityProfileCallContext::$supportedActions['wildfire.best-practice-set'] = ar
     },
 );
 
+SecurityProfileCallContext::$supportedActions['virus-and-wildfire.alert-only-set'] = array(
+    'name' => 'virus-and-wildfire.alert-only-set',
+    'MainFunction' => function (SecurityProfileCallContext $context) {
+        $object = $context->object;
+
+        if( get_class( $object) !== "VirusAndWildfireProfile")
+            return null;
+
+        ///////////////////////////////////////////////////////////////
+        $f = SecurityProfileCallContext::$supportedActions['virus.decoder.alert-only-set']['MainFunction'];
+        $f($context);
+
+
+        ///////////////////////////////////////////////////////////////
+        $f = SecurityProfileCallContext::$supportedActions['virus.inline-ml.alert-only-set']['MainFunction'];
+        $f($context);
+
+        ///////////////////////////////////////////////////////////////////////////////////////
+        /// InlineML
+        $f = SecurityProfileCallContext::$supportedActions['wildfire.inline-ml.alert-only-set']['MainFunction'];
+        $f($context );
+
+
+        ///////////////////////////////////////////////////////////////////////////////////////
+        /// Rules
+        $f = SecurityProfileCallContext::$supportedActions['wildfire.rules.alert-only-set']['MainFunction'];
+        $f($context );
+
+        #if( $context->isAPI )
+        #    $object->API_sync();
+
+    },
+);
+SecurityProfileCallContext::$supportedActions['virus-and-wildfire.best-practice-set'] = array(
+    'name' => 'wildfire.best-practice-set',
+    'MainFunction' => function (SecurityProfileCallContext $context) {
+        $object = $context->object;
+
+        if (get_class($object) !== "VirusAndWildfireProfile")
+            return null;
+
+        //AV
+        ////////////////////////////////////////////
+        $f = SecurityProfileCallContext::$supportedActions['virus.decoder.best-practice-set']['MainFunction'];
+        $f($context);
+
+        ////////////////////////////////////////////
+        $f = SecurityProfileCallContext::$supportedActions['virus.inline-ml.best-practice-set']['MainFunction'];
+        $f($context);
+
+        //WF
+        //////////////////////////////////////////////////////////////////////
+        /// inline
+        $f = SecurityProfileCallContext::$supportedActions['wildfire.inline-ml.best-practice-set']['MainFunction'];
+        $f($context );
+
+        if( $context->isAPI )
+        {
+            $object->API_sync();
+        }
+    },
+);
 SecurityProfileCallContext::$supportedActions['url.alert-only-set'] = array(
     'name' => 'url.alert-only-set',
     'MainFunction' => function (SecurityProfileCallContext $context) {

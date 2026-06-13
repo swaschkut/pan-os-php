@@ -83,21 +83,37 @@ ZoneProtectionProfileCallContext::$supportedActions['display'] = array(
 
         $tmp_string = "";
 
-        if( $object->discard_ip_spoof !== FALSE )
-            $tmp_string .= " - discard-ip-spoof: '".$object->discard_ip_spoof."'";
-        if( $object->discard_malformed_option !== FALSE )
-            $tmp_string .= " - discard-malformed-option: '".$object->discard_malformed_option."'";
-        if( $object->remove_tcp_timestamp !== FALSE )
-            $tmp_string .= " - remove-tcp-timestamp: '".$object->remove_tcp_timestamp."'";
-        if( $object->strip_tcp_fast_open_and_data !== FALSE )
-            $tmp_string .= " - strip-tcp-fast-open-and-data: '".$object->strip_tcp_fast_open_and_data."'";
-        if( $object->strip_mptcp_option !== FALSE )
-            $tmp_string .= " - strip-mptcp-option: '".$object->strip_mptcp_option."'";
+        // Loop through your mapping array
+        // 1. Initialize empty strings for each required display block
+        $outputSections = [
+            'IP Drop' => '',
+            'TCP Drop' => '',
+            'ICMP Drop' => '',
+            'IPv6 Drop' => '',
+            'IPv6 filter HDR' => '',
+            'ICMPv6' => ''
+        ];
 
-        if( !empty($tmp_string) )
+        // 2. Loop through the metadata map and aggregate strings based on their 'section' assignment
+        foreach ($object->xmlMap as $item) {
+            $xmlTag = $item['tag'];
+            $propertyName = $item['prop'];
+            $section = $item['section'];
+
+            if (isset($object->{$propertyName})) {
+                $outputSections[$section] .= " - {$xmlTag}: '" . $object->{$propertyName} . "'";
+            } else {
+                $outputSections[$section] .= " - {$xmlTag}: 'no'";
+            }
+        }
+
+        // 3. Print out each section independently using your established format structure
+        foreach ($outputSections as $sectionName => $contentString)
         {
-            PH::print_stdout( "\n     - ADDITIONAL :");
-            PH::print_stdout( "        ".$tmp_string." ");
+            if (!empty($contentString)) {
+                PH::print_stdout("\n     * " . strtoupper($sectionName) . " :");
+                PH::print_stdout("        " . $contentString . " ");
+            }
         }
 
     },
@@ -137,7 +153,15 @@ ZoneProtectionProfileCallContext::$supportedActions[] = array(
             $addTotalUse = TRUE;
 
         #$headers = '<th>ID</th><th>location</th><th>name</th><th>color</th><th>description</th>';
-        $headers = '<th>ID</th><th>template</th><th>location</th><th>name</th><th>content</th>';
+        $headers = '<th>ID</th><th>template</th><th>location</th><th>name</th>';
+        $headers .= '<th>flood</th><th>scan</th>';
+
+        $headers .= '<th>IP Drop</th>';
+        $headers .= '<th>TCP Drop</th>';
+        $headers .= '<th>ICMP Drop</th>';
+        $headers .= '<th>IPv6 Drop</th>';
+        $headers .= '<th>IPv6 filter HDR</th>';
+        $headers .= '<th>ICMPv6</th>';
 
         if( $addWhereUsed )
             $headers .= '<th>where used</th>';
@@ -186,15 +210,14 @@ ZoneProtectionProfileCallContext::$supportedActions[] = array(
                 $lines .= $context->encloseFunction($object->name());
 
 
+                //////////////////////////////////
+
                 $tmp_array = array();
                 $tmp_flood_array = array();
-                $tmp_flood_array[] = "FLOOD:";
-
-
                 foreach( $object->flood as $key => $flood )
                 {
-                    $tmp_flood_array[] = "* ".$key."\n";
-                    $tmp_string = "";
+                    $tmp_string = "* ".$key."\n";
+                    #$tmp_string = "";
                     if( isset($flood['red']) )
                     {
                         #PH::print_stdout( "        - red:" );
@@ -211,13 +234,15 @@ ZoneProtectionProfileCallContext::$supportedActions[] = array(
                     if( !empty($tmp_string) )
                         $tmp_flood_array[] = $tmp_string;
                 }
+                $lines .= $context->encloseFunction($tmp_flood_array);
 
-                $tmp_flood_array[] = "";
-                $tmp_flood_array[] = "SCAN:";
+                //////////////////////////////////
+
+                $tmp_flood_array = array();
                 foreach( $object->scan as $key => $scan )
                 {
-                    $tmp_flood_array[] = "* ".$key."\n";
-                    $tmp_string = "";
+                    $tmp_string = "* ".$key."\n";
+                    #$tmp_string = "";
                     if( isset($scan['action']) )
                         $tmp_string .= " - action: ".$scan['action'];
 
@@ -234,29 +259,38 @@ ZoneProtectionProfileCallContext::$supportedActions[] = array(
                     if( !empty($tmp_string) )
                         $tmp_flood_array[] = $tmp_string;
                 }
+                $lines .= $context->encloseFunction($tmp_flood_array);
 
+                //////////////////////////////////
 
-                $tmp_string = "";
+                $outputSections = [
+                    'IP Drop' => array(),
+                    'TCP Drop' => array(),
+                    'ICMP Drop' => array(),
+                    'IPv6 Drop' => array(),
+                    'IPv6 filter HDR' => array(),
+                    'ICMPv6' => array()
+                ];
 
-                if( $object->discard_ip_spoof !== FALSE )
-                    $tmp_string .= " - discard-ip-spoof: '".$object->discard_ip_spoof."'";
-                if( $object->discard_malformed_option !== FALSE )
-                    $tmp_string .= " - discard-malformed-option: '".$object->discard_malformed_option."'";
-                if( $object->remove_tcp_timestamp !== FALSE )
-                    $tmp_string .= " - remove-tcp-timestamp: '".$object->remove_tcp_timestamp."'";
-                if( $object->strip_tcp_fast_open_and_data !== FALSE )
-                    $tmp_string .= " - strip-tcp-fast-open-and-data: '".$object->strip_tcp_fast_open_and_data."'";
-                if( $object->strip_mptcp_option !== FALSE )
-                    $tmp_string .= " - strip-mptcp-option: '".$object->strip_mptcp_option."'";
-
-                if( !empty($tmp_string) )
+                // 2. Loop through the metadata map and aggregate strings based on their 'section' assignment
+                foreach ($object->xmlMap as $item)
                 {
-                    $tmp_flood_array[] = "";
-                    $tmp_flood_array[] = "ADDITIONAL :";
-                    $tmp_flood_array[] = $tmp_string;
+                    $xmlTag = $item['tag'];
+                    $propertyName = $item['prop'];
+                    $section = $item['section'];
+
+                    if (isset($object->{$propertyName})) {
+                        $outputSections[$section][] = " - {$xmlTag}: '" . $object->{$propertyName} . "'";
+                    } else {
+                        $outputSections[$section][] =  " - {$xmlTag}: 'no'";
+                    }
                 }
 
-                $lines .= $context->encloseFunction($tmp_flood_array);
+                // 3. Print out each section independently using your established format structure
+                foreach ($outputSections as $sectionName => $contentString)
+                {
+                    $lines .= $context->encloseFunction($contentString);
+                }
 
                 if( $addWhereUsed )
                 {

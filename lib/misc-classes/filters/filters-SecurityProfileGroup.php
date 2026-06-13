@@ -598,6 +598,36 @@ RQuery::$defaultFilters['securityprofilegroup']['secprof']['operators']['wf-prof
         'input' => 'input/panorama-8.0.xml'
     )
 );
+RQuery::$defaultFilters['securityprofilegroup']['secprof']['operators']['avwf-profile.is.set'] = array(
+    'Function' => function (SecurityprofilegroupRQueryContext $context) {
+        $secprofgroup = $context->object;
+
+
+        $profiles = $secprofgroup->securityProfiles();
+
+        return isset($profiles['virus-and-wildfire-analysis']);
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+RQuery::$defaultFilters['securityprofilegroup']['secprof']['operators']['dnssec-profile.is.set'] = array(
+    'Function' => function (SecurityprofilegroupRQueryContext $context) {
+        $secprofgroup = $context->object;
+
+
+        $profiles = $secprofgroup->securityProfiles();
+
+        return isset($profiles['dns-security']);
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
 RQuery::$defaultFilters['securityprofilegroup']['secprof']['operators']['vuln-profile.is.set'] = array(
     'Function' => function (SecurityprofilegroupRQueryContext $context) {
         $secprofgroup = $context->object;
@@ -666,5 +696,18 @@ RQuery::$defaultFilters['securityprofilegroup']['object']['operators']['has.pred
         'fString' => '(%PROP% av-production)',
         'input' => 'input/panorama-8.0.xml'
     )
+);
+RQuery::$defaultFilters['securityprofilegroup']['device']['operators']['is.buckbeak'] = array(
+    'Function' => function (SecurityprofilegroupRQueryContext $context) {
+        $object = $context->object;
+
+        $rootObject = PH::findRootObjectOrDie($context->object->owner->owner);
+
+        if ( $rootObject->isBuckbeak() )
+            return TRUE;
+
+        return FALSE;
+    },
+    'arg' => FALSE
 );
 // </editor-fold>

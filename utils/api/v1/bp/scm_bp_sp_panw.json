@@ -137,6 +137,9 @@
                         ],
                         "packet-capture": [
                             "single-packet"
+                        ],
+                        "log-level": [
+                            "!none"
                         ]
                     },
                     {
@@ -148,6 +151,9 @@
                         ],
                         "packet-capture": [
                             "extended-capture"
+                        ],
+                        "log-level": [
+                            "!none"
                         ]
                     },
                     {
@@ -159,6 +165,29 @@
                         ],
                         "packet-capture": [
                             "disable"
+                        ],
+                        "log-level": [
+                            "!none"
+                        ]
+                    }
+                ]
+            },
+            "visibility": {
+                "action": [
+                    {
+                        "type": [
+                            "pan-dns-sec-adtracking",
+                            "pan-dns-sec-ddns",
+                            "pan-dns-sec-grayware",
+                            "pan-dns-sec-malware",
+                            "pan-dns-sec-phishing",
+                            "pan-dns-sec-proxy",
+                            "pan-dns-sec-recent",
+                            "pan-dns-sec-parked",
+                            "pan-dns-sec-cc"
+                        ],
+                        "log-level": [
+                            "!none"
                         ]
                     }
                 ]
@@ -174,6 +203,19 @@
                         ],
                         "action": [
                             "reset-both"
+                        ],
+                        "log-level": [
+                            "!none"
+                        ]
+                    }
+                ]
+            },
+            "visibility": {
+                "action": [
+                    {
+                        "type": [
+                            "pan-adns-sec-dnsmisconfig",
+                            "pan-adns-sec-hijacking"
                         ],
                         "log-level": [
                             "!none"
