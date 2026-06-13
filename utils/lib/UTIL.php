@@ -2665,7 +2665,10 @@ class UTIL
             $doc2->appendChild($node);
             //print $doc2->saveXML();
 
-            $utilDiff->runDiff( $this->origXmlDoc, $doc2 );
+            if( PH::$shadow_multivsys )
+                $utilDiff->runDiff( $this->origXmlDoc, $doc2, true );
+            else
+                $utilDiff->runDiff( $this->origXmlDoc, $doc2 );
 
             $utilDiff->display_outputformatset();
 

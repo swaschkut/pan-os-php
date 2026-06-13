@@ -10,6 +10,7 @@ UTIL:
 * type=rule | extend 'actions=securityProfile-Profile-Set:virus-and-wildfire/dns-security | to cover SCM
 * type=rule/securityprofile/securityprofilegroup | extend filters to use for SCM profiles avwf/dnssec
 * type=securityprofile/securityprofilegroup | extend actions to cover SCM SP avwf / dnssec
+* type=diff | introduce argument 'shadow-multivsys'
 
 BUGFIX:
 * type=securityprofile actions=vulnerability.rules.alert-only-set | to cover corner case
