@@ -6,6 +6,7 @@ UTIL:
 
 BUGFIX:
 * type=securityprofile actions=virus.decoder.alert-only-set | bugfix for older PAN-OS version
+* type=securityprofile actions=spyware.alert-only-set | bugfix to add <cloud-inline-analysis> starting with PAN-OS 10.2
 
 GENERAL:
 

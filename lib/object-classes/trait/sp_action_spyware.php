@@ -221,10 +221,13 @@ trait sp_action_spyware
         }
         else
         {
-            $tmp_rule = DH::findFirstElementOrCreate('cloud-inline-analysis', $xml);
-            $tmp_rule->textContent = "no";
+            if( $this->owner !== null && $this->owner->owner->version >= 102 )
+            {
+                $tmp_rule = DH::findFirstElementOrCreate('cloud-inline-analysis', $xml);
+                $tmp_rule->textContent = "no";
 
-            $this->cloud_inline_analysis_enabled = false;
+                $this->cloud_inline_analysis_enabled = false;
+            }
         }
     }
 
