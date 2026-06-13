@@ -20,6 +20,7 @@ BUGFIX:
 * type=securityprofile securityprofiletype=spyware actions=spyware.dns.alert-only-set | bugfix to set log-level for visibility
 
 GENERAL:
+* update Device App-ID to version: 9113-10104
 
 
 2.1.55 (20260607)
