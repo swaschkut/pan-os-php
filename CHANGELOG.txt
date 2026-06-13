@@ -2,8 +2,10 @@ CHANGELOG
 
 2.1.57
 UTIL:
+* type=playbook shadow-multivsys | if set, use it in all playbook JSON commands
 
 BUGFIX:
+* type=securityprofile actions=virus.decoder.alert-only-set | bugfix for older PAN-OS version
 
 GENERAL:
 
