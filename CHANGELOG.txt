@@ -1,6 +1,14 @@
 CHANGELOG
 
-2.1.56
+2.1.57
+UTIL:
+
+BUGFIX:
+
+GENERAL:
+
+
+2.1.56  (20260613)
 UTIL:
 * type=rule | introduce 'filter=(name is.in.csv-report-file XYZ)'
 * type=device | new actions=threat-report-bp-change-plan:FILENAME.csv in=api://MGTM-IP
