@@ -2103,7 +2103,7 @@ SecurityProfileCallContext::$commonActionFunctions['SPR-filter']= array(
             $RuleArray = $panorama->securityRules->rules($ruleFilter);
             $ruleCount += count($RuleArray);
 
-            foreach( $panorama->getVirtualSystems() as $dg )
+            foreach( $panorama->getDeviceGroups() as $dg )
             {
                 $RuleArray = $dg->securityRules->rules($ruleFilter);
                 $ruleCount += count($RuleArray);
@@ -2176,7 +2176,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
             $context->first = false;
         }
 
-        $placeholderMessage = "Placeholder pending pan-os-php enrichment (~15062026): cannot yet split rule counts between same-named SPs at different locations.";
+        $placeholderMessage = "";
 
 
         // 2. Mock Dataset (Replace this with data fetched from your DB, API, or parsing engine)
@@ -2435,7 +2435,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     <?php endforeach; ?>
 
                     <tr class="subtotal">
-                        <td colspan="2">Subtotal (excludes placeholder rows)</td>
+                        <td colspan="2">Subtotal</td>
                         <td class="num"><?php echo $subtotalCount; ?></td>
                         <td class="num"><?php echo $subtotalVisible; ?></td>
                     </tr>
@@ -2456,21 +2456,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
         file_put_contents($filename, ob_get_clean());
     },
     'args' => array(
-        'filename' => array('type' => 'string', 'default' => '*nodefault*'),
-        'additionalFields' => array(
-            'type' => 'pipeSeparatedList',
-            'subtype' => 'string',
-            'default' => '*NONE*',
-            'choices' => array('WhereUsed', 'UsedInLocation', 'TotalUse', 'BestPractice', 'Visibility', 'Adoption', 'URLmembers'),
-            'help' => "pipe(|) separated list of additional fields (ie: Arg1|Arg2|Arg3...) to include in the report. The following is available:\n" .
-                "  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n" .
-                "  - WhereUsed : list places where object is used (rules, groups ...)\n" .
-                "  - TotalUse : list a counter how often this object is used\n" .
-                "  - BestPractice : show if BestPractice is configured\n" .
-                "  - Visibility : show if SP log is configured\n" .
-                "  - Adoption : show if SP log is used\n" .
-                "  - URLmembers : add URL members also if bestpractice or visibility is added\n"
-        )
+        'filename' => array('type' => 'string', 'default' => '*nodefault*')
     )
 );
 
