@@ -2184,38 +2184,38 @@ SecurityProfileCallContext::$supportedActions[] = array(
             'sec-av' => [
                 'title'         => 'AV — Antivirus Profiles',
                 'profile_label' => 'virus-profile',
-                'visible_label' => "Count 'sp_av_visible'",
+                'visible_label' => "SecRule Count 'sp_av_visible'",
                 'rows'          => [
                 ]
             ],
             'sec-as' => [
                 'title'         => 'AS — Anti-Spyware Profiles',
                 'profile_label' => 'spyware-profile',
-                'visible_label' => "Count 'sp_as_visible'",
+                'visible_label' => "SecRule Count 'sp_as_visible'",
                 'rows'          => []
             ],
             'sec-vp' => [
                 'title'         => 'VP — Vulnerability Profiles',
                 'profile_label' => 'vulnerability-profile',
-                'visible_label' => "Count 'sp_vp_visible'",
+                'visible_label' => "SecRule Count 'sp_vp_visible'",
                 'rows'          => []
             ],
             'sec-url' => [
                 'title'         => 'URL — URL Filtering Profiles',
                 'profile_label' => 'url-filtering-profile',
-                'visible_label' => "Count 'sp_url_visible'",
+                'visible_label' => "SecRule Count 'sp_url_visible'",
                 'rows'          => []
             ],
             'sec-fb' => [
                 'title'         => 'FB — File Blocking Profiles',
                 'profile_label' => 'file-blocking-profile',
-                'visible_label' => "Count 'sp_file_visible'",
+                'visible_label' => "SecRule Count 'sp_file_visible'",
                 'rows'          => []
             ],
             'sec-wf' => [
                 'title'         => 'WF — WildFire Analysis Profiles',
                 'profile_label' => 'wildfire-analysis-profile',
-                'visible_label' => "Count 'sp_wf_visible'",
+                'visible_label' => "SecRule Count 'sp_wf_visible'",
                 'rows'          => []
             ],
         ];
@@ -2410,7 +2410,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     <tr>
                         <th>Location</th>
                         <th><?php echo htmlspecialchars($section['profile_label']); ?></th>
-                        <th>Count</th>
+                        <th>SecRule Count</th>
                         <th><?php echo htmlspecialchars($section['visible_label']); ?></th>
                     </tr>
                     </thead>
