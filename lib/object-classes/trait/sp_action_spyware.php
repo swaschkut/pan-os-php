@@ -187,21 +187,7 @@ trait sp_action_spyware
                 $xml->appendChild($xmlElement);
             }
 
-            if( $this->owner !== null && $this->owner->owner->version >= 112 )
-            {
-                $this->additional['mica-engine-spyware-enabled']['HTTP Command and Control detector']['inline-policy-action'] = "disable";
-                $this->additional['mica-engine-spyware-enabled']['HTTP Command and Control detector']['local-deep-learning'] = "enable";
-                $this->additional['mica-engine-spyware-enabled']['HTTP2 Command and Control detector']['inline-policy-action'] = "disable";
-                $this->additional['mica-engine-spyware-enabled']['HTTP2 Command and Control detector']['local-deep-learning'] = "enable";
-                $this->additional['mica-engine-spyware-enabled']['SSL Command and Control detector']['inline-policy-action'] = "disable";
-                $this->additional['mica-engine-spyware-enabled']['SSL Command and Control detector']['local-deep-learning'] = "enable";
-
-                $this->additional['mica-engine-spyware-enabled']['Unknown-TCP Command and Control detector']['inline-policy-action'] = "disable";
-                $this->additional['mica-engine-spyware-enabled']['Unknown-TCP Command and Control detector']['local-deep-learning'] = "enable";
-                $this->additional['mica-engine-spyware-enabled']['Unknown-UDP Command and Control detector']['inline-policy-action'] = "disable";
-                $this->additional['mica-engine-spyware-enabled']['Unknown-UDP Command and Control detector']['local-deep-learning'] = "enable";
-            }
-            elseif( $this->owner !== null && $this->owner->owner->version >= 102 )
+            if( $this->owner !== null && $this->owner->owner->version >= 102 )
             {
                 $this->additional['mica-engine-spyware-enabled']['HTTP Command and Control detector']['inline-policy-action'] = "disable";
                 $this->additional['mica-engine-spyware-enabled']['HTTP2 Command and Control detector']['inline-policy-action'] = "disable";
@@ -209,6 +195,16 @@ trait sp_action_spyware
 
                 $this->additional['mica-engine-spyware-enabled']['Unknown-TCP Command and Control detector']['inline-policy-action'] = "disable";
                 $this->additional['mica-engine-spyware-enabled']['Unknown-UDP Command and Control detector']['inline-policy-action'] = "disable";
+
+                if( $this->owner !== null && $this->owner->owner->version >= 112 )
+                {
+                    $this->additional['mica-engine-spyware-enabled']['HTTP Command and Control detector']['local-deep-learning'] = "enable";
+                    $this->additional['mica-engine-spyware-enabled']['HTTP2 Command and Control detector']['local-deep-learning'] = "enable";
+                    $this->additional['mica-engine-spyware-enabled']['SSL Command and Control detector']['local-deep-learning'] = "enable";
+
+                    $this->additional['mica-engine-spyware-enabled']['Unknown-TCP Command and Control detector']['local-deep-learning'] = "enable";
+                    $this->additional['mica-engine-spyware-enabled']['Unknown-UDP Command and Control detector']['local-deep-learning'] = "enable";
+                }
             }
         }
 
@@ -221,10 +217,13 @@ trait sp_action_spyware
         }
         else
         {
-            $tmp_rule = DH::findFirstElementOrCreate('cloud-inline-analysis', $xml);
-            $tmp_rule->textContent = "no";
+            if( $this->owner !== null && $this->owner->owner->version >= 102 )
+            {
+                $tmp_rule = DH::findFirstElementOrCreate('cloud-inline-analysis', $xml);
+                $tmp_rule->textContent = "no";
 
-            $this->cloud_inline_analysis_enabled = false;
+                $this->cloud_inline_analysis_enabled = false;
+            }
         }
     }
 
@@ -1010,7 +1009,7 @@ trait sp_action_spyware
 
     public function spyware_advanced_dns_security_best_practice(): ?bool
     {
-        if( $this->owner->owner->version >= 102 )
+        if( $this->owner->owner->version >= 112 )
         {
             $bp_set = false;
             if( isset($this->additional['botnet-domain']['advanced-dns-security-categories']) )
@@ -1031,7 +1030,7 @@ trait sp_action_spyware
 
     public function spyware_advanced_dns_security_visibility(): ?bool
     {
-        if( $this->owner->owner->version >= 102 )
+        if( $this->owner->owner->version >= 112 )
         {
             $bp_set = false;
             if( isset($this->additional['botnet-domain']['advanced-dns-security-categories']) )

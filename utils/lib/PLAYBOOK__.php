@@ -372,6 +372,9 @@ class PLAYBOOK__
             if( PH::$shadow_loadreduce )
                 $arguments[] = "shadow-loadreduce";
 
+            if( PH::$shadow_multivsys )
+                $arguments[] = "shadow-multivsys";
+
             if( isset( $command['shadow-bpjsonfile'] ) )
                 $arguments[] = "shadow-bpjsonfile=".$command['shadow-bpjsonfile'];
 

@@ -2349,7 +2349,8 @@ SecurityProfileCallContext::$supportedActions['virus.decoder.alert-only-set'] = 
 
             foreach( $actionTypeArray as $actionType )
             {
-                if ($object->$decoder[$actionType] == "allow") {
+                if (isset($object->$decoder[$actionType]) && $object->$decoder[$actionType] == "allow")
+                {
                     $object->$decoder[$actionType] = "alert";
                     $action_xmlNode = DH::findFirstElement($actionType, $xmlNode);
                     $action_xmlNode->textContent = "alert";
