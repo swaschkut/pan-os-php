@@ -1009,7 +1009,7 @@ trait sp_action_spyware
 
     public function spyware_advanced_dns_security_best_practice(): ?bool
     {
-        if( $this->owner->owner->version >= 102 )
+        if( $this->owner->owner->version >= 112 )
         {
             $bp_set = false;
             if( isset($this->additional['botnet-domain']['advanced-dns-security-categories']) )
@@ -1030,7 +1030,7 @@ trait sp_action_spyware
 
     public function spyware_advanced_dns_security_visibility(): ?bool
     {
-        if( $this->owner->owner->version >= 102 )
+        if( $this->owner->owner->version >= 112 )
         {
             $bp_set = false;
             if( isset($this->additional['botnet-domain']['advanced-dns-security-categories']) )

@@ -8,6 +8,7 @@ BUGFIX:
 * type=securityprofile actions=virus.decoder.alert-only-set | bugfix for older PAN-OS version
 * type=securityprofile actions=spyware.alert-only-set | bugfix to add <cloud-inline-analysis> starting with PAN-OS 10.2
 * type=device actions=sp_spg-create-alert-only-bp:true shadow-multivsys | create SP also at shared if only vsys1 is configured
+* type=securityprofile securityprofiletype=spyware | bugfix for advanced-dns-security - to correctly validate starting with PAN-OS 11.2
 
 GENERAL:
 
