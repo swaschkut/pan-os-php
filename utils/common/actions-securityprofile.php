@@ -2081,6 +2081,399 @@ SecurityProfileCallContext::$supportedActions[] = array(
 );
 SecurityProfileCallContext::$supportedActions[] = array_merge(SecurityProfileCallContext::$supportedActions[array_key_last(SecurityProfileCallContext::$supportedActions)], array('name' => 'exportToHtml'));
 
+SecurityProfileCallContext::$commonActionFunctions['SPR-filter']= array(
+    'name' => 'virus.decoder.best-practice-set',
+    'MainFunction' => function (SecurityProfileCallContext $context, $ruleFilter)
+    {
+        $ruleCount = 0;
+        if( $context->subSystem->isPanorama() )
+        {
+            $RuleArray = $context->subSystem->securityRules->rules($ruleFilter);
+            $ruleCount += count($RuleArray);
+            foreach( $context->subSystem->getDeviceGroups() as $dg )
+            {
+                $RuleArray = $dg->securityRules->rules($ruleFilter);
+                $ruleCount += count($RuleArray);
+            }
+        }
+        elseif( $context->subSystem->isDeviceGroup() )
+        {
+            $panorama = $context->subSystem->owner;
+
+            $RuleArray = $panorama->securityRules->rules($ruleFilter);
+            $ruleCount += count($RuleArray);
+
+            foreach( $panorama->getVirtualSystems() as $dg )
+            {
+                $RuleArray = $dg->securityRules->rules($ruleFilter);
+                $ruleCount += count($RuleArray);
+            }
+        }
+        elseif( $context->subSystem->isFirewall() )
+        {
+            foreach( $context->subSystem->getVirtualSystems() as $dg )
+            {
+                $RuleArray = $dg->securityRules->rules($ruleFilter);
+                $ruleCount += count($RuleArray);
+            }
+        }
+        elseif( $context->subSystem->isVirtualSystem() )
+        {
+            $firewall = $context->subSystem->owner;
+
+            foreach( $firewall->getVirtualSystems() as $dg )
+            {
+                $RuleArray = $dg->securityRules->rules($ruleFilter);
+                $ruleCount += count($RuleArray);
+            }
+        }
+
+        return $ruleCount;
+    }
+);
+
+SecurityProfileCallContext::$supportedActions[] = array(
+    'name' => 'exportSPRtoHTML',
+    'MainFunction' => function (SecurityProfileCallContext $context) {
+        $object = $context->object;
+        $context->objectList[] = $object;
+    },
+    'GlobalInitFunction' => function (SecurityProfileCallContext $context) {
+        $context->objectList = array();
+        $context->first = true;
+    },
+    'GlobalFinishFunction' => function (SecurityProfileCallContext $context) {
+        $args = &$context->arguments;
+        $filename = $args['filename'];
+
+        if( isset( $_SERVER['REQUEST_METHOD'] ) ) {
+            $filename = "project/html/".$filename;
+        }
+
+        // 1. Report Configuration & Meta Information
+        $reportTitle = "Security Profile Review";
+        $sourceMeta  = "configs/spr_html/reports";
+
+        $matchedRulesCount = 0;
+        if( $context->first )
+        {
+            $ruleFilter = "(action is.allow) and (rule is.enabled)";
+            $f = SecurityProfileCallContext::$commonActionFunctions['SPR-filter']['MainFunction'];
+            $matchedRulesCount = $f($context, $ruleFilter);
+
+            $av_blank = $f($context, $ruleFilter." and !(secprof av-profile.is.set)");
+
+            $as_blank = $f($context, $ruleFilter." and !(secprof as-profile.is.set)");
+
+            $vp_blank = $f($context, $ruleFilter." and !(secprof vuln-profile.is.set)");
+
+            $url_blank = $f($context, $ruleFilter." and !(secprof url-profile.is.set)");
+
+            $fb_blank = $f($context, $ruleFilter." and !(secprof file-profile.is.set)");
+
+            $wf_blank = $f($context, $ruleFilter." and !(secprof wf-profile.is.set)");
+
+            $context->first = false;
+        }
+
+        $placeholderMessage = "Placeholder pending pan-os-php enrichment (~15062026): cannot yet split rule counts between same-named SPs at different locations.";
+
+
+        // 2. Mock Dataset (Replace this with data fetched from your DB, API, or parsing engine)
+        $sections = [
+            'sec-av' => [
+                'title'         => 'AV — Antivirus Profiles',
+                'profile_label' => 'virus-profile',
+                'visible_label' => "Count 'sp_av_visible'",
+                'rows'          => [
+                ]
+            ],
+            'sec-as' => [
+                'title'         => 'AS — Anti-Spyware Profiles',
+                'profile_label' => 'spyware-profile',
+                'visible_label' => "Count 'sp_as_visible'",
+                'rows'          => []
+            ],
+            'sec-vp' => [
+                'title'         => 'VP — Vulnerability Profiles',
+                'profile_label' => 'vulnerability-profile',
+                'visible_label' => "Count 'sp_vp_visible'",
+                'rows'          => []
+            ],
+            'sec-url' => [
+                'title'         => 'URL — URL Filtering Profiles',
+                'profile_label' => 'url-filtering-profile',
+                'visible_label' => "Count 'sp_url_visible'",
+                'rows'          => []
+            ],
+            'sec-fb' => [
+                'title'         => 'FB — File Blocking Profiles',
+                'profile_label' => 'file-blocking-profile',
+                'visible_label' => "Count 'sp_file_visible'",
+                'rows'          => []
+            ],
+            'sec-wf' => [
+                'title'         => 'WF — WildFire Analysis Profiles',
+                'profile_label' => 'wildfire-analysis-profile',
+                'visible_label' => "Count 'sp_wf_visible'",
+                'rows'          => []
+            ],
+        ];
+
+        //Todo: missing part - get rules where no SP type is used
+
+        foreach( $context->objectList as $object )
+        {
+            if( get_class($object) == "customURLProfile"
+                || get_class( $object ) == "PredefinedSecurityProfileURL"
+                || get_class( $object ) == "predefined-url"
+                || get_class( $object ) == "predefined-url-filtering"
+                || get_class( $object ) == "predefined-virus"
+                || get_class( $object ) == "predefined-spyware"
+                || get_class( $object ) == "predefined-file-blocking"
+                || get_class( $object ) == "predefined-vulnerability"
+                || get_class( $object ) == "predefined-wildfire-analysis"
+            )
+                continue;
+
+
+            /** @var AntiVirusProfile|AntiSpywareProfile|VulnerabilityProfile|FileBlockingProfile|URLProfile|WildfireProfile|DataFilteringProfile|VirusAndWildfireProfile|DNSSecurityProfile $object */
+            $info = array();
+            if($object->owner->owner->name() == "")
+                $info['location'] = "shared";
+            else
+                $info['location'] = $object->owner->owner->name();
+            $info['profile'] = $object->name();
+
+            //Todo - this is still on all rules, focus on (action=allow & disabled=no)
+            $info['count'] = 0;
+            foreach( $object->refrules as $rule )
+            {
+                if( get_class($rule) == "SecurityRule" )
+                {
+                    /** @var SecurityRule $rule */
+                    if( $rule->isEnabled() && $rule->actionIsAllow() )
+                        $info['count']++;
+                }
+                elseif( get_class($rule) == "SecurityProfileGroup" )
+                {
+                    foreach( $rule->refrules as $rule2 )
+                    {
+                        if( get_class($rule2) == "SecurityRule" )
+                        {
+                            /** @var SecurityRule $rule2 */
+                            if( $rule2->isEnabled() && $rule2->actionIsAllow() )
+                                $info['count']++;
+                        }
+                    }
+                }
+            }
+
+            if( $object->is_visibility() )
+                $info['visible'] = $info['count'];
+            else
+                $info['visible'] = 0;
+
+
+            if( get_class($object) == "AntiVirusProfile" )
+            {
+                $sections['sec-av']['rows'][] = $info;
+            }
+            elseif( get_class($object) == "AntiSpywareProfile" )
+            {
+                $sections['sec-as']['rows'][] = $info;
+            }
+            elseif( get_class($object) == "VulnerabilityProfile" )
+            {
+                $sections['sec-vp']['rows'][] = $info;
+            }
+            elseif( get_class($object) == "FileBlockingProfile" )
+            {
+                $sections['sec-fb']['rows'][] = $info;
+            }
+            elseif( get_class($object) == "URLProfile" )
+            {
+                $sections['sec-url']['rows'][] = $info;
+            }
+            elseif( get_class($object) == "WildfireProfile" )
+            {
+                $sections['sec-wf']['rows'][] = $info;
+            }
+        }
+
+        $sections['sec-av']['rows'][] = array( "location" => "N/A", "profile" => "blank", "count" => $av_blank, "visible" => 0 );
+        $sections['sec-as']['rows'][] = array( "location" => "N/A", "profile" => "blank", "count" => $as_blank, "visible" => 0 );
+        $sections['sec-vp']['rows'][] = array( "location" => "N/A", "profile" => "blank", "count" => $vp_blank, "visible" => 0 );
+        $sections['sec-fb']['rows'][] = array( "location" => "N/A", "profile" => "blank", "count" => $fb_blank, "visible" => 0 );
+        $sections['sec-url']['rows'][] = array( "location" => "N/A", "profile" => "blank", "count" => $url_blank, "visible" => 0 );
+        $sections['sec-wf']['rows'][] = array( "location" => "N/A", "profile" => "blank", "count" => $wf_blank, "visible" => 0 );
+
+        // START OUTPUT BUFFERING: Intercepts printing output directly to variable
+        ob_start();
+        ?>
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="utf-8">
+            <title><?php echo htmlspecialchars($reportTitle); ?></title>
+            <style>
+                :root {
+                    --border: #d0d5dd;
+                    --header-bg: #1d4ed8;
+                    --header-fg: #ffffff;
+                    --row-alt: #f8fafc;
+                    --muted: #6b7280;
+                    --subtotal-bg: #eef2ff;
+                    --placeholder: #9ca3af;
+                }
+                * { box-sizing: border-box; }
+                body {
+                    margin: 24px;
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+                    Ubuntu, Cantarell, sans-serif;
+                    color: #111827;
+                }
+                header.spr-header {
+                    border-bottom: 2px solid var(--border);
+                    padding-bottom: 12px;
+                    margin-bottom: 24px;
+                }
+                header.spr-header h1 { margin: 0 0 4px 0; font-size: 22px; }
+                header.spr-header .meta { color: var(--muted); font-size: 13px; }
+                .spr-section { margin-bottom: 32px; }
+                .spr-section h2 {
+                    font-size: 16px;
+                    margin: 0 0 8px 0;
+                    padding: 6px 10px;
+                    background: #f3f4f6;
+                    border-left: 4px solid var(--header-bg);
+                }
+                .spr-table {
+                    border-collapse: collapse;
+                    width: 100%;
+                    table-layout: fixed;
+                    font-size: 13px;
+                }
+                .spr-table th, .spr-table td {
+                    border: 1px solid var(--border);
+                    padding: 6px 10px;
+                    text-align: left;
+                    word-break: break-word;
+                }
+                .spr-table thead th {
+                    background: var(--header-bg);
+                    color: var(--header-fg);
+                    font-weight: 600;
+                }
+                .spr-table tbody tr:nth-child(even) { background: var(--row-alt); }
+                .spr-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+                .spr-table td.placeholder {
+                    color: var(--placeholder);
+                    font-style: italic;
+                    cursor: help;
+                }
+                .spr-table tr.subtotal td {
+                    background: var(--subtotal-bg);
+                    font-weight: 600;
+                    border-top: 2px solid var(--header-bg);
+                }
+                footer.spr-footer {
+                    margin-top: 32px;
+                    padding-top: 12px;
+                    border-top: 1px solid var(--border);
+                    color: var(--muted);
+                    font-size: 12px;
+                }
+            </style>
+        </head>
+        <body>
+
+        <!-- Unique Header Section -->
+        <header class="spr-header">
+            <h1><?php echo htmlspecialchars($reportTitle); ?></h1>
+            <div class="meta">
+                Source: <?php echo htmlspecialchars($sourceMeta); ?> &middot;
+                Matched rules (action=allow &amp; disabled=no): <?php echo number_format($matchedRulesCount); ?>
+            </div>
+        </header>
+
+        <!-- Repeating Security Profile Tables -->
+        <?php foreach ($sections as $id => $section): ?>
+            <?php
+            $subtotalCount = 0;
+            $subtotalVisible = 0;
+            ?>
+            <section id="<?php echo htmlspecialchars($id); ?>" class="spr-section">
+                <h2><?php echo htmlspecialchars($section['title']); ?></h2>
+                <table class="spr-table">
+                    <thead>
+                    <tr>
+                        <th>Location</th>
+                        <th><?php echo htmlspecialchars($section['profile_label']); ?></th>
+                        <th>Count</th>
+                        <th><?php echo htmlspecialchars($section['visible_label']); ?></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <?php foreach ($section['rows'] as $row): ?>
+                        <tr>
+                            <td><?php echo htmlspecialchars($row['location']); ?></td>
+                            <td><?php echo htmlspecialchars($row['profile']); ?></td>
+
+                            <?php if (!empty($row['is_placeholder'])): ?>
+                                <td class="num placeholder" title="<?php echo htmlspecialchars($placeholderMessage); ?>">—</td>
+                                <td class="num placeholder" title="<?php echo htmlspecialchars($placeholderMessage); ?>">—</td>
+                            <?php else: ?>
+                                <td class="num"><?php echo $row['count']; ?></td>
+                                <td class="num"><?php echo $row['visible']; ?></td>
+                                <?php
+                                $subtotalCount += $row['count'];
+                                $subtotalVisible += $row['visible'];
+                                ?>
+                            <?php endif; ?>
+                        </tr>
+                    <?php endforeach; ?>
+
+                    <tr class="subtotal">
+                        <td colspan="2">Subtotal (excludes placeholder rows)</td>
+                        <td class="num"><?php echo $subtotalCount; ?></td>
+                        <td class="num"><?php echo $subtotalVisible; ?></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </section>
+        <?php endforeach; ?>
+
+        <footer class="spr-footer">
+            <?php echo htmlspecialchars($placeholderMessage); ?>
+        </footer>
+
+        </body>
+        </html>
+        <?php
+
+        // Flushes buffer out and saves the final file configuration directly to target path
+        file_put_contents($filename, ob_get_clean());
+    },
+    'args' => array(
+        'filename' => array('type' => 'string', 'default' => '*nodefault*'),
+        'additionalFields' => array(
+            'type' => 'pipeSeparatedList',
+            'subtype' => 'string',
+            'default' => '*NONE*',
+            'choices' => array('WhereUsed', 'UsedInLocation', 'TotalUse', 'BestPractice', 'Visibility', 'Adoption', 'URLmembers'),
+            'help' => "pipe(|) separated list of additional fields (ie: Arg1|Arg2|Arg3...) to include in the report. The following is available:\n" .
+                "  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n" .
+                "  - WhereUsed : list places where object is used (rules, groups ...)\n" .
+                "  - TotalUse : list a counter how often this object is used\n" .
+                "  - BestPractice : show if BestPractice is configured\n" .
+                "  - Visibility : show if SP log is configured\n" .
+                "  - Adoption : show if SP log is used\n" .
+                "  - URLmembers : add URL members also if bestpractice or visibility is added\n"
+        )
+    )
+);
+
 SecurityProfileCallContext::$supportedActions['custom-url-category-add-ending-token'] = array(
     'name' => 'custom-url-category-add-ending-token',
     'MainFunction' => function (SecurityProfileCallContext $context) {
