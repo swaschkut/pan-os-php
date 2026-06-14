@@ -464,10 +464,8 @@ class SecurityRule extends RuleWithUserID
                 {
                     $this->secprofgroup = $firstE->textContent;
                     $this->secprofgroup_obj = $tmp_group;
-                    //Todo: swaschkut 20210422 - 20260420 - how to validate if this is still an issue??
-                    //- not working due to parentcentralStore implementation wrong
+
                     $tmp_group->addReference( $this );
-                    #mwarning( "SPG object found - add reference" );
                 }
                 else
                 {

@@ -9225,21 +9225,6 @@ var subjectObject =
                     "filename": {
                         "type": "string",
                         "default": "*nodefault*"
-                    },
-                    "additionalFields": {
-                        "type": "pipeSeparatedList",
-                        "subtype": "string",
-                        "default": "*NONE*",
-                        "choices": [
-                            "WhereUsed",
-                            "UsedInLocation",
-                            "TotalUse",
-                            "BestPractice",
-                            "Visibility",
-                            "Adoption",
-                            "URLmembers"
-                        ],
-                        "help": "pipe(|) separated list of additional fields (ie: Arg1|Arg2|Arg3...) to include in the report. The following is available:\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n  - WhereUsed : list places where object is used (rules, groups ...)\n  - TotalUse : list a counter how often this object is used\n  - BestPractice : show if BestPractice is configured\n  - Visibility : show if SP log is configured\n  - Adoption : show if SP log is used\n  - URLmembers : add URL members also if bestpractice or visibility is added\n"
                     }
                 }
             },

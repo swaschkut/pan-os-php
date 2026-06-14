@@ -2127,6 +2127,42 @@ SecurityProfileCallContext::$commonActionFunctions['SPR-filter']= array(
                 $ruleCount += count($RuleArray);
             }
         }
+        elseif( $context->subSystem->isBuckbeak()
+            || $context->subSystem->isFawkes()
+            || $context->subSystem->isContainer()
+            || $context->subSystem->isDeviceCloud()
+            || $context->subSystem->isDeviceOnPrem()
+            || $context->subSystem->isSnippet()
+        )
+        {
+            /** @var BuckbeakConf $panorama */
+            $panorama = $context->subSystem->owner;
+
+            foreach( $panorama->getContainers() as $dg )
+            {
+                $RuleArray = $dg->securityRules->rules($ruleFilter);
+                $ruleCount += count($RuleArray);
+            }
+
+            foreach( $panorama->getDeviceClouds() as $dg )
+            {
+                $RuleArray = $dg->securityRules->rules($ruleFilter);
+                $ruleCount += count($RuleArray);
+            }
+
+            foreach( $panorama->getDeviceOnPrems() as $dg )
+            {
+                $RuleArray = $dg->securityRules->rules($ruleFilter);
+                $ruleCount += count($RuleArray);
+            }
+
+            foreach( $panorama->getSnippets() as $dg )
+            {
+                //Todo - only if snippet is used - swaschkut 20260614
+                $RuleArray = $dg->securityRules->rules($ruleFilter);
+                $ruleCount += count($RuleArray);
+            }
+        }
 
         return $ruleCount;
     }
@@ -2145,6 +2181,8 @@ SecurityProfileCallContext::$supportedActions[] = array(
     'GlobalFinishFunction' => function (SecurityProfileCallContext $context) {
         $args = &$context->arguments;
         $filename = $args['filename'];
+
+        $isSCM = false;
 
         if( isset( $_SERVER['REQUEST_METHOD'] ) ) {
             $filename = "project/html/".$filename;
@@ -2172,6 +2210,11 @@ SecurityProfileCallContext::$supportedActions[] = array(
             $fb_blank = $f($context, $ruleFilter." and !(secprof file-profile.is.set)");
 
             $wf_blank = $f($context, $ruleFilter." and !(secprof wf-profile.is.set)");
+
+            //SCM related
+            $avwf_blank = $f($context, $ruleFilter." and !(secprof avwf-profile.is.set)");
+
+            $dnssec_blank = $f($context, $ruleFilter." and !(secprof dnssec-profile.is.set)");
 
             $context->first = false;
         }
@@ -2219,6 +2262,33 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 'rows'          => []
             ],
         ];
+
+        if( $context->subSystem->isBuckbeak()
+            || $context->subSystem->isFawkes()
+            || $context->subSystem->isContainer()
+            || $context->subSystem->isDeviceCloud()
+            || $context->subSystem->isDeviceOnPrem()
+            || $context->subSystem->isSnippet()
+        )
+        {
+            $isSCM = true;
+
+            $sections['sec-avwf'] = array(
+                'title'         => 'AVWF — VirusAndWildFire Profiles',
+                'profile_label' => 'virus-and-wildfire-profile',
+                'visible_label' => "SecRule Count 'sp_avwf_visible'",
+                'rows'          => array()
+            );
+            $sections['sec-dnssec'] = array(
+                'title'         => 'DNSSec — DNSSecurity Profiles',
+                'profile_label' => 'dnssecurity-profile',
+                'visible_label' => "SecRule Count 'sp_dnssec_visible'",
+                'rows'          => array()
+            );
+
+            unset( $sections['sec-av'] );
+            unset( $sections['sec-wf'] );
+        }
 
         //Todo: missing part - get rules where no SP type is used
 
@@ -2299,14 +2369,34 @@ SecurityProfileCallContext::$supportedActions[] = array(
             {
                 $sections['sec-wf']['rows'][] = $info;
             }
+
+            //Todo SCM related
+            elseif( get_class($object) == "VirusAndWildfireProfile" )
+            {
+                $sections['sec-avwf']['rows'][] = $info;
+            }
+            elseif( get_class($object) == "DNSSecurityProfile" )
+            {
+                $sections['sec-dnssec']['rows'][] = $info;
+            }
         }
 
-        $sections['sec-av']['rows'][] = array( "location" => "N/A", "profile" => "blank", "count" => $av_blank, "visible" => 0 );
+        if( !$isSCM )
+        {
+            $sections['sec-av']['rows'][] = array( "location" => "N/A", "profile" => "blank", "count" => $av_blank, "visible" => 0 );
+            $sections['sec-wf']['rows'][] = array( "location" => "N/A", "profile" => "blank", "count" => $wf_blank, "visible" => 0 );
+        }
+        else
+        {
+            //SCM
+            $sections['sec-avwf']['rows'][] = array( "location" => "N/A", "profile" => "blank", "count" => $avwf_blank, "visible" => 0 );
+            $sections['sec-dnssec']['rows'][] = array( "location" => "N/A", "profile" => "blank", "count" => $dnssec_blank, "visible" => 0 );
+        }
+
         $sections['sec-as']['rows'][] = array( "location" => "N/A", "profile" => "blank", "count" => $as_blank, "visible" => 0 );
         $sections['sec-vp']['rows'][] = array( "location" => "N/A", "profile" => "blank", "count" => $vp_blank, "visible" => 0 );
         $sections['sec-fb']['rows'][] = array( "location" => "N/A", "profile" => "blank", "count" => $fb_blank, "visible" => 0 );
         $sections['sec-url']['rows'][] = array( "location" => "N/A", "profile" => "blank", "count" => $url_blank, "visible" => 0 );
-        $sections['sec-wf']['rows'][] = array( "location" => "N/A", "profile" => "blank", "count" => $wf_blank, "visible" => 0 );
 
         // START OUTPUT BUFFERING: Intercepts printing output directly to variable
         ob_start();
