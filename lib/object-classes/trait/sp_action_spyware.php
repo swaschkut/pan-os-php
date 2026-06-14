@@ -1025,7 +1025,7 @@ trait sp_action_spyware
             }
             return $bp_set;
         }
-        return null;
+        return true;
     }
 
     public function spyware_advanced_dns_security_visibility(): ?bool
@@ -1047,7 +1047,7 @@ trait sp_action_spyware
 
             return $bp_set;
         }
-        return null;
+        return true;
     }
 
     public function spyware_dns_security_adoption(): ?bool
