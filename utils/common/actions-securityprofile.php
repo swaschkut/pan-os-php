@@ -2228,6 +2228,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 'title'         => 'AV — Antivirus Profiles',
                 'profile_label' => 'virus-profile',
                 'visible_label' => "SecRule Count 'sp_av_visible'",
+                'bp_label' => "SecRule Count 'sp_av_bestpractice'",
                 'rows'          => [
                 ]
             ],
@@ -2235,30 +2236,35 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 'title'         => 'AS — Anti-Spyware Profiles',
                 'profile_label' => 'spyware-profile',
                 'visible_label' => "SecRule Count 'sp_as_visible'",
+                'bp_label' => "SecRule Count 'sp_as_bestpractice'",
                 'rows'          => []
             ],
             'sec-vp' => [
                 'title'         => 'VP — Vulnerability Profiles',
                 'profile_label' => 'vulnerability-profile',
                 'visible_label' => "SecRule Count 'sp_vp_visible'",
+                'bp_label' => "SecRule Count 'sp_vp_bestpractice'",
                 'rows'          => []
             ],
             'sec-url' => [
                 'title'         => 'URL — URL Filtering Profiles',
                 'profile_label' => 'url-filtering-profile',
                 'visible_label' => "SecRule Count 'sp_url_visible'",
+                'bp_label' => "SecRule Count 'sp_url_bestpractice'",
                 'rows'          => []
             ],
             'sec-fb' => [
                 'title'         => 'FB — File Blocking Profiles',
                 'profile_label' => 'file-blocking-profile',
                 'visible_label' => "SecRule Count 'sp_file_visible'",
+                'bp_label' => "SecRule Count 'sp_file_bestpractice'",
                 'rows'          => []
             ],
             'sec-wf' => [
                 'title'         => 'WF — WildFire Analysis Profiles',
                 'profile_label' => 'wildfire-analysis-profile',
                 'visible_label' => "SecRule Count 'sp_wf_visible'",
+                'bp_label' => "SecRule Count 'sp_wf_bestpractice'",
                 'rows'          => []
             ],
         ];
@@ -2277,12 +2283,14 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 'title'         => 'AVWF — VirusAndWildFire Profiles',
                 'profile_label' => 'virus-and-wildfire-profile',
                 'visible_label' => "SecRule Count 'sp_avwf_visible'",
+                'bp_label' => "SecRule Count 'sp_avwf_bestpractice'",
                 'rows'          => array()
             );
             $sections['sec-dnssec'] = array(
                 'title'         => 'DNSSec — DNSSecurity Profiles',
                 'profile_label' => 'dnssecurity-profile',
                 'visible_label' => "SecRule Count 'sp_dnssec_visible'",
+                'bp_label' => "SecRule Count 'sp_dnssec_bestpractice'",
                 'rows'          => array()
             );
 
@@ -2344,6 +2352,10 @@ SecurityProfileCallContext::$supportedActions[] = array(
             else
                 $info['visible'] = 0;
 
+            if( $object->is_best_practice() )
+                $info['bp'] = $info['count'];
+            else
+                $info['bp'] = 0;
 
             if( get_class($object) == "AntiVirusProfile" )
             {
@@ -2383,20 +2395,20 @@ SecurityProfileCallContext::$supportedActions[] = array(
 
         if( !$isSCM )
         {
-            $sections['sec-av']['rows'][] = array( "location" => "N/A", "profile" => "blank", "count" => $av_blank, "visible" => 0 );
-            $sections['sec-wf']['rows'][] = array( "location" => "N/A", "profile" => "blank", "count" => $wf_blank, "visible" => 0 );
+            $sections['sec-av']['rows'][] = array( "location" => "N/A", "profile" => "blank", "count" => $av_blank, "visible" => 0, "bp" => 0 );
+            $sections['sec-wf']['rows'][] = array( "location" => "N/A", "profile" => "blank", "count" => $wf_blank, "visible" => 0, "bp" => 0 );
         }
         else
         {
             //SCM
-            $sections['sec-avwf']['rows'][] = array( "location" => "N/A", "profile" => "blank", "count" => $avwf_blank, "visible" => 0 );
-            $sections['sec-dnssec']['rows'][] = array( "location" => "N/A", "profile" => "blank", "count" => $dnssec_blank, "visible" => 0 );
+            $sections['sec-avwf']['rows'][] = array( "location" => "N/A", "profile" => "blank", "count" => $avwf_blank, "visible" => 0, "bp" => 0 );
+            $sections['sec-dnssec']['rows'][] = array( "location" => "N/A", "profile" => "blank", "count" => $dnssec_blank, "visible" => 0, "bp" => 0 );
         }
 
-        $sections['sec-as']['rows'][] = array( "location" => "N/A", "profile" => "blank", "count" => $as_blank, "visible" => 0 );
-        $sections['sec-vp']['rows'][] = array( "location" => "N/A", "profile" => "blank", "count" => $vp_blank, "visible" => 0 );
-        $sections['sec-fb']['rows'][] = array( "location" => "N/A", "profile" => "blank", "count" => $fb_blank, "visible" => 0 );
-        $sections['sec-url']['rows'][] = array( "location" => "N/A", "profile" => "blank", "count" => $url_blank, "visible" => 0 );
+        $sections['sec-as']['rows'][] = array( "location" => "N/A", "profile" => "blank", "count" => $as_blank, "visible" => 0, "bp" => 0 );
+        $sections['sec-vp']['rows'][] = array( "location" => "N/A", "profile" => "blank", "count" => $vp_blank, "visible" => 0, "bp" => 0 );
+        $sections['sec-fb']['rows'][] = array( "location" => "N/A", "profile" => "blank", "count" => $fb_blank, "visible" => 0, "bp" => 0 );
+        $sections['sec-url']['rows'][] = array( "location" => "N/A", "profile" => "blank", "count" => $url_blank, "visible" => 0, "bp" => 0 );
 
         // START OUTPUT BUFFERING: Intercepts printing output directly to variable
         ob_start();
@@ -2492,6 +2504,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
             <?php
             $subtotalCount = 0;
             $subtotalVisible = 0;
+            $subtotalBP = 0;
             ?>
             <section id="<?php echo htmlspecialchars($id); ?>" class="spr-section">
                 <h2><?php echo htmlspecialchars($section['title']); ?></h2>
@@ -2502,6 +2515,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         <th><?php echo htmlspecialchars($section['profile_label']); ?></th>
                         <th>SecRule Count</th>
                         <th><?php echo htmlspecialchars($section['visible_label']); ?></th>
+                        <th><?php echo htmlspecialchars($section['bp_label']); ?></th>
                     </tr>
                     </thead>
                     <tbody>
@@ -2516,9 +2530,11 @@ SecurityProfileCallContext::$supportedActions[] = array(
                             <?php else: ?>
                                 <td class="num"><?php echo $row['count']; ?></td>
                                 <td class="num"><?php echo $row['visible']; ?></td>
+                                <td class="num"><?php echo $row['bp']; ?></td>
                                 <?php
                                 $subtotalCount += $row['count'];
                                 $subtotalVisible += $row['visible'];
+                                $subtotalBP += $row['bp'];
                                 ?>
                             <?php endif; ?>
                         </tr>
@@ -2528,6 +2544,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         <td colspan="2">Subtotal</td>
                         <td class="num"><?php echo $subtotalCount; ?></td>
                         <td class="num"><?php echo $subtotalVisible; ?></td>
+                        <td class="num"><?php echo $subtotalBP; ?></td>
                     </tr>
                     </tbody>
                 </table>

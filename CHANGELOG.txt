@@ -6,6 +6,7 @@ UTIL:
 * type=rule 'actions=exporttohtml:rule.html,visibility|bestpractice' | extend with SPG_SP location information
 * type=securityprofile location=any actions=exportSPRtoHTML:spr.html | export full SP info, with counter for SecRules to HTML
 * type=securityprofile actions=exportSPRtoHTML:spr.html | extend for SCM config
+* type=securityprofile actions=exportSPRtoHTML:spr.html | extend with sp_xyz_bestpractice column
 
 BUGFIX:
 * type=securityprofile actions=virus.decoder.alert-only-set | bugfix for older PAN-OS version
