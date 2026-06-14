@@ -2835,11 +2835,20 @@ SecurityProfileCallContext::$supportedActions['virus.decoder.alert-only-set'] = 
 
             foreach( $actionTypeArray as $actionType )
             {
-                if (isset($object->$decoder[$actionType]) && $object->$decoder[$actionType] == "allow")
+                $check_array = $object->virus_bp_visibility_JSON( "visibility", "virus", $actionType );
+
+                foreach( $check_array as $check )
                 {
-                    $object->$decoder[$actionType] = "alert";
-                    $action_xmlNode = DH::findFirstElement($actionType, $xmlNode);
-                    $action_xmlNode->textContent = "alert";
+                    $final_check = $check;
+                    if( str_contains( $final_check, "!" ) )
+                        $final_check = str_replace("!", "", $final_check);
+
+                    if (isset($object->$decoder[$actionType]) && $object->$decoder[$actionType] == $final_check)
+                    {
+                        $object->$decoder[$actionType] = "alert";
+                        $action_xmlNode = DH::findFirstElement($actionType, $xmlNode);
+                        $action_xmlNode->textContent = "alert";
+                    }
                 }
             }
         }
@@ -2863,13 +2872,31 @@ SecurityProfileCallContext::$supportedActions['virus.inline-ml.alert-only-set'] 
                 if( $mlav_engine_entry->nodeType != XML_ELEMENT_NODE )
                     continue;
 
-                $name = DH::findAttribute( "name", $mlav_engine_entry);
+                $check_array = $object->bp_visibility_JSON( "visibility", "virus");
 
-                $action_xmlNode = DH::findFirstElement("mlav-policy-action", $mlav_engine_entry);
-                if( $action_xmlNode->textContent == "disable" )
+                if( isset($check_array['inline-policy-action'] ) )
                 {
-                    $action_xmlNode->textContent = "enable(alert-only)";
-                    $object->additional['mlav-engine-filebased-enabled'][$name]['mlav-policy-action'] = "enable(alert-only)";
+                    foreach ($check_array['inline-policy-action'] as $validate)
+                    {
+                        foreach( $validate['type'] as $type )
+                        {
+                            if( $type == 'any' || $type == $mlav_engine_entry )
+                            {
+                                $final_check = $validate['action'][0];
+                                if( str_contains( $final_check, "!" ) )
+                                    $final_check = str_replace("!", "", $final_check);
+
+                                $name = DH::findAttribute( "name", $mlav_engine_entry);
+
+                                $action_xmlNode = DH::findFirstElement("mlav-policy-action", $mlav_engine_entry);
+                                if( $action_xmlNode->textContent == $final_check )
+                                {
+                                    $action_xmlNode->textContent = "enable(alert-only)";
+                                    $object->additional['mlav-engine-filebased-enabled'][$name]['mlav-policy-action'] = "enable(alert-only)";
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }

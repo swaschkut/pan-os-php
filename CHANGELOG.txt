@@ -7,6 +7,7 @@ UTIL:
 * type=securityprofile location=any actions=exportSPRtoHTML:spr.html | export full SP info, with counter for SecRules to HTML
 * type=securityprofile actions=exportSPRtoHTML:spr.html | extend for SCM config
 * type=securityprofile actions=exportSPRtoHTML:spr.html | extend with sp_xyz_bestpractice column
+* type=securityprofile actions=virus.alert-only-set | use bp setting json for action set
 
 BUGFIX:
 * type=securityprofile actions=virus.decoder.alert-only-set | bugfix for older PAN-OS version
