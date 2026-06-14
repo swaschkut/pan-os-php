@@ -463,6 +463,7 @@ class SecurityRule extends RuleWithUserID
                 if( is_object( $tmp_group ) )
                 {
                     $this->secprofgroup = $firstE->textContent;
+                    $this->secprofgroup_obj = $tmp_group;
                     //Todo: swaschkut 20210422 - 20260420 - how to validate if this is still an issue??
                     //- not working due to parentcentralStore implementation wrong
                     $tmp_group->addReference( $this );
@@ -592,6 +593,17 @@ class SecurityRule extends RuleWithUserID
             derr('Cannot be called on a rule that is of security type =' . $this->secproftype);
 
         return $this->secprofgroup;
+    }
+    public function securityProfileGroup_obj()
+    {
+        if( $this->secproftype != 'group' )
+            derr('Cannot be called on a rule that is of security type =' . $this->secproftype);
+
+        if( $this->secprofgroup_obj ==  null )
+        {
+            $this->secprofgroup_obj = $this->owner->owner->securityProfileGroupStore->find( $this->secprofgroup );
+        }
+        return $this->secprofgroup_obj;
     }
 
     public function securityProfiles()
