@@ -1107,20 +1107,23 @@ class URLProfile extends SecurityProfile2
 
     public function check_mica_engine_visibility_json( $check_array )
     {
-        //Todo: this is visible and bp
-        foreach( $check_array as $key => $validation )
+        if( $this->owner->owner->version >= 102 )
         {
-            $finding = str_replace("!", "", $validation);
+            //Todo: this is visible and bp
+            foreach( $check_array as $key => $validation )
+            {
+                $finding = str_replace("!", "", $validation);
 
-            if( $key == "local-inline-cat" )
-            {
-                if( $this->local_inline_cat !== $validation )
-                    return false;
-            }
-            elseif( $key == "cloud-inline-cat" )
-            {
-                if( $this->cloud_inline_cat !== $validation )
-                    return false;
+                if( $key == "local-inline-cat" )
+                {
+                    if( $this->local_inline_cat !== $validation )
+                        return false;
+                }
+                elseif( $key == "cloud-inline-cat" )
+                {
+                    if( $this->cloud_inline_cat !== $validation )
+                        return false;
+                }
             }
         }
 
