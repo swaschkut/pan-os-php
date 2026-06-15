@@ -10,6 +10,7 @@ UTIL:
 * type=securityprofile actions=virus.alert-only-set | use bp setting json for action set
 * type=securityprofile securityprofiletype=url-filtering 'actions=exporttohtml:sp_url.html,visibility|bestpractice' | extend with detail URL TAB information for mode / log-severity
 * type=securityprofile securityprofiletype=url-filtering | extend visibility/bestpractice with URL mica-engine
+* type=stats | extend with URL inline-ML
 
 BUGFIX:
 * type=securityprofile actions=virus.decoder.alert-only-set | bugfix for older PAN-OS version

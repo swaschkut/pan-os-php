@@ -1359,6 +1359,10 @@ class URLProfile extends SecurityProfile2
         else
             return FALSE;
     }
+    public function mica_engine_is_adoption()
+    {
+        return TRUE;
+    }
     static $templatexml = '<entry name="**temporarynamechangeme**"></entry>';
 
 }

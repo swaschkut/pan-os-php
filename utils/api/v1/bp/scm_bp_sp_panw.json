@@ -585,6 +585,7 @@
             "Data Filtering": false,
             "URL Filtering Profiles": true,
             "Credential Theft Prevention": true,
+            "URL InLine ML": true,
             "DNS Security": true,
             "DNS List": false
         },
@@ -605,6 +606,7 @@
             "File Blocking Profiles": true,
             "URL Filtering Profiles": true,
             "Credential Theft Prevention": true,
+            "URL InLine ML": false,
             "DNS Security": true,
             "DNS List": false
         }

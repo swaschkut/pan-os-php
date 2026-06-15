@@ -1840,6 +1840,19 @@ RQuery::$defaultFilters['securityprofile']['url.mica-engine']['operators']['is.b
     'arg' => false,
     'help' => "'securityprofiletype=url-filtering' e.g. 'filter=(url.mica-engine is.best-practice)'"
 );
+RQuery::$defaultFilters['securityprofile']['url.mica-engine']['operators']['is.adoption'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var URLProfile $object */
+        $object = $context->object;
+
+        if( $object->secprof_type != 'url-filtering' )
+            return null;
+
+        return $object->mica_engine_is_adoption();
+    },
+    'arg' => false,
+    'help' => "'securityprofiletype=url-filtering' e.g. 'filter=(url.mica-engine is.best-practice)'"
+);
 
 RQuery::$defaultFilters['securityprofile']['object']['operators']['is.predefined'] = array(
     'Function' => function (SecurityProfileRQueryContext $context) {

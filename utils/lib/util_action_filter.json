@@ -10242,9 +10242,14 @@
                     "is.visibility": {
                         "Function": {},
                         "arg": false,
-                        "help": "'securityprofiletype=url-filtering' e.g. 'filter=(url.user-credential-detection is.visibility)'"
+                        "help": "'securityprofiletype=url-filtering' e.g. 'filter=(url.mica-engine is.visibility)'"
                     },
                     "is.best-practice": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=url-filtering' e.g. 'filter=(url.mica-engine is.best-practice)'"
+                    },
+                    "is.adoption": {
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=url-filtering' e.g. 'filter=(url.mica-engine is.best-practice)'"

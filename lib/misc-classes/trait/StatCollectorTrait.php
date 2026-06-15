@@ -1196,6 +1196,15 @@ trait StatCollectorTrait
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "url.user-credential-detection is.adoption" );
         $stdoutarray['url-credential adoption'] = count( $sub_ruleStore->rules( $filter_array ) );
 
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "url.mica-engine is.visibility" );
+        $stdoutarray['url-mica-engine visibility'] = count( $sub_ruleStore->rules( $filter_array ) );
+
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "url.mica-engine is.best-practice" );
+        $stdoutarray['url-mica-engine best-practice'] = count( $sub_ruleStore->rules( $filter_array ) );
+
+        $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "url.mica-engine is.adoption" );
+        $stdoutarray['url-mica-engine adoption'] = count( $sub_ruleStore->rules( $filter_array ) );
+
         $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "dns-list is.visibility" );
         $stdoutarray['dns-list visibility'] = count( $sub_ruleStore->rules( $filter_array ) );
 
@@ -1290,6 +1299,10 @@ trait StatCollectorTrait
         $workingArray[] = array( 'url-credential visibility', $ruleForCalculation);
         $workingArray[] = array( 'url-credential best-practice', $ruleForCalculation);
         $workingArray[] = array( 'url-credential adoption', $ruleForCalculation);
+
+        $workingArray[] = array( 'url-mica-engine visibility', $ruleForCalculation);
+        $workingArray[] = array( 'url-mica-engine best-practice', $ruleForCalculation);
+        $workingArray[] = array( 'url-mica-engine adoption', $ruleForCalculation);
 
         $workingArray[] = array( 'dns-list visibility', $ruleForCalculation);
         $workingArray[] = array( 'dns-list best-practice', $ruleForCalculation);
@@ -1414,6 +1427,8 @@ trait StatCollectorTrait
         $percentageArray_visibility['URL Filtering Profiles']['group'] = 'URL Filtering';
         $percentageArray_visibility['Credential Theft Prevention']['value'] = $stdoutarray['url-credential visibility percentage'];
         $percentageArray_visibility['Credential Theft Prevention']['group'] = 'URL Filtering';
+        $percentageArray_visibility['URL InLine ML']['value'] = $stdoutarray['url-mica-engine visibility percentage'];
+        $percentageArray_visibility['URL InLine ML']['group'] = 'URL Filtering';
 
         $percentageArray_visibility['DNS List']['value'] = $stdoutarray['dns-list visibility percentage'];
         $percentageArray_visibility['DNS List']['group'] = 'DNS Security';
