@@ -1825,7 +1825,7 @@ RQuery::$defaultFilters['securityprofile']['url.mica-engine']['operators']['is.v
         return $object->mica_engine_is_visibility();
     },
     'arg' => false,
-    'help' => "'securityprofiletype=url-filtering' e.g. 'filter=(url.user-credential-detection is.visibility)'"
+    'help' => "'securityprofiletype=url-filtering' e.g. 'filter=(url.mica-engine is.visibility)'"
 );
 RQuery::$defaultFilters['securityprofile']['url.mica-engine']['operators']['is.best-practice'] = array(
     'Function' => function (SecurityProfileRQueryContext $context) {
