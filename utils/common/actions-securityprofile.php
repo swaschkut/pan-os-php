@@ -2096,7 +2096,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
 SecurityProfileCallContext::$supportedActions[] = array_merge(SecurityProfileCallContext::$supportedActions[array_key_last(SecurityProfileCallContext::$supportedActions)], array('name' => 'exportToHtml'));
 
 SecurityProfileCallContext::$commonActionFunctions['SPR-filter']= array(
-    'name' => 'virus.decoder.best-practice-set',
+    'name' => 'SPR-filter',
     'MainFunction' => function (SecurityProfileCallContext $context, $ruleFilter)
     {
         $ruleCount = 0;
@@ -2181,6 +2181,106 @@ SecurityProfileCallContext::$commonActionFunctions['SPR-filter']= array(
         return $ruleCount;
     }
 );
+SecurityProfileCallContext::$commonActionFunctions['bp-stats']= array(
+    'name' => 'bp-stats',
+    'MainFunction' => function (SecurityProfileCallContext $context, $debug = true, $actions = "display")
+    {
+        $shadow_json_backup = PH::$shadow_json;
+        PH::$shadow_json = true;
+        $ruleCount = 0;
+        if( $context->subSystem->isPanorama() )
+        {
+            $context->subSystem->display_bp_statistics( $debug, $actions );
+        }
+        elseif( $context->subSystem->isDeviceGroup() )
+        {
+            $panorama = $context->subSystem->owner;
+            $panorama->display_bp_statistics( $debug, $actions );
+        }
+        elseif( $context->subSystem->isFirewall() )
+        {
+            $context->subSystem->display_bp_statistics( $debug, $actions );
+        }
+        elseif( $context->subSystem->isVirtualSystem() )
+        {
+            $firewall = $context->subSystem->owner;
+
+            $firewall->display_bp_statistics( $debug, $actions );
+        }
+        elseif( $context->subSystem->isBuckbeak()
+            || $context->subSystem->isFawkes()
+            || $context->subSystem->isContainer()
+            || $context->subSystem->isDeviceCloud()
+            || $context->subSystem->isDeviceOnPrem()
+            || $context->subSystem->isSnippet()
+        )
+        {
+            /** @var BuckbeakConf $panorama */
+            $panorama = $context->subSystem->owner;
+            $panorama->display_bp_statistics( $debug, $actions );
+        }
+
+        PH::$shadow_json = $shadow_json_backup;
+
+        return PH::$JSON_TMP;
+    }
+);
+
+SecurityProfileCallContext::$commonActionFunctions['bp-stats_print_table']= array(
+    'name' => 'bp-stats_print_table',
+    'MainFunction' => function (SecurityProfileCallContext $context, $debug = true, $actions = "display")
+    {
+        $shadow_json_backup = PH::$shadow_json;
+        PH::$shadow_json = true;
+        $ruleCount = 0;
+
+
+        $f = SecurityProfileCallContext::$commonActionFunctions['bp-stats']['MainFunction'];
+        $bp_stats_array = $f($context, true );
+
+        $bp_stats_array_visible = $bp_stats_array[0]['percentage']['visibility'];
+        $string_check = "visibility";
+        $percentageArray_visibility = $bp_stats_array_visible;
+
+        #print_r($percentageArray_visibility);
+
+        $device = $context->subSystem;
+        if( $context->subSystem->isPanorama() )
+        {
+            $device = $context->subSystem;
+        }
+        elseif( $context->subSystem->isDeviceGroup() )
+        {
+            $device = $context->subSystem->owner;
+        }
+        elseif( $context->subSystem->isFirewall() )
+        {
+            $device = $context->subSystem;
+        }
+        elseif( $context->subSystem->isVirtualSystem() )
+        {
+            $device = $context->subSystem->owner;
+        }
+        elseif( $context->subSystem->isBuckbeak()
+            || $context->subSystem->isFawkes()
+            || $context->subSystem->isContainer()
+            || $context->subSystem->isDeviceCloud()
+            || $context->subSystem->isDeviceOnPrem()
+            || $context->subSystem->isSnippet()
+        )
+        {
+            /** @var BuckbeakConf $panorama */
+            $device = $context->subSystem->owner;
+        }
+
+        $device->print_table( $string_check, $percentageArray_visibility);
+
+        PH::$shadow_json = $shadow_json_backup;
+
+        return PH::$JSON_TMP;
+    }
+);
+
 
 SecurityProfileCallContext::$supportedActions[] = array(
     'name' => 'exportSPRtoHTML',
@@ -2203,10 +2303,19 @@ SecurityProfileCallContext::$supportedActions[] = array(
         }
 
         // 1. Report Configuration & Meta Information
-        $reportTitle = "Security Profile Review";
+        $reportTitle = "Security Profile Review — Visibility & Feature Coverage";
         $sourceMeta  = "configs/spr_html/reports";
 
         $matchedRulesCount = 0;
+        // Security Rules Scope Data Configuration
+        $securityRulesScope = [
+            'total'          => 0,
+            'allow'          => 0,
+            'allow_enabled'  => 0,
+            'allow_disabled' => 0,
+            'enabled'        => 0
+        ];
+
         if( $context->first )
         {
             $ruleFilter = "(action is.allow) and (rule is.enabled)";
@@ -2214,72 +2323,98 @@ SecurityProfileCallContext::$supportedActions[] = array(
             $matchedRulesCount = $f($context, $ruleFilter);
 
             $av_blank = $f($context, $ruleFilter." and !(secprof av-profile.is.set)");
-
             $as_blank = $f($context, $ruleFilter." and !(secprof as-profile.is.set)");
-
             $vp_blank = $f($context, $ruleFilter." and !(secprof vuln-profile.is.set)");
-
             $url_blank = $f($context, $ruleFilter." and !(secprof url-profile.is.set)");
-
             $fb_blank = $f($context, $ruleFilter." and !(secprof file-profile.is.set)");
-
             $wf_blank = $f($context, $ruleFilter." and !(secprof wf-profile.is.set)");
 
-            //SCM related
+            // SCM related
             $avwf_blank = $f($context, $ruleFilter." and !(secprof avwf-profile.is.set)");
-
             $dnssec_blank = $f($context, $ruleFilter." and !(secprof dnssec-profile.is.set)");
+
+            $f = SecurityProfileCallContext::$commonActionFunctions['bp-stats']['MainFunction'];
+            $bp_stats_array = $f($context, true );
+
+            // Persist summary metadata arrays inside context object state
+            $summaryMetrics = isset($bp_stats_array[0]['percentage']['visibility']) ? $bp_stats_array[0]['percentage']['visibility'] : array();
+            $bp_stats_raw   = $bp_stats_array;
+
+            $securityRulesScope['total'] = $bp_stats_raw[0]['security rules'];
+            $securityRulesScope['allow'] = $bp_stats_raw[0]['security rules allow'];
+            $securityRulesScope['allow_enabled'] = $bp_stats_raw[0]['security rules allow enabled'];
+            $securityRulesScope['allow_disabled'] = $bp_stats_raw[0]['security rules allow disabled'];
+            $securityRulesScope['enabled'] = $bp_stats_raw[0]['security rules enabled'];
+
 
             $context->first = false;
         }
 
-        $placeholderMessage = "";
+        // Fallback: Parse left-side overview metrics if $summaryMetrics was empty due to the flat array layout
+        if (empty($summaryMetrics) && !empty($bp_stats_raw[0])) {
+            $flatData = $bp_stats_raw[0];
+            $overviewMapping = [
+                'Antivirus'           => 'av visibility percentage',
+                'Anti-Spyware'        => 'as visibility percentage',
+                'Vulnerability'       => 'vp visibility percentage',
+                'URL Site Access'     => 'url-site-access visibility percentage',
+                'URL User Credential' => 'url-credential visibility percentage',
+                'File Blocking'       => 'fb visibility percentage',
+                'WildFire Analysis'   => 'wf visibility percentage',
+            ];
+            foreach ($overviewMapping as $label => $flatKey) {
+                if (isset($flatData[$flatKey])) {
+                    $summaryMetrics[$label] = [
+                        'value' => $flatData[$flatKey],
+                        'group' => 'Security Profiles'
+                    ];
+                }
+            }
+        }
 
-
-        // 2. Mock Dataset (Replace this with data fetched from your DB, API, or parsing engine)
+        // 2. Section Map Definitions matching custom requested column fields
         $sections = [
             'sec-av' => [
-                'title'         => 'AV — Antivirus Profiles',
-                'profile_label' => 'virus-profile',
-                'visible_label' => "SecRule Count 'sp_av_visible'",
-                'bp_label' => "SecRule Count 'sp_av_bestpractice'",
-                'rows'          => [
-                ]
+                'title'    => 'AV — Antivirus Profiles',
+                'headers'  => ['Location', 'Antivirus Profile Name', '# of Rules', 'Visible', 'Actions', 'Inline ML', 'Rules not at Visibility', 'Inline ML not at Visibility'],
+                'keys'     => ['location', 'profile', 'count', 'visible', 'actions', 'inline_ml', 'rules_not_visible', 'inline_ml_not_visible'],
+                'numeric'  => ['count', 'visible', 'actions', 'inline_ml', 'rules_not_visible', 'inline_ml_not_visible'],
+                'rows'     => []
             ],
             'sec-as' => [
-                'title'         => 'AS — Anti-Spyware Profiles',
-                'profile_label' => 'spyware-profile',
-                'visible_label' => "SecRule Count 'sp_as_visible'",
-                'bp_label' => "SecRule Count 'sp_as_bestpractice'",
-                'rows'          => []
+                'title'    => 'AS — Anti-Spyware Profiles',
+                'headers'  => ['Location', 'Anti-Spyware Profile Name', '# of Rules', 'Visible', 'Rules', 'DNS Lists', 'DNS Security', 'Inline ML'],
+                'keys'     => ['location', 'profile', 'count', 'visible', 'rules', 'dns_lists', 'dns_security', 'inline_ml'],
+                'numeric'  => ['count', 'visible', 'rules', 'dns_lists', 'dns_security', 'inline_ml'],
+                'rows'     => []
             ],
             'sec-vp' => [
-                'title'         => 'VP — Vulnerability Profiles',
-                'profile_label' => 'vulnerability-profile',
-                'visible_label' => "SecRule Count 'sp_vp_visible'",
-                'bp_label' => "SecRule Count 'sp_vp_bestpractice'",
-                'rows'          => []
+                'title'    => 'VP — Vulnerability Profiles',
+                'headers'  => ['Location', 'Vulnerability Profile Name', '# of Rules', 'Visible', 'Rules', 'Inline ML'],
+                'keys'     => ['location', 'profile', 'count', 'visible', 'rules', 'inline_ml'],
+                'numeric'  => ['count', 'visible', 'rules', 'inline_ml'],
+                'rows'     => []
             ],
             'sec-url' => [
-                'title'         => 'URL — URL Filtering Profiles',
-                'profile_label' => 'url-filtering-profile',
-                'visible_label' => "SecRule Count 'sp_url_visible'",
-                'bp_label' => "SecRule Count 'sp_url_bestpractice'",
-                'rows'          => []
+                'title'    => 'URL — URL Filtering Profiles',
+                'headers'  => ['Location', 'URL Filtering Profile Name', '# of Rules', 'Visible', 'Site Access', 'User Credential Submission', 'InlineML'],
+                'keys'     => ['location', 'profile', 'count', 'visible', 'site_access', 'user_credential', 'inline_ml'],
+                'numeric'  => ['count', 'visible', 'site_access', 'user_credential', 'inline_ml'],
+                'rows'     => []
             ],
             'sec-fb' => [
-                'title'         => 'FB — File Blocking Profiles',
-                'profile_label' => 'file-blocking-profile',
-                'visible_label' => "SecRule Count 'sp_file_visible'",
-                'bp_label' => "SecRule Count 'sp_file_bestpractice'",
-                'rows'          => []
+                'title'    => 'FB — File Blocking Profiles',
+                'headers'  => ['Location', 'File Blocking Profile Name', '# of Rules', 'Visible', 'Rules'],
+                'keys'     => ['location', 'profile', 'count', 'visible', 'rules'],
+                'numeric'  => ['count', 'visible', 'rules'],
+                'rows'     => []
             ],
             'sec-wf' => [
-                'title'         => 'WF — WildFire Analysis Profiles',
-                'profile_label' => 'wildfire-analysis-profile',
-                'visible_label' => "SecRule Count 'sp_wf_visible'",
-                'bp_label' => "SecRule Count 'sp_wf_bestpractice'",
-                'rows'          => []
+                'title'    => 'WF — WildFire Analysis Profiles',
+                'headers'  => ['Location', 'WildFire Analysis Profile Name', '# of Rules', 'Visible', 'Rules', 'Inline ML'],
+                'keys'     => ['location', 'profile', 'count', 'visible', 'rules', 'inline_ml'],
+                'numeric'  => ['count', 'visible', 'rules', 'inline_ml'],
+                'rows'     => []
             ],
         ];
 
@@ -2292,28 +2427,68 @@ SecurityProfileCallContext::$supportedActions[] = array(
         )
         {
             $isSCM = true;
-
             $sections['sec-avwf'] = array(
-                'title'         => 'AVWF — VirusAndWildFire Profiles',
-                'profile_label' => 'virus-and-wildfire-profile',
-                'visible_label' => "SecRule Count 'sp_avwf_visible'",
-                'bp_label' => "SecRule Count 'sp_avwf_bestpractice'",
-                'rows'          => array()
+                'title'    => 'AVWF — VirusAndWildFire Profiles',
+                'headers'  => ['Location', 'VirusAndWildFire Profile Name', '# of Rules', 'Visible', 'Rules', 'Inline ML'],
+                'keys'     => ['location', 'profile', 'count', 'visible', 'rules', 'inline_ml'],
+                'numeric'  => ['count', 'visible', 'rules', 'inline_ml'],
+                'rows'     => array()
             );
             $sections['sec-dnssec'] = array(
-                'title'         => 'DNSSec — DNSSecurity Profiles',
-                'profile_label' => 'dnssecurity-profile',
-                'visible_label' => "SecRule Count 'sp_dnssec_visible'",
-                'bp_label' => "SecRule Count 'sp_dnssec_bestpractice'",
-                'rows'          => array()
+                'title'    => 'DNSSec — DNSSecurity Profiles',
+                'headers'  => ['Location', 'DNSSecurity Profile Name', '# of Rules', 'Visible', 'Rules'],
+                'keys'     => ['location', 'profile', 'count', 'visible', 'rules'],
+                'numeric'  => ['count', 'visible', 'rules'],
+                'rows'     => array()
             );
-
             unset( $sections['sec-av'] );
             unset( $sections['sec-wf'] );
         }
 
-        //Todo: missing part - get rules where no SP type is used
+        // --- MAP PILL LABELS TO FLAT ARRAY SUB-STRINGS ---
+        $pillMetaMapping = [
+            'sec-av' => [
+                'visibility'             => 'av visibility',
+                'visibility actions'     => 'av visibility actions',
+                'visibility mica-engine' => 'av visibility mica-engine'
+            ],
+            'sec-as' => [
+                'visibility'              => 'as visibility',
+                'visibility rules'        => 'as visibility rules',
+                'visibility mica-engine'  => 'as visibility mica-engine',
+                'dns-list visibility'     => 'dns-list visibility',
+                'dns-security visibility' => 'dns-security visibility'
+            ],
+            'sec-vp' => [
+                'visibility'             => 'vp visibility',
+                'visibility rules'       => 'vp visibility rules',
+                'visibility mica-engine' => 'vp visibility mica-engine'
+            ],
+            'sec-url' => [
+                'site access visibility' => 'url-site-access visibility',
+                'credential visibility'  => 'url-credential visibility',
+                'visibility mica-engine' => 'url-mica-engine visibility'
+            ],
+            'sec-fb' => [
+                'visibility'       => 'fb visibility'
+            ],
+            'sec-wf' => [
+                'visibility'             => 'wf visibility',
+                'visibility rules'       => 'wf visibility rules',
+                'visibility mica-engine' => 'wf visibility mica-engine'
+            ],
+            'sec-avwf' => [
+                'visibility'             => 'avwf visibility',
+                'visibility rules'       => 'avwf visibility rules',
+                'visibility mica-engine' => 'avwf visibility mica-engine'
+            ],
+            'sec-dnssec' => [
+                'visibility'       => 'dnssec visibility',
+                'visibility rules' => 'dnssec visibility rules'
+            ]
+        ];
 
+        // 3. Populate Data & Placeholders
         foreach( $context->objectList as $object )
         {
             if( get_class($object) == "customURLProfile"
@@ -2328,8 +2503,6 @@ SecurityProfileCallContext::$supportedActions[] = array(
             )
                 continue;
 
-
-            /** @var AntiVirusProfile|AntiSpywareProfile|VulnerabilityProfile|FileBlockingProfile|URLProfile|WildfireProfile|DataFilteringProfile|VirusAndWildfireProfile|DNSSecurityProfile $object */
             $info = array();
             if($object->owner->owner->name() == "")
                 $info['location'] = "shared";
@@ -2337,13 +2510,11 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 $info['location'] = $object->owner->owner->name();
             $info['profile'] = $object->name();
 
-            //Todo - this is still on all rules, focus on (action=allow & disabled=no)
             $info['count'] = 0;
             foreach( $object->refrules as $rule )
             {
                 if( get_class($rule) == "SecurityRule" )
                 {
-                    /** @var SecurityRule $rule */
                     if( $rule->isEnabled() && $rule->actionIsAllow() )
                         $info['count']++;
                 }
@@ -2353,7 +2524,6 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     {
                         if( get_class($rule2) == "SecurityRule" )
                         {
-                            /** @var SecurityRule $rule2 */
                             if( $rule2->isEnabled() && $rule2->actionIsAllow() )
                                 $info['count']++;
                         }
@@ -2366,65 +2536,102 @@ SecurityProfileCallContext::$supportedActions[] = array(
             else
                 $info['visible'] = 0;
 
-            if( $object->is_best_practice() )
-                $info['bp'] = $info['count'];
-            else
-                $info['bp'] = 0;
-
+            // --- EXTENDED PARAMETERS ---
+            $info['actions']                  = 0;
+            $info['inline_ml']                = 0;
             if( get_class($object) == "AntiVirusProfile" )
             {
-                $sections['sec-av']['rows'][] = $info;
+                if( $object->av_actions_visibility() )
+                    $info['actions'] = $info['count'];
             }
-            elseif( get_class($object) == "AntiSpywareProfile" )
-            {
-                $sections['sec-as']['rows'][] = $info;
-            }
-            elseif( get_class($object) == "VulnerabilityProfile" )
-            {
-                $sections['sec-vp']['rows'][] = $info;
-            }
-            elseif( get_class($object) == "FileBlockingProfile" )
-            {
-                $sections['sec-fb']['rows'][] = $info;
-            }
-            elseif( get_class($object) == "URLProfile" )
-            {
-                $sections['sec-url']['rows'][] = $info;
-            }
-            elseif( get_class($object) == "WildfireProfile" )
-            {
-                $sections['sec-wf']['rows'][] = $info;
-            }
+            if( ( get_class($object) == "AntiVirusProfile"
+                    || get_class($object) == "AntiSpywareProfile"
+                    || get_class($object) == "VulnerablityProfile"
+                    || get_class($object) == "WildfireProfile"
+                )
+                && $object->cloud_inline_analysis_best_practice($object->owner->bp_json_file) )
+                $info['inline_ml'] = $info['count'];
 
-            //Todo SCM related
-            elseif( get_class($object) == "VirusAndWildfireProfile" )
-            {
-                $sections['sec-avwf']['rows'][] = $info;
-            }
-            elseif( get_class($object) == "DNSSecurityProfile" )
-            {
-                $sections['sec-dnssec']['rows'][] = $info;
-            }
+            $info['rules_not_visible']        = 0;
+            $info['inline_ml_not_visible']    = 0;
+
+            $info['rules']                    = 0;
+            if( get_class($object) == "AntiSpywareProfile" && $object->spyware_rules_visibility() )
+                $info['rules'] = $info['count'];
+
+            if( get_class($object) == "VulnerablityProfile" && $object->vulnerability_rules_visibility() )
+                $info['rules'] = $info['count'];
+
+            if( get_class($object) == "WildfireProfile" && $object->wildfire_rules_visibility() )
+                $info['rules'] = $info['count'];
+
+            $info['dns_lists']                = 0;
+            $info['dns_security']             = 0;
+            if( get_class($object) == "AntiSpywareProfile" && $object->spyware_dnslist_visibility() )
+                $info['dns_lists'] = $info['count'];
+
+            if( get_class($object) == "AntiSpywareProfile" && $object->spyware_dns_security_visibility() )
+                $info['dns_security'] = $info['count'];
+
+            $info['site_access']              = 0;
+            $info['user_credential']          = 0;
+            if( get_class($object) == "URLProfile" && $object->url_siteaccess_visibility())
+                $info['site_access'] = $info['count'];
+
+            if( get_class($object) == "URLProfile" && $object->url_usercredentialsubmission_visibility() )
+                $info['user_credential'] = $info['count'];
+
+            if( get_class($object) == "URLProfile" && $object->url_usercredentialsubmission_visibility_tab())
+                $info['user_credential_tab'] = $info['count'];
+
+            if( get_class($object) == "URLProfile" && $object->url_mica_engine_visibility())
+                $info['inline_ml'] = $info['count'];
+
+            if( get_class($object) == "AntiVirusProfile" ) { $sections['sec-av']['rows'][] = $info; }
+            elseif( get_class($object) == "AntiSpywareProfile" ) { $sections['sec-as']['rows'][] = $info; }
+            elseif( get_class($object) == "VulnerabilityProfile" ) { $sections['sec-vp']['rows'][] = $info; }
+            elseif( get_class($object) == "FileBlockingProfile" ) { $sections['sec-fb']['rows'][] = $info; }
+            elseif( get_class($object) == "URLProfile" ) { $sections['sec-url']['rows'][] = $info; }
+            elseif( get_class($object) == "WildfireProfile" ) { $sections['sec-wf']['rows'][] = $info; }
+            elseif( get_class($object) == "VirusAndWildfireProfile" ) { $sections['sec-avwf']['rows'][] = $info; }
+            elseif( get_class($object) == "DNSSecurityProfile" ) { $sections['sec-dnssec']['rows'][] = $info; }
         }
 
-        if( !$isSCM )
-        {
-            $sections['sec-av']['rows'][] = array( "location" => "N/A", "profile" => "blank", "count" => $av_blank, "visible" => 0, "bp" => 0 );
-            $sections['sec-wf']['rows'][] = array( "location" => "N/A", "profile" => "blank", "count" => $wf_blank, "visible" => 0, "bp" => 0 );
-        }
-        else
-        {
-            //SCM
-            $sections['sec-avwf']['rows'][] = array( "location" => "N/A", "profile" => "blank", "count" => $avwf_blank, "visible" => 0, "bp" => 0 );
-            $sections['sec-dnssec']['rows'][] = array( "location" => "N/A", "profile" => "blank", "count" => $dnssec_blank, "visible" => 0, "bp" => 0 );
-        }
+        $blankDefaults = [
+            'actions' => 0, 'inline_ml' => 0, 'rules_not_visible' => 0, 'inline_ml_not_visible' => 0,
+            'rules' => 0, 'dns_lists' => 0, 'dns_security' => 0, 'site_access' => 0, 'user_credential' => 0
+        ];
 
-        $sections['sec-as']['rows'][] = array( "location" => "N/A", "profile" => "blank", "count" => $as_blank, "visible" => 0, "bp" => 0 );
-        $sections['sec-vp']['rows'][] = array( "location" => "N/A", "profile" => "blank", "count" => $vp_blank, "visible" => 0, "bp" => 0 );
-        $sections['sec-fb']['rows'][] = array( "location" => "N/A", "profile" => "blank", "count" => $fb_blank, "visible" => 0, "bp" => 0 );
-        $sections['sec-url']['rows'][] = array( "location" => "N/A", "profile" => "blank", "count" => $url_blank, "visible" => 0, "bp" => 0 );
+        if( !$isSCM ) {
+            $sections['sec-av']['rows'][]  = array_merge(["location" => "N/A", "profile" => "blank", "count" => $av_blank, "visible" => 0], $blankDefaults);
+            $sections['sec-wf']['rows'][]  = array_merge(["location" => "N/A", "profile" => "blank", "count" => $wf_blank, "visible" => 0], $blankDefaults);
+        } else {
+            $sections['sec-avwf']['rows'][]   = array_merge(["location" => "N/A", "profile" => "blank", "count" => $avwf_blank, "visible" => 0], $blankDefaults);
+            $sections['sec-dnssec']['rows'][] = array_merge(["location" => "N/A", "profile" => "blank", "count" => $dnssec_blank, "visible" => 0], $blankDefaults);
+        }
+        $sections['sec-as']['rows'][]  = array_merge(["location" => "N/A", "profile" => "blank", "count" => $as_blank, "visible" => 0], $blankDefaults);
+        $sections['sec-vp']['rows'][]  = array_merge(["location" => "N/A", "profile" => "blank", "count" => $vp_blank, "visible" => 0], $blankDefaults);
+        $sections['sec-fb']['rows'][]  = array_merge(["location" => "N/A", "profile" => "blank", "count" => $fb_blank, "visible" => 0], $blankDefaults);
+        $sections['sec-url']['rows'][] = array_merge(["location" => "N/A", "profile" => "blank", "count" => $url_blank, "visible" => 0], $blankDefaults);
 
-        // START OUTPUT BUFFERING: Intercepts printing output directly to variable
+        // --- MOCK INFRAS DATA SET ---
+        $network_zone_protection = [
+            ['zone' => 'Trust-Internal', 'profile' => 'Strict-Zone-Protection', 'status' => 'Protected', 'drop_count' => 14],
+            ['zone' => 'DMZ-External', 'profile' => 'Edge-Protection-Profile', 'status' => 'Protected', 'drop_count' => 142],
+            ['zone' => 'Guest-Wifi', 'profile' => 'None', 'status' => 'Unprotected', 'drop_count' => 0]
+        ];
+
+        $network_log_forwarding = [
+            ['profile_name' => 'Splunk-Forwarding-Default', 'syslog_targets' => '10.0.1.50, 10.0.1.51', 'rules_bound' => 42, 'status' => 'Active'],
+            ['profile_name' => 'Critical-Alerts-Email', 'syslog_targets' => 'pagerduty-webhook', 'rules_bound' => 5, 'status' => 'Active']
+        ];
+
+        $network_log_settings = [
+            ['log_type' => 'System Logs', 'severity_traps' => 'critical, high', 'destination' => 'Syslog-Server', 'status' => 'Configured'],
+            ['log_type' => 'Configuration Logs', 'severity_traps' => 'all', 'destination' => 'Syslog-Server', 'status' => 'Configured'],
+            ['log_type' => 'Threat Logs', 'severity_traps' => 'all', 'destination' => 'Splunk-Forwarding-Default', 'status' => 'Configured']
+        ];
+
         ob_start();
         ?>
         <!DOCTYPE html>
@@ -2439,15 +2646,18 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     --header-fg: #ffffff;
                     --row-alt: #f8fafc;
                     --muted: #6b7280;
-                    --subtotal-bg: #eef2ff;
-                    --placeholder: #9ca3af;
+                    --subtotal-bg: #f1f5f9;
+                    --net-header: #0f172a;
+                    --pill-bg: #f4f4f5;
+                    --pill-border: #e4e4e7;
+                    --pill-txt: #71717a;
                 }
                 * { box-sizing: border-box; }
                 body {
                     margin: 24px;
-                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
-                    Ubuntu, Cantarell, sans-serif;
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
                     color: #111827;
+                    background-color: #fff;
                 }
                 header.spr-header {
                     border-bottom: 2px solid var(--border);
@@ -2456,25 +2666,69 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 }
                 header.spr-header h1 { margin: 0 0 4px 0; font-size: 22px; }
                 header.spr-header .meta { color: var(--muted); font-size: 13px; }
-                .spr-section { margin-bottom: 32px; }
+
+                .spr-header-row {
+                    display: flex;
+                    gap: 24px;
+                    margin-bottom: 24px;
+                    align-items: stretch;
+                }
+                .spr-header-panel {
+                    flex: 1;
+                    max-height: 480px;
+                    overflow-y: auto;
+                    border: 1px solid var(--border);
+                    padding: 12px;
+                    border-radius: 6px;
+                    background: #fff;
+                }
+                .spr-section { margin-bottom: 36px; }
                 .spr-section h2 {
-                    font-size: 16px;
-                    margin: 0 0 8px 0;
+                    font-size: 15px;
+                    margin: 0 0 12px 0;
                     padding: 6px 10px;
                     background: #f3f4f6;
                     border-left: 4px solid var(--header-bg);
                 }
+
+                /* Pill Metric Grid Containers */
+                .spr-pill-matrix {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 6px;
+                    margin: 4px 0 16px 4px;
+                }
+                .spr-pill-row {
+                    display: flex;
+                    gap: 12px;
+                    flex-wrap: wrap;
+                }
+                .spr-pill {
+                    background-color: var(--pill-bg);
+                    border: 1px solid var(--pill-border);
+                    border-radius: 12px;
+                    padding: 4px 14px;
+                    font-size: 12px;
+                    color: var(--pill-txt);
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 6px;
+                }
+                .spr-pill strong {
+                    color: #000000;
+                    font-weight: 700;
+                }
+
                 .spr-table {
                     border-collapse: collapse;
                     width: 100%;
-                    table-layout: fixed;
                     font-size: 13px;
+                    margin-bottom: 8px;
                 }
                 .spr-table th, .spr-table td {
                     border: 1px solid var(--border);
-                    padding: 6px 10px;
+                    padding: 8px 10px;
                     text-align: left;
-                    word-break: break-word;
                 }
                 .spr-table thead th {
                     background: var(--header-bg);
@@ -2482,99 +2736,346 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     font-weight: 600;
                 }
                 .spr-table tbody tr:nth-child(even) { background: var(--row-alt); }
-                .spr-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
-                .spr-table td.placeholder {
-                    color: var(--placeholder);
-                    font-style: italic;
-                    cursor: help;
-                }
+                .spr-table td.num, .spr-table th.num { text-align: right; font-variant-numeric: tabular-nums; }
                 .spr-table tr.subtotal td {
                     background: var(--subtotal-bg);
                     font-weight: 600;
-                    border-top: 2px solid var(--header-bg);
                 }
-                footer.spr-footer {
-                    margin-top: 32px;
-                    padding-top: 12px;
-                    border-top: 1px solid var(--border);
-                    color: var(--muted);
-                    font-size: 12px;
+
+                .progress-container {
+                    background-color: #e2e8f0;
+                    border-radius: 4px;
+                    width: 100%;
+                    min-width: 120px;
+                    height: 14px;
+                    display: inline-block;
+                    overflow: hidden;
+                    vertical-align: middle;
                 }
+                .progress-bar {
+                    background-color: #10b981;
+                    height: 100%;
+                    border-radius: 4px;
+                }
+                .progress-bar.low { background-color: #f59e0b; }
+                .progress-bar.critical { background-color: #ef4444; }
+
+                .net-container {
+                    margin-top: 20px;
+                    border: 1px solid var(--border);
+                    border-radius: 6px;
+                    overflow: hidden;
+                }
+                .net-section-title {
+                    background: var(--net-header);
+                    color: #fff;
+                    padding: 10px 14px;
+                    font-size: 14px;
+                    font-weight: 600;
+                    margin: 0;
+                }
+                .net-grid {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 1px;
+                    background: var(--border);
+                }
+                .net-block {
+                    background: #fff;
+                    padding: 16px;
+                }
+                .net-block h3 {
+                    margin: 0 0 10px 0;
+                    font-size: 13px;
+                    color: #1e293b;
+                    text-transform: uppercase;
+                    letter-spacing: 0.05em;
+                    border-bottom: 1px solid #e2e8f0;
+                    padding-bottom: 4px;
+                }
+                .badge {
+                    padding: 2px 6px;
+                    border-radius: 4px;
+                    font-size: 11px;
+                    font-weight: 600;
+                }
+                .badge-green { background: #dcfce7; color: #15803d; }
+                .badge-red { background: #fee2e2; color: #b91c1c; }
             </style>
         </head>
         <body>
 
-        <!-- Unique Header Section -->
         <header class="spr-header">
             <h1><?php echo htmlspecialchars($reportTitle); ?></h1>
             <div class="meta">
-                Source: <?php echo htmlspecialchars($sourceMeta); ?> &middot;
-                Matched rules (action=allow &amp; disabled=no): <?php echo number_format($matchedRulesCount); ?>
+                Source Block Matcher: <?php echo htmlspecialchars($sourceMeta); ?> &middot;
+                Total Match Assessment Context: <?php echo number_format($matchedRulesCount); ?> rules matched.
             </div>
         </header>
 
-        <!-- Repeating Security Profile Tables -->
-        <?php foreach ($sections as $id => $section): ?>
-            <?php
-            $subtotalCount = 0;
-            $subtotalVisible = 0;
-            $subtotalBP = 0;
-            ?>
-            <section id="<?php echo htmlspecialchars($id); ?>" class="spr-section">
-                <h2><?php echo htmlspecialchars($section['title']); ?></h2>
-                <table class="spr-table">
+        <div class="spr-header-row">
+            <!-- LEFT SIDE PANEL: Coverage Metrics Table -->
+            <div class="spr-header-panel">
+                <h3 style="font-size: 14px; margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 0.05em; color: var(--net-header);">
+                    Overall Security Profile Coverage &amp; Visibility Status
+                </h3>
+                <table class="spr-table" style="margin: 0;">
                     <thead>
                     <tr>
-                        <th>Location</th>
-                        <th><?php echo htmlspecialchars($section['profile_label']); ?></th>
-                        <th>SecRule Count</th>
-                        <th><?php echo htmlspecialchars($section['visible_label']); ?></th>
-                        <th><?php echo htmlspecialchars($section['bp_label']); ?></th>
+                        <th>Group</th>
+                        <th>Type</th>
+                        <th class="num" style="width: 90px;">Percentage</th>
+                        <th style="width: 180px;">% Visual Distribution</th>
                     </tr>
                     </thead>
                     <tbody>
-                    <?php foreach ($section['rows'] as $row): ?>
-                        <tr>
-                            <td><?php echo htmlspecialchars($row['location']); ?></td>
-                            <td><?php echo htmlspecialchars($row['profile']); ?></td>
+                    <?php if(!empty($summaryMetrics) && is_array($summaryMetrics)): ?>
+                        <?php foreach ($summaryMetrics as $type => $info): ?>
+                            <?php
+                            $pct = isset($info['value']) ? $info['value'] : 0;
+                            $group = isset($info['group']) ? $info['group'] : 'General';
 
-                            <?php if (!empty($row['is_placeholder'])): ?>
-                                <td class="num placeholder" title="<?php echo htmlspecialchars($placeholderMessage); ?>">—</td>
-                                <td class="num placeholder" title="<?php echo htmlspecialchars($placeholderMessage); ?>">—</td>
-                            <?php else: ?>
-                                <td class="num"><?php echo $row['count']; ?></td>
-                                <td class="num"><?php echo $row['visible']; ?></td>
-                                <td class="num"><?php echo $row['bp']; ?></td>
+                            $colorClass = '';
+                            if ($pct == 0) { $colorClass = 'critical'; }
+                            elseif ($pct < 70) { $colorClass = 'low'; }
+                            ?>
+                            <tr>
+                                <td style="color: var(--muted); font-size: 12px; font-weight: 500;"><?php echo htmlspecialchars($group); ?></td>
+                                <td><strong><?php echo htmlspecialchars($type); ?></strong></td>
+                                <td class="num"><strong><?php echo $pct; ?>%</strong></td>
+                                <td>
+                                    <div class="progress-container">
+                                        <div class="progress-bar <?php echo $colorClass; ?>" style="width: <?php echo $pct; ?>%;"></div>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <tr>
+                            <td colspan="4" style="color: var(--muted); text-align: center; padding: 20px;">
+                                No parameters found inside active environment context array ($summaryMetrics).
+                            </td>
+                        </tr>
+                    <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- RIGHT SIDE PANEL: Security Rules (Scope) Data -->
+            <div class="spr-header-panel">
+                <h3 style="font-size: 14px; margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 0.05em; color: var(--net-header);">
+                    Security Rules (Scope) Summary
+                </h3>
+                <table class="spr-table" style="margin: 0;">
+                    <thead>
+                    <tr>
+                        <th>Rule Context Metric Rule Base</th>
+                        <th class="num" style="width: 120px;">Rule Count</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                        <td>Total Security Rules</td>
+                        <td class="num" style="font-weight: 600;"><?php echo number_format($securityRulesScope['total']); ?></td>
+                    </tr>
+                    <tr>
+                        <td>Security Rules (Action: Allow)</td>
+                        <td class="num"><?php echo number_format($securityRulesScope['allow']); ?></td>
+                    </tr>
+                    <tr>
+                        <td>&nbsp;&nbsp;&bull; Action: Allow &amp; Enabled</td>
+                        <td class="num" style="color: #15803d; font-weight: 600;"><?php echo number_format($securityRulesScope['allow_enabled']); ?></td>
+                    </tr>
+                    <tr>
+                        <td>&nbsp;&nbsp;&bull; Action: Allow &amp; Disabled</td>
+                        <td class="num" style="color: var(--muted);"><?php echo number_format($securityRulesScope['allow_disabled']); ?></td>
+                    </tr>
+                    <tr>
+                        <td>Total Enabled Firewall Rules</td>
+                        <td class="num"><?php echo number_format($securityRulesScope['enabled']); ?></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <hr style="border: 0; border-top: 1px solid var(--border); margin-bottom: 24px;">
+
+        <?php foreach ($sections as $id => $section): ?>
+            <section id="<?php echo htmlspecialchars($id); ?>" class="spr-section">
+                <h2><?php echo htmlspecialchars($section['title']); ?></h2>
+
+                <!-- CAPSULE METRIC BADGES GRID MATRIX -->
+                <?php if (isset($pillMetaMapping[$id]) && !empty($bp_stats_raw[0])): ?>
+                    <?php $flatData = $bp_stats_raw[0]; ?>
+                    <div class="spr-pill-matrix">
+                        <!-- Top Percentage Row -->
+                        <div class="spr-pill-row">
+                            <?php foreach ($pillMetaMapping[$id] as $label => $baseKey): ?>
                                 <?php
-                                $subtotalCount += $row['count'];
-                                $subtotalVisible += $row['visible'];
-                                $subtotalBP += $row['bp'];
+                                $pctKey = $baseKey . ' percentage';
+                                $pctValue = isset($flatData[$pctKey]) ? $flatData[$pctKey] : 0;
                                 ?>
-                            <?php endif; ?>
+                                <div class="spr-pill">
+                                    <?php echo htmlspecialchars($label); ?> (%) <strong><?php echo $pctValue; ?>%</strong>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                        <!-- Bottom Numerical Fraction Row -->
+                        <div class="spr-pill-row">
+                            <?php foreach ($pillMetaMapping[$id] as $label => $baseKey): ?>
+                                <?php
+                                $calcKey = $baseKey . ' calc';
+                                $calcValue = isset($flatData[$calcKey]) ? $flatData[$calcKey] : (isset($flatData[$baseKey]) ? $flatData[$baseKey] : '0');
+                                ?>
+                                <div class="spr-pill">
+                                    <?php echo htmlspecialchars($label); ?> (count) <strong><?php echo htmlspecialchars($calcValue); ?></strong>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                <?php endif; ?>
+
+                <table class="spr-table">
+                    <thead>
+                    <tr>
+                        <?php foreach ($section['headers'] as $header): ?>
+                            <th class="<?php echo (strpos($header, '#') !== false || strpos($header, 'Visible') !== false || strpos($header, 'ML') !== false) ? 'num' : ''; ?>">
+                                <?php echo htmlspecialchars($header); ?>
+                            </th>
+                        <?php endforeach; ?>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <?php
+                    $subtotals = array_fill_keys($section['keys'], 0);
+
+                    foreach ($section['rows'] as $row):
+                        ?>
+                        <tr>
+                            <?php foreach ($section['keys'] as $key): ?>
+                                <?php
+                                $isNumeric = in_array($key, $section['numeric']);
+                                if ($isNumeric) {
+                                    $subtotals[$key] += isset($row[$key]) ? $row[$key] : 0;
+                                }
+                                ?>
+                                <td class="<?php echo $isNumeric ? 'num' : ''; ?>">
+                                    <?php echo htmlspecialchars(isset($row[$key]) ? $row[$key] : ''); ?>
+                                </td>
+                            <?php endforeach; ?>
                         </tr>
                     <?php endforeach; ?>
 
                     <tr class="subtotal">
-                        <td colspan="2">Subtotal</td>
-                        <td class="num"><?php echo $subtotalCount; ?></td>
-                        <td class="num"><?php echo $subtotalVisible; ?></td>
-                        <td class="num"><?php echo $subtotalBP; ?></td>
+                        <td>Subtotal</td>
+                        <?php
+                        for ($i = 1; $i < count($section['keys']); $i++):
+                            $key = $section['keys'][$i];
+                            $isNumeric = in_array($key, $section['numeric']);
+                            ?>
+                            <td class="<?php echo $isNumeric ? 'num' : ''; ?>">
+                                <?php echo $isNumeric ? $subtotals[$key] : ''; ?>
+                            </td>
+                        <?php endfor; ?>
                     </tr>
                     </tbody>
                 </table>
             </section>
         <?php endforeach; ?>
 
-        <footer class="spr-footer">
-            <?php echo htmlspecialchars($placeholderMessage); ?>
-        </footer>
+        <section class="spr-section">
+            <div class="net-container">
+                <div class="net-section-title">Network Base Infrastructure Configuration Profiles</div>
+                <div class="net-grid">
+
+                    <div class="net-block">
+                        <h3>Zone Protection Settings</h3>
+                        <table class="spr-table" style="margin: 0;">
+                            <thead>
+                            <tr>
+                                <th>Security Target Zone</th>
+                                <th>Applied Protection Profile</th>
+                                <th>Security Status</th>
+                                <th class="num">Drop Counter Action Triggered</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <?php foreach($network_zone_protection as $zp): ?>
+                                <tr>
+                                    <td><strong><?php echo htmlspecialchars($zp['zone']); ?></strong></td>
+                                    <td><?php echo htmlspecialchars($zp['profile']); ?></td>
+                                    <td>
+                                    <span class="badge <?php echo $zp['status'] === 'Protected' ? 'badge-green' : 'badge-red'; ?>">
+                                        <?php echo htmlspecialchars($zp['status']); ?>
+                                    </span>
+                                    </td>
+                                    <td class="num"><?php echo $zp['drop_count']; ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="net-block">
+                        <h3>Log Forwarding Routing Pipeline</h3>
+                        <table class="spr-table" style="margin: 0;">
+                            <thead>
+                            <tr>
+                                <th>Log Forwarding Profile Name</th>
+                                <th>Target Destinations / Traps</th>
+                                <th class="num">Referenced Security Rules</th>
+                                <th>Deployment Status</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <?php foreach($network_log_forwarding as $lf): ?>
+                                <tr>
+                                    <td><strong><?php echo htmlspecialchars($lf['profile_name']); ?></strong></td>
+                                    <td><code><?php echo htmlspecialchars($lf['syslog_targets']); ?></code></td>
+                                    <td class="num"><?php echo $lf['rules_bound']; ?></td>
+                                    <td><span class="badge badge-green"><?php echo htmlspecialchars($lf['status']); ?></span></td>
+                                </tr>
+                            <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="net-block">
+                        <h3>System Engine Log Settings</h3>
+                        <table class="spr-table" style="margin: 0;">
+                            <thead>
+                            <tr>
+                                <th>Log Component Class</th>
+                                <th>Severity Captures</th>
+                                <th>Forwarding Dest Routing Node</th>
+                                <th>Operational State</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <?php foreach($network_log_settings as $ls): ?>
+                                <tr>
+                                    <td><strong><?php echo htmlspecialchars($ls['log_type']); ?></strong></td>
+                                    <td><?php echo htmlspecialchars($ls['severity_traps']); ?></td>
+                                    <td><?php echo htmlspecialchars($ls['destination']); ?></td>
+                                    <td><span class="badge badge-green"><?php echo htmlspecialchars($ls['status']); ?></span></td>
+                                </tr>
+                            <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+            </div>
+        </section>
 
         </body>
         </html>
         <?php
 
-        // Flushes buffer out and saves the final file configuration directly to target path
         file_put_contents($filename, ob_get_clean());
+
+        return TRUE;
     },
     'args' => array(
         'filename' => array('type' => 'string', 'default' => '*nodefault*')

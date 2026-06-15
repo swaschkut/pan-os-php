@@ -1551,7 +1551,7 @@ trait StatCollectorTrait
             PH::$JSON_TMP[] = $stdoutarray;
     }
 
-    private function print_table( $string_check, $percentageArray )
+    public function print_table( $string_check, $percentageArray )
     {
         PH::print_stdout($string_check);
         $tbl = new ConsoleTable();

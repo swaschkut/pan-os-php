@@ -448,6 +448,14 @@ trait sp_action_virus
         return $this->av_general_action_best_practice( "action" );
     }
 
+    public function av_actions_visibility()
+    {
+        if( $this->av_action_visibility() && $this->av_wildfireaction_visibility() && $this->av_mlavaction_is_visibility() )
+            return true;
+
+        return false;
+    }
+
     public function av_action_visibility()
     {
         return $this->av_general_action_visibility( "action" );
