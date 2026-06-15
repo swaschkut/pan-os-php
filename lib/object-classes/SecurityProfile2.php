@@ -253,6 +253,274 @@ class SecurityProfile2
     }
 
 
+    public function cloud_inline_analysis_array( $bp_json_file = null )
+    {
+        $this->bp_json_file = $bp_json_file;
+        $this->bp_json_file = PH::getBPjsonFile();
+
+        // Initialize the structured results array exactly as requested
+        $results = [
+            'all'         => [],
+            'visible'     => [],
+            'not visible' => [],
+            'bp'          => [],
+            'not bp'      => []
+        ];
+
+        // Supported profile types filter
+        $supported_types = [
+            'spyware', 'vulnerability', 'virus', 'wildfire',
+            'dns-security', 'virus-and-wildfire-analysis'
+        ];
+
+        if ( !in_array($this->secprof_type, $supported_types) ) {
+            return $results;
+        }
+
+        $check_array = $this->bp_visibility_JSON("visibility", $this->secprof_type);
+        $cloud_enabled = isset($this->cloud_inline_analysis_enabled) && $this->cloud_inline_analysis_enabled;
+
+        // 1. Mica Engine: Vulnerability
+        if ( isset($this->additional['mica-engine-vulnerability-enabled']) ) {
+            foreach ( $this->additional['mica-engine-vulnerability-enabled'] as $key => $data ) {
+                $action_key = 'inline-policy-action';
+                $action_value = isset($data[$action_key]) ? $data[$action_key] : '';
+
+                $is_visible = $cloud_enabled && (strtolower($action_value) !== 'disable');
+                $is_bp = $this->validateInlineAction($data, $action_key, $check_array);
+
+                $label = is_numeric($key) ? "Mica Vulnerability" : $key;
+                $this->logResult($results, "$label - $action_key : $action_value", $is_visible, $is_bp);
+            }
+        }
+
+        // 2. Mica Engine: Spyware
+        if ( isset($this->additional['mica-engine-spyware-enabled']) ) {
+            foreach ( $this->additional['mica-engine-spyware-enabled'] as $key => $data ) {
+                $action_key = 'inline-policy-action';
+                $action_value = isset($data[$action_key]) ? $data[$action_key] : '';
+
+                $is_visible = $cloud_enabled && (strtolower($action_value) !== 'disable');
+                $is_bp = $this->validateInlineAction($data, $action_key, $check_array);
+
+                $label = is_numeric($key) ? "Mica Spyware" : $key;
+                $this->logResult($results, "$label - $action_key : $action_value", $is_visible, $is_bp);
+            }
+        }
+
+        // 3. Mica Engine: Wildfire Rules
+        if ( isset($this->additional['mica-engine-wildfire-rules']) ) {
+            foreach ( $this->additional['mica-engine-wildfire-rules'] as $key => $data ) {
+                $action_key = 'action';
+                $action_value = isset($data[$action_key]) ? $data[$action_key] : '';
+
+                $is_visible = $cloud_enabled && (strtolower($action_value) !== 'disable');
+                $is_bp = $this->validateInlineAction($data, $action_key, $check_array);
+
+                $label = is_numeric($key) ? "Mica Wildfire" : $key;
+                $this->logResult($results, "$label - $action_key : $action_value", $is_visible, $is_bp);
+            }
+        }
+
+        // 4. AV Wildfire Inline ML Tab (Filebased)
+        if ( isset($this->additional['mlav-engine-filebased-enabled']) ) {
+            foreach ( $this->additional['mlav-engine-filebased-enabled'] as $type => $data ) {
+                $action_key = 'mlav-policy-action';
+                $action_value = isset($data[$action_key]) ? $data[$action_key] : '';
+
+                $is_visible = (strtolower($action_value) !== 'disable');
+                $is_bp = $this->validateInlineAction($data, $action_key, $check_array);
+
+                $this->logResult($results, "$type - $action_key : $action_value", $is_visible, $is_bp);
+            }
+        }
+
+        return $results;
+    }
+
+    public function cloud_inline_analysis_array_new( $bp_json_file = null )
+    {
+        $this->bp_json_file = $bp_json_file;
+        $this->bp_json_file = PH::getBPjsonFile();
+
+        // Initialize the structured results array exactly as requested
+        $results = [
+            'all'         => [],
+            'visible'     => [],
+            'not visible' => [],
+            'bp'          => [],
+            'not bp'      => []
+        ];
+
+        // Supported profile types filter
+        $supported_types = [
+            'spyware', 'vulnerability', 'virus', 'wildfire',
+            'dns-security', 'virus-and-wildfire-analysis'
+        ];
+
+        if ( !in_array($this->secprof_type, $supported_types) ) {
+            return $results;
+        }
+
+        $check_array = $this->bp_visibility_JSON("visibility", $this->secprof_type);
+        $cloud_enabled = isset($this->cloud_inline_analysis_enabled) && $this->cloud_inline_analysis_enabled;
+
+        // Helper closure to extract the expected Best Practice action from the JSON schema
+        $get_bp_action = function($check_array, $action_key) {
+            if (isset($check_array[$action_key])) {
+                foreach ($check_array[$action_key] as $validate) {
+                    if (isset($validate['type']) && $validate['type'][0] == 'any' && isset($validate['action'][0])) {
+                        return $validate['action'][0];
+                    }
+                }
+            }
+            return null;
+        };
+
+        // 1. Mica Engine: Vulnerability
+        if ( isset($this->additional['mica-engine-vulnerability-enabled']) ) {
+            $action_key = 'inline-policy-action';
+            $bp_action = $get_bp_action($check_array, $action_key);
+
+            foreach ( $this->additional['mica-engine-vulnerability-enabled'] as $key => $name ) {
+                // Pass the intact variable to the original validation logic
+                $is_bp = !empty($bp_action) ? $this->visibility_stringValidation($name, $action_key, $bp_action) : false;
+
+                $action_value = $is_bp ? $bp_action : 'other/disabled';
+                $is_visible = $cloud_enabled && ($action_value !== 'disable');
+
+                // PHP 8 Fix: Safely intercept arrays to prevent Array-to-String conversion crashes
+                if (is_array($name)) {
+                    $displayName = isset($name['name']) ? $name['name'] : (!is_numeric($key) ? $key : 'Array');
+                } else {
+                    $displayName = $name;
+                }
+
+                $this->logResult($results, "Mica Vulnerability ($displayName) - $action_key : $action_value", $is_visible, $is_bp);
+            }
+        }
+
+        // 2. Mica Engine: Spyware
+        if ( isset($this->additional['mica-engine-spyware-enabled']) ) {
+            $action_key = 'inline-policy-action';
+            $bp_action = $get_bp_action($check_array, $action_key);
+
+            foreach ( $this->additional['mica-engine-spyware-enabled'] as $key => $name ) {
+                $is_bp = !empty($bp_action) ? $this->visibility_stringValidation($name, $action_key, $bp_action) : false;
+
+                $action_value = $is_bp ? $bp_action : 'other/disabled';
+                $is_visible = $cloud_enabled && ($action_value !== 'disable');
+
+                // PHP 8 Fix: Safely intercept arrays
+                if (is_array($name)) {
+                    $displayName = isset($name['name']) ? $name['name'] : (!is_numeric($key) ? $key : 'Array');
+                } else {
+                    $displayName = $name;
+                }
+
+                $this->logResult($results, "Mica Spyware ($displayName) - $action_key : $action_value", $is_visible, $is_bp);
+            }
+        }
+
+        // 3. Mica Engine: Wildfire Rules
+        if ( isset($this->additional['mica-engine-wildfire-rules']) ) {
+            $action_key = 'action';
+            $bp_action = $get_bp_action($check_array, $action_key);
+
+            foreach ( $this->additional['mica-engine-wildfire-rules'] as $key => $name ) {
+                $is_bp = !empty($bp_action) ? $this->visibility_stringValidation($name, $action_key, $bp_action) : false;
+
+                $action_value = $is_bp ? $bp_action : 'other/disabled';
+                $is_visible = $cloud_enabled && ($action_value !== 'disable');
+
+                // PHP 8 Fix: Safely intercept arrays
+                if (is_array($name)) {
+                    $displayName = isset($name['name']) ? $name['name'] : (!is_numeric($key) ? $key : 'Array');
+                } else {
+                    $displayName = $name;
+                }
+
+                $this->logResult($results, "Mica Wildfire ($displayName) - $action_key : $action_value", $is_visible, $is_bp);
+            }
+        }
+
+        // 4. AV Wildfire Inline ML Tab (Filebased)
+        if ( isset($this->additional['mlav-engine-filebased-enabled']) ) {
+            $action_key = 'mlav-policy-action';
+            $bp_action = $get_bp_action($check_array, $action_key);
+
+            foreach ( $this->additional['mlav-engine-filebased-enabled'] as $type => $name ) {
+                $is_bp = !empty($bp_action) ? $this->visibility_stringValidation($name, $action_key, $bp_action) : false;
+
+                $action_value = $is_bp ? $bp_action : 'other/disabled';
+                $is_visible = ($action_value !== 'disable');
+
+                // PHP 8 Fix: Safely intercept arrays
+                if (is_array($name)) {
+                    $displayName = isset($name['name']) ? $name['name'] : (!is_numeric($type) ? $type : 'Array');
+                } else {
+                    $displayName = $name;
+                }
+
+                $this->logResult($results, "$type ($displayName) - $action_key : $action_value", $is_visible, $is_bp);
+            }
+        }
+
+        return $results;
+    }
+
+    /**
+     * Helper to validate an action against the BP JSON rules array
+     */
+    private function validateInlineAction($data, $action_key, $check_array)
+    {
+        if ( !isset($check_array['inline-policy-action']) ) {
+            return false;
+        }
+
+        $has_validated = false;
+        foreach ( $check_array['inline-policy-action'] as $validate ) {
+            if ( isset($validate['type']) && $validate['type'][0] === 'any' ) {
+                $has_validated = true;
+                // Passes the underlying array structure down to your original string validator safely
+                if ( !$this->visibility_stringValidation($data, $action_key, $validate['action'][0]) ) {
+                    return false;
+                }
+            }
+        }
+
+        return $has_validated;
+    }
+
+    /**
+     * Helper to format strings dynamically and sort them into target buckets
+     */
+    private function logResult(&$results, $base_string, $is_visible, $is_bp)
+    {
+        $formatted_string = $base_string;
+        if (!$is_bp) {
+            $formatted_string .= " | **NOT BP**";
+        }
+        if (!$is_visible) {
+            $formatted_string .= " | **NOT VISIBLE**";
+        }
+
+        // Distribute items into their respective collection buckets
+        $results['all'][] = $formatted_string;
+
+        if ($is_visible) {
+            $results['visible'][] = $formatted_string;
+        } else {
+            $results['not visible'][] = $formatted_string;
+        }
+
+        if ($is_bp) {
+            $results['bp'][] = $formatted_string;
+        } else {
+            $results['not bp'][] = $formatted_string;
+        }
+    }
+
     public function visibility_stringValidation($array, $key, $validate)
     {
         $negate_string = "";
