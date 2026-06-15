@@ -1814,6 +1814,32 @@ RQuery::$defaultFilters['securityprofile']['url.site-access']['operators']['allo
     'arg' => false,
     'help' => "'securityprofiletype=url-filtering' e.g. 'filter=(url.site-access allow.is.set)'"
 );
+RQuery::$defaultFilters['securityprofile']['url.mica-engine']['operators']['is.visibility'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var URLProfile $object */
+        $object = $context->object;
+
+        if( $object->secprof_type != 'url-filtering' )
+            return null;
+
+        return $object->mica_engine_is_visibility();
+    },
+    'arg' => false,
+    'help' => "'securityprofiletype=url-filtering' e.g. 'filter=(url.user-credential-detection is.visibility)'"
+);
+RQuery::$defaultFilters['securityprofile']['url.mica-engine']['operators']['is.best-practice'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var URLProfile $object */
+        $object = $context->object;
+
+        if( $object->secprof_type != 'url-filtering' )
+            return null;
+
+        return $object->mica_engine_is_bestpractice();
+    },
+    'arg' => false,
+    'help' => "'securityprofiletype=url-filtering' e.g. 'filter=(url.mica-engine is.best-practice)'"
+);
 
 RQuery::$defaultFilters['securityprofile']['object']['operators']['is.predefined'] = array(
     'Function' => function (SecurityProfileRQueryContext $context) {

@@ -10237,6 +10237,20 @@
                     }
                 }
             },
+            "url.mica-engine": {
+                "operators": {
+                    "is.visibility": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=url-filtering' e.g. 'filter=(url.user-credential-detection is.visibility)'"
+                    },
+                    "is.best-practice": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=url-filtering' e.g. 'filter=(url.mica-engine is.best-practice)'"
+                    }
+                }
+            },
             "url.site-access": {
                 "operators": {
                     "is.visibility": {
