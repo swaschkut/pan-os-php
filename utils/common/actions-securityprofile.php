@@ -1878,10 +1878,17 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     if( $bestPractice )
                     {
                         //<th>URL credentials TAB</th>
+                        $tab_config = array();
+                        $tab_config[] = "mode: ".$object->credential_mode;
+                        $tab_config[] = "log-severity: ".$object->credential_log;
+                        $tab_config[] = "----";
+
                         if( $object->url_usercredentialsubmission_best_practice_tab() )
-                            $lines .= $context->encloseFunction($bp_text_yes);
+                            $tab_config[] = $bp_text_yes;
                         else
-                            $lines .= $context->encloseFunction($bp_text_no);
+                            $tab_config[] = $bp_text_no;
+
+                        $lines .= $context->encloseFunction($tab_config);
                     }
 
                     if( $visibility )
@@ -1941,10 +1948,17 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     if( $visibility )
                     {
                         //<th>URL credentials TAB</th>
+                        $tab_config = array();
+                        $tab_config[] = "mode: ".$object->credential_mode;
+                        $tab_config[] = "log-severity: ".$object->credential_log;
+                        $tab_config[] = "----";
+
                         if( $object->url_usercredentialsubmission_visibility_tab() )
-                            $lines .= $context->encloseFunction($bp_text_yes);
+                            $tab_config[] = $bp_text_yes;
                         else
-                            $lines .= $context->encloseFunction($bp_text_no);
+                            $tab_config[] = $bp_text_no;
+
+                        $lines .= $context->encloseFunction($tab_config);
                     }
 
                     if( $adoption )
@@ -4743,145 +4757,16 @@ SecurityProfileCallContext::$supportedActions['url.alert-only-set'] = array(
 
         /////////////////
         $object->url_siteaccess_set_alertonly();
-        /*
-        $allow_xmlnode = DH::findFirstElement("allow", $object->xmlroot);
-        $alert_xmlnode = DH::findFirstElementOrCreate("alert", $object->xmlroot);
-        if( $allow_xmlnode !== False )
-        {
-            foreach( $allow_xmlnode->childNodes as $allow_node )
-            {
-                if( $allow_node->nodeType != XML_ELEMENT_NODE )
-                    continue;
-
-                $tmp_name = $allow_node->textContent;
-
-                //Todo: not working correclty
-                $custom_url_category_obj = $object->owner->owner->customURLProfileStore->find($tmp_name);
-                if( $custom_url_category_obj !== NULL )
-                    continue;
-                //workaround
-                if(isset( $object->allow_custom[$tmp_name] ) )
-                    continue;
-
-                $clone_node = $allow_node->cloneNode(true);
-                $alert_xmlnode->appendChild($clone_node);
-                $allow_xmlnode->removeChild($allow_node);
-
-
-                $key = array_search ($tmp_name, $object->allow);
-                unset($object->allow[$key]);
-            }
-            if( empty($object->allow) and empty($object->allow_custom) )
-                $object->xmlroot->removeChild($allow_xmlnode);
-        }
-
-        foreach( $object->allow as $allow )
-        {
-            //Todo: not working correclty
-            $custom_url_category_obj = $object->owner->owner->customURLProfileStore->find($allow);
-            if( $custom_url_category_obj !== NULL )
-                continue;
-            //workaround
-            if(isset( $object->allow_custom[$allow] ) )
-                continue;
-
-            $object->alert[] = $allow;
-
-            $xmlString = '<member>'.$allow.'</member>';
-            $xmlElement = DH::importXmlStringOrDie($object->xmlroot->ownerDocument, $xmlString);
-            $alert_xmlnode->appendChild($xmlElement);
-        }
-        $object->allow = array();
-        */
 
         /////////////////
         $object->url_credential_set_alertonly();
-        /*
-        $credential_xmlnode = DH::findFirstElementOrCreate("credential-enforcement", $object->xmlroot);
-        $allow_credential_xmlnode = DH::findFirstElement("allow", $credential_xmlnode);
-        if( $allow_credential_xmlnode !== False )
-        {
-            foreach( $allow_credential_xmlnode->childNodes as $allow_node )
-            {
-                if( $allow_node->nodeType != XML_ELEMENT_NODE )
-                    continue;
-
-                $tmp_name = $allow_node->textContent;
-
-                //Todo: not working correclty
-                $custom_url_category_obj = $object->owner->owner->customURLProfileStore->find($tmp_name);
-                if( $custom_url_category_obj !== NULL )
-                    continue;
-                //workaround
-                if(isset( $object->allow_credential_custom[$tmp_name] ) )
-                    continue;
-
-                $clone_node = $allow_node->cloneNode(true);
-                $alert_credential_xmlnode = DH::findFirstElementOrCreate("alert", $credential_xmlnode);
-                $alert_credential_xmlnode->appendChild($clone_node);
-                $allow_credential_xmlnode->removeChild($allow_node);
-
-                $key = array_search ($tmp_name, $object->allow_credential);
-                unset($object->allow_credential[$key]);
-            }
-            if( empty($object->allow_credential) and empty($object->allow_credential_custom) )
-                $credential_xmlnode->removeChild($allow_credential_xmlnode);
-        }
-
-        foreach( $object->allow_credential as $allow )
-        {
-            //Todo: not working correclty
-            $custom_url_category_obj = $object->owner->owner->customURLProfileStore->find($allow);
-            if( $custom_url_category_obj !== NULL )
-                continue;
-            //workaround
-            if(isset( $object->allow_credential_custom[$allow] ) )
-                continue;
-
-            $object->alert_credential[] = $allow;
-
-            $xmlString = '<member>'.$allow.'</member>';
-            $xmlElement = DH::importXmlStringOrDie($object->xmlroot->ownerDocument, $xmlString);
-            $alert_credential_xmlnode = DH::findFirstElementOrCreate("alert", $credential_xmlnode);
-            $alert_credential_xmlnode->appendChild($xmlElement);
-        }
-        $object->allow_credential = array();
-        */
 
         ////////////////////////////
         $object->url_inline_cat_set(true);
 
-        /*
-        if( $context->object->owner->owner->version >= 102 )
-        {
-            $xmlnode = DH::findFirstElementOrCreate("local-inline-cat", $object->xmlroot);
-            $xmlnode->textContent = "yes";
-
-            $xmlnode = DH::findFirstElementOrCreate("cloud-inline-cat", $object->xmlroot);
-            $xmlnode->textContent = "yes";
-        }
-        */
-
         ////////////
         $object->url_credential_mode_alertonly();
-        /*
-        $credential_xmlnode = DH::findFirstElementOrCreate("credential-enforcement", $object->xmlroot);
-        $mode_credential_xmlnode = DH::findFirstElementOrCreate("mode", $credential_xmlnode);
-        $mode_child_xmlnode = DH::firstChildElement($mode_credential_xmlnode);
-        if( $mode_child_xmlnode == false )
-        {
-            DH::findFirstElementOrCreate("ip-user", $mode_credential_xmlnode);
-            $logseverity_credential_xmlnode = DH::findFirstElementOrCreate("log-severity", $credential_xmlnode);
-            $logseverity_credential_xmlnode->textContent = "medium";
-        }
-        elseif( $mode_child_xmlnode !== false && $mode_child_xmlnode->nodeName == "disabled" )
-        {
-            DH::findFirstElementOrCreate("ip-user", $mode_credential_xmlnode);
-            $logseverity_credential_xmlnode = DH::findFirstElementOrCreate("log-severity", $credential_xmlnode);
-            $logseverity_credential_xmlnode->textContent = "medium";
-            $mode_credential_xmlnode->removeChild($mode_child_xmlnode);
-        }
-        */
+
 
         if( $context->isAPI )
         {

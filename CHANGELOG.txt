@@ -8,6 +8,7 @@ UTIL:
 * type=securityprofile actions=exportSPRtoHTML:spr.html | extend for SCM config
 * type=securityprofile actions=exportSPRtoHTML:spr.html | extend with sp_xyz_bestpractice column
 * type=securityprofile actions=virus.alert-only-set | use bp setting json for action set
+* type=securityprofile securityprofiletype=url-filtering 'actions=exporttohtml:sp_url.html,visibility|bestpractice' | extend with detail URL TAB information for mode / log-severity
 
 BUGFIX:
 * type=securityprofile actions=virus.decoder.alert-only-set | bugfix for older PAN-OS version
