@@ -149,7 +149,7 @@ class DNSPolicy
                 if( isset($details[$secprof_type][$dns_string]['bp']))
                     $checkArray = $details[$secprof_type][$dns_string]['bp'];
                 else
-                    derr( "this JSON bp/visibility JSON file does not have 'bp' -> '".$dns_string."' defined correctly for: '".$secprof_type, null, FALSE );
+                    mwarning( "this JSON bp/visibility JSON file customised 'bp' -> '".$dns_string."' defined correctly for: '".$secprof_type, null, FALSE );
             }
             elseif( $checkType == "visibility")
             {
@@ -642,7 +642,7 @@ class DNSPolicy
                 if( isset($details[$secprof_type]['lists']['bp']))
                     $checkArray = $details[$secprof_type]['lists']['bp'];
                 else
-                    derr( "this JSON bp/visibility JSON file does not have 'bp' -> 'lists' defined correctly for: '".$secprof_type, null, FALSE );
+                    mwarning( "this JSON bp/visibility JSON file customised 'bp' -> 'lists' defined correctly for: '".$secprof_type, null, FALSE );
             }
             elseif( $checkType == "visibility")
             {

@@ -16,6 +16,7 @@ BUGFIX:
 * type=securityprofile securityprofiletype=spyware | bugfix for advanced-dns-security - to correctly validate starting with PAN-OS 11.2
 
 GENERAL:
+* BP settings validation - no error out but warning if customised
 
 
 2.1.56  (20260613)

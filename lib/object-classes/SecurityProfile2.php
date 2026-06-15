@@ -300,14 +300,14 @@ class SecurityProfile2
                 if( isset($details[$secprof_type][$array_type]['bp'][$check_action_type]) )
                     $checkArray = $details[$secprof_type][$array_type]['bp'];
                 else
-                    derr( "this JSON bp/visibility JSON file does not have 'bp' -> '".$check_action_type."' defined correctly for: '".$secprof_type."'", null, FALSE );
+                    mwarning( "this JSON bp/visibility JSON file customised 'bp' -> '".$check_action_type."' for: '".$secprof_type."'", null, FALSE );
             }
             elseif( $checkType == "visibility")
             {
                 if( isset($details[$secprof_type][$array_type]['visibility'][$check_action_type]) )
                     $checkArray = $details[$secprof_type][$array_type]['visibility'];
                 else
-                    derr( "this JSON bp/visibility JSON file does not have 'visibility' -> '".$check_action_type."' defined correctly for: '".$secprof_type."'", null, FALSE );
+                    mwarning( "this JSON bp/visibility JSON file customised 'visibility' -> '".$check_action_type."' for: '".$secprof_type."'", null, FALSE );
             }
         }
 
