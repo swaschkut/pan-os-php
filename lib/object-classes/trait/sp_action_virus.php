@@ -450,7 +450,15 @@ trait sp_action_virus
 
     public function av_actions_visibility()
     {
-        if( $this->av_action_visibility() && $this->av_wildfireaction_visibility() && $this->av_mlavaction_is_visibility() )
+        if( $this->av_action_visibility() && $this->av_wildfireaction_visibility() && $this->av_mlavaction_visibility() )
+            return true;
+
+        return false;
+    }
+
+    public function av_actions_best_practice()
+    {
+        if( $this->av_action_best_practice() && $this->av_wildfireaction_best_practice() && $this->av_mlavaction_best_practice() )
             return true;
 
         return false;
@@ -479,7 +487,7 @@ trait sp_action_virus
         return $this->av_general_action_best_practice( "mlav-action" );
     }
 
-    public function av_mlavaction_is_visibility(): ?bool
+    public function av_mlavaction_visibility(): ?bool
     {
         return $this->av_general_action_visibility( "mlav-action" );
     }

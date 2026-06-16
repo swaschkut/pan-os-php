@@ -175,7 +175,7 @@ class AntiVirusProfile extends SecurityProfile2
         {
             if ($this->av_action_visibility()
                 && $this->av_wildfireaction_visibility()
-                && $this->av_mlavaction_is_visibility()
+                && $this->av_mlavaction_visibility()
                 && $this->cloud_inline_analysis_visibility($this->owner->bp_json_file)
             )
                 return TRUE;
@@ -186,7 +186,7 @@ class AntiVirusProfile extends SecurityProfile2
         {
             if ($this->av_action_visibility()
                 && $this->av_wildfireaction_visibility()
-                && $this->av_mlavaction_is_visibility()
+                && $this->av_mlavaction_visibility()
             )
                 return TRUE;
             else

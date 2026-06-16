@@ -13,6 +13,7 @@ UTIL:
 * type=stats | extend with URL inline-ML
 * type=securityprofile actions=exportSPRtoHTML:spr.html | update with more information
 * type=securityprofile actions=exporttoexcel | rename mica-engine column for bp / visibility
+* type=securityprofile actions=exportSPRtoHTML:spr.html | update to bring in location and visibility/bp/adoption dropdown
 
 BUGFIX:
 * type=securityprofile actions=virus.decoder.alert-only-set | bugfix for older PAN-OS version

@@ -1253,7 +1253,7 @@ class URLProfile extends SecurityProfile2
         else
             return TRUE;
     }
-    public function url_mica_engine_bestpractice()
+    public function url_mica_engine_best_practice()
     {
         $check_array = $this->url_mica_engine_bp_visibility_JSON( "bp", "url" );
         $bestpractise = $this->check_mica_engine_visibility_json( $check_array );
@@ -1269,7 +1269,7 @@ class URLProfile extends SecurityProfile2
         if( $this->url_siteaccess_best_practice()
             && $this->url_usercredentialsubmission_best_practice()
             && $this->url_usercredentialsubmission_best_practice_tab()
-            && $this->url_mica_engine_bestpractice()
+            && $this->url_mica_engine_best_practice()
         )
             return TRUE;
         else

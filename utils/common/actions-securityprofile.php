@@ -1037,7 +1037,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         }
                         if( $visibility )
                         {
-                            if( $object->av_action_visibility() && $object->av_wildfireaction_visibility() && $object->av_mlavaction_is_visibility() )
+                            if( $object->av_action_visibility() && $object->av_wildfireaction_visibility() && $object->av_mlavaction_visibility() )
                                 $lines .= $context->encloseFunction($bp_text_yes.' Visibility AV actions set');
                             else
                                 $lines .= $context->encloseFunction($bp_text_no.' NO Visibility AV actions');
@@ -1159,7 +1159,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         if( $visibility )
                         {
                             if( $object->av_action_visibility() && $object->av_wildfireaction_visibility()
-                                && $object->av_mlavaction_is_visibility() && $object->wildfire_rules_visibility() )
+                                && $object->av_mlavaction_visibility() && $object->wildfire_rules_visibility() )
                                 $lines .= $context->encloseFunction($bp_text_yes.' Visibility AV/WF rules set');
                             else
                                 $lines .= $context->encloseFunction($bp_text_no.' NO Visibility AV/WF rules');
@@ -2191,21 +2191,36 @@ SecurityProfileCallContext::$commonActionFunctions['bp-stats']= array(
         if( $context->subSystem->isPanorama() )
         {
             $context->subSystem->display_bp_statistics( $debug, $actions );
+
+            $dgs = $context->subSystem->getDeviceGroups();
+            foreach($dgs as $dg)
+                $dg->display_bp_statistics( $debug, $actions );
         }
         elseif( $context->subSystem->isDeviceGroup() )
         {
             $panorama = $context->subSystem->owner;
             $panorama->display_bp_statistics( $debug, $actions );
+
+            $dgs = $panorama->getDeviceGroups();
+            foreach($dgs as $dg)
+                $dg->display_bp_statistics( $debug, $actions );
         }
         elseif( $context->subSystem->isFirewall() )
         {
             $context->subSystem->display_bp_statistics( $debug, $actions );
+
+            $dgs = $context->subSystem->getVirtualSystems();
+            foreach($dgs as $dg)
+                $dg->display_bp_statistics( $debug, $actions );
         }
         elseif( $context->subSystem->isVirtualSystem() )
         {
             $firewall = $context->subSystem->owner;
 
             $firewall->display_bp_statistics( $debug, $actions );
+            $dgs = $firewall->getVirtualSystems();
+            foreach($dgs as $dg)
+                $dg->display_bp_statistics( $debug, $actions );
         }
         elseif( $context->subSystem->isBuckbeak()
             || $context->subSystem->isFawkes()
@@ -3137,7 +3152,6 @@ SecurityProfileCallContext::$supportedActions[] = array(
             $bp_stats_array = $f($context, true );
 
             // Persist summary metadata arrays inside context object state
-            $summaryMetrics = isset($bp_stats_array[0]['percentage']['visibility']) ? $bp_stats_array[0]['percentage']['visibility'] : array();
             $bp_stats_raw   = $bp_stats_array;
 
             $securityRulesScope['total'] = $bp_stats_raw[0]['security rules'];
@@ -3149,29 +3163,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
             $context->first = false;
         }
 
-        // Fallback: Parse left-side overview metrics if $summaryMetrics was empty due to the flat array layout
-        if (empty($summaryMetrics) && !empty($bp_stats_raw[0])) {
-            $flatData = $bp_stats_raw[0];
-            $overviewMapping = [
-                'Antivirus'           => 'av visibility percentage',
-                'Anti-Spyware'        => 'as visibility percentage',
-                'Vulnerability'       => 'vp visibility percentage',
-                'URL Site Access'     => 'url-site-access visibility percentage',
-                'URL User Credential' => 'url-credential visibility percentage',
-                'File Blocking'       => 'fb visibility percentage',
-                'WildFire Analysis'   => 'wf visibility percentage',
-            ];
-            foreach ($overviewMapping as $label => $flatKey) {
-                if (isset($flatData[$flatKey])) {
-                    $summaryMetrics[$label] = [
-                        'value' => $flatData[$flatKey],
-                        'group' => 'Security Profiles'
-                    ];
-                }
-            }
-        }
-
-        // 2. Section Map Definitions matching custom requested column fields (with added Placeholder columns)
+        // 2. Section Map Definitions matching custom requested column fields
         $sections = [
             'sec-av' => [
                 'title'    => 'AV — Antivirus Profiles',
@@ -3184,7 +3176,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 'title'    => 'AS — Anti-Spyware Profiles',
                 'headers'  => ['Location', 'Anti-Spyware Profile Name', '# of Rules', 'Visible', 'Rules', 'DNS Lists', 'DNS Security', 'Inline ML', 'Rules Check Info', 'DNS Lists Check Info', 'DNS Security Check Info', 'Inline ML Check Info'],
                 'keys'     => ['location', 'profile', 'count', 'visible', 'rules', 'dns_lists', 'dns_security', 'inline_ml', 'rules_detail', 'dns_lists_detail', 'dns_security_detail', 'inline_ml_detail'],
-                'numeric'  => ['count', 'visible', 'rules', 'dns_lists', 'dns_security', 'inline_ml'],
+                'numeric'  => ['count', 'visible', 'rules', 'dns_lists', 'dns_security', 'adns_security', 'inline_ml'],
                 'rows'     => []
             ],
             'sec-vp' => [
@@ -3245,6 +3237,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
         }
 
         // --- MAP PILL LABELS TO FLAT ARRAY SUB-STRINGS ---
+        // Left intact to retain raw configuration metrics references perfectly while providing tab mutation capabilities
         $pillMetaMapping = [
             'sec-av' => [
                 'visibility'             => 'av visibility',
@@ -3254,9 +3247,10 @@ SecurityProfileCallContext::$supportedActions[] = array(
             'sec-as' => [
                 'visibility'              => 'as visibility',
                 'visibility rules'        => 'as visibility rules',
-                'visibility mica-engine'  => 'as visibility mica-engine',
                 'dns-list visibility'     => 'dns-list visibility',
-                'dns-security visibility' => 'dns-security visibility'
+                'dns-security visibility' => 'dns-security visibility',
+                'adns-security visibility'=> 'adns-security visibility',
+                'visibility mica-engine'  => 'as visibility mica-engine'
             ],
             'sec-vp' => [
                 'visibility'             => 'vp visibility',
@@ -3335,47 +3329,81 @@ SecurityProfileCallContext::$supportedActions[] = array(
             else
                 $info['visible'] = 0;
 
+            if( $object->is_best_practice() )
+                $info['bp_pass'] = $info['count'];
+            else
+                $info['bp_pass'] = 0;
+
+            if( $object->is_adoption() )
+                $info['adopted'] = $info['count'];
+            else
+                $info['adopted'] = 0;
+
             // --- EXTENDED PARAMETERS ---
             $info['actions']                  = 0;
             $info['inline_ml']                = 0;
             $info['actions_detail']             = 'Compliant';
             $info['inline_ml_detail']             = 'Compliant';
+            $info['bp_actions']                  = 0;
+            $info['bp_inline_ml']                = 0;
+            $info['bp_actions_detail']             = 'BP Compliant';
+            $info['bp_inline_ml_detail']             = 'BP Compliant';
             if( get_class($object) == "AntiVirusProfile" )
             {
                 if( $object->av_actions_visibility() )
                     $info['actions'] = $info['count'];
                 else
-                    $info['actions_detail'] = '[Placeholder: Actions Detail Text]';
+                    $info['actions_detail'] = '[Placeholder: visible Actions Detail Text]';
+
+                if( $object->av_actions_best_practice() )
+                    $info['bp_actions'] = $info['count'];
+                else
+                    $info['bp_actions_detail'] = '[Placeholder: BP Actions Detail Text]';
             }
             if( get_class($object) == "AntiVirusProfile"
-                    || get_class($object) == "AntiSpywareProfile"
-                    || get_class($object) == "VulnerabilityProfile"
-                    || get_class($object) == "WildfireProfile"
+                || get_class($object) == "AntiSpywareProfile"
+                || get_class($object) == "VulnerabilityProfile"
+                || get_class($object) == "WildfireProfile"
             )
             {
-                if( $object->cloud_inline_analysis_best_practice($object->owner->bp_json_file) )
+                if( $object->cloud_inline_analysis_visibility($object->owner->bp_json_file) )
                 {
                     $info['inline_ml'] = $info['count'];
                 }
                 else
                 {
                     $notVisibleElements         = $object->cloud_inline_analysis_array($object->owner->bp_json_file)['not visible'];
-                    // If it's an array, join with newlines. Otherwise, leave it as is.
                     $info['inline_ml_detail'] = is_array($notVisibleElements) ? implode("\n", $notVisibleElements) : $notVisibleElements;
                     $info['inline_ml_detail']             = '[Placeholder: In-Line Details]';
                 }
 
+                if( $object->cloud_inline_analysis_best_practice($object->owner->bp_json_file) )
+                {
+                    $info['bp_inline_ml'] = $info['count'];
+                }
+                else
+                {
+                    $notVisibleElements         = $object->cloud_inline_analysis_array($object->owner->bp_json_file)['not bp'];
+                    $info['bp_inline_ml_detail'] = is_array($notVisibleElements) ? implode("\n", $notVisibleElements) : $notVisibleElements;
+                    $info['bp_inline_ml_detail']             = '[Placeholder: bp In-Line Details]';
+                }
             }
-
 
             $info['rules']                    = 0;
             $info['rules_detail']             = 'Compliant';
+            $info['bp_rules']                    = 0;
+            $info['bp_rules_detail']             = 'BP Compliant';
             if( get_class($object) == "AntiSpywareProfile" )
             {
                 if(  $object->spyware_rules_visibility() )
                     $info['rules'] = $info['count'];
                 else
-                    $info['rules_detail']             = '[Placeholder: Rules Visibility Details]';
+                    $info['rules_detail']             = '[Placeholder: visible Rules Visibility Details]';
+
+                if(  $object->spyware_rules_best_practice() )
+                    $info['bp_rules'] = $info['count'];
+                else
+                    $info['bp_rules_detail']             = '[Placeholder: bp Rules Visibility Details]';
             }
 
             if( get_class($object) == "VulnerabilityProfile" )
@@ -3383,29 +3411,50 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 if( $object->vulnerability_rules_visibility() )
                     $info['rules'] = $info['count'];
                 else
-                    $info['rules_detail']             = '[Placeholder: Rules Visibility Details]';
-            }
+                    $info['rules_detail']             = '[Placeholder: visible Rules Visibility Details]';
 
+                if(  $object->vulnerability_rules_best_practice() )
+                    $info['bp_rules'] = $info['count'];
+                else
+                    $info['bp_rules_detail']             = '[Placeholder: bp Rules Visibility Details]';
+            }
 
             if( get_class($object) == "WildfireProfile" )
             {
                 if( $object->wildfire_rules_visibility() )
                     $info['rules'] = $info['count'];
                 else
-                    $info['rules_detail']             = '[Placeholder: Rules Visibility Details]';
-            }
+                    $info['rules_detail']             = '[Placeholder: visible Rules Visibility Details]';
 
+                if(  $object->wildfire_rules_best_practice() )
+                    $info['bp_rules'] = $info['count'];
+                else
+                    $info['bp_rules_detail']             = '[Placeholder: bp Rules Visibility Details]';
+            }
 
             $info['dns_lists']                = 0;
             $info['dns_security']             = 0;
             $info['dns_lists_detail']             = 'Compliant';
             $info['dns_security_detail']             = 'Compliant';
+            $info['bp_dns_lists']                = 0;
+            $info['bp_dns_security']             = 0;
+            $info['bp_dns_lists_detail']             = 'BP Compliant';
+            $info['bp_dns_security_detail']             = 'BP Compliant';
+            $info['adns_security']             = 0;
+            $info['adns_security_detail']             = 'Compliant';
+            $info['bp_adns_security']             = 0;
+            $info['bp_adns_security_detail']             = 'BP Compliant';
             if( get_class($object) == "AntiSpywareProfile" )
             {
                 if( $object->spyware_dnslist_visibility() )
                     $info['dns_lists'] = $info['count'];
                 else
-                    $info['dns_lists_detail']         = '[Placeholder: DNS Lists Details]';
+                    $info['dns_lists_detail']         = '[Placeholder: visible DNS Lists Details]';
+
+                if( $object->spyware_dnslist_best_practice() )
+                    $info['bp_dns_lists'] = $info['count'];
+                else
+                    $info['bp_dns_lists_detail']         = '[Placeholder: bp DNS Lists Details]';
             }
 
             if( get_class($object) == "AntiSpywareProfile" )
@@ -3414,12 +3463,29 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     $info['dns_security'] = $info['count'];
                 else
                     $info['dns_security_detail']      = '[Placeholder: DNS Security Details]';
+
+                if( $object->spyware_dns_security_best_practice() )
+                    $info['bp_dns_security'] = $info['count'];
+                else
+                    $info['bp_dns_security_detail']      = '[Placeholder: BP DNS Security Details]';
+
+                if( $object->spyware_advanced_dns_security_visibility() )
+                    $info['adns_security'] = $info['count'];
+                else
+                    $info['adns_security_detail']      = '[Placeholder: DNS Security Details]';
+
+                if( $object->spyware_advanced_dns_security_best_practice() )
+                    $info['bp_adns_security'] = $info['count'];
+                else
+                    $info['bp_adns_security_detail']      = '[Placeholder: BP ADNS Security Details]';
             }
 
-
-
-            $info['site_access']              = 0;
-            $info['user_credential']          = 0;
+            $info['site_access'] = 0;
+            $info['user_credential'] = 0;
+            $info['user_credential_tab'] = 0;
+            $info['bp_site_access'] = 0;
+            $info['bp_user_credential'] = 0;
+            $info['bp_user_credential_tab'] = 0;
             if( get_class($object) == "URLProfile" && $object->url_siteaccess_visibility())
                 $info['site_access'] = $info['count'];
 
@@ -3432,13 +3498,24 @@ SecurityProfileCallContext::$supportedActions[] = array(
             if( get_class($object) == "URLProfile" && $object->url_mica_engine_visibility())
                 $info['inline_ml'] = $info['count'];
 
-            // --- DETAILED TEXT PLACEHOLDERS POPULATION ---
-            // If the specific structural item isn't visible, these text-friendly slots hold detailed diagnostics data
+            if( get_class($object) == "URLProfile" && $object->url_siteaccess_best_practice())
+                $info['bp_site_access'] = $info['count'];
 
+            if( get_class($object) == "URLProfile" && $object->url_usercredentialsubmission_best_practice() )
+                $info['bp_user_credential'] = $info['count'];
 
+            if( get_class($object) == "URLProfile" && $object->url_usercredentialsubmission_best_practice_tab())
+                $info['bp_user_credential_tab'] = $info['count'];
+
+            if( get_class($object) == "URLProfile" && $object->url_mica_engine_best_practice())
+                $info['bp_inline_ml'] = $info['count'];
 
             $info['site_access_detail']       = ($info['site_access'] < $info['count']) ? '[Placeholder: Site Access Details]' : 'Compliant';
             $info['user_credential_detail']   = ($info['user_credential'] < $info['count']) ? '[Placeholder: User Credential Details]' : 'Compliant';
+
+            $info['bp_site_access_detail']       = ($info['bp_site_access'] < $info['count']) ? '[Placeholder: BP Site Access Details]' : 'BP Compliant';
+            $info['bp_user_credential_detail']   = ($info['bp_user_credential'] < $info['count']) ? '[Placeholder: BP User Credential Details]' : 'BP Compliant';
+
 
             if( get_class($object) == "AntiVirusProfile" ) { $sections['sec-av']['rows'][] = $info; }
             elseif( get_class($object) == "AntiSpywareProfile" ) { $sections['sec-as']['rows'][] = $info; }
@@ -3450,12 +3527,20 @@ SecurityProfileCallContext::$supportedActions[] = array(
             elseif( get_class($object) == "DNSSecurityProfile" ) { $sections['sec-dnssec']['rows'][] = $info; }
         }
 
+
         $blankDefaults = [
             'actions' => 0, 'inline_ml' => 0, 'rules_not_visible' => 0, 'inline_ml_not_visible' => 0,
-            'rules' => 0, 'dns_lists' => 0, 'dns_security' => 0, 'site_access' => 0, 'user_credential' => 0,
+            'rules' => 0, 'dns_lists' => 0, 'dns_security' => 0, 'adns_security' => 0, 'site_access' => 0, 'user_credential' => 0,
             'actions_detail' => 'N/A', 'inline_ml_detail' => 'N/A', 'rules_detail' => 'N/A',
-            'dns_lists_detail' => 'N/A', 'dns_security_detail' => 'N/A', 'site_access_detail' => 'N/A',
-            'user_credential_detail' => 'N/A'
+            'dns_lists_detail' => 'N/A', 'dns_security_detail' => 'N/A', 'adns_security_detail' => 'N/A', 'site_access_detail' => 'N/A',
+            'user_credential_detail' => 'N/A',
+
+            // --- ADD THESE NEW BLANK DEFAULTS ---
+            'bp_pass' => 0, 'bp_actions' => 0, 'bp_inline_ml' => 0, 'bp_rules' => 0,
+            'bp_dns_lists' => 0, 'bp_dns_security' => 0, 'bp_adns_security' => 0, 'bp_site_access' => 0, 'bp_user_credential' => 0,
+            'bp_actions_detail' => 'N/A', 'bp_inline_ml_detail' => 'N/A', 'bp_rules_detail' => 'N/A',
+            'bp_dns_lists_detail' => 'N/A', 'bp_dns_security_detail' => 'N/A', 'bp_adns_security_detail' => 'N/A', 'bp_site_access_detail' => 'N/A',
+            'bp_user_credential_detail' => 'N/A'
         ];
 
         if( !$isSCM ) {
@@ -3507,6 +3592,8 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     --pill-bg: #f4f4f5;
                     --pill-border: #e4e4e7;
                     --pill-txt: #71717a;
+                    --tab-active-bg: #1d4ed8;
+                    --tab-active-fg: #ffffff;
                 }
                 * { box-sizing: border-box; }
                 body {
@@ -3523,6 +3610,29 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 header.spr-header h1 { margin: 0 0 4px 0; font-size: 22px; }
                 header.spr-header .meta { color: var(--muted); font-size: 13px; }
 
+                /* Selector styling */
+                .device-selector-box {
+                    background: #f8fafc;
+                    border: 1px solid var(--border);
+                    padding: 16px;
+                    border-radius: 8px;
+                    margin-bottom: 24px;
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                }
+                .device-selector-box select {
+                    padding: 8px 12px;
+                    font-size: 14px;
+                    font-weight: 600;
+                    border-radius: 6px;
+                    border: 1px solid var(--border);
+                    background: #fff;
+                    color: #0f172a;
+                    cursor: pointer;
+                    min-width: 250px;
+                }
+
                 .spr-header-row {
                     display: flex;
                     gap: 24px;
@@ -3531,12 +3641,13 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 }
                 .spr-header-panel {
                     flex: 1;
-                    max-height: 480px;
-                    overflow-y: auto;
+                    min-height: 380px;
                     border: 1px solid var(--border);
-                    padding: 12px;
+                    padding: 16px;
                     border-radius: 6px;
                     background: #fff;
+                    display: flex;
+                    flex-direction: column;
                 }
                 .spr-section { margin-bottom: 36px; }
                 .spr-section h2 {
@@ -3545,6 +3656,38 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     padding: 6px 10px;
                     background: #f3f4f6;
                     border-left: 4px solid var(--header-bg);
+                }
+
+                /* TAB CONTROLS LAYOUT STYLING */
+                .spr-tabs-navigation {
+                    display: flex;
+                    gap: 4px;
+                    border-bottom: 2px solid var(--border);
+                    margin-bottom: 16px;
+                    padding-top: 4px;
+                }
+                .spr-tab-btn {
+                    padding: 8px 20px;
+                    font-size: 13px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    background: #f1f5f9;
+                    border: 1px solid var(--border);
+                    border-bottom: none;
+                    border-top-left-radius: 6px;
+                    border-top-right-radius: 6px;
+                    color: #475569;
+                    transition: all 0.15s ease-in-out;
+                    margin-bottom: -2px;
+                }
+                .spr-tab-btn:hover {
+                    background: #e2e8f0;
+                    color: #0f172a;
+                }
+                .spr-tab-btn.active {
+                    background: var(--tab-active-bg);
+                    color: var(--tab-active-fg);
+                    border-color: var(--tab-active-bg);
                 }
 
                 /* Pill Metric Grid Containers */
@@ -3582,7 +3725,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     margin-bottom: 8px;
                 }
                 .spr-table td {
-                    white-space: pre-line; /* This forces HTML to respect '\n' string line breaks natively */
+                    white-space: pre-line;
                 }
                 .spr-table th, .spr-table td {
                     border: 1px solid var(--border);
@@ -3612,9 +3755,9 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     vertical-align: middle;
                 }
                 .progress-bar {
-                    background-color: #10b981;
                     height: 100%;
                     border-radius: 4px;
+                    background-color: #10b981;
                 }
                 .progress-bar.low { background-color: #f59e0b; }
                 .progress-bar.critical { background-color: #ef4444; }
@@ -3672,89 +3815,109 @@ SecurityProfileCallContext::$supportedActions[] = array(
             </div>
         </header>
 
+        <!-- DYNAMIC DEVICE SELECTOR DROPDOWN -->
+        <div class="device-selector-box">
+            <label for="deviceSelector"><strong>Active Context Dataset / Location:</strong></label>
+            <select id="deviceSelector" onchange="changeActiveDeviceContext(this.value)">
+                <?php foreach ($bp_stats_raw as $index => $deviceDataInstance): ?>
+                    <?php
+                    $dropdownLabel = "Dataset Target Location #" . ($index + 1);
+
+                    if (isset($deviceDataInstance['type'])) {
+                        $type = $deviceDataInstance['type'];
+                        $header = $deviceDataInstance['header'] ?? '';
+
+                        $cleanHeader = preg_replace('/\x1b\[[0-9;]*m/', '', $header);
+                        $cleanHeader = preg_replace('/\[[0-9;]*m/', '', $cleanHeader);
+
+                        if ($type === 'PANConf' || $type === 'PanoramaConf') {
+                            $dropdownLabel = "FullDevice";
+                        }
+                        elseif ($type === 'VirtualSystem') {
+                            if (preg_match("/VirtualSystem\s+'([^']+)'/", $cleanHeader, $matches)) {
+                                $dropdownLabel = $matches[1];
+                            } else {
+                                $dropdownLabel = "vsys1";
+                            }
+                        }
+                        elseif ($type === 'DeviceGroup') {
+                            if (preg_match("/DeviceGroup\s+'([^']+)'/", $cleanHeader, $matches)) {
+                                $dropdownLabel = $matches[1];
+                            } else {
+                                $dropdownLabel = "DeviceGroup Context";
+                            }
+                        }
+                    }
+                    ?>
+                    <option value="<?php echo $index; ?>">
+                        <?php echo htmlspecialchars($dropdownLabel); ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+
         <div class="spr-header-row">
-            <!-- LEFT SIDE PANEL: Coverage Metrics Table -->
-            <div class="spr-header-panel">
-                <h3 style="font-size: 14px; margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 0.05em; color: var(--net-header);">
-                    Overall Security Profile Coverage &amp; Visibility Status
-                </h3>
-                <table class="spr-table" style="margin: 0;">
-                    <thead>
-                    <tr>
-                        <th>Group</th>
-                        <th>Type</th>
-                        <th class="num" style="width: 90px;">Percentage</th>
-                        <th style="width: 180px;">% Visual Distribution</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <?php if(!empty($summaryMetrics) && is_array($summaryMetrics)): ?>
-                        <?php foreach ($summaryMetrics as $type => $info): ?>
-                            <?php
-                            $pct = isset($info['value']) ? $info['value'] : 0;
-                            $group = isset($info['group']) ? $info['group'] : 'General';
-
-                            $colorClass = '';
-                            if ($pct == 0) { $colorClass = 'critical'; }
-                            elseif ($pct < 70) { $colorClass = 'low'; }
-                            ?>
-                            <tr>
-                                <td style="color: var(--muted); font-size: 12px; font-weight: 500;"><?php echo htmlspecialchars($group); ?></td>
-                                <td><strong><?php echo htmlspecialchars($type); ?></strong></td>
-                                <td class="num"><strong><?php echo $pct; ?>%</strong></td>
-                                <td style="white-space: normal; width: 180px;">
-                                    <div class="progress-container">
-                                        <div class="progress-bar <?php echo $colorClass; ?>" style="width: <?php echo $pct; ?>%;"></div>
-                                    </div>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        <tr>
-                            <td colspan="4" style="color: var(--muted); text-align: center; padding: 20px;">
-                                No parameters found inside active environment context array ($summaryMetrics).
-                            </td>
-                        </tr>
-                    <?php endif; ?>
-                    </tbody>
-                </table>
-            </div>
-
             <!-- RIGHT SIDE PANEL: Security Rules (Scope) Data -->
-            <div class="spr-header-panel">
+            <div class="spr-header-panel" style="max-height: 250px; flex: 0 0 350px;">
                 <h3 style="font-size: 14px; margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 0.05em; color: var(--net-header);">
                     Security Rules (Scope) Summary
                 </h3>
                 <table class="spr-table" style="margin: 0;">
                     <thead>
                     <tr>
-                        <th>Rule Context Metric Rule Base</th>
-                        <th class="num" style="width: 120px;">Rule Count</th>
+                        <th>Rule Context Metric</th>
+                        <th class="num" style="width: 100px;">Count</th>
                     </tr>
                     </thead>
                     <tbody>
                     <tr>
                         <td>Total Security Rules</td>
-                        <td class="num" style="font-weight: 600;"><?php echo number_format($securityRulesScope['total']); ?></td>
+                        <td class="num" id="scope-total" style="font-weight: 600;"><?php echo number_format($securityRulesScope['total']); ?></td>
                     </tr>
                     <tr>
-                        <td>Security Rules (Action: Allow)</td>
-                        <td class="num"><?php echo number_format($securityRulesScope['allow']); ?></td>
+                        <td>Rules (Action: Allow)</td>
+                        <td class="num" id="scope-allow"><?php echo number_format($securityRulesScope['allow']); ?></td>
                     </tr>
                     <tr>
-                        <td>&nbsp;&nbsp;&bull; Action: Allow &amp; Enabled</td>
-                        <td class="num" style="color: #15803d; font-weight: 600;"><?php echo number_format($securityRulesScope['allow_enabled']); ?></td>
+                        <td>&nbsp;&nbsp;&bull; Allow &amp; Enabled</td>
+                        <td class="num" id="scope-allow-enabled" style="color: #15803d; font-weight: 600;"><?php echo number_format($securityRulesScope['allow_enabled']); ?></td>
                     </tr>
                     <tr>
-                        <td>&nbsp;&nbsp;&bull; Action: Allow &amp; Disabled</td>
-                        <td class="num" style="color: var(--muted);"><?php echo number_format($securityRulesScope['allow_disabled']); ?></td>
+                        <td>&nbsp;&nbsp;&bull; Allow &amp; Disabled</td>
+                        <td class="num" id="scope-allow-disabled" style="color: var(--muted);"><?php echo number_format($securityRulesScope['allow_disabled']); ?></td>
                     </tr>
                     <tr>
-                        <td>Total Enabled Firewall Rules</td>
-                        <td class="num"><?php echo number_format($securityRulesScope['enabled']); ?></td>
+                        <td>Total Enabled Rules</td>
+                        <td class="num" id="scope-enabled"><?php echo number_format($securityRulesScope['enabled']); ?></td>
                     </tr>
                     </tbody>
                 </table>
+            </div>
+
+            <!-- LEFT SIDE PANEL WITH TAB SWITCHER ABOVE THE METRICS TABLE -->
+            <div class="spr-header-panel">
+                <!-- THREE HARDCODED TABS SWITCH -->
+                <div class="spr-tabs-navigation">
+                    <div class="spr-tab-btn active" onclick="switchMetricsTab('visibility', this)">Visibility</div>
+                    <div class="spr-tab-btn" onclick="switchMetricsTab('best-practice', this)">Best-Practice</div>
+                    <div class="spr-tab-btn" onclick="switchMetricsTab('adoption', this)">Adoption</div>
+                </div>
+
+                <div style="flex: 1; overflow-y: auto;">
+                    <table class="spr-table" style="margin: 0;">
+                        <thead>
+                        <tr>
+                            <th>Group</th>
+                            <th>Type</th>
+                            <th class="num" style="width: 90px;">Percentage</th>
+                            <th style="width: 220px;">% Visual Distribution</th>
+                        </tr>
+                        </thead>
+                        <tbody id="overview-metrics-tbody">
+                        <!-- Dynamic content is fully handled on load and updates via javascript engine below -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
@@ -3764,36 +3927,19 @@ SecurityProfileCallContext::$supportedActions[] = array(
             <section id="<?php echo htmlspecialchars($id); ?>" class="spr-section">
                 <h2><?php echo htmlspecialchars($section['title']); ?></h2>
 
-                <!-- CAPSULE METRIC BADGES GRID MATRIX -->
+                <!-- CAPSULE METRIC BADGES GRID MATRIX WITH DYNAMIC HOOK TEXT INJECTION PIPELINE -->
                 <?php if (isset($pillMetaMapping[$id]) && !empty($bp_stats_raw[0])): ?>
-                    <?php $flatData = $bp_stats_raw[0]; ?>
                     <div class="spr-pill-matrix">
-                        <!-- Top Percentage Row -->
                         <div class="spr-pill-row">
                             <?php foreach ($pillMetaMapping[$id] as $label => $baseKey): ?>
                                 <?php
-                                $pctKey = $baseKey . ' percentage';
-                                $pctValue = isset($flatData[$pctKey]) ? $flatData[$pctKey] : 0;
+                                $sluggedLabel = strtolower(preg_replace('/[^a-z0-9-]+/', '-', $label));
                                 ?>
                                 <div class="spr-pill">
-                                    <?php echo htmlspecialchars($label); ?> (%) <strong><?php echo htmlspecialchars((string)$pctValue); ?>%</strong>
-                                </div>
-                            <?php endforeach; ?>
-                        </div>
-                        <!-- Bottom Numerical Fraction Row -->
-                        <div class="spr-pill-row">
-                            <?php foreach ($pillMetaMapping[$id] as $label => $baseKey): ?>
-                                <?php
-                                $calcKey = $baseKey . ' calc';
-                                $calcValue = isset($flatData[$calcKey]) ? $flatData[$calcKey] : (isset($flatData[$baseKey]) ? $flatData[$baseKey] : '0');
-
-                                // PHP 8 Fix: If compliance metric is a rule list array, safely count it
-                                if (is_array($calcValue)) {
-                                    $calcValue = count($calcValue);
-                                }
-                                ?>
-                                <div class="spr-pill">
-                                    <?php echo htmlspecialchars($label); ?> (count) <strong><?php echo htmlspecialchars((string)$calcValue); ?></strong>
+                                    <span id="pill-label-<?php echo $id . '-' . $sluggedLabel; ?>">Visibility</span>:
+                                    <strong id="pill-pct-<?php echo $id . '-' . $sluggedLabel; ?>">0%</strong>
+                                    <span style="color: var(--muted); margin: 0 2px;">|</span>
+                                    <span id="pill-count-<?php echo $id . '-' . $sluggedLabel; ?>" style="font-variant-numeric: tabular-nums;">0/23</span>
                                 </div>
                             <?php endforeach; ?>
                         </div>
@@ -3816,7 +3962,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
 
                     foreach ($section['rows'] as $row):
                         ?>
-                        <tr>
+                        <tr data-row-json="<?php echo htmlspecialchars(json_encode($row), ENT_QUOTES, 'UTF-8'); ?>">
                             <?php foreach ($section['keys'] as $key): ?>
                                 <?php
                                 $isNumeric = in_array($key, $section['numeric']);
@@ -3827,8 +3973,6 @@ SecurityProfileCallContext::$supportedActions[] = array(
                                 <td class="<?php echo $isNumeric ? 'num' : ''; ?>">
                                     <?php
                                     $cellValue = isset($row[$key]) ? $row[$key] : '';
-
-                                    // PHP 8 Fix: If an unexpected array sneaks into a table column cell, stringify it
                                     if (is_array($cellValue)) {
                                         $cellValue = implode(', ', $cellValue);
                                     }
@@ -3860,7 +4004,6 @@ SecurityProfileCallContext::$supportedActions[] = array(
             <div class="net-container">
                 <div class="net-section-title">Network Base Infrastructure Configuration Profiles</div>
                 <div class="net-grid">
-
                     <div class="net-block">
                         <h3>Zone Protection Settings</h3>
                         <table class="spr-table" style="margin: 0;">
@@ -3936,10 +4079,511 @@ SecurityProfileCallContext::$supportedActions[] = array(
                             </tbody>
                         </table>
                     </div>
-
                 </div>
             </div>
         </section>
+
+        <!-- CONTROLLER AND INTERACTIVE RENDERING ENGINE -->
+        <script>
+            // Serialize backend dataset globally to client-side JS DOM mapping
+            const fullDeviceDatasetArray = <?php echo json_encode($bp_stats_raw); ?>;
+            const activePillSectionMapping = <?php echo json_encode($pillMetaMapping); ?>;
+
+            // Unified source of truth schema that defines the layout variations across all 3 tabs
+            const detailedSectionsConfiguration = {
+                'sec-av': {
+                    keys: {
+                        'visibility':    ['location', 'profile', 'count', 'visible', 'actions', 'inline_ml', 'actions_detail', 'inline_ml_detail'],
+                        'best-practice': ['location', 'profile', 'count', 'bp_pass', 'bp_actions', 'bp_inline_ml', 'bp_actions_detail', 'bp_inline_ml_detail'],
+                        'adoption':      ['location', 'profile', 'count', 'adopted']
+                    },
+                    headers: {
+                        'visibility':    ['Location', 'Antivirus Profile Name', '# of Rules', 'Visible', 'Actions', 'Inline ML', 'Actions Check Info', 'Inline ML Check Info'],
+                        'best-practice': ['Location', 'Antivirus Profile Name', '# of Rules', 'BP Pass', 'BP Actions', 'BP Inline ML', 'Actions Check Info', 'Inline ML Check Info'],
+                        'adoption':      ['Location', 'Antivirus Profile Name', '# of Rules', 'Adopted']
+                    },
+                    numericIndices: [2, 3, 4, 5]
+                },
+                'sec-as': {
+                    keys: {
+                        'visibility':    ['location', 'profile', 'count', 'visible', 'rules', 'dns_lists', 'dns_security', 'adns_security', 'inline_ml', 'rules_detail', 'dns_lists_detail', 'dns_security_detail', 'adns_security_detail', 'inline_ml_detail'],
+                        'best-practice': ['location', 'profile', 'count', 'bp_pass', 'bp_rules', 'bp_dns_lists',  'bp_dns_security', 'bp_adns_security', 'bp_inline_ml', 'bp_rules_detail', 'bp_dns_lists_detail', 'bp_dns_security_detail', 'bp_adns_security_detail', 'bp_inline_ml_detail'],
+                        'adoption':      ['location', 'profile', 'count', 'adopted']
+                    },
+                    headers: {
+                        'visibility':    ['Location', 'Anti-Spyware Profile Name', '# of Rules', 'Visible', 'Rules', 'DNS Lists', 'DNS Security', 'ADNS Security', 'Inline ML', 'Rules Check Info', 'DNS Lists Check Info', 'DNS Security Check Info', 'ADNS Security Check Info', 'Inline ML Check Info'],
+                        'best-practice': ['Location', 'Anti-Spyware Profile Name', '# of Rules', 'BP Pass', 'BP Rules', 'BP DNS Lists', 'BP DNS Security', 'BP ADNS Security', 'BP Inline ML', 'Rules Check Info', 'DNS Lists Check Info', 'DNS Security Check Info', 'ADNS Security Check Info', 'Inline ML Check Info'],
+                        'adoption':      ['Location', 'Anti-Spyware Profile Name', '# of Rules', 'Adopted']
+                    },
+                    numericIndices: [2, 3, 4, 5, 6, 7, 8]
+                },
+                'sec-vp': {
+                    keys: {
+                        'visibility':    ['location', 'profile', 'count', 'visible', 'rules', 'inline_ml', 'rules_detail', 'inline_ml_detail'],
+                        'best-practice': ['location', 'profile', 'count', 'bp_pass', 'bp_rules', 'bp_inline_ml', 'bp_rules_detail', 'bp_inline_ml_detail'],
+                        'adoption':      ['location', 'profile', 'count', 'adopted']
+                    },
+                    headers: {
+                        'visibility':    ['Location', 'Vulnerability Profile Name', '# of Rules', 'Visible', 'Rules', 'Inline ML', 'Rules Check Info', 'Inline ML Check Info'],
+                        'best-practice': ['Location', 'Vulnerability Profile Name', '# of Rules', 'BP Pass', 'BP Rules', 'BP Inline ML', 'Rules Check Info', 'Inline ML Check Info'],
+                        'adoption':      ['Location', 'Vulnerability Profile Name', '# of Rules', 'Adopted']
+                    },
+                    numericIndices: [2, 3, 4, 5]
+                },
+                'sec-url': {
+                    keys: {
+                        'visibility':    ['location', 'profile', 'count', 'visible', 'site_access', 'user_credential', 'inline_ml', 'site_access_detail', 'user_credential_detail', 'inline_ml_detail'],
+                        'best-practice': ['location', 'profile', 'count', 'bp_pass', 'bp_site_access', 'bp_user_credential', 'bp_inline_ml', 'bp_site_access_detail', 'bp_user_credential_detail', 'bp_inline_ml_detail'],
+                        'adoption':      ['location', 'profile', 'count', 'adopted']
+                    },
+                    headers: {
+                        'visibility':    ['Location', 'URL Filtering Profile Name', '# of Rules', 'Visible', 'Site Access', 'User Credential Submission', 'InlineML', 'Site Access Check Info', 'User Credential Check Info', 'Inline ML Check Info'],
+                        'best-practice': ['Location', 'URL Filtering Profile Name', '# of Rules', 'BP Pass', 'BP Site Access', 'BP User Credential', 'BP InlineML', 'Site Access Check Info', 'User Credential Check Info', 'Inline ML Check Info'],
+                        'adoption':      ['Location', 'URL Filtering Profile Name', '# of Rules', 'Adopted']
+                    },
+                    numericIndices: [2, 3, 4, 5, 6]
+                },
+                'sec-fb': {
+                    keys: {
+                        'visibility':    ['location', 'profile', 'count', 'visible', 'rules', 'rules_detail'],
+                        'best-practice': ['location', 'profile', 'count', 'bp_pass', 'bp_rules', 'bp_rules_detail'],
+                        'adoption':      ['location', 'profile', 'count', 'adopted']
+                    },
+                    headers: {
+                        'visibility':    ['Location', 'File Blocking Profile Name', '# of Rules', 'Visible', 'Rules', 'Rules Check Info'],
+                        'best-practice': ['Location', 'File Blocking Profile Name', '# of Rules', 'BP Pass', 'BP Rules', 'Rules Check Info'],
+                        'adoption':      ['Location', 'File Blocking Profile Name', '# of Rules', 'Adopted']
+                    },
+                    numericIndices: [2, 3, 4]
+                },
+                'sec-wf': {
+                    keys: {
+                        'visibility':    ['location', 'profile', 'count', 'visible', 'rules', 'inline_ml', 'rules_detail', 'inline_ml_detail'],
+                        'best-practice': ['location', 'profile', 'count', 'bp_pass', 'bp_rules', 'bp_inline_ml', 'bp_rules_detail', 'bp_inline_ml_detail'],
+                        'adoption':      ['location', 'profile', 'count', 'adopted']
+                    },
+                    headers: {
+                        'visibility':    ['Location', 'WildFire Analysis Profile Name', '# of Rules', 'Visible', 'Rules', 'Inline ML', 'Rules Check Info', 'Inline ML Check Info'],
+                        'best-practice': ['Location', 'WildFire Analysis Profile Name', '# of Rules', 'BP Pass', 'BP Rules', 'BP Inline ML', 'Rules Check Info', 'Inline ML Check Info'],
+                        'adoption':      ['Location', 'WildFire Analysis Profile Name', '# of Rules', 'Adopted']
+                    },
+                    numericIndices: [2, 3, 4, 5]
+                },
+                'sec-avwf': {
+                    keys: {
+                        'visibility':    ['location', 'profile', 'count', 'visible', 'rules', 'inline_ml', 'rules_detail', 'inline_ml_detail'],
+                        'best-practice': ['location', 'profile', 'count', 'bp_pass', 'bp_rules', 'bp_inline_ml', 'bp_rules_detail', 'bp_inline_ml_detail'],
+                        'adoption':      ['location', 'profile', 'count', 'adopted']
+                    },
+                    headers: {
+                        'visibility':    ['Location', 'VirusAndWildFire Profile Name', '# of Rules', 'Visible', 'Rules', 'Inline ML', 'Rules Check Info', 'Inline ML Check Info'],
+                        'best-practice': ['Location', 'VirusAndWildFire Profile Name', '# of Rules', 'BP Pass', 'BP Rules', 'BP Inline ML', 'Rules Check Info', 'Inline ML Check Info'],
+                        'adoption':      ['Location', 'VirusAndWildFire Profile Name', '# of Rules', 'Adopted']
+                    },
+                    numericIndices: [2, 3, 4, 5]
+                },
+                'sec-dnssec': {
+                    keys: {
+                        'visibility':    ['location', 'profile', 'count', 'visible', 'rules', 'rules_detail'],
+                        'best-practice': ['location', 'profile', 'count', 'bp_pass', 'bp_rules', 'bp_rules_detail'],
+                        'adoption':      ['location', 'profile', 'count', 'adopted']
+                    },
+                    headers: {
+                        'visibility':    ['Location', 'DNSSecurity Profile Name', '# of Rules', 'Visible', 'Rules', 'Rules Check Info'],
+                        'best-practice': ['Location', 'DNSSecurity Profile Name', '# of Rules', 'BP Pass', 'BP Rules', 'Rules Check Info'],
+                        'adoption':      ['Location', 'DNSSecurity Profile Name', '# of Rules', 'Adopted']
+                    },
+                    numericIndices: [2, 3, 4]
+                }
+            };
+
+            // Global engine operational states
+            let currentSelectedIndex = 0;
+            let currentActiveTab = 'visibility';
+
+            // Tab triggering controller execution entry point
+            function switchMetricsTab(tabId, element) {
+                const buttons = document.querySelectorAll('.spr-tab-btn');
+                buttons.forEach(btn => btn.classList.remove('active'));
+                element.classList.add('active');
+
+                currentActiveTab = tabId;
+
+                // 1. Refresh Dynamic Overview layout
+                renderMetricsTable();
+
+                // 2. Loop across layout blocks to dynamically mutate tables structure on click
+                renderDetailedSectionsLayouts();
+
+                // 3. Trigger context mutations across summary capsule pill fields
+                updatePillMatrices();
+            }
+
+            /**
+             * Iterates over every security profile table block lower down the page,
+             * morphing headers, column definitions, and values based on the selected tab state.
+             */
+            function renderDetailedSectionsLayouts() {
+                const activeTab = currentActiveTab;
+
+                for (const sectionId in detailedSectionsConfiguration) {
+                    if (!detailedSectionsConfiguration.hasOwnProperty(sectionId)) continue;
+
+                    const config = detailedSectionsConfiguration[sectionId];
+                    const sectionEl = document.getElementById(sectionId);
+                    if (!sectionEl) continue;
+
+                    const targetKeys = config.keys[activeTab];
+                    const targetHeaders = config.headers[activeTab];
+
+                    if (!targetKeys || !targetHeaders) continue;
+
+                    // --- STEP A: REWRITE THE THEAD HEADERS ---
+                    const theadRow = sectionEl.querySelector('table thead tr');
+                    if (theadRow) {
+                        theadRow.innerHTML = '';
+                        targetHeaders.forEach((headerText, index) => {
+                            const isNumeric = config.numericIndices.includes(index);
+                            const th = document.createElement('th');
+                            if (isNumeric) th.classList.add('num');
+                            th.textContent = headerText;
+                            theadRow.appendChild(th);
+                        });
+                    }
+
+                    // --- STEP B: DYNAMICALLY RE-RENDER TABLE VALUES FROM SEED DATA RETAINING FILTERS ---
+                    const selectorEl = document.getElementById('deviceSelector');
+                    const selectedLabel = selectorEl ? selectorEl.options[selectorEl.selectedIndex].text.trim() : '';
+                    const isFullDevice = (selectedLabel === 'FullDevice');
+
+                    const tableRows = sectionEl.querySelectorAll('table tbody tr:not(.subtotal)');
+                    let subtotalAggregates = {};
+
+                    tableRows.forEach(row => {
+                        // Retrieve full raw data row structure injected dynamically via data-row-json property
+                        const rawDataAttr = row.getAttribute('data-row-json');
+                        if (!rawDataAttr) return;
+
+                        const rowData = JSON.parse(rawDataAttr);
+                        const rowLocation = rowData['location'] || 'N/A';
+
+                        // Verify display properties visibility status based on active dropdown selector filter
+                        const shouldShow = isFullDevice || (rowLocation === selectedLabel);
+
+                        if (shouldShow) {
+                            row.style.display = '';
+                            row.innerHTML = ''; // Strip column tokens inside row tree
+
+                            targetKeys.forEach((key, index) => {
+                                const td = document.createElement('td');
+                                const isNumeric = config.numericIndices.includes(index);
+                                if (isNumeric) td.classList.add('num');
+
+                                let cellValue = rowData[key] !== undefined ? rowData[key] : '';
+                                if (Array.isArray(cellValue)) {
+                                    cellValue = cellValue.implode ? cellValue.implode(', ') : cellValue.join(', ');
+                                }
+
+                                // Structural cell injection block
+                                if (index === 0 || index === 1) {
+                                    td.innerHTML = `<strong>${escapeHtml(cellValue)}</strong>`;
+                                } else {
+                                    td.textContent = cellValue;
+                                }
+
+                                // Add running totals to tracking objects matrix
+                                if (isNumeric) {
+                                    const parsedVal = parseFloat(cellValue) || 0;
+                                    subtotalAggregates[index] = (subtotalAggregates[index] || 0) + parsedVal;
+                                }
+
+                                row.appendChild(td);
+                            });
+                        } else {
+                            row.style.display = 'none';
+                        }
+                    });
+
+                    // --- STEP C: RE-COMPUTE THE SUBTOTAL FOR THE SECTION ---
+                    const subtotalRow = sectionEl.querySelector('tr.subtotal');
+                    if (subtotalRow) {
+                        subtotalRow.innerHTML = '';
+                        const firstTd = document.createElement('td');
+                        firstTd.textContent = 'Subtotal';
+                        subtotalRow.appendChild(firstTd);
+
+                        for (let i = 1; i < targetKeys.length; i++) {
+                            const td = document.createElement('td');
+                            const isNumeric = config.numericIndices.includes(i);
+                            if (isNumeric) {
+                                td.classList.add('num');
+                                td.textContent = subtotalAggregates[i] || 0;
+                            } else {
+                                td.textContent = '';
+                            }
+                            subtotalRow.appendChild(td);
+                        }
+                    }
+                }
+            }
+
+            /**
+             * Dynamic calculation routine that updates unified pill layouts (combining % and count)
+             * relative to the active target compliance tab on the fly.
+             *
+             * For 'adoption', it isolates and displays ONLY the core section/profile adoption info.
+             */
+            function updatePillMatrices() {
+                const dataset = fullDeviceDatasetArray[currentSelectedIndex];
+                if (!dataset) return;
+
+                // Map the active UI tab directly to the nomenclature string used in your array keys
+                let activeTabString = 'visibility';
+                let displayLabelPrefix = 'Visibility';
+
+                if (currentActiveTab === 'best-practice') {
+                    activeTabString = 'best-practice';
+                    displayLabelPrefix = 'Best-Practice';
+                } else if (currentActiveTab === 'adoption') {
+                    activeTabString = 'adoption';
+                    displayLabelPrefix = 'Adoption';
+                }
+
+                for (const sectionId in activePillSectionMapping) {
+                    if (!activePillSectionMapping.hasOwnProperty(sectionId)) continue;
+
+                    const labelsConfig = activePillSectionMapping[sectionId];
+                    for (const rawLabelName in labelsConfig) {
+                        if (!labelsConfig.hasOwnProperty(rawLabelName)) continue;
+
+                        const elementSlug = rawLabelName.toLowerCase().replace(/[^a-z0-9-]+/g, '-');
+                        const pillDOMElement = document.getElementById(`pill-label-${sectionId}-${elementSlug}`)?.closest('.spr-pill');
+
+                        // --- ADOPTION TAB FILTER CRITERIA ---
+                        // If the active tab is adoption, we only want the main row profile metric.
+                        // We hide any pill that represents a sub-component (like rules, inline ml, actions, dns, etc.)
+                        if (currentActiveTab === 'adoption' && rawLabelName !== 'visibility' && rawLabelName !== 'site access visibility') {
+                            if (pillDOMElement) {
+                                pillDOMElement.style.display = 'none';
+                            }
+                            continue;
+                        } else if (pillDOMElement) {
+                            pillDOMElement.style.display = ''; // Restore visibility for other tabs
+                        }
+
+                        // baseKey is exactly what comes from your mapping config (e.g., "adns-security visibility")
+                        const baseKey = labelsConfig[rawLabelName];
+
+                        // 1. Direct Swap Strategy: Replace the literal word "visibility" with the active tab string
+                        const targetBaseKey = baseKey.replace('visibility', activeTabString);
+
+                        // 2. Append the exact calculation modifiers your backend expects
+                        const percentageKey = `${targetBaseKey} percentage`;
+                        const countKey = `${targetBaseKey} calc`;
+
+                        // 3. Clean up UI Label text inside the HTML spans nicely
+                        let cleanLabelBody = rawLabelName
+                            .replace('visibility', '')
+                            .replace('site access', 'Site Access')
+                            .replace('credential', 'Credential')
+                            .replace('mica-engine', 'Inline ML')
+                            .replace('dns-list', 'DNS List')
+                            .replace('adns-security', 'Advanced DNS Security')
+                            .replace('dns-security', 'DNS Security')
+                            .trim();
+
+                        if (cleanLabelBody) {
+                            cleanLabelBody = cleanLabelBody.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+                        }
+                        const finalLabelText = cleanLabelBody ? ` — ${cleanLabelBody}` : '';
+
+                        // 4. Update the Unified Title Label Text
+                        const labelElement = document.getElementById(`pill-label-${sectionId}-${elementSlug}`);
+                        if (labelElement) {
+                            labelElement.textContent = `${displayLabelPrefix}${finalLabelText}`;
+                        }
+
+                        // 5. Update Percentage Value Metric
+                        const pctElement = document.getElementById(`pill-pct-${sectionId}-${elementSlug}`);
+                        if (pctElement) {
+                            const pctValue = dataset[percentageKey];
+                            pctElement.textContent = pctValue !== undefined ? (isNaN(pctValue) ? pctValue : pctValue + '%') : '0%';
+                        }
+
+                        // 6. Update Fractional Count Metric
+                        const countElement = document.getElementById(`pill-count-${sectionId}-${elementSlug}`);
+                        if (countElement) {
+                            countElement.textContent = dataset[countKey] !== undefined ? dataset[countKey] : '0/23';
+                        }
+                    }
+                }
+            }
+
+            // Dropdown routing index logic
+            function changeActiveDeviceContext(targetIndex) {
+                currentSelectedIndex = parseInt(targetIndex);
+                const dataset = fullDeviceDatasetArray[currentSelectedIndex];
+                if (!dataset) return;
+
+                // 1. Refresh Dynamic Right Panel Global Scope Figures
+                updateDOMTextContent('scope-total', formatNumberWithCommas(dataset['security rules'] ?? 0));
+                updateDOMTextContent('scope-allow', formatNumberWithCommas(dataset['security rules allow'] ?? 0));
+                updateDOMTextContent('scope-allow-enabled', formatNumberWithCommas(dataset['security rules allow enabled'] ?? 0));
+                updateDOMTextContent('scope-allow-disabled', formatNumberWithCommas(dataset['security rules allow disabled'] ?? 0));
+                updateDOMTextContent('scope-enabled', formatNumberWithCommas(dataset['security rules enabled'] ?? 0));
+
+                // 2. Render Left Panel Table Context Framework based on newly selected device item
+                renderMetricsTable();
+
+                // 3. Trigger dynamic pill layout and text calculation updates
+                updatePillMatrices();
+
+                // 4. Trigger dynamic table redraw to filter rows by newly selected Location mapping
+                renderDetailedSectionsLayouts();
+            }
+
+            // Core table rendering manager method parsing the 3-tab layout variations
+            function renderMetricsTable() {
+                const dataset = fullDeviceDatasetArray[currentSelectedIndex];
+                const tbody = document.getElementById('overview-metrics-tbody');
+                if (!dataset || !tbody) return;
+
+                tbody.innerHTML = '';
+
+                // Ensure the table header has our new 5th column header title
+                const theadRow = document.querySelector('.spr-header-panel table thead tr');
+                if (theadRow && theadRow.cells.length === 4) {
+                    const th = document.createElement('th');
+                    th.classList.add('num');
+                    th.style.width = '120px';
+                    th.textContent = 'Rule Calculation';
+                    theadRow.appendChild(th);
+                }
+
+                // Isolate the correct active subset loop array context
+                let targetedSubSet = {};
+                if (dataset['percentage'] && dataset['percentage'][currentActiveTab]) {
+                    targetedSubSet = dataset['percentage'][currentActiveTab];
+                }
+
+                for (const displayName in targetedSubSet) {
+                    if (!targetedSubSet.hasOwnProperty(displayName)) continue;
+
+                    const matchedData = targetedSubSet[displayName];
+                    let pctValue = 0;
+                    let groupName = 'Security Profiles';
+
+                    if (matchedData !== null && typeof matchedData === 'object') {
+                        pctValue = matchedData['value'] ?? 0;
+                        groupName = matchedData['group'] ?? groupName;
+                    } else {
+                        pctValue = matchedData || 0;
+                    }
+
+                    let explicitCalculationValue = 'N/A';
+
+                    // --- 1. HARD FORCED INTERCEPT FOR STATIC KEYS ---
+                    if (displayName === 'App-ID' || displayName === 'User-ID' || displayName === 'Service/Port') {
+                        let staticKey = 'service port';
+                        if (displayName === 'App-ID') staticKey = 'app id';
+                        if (displayName === 'User-ID') staticKey = 'user id';
+
+                        const totalRules = dataset[staticKey] || dataset[staticKey.toUpperCase()] || 0;
+                        const matchingRules = Math.round((pctValue / 100) * totalRules);
+
+                        explicitCalculationValue = `${matchingRules}/${totalRules}`;
+                    } else {
+                        // --- 2. DYNAMIC GENERATION FOR STANDARD TABBED PROFILES ---
+                        let baseKey = displayName.toLowerCase()
+                            .replace('wildfire analysis ', 'wf ')
+                            .replace('antivirus ', 'av ')
+                            .replace('anti-spyware ', 'as ')
+                            .replace('vulnerability ', 'vp ')
+                            .replace('file blocking ', 'fb ')
+                            .replace('data filtering', 'data')
+                            .replace('url filtering profiles', 'url-site-access')
+                            .replace('credential theft prevention', 'url-credential')
+                            .replace('url inline ml', 'url-mica-engine')
+                            .replace('inline ml', 'mica-engine')
+                            .replace('dns list', 'dns-list')          // Exact array key fix
+                            .replace('dns security', 'dns-security')  // Exact array key fix
+                            .replace('advanced dns security', 'adns-security')
+                            .replace('profiles', '')
+                            .replace('/', ' ')
+                            .trim();
+
+                        if (baseKey === 'logging') baseKey = 'log at end';
+                        if (baseKey === 'log forwarding') baseKey = 'log prof set';
+
+                        if (`${baseKey} calc` in dataset) {
+                            // Flat and tabless (e.g., 'zone protection calc')
+                            explicitCalculationValue = dataset[`${baseKey} calc`];
+                        } else if (baseKey.startsWith('wf ') || baseKey.startsWith('av ') || baseKey.startsWith('as ') || baseKey.startsWith('vp ')) {
+                            // Multi-word profiles (e.g., 'wf visibility rules calc')
+                            const keyParts = baseKey.split(' ');
+                            const calcLookupKey = `${keyParts[0]} ${currentActiveTab} ${keyParts.slice(1).join(' ')} calc`;
+                            explicitCalculationValue = dataset[calcLookupKey] || 'N/A';
+                        } else {
+                            // Standard tabbed format (e.g., 'fb visibility calc', 'dns-list visibility calc')
+                            const calcLookupKey = `${baseKey} ${currentActiveTab} calc`;
+                            explicitCalculationValue = dataset[calcLookupKey] || 'N/A';
+                        }
+                    }
+
+                    let barStatusClass = '';
+                    if (parseInt(pctValue) === 0) barStatusClass = 'critical';
+                    else if (parseInt(pctValue) < 70) barStatusClass = 'low';
+
+                    const row = document.createElement('tr');
+
+                    row.innerHTML = `
+                        <td style="color: var(--muted); font-size: 12px; font-weight: 500;">${escapeHtml(groupName)}</td>
+                        <td><strong>${escapeHtml(displayName)}</strong></td>
+                        <td class="num"><strong>${pctValue}%</strong></td>
+                        <td style="white-space: normal; width: 180px;">
+                            <div class="progress-container">
+                                <div class="progress-bar"></div>
+                            </div>
+                        </td>
+                        <td class="num" style="font-weight: 600; font-variant-numeric: tabular-nums; color: #0f172a; font-size: 13px;">
+                            ${escapeHtml(explicitCalculationValue)}
+                        </td>
+                    `;
+
+                    const progressBar = row.querySelector('.progress-bar');
+                    if (progressBar) {
+                        progressBar.style.width = pctValue + '%';
+                        if (barStatusClass) progressBar.classList.add(barStatusClass);
+                    }
+
+                    tbody.appendChild(row);
+                }
+            }
+
+            function updateDOMTextContent(elementId, clearTextString) {
+                const elementRef = document.getElementById(elementId);
+                if (elementRef) elementRef.textContent = clearTextString;
+            }
+
+            function formatNumberWithCommas(rawNum) {
+                return Number(rawNum).toLocaleString('en-US');
+            }
+
+            function escapeHtml(str) {
+                return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+            }
+
+            // Run initial bootstrap on screen compile initialization load context execution sequence
+            window.addEventListener('DOMContentLoaded', () => {
+                const selectorEl = document.getElementById('deviceSelector');
+                if (selectorEl) {
+                    currentSelectedIndex = parseInt(selectorEl.value) || 0;
+                }
+                renderMetricsTable();
+                updatePillMatrices();
+                renderDetailedSectionsLayouts();
+            });
+        </script>
 
         </body>
         </html>

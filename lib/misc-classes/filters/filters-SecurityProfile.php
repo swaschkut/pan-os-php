@@ -895,7 +895,7 @@ RQuery::$defaultFilters['securityprofile']['av.mlav-action']['operators']['is.vi
         if( $object->secprof_type != 'virus' && $object->secprof_type != 'virus-and-wildfire-analysis' )
             return null;
 
-        return $object->av_mlavaction_is_visibility();
+        return $object->av_mlavaction_visibility();
     },
     'arg' => false,
     'help' => "'securityprofiletype=virus'"
@@ -921,7 +921,7 @@ RQuery::$defaultFilters['securityprofile']['av.actions']['operators']['is.visibi
         if( $object->secprof_type != 'virus' && $object->secprof_type != 'virus-and-wildfire-analysis' )
             return null;
 
-        return $object->av_mlavaction_is_visibility() && $object->av_wildfireaction_visibility() && $object->av_action_visibility();
+        return $object->av_mlavaction_visibility() && $object->av_wildfireaction_visibility() && $object->av_action_visibility();
     },
     'arg' => false,
     'help' => "'securityprofiletype=virus'"
