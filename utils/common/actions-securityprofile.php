@@ -2283,7 +2283,7 @@ SecurityProfileCallContext::$commonActionFunctions['bp-stats_print_table']= arra
 
 
 SecurityProfileCallContext::$supportedActions[] = array(
-    'name' => 'exportSPRtoHTML',
+    'name' => 'exportSPRtoHTML_old',
     'MainFunction' => function (SecurityProfileCallContext $context) {
         $object = $context->object;
         $context->objectList[] = $object;
@@ -2546,7 +2546,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
             }
             if( ( get_class($object) == "AntiVirusProfile"
                     || get_class($object) == "AntiSpywareProfile"
-                    || get_class($object) == "VulnerablityProfile"
+                    || get_class($object) == "VulnerabilityProfile"
                     || get_class($object) == "WildfireProfile"
                 )
                 && $object->cloud_inline_analysis_best_practice($object->owner->bp_json_file) )
@@ -2559,7 +2559,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
             if( get_class($object) == "AntiSpywareProfile" && $object->spyware_rules_visibility() )
                 $info['rules'] = $info['count'];
 
-            if( get_class($object) == "VulnerablityProfile" && $object->vulnerability_rules_visibility() )
+            if( get_class($object) == "VulnerabilityProfile" && $object->vulnerability_rules_visibility() )
                 $info['rules'] = $info['count'];
 
             if( get_class($object) == "WildfireProfile" && $object->wildfire_rules_visibility() )
@@ -2843,7 +2843,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                                 <td style="color: var(--muted); font-size: 12px; font-weight: 500;"><?php echo htmlspecialchars($group); ?></td>
                                 <td><strong><?php echo htmlspecialchars($type); ?></strong></td>
                                 <td class="num"><strong><?php echo $pct; ?>%</strong></td>
-                                <td>
+                                <td style="white-space: normal; width: 180px;">
                                     <div class="progress-container">
                                         <div class="progress-bar <?php echo $colorClass; ?>" style="width: <?php echo $pct; ?>%;"></div>
                                     </div>
@@ -3083,7 +3083,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
 );
 
 SecurityProfileCallContext::$supportedActions[] = array(
-    'name' => 'exportSPRtoHTML_new',
+    'name' => 'exportSPRtoHTML',
     'MainFunction' => function (SecurityProfileCallContext $context) {
         $object = $context->object;
         $context->objectList[] = $object;
@@ -3177,7 +3177,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 'title'    => 'AV — Antivirus Profiles',
                 'headers'  => ['Location', 'Antivirus Profile Name', '# of Rules', 'Visible', 'Actions', 'Inline ML', 'Actions Check Info', 'Inline ML Check Info'],
                 'keys'     => ['location', 'profile', 'count', 'visible', 'actions', 'inline_ml', 'actions_detail', 'inline_ml_detail'],
-                'numeric'  => ['count', 'visible', 'actions', 'inline_ml', 'rules_not_visible', 'inline_ml_not_visible'],
+                'numeric'  => ['count', 'visible', 'actions', 'inline_ml'],
                 'rows'     => []
             ],
             'sec-as' => [
@@ -3702,7 +3702,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                                 <td style="color: var(--muted); font-size: 12px; font-weight: 500;"><?php echo htmlspecialchars($group); ?></td>
                                 <td><strong><?php echo htmlspecialchars($type); ?></strong></td>
                                 <td class="num"><strong><?php echo $pct; ?>%</strong></td>
-                                <td>
+                                <td style="white-space: normal; width: 180px;">
                                     <div class="progress-container">
                                         <div class="progress-bar <?php echo $colorClass; ?>" style="width: <?php echo $pct; ?>%;"></div>
                                     </div>
