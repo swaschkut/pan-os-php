@@ -12,6 +12,7 @@ UTIL:
 * type=securityprofile securityprofiletype=url-filtering | extend visibility/bestpractice with URL mica-engine
 * type=stats | extend with URL inline-ML
 * type=securityprofile actions=exportSPRtoHTML:spr.html | update with more information
+* type=securityprofile actions=exporttoexcel | rename mica-engine column for bp / visibility
 
 BUGFIX:
 * type=securityprofile actions=virus.decoder.alert-only-set | bugfix for older PAN-OS version

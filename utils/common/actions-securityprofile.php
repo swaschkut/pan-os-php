@@ -595,9 +595,9 @@ SecurityProfileCallContext::$supportedActions[] = array(
 
         $headers .= '<th>DNS whitelist</th><th>mica-engine</th>';
         if( $bestPractice )
-            $headers .= '<th>BP</th>';
+            $headers .= '<th>mica-engine BP</th>';
         if( $visibility )
-            $headers .= '<th>visibility</th>';
+            $headers .= '<th>mica-engine visibility</th>';
 
 
 
