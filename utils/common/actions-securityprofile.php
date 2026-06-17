@@ -2298,7 +2298,7 @@ SecurityProfileCallContext::$commonActionFunctions['bp-stats_print_table']= arra
 
 
 SecurityProfileCallContext::$supportedActions[] = array(
-    'name' => 'exportSPRtoHTML_old',
+    'name' => 'exportSPtoHTML_old',
     'MainFunction' => function (SecurityProfileCallContext $context) {
         $object = $context->object;
         $context->objectList[] = $object;
@@ -3098,7 +3098,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
 );
 
 SecurityProfileCallContext::$supportedActions[] = array(
-    'name' => 'exportSPRtoHTML',
+    'name' => 'exportSPtoHTML',
     'MainFunction' => function (SecurityProfileCallContext $context) {
         $object = $context->object;
         $context->objectList[] = $object;
@@ -4604,7 +4604,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
 );
 
 SecurityProfileCallContext::$supportedActions[] = array(
-    'name' => 'exportSPRtoHTML_new',
+    'name' => 'exportSPtoHTML_new',
     'MainFunction' => function (SecurityProfileCallContext $context) {
         $object = $context->object;
         $context->objectList[] = $object;
@@ -4625,7 +4625,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
 
         // 1. Report Configuration & Meta Information
         $reportTitle = "Security Profile Review — Visibility & Feature Coverage";
-        $sourceMeta  = "configs/spr_html/reports";
+        $sourceMeta  = "configs/sp_html/reports";
 
         $matchedRulesCount = 0;
         // Security Rules Scope Data Configuration
