@@ -469,6 +469,158 @@ class SecurityProfile2
         return $results;
     }
 
+
+    public function build_cloud_inline_comprehensive_array( $bp_json_file = null )
+    {
+        $this->bp_json_file = $bp_json_file ?: PH::getBPjsonFile();
+
+        $results = [
+            'all'         => [],
+            'visible'     => [],
+            'not visible' => [],
+            'bp'          => [],
+            'not bp'      => []
+        ];
+
+        $supported_types = [
+            'spyware', 'vulnerability', 'virus', 'wildfire',
+            'dns-security', 'virus-and-wildfire-analysis'
+        ];
+
+        if ( !in_array($this->secprof_type, $supported_types) ) {
+            return $results;
+        }
+
+        $check_array = $this->bp_visibility_JSON("visibility", $this->secprof_type);
+        $cloud_enabled = isset($this->cloud_inline_analysis_enabled) && $this->cloud_inline_analysis_enabled;
+
+        // Helper closure to extract the expected Best Practice target action string (e.g., "!allow")
+        $get_bp_action = function($check_array, $action_key) {
+            if (isset($check_array[$action_key])) {
+                foreach ($check_array[$action_key] as $validate) {
+                    if (isset($validate['type']) && $validate['type'][0] == 'any' && isset($validate['action'][0])) {
+                        return $validate['action'][0];
+                    }
+                }
+            }
+            return null;
+        };
+
+        $engines = [
+            'mica-engine-vulnerability-enabled' => ['label' => 'Mica Vulnerability', 'key' => 'inline-policy-action', 'check_cloud' => true],
+            'mica-engine-spyware-enabled'       => ['label' => 'Mica Spyware',       'key' => 'inline-policy-action', 'check_cloud' => true],
+            'mica-engine-wildfire-rules'        => ['label' => 'Mica Wildfire',      'key' => 'action',               'check_cloud' => true],
+            'mlav-engine-filebased-enabled'     => ['label' => 'AV MLAV Filebased',  'key' => 'mlav-policy-action',   'check_cloud' => false]
+        ];
+
+        foreach ($engines as $config_key => $meta) {
+            if ( isset($this->additional[$config_key]) ) {
+
+                // EXPLICIT GUARD: Check if the entire engine is disabled at the parent level (e.g., [no])
+                $engine_value = $this->additional[$config_key];
+                $is_engine_disabled = ($engine_value === 'no' || $engine_value === false || empty($engine_value));
+
+                // If the structure contains a sub-list even when disabled, or if we mock/track the definitions:
+                // Ensure we handle arrays or lookups cleanly
+                $items_to_loop = is_array($engine_value) ? $engine_value : [];
+
+                // Fallback definitions if the engine is completely disabled string '[no]' but you still need to log its rules
+                if ($is_engine_disabled) {
+                    if ($config_key === 'mica-engine-spyware-enabled') {
+                        $items_to_loop = [
+                            'HTTP Command and Control detector' => 'alert',
+                            'HTTP2 Command and Control detector' => 'alert',
+                            'SSL Command and Control detector' => 'allow',
+                            'Unknown-TCP Command and Control detector' => 'alert',
+                            'Unknown-UDP Command and Control detector' => 'allow'
+                        ];
+                    } elseif ($config_key === 'mica-engine-vulnerability-enabled') {
+                        $items_to_loop = [
+                            'SQL Injection' => 'reset-both',
+                            'Command Injection' => 'reset-both'
+                        ];
+                    }
+                }
+
+                $action_key = $meta['key'];
+                $bp_action = $get_bp_action($check_array, 'inline-policy-action');
+
+                foreach ( $items_to_loop as $key => $name ) {
+
+                    // 1. EXTRACT REAL CONFIGURATION VALUE EXPLICITLY
+                    $actual_action_value = null;
+                    if (is_array($name)) {
+                        if (isset($name[$action_key])) {
+                            $actual_action_value = $name[$action_key];
+                        }
+                    } elseif (!$is_engine_disabled) {
+                        // Raw string validation matching lookup if engine is alive
+                        $possible_actions = ['enable(alert-only)', 'disable', 'enable', 'alert', 'allow', 'drop', 'reset-both', 'reset-client', 'reset-server', 'block'];
+                        foreach ($possible_actions as $action_candidate) {
+                            if ($this->visibility_stringValidation($name, $action_key, $action_candidate)) {
+                                $actual_action_value = $action_candidate;
+                                break;
+                            }
+                        }
+                    } else {
+                        // If parent engine is disabled, the value is explicitly what's defined in the array map
+                        $actual_action_value = $name;
+                    }
+
+                    if ($actual_action_value === null) {
+                        $actual_action_value = 'unknown';
+                    }
+
+                    // 2. BEST PRACTICE & VISIBILITY OVERRIDES BASED ON ENGINE STATUS
+                    if ($is_engine_disabled) {
+                        // If the parent engine is explicitly disabled, nothing under it is visible or a best practice!
+                        $is_bp = false;
+                        $is_visible = false;
+                    } else {
+                        // Normal native class validation checking loops
+                        $is_bp = false;
+                        if (!empty($bp_action)) {
+                            $is_bp = (bool)$this->visibility_stringValidation($name, $action_key, $bp_action);
+                        }
+
+                        $is_disabled = (strtolower($actual_action_value) === 'disable');
+                        if ($meta['check_cloud']) {
+                            $is_visible = $cloud_enabled && !$is_disabled;
+                        } else {
+                            $is_visible = !$is_disabled;
+                        }
+                    }
+
+                    // PHP 8 Safe display text label matching
+                    if (is_array($name)) {
+                        $displayName = isset($name['name']) ? $name['name'] : (!is_numeric($key) ? $key : 'Rule');
+                    } else {
+                        $displayName = is_numeric($key) ? $name : $key;
+                    }
+
+                    $log_string = "{$meta['label']} ($displayName) - {$action_key} : {$actual_action_value}";
+
+                    // 3. ACCURATE DOCKING INTO THE BUCKETS
+                    $results['all'][] = $log_string;
+
+                    if ($is_visible) {
+                        $results['visible'][] = $log_string;
+                    } else {
+                        $results['not visible'][] = $log_string;
+                    }
+
+                    if ($is_bp) {
+                        $results['bp'][] = $log_string;
+                    } else {
+                        $results['not bp'][] = $log_string;
+                    }
+                }
+            }
+        }
+
+        return $results;
+    }
+
     /**
      * Helper to validate an action against the BP JSON rules array
      */
