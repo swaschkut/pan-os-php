@@ -1711,9 +1711,11 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         $lines .= $context->encloseFunction('---');
                         $lines .= $context->encloseFunction('---');
                         $lines .= $context->encloseFunction('---');
+                        $lines .= $context->encloseFunction('---');
                     }
                     if( $visibility )
                     {
+                        $lines .= $context->encloseFunction('---');
                         $lines .= $context->encloseFunction('---');
                         $lines .= $context->encloseFunction('---');
                         $lines .= $context->encloseFunction('---');
@@ -2018,9 +2020,11 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         $lines .= $context->encloseFunction('---');
                         $lines .= $context->encloseFunction('---');
                         $lines .= $context->encloseFunction('---');
+                        $lines .= $context->encloseFunction('---');
                     }
                     if( $visibility )
                     {
+                        $lines .= $context->encloseFunction('---');
                         $lines .= $context->encloseFunction('---');
                         $lines .= $context->encloseFunction('---');
                         $lines .= $context->encloseFunction('---');
