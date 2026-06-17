@@ -32,6 +32,20 @@ RQuery::$defaultFilters['securityprofile']['object']['operators']['is.unused'] =
         'input' => 'input/panorama-8.0.xml'
     )
 );
+RQuery::$defaultFilters['securityprofile']['object']['operators']['is.unused.recursive'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        if( get_class($context->object ) == "PredefinedSecurityProfileURL" )
+            return null;
+        $object = $context->object;
+
+        return $object->objectIsUnusedRecursive();
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
 RQuery::$defaultFilters['securityprofile']['name']['operators']['is.in.file'] = array(
     'Function' => function (SecurityProfileRQueryContext $context) {
         $object = $context->object;

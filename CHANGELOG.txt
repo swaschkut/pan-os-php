@@ -14,6 +14,7 @@ UTIL:
 * type=securityprofile actions=exportSPtoHTML:sp.html | update with more information
 * type=securityprofile actions=exporttoexcel | rename mica-engine column for bp / visibility
 * type=securityprofile actions=exportSPtoHTML:sp.html | update to bring in location and visibility/bp/adoption dropdown
+* type=securityprofile | implement 'filter=(object is.unused.recursive)'
 
 BUGFIX:
 * type=securityprofile actions=virus.decoder.alert-only-set | bugfix for older PAN-OS version
