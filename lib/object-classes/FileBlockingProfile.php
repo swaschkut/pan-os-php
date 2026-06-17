@@ -156,12 +156,17 @@ class FileBlockingProfile extends SecurityProfile2
             {
                 if( isset($this->rule_coverage[$bp_array]) )
                 {
-                    if( $checkBP_array['block']['action'] !== $this->rule_coverage[$bp_array]['action'] )
+                    if( $checkBP_array['block']['action'] !== $this->rule_coverage[$bp_array]['action']
+                        || $checkBP_array['block']['direction'] !== $this->rule_coverage[$bp_array]['direction']
+                    )
                         return false;
                     else
                         $bp_set = true;
                 }
-                elseif( isset($this->rule_coverage['any']) && $checkBP_array['block']['action'] === $this->rule_coverage['any']['action'] )
+                elseif( isset($this->rule_coverage['any'])
+                    && $checkBP_array['block']['action'] === $this->rule_coverage['any']['action']
+                    && $checkBP_array['block']['direction'] === $this->rule_coverage['any']['direction']
+                )
                 {
                     $bp_set = true;
                     break;
@@ -172,24 +177,6 @@ class FileBlockingProfile extends SecurityProfile2
 
             if( !$this->fileblocking_rules_visibility() )
                 return false;
-
-            /*
-            foreach ($this->rules_obj as $rulename => $rule)
-            {
-                /** @var ThreatPolicyFileblocking $rule */
-                /*
-                if ($rule->fileblocking_rule_best_practice())
-                {
-                    $bp_set = true;
-                    #print "true\n";
-                }
-                else
-                {
-                    $bp_set = false;
-                    #print "false\n";
-                }
-            }
-            */
         }
         return $bp_set;
     }
@@ -199,20 +186,52 @@ class FileBlockingProfile extends SecurityProfile2
         $bp_set = false;
         if (!empty($this->rules_obj))
         {
+            $check_array = $this->rules_obj[0]->fileblocking_rule_bp_visibility_JSON( "visibility", "file-blocking" );
+            $this->fileblocking_rules_coverage();
+
+            foreach( $check_array['alert']['filetype'] as $bp_array )
+            {
+                if( isset($this->rule_coverage[$bp_array]) )
+                {
+                    if( $check_array['alert']['action'] !== $this->rule_coverage[$bp_array]['action']
+                        || $check_array['alert']['direction'] !== $this->rule_coverage[$bp_array]['direction']
+                    )
+                        return false;
+                    else
+                        $bp_set = true;
+                }
+                elseif( isset($this->rule_coverage['any'])
+                    && $check_array['alert']['action'] === $this->rule_coverage['any']['action']
+                    && $check_array['alert']['direction'] === $this->rule_coverage['any']['direction']
+                )
+                {
+                    $bp_set = true;
+                    break;
+                }
+                else
+                    return false;
+            }
+        }
+        return $bp_set;
+
+        /*
+        $bp_set = false;
+        if (!empty($this->rules_obj))
+        {
             $bp_set = false;
 
             foreach ($this->rules_obj as $rulename => $rule)
             {
-                /** @var ThreatPolicyFileblocking $rule */
+
                 if ($rule->fileblocking_rule_visibility())
-                    #$bp_set = true;
-                    return true;
+                    $bp_set = true;
                 else
-                    #return false;
-                    $bp_set = false;
+                    return false;
+                    #$bp_set = false;
             }
         }
         return $bp_set;
+        */
     }
 
     public function fileblocking_rules_coverage()
@@ -227,6 +246,7 @@ class FileBlockingProfile extends SecurityProfile2
                     if( !isset($this->rule_coverage[$filtetype_detail]) )
                     {
                         $this->rule_coverage[$filtetype_detail]['action'] = $rule->action();
+                        $this->rule_coverage[$filtetype_detail]['direction'] = $rule->direction();
                     }
                 }
             }
@@ -236,9 +256,6 @@ class FileBlockingProfile extends SecurityProfile2
     public function is_best_practice()
     {
         if( $this->fileblocking_rules_best_practice()
-            #&& $this->spyware_dns_security_best_practice() && $this->spyware_dnslist_best_practice()
-            #&& $this->vulnerability_exception_best_practice()
-            && $this->fileblocking_rules_visibility()
         )
             return TRUE;
         else
@@ -248,7 +265,6 @@ class FileBlockingProfile extends SecurityProfile2
     public function is_visibility()
     {
         if( $this->fileblocking_rules_visibility()
-            #&& $this->spyware_dns_security_visibility() && $this->spyware_dnslist_visibility()
         )
             return TRUE;
         else

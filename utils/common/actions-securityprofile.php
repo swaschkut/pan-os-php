@@ -569,35 +569,35 @@ SecurityProfileCallContext::$supportedActions[] = array(
 
         $headers .= '<th>store</th><th>type</th><th>rules</th>';
         if( $bestPractice )
-            $headers .= '<th>BP</th>';
+            $headers .= '<th>BP rules</th>';
         if( $visibility )
-            $headers .= '<th>visibility</th>';
+            $headers .= '<th>visibility rules</th>';
         if( $adoption )
-            $headers .= '<th>adoption</th>';
+            $headers .= '<th>adoption rules</th>';
 
         $headers .= '<th>exception</th>';
         if( $bestPractice )
-            $headers .= '<th>BP</th>';
+            $headers .= '<th>BP exception</th>';
         if( $visibility )
-            $headers .= '<th>visibility</th>';
+            $headers .= '<th>visibility exception</th>';
 
         $headers .= '<th>DNS lists</th>';
         if( $bestPractice )
-            $headers .= '<th>BP</th>';
+            $headers .= '<th>BP DNS lists</th>';
         if( $visibility )
-            $headers .= '<th>visibility</th>';
+            $headers .= '<th>visibility DNS lists</th>';
 
         $headers .= '<th>DNS sinkhole</th><th>DNS security</th>';
         if( $bestPractice )
-            $headers .= '<th>BP</th>';
+            $headers .= '<th>BP DNS security</th>';
         if( $visibility )
-            $headers .= '<th>visibility</th>';
+            $headers .= '<th>visibility DNS security</th>';
 
         $headers .= '<th>DNS whitelist</th><th>mica-engine</th>';
         if( $bestPractice )
-            $headers .= '<th>mica-engine BP</th>';
+            $headers .= '<th>BP mica-engine</th>';
         if( $visibility )
-            $headers .= '<th>mica-engine visibility</th>';
+            $headers .= '<th>visibility mica-engine</th>';
 
 
 
@@ -605,6 +605,8 @@ SecurityProfileCallContext::$supportedActions[] = array(
         {
             $headers .= '<th>URL BP</th>';
             $headers .= '<th>URL BP details</th>';
+
+            $headers .= '<th>URL credentials BP</th>';
 
             $headers .= '<th>URL credentials BP details</th>';
 
@@ -616,6 +618,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
             $headers .= '<th>URL visibility</th>';
             $headers .= '<th>URL visibility details</th>';
 
+            $headers .= '<th>URL credentials visibility</th>';
             $headers .= '<th>URL credentials visibility details</th>';
 
             $headers .= '<th>URL credentials visibility TAB details</th>';
@@ -1811,6 +1814,13 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     }
                     if( $bestPractice )
                     {
+                        if( $object->url_usercredentialsubmission_best_practice() && $object->url_usercredentialsubmission_best_practice_tab() )
+                            $lines .= $context->encloseFunction($bp_text_yes);
+                        else
+                            $lines .= $context->encloseFunction($bp_text_no);
+                    }
+                    if( $bestPractice )
+                    {
                         //<th>URL credentials</th>
                         $tmp_array = array();
                         $countAllowcredential = count( $object->allow_credential );
@@ -1923,7 +1933,13 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         $lines .= $context->encloseFunction($tmp_array);
                     }
 
-
+                    if( $visibility )
+                    {
+                        if( $object->url_usercredentialsubmission_visibility() && $object->url_usercredentialsubmission_visibility_tab() )
+                            $lines .= $context->encloseFunction($bp_text_yes);
+                        else
+                            $lines .= $context->encloseFunction($bp_text_no);
+                    }
                     if( $visibility )
                     {
                         //<th>URL credentials</th>
