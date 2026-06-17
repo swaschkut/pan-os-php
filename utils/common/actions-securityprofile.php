@@ -3118,8 +3118,8 @@ SecurityProfileCallContext::$supportedActions[] = array(
         }
 
         // 1. Report Configuration & Meta Information
-        $reportTitle = "Security Profile Review — Visibility & Feature Coverage";
-        $sourceMeta  = "configs/spr_html/reports";
+        $reportTitle = "Security Profile — Visibility & Feature Coverage";
+        $sourceMeta  = "configs/sp_html/reports";
 
         $matchedRulesCount = 0;
         // Security Rules Scope Data Configuration
@@ -4624,7 +4624,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
         }
 
         // 1. Report Configuration & Meta Information
-        $reportTitle = "Security Profile Review — Visibility & Feature Coverage";
+        $reportTitle = "Security Profile — Visibility & Feature Coverage";
         $sourceMeta  = "configs/sp_html/reports";
 
         $matchedRulesCount = 0;
