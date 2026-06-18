@@ -3257,7 +3257,6 @@ SecurityProfileCallContext::$supportedActions[] = array(
         }
 
         // --- MAP PILL LABELS TO FLAT ARRAY SUB-STRINGS ---
-        // Left intact to retain raw configuration metrics references perfectly while providing tab mutation capabilities
         $pillMetaMapping = [
             'sec-av' => [
                 'visibility'             => 'av visibility',
@@ -3398,7 +3397,6 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     $notVisibleElements         = $object->build_cloud_inline_comprehensive_array($object->owner->bp_json_file)['all'];
                     $notVisibleElements         = $object->build_cloud_inline_comprehensive_array($object->owner->bp_json_file)['not visible'];
                     $info['inline_ml_detail'] = is_array($notVisibleElements) ? implode("\n", $notVisibleElements) : $notVisibleElements;
-                    $info['inline_ml_detail']             = '[Placeholder: In-Line Details]';
                 }
 
                 if( $object->cloud_inline_analysis_best_practice($object->owner->bp_json_file) )
@@ -3407,10 +3405,9 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 }
                 else
                 {
-                    $notVisibleElements         = $object->build_cloud_inline_comprehensive_array($object->owner->bp_json_file)['all'];
-                    #$notVisibleElements         = $object->build_cloud_inline_comprehensive_array($object->owner->bp_json_file)['no bp'];
-                    $info['bp_inline_ml_detail'] = is_array($notVisibleElements) ? implode("\n", $notVisibleElements) : $notVisibleElements;
-                    $info['bp_inline_ml_detail']             = '[Placeholder: bp In-Line Details]';
+                    #$notVisibleElements         = $object->build_cloud_inline_comprehensive_array($object->owner->bp_json_file)['all'];
+                    #$info['bp_inline_ml_detail'] = is_array($notVisibleElements) ? implode("\n", $notVisibleElements) : $notVisibleElements;
+                    $info['bp_inline_ml_detail'] = '[Placeholder: visible mica-engine Details]';
                 }
             }
 
@@ -3560,7 +3557,6 @@ SecurityProfileCallContext::$supportedActions[] = array(
             'dns_lists_detail' => 'N/A', 'dns_security_detail' => 'N/A', 'adns_security_detail' => 'N/A', 'site_access_detail' => 'N/A',
             'user_credential_detail' => 'N/A',
 
-            // --- ADD THESE NEW BLANK DEFAULTS ---
             'bp_pass' => 0, 'bp_actions' => 0, 'bp_inline_ml' => 0, 'bp_rules' => 0,
             'bp_dns_lists' => 0, 'bp_dns_security' => 0, 'bp_adns_security' => 0, 'bp_site_access' => 0, 'bp_user_credential' => 0,
             'bp_actions_detail' => 'N/A', 'bp_inline_ml_detail' => 'N/A', 'bp_rules_detail' => 'N/A',
@@ -3597,6 +3593,31 @@ SecurityProfileCallContext::$supportedActions[] = array(
             ['log_type' => 'Configuration Logs', 'severity_traps' => 'all', 'destination' => 'Syslog-Server', 'status' => 'Configured'],
             ['log_type' => 'Threat Logs', 'severity_traps' => 'all', 'destination' => 'Splunk-Forwarding-Default', 'status' => 'Configured']
         ];
+
+        // --- EXTRACT METRIC PASS TOTAL COVERAGE PLACEHOLDERS FROM THE CURRENT DOM NODE DATA ---
+        // Capture specific targeted statistics elements out of the dataset array block index 0[cite: 1]
+        $device_stats_source = $bp_stats_raw[0] ?? [];
+
+        // 1. Zone Protection placeholders
+        $zone_protection_calc       = $device_stats_source['zone protection calc'] ?? '0/0';
+        $zone_protection_parts      = explode('/', $zone_protection_calc);
+        $zone_protection_pass       = $zone_protection_parts[0] ?? 0;
+        $zone_protection_total      = $zone_protection_parts[1] ?? 0;
+        $zone_protection_coverage   = $device_stats_source['zone protection percentage'] ?? 0;
+
+        // 2. Log Forwarding placeholders
+        $log_forwarding_calc        = $device_stats_source['log prof set calc'] ?? '0/0';
+        $log_forwarding_parts       = explode('/', $log_forwarding_calc);
+        $log_forwarding_pass        = $log_forwarding_parts[0] ?? 0;
+        $log_forwarding_total       = $log_forwarding_parts[1] ?? 0;
+        $log_forwarding_coverage    = $device_stats_source['log prof set percentage'] ?? 0;
+
+        // 3. Logging placeholders
+        $logging_calc               = $device_stats_source['log at end calc'] ?? '0/0';
+        $logging_parts              = explode('/', $logging_calc);
+        $logging_pass               = $logging_parts[0] ?? 0;
+        $logging_total              = $logging_parts[1] ?? 0;
+        $logging_coverage           = $device_stats_source['log at end percentage'] ?? 0;
 
         ob_start();
         ?>
@@ -3635,7 +3656,6 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 header.spr-header h1 { margin: 0 0 4px 0; font-size: 22px; }
                 header.spr-header .meta { color: var(--muted); font-size: 13px; }
 
-                /* Selector styling */
                 .device-selector-box {
                     background: #f8fafc;
                     border: 1px solid var(--border);
@@ -3683,7 +3703,6 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     border-left: 4px solid var(--header-bg);
                 }
 
-                /* TAB CONTROLS LAYOUT STYLING */
                 .spr-tabs-navigation {
                     display: flex;
                     gap: 4px;
@@ -3715,7 +3734,6 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     border-color: var(--tab-active-bg);
                 }
 
-                /* Pill Metric Grid Containers */
                 .spr-pill-matrix {
                     display: flex;
                     flex-direction: column;
@@ -3840,7 +3858,6 @@ SecurityProfileCallContext::$supportedActions[] = array(
             </div>
         </header>
 
-        <!-- DYNAMIC DEVICE SELECTOR DROPDOWN -->
         <div class="device-selector-box">
             <label for="deviceSelector"><strong>Active Context Dataset / Location:</strong></label>
             <select id="deviceSelector" onchange="changeActiveDeviceContext(this.value)">
@@ -3882,7 +3899,6 @@ SecurityProfileCallContext::$supportedActions[] = array(
         </div>
 
         <div class="spr-header-row">
-            <!-- RIGHT SIDE PANEL: Security Rules (Scope) Data -->
             <div class="spr-header-panel" style="max-height: 250px; flex: 0 0 350px;">
                 <h3 style="font-size: 14px; margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 0.05em; color: var(--net-header);">
                     Security Rules (Scope) Summary
@@ -3919,9 +3935,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 </table>
             </div>
 
-            <!-- LEFT SIDE PANEL WITH TAB SWITCHER ABOVE THE METRICS TABLE -->
             <div class="spr-header-panel">
-                <!-- THREE HARDCODED TABS SWITCH -->
                 <div class="spr-tabs-navigation">
                     <div class="spr-tab-btn active" onclick="switchMetricsTab('visibility', this)">Visibility</div>
                     <div class="spr-tab-btn" onclick="switchMetricsTab('best-practice', this)">Best-Practice</div>
@@ -3939,7 +3953,6 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         </tr>
                         </thead>
                         <tbody id="overview-metrics-tbody">
-                        <!-- Dynamic content is fully handled on load and updates via javascript engine below -->
                         </tbody>
                     </table>
                 </div>
@@ -3952,7 +3965,6 @@ SecurityProfileCallContext::$supportedActions[] = array(
             <section id="<?php echo htmlspecialchars($id); ?>" class="spr-section">
                 <h2><?php echo htmlspecialchars($section['title']); ?></h2>
 
-                <!-- CAPSULE METRIC BADGES GRID MATRIX WITH DYNAMIC HOOK TEXT INJECTION PIPELINE -->
                 <?php if (isset($pillMetaMapping[$id]) && !empty($bp_stats_raw[0])): ?>
                     <div class="spr-pill-matrix">
                         <div class="spr-pill-row">
@@ -4026,95 +4038,75 @@ SecurityProfileCallContext::$supportedActions[] = array(
         <?php endforeach; ?>
 
         <section class="spr-section">
-            <div class="net-container">
-                <div class="net-section-title">Network Base Infrastructure Configuration Profiles</div>
-                <div class="net-grid">
-                    <div class="net-block">
-                        <h3>Zone Protection Settings</h3>
-                        <table class="spr-table" style="margin: 0;">
-                            <thead>
-                            <tr>
-                                <th>Security Target Zone</th>
-                                <th>Applied Protection Profile</th>
-                                <th>Security Status</th>
-                                <th class="num">Drop Counter Action Triggered</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            <?php foreach($network_zone_protection as $zp): ?>
-                                <tr>
-                                    <td><strong><?php echo htmlspecialchars($zp['zone']); ?></strong></td>
-                                    <td><?php echo htmlspecialchars($zp['profile']); ?></td>
-                                    <td>
-                                    <span class="badge <?php echo $zp['status'] === 'Protected' ? 'badge-green' : 'badge-red'; ?>">
-                                        <?php echo htmlspecialchars($zp['status']); ?>
-                                    </span>
-                                    </td>
-                                    <td class="num"><?php echo $zp['drop_count']; ?></td>
-                                </tr>
-                            <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <div class="net-block">
-                        <h3>Log Forwarding Routing Pipeline</h3>
-                        <table class="spr-table" style="margin: 0;">
-                            <thead>
-                            <tr>
-                                <th>Log Forwarding Profile Name</th>
-                                <th>Target Destinations / Traps</th>
-                                <th class="num">Referenced Security Rules</th>
-                                <th>Deployment Status</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            <?php foreach($network_log_forwarding as $lf): ?>
-                                <tr>
-                                    <td><strong><?php echo htmlspecialchars($lf['profile_name']); ?></strong></td>
-                                    <td><code><?php echo htmlspecialchars($lf['syslog_targets']); ?></code></td>
-                                    <td class="num"><?php echo $lf['rules_bound']; ?></td>
-                                    <td><span class="badge badge-green"><?php echo htmlspecialchars($lf['status']); ?></span></td>
-                                </tr>
-                            <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <div class="net-block">
-                        <h3>System Engine Log Settings</h3>
-                        <table class="spr-table" style="margin: 0;">
-                            <thead>
-                            <tr>
-                                <th>Log Component Class</th>
-                                <th>Severity Captures</th>
-                                <th>Forwarding Dest Routing Node</th>
-                                <th>Operational State</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            <?php foreach($network_log_settings as $ls): ?>
-                                <tr>
-                                    <td><strong><?php echo htmlspecialchars($ls['log_type']); ?></strong></td>
-                                    <td><?php echo htmlspecialchars($ls['severity_traps']); ?></td>
-                                    <td><?php echo htmlspecialchars($ls['destination']); ?></td>
-                                    <td><span class="badge badge-green"><?php echo htmlspecialchars($ls['status']); ?></span></td>
-                                </tr>
-                            <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
+            <h2>Zone Protection</h2>
+            <table class="spr-table" style="width: 100%; max-width: 800px;">
+                <thead>
+                <tr>
+                    <th>Metric</th>
+                    <th class="num" style="width: 80px;">Pass</th>
+                    <th class="num" style="width: 80px;">Total</th>
+                    <th class="num" style="width: 100px;">Coverage</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td>Rules with from-zone != 'any' AND from-visible == '**visible**'</td>
+                    <td class="num" id="net-zone-pass"><?php echo htmlspecialchars((string)$zone_protection_pass); ?></td>
+                    <td class="num" id="net-zone-total"><?php echo htmlspecialchars((string)$zone_protection_total); ?></td>
+                    <td class="num" id="net-zone-coverage" style="font-weight: 600;"><?php echo htmlspecialchars((string)$zone_protection_coverage); ?>%</td>
+                </tr>
+                </tbody>
+            </table>
         </section>
 
-        <!-- CONTROLLER AND INTERACTIVE RENDERING ENGINE -->
+        <section class="spr-section">
+            <h2>Log Forwarding</h2>
+            <table class="spr-table" style="width: 100%; max-width: 800px;">
+                <thead>
+                <tr>
+                    <th>Metric</th>
+                    <th class="num" style="width: 80px;">Pass</th>
+                    <th class="num" style="width: 80px;">Total</th>
+                    <th class="num" style="width: 100px;">Coverage</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td>Enabled rules with log_prof == 'yes'</td>
+                    <td class="num" id="net-logfwd-pass"><?php echo htmlspecialchars((string)$log_forwarding_pass); ?></td>
+                    <td class="num" id="net-logfwd-total"><?php echo htmlspecialchars((string)$log_forwarding_total); ?></td>
+                    <td class="num" id="net-logfwd-coverage" style="font-weight: 600;"><?php echo htmlspecialchars((string)$log_forwarding_coverage); ?>%</td>
+                </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section class="spr-section">
+            <h2>Logging</h2>
+            <table class="spr-table" style="width: 100%; max-width: 800px;">
+                <thead>
+                <tr>
+                    <th>Metric</th>
+                    <th class="num" style="width: 80px;">Pass</th>
+                    <th class="num" style="width: 80px;">Total</th>
+                    <th class="num" style="width: 100px;">Coverage</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td>Enabled rules with log_end == 'yes'</td>
+                    <td class="num" id="net-logging-pass"><?php echo htmlspecialchars((string)$logging_pass); ?></td>
+                    <td class="num" id="net-logging-total"><?php echo htmlspecialchars((string)$logging_total); ?></td>
+                    <td class="num" id="net-logging-coverage" style="font-weight: 600;"><?php echo htmlspecialchars((string)$logging_coverage); ?>%</td>
+                </tr>
+                </tbody>
+            </table>
+        </section>
+
         <script>
-            // Serialize backend dataset globally to client-side JS DOM mapping
             const fullDeviceDatasetArray = <?php echo json_encode($bp_stats_raw); ?>;
             const activePillSectionMapping = <?php echo json_encode($pillMetaMapping); ?>;
 
-            // Unified source of truth schema that defines the layout variations across all 3 tabs
             const detailedSectionsConfiguration = {
                 'sec-av': {
                     keys: {
@@ -4222,11 +4214,9 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 }
             };
 
-            // Global engine operational states
             let currentSelectedIndex = 0;
             let currentActiveTab = 'visibility';
 
-            // Tab triggering controller execution entry point
             function switchMetricsTab(tabId, element) {
                 const buttons = document.querySelectorAll('.spr-tab-btn');
                 buttons.forEach(btn => btn.classList.remove('active'));
@@ -4234,20 +4224,11 @@ SecurityProfileCallContext::$supportedActions[] = array(
 
                 currentActiveTab = tabId;
 
-                // 1. Refresh Dynamic Overview layout
                 renderMetricsTable();
-
-                // 2. Loop across layout blocks to dynamically mutate tables structure on click
                 renderDetailedSectionsLayouts();
-
-                // 3. Trigger context mutations across summary capsule pill fields
                 updatePillMatrices();
             }
 
-            /**
-             * Iterates over every security profile table block lower down the page,
-             * morphing headers, column definitions, and values based on the selected tab state.
-             */
             function renderDetailedSectionsLayouts() {
                 const activeTab = currentActiveTab;
 
@@ -4263,7 +4244,6 @@ SecurityProfileCallContext::$supportedActions[] = array(
 
                     if (!targetKeys || !targetHeaders) continue;
 
-                    // --- STEP A: REWRITE THE THEAD HEADERS ---
                     const theadRow = sectionEl.querySelector('table thead tr');
                     if (theadRow) {
                         theadRow.innerHTML = '';
@@ -4276,7 +4256,6 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         });
                     }
 
-                    // --- STEP B: DYNAMICALLY RE-RENDER TABLE VALUES FROM SEED DATA RETAINING FILTERS ---
                     const selectorEl = document.getElementById('deviceSelector');
                     const selectedLabel = selectorEl ? selectorEl.options[selectorEl.selectedIndex].text.trim() : '';
                     const isFullDevice = (selectedLabel === 'FullDevice');
@@ -4285,19 +4264,17 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     let subtotalAggregates = {};
 
                     tableRows.forEach(row => {
-                        // Retrieve full raw data row structure injected dynamically via data-row-json property
                         const rawDataAttr = row.getAttribute('data-row-json');
                         if (!rawDataAttr) return;
 
                         const rowData = JSON.parse(rawDataAttr);
                         const rowLocation = rowData['location'] || 'N/A';
 
-                        // Verify display properties visibility status based on active dropdown selector filter
                         const shouldShow = isFullDevice || (rowLocation === selectedLabel);
 
                         if (shouldShow) {
                             row.style.display = '';
-                            row.innerHTML = ''; // Strip column tokens inside row tree
+                            row.innerHTML = '';
 
                             targetKeys.forEach((key, index) => {
                                 const td = document.createElement('td');
@@ -4309,14 +4286,12 @@ SecurityProfileCallContext::$supportedActions[] = array(
                                     cellValue = cellValue.implode ? cellValue.implode(', ') : cellValue.join(', ');
                                 }
 
-                                // Structural cell injection block
                                 if (index === 0 || index === 1) {
                                     td.innerHTML = `<strong>${escapeHtml(cellValue)}</strong>`;
                                 } else {
                                     td.textContent = cellValue;
                                 }
 
-                                // Add running totals to tracking objects matrix
                                 if (isNumeric) {
                                     const parsedVal = parseFloat(cellValue) || 0;
                                     subtotalAggregates[index] = (subtotalAggregates[index] || 0) + parsedVal;
@@ -4329,7 +4304,6 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         }
                     });
 
-                    // --- STEP C: RE-COMPUTE THE SUBTOTAL FOR THE SECTION ---
                     const subtotalRow = sectionEl.querySelector('tr.subtotal');
                     if (subtotalRow) {
                         subtotalRow.innerHTML = '';
@@ -4352,17 +4326,10 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 }
             }
 
-            /**
-             * Dynamic calculation routine that updates unified pill layouts (combining % and count)
-             * relative to the active target compliance tab on the fly.
-             *
-             * For 'adoption', it isolates and displays ONLY the core section/profile adoption info.
-             */
             function updatePillMatrices() {
                 const dataset = fullDeviceDatasetArray[currentSelectedIndex];
                 if (!dataset) return;
 
-                // Map the active UI tab directly to the nomenclature string used in your array keys
                 let activeTabString = 'visibility';
                 let displayLabelPrefix = 'Visibility';
 
@@ -4384,29 +4351,21 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         const elementSlug = rawLabelName.toLowerCase().replace(/[^a-z0-9-]+/g, '-');
                         const pillDOMElement = document.getElementById(`pill-label-${sectionId}-${elementSlug}`)?.closest('.spr-pill');
 
-                        // --- ADOPTION TAB FILTER CRITERIA ---
-                        // If the active tab is adoption, we only want the main row profile metric.
-                        // We hide any pill that represents a sub-component (like rules, inline ml, actions, dns, etc.)
                         if (currentActiveTab === 'adoption' && rawLabelName !== 'visibility' && rawLabelName !== 'site access visibility') {
                             if (pillDOMElement) {
                                 pillDOMElement.style.display = 'none';
                             }
                             continue;
                         } else if (pillDOMElement) {
-                            pillDOMElement.style.display = ''; // Restore visibility for other tabs
+                            pillDOMElement.style.display = '';
                         }
 
-                        // baseKey is exactly what comes from your mapping config (e.g., "adns-security visibility")
                         const baseKey = labelsConfig[rawLabelName];
-
-                        // 1. Direct Swap Strategy: Replace the literal word "visibility" with the active tab string
                         const targetBaseKey = baseKey.replace('visibility', activeTabString);
 
-                        // 2. Append the exact calculation modifiers your backend expects
                         const percentageKey = `${targetBaseKey} percentage`;
                         const countKey = `${targetBaseKey} calc`;
 
-                        // 3. Clean up UI Label text inside the HTML spans nicely
                         let cleanLabelBody = rawLabelName
                             .replace('visibility', '')
                             .replace('site access', 'Site Access')
@@ -4422,20 +4381,17 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         }
                         const finalLabelText = cleanLabelBody ? ` — ${cleanLabelBody}` : '';
 
-                        // 4. Update the Unified Title Label Text
                         const labelElement = document.getElementById(`pill-label-${sectionId}-${elementSlug}`);
                         if (labelElement) {
                             labelElement.textContent = `${displayLabelPrefix}${finalLabelText}`;
                         }
 
-                        // 5. Update Percentage Value Metric
                         const pctElement = document.getElementById(`pill-pct-${sectionId}-${elementSlug}`);
                         if (pctElement) {
                             const pctValue = dataset[percentageKey];
                             pctElement.textContent = pctValue !== undefined ? (isNaN(pctValue) ? pctValue : pctValue + '%') : '0%';
                         }
 
-                        // 6. Update Fractional Count Metric
                         const countElement = document.getElementById(`pill-count-${sectionId}-${elementSlug}`);
                         if (countElement) {
                             countElement.textContent = dataset[countKey] !== undefined ? dataset[countKey] : '0/23';
@@ -4444,30 +4400,41 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 }
             }
 
-            // Dropdown routing index logic
             function changeActiveDeviceContext(targetIndex) {
                 currentSelectedIndex = parseInt(targetIndex);
                 const dataset = fullDeviceDatasetArray[currentSelectedIndex];
                 if (!dataset) return;
 
-                // 1. Refresh Dynamic Right Panel Global Scope Figures
                 updateDOMTextContent('scope-total', formatNumberWithCommas(dataset['security rules'] ?? 0));
                 updateDOMTextContent('scope-allow', formatNumberWithCommas(dataset['security rules allow'] ?? 0));
                 updateDOMTextContent('scope-allow-enabled', formatNumberWithCommas(dataset['security rules allow enabled'] ?? 0));
                 updateDOMTextContent('scope-allow-disabled', formatNumberWithCommas(dataset['security rules allow disabled'] ?? 0));
                 updateDOMTextContent('scope-enabled', formatNumberWithCommas(dataset['security rules enabled'] ?? 0));
 
-                // 2. Render Left Panel Table Context Framework based on newly selected device item
+                // DYNAMIC UPDATES FOR THE INFRASTRUCTURE SUMMARY PLACEHOLDERS WHEN THE DROPDOWN CHANGES Context
+                const zoneCalc = dataset['zone protection calc'] ?? '0/0';
+                const zoneParts = zoneCalc.split('/');
+                updateDOMTextContent('net-zone-pass', zoneParts[0] ?? 0);
+                updateDOMTextContent('net-zone-total', zoneParts[1] ?? 0);
+                updateDOMTextContent('net-zone-coverage', (dataset['zone protection percentage'] ?? 0) + '%');
+
+                const logfwdCalc = dataset['log prof set calc'] ?? '0/0';
+                const logfwdParts = logfwdCalc.split('/');
+                updateDOMTextContent('net-logfwd-pass', logfwdParts[0] ?? 0);
+                updateDOMTextContent('net-logfwd-total', logfwdParts[1] ?? 0);
+                updateDOMTextContent('net-logfwd-coverage', (dataset['log prof set percentage'] ?? 0) + '%');
+
+                const loggingCalc = dataset['log at end calc'] ?? '0/0';
+                const loggingParts = loggingCalc.split('/');
+                updateDOMTextContent('net-logging-pass', loggingParts[0] ?? 0);
+                updateDOMTextContent('net-logging-total', loggingParts[1] ?? 0);
+                updateDOMTextContent('net-logging-coverage', (dataset['log at end percentage'] ?? 0) + '%');
+
                 renderMetricsTable();
-
-                // 3. Trigger dynamic pill layout and text calculation updates
                 updatePillMatrices();
-
-                // 4. Trigger dynamic table redraw to filter rows by newly selected Location mapping
                 renderDetailedSectionsLayouts();
             }
 
-            // Core table rendering manager method parsing the 3-tab layout variations
             function renderMetricsTable() {
                 const dataset = fullDeviceDatasetArray[currentSelectedIndex];
                 const tbody = document.getElementById('overview-metrics-tbody');
@@ -4475,7 +4442,6 @@ SecurityProfileCallContext::$supportedActions[] = array(
 
                 tbody.innerHTML = '';
 
-                // Ensure the table header has our new 5th column header title
                 const theadRow = document.querySelector('.spr-header-panel table thead tr');
                 if (theadRow && theadRow.cells.length === 4) {
                     const th = document.createElement('th');
@@ -4485,7 +4451,6 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     theadRow.appendChild(th);
                 }
 
-                // Isolate the correct active subset loop array context
                 let targetedSubSet = {};
                 if (dataset['percentage'] && dataset['percentage'][currentActiveTab]) {
                     targetedSubSet = dataset['percentage'][currentActiveTab];
@@ -4507,7 +4472,6 @@ SecurityProfileCallContext::$supportedActions[] = array(
 
                     let explicitCalculationValue = 'N/A';
 
-                    // --- 1. HARD FORCED INTERCEPT FOR STATIC KEYS ---
                     if (displayName === 'App-ID' || displayName === 'User-ID' || displayName === 'Service/Port') {
                         let staticKey = 'service port';
                         if (displayName === 'App-ID') staticKey = 'app id';
@@ -4518,7 +4482,6 @@ SecurityProfileCallContext::$supportedActions[] = array(
 
                         explicitCalculationValue = `${matchingRules}/${totalRules}`;
                     } else {
-                        // --- 2. DYNAMIC GENERATION FOR STANDARD TABBED PROFILES ---
                         let baseKey = displayName.toLowerCase()
                             .replace('wildfire analysis ', 'wf ')
                             .replace('antivirus ', 'av ')
@@ -4530,8 +4493,8 @@ SecurityProfileCallContext::$supportedActions[] = array(
                             .replace('credential theft prevention', 'url-credential')
                             .replace('url inline ml', 'url-mica-engine')
                             .replace('inline ml', 'mica-engine')
-                            .replace('dns list', 'dns-list')          // Exact array key fix
-                            .replace('dns security', 'dns-security')  // Exact array key fix
+                            .replace('dns list', 'dns-list')
+                            .replace('dns security', 'dns-security')
                             .replace('advanced dns security', 'adns-security')
                             .replace('profiles', '')
                             .replace('/', ' ')
@@ -4541,15 +4504,12 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         if (baseKey === 'log forwarding') baseKey = 'log prof set';
 
                         if (`${baseKey} calc` in dataset) {
-                            // Flat and tabless (e.g., 'zone protection calc')
                             explicitCalculationValue = dataset[`${baseKey} calc`];
                         } else if (baseKey.startsWith('wf ') || baseKey.startsWith('av ') || baseKey.startsWith('as ') || baseKey.startsWith('vp ')) {
-                            // Multi-word profiles (e.g., 'wf visibility rules calc')
                             const keyParts = baseKey.split(' ');
                             const calcLookupKey = `${keyParts[0]} ${currentActiveTab} ${keyParts.slice(1).join(' ')} calc`;
                             explicitCalculationValue = dataset[calcLookupKey] || 'N/A';
                         } else {
-                            // Standard tabbed format (e.g., 'fb visibility calc', 'dns-list visibility calc')
                             const calcLookupKey = `${baseKey} ${currentActiveTab} calc`;
                             explicitCalculationValue = dataset[calcLookupKey] || 'N/A';
                         }
@@ -4598,7 +4558,6 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
             }
 
-            // Run initial bootstrap on screen compile initialization load context execution sequence
             window.addEventListener('DOMContentLoaded', () => {
                 const selectorEl = document.getElementById('deviceSelector');
                 if (selectorEl) {
