@@ -3394,9 +3394,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 }
                 else
                 {
-                    $notVisibleElements         = $object->build_cloud_inline_comprehensive_array($object->owner->bp_json_file)['all'];
-                    $notVisibleElements         = $object->build_cloud_inline_comprehensive_array($object->owner->bp_json_file)['not visible'];
-                    $info['inline_ml_detail'] = is_array($notVisibleElements) ? implode("\n", $notVisibleElements) : $notVisibleElements;
+                    $info['inline_ml_detail'] = '[Placeholder: visible mica-engine Details]';
                 }
 
                 if( $object->cloud_inline_analysis_best_practice($object->owner->bp_json_file) )
@@ -3405,9 +3403,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 }
                 else
                 {
-                    #$notVisibleElements         = $object->build_cloud_inline_comprehensive_array($object->owner->bp_json_file)['all'];
-                    #$info['bp_inline_ml_detail'] = is_array($notVisibleElements) ? implode("\n", $notVisibleElements) : $notVisibleElements;
-                    $info['bp_inline_ml_detail'] = '[Placeholder: visible mica-engine Details]';
+                    $info['bp_inline_ml_detail'] = '[Placeholder: BP mica-engine Details]';
                 }
             }
 
