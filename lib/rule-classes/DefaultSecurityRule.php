@@ -353,6 +353,18 @@ class DefaultSecurityRule extends Rule
         return $this->secprofgroup;
     }
 
+    public function securityProfileGroup_obj()
+    {
+        if( $this->secproftype != 'group' )
+            derr('Cannot be called on a rule that is of security type =' . $this->secproftype);
+
+        if( $this->secprofgroup_obj ==  null )
+        {
+            $this->secprofgroup_obj = $this->owner->owner->securityProfileGroupStore->find( $this->secprofgroup );
+        }
+        return $this->secprofgroup_obj;
+    }
+    
     public function securityProfiles()
     {
         if( $this->secproftype != 'profile' )
