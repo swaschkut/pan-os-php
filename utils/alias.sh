@@ -6,9 +6,15 @@
 
 #alias pa_docker-migration-parser='docker run --name converter --rm -v ${PWD}:/expedition-converter -it swaschkut/expedition-converter php /tools/converter/parser/migration_parser.php'
 #alias pa_docker-migration-parser2='docker run  --name converter --rm -v ${PWD}:/expedition-converter -it swaschkut/expedition-converter'
-alias pa_docker-panosphp='docker run --name panosphp --rm -v $PWD:/share -it swaschkut/pan-os-php:latest'
-alias pa_docker-panosphp-develop='docker run --name panosphp-develop --rm -v $PWD:/share -it swaschkut/pan-os-php:develop'
+alias pa_docker-panosphp='docker run --name panosphp --rm -v $PWD:/share -v ~/.panconfkeystore:/home/ubuntu/.panconfkeystore -it swaschkut/pan-os-php:latest'
 
+alias pa_docker-panosphp-develop='docker run --name panosphp-develop --rm -v $PWD:/share -v ~/.panconfkeystore:/home/ubuntu/.panconfkeystore -it swaschkut/pan-os-php:develop'
+alias pa_docker-panosphp-develop_pull='docker pull swaschkut/pan-os-php:develop'
+
+
+
+alias pa_docker-panosphp-beta='docker run --name panosphp-develop --rm -v $PWD:/share -v ~/.panconfkeystore:/home/ubuntu/.panconfkeystore -it swaschkut/pan-os-php:beta'
+alias pa_docker-panosphp-beta_pull='docker pull swaschkut/pan-os-php:beta'
 
 
 alias pan-os-php='php -r "require_once '"'"'utils/pan-os-php.php'"'"';" $@'

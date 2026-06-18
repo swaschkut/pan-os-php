@@ -5037,6 +5037,11 @@ var subjectObject =
         "action": [],
         "filter": []
     },
+    "playbook-validation": {
+        "name": "playbook-validation",
+        "action": [],
+        "filter": []
+    },
     "profile": {
         "name": "profile",
         "action": {
@@ -9216,8 +9221,32 @@ var subjectObject =
                     }
                 }
             },
-            "exportsprtohtml": {
-                "name": "exportSPRtoHTML",
+            "exportsptohtml": {
+                "name": "exportSPtoHTML",
+                "MainFunction": {},
+                "GlobalInitFunction": {},
+                "GlobalFinishFunction": {},
+                "args": {
+                    "filename": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                }
+            },
+            "exportsptohtml_new": {
+                "name": "exportSPtoHTML_new",
+                "MainFunction": {},
+                "GlobalInitFunction": {},
+                "GlobalFinishFunction": {},
+                "args": {
+                    "filename": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                }
+            },
+            "exportsptohtml_old": {
+                "name": "exportSPtoHTML_old",
                 "MainFunction": {},
                 "GlobalInitFunction": {},
                 "GlobalFinishFunction": {},
@@ -10053,6 +10082,14 @@ var subjectObject =
             "object": {
                 "operators": {
                     "is.unused": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "is.unused.recursive": {
                         "Function": {},
                         "arg": false,
                         "ci": {

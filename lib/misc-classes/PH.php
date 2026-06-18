@@ -1117,6 +1117,7 @@ class PH
         "xml-op-json",
         "bpa-generator",
         "playbook",
+        "playbook-validation",
         #"ironskillet-update",
         "maxmind-update",
         "util_get-action-filter",
@@ -1266,6 +1267,9 @@ class PH
 
         elseif( $type == "playbook" )
             $util = new PLAYBOOK__( $argv, $argc );
+
+        elseif( $type == "playbook-validation" )
+            $util = new PLAYBOOK_VALIDATION__( $argv, $argc );
 
         elseif( $type == "util_get-action-filter" )
             $util = new UTIL_GET_ACTION_FILTER( $argv, $argc );
