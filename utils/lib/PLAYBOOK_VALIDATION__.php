@@ -50,8 +50,9 @@ class PLAYBOOK_VALIDATION__
         $this->supportedArguments['outputformatset'] = array('niceName' => 'outputformatset', 'shortHelp' => 'get all PAN-OS set commands about the task the UTIL script is doing. outputformatset=FILENAME -> store set commands in file', 'argDesc' => 'outputformatset');
 
         $this->supportedArguments['script-validation'] = array('niceName' => 'script-validation');
-        $this->supportedArguments['dev'] = array('niceName' => 'run dev related part');
-        $this->supportedArguments['beta'] = array('niceName' => 'run beta related beta part');
+        $this->supportedArguments['dev'] = array('niceName' => 'run pan-os-php dev related part');
+        $this->supportedArguments['beta'] = array('niceName' => 'run pan-os-php beta related beta part');
+        $this->supportedArguments['latest'] = array('niceName' => 'run pan-os-php latest related beta part');
         $this->supportedArguments['compare'] = array('niceName' => 'compare files from dev and beta folder');
         $this->supportedArguments['generate-sp'] = array('niceName' => 'generate-sp - generate securityprofile HTML overview actions=exportSPtoHTML');
         $this->supportedArguments['generate-sp-only'] = array('niceName' => 'generate-sp-only - in combination with argument dev / beta');
@@ -124,6 +125,7 @@ class PLAYBOOK_VALIDATION__
         $script_validation = false;
         $generate_dev = false;
         $generate_beta = false;
+        $generate_latest = false;
         $generate_spr = false;
         $generate_spr_only = false;
         $compare = false; // Changed to false by default so CLI arguments can toggle it on
@@ -141,6 +143,9 @@ class PLAYBOOK_VALIDATION__
 
         if( isset(PH::$args['beta']) )
             $generate_beta = true;
+
+        if( isset(PH::$args['latest']) )
+            $generate_latest = true;
 
         if( isset(PH::$args['compare']) )
             $compare = true;
@@ -249,6 +254,40 @@ class PLAYBOOK_VALIDATION__
                 $panosphp_tool = "pa_docker-panosphp-beta";
                 if( $tool == "docker-outside" )
                     $panosphp_tool = 'docker run --name panosphp-beta --rm -v $PWD:/share -v ~/.panconfkeystore:/home/ubuntu/.panconfkeystore -it swaschkut/pan-os-php:beta';
+                elseif( $tool == "docker" )
+                    $panosphp_tool = 'php /tools/pan-os-php/utils/pan-os-php.php';
+                elseif( $tool == "local" )
+                    $panosphp_tool = "pan-os-php";
+
+                $command = $panosphp_tool . " type=playbook 'json={$playbook_file}' shadow-bpjsonfile={$bp_setting_file} 'out={$folder}/{$config}' 'in=origin/{$config}' subprocess projectfolder=delete/validation_{$folder}";
+                $command_array[] = $command;
+
+                if ($script_validation)
+                    print $command . "\n";
+                else {
+                    print $inline . $inline . "run CLI command\n";
+                    $this->request_CLI_command($command, $config);
+                }
+            }
+
+            if( $generate_latest )
+                $folder = "latest";
+            if( $generate_latest && !$generate_spr_only )
+            {
+                print "\n\n";
+                print $inline . "====================================\n";
+                print $inline . "LATEST\n";
+                print $inline . "====================================\n";
+
+
+                //$command = "docker pull swaschkut/pan-os-php:latest";
+                //$this->request_CLI_command($command);
+
+                $folder = "latest";
+
+                $panosphp_tool = "pa_docker-panosphp-latest";
+                if( $tool == "docker-outside" )
+                    $panosphp_tool = 'docker run --name panosphp-latest --rm -v $PWD:/share -v ~/.panconfkeystore:/home/ubuntu/.panconfkeystore -it swaschkut/pan-os-php:latest';
                 elseif( $tool == "docker" )
                     $panosphp_tool = 'php /tools/pan-os-php/utils/pan-os-php.php';
                 elseif( $tool == "local" )
