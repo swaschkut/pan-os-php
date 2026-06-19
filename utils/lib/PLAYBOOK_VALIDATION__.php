@@ -231,7 +231,7 @@ class PLAYBOOK_VALIDATION__
                 $commands[] = $command;
                 $command_array[] = $command;
 
-                $command = $panosphp_tool . " type=stats shadow-bpjsonfile={$bp_setting_file} actions=display-bpa 'in={$folder}/{$config}' projectfolder={$folder} debugapi shadow-json";
+                $command = $panosphp_tool . " type=stats shadow-bpjsonfile={$bp_setting_file} actions=display-bpa 'in={$folder}/{$config}' projectfolder={$folder} debugapi shadow-json 2>&1 | tee {$folder}/{$configname}_stats.txt";
                 $commands[] = $command;
                 $command_array[] = $command;
 
@@ -275,7 +275,7 @@ class PLAYBOOK_VALIDATION__
                 $commands[] = $command;
                 $command_array[] = $command;
 
-                $command = $panosphp_tool . " type=stats shadow-bpjsonfile={$bp_setting_file} actions=display-bpa 'in={$folder}/{$config}' projectfolder={$folder} debugapi shadow-json";
+                $command = $panosphp_tool . " type=stats shadow-bpjsonfile={$bp_setting_file} actions=display-bpa 'in={$folder}/{$config}' projectfolder={$folder} debugapi shadow-json 2>&1 | tee {$folder}/{$configname}_stats.txt";
                 $commands[] = $command;
                 $command_array[] = $command;
 
@@ -319,7 +319,7 @@ class PLAYBOOK_VALIDATION__
                 $commands[] = $command;
                 $command_array[] = $command;
 
-                $command = $panosphp_tool . " type=stats shadow-bpjsonfile={$bp_setting_file} actions=display-bpa 'in={$folder}/{$config}' projectfolder={$folder} debugapi shadow-json";
+                $command = $panosphp_tool . " type=stats shadow-bpjsonfile={$bp_setting_file} actions=display-bpa 'in={$folder}/{$config}' projectfolder={$folder} debugapi shadow-json 2>&1 | tee {$folder}/{$configname}_stats.txt";
                 $commands[] = $command;
                 $command_array[] = $command;
 
