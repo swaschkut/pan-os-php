@@ -50,12 +50,12 @@ class PLAYBOOK_VALIDATION__
         $this->supportedArguments['outputformatset'] = array('niceName' => 'outputformatset', 'shortHelp' => 'get all PAN-OS set commands about the task the UTIL script is doing. outputformatset=FILENAME -> store set commands in file', 'argDesc' => 'outputformatset');
 
         $this->supportedArguments['script-validation'] = array('niceName' => 'script-validation');
-        $this->supportedArguments['dev'] = array('niceName' => 'dev');
-        $this->supportedArguments['beta'] = array('niceName' => 'beta');
-        $this->supportedArguments['compare'] = array('niceName' => 'compare');
-        $this->supportedArguments['generate-sp'] = array('niceName' => 'generate-sp');
-        $this->supportedArguments['generate-sp-only'] = array('niceName' => 'generate-sp-only');
-        $this->supportedArguments['tool'] = array('niceName' => 'tool usage');
+        $this->supportedArguments['dev'] = array('niceName' => 'run dev related part');
+        $this->supportedArguments['beta'] = array('niceName' => 'run beta related beta part');
+        $this->supportedArguments['compare'] = array('niceName' => 'compare files from dev and beta folder');
+        $this->supportedArguments['generate-sp'] = array('niceName' => 'generate-sp - generate securityprofile HTML overview actions=exportSPtoHTML');
+        $this->supportedArguments['generate-sp-only'] = array('niceName' => 'generate-sp-only - in combination with argument dev / beta');
+        $this->supportedArguments['tool'] = array('niceName' => 'tool usage: tool=docker-outsite/tool=docker/tool=local');
 
 
         $input = null;
@@ -153,6 +153,8 @@ class PLAYBOOK_VALIDATION__
 
         if( isset(PH::$args['tool']) )
             $tool = PH::$args['tool'];
+        else
+            $tool = "docker";
 
         if( isset(PH::$args['playbook-file']) )
             $playbook_file = PH::$args['playbook-file'];
@@ -186,7 +188,7 @@ class PLAYBOOK_VALIDATION__
 
 
 
-
+        $command_array = array();
         foreach( $file_array as $config )
         {
             $inline = "   ";
@@ -210,15 +212,15 @@ class PLAYBOOK_VALIDATION__
 
                 $folder = "dev";
                 $panosphp_tool = "pa_docker-panosphp-develop";
-                if( $tool == "docker" )
-                {
+                if( $tool == "docker-outside" )
                     $panosphp_tool = 'docker run --name panosphp-develop --rm -v $PWD:/share -v ~/.panconfkeystore:/home/ubuntu/.panconfkeystore -it swaschkut/pan-os-php:develop';
+                elseif( $tool == "docker" )
                     $panosphp_tool = 'php /tools/pan-os-php/utils/pan-os-php.php';
-                }
                 elseif( $tool == "local" )
                     $panosphp_tool = "pan-os-php";
 
                 $command = $panosphp_tool." type=playbook 'json={$playbook_file}' shadow-bpjsonfile={$bp_setting_file} 'out={$folder}/{$config}' 'in=origin/{$config}' subprocess projectfolder=delete/validation_{$folder}";
+                $command_array[] = $command;
 
                 if( $script_validation )
                     print $command."\n";
@@ -246,17 +248,14 @@ class PLAYBOOK_VALIDATION__
 
                 $panosphp_tool = "pa_docker-panosphp-beta";
                 if( $tool == "docker-outside" )
-                {
                     $panosphp_tool = 'docker run --name panosphp-beta --rm -v $PWD:/share -v ~/.panconfkeystore:/home/ubuntu/.panconfkeystore -it swaschkut/pan-os-php:beta';
-                }
                 elseif( $tool == "docker" )
-                {
                     $panosphp_tool = 'php /tools/pan-os-php/utils/pan-os-php.php';
-                }
                 elseif( $tool == "local" )
                     $panosphp_tool = "pan-os-php";
 
                 $command = $panosphp_tool . " type=playbook 'json={$playbook_file}' shadow-bpjsonfile={$bp_setting_file} 'out={$folder}/{$config}' 'in=origin/{$config}' subprocess projectfolder=delete/validation_{$folder}";
+                $command_array[] = $command;
 
                 if ($script_validation)
                     print $command . "\n";
@@ -279,18 +278,15 @@ class PLAYBOOK_VALIDATION__
 
                 $panosphp_tool = "pa_docker-panosphp-beta";
                 if( $tool == "docker-outside" )
-                {
                     $panosphp_tool = 'docker run --name panosphp-beta --rm -v $PWD:/share -v ~/.panconfkeystore:/home/ubuntu/.panconfkeystore -it swaschkut/pan-os-php:beta';
-                }
                 elseif( $tool == "docker" )
-                {
                     $panosphp_tool = 'php /tools/pan-os-php/utils/pan-os-php.php';
-                }
                 elseif( $tool == "local" )
                     $panosphp_tool = "pan-os-php";
 
                 //compare
                 $command = $panosphp_tool." type=diff 'file1=dev/{$config}' 'file2=beta/{$config}'";
+                $command_array[] = $command;
 
                 if( $script_validation )
                     print $command."\n";
@@ -310,13 +306,9 @@ class PLAYBOOK_VALIDATION__
 
                 $panosphp_tool = "pa_docker-panosphp-beta";
                 if( $tool == "docker-outside" )
-                {
                     $panosphp_tool = 'docker run --name panosphp-beta --rm -v $PWD:/share -v ~/.panconfkeystore:/home/ubuntu/.panconfkeystore -it swaschkut/pan-os-php:beta';
-                }
                 if( $tool == "docker" )
-                {
                     $panosphp_tool = 'php /tools/pan-os-php/utils/pan-os-php.php';
-                }
                 elseif( $tool == "local" )
                     $panosphp_tool = "pan-os-php";
 
@@ -331,6 +323,8 @@ class PLAYBOOK_VALIDATION__
                     exit();
                 }
 
+                $command_array[] = $command;
+
                 if( $script_validation )
                     print $command."\n";
                 else
@@ -341,6 +335,10 @@ class PLAYBOOK_VALIDATION__
 
             }
         }
+
+        if( $script_validation )
+            print_r( $command_array );
+
     }
 
     function endOfScript()
