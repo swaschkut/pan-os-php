@@ -183,8 +183,10 @@ class PLAYBOOK_VALIDATION__
         foreach ($files as $file)
         {
             if (is_file($file))
-                $file_array[] = basename($file);
-
+            {
+                if( str_contains( basename($file),".xml") )
+                    $file_array[] = basename($file);
+            }
         }
 
         if( $script_validation )
@@ -207,6 +209,7 @@ class PLAYBOOK_VALIDATION__
                 $folder = "dev";
             if( $generate_dev && !$generate_spr_only )
             {
+                $commands = array();
                 print $inline."====================================\n";
                 print $inline."DEV\n";
                 print $inline."====================================\n";
@@ -225,14 +228,22 @@ class PLAYBOOK_VALIDATION__
                     $panosphp_tool = "pan-os-php";
 
                 $command = $panosphp_tool." type=playbook 'json={$playbook_file}' shadow-bpjsonfile={$bp_setting_file} 'out={$folder}/{$config}' 'in=origin/{$config}' subprocess projectfolder=delete/validation_{$folder}";
+                $commands[] = $command;
                 $command_array[] = $command;
 
-                if( $script_validation )
-                    print $command."\n";
-                else
+                $command = $panosphp_tool . " type=stats shadow-bpjsonfile={$bp_setting_file} actions=display-bpa 'in={$folder}/{$config}' projectfolder={$folder} debugapi shadow-json";
+                $commands[] = $command;
+                $command_array[] = $command;
+
+                foreach( $commands as $command )
                 {
-                    print $inline.$inline."run CLI command\n";
-                    $this->request_CLI_command( $command, $config );
+                    if ($script_validation)
+                        print $command . "\n";
+                    else
+                    {
+                        print $inline . $inline . "run CLI command\n";
+                        $this->request_CLI_command($command, $config);
+                    }
                 }
             }
 
@@ -240,6 +251,7 @@ class PLAYBOOK_VALIDATION__
                 $folder = "beta";
             if( $generate_beta && !$generate_spr_only )
             {
+                $commands = array();
                 print "\n\n";
                 print $inline . "====================================\n";
                 print $inline . "BETA\n";
@@ -260,13 +272,22 @@ class PLAYBOOK_VALIDATION__
                     $panosphp_tool = "pan-os-php";
 
                 $command = $panosphp_tool . " type=playbook 'json={$playbook_file}' shadow-bpjsonfile={$bp_setting_file} 'out={$folder}/{$config}' 'in=origin/{$config}' subprocess projectfolder=delete/validation_{$folder}";
+                $commands[] = $command;
                 $command_array[] = $command;
 
-                if ($script_validation)
-                    print $command . "\n";
-                else {
-                    print $inline . $inline . "run CLI command\n";
-                    $this->request_CLI_command($command, $config);
+                $command = $panosphp_tool . " type=stats shadow-bpjsonfile={$bp_setting_file} actions=display-bpa 'in={$folder}/{$config}' projectfolder={$folder} debugapi shadow-json";
+                $commands[] = $command;
+                $command_array[] = $command;
+
+                foreach( $commands as $command )
+                {
+                    if ($script_validation)
+                        print $command . "\n";
+                    else
+                    {
+                        print $inline . $inline . "run CLI command\n";
+                        $this->request_CLI_command($command, $config);
+                    }
                 }
             }
 
@@ -274,6 +295,7 @@ class PLAYBOOK_VALIDATION__
                 $folder = "latest";
             if( $generate_latest && !$generate_spr_only )
             {
+                $commands = array();
                 print "\n\n";
                 print $inline . "====================================\n";
                 print $inline . "LATEST\n";
@@ -294,13 +316,21 @@ class PLAYBOOK_VALIDATION__
                     $panosphp_tool = "pan-os-php";
 
                 $command = $panosphp_tool . " type=playbook 'json={$playbook_file}' shadow-bpjsonfile={$bp_setting_file} 'out={$folder}/{$config}' 'in=origin/{$config}' subprocess projectfolder=delete/validation_{$folder}";
+                $commands[] = $command;
                 $command_array[] = $command;
 
-                if ($script_validation)
-                    print $command . "\n";
-                else {
-                    print $inline . $inline . "run CLI command\n";
-                    $this->request_CLI_command($command, $config);
+                $command = $panosphp_tool . " type=stats shadow-bpjsonfile={$bp_setting_file} actions=display-bpa 'in={$folder}/{$config}' projectfolder={$folder} debugapi shadow-json";
+                $commands[] = $command;
+                $command_array[] = $command;
+
+                foreach( $commands as $command )
+                {
+                    if ($script_validation)
+                        print $command . "\n";
+                    else {
+                        print $inline . $inline . "run CLI command\n";
+                        $this->request_CLI_command($command, $config);
+                    }
                 }
             }
 
@@ -353,9 +383,9 @@ class PLAYBOOK_VALIDATION__
 
                 //compare
                 if( $generate_beta )
-                    $command = $panosphp_tool." type=securityprofile 'in=beta/{$config}' 'actions=exportSPtoHTML:sp_{$configname}_beta.html' projectfolder={$folder}";
+                    $command = $panosphp_tool." type=securityprofile 'in=beta/{$config}' 'actions=exportSPtoHTML:sp_{$configname}_beta.html' location=any projectfolder={$folder}";
                 elseif( $generate_dev )
-                    $command = $panosphp_tool." type=securityprofile 'in=dev/{$config}' 'actions=exportSPtoHTML:sp_{$configname}_dev.html' projectfolder={$folder}";
+                    $command = $panosphp_tool." type=securityprofile 'in=dev/{$config}' 'actions=exportSPtoHTML:sp_{$configname}_dev.html' location=any projectfolder={$folder}";
                 else
                 {
                     print "nothing choosen: 'beta' or 'dev'\n";
