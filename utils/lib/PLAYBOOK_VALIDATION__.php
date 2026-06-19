@@ -59,6 +59,9 @@ class PLAYBOOK_VALIDATION__
         $this->supportedArguments['compare-stats-dev-beta'] = array('niceName' => 'compare stats JSON files from dev and beta folder');
         $this->supportedArguments['compare-stats-latest-dev'] = array('niceName' => 'compare stats JSON files from latest and dev folder');
 
+        //stats-not-100
+        $this->supportedArguments['stats-not-100'] = array('niceName' => 'search in stats JSON file where percentage value NOT 100; exclud ZPP/APP-ID/User-ID/ServicePort/DataFiltering');
+
         $this->supportedArguments['generate-sp'] = array('niceName' => 'generate-sp - generate securityprofile HTML overview actions=exportSPtoHTML');
         $this->supportedArguments['generate-sp-only'] = array('niceName' => 'generate-sp-only - in combination with argument dev / beta');
 
@@ -143,6 +146,8 @@ class PLAYBOOK_VALIDATION__
         $compare_dev_beta = false;
         $compare_latest_dev = false;
 
+        $compare_stats_not_100 = false;
+
         $generate_stats = false;
         $generate_stats_only = false;
 
@@ -178,6 +183,8 @@ class PLAYBOOK_VALIDATION__
         if( isset(PH::$args['compare-stats-latest-dev']) )
             $compare_stats_latest_dev = true;
 
+        if( isset(PH::$args['stats-not-100']) )
+            $compare_stats_not_100 = true;
 
         if( isset(PH::$args['generate-sp']) )
             $generate_spr = true;
@@ -214,13 +221,24 @@ class PLAYBOOK_VALIDATION__
 // Get all file paths
         $files = glob($folderPath);
 
+        $validation = array();
+
+        $compare_validation = array();
+        $compare_validation['xml'] = null;
+        $compare_validation['stats'] = null;
+        $compare_validation['percentage'] = null;
+
         $file_array = array();
         foreach ($files as $file)
         {
             if (is_file($file))
             {
                 if( str_contains( basename($file),".xml") )
+                {
                     $file_array[] = basename($file);
+                    $validation[basename($file)] = $compare_validation;
+                }
+
             }
         }
 
@@ -242,7 +260,7 @@ class PLAYBOOK_VALIDATION__
 
             if( $generate_dev )
                 $folder = "dev";
-            if( $generate_dev && !$generate_spr_only && !$generate_stats_only )
+            if( $generate_dev && !$generate_spr_only && !$generate_stats_only && !$compare_stats_not_100 )
             {
                 $commands = array();
                 print $inline."====================================\n";
@@ -254,7 +272,7 @@ class PLAYBOOK_VALIDATION__
 
 
                 $folder = "dev";
-                $panosphp_tool = "pa_docker-panosphp-develop";
+
                 if( $tool == "docker-outside" )
                     $panosphp_tool = 'docker run --name panosphp-develop --rm -v $PWD:/share -v ~/.panconfkeystore:/home/ubuntu/.panconfkeystore -it swaschkut/pan-os-php:develop';
                 elseif( $tool == "docker" )
@@ -284,7 +302,7 @@ class PLAYBOOK_VALIDATION__
 
             if( $generate_beta )
                 $folder = "beta";
-            if( $generate_beta && !$generate_spr_only && !$generate_stats_only )
+            if( $generate_beta && !$generate_spr_only && !$generate_stats_only && !$compare_stats_not_100 )
             {
                 $commands = array();
                 print "\n\n";
@@ -298,7 +316,7 @@ class PLAYBOOK_VALIDATION__
 
                 $folder = "beta";
 
-                $panosphp_tool = "pa_docker-panosphp-beta";
+
                 if( $tool == "docker-outside" )
                     $panosphp_tool = 'docker run --name panosphp-beta --rm -v $PWD:/share -v ~/.panconfkeystore:/home/ubuntu/.panconfkeystore -it swaschkut/pan-os-php:beta';
                 elseif( $tool == "docker" )
@@ -328,7 +346,7 @@ class PLAYBOOK_VALIDATION__
 
             if( $generate_latest )
                 $folder = "latest";
-            if( $generate_latest && !$generate_spr_only && !$generate_stats_only )
+            if( $generate_latest && !$generate_spr_only && !$generate_stats_only && !$compare_stats_not_100 )
             {
                 $commands = array();
                 print "\n\n";
@@ -342,7 +360,7 @@ class PLAYBOOK_VALIDATION__
 
                 $folder = "latest";
 
-                $panosphp_tool = "pa_docker-panosphp-latest";
+
                 if( $tool == "docker-outside" )
                     $panosphp_tool = 'docker run --name panosphp-latest --rm -v $PWD:/share -v ~/.panconfkeystore:/home/ubuntu/.panconfkeystore -it swaschkut/pan-os-php:latest';
                 elseif( $tool == "docker" )
@@ -383,9 +401,8 @@ class PLAYBOOK_VALIDATION__
                 print $inline."GENERATE SP\n";
                 print $inline."====================================\n";
 
-                $panosphp_tool = "pa_docker-panosphp-beta";
-                if( $tool == "docker-outside" )
-                    $panosphp_tool = 'docker run --name panosphp-beta --rm -v $PWD:/share -v ~/.panconfkeystore:/home/ubuntu/.panconfkeystore -it swaschkut/pan-os-php:beta';
+
+
                 if( $tool == "docker" )
                     $panosphp_tool = 'php /tools/pan-os-php/utils/pan-os-php.php';
                 elseif( $tool == "local" )
@@ -393,12 +410,33 @@ class PLAYBOOK_VALIDATION__
 
                 //compare_dev_beta
                 if( $generate_beta )
-                    $command = $panosphp_tool." type=securityprofile 'in=beta/{$config}' 'actions=exportSPtoHTML:sp_{$configname}_beta.html' location=any projectfolder={$folder}";
-                elseif( $generate_dev )
-                    $command = $panosphp_tool." type=securityprofile 'in=dev/{$config}' 'actions=exportSPtoHTML:sp_{$configname}_dev.html' location=any projectfolder={$folder}";
-                else
                 {
-                    print "nothing choosen: 'beta' or 'dev'\n";
+                    if( $tool == "docker-outside" )
+                        $panosphp_tool = 'docker run --name panosphp-beta --rm -v $PWD:/share -v ~/.panconfkeystore:/home/ubuntu/.panconfkeystore -it swaschkut/pan-os-php:beta';
+
+                    $command = $panosphp_tool." type=securityprofile 'in=beta/{$config}' 'actions=exportSPtoHTML:{$configname}_sp.html' location=any projectfolder=beta";
+                }
+
+
+                if( $generate_dev )
+                {
+                    if( $tool == "docker-outside" )
+                        $panosphp_tool = 'docker run --name panosphp-develop --rm -v $PWD:/share -v ~/.panconfkeystore:/home/ubuntu/.panconfkeystore -it swaschkut/pan-os-php:develop';
+                    $command = $panosphp_tool." type=securityprofile 'in=dev/{$config}' 'actions=exportSPtoHTML:{$configname}_sp.html' location=any projectfolder=dev";
+                }
+
+
+                if( $generate_latest )
+                {
+                    if( $tool == "docker-outside" )
+                        $panosphp_tool = 'docker run --name panosphp-latest --rm -v $PWD:/share -v ~/.panconfkeystore:/home/ubuntu/.panconfkeystore -it swaschkut/pan-os-php:latest';
+                    $command = $panosphp_tool." type=securityprofile 'in=dev/{$config}' 'actions=exportSPtoHTML:{$configname}_sp.html' location=any projectfolder=latest";
+                }
+
+
+                if( !$generate_beta && !$generate_dev && !$generate_latest )
+                {
+                    print "nothing choosen: 'beta' / 'dev' / 'latest' or a combination\n";
                     exit();
                 }
 
@@ -410,6 +448,7 @@ class PLAYBOOK_VALIDATION__
                 {
                     print $inline.$inline."run CLI command\n";
                     $this->compare_command( $command, $config );
+                    $this->request_CLI_command($command, $config);
                 }
 
             }
@@ -424,9 +463,7 @@ class PLAYBOOK_VALIDATION__
                 print $inline."GENERATE STATS\n";
                 print $inline."====================================\n";
 
-                $panosphp_tool = "pa_docker-panosphp-beta";
-                if( $tool == "docker-outside" )
-                    $panosphp_tool = 'docker run --name panosphp-beta --rm -v $PWD:/share -v ~/.panconfkeystore:/home/ubuntu/.panconfkeystore -it swaschkut/pan-os-php:beta';
+
                 if( $tool == "docker" )
                     $panosphp_tool = 'php /tools/pan-os-php/utils/pan-os-php.php';
                 elseif( $tool == "local" )
@@ -436,7 +473,13 @@ class PLAYBOOK_VALIDATION__
                 if( $generate_beta )
                 {
                     $folder = "beta";
-                    $command = $panosphp_tool . " type=stats shadow-bpjsonfile={$bp_setting_file} actions=display-bpa 'in={$folder}/{$config}' projectfolder={$folder} shadow-json 2>&1 | tee {$folder}/{$configname}_stats.txt";
+
+
+                    if( $tool == "docker-outside" )
+                        $panosphp_tool = 'docker run --name panosphp-beta --rm -v $PWD:/share -v ~/.panconfkeystore:/home/ubuntu/.panconfkeystore -it swaschkut/pan-os-php:beta';
+
+
+                    $command = $panosphp_tool . " type=stats shadow-bpjsonfile={$bp_setting_file} actions=display-bpa 'in={$folder}/{$config}' location=any shadow-json 2>&1 | tee {$folder}/{$configname}_stats.txt";
                     $command_array[] = $command;
                     $commands[] = $command;
                 }
@@ -445,7 +488,12 @@ class PLAYBOOK_VALIDATION__
                 if( $generate_dev )
                 {
                     $folder = "dev";
-                    $command = $panosphp_tool . " type=stats shadow-bpjsonfile={$bp_setting_file} actions=display-bpa 'in={$folder}/{$config}' projectfolder={$folder} shadow-json 2>&1 | tee {$folder}/{$configname}_stats.txt";
+
+                    if( $tool == "docker-outside" )
+                        $panosphp_tool = 'docker run --name panosphp-develop --rm -v $PWD:/share -v ~/.panconfkeystore:/home/ubuntu/.panconfkeystore -it swaschkut/pan-os-php:develop';
+
+
+                    $command = $panosphp_tool . " type=stats shadow-bpjsonfile={$bp_setting_file} actions=display-bpa 'in={$folder}/{$config}' location=any shadow-json 2>&1 | tee {$folder}/{$configname}_stats.txt";
                     $command_array[] = $command;
                     $commands[] = $command;
                 }
@@ -453,7 +501,12 @@ class PLAYBOOK_VALIDATION__
                 if( $generate_latest )
                 {
                     $folder = "latest";
-                    $command = $panosphp_tool . " type=stats shadow-bpjsonfile={$bp_setting_file} actions=display-bpa 'in={$folder}/{$config}' projectfolder={$folder} shadow-json 2>&1 | tee {$folder}/{$configname}_stats.txt";
+
+                    if( $tool == "docker-outside" )
+                        $panosphp_tool = 'docker run --name panosphp-latest --rm -v $PWD:/share -v ~/.panconfkeystore:/home/ubuntu/.panconfkeystore -it swaschkut/pan-os-php:latest';
+
+
+                    $command = $panosphp_tool . " type=stats shadow-bpjsonfile={$bp_setting_file} actions=display-bpa 'in={$folder}/{$config}' location=any shadow-json 2>&1 | tee {$folder}/{$configname}_stats.txt";
                     $command_array[] = $command;
                     $commands[] = $command;
                 }
@@ -488,7 +541,7 @@ class PLAYBOOK_VALIDATION__
                 print $inline."COMPARE XML\n";
                 print $inline."====================================\n";
 
-                $panosphp_tool = "pa_docker-panosphp-beta";
+
                 if( $tool == "docker-outside" )
                     $panosphp_tool = 'docker run --name panosphp-beta --rm -v $PWD:/share -v ~/.panconfkeystore:/home/ubuntu/.panconfkeystore -it swaschkut/pan-os-php:beta';
                 elseif( $tool == "docker" )
@@ -515,7 +568,7 @@ class PLAYBOOK_VALIDATION__
                 else
                 {
                     print $inline.$inline."run CLI command\n";
-                    $this->compare_command( $command, $config );
+                    $validation[$config]['xml'] = $this->compare_command( $command, $config );
                 }
             }
 
@@ -544,41 +597,130 @@ class PLAYBOOK_VALIDATION__
                     $file1 = $compare_stats_file["file1"];
                     $file2 = $compare_stats_file["file2"];
 
-
-
                     // Decode and re-encode with PRETTY_PRINT to standardize formatting
                     $json1 = json_decode(file_get_contents($file1), true);
                     $json2 = json_decode(file_get_contents($file2), true);
 
-                    $json1 = $json1['statistic'] ?? null;
-                    $json2 = $json2['statistic'] ?? null;
+                    $statOriginal = $json1['statistic'] ?? null;
+                    $statOther = $json2['statistic'] ?? null;
 
-                    file_put_contents('temp1.json', json_encode($json1, JSON_PRETTY_PRINT));
-                    file_put_contents('temp2.json', json_encode($json2, JSON_PRETTY_PRINT));
+                    ////
+                    ///
+                    // 3. Run the comparison starting strictly on the extracted statistics data
+                    $diff = $this->getJsonChangesOnly($statOriginal, $statOther);
 
-                    // Run native OS diff
-                    $output = [];
-                    exec('diff temp1.json temp2.json', $output, $returnCode);
-
-                    if ($returnCode === 0) {
-                        echo "Files are identical.";
-                    } else {
-                        echo "Files are different. Line-by-line differences:\n";
-                        echo implode("\n", $output);
+                    if( empty($diff) )
+                    {
+                        $validation[$config]['stats'] = true;
+                    }
+                    else
+                    {
+                        // 4. Output results
+                        echo json_encode($diff, JSON_PRETTY_PRINT);
+                        $validation[$config]['stats'] = false;
                     }
 
-                    // Clean up temp files
-                    unlink('temp1.json');
-                    unlink('temp2.json');
+                }
+            }
 
+            //statictic -> [0] -> percentag -> visibility
+            if( $compare_stats_not_100 )
+            {
+                $file_array = array();
+                if( $generate_beta )
+                {
+                    $file1 = "beta/{$configname}_stats.txt";
+                    $file_array[] = $file1;
+                }
+
+                if( $generate_dev )
+                {
+                    $file1 = "dev/{$configname}_stats.txt";
+                    $file_array[] = $file1;
+                }
+
+                if( $generate_latest )
+                {
+                    $file1 = "latest/{$configname}_stats.txt";
+                    $file_array[] = $file1;
+                }
+
+                foreach( $file_array as $file1 )
+                {
+                    // 1. Decode the JSON string into a PHP associative array
+                    $data = json_decode(file_get_contents($file1), true);
+
+                    $data = $data['statistic'][0][0]['percentage'] ?? null;
+
+                    // 2. Define your exclusion list
+                    $exclusions = [
+                        'Data Filtering',
+                        'App-ID',
+                        'User-ID',
+                        'Service/Port', // json_decode automatically handles the escaped forward slash
+                        'Zone Protection'
+                    ];
+
+                    $results = [];
+
+                    // 3. Loop through the visibility items
+                    if (isset($data['visibility']))
+                    {
+                        foreach ($data['visibility'] as $name => $details) {
+
+                            // Condition A: Exclude specific names
+                            if (in_array($name, $exclusions)) {
+                                continue;
+                            }
+
+                            // Condition B: Filter for values that are NOT 100
+                            if ($details['value'] !== 100)
+                            {
+                                // Save matching elements to our results array
+                                $results[$name] = $details;
+                                $validation[$config]['percentage'] = false;
+                            }
+                        }
+                    }
+
+                    // 4. Output the filtered results
+                    print_r($results);
                 }
             }
 
         }
 
         if( $script_validation )
-            print_r( $command_array );
+        {
+            print "\n\n";
+            print $inline."====================================\n";
+            print $inline."ALL COMMANDS:\n";
+            print $inline."====================================\n";
 
+            foreach( $command_array as $command )
+                print $command."\n\n";
+        }
+
+
+        if( !empty($validation) )
+        {
+            print "\n\n";
+            print $inline."====================================\n";
+            print $inline."VALIDATION:\n";
+            print $inline."====================================\n";
+
+            foreach( $validation as $config => $compare_type )
+            {
+                if( $compare_type != null )
+                    foreach( $compare_type as $type => $value )
+                    {
+                        if( $value === false )
+                        {
+                            print "{$type}: => diff for {$config}\n";
+                        }
+                    }
+            }
+        }
     }
 
     function endOfScript()
@@ -771,6 +913,7 @@ class PLAYBOOK_VALIDATION__
         $ret = $this->request_CLI_command_old($command);
         $counter = $ret["counter"];
         $retValue = $ret["retValue"];
+        $diffEqual = $ret["diffEqual"];
 
 
         #print "counter: ".$counter."\n";
@@ -782,11 +925,14 @@ class PLAYBOOK_VALIDATION__
         #if( $retValue != 0 )
         #    derr("CLI exit with error code '{$retValue}'");
         echo "\n";
+
+        return $diffEqual;
     }
 
 
     function request_CLI_command_old( $command )
     {
+        $diff_equal = false;
         echo " * Executing CLI: {$command}\n";
 
         $output = array();
@@ -797,13 +943,15 @@ class PLAYBOOK_VALIDATION__
         $counter = 0;
         foreach( $output as $line )
         {
+            if( str_contains($line, "- FinalResult:   PASS") )
+                $diff_equal = true;
             echo '   ##  ';
             echo $line;
             echo "\n";
             $counter++;
         }
 
-        return array("counter" => $counter, "retValue" => $retValue);
+        return array("counter" => $counter, "retValue" => $retValue, "diffEqual" => $diff_equal);
     }
 
 
@@ -839,5 +987,49 @@ class PLAYBOOK_VALIDATION__
         } else {
             echo "Failed to execute command.\n";
         }
+    }
+
+
+
+
+    
+
+    /**
+     * * Recursively finds keys that exist in $original but have different values in $other.
+     * * Ignores any newly added keys.
+     * */
+    function getJsonChangesOnly(array $original, array $other): array
+    {
+        $changes = [];
+
+        foreach($original as $key => $value)
+        {
+            // Ignore if the key doesn't exist in the new payload
+            if(!array_key_exists($key, $other)){
+                continue;
+            }
+
+            if(is_array($value) && is_array($other[$key]))
+            {
+                $nestedChanges = $this->getJsonChangesOnly($value, $other[$key]);
+                if(!empty($nestedChanges))
+                {
+                    $changes[$key] = $nestedChanges;
+                }
+            }
+            else
+            {
+                // Validate if the value has really changed
+                if($value !== $other[$key])
+                {
+                    $changes[$key] = [
+                        'from' => $value,
+                        'to' => $other[$key]
+                    ];
+                }
+            }
+        }
+
+        return $changes;
     }
 }
