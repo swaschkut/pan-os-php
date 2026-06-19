@@ -53,7 +53,8 @@ class PLAYBOOK_VALIDATION__
         $this->supportedArguments['dev'] = array('niceName' => 'run pan-os-php dev related part');
         $this->supportedArguments['beta'] = array('niceName' => 'run pan-os-php beta related beta part');
         $this->supportedArguments['latest'] = array('niceName' => 'run pan-os-php latest related beta part');
-        $this->supportedArguments['compare'] = array('niceName' => 'compare files from dev and beta folder');
+        $this->supportedArguments['compare_dev_beta-dev-beta'] = array('niceName' => 'compare_dev_beta files from dev and beta folder');
+        $this->supportedArguments['compare_dev_beta-latest-dev'] = array('niceName' => 'compare_dev_beta files from latest and dev folder');
         $this->supportedArguments['generate-sp'] = array('niceName' => 'generate-sp - generate securityprofile HTML overview actions=exportSPtoHTML');
         $this->supportedArguments['generate-sp-only'] = array('niceName' => 'generate-sp-only - in combination with argument dev / beta');
         $this->supportedArguments['tool'] = array('niceName' => 'tool usage: tool=docker-outsite/tool=docker/tool=local');
@@ -128,7 +129,8 @@ class PLAYBOOK_VALIDATION__
         $generate_latest = false;
         $generate_spr = false;
         $generate_spr_only = false;
-        $compare = false; // Changed to false by default so CLI arguments can toggle it on
+        $compare_dev_beta = false;
+        $compare_latest_dev = false;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // CLI Argument Validation
@@ -147,8 +149,11 @@ class PLAYBOOK_VALIDATION__
         if( isset(PH::$args['latest']) )
             $generate_latest = true;
 
-        if( isset(PH::$args['compare']) )
-            $compare = true;
+        if( isset(PH::$args['compare-dev-beta']) )
+            $compare_dev_beta = true;
+
+        if( isset(PH::$args['compare-latest-dev']) )
+            $compare_latest_dev = true;
 
         if( isset(PH::$args['generate-sp']) )
             $generate_spr = true;
@@ -337,8 +342,8 @@ class PLAYBOOK_VALIDATION__
             //todo:
             //validate if dev and beta folder has all files available
 
-            //validate if all origin config are also available in DEV and BETA, then compare
-            if( $compare )
+            //validate if all origin config are also available in DEV and BETA, then compare_dev_beta
+            if( $compare_dev_beta || $compare_latest_dev)
             {
                 print "\n\n";
                 print $inline."====================================\n";
@@ -353,9 +358,19 @@ class PLAYBOOK_VALIDATION__
                 elseif( $tool == "local" )
                     $panosphp_tool = "pan-os-php";
 
-                //compare
-                $command = $panosphp_tool." type=diff 'file1=dev/{$config}' 'file2=beta/{$config}'";
-                $command_array[] = $command;
+                if( $compare_dev_beta )
+                {
+                    //compare_dev_beta
+                    $command = $panosphp_tool." type=diff 'file1=dev/{$config}' 'file2=beta/{$config}'";
+                    $command_array[] = $command;
+                }
+
+                if( $compare_latest_dev )
+                {
+                    $command = $panosphp_tool." type=diff 'file1=latest/{$config}' 'file2=dev/{$config}'";
+                    $command_array[] = $command;
+                }
+
 
                 if( $script_validation )
                     print $command."\n";
@@ -381,7 +396,7 @@ class PLAYBOOK_VALIDATION__
                 elseif( $tool == "local" )
                     $panosphp_tool = "pan-os-php";
 
-                //compare
+                //compare_dev_beta
                 if( $generate_beta )
                     $command = $panosphp_tool." type=securityprofile 'in=beta/{$config}' 'actions=exportSPtoHTML:sp_{$configname}_beta.html' location=any projectfolder={$folder}";
                 elseif( $generate_dev )
