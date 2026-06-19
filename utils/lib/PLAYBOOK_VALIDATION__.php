@@ -53,8 +53,8 @@ class PLAYBOOK_VALIDATION__
         $this->supportedArguments['dev'] = array('niceName' => 'run pan-os-php dev related part');
         $this->supportedArguments['beta'] = array('niceName' => 'run pan-os-php beta related beta part');
         $this->supportedArguments['latest'] = array('niceName' => 'run pan-os-php latest related beta part');
-        $this->supportedArguments['compare_dev_beta-dev-beta'] = array('niceName' => 'compare_dev_beta files from dev and beta folder');
-        $this->supportedArguments['compare_dev_beta-latest-dev'] = array('niceName' => 'compare_dev_beta files from latest and dev folder');
+        $this->supportedArguments['compare-dev-beta'] = array('niceName' => 'compare_dev_beta files from dev and beta folder');
+        $this->supportedArguments['compare-latest-dev'] = array('niceName' => 'compare_dev_beta files from latest and dev folder');
         $this->supportedArguments['generate-sp'] = array('niceName' => 'generate-sp - generate securityprofile HTML overview actions=exportSPtoHTML');
         $this->supportedArguments['generate-sp-only'] = array('niceName' => 'generate-sp-only - in combination with argument dev / beta');
         $this->supportedArguments['tool'] = array('niceName' => 'tool usage: tool=docker-outsite/tool=docker/tool=local');
