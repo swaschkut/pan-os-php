@@ -16,6 +16,7 @@ UTIL:
 * type=securityprofile actions=exportSPtoHTML:sp.html | update to bring in location and visibility/bp/adoption dropdown
 * type=securityprofile | implement 'filter=(object is.unused.recursive)'
 * introduce new pan-os-php utility | type=playbook-validation
+* type=securityprofile actions=exportSPtoHTML:sp.html | add [predefined] to object name if fit
 
 BUGFIX:
 * type=securityprofile actions=virus.decoder.alert-only-set | bugfix for older PAN-OS version

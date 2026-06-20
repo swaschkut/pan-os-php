@@ -666,7 +666,13 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 $lines .= $context->encloseFunction(PH::getLocationString($object));
 
 
-                $lines .= $context->encloseFunction($object->name());
+                if( str_contains($object->owner->name(), "predefined") )
+                    $tmp_name = $object->name()." [predefined]";
+                else
+                    $tmp_name = $object->name();
+                #$lines .= $context->encloseFunction($object->name());
+                $lines .= $context->encloseFunction($tmp_name);
+
                 if( $bestPractice || $visibility || $adoption )
                 {
                     if( get_class($object) == "AntiVirusProfile" )
@@ -3307,13 +3313,13 @@ SecurityProfileCallContext::$supportedActions[] = array(
 
             if( get_class($object) == "customURLProfile"
                 || get_class( $object ) == "PredefinedSecurityProfileURL"
-                || get_class( $object ) == "predefined-url"
-                || get_class( $object ) == "predefined-url-filtering"
-                || get_class( $object ) == "predefined-virus"
-                || get_class( $object ) == "predefined-spyware"
-                || get_class( $object ) == "predefined-file-blocking"
-                || get_class( $object ) == "predefined-vulnerability"
-                || get_class( $object ) == "predefined-wildfire-analysis"
+                #|| get_class( $object ) == "predefined-url"
+                #|| get_class( $object ) == "predefined-url-filtering"
+                #|| get_class( $object ) == "predefined-virus"
+                #|| get_class( $object ) == "predefined-spyware"
+                #|| get_class( $object ) == "predefined-file-blocking"
+                #|| get_class( $object ) == "predefined-vulnerability"
+                #|| get_class( $object ) == "predefined-wildfire-analysis"
             )
                 continue;
 
@@ -3322,7 +3328,11 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 $info['location'] = "shared";
             else
                 $info['location'] = $object->owner->owner->name();
-            $info['profile'] = $object->name();
+            PH::print_stdout($object->owner->name());
+            if( str_contains($object->owner->name(), "predefined") )
+                $info['profile'] = $object->name()." [predefined]";
+            else
+                $info['profile'] = $object->name();
 
             $info['count'] = 0;
             foreach( $object->refrules as $rule )
