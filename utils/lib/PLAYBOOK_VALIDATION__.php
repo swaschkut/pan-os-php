@@ -70,6 +70,9 @@ class PLAYBOOK_VALIDATION__
 
         $this->supportedArguments['tool'] = array('niceName' => 'tool usage: tool=docker-outsite/tool=docker/tool=local');
 
+        $this->supportedArguments['playbook-file'] = array('niceName' => 'define playbook file');
+        $this->supportedArguments['bp-setting-file'] = array('niceName' => 'define BP setting file');
+
 
         $input = null;
         $output = null;
@@ -274,7 +277,7 @@ class PLAYBOOK_VALIDATION__
                 $folder = "dev";
 
                 if( $tool == "docker-outside" )
-                    $panosphp_tool = 'docker run --name panosphp-develop --rm -v $PWD:/share -v ~/.panconfkeystore:/home/ubuntu/.panconfkeystore -it swaschkut/pan-os-php:develop';
+                    $panosphp_tool = 'docker run --name panosphp-develop-val --rm -v $PWD:/share -v ~/.panconfkeystore:/home/ubuntu/.panconfkeystore -it swaschkut/pan-os-php:develop';
                 elseif( $tool == "docker" )
                     $panosphp_tool = 'php /tools/pan-os-php/utils/pan-os-php.php';
                 elseif( $tool == "local" )
@@ -318,7 +321,7 @@ class PLAYBOOK_VALIDATION__
 
 
                 if( $tool == "docker-outside" )
-                    $panosphp_tool = 'docker run --name panosphp-beta --rm -v $PWD:/share -v ~/.panconfkeystore:/home/ubuntu/.panconfkeystore -it swaschkut/pan-os-php:beta';
+                    $panosphp_tool = 'docker run --name panosphp-beta-val --rm -v $PWD:/share -v ~/.panconfkeystore:/home/ubuntu/.panconfkeystore -it swaschkut/pan-os-php:beta';
                 elseif( $tool == "docker" )
                     $panosphp_tool = 'php /tools/pan-os-php/utils/pan-os-php.php';
                 elseif( $tool == "local" )
@@ -362,7 +365,7 @@ class PLAYBOOK_VALIDATION__
 
 
                 if( $tool == "docker-outside" )
-                    $panosphp_tool = 'docker run --name panosphp-latest --rm -v $PWD:/share -v ~/.panconfkeystore:/home/ubuntu/.panconfkeystore -it swaschkut/pan-os-php:latest';
+                    $panosphp_tool = 'docker run --name panosphp-latest-val --rm -v $PWD:/share -v ~/.panconfkeystore:/home/ubuntu/.panconfkeystore -it swaschkut/pan-os-php:latest';
                 elseif( $tool == "docker" )
                     $panosphp_tool = 'php /tools/pan-os-php/utils/pan-os-php.php';
                 elseif( $tool == "local" )
@@ -412,25 +415,25 @@ class PLAYBOOK_VALIDATION__
                 if( $generate_beta )
                 {
                     if( $tool == "docker-outside" )
-                        $panosphp_tool = 'docker run --name panosphp-beta --rm -v $PWD:/share -v ~/.panconfkeystore:/home/ubuntu/.panconfkeystore -it swaschkut/pan-os-php:beta';
+                        $panosphp_tool = 'docker run --name panosphp-beta-val --rm -v $PWD:/share -v ~/.panconfkeystore:/home/ubuntu/.panconfkeystore -it swaschkut/pan-os-php:beta';
 
-                    $command = $panosphp_tool." type=securityprofile 'in=beta/{$config}' 'actions=exportSPtoHTML:{$configname}_sp.html' location=any projectfolder=beta";
+                    $command = $panosphp_tool." type=securityprofile 'in=beta/{$config}' 'actions=exportSPtoHTML:{$configname}_sp.html' location=any projectfolder=beta 'filter=!(object is.unused) and !(object is.unused.recursive)'";
                 }
 
 
                 if( $generate_dev )
                 {
                     if( $tool == "docker-outside" )
-                        $panosphp_tool = 'docker run --name panosphp-develop --rm -v $PWD:/share -v ~/.panconfkeystore:/home/ubuntu/.panconfkeystore -it swaschkut/pan-os-php:develop';
-                    $command = $panosphp_tool." type=securityprofile 'in=dev/{$config}' 'actions=exportSPtoHTML:{$configname}_sp.html' location=any projectfolder=dev";
+                        $panosphp_tool = 'docker run --name panosphp-develop-val --rm -v $PWD:/share -v ~/.panconfkeystore:/home/ubuntu/.panconfkeystore -it swaschkut/pan-os-php:develop';
+                    $command = $panosphp_tool." type=securityprofile 'in=dev/{$config}' 'actions=exportSPtoHTML:{$configname}_sp.html' location=any projectfolder=dev 'filter=!(object is.unused) and !(object is.unused.recursive)'";
                 }
 
 
                 if( $generate_latest )
                 {
                     if( $tool == "docker-outside" )
-                        $panosphp_tool = 'docker run --name panosphp-latest --rm -v $PWD:/share -v ~/.panconfkeystore:/home/ubuntu/.panconfkeystore -it swaschkut/pan-os-php:latest';
-                    $command = $panosphp_tool." type=securityprofile 'in=dev/{$config}' 'actions=exportSPtoHTML:{$configname}_sp.html' location=any projectfolder=latest";
+                        $panosphp_tool = 'docker run --name panosphp-latest-val --rm -v $PWD:/share -v ~/.panconfkeystore:/home/ubuntu/.panconfkeystore -it swaschkut/pan-os-php:latest';
+                    $command = $panosphp_tool." type=securityprofile 'in=dev/{$config}' 'actions=exportSPtoHTML:{$configname}_sp.html' location=any projectfolder=latest 'filter=!(object is.unused) and !(object is.unused.recursive)'";
                 }
 
 
@@ -476,10 +479,10 @@ class PLAYBOOK_VALIDATION__
 
 
                     if( $tool == "docker-outside" )
-                        $panosphp_tool = 'docker run --name panosphp-beta --rm -v $PWD:/share -v ~/.panconfkeystore:/home/ubuntu/.panconfkeystore -it swaschkut/pan-os-php:beta';
+                        $panosphp_tool = 'docker run --name panosphp-beta-val --rm -v $PWD:/share -v ~/.panconfkeystore:/home/ubuntu/.panconfkeystore -it swaschkut/pan-os-php:beta';
 
 
-                    $command = $panosphp_tool . " type=stats shadow-bpjsonfile={$bp_setting_file} actions=display-bpa 'in={$folder}/{$config}' location=any shadow-json 2>&1 | tee {$folder}/{$configname}_stats.txt";
+                    $command = $panosphp_tool . " type=stats shadow-bpjsonfile={$bp_setting_file} actions=display-bpa 'in={$folder}/{$config}' shadow-json 2>&1 | tee {$folder}/{$configname}_stats.txt";
                     $command_array[] = $command;
                     $commands[] = $command;
                 }
@@ -490,10 +493,10 @@ class PLAYBOOK_VALIDATION__
                     $folder = "dev";
 
                     if( $tool == "docker-outside" )
-                        $panosphp_tool = 'docker run --name panosphp-develop --rm -v $PWD:/share -v ~/.panconfkeystore:/home/ubuntu/.panconfkeystore -it swaschkut/pan-os-php:develop';
+                        $panosphp_tool = 'docker run --name panosphp-develop-val --rm -v $PWD:/share -v ~/.panconfkeystore:/home/ubuntu/.panconfkeystore -it swaschkut/pan-os-php:develop';
 
 
-                    $command = $panosphp_tool . " type=stats shadow-bpjsonfile={$bp_setting_file} actions=display-bpa 'in={$folder}/{$config}' location=any shadow-json 2>&1 | tee {$folder}/{$configname}_stats.txt";
+                    $command = $panosphp_tool . " type=stats shadow-bpjsonfile={$bp_setting_file} actions=display-bpa 'in={$folder}/{$config}' shadow-json 2>&1 | tee {$folder}/{$configname}_stats.txt";
                     $command_array[] = $command;
                     $commands[] = $command;
                 }
@@ -503,10 +506,10 @@ class PLAYBOOK_VALIDATION__
                     $folder = "latest";
 
                     if( $tool == "docker-outside" )
-                        $panosphp_tool = 'docker run --name panosphp-latest --rm -v $PWD:/share -v ~/.panconfkeystore:/home/ubuntu/.panconfkeystore -it swaschkut/pan-os-php:latest';
+                        $panosphp_tool = 'docker run --name panosphp-latest-val --rm -v $PWD:/share -v ~/.panconfkeystore:/home/ubuntu/.panconfkeystore -it swaschkut/pan-os-php:latest';
 
 
-                    $command = $panosphp_tool . " type=stats shadow-bpjsonfile={$bp_setting_file} actions=display-bpa 'in={$folder}/{$config}' location=any shadow-json 2>&1 | tee {$folder}/{$configname}_stats.txt";
+                    $command = $panosphp_tool . " type=stats shadow-bpjsonfile={$bp_setting_file} actions=display-bpa 'in={$folder}/{$config}' shadow-json 2>&1 | tee {$folder}/{$configname}_stats.txt";
                     $command_array[] = $command;
                     $commands[] = $command;
                 }
@@ -543,7 +546,7 @@ class PLAYBOOK_VALIDATION__
 
 
                 if( $tool == "docker-outside" )
-                    $panosphp_tool = 'docker run --name panosphp-beta --rm -v $PWD:/share -v ~/.panconfkeystore:/home/ubuntu/.panconfkeystore -it swaschkut/pan-os-php:beta';
+                    $panosphp_tool = 'docker run --name panosphp-beta-val --rm -v $PWD:/share -v ~/.panconfkeystore:/home/ubuntu/.panconfkeystore -it swaschkut/pan-os-php:beta';
                 elseif( $tool == "docker" )
                     $panosphp_tool = 'php /tools/pan-os-php/utils/pan-os-php.php';
                 elseif( $tool == "local" )
@@ -597,9 +600,23 @@ class PLAYBOOK_VALIDATION__
                     $file1 = $compare_stats_file["file1"];
                     $file2 = $compare_stats_file["file2"];
 
-                    // Decode and re-encode with PRETTY_PRINT to standardize formatting
+                    // 1. Check if both files exist and are readable
+                    if (!file_exists($file1) || !is_readable($file1)) {
+                        die("Error: File 1 does not exist or is not readable: " . $file1);
+                    }
+
+                    if (!file_exists($file2) || !is_readable($file2)) {
+                        die("Error: File 2 does not exist or is not readable: " . $file2);
+                    }
+
+                    // 2. Safely read and decode the files
                     $json1 = json_decode(file_get_contents($file1), true);
                     $json2 = json_decode(file_get_contents($file2), true);
+
+                    // 3. (Optional but recommended) Verify that the JSON itself is valid
+                    if (json_last_error() !== JSON_ERROR_NONE) {
+                        die("Error parsing JSON data: " . json_last_error_msg());
+                    }
 
                     $statOriginal = $json1['statistic'] ?? null;
                     $statOther = $json2['statistic'] ?? null;
