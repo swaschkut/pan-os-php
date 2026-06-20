@@ -908,38 +908,8 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 {
                     foreach( $object->rules_obj as $rulename => $rule )
                     {
-                        $stringSeverity = "";
-                        if( !empty($rule->severity) )
-                            $stringSeverity = " - severity:'". implode( ",", $rule->severity )."'";
-                        $stringApplication = "";
-                        if( !empty($rule->application) )
-                            $stringApplication = " - application:'". implode( ",", $rule->application )."'";
-                        $stringFileType = "";
-                        if( !empty($rule->filetype) )
-                            $stringFileType = " - filetype:'". implode( ",", $rule->filetype )."'";
-                        $stringPacketCapture = "";
-                        if( $rule->packetCapture() !== null )
-                            $stringPacketCapture = " - packetCapture:'".$rule->packetCapture()."'";
-                        $stringCategory = "";
-                        if( $rule->category() !== null )
-                            $stringCategory = " - category:'".$rule->category()."'";
-                        $stringHost = "";
-                        if( $rule->host() !== null )
-                            $stringHost = " - host:'".$rule->host()."'";
-                        $stringThreatName = "";
-                        if( $rule->threatname !== null )
-                            $stringThreatName = " - threat-name:'".$rule->threatName()."'";
-                        $stringAction = "";
-                        if( $rule->action() !== null )
-                            $stringAction = " - action:'".$rule->action()."'";
-                        $stringDirection = "";
-                        if( $rule->direction() !== null )
-                            $stringDirection = " - direction:'".$rule->direction()."'";
-                        $stringAnalysis = "";
-                        if( $rule->analysis() !== null )
-                            $stringAnalysis = " - analysis:'".$rule->analysis()."'";
+                        $tmp_string = $rule->getFullThreatPolicyText();
 
-                        $tmp_string = "'".$rule->name()."' | ".$stringSeverity.$stringThreatName.$stringAction.$stringApplication.$stringFileType.$stringPacketCapture.$stringCategory.$stringHost.$stringDirection.$stringAnalysis;
                         if( get_class($rule ) == "ThreatPolicySpyware" )
                         {
                             if( !$rule->spyware_rule_best_practice() && $bestPractice )
@@ -983,46 +953,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
 
                 $array = array();
                 if( !empty( $object->tmp_virus_prof_array ) )
-                {
-                    foreach( $object->tmp_virus_prof_array as $key => $type )
-                    {
-                        $string = $type;
-
-                        $actionTypeArray = array('action', 'wildfire-action', 'mlav-action');
-
-                        foreach( $actionTypeArray as $actionType )
-                        {
-                            if( isset( $object->$type[$actionType] ) )
-                            {
-                                $string .= "          - ".$actionType.":          '" . $object->$type[$actionType] . "'";
-                                if( $bestPractice )
-                                {
-                                    $check_array = PH::$shadow_bp_jsonfile['virus']['rule']['bp'][$actionType];
-                                    if( in_array( $type, $check_array['type'] ) )
-                                    {
-                                        if( !in_array( $object->$type[$actionType], $check_array['action'] ) )
-                                            $string .= $bp_NOT_sign;
-                                    }
-                                    else
-                                    {
-                                        if( !in_array( $object->$type[$actionType], $check_array['action-not-matching-type'] ) )
-                                            $string .= $bp_NOT_sign;
-                                    }
-                                }
-                                if( $visibility )
-                                {
-                                    //Todo: to get same output as BP; change JSON and validate what is needed
-                                    $check_array = PH::$shadow_bp_jsonfile['virus']['rule']['visibility'][$actionType];
-                                    if( in_array( "!".$object->$type[$actionType], $check_array ) )
-                                        $string .= $visible_NOT_sign;
-                                }
-                            }
-                        }
-
-                        $array[] = $string;
-                    }
-
-                }
+                    $object->getFullActionTextSPhtml($array, $bestPractice, $visibility, $bp_NOT_sign, $visible_NOT_sign);
 
                 if( !empty( $object->rules_obj ) || !empty( $object->tmp_virus_prof_array ) )
                 {
@@ -3431,7 +3362,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 if(  $object->spyware_rules_best_practice() )
                     $info['bp_rules'] = $info['count'];
                 else
-                    $info['bp_rules_detail']             = '[Placeholder: bp Rules Visibility Details]';
+                    $info['bp_rules_detail']             = '[Placeholder: bp Rules BP Details]';
             }
 
             if( get_class($object) == "VulnerabilityProfile" )
@@ -3444,7 +3375,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 if(  $object->vulnerability_rules_best_practice() )
                     $info['bp_rules'] = $info['count'];
                 else
-                    $info['bp_rules_detail']             = '[Placeholder: bp Rules Visibility Details]';
+                    $info['bp_rules_detail']             = '[Placeholder: bp Rules BP Details]';
             }
 
             if( get_class($object) == "WildfireProfile" )
@@ -3457,7 +3388,20 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 if(  $object->wildfire_rules_best_practice() )
                     $info['bp_rules'] = $info['count'];
                 else
-                    $info['bp_rules_detail']             = '[Placeholder: bp Rules Visibility Details]';
+                    $info['bp_rules_detail']             = '[Placeholder: bp Rules BP Details]';
+            }
+
+            if( get_class($object) == "FileBlockingProfile" )
+            {
+                if( $object->fileblocking_rules_visibility() )
+                    $info['rules'] = $info['count'];
+                else
+                    $info['rules_detail']             = '[Placeholder: visible Rules Visibility Details]';
+
+                if(  $object->fileblocking_rules_best_practice() )
+                    $info['bp_rules'] = $info['count'];
+                else
+                    $info['bp_rules_detail']             = '[Placeholder: bp Rules BP Details]';
             }
 
             $info['dns_lists']                = 0;
@@ -4779,13 +4723,13 @@ SecurityProfileCallContext::$supportedActions[] = array(
 
             if( get_class($object) == "customURLProfile"
                 || get_class( $object ) == "PredefinedSecurityProfileURL"
-                || get_class( $object ) == "predefined-url"
-                || get_class( $object ) == "predefined-url-filtering"
-                || get_class( $object ) == "predefined-virus"
-                || get_class( $object ) == "predefined-spyware"
-                || get_class( $object ) == "predefined-file-blocking"
-                || get_class( $object ) == "predefined-vulnerability"
-                || get_class( $object ) == "predefined-wildfire-analysis"
+                #|| get_class( $object ) == "predefined-url"
+                #|| get_class( $object ) == "predefined-url-filtering"
+                #|| get_class( $object ) == "predefined-virus"
+                #|| get_class( $object ) == "predefined-spyware"
+                #|| get_class( $object ) == "predefined-file-blocking"
+                #|| get_class( $object ) == "predefined-vulnerability"
+                #|| get_class( $object ) == "predefined-wildfire-analysis"
             )
                 continue;
 
@@ -4794,7 +4738,11 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 $info['location'] = "shared";
             else
                 $info['location'] = $object->owner->owner->name();
-            $info['profile'] = $object->name();
+
+            if( str_contains($object->owner->name(), "predefined") )
+                $info['profile'] = $object->name()." [predefined]";
+            else
+                $info['profile'] = $object->name();
 
             $info['count'] = 0;
             foreach( $object->refrules as $rule )
@@ -4847,12 +4795,21 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 if( $object->av_actions_visibility() )
                     $info['actions'] = $info['count'];
                 else
-                    $info['actions_detail'] = '[Placeholder: visible Actions Detail Text]';
+                {
+                    $array = array();
+                    $object->getFullActionTextSPhtml( $array, false, true );
+                    $info['actions_detail'] = implode("\n", $array);
+                }
+
 
                 if( $object->av_actions_best_practice() )
                     $info['bp_actions'] = $info['count'];
                 else
-                    $info['bp_actions_detail'] = '[Placeholder: BP Actions Detail Text]';
+                {
+                    $array = array();
+                    $object->getFullActionTextSPhtml( $array, true, false );
+                    $info['bp_actions_detail'] = implode("\n", $array);
+                }
             }
             if( get_class($object) == "AntiVirusProfile"
                 || get_class($object) == "AntiSpywareProfile"
@@ -4867,7 +4824,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 else
                 {
                     $notVisibleElements         = $object->build_cloud_inline_comprehensive_array($object->owner->bp_json_file)['all'];
-                    $notVisibleElements         = $object->build_cloud_inline_comprehensive_array($object->owner->bp_json_file)['not visible'];
+                    #$notVisibleElements         = $object->build_cloud_inline_comprehensive_array($object->owner->bp_json_file)['not visible'];
                     $info['inline_ml_detail'] = is_array($notVisibleElements) ? implode("\n", $notVisibleElements) : $notVisibleElements;
                 }
 
@@ -4891,12 +4848,44 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 if(  $object->spyware_rules_visibility() )
                     $info['rules'] = $info['count'];
                 else
-                    $info['rules_detail']             = '[Placeholder: visible Rules Visibility Details]';
+                {
+                    $info['rules_detail'] = "";
+                    if( !empty( $object->rules_obj ) )
+                    {
+                        foreach ($object->rules_obj as $rulename => $rule)
+                        {
+                            /* @var ThreatPolicySpyware $rule */
+                            if( !$rule->spyware_rule_visibility() )
+                            {
+                                //Todo: how to bring in newline??
+                                $info['rules_detail'] .= $rule->getFullThreatPolicyText()."\n";
+                            }
+                        }
+                    }
+                    if( empty( $info['rules_detail'] ) )
+                        $info['rules_detail'] = "[missing rules]";
+                }
 
                 if(  $object->spyware_rules_best_practice() )
                     $info['bp_rules'] = $info['count'];
                 else
-                    $info['bp_rules_detail']             = '[Placeholder: bp Rules Visibility Details]';
+                {
+                    $info['bp_rules_detail'] = "";
+                    if( !empty( $object->rules_obj ) )
+                    {
+                        foreach ($object->rules_obj as $rulename => $rule)
+                        {
+                            /* @var ThreatPolicySpyware $rule */
+                            if( !$rule->spyware_rule_best_practice() )
+                            {
+                                //Todo: how to bring in newline??
+                                $info['bp_rules_detail'] .= $rule->getFullThreatPolicyText()."\n";
+                            }
+                        }
+                    }
+                    if( empty( $info['bp_rules_detail'] ) )
+                        $info['bp_rules_detail'] = "[missing rules]";
+                }
             }
 
             if( get_class($object) == "VulnerabilityProfile" )
@@ -4904,12 +4893,89 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 if( $object->vulnerability_rules_visibility() )
                     $info['rules'] = $info['count'];
                 else
-                    $info['rules_detail']             = '[Placeholder: visible Rules Visibility Details]';
+                {
+                    $info['rules_detail'] = "";
+                    if( !empty( $object->rules_obj ) )
+                    {
+                        foreach ($object->rules_obj as $rulename => $rule)
+                        {
+                            /* @var ThreatPolicyVulnerability $rule */
+                            if( !$rule->vulnerability_rule_visibility() )
+                            {
+                                //Todo: how to bring in newline??
+                                $info['rules_detail'] .= $rule->getFullThreatPolicyText()."\n";
+                            }
+                        }
+                    }
+                    if( empty( $info['rules_detail'] ) )
+                        $info['rules_detail'] = "[missing rules]";
+                }
 
                 if(  $object->vulnerability_rules_best_practice() )
                     $info['bp_rules'] = $info['count'];
                 else
-                    $info['bp_rules_detail']             = '[Placeholder: bp Rules Visibility Details]';
+                {
+                    $info['bp_rules_detail'] = "";
+                    if( !empty( $object->rules_obj ) )
+                    {
+                        foreach ($object->rules_obj as $rulename => $rule)
+                        {
+                            /* @var ThreatPolicyVulnerability $rule */
+                            if( !$rule->vulnerability_rule_best_practice() )
+                            {
+                                //Todo: how to bring in newline??
+                                $info['bp_rules_detail'] .= $rule->getFullThreatPolicyText()."\n";
+                            }
+                        }
+                    }
+                    if( empty( $info['bp_rules_detail'] ) )
+                        $info['bp_rules_detail'] = "[missing rules]";
+                }
+            }
+
+            if( get_class($object) == "FileBlockingProfile" )
+            {
+                if( $object->fileblocking_rules_visibility() )
+                    $info['rules'] = $info['count'];
+                else
+                {
+                    $info['rules_detail'] = "";
+                    if( !empty( $object->rules_obj ) )
+                    {
+                        foreach ($object->rules_obj as $rulename => $rule)
+                        {
+                            /* @var ThreatPolicyFileBlocking $rule */
+                            if( !$rule->fileblocking_rule_visibility() )
+                            {
+                                //Todo: how to bring in newline??
+                                $info['rules_detail'] .= $rule->getFullThreatPolicyText()."\n";
+                            }
+                        }
+                    }
+                    if( empty( $info['rules_detail'] ) )
+                        $info['rules_detail'] = "[missing rules]";
+                }
+
+                if(  $object->fileblocking_rules_best_practice() )
+                    $info['bp_rules'] = $info['count'];
+                else
+                {
+                    $info['bp_rules_detail'] = "";
+                    if( !empty( $object->rules_obj ) )
+                    {
+                        foreach ($object->rules_obj as $rulename => $rule)
+                        {
+                            /* @var ThreatPolicyFileBlocking $rule */
+                            if( !$rule->fileblocking_rule_best_practice() )
+                            {
+                                //Todo: how to bring in newline??
+                                $info['bp_rules_detail'] .= $rule->getFullThreatPolicyText()."\n";
+                            }
+                        }
+                    }
+                    if( empty( $info['bp_rules_detail'] ) )
+                        $info['bp_rules_detail'] = "[missing rules]";
+                }
             }
 
             if( get_class($object) == "WildfireProfile" )
@@ -4917,12 +4983,44 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 if( $object->wildfire_rules_visibility() )
                     $info['rules'] = $info['count'];
                 else
-                    $info['rules_detail']             = '[Placeholder: visible Rules Visibility Details]';
+                {
+                    $info['rules_detail'] = "";
+                    if( !empty( $object->rules_obj ) )
+                    {
+                        foreach ($object->rules_obj as $rulename => $rule)
+                        {
+                            /* @var ThreatPolicyWildfire $rule */
+                            if( !$rule->wildfire_rule_visibility() )
+                            {
+                                //Todo: how to bring in newline??
+                                $info['rules_detail'] .= $rule->getFullThreatPolicyText()."\n";
+                            }
+                        }
+                    }
+                    if( empty( $info['rules_detail'] ) )
+                        $info['rules_detail'] = "[missing rules]";
+                }
 
                 if(  $object->wildfire_rules_best_practice() )
                     $info['bp_rules'] = $info['count'];
                 else
-                    $info['bp_rules_detail']             = '[Placeholder: bp Rules Visibility Details]';
+                {
+                    $info['bp_rules_detail'] = "";
+                    if( !empty( $object->rules_obj ) )
+                    {
+                        foreach ($object->rules_obj as $rulename => $rule)
+                        {
+                            /* @var ThreatPolicyWildfire $rule */
+                            if( !$rule->wildfire_rule_best_practice() )
+                            {
+                                //Todo: how to bring in newline??
+                                $info['rules_detail'] .= $rule->getFullThreatPolicyText()."\n";
+                            }
+                        }
+                    }
+                    if( empty( $info['bp_rules_detail'] ) )
+                        $info['bp_rules_detail'] = "[missing rules]";
+                }
             }
 
             $info['dns_lists']                = 0;

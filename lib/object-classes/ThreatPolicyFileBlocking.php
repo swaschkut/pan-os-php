@@ -94,30 +94,32 @@ class ThreatPolicyFileBlocking extends ThreatPolicy
             if( $action === "block")
                 $bp = true;
 
-            //Todo: 20250914 swaschkut - missing validation
-            //application
-            //direction
-
             foreach( $check as $validate => $values )
             {
                 if( $validate == "filetype_blocked_also_before" )
                     continue;
 
-                if( $validate == "direction" )
+                if( is_string( $values ) )
                 {
-                    if( $this->direction() !== $values )
-                        return false;
-                }
+                    if( $validate == "direction" )
+                    {
+                        if( $this->direction() !== $values )
+                            return false;
+                    }
 
-                if( $validate == "application" )
-                {
-                    if( $this->application() !== $values )
-                        return false;
-                }
+                    if( $validate == "application" )
+                    {
+                        if( $this->application() !== $values )
+                            return false;
+                    }
 
-                #print "Action: ".$action."\n";
-                #print_r($check);
-                if( is_array( $values ) )
+                    if( $validate == "filetype" )
+                    {
+                        if( $this->filetype() !== $values )
+                            return false;
+                    }
+                }
+                elseif( is_array( $values ) )
                 {
                     //application
                     //filetype
@@ -179,30 +181,32 @@ class ThreatPolicyFileBlocking extends ThreatPolicy
             if( $action === "alert")
                 $bp = true;
 
-            //Todo: 20250914 swaschkut - missing validation
-            //application
-            //direction
-
             foreach( $check as $validate => $values )
             {
                 if( $validate == "filetype_blocked_also_before" )
                     continue;
 
-                if( $validate == "direction" )
+                if( is_string( $values ) )
                 {
-                    if( $this->direction() !== $values )
-                        return false;
-                }
+                    if( $validate == "direction" )
+                    {
+                        if( $this->direction() !== $values )
+                            return false;
+                    }
 
-                if( $validate == "application" )
-                {
-                    if( $this->application() !== $values )
-                        return false;
-                }
+                    if( $validate == "application" )
+                    {
+                        if( $this->application() !== $values )
+                            return false;
+                    }
 
-                #print "Action: ".$action."\n";
-                #print_r($check);
-                if( is_array( $values ) )
+                    if( $validate == "filetype" )
+                    {
+                        if( $this->filetype() !== $values )
+                            return false;
+                    }
+                }
+                elseif( is_array( $values ) )
                 {
                     //application
                     //filetype
@@ -210,7 +214,7 @@ class ThreatPolicyFileBlocking extends ThreatPolicy
                     {
                         if( in_array( "any", $this->$validate ) )
                         {
-                            #return true;
+                            return true;
                         }
 
                         if( !in_array( $value, $this->$validate ) )
@@ -221,29 +225,6 @@ class ThreatPolicyFileBlocking extends ThreatPolicy
         }
 
         return $bp;
-        /*
-        foreach( $check_array as $action => $check )
-        {
-            if( $this->action() !== $action )
-                continue;
-
-            foreach( $check as $validate => $values )
-            {
-                if( is_array( $values ) )
-                {
-                    //application
-                    //filetype
-                    foreach( $values as $value )
-                    {
-                        if( !in_array( $value, $this->$validate ) )
-                            return false;
-                    }
-                }
-            }
-        }
-
-        return TRUE;
-        */
     }
 
     public function fileblocking_rule_best_practice()

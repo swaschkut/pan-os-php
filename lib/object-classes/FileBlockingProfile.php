@@ -148,6 +148,21 @@ class FileBlockingProfile extends SecurityProfile2
         $bp_set = false;
         if (!empty($this->rules_obj))
         {
+            /*
+             // how to validate if a rule is missing
+            foreach( $this->rules_obj as $rulename => $rule )
+            {
+                if( $rule->fileblocking_rule_best_practice() )
+                    return true;
+            }
+
+            return false;
+            */
+
+            //////////////////////////
+            /// OLD
+            ///
+            ///
             $check_array = $this->rules_obj[0]->fileblocking_rule_bp_visibility_JSON( "visibility", "file-blocking" );
             $checkBP_array = $this->rules_obj[0]->fileblocking_rule_bp_visibility_JSON( "bp", "file-blocking" );
             $this->fileblocking_rules_coverage();
@@ -177,6 +192,7 @@ class FileBlockingProfile extends SecurityProfile2
 
             if( !$this->fileblocking_rules_visibility() )
                 return false;
+
         }
         return $bp_set;
     }
@@ -186,52 +202,66 @@ class FileBlockingProfile extends SecurityProfile2
         $bp_set = false;
         if (!empty($this->rules_obj))
         {
+            /*
+             * //how to validate that a rule is missing/?
+            foreach( $this->rules_obj as $rulename => $rule )
+            {
+
+                if( $rule->fileblocking_rule_visibility() )
+                    return true;
+            }
+
+            return false;
+            */
+
+            //////////////////////////
+            /// OLD
+            ///
             $check_array = $this->rules_obj[0]->fileblocking_rule_bp_visibility_JSON( "visibility", "file-blocking" );
             $this->fileblocking_rules_coverage();
+
+            #print_r( $check_array  );
+            #print_r( $this->rule_coverage );
 
             foreach( $check_array['alert']['filetype'] as $bp_array )
             {
                 if( isset($this->rule_coverage[$bp_array]) )
                 {
+
                     if( $check_array['alert']['action'] !== $this->rule_coverage[$bp_array]['action']
                         || $check_array['alert']['direction'] !== $this->rule_coverage[$bp_array]['direction']
+                        || $check_array['alert']['application'] !== $this->rule_coverage[$bp_array]['application']
                     )
-                        return false;
+                    {
+                        #print "    SET FALSE - not return????\n";
+                        $bp_set = false;
+                    }
+
                     else
+                    {
+                        #print "    SET TRUE\n";
                         $bp_set = true;
+                        #print "    return TRUE2\n";
+                        return TRUE;
+                    }
                 }
-                elseif( isset($this->rule_coverage['any'])
+
+                if( isset($this->rule_coverage['any'])
                     && $check_array['alert']['action'] === $this->rule_coverage['any']['action']
                     && $check_array['alert']['direction'] === $this->rule_coverage['any']['direction']
                 )
                 {
+                    #print "    RETURN TRUE\n";
+                    return TRUE;
                     $bp_set = true;
                     break;
                 }
                 else
                     return false;
             }
+
         }
         return $bp_set;
-
-        /*
-        $bp_set = false;
-        if (!empty($this->rules_obj))
-        {
-            $bp_set = false;
-
-            foreach ($this->rules_obj as $rulename => $rule)
-            {
-
-                if ($rule->fileblocking_rule_visibility())
-                    $bp_set = true;
-                else
-                    return false;
-                    #$bp_set = false;
-            }
-        }
-        return $bp_set;
-        */
     }
 
     public function fileblocking_rules_coverage()
@@ -247,6 +277,7 @@ class FileBlockingProfile extends SecurityProfile2
                     {
                         $this->rule_coverage[$filtetype_detail]['action'] = $rule->action();
                         $this->rule_coverage[$filtetype_detail]['direction'] = $rule->direction();
+                        $this->rule_coverage[$filtetype_detail]['application'] = $rule->application();
                     }
                 }
             }

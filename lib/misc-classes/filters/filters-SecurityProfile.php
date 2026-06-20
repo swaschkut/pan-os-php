@@ -1883,6 +1883,11 @@ RQuery::$defaultFilters['securityprofile']['object']['operators']['is.visibility
     'Function' => function (SecurityProfileRQueryContext $context) {
         $object = $context->object;
 
+        if( get_class( $object ) == "PredefinedSecurityProfileURL"
+            || get_class( $object ) == "customURLProfile"
+        )
+            return null;
+
         return $object->is_visibility();
     },
     'arg' => FALSE
