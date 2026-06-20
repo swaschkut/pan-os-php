@@ -1264,229 +1264,14 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         }
                     }
 
-                    if( !empty( $object->additional['mica-engine-spyware-enabled'] ) )
+
+                    if( !empty( $object->additional['mica-engine-spyware-enabled'] )
+                        || !empty( $object->additional['mica-engine-vulnerability-enabled'] )
+                        || !empty( $object->additional['mlav-engine-filebased-enabled'] )
+                        || !empty( $object->additional['mica-engine-wildfire-rules'] )
+                    )
                     {
-                        $enabled = "[no]";
-
-                        if( $object->cloud_inline_analysis_enabled )
-                            $enabled = "[yes]";
-                        else
-                        {
-                            if( $bestPractice )
-                                $enabled .= $bp_NOT_sign;
-                            if( $visibility )
-                                $enabled .= $visible_NOT_sign;
-                        }
-
-                        $string_mica_engine[] = "mica-engine-spyware-enabled: ". $enabled;
-
-                        foreach ($object->additional['mica-engine-spyware-enabled'] as $type => $array)
-                        {
-                            $tmp_string = $type . " - inline-policy-action :" . $object->additional['mica-engine-spyware-enabled'][$type]['inline-policy-action'];
-                            if( $bestPractice )
-                            {
-                                if( isset(PH::$shadow_bp_jsonfile['spyware']['cloud-inline']['bp']) )
-                                {
-                                    $check_array = PH::$shadow_bp_jsonfile['spyware']['cloud-inline']['bp'];
-                                    if( isset($check_array['inline-policy-action']) )
-                                    {
-                                        $bp_set = TRUE;
-                                        foreach( $check_array['inline-policy-action'] as $detailed_check )
-                                        {
-                                            if ($detailed_check['type'][0] == "any") {
-                                                if ($detailed_check['action'][0] !== $object->additional['mica-engine-spyware-enabled'][$type]['inline-policy-action'])
-                                                    $bp_set = FALSE;
-                                            }
-                                        }
-                                        if($bp_set == FALSE)
-                                            $tmp_string .= $bp_NOT_sign;
-                                    }
-                                }
-                            }
-
-                            if( $visibility )
-                            {
-                                if( isset(PH::$shadow_bp_jsonfile['spyware']['cloud-inline']['visibility']) )
-                                {
-                                    $check_array = PH::$shadow_bp_jsonfile['spyware']['cloud-inline']['visibility'];
-                                    if( isset($check_array['inline-policy-action']) )
-                                    {
-                                        $bp_set = TRUE;
-                                        foreach( $check_array['inline-policy-action'] as $detailed_check )
-                                        {
-                                            if ($detailed_check['type'][0] == "any") {
-                                                $validate = $detailed_check['action'][0];
-                                                $negate_string = "";
-                                                if (strpos($validate, "!") !== FALSE)
-                                                    $negate_string = "!";
-                                                if ($validate === $negate_string . $object->additional['mica-engine-spyware-enabled'][$type]['inline-policy-action'])
-                                                    $bp_set = FALSE;
-                                            }
-                                        }
-                                        if($bp_set == FALSE)
-                                            $tmp_string .= $visible_NOT_sign;
-                                    }
-                                }
-                            }
-
-                            //Todo: swaschkut 2025115  LDL missing
-                            if( isset($object->additional['mica-engine-spyware-enabled'][$type]['local-deep-learning']) )
-                            {
-                                $tmp_string .= " - local-deep-learning :".$object->additional['mica-engine-spyware-enabled'][$type]['local-deep-learning'];
-                            }
-
-                            $string_mica_engine[] = $tmp_string;
-                        }
-
-                    }
-
-                    if( !empty( $object->additional['mica-engine-vulnerability-enabled'] ) )
-                    {
-                        $enabled = "[no]";
-                        if( $object->cloud_inline_analysis_enabled )
-                            $enabled = "[yes]";
-                        else
-                        {
-                            if( $bestPractice )
-                                $enabled .= $bp_NOT_sign;
-                            if( $visibility )
-                                $enabled .= $visible_NOT_sign;
-                        }
-
-                        $string_mica_engine[] = "mica-engine-vulnerability-enabled: ". $enabled;
-
-                        foreach ($object->additional['mica-engine-vulnerability-enabled'] as $type => $array)
-                        {
-                            $tmp_string = $type . " - inline-policy-action :" . $object->additional['mica-engine-vulnerability-enabled'][$type]['inline-policy-action'];
-                            if( $bestPractice )
-                            {
-                                if( isset(PH::$shadow_bp_jsonfile['vulnerability']['cloud-inline']['bp']) )
-                                {
-                                    $check_array = PH::$shadow_bp_jsonfile['vulnerability']['cloud-inline']['bp'];
-                                    if( isset($check_array['inline-policy-action']) )
-                                    {
-                                        $bp_set = TRUE;
-                                        foreach( $check_array['inline-policy-action'] as $detailed_check )
-                                        {
-                                            if( $detailed_check['type'][0] == "any" )
-                                            {
-                                                if( $detailed_check['action'][0] !== $object->additional['mica-engine-vulnerability-enabled'][$type]['inline-policy-action'] )
-                                                    $bp_set = FALSE;
-                                            }
-                                        }
-
-                                        if($bp_set == FALSE)
-                                            $tmp_string .= $bp_NOT_sign;
-                                    }
-                                }
-                            }
-
-                            if( $visibility )
-                            {
-                                if( isset(PH::$shadow_bp_jsonfile['vulnerability']['cloud-inline']['visibility']) )
-                                {
-                                    $check_array = PH::$shadow_bp_jsonfile['vulnerability']['cloud-inline']['visibility'];
-                                    if( isset($check_array['inline-policy-action']) )
-                                    {
-                                        $bp_set = TRUE;
-                                        foreach( $check_array['inline-policy-action'] as $detailed_check )
-                                        {
-                                            if ($detailed_check['type'][0] == "any")
-                                            {
-                                                $validate = $detailed_check['action'][0];
-                                                $negate_string = "";
-                                                if (strpos($validate, "!") !== FALSE)
-                                                    $negate_string = "!";
-                                                if ($validate === $negate_string . $object->additional['mica-engine-vulnerability-enabled'][$type]['inline-policy-action'])
-                                                    $bp_set = FALSE;
-                                            }
-                                        }
-                                        if($bp_set == FALSE)
-                                            $tmp_string .= $visible_NOT_sign;
-                                    }
-                                }
-
-                            }
-                            $string_mica_engine[] = $tmp_string;
-                        }
-
-                    }
-
-                    if( !empty( $object->additional['mlav-engine-filebased-enabled'] ) )
-                    {
-                        $string_mica_engine[] = "mlav-engine-filebased-enabled: ";
-
-                        foreach ($object->additional['mlav-engine-filebased-enabled'] as $type => $array)
-                        {
-                            $tmp_string = $type . " - mlav-policy-action :" . $object->additional['mlav-engine-filebased-enabled'][$type]['mlav-policy-action'];
-                            if( $bestPractice )
-                            {
-                                if( isset(PH::$shadow_bp_jsonfile['virus']['cloud-inline']['bp']) )
-                                {
-                                    $check_array = PH::$shadow_bp_jsonfile['virus']['cloud-inline']['bp'];
-                                    if( isset($check_array['inline-policy-action']) )
-                                    {
-                                        $bp_set = TRUE;
-                                        foreach( $check_array['inline-policy-action'] as $detailed_check )
-                                        {
-                                            if ($detailed_check['type'][0] == "any") {
-                                                if ($detailed_check['action'][0] !== $object->additional['mlav-engine-filebased-enabled'][$type]['mlav-policy-action'])
-                                                    $bp_set = FALSE;
-                                            }
-                                        }
-                                        if($bp_set == FALSE)
-                                            $tmp_string .= $bp_NOT_sign;
-                                    }
-                                }
-                            }
-
-                            if( $visibility )
-                            {
-                                if( isset(PH::$shadow_bp_jsonfile['virus']['cloud-inline']['visibility']) )
-                                {
-                                    $check_array = PH::$shadow_bp_jsonfile['virus']['cloud-inline']['visibility'];
-                                    if( isset($check_array['inline-policy-action']) )
-                                    {
-                                        $bp_set = TRUE;
-                                        foreach( $check_array['inline-policy-action'] as $detailed_check )
-                                        {
-                                            if ($detailed_check['type'][0] == "any")
-                                            {
-                                                $validate = $detailed_check['action'][0];
-                                                $negate_string = "";
-                                                if (strpos($validate, "!") !== FALSE)
-                                                    $negate_string = "!";
-                                                if ($validate === $negate_string . $object->additional['mlav-engine-filebased-enabled'][$type]['mlav-policy-action'])
-                                                    $bp_set = FALSE;
-                                            }
-                                        }
-                                        if($bp_set == FALSE)
-                                            $tmp_string .= $visible_NOT_sign;
-                                    }
-                                }
-                            }
-
-                            $string_mica_engine[] = $tmp_string;
-                        }
-
-                    }
-
-                    if( !empty( $object->additional['mica-engine-wildfire-rules'] ) )
-                    {
-                        $enabled = "[no]";
-                        if ($object->cloud_inline_analysis_enabled)
-                            $enabled = "[yes]";
-                        else {
-                            #if( $bestPractice )
-                            #    $enabled .= $bp_NOT_sign;
-                            #if( $visibility )
-                            #    $enabled .= $visible_NOT_sign;
-                        }
-
-                        $string_mica_engine[] = "mica-engine-wildfire-rules: " . $enabled;
-
-                        foreach( $object->additional['mica-engine-wildfire-rules'] as $rulename => $rule )
-                            $string_mica_engine[] = "'".$rulename."' | - application:'".implode(",", $rule['application'])."' - fileType:'".implode(",", $rule['file-type'])."' - direction:'".$rule['direction']."'  - action:'".$rule['action']."'";
+                        $object->getFullTextHTML( $string_mica_engine, $bestPractice, $visibility, $bp_NOT_sign, $visible_NOT_sign);
                     }
                 }
                 elseif( get_class($object) == "URLProfile" )
@@ -4823,9 +4608,11 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 }
                 else
                 {
-                    $notVisibleElements         = $object->build_cloud_inline_comprehensive_array($object->owner->bp_json_file)['all'];
-                    #$notVisibleElements         = $object->build_cloud_inline_comprehensive_array($object->owner->bp_json_file)['not visible'];
-                    $info['inline_ml_detail'] = is_array($notVisibleElements) ? implode("\n", $notVisibleElements) : $notVisibleElements;
+                    $string_mica_engine = array();
+                    $object->getFullTextHTML( $string_mica_engine, false, true);
+                    $info['inline_ml_detail'] = implode("\n", $string_mica_engine);
+                    if( empty( $info['inline_ml_detail'] ) )
+                        $info['inline_ml_detail'] = "[missing settings]";
                 }
 
                 if( $object->cloud_inline_analysis_best_practice($object->owner->bp_json_file) )
@@ -4834,10 +4621,14 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 }
                 else
                 {
-                    $notVisibleElements         = $object->build_cloud_inline_comprehensive_array($object->owner->bp_json_file)['all'];
-                    $info['bp_inline_ml_detail'] = is_array($notVisibleElements) ? implode("\n", $notVisibleElements) : $notVisibleElements;
+                    $string_mica_engine = array();
+                    $object->getFullTextHTML( $string_mica_engine, true, false);
+                    $info['bp_inline_ml_detail'] = implode("\n", $string_mica_engine);
+                    if( empty( $info['bp_inline_ml_detail'] ) )
+                        $info['bp_inline_ml_detail'] = "[missing settings]";
                 }
             }
+
 
             $info['rules']                    = 0;
             $info['rules_detail']             = 'Compliant';
@@ -5086,9 +4877,6 @@ SecurityProfileCallContext::$supportedActions[] = array(
             if( get_class($object) == "URLProfile" && $object->url_usercredentialsubmission_visibility_tab())
                 $info['user_credential_tab'] = $info['count'];
 
-            if( get_class($object) == "URLProfile" && $object->url_mica_engine_visibility())
-                $info['inline_ml'] = $info['count'];
-
             if( get_class($object) == "URLProfile" && $object->url_siteaccess_best_practice())
                 $info['bp_site_access'] = $info['count'];
 
@@ -5098,8 +4886,18 @@ SecurityProfileCallContext::$supportedActions[] = array(
             if( get_class($object) == "URLProfile" && $object->url_usercredentialsubmission_best_practice_tab())
                 $info['bp_user_credential_tab'] = $info['count'];
 
-            if( get_class($object) == "URLProfile" && $object->url_mica_engine_best_practice())
-                $info['bp_inline_ml'] = $info['count'];
+            if( get_class($object) == "URLProfile" )
+            {
+                if( $object->url_mica_engine_visibility())
+                    $info['inline_ml'] = $info['count'];
+                else
+                    $info['inline_ml_detail'] = "[Placeholder: add visibility mica missing part]";
+
+                if( $object->url_mica_engine_best_practice() )
+                    $info['bp_inline_ml'] = $info['count'];
+                else
+                    $info['bp_inline_ml_detail'] = "[Placeholder: add BP mica missing part}";
+            }
 
             $info['site_access_detail']       = ($info['site_access'] < $info['count']) ? '[Placeholder: Site Access Details]' : 'Compliant';
             $info['user_credential_detail']   = ($info['user_credential'] < $info['count']) ? '[Placeholder: User Credential Details]' : 'Compliant';

@@ -18,6 +18,7 @@ UTIL:
 * introduce new pan-os-php utility | type=playbook-validation
 * type=securityprofile actions=exportSPtoHTML:sp.html | add [predefined] to object name if fit
 * type=securityprofile | new 'filter=(object is.visibility)'
+* type=securityprofile | code combination for actions=exportToHTML / exportSPtoHTML
 
 BUGFIX:
 * type=securityprofile actions=virus.decoder.alert-only-set | bugfix for older PAN-OS version
