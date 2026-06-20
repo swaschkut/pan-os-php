@@ -1879,7 +1879,14 @@ RQuery::$defaultFilters['securityprofile']['object']['operators']['is.predefined
     },
     'arg' => FALSE
 );
+RQuery::$defaultFilters['securityprofile']['object']['operators']['is.visibility'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        $object = $context->object;
 
+        return $object->is_visibility();
+    },
+    'arg' => FALSE
+);
 RQuery::$defaultFilters['securityprofile']['device']['operators']['is.buckbeak'] = array(
     'Function' => function (SecurityProfileRQueryContext $context) {
         $object = $context->object;

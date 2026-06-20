@@ -3328,7 +3328,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 $info['location'] = "shared";
             else
                 $info['location'] = $object->owner->owner->name();
-            
+
             if( str_contains($object->owner->name(), "predefined") )
                 $info['profile'] = $object->name()." [predefined]";
             else
