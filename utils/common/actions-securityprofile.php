@@ -2840,7 +2840,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
 );
 
 SecurityProfileCallContext::$supportedActions[] = array(
-    'name' => 'exportSPtoHTML',
+    'name' => 'exportSPtoHTML_new_old',
     'MainFunction' => function (SecurityProfileCallContext $context) {
         $object = $context->object;
         $context->objectList[] = $object;
@@ -4319,7 +4319,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
 
 
 SecurityProfileCallContext::$supportedActions[] = array(
-    'name' => 'exportSPtoHTML_new',
+    'name' => 'exportSPtoHTML',
     'MainFunction' => function (SecurityProfileCallContext $context) {
         $object = $context->object;
         $context->objectList[] = $object;

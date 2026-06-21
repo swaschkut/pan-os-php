@@ -687,6 +687,8 @@ class RuleCallContext extends CallContext
                 else
                     return self::enclose('');
             }
+            else
+                return self::enclose('');
         }
 
 

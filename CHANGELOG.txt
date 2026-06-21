@@ -19,6 +19,7 @@ UTIL:
 * type=securityprofile actions=exportSPtoHTML:sp.html | add [predefined] to object name if fit
 * type=securityprofile | new 'filter=(object is.visibility)'
 * type=securityprofile | code combination for actions=exportToHTML / exportSPtoHTML
+* type=rule actions=exporttoexcel:file.html,visibility|bestpractice | bugfix for sp_spg_location
 
 BUGFIX:
 * type=securityprofile actions=virus.decoder.alert-only-set | bugfix for older PAN-OS version
