@@ -1281,6 +1281,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 }
                 elseif( get_class($object) == "URLProfile" )
                 {
+                    //todo output for both exportToExcel and exportSPtoHTML - how?
                     if( $object->local_inline_cat !== null )
                         $string_mica_engine[] = "local-inline-cat=".$object->local_inline_cat;
                     if( $object->cloud_inline_cat !== null )
@@ -1470,165 +1471,35 @@ SecurityProfileCallContext::$supportedActions[] = array(
                             $lines .= $context->encloseFunction($bp_text_yes);
                         else
                             $lines .= $context->encloseFunction($bp_text_no);
-                    }
 
-                    if( $bestPractice )
-                    {
+
+                        /////////////////////////////////////////////
                         //URL detail BP
                         $tmp_array = array();
-                        $tmp_array = array();
-                        $countAllow = count( $object->allow );
-                        $countAlert = count( $object->alert );
-                        $countBlock = count( $object->block );
-                        $tmp_array[] = "Allow (".$countAllow.")";
-                        $tmp_array[] = "Alert (".$countAlert.")";
-                        $tmp_array[] = "Block (".$countBlock.")";
-                        $tmp_array[] = "------------------------";
-
-                        $check_array = $object->url_siteaccess_bp_visibility_JSON( "bp", "url" );
-                        #print_r($check_array);
-                        $block_categories_to_check = array();
-                        $alert_categories_to_check = array();
-                        foreach( $check_array as $check )
-                        {
-                            if( isset( $check['action'] ) )
-                            {
-                                if( $check['action'] == 'block' )
-                                {
-                                    if( isset( $check['type'] ) )
-                                        $block_categories_to_check = array_merge( $block_categories_to_check, $check['type'] );
-                                }
-                                elseif( $check['action'] == 'alert' )
-                                {
-                                    if( isset( $check['type'] ) )
-                                        $alert_categories_to_check = array_merge( $alert_categories_to_check, $check['type'] );
-                                }
-                            }
-                        }
-
-                        #if( isset($check_array[0]['type']) )
-                        #    $block_categories = $check_array[0]['type'];
-                        #else
-                        if( empty( $block_categories_to_check ) )
-                            $block_categories_to_check = array('command-and-control','compromised-website','grayware','malware','phishing','ransomware','scanning-activity');
-
-                        $notBlock = array();
-                        foreach( $block_categories_to_check as $block_category )
-                        {
-                            if( !in_array( $block_category, $object->block ) )
-                                $notBlock[] = $block_category;
-
-                        }
-                        if( !empty($notBlock) )
-                        {
-                            $tmp_array[] = 'BLOCK missing: ';
-                            $tmp_array = array_merge( $tmp_array, $notBlock );
-                        }
-                        $notAlert = array();
-                        foreach( $alert_categories_to_check as $alert_category )
-                        {
-                            if( !in_array( $alert_category, $object->alert ) && !in_array( $alert_category, $object->block ) )
-                                $notAlert[] = $alert_category;
-
-                        }
-                        if( !empty($notAlert) )
-                        {
-                            $tmp_array[] = 'ALERT missing: ';
-                            $tmp_array = array_merge( $tmp_array, $notAlert );
-                        }
-
-                        if( empty($notBlock) && empty($notAlert) )
-                            $tmp_array[] = "yes";
+                        $object->url_siteaccess_getFullTextHTML($tmp_array, true, false, $bp_text_yes, $bp_text_no);
 
                         $lines .= $context->encloseFunction($tmp_array);
-                    }
-                    if( $bestPractice )
-                    {
+
+
+                        ///////////////////////////////////////
                         if( $object->url_usercredentialsubmission_best_practice() && $object->url_usercredentialsubmission_best_practice_tab() )
                             $lines .= $context->encloseFunction($bp_text_yes);
                         else
                             $lines .= $context->encloseFunction($bp_text_no);
-                    }
-                    if( $bestPractice )
-                    {
+
+                        ////////////////////////////////
                         //<th>URL credentials</th>
                         $tmp_array = array();
-                        $countAllowcredential = count( $object->allow_credential );
-                        $countAlertcredential = count( $object->alert_credential );
-                        $countBlockcredential = count( $object->block_credential );
-                        $tmp_array[] = "Allow (".$countAllowcredential.")";
-                        $tmp_array[] = "Alert (".$countAlertcredential.")";
-                        $tmp_array[] = "Block (".$countBlockcredential.")";
-                        $tmp_array[] = "------------------------";
-
-                        $check_array = $object->url_siteaccess_bp_visibility_JSON( "bp", "url" );
-
-                        $block_categories_to_check = array();
-                        $alert_categories_to_check = array();
-                        foreach( $check_array as $check )
-                        {
-                            if( isset( $check['action'] ) )
-                            {
-                                if( $check['action'] == 'block' )
-                                {
-                                    if( isset( $check['type'] ) )
-                                        $block_categories_to_check = array_merge( $block_categories_to_check, $check['type'] );
-                                }
-                                elseif( $check['action'] == 'alert' )
-                                {
-                                    if( isset( $check['type'] ) )
-                                        $alert_categories_to_check = array_merge( $alert_categories_to_check, $check['type'] );
-                                }
-                            }
-                        }
-
-                        if( empty( $block_categories_to_check ) )
-                            $block_categories_to_check = array('command-and-control','compromised-website','grayware','malware','phishing','ransomware','scanning-activity');
-
-                        $notBlock = array();
-                        foreach( $block_categories_to_check as $block_category )
-                        {
-                            if( !in_array( $block_category, $object->block_credential ) )
-                                $notBlock[] = $block_category;
-
-                        }
-                        if( !empty($notBlock) )
-                        {
-                            $tmp_array[] = 'BLOCK missing: ';
-                            $tmp_array = array_merge( $tmp_array, $notBlock );
-                        }
-                        $notAlert = array();
-                        foreach( $alert_categories_to_check as $alert_category )
-                        {
-                            if( !in_array( $alert_category, $object->alert_credential ) && !in_array( $alert_category, $object->block_credential ) )
-                                $notAlert[] = $alert_category;
-
-                        }
-                        if( !empty($notAlert) )
-                        {
-                            $tmp_array[] = 'ALERT missing: ';
-                            $tmp_array = array_merge( $tmp_array, $notAlert );
-                        }
-
-                        if( empty($notBlock) && empty($notAlert) )
-                            $tmp_array[] = "yes";
+                        $object->url_credentials_getFullTextHTML($tmp_array, true, false, $bp_text_yes, $bp_text_no);
 
                         $lines .= $context->encloseFunction($tmp_array);
-                    }
-                    if( $bestPractice )
-                    {
+
+                        ////////////////////////
                         //<th>URL credentials TAB</th>
-                        $tab_config = array();
-                        $tab_config[] = "mode: ".$object->credential_mode;
-                        $tab_config[] = "log-severity: ".$object->credential_log;
-                        $tab_config[] = "----";
+                        $tmp_array = array();
+                        $object->url_credentials_tab_getFullTextHTML($tmp_array, true, false, $bp_text_yes, $bp_text_no);
 
-                        if( $object->url_usercredentialsubmission_best_practice_tab() )
-                            $tab_config[] = $bp_text_yes;
-                        else
-                            $tab_config[] = $bp_text_no;
-
-                        $lines .= $context->encloseFunction($tab_config);
+                        $lines .= $context->encloseFunction($tmp_array);
                     }
 
                     if( $visibility )
@@ -1637,74 +1508,34 @@ SecurityProfileCallContext::$supportedActions[] = array(
                             $lines .= $context->encloseFunction($bp_text_yes);
                         else
                             $lines .= $context->encloseFunction($bp_text_no);
-                    }
 
-                    if( $visibility )
-                    {
+                        //////////////////////
                         //URL detail visibility
                         $tmp_array = array();
-
-                        $sanitized_action = $object->allow;
-                        foreach( $sanitized_action as $key => $url_category)
-                        {
-                            if( isset($object->owner->owner->customURLProfileStore) )
-                            {
-                                $custom_url_category_obj = $object->owner->owner->customURLProfileStore->find($url_category);
-                                if( $custom_url_category_obj !== NULL )
-                                    unset( $sanitized_action[$key] );
-                            }
-                        }
-
-                        if( empty($sanitized_action) )
-                            $tmp_array[] = "yes";
-                        else
-                            $tmp_array[] = 'ALLOW: "set all pre-defined URL-category action to alert"';
+                        $object->url_siteaccess_getFullTextHTML($tmp_array, false, true, $bp_text_yes, $bp_text_no);
 
                         $lines .= $context->encloseFunction($tmp_array);
-                    }
 
-                    if( $visibility )
-                    {
+
+                        /////////////////////////////////////////
                         if( $object->url_usercredentialsubmission_visibility() && $object->url_usercredentialsubmission_visibility_tab() )
                             $lines .= $context->encloseFunction($bp_text_yes);
                         else
                             $lines .= $context->encloseFunction($bp_text_no);
-                    }
-                    if( $visibility )
-                    {
+
+                        //////////////////
                         //<th>URL credentials</th>
                         $tmp_array = array();
-
-                        $sanitized_action = $object->allow_credential;
-                        foreach( $sanitized_action as $key => $url_category)
-                        {
-                            $custom_url_category_obj = $object->owner->owner->customURLProfileStore->find($url_category);
-                            if( $custom_url_category_obj !== NULL )
-                                unset( $sanitized_action[$key] );
-                        }
-
-                        if( empty($sanitized_action) )
-                            $tmp_array[] = "yes";
-                        else
-                            $tmp_array[] = 'ALLOW: "set all pre-defined URL-category action to alert"';
+                        $object->url_credentials_getFullTextHTML($tmp_array, false, true, $bp_text_yes, $bp_text_no);
 
                         $lines .= $context->encloseFunction($tmp_array);
-                    }
 
-                    if( $visibility )
-                    {
+                        ///////////////////////////////
                         //<th>URL credentials TAB</th>
-                        $tab_config = array();
-                        $tab_config[] = "mode: ".$object->credential_mode;
-                        $tab_config[] = "log-severity: ".$object->credential_log;
-                        $tab_config[] = "----";
+                        $tmp_array = array();
+                        $object->url_credentials_tab_getFullTextHTML($tmp_array, false, true, $bp_text_yes, $bp_text_no);
 
-                        if( $object->url_usercredentialsubmission_visibility_tab() )
-                            $tab_config[] = $bp_text_yes;
-                        else
-                            $tab_config[] = $bp_text_no;
-
-                        $lines .= $context->encloseFunction($tab_config);
+                        $lines .= $context->encloseFunction($tmp_array);
                     }
 
                     if( $adoption )
@@ -4927,42 +4758,99 @@ SecurityProfileCallContext::$supportedActions[] = array(
             $info['bp_site_access'] = 0;
             $info['bp_user_credential'] = 0;
             $info['bp_user_credential_tab'] = 0;
-            if( get_class($object) == "URLProfile" && $object->url_siteaccess_visibility())
-                $info['site_access'] = $info['count'];
 
-            if( get_class($object) == "URLProfile" && $object->url_usercredentialsubmission_visibility() )
-                $info['user_credential'] = $info['count'];
+            $info['site_access_detail']       = "Compliant";
+            $info['user_credential_detail']   = "Compliant";
 
-            if( get_class($object) == "URLProfile" && $object->url_usercredentialsubmission_visibility_tab())
-                $info['user_credential_tab'] = $info['count'];
-
-            if( get_class($object) == "URLProfile" && $object->url_siteaccess_best_practice())
-                $info['bp_site_access'] = $info['count'];
-
-            if( get_class($object) == "URLProfile" && $object->url_usercredentialsubmission_best_practice() )
-                $info['bp_user_credential'] = $info['count'];
-
-            if( get_class($object) == "URLProfile" && $object->url_usercredentialsubmission_best_practice_tab())
-                $info['bp_user_credential_tab'] = $info['count'];
-
+            $info['bp_site_access_detail']       = "Compliant";
+            $info['bp_user_credential_detail']   = "Compliant";
             if( get_class($object) == "URLProfile" )
             {
+                if( $object->url_siteaccess_visibility())
+                    $info['site_access'] = $info['count'];
+                else
+                {
+                    $tmp_array = array();
+                    $object->url_siteaccess_getFullTextHTML($tmp_array, false, true);
+                    $info['site_access_detail'] = implode("\n", $tmp_array);
+                }
+
+                if(  $object->url_usercredentialsubmission_visibility() )
+                    $info['user_credential'] = $info['count'];
+                else
+                {
+                    $tmp_array = array();
+                    $object->url_credentials_getFullTextHTML($tmp_array, false, true);
+                    $info['user_credential_detail'] = implode("\n", $tmp_array);
+                }
+
+                if(  $object->url_usercredentialsubmission_visibility_tab())
+                    $info['user_credential_tab'] = $info['count'];
+                else
+                {
+                    $tmp_array = array();
+                    $object->url_credentials_tab_getFullTextHTML($tmp_array, false, true);
+                    $info['user_credential_detail'] .= "\n";
+                    $info['user_credential_detail'] .= implode("\n", $tmp_array);
+                }
+
+                if(  $object->url_siteaccess_best_practice())
+                    $info['bp_site_access'] = $info['count'];
+                else
+                {
+                    $tmp_array = array();
+                    $object->url_siteaccess_getFullTextHTML($tmp_array, true, false);
+                    $info['bp_site_access_detail'] = implode("\n", $tmp_array);
+                }
+
+                if(  $object->url_usercredentialsubmission_best_practice() )
+                    $info['bp_user_credential'] = $info['count'];
+                else
+                {
+                    $tmp_array = array();
+                    $object->url_credentials_getFullTextHTML($tmp_array, true, false);
+                    $info['bp_user_credential_detail'] = implode("\n", $tmp_array);
+                }
+
+                if(  $object->url_usercredentialsubmission_best_practice_tab())
+                    $info['bp_user_credential_tab'] = $info['count'];
+                else
+                {
+                    $tmp_array = array();
+                    $object->url_credentials_tab_getFullTextHTML($tmp_array, true, false);
+
+                    $info['bp_user_credential_detail'] .= "\n";
+                    $info['bp_user_credential_detail'] .= implode("\n", $tmp_array);
+                }
+
                 if( $object->url_mica_engine_visibility())
                     $info['inline_ml'] = $info['count'];
                 else
-                    $info['inline_ml_detail'] = "[Placeholder: add visibility mica missing part]";
+                {
+                    $string_mica_engine = array();
+                    if( $object->local_inline_cat !== null )
+                        $string_mica_engine[] = "local-inline-cat=".$object->local_inline_cat;
+                    if( $object->cloud_inline_cat !== null )
+                        $string_mica_engine[] = "cloud-inline-cat=".$object->cloud_inline_cat;
+
+                    $info['inline_ml_detail'] = implode("\n", $string_mica_engine);
+                }
+
 
                 if( $object->url_mica_engine_best_practice() )
                     $info['bp_inline_ml'] = $info['count'];
                 else
-                    $info['bp_inline_ml_detail'] = "[Placeholder: add BP mica missing part}";
+                {
+                    $string_mica_engine = array();
+                    if( $object->local_inline_cat !== null )
+                        $string_mica_engine[] = "local-inline-cat=".$object->local_inline_cat;
+                    if( $object->cloud_inline_cat !== null )
+                        $string_mica_engine[] = "cloud-inline-cat=".$object->cloud_inline_cat;
+
+                    $info['inline_ml_detail'] = implode("\n", $string_mica_engine);
+                }
             }
 
-            $info['site_access_detail']       = ($info['site_access'] < $info['count']) ? '[Placeholder: Site Access Details]' : 'Compliant';
-            $info['user_credential_detail']   = ($info['user_credential'] < $info['count']) ? '[Placeholder: User Credential Details]' : 'Compliant';
-
-            $info['bp_site_access_detail']       = ($info['bp_site_access'] < $info['count']) ? '[Placeholder: BP Site Access Details]' : 'BP Compliant';
-            $info['bp_user_credential_detail']   = ($info['bp_user_credential'] < $info['count']) ? '[Placeholder: BP User Credential Details]' : 'BP Compliant';
 
 
             if( get_class($object) == "AntiVirusProfile" ) { $sections['sec-av']['rows'][] = $info; }

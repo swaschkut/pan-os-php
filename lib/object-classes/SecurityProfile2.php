@@ -787,6 +787,209 @@ class SecurityProfile2
         }
     }
 
+    public function url_siteaccess_getFullTextHTML(&$tmp_array, $bestPractice = false, $visibility = false, $bp_text_yes = "", $bp_text_no = "")
+    {
+        if( $visibility )
+        {
+            $sanitized_action = $this->allow;
+            foreach( $sanitized_action as $key => $url_category)
+            {
+                if( isset($this->owner->owner->customURLProfileStore) )
+                {
+                    $custom_url_category_obj = $this->owner->owner->customURLProfileStore->find($url_category);
+                    if( $custom_url_category_obj !== NULL )
+                        unset( $sanitized_action[$key] );
+                }
+            }
+
+            if( empty($sanitized_action) )
+                $tmp_array[] = "yes";
+            else
+                $tmp_array[] = 'ALLOW: "set all pre-defined URL-category action to alert"';
+        }
+
+        if( $bestPractice )
+        {
+            $countAllow = count( $this->allow );
+            $countAlert = count( $this->alert );
+            $countBlock = count( $this->block );
+            $tmp_array[] = "Allow (".$countAllow.")";
+            $tmp_array[] = "Alert (".$countAlert.")";
+            $tmp_array[] = "Block (".$countBlock.")";
+            $tmp_array[] = "------------------------";
+
+            $check_array = $this->url_siteaccess_bp_visibility_JSON( "bp", "url" );
+            #print_r($check_array);
+            $block_categories_to_check = array();
+            $alert_categories_to_check = array();
+            foreach( $check_array as $check )
+            {
+                if( isset( $check['action'] ) )
+                {
+                    if( $check['action'] == 'block' )
+                    {
+                        if( isset( $check['type'] ) )
+                            $block_categories_to_check = array_merge( $block_categories_to_check, $check['type'] );
+                    }
+                    elseif( $check['action'] == 'alert' )
+                    {
+                        if( isset( $check['type'] ) )
+                            $alert_categories_to_check = array_merge( $alert_categories_to_check, $check['type'] );
+                    }
+                }
+            }
+
+            #if( isset($check_array[0]['type']) )
+            #    $block_categories = $check_array[0]['type'];
+            #else
+            if( empty( $block_categories_to_check ) )
+                $block_categories_to_check = array('command-and-control','compromised-website','grayware','malware','phishing','ransomware','scanning-activity');
+
+            $notBlock = array();
+            foreach( $block_categories_to_check as $block_category )
+            {
+                if( !in_array( $block_category, $this->block ) )
+                    $notBlock[] = $block_category;
+
+            }
+            if( !empty($notBlock) )
+            {
+                $tmp_array[] = 'BLOCK missing: ';
+                $tmp_array = array_merge( $tmp_array, $notBlock );
+            }
+            $notAlert = array();
+            foreach( $alert_categories_to_check as $alert_category )
+            {
+                if( !in_array( $alert_category, $this->alert ) && !in_array( $alert_category, $this->block ) )
+                    $notAlert[] = $alert_category;
+
+            }
+            if( !empty($notAlert) )
+            {
+                $tmp_array[] = 'ALERT missing: ';
+                $tmp_array = array_merge( $tmp_array, $notAlert );
+            }
+
+            if( empty($notBlock) && empty($notAlert) )
+                $tmp_array[] = "yes";
+        }
+
+        return $tmp_array;
+    }
+
+    public function url_credentials_getFullTextHTML(&$tmp_array, $bestPractice = false, $visibility = false, $bp_text_yes = "", $bp_text_no = "")
+    {
+        if ($visibility)
+        {
+            $sanitized_action = $this->allow_credential;
+            foreach( $sanitized_action as $key => $url_category)
+            {
+                $custom_url_category_obj = $this->owner->owner->customURLProfileStore->find($url_category);
+                if( $custom_url_category_obj !== NULL )
+                    unset( $sanitized_action[$key] );
+            }
+
+            if( empty($sanitized_action) )
+                $tmp_array[] = "yes";
+            else
+                $tmp_array[] = 'ALLOW: "set all pre-defined URL-category action to alert"';
+        }
+
+        if ($bestPractice)
+        {
+            $countAllowcredential = count( $this->allow_credential );
+            $countAlertcredential = count( $this->alert_credential );
+            $countBlockcredential = count( $this->block_credential );
+            $tmp_array[] = "Allow (".$countAllowcredential.")";
+            $tmp_array[] = "Alert (".$countAlertcredential.")";
+            $tmp_array[] = "Block (".$countBlockcredential.")";
+            $tmp_array[] = "------------------------";
+
+            $check_array = $this->url_siteaccess_bp_visibility_JSON( "bp", "url" );
+
+            $block_categories_to_check = array();
+            $alert_categories_to_check = array();
+            foreach( $check_array as $check )
+            {
+                if( isset( $check['action'] ) )
+                {
+                    if( $check['action'] == 'block' )
+                    {
+                        if( isset( $check['type'] ) )
+                            $block_categories_to_check = array_merge( $block_categories_to_check, $check['type'] );
+                    }
+                    elseif( $check['action'] == 'alert' )
+                    {
+                        if( isset( $check['type'] ) )
+                            $alert_categories_to_check = array_merge( $alert_categories_to_check, $check['type'] );
+                    }
+                }
+            }
+
+            if( empty( $block_categories_to_check ) )
+                $block_categories_to_check = array('command-and-control','compromised-website','grayware','malware','phishing','ransomware','scanning-activity');
+
+            $notBlock = array();
+            foreach( $block_categories_to_check as $block_category )
+            {
+                if( !in_array( $block_category, $this->block_credential ) )
+                    $notBlock[] = $block_category;
+
+            }
+            if( !empty($notBlock) )
+            {
+                $tmp_array[] = 'BLOCK missing: ';
+                $tmp_array = array_merge( $tmp_array, $notBlock );
+            }
+            $notAlert = array();
+            foreach( $alert_categories_to_check as $alert_category )
+            {
+                if( !in_array( $alert_category, $this->alert_credential ) && !in_array( $alert_category, $this->block_credential ) )
+                    $notAlert[] = $alert_category;
+
+            }
+            if( !empty($notAlert) )
+            {
+                $tmp_array[] = 'ALERT missing: ';
+                $tmp_array = array_merge( $tmp_array, $notAlert );
+            }
+
+            if( empty($notBlock) && empty($notAlert) )
+                $tmp_array[] = "yes";
+        }
+
+        return $tmp_array;
+    }
+
+    public function url_credentials_tab_getFullTextHTML(&$tmp_array, $bestPractice = false, $visibility = false, $bp_text_yes = "", $bp_text_no = "")
+    {
+        if ($visibility)
+        {
+            $tmp_array[] = "mode: ".$this->credential_mode;
+            $tmp_array[] = "log-severity: ".$this->credential_log;
+            $tmp_array[] = "----";
+
+            if( $this->url_usercredentialsubmission_visibility_tab() )
+                $tmp_array[] = $bp_text_yes;
+            else
+                $tmp_array[] = $bp_text_no;
+        }
+
+        if ($bestPractice)
+        {
+            $tmp_array[] = "mode: ".$this->credential_mode;
+            $tmp_array[] = "log-severity: ".$this->credential_log;
+            $tmp_array[] = "----";
+
+            if( $this->url_usercredentialsubmission_best_practice_tab() )
+                $tmp_array[] = $bp_text_yes;
+            else
+                $tmp_array[] = $bp_text_no;
+        }
+
+        return $tmp_array;
+    }
+
     public function visibility_stringValidation($array, $key, $validate)
     {
         $negate_string = "";
