@@ -254,7 +254,7 @@ class SecurityProfile2
 
 
 
-    public function getFullTextHTML( &$string_mica_engine, $bestPractice = false, $visibility = false, $bp_NOT_sign = "", $visible_NOT_sign = "")
+    public function mica_getFullTextHTML(&$string_mica_engine, $bestPractice = false, $visibility = false, $bp_NOT_sign = "", $visible_NOT_sign = "")
     {
         if( !empty( $this->additional['mica-engine-spyware-enabled'] ) )
         {
@@ -602,6 +602,185 @@ class SecurityProfile2
                     #if( !in_array( "any", $rule['application']) || !in_array( "any", $rule['file-type']) ||  $rule['direction'] !== "both" )
                         //not working correct
                         $string_mica_engine[] = $tmp_string;
+                }
+            }
+
+        }
+    }
+
+    public function botnet_getFullTextHTML(&$string_dns_list, &$string_dns_sinkhole, &$string_dns_security, &$string_adns_security, &$string_dns_whitelist, $bestPractice = false, $visibility = false, $bp_NOT_sign = "", $visible_NOT_sign = "")
+    {
+        foreach( $this->additional['botnet-domain'] as $type => $threat )
+        {
+            if( $type == "lists" && $string_dns_list !== null )
+            {
+                foreach( $this->additional['botnet-domain']['lists'] as $name => $rule )
+                {
+                    if( !empty($bp_NOT_sign) && !empty($visible_NOT_sign) )
+                        $add_to_array = true;
+                    else
+                        $add_to_array = false;
+
+                    //$string = $name." -  action: ".$value['action'];
+                    $string = "";
+                    $string .= $rule->name();
+
+                    $string .= " - action: '".$rule->action."'";
+                    $string .= " - packet-capture: '".$rule->packetCapture()."'";
+
+                    /** @var DNSPolicy $rule */
+                    if( $bestPractice && !$rule->spyware_lists_bestpractice() )
+                    {
+                        if( !empty($bp_NOT_sign) && !empty($visible_NOT_sign) )
+                            $string .= $bp_NOT_sign;
+                        else
+                        {
+                            $add_to_array = true;
+                        }
+                    }
+                    if( $visibility && !$rule->spyware_lists_visibility() )
+                    {
+                        if( !empty($bp_NOT_sign) && !empty($visible_NOT_sign) )
+                            $string .= $visible_NOT_sign;
+                        else
+                        {
+                            $add_to_array = true;
+                        }
+                    }
+
+                    if( $add_to_array )
+                        $string_dns_list[] =  $string;
+                }
+
+            }
+            elseif( $type == "sinkhole" && $string_dns_sinkhole !== null )
+            {
+                foreach( $this->additional['botnet-domain'][$type] as $name => $value )
+                {
+                    if( !empty($bp_NOT_sign) && !empty($visible_NOT_sign) )
+                        $add_to_array = true;
+                    else
+                        $add_to_array = false;
+
+                    if( $add_to_array )
+                    {
+                        $string_dns_sinkhole[] = $name.": ".$value;
+                    }
+                }
+
+            }
+            elseif( $type == "dns-security-categories" && $string_dns_security !== null )
+            {
+                foreach( $this->additional['botnet-domain'][$type] as $name => $rule )
+                {
+                    if( !empty($bp_NOT_sign) && !empty($visible_NOT_sign) )
+                        $add_to_array = true;
+                    else
+                        $add_to_array = false;
+
+                    $string = "";
+                    $string .= $rule->name();
+
+                    $string .= " - log-level: '".$rule->logLevel()."'";
+                    $string .= " - action: '".$rule->action."'";
+                    $string .= " - packet-capture: '".$rule->packetCapture()."'";
+                    /** @var DNSPolicy $rule */
+                    if( $bestPractice && !$rule->spyware_dns_security_rule_bestpractice() )
+                    {
+                        if( !empty($bp_NOT_sign) && !empty($visible_NOT_sign) )
+                            $string .= $bp_NOT_sign;
+                        else
+                        {
+                            $add_to_array = true;
+                        }
+                    }
+
+                    if( $visibility && !$rule->spyware_dns_security_rule_visibility() )
+                    {
+                        if( !empty($bp_NOT_sign) && !empty($visible_NOT_sign) )
+                            $string .= $visible_NOT_sign;
+                        else
+                        {
+                            $add_to_array = true;
+                        }
+                    }
+
+
+                    if( $add_to_array )
+                        $string_dns_security[] = $string;
+                }
+            }
+            elseif( $type == "advanced-dns-security-categories" && $string_adns_security !== null )
+            {
+                if( !empty($bp_NOT_sign) && !empty($visible_NOT_sign) )
+                    $add_to_array = true;
+                else
+                    $add_to_array = false;
+
+                if( $add_to_array )
+                {
+                    $string_adns_security[] = "";
+                    $string_adns_security[] = "---Advanced DNS Security Categories";
+                }
+
+                foreach( $this->additional['botnet-domain'][$type] as $name => $rule )
+                {
+                    if( !empty($bp_NOT_sign) && !empty($visible_NOT_sign) )
+                        $add_to_array = true;
+                    else
+                        $add_to_array = false;
+
+                    $string = "";
+                    $string .= $rule->name();
+
+                    $string .= " - log-level: '".$rule->logLevel()."'";
+                    $string .= " - action: '".$rule->action."'";
+                    #adns does not have packet-capture
+                    //$string .= " - packet-capture: '".$rule->packetCapture()."'";
+                    /** @var DNSPolicy $rule */
+                    //Todo: TBD
+                    if( $bestPractice && !$rule->spyware_advanced_dns_security_rule_bestpractice() )
+                    {
+                        if( !empty($bp_NOT_sign) && !empty($visible_NOT_sign) )
+                            $string .= $bp_NOT_sign;
+                        else
+                        {
+                            $add_to_array = true;
+                        }
+                    }
+
+                    if( $visibility && !$rule->spyware_advanced_dns_security_rule_visibility() )
+                    {
+                        if( !empty($bp_NOT_sign) && !empty($visible_NOT_sign) )
+                            $string .= $visible_NOT_sign;
+                        else
+                        {
+                            $add_to_array = true;
+                        }
+                    }
+
+
+                    if( $add_to_array )
+                        $string_adns_security[] = $string;
+                }
+            }
+            elseif( $type == "whitelist" && $string_dns_whitelist !== null )
+            {
+                foreach( $this->additional['botnet-domain'][$type] as $name => $value )
+                {
+                    if( !empty($bp_NOT_sign) && !empty($visible_NOT_sign) )
+                        $add_to_array = true;
+                    else
+                        $add_to_array = false;
+
+                    $string = $value['name'];
+                    if( isset($value['description']) )
+                        $string .= "' | description:'".$value['description'];
+
+                    if( $add_to_array )
+                    {
+                        $string_dns_whitelist[] = $string;
+                    }
                 }
             }
 

@@ -1174,12 +1174,14 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 $string_dns_list = array();
                 $string_dns_sinkhole = array();
                 $string_dns_security = array();
+                $string_adns_security = array();
                 $string_dns_whitelist = array();
                 $string_mica_engine = array();
                 if( !empty( $object->additional ) )
                 {
                     if( !empty( $object->additional['botnet-domain'] ) )
                     {
+                        /*
                         foreach( $object->additional['botnet-domain'] as $type => $threat )
                         {
                             if( $type == "lists" )
@@ -1194,6 +1196,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                                     $string .= " - packet-capture: '".$rule->packetCapture()."'";
 
                                     /** @var DNSPolicy $rule */
+                        /*
                                     if( $bestPractice && !$rule->spyware_lists_bestpractice() )
                                         $string .= $bp_NOT_sign;
                                     if( $visibility && !$rule->spyware_lists_visibility() )
@@ -1221,7 +1224,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                                     $string .= " - action: '".$rule->action."'";
                                     $string .= " - packet-capture: '".$rule->packetCapture()."'";
                                     /** @var DNSPolicy $rule */
-                                    if( $bestPractice && !$rule->spyware_dns_security_rule_bestpractice() )
+                            /*        if( $bestPractice && !$rule->spyware_dns_security_rule_bestpractice() )
                                         $string .= $bp_NOT_sign;
                                     if( $visibility && !$rule->spyware_dns_security_rule_visibility() )
                                         $string .= $visible_NOT_sign;
@@ -1242,7 +1245,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                                     #adns does not have packet-capture
                                     //$string .= " - packet-capture: '".$rule->packetCapture()."'";
                                     /** @var DNSPolicy $rule */
-                                    //Todo: TBD
+                           /*         //Todo: TBD
                                     if( $bestPractice && !$rule->spyware_advanced_dns_security_rule_bestpractice() )
                                         $string .= $bp_NOT_sign;
                                     if( $visibility && !$rule->spyware_advanced_dns_security_rule_visibility() )
@@ -1262,6 +1265,8 @@ SecurityProfileCallContext::$supportedActions[] = array(
                             }
 
                         }
+                        */
+                        $object->botnet_getFullTextHTML($string_dns_list, $string_dns_sinkhole, $string_dns_security, $string_adns_security, $string_dns_whitelist, $bestPractice, $visibility, $bp_NOT_sign, $visible_NOT_sign);
                     }
 
 
@@ -1271,7 +1276,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         || !empty( $object->additional['mica-engine-wildfire-rules'] )
                     )
                     {
-                        $object->getFullTextHTML( $string_mica_engine, $bestPractice, $visibility, $bp_NOT_sign, $visible_NOT_sign);
+                        $object->mica_getFullTextHTML( $string_mica_engine, $bestPractice, $visibility, $bp_NOT_sign, $visible_NOT_sign);
                     }
                 }
                 elseif( get_class($object) == "URLProfile" )
@@ -1320,7 +1325,8 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 //<th>DNS sinkhole</th>
                 $lines .= $context->encloseFunction($string_dns_sinkhole);
                 //<th>DNS security</th>
-                $lines .= $context->encloseFunction($string_dns_security);
+                $tmp_dns_security = array_merge($string_dns_security, $string_adns_security);
+                $lines .= $context->encloseFunction($tmp_dns_security);
                 if( $bestPractice || $visibility)
                 {
                     if( (
@@ -4609,7 +4615,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 else
                 {
                     $string_mica_engine = array();
-                    $object->getFullTextHTML( $string_mica_engine, false, true);
+                    $object->mica_getFullTextHTML( $string_mica_engine, false, true);
                     $info['inline_ml_detail'] = implode("\n", $string_mica_engine);
                     if( empty( $info['inline_ml_detail'] ) )
                         $info['inline_ml_detail'] = "[missing settings]";
@@ -4622,7 +4628,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 else
                 {
                     $string_mica_engine = array();
-                    $object->getFullTextHTML( $string_mica_engine, true, false);
+                    $object->mica_getFullTextHTML( $string_mica_engine, true, false);
                     $info['bp_inline_ml_detail'] = implode("\n", $string_mica_engine);
                     if( empty( $info['bp_inline_ml_detail'] ) )
                         $info['bp_inline_ml_detail'] = "[missing settings]";
@@ -4831,12 +4837,29 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 if( $object->spyware_dnslist_visibility() )
                     $info['dns_lists'] = $info['count'];
                 else
-                    $info['dns_lists_detail']         = '[Placeholder: visible DNS Lists Details]';
+                {
+                    $tmp_string_dns_list = array();
+                    $tmp_string_dns_sinkhole = null;
+                    $tmp_string_dns_security = null;
+                    $tmp_string_adns_security = null;
+                    $tmp_string_dns_whitelist = null;
+                    $object->botnet_getFullTextHTML($tmp_string_dns_list, $tmp_string_dns_sinkhole, $tmp_string_dns_security, $tmp_string_adns_security, $tmp_string_dns_whitelist, false, true);
+                    $info['dns_lists_detail']         = implode("\n", $tmp_string_dns_list);
+                }
+
 
                 if( $object->spyware_dnslist_best_practice() )
                     $info['bp_dns_lists'] = $info['count'];
                 else
-                    $info['bp_dns_lists_detail']         = '[Placeholder: bp DNS Lists Details]';
+                {
+                    $tmp_string_dns_list = array();
+                    $tmp_string_dns_sinkhole = null;
+                    $tmp_string_dns_security = null;
+                    $tmp_string_adns_security = null;
+                    $tmp_string_dns_whitelist = null;
+                    $object->botnet_getFullTextHTML($tmp_string_dns_list, $tmp_string_dns_sinkhole, $tmp_string_dns_security, $tmp_string_adns_security,$tmp_string_dns_whitelist, true, false);
+                    $info['bp_dns_lists_detail']         = implode("\n", $tmp_string_dns_list);
+                }
             }
 
             if( get_class($object) == "AntiSpywareProfile" )
@@ -4844,22 +4867,58 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 if( $object->spyware_dns_security_visibility() )
                     $info['dns_security'] = $info['count'];
                 else
-                    $info['dns_security_detail']      = '[Placeholder: DNS Security Details]';
+                {
+                    $tmp_string_dns_list = null;
+                    $tmp_string_dns_sinkhole = null;
+                    $tmp_string_dns_security = array();
+                    $tmp_string_adns_security = null;
+                    $tmp_string_dns_whitelist = null;
+                    $object->botnet_getFullTextHTML($tmp_string_dns_list, $tmp_string_dns_sinkhole, $tmp_string_dns_security, $tmp_string_adns_security,$tmp_string_dns_whitelist, false, true);
+                    $info['dns_security_detail']         = implode("\n", $tmp_string_dns_security);
+                }
+
 
                 if( $object->spyware_dns_security_best_practice() )
                     $info['bp_dns_security'] = $info['count'];
                 else
-                    $info['bp_dns_security_detail']      = '[Placeholder: BP DNS Security Details]';
+                {
+                    $tmp_string_dns_list = null;
+                    $tmp_string_dns_sinkhole = null;
+                    $tmp_string_dns_security = array();
+                    $tmp_string_adns_security = null;
+                    $tmp_string_dns_whitelist = null;
+                    $object->botnet_getFullTextHTML($tmp_string_dns_list, $tmp_string_dns_sinkhole, $tmp_string_dns_security, $tmp_string_adns_security,$tmp_string_dns_whitelist, true, false);
+                    $info['bp_dns_security_detail']         = implode("\n", $tmp_string_dns_security);
+                }
+
 
                 if( $object->spyware_advanced_dns_security_visibility() )
                     $info['adns_security'] = $info['count'];
                 else
-                    $info['adns_security_detail']      = '[Placeholder: DNS Security Details]';
+                {
+                    $tmp_string_dns_list = null;
+                    $tmp_string_dns_sinkhole = null;
+                    $tmp_string_dns_security = null;
+                    $tmp_string_adns_security = array();
+                    $tmp_string_dns_whitelist = null;
+                    $object->botnet_getFullTextHTML($tmp_string_dns_list, $tmp_string_dns_sinkhole, $tmp_string_dns_security, $tmp_string_adns_security,$tmp_string_dns_whitelist, false, true);
+                    $info['adns_security_detail']         = implode("\n", $tmp_string_adns_security);
+                }
+
 
                 if( $object->spyware_advanced_dns_security_best_practice() )
                     $info['bp_adns_security'] = $info['count'];
                 else
-                    $info['bp_adns_security_detail']      = '[Placeholder: BP ADNS Security Details]';
+                {
+                    $tmp_string_dns_list = null;
+                    $tmp_string_dns_sinkhole = null;
+                    $tmp_string_dns_security = null;
+                    $tmp_string_adns_security = array();
+                    $tmp_string_dns_whitelist = null;
+                    $object->botnet_getFullTextHTML($tmp_string_dns_list, $tmp_string_dns_sinkhole, $tmp_string_dns_security, $tmp_string_adns_security,$tmp_string_dns_whitelist, true, false);
+                    $info['bp_adns_security_detail']         = implode("\n", $tmp_string_adns_security);
+                }
+
             }
 
             $info['site_access'] = 0;

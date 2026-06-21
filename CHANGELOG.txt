@@ -20,6 +20,7 @@ UTIL:
 * type=securityprofile | new 'filter=(object is.visibility)'
 * type=securityprofile | code combination for actions=exportToHTML / exportSPtoHTML
 * type=rule actions=exporttoexcel:file.html,visibility|bestpractice | bugfix for sp_spg_location
+* type=securityprofile actions=exportSPtoHTML:file.html | extend with AS dns info
 
 BUGFIX:
 * type=securityprofile actions=virus.decoder.alert-only-set | bugfix for older PAN-OS version
