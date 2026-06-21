@@ -9233,30 +9233,6 @@ var subjectObject =
                     }
                 }
             },
-            "exportsptohtml_new": {
-                "name": "exportSPtoHTML_new",
-                "MainFunction": {},
-                "GlobalInitFunction": {},
-                "GlobalFinishFunction": {},
-                "args": {
-                    "filename": {
-                        "type": "string",
-                        "default": "*nodefault*"
-                    }
-                }
-            },
-            "exportsptohtml_old": {
-                "name": "exportSPtoHTML_old",
-                "MainFunction": {},
-                "GlobalInitFunction": {},
-                "GlobalFinishFunction": {},
-                "args": {
-                    "filename": {
-                        "type": "string",
-                        "default": "*nodefault*"
-                    }
-                }
-            },
             "exporttoexcel": {
                 "name": "exportToExcel",
                 "MainFunction": {},
@@ -10106,6 +10082,10 @@ var subjectObject =
                         }
                     },
                     "is.predefined": {
+                        "Function": {},
+                        "arg": false
+                    },
+                    "is.visibility": {
                         "Function": {},
                         "arg": false
                     }
