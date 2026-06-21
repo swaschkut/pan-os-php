@@ -30,6 +30,7 @@ BUGFIX:
 * type=securityprofile securityprofiletype=spyware | bugfix for advanced-dns-security - to correctly validate starting with PAN-OS 11.2
 * type=securityprofile securityprofiletype=file-blocking actions=exporttohtml:sp_fb.html | bugfix to get correct visibility
 * type=securityprofile securityprofiletype=spyware actions=exportTOhtml:sp_as.html | bugfix for dnslist
+* type=stats | avoid to add duplicate entries to PH::$JSON_TMP
 
 GENERAL:
 * BP settings validation - no error out but warning if customised

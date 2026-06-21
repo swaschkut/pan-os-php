@@ -413,8 +413,6 @@ class STATSUTIL extends RULEUTIL
 
         PH::$JSON_TMP = array();
 
-        $runtime = number_format((microtime(TRUE) - $this->runStartTime), 2, '.', '');
-        PH::print_stdout( array( 'value' => $runtime, 'type' => "seconds" ), false,'runtime' );
 
         if( PH::$shadow_json )
         {

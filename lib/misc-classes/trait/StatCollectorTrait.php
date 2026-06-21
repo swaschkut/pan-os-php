@@ -1548,7 +1548,11 @@ trait StatCollectorTrait
 
 
         if( $actions == "display-bpa" )
-            PH::$JSON_TMP[] = $stdoutarray;
+        {
+            #PH::$JSON_TMP[$stdoutarray['header']] = $stdoutarray;
+            #PH::$JSON_TMP[] = $stdoutarray;
+        }
+
     }
 
     public function print_table( $string_check, $percentageArray )
