@@ -128,9 +128,9 @@ class ThreatPolicyFileBlocking extends ThreatPolicy
                         if( in_array( "any", $this->$validate ) )
                         {
                             #return true;
+                            $bp = true;
                         }
-
-                        if( !in_array( $value, $this->$validate ) )
+                        elseif( !in_array( $value, $this->$validate ) )
                             return false;
                     }
                 }
@@ -191,19 +191,33 @@ class ThreatPolicyFileBlocking extends ThreatPolicy
                     if( $validate == "direction" )
                     {
                         if( $this->direction() !== $values )
+                        {
+                            print $this->name()." {$validate} false\n";
                             return false;
+                        }
                     }
 
                     if( $validate == "application" )
                     {
-                        if( $this->application() !== $values )
+                        $app_array = $this->application();
+                        #if( $this->application() !== $values )
+                        if( !isset( $app_array[$values] ) )
+                        {
+                            print $this->name()." {$validate} false\n";
+                            print "APP: ".$this->application()."\n";
+                            print "app values: ".$values."\n";
+
                             return false;
+                        }
                     }
 
                     if( $validate == "filetype" )
                     {
                         if( $this->filetype() !== $values )
+                        {
+                            print $this->name()." {$validate} false\n";
                             return false;
+                        }
                     }
                 }
                 elseif( is_array( $values ) )
@@ -214,11 +228,14 @@ class ThreatPolicyFileBlocking extends ThreatPolicy
                     {
                         if( in_array( "any", $this->$validate ) )
                         {
-                            return true;
+                            #return true;
+                            $bp = true;
                         }
-
-                        if( !in_array( $value, $this->$validate ) )
+                        elseif( !in_array( $value, $this->$validate ) )
+                        {
+                            print $this->name()." ARRAY end false\n";
                             return false;
+                        }
                     }
                 }
             }
