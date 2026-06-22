@@ -1930,8 +1930,9 @@ SecurityProfileCallContext::$supportedActions[] = array(
             $f = SecurityProfileCallContext::$commonActionFunctions['bp-stats']['MainFunction'];
             $bp_stats_array = $f($context, true );
 
-            // Persist summary metadata arrays inside context object state
-            $bp_stats_raw   = $bp_stats_array;
+
+            foreach( $bp_stats_array as $key => $array )
+                $bp_stats_raw[] = $array;
 
             $firstKey = array_key_first($bp_stats_raw);
 
