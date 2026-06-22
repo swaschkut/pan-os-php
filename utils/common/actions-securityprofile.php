@@ -3365,21 +3365,10 @@ SecurityProfileCallContext::$supportedActions[] = array(
             }
 
             function updatePillMatrices() {
-                // 1. Get all the unique string keys present in your dataset object
-                const keys = Object.keys(fullDeviceDatasetArray);
-                //console.warn(`Actual dynamic keys found:`, keys);
 
-                const currentKey = keys[currentSelectedIndex];
-                //console.warn(`Mapped Key for selection index (${currentSelectedIndex}):`, currentKey);
-
-                const dataset = targetData[currentKey];
-                //console.warn("Extracted Dataset object:", dataset);
-
-                // Safety fallback: exit if index doesn't map to any data
-                if (!dataset) {
-                    console.warn(`Dataset entry not found for index: ${currentSelectedIndex}`);
+                const dataset = fullDeviceDatasetArray[currentSelectedIndex];
+                if (!dataset)
                     return;
-                }
 
                 let activeTabString = 'visibility';
                 let displayLabelPrefix = 'Visibility';
