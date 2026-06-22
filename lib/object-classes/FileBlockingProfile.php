@@ -202,8 +202,7 @@ class FileBlockingProfile extends SecurityProfile2
         $bp_set = false;
         if (!empty($this->rules_obj))
         {
-            /*
-             * //how to validate that a rule is missing/?
+            //how to validate that a rule is missing
             foreach( $this->rules_obj as $rulename => $rule )
             {
 
@@ -212,8 +211,9 @@ class FileBlockingProfile extends SecurityProfile2
             }
 
             return false;
-            */
 
+
+            /*
             //////////////////////////
             /// OLD
             ///
@@ -230,18 +230,19 @@ class FileBlockingProfile extends SecurityProfile2
 
                     if( $check_array['alert']['action'] !== $this->rule_coverage[$bp_array]['action']
                         || $check_array['alert']['direction'] !== $this->rule_coverage[$bp_array]['direction']
-                        || $check_array['alert']['application'] !== $this->rule_coverage[$bp_array]['application']
+                        ||  (isset($this->rule_coverage[$bp_array]['application']) && !isset( $this->rule_coverage[$bp_array]['application'][ $check_array['alert']['application'] ] ) )
+
                     )
                     {
-                        #print "    SET FALSE - not return????\n";
+                        #print "    SET FALSE - not return2 ????\n";
                         $bp_set = false;
                     }
 
                     else
                     {
-                        #print "    SET TRUE\n";
+
                         $bp_set = true;
-                        #print "    return TRUE2\n";
+
                         return TRUE;
                     }
                 }
@@ -249,18 +250,25 @@ class FileBlockingProfile extends SecurityProfile2
                 if( isset($this->rule_coverage['any'])
                     && $check_array['alert']['action'] === $this->rule_coverage['any']['action']
                     && $check_array['alert']['direction'] === $this->rule_coverage['any']['direction']
+                    &&  isset( $this->rule_coverage['any']['application'][$check_array['alert']['application']] )
                 )
                 {
+                    #print "--------------\n";
+                    #print "NAME: ".$this->name()."\n";
                     #print "    RETURN TRUE\n";
+                    #print "--------------\n";
                     return TRUE;
-                    $bp_set = true;
-                    break;
                 }
                 else
-                    return false;
-            }
+                {
+                    #print "    SET FALSE - not return????\n";
+                    $bp_set = false;
+                }
 
+            }
+        */
         }
+
         return $bp_set;
     }
 
