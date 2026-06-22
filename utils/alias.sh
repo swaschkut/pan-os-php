@@ -18,6 +18,8 @@ alias pa_docker-panosphp-beta_pull='docker pull swaschkut/pan-os-php:beta'
 
 
 alias pan-os-php='php -r "require_once '"'"'utils/pan-os-php.php'"'"';" $@'
+
+alias pa_docker-create-jpg='docker run --rm -v $(pwd)/jpg:/app/jpg -v $(pwd)/json/diagram_data.js:/app/diagram_data.js swaschkut/pan-os-php_chart-exporter'
 ##########################################################################################
 ##########################################################################################
 ##########################################################################################

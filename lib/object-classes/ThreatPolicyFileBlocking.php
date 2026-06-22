@@ -192,7 +192,7 @@ class ThreatPolicyFileBlocking extends ThreatPolicy
                     {
                         if( $this->direction() !== $values )
                         {
-                            print $this->name()." {$validate} false\n";
+                            #print $this->name()." {$validate} false\n";
                             return false;
                         }
                     }
@@ -203,9 +203,9 @@ class ThreatPolicyFileBlocking extends ThreatPolicy
                         #if( $this->application() !== $values )
                         if( !isset( $app_array[$values] ) )
                         {
-                            print $this->name()." {$validate} false\n";
-                            print "APP: ".$this->application()."\n";
-                            print "app values: ".$values."\n";
+                            #print $this->name()." {$validate} false\n";
+                            #print "APP: ".$this->application()."\n";
+                            #print "app values: ".$values."\n";
 
                             return false;
                         }
@@ -215,7 +215,7 @@ class ThreatPolicyFileBlocking extends ThreatPolicy
                     {
                         if( $this->filetype() !== $values )
                         {
-                            print $this->name()." {$validate} false\n";
+                            #print $this->name()." {$validate} false\n";
                             return false;
                         }
                     }
@@ -233,7 +233,7 @@ class ThreatPolicyFileBlocking extends ThreatPolicy
                         }
                         elseif( !in_array( $value, $this->$validate ) )
                         {
-                            print $this->name()." ARRAY end false\n";
+                            #print $this->name()." ARRAY end false\n";
                             return false;
                         }
                     }

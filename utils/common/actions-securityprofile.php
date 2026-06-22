@@ -1933,11 +1933,13 @@ SecurityProfileCallContext::$supportedActions[] = array(
             // Persist summary metadata arrays inside context object state
             $bp_stats_raw   = $bp_stats_array;
 
-            $securityRulesScope['total'] = $bp_stats_raw[0]['security rules'];
-            $securityRulesScope['allow'] = $bp_stats_raw[0]['security rules allow'];
-            $securityRulesScope['allow_enabled'] = $bp_stats_raw[0]['security rules allow enabled'];
-            $securityRulesScope['allow_disabled'] = $bp_stats_raw[0]['security rules allow disabled'];
-            $securityRulesScope['enabled'] = $bp_stats_raw[0]['security rules enabled'];
+            $firstKey = array_key_first($bp_stats_raw);
+
+            $securityRulesScope['total'] = $bp_stats_raw[$firstKey]['security rules'];
+            $securityRulesScope['allow'] = $bp_stats_raw[$firstKey]['security rules allow'];
+            $securityRulesScope['allow_enabled'] = $bp_stats_raw[$firstKey]['security rules allow enabled'];
+            $securityRulesScope['allow_disabled'] = $bp_stats_raw[$firstKey]['security rules allow disabled'];
+            $securityRulesScope['enabled'] = $bp_stats_raw[$firstKey]['security rules enabled'];
 
             $context->first = false;
         }
@@ -2631,7 +2633,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
 
         // --- EXTRACT METRIC PASS TOTAL COVERAGE PLACEHOLDERS FROM THE CURRENT DOM NODE DATA ---
         // Capture specific targeted statistics elements out of the dataset array block index 0[cite: 1]
-        $device_stats_source = $bp_stats_raw[0] ?? [];
+        $device_stats_source = $bp_stats_raw[$firstKey] ?? [];
 
         // 1. Zone Protection placeholders
         $zone_protection_calc       = $device_stats_source['zone protection calc'] ?? '0/0';
@@ -2896,9 +2898,9 @@ SecurityProfileCallContext::$supportedActions[] = array(
         <div class="device-selector-box">
             <label for="deviceSelector"><strong>Active Context Dataset / Location:</strong></label>
             <select id="deviceSelector" onchange="changeActiveDeviceContext(this.value)">
-                <?php foreach ($bp_stats_raw as $index => $deviceDataInstance): ?>
+                <?php $counter = 0; foreach ($bp_stats_raw as $index => $deviceDataInstance): ?>
                     <?php
-                    $dropdownLabel = "Dataset Target Location #" . ($index + 1);
+                    $dropdownLabel = "Dataset Target Location #" . ($counter + 1);
 
                     if (isset($deviceDataInstance['type'])) {
                         $type = $deviceDataInstance['type'];
@@ -2926,8 +2928,8 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         }
                     }
                     ?>
-                    <option value="<?php echo $index; ?>">
-                        <?php echo htmlspecialchars($dropdownLabel); ?>
+                    <option value="<?php echo $counter; ?>">
+                        <?php echo htmlspecialchars($dropdownLabel); $counter++;?>
                     </option>
                 <?php endforeach; ?>
             </select>
@@ -3000,7 +3002,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
             <section id="<?php echo htmlspecialchars($id); ?>" class="spr-section">
                 <h2><?php echo htmlspecialchars($section['title']); ?></h2>
 
-                <?php if (isset($pillMetaMapping[$id]) && !empty($bp_stats_raw[0])): ?>
+                <?php if (isset($pillMetaMapping[$id]) && !empty($bp_stats_raw[$firstKey])): ?>
                     <div class="spr-pill-matrix">
                         <div class="spr-pill-row">
                             <?php foreach ($pillMetaMapping[$id] as $label => $baseKey): ?>
@@ -3362,8 +3364,21 @@ SecurityProfileCallContext::$supportedActions[] = array(
             }
 
             function updatePillMatrices() {
-                const dataset = fullDeviceDatasetArray[currentSelectedIndex];
-                if (!dataset) return;
+                // 1. Get all the unique string keys present in your dataset object
+                const keys = Object.keys(fullDeviceDatasetArray);
+                //console.warn(`Actual dynamic keys found:`, keys);
+
+                const currentKey = keys[currentSelectedIndex];
+                //console.warn(`Mapped Key for selection index (${currentSelectedIndex}):`, currentKey);
+
+                const dataset = targetData[currentKey];
+                //console.warn("Extracted Dataset object:", dataset);
+
+                // Safety fallback: exit if index doesn't map to any data
+                if (!dataset) {
+                    console.warn(`Dataset entry not found for index: ${currentSelectedIndex}`);
+                    return;
+                }
 
                 let activeTabString = 'visibility';
                 let displayLabelPrefix = 'Visibility';
