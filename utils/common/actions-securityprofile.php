@@ -4569,6 +4569,9 @@ SecurityProfileCallContext::$supportedActions['spyware.dns.alert-only-set'] = ar
                     || $rule->name() == "pan-dns-sec-ddns"
                     || $rule->name() == "pan-dns-sec-parked"
                     || $rule->name() == "pan-dns-sec-recent"
+
+                    || $rule->name() == "pan-adns-sec-dnsmisconfig"
+                    || $rule->name() == "pan-adns-sec-hijacking"
                 )
                 {
                     if( $hasDNSlicense )
