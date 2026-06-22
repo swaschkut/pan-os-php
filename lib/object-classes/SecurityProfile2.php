@@ -172,6 +172,13 @@ class SecurityProfile2
                     }
                 }
             }
+            else
+            {
+                if ( $this->secprof_type == 'vulnerability' && $this->owner->owner->version < 110)
+                {
+                    #return true;
+                }
+            }
 
             if( isset($this->additional['mica-engine-spyware-enabled']) )
             {
@@ -195,9 +202,19 @@ class SecurityProfile2
                     }
                 }
             }
+            else
+            {
+                if ( $this->secprof_type == 'spyware' && $this->owner->owner->version < 102)
+                {
+                    #return true;
+                }
+            }
 
             if( isset($this->additional['mica-engine-wildfire-rules']) )
             {
+                if ($this->owner->owner->version < 112)
+                    return true;
+
                 foreach( $this->additional['mica-engine-wildfire-rules'] as $name)
                 {
                     if( isset($check_array['inline-policy-action'] ) )
@@ -221,6 +238,23 @@ class SecurityProfile2
                             return FALSE;
                     }
                 }
+            }
+            else
+            {
+                if ( ($this->secprof_type == 'wildfire' || $this->secprof_type == 'virus-and-wildfire-analysis' ) && $this->owner->owner->version < 112)
+                {
+                    //>=111 wf mica-engine but always allow!!!
+                    return true;
+                }
+
+            }
+        }
+        else
+        {
+            if ( ($this->secprof_type == 'wildfire' || $this->secprof_type == 'virus-and-wildfire-analysis' ) && $this->owner->owner->version < 112)
+            {
+                //>=111 wf mica-engine but always allow!!!
+                return true;
             }
         }
 
@@ -246,6 +280,13 @@ class SecurityProfile2
                     if ($bp_set == FALSE)
                         return false;
                 }
+            }
+        }
+        else
+        {
+            if ( ($this->secprof_type == 'virus' || $this->secprof_type == 'virus-and-wildfire-analysis' ) && $this->owner->owner->version < 102)
+            {
+                #return true;
             }
         }
 
