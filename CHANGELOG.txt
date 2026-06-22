@@ -32,6 +32,7 @@ BUGFIX:
 * type=securityprofile securityprofiletype=spyware actions=exportTOhtml:sp_as.html | bugfix for dnslist
 * type=stats | avoid to add duplicate entries to PH::$JSON_TMP
 * type=stats shadow-json debugapi | bugfix to avoid adding duplicate and also keep the display-bpa one which is triggered by BP settings file
+* type=securityprofile actions=as.dns.alert-only-set | set adns log-severity if action=block
 
 GENERAL:
 * BP settings validation - no error out but warning if customised
