@@ -1502,7 +1502,9 @@ trait StatCollectorTrait
     public function display_bp_statistics( $debug = false, $actions = "display" ): void
     {
         $stdoutarray = $this->get_bp_statistics();
-        PH::$JSON_TMP[] = $stdoutarray;
+        #PH::$JSON_TMP[] = $stdoutarray;
+        if( !isset(PH::$JSON_TMP[$stdoutarray['header']]) )
+            PH::$JSON_TMP[$stdoutarray['header']] = $stdoutarray;
 
 
         $this->generate_table($stdoutarray, $debug, $actions);
@@ -1549,8 +1551,9 @@ trait StatCollectorTrait
 
         if( $actions == "display-bpa" )
         {
-            #PH::$JSON_TMP[$stdoutarray['header']] = $stdoutarray;
-            PH::$JSON_TMP[] = $stdoutarray;
+            //if JSON info is available overrite it
+            PH::$JSON_TMP[$stdoutarray['header']] = $stdoutarray;
+            #PH::$JSON_TMP[] = $stdoutarray;
         }
 
     }
