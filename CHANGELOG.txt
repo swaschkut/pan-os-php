@@ -23,6 +23,7 @@ UTIL:
 * type=securityprofile actions=exportSPtoHTML:file.html | extend with AS dns info
 * type=securityprofile actions=exportSPtoHTML:file.html | extend with URL info
 * type=playbook-validation | extend with help information
+* mica-engine | not visibility if PAN-OS does not support this config part
 
 BUGFIX:
 * type=securityprofile actions=virus.decoder.alert-only-set | bugfix for older PAN-OS version

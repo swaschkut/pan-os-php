@@ -176,7 +176,7 @@ class SecurityProfile2
             {
                 if ( $this->secprof_type == 'vulnerability' && $this->owner->owner->version < 110)
                 {
-                    #return true;
+                    return false;
                 }
             }
 
@@ -206,13 +206,15 @@ class SecurityProfile2
             {
                 if ( $this->secprof_type == 'spyware' && $this->owner->owner->version < 102)
                 {
-                    #return true;
+                    return false;
                 }
             }
 
             if( isset($this->additional['mica-engine-wildfire-rules']) )
             {
-                if ($this->owner->owner->version < 112)
+                if ( $this->owner->owner->version < 111 )
+                    return false;
+                elseif ( $this->owner->owner->version == 111 )
                     return true;
 
                 foreach( $this->additional['mica-engine-wildfire-rules'] as $name)
@@ -243,18 +245,27 @@ class SecurityProfile2
             {
                 if ( ($this->secprof_type == 'wildfire' || $this->secprof_type == 'virus-and-wildfire-analysis' ) && $this->owner->owner->version < 112)
                 {
-                    //>=111 wf mica-engine but always allow!!!
-                    return true;
+                    if ( $this->owner->owner->version < 111 )
+                        return false;
+                    elseif ( $this->owner->owner->version == 111 )
+                    {
+                        //>=111 wf mica-engine but always allow!!!
+                        return true;
+                    }
                 }
-
             }
         }
         else
         {
-            if ( ($this->secprof_type == 'wildfire' || $this->secprof_type == 'virus-and-wildfire-analysis' ) && $this->owner->owner->version < 112)
+            if ( ($this->secprof_type == 'wildfire' || $this->secprof_type == 'virus-and-wildfire-analysis' ) )
             {
-                //>=111 wf mica-engine but always allow!!!
-                return true;
+                if ( $this->owner->owner->version < 111 )
+                    return false;
+                elseif ( $this->owner->owner->version == 111 )
+                {
+                    //>=111 wf mica-engine but always allow!!!
+                    return true;
+                }
             }
         }
 
@@ -284,9 +295,12 @@ class SecurityProfile2
         }
         else
         {
-            if ( ($this->secprof_type == 'virus' || $this->secprof_type == 'virus-and-wildfire-analysis' ) && $this->owner->owner->version < 102)
+            if ( ($this->secprof_type == 'virus' || $this->secprof_type == 'virus-and-wildfire-analysis' ) )
             {
-                #return true;
+                if( $this->owner->owner->version < 102 )
+                {
+                    return false;
+                }
             }
         }
 
