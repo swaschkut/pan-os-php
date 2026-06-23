@@ -585,7 +585,7 @@
             "Data Filtering": false,
             "URL Filtering Profiles": true,
             "Credential Theft Prevention": true,
-            "URL InLine ML": true,
+            "URL InLine ML": false,
             "DNS Security": true,
             "DNS List": false
         },
