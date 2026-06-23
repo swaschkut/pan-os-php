@@ -410,7 +410,8 @@ class SecurityProfileGroupStore extends ObjStore
 
     public function &getSecurityProfileGroupStoreXPath()
     {
-        $path = $this->getBaseXPath() . '/profile-group';
+        #$path = $this->getBaseXPath() . '/profile-group';
+        $path = $this->getBaseXPath();
         return $path;
     }
 

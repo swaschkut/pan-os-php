@@ -34,6 +34,7 @@ BUGFIX:
 * type=stats shadow-json debugapi | bugfix to avoid adding duplicate and also keep the display-bpa one which is triggered by BP settings file
 * type=securityprofile actions=as.dns.alert-only-set | set adns log-severity if action=block
 * type=securityprofile securityprofiletype=wildfire-analysis | PAN-OS 11.1 - bugfix as wf mica-engine can not set for alerting
+* type=securityprofilegroup  actions=securityprofile-set:[profile] | bugfix for online API mode to have correct XPath
 
 GENERAL:
 * BP settings validation - no error out but warning if customised
