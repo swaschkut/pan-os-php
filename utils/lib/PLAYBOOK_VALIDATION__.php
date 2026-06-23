@@ -84,7 +84,11 @@ class PLAYBOOK_VALIDATION__
 //example of an JSON file syntax
         $visibility_pathString = dirname(__FILE__)."/../api/v1/playbook";
         $predefinedJSONfile = $visibility_pathString."/visibility.json";
+
+        $visibility_pathString = dirname(__FILE__)."/../api/v1/playbook";
+        $predefinedJSONfile = $visibility_pathString."/visibility.json";
         $JSONarray = file_get_contents( $predefinedJSONfile );
+
 
         $tmp_ph = new PH($argv, $argc);
 
@@ -106,9 +110,7 @@ class PLAYBOOK_VALIDATION__
 
         if( isset(PH::$args['help']) )
         {
-            $help_string = PH::boldText("USAGE: ") . "php " . $PHP_FILE . ' in=inputfile.xml out=outputfile.xml [json=JSONfile] [json=$$playbookfolder$$/JSONfile]\n';
-
-            PH::print_stdout( $help_string );
+            $this->usageMessage();
 
             exit();
         }
@@ -136,7 +138,7 @@ class PLAYBOOK_VALIDATION__
         $bp_setting_file = "validation_files/bp_setting/02b_scm_bp_sp_panw.json";
 
 
-// Default settings
+        // Default settings
         $script_validation = false;
 
         $generate_dev = false;
@@ -231,6 +233,16 @@ class PLAYBOOK_VALIDATION__
         $compare_validation['stats'] = null;
         $compare_validation['percentage'] = null;
 
+        $inline = "   ";
+        if( empty($files) )
+        {
+            print $inline."====================================\n";
+            print $inline."NO CONFIG FILES in 'content' FOLDER\n";
+            print $inline."====================================\n";
+
+            exit();
+        }
+
         $file_array = array();
         foreach ($files as $file)
         {
@@ -254,7 +266,6 @@ class PLAYBOOK_VALIDATION__
         $command_array = array();
         foreach( $file_array as $config )
         {
-            $inline = "   ";
             $configname = explode( ".", $config );
             $configname = $configname[0];
 
@@ -621,6 +632,16 @@ class PLAYBOOK_VALIDATION__
                     $statOriginal = $json1['statistic'] ?? null;
                     $statOther = $json2['statistic'] ?? null;
 
+                    //due to header changes in 2.1.57.beta
+                    $tmp_array = array();
+                    foreach( $statOriginal as $key => $value )
+                        $tmp_array[] = $value;
+                    $statOriginal = $tmp_array;
+                    $tmp_array = array();
+                    foreach( $statOther as $key => $value )
+                        $tmp_array[] = $value;
+                    $statOther = $tmp_array;
+
                     ////
                     ///
                     // 3. Run the comparison starting strictly on the extracted statistics data
@@ -916,11 +937,20 @@ class PLAYBOOK_VALIDATION__
 
     public function usageMessage()
     {
-        $string = PH::boldText("USAGE: ") . "php " . $this->PHP_FILE . " in=inputfile.xml out=outputfile.xml location=any|shared|sub " .
-            "json=PLAYBOOK.json projectfolder=DIRECTORY\n";
+        $string = PH::boldText("USAGE: ") . "php " . $this->PHP_FILE . " beta/dev "
+            . "[generate-sp/generate-stats/generate-sp-only/generate-stats-only]"
+            . "[compare-dev-beta/compare-stats-dev-beta/compare-latest-dev/compare-stats-latest-dev]"
+            . "[tool=docker-outside/docker/local]"
+            . "[script-validation]"
+            . "[playbook-file=custom-pb-file.json]"
+            . "[bp-setting-file=custom-bp-set-file.json]"
+            . "";
 
 
+        PH::print_stdout();
         PH::print_stdout( $string );
+        PH::print_stdout();
+
         PH::$JSON_TMP['usage'] = $string;
     }
 
