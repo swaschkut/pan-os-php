@@ -2173,7 +2173,30 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     $object->mica_getFullTextHTML( $string_mica_engine, false, true);
                     $info['inline_ml_detail'] = implode("\n", $string_mica_engine);
                     if( empty( $info['inline_ml_detail'] ) )
-                        $info['inline_ml_detail'] = "[missing settings]";
+                    {
+                        if( get_class($object) == "VulnerabilityProfile"
+                            && $object->owner->owner->version < 110
+                        )
+                        {
+                            $info['inline_ml_detail']             = '[Feature not available]';
+                        }
+                        elseif( get_class($object) == "WildfireProfile"
+                            && $object->owner->owner->version < 111
+                        )
+                        {
+                            $info['inline_ml_detail']             = '[Feature not available]';
+                        }
+                        elseif( (get_class($object) == "AntiVirusProfile"
+                            || get_class($object) == "AntiSpywareProfile")
+                            && ($object->owner->owner->version < 102)
+                        )
+                        {
+                            $info['inline_ml_detail']             = '[Feature not available]';
+                        }
+                        else
+                            $info['inline_ml_detail'] = "[missing settings]";
+                    }
+
                 }
 
                 if( $object->cloud_inline_analysis_best_practice($object->owner->bp_json_file) )
@@ -2186,7 +2209,29 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     $object->mica_getFullTextHTML( $string_mica_engine, true, false);
                     $info['bp_inline_ml_detail'] = implode("\n", $string_mica_engine);
                     if( empty( $info['bp_inline_ml_detail'] ) )
-                        $info['bp_inline_ml_detail'] = "[missing settings]";
+                    {
+                        if( get_class($object) == "VulnerabilityProfile"
+                            && $object->owner->owner->version < 110
+                        )
+                        {
+                            $info['bp_inline_ml_detail']             = '[Feature not available]';
+                        }
+                        elseif( get_class($object) == "WildfireProfile"
+                            && $object->owner->owner->version < 111
+                        )
+                        {
+                            $info['bp_inline_ml_detail']             = '[Feature not available]';
+                        }
+                        elseif( (get_class($object) == "AntiVirusProfile"
+                                || get_class($object) == "AntiSpywareProfile")
+                            && ($object->owner->owner->version < 102)
+                        )
+                        {
+                            $info['bp_inline_ml_detail']             = '[Feature not available]';
+                        }
+                        else
+                            $info['bp_inline_ml_detail'] = "[missing settings]";
+                    }
                 }
             }
 
@@ -2558,6 +2603,8 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         $string_mica_engine[] = "cloud-inline-cat=".$object->cloud_inline_cat;
 
                     $info['inline_ml_detail'] = implode("\n", $string_mica_engine);
+                    if($object->owner->owner->version < 102)
+                        $info['inline_ml_detail']             = '[Feature not available]';
                 }
 
 
@@ -2571,7 +2618,9 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     if( $object->cloud_inline_cat !== null )
                         $string_mica_engine[] = "cloud-inline-cat=".$object->cloud_inline_cat;
 
-                    $info['inline_ml_detail'] = implode("\n", $string_mica_engine);
+                    $info['bp_inline_ml_detail'] = implode("\n", $string_mica_engine);
+                    if($object->owner->owner->version < 102)
+                        $info['bp_inline_ml_detail']             = '[Feature not available]';
                 }
             }
 

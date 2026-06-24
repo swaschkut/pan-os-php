@@ -176,7 +176,7 @@ class SecurityProfile2
             {
                 if ( $this->secprof_type == 'vulnerability' && $this->owner->owner->version < 110)
                 {
-                    return false;
+                    return null;
                 }
             }
 
@@ -206,14 +206,14 @@ class SecurityProfile2
             {
                 if ( $this->secprof_type == 'spyware' && $this->owner->owner->version < 102)
                 {
-                    return false;
+                    return null;
                 }
             }
 
             if( isset($this->additional['mica-engine-wildfire-rules']) )
             {
                 if ( $this->owner->owner->version < 111 )
-                    return false;
+                    return null;
                 elseif ( $this->owner->owner->version == 111 )
                     return true;
 
@@ -246,7 +246,7 @@ class SecurityProfile2
                 if ( ($this->secprof_type == 'wildfire' || $this->secprof_type == 'virus-and-wildfire-analysis' ) && $this->owner->owner->version < 112)
                 {
                     if ( $this->owner->owner->version < 111 )
-                        return false;
+                        return null;
                     elseif ( $this->owner->owner->version == 111 )
                     {
                         //>=111 wf mica-engine but always allow!!!
@@ -260,7 +260,7 @@ class SecurityProfile2
             if ( ($this->secprof_type == 'wildfire' || $this->secprof_type == 'virus-and-wildfire-analysis' ) )
             {
                 if ( $this->owner->owner->version < 111 )
-                    return false;
+                    return null;
                 elseif ( $this->owner->owner->version == 111 )
                 {
                     //>=111 wf mica-engine but always allow!!!
@@ -299,7 +299,7 @@ class SecurityProfile2
             {
                 if( $this->owner->owner->version < 102 )
                 {
-                    return false;
+                    return null;
                 }
             }
         }
