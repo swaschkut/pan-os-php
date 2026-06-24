@@ -1575,9 +1575,6 @@ RQuery::$defaultFilters['securityprofile']['wf.mica-engine']['operators']['is.be
         if( $object->secprof_type != 'wildfire' && $object->secprof_type != 'virus-and-wildfire-analysis' )
             return null;
 
-        if ($object->owner->owner->version < 112)
-            return true;
-
         return $object->cloud_inline_analysis_best_practice($object->owner->bp_json_file);
     },
     'arg' => false,
@@ -1590,9 +1587,6 @@ RQuery::$defaultFilters['securityprofile']['wf.mica-engine']['operators']['is.vi
 
         if( $object->secprof_type != 'wildfire' && $object->secprof_type != 'virus-and-wildfire-analysis' )
             return null;
-
-        if ($object->owner->owner->version < 112)
-            return true;
 
         return $object->cloud_inline_analysis_visibility($object->owner->bp_json_file);
     },
