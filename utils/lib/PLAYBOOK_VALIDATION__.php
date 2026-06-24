@@ -429,6 +429,10 @@ class PLAYBOOK_VALIDATION__
                         $panosphp_tool = 'docker run --name panosphp-beta-val --rm -v $PWD:/share -v ~/.panconfkeystore:/home/ubuntu/.panconfkeystore -it swaschkut/pan-os-php:beta';
 
                     $command = $panosphp_tool." type=securityprofile 'in=beta/{$config}' 'actions=exportSPtoHTML:{$configname}_sp.html' location=any projectfolder=beta 'filter=!(object is.unused) and !(object is.unused.recursive)'";
+                    $command_array[] = $command;
+
+                    $command = $panosphp_tool." type=securityprofile 'in=beta/{$config}' 'actions=exporttoHTML:{$configname}_sp_all.html,visibility|bestpractice' location=any projectfolder=beta 'filter=!(object is.unused) and !(object is.unused.recursive)'";
+                    $command_array[] = $command;
                 }
 
 
@@ -437,6 +441,10 @@ class PLAYBOOK_VALIDATION__
                     if( $tool == "docker-outside" )
                         $panosphp_tool = 'docker run --name panosphp-develop-val --rm -v $PWD:/share -v ~/.panconfkeystore:/home/ubuntu/.panconfkeystore -it swaschkut/pan-os-php:develop';
                     $command = $panosphp_tool." type=securityprofile 'in=dev/{$config}' 'actions=exportSPtoHTML:{$configname}_sp.html' location=any projectfolder=dev 'filter=!(object is.unused) and !(object is.unused.recursive)'";
+                    $command_array[] = $command;
+
+                    $command = $panosphp_tool." type=securityprofile 'in=dev/{$config}' 'actions=exporttoHTML:{$configname}_sp_all.html,visibility|bestpractice' location=any projectfolder=dev 'filter=!(object is.unused) and !(object is.unused.recursive)'";
+                    $command_array[] = $command;
                 }
 
 
@@ -445,6 +453,10 @@ class PLAYBOOK_VALIDATION__
                     if( $tool == "docker-outside" )
                         $panosphp_tool = 'docker run --name panosphp-latest-val --rm -v $PWD:/share -v ~/.panconfkeystore:/home/ubuntu/.panconfkeystore -it swaschkut/pan-os-php:latest';
                     $command = $panosphp_tool." type=securityprofile 'in=dev/{$config}' 'actions=exportSPtoHTML:{$configname}_sp.html' location=any projectfolder=latest 'filter=!(object is.unused) and !(object is.unused.recursive)'";
+                    $command_array[] = $command;
+
+                    $command = $panosphp_tool." type=securityprofile 'in=latest/{$config}' 'actions=exporttoHTML:{$configname}_sp_all.html,visibility|bestpractice' location=any projectfolder=latest 'filter=!(object is.unused) and !(object is.unused.recursive)'";
+                    $command_array[] = $command;
                 }
 
 
@@ -454,7 +466,7 @@ class PLAYBOOK_VALIDATION__
                     exit();
                 }
 
-                $command_array[] = $command;
+
 
                 if( $script_validation )
                     print $command."\n";
