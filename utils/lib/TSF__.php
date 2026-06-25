@@ -78,7 +78,7 @@ class TSF__
                 $this->actions = 'extract-running-and-merged-config';
         }
         else
-            $this->actions = 'extract-running-config';
+            $this->actions = 'extract-running-and-merged-config';
 
         $this->supportedArguments = Array();
         $this->supportedArguments['in'] = Array('niceName' => 'in', 'shortHelp' => 'specifiy the TechSupportFile', 'argDesc' => 'in=[TSF.tgz]');
@@ -137,9 +137,11 @@ class TSF__
         foreach( $ext_filename_array as $ext_filename )
         {
             $final_ext_filename = $ext_filename;
-            if( str_starts_with($final_ext_filename, ".") )
+            $final_ext_filename = $ext_filename;
+            if (str_starts_with($final_ext_filename, "."))
             {
-                $final_ext_filename =  ltrim($final_ext_filename, '1');;
+                // Pass '.' to remove the leading dot
+                $final_ext_filename = ltrim($final_ext_filename, '.');
             }
 
             $cliArray[] = "cp ".$this->projectfolder."opt/pancfg/mgmt/".$ext_folder."/".$ext_filename." ".$this->projectfolder.$final_ext_filename;

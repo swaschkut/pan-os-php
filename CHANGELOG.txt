@@ -25,6 +25,7 @@ UTIL:
 * type=playbook-validation | extend with help information
 * mica-engine | not visibility if PAN-OS does not support this config part
 * type=securityprofile actions=exportSPtoHTML:file.html | adjustment for none available features in a specific PAN-OS version
+* type=tsf | if no actions argument default is now "actions=extract-running-and-merged-config" | bugfix to remove leading . of .merged-running-config.xml
 
 BUGFIX:
 * type=securityprofile actions=virus.decoder.alert-only-set | bugfix for older PAN-OS version
