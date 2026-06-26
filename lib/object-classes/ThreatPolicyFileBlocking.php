@@ -69,14 +69,14 @@ class ThreatPolicyFileBlocking extends ThreatPolicy
                 if( isset($details[$secprof_type][$array_type]['bp']))
                     $checkArray = $details[$secprof_type][$array_type]['bp'];
                 else
-                    derr( "this JSON bp/visibility JSON file does not have 'bp' -> '".$array_type."' defined correctly for: '".$secprof_type."'", null, FALSE );
+                    mwarning( "this JSON bp/visibility JSON file customised 'bp' -> '".$array_type."' for: '".$secprof_type."'", null, FALSE );
             }
             elseif( $checkType == "visibility")
             {
                 if( isset($details[$secprof_type][$array_type]['visibility']))
                     $checkArray = $details[$secprof_type][$array_type]['visibility'];
                 else
-                    derr( "this JSON bp/visibility JSON file does not have 'visibility' -> '".$array_type."' defined correctly for: '".$secprof_type."'", null, FALSE );
+                    mwarning( "this JSON bp/visibility JSON file customised 'visibility' -> '".$array_type."' for: '".$secprof_type."'", null, FALSE );
             }
         }
 
@@ -94,38 +94,43 @@ class ThreatPolicyFileBlocking extends ThreatPolicy
             if( $action === "block")
                 $bp = true;
 
-            //Todo: 20250914 swaschkut - missing validation
-            //application
-            //direction
-
             foreach( $check as $validate => $values )
             {
                 if( $validate == "filetype_blocked_also_before" )
                     continue;
 
-                if( $validate == "direction" )
+                if( is_string( $values ) )
                 {
-                    if( $this->direction() !== $values )
-                        return false;
-                }
+                    if( $validate == "direction" )
+                    {
+                        if( $this->direction() !== $values )
+                            return false;
+                    }
 
-                if( $validate == "application" )
-                {
-                    if( $this->application() !== $values )
-                        return false;
-                }
+                    if( $validate == "application" )
+                    {
+                        if( $this->application() !== $values )
+                            return false;
+                    }
 
-                #print "Action: ".$action."\n";
-                #print_r($check);
-                if( is_array( $values ) )
+                    if( $validate == "filetype" )
+                    {
+                        if( $this->filetype() !== $values )
+                            return false;
+                    }
+                }
+                elseif( is_array( $values ) )
                 {
                     //application
                     //filetype
                     foreach( $values as $value )
                     {
                         if( in_array( "any", $this->$validate ) )
-                            return true;
-                        if( !in_array( $value, $this->$validate ) )
+                        {
+                            #return true;
+                            $bp = true;
+                        }
+                        elseif( !in_array( $value, $this->$validate ) )
                             return false;
                     }
                 }
@@ -167,27 +172,76 @@ class ThreatPolicyFileBlocking extends ThreatPolicy
 
     public function check_visibility_json( $check_array )
     {
+        $bp = false;
         foreach( $check_array as $action => $check )
         {
             if( $this->action() !== $action )
                 continue;
 
+            if( $action === "alert")
+                $bp = true;
+
             foreach( $check as $validate => $values )
             {
-                if( is_array( $values ) )
+                if( $validate == "filetype_blocked_also_before" )
+                    continue;
+
+                if( is_string( $values ) )
+                {
+                    if( $validate == "direction" )
+                    {
+                        if( $this->direction() !== $values )
+                        {
+                            #print $this->name()." {$validate} false\n";
+                            return false;
+                        }
+                    }
+
+                    if( $validate == "application" )
+                    {
+                        $app_array = $this->application();
+                        #if( $this->application() !== $values )
+                        if( !isset( $app_array[$values] ) )
+                        {
+                            #print $this->name()." {$validate} false\n";
+                            #print "APP: ".$this->application()."\n";
+                            #print "app values: ".$values."\n";
+
+                            return false;
+                        }
+                    }
+
+                    if( $validate == "filetype" )
+                    {
+                        if( $this->filetype() !== $values )
+                        {
+                            #print $this->name()." {$validate} false\n";
+                            return false;
+                        }
+                    }
+                }
+                elseif( is_array( $values ) )
                 {
                     //application
                     //filetype
                     foreach( $values as $value )
                     {
-                        if( !in_array( $value, $this->$validate ) )
+                        if( in_array( "any", $this->$validate ) )
+                        {
+                            #return true;
+                            $bp = true;
+                        }
+                        elseif( !in_array( $value, $this->$validate ) )
+                        {
+                            #print $this->name()." ARRAY end false\n";
                             return false;
+                        }
                     }
                 }
             }
         }
 
-        return TRUE;
+        return $bp;
     }
 
     public function fileblocking_rule_best_practice()

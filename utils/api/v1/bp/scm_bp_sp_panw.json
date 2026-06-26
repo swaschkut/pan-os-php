@@ -431,6 +431,16 @@
                     "mode": "ip-user"
                 }
             }
+        },
+        "mica-engine": {
+            "visibility": {
+                "local-inline-cat": "yes",
+                "cloud-inline-cat": "yes"
+            },
+            "bp": {
+                "local-inline-cat": "yes",
+                "cloud-inline-cat": "yes"
+            }
         }
     },
     "file-blocking": {
@@ -575,6 +585,7 @@
             "Data Filtering": false,
             "URL Filtering Profiles": true,
             "Credential Theft Prevention": true,
+            "URL InLine ML": false,
             "DNS Security": true,
             "DNS List": false
         },
@@ -595,6 +606,7 @@
             "File Blocking Profiles": true,
             "URL Filtering Profiles": true,
             "Credential Theft Prevention": true,
+            "URL InLine ML": false,
             "DNS Security": true,
             "DNS List": false
         }

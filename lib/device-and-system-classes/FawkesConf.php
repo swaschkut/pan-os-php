@@ -1043,7 +1043,10 @@ class FawkesConf
     {
         $stdoutarray = array();
         #PH::$JSON_TMP[$this->name] = $stdoutarray;
-        PH::$JSON_TMP[] = $stdoutarray;
+
+        #PH::$JSON_TMP[] = $stdoutarray;
+        if( !isset(PH::$JSON_TMP[$stdoutarray['header']]) )
+            PH::$JSON_TMP[$stdoutarray['header']] = $stdoutarray;
 
 
         if( !PH::$shadow_json && $debug )

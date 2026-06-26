@@ -325,6 +325,44 @@ class ThreatPolicy
 
         }
     }
+
+    public function getFullThreatPolicyText()
+    {
+        $stringSeverity = "";
+        if( !empty($this->severity) )
+            $stringSeverity = " - severity:'". implode( ",", $this->severity )."'";
+        $stringApplication = "";
+        if( !empty($this->application) )
+            $stringApplication = " - application:'". implode( ",", $this->application )."'";
+        $stringFileType = "";
+        if( !empty($this->filetype) )
+            $stringFileType = " - filetype:'". implode( ",", $this->filetype )."'";
+        $stringPacketCapture = "";
+        if( $this->packetCapture() !== null )
+            $stringPacketCapture = " - packetCapture:'".$this->packetCapture()."'";
+        $stringCategory = "";
+        if( $this->category() !== null )
+            $stringCategory = " - category:'".$this->category()."'";
+        $stringHost = "";
+        if( $this->host() !== null )
+            $stringHost = " - host:'".$this->host()."'";
+        $stringThreatName = "";
+        if( $this->threatname !== null )
+            $stringThreatName = " - threat-name:'".$this->threatName()."'";
+        $stringAction = "";
+        if( $this->action() !== null )
+            $stringAction = " - action:'".$this->action()."'";
+        $stringDirection = "";
+        if( $this->direction() !== null )
+            $stringDirection = " - direction:'".$this->direction()."'";
+        $stringAnalysis = "";
+        if( $this->analysis() !== null )
+            $stringAnalysis = " - analysis:'".$this->analysis()."'";
+
+        $tmp_string = "'".$this->name()."' | ".$stringSeverity.$stringThreatName.$stringAction.$stringApplication.$stringFileType.$stringPacketCapture.$stringCategory.$stringHost.$stringDirection.$stringAnalysis;
+
+        return $tmp_string;
+    }
 }
 
 

@@ -149,7 +149,7 @@ class DNSPolicy
                 if( isset($details[$secprof_type][$dns_string]['bp']))
                     $checkArray = $details[$secprof_type][$dns_string]['bp'];
                 else
-                    derr( "this JSON bp/visibility JSON file does not have 'bp' -> '".$dns_string."' defined correctly for: '".$secprof_type, null, FALSE );
+                    mwarning( "this JSON bp/visibility JSON file customised 'bp' -> '".$dns_string."' defined correctly for: '".$secprof_type, null, FALSE );
             }
             elseif( $checkType == "visibility")
             {
@@ -642,7 +642,7 @@ class DNSPolicy
                 if( isset($details[$secprof_type]['lists']['bp']))
                     $checkArray = $details[$secprof_type]['lists']['bp'];
                 else
-                    derr( "this JSON bp/visibility JSON file does not have 'bp' -> 'lists' defined correctly for: '".$secprof_type, null, FALSE );
+                    mwarning( "this JSON bp/visibility JSON file customised 'bp' -> 'lists' defined correctly for: '".$secprof_type, null, FALSE );
             }
             elseif( $checkType == "visibility")
             {
@@ -722,7 +722,46 @@ class DNSPolicy
 
     public function spyware_lists_visibility()
     {
-        //every setting is visibility
+        $check_array = $this->spyware_lists_bp_visibility_JSON( "visibility");
+
+        if( isset( $check_array['action'] ) )
+        {
+            foreach( $check_array['action'] as $validate )
+            {
+                $bp_action = FALSE;
+
+                foreach( $validate['type'] as $name )
+                {
+                    if( $this->name() == $name )
+                    {
+                        #print "0) name: ".$name."\n";
+                        foreach( $validate['action'] as $final_action_check )
+                        {
+                            $final_action_check = str_replace("!", "", $final_action_check);
+                            #print "1) action: ".$this->action()." |validate: ".$final_action_check."\n";
+                            if( $this->action() == $final_action_check )
+                            {
+                                return false;
+                                $bp_action = FALSE;
+                                #print "1-1) false\n";
+                            }
+                            else
+                            {
+                                $bp_action = TRUE;
+                                #print "1-0) true\n";
+                                break;
+                            }
+                        }
+
+                        if( $bp_action )
+                            return TRUE;
+                        else
+                            return FALSE;
+                    }
+                }
+            }
+        }
+
         return true;
     }
 }

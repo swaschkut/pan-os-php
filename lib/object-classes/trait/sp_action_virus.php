@@ -370,14 +370,14 @@ trait sp_action_virus
                 if( isset($details[$secprof_type][$array_type]['bp'][$av_action_type]))
                     $checkArray = $details[$secprof_type][$array_type]['bp'][$av_action_type];
                 else
-                    derr( "this JSON bp/visibility JSON file does not have 'bp' -> '".$array_type."' defined correctly for: '".$secprof_type."' '".$av_action_type."'", null, FALSE );
+                    mwarning( "this JSON bp/visibility JSON file customised 'bp' -> '".$array_type."' for: '".$secprof_type."' '".$av_action_type."'", null, FALSE );
             }
             elseif( $checkType == "visibility")
             {
                 if( isset($details[$secprof_type][$array_type]['visibility'][$av_action_type]))
                     $checkArray = $details[$secprof_type][$array_type]['visibility'][$av_action_type];
                 else
-                    derr( "this JSON bp/visibility JSON file does not have 'visibility' -> '".$array_type."' defined correctly for: '".$secprof_type."' '".$av_action_type."'", null, FALSE );
+                    mwarning( "this JSON bp/visibility JSON file customised 'visibility' -> '".$array_type."' for: '".$secprof_type."' '".$av_action_type."'", null, FALSE );
             }
         }
 
@@ -448,6 +448,22 @@ trait sp_action_virus
         return $this->av_general_action_best_practice( "action" );
     }
 
+    public function av_actions_visibility()
+    {
+        if( $this->av_action_visibility() && $this->av_wildfireaction_visibility() && $this->av_mlavaction_visibility() )
+            return true;
+
+        return false;
+    }
+
+    public function av_actions_best_practice()
+    {
+        if( $this->av_action_best_practice() && $this->av_wildfireaction_best_practice() && $this->av_mlavaction_best_practice() )
+            return true;
+
+        return false;
+    }
+
     public function av_action_visibility()
     {
         return $this->av_general_action_visibility( "action" );
@@ -471,7 +487,7 @@ trait sp_action_virus
         return $this->av_general_action_best_practice( "mlav-action" );
     }
 
-    public function av_mlavaction_is_visibility(): ?bool
+    public function av_mlavaction_visibility(): ?bool
     {
         return $this->av_general_action_visibility( "mlav-action" );
     }
@@ -533,5 +549,78 @@ trait sp_action_virus
         }
 
         return $bestpractise;
+    }
+
+    public function getFullActionTextSPhtml( &$array, $bestPractice = false, $visibility = false, $bp_NOT_sign = "", $visible_NOT_sign = "" )
+    {
+        if( !empty( $this->tmp_virus_prof_array ) )
+        {
+            foreach( $this->tmp_virus_prof_array as $key => $type )
+            {
+                if( !empty($bp_NOT_sign) && !empty($visible_NOT_sign) )
+                    $add_to_array = true;
+                else
+                    $add_to_array = false;
+
+                $string = $type;
+
+                $actionTypeArray = array('action', 'wildfire-action', 'mlav-action');
+
+                foreach( $actionTypeArray as $actionType )
+                {
+                    if( isset( $this->$type[$actionType] ) )
+                    {
+                        $tmp_string = "          - ".$actionType.":          '" . $this->$type[$actionType] . "'";
+                        if( !empty($bp_NOT_sign) && !empty($visible_NOT_sign) )
+                            $string .= $tmp_string;
+
+                        if( $bestPractice )
+                        {
+                            $check_array = PH::$shadow_bp_jsonfile['virus']['rule']['bp'][$actionType];
+                            if( in_array( $type, $check_array['type'] ) )
+                            {
+                                if( !in_array( $this->$type[$actionType], $check_array['action'] ) )
+                                {
+                                    $add_to_array = true;
+                                    if( !empty($bp_NOT_sign) )
+                                        $string .= $bp_NOT_sign;
+                                    else
+                                        $string .= $tmp_string;
+                                }
+
+                            }
+                            else
+                            {
+                                if( !in_array( $this->$type[$actionType], $check_array['action-not-matching-type'] ) )
+                                {
+                                    $add_to_array = true;
+                                    if( !empty($bp_NOT_sign) )
+                                        $string .= $bp_NOT_sign;
+                                    else
+                                        $string .= $tmp_string;
+                                }
+                            }
+                        }
+                        if( $visibility )
+                        {
+                            //Todo: to get same output as BP; change JSON and validate what is needed
+                            $check_array = PH::$shadow_bp_jsonfile['virus']['rule']['visibility'][$actionType];
+                            if( in_array( "!".$this->$type[$actionType], $check_array ) )
+                            {
+                                $add_to_array = true;
+                                if( !empty($visible_NOT_sign) )
+                                    $string .= $visible_NOT_sign;
+                                else
+                                    $string .= $tmp_string;
+                            }
+                        }
+                    }
+                }
+
+                if( $add_to_array )
+                    $array[] = $string;
+            }
+
+        }
     }
 }

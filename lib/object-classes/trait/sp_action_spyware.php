@@ -741,14 +741,14 @@ trait sp_action_spyware
                 if( isset($details[$secprof_type][$array_type]['bp']))
                     $checkArray = $details[$secprof_type][$array_type]['bp'];
                 else
-                    derr( "this JSON bp/visibility JSON file does not have 'bp' -> '".$array_type."' defined correctly for: '".$secprof_type, null, FALSE );
+                    mwarning( "this JSON bp/visibility JSON file customised 'bp' -> '".$array_type."' for: '".$secprof_type, null, FALSE );
             }
             elseif( $checkType == "visibility")
             {
                 if( isset($details[$secprof_type][$array_type]['visibility']))
                     $checkArray = $details[$secprof_type][$array_type]['visibility'];
                 else
-                    derr( "this JSON bp/visibility JSON file does not have 'visibility' -> '".$array_type."' defined correctly for: '".$secprof_type, null, FALSE );
+                    mwarning( "this JSON bp/visibility JSON file customised 'visibility' -> '".$array_type."' for: '".$secprof_type, null, FALSE );
             }
         }
 
@@ -809,6 +809,18 @@ trait sp_action_spyware
         $bp_set = null;
         if (!empty($this->rules_obj))
         {
+            /*
+            //Todo: use ThreatPolicySpyware - swaschkut 20260620
+            //how to validate if a severity is missing
+            foreach( $this->rules_obj as $rulename => $rule )
+            {
+                if( $rule->spyware_rule_best_practice() )
+                    return true;
+            }
+
+            return false;
+            */
+            //////// OLD start
             $bp_set = false;
 
             $check_array = $this->rules_obj[0]->spyware_rule_bp_visibility_JSON( "visibility", "spyware" );
@@ -885,6 +897,8 @@ trait sp_action_spyware
                 elseif( $bp_array !== "any" )
                     return false;
             }
+            // OLD end
+            //////
         }
         return $bp_set;
     }
@@ -894,6 +908,19 @@ trait sp_action_spyware
         $bp_set = null;
         if (!empty($this->rules_obj))
         {
+            /*
+            //Todo: use ThreatPolicySpyware - swaschkut 20260620
+            //how to validate if a severity is missing
+            foreach( $this->rules_obj as $rulename => $rule )
+            {
+                if( $rule->spyware_rule_visibility() )
+                    return true;
+            }
+
+            return false;
+            */
+            /////////////
+            /// OlD start
             $bp_set = false;
 
             $check_array = $this->rules_obj[0]->spyware_rule_bp_visibility_JSON( "visibility", "spyware" );
@@ -930,6 +957,7 @@ trait sp_action_spyware
                 elseif( $bp_array !== "any" )
                     return false;
             }
+
         }
         return $bp_set;
     }
@@ -958,7 +986,8 @@ trait sp_action_spyware
     public function spyware_exception_best_practice(): void
     {
         if (!empty($this->threatException)) {
-            foreach ($this->threatException as $threatname => $threat) {
+            foreach ($this->threatException as $threatname => $threat)
+            {
                 //which check??
             }
         }

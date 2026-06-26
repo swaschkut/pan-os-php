@@ -32,6 +32,20 @@ RQuery::$defaultFilters['securityprofile']['object']['operators']['is.unused'] =
         'input' => 'input/panorama-8.0.xml'
     )
 );
+RQuery::$defaultFilters['securityprofile']['object']['operators']['is.unused.recursive'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        if( get_class($context->object ) == "PredefinedSecurityProfileURL" )
+            return null;
+        $object = $context->object;
+
+        return $object->objectIsUnusedRecursive();
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
 RQuery::$defaultFilters['securityprofile']['name']['operators']['is.in.file'] = array(
     'Function' => function (SecurityProfileRQueryContext $context) {
         $object = $context->object;
@@ -895,7 +909,7 @@ RQuery::$defaultFilters['securityprofile']['av.mlav-action']['operators']['is.vi
         if( $object->secprof_type != 'virus' && $object->secprof_type != 'virus-and-wildfire-analysis' )
             return null;
 
-        return $object->av_mlavaction_is_visibility();
+        return $object->av_mlavaction_visibility();
     },
     'arg' => false,
     'help' => "'securityprofiletype=virus'"
@@ -921,7 +935,7 @@ RQuery::$defaultFilters['securityprofile']['av.actions']['operators']['is.visibi
         if( $object->secprof_type != 'virus' && $object->secprof_type != 'virus-and-wildfire-analysis' )
             return null;
 
-        return $object->av_mlavaction_is_visibility() && $object->av_wildfireaction_visibility() && $object->av_action_visibility();
+        return $object->av_mlavaction_visibility() && $object->av_wildfireaction_visibility() && $object->av_action_visibility();
     },
     'arg' => false,
     'help' => "'securityprofiletype=virus'"
@@ -1814,6 +1828,45 @@ RQuery::$defaultFilters['securityprofile']['url.site-access']['operators']['allo
     'arg' => false,
     'help' => "'securityprofiletype=url-filtering' e.g. 'filter=(url.site-access allow.is.set)'"
 );
+RQuery::$defaultFilters['securityprofile']['url.mica-engine']['operators']['is.visibility'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var URLProfile $object */
+        $object = $context->object;
+
+        if( $object->secprof_type != 'url-filtering' )
+            return null;
+
+        return $object->mica_engine_is_visibility();
+    },
+    'arg' => false,
+    'help' => "'securityprofiletype=url-filtering' e.g. 'filter=(url.mica-engine is.visibility)'"
+);
+RQuery::$defaultFilters['securityprofile']['url.mica-engine']['operators']['is.best-practice'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var URLProfile $object */
+        $object = $context->object;
+
+        if( $object->secprof_type != 'url-filtering' )
+            return null;
+
+        return $object->mica_engine_is_bestpractice();
+    },
+    'arg' => false,
+    'help' => "'securityprofiletype=url-filtering' e.g. 'filter=(url.mica-engine is.best-practice)'"
+);
+RQuery::$defaultFilters['securityprofile']['url.mica-engine']['operators']['is.adoption'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var URLProfile $object */
+        $object = $context->object;
+
+        if( $object->secprof_type != 'url-filtering' )
+            return null;
+
+        return $object->mica_engine_is_adoption();
+    },
+    'arg' => false,
+    'help' => "'securityprofiletype=url-filtering' e.g. 'filter=(url.mica-engine is.best-practice)'"
+);
 
 RQuery::$defaultFilters['securityprofile']['object']['operators']['is.predefined'] = array(
     'Function' => function (SecurityProfileRQueryContext $context) {
@@ -1826,7 +1879,19 @@ RQuery::$defaultFilters['securityprofile']['object']['operators']['is.predefined
     },
     'arg' => FALSE
 );
+RQuery::$defaultFilters['securityprofile']['object']['operators']['is.visibility'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        $object = $context->object;
 
+        if( get_class( $object ) == "PredefinedSecurityProfileURL"
+            || get_class( $object ) == "customURLProfile"
+        )
+            return null;
+
+        return $object->is_visibility();
+    },
+    'arg' => FALSE
+);
 RQuery::$defaultFilters['securityprofile']['device']['operators']['is.buckbeak'] = array(
     'Function' => function (SecurityProfileRQueryContext $context) {
         $object = $context->object;
