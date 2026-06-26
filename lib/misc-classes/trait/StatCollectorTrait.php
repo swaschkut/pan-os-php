@@ -1062,8 +1062,10 @@ trait StatCollectorTrait
         $stdoutarray['security rules allow enabled'] = count( $sub_ruleStore->rules( "(action is.allow) and (rule is.enabled)" ) );
         $stdoutarray['security rules allow disabled'] = count( $sub_ruleStore->rules( "(action is.allow) and (rule is.disabled)" ) );
         $stdoutarray['security rules enabled'] = count( $sub_ruleStore->rules( "(rule is.enabled)" ) );
+        $stdoutarray['security rules disabled'] = count( $sub_ruleStore->rules( "(rule is.disabled)" ) );
         $stdoutarray['security rules deny'] = count( $sub_ruleStore->rules( "!(action is.allow)" ) );
         $stdoutarray['security rules deny enabled'] = count( $sub_ruleStore->rules( "!(action is.allow) and (rule is.enabled)" ) );
+        $stdoutarray['security rules deny disabled'] = count( $sub_ruleStore->rules( "!(action is.allow) and (rule is.disabled)" ) );
         $ruleForCalculation = $stdoutarray['security rules allow enabled'];
 
         $generalFilter = "(rule is.enabled) and ";

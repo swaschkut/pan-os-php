@@ -1907,7 +1907,11 @@ SecurityProfileCallContext::$supportedActions[] = array(
             'allow'          => 0,
             'allow_enabled'  => 0,
             'allow_disabled' => 0,
-            'enabled'        => 0
+            'enabled'        => 0,
+            'disabled'        => 0,
+            'deny'          => 0,
+            'deny_enabled'  => 0,
+            'deny_disabled' => 0
         ];
 
         if( $context->first )
@@ -1941,6 +1945,10 @@ SecurityProfileCallContext::$supportedActions[] = array(
             $securityRulesScope['allow_enabled'] = $bp_stats_raw[$firstKey]['security rules allow enabled'];
             $securityRulesScope['allow_disabled'] = $bp_stats_raw[$firstKey]['security rules allow disabled'];
             $securityRulesScope['enabled'] = $bp_stats_raw[$firstKey]['security rules enabled'];
+            $securityRulesScope['disabled'] = $bp_stats_raw[$firstKey]['security rules disabled'];
+            $securityRulesScope['deny'] = $bp_stats_raw[$firstKey]['security rules deny'];
+            $securityRulesScope['deny_enabled'] = $bp_stats_raw[$firstKey]['security rules deny enabled'];
+            $securityRulesScope['deny_disabled'] = $bp_stats_raw[$firstKey]['security rules deny disabled'];
 
             $context->first = false;
         }
@@ -3003,6 +3011,14 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         <td class="num" id="scope-total" style="font-weight: 600;"><?php echo number_format($securityRulesScope['total']); ?></td>
                     </tr>
                     <tr>
+                        <td>Total Enabled Rules</td>
+                        <td class="num" id="scope-enabled"><?php echo number_format($securityRulesScope['enabled']); ?></td>
+                    </tr>
+                    <tr>
+                        <td>Total Disabled Rules</td>
+                        <td class="num" id="scope-disabled"><?php echo number_format($securityRulesScope['disabled']); ?></td>
+                    </tr>
+                    <tr>
                         <td>Rules (Action: Allow)</td>
                         <td class="num" id="scope-allow"><?php echo number_format($securityRulesScope['allow']); ?></td>
                     </tr>
@@ -3015,8 +3031,16 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         <td class="num" id="scope-allow-disabled" style="color: var(--muted);"><?php echo number_format($securityRulesScope['allow_disabled']); ?></td>
                     </tr>
                     <tr>
-                        <td>Total Enabled Rules</td>
-                        <td class="num" id="scope-enabled"><?php echo number_format($securityRulesScope['enabled']); ?></td>
+                        <td>Rules (Action: Deny)</td>
+                        <td class="num" id="scope-deny"><?php echo number_format($securityRulesScope['deny']); ?></td>
+                    </tr>
+                    <tr>
+                        <td>&nbsp;&nbsp;&bull; Deny &amp; Enabled</td>
+                        <td class="num" id="scope-deny-enabled" style="color: #15803d; font-weight: 600;"><?php echo number_format($securityRulesScope['deny_enabled']); ?></td>
+                    </tr>
+                    <tr>
+                        <td>&nbsp;&nbsp;&bull; Deny &amp; Disabled</td>
+                        <td class="num" id="scope-deny-disabled" style="color: var(--muted);"><?php echo number_format($securityRulesScope['deny_disabled']); ?></td>
                     </tr>
                     </tbody>
                 </table>
@@ -3499,6 +3523,9 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 updateDOMTextContent('scope-allow-enabled', formatNumberWithCommas(dataset['security rules allow enabled'] ?? 0));
                 updateDOMTextContent('scope-allow-disabled', formatNumberWithCommas(dataset['security rules allow disabled'] ?? 0));
                 updateDOMTextContent('scope-enabled', formatNumberWithCommas(dataset['security rules enabled'] ?? 0));
+                updateDOMTextContent('scope-disabled', formatNumberWithCommas(dataset['security rules disabled'] ?? 0));
+                updateDOMTextContent('scope-deny-enabled', formatNumberWithCommas(dataset['security rules deny enabled'] ?? 0));
+                updateDOMTextContent('scope-deny-disabled', formatNumberWithCommas(dataset['security rules deny disabled'] ?? 0));
 
                 // DYNAMIC UPDATES FOR THE INFRASTRUCTURE SUMMARY PLACEHOLDERS WHEN THE DROPDOWN CHANGES Context
                 const zoneCalc = dataset['zone protection calc'] ?? '0/0';

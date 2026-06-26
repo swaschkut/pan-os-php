@@ -43,6 +43,7 @@ BUGFIX:
 GENERAL:
 * BP settings validation - no error out but warning if customised
 * Device App-ID update to version: 9118-10120
+* class StatCollectorTrait.php | extend with "security rules disabled" and "security rules deny disabled"
 
 
 2.1.56  (20260613)
