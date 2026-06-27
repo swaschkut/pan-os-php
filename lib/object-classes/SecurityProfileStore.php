@@ -63,7 +63,7 @@ class SecurityProfileStore extends ObjStore
         'PredefinedSecurityProfileVulnerability' => array('name' => 'predefinedVulnerability', 'varName' => 'predefinedVulnerabilitySecProf', 'xpathRoot' => 'predefined-Vulnerability'),
         'PredefinedSecurityProfileFileBlocking' => array('name' => 'predefinedFileblocking', 'varName' => 'predefinedFileblockingSecProf', 'xpathRoot' => 'predefined-Fileblocking'),
         'PredefinedSecurityProfileWildfire' => array('name' => 'predefinedWildfire', 'varName' => 'predefinedWildfireSecProf', 'xpathRoot' => 'predefined-Wildfire'),
-        'PredefinedSecurityProfileUrlFiltering' => array('name' => 'predefinedURLProfile', 'varName' => 'predefinedUrlFilteringSecProfiles', 'xpathRoot' => 'predefined-url-filtering '),
+        'PredefinedSecurityProfileUrlFiltering' => array('name' => 'predefinedURLProfile', 'varName' => 'predefinedUrlFilteringSecProfiles', 'xpathRoot' => 'predefined-url-filtering'),
         'PredefinedSecurityProfileVirusAndWildfire' => array('name' => 'predefinedVirusAndWildfire', 'varName' => 'predefinedVirusAndWildfireSecProf', 'xpathRoot' => 'predefined-VirusAndWildfire'),
 
 
@@ -1225,6 +1225,7 @@ class SecurityProfileStore extends ObjStore
         $f->type = $f::TypeTmp;
         $f->addReference($ref);
 
+        //Todo: 20260627 - swaschkut  needed for SASE API implementation - but NOT for SCM
         /*
         if( $f->xmlroot == null )
         {

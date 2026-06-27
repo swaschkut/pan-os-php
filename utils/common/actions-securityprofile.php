@@ -1813,6 +1813,15 @@ SecurityProfileCallContext::$commonActionFunctions['bp-stats']= array(
             /** @var BuckbeakConf $panorama */
             $panorama = $context->subSystem->owner;
             $panorama->display_bp_statistics( $debug, $actions );
+
+            $dgs = $panorama->getContainers();
+            foreach($dgs as $dg)
+                $dg->display_bp_statistics( $debug, $actions );
+
+
+            $dgs = $panorama->getSnippets();
+            foreach($dgs as $dg)
+                $dg->display_bp_statistics( $debug, $actions );
         }
 
         PH::$shadow_json = $shadow_json_backup;
@@ -1891,6 +1900,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
         $filename = $args['filename'];
 
         $isSCM = false;
+        static $bp_stats_raw = null;
 
         if( isset( $_SERVER['REQUEST_METHOD'] ) ) {
             $filename = "project/html/".$filename;
@@ -1916,6 +1926,8 @@ SecurityProfileCallContext::$supportedActions[] = array(
 
         if( $context->first )
         {
+            $bp_stats_raw = array();
+
             $ruleFilter = "(action is.allow) and (rule is.enabled)";
             $f = SecurityProfileCallContext::$commonActionFunctions['SPR-filter']['MainFunction'];
             $matchedRulesCount = $f($context, $ruleFilter);
@@ -2069,6 +2081,19 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 'visibility rules' => 'dnssec visibility rules'
             ]
         ];
+
+        if( $context->subSystem->isBuckbeak()
+            || $context->subSystem->isFawkes()
+            || $context->subSystem->isContainer()
+            || $context->subSystem->isDeviceCloud()
+            || $context->subSystem->isDeviceOnPrem()
+            || $context->subSystem->isSnippet()
+        )
+        {
+            unset( $pillMetaMapping['sec-av'] );
+            unset( $pillMetaMapping['sec-wf'] );
+        }
+
 
         // 3. Populate Data & Placeholders
         foreach( $context->objectList as $object )
@@ -2967,21 +2992,49 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         $cleanHeader = preg_replace('/\x1b\[[0-9;]*m/', '', $header);
                         $cleanHeader = preg_replace('/\[[0-9;]*m/', '', $cleanHeader);
 
-                        if ($type === 'PANConf' || $type === 'PanoramaConf') {
+                        if ($type === 'PANConf' || $type === 'PanoramaConf' || $type === 'BuckbeakConf') {
                             $dropdownLabel = "FullDevice";
                         }
                         elseif ($type === 'VirtualSystem') {
                             if (preg_match("/VirtualSystem\s+'([^']+)'/", $cleanHeader, $matches)) {
-                                $dropdownLabel = $matches[1];
+                                $dropdownLabel = "[VSYS]".$matches[1];
                             } else {
                                 $dropdownLabel = "vsys1";
                             }
                         }
                         elseif ($type === 'DeviceGroup') {
                             if (preg_match("/DeviceGroup\s+'([^']+)'/", $cleanHeader, $matches)) {
-                                $dropdownLabel = $matches[1];
+                                $dropdownLabel = "[DG]".$matches[1];
                             } else {
                                 $dropdownLabel = "DeviceGroup Context";
+                            }
+                        }
+                        elseif ($type === 'Container') {
+                            if (preg_match("/Container\s+'([^']+)'/", $cleanHeader, $matches)) {
+                                $dropdownLabel = "[C]".$matches[1];
+                            } else {
+                                $dropdownLabel = "Container Context";
+                            }
+                        }
+                        elseif ($type === 'Snippet') {
+                            if (preg_match("/Snippet\s+'([^']+)'/", $cleanHeader, $matches)) {
+                                $dropdownLabel = "[S]".$matches[1];
+                            } else {
+                                $dropdownLabel = "Snippet Context";
+                            }
+                        }
+                        elseif ($type === 'DeviceCloud') {
+                            if (preg_match("/DeviceCloud\s+'([^']+)'/", $cleanHeader, $matches)) {
+                                $dropdownLabel = "[DC]".$matches[1];
+                            } else {
+                                $dropdownLabel = "DeviceCloud Context";
+                            }
+                        }
+                        elseif ($type === 'DeviceOnPrem') {
+                            if (preg_match("/DeviceOnPrem\s+'([^']+)'/", $cleanHeader, $matches)) {
+                                $dropdownLabel = "[DO]".$matches[1];
+                            } else {
+                                $dropdownLabel = "DeviceOnPrem Context";
                             }
                         }
                     }
