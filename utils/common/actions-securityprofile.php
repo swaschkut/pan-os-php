@@ -3357,21 +3357,21 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         'adoption':      ['location', 'profile', 'count', 'adopted']
                     },
                     headers: {
-                        'visibility':    ['Location', 'VirusAndWildFire Profile Name', '# of Rules', 'Visible', 'Rules', 'Inline ML', 'Rules Check Info', 'Inline ML Check Info'],
-                        'best-practice': ['Location', 'VirusAndWildFire Profile Name', '# of Rules', 'BP Pass', 'BP Rules', 'BP Inline ML', 'Rules Check Info', 'Inline ML Check Info'],
+                        'visibility':    ['Location', 'VirusAndWildFire Profile Name', '# of Rules', 'Visible', 'AV Rules', 'AV Inline ML', 'AV Rules Check Info', 'AV Inline ML Check Info'],
+                        'best-practice': ['Location', 'VirusAndWildFire Profile Name', '# of Rules', 'BP Pass', 'AV BP Rules', 'AV BP Inline ML', 'AV Rules Check Info', 'AV Inline ML Check Info'],
                         'adoption':      ['Location', 'VirusAndWildFire Profile Name', '# of Rules', 'Adopted']
                     },
                     numericIndices: [2, 3, 4, 5]
                 },
                 'sec-dnssec': {
                     keys: {
-                        'visibility':    ['location', 'profile', 'count', 'visible', 'rules', 'rules_detail'],
-                        'best-practice': ['location', 'profile', 'count', 'bp_pass', 'bp_rules', 'bp_rules_detail'],
+                        'visibility':    ['location', 'profile', 'count', 'visible', 'dns_lists', 'dns_security', 'adns_security'],
+                        'best-practice': ['location', 'profile', 'count', 'bp_pass', 'bp_dns_lists', 'bp_dns_security', 'bp_adns_security'],
                         'adoption':      ['location', 'profile', 'count', 'adopted']
                     },
                     headers: {
-                        'visibility':    ['Location', 'DNSSecurity Profile Name', '# of Rules', 'Visible', 'Rules', 'Rules Check Info'],
-                        'best-practice': ['Location', 'DNSSecurity Profile Name', '# of Rules', 'BP Pass', 'BP Rules', 'Rules Check Info'],
+                        'visibility':    ['Location', 'DNSSecurity Profile Name', '# of Rules', 'Visible',  'DNS Lists', 'DNS Security', 'ADNS Security'],
+                        'best-practice': ['Location', 'DNSSecurity Profile Name', '# of Rules', 'BP Pass',  'BP DNS Lists', 'BP DNS Security', 'BP ADNS Security'],
                         'adoption':      ['Location', 'DNSSecurity Profile Name', '# of Rules', 'Adopted']
                     },
                     numericIndices: [2, 3, 4]
