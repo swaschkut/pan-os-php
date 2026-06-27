@@ -1,6 +1,14 @@
 CHANGELOG
 
-2.1.57
+2.1.58
+UTIL:
+
+BUGFIX:
+
+GENERAL:
+
+
+2.1.57 [beta->dev 20260627]
 UTIL:
 * type=playbook shadow-multivsys | if set, use it in all playbook JSON commands
 * type=rule 'actions=exporttohtml:rule.html,visibility|bestpractice' | extend with SPG_SP location information
