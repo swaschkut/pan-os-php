@@ -1970,8 +1970,8 @@ SecurityProfileCallContext::$supportedActions[] = array(
             'sec-av' => [
                 'title'    => 'AV — Antivirus Profiles',
                 'headers'  => ['Location', 'Antivirus Profile Name', '# of Rules', 'Visible', 'Actions', 'Inline ML', 'Actions Check Info', 'Inline ML Check Info'],
-                'keys'     => ['location', 'profile', 'count', 'visible', 'actions', 'inline_ml', 'actions_detail', 'inline_ml_detail'],
-                'numeric'  => ['count', 'visible', 'actions', 'inline_ml'],
+                'keys'     => ['location', 'profile', 'count', 'visible', 'actions', 'av_inline_ml', 'actions_detail', 'av_inline_ml_detail'],
+                'numeric'  => ['count', 'visible', 'actions', 'av_inline_ml'],
                 'rows'     => []
             ],
             'sec-as' => [
@@ -2020,18 +2020,29 @@ SecurityProfileCallContext::$supportedActions[] = array(
         )
         {
             $isSCM = true;
+            //Todo: changes for $sections['as'] needed, without DNS part
+
+            $sections['sec-as'] = array(
+                'title'    => 'AS — Anti-Spyware Profiles',
+                'headers'  => ['Location', 'Anti-Spyware Profile Name', '# of Rules', 'Visible', 'Rules', 'Inline ML', 'Rules Check Info', 'Inline ML Check Info'],
+                'keys'     => ['location', 'profile', 'count', 'visible', 'rules',  'inline_ml', 'rules_detail', 'inline_ml_detail'],
+                'numeric'  => ['count', 'visible', 'rules',  'inline_ml'],
+                'rows'     => array()
+            );
+
+            //Todo: AV wf think about settings; both av and wf have rules settings
             $sections['sec-avwf'] = array(
                 'title'    => 'AVWF — VirusAndWildFire Profiles',
-                'headers'  => ['Location', 'VirusAndWildFire Profile Name', '# of Rules', 'Visible', 'Rules', 'Inline ML', 'Rules Check Info', 'Inline ML Check Info'],
-                'keys'     => ['location', 'profile', 'count', 'visible', 'rules', 'inline_ml', 'rules_detail', 'inline_ml_detail'],
-                'numeric'  => ['count', 'visible', 'rules', 'inline_ml'],
+                'headers'  => ['Location', 'VirusAndWildFire Profile Name', '# of Rules', 'Visible', 'AV Actions', 'AV Inline ML', 'WF Rules', 'WF Inline ML', 'AV Actions Check Info', 'AV Inline ML Check Info', 'WF Rules Check Info', 'WF Inline ML Check Info'],
+                'keys'     => ['location', 'profile', 'count', 'visible', 'actions', 'av_inline_ml', 'rules', 'inline_ml', 'actions_detail', 'av_inline_ml_detail', 'rules_detail', 'inline_ml_detail'],
+                'numeric'  => ['count', 'visible', 'actions', 'av_inline_ml', 'rules', 'inline_ml'],
                 'rows'     => array()
             );
             $sections['sec-dnssec'] = array(
                 'title'    => 'DNSSec — DNSSecurity Profiles',
-                'headers'  => ['Location', 'DNSSecurity Profile Name', '# of Rules', 'Visible', 'Rules', 'Rules Check Info'],
-                'keys'     => ['location', 'profile', 'count', 'visible', 'rules', 'rules_detail'],
-                'numeric'  => ['count', 'visible', 'rules'],
+                'headers'  => ['Location', 'DNSSecurity Profile Name', '# of Rules', 'Visible', 'DNS Lists', 'DNS Security', 'DNS Lists Check Info', 'DNS Security Check Info'],
+                'keys'     => ['location', 'profile', 'count', 'visible', 'dns_lists', 'dns_security', 'dns_lists_detail', 'dns_security_detail'],
+                'numeric'  => ['count', 'visible', 'dns_lists', 'dns_security', 'adns_security'],
                 'rows'     => array()
             );
             unset( $sections['sec-av'] );
@@ -2073,12 +2084,16 @@ SecurityProfileCallContext::$supportedActions[] = array(
             ],
             'sec-avwf' => [
                 'visibility'             => 'avwf visibility',
-                'visibility rules'       => 'avwf visibility rules',
-                'visibility mica-engine' => 'avwf visibility mica-engine'
+                'visibility av actions'     => 'av visibility actions',
+                'visibility av mica-engine' => 'av visibility mica-engine',
+                'visibility wf rules'       => 'wf visibility rules',
+                'visibility wf mica-engine' => 'wf visibility mica-engine'
             ],
             'sec-dnssec' => [
                 'visibility'       => 'dnssec visibility',
-                'visibility rules' => 'dnssec visibility rules'
+                'dns-list visibility'     => 'dns-list visibility',
+                'dns-security visibility' => 'dns-security visibility',
+                'adns-security visibility'=> 'adns-security visibility',
             ]
         ];
 
@@ -2090,6 +2105,12 @@ SecurityProfileCallContext::$supportedActions[] = array(
             || $context->subSystem->isSnippet()
         )
         {
+            $pillMetaMapping['sec-as'] = array(
+                    'visibility'              => 'as visibility',
+                    'visibility rules'        => 'as visibility rules',
+                    'visibility mica-engine'  => 'as visibility mica-engine'
+            );
+            //4pillMetaMapping change for sec-as
             unset( $pillMetaMapping['sec-av'] );
             unset( $pillMetaMapping['sec-wf'] );
         }
@@ -2163,13 +2184,17 @@ SecurityProfileCallContext::$supportedActions[] = array(
             // --- EXTENDED PARAMETERS ---
             $info['actions']                  = 0;
             $info['inline_ml']                = 0;
+            $info['av_inline_ml']                = 0;
             $info['actions_detail']             = 'Compliant';
             $info['inline_ml_detail']             = 'Compliant';
+            $info['av_inline_ml_detail']             = 'Compliant';
             $info['bp_actions']                  = 0;
             $info['bp_inline_ml']                = 0;
+            $info['bp_av_inline_ml']                = 0;
             $info['bp_actions_detail']             = 'BP Compliant';
             $info['bp_inline_ml_detail']             = 'BP Compliant';
-            if( get_class($object) == "AntiVirusProfile" )
+            $info['bp_av_inline_ml_detail']             = 'BP Compliant';
+            if( get_class($object) == "AntiVirusProfile" || get_class($object) == "VirusAndWildfireProfile")
             {
                 if( $object->av_actions_visibility() )
                     $info['actions'] = $info['count'];
@@ -2178,6 +2203,9 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     $array = array();
                     $object->getFullActionTextSPhtml( $array, false, true );
                     $info['actions_detail'] = implode("\n", $array);
+
+                    if( empty( $info['actions_detail'] ) )
+                        $info['actions_detail'] = "[missing settings]";
                 }
 
 
@@ -2188,24 +2216,46 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     $array = array();
                     $object->getFullActionTextSPhtml( $array, true, false );
                     $info['bp_actions_detail'] = implode("\n", $array);
+
+                    if( empty( $info['bp_actions_detail'] ) )
+                        $info['bp_actions_detail'] = "[missing settings]";
                 }
             }
             if( get_class($object) == "AntiVirusProfile"
                 || get_class($object) == "AntiSpywareProfile"
                 || get_class($object) == "VulnerabilityProfile"
                 || get_class($object) == "WildfireProfile"
+                || get_class($object) == "VirusAndWildfireProfile"
             )
             {
                 if( $object->cloud_inline_analysis_visibility($object->owner->bp_json_file) )
                 {
-                    $info['inline_ml'] = $info['count'];
+                    if (get_class($object) == "AntiVirusProfile")
+                        $info['av_inline_ml'] = $info['count'];
+                    else
+                    {
+                        $info['inline_ml'] = $info['count'];
+                        if (get_class($object) == "VirusAndWildfireProfile")
+                            $info['av_inline_ml'] = $info['count'];
+                    }
                 }
                 else
                 {
                     $string_mica_engine = array();
                     $object->mica_getFullTextHTML( $string_mica_engine, false, true);
-                    $info['inline_ml_detail'] = implode("\n", $string_mica_engine);
-                    if( empty( $info['inline_ml_detail'] ) )
+                    //$info['inline_ml_detail'] = implode("\n", $string_mica_engine);
+
+                    if (get_class($object) == "AntiVirusProfile") {
+                        $info['av_inline_ml_detail'] = implode("\n", $string_mica_engine);
+                    }
+                    else
+                    {
+                        $info['inline_ml_detail'] = implode("\n", $string_mica_engine);
+                        if (get_class($object) == "VirusAndWildfireProfile")
+                            $info['av_inline_ml_detail'] = implode("\n", $string_mica_engine);
+                    }
+
+                    if( empty( $info['inline_ml_detail'] ) || empty( $info['av_inline_ml_detail'] ) )
                     {
                         if( get_class($object) == "VulnerabilityProfile"
                             && $object->owner->owner->version < 110
@@ -2213,14 +2263,21 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         {
                             $info['inline_ml_detail']             = '[Feature not available]';
                         }
-                        elseif( get_class($object) == "WildfireProfile"
+                        elseif( (get_class($object) == "WildfireProfile"
+                            || get_class($object) == "VirusAndWildfireProfile" )
                             && $object->owner->owner->version < 111
                         )
                         {
                             $info['inline_ml_detail']             = '[Feature not available]';
                         }
                         elseif( (get_class($object) == "AntiVirusProfile"
-                            || get_class($object) == "AntiSpywareProfile")
+                            || get_class($object) == "VirusAndWildfireProfile" )
+                            && ($object->owner->owner->version < 102)
+                        )
+                        {
+                            $info['av_inline_ml_detail']             = '[Feature not available]';
+                        }
+                        elseif( get_class($object) == "AntiSpywareProfile"
                             && ($object->owner->owner->version < 102)
                         )
                         {
@@ -2234,14 +2291,31 @@ SecurityProfileCallContext::$supportedActions[] = array(
 
                 if( $object->cloud_inline_analysis_best_practice($object->owner->bp_json_file) )
                 {
-                    $info['bp_inline_ml'] = $info['count'];
+                    if (get_class($object) == "AntiVirusProfile")
+                        $info['bp_av_inline_ml'] = $info['count'];
+                    else
+                    {
+                        $info['bp_inline_ml'] = $info['count'];
+                        if (get_class($object) == "VirusAndWildfireProfile")
+                            $info['bp_av_inline_ml'] = $info['count'];
+                    }
                 }
                 else
                 {
                     $string_mica_engine = array();
                     $object->mica_getFullTextHTML( $string_mica_engine, true, false);
                     $info['bp_inline_ml_detail'] = implode("\n", $string_mica_engine);
-                    if( empty( $info['bp_inline_ml_detail'] ) )
+
+                    if (get_class($object) == "AntiVirusProfile")
+                        $info['bp_av_inline_ml_detail'] = implode("\n", $string_mica_engine);
+                    else
+                    {
+                        $info['bp_inline_ml_detail'] = implode("\n", $string_mica_engine);
+                        if (get_class($object) == "VirusAndWildfireProfile")
+                            $info['bp_av_inline_ml_detail'] = implode("\n", $string_mica_engine);
+                    }
+
+                    if( empty( $info['bp_inline_ml_detail'] ) || empty( $info['bp_av_inline_ml_detail'] ) )
                     {
                         if( get_class($object) == "VulnerabilityProfile"
                             && $object->owner->owner->version < 110
@@ -2249,14 +2323,21 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         {
                             $info['bp_inline_ml_detail']             = '[Feature not available]';
                         }
-                        elseif( get_class($object) == "WildfireProfile"
+                        elseif( (get_class($object) == "WildfireProfile"
+                            || get_class($object) == "VirusAndWildfireProfile" )
                             && $object->owner->owner->version < 111
                         )
                         {
                             $info['bp_inline_ml_detail']             = '[Feature not available]';
                         }
                         elseif( (get_class($object) == "AntiVirusProfile"
-                                || get_class($object) == "AntiSpywareProfile")
+                            || get_class($object) == "VirusAndWildfireProfile" )
+                            && ($object->owner->owner->version < 102)
+                        )
+                        {
+                            $info['bp_av_inline_ml_detail']             = '[Feature not available]';
+                        }
+                        elseif( get_class($object) == "AntiSpywareProfile"
                             && ($object->owner->owner->version < 102)
                         )
                         {
@@ -2408,7 +2489,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 }
             }
 
-            if( get_class($object) == "WildfireProfile" )
+            if( get_class($object) == "WildfireProfile" || get_class($object) == "VirusAndWildfireProfile")
             {
                 if( $object->wildfire_rules_visibility() )
                     $info['rules'] = $info['count'];
@@ -2465,7 +2546,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
             $info['adns_security_detail']             = 'Compliant';
             $info['bp_adns_security']             = 0;
             $info['bp_adns_security_detail']             = 'BP Compliant';
-            if( get_class($object) == "AntiSpywareProfile" )
+            if( get_class($object) == "AntiSpywareProfile" || get_class($object) == "DNSSecurityProfile" )
             {
                 if( $object->spyware_dnslist_visibility() )
                     $info['dns_lists'] = $info['count'];
@@ -2495,7 +2576,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 }
             }
 
-            if( get_class($object) == "AntiSpywareProfile" )
+            if( get_class($object) == "AntiSpywareProfile" || get_class($object) == "DNSSecurityProfile" )
             {
                 if( $object->spyware_dns_security_visibility() )
                     $info['dns_security'] = $info['count'];
@@ -2671,9 +2752,9 @@ SecurityProfileCallContext::$supportedActions[] = array(
 
 
         $blankDefaults = [
-            'actions' => 0, 'inline_ml' => 0, 'rules_not_visible' => 0, 'inline_ml_not_visible' => 0,
+            'actions' => 0, 'inline_ml' => 0, 'av_inline_ml' => 0, 'rules_not_visible' => 0, 'inline_ml_not_visible' => 0,
             'rules' => 0, 'dns_lists' => 0, 'dns_security' => 0, 'adns_security' => 0, 'site_access' => 0, 'user_credential' => 0,
-            'actions_detail' => 'N/A', 'inline_ml_detail' => 'N/A', 'rules_detail' => 'N/A',
+            'actions_detail' => 'N/A', 'inline_ml_detail' => 'N/A', 'av_inline_ml_detail' => 'N/A', 'rules_detail' => 'N/A',
             'dns_lists_detail' => 'N/A', 'dns_security_detail' => 'N/A', 'adns_security_detail' => 'N/A', 'site_access_detail' => 'N/A',
             'user_credential_detail' => 'N/A',
 
@@ -3352,31 +3433,51 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 },
                 'sec-avwf': {
                     keys: {
+                        'visibility':    ['location', 'profile', 'count', 'visible', 'actions', 'av_inline_ml', 'rules', 'inline_ml', 'actions_detail', 'av_inline_ml_detail', 'rules_detail', 'inline_ml_detail'],
+                        'best-practice': ['location', 'profile', 'count', 'bp_pass', 'bp_actions', 'bp_av_inline_ml', 'bp_rules', 'bp_inline_ml', 'bp_actions_detail', 'bp_av_inline_ml_detail', 'bp_rules_detail', 'bp_inline_ml_detail'],
+                        'adoption':      ['location', 'profile', 'count', 'adopted']
+                    },
+                    headers: {
+                        'visibility':    ['Location', 'VirusAndWildFire Profile Name', '# of Rules', 'Visible', 'AV Actions', 'AV Inline ML', 'WF Rules', 'WF Inline ML', 'AV Actions Check Info', 'AV Inline ML Check Info', 'WF Rules Check Info', 'WF Inline ML Check Info'],
+                        'best-practice': ['Location', 'VirusAndWildFire Profile Name', '# of Rules', 'BP Pass', 'AV BP Actions', 'AV BP Inline ML', 'WF BP Rules', 'WF BP Inline ML', 'AV Actions Check Info', 'AV Inline ML Check Info', 'WF Rules Check Info', 'WF Inline ML Check Info'],
+                        'adoption':      ['Location', 'VirusAndWildFire Profile Name', '# of Rules', 'Adopted']
+                    },
+                    numericIndices: [2, 3, 4, 5, 6, 7]
+                },
+                'sec-dnssec': {
+                    keys: {
+                        'visibility':    ['location', 'profile', 'count', 'visible', 'dns_lists', 'dns_security', 'adns_security','dns_lists_detail', 'dns_security_detail', 'adns_security_detail'],
+                        'best-practice': ['location', 'profile', 'count', 'bp_pass', 'bp_dns_lists', 'bp_dns_security', 'bp_adns_security', 'bp_rules_detail', 'bp_dns_lists_detail', 'bp_dns_security_detail'],
+                        'adoption':      ['location', 'profile', 'count', 'adopted']
+                    },
+                    headers: {
+                        'visibility':    ['Location', 'DNSSecurity Profile Name', '# of Rules', 'Visible',  'DNS Lists', 'DNS Security', 'ADNS Security', 'DNS Lists Check Info', 'DNS Security Check Info', 'ADNS Security Check Info'],
+                        'best-practice': ['Location', 'DNSSecurity Profile Name', '# of Rules', 'BP Pass',  'BP DNS Lists', 'BP DNS Security', 'BP ADNS Security', 'DNS Lists Check Info', 'DNS Security Check Info', 'ADNS Security Check Info'],
+                        'adoption':      ['Location', 'DNSSecurity Profile Name', '# of Rules', 'Adopted']
+                    },
+                    numericIndices: [2, 3, 4, 5, 6]
+                }
+            };
+
+            // 2. Overwrite only 'sec-as' if $isSCM evaluates to true in PHP
+            <?php if ($isSCM): ?>
+                detailedSectionsConfiguration['sec-as'] = {
+                    keys: {
                         'visibility':    ['location', 'profile', 'count', 'visible', 'rules', 'inline_ml', 'rules_detail', 'inline_ml_detail'],
                         'best-practice': ['location', 'profile', 'count', 'bp_pass', 'bp_rules', 'bp_inline_ml', 'bp_rules_detail', 'bp_inline_ml_detail'],
                         'adoption':      ['location', 'profile', 'count', 'adopted']
                     },
                     headers: {
-                        'visibility':    ['Location', 'VirusAndWildFire Profile Name', '# of Rules', 'Visible', 'AV Rules', 'AV Inline ML', 'AV Rules Check Info', 'AV Inline ML Check Info'],
-                        'best-practice': ['Location', 'VirusAndWildFire Profile Name', '# of Rules', 'BP Pass', 'AV BP Rules', 'AV BP Inline ML', 'AV Rules Check Info', 'AV Inline ML Check Info'],
-                        'adoption':      ['Location', 'VirusAndWildFire Profile Name', '# of Rules', 'Adopted']
+                        'visibility':    ['Location', 'Anti-Spyware Profile Name', '# of Rules', 'Visible', 'Rules', 'Inline ML', 'Rules Check Info', 'Inline ML Check Info'],
+                        'best-practice': ['Location', 'Anti-Spyware Profile Name', '# of Rules', 'BP Pass', 'BP Rules', 'BP Inline ML', 'Rules Check Info', 'Inline ML Check Info'],
+                        'adoption':      ['Location', 'Anti-Spyware Profile Name', '# of Rules', 'Adopted']
                     },
                     numericIndices: [2, 3, 4, 5]
-                },
-                'sec-dnssec': {
-                    keys: {
-                        'visibility':    ['location', 'profile', 'count', 'visible', 'dns_lists', 'dns_security', 'adns_security'],
-                        'best-practice': ['location', 'profile', 'count', 'bp_pass', 'bp_dns_lists', 'bp_dns_security', 'bp_adns_security'],
-                        'adoption':      ['location', 'profile', 'count', 'adopted']
-                    },
-                    headers: {
-                        'visibility':    ['Location', 'DNSSecurity Profile Name', '# of Rules', 'Visible',  'DNS Lists', 'DNS Security', 'ADNS Security'],
-                        'best-practice': ['Location', 'DNSSecurity Profile Name', '# of Rules', 'BP Pass',  'BP DNS Lists', 'BP DNS Security', 'BP ADNS Security'],
-                        'adoption':      ['Location', 'DNSSecurity Profile Name', '# of Rules', 'Adopted']
-                    },
-                    numericIndices: [2, 3, 4]
-                }
-            };
+                };
+
+            <?php endif; ?>
+
+
 
             let currentSelectedIndex = 0;
             let currentActiveTab = 'visibility';
