@@ -2205,7 +2205,13 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     $info['actions_detail'] = implode("\n", $array);
 
                     if( empty( $info['actions_detail'] ) )
-                        $info['actions_detail'] = "[missing settings]";
+                    {
+                        if( $isSCM )
+                            $info['actions_detail'] = "[SCM no export - missing settings]";
+                        else
+                            $info['actions_detail'] = "[missing settings]";
+                    }
+
                 }
 
 
@@ -2218,7 +2224,12 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     $info['bp_actions_detail'] = implode("\n", $array);
 
                     if( empty( $info['bp_actions_detail'] ) )
-                        $info['bp_actions_detail'] = "[missing settings]";
+                    {
+                        if( $isSCM )
+                            $info['bp_actions_detail'] = "[SCM no export - missing settings]";
+                        else
+                            $info['bp_actions_detail'] = "[missing settings]";
+                    }
                 }
             }
             if( get_class($object) == "AntiVirusProfile"
