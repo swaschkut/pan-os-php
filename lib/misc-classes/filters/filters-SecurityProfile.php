@@ -1596,7 +1596,7 @@ RQuery::$defaultFilters['securityprofile']['wf.mica-engine']['operators']['is.vi
 
 RQuery::$defaultFilters['securityprofile']['avwf']['operators']['is.best-practice'] = array(
     'Function' => function (SecurityProfileRQueryContext $context) {
-        /** @var AntiVirusProfile $object */
+        /** @var VirusAndWildfireProfile $object */
         $object = $context->object;
 
         if( $object->secprof_type != 'virus-and-wildfire-analysis' )
@@ -1609,7 +1609,7 @@ RQuery::$defaultFilters['securityprofile']['avwf']['operators']['is.best-practic
 );
 RQuery::$defaultFilters['securityprofile']['avwf']['operators']['is.visibility'] = array(
     'Function' => function (SecurityProfileRQueryContext $context) {
-        /** @var AntiVirusProfile $object */
+        /** @var VirusAndWildfireProfile $object */
         $object = $context->object;
 
         if( $object->secprof_type != 'virus-and-wildfire-analysis' )
@@ -1622,7 +1622,7 @@ RQuery::$defaultFilters['securityprofile']['avwf']['operators']['is.visibility']
 );
 RQuery::$defaultFilters['securityprofile']['avwf']['operators']['is.adoption'] = array(
     'Function' => function (SecurityProfileRQueryContext $context) {
-        /** @var AntiVirusProfile $object */
+        /** @var VirusAndWildfireProfile $object */
         $object = $context->object;
 
         if( $object->secprof_type != 'virus-and-wildfire-analysis' )
@@ -1636,7 +1636,7 @@ RQuery::$defaultFilters['securityprofile']['avwf']['operators']['is.adoption'] =
 
 RQuery::$defaultFilters['securityprofile']['dnssec']['operators']['is.best-practice'] = array(
     'Function' => function (SecurityProfileRQueryContext $context) {
-        /** @var AntiVirusProfile $object */
+        /** @var DNSSecurityProfile $object */
         $object = $context->object;
 
         if( $object->secprof_type != 'dns-security' )
@@ -1649,7 +1649,7 @@ RQuery::$defaultFilters['securityprofile']['dnssec']['operators']['is.best-pract
 );
 RQuery::$defaultFilters['securityprofile']['dnssec']['operators']['is.visibility'] = array(
     'Function' => function (SecurityProfileRQueryContext $context) {
-        /** @var AntiVirusProfile $object */
+        /** @var DNSSecurityProfile $object */
         $object = $context->object;
 
         if( $object->secprof_type != 'dns-security' )
@@ -1662,7 +1662,7 @@ RQuery::$defaultFilters['securityprofile']['dnssec']['operators']['is.visibility
 );
 RQuery::$defaultFilters['securityprofile']['dnssec']['operators']['is.adoption'] = array(
     'Function' => function (SecurityProfileRQueryContext $context) {
-        /** @var AntiVirusProfile $object */
+        /** @var DNSSecurityProfile $object */
         $object = $context->object;
 
         if( $object->secprof_type != 'dns-security' )

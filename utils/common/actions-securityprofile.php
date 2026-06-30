@@ -1812,16 +1812,16 @@ SecurityProfileCallContext::$commonActionFunctions['bp-stats']= array(
         {
             /** @var BuckbeakConf $panorama */
             $panorama = $context->subSystem->owner;
-            $panorama->display_bp_statistics( $debug, $actions );
+            $panorama->display_bp_statistics( $debug, $actions, false, true );
 
             $dgs = $panorama->getContainers();
             foreach($dgs as $dg)
-                $dg->display_bp_statistics( $debug, $actions );
+                $dg->display_bp_statistics( $debug, $actions, false, true );
 
 
             $dgs = $panorama->getSnippets();
             foreach($dgs as $dg)
-                $dg->display_bp_statistics( $debug, $actions );
+                $dg->display_bp_statistics( $debug, $actions, false, true );
         }
 
         PH::$shadow_json = $shadow_json_backup;
@@ -1949,6 +1949,9 @@ SecurityProfileCallContext::$supportedActions[] = array(
 
             foreach( $bp_stats_array as $key => $array )
                 $bp_stats_raw[] = $array;
+
+            #print_r( $bp_stats_raw );
+            #exit();
 
             $firstKey = array_key_first($bp_stats_raw);
 
@@ -3764,6 +3767,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                         explicitCalculationValue = `${matchingRules}/${totalRules}`;
                     } else {
                         let baseKey = displayName.toLowerCase()
+                            .replace('virusandwildfire analysis ', 'avwf ')
                             .replace('wildfire analysis ', 'wf ')
                             .replace('antivirus ', 'av ')
                             .replace('anti-spyware ', 'as ')
@@ -3786,7 +3790,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
 
                         if (`${baseKey} calc` in dataset) {
                             explicitCalculationValue = dataset[`${baseKey} calc`];
-                        } else if (baseKey.startsWith('wf ') || baseKey.startsWith('av ') || baseKey.startsWith('as ') || baseKey.startsWith('vp ')) {
+                        } else if (baseKey.startsWith('avwf ') || baseKey.startsWith('wf ') || baseKey.startsWith('av ') || baseKey.startsWith('as ') || baseKey.startsWith('vp ')) {
                             const keyParts = baseKey.split(' ');
                             const calcLookupKey = `${keyParts[0]} ${currentActiveTab} ${keyParts.slice(1).join(' ')} calc`;
                             explicitCalculationValue = dataset[calcLookupKey] || 'N/A';
