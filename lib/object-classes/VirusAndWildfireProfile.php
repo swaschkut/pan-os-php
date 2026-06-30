@@ -155,16 +155,19 @@ class VirusAndWildfireProfile extends SecurityProfile2
 
     public function is_best_practice(): bool
     {
+        //Todo - swaschkut 20260629
         return false;
     }
 
     public function is_visibility(): bool
     {
+        //Todo - swaschkut 20260629
         return false;
     }
 
     public function is_adoption(): bool
     {
+        //Todo - swaschkut 20260629
         return false;
     }
 

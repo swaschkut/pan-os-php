@@ -1825,7 +1825,7 @@ class PanoramaConf
     }
 
 
-    public function display_statistics( $connector = null, $debug = false, $actions = "display", $location = false ): void
+    public function display_statistics( $connector = null, $debug = false, $actions = "display", $location = false, $is_SCM = false ): void
     {
         //Todo: swaschkut 20251017 template / template-stack missing
 
@@ -1908,33 +1908,33 @@ class PanoramaConf
 
 
         if( !PH::$shadow_loaddghierarchy )
-            $this->display_bp_statistics( $debug, $actions );
+            $this->display_bp_statistics( $debug, $actions, false, $is_SCM );
         else
-            $this->display_bp_statistics( $debug, $actions, $location );
+            $this->display_bp_statistics( $debug, $actions, $location, $is_SCM );
 
         if( !PH::$shadow_loaddghierarchy )
         {
-            $this->display_shared_statistics( $connector, $debug, $actions );
+            $this->display_shared_statistics( $connector, $debug, $actions, $is_SCM );
         }
 
     }
 
-    public function display_shared_statistics( $connector = null, $debug = false, $actions = "display" ): void
+    public function display_shared_statistics( $connector = null, $debug = false, $actions = "display", $is_SCM = false ): void
     {
         $statsArray = array();
 
 
 
-        $this->display_statistics_NEW($debug, $actions, $statsArray, $connector, "shared" );
+        $this->display_statistics_NEW($debug, $actions, $statsArray, $connector, "shared", $is_SCM );
 
 
-        $this->display_bp_shared_statistics( $debug, $actions );
+        $this->display_bp_shared_statistics( $debug, $actions, $is_SCM );
     }
 
 
-    public function display_bp_statistics( $debug = false, $actions = "display", $location = false )
+    public function display_bp_statistics( $debug = false, $actions = "display", $location = false, $is_SCM = false )
     {
-        $stdoutarray = $this->get_bp_statistics();
+        $stdoutarray = $this->get_bp_statistics( $is_SCM);
         $stdoutarray['type'] = get_class( $this );
 
         if( !PH::$shadow_loaddghierarchy )
@@ -1947,7 +1947,7 @@ class PanoramaConf
 
         foreach( $this->getDeviceGroups() as $deviceGroup )
         {
-            $stdoutarray2 = $deviceGroup->get_bp_statistics();
+            $stdoutarray2 = $deviceGroup->get_bp_statistics( $is_SCM );
             foreach ($stdoutarray2 as $key2 => $stdoutarray_value)
             {
                 if( $key2 == "header" || $key2 == "type" || $key2 == "statstype" )
@@ -1970,10 +1970,10 @@ class PanoramaConf
             }
         }
 
-        $this->bp_calculation( $stdoutarray );
+        $this->bp_calculation( $stdoutarray, $is_SCM );
 
 
-        $percentageArray = $this->get_bp_percentageArray($stdoutarray);
+        $percentageArray = $this->get_bp_percentageArray($stdoutarray, $is_SCM);
 
         $stdoutarray['percentage'] = $percentageArray;
 
@@ -1984,10 +1984,10 @@ class PanoramaConf
         $this->generate_table($stdoutarray, $debug, $actions);
     }
 
-    public function display_bp_shared_statistics( $debug = false, $actions = "display" )
+    public function display_bp_shared_statistics( $debug = false, $actions = "display", $is_SCM = false )
     {
 
-        $stdoutarray = $this->get_bp_statistics( $actions );
+        $stdoutarray = $this->get_bp_statistics( $is_SCM );
 
         $stdoutarray['type'] = "DeviceGroup";
         $header = "BP/Visibility Statistics for PanoramaConf '" . PH::boldText("shared") . "' | ";

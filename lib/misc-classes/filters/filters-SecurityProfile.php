@@ -1594,6 +1594,86 @@ RQuery::$defaultFilters['securityprofile']['wf.mica-engine']['operators']['is.vi
     'help' => "'securityprofiletype=wildfire-analysis' e.g. 'filter=(wf.mica-engine is.visibility)'"
 );
 
+RQuery::$defaultFilters['securityprofile']['avwf']['operators']['is.best-practice'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var AntiVirusProfile $object */
+        $object = $context->object;
+
+        if( $object->secprof_type != 'virus-and-wildfire-analysis' )
+            return null;
+
+        return $object->is_best_practice();
+    },
+    'arg' => false,
+    'help' => "'securityprofiletype=virus-and-wildfire-analysis' e.g. 'filter=(avwf is.best-practice)'"
+);
+RQuery::$defaultFilters['securityprofile']['avwf']['operators']['is.visibility'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var AntiVirusProfile $object */
+        $object = $context->object;
+
+        if( $object->secprof_type != 'virus-and-wildfire-analysis' )
+            return null;
+
+        return $object->is_visibility();
+    },
+    'arg' => false,
+    'help' => "'securityprofiletype=virus-and-wildfire-analysis' e.g. 'filter=(avwf is.visibility)'"
+);
+RQuery::$defaultFilters['securityprofile']['avwf']['operators']['is.adoption'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var AntiVirusProfile $object */
+        $object = $context->object;
+
+        if( $object->secprof_type != 'virus-and-wildfire-analysis' )
+            return null;
+
+        return $object->is_adoption();
+    },
+    'arg' => false,
+    'help' => "'securityprofiletype=virus-and-wildfire-analysis' e.g. 'filter=(avwf is.adoption)'"
+);
+
+RQuery::$defaultFilters['securityprofile']['dnssec']['operators']['is.best-practice'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var AntiVirusProfile $object */
+        $object = $context->object;
+
+        if( $object->secprof_type != 'dns-security' )
+            return null;
+
+        return $object->is_best_practice();
+    },
+    'arg' => false,
+    'help' => "'securityprofiletype=dns-security' e.g. 'filter=(dnssec is.best-practice)'"
+);
+RQuery::$defaultFilters['securityprofile']['dnssec']['operators']['is.visibility'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var AntiVirusProfile $object */
+        $object = $context->object;
+
+        if( $object->secprof_type != 'dns-security' )
+            return null;
+
+        return $object->is_visibility();
+    },
+    'arg' => false,
+    'help' => "'securityprofiletype=dns-security' e.g. 'filter=(dnssec is.visibility)'"
+);
+RQuery::$defaultFilters['securityprofile']['dnssec']['operators']['is.adoption'] = array(
+    'Function' => function (SecurityProfileRQueryContext $context) {
+        /** @var AntiVirusProfile $object */
+        $object = $context->object;
+
+        if( $object->secprof_type != 'dns-security' )
+            return null;
+
+        return $object->is_adoption();
+    },
+    'arg' => false,
+    'help' => "'securityprofiletype=virus' e.g. 'filter=(av is.adoption)'"
+);
+
 RQuery::$defaultFilters['securityprofile']['fb.rules']['operators']['is.best-practice'] = array(
     'Function' => function (SecurityProfileRQueryContext $context) {
         /** @var FileBlockingProfile $object */

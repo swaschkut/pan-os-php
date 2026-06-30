@@ -2,6 +2,7 @@ CHANGELOG
 
 2.1.58
 UTIL:
+* type=securityprofile actions=exportSPtoHTML:file.html | extend with SCM VirusAndWildfire / DNSSec Profile
 
 BUGFIX:
 

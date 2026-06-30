@@ -1039,7 +1039,7 @@ class FawkesConf
         }
     }
 
-    public function display_bp_statistics( $debug = false )
+    public function display_bp_statistics( $debug = false, $actions = "display", $location = false, $is_SCM = true )
     {
         $stdoutarray = array();
         #PH::$JSON_TMP[$this->name] = $stdoutarray;
