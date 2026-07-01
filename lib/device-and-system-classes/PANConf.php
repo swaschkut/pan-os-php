@@ -1075,7 +1075,7 @@ class PANConf
         return $this->sharedGateways;
     }
 
-    public function display_statistics( $connector = null, $debug = false, $actions = 'display' )
+    public function display_statistics( $connector = null, $debug = false, $actions = 'display', $location = false, $is_SCM = false )
     {
         $statsArray = array();
 
@@ -1116,13 +1116,13 @@ class PANConf
 
 
         //$this->display_PANConf_statistics_NEW( $debug, $actions, $statsArray, $connector );
-        $this->display_statistics_NEW( $debug, $actions, $statsArray, $connector, false, $is_SCM );
+        $this->display_statistics_NEW( $debug, $actions, $statsArray, $connector );
 
 
 
         if( !PH::$shadow_json and $actions == "display-bpa" )
         {
-            $this->display_bp_statistics( $debug, $actions, false, $is_SCM );
+            $this->display_bp_statistics( $debug, $actions );
 
             $vsys1 = $this->findVirtualSystem('vsys1');
             $vsys1->display_bp_statistics( $debug, $actions );
