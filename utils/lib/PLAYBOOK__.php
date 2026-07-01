@@ -375,8 +375,12 @@ class PLAYBOOK__
             if( PH::$shadow_multivsys )
                 $arguments[] = "shadow-multivsys";
 
-            if( isset( $command['shadow-bpjsonfile'] ) )
-                $arguments[] = "shadow-bpjsonfile=".$command['shadow-bpjsonfile'];
+            if( PH::$shadow_bp_jsonfile )
+            {
+                if( PH::$shadow_bp_jsonfilename !== null )
+                    $arguments[] = "'shadow-bpjsonfile=".PH::$shadow_bp_jsonfilename."'";
+            }
+
 
 
             if( $script == "html-merger" )
