@@ -165,6 +165,13 @@ class PH
 
                 #PH::$shadow_bp_jsonfilename = $projectFolder.$arg_array[1];
                 PH::$shadow_bp_jsonfilename = $arg_array[1];
+
+                // if $$bp-setting$$/ - replace with full bp settings folder
+                if( strpos( PH::$shadow_bp_jsonfilename, '$$bp-setting$$/') !== FALSE )
+                {
+                    $bpSetting_pathString = dirname(__FILE__)."/../../utils/api/v1/bp";
+                    PH::$shadow_bp_jsonfilename = str_replace( '$$bp-setting$$', $bpSetting_pathString, PH::$shadow_bp_jsonfilename );
+                }
                 $JSONarray = file_get_contents( PH::$shadow_bp_jsonfilename );
 
                 if( $JSONarray === false )
