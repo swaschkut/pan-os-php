@@ -8,6 +8,7 @@ UTIL:
 BUGFIX:
 
 GENERAL:
+* docker update | docker cli to ubuntu:26.04 - docker API to php:8.5-apache - docker php to php:8.5-cli
 
 
 2.1.57 [beta->dev 20260627]
