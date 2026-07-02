@@ -9741,6 +9741,25 @@ var subjectObject =
                     }
                 }
             },
+            "avwf": {
+                "operators": {
+                    "is.best-practice": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=virus-and-wildfire-analysis' e.g. 'filter=(avwf is.best-practice)'"
+                    },
+                    "is.visibility": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=virus-and-wildfire-analysis' e.g. 'filter=(avwf is.visibility)'"
+                    },
+                    "is.adoption": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=virus-and-wildfire-analysis' e.g. 'filter=(avwf is.adoption)'"
+                    }
+                }
+            },
             "cloud-inline-analysis": {
                 "operators": {
                     "is.enabled": {
@@ -9895,6 +9914,25 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         },
                         "help": "'securityprofiletype=spyware' e.g. 'filter=(dns-security.packet-capture has disable)' possible values: disable\/single-packet\/extended-capture"
+                    }
+                }
+            },
+            "dnssec": {
+                "operators": {
+                    "is.best-practice": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=dns-security' e.g. 'filter=(dnssec is.best-practice)'"
+                    },
+                    "is.visibility": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=dns-security' e.g. 'filter=(dnssec is.visibility)'"
+                    },
+                    "is.adoption": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=virus' e.g. 'filter=(av is.adoption)'"
                     }
                 }
             },
