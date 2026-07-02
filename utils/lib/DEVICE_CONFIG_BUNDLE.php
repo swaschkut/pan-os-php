@@ -387,8 +387,6 @@ class DEVICE_CONFIG_BUNDLE extends UTIL
         PH::$JSON_OUT = array();
         PH::$JSON_TMP = array();
 
-        $runtime = number_format((microtime(TRUE) - $this->runStartTime), 2, '.', '');
-        PH::print_stdout( array( 'value' => $runtime, 'type' => "seconds" ), false,'runtime' );
 
         if( PH::$shadow_json )
         {

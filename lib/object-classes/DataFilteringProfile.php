@@ -154,6 +154,11 @@ class DataFilteringProfile extends SecurityProfile2
             return false;
     }
 
+    public function is_best_practice()
+    {
+        return false;
+    }
+
     static $templatexml = '<entry name="**temporarynamechangeme**"></entry>';
 
 }

@@ -247,7 +247,8 @@ class PH
 
     private static $library_version_major = 2;
     private static $library_version_sub = 1;
-    private static $library_version_bugfix = 56;
+    private static $library_version_bugfix = 57;
+    private static $library_version_release = "develop";
 
     //BASIC AUTH PAN-OS 7.1
     public static $softwareupdate_key = "658d787f293e631196dac9fb29490f1cc1bb3827";
@@ -283,7 +284,7 @@ class PH
 
     static public function frameworkVersion()
     {
-        return self::$library_version_major . '.' . self::$library_version_sub . '.' . self::$library_version_bugfix;
+        return self::$library_version_major . '.' . self::$library_version_sub . '.' . self::$library_version_bugfix. '.' . self::$library_version_release;
     }
 
     static public function frameworkInstalledOS()
@@ -1116,6 +1117,7 @@ class PH
         "xml-op-json",
         "bpa-generator",
         "playbook",
+        "playbook-validation",
         #"ironskillet-update",
         "maxmind-update",
         "util_get-action-filter",
@@ -1265,6 +1267,9 @@ class PH
 
         elseif( $type == "playbook" )
             $util = new PLAYBOOK__( $argv, $argc );
+
+        elseif( $type == "playbook-validation" )
+            $util = new PLAYBOOK_VALIDATION__( $argv, $argc );
 
         elseif( $type == "util_get-action-filter" )
             $util = new UTIL_GET_ACTION_FILTER( $argv, $argc );

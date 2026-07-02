@@ -49,8 +49,6 @@ class PROFILEUTIL extends UTIL
 
         $this->save_our_work(TRUE);
 
-        $runtime = number_format((microtime(TRUE) - $this->runStartTime), 2, '.', '');
-        PH::print_stdout( array( 'value' => $runtime, 'type' => "seconds" ), false,'runtime' );
 
         if( PH::$shadow_json )
         {

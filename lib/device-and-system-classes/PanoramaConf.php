@@ -1977,7 +1977,9 @@ class PanoramaConf
 
         $stdoutarray['percentage'] = $percentageArray;
 
-        PH::$JSON_TMP[] = $stdoutarray;
+        #PH::$JSON_TMP[] = $stdoutarray;
+        if( !isset(PH::$JSON_TMP[$stdoutarray['header']]) )
+            PH::$JSON_TMP[$stdoutarray['header']] = $stdoutarray;
 
         $this->generate_table($stdoutarray, $debug, $actions);
     }

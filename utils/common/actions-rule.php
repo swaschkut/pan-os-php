@@ -5151,15 +5151,25 @@ RuleCallContext::$supportedActions[] = array(
             'application_seen' => 'application_seen',
             'action' => 'action',
             'security-profile' => 'security-profile',
+            'sp_spg-location' => 'sp_spg-location',
             'virus-profile' => 'virus-profile',
+            'av-location' => 'av-location',
             'spyware-profile' => 'spyware-profile',
+            'as-location' => 'as-location',
             'vulnerability-profile' => 'vulnerability-profile',
+            'vp-location' => 'vp-location',
             'url-filtering-profile' => 'url-filtering-profile',
+            'url-location' => 'url-location',
             'file-blocking-profile' => 'file-blocking-profile',
+            'fb-location' => 'fb-location',
             'wildfire-analysis-profile' => 'wildfire-analysis-profile',
+            'wf-location' => 'wf-location',
             'data-filtering-profile' => 'data-filtering-profile',
+            'data-location' => 'data-location',
             'dns-security-profile' => 'dns-security-profile',
+            'dnssec-location' => 'dnssec-location',
             'virus-and-wildfire-analysis-profile' => 'virus-and-wildfire-analysis-profile',
+            'avwf-location' => 'avwf-location',
             'sp_best_practice' => 'sp_best_practice',
             'sp_best_practice_details' => 'sp_best_practice_details',
             'sp_visibility' => 'sp_visibility',
@@ -5333,7 +5343,18 @@ RuleCallContext::$supportedActions[] = array(
                         $continue = true;
                     }
                     elseif(
-                        ($fieldName == 'sp_best_practice_details')
+                        ($fieldName == 'sp_best_practice_details'
+                            || $fieldName == 'sp_spg-location'
+                            || $fieldName == 'av-location'
+                            || $fieldName == 'as-location'
+                            || $fieldName == 'vp-location'
+                            || $fieldName == 'url-location'
+                            || $fieldName == 'wf-location'
+                            || $fieldName == 'fb-location'
+                            || $fieldName == 'data-location'
+                            || $fieldName == 'dnssec-location'
+                            || $fieldName == 'avwf-location'
+                        )
                         &&
                         ( (!$bestPractice && !$visibility && !$adoption) || !$context->arguments['tmp_secrule'] )
                     )
@@ -5597,7 +5618,18 @@ RuleCallContext::$supportedActions[] = array(
                 $continue = true;
             }
             elseif(
-                ($fieldName == 'sp_best_practice_details')
+                ($fieldName == 'sp_best_practice_details'
+                    || $fieldName == 'sp_spg-location'
+                    || $fieldName == 'av-location'
+                    || $fieldName == 'as-location'
+                    || $fieldName == 'vp-location'
+                    || $fieldName == 'url-location'
+                    || $fieldName == 'wf-location'
+                    || $fieldName == 'fb-location'
+                    || $fieldName == 'data-location'
+                    || $fieldName == 'dnssec-location'
+                    || $fieldName == 'avwf-location'
+                )
                 &&
                 ( (!$bestPractice && !$visibility && !$adoption) || !$context->arguments['tmp_secrule'] )
             )

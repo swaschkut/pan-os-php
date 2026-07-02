@@ -48,14 +48,14 @@ class ThreatPolicyDataFiltering extends ThreatPolicy
                 if( isset($details[$secprof_type][$array_type]['bp']))
                     $checkArray = $details[$secprof_type][$array_type]['bp'];
                 else
-                    derr( "this JSON bp/visibility JSON file does not have 'bp' -> '".$array_type."' defined correctly for: '".$secprof_type."'", null, FALSE );
+                    mwarning( "this JSON bp/visibility JSON file customised 'bp' -> '".$array_type."' for: '".$secprof_type."'", null, FALSE );
             }
             elseif( $checkType == "visibility")
             {
                 if( isset($details[$secprof_type][$array_type]['visibility']))
                     $checkArray = $details[$secprof_type][$array_type]['visibility'];
                 else
-                    derr( "this JSON bp/visibility JSON file does not have 'visibility' -> '".$array_type."' defined correctly for: '".$secprof_type."'", null, FALSE );
+                    mwarning( "this JSON bp/visibility JSON file customised 'visibility' -> '".$array_type."' for: '".$secprof_type."'", null, FALSE );
             }
         }
 

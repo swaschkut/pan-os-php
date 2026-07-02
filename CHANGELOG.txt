@@ -1,6 +1,53 @@
 CHANGELOG
 
-2.1.56
+2.1.57
+UTIL:
+* type=playbook shadow-multivsys | if set, use it in all playbook JSON commands
+* type=rule 'actions=exporttohtml:rule.html,visibility|bestpractice' | extend with SPG_SP location information
+* type=securityprofile location=any actions=exportSPtoHTML:sp.html | export full SP info, with counter for SecRules to HTML
+* type=securityprofile actions=exportSPtoHTML:sp.html | extend for SCM config
+* type=securityprofile actions=exportSPtoHTML:sp.html | extend with sp_xyz_bestpractice column
+* type=securityprofile actions=virus.alert-only-set | use bp setting json for action set
+* type=securityprofile securityprofiletype=url-filtering 'actions=exporttohtml:sp_url.html,visibility|bestpractice' | extend with detail URL TAB information for mode / log-severity
+* type=securityprofile securityprofiletype=url-filtering | extend visibility/bestpractice with URL mica-engine
+* type=stats | extend with URL inline-ML
+* type=securityprofile actions=exportSPtoHTML:sp.html | update with more information
+* type=securityprofile actions=exporttoexcel | rename mica-engine column for bp / visibility
+* type=securityprofile actions=exportSPtoHTML:sp.html | update to bring in location and visibility/bp/adoption dropdown
+* type=securityprofile | implement 'filter=(object is.unused.recursive)'
+* introduce new pan-os-php utility | type=playbook-validation
+* type=securityprofile actions=exportSPtoHTML:sp.html | add [predefined] to object name if fit
+* type=securityprofile | new 'filter=(object is.visibility)'
+* type=securityprofile | code combination for actions=exportToHTML / exportSPtoHTML
+* type=rule actions=exporttoexcel:file.html,visibility|bestpractice | bugfix for sp_spg_location
+* type=securityprofile actions=exportSPtoHTML:file.html | extend with AS dns info
+* type=securityprofile actions=exportSPtoHTML:file.html | extend with URL info
+* type=playbook-validation | extend with help information
+* mica-engine | not visibility if PAN-OS does not support this config part
+* type=securityprofile actions=exportSPtoHTML:file.html | adjustment for none available features in a specific PAN-OS version
+* type=tsf | if no actions argument default is now "actions=extract-running-and-merged-config" | bugfix to remove leading . of .merged-running-config.xml
+* type=securityprofile actions=exportSPtoHTML:file.html | extend for in=scm-api://
+
+BUGFIX:
+* type=securityprofile actions=virus.decoder.alert-only-set | bugfix for older PAN-OS version
+* type=securityprofile actions=spyware.alert-only-set | bugfix to add <cloud-inline-analysis> starting with PAN-OS 10.2
+* type=device actions=sp_spg-create-alert-only-bp:true shadow-multivsys | create SP also at shared if only vsys1 is configured
+* type=securityprofile securityprofiletype=spyware | bugfix for advanced-dns-security - to correctly validate starting with PAN-OS 11.2
+* type=securityprofile securityprofiletype=file-blocking actions=exporttohtml:sp_fb.html | bugfix to get correct visibility
+* type=securityprofile securityprofiletype=spyware actions=exportTOhtml:sp_as.html | bugfix for dnslist
+* type=stats | avoid to add duplicate entries to PH::$JSON_TMP
+* type=stats shadow-json debugapi | bugfix to avoid adding duplicate and also keep the display-bpa one which is triggered by BP settings file
+* type=securityprofile actions=as.dns.alert-only-set | set adns log-severity if action=block
+* type=securityprofile securityprofiletype=wildfire-analysis | PAN-OS 11.1 - bugfix as wf mica-engine can not set for alerting
+* type=securityprofilegroup  actions=securityprofile-set:[profile] | bugfix for online API mode to have correct XPath
+
+GENERAL:
+* BP settings validation - no error out but warning if customised
+* Device App-ID update to version: 9118-10120
+* class StatCollectorTrait.php | extend with "security rules disabled" and "security rules deny disabled"
+
+
+2.1.56  (20260613)
 UTIL:
 * type=rule | introduce 'filter=(name is.in.csv-report-file XYZ)'
 * type=device | new actions=threat-report-bp-change-plan:FILENAME.csv in=api://MGTM-IP

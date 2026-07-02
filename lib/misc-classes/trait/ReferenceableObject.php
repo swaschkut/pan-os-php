@@ -686,6 +686,18 @@ trait ReferenceableObject
             $className = 'ServiceGroup';
         elseif( get_class($this) == 'Address' || get_class($this) == 'AddressGroup' )
             $className = 'AddressGroup';
+        elseif( get_class($this) == 'AntiVirusProfile'
+            || get_class($this) == 'AntiSpywareProfile'
+            || get_class($this) == 'DataFilteringProfile'
+            || get_class($this) == 'DNSSecurityProfile'
+            || get_class($this) == 'FileBlockingProfile'
+            || get_class($this) == 'URLProfile'
+            || get_class($this) == 'VirusAndWildfireProfile'
+            || get_class($this) == 'VulnerabilityProfile'
+            || get_class($this) == 'WildfireProfile'
+            || get_class($this) == 'SecurityProfileGroup'
+        )
+            $className = 'SecurityProfileGroup';
         elseif( get_class($this) == 'App' || get_class($this) == 'AppFilter' || get_class($this) == 'AppGroup')
             $className = 'AppGroup';
         else

@@ -5037,6 +5037,11 @@ var subjectObject =
         "action": [],
         "filter": []
     },
+    "playbook-validation": {
+        "name": "playbook-validation",
+        "action": [],
+        "filter": []
+    },
     "profile": {
         "name": "profile",
         "action": {
@@ -9216,6 +9221,18 @@ var subjectObject =
                     }
                 }
             },
+            "exportsptohtml": {
+                "name": "exportSPtoHTML",
+                "MainFunction": {},
+                "GlobalInitFunction": {},
+                "GlobalFinishFunction": {},
+                "args": {
+                    "filename": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                }
+            },
             "exporttoexcel": {
                 "name": "exportToExcel",
                 "MainFunction": {},
@@ -10048,6 +10065,14 @@ var subjectObject =
                             "input": "input\/panorama-8.0.xml"
                         }
                     },
+                    "is.unused.recursive": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
                     "is.tmp": {
                         "Function": {},
                         "arg": false,
@@ -10057,6 +10082,10 @@ var subjectObject =
                         }
                     },
                     "is.predefined": {
+                        "Function": {},
+                        "arg": false
+                    },
+                    "is.visibility": {
                         "Function": {},
                         "arg": false
                     }
@@ -10223,6 +10252,25 @@ var subjectObject =
                         "Function": {},
                         "arg": false,
                         "help": "'securityprofiletype=url-filtering' e.g. 'filter=(url is.best-practice)'"
+                    }
+                }
+            },
+            "url.mica-engine": {
+                "operators": {
+                    "is.visibility": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=url-filtering' e.g. 'filter=(url.mica-engine is.visibility)'"
+                    },
+                    "is.best-practice": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=url-filtering' e.g. 'filter=(url.mica-engine is.best-practice)'"
+                    },
+                    "is.adoption": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "'securityprofiletype=url-filtering' e.g. 'filter=(url.mica-engine is.best-practice)'"
                     }
                 }
             },

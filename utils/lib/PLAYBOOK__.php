@@ -372,6 +372,9 @@ class PLAYBOOK__
             if( PH::$shadow_loadreduce )
                 $arguments[] = "shadow-loadreduce";
 
+            if( PH::$shadow_multivsys )
+                $arguments[] = "shadow-multivsys";
+
             if( isset( $command['shadow-bpjsonfile'] ) )
                 $arguments[] = "shadow-bpjsonfile=".$command['shadow-bpjsonfile'];
 
@@ -628,6 +631,19 @@ class PLAYBOOK__
             PH::print_stdout("please use this file: ".$output." and upload it to your device");
             PH::print_stdout();
             PH::print_stdout( "############################################################################");
+
+            // 1. Get the directory path from the full output file path
+            $dir = dirname($output);
+
+            // 2. Check if the directory exists, if not, create it recursively
+            if (!is_dir($dir))
+            {
+                // mkdir(path, permissions, recursive = true)
+                // true allows the creation of nested directories (e.g., folder/subfolder)
+                if (!mkdir($dir, 0755, true))
+                    die("Failed to create directories...");
+            }
+
             copy( $out, $output );
         }
 
