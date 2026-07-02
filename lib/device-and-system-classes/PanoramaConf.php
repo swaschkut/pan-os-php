@@ -1993,6 +1993,9 @@ class PanoramaConf
         $header = "BP/Visibility Statistics for PanoramaConf '" . PH::boldText("shared") . "' | ";
         $stdoutarray['header'] = $header;
 
+        if( !isset(PH::$JSON_TMP[$stdoutarray['header']]) )
+            PH::$JSON_TMP[$stdoutarray['header']] = $stdoutarray;
+
         $this->generate_table($stdoutarray, $debug, $actions);
     }
 

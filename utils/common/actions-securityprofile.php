@@ -1772,6 +1772,8 @@ SecurityProfileCallContext::$commonActionFunctions['bp-stats']= array(
         {
             $context->subSystem->display_bp_statistics( $debug, $actions );
 
+            $context->subSystem->display_bp_shared_statistics( $debug, $actions );
+
             $dgs = $context->subSystem->getDeviceGroups();
             foreach($dgs as $dg)
                 $dg->display_bp_statistics( $debug, $actions );
@@ -1780,6 +1782,8 @@ SecurityProfileCallContext::$commonActionFunctions['bp-stats']= array(
         {
             $panorama = $context->subSystem->owner;
             $panorama->display_bp_statistics( $debug, $actions );
+
+            $panorama->display_bp_shared_statistics( $debug, $actions );
 
             $dgs = $panorama->getDeviceGroups();
             foreach($dgs as $dg)
@@ -3101,7 +3105,8 @@ SecurityProfileCallContext::$supportedActions[] = array(
                             if (preg_match("/DeviceGroup\s+'([^']+)'/", $cleanHeader, $matches)) {
                                 $dropdownLabel = "[DG]".$matches[1];
                             } else {
-                                $dropdownLabel = "DeviceGroup Context";
+                                #$dropdownLabel = "DeviceGroup Context";
+                                $dropdownLabel = "[DG]shared";
                             }
                         }
                         elseif ($type === 'Container') {
