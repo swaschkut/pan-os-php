@@ -1120,18 +1120,13 @@ class PANConf
 
 
 
-        if( !PH::$shadow_json and $actions == "display-bpa" )
+        if( $actions == "display-bpa" )
         {
             $this->display_bp_statistics( $debug, $actions );
 
             $vsys1 = $this->findVirtualSystem('vsys1');
             $vsys1->display_bp_statistics( $debug, $actions );
         }
-
-
-
-
-
     }
 
 

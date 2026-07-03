@@ -8,6 +8,7 @@ UTIL:
 
 BUGFIX:
 * bugfix - better validation if "$this->owner->owner->customURLProfileStore" isset
+* class PANConf | bugfix to actions=display-bpa by usage of shadow-json
 
 GENERAL:
 * docker update | docker cli to ubuntu:26.04 - docker API to php:8.5-apache - docker php to php:8.5-cli
