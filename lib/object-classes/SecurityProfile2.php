@@ -943,9 +943,12 @@ class SecurityProfile2
             $sanitized_action = $this->allow_credential;
             foreach( $sanitized_action as $key => $url_category)
             {
-                $custom_url_category_obj = $this->owner->owner->customURLProfileStore->find($url_category);
-                if( $custom_url_category_obj !== NULL )
-                    unset( $sanitized_action[$key] );
+                if( isset( $this->owner->owner->customURLProfileStore) )
+                {
+                    $custom_url_category_obj = $this->owner->owner->customURLProfileStore->find($url_category);
+                    if( $custom_url_category_obj !== NULL )
+                        unset( $sanitized_action[$key] );
+                }
             }
 
             if( empty($sanitized_action) )
