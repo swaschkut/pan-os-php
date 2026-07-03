@@ -791,15 +791,15 @@ class BuckbeakConf
         if( get_class( $sub ) == 'PanoramaConf' )
         {
             if( !PH::$shadow_loaddghierarchy )
-                $sub->display_shared_statistics( $connector, $debug, $actions );
+                $sub->display_shared_statistics( $connector, $debug, $actions, true );
         }
     }
 
 
 
-    public function display_bp_statistics( $debug = false, $actions = "display", $location = false )
+    public function display_bp_statistics( $debug = false, $actions = "display", $location = false, $is_SCM = true )
     {
-        $stdoutarray = $this->get_bp_statistics( );
+        $stdoutarray = $this->get_bp_statistics( $is_SCM );
 
         $stdoutarray['type'] = get_class( $this );
 
@@ -824,7 +824,7 @@ class BuckbeakConf
 
         foreach( $folderArray as $deviceGroup )
         {
-            $stdoutarray2 = $deviceGroup->get_bp_statistics();
+            $stdoutarray2 = $deviceGroup->get_bp_statistics( $is_SCM );
             foreach ($stdoutarray2 as $key2 => $stdoutarray_value)
             {
                 if( $key2 == "header" || $key2 == "type" || $key2 == "statstype" )
@@ -845,9 +845,9 @@ class BuckbeakConf
         }
 
 
-        $this->bp_calculation( $stdoutarray );
+        $this->bp_calculation( $stdoutarray, $is_SCM );
 
-        $percentageArray = $this->get_bp_percentageArray( $stdoutarray );
+        $percentageArray = $this->get_bp_percentageArray( $stdoutarray, $is_SCM );
 
 
         $stdoutarray['percentage'] = $percentageArray;

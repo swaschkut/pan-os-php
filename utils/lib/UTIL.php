@@ -317,6 +317,7 @@ class UTIL
         $this->supportedArguments['shadow-loadreduce']= array('niceName' => 'shadow-loadreduce', 'shortHelp' => 'during config load do NOT load dynamic-addressgroup information from address objects TAG based part');
         $this->supportedArguments['shadow-loaddghierarchy']= array('niceName' => 'shadow-loaddghierarchy', 'shortHelp' => 'load for location=DG the full hierarchy');
         $this->supportedArguments['shadow-bpjsonfile']= array('niceName' => 'shadow-bpjsonfile', 'shortHelp' => 'use custom defined bestpractice and visibility to validate the configuration');
+        $this->supportedArguments['shadow-multivsys']= array('niceName' => 'shadow-multivsys', 'shortHelp' => 'this argument is needed if only VSYS1 is configured, but multi-vsys is enabled');
     }
 
     public function utilInit()

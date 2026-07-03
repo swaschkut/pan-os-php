@@ -109,7 +109,7 @@ class PLAYBOOK__
 
         if( isset(PH::$args['help']) )
         {
-            $help_string = PH::boldText("USAGE: ") . "php " . $PHP_FILE . ' in=inputfile.xml out=outputfile.xml [json=JSONfile] [json=$$playbookfolder$$/JSONfile]\n';
+            $help_string = PH::boldText("USAGE: ") . "php " . $PHP_FILE . ' in=inputfile.xml out=outputfile.xml [json=JSONfile] [json=$$playbook$$/JSONfile]\n';
 
             PH::print_stdout( $help_string );
 
@@ -353,6 +353,23 @@ class PLAYBOOK__
                 $arguments[] = "outputformatset".$string;
             }
 
+            if( PH::$shadow_bp_jsonfile )
+            {
+                if( PH::$shadow_bp_jsonfilename !== null )
+                    $arguments[] = "shadow-bpjsonfile=".PH::$shadow_bp_jsonfilename;
+
+                if( isset( $command['shadow-bpjsonfile'] ) )
+                    unset( $command['shadow-bpjsonfile'] );
+            }
+            else
+            {
+                if( isset( $command['shadow-bpjsonfile'] ) )
+                {
+                    $arguments[] = $command['shadow-bpjsonfile'];
+                    unset( $command['shadow-bpjsonfile'] );
+                }
+            }
+
             foreach( $command as $arg )
                 $arguments[] = $arg;
 
@@ -375,8 +392,6 @@ class PLAYBOOK__
             if( PH::$shadow_multivsys )
                 $arguments[] = "shadow-multivsys";
 
-            if( isset( $command['shadow-bpjsonfile'] ) )
-                $arguments[] = "shadow-bpjsonfile=".$command['shadow-bpjsonfile'];
 
 
             if( $script == "html-merger" )

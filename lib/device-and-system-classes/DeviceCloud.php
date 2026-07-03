@@ -1145,7 +1145,7 @@ class DeviceCloud
         $name = array();
         foreach( $this->attachedSnippets as $snippet )
         {
-            $name[] = $snippet->name;
+            $name[$snippet->name] = $snippet->name;
         }
 
         return $name;

@@ -1075,7 +1075,7 @@ class PANConf
         return $this->sharedGateways;
     }
 
-    public function display_statistics( $connector = null, $debug = false, $actions = 'display' )
+    public function display_statistics( $connector = null, $debug = false, $actions = 'display', $location = false, $is_SCM = false )
     {
         $statsArray = array();
 
@@ -1120,22 +1120,17 @@ class PANConf
 
 
 
-        if( !PH::$shadow_json and $actions == "display-bpa" )
+        if( $actions == "display-bpa" )
         {
             $this->display_bp_statistics( $debug, $actions );
 
             $vsys1 = $this->findVirtualSystem('vsys1');
             $vsys1->display_bp_statistics( $debug, $actions );
         }
-
-
-
-
-
     }
 
 
-    public function display_bp_statistics( $debug = false, $actions = "display" )
+    public function display_bp_statistics( $debug = false, $actions = "display", $location = false, $is_SCM = false )
     {
         $stdoutarray = array();
         $stdoutarray['type'] = get_class( $this );
@@ -1150,7 +1145,7 @@ class PANConf
 
         foreach( $this->getVirtualSystems() as $virtualSystem )
         {
-            $stdoutarray2 = $virtualSystem->get_bp_statistics( );
+            $stdoutarray2 = $virtualSystem->get_bp_statistics( $is_SCM );
             foreach ($stdoutarray2 as $key2 => $stdoutarray_value)
             {
                 if( $key2 == "header" || $key2 == "type" || $key2 == "statstype" )
@@ -1173,10 +1168,10 @@ class PANConf
             }
         }
 
-        $this->bp_calculation( $stdoutarray );
+        $this->bp_calculation( $stdoutarray, $is_SCM );
 
 
-        $percentageArray = $this->get_bp_percentageArray($stdoutarray);
+        $percentageArray = $this->get_bp_percentageArray($stdoutarray, $is_SCM);
 
         $stdoutarray['percentage'] = $percentageArray;
 

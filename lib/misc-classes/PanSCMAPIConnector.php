@@ -312,7 +312,9 @@ class PanSCMAPIConnector
             foreach( $folder['snippets'] as $snippet )
             {
                 $snippet = $pan->findSnippet( $snippet );
-                $sub->addSnippet( $snippet );
+                /** @var Container $sub */
+                if( !isset($sub->attachedSnippets[$snippet->name()]) )
+                    $sub->addSnippet( $snippet );
             }
         }
     }

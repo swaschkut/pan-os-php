@@ -202,9 +202,9 @@ trait StatCollectorTrait
 
         if( get_class($this) == "BuckbeakConf" )
         {
-            $stdoutarray['WildfireAndAnti-Virus objects'] = array();
-            $stdoutarray['WildfireAndAnti-Virus objects'][$subName] = $sub->VirusAndWildfireProfileStore->count();
-            $stdoutarray['WildfireAndAnti-Virus objects']['total_DGs'] = $statsArray['gnsecprofAVWF'];
+            $stdoutarray['VirusAndWildfire objects'] = array();
+            $stdoutarray['VirusAndWildfire objects'][$subName] = $sub->VirusAndWildfireProfileStore->count();
+            $stdoutarray['VirusAndWildfire objects']['total_DGs'] = $statsArray['gnsecprofAVWF'];
         }
 
 
@@ -706,9 +706,9 @@ trait StatCollectorTrait
     }
 
 
-    public function display_statistics( $debug = false, $actions = 'display', $statsArray = array(), $connector = null  ): void
+    public function display_statistics( $debug = false, $actions = 'display', $statsArray = array(), $connector = null, $is_SCM = false  ): void
     {
-        self::display_statistics_NEW( $debug, $actions, $statsArray, $connector );
+        self::display_statistics_NEW( $debug, $actions, $statsArray, $connector, false, $is_SCM );
     }
 
 
@@ -752,18 +752,26 @@ trait StatCollectorTrait
             'SSL_TLSServiceProfile objects' => ['store' => 'SSL_TLSServiceProfileStore', 'sum_total' => 'gSSL_TLSServiceProfileCount']
         ];
 
-   public function display_statistics_NEW($debug = false, $actions = "display", $statsArray = array(), $connector = null, $location = false): void
+   public function display_statistics_NEW($debug = false, $actions = "display", $statsArray = array(), $connector = null, $location = false, $is_SCM = false): void
     {
         $stdoutarray = array();
 
         $class = get_class($this);
         $isPANConf = ($class === "PANConf");
         $isPanoramaConf = ($class === "PanoramaConf");
+        $isBuckbeakConf = ($class === "BuckbeakConf");
         $isContainerOrDG = ($class === "Container" || $class === "DeviceGroup");
 
         // Conditional Profile Logic
         $isCloudOrSnippet = in_array($class, ["Container", "DeviceCloud", "DeviceOnPrem", "Snippet"]);
 
+
+        ////////////
+        // 1. Prüfung auf Basis der aktuellen Klasse
+        if( $isBuckbeakConf || $isCloudOrSnippet ) {
+            $is_SCM = true;
+        }
+        /////////////////
 
         // Check if we are in "Summary Mode" (data provided in $statsArray)
         $isSummaryMode = !empty($statsArray);
@@ -854,7 +862,7 @@ trait StatCollectorTrait
 
         if ($isCloudOrSnippet)
         {
-            $this->stats_profileMaps['WildfireAndAntivirus objects'] = array('store' => 'VirusAndWildfireProfileStore');
+            $this->stats_profileMaps['VirusAndWildfire objects'] = array('store' => 'VirusAndWildfireProfileStore');
             $this->stats_profileMaps['DNS-Security objects'] = array('store' => 'DNSSecurityProfileStore');
             $this->stats_profileMaps['Saas-Security objects'] = array('store' => 'SaasSecurityProfileStore');
         }
@@ -925,15 +933,15 @@ trait StatCollectorTrait
         {
             //in general print full Panorama / shared and here all specific DG
             if( !PH::$shadow_loaddghierarchy )
-                $this->display_bp_statistics( $debug, $actions );
+                $this->display_bp_statistics( $debug, $actions, false, $is_SCM );
             else
-                $this->display_bp_statistics( $debug, $actions, $location );
+                $this->display_bp_statistics( $debug, $actions, $location, $is_SCM );
         }
         elseif( $class === "VirtualSystem" )
         {
             //in general print full Firewall /vsys1 and here all specific vsys
             if( $this->name() !== "vsys1" )
-                $this->display_bp_statistics( $debug, $actions );
+                $this->display_bp_statistics( $debug, $actions, false, $is_SCM );
         }
     }
 
@@ -1024,8 +1032,16 @@ trait StatCollectorTrait
         }
     }
 
-    public function get_bp_statistics(): array
+    public function get_bp_statistics( $is_SCM = false): array
     {
+        if( get_class($this) == "BuckbeakConf"
+            || get_class($this) == "Container"
+            || get_class($this) == "DeviceOnPrem"
+            || get_class($this) == "DeviceCloud"
+            || get_class($this) == "Snippet"
+        )
+            $is_SCM = true;
+
         //Todo: add missing stuff
         //AV actions
         //AV mica-engine
@@ -1226,11 +1242,33 @@ trait StatCollectorTrait
         $stdoutarray['dns-security adoption'] = count( $sub_ruleStore->rules( $filter_array ) );
 
 
+        if( $is_SCM )
+        {
+            $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "avwf is.visibility" );
+            $stdoutarray['avwf visibility'] = count( $sub_ruleStore->rules( $filter_array ) );
 
-        $this->bp_calculation( $stdoutarray );
+            $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "avwf is.best-practice" );
+            $stdoutarray['avwf best-practice'] = count( $sub_ruleStore->rules( $filter_array ) );
+
+            $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "avwf is.adoption" );
+            $stdoutarray['avwf adoption'] = count( $sub_ruleStore->rules( $filter_array ) );
+
+            /////////////
+            $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "dnssec is.visibility" );
+            $stdoutarray['dnssec visibility'] = count( $sub_ruleStore->rules( $filter_array ) );
+
+            $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "dnssec is.best-practice" );
+            $stdoutarray['dnssec best-practice'] = count( $sub_ruleStore->rules( $filter_array ) );
+
+            $filter_array = array('query' => $generalFilter_allow."(secprof has.from.query subquery1)", 'subquery1' => "dnssec is.adoption" );
+            $stdoutarray['dnssec adoption'] = count( $sub_ruleStore->rules( $filter_array ) );
+        }
 
 
-        $percentageArray = $this->get_bp_percentageArray( $stdoutarray );
+        $this->bp_calculation( $stdoutarray, $is_SCM );
+
+
+        $percentageArray = $this->get_bp_percentageArray( $stdoutarray, $is_SCM );
 
         $stdoutarray['percentage'] = $percentageArray;
 
@@ -1238,8 +1276,16 @@ trait StatCollectorTrait
         return $stdoutarray;
     }
 
-    public function bp_calculation( &$stdoutarray ): void
+    public function bp_calculation( &$stdoutarray, $is_SCM = false ): void
     {
+        if( get_class($this) == "BuckbeakConf"
+            || get_class($this) == "Container"
+            || get_class($this) == "DeviceOnPrem"
+            || get_class($this) == "DeviceCloud"
+            || get_class($this) == "Snippet"
+        )
+            $is_SCM = true;
+
         $dummy_stdoutarray = array();
         //$ruleForCalculation = $stdoutarray['security rules allow enabled'];
         $ruleForCalculation = 'security rules allow enabled';
@@ -1248,6 +1294,13 @@ trait StatCollectorTrait
         $workingArray[] = array( 'log at end', 'security rules enabled' );
         $workingArray[] = array( 'log at not start', 'security rules enabled' );
         $workingArray[] = array( 'log prof set', 'security rules enabled');
+
+        if( $is_SCM )
+        {
+            $workingArray[] = array( 'avwf visibility', $ruleForCalculation);
+            $workingArray[] = array( 'avwf best-practice', $ruleForCalculation);
+            $workingArray[] = array( 'avwf adoption', $ruleForCalculation);
+        }
 
         $workingArray[] = array( 'wf visibility', $ruleForCalculation);
         $workingArray[] = array( 'wf visibility rules', $ruleForCalculation);
@@ -1306,6 +1359,12 @@ trait StatCollectorTrait
         $workingArray[] = array( 'url-mica-engine best-practice', $ruleForCalculation);
         $workingArray[] = array( 'url-mica-engine adoption', $ruleForCalculation);
 
+        if( $is_SCM )
+        {
+            $workingArray[] = array( 'dnssec visibility', $ruleForCalculation);
+            $workingArray[] = array( 'dnssec best-practice', $ruleForCalculation);
+            $workingArray[] = array( 'dnssec adoption', $ruleForCalculation);
+        }
         $workingArray[] = array( 'dns-list visibility', $ruleForCalculation);
         $workingArray[] = array( 'dns-list best-practice', $ruleForCalculation);
         $workingArray[] = array( 'dns-list adoption', $ruleForCalculation);
@@ -1331,8 +1390,16 @@ trait StatCollectorTrait
     }
 
 
-    public function get_bp_percentageArray( $stdoutarray ): array
+    public function get_bp_percentageArray( $stdoutarray, $is_SCM = false ): array
     {
+        if( get_class($this) == "BuckbeakConf"
+            || get_class($this) == "Container"
+            || get_class($this) == "DeviceOnPrem"
+            || get_class($this) == "DeviceCloud"
+            || get_class($this) == "Snippet"
+        )
+            $is_SCM = true;
+
         $percentageArray = array();
 
         $percentageArray_adoption = array();
@@ -1340,6 +1407,12 @@ trait StatCollectorTrait
         $percentageArray_adoption['Logging']['group'] = 'Logging';
         $percentageArray_adoption['Log Forwarding Profiles']['value'] = $stdoutarray['log prof set percentage'];
         $percentageArray_adoption['Log Forwarding Profiles']['group'] = 'Logging';
+
+        if( $is_SCM )
+        {
+            $percentageArray_adoption['VirusAndWildfire Analysis Profiles']['value'] = $stdoutarray['avwf adoption percentage'];
+            $percentageArray_adoption['VirusAndWildfire Analysis Profiles']['group'] = 'Wildfire';
+        }
 
         $percentageArray_adoption['Wildfire Analysis Profiles']['value'] = $stdoutarray['wf adoption percentage'];
         $percentageArray_adoption['Wildfire Analysis Profiles']['group'] = 'Wildfire';
@@ -1367,6 +1440,12 @@ trait StatCollectorTrait
         $percentageArray_adoption['URL Filtering Profiles']['group'] = 'URL Filtering';
         $percentageArray_adoption['Credential Theft Prevention']['value'] = $stdoutarray['url-credential adoption percentage'];
         $percentageArray_adoption['Credential Theft Prevention']['group'] = 'URL Filtering';
+
+        if( $is_SCM )
+        {
+            $percentageArray_adoption['DNSSEC Profiles']['value'] = $stdoutarray['dnssec adoption percentage'];
+            $percentageArray_adoption['DNSSEC Profiles']['group'] = 'DNS Security';
+        }
         $percentageArray_adoption['DNS List']['value'] = $stdoutarray['dns-list adoption percentage'];
         $percentageArray_adoption['DNS List']['group'] = 'DNS Security';
 
@@ -1382,6 +1461,12 @@ trait StatCollectorTrait
         $percentageArray_visibility['Logging']['group'] = 'Logging';
         $percentageArray_visibility['Log Forwarding Profiles']['value'] = $stdoutarray['log prof set percentage'];
         $percentageArray_visibility['Log Forwarding Profiles']['group'] = 'Logging';
+
+        if( $is_SCM )
+        {
+            $percentageArray_visibility['VirusAndWildfire Analysis Profiles']['value'] = $stdoutarray['avwf visibility percentage'];
+            $percentageArray_visibility['VirusAndWildfire Analysis Profiles']['group'] = 'Wildfire';
+        }
 
         $percentageArray_visibility['Wildfire Analysis Profiles']['value'] = $stdoutarray['wf visibility percentage'];
         $percentageArray_visibility['Wildfire Analysis Profiles']['group'] = 'Wildfire';
@@ -1432,6 +1517,12 @@ trait StatCollectorTrait
         $percentageArray_visibility['URL InLine ML']['value'] = $stdoutarray['url-mica-engine visibility percentage'];
         $percentageArray_visibility['URL InLine ML']['group'] = 'URL Filtering';
 
+        if( $is_SCM )
+        {
+            $percentageArray_visibility['DNSSEC Profiles']['value'] = $stdoutarray['dnssec visibility percentage'];
+            $percentageArray_visibility['DNSSEC Profiles']['group'] = 'DNS Security';
+        }
+
         $percentageArray_visibility['DNS List']['value'] = $stdoutarray['dns-list visibility percentage'];
         $percentageArray_visibility['DNS List']['group'] = 'DNS Security';
 
@@ -1446,6 +1537,13 @@ trait StatCollectorTrait
         $percentageArray_best_practice['Logging']['value'] = $stdoutarray['log at not start percentage'];
         $percentageArray_best_practice['Logging']['group'] = 'Logging';
         #$percentageArray_best_practice['Log Forwarding Profiles']['value'] = $stdoutarray['log prof set percentage'];
+
+        if( $is_SCM )
+        {
+            $percentageArray_best_practice['VirusAndWildfire Analysis Profiles']['value'] = $stdoutarray['avwf best-practice percentage'];
+            $percentageArray_best_practice['VirusAndWildfire Analysis Profiles']['group'] = 'Wildfire';
+        }
+
         $percentageArray_best_practice['Wildfire Analysis Profiles']['value'] = $stdoutarray['wf best-practice percentage'];
         $percentageArray_best_practice['Wildfire Analysis Profiles']['group'] = 'Wildfire';
         $percentageArray_best_practice['Wildfire Analysis Rules']['value'] = $stdoutarray['wf best-practice rules percentage'];
@@ -1490,6 +1588,12 @@ trait StatCollectorTrait
         $percentageArray_best_practice['Credential Theft Prevention']['value'] = $stdoutarray['url-credential best-practice percentage'];
         $percentageArray_best_practice['Credential Theft Prevention']['group'] = 'URL Filtering';
 
+        if( $is_SCM )
+        {
+            $percentageArray_best_practice['DNSSEC Profiles']['value'] = $stdoutarray['dnssec best-practice percentage'];
+            $percentageArray_best_practice['DNSSEC Profiles']['group'] = 'DNS Security';
+        }
+
         $percentageArray_best_practice['DNS List']['value'] = $stdoutarray['dns-list best-practice percentage'];
         $percentageArray_best_practice['DNS List']['group'] = 'DNS Security';
 
@@ -1501,9 +1605,17 @@ trait StatCollectorTrait
         return $percentageArray;
     }
 
-    public function display_bp_statistics( $debug = false, $actions = "display" ): void
+    public function display_bp_statistics( $debug = false, $actions = "display", $location = false, $is_SCM = false ): void
     {
-        $stdoutarray = $this->get_bp_statistics();
+        if( get_class($this) == "BuckbeakConf"
+            || get_class($this) == "Container"
+            || get_class($this) == "DeviceOnPrem"
+            || get_class($this) == "DeviceCloud"
+            || get_class($this) == "Snippet"
+        )
+            $is_SCM = true;
+
+        $stdoutarray = $this->get_bp_statistics( $is_SCM);
         #PH::$JSON_TMP[] = $stdoutarray;
         if( !isset(PH::$JSON_TMP[$stdoutarray['header']]) )
             PH::$JSON_TMP[$stdoutarray['header']] = $stdoutarray;
