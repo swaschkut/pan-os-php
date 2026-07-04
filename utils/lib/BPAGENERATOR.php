@@ -202,7 +202,7 @@ class BPAGENERATOR extends UTIL
             PH::print_stdout( "Exception (): " . $e->getMessage() );
         }
 
-        curl_close($curl);
+        //curl_close($curl);
         //print_r($reply);
 
         return $response;

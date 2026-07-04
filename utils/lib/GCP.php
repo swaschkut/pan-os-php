@@ -606,7 +606,7 @@ class GCP extends UTIL
             array('User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_4) AppleWebKit/600.7.12 (KHTML, like Gecko) Version/8.0.7 Safari/600.7.12')
         );
         $response = curl_exec($curl);
-        curl_close($curl);
+        //curl_close($curl);
 
         $exec = 'open -a "Google Chrome" '.$this->http_auth;
         exec( $exec );
@@ -625,7 +625,7 @@ class GCP extends UTIL
                 sleep(20);
 
                 $response = curl_exec($curl);
-                curl_close($curl);
+                //curl_close($curl);
 
                 $counter++;
             }

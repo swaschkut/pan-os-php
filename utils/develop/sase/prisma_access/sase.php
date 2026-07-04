@@ -403,7 +403,7 @@ curl -d "grant_type=client_credentials&scope=tsg_id:<tsg_id>" \
 
     #print $response."\n";
 
-    curl_close($curl);
+    //curl_close($curl);
 
 
     $jsonArray = json_decode( $response, true );
@@ -438,7 +438,7 @@ function getConfig($access_token, $configType = "candidate")
         CURLOPT_RETURNTRANSFER => true
     ));
     $response = curl_exec($curl);
-    curl_close($curl);
+    //curl_close($curl);
 
     $jsonArray = json_decode($response, true);
 
@@ -493,7 +493,7 @@ function getResource($access_token, $type = "address", $folder = "Shared", $limi
         CURLOPT_RETURNTRANSFER => true
     ));
     $response = curl_exec($curl);
-    curl_close($curl);
+    //curl_close($curl);
 
     $jsonArray = json_decode($response, true);
 
@@ -549,7 +549,7 @@ function getRunningConfig($access_token, $type = "address", $folder = "Shared", 
     ));
     $response = curl_exec($curl);
     print $response."\n";
-    curl_close($curl);
+    //curl_close($curl);
 
     $jsonArray = json_decode($response, true);
 
@@ -848,7 +848,7 @@ function getAPIresponse($access_token){
         CURLOPT_RETURNTRANSFER => TRUE
     ));
     $response = curl_exec($curl);
-    curl_close($curl);
+    //curl_close($curl);
 
     $jsonArray = json_decode($response, TRUE);
     print_r( $jsonArray );
