@@ -1,3 +1,19 @@
+<?php
+session_start();
+include "../../../test/db_conn.php";
+if( isset($_SESSION['folder']) && isset($_SESSION['id']) )
+{
+    $panconfkeystoreFILE = $_SESSION['folder']."/.panconfkeystore";
+    $projectFOLDER = $_SESSION['folder'];
+}
+else
+{
+    $tmpFOLDER = '/../../../../../api/v1/project';
+    $panconfkeystoreFILE = dirname(__FILE__) . $tmpFOLDER.'/.panconfkeystore';
+    $projectFOLDER = dirname(__FILE__) . $tmpFOLDER;
+}
+
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -11,7 +27,12 @@
             --excellent: #25B197; --poor: #E8121C; --bg: #ffffff;
             --nav-bg: #1a202c; --sidebar-bg: #2d3748; --accent: #3182ce;
         }
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); display: flex; height: 100vh; overflow: hidden; }
+        /* CHANGED: Added flex-direction: column to stack menu on top */
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+
+        /* ADDED: Container to handle sidebar and content layout side-by-side */
+        .app-layout { display: flex; flex: 1; overflow: hidden; width: 100%; }
+
         .mode-sidebar { width: 180px; background: var(--sidebar-bg); color: white; display: flex; flex-direction: column; flex-shrink: 0; }
         .sidebar-header { padding: 20px; font-weight: 800; font-size: 0.9rem; border-bottom: 1px solid #4a5568; color: #63b3ed; }
         .mode-item { padding: 15px 20px; cursor: pointer; font-size: 0.85rem; border-left: 4px solid transparent; }
@@ -169,21 +190,48 @@
 </head>
 <body>
 
-<div class="mode-sidebar">
-    <div class="sidebar-header">BPA ANALYZER</div>
-    <div class="mode-item active" id="mode-diagram" onclick="setMode('diagram')">📊 Diagram View</div>
-    <div class="mode-item" id="mode-settings" onclick="setMode('settings')">⚙️ BP Settings</div>
+<div class="menu-top-container" style="border:1px solid black; padding: 10px; background-color: #f8fafc; width: 100%; box-sizing: border-box;">
+    <table class="table table-bordered" style="width:100%">
+        <tr>
+            <td><a href="../../../index.php">MAIN page</a></td>
+            <td><a href="../../../bp_config.php">BP config page</a></td>
+            <td><a href="../../../bp_secprof.php">BP secprof page</a></td>
+            <td><a href="../../../single.php">single command</a></td>
+            <td><a href="../../../playbook.php">JSON PLAYBOOK</a></td>
+            <td><a href="../../../preparation.php">upload file / store APIkey</a></td>
+
+            <td><a href="../../diagram/temp_diagram.php">Diagram</a></td>
+            <td><a href="../bp_setting/bp_setting-editor.php">BP Setting Editor</a></td>
+            <td><a href="../playbook/playbook-editor.php">Playbook Editor</a></td>
+
+            <td><a href="../../../help.php">action / filter help</a></td>
+            <?php
+            if( isset($_SESSION['folder']) && isset($_SESSION['id']) )
+            {
+                echo '<td>logged in as: <a href="../../../test/home.php">'.$_SESSION['name'].'</a>  |  <a href="../../../test/logout.php">LOGOUT</a></td>';
+            }
+            ?>
+        </tr>
+    </table>
 </div>
 
-<div class="wrapper">
-    <div class="header">
-        <div class="menu" id="topMenu"></div>
-        <div style="display:flex; gap:10px; align-items: center;">
-            <input type="file" id="fileInput" accept=".json" style="font-size:0.7rem;">
-            <button id="downloadBtn" class="btn-save" style="display:none">Export JSON</button>
-        </div>
+<div class="app-layout">
+    <div class="mode-sidebar">
+        <div class="sidebar-header">BPA ANALYZER</div>
+        <div class="mode-item active" id="mode-diagram" onclick="setMode('diagram')">📊 Diagram View</div>
+        <div class="mode-item" id="mode-settings" onclick="setMode('settings')">⚙️ BP Settings</div>
     </div>
-    <div class="main-content" id="mainContent"></div>
+
+    <div class="wrapper">
+        <div class="header">
+            <div class="menu" id="topMenu"></div>
+            <div style="display:flex; gap:10px; align-items: center;">
+                <input type="file" id="fileInput" accept=".json" style="font-size:0.7rem;">
+                <button id="downloadBtn" class="btn-save" style="display:none">Export JSON</button>
+            </div>
+        </div>
+        <div class="main-content" id="mainContent"></div>
+    </div>
 </div>
 
 <script>
@@ -573,244 +621,4 @@
                     group.appendChild(optDiv);
                 } else {
                     const input = document.createElement('input');
-                    input.className = 'edit-input';
-                    input.value = Array.isArray(val) ? val.join(', ') : val;
-                    input.onchange = (e) => { data[key] = Array.isArray(val) ? e.target.value.split(',').map(s => s.trim()) : e.target.value; };
-                    group.appendChild(input);
-                }
-            }
-            container.appendChild(group);
-        }
-    }
-
-    function buildEditor_new1(data, container, path = []) {
-        for (const key in data) {
-            const val = data[key];
-            const currentPath = [...path, key];
-            const group = document.createElement('div');
-            group.className = 'settings-group';
-
-            if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'object') {
-                group.innerHTML = `<span class="json-key">${key}</span>`;
-                const arrayContainer = document.createElement('div');
-                val.forEach((item, idx) => {
-                    const itemBox = document.createElement('div');
-                    itemBox.className = 'array-item-box';
-                    const ctrl = document.createElement('div');
-                    ctrl.className = 'array-controls';
-
-                    const plus = document.createElement('button'); plus.className='btn-action btn-plus'; plus.innerText='+';
-                    plus.onclick = () => { data[key].splice(idx+1, 0, JSON.parse(JSON.stringify(item))); refreshUI(); };
-
-                    const minus = document.createElement('button'); minus.className='btn-action btn-minus'; minus.innerText='-';
-                    minus.onclick = () => { if(data[key].length > 1) { data[key].splice(idx, 1); refreshUI(); } };
-
-                    ctrl.appendChild(plus); ctrl.appendChild(minus);
-                    itemBox.appendChild(ctrl);
-                    buildEditor(item, itemBox, currentPath);
-                    arrayContainer.appendChild(itemBox);
-                });
-                group.appendChild(arrayContainer);
-            } else if (typeof val === 'object' && !Array.isArray(val) && val !== null) {
-                group.innerHTML = `<span class="json-key" style="color:var(--accent); font-weight:700;">${key}</span>`;
-                const subGroupContainer = document.createElement('div');
-                subGroupContainer.style.paddingLeft = "15px";
-                subGroupContainer.style.borderLeft = "2px dashed #e2e8f0";
-                buildEditor(val, subGroupContainer, currentPath);
-                group.appendChild(subGroupContainer);
-            } else {
-                group.innerHTML = `<span class="json-key">${key}:</span>`;
-                const rule = getRuleByPath(currentPath);
-                if (rule) {
-                    const optDiv = document.createElement('div');
-                    const curArr = Array.isArray(val) ? val : [val];
-                    const hasAny = curArr.includes("any");
-                    const isInclusive = rule.behavior === "inclusive";
-                    const displayOptions = Array.from(new Set([...rule.options, ...curArr]));
-
-                    displayOptions.forEach(opt => {
-                        const label = document.createElement('label');
-                        label.className = 'validation-option';
-                        if (hasAny && opt !== "any" && !isInclusive) label.classList.add('disabled-option');
-                        const input = document.createElement('input');
-                        input.type = rule.multi ? "checkbox" : "radio";
-                        input.checked = curArr.includes(opt);
-                        if (hasAny && opt !== "any" && !isInclusive) input.disabled = true;
-
-                        input.onchange = () => {
-                            if (rule.multi) {
-                                let selection = Array.isArray(data[key]) ? [...data[key]] : [data[key]];
-                                if (opt === "any") {
-                                    if (input.checked) isInclusive ? selection.push("any") : selection = ["any"];
-                                    else selection = selection.filter(v => v !== "any");
-                                } else {
-                                    if (!isInclusive) selection = selection.filter(v => v !== "any");
-                                    if (input.checked) { if (!selection.includes(opt)) selection.push(opt); }
-                                    else selection = selection.filter(v => v !== opt);
-                                }
-                                data[key] = selection;
-                            } else {
-                                data[key] = opt;
-                            }
-                            refreshUI();
-                        };
-                        label.appendChild(input); label.appendChild(document.createTextNode(opt));
-                        optDiv.appendChild(label);
-                    });
-
-                    if (rule.multi && rule.allowCustom) {
-                        const addContainer = document.createElement('div');
-                        addContainer.className = 'custom-add-container';
-                        const customInput = document.createElement('input');
-                        customInput.type = 'text';
-                        customInput.className = 'custom-add-input';
-                        customInput.placeholder = 'Add custom option...';
-                        const addBtn = document.createElement('button');
-                        addBtn.className = 'btn-custom-add';
-                        addBtn.innerText = 'Add';
-                        addBtn.onclick = () => {
-                            const newVal = customInput.value.trim();
-                            if (newVal && !curArr.includes(newVal)) {
-                                if (Array.isArray(data[key])) data[key].push(newVal);
-                                else data[key] = [data[key], newVal];
-                                refreshUI();
-                            }
-                        };
-                        addContainer.appendChild(customInput); addContainer.appendChild(addBtn);
-                        optDiv.appendChild(addContainer);
-                    }
-                    group.appendChild(optDiv);
-                } else {
-                    const input = document.createElement('input');
-                    input.className = 'edit-input';
-                    input.value = Array.isArray(val) ? val.join(', ') : val;
-                    input.onchange = (e) => { data[key] = Array.isArray(val) ? e.target.value.split(',').map(s => s.trim()) : e.target.value; };
-                    group.appendChild(input);
-                }
-            }
-            container.appendChild(group);
-        }
-    }
-
-    function buildEditor(data, container, path = []) {
-        // Falls die Daten kein Objekt/Array sind, direkt abbrechen
-        if (typeof data !== 'object' || data === null) return;
-
-        for (const key in data) {
-            const val = data[key];
-            const currentPath = [...path, key];
-            const group = document.createElement('div');
-            group.className = 'settings-group';
-
-            if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'object') {
-                group.innerHTML = `<span class="json-key">${key}</span>`;
-                const arrayContainer = document.createElement('div');
-                val.forEach((item, idx) => {
-                    const itemBox = document.createElement('div');
-                    itemBox.className = 'array-item-box';
-                    const ctrl = document.createElement('div');
-                    ctrl.className = 'array-controls';
-
-                    const plus = document.createElement('button'); plus.className='btn-action btn-plus'; plus.innerText='+';
-                    plus.onclick = () => { data[key].splice(idx+1, 0, JSON.parse(JSON.stringify(item))); refreshUI(); };
-
-                    const minus = document.createElement('button'); minus.className='btn-action btn-minus'; minus.innerText='-';
-                    minus.onclick = () => { if(data[key].length > 1) { data[key].splice(idx, 1); refreshUI(); } };
-
-                    ctrl.appendChild(plus); ctrl.appendChild(minus);
-                    itemBox.appendChild(ctrl);
-                    buildEditor(item, itemBox, currentPath);
-                    arrayContainer.appendChild(itemBox);
-                });
-                group.appendChild(arrayContainer);
-            } else if (typeof val === 'object' && !Array.isArray(val) && val !== null) {
-                group.innerHTML = `<span class="json-key" style="color:var(--accent); font-weight:700;">${key}</span>`;
-                const subGroupContainer = document.createElement('div');
-                subGroupContainer.style.paddingLeft = "15px";
-                subGroupContainer.style.borderLeft = "2px dashed #e2e8f0";
-                buildEditor(val, subGroupContainer, currentPath);
-                group.appendChild(subGroupContainer);
-            } else {
-                group.innerHTML = `<span class="json-key">${key}:</span>`;
-                const rule = getRuleByPath(currentPath);
-                if (rule) {
-                    const optDiv = document.createElement('div');
-                    const curArr = Array.isArray(val) ? val : [val];
-                    const hasAny = curArr.includes("any");
-                    const isInclusive = rule.behavior === "inclusive";
-                    const displayOptions = Array.from(new Set([...rule.options, ...curArr]));
-
-                    displayOptions.forEach(opt => {
-                        const label = document.createElement('label');
-                        label.className = 'validation-option';
-                        if (hasAny && opt !== "any" && !isInclusive) label.classList.add('disabled-option');
-                        const input = document.createElement('input');
-                        input.type = rule.multi ? "checkbox" : "radio";
-                        input.checked = curArr.includes(opt);
-                        if (hasAny && opt !== "any" && !isInclusive) input.disabled = true;
-
-                        input.onchange = () => {
-                            if (rule.multi) {
-                                let selection = Array.isArray(data[key]) ? [...data[key]] : [data[key]];
-                                if (opt === "any") {
-                                    if (input.checked) isInclusive ? selection.push("any") : selection = ["any"];
-                                    else selection = selection.filter(v => v !== "any");
-                                } else {
-                                    if (!isInclusive) selection = selection.filter(v => v !== "any");
-                                    if (input.checked) { if (!selection.includes(opt)) selection.push(opt); }
-                                    else selection = selection.filter(v => v !== opt);
-                                }
-                                data[key] = selection;
-                            } else {
-                                data[key] = opt;
-                            }
-                            refreshUI();
-                        };
-                        label.appendChild(input); label.appendChild(document.createTextNode(opt));
-                        optDiv.appendChild(label);
-                    });
-
-                    if (rule.multi && rule.allowCustom) {
-                        const addContainer = document.createElement('div');
-                        addContainer.className = 'custom-add-container';
-                        const customInput = document.createElement('input');
-                        customInput.type = 'text';
-                        customInput.className = 'custom-add-input';
-                        customInput.placeholder = 'Add custom option...';
-                        const addBtn = document.createElement('button');
-                        addBtn.className = 'btn-custom-add';
-                        addBtn.innerText = 'Add';
-                        addBtn.onclick = () => {
-                            const newVal = customInput.value.trim();
-                            if (newVal && !curArr.includes(newVal)) {
-                                if (Array.isArray(data[key])) data[key].push(newVal);
-                                else data[key] = [data[key], newVal];
-                                refreshUI();
-                            }
-                        };
-                        addContainer.appendChild(customInput); addContainer.appendChild(addBtn);
-                        optDiv.appendChild(addContainer);
-                    }
-                    group.appendChild(optDiv);
-                } else {
-                    const input = document.createElement('input');
-                    input.className = 'edit-input';
-                    input.value = Array.isArray(val) ? val.join(', ') : val;
-                    input.onchange = (e) => { data[key] = Array.isArray(val) ? e.target.value.split(',').map(s => s.trim()) : e.target.value; };
-                    group.appendChild(input);
-                }
-            }
-            container.appendChild(group);
-        }
-    }
-
-    document.getElementById('downloadBtn').onclick = () => {
-        const blob = new Blob([JSON.stringify(jsonData, null, 4)], {type: "application/json"});
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = "updated_config.json";
-        a.click();
-    };
-</script>
-</body>
-</html>
+                    input.className =

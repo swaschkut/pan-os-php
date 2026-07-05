@@ -1,3 +1,19 @@
+<?php
+session_start();
+include "../../test/db_conn.php";
+if( isset($_SESSION['folder']) && isset($_SESSION['id']) )
+{
+    $panconfkeystoreFILE = $_SESSION['folder']."/.panconfkeystore";
+    $projectFOLDER = $_SESSION['folder'];
+}
+else
+{
+    $tmpFOLDER = '/../../../../api/v1/project';
+    $panconfkeystoreFILE = dirname(__FILE__) . $tmpFOLDER.'/.panconfkeystore';
+    $projectFOLDER = dirname(__FILE__) . $tmpFOLDER;
+}
+
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -29,9 +45,9 @@
             <td><a href="../../playbook.php">JSON PLAYBOOK</a></td>
             <td><a href="../../preparation.php">upload file / store APIkey</a></td>
 
-            <td><a href="temp_diagram.html">Diagram</a></td>
-            <td><a href="../editor/bp_setting/bp_setting-editor.html">BP Setting Editor</a></td>
-            <td><a href="../editor/playbook/playbook-editor.html">Playbook Editor</a></td>
+            <td><a href="temp_diagram.php">Diagram</a></td>
+            <td><a href="../editor/bp_setting/bp_setting-editor.php">BP Setting Editor</a></td>
+            <td><a href="../editor/playbook/playbook-editor.php">Playbook Editor</a></td>
 
             <td><a href="../../help.php">action / filter help</a></td>
             <?php
