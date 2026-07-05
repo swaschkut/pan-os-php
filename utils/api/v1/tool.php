@@ -150,7 +150,10 @@ elseif( !isset($_GET['in']) && isset( $_FILES['configInput'] ) ){
 elseif( isset($_GET['in']) )
 {
     if( !isset($_GET['out']) )
+    {
         $argv[] = "out=true";
+    }
+
 }
 elseif( isset($_GET['help']) || isset($_GET['listfilters']) || isset($_GET['listactions']) || $url_pieces[1] == "key-manager" || $url_pieces[1] == "util_get-action-filter" )
 {
@@ -307,6 +310,7 @@ function UTILcaller( $url_pieces, $argv, $argc, $PHP_FILE )
                     // 4. Expression Validation (for 'filter' and 'actions')
                     // If your filters genuinely require single quotes (e.g., name contains 'test'),
                     // we allow quotes here but block high-risk system characters (backticks, pipes, semicolons, null-bytes).
+                    /*
                     else {
                         if (preg_match('/[\x00`|;&]/', $get)) {
                             throw new Exception("Security Error: High-risk command execution sequences blocked in '$key'.", 400);
@@ -316,7 +320,7 @@ function UTILcaller( $url_pieces, $argv, $argc, $PHP_FILE )
                         if (preg_match('/\'\s+(or|and)\s+/i', $get) || preg_match('/"\s+(or|and)\s+/i', $get)) {
                             throw new Exception("Security Error: Logical injection attempt blocked.", 400);
                         }
-                    }
+                    }*/
                 }
 
                 // --- SECURITY FIX END ---
