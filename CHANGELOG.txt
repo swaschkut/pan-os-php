@@ -1,6 +1,6 @@
 CHANGELOG
 
-2.1.58 [develop]
+2.1.58 [beta]
 UTIL:
 * type=securityprofile actions=exportSPtoHTML:file.html | extend with SCM VirusAndWildfire / DNSSec Profile
 * type=playbook | if json playbook file is using 'shadow-bpjsonfile=file' correctly use it
@@ -13,6 +13,9 @@ BUGFIX:
 GENERAL:
 * docker update | docker cli to ubuntu:26.04 - docker API to php:8.5-apache - docker php to php:8.5-cli
 * update Device App-ID to version: 9120-10131
+* compose.json update php to 8.5
+* autocompletion pan-os-php.sh - add support for "type=rule ruletype=XYZ" / "type=securityprofile securityprofiletype=XYZ"
+* tool.php | vulnerability fix
 
 
 2.1.57 (20260627)

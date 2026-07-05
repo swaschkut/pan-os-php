@@ -1,5 +1,5 @@
 {
-    "name": "paloaltonetworks/pan-os-php",
+    "name": "swaschkut/pan-os-php",
     "type": "library",
     "description": "Library and UTIL tools for work with PAN-OS Firewall and Panorama configuration in PHP.",
     "keywords": ["git"],
@@ -15,7 +15,7 @@
         }
     ],
     "require": {
-      "php": ">=8.3",
+      "php": ">=8.5",
       "ext-json": "*",
       "ext-curl": "*",
       "ext-dom": "*",
