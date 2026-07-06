@@ -148,17 +148,18 @@ trait sp_action_wildfire
         {
             $bp_set = false;
 
+            $first_array_key = array_key_first($this->rules_obj);
 
-            $check_array = $this->rules_obj[0]->wildfire_rule_bp_visibility_JSON( "visibility", "wildfire" );
-            $checkBP_array = $this->rules_obj[0]->wildfire_rule_bp_visibility_JSON( "bp", "wildfire" );
+            $check_array = $this->rules_obj[$first_array_key]->wildfire_rule_bp_visibility_JSON( "visibility", "wildfire" );
+            $checkBP_array = $this->rules_obj[$first_array_key]->wildfire_rule_bp_visibility_JSON( "bp", "wildfire" );
             $this->wildfire_rules_coverage();
 
-
-            foreach( $checkBP_array[0]['filetype'] as $bp_array )
+            $first_array_key2 = array_key_first($checkBP_array);
+            foreach( $checkBP_array[$first_array_key2]['filetype'] as $bp_array )
             {
                 if( isset($this->rule_coverage[$bp_array]) )
                 {
-                    if( is_array($checkBP_array[0]['analysis']) )
+                    if( is_array($checkBP_array[$first_array_key2]['analysis']) )
                     {
                         if( !in_array($this->rule_coverage[$bp_array]['analysis'], $checkBP_array[0]['analysis']) )
                             return false;
@@ -167,7 +168,7 @@ trait sp_action_wildfire
                     }
                     else
                     {
-                        if( $checkBP_array[0]['analysis'] !== $this->rule_coverage[$bp_array]['analysis'] )
+                        if( $checkBP_array[$first_array_key2]['analysis'] !== $this->rule_coverage[$bp_array]['analysis'] )
                             return false;
                         else
                             $bp_set = true;
@@ -177,7 +178,7 @@ trait sp_action_wildfire
                 #    return false;
             }
 
-            foreach( $check_array[0]['filetype'] as $bp_array )
+            foreach( $check_array[$first_array_key2]['filetype'] as $bp_array )
             {
                 if( isset($this->rule_coverage[$bp_array]) )
                 {
