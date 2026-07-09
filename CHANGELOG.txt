@@ -5,6 +5,7 @@ UTIL:
 * type=securityprofile actions=exportSPtoHTML:file.html | extend with SCM VirusAndWildfire / DNSSec Profile
 * type=playbook | if json playbook file is using 'shadow-bpjsonfile=file' correctly use it
 * Class PanoramaConf | update to add BPshared statistics to JSON
+* type=securityprofilegroup | introduce 'filter=(secprof nothing.is.set)'
 
 BUGFIX:
 * bugfix - better validation if "$this->owner->owner->customURLProfileStore" isset
