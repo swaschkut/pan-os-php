@@ -3016,7 +3016,50 @@ RQuery::$defaultFilters['rule']['secprof']['operators']['has.from.query'] = arra
     'arg' => TRUE,
     'help' => 'example: \'filter=(secprof has.from.query subquery1)\' \'subquery1=(av is.best-practice)\'',
 );
+RQuery::$defaultFilters['rule']['secprofgroup']['operators']['has.from.query'] = array(
+    'Function' => function (RuleRQueryContext $context) {
+        $rule = $context->object;
 
+        if( $context->object->securityProfileIsBlank() )
+            return FALSE;
+
+        if( $context->value === null || !isset($context->nestedQueries[$context->value]) )
+            derr("cannot find nested query called '{$context->value}'");
+
+
+        $errorMessage = '';
+
+        if( !isset($context->cachedSubRQuery) )
+        {
+            $rQuery = new RQuery('securityprofilegroup');
+            if( $rQuery->parseFromString($context->nestedQueries[$context->value], $errorMessage) === FALSE )
+                derr('nested query execution error : ' . $errorMessage);
+            $context->cachedSubRQuery = $rQuery;
+        }
+        else
+            $rQuery = $context->cachedSubRQuery;
+
+        $secprof_objects = array();
+        if( $rule->securityProfileType() == "group" )
+        {
+            /** @var SecurityProfileGroup $tmp_group */
+            $tmp_group =  $rule->owner->owner->securityProfileGroupStore->find( $rule->securityProfileGroup() );
+            if( $tmp_group !== null )
+                $secprof_objects = $tmp_group->securityProfiles();
+        }
+        else
+            $secprof_objects = $rule->securityProfiles();
+
+        if( $rQuery->matchSingleObject(array('object' => $tmp_group, 'nestedQueries' => &$context->nestedQueries)) )
+            return TRUE;
+
+
+
+        return FALSE;
+    },
+    'arg' => TRUE,
+    'help' => 'example: \'filter=(secprofgroup has.from.query subquery1)\' \'subquery1=(nothing is.set)\'',
+);
 RQuery::$defaultFilters['rule']['secprof']['operators']['has.predefined'] = array(
     'Function' => function (RuleRQueryContext $context) {
         $secprofgroup = $context->object;
