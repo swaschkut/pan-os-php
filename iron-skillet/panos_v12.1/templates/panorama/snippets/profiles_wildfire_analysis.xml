@@ -50,4 +50,17 @@
       <analysis>public-cloud</analysis>
     </entry>
   </rules>
+  <mica-engine-wildfire-rules>
+    <entry name="wf_inline_alert">
+      <application>
+        <member>any</member>
+      </application>
+      <file-type>
+        <member>any</member>
+      </file-type>
+      <direction>both</direction>
+      <action>alert</action>
+    </entry>
+  </mica-engine-wildfire-rules>
+  <cloud-inline-analysis>yes</cloud-inline-analysis>
 </entry></root>
