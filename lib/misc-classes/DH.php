@@ -578,14 +578,14 @@ class DH
         $fullpath = $orig_fullxpath;
 
         //for template related stuff, do not replace "config network"
-        if( strpos( $fullpath, "template" ) === FALSE )
+        if( strpos( $fullpath, "template" ) === FALSE and strpos( $fullpath, "template-stack" ) === FALSE )
         {
             $replace = "/config";
             $fullpath = str_replace($replace, "", $fullpath);
             $replace = "/devices/entry[@name='localhost.localdomain']";
             $fullpath = str_replace($replace, "", $fullpath);
         }
-        else
+        elseif( strpos( $fullpath, "template" ) === TRUE )
         {
             $replace = "/config/devices/entry[@name='localhost.localdomain']/template";
             if( strpos( $fullpath, $replace ) !== FALSE )
@@ -595,6 +595,7 @@ class DH
             if( strpos( $fullpath, $replace ) !== FALSE )
                 $fullpath = str_replace($replace, "/config", $fullpath);
         }
+        //Todo: what about template-stack?????
 
 
         //if FW - no multivsys - remove it
@@ -1292,11 +1293,12 @@ class DH
             }
             $text = DH::elementToPanXPath($item);
             $replace_template = "/config/devices/entry[@name='localhost.localdomain']/template/";
+            $replace_template_stack = "/config/devices/entry[@name='localhost.localdomain']/template-stack/";
 
             if( $xpath !== null && strpos($text, $xpath) === FALSE )
                 continue;
 
-            if( strpos($text, $replace_template) !== FALSE )
+            if( str_contains($text, $replace_template) )
             {
                 $tmpArray['xpath'] = $text;
                 $text = str_replace($replace_template, "", $text);
@@ -1314,6 +1316,26 @@ class DH
                 $tmpArray['line'] = $item->getLineNo();
 
                 $templateEntryArray['template'][$templateName][] = $tmpArray;
+
+            }
+            elseif( str_contains($text, $replace_template_stack) )
+            {
+                $tmpArray['xpath'] = $text;
+                $text = str_replace($replace_template_stack, "", $text);
+
+                $templateXpathArray = explode("/", $text);
+
+                $templateName = str_replace("entry[@name='", "", $templateXpathArray[0]);
+                $templateName = str_replace("']", "", $templateName);
+
+                $replace = "entry[@name='" . $templateName . "']";
+                $text = str_replace($replace, "", $text);
+
+                $tmpArray['text'] = $text;
+                $tmpArray['node'] = $item;
+                $tmpArray['line'] = $item->getLineNo();
+
+                $templateEntryArray['template-stack'][$templateName][] = $tmpArray;
 
             }
             else
@@ -1335,6 +1357,61 @@ class DH
                 //$string .= "\n";
                 //PH::print_stdout();
                 $tmp_string = "TEMPLATE: " . $templateName;
+                $string .= $padding.$tmp_string."\n";
+                //PH::print_stdout($tmp_string);
+                foreach( $templateEntry as $item )
+                {
+                    $xpath = $item['xpath'];
+                    //$string .= "\n";
+                    //PH::print_stdout();
+                    //PH::print_stdout("---------");
+                    if( !$displayXMLnode && !$displayAttributeName )
+                    {
+                        $tmp_string = "   * XPATH: ".$xpath;
+                        $string .= $padding.$tmp_string."\n";
+                    }
+
+
+                    if( $displayXMLlineno )
+                    {
+                        $tmp_string = "   * line: ".$item['line'];
+                        $string .= $padding.$tmp_string."\n";
+                    }
+
+                    if( $fullxpath )
+                    {
+                        $tmp_string = "     |" . $xpath . "|";
+                        $string .= $padding.$tmp_string."\n";
+                    }
+
+
+                    if( $displayXMLnode )
+                    {
+                        $tmp_string = "";
+                        DH::getXpathDisplay( $tmp_string, $xmlDoc, $xpath, "test", false, "display");
+                        $string .= $tmp_string;
+                    }
+
+                    if( $displayAttributeName )
+                    {
+                        $tmp_string = "";
+                        DH::getXpathDisplay( $tmp_string, $xmlDoc, $xpath, "test", true, "display");
+                        $string .= $tmp_string;
+                    }
+
+                }
+
+                $string .= "\n";
+            }
+        }
+
+        if( isset($templateEntryArray['template-stack']) )
+        {
+            foreach( $templateEntryArray['template-stack'] as $templateName => $templateEntry )
+            {
+                //$string .= "\n";
+                //PH::print_stdout();
+                $tmp_string = "TEMPLATE-STACK: " . $templateName;
                 $string .= $padding.$tmp_string."\n";
                 //PH::print_stdout($tmp_string);
                 foreach( $templateEntry as $item )
