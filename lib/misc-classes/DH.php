@@ -593,11 +593,13 @@ class DH
 
             $replace = "/config/devices/entry[@name='localhost.localdomain']/template";
             if(str_contains($fullpath, $replace))
+            {
                 $fullpath = str_replace($replace, "/template", $fullpath);
 
-            $replace = "/config/devices/entry[@name='localhost.localdomain']";
-            if(str_contains($fullpath, $replace))
-                $fullpath = str_replace($replace, "/config", $fullpath);
+                $replace = "/config/devices/entry[@name='localhost.localdomain']";
+                if(str_contains($fullpath, $replace))
+                    $fullpath = str_replace($replace, "/config", $fullpath);
+            }
         }
         //Todo: what about template-stack?????
 
