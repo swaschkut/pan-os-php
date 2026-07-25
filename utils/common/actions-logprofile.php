@@ -53,7 +53,10 @@ LogProfileCallContext::$supportedActions['display'] = array(
                         $tmp_txt = "       - " . str_pad($key, 12)." | ".str_pad($name_key, 12)."";
                         foreach ($type as $type_key => $type_value)
                         {
-                            $tmp_txt .= " |" . $type_key . "->" . $type_value;
+                            if( is_array($type_value))
+                                $tmp_txt .= " |" . $type_key . "->" . implode(",", $type_value);
+                            else
+                                $tmp_txt .= " |" . $type_key . "->" . $type_value;
                         }
                     }
                 }
@@ -146,7 +149,10 @@ LogProfileCallContext::$supportedActions[] = array(
                                 $tmp_txt = "       - " . str_pad($key, 12)." | ".str_pad($name_key, 12)."";
                                 foreach ($type as $type_key => $type_value)
                                 {
-                                    $tmp_txt .= " |" . $type_key . "->" . $type_value;
+                                    if( is_array($type_value))
+                                        $tmp_txt .= " |" . $type_key . "->" . implode(",", $type_value);
+                                    else
+                                        $tmp_txt .= " |" . $type_key . "->" . $type_value;
                                 }
                             }
                         }

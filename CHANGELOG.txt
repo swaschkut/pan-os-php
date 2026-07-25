@@ -8,6 +8,7 @@ UTIL:
 * type=securityprofilegroup | introduce 'filter=(secprof nothing.is.set)'
 * type=rule 'filter=(secprofgroup has.from.query subquery1)' 'subquery1=(secprof nothing.is.set)'
 * type=rule | introduce actions=to/from-remove-objects-matching-filter
+* type=log-profile | extend information reading and output
 
 BUGFIX:
 * bugfix - better validation if "$this->owner->owner->customURLProfileStore" isset
