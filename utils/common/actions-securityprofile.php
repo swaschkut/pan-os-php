@@ -1285,8 +1285,18 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     //todo output for both exportToExcel and exportSPtoHTML - how?
                     if( $object->local_inline_cat !== null )
                         $string_mica_engine[] = "local-inline-cat=".$object->local_inline_cat;
+                    else
+                    {
+                        if( $object->owner->owner->version >= 102 )
+                            $string_mica_engine[] = "local-inline-cat=no";
+                    }
                     if( $object->cloud_inline_cat !== null )
                         $string_mica_engine[] = "cloud-inline-cat=".$object->cloud_inline_cat;
+                    else
+                    {
+                        if( $object->owner->owner->version >= 102 )
+                            $string_mica_engine[] = "cloud-inline-cat=no";
+                    }
                 }
 
                 //<th>DNS lists</th>
