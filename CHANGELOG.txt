@@ -26,6 +26,7 @@ GENERAL:
 * compose.json update php to 8.5
 * autocompletion pan-os-php.sh - add support for "type=rule ruletype=XYZ" / "type=securityprofile securityprofiletype=XYZ"
 * tool.php | vulnerability fix
+* bash_autocompletion pan-os-php.sh | extend with type=device devicetype=
 
 
 2.1.57 (20260627)

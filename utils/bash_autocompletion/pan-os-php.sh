@@ -50,8 +50,9 @@ _pan_os_php() {
     local -a std_args
     std_args=(
         type= in= out= actions= filter= location= loadplugin= template=
-        apitimeout= outputformatset= ruletype= securityprofiletype=
-            help listactions listfilters version stats debugapi
+        apitimeout= outputformatset=
+        ruletype= securityprofiletype= devicetype=
+    help listactions listfilters version stats debugapi
     loadpanoramapushedconfig
     shadow-json shadow-apikeyhidden shadow-apikeynohidden shadow-apikeynosave
     shadow-disableoutputformatting shadow-displaycurlrequest
@@ -141,6 +142,18 @@ case "${cur}" in
             local spt
             for spt in "${sptypes[@]}"; do
                 [[ "${spt}" == ${val}* ]] && suggestions+=("securityprofiletype=${spt}")
+                done
+            compadd -S ' ' -- "${suggestions[@]}"
+            ;;
+
+            devicetype=*)
+            local val="${cur#devicetype=}"
+            local -a devicetypes
+            devicetypes=(any vsys devicegroup templatestack template container devicecloud manageddevice deviceonprem snippet)
+            local -a suggestions
+            local spt
+            for spt in "${devicetypes[@]}"; do
+                [[ "${spt}" == ${val}* ]] && suggestions+=("devicetype=${spt}")
                 done
             compadd -S ' ' -- "${suggestions[@]}"
             ;;
