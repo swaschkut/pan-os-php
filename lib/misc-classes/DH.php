@@ -578,21 +578,25 @@ class DH
         $fullpath = $orig_fullxpath;
 
         //for template related stuff, do not replace "config network"
-        if( strpos( $fullpath, "template" ) === FALSE and strpos( $fullpath, "template-stack" ) === FALSE )
+        if( !str_contains($fullpath, "template") and !str_contains($fullpath, "template-stack"))
         {
             $replace = "/config";
             $fullpath = str_replace($replace, "", $fullpath);
             $replace = "/devices/entry[@name='localhost.localdomain']";
             $fullpath = str_replace($replace, "", $fullpath);
         }
-        elseif( strpos( $fullpath, "template" ) === TRUE )
+        else
         {
+            $replace = "/config/devices/entry[@name='localhost.localdomain']/template-stack";
+            if(str_contains($fullpath, $replace))
+                $fullpath = str_replace($replace, "/template-stack", $fullpath);
+
             $replace = "/config/devices/entry[@name='localhost.localdomain']/template";
-            if( strpos( $fullpath, $replace ) !== FALSE )
+            if(str_contains($fullpath, $replace))
                 $fullpath = str_replace($replace, "/template", $fullpath);
 
             $replace = "/config/devices/entry[@name='localhost.localdomain']";
-            if( strpos( $fullpath, $replace ) !== FALSE )
+            if(str_contains($fullpath, $replace))
                 $fullpath = str_replace($replace, "/config", $fullpath);
         }
         //Todo: what about template-stack?????
