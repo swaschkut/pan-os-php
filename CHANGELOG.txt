@@ -16,6 +16,7 @@ BUGFIX:
 * WF - 12.1 - iron-skilet - create-alert-only-set - adjust micae-engine
 * AV - PAN-OS >= 11.1 - if mlav-action not available add it and set it to allow
 * class DH | fix to produce correct set commands for template-stack
+* BP JSON file - ADNS action changed from "reset-both" to "sinkhole"
 
 GENERAL:
 * docker update | docker cli to ubuntu:26.04 - docker API to php:8.5-apache - docker php to php:8.5-cli
