@@ -17,6 +17,7 @@ BUGFIX:
 * AV - PAN-OS >= 11.1 - if mlav-action not available add it and set it to allow
 * class DH | fix to produce correct set commands for template-stack
 * BP JSON file - ADNS action changed from "reset-both" to "sinkhole"
+* type=securityprofile actions=exporttohtml:file.html,visibility|bestpractice | fix for AS/VP rules if not visiblity -> also not BP
 
 GENERAL:
 * docker update | docker cli to ubuntu:26.04 - docker API to php:8.5-apache - docker php to php:8.5-cli

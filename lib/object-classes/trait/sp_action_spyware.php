@@ -809,6 +809,9 @@ trait sp_action_spyware
         $bp_set = null;
         if (!empty($this->rules_obj))
         {
+            if( !$this->spyware_rules_visibility() )
+                return FALSE;
+
             /*
             //Todo: use ThreatPolicySpyware - swaschkut 20260620
             //how to validate if a severity is missing

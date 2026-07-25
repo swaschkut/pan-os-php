@@ -673,6 +673,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 #$lines .= $context->encloseFunction($object->name());
                 $lines .= $context->encloseFunction($tmp_name);
 
+                // column BP | Visiblity | Adoption
                 if( $bestPractice || $visibility || $adoption )
                 {
                     if( get_class($object) == "AntiVirusProfile" )
