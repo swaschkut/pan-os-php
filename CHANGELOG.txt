@@ -9,6 +9,7 @@ UTIL:
 * type=rule 'filter=(secprofgroup has.from.query subquery1)' 'subquery1=(secprof nothing.is.set)'
 * type=rule | introduce actions=to/from-remove-objects-matching-filter
 * type=log-profile | extend information reading and output
+* type=zone-protection-profile | extend content if ip scans are disabled
 
 BUGFIX:
 * bugfix - better validation if "$this->owner->owner->customURLProfileStore" isset

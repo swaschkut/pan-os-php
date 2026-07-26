@@ -80,6 +80,10 @@ ZoneProtectionProfileCallContext::$supportedActions['display'] = array(
             if( !empty($tmp_string) )
                 PH::print_stdout( "        ".$tmp_string." ");
         }
+        if( !empty($object->disabled_scans))
+            PH::print_stdout( "\n       - SCAN disabled:");
+        foreach( $object->disabled_scans as $key => $scan )
+            PH::print_stdout( "        * ".$key." [disabled] " );
 
         $tmp_string = "";
 
@@ -177,7 +181,7 @@ ZoneProtectionProfileCallContext::$supportedActions[] = array(
             {
                 $count++;
 
-                /** @var Tag $object */
+                /** @var ZoneProtectionProfile $object */
                 if( $count % 2 == 1 )
                     $lines .= "<tr>\n";
                 else
@@ -258,6 +262,10 @@ ZoneProtectionProfileCallContext::$supportedActions[] = array(
 
                     if( !empty($tmp_string) )
                         $tmp_flood_array[] = $tmp_string;
+                }
+                foreach( $object->disabled_scans as $key => $scan )
+                {
+                    $tmp_flood_array[] = "* " . $key . " [disabled]\n";
                 }
                 $lines .= $context->encloseFunction($tmp_flood_array);
 
