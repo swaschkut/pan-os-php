@@ -1519,7 +1519,7 @@ DeviceCallContext::$supportedActions['exportToExcel'] = array(
 
 
         #$headers = '<th>location</th><th>name</th><th>template</th>';
-        $headers = '<th>ID</th><th>name</th><th>template</th>';
+        $headers = '<th>ID</th><th>name</th><th>managed-device</th><th>device-group</th><th>template-stack</th><th>template</th><th>log-collector</th>';
 
         if( $addWhereUsed )
             $headers .= '<th>where used</th>';
@@ -1545,29 +1545,110 @@ DeviceCallContext::$supportedActions['exportToExcel'] = array(
 
                 $lines .= $context->encloseFunction($object->name());
 
-                if( get_class($object) == "TemplateStack" )
+
+                if( get_class($object) == "ManagedDevice" )
                 {
+                    //serial
+                    $lines .= $context->encloseFunction("");
+
+                    //dg
+                    $refTextArray = array();
+                    foreach( $object->getReferences() as $ref )
+                    {
+                        if( get_class($ref) == "DeviceGroup" )
+                            $refTextArray[] = $ref->_PANC_shortName();
+                    }
+                    $lines .= $context->encloseFunction($refTextArray);
+
+
+                    //t-stack
+                    $lines .= $context->encloseFunction("[t-stack]");
+                    //template
+                    $lines .= $context->encloseFunction("[template]");
+                    //log-collect
+                    $lines .= $context->encloseFunction("[log-collector]");
+                }
+                elseif( get_class($object) == "DeviceGroup" )
+                {
+                    //serial
+                    $lines .= $context->encloseFunction("[serial]");
+                    //dg
+                    $lines .= $context->encloseFunction("");
+                    //t-stack
+                    $lines .= $context->encloseFunction("[t-stack]");
+                    //template
+                    $lines .= $context->encloseFunction("[template]");
+                    //log-collect
+                    $lines .= $context->encloseFunction("[log-collector]");
+                }
+                elseif( get_class($object) == "TemplateStack" )
+                {
+                    //serial
+                    $lines .= $context->encloseFunction("[serial]");
+                    //dg
+                    $lines .= $context->encloseFunction("[DG]");
+                    //t-stack
+                    $lines .= $context->encloseFunction("");
+                    //template
                     $lines .= $context->encloseFunction( array_reverse($object->templates) );
+                    //log-collect
+                    $lines .= $context->encloseFunction("[log-collector]");
+                }
+                elseif( get_class($object) == "Template" )
+                {
+                    //serial
+                    $lines .= $context->encloseFunction("[serial]");
+                    //dg
+                    $lines .= $context->encloseFunction("[DG]");
+                    //t-stack
+                    $lines .= $context->encloseFunction("[t-stack]");
+                    //template
+                    $lines .= $context->encloseFunction("");
+                    //log-collect
+                    $lines .= $context->encloseFunction("[log-collector]");
+                }
+                elseif( get_class($object) == "LogCollectorGroup" )
+                {
+                    //serial
+                    $lines .= $context->encloseFunction("[serial]");
+                    //dg
+                    $lines .= $context->encloseFunction("[DG]");
+                    //t-stack
+                    $lines .= $context->encloseFunction("[t-stack]");
+                    //template
+                    $lines .= $context->encloseFunction("[template]");
+                    //log-collect
+                    $lines .= $context->encloseFunction("");
                 }
 
                 if( $addWhereUsed )
                 {
-                    $refTextArray = array();
-                    foreach( $object->getReferences() as $ref )
-                        $refTextArray[] = $ref->_PANC_shortName();
+                    if( get_class($object) !== "DeviceGroup" )
+                    {
+                        $refTextArray = array();
+                        foreach( $object->getReferences() as $ref )
+                            $refTextArray[] = $ref->_PANC_shortName()." [".get_class($ref)."]";
 
-                    $lines .= $context->encloseFunction($refTextArray);
+                        $lines .= $context->encloseFunction($refTextArray);
+                    }
+                    else
+                        $lines .= $context->encloseFunction("");
                 }
                 if( $addUsedInLocation )
                 {
-                    $refTextArray = array();
-                    foreach( $object->getReferences() as $ref )
+                    if( get_class($object) !== "DeviceGroup" )
                     {
-                        $location = PH::getLocationString($object->owner);
-                        $refTextArray[$location] = $location;
-                    }
+                        $refTextArray = array();
+                        foreach( $object->getReferences() as $ref )
+                        {
+                            $location = PH::getLocationString($object->owner);
+                            $refTextArray[$location] = $location;
+                        }
 
-                    $lines .= $context->encloseFunction($refTextArray);
+                        $lines .= $context->encloseFunction($refTextArray);
+                    }
+                    else
+                        $lines .= $context->encloseFunction("");
                 }
 
                 $lines .= "</tr>\n";
