@@ -268,7 +268,7 @@ elif [[ -n "${BASH_VERSION}" ]]; then
             'shadow-loadreduce' 'shadow-nojson' 'shadow-saseapiqa' 'shadow-multivsys'
             'outputformatset='
             'stats' 'template=' 'version'
-            'ruletype=' 'securityprofiletype='
+            'ruletype=' 'securityprofiletype=' 'devicetype='
         )
 
             local arguments_migration=('type=' 'in=' 'out=' 'file=' 'help' 'vendor=' 'routetable=' 'mapping=')
@@ -334,6 +334,11 @@ elif [[ -n "${BASH_VERSION}" ]]; then
                 ;;
             securityprofiletype)
             local opts="any url-filtering virus vulnerability spyware file-blocking data-filtering wildfire-analysis custom-url-category dns-security saas-security virus-and-wildfire-analysis predefined-url predefined-url-filtering predefined-virus predefined-spyware predefined-file-blocking predefined-vulnerability predefined-wildfire-analysis"
+            COMPREPLY=($(compgen -W "${opts}" -- "${real_cur}"))
+            return 0
+                ;;
+            devicetype)
+            local opts="any vsys devicegroup templatestack template container devicecloud manageddevice deviceonprem snippet"
             COMPREPLY=($(compgen -W "${opts}" -- "${real_cur}"))
             return 0
                 ;;
