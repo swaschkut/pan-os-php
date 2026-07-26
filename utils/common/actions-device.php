@@ -1549,20 +1549,27 @@ DeviceCallContext::$supportedActions['exportToExcel'] = array(
                 if( get_class($object) == "ManagedDevice" )
                 {
                     //serial
-                    $lines .= $context->encloseFunction("");
+                    $lines .= $context->encloseFunction( "-SELF-" );
 
                     //dg
                     $refTextArray = array();
                     foreach( $object->getReferences() as $ref )
                     {
                         if( get_class($ref) == "DeviceGroup" )
-                            $refTextArray[] = $ref->_PANC_shortName();
+                        {
+                            $devicesInGroup = $ref->getDevicesInGroup();
+                            $vsysName = "---";
+                            if( isset( array_keys($devicesInGroup[$object->name()]['vsyslist'])[0] ) )
+                                $vsysName = array_keys($devicesInGroup[$object->name()]['vsyslist'])[0];
+                            $refTextArray[] = $ref->_PANC_shortName()." [".$vsysName."]";
+                        }
+
                     }
                     $lines .= $context->encloseFunction($refTextArray);
 
 
                     //t-stack
-                    $lines .= $context->encloseFunction("[t-stack]");
+                    $lines .= $context->encloseFunction( $object->getTemplateStack() );
                     //template
                     $lines .= $context->encloseFunction("[template]");
                     //log-collect
@@ -1570,12 +1577,30 @@ DeviceCallContext::$supportedActions['exportToExcel'] = array(
                 }
                 elseif( get_class($object) == "DeviceGroup" )
                 {
+                    $devicesInGroup = $object->getDevicesInGroup();
                     //serial
-                    $lines .= $context->encloseFunction("[serial]");
+                    $tmp_string = "";
+                    foreach( $object->getDevicesInGroup() as $key => $device )
+                    {
+                        if( isset($device['vsyslist']) )
+                            $tmp_string .= $key." [".array_keys($device['vsyslist'])[0]."]\n";
+                        else
+                            $tmp_string .= $key." [vsys1]\n";
+                    }
+
+                    $lines .= $context->encloseFunction($tmp_string);
+
                     //dg
-                    $lines .= $context->encloseFunction("");
+                    $lines .= $context->encloseFunction( "-SELF-" );
+
                     //t-stack
-                    $lines .= $context->encloseFunction("[t-stack]");
+                    $tmp_string = "";
+                    foreach( $object->getDevicesInGroup() as $key => $device )
+                    {
+                        $managedFirewall = $object->owner->managedFirewallsStore->find($key);
+                        $tmp_string .= $managedFirewall->getTemplateStack()."\n";
+                    }
+                    $lines .= $context->encloseFunction($tmp_string);
                     //template
                     $lines .= $context->encloseFunction("[template]");
                     //log-collect
@@ -1588,7 +1613,7 @@ DeviceCallContext::$supportedActions['exportToExcel'] = array(
                     //dg
                     $lines .= $context->encloseFunction("[DG]");
                     //t-stack
-                    $lines .= $context->encloseFunction("");
+                    $lines .= $context->encloseFunction( "-SELF-" );
                     //template
                     $lines .= $context->encloseFunction( array_reverse($object->templates) );
                     //log-collect
@@ -1600,10 +1625,17 @@ DeviceCallContext::$supportedActions['exportToExcel'] = array(
                     $lines .= $context->encloseFunction("[serial]");
                     //dg
                     $lines .= $context->encloseFunction("[DG]");
+
                     //t-stack
-                    $lines .= $context->encloseFunction("[t-stack]");
+                    $refTextArray = array();
+                    foreach( $object->getReferences() as $ref )
+                    {
+                        if( get_class($ref) == "TemplateStack" )
+                            $refTextArray[] = $ref->_PANC_shortName();
+                    }
+                    $lines .= $context->encloseFunction($refTextArray);
                     //template
-                    $lines .= $context->encloseFunction("");
+                    $lines .= $context->encloseFunction("-SELF-" );
                     //log-collect
                     $lines .= $context->encloseFunction("[log-collector]");
                 }
@@ -1618,7 +1650,7 @@ DeviceCallContext::$supportedActions['exportToExcel'] = array(
                     //template
                     $lines .= $context->encloseFunction("[template]");
                     //log-collect
-                    $lines .= $context->encloseFunction("");
+                    $lines .= $context->encloseFunction("-SELF-" );
                 }
 
                 if( $addWhereUsed )
