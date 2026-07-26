@@ -32,6 +32,8 @@ class LogProfile
     public $type = null;
     public $type_available = null;
 
+    public $enhanced_application_logging = null;
+
     /**
      * @param string $name
      * @param LogProfileStore|null $owner
@@ -208,6 +210,17 @@ class LogProfile
                 }
             }
         }
+
+        //          <enhanced-application-logging>yes</enhanced-application-logging>
+        $tmp_enhanced_application_logging = DH::findFirstElement('enhanced-application-logging', $xml);
+        if( $tmp_enhanced_application_logging !== FALSE )
+            $this->enhanced_application_logging = $tmp_enhanced_application_logging->textContent;
+        else
+        {
+            if( $this->owner->owner->version > 81 )
+                $this->enhanced_application_logging = "no";
+        }
+
         /*
         //Todo: 20260725
         //additional information needed
