@@ -151,9 +151,9 @@ case "${cur}" in
             local -a devicetypes
             devicetypes=(any vsys devicegroup templatestack template container devicecloud manageddevice deviceonprem snippet)
             local -a suggestions
-            local spt
-            for spt in "${devicetypes[@]}"; do
-                [[ "${spt}" == ${val}* ]] && suggestions+=("devicetype=${spt}")
+            local dt
+            for dt in "${devicetypes[@]}"; do
+                [[ "${dt}" == ${val}* ]] && suggestions+=("devicetype=${dt}")
                 done
             compadd -S ' ' -- "${suggestions[@]}"
             ;;
