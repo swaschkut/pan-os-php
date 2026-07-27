@@ -64,9 +64,54 @@ asort(PH::$supportedUTILTypes);
 $typeUTIL = new UTIL("custom", $argv, $argc, $PHP_FILE, $supportedArguments, $usageMsg);
 $typeUTIL->supportedArguments['type'] = array('niceName' => 'type', 'shortHelp' => 'specify which type of PAN-OS-PHP UTIL script you like to use', 'argDesc' => implode("|", PH::$supportedUTILTypes ));
 $typeUTIL->supportedArguments['version'] = array('niceName' => 'version', 'shortHelp' => 'display actual installed PAN-OS-PHP framework version');
+$typeUTIL->supportedArguments['changelog'] = array('niceName' => 'changelog', 'shortHelp' => 'display changelog[=2.1.56]');
+
+if( isset(PH::$args['changelog']) )
+{
+    $version = PH::frameworkVersion("numbers");
+    $changeLogFile = dirname(__FILE__) . "/../CHANGELOG.txt";
+
+    if (!file_exists($changeLogFile)) {
+        return null;
+    }
+
+    $changelogContent = file_get_contents($changeLogFile);
 
 
-if( isset(PH::$args['version']) )
+    if( PH::$args['changelog'] !== TRUE )
+        $version = PH::$args['changelog'];
+
+    PH::print_stdout( " - PAN-OS-PHP version: ".PH::frameworkVersion() . " [".PH::frameworkInstalledOS()."]" . " [" . phpversion() ."]" );
+    PH::print_stdout( array( "version" => PH::frameworkVersion(), "os" => PH::frameworkInstalledOS(), "php-version" => phpversion() ), true, 'PAN-OS-PHP');
+
+
+    $includeHeader = true;
+
+    // Strip leading 'v' or 'V' from framework version if present
+    $cleanVersion = $version." ";
+    $quotedVersion = preg_quote($cleanVersion, '/');
+
+    // Pattern breakdown:
+    // Group 1: Captures full header line (e.g., "2.1.59 [beta]" or "2.1.57 (20260627)")
+    // Group 2: Captures body content up to the next version header line (e.g. "2.1.58") or EOF
+    $pattern = '/(?:^|\R)\s*(' . $quotedVersion . '[^\r\n]*)\R+(.*?)(?=\R\s*\d+\.\d+\.\d+|\z)/s';
+
+    if (preg_match($pattern, $changelogContent, $matches))
+    {
+        $header = trim($matches[1]);
+        $body   = trim($matches[2]);
+
+        $output = $includeHeader ? "{$header}\n\n{$body}" : $body;
+
+        PH::print_stdout( $output );
+        PH::print_stdout();
+        exit();
+    }
+
+    PH::print_stdout("No changelog entry found in CHANGELOG file for version {$cleanVersion}");
+    exit();
+}
+elseif( isset(PH::$args['version']) )
 {
     PH::print_stdout( " - PAN-OS-PHP version: ".PH::frameworkVersion() . " [".PH::frameworkInstalledOS()."]" );
     PH::print_stdout( " - ".dirname($PHP_FILE) );
