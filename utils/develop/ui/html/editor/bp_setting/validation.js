@@ -57,7 +57,15 @@ const BP_VALIDATION = {
                 "action": {
                     "type": { "multi": true, "options": ["pan-dns-sec-adtracking", "pan-dns-sec-ddns", "pan-dns-sec-grayware", "pan-dns-sec-malware", "pan-dns-sec-phishing", "pan-dns-sec-proxy", "pan-dns-sec-recent", "pan-dns-sec-cc", "pan-dns-sec-parked"], "allowCustom": true },
                     "action": { "multi": true, "options": ["sinkhole", "alert", "block"] },
-                    "packet-capture": { "multi": true, "options": ["disable", "single-packet", "extended-capture"] }
+                    "packet-capture": { "multi": true, "options": ["disable", "single-packet", "extended-capture"] },
+                    "log-level": { "multi": false, "options": ["!none"] }
+                }
+            },
+            "visibility": {
+                "action": {
+                    "type": { "multi": true, "options": ["pan-dns-sec-adtracking", "pan-dns-sec-ddns", "pan-dns-sec-grayware", "pan-dns-sec-malware", "pan-dns-sec-phishing", "pan-dns-sec-proxy", "pan-dns-sec-recent", "pan-dns-sec-cc", "pan-dns-sec-parked"], "allowCustom": true },
+                    "action": { "multi": true, "options": ["!allow"] },
+                    "log-level": { "multi": false, "options": ["!none"] }
                 }
             }
         },
@@ -66,6 +74,13 @@ const BP_VALIDATION = {
                 "action": {
                     "type": { "multi": true, "options": ["pan-adns-sec-dnsmisconfig", "pan-adns-sec-hijacking"], "allowCustom": true },
                     "action": { "multi": true, "options": ["reset-both"] },
+                    "log-level": { "multi": false, "options": ["!none"] }
+                }
+            },
+            "visibility": {
+                "action": {
+                    "type": { "multi": true, "options": ["pan-adns-sec-dnsmisconfig", "pan-adns-sec-hijacking"], "allowCustom": true },
+                    "action": { "multi": true, "options": ["!allow"] },
                     "log-level": { "multi": false, "options": ["!none"] }
                 }
             }
@@ -183,13 +198,13 @@ const BP_VALIDATION = {
                 "application": { "multi": true, "options": ["any"], "allowCustom": true },
                 "filetype": { "multi": true, "options": ["any", "pe", "apk", "pdf", "ms-office"], "allowCustom": true },
                 "direction": { "multi": false, "options": ["both", "upload", "download"] },
-                "analysis": { "multi": false, "options": ["public-cloud", "private-cloud"] }
+                "analysis": { "multi": true, "options": ["public-cloud", "private-cloud"] }
             },
             "visibility": {
                 "application": { "multi": true, "options": ["any"], "allowCustom": true },
                 "filetype": { "multi": true, "options": ["any"], "allowCustom": true },
                 "direction": { "multi": false, "options": ["both"] },
-                "analysis": { "multi": false, "options": ["public-cloud"] }
+                "analysis": { "multi": true, "options": ["public-cloud"] }
             }
         },
         "cloud-inline": {

@@ -1,18 +1,35 @@
 CHANGELOG
 
-2.1.58 [develop]
+2.1.58 [beta]
 UTIL:
 * type=securityprofile actions=exportSPtoHTML:file.html | extend with SCM VirusAndWildfire / DNSSec Profile
 * type=playbook | if json playbook file is using 'shadow-bpjsonfile=file' correctly use it
 * Class PanoramaConf | update to add BPshared statistics to JSON
+* type=securityprofilegroup | introduce 'filter=(secprof nothing.is.set)'
+* type=rule 'filter=(secprofgroup has.from.query subquery1)' 'subquery1=(secprof nothing.is.set)'
+* type=rule | introduce actions=to/from-remove-objects-matching-filter
+* type=log-profile | extend information reading and output
+* type=zone-protection-profile | extend content if ip scans are disabled
+* type=device actions=exportToHtml:file.html | extend with more information
 
 BUGFIX:
 * bugfix - better validation if "$this->owner->owner->customURLProfileStore" isset
 * class PANConf | bugfix to actions=display-bpa by usage of shadow-json
+* WF - PAN-OS 11.1 - iron-skillet - creat-alert-only-set - adjust mica-engine
+* WF - 12.1 - iron-skilet - create-alert-only-set - adjust micae-engine
+* AV - PAN-OS >= 11.1 - if mlav-action not available add it and set it to allow
+* class DH | fix to produce correct set commands for template-stack
+* BP JSON file - ADNS action changed from "reset-both" to "sinkhole"
+* type=securityprofile actions=exporttohtml:file.html,visibility|bestpractice | fix for AS/VP rules if not visiblity -> also not BP
+* class ZoneRuleContainer | bugfix if TemplateStack is empty for managedevice
 
 GENERAL:
 * docker update | docker cli to ubuntu:26.04 - docker API to php:8.5-apache - docker php to php:8.5-cli
 * update Device App-ID to version: 9120-10131
+* compose.json update php to 8.5
+* autocompletion pan-os-php.sh - add support for "type=rule ruletype=XYZ" / "type=securityprofile securityprofiletype=XYZ"
+* tool.php | vulnerability fix
+* bash_autocompletion pan-os-php.sh | extend with type=device devicetype=
 
 
 2.1.57 (20260627)

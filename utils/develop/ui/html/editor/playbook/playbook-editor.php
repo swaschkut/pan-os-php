@@ -1,3 +1,19 @@
+<?php
+session_start();
+include "../../../test/db_conn.php";
+if( isset($_SESSION['folder']) && isset($_SESSION['id']) )
+{
+    $panconfkeystoreFILE = $_SESSION['folder']."/.panconfkeystore";
+    $projectFOLDER = $_SESSION['folder'];
+}
+else
+{
+    $tmpFOLDER = '/../../../../../api/v1/project';
+    $panconfkeystoreFILE = dirname(__FILE__) . $tmpFOLDER.'/.panconfkeystore';
+    $projectFOLDER = dirname(__FILE__) . $tmpFOLDER;
+}
+
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -57,6 +73,32 @@
     </style>
 </head>
 <body>
+
+<div class="menu" style="border:1px solid black; padding: 10px;">
+    <table class="table table-bordered" style="width:100%">
+        <tr>
+        <tr>
+            <td><a href="../../../index.php">MAIN page</a></td>
+            <td><a href="../../../bp_config.php">BP config page</a></td>
+            <td><a href="../../../bp_secprof.php">BP secprof page</a></td>
+            <td><a href="../../../single.php">single command</a></td>
+            <td><a href="../../../playbook.php">JSON PLAYBOOK</a></td>
+            <td><a href="../../../preparation.php">upload file / store APIkey</a></td>
+
+            <td><a href="../../diagram/temp_diagram.php">Diagram</a></td>
+            <td><a href="../bp_setting/bp_setting-editor.php">BP Setting Editor</a></td>
+            <td><a href="../playbook/playbook-editor.php">Playbook Editor</a></td>
+
+            <td><a href="../../../help.php">action / filter help</a></td>
+            <?php
+                if( isset($_SESSION['folder']) && isset($_SESSION['id']) )
+                {
+                    echo '<td>logged in as: <a href="../../../test/home.php">'.$_SESSION['name'].'</a>  |  <a href="../../../test/logout.php">LOGOUT</a></td>';
+            }
+            ?>
+        </tr>
+    </table>
+</div>
 
 <div class="container">
     <div class="header">

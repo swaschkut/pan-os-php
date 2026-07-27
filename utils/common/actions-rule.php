@@ -1172,6 +1172,63 @@ RuleCallContext::$supportedActions[] = array(
     'args' => & RuleCallContext::$commonActionFunctions['calculate-zones']['args'],
     'help' => & RuleCallContext::$commonActionFunctions['calculate-zones']['help']
 );
+
+RuleCallContext::$supportedActions[] = array(
+    'name' => 'from-Remove-Objects-Matching-Filter',
+    'MainFunction' => function (RuleCallContext $context) {
+        $rule = $context->object;
+        if( $rule->isDefaultSecurityRule() )
+        {
+            $string = "DefaultSecurityRule - action not supported";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+        if( $rule->from->count() < 1 )
+            return;
+
+        $queryName = $context->arguments['SubqueryFilterName'];
+
+        if( !isset($context->nestedQueries[$queryName]) )
+        {
+            derr("cannot find query filter called '{$queryName}'", null, FALSE);
+        }
+
+        $rQuery = new RQuery('zone');
+        $errorMessage = '';
+        if( !$rQuery->parseFromString($context->nestedQueries[$queryName], $errorMessage) )
+            derr("error while parsing query: {$context->nestedQueries[$queryName]}", null, FALSE);
+
+
+        foreach( $rule->from->getAll() as $member )
+        {
+            if( $rQuery->matchSingleObject($member) )
+            {
+                $string = "removing object '{$member->name()}'... ";
+                PH::ACTIONlog( $context, $string );
+
+                if( $context->isAPI )
+                    $rule->to->API_removeZone($member, TRUE);
+                else
+                    $rule->to->removeZone($member, TRUE, TRUE);
+            }
+        }
+
+        if( $rule->from->count() < 1 )
+        {
+            $string = "no objects remaining so the Rule will be disabled...";
+            PH::ACTIONlog( $context, $string );
+            if( $context->isAPI )
+                $rule->API_setDisabled(TRUE);
+            else
+                $rule->setDisabled(TRUE);
+        }
+    },
+    'args' => array('SubqueryFilterName' => array('type' => 'string', 'default' => '*nodefault*',
+        'help' => 'specify the subquery that will be used to filter the objects to be removed: "actions=from-Remove-Objects-Matching-Filter:subquery1" "subquery1=!(interface is.set)"'),
+    ),
+    'help' => "this action will go through all objects and see if they match the query you input and then remove them if it's the case."
+);
+
 RuleCallContext::$supportedActions[] = array(
     'name' => 'to-calculate-zones',
     'section' => 'zone',
@@ -1204,6 +1261,61 @@ RuleCallContext::$supportedActions[] = array(
     'help' => & RuleCallContext::$commonActionFunctions['calculate-zones']['help']
 );
 
+RuleCallContext::$supportedActions[] = array(
+    'name' => 'to-Remove-Objects-Matching-Filter',
+    'MainFunction' => function (RuleCallContext $context) {
+        $rule = $context->object;
+        if( $rule->isDefaultSecurityRule() )
+        {
+            $string = "DefaultSecurityRule - action not supported";
+            PH::ACTIONstatus( $context, "SKIPPED", $string );
+            return;
+        }
+        if( $rule->to->count() < 1 )
+            return;
+
+        $queryName = $context->arguments['SubqueryFilterName'];
+
+        if( !isset($context->nestedQueries[$queryName]) )
+        {
+            derr("cannot find query filter called '{$queryName}'", null, FALSE);
+        }
+
+        $rQuery = new RQuery('zone');
+        $errorMessage = '';
+        if( !$rQuery->parseFromString($context->nestedQueries[$queryName], $errorMessage) )
+            derr("error while parsing query: {$context->nestedQueries[$queryName]}", null, FALSE);
+
+
+        foreach( $rule->to->getAll() as $member )
+        {
+            if( $rQuery->matchSingleObject($member) )
+            {
+                $string = "removing object '{$member->name()}'... ";
+                PH::ACTIONlog( $context, $string );
+
+                if( $context->isAPI )
+                    $rule->to->API_removeZone($member, TRUE);
+                else
+                    $rule->to->removeZone($member, TRUE, TRUE);
+            }
+        }
+
+        if( $rule->to->count() < 1 )
+        {
+            $string = "no objects remaining so the Rule will be disabled...";
+            PH::ACTIONlog( $context, $string );
+            if( $context->isAPI )
+                $rule->API_setDisabled(TRUE);
+            else
+                $rule->setDisabled(TRUE);
+        }
+    },
+    'args' => array('SubqueryFilterName' => array('type' => 'string', 'default' => '*nodefault*',
+        'help' => 'specify the subquery that will be used to filter the objects to be removed: "actions=to-Remove-Objects-Matching-Filter:subquery1" "subquery1=!(interface is.set)"'),
+    ),
+    'help' => "this action will go through all objects and see if they match the query you input and then remove them if it's the case."
+);
 
 //                                                    //
 //                Source/Dest Based Actions           //

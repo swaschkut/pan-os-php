@@ -107,6 +107,9 @@ class ZoneProtectionProfile
     public $xmlMap = array();
 
 
+    public $disabled_scans = array();
+
+
     /**
      * ZoneProtectionProfile constructor.
      * @param string $name
@@ -116,6 +119,13 @@ class ZoneProtectionProfile
     {
         $this->owner = $owner;
         $this->name = $name;
+
+        $this->disabled_scans['8001'] = 'yes';
+        $this->disabled_scans['8002'] = 'yes';
+        $this->disabled_scans['8003'] = 'yes';
+
+        if( $this->owner->owner->version >= 111 )
+            $this->disabled_scans['8006'] = 'yes';
     }
 
     /**
@@ -180,8 +190,6 @@ class ZoneProtectionProfile
         $scan_Node = DH::findFirstElement('scan', $xml);
         if( $scan_Node !== FALSE )
         {
-            //Todo: on parts which are enabled are visible in the XML
-            // add default config to be able to compare if something is disabled
             foreach( $scan_Node->childNodes as $scan_entry_Node )
             {
                 if( $scan_entry_Node->nodeType != 1 )
@@ -193,6 +201,10 @@ class ZoneProtectionProfile
                 $entry_name = DH::findAttribute('name', $scan_entry_Node);
                 if( $entry_name === FALSE )
                     derr("zone-protection-profile scan name not found\n");
+
+                if( isset($this->disabled_scans[$entry_name]) )
+                    unset($this->disabled_scans[$entry_name]);
+
 
                 $action_Node = DH::findFirstElement('action', $scan_entry_Node);
                 if( $action_Node !== FALSE )

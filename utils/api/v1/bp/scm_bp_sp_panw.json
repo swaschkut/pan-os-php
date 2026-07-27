@@ -98,6 +98,7 @@
                 ],
                 "action": [
                     "reset-both",
+                    "drop",
                     "block-ip"
                 ],
                 "packet-capture": [
@@ -202,7 +203,7 @@
                             "pan-adns-sec-hijacking"
                         ],
                         "action": [
-                            "reset-both"
+                            "sinkhole"
                         ],
                         "log-level": [
                             "!none"
@@ -309,6 +310,7 @@
                 ],
                 "action": [
                     "reset-both",
+                    "drop",
                     "block-ip"
                 ],
                 "packet-capture": [

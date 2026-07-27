@@ -53,13 +53,22 @@ LogProfileCallContext::$supportedActions['display'] = array(
                         $tmp_txt = "       - " . str_pad($key, 12)." | ".str_pad($name_key, 12)."";
                         foreach ($type as $type_key => $type_value)
                         {
-                            $tmp_txt .= " |" . $type_key . "->" . $type_value;
+                            if( is_array($type_value))
+                                $tmp_txt .= " |" . $type_key . "->" . implode(",", $type_value);
+                            else
+                                $tmp_txt .= " |" . $type_key . "->" . $type_value;
                         }
                     }
                 }
                 PH::print_stdout($tmp_txt);
             }
         }
+
+        if( $object->enhanced_application_logging === FALSE )
+            PH::print_stdout( "       - EnhancedApplicationLogging: ---");
+        else
+            PH::print_stdout( "       - EnhancedApplicationLogging: ".$object->enhanced_application_logging );
+
 
         if( PH::$shadow_displayxmlnode )
             DH::DEBUGprintDOMDocument($object->xmlroot);
@@ -101,7 +110,7 @@ LogProfileCallContext::$supportedActions[] = array(
             $addTotalUse = TRUE;
 
         #$headers = '<th>ID</th><th>location</th><th>name</th><th>color</th><th>description</th>';
-        $headers = '<th>ID</th><th>location</th><th>name</th><th>content</th>';
+        $headers = '<th>ID</th><th>location</th><th>name</th><th>content</th><th>enhanced-application-logging</th>>';
 
         if( $addWhereUsed )
             $headers .= '<th>where used</th>';
@@ -117,7 +126,7 @@ LogProfileCallContext::$supportedActions[] = array(
             {
                 $count++;
 
-                /** @var Tag $object */
+                /** @var LogProfile $object */
                 if( $count % 2 == 1 )
                     $lines .= "<tr>\n";
                 else
@@ -146,7 +155,10 @@ LogProfileCallContext::$supportedActions[] = array(
                                 $tmp_txt = "       - " . str_pad($key, 12)." | ".str_pad($name_key, 12)."";
                                 foreach ($type as $type_key => $type_value)
                                 {
-                                    $tmp_txt .= " |" . $type_key . "->" . $type_value;
+                                    if( is_array($type_value))
+                                        $tmp_txt .= " |" . $type_key . "->" . implode(",", $type_value);
+                                    else
+                                        $tmp_txt .= " |" . $type_key . "->" . $type_value;
                                 }
                             }
                         }
@@ -160,23 +172,11 @@ LogProfileCallContext::$supportedActions[] = array(
                 {
                     $lines .= $context->encloseFunction("---");
                 }
-                /*
-                //information for log-profile needed
-                if( $object->isTag() )
-                {
-                    if( $object->isTmp() )
-                    {
-                        $lines .= $context->encloseFunction('unknown');
-                        $lines .= $context->encloseFunction('');
 
-                    }
-                    else
-                    {
-                        $lines .= $context->encloseFunction($object->color);
-                        $lines .= $context->encloseFunction($object->getComments());
-                    }
-                }
-                */
+                if( $object->enhanced_application_logging === FALSE )
+                    $lines .= $context->encloseFunction("---");
+                else
+                    $lines .= $context->encloseFunction($object->enhanced_application_logging);
 
                 if( $addWhereUsed )
                 {

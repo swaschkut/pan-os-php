@@ -8183,6 +8183,15 @@ var subjectObject =
                     }
                 }
             },
+            "secprofgroup": {
+                "operators": {
+                    "has.from.query": {
+                        "Function": {},
+                        "arg": true,
+                        "help": "example: 'filter=(secprofgroup has.from.query subquery1)' 'subquery1=(nothing is.set)'"
+                    }
+                }
+            },
             "service": {
                 "operators": {
                     "has.from.query": {
@@ -10918,6 +10927,14 @@ var subjectObject =
                         }
                     },
                     "data-profile.is.set": {
+                        "Function": {},
+                        "arg": false,
+                        "ci": {
+                            "fString": "(%PROP%)",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    },
+                    "nothing.is.set": {
                         "Function": {},
                         "arg": false,
                         "ci": {
