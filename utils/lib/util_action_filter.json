@@ -5998,6 +5998,18 @@
                     }
                 }
             },
+            "from-remove-objects-matching-filter": {
+                "name": "from-Remove-Objects-Matching-Filter",
+                "MainFunction": {},
+                "args": {
+                    "SubqueryFilterName": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "specify the subquery that will be used to filter the objects to be removed: \"actions=from-Remove-Objects-Matching-Filter:subquery1\" \"subquery1=!(interface is.set)\""
+                    }
+                },
+                "help": "this action will go through all objects and see if they match the query you input and then remove them if it's the case."
+            },
             "from-replace": {
                 "name": "from-Replace",
                 "section": "zone",
@@ -6914,6 +6926,18 @@
                         "default": "*nodefault*"
                     }
                 }
+            },
+            "to-remove-objects-matching-filter": {
+                "name": "to-Remove-Objects-Matching-Filter",
+                "MainFunction": {},
+                "args": {
+                    "SubqueryFilterName": {
+                        "type": "string",
+                        "default": "*nodefault*",
+                        "help": "specify the subquery that will be used to filter the objects to be removed: \"actions=to-Remove-Objects-Matching-Filter:subquery1\" \"subquery1=!(interface is.set)\""
+                    }
+                },
+                "help": "this action will go through all objects and see if they match the query you input and then remove them if it's the case."
             },
             "to-replace": {
                 "name": "to-Replace",

@@ -7,7 +7,8 @@ UTIL:
 BUGFIX:
 
 GENERAL:
-*  Device App-ID update to version: 9128-10169
+* Device App-ID update to version: 9128-10169
+* update actions / filters json
 
 
 2.1.58 (TBD)
