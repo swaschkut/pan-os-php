@@ -207,6 +207,8 @@ class UTIL
             PH::print_stdout();
         }
 
+        $this->getChangelogByVersion();
+
         if( empty($_supportedArguments) )
             $this->supportedArguments();
         else
@@ -284,6 +286,7 @@ class UTIL
         $this->supportedArguments['filter'] = array('niceName' => 'Filter', 'shortHelp' => "filters objects based on a query. ie: 'filter=((from has external) or (source has privateNet1) and (to has external))'", 'argDesc' => '(field operator [value])');
         $this->supportedArguments['loadplugin'] = array('niceName' => 'loadPlugin', 'shortHelp' => 'a PHP file which contains a plugin to expand capabilities of this script', 'argDesc' => '[filename]');
         $this->supportedArguments['help'] = array('niceName' => 'help', 'shortHelp' => 'this message');
+        $this->supportedArguments['changelog'] = array('niceName' => 'changelog', 'shortHelp' => 'changelog');
 
         $this->supportedArguments['expedition'] = array('niceName' => 'expedition', 'shortHelp' => 'only used if called from Expedition Tool');
         $this->supportedArguments['template'] = array('niceName' => 'template', 'shortHelp' => 'specify if you want to limit your query to a TEMPLATE. By default template=any for Panorama', 'argDesc' => 'template');
@@ -783,6 +786,93 @@ class UTIL
 
             exit(0);
         }
+    }
+
+
+    /**
+     * Retrieves the changelog entry for a specific version.
+     *
+     * @param string $version          The version string to look up (e.g., '2.1.58').
+     * @param string $changelogContent The raw string content of the CHANGELOG file.
+     * @param bool   $includeHeader    Whether to include the version header line in the return string.
+     * @return string|null             Returns the changelog block if found, or null if not found.
+     */
+    function getChangelogByVersion_old(): ?string
+    {
+        $version = PH::frameworkVersion();
+        $changeLogFile = dirname(__FILE__)."/../../CHANGELOG.txt";
+        $changelogContent = file_get_contents($changeLogFile);;
+        $includeHeader = true;
+        if( isset(PH::$args['changelog']) )
+        {
+            print $changelogContent."\n";
+            // Escapes special characters in version string
+            $quotedVersion = preg_quote($version, '/');
+
+            // Pattern matches the version header line and everything up to the next version header or end of file
+            $pattern = '/(?:^|\R)\s*(' . $quotedVersion . '(?:\s|\[|\(|\z).*?)\R+(.*?)(?=\R\s*\d+\.\d+\.\d+|\z)/s';
+
+            if (preg_match($pattern, $changelogContent, $matches)) {
+                $header = trim($matches[1]);
+                $body   = trim($matches[2]);
+
+                return $includeHeader ? "{$header}\n\n{$body}" : $body;
+            }
+
+            exit(0);
+        }
+
+        return null;
+    }
+
+    function getChangelogByVersion(): ?string
+    {
+        $version = PH::frameworkVersion("numbers");
+        $changeLogFile = dirname(__FILE__) . "/../../CHANGELOG.txt";
+
+        if (!file_exists($changeLogFile)) {
+            return null;
+        }
+
+        $changelogContent = file_get_contents($changeLogFile);
+
+        if (isset(PH::$args['changelog']))
+        {
+            if( PH::$args['changelog'] !== TRUE )
+                $version = PH::$args['changelog'];
+
+            PH::print_stdout( " - PAN-OS-PHP version: ".PH::frameworkVersion() . " [".PH::frameworkInstalledOS()."]" . " [" . phpversion() ."]" );
+            PH::print_stdout( array( "version" => PH::frameworkVersion(), "os" => PH::frameworkInstalledOS(), "php-version" => phpversion() ), true, 'PAN-OS-PHP');
+
+
+            $includeHeader = true;
+
+            // Strip leading 'v' or 'V' from framework version if present
+            $cleanVersion = $version." ";
+            $quotedVersion = preg_quote($cleanVersion, '/');
+
+            // Pattern breakdown:
+            // Group 1: Captures full header line (e.g., "2.1.59 [beta]" or "2.1.57 (20260627)")
+            // Group 2: Captures body content up to the next version header line (e.g. "2.1.58") or EOF
+            $pattern = '/(?:^|\R)\s*(' . $quotedVersion . '[^\r\n]*)\R+(.*?)(?=\R\s*\d+\.\d+\.\d+|\z)/s';
+
+            if (preg_match($pattern, $changelogContent, $matches))
+            {
+                $header = trim($matches[1]);
+                $body   = trim($matches[2]);
+
+                $output = $includeHeader ? "{$header}\n\n{$body}" : $body;
+
+                PH::print_stdout( $output );
+                PH::print_stdout();
+                exit(0);
+            }
+
+            PH::print_stdout("No changelog entry found in CHANGELOG file for version {$cleanVersion}");
+            exit(0);
+        }
+
+        return null;
     }
 
     public function arg_validation()

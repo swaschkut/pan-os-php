@@ -2,13 +2,14 @@ CHANGELOG
 
 2.1.59 [beta]
 UTIL:
+* pan-os-php changelog[=2.1.56] | introduction of argument changelog
 
 BUGFIX:
 
 GENERAL:
 
 
-2.1.58
+2.1.58 (TBD)
 UTIL:
 * type=securityprofile actions=exportSPtoHTML:file.html | extend with SCM VirusAndWildfire / DNSSec Profile
 * type=playbook | if json playbook file is using 'shadow-bpjsonfile=file' correctly use it

@@ -289,9 +289,12 @@ class PH
         return array($ciphertext_2, $calcmac);
     }
 
-    static public function frameworkVersion()
+    static public function frameworkVersion( $format = "all")
     {
-        return self::$library_version_major . '.' . self::$library_version_sub . '.' . self::$library_version_bugfix. '.' . self::$library_version_release;
+        if( $format == "all" )
+            return self::$library_version_major . '.' . self::$library_version_sub . '.' . self::$library_version_bugfix. '.' . self::$library_version_release;
+        else
+            return self::$library_version_major . '.' . self::$library_version_sub . '.' . self::$library_version_bugfix;
     }
 
     static public function frameworkInstalledOS()
