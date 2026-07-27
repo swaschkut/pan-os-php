@@ -328,18 +328,18 @@ elif [[ -n "${BASH_VERSION}" ]]; then
             return 0
                 ;;
             ruletype)
-            local opts="any security nat decryption appoverride captiveportal authentication pbf qos dos tunnelinspection defaultsecurity networkpacketbroker sdwan"
-            COMPREPLY=($(compgen -W "${opts}" -- "${real_cur}"))
+            local ruletype_list="any security nat decryption appoverride captiveportal authentication pbf qos dos tunnelinspection defaultsecurity networkpacketbroker sdwan"
+            COMPREPLY=($(compgen -W "${ruletype_list}" -- "${real_cur}"))
             return 0
                 ;;
             securityprofiletype)
-            local opts="any url-filtering virus vulnerability spyware file-blocking data-filtering wildfire-analysis custom-url-category dns-security saas-security virus-and-wildfire-analysis predefined-url predefined-url-filtering predefined-virus predefined-spyware predefined-file-blocking predefined-vulnerability predefined-wildfire-analysis"
-            COMPREPLY=($(compgen -W "${opts}" -- "${real_cur}"))
+            local securityprofiletype_list="any url-filtering virus vulnerability spyware file-blocking data-filtering wildfire-analysis custom-url-category dns-security saas-security virus-and-wildfire-analysis predefined-url predefined-url-filtering predefined-virus predefined-spyware predefined-file-blocking predefined-vulnerability predefined-wildfire-analysis"
+            COMPREPLY=($(compgen -W "${securityprofiletype_list}" -- "${real_cur}"))
             return 0
                 ;;
             devicetype)
-            local opts="any vsys devicegroup templatestack template container devicecloud manageddevice deviceonprem snippet"
-            COMPREPLY=($(compgen -W "${opts}" -- "${real_cur}"))
+            local devicetype_list="any vsys devicegroup templatestack template container devicecloud manageddevice deviceonprem snippet"
+            COMPREPLY=($(compgen -W "${devicetype_list}" -- "${real_cur}"))
             return 0
                 ;;
             vendor)
