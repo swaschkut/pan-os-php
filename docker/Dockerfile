@@ -50,6 +50,7 @@ COPY utils ./utils
 COPY tests ./tests
 COPY iron-skillet ./iron-skillet
 COPY migration ./migration
+COPY CHANGELOG.txt .
 
 
 # PHP library of pan-os-php

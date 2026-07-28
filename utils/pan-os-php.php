@@ -71,12 +71,10 @@ if( isset(PH::$args['changelog']) )
     $version = PH::frameworkVersion("numbers");
     $changeLogFile = dirname(__FILE__) . "/../CHANGELOG.txt";
 
-    if (!file_exists($changeLogFile)) {
-        return null;
-    }
+    if (!file_exists($changeLogFile))
+        derr("ChangelogFile not found: {$changeLogFile}");
 
     $changelogContent = file_get_contents($changeLogFile);
-
 
     if( PH::$args['changelog'] !== TRUE )
         $version = PH::$args['changelog'];
