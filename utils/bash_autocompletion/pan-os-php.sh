@@ -52,7 +52,7 @@ _pan_os_php() {
         type= in= out= actions= filter= location= loadplugin= template=
         apitimeout= outputformatset=
         ruletype= securityprofiletype= devicetype=
-    help listactions listfilters version stats debugapi
+    help listactions listfilters version changelog stats debugapi
     loadpanoramapushedconfig
     shadow-json shadow-apikeyhidden shadow-apikeynohidden shadow-apikeynosave
     shadow-disableoutputformatting shadow-displaycurlrequest
@@ -267,7 +267,7 @@ elif [[ -n "${BASH_VERSION}" ]]; then
             'shadow-bpjsonfile' 'shadow-displayxmlnode' 'shadow-loaddghierarchy'
             'shadow-loadreduce' 'shadow-nojson' 'shadow-saseapiqa' 'shadow-multivsys'
             'outputformatset='
-            'stats' 'template=' 'version'
+            'stats' 'template=' 'version' 'changelog'
             'ruletype=' 'securityprofiletype=' 'devicetype='
         )
 
