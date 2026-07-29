@@ -23,6 +23,20 @@
       "actions": "actions=vulnerability.best-practice-set",
       "filter" : "filter=!(name eq Alert-Only-VP)",
       "location": "location=any"
+    },
+    {
+      "type": "securityprofile",
+      "securityprofiletype": "securityprofiletype=url-filtering",
+      "actions": "actions=url.best-practice-set",
+      "filter" : "filter=!(name eq Alert-Only-URL)",
+      "location": "location=any"
+    },
+    {
+      "type": "securityprofile",
+      "securityprofiletype": "securityprofiletype=wildfire-analysis",
+      "actions": "actions=wildfire.best-practice-set",
+      "filter" : "filter=!(name eq Alert-Only-WF)",
+      "location": "location=any"
     }
   ]
 }
