@@ -6,6 +6,7 @@ UTIL:
 * playbook | best-practice-set.json | add url and wf
 
 BUGFIX:
+* type=securityprofile/securityprofilegroup | bugfix to get actions=name-xyz working
 
 GENERAL:
 * Device App-ID update to version: 9128-10169

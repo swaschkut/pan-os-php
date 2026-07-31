@@ -33,6 +33,17 @@ class SecurityProfile2
 
     public $bp_json_file = null;
 
+
+    /**
+     * @return string
+     */
+    public function &getXPath()
+    {
+        $str = $this->owner->getSecurityProfileStoreXPath() . "/entry[@name='" . $this->name . "']";
+
+        return $str;
+    }
+
     public function cloud_inline_analysis_best_practice( $bp_json_file = null )
     {
         $this->bp_json_file = $bp_json_file;

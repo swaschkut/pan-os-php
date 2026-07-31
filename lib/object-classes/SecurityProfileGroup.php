@@ -1071,6 +1071,17 @@ class SecurityProfileGroup
     }
     */
 
+    /**
+     * @param SecurityProfile $h
+     * ** This is for internal use only **
+     *
+     * @ignore
+     */
+    public function referencedObjectRenamed($h)
+    {
+        $this->rewriteXML();
+    }
+
     public function rewriteXML()
     {
         if( $this->xmlroot !== null )
