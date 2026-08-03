@@ -1,6 +1,6 @@
 CHANGELOG
 
-2.1.58 [develop]
+2.1.58 (20260803)
 UTIL:
 * type=securityprofile actions=exportSPtoHTML:file.html | extend with SCM VirusAndWildfire / DNSSec Profile
 * type=playbook | if json playbook file is using 'shadow-bpjsonfile=file' correctly use it
