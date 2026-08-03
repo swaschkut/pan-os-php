@@ -675,6 +675,22 @@ RQuery::$defaultFilters['securityprofilegroup']['secprof']['operators']['data-pr
     )
 );
 
+RQuery::$defaultFilters['securityprofilegroup']['secprof']['operators']['nothing.is.set'] = array(
+    'Function' => function (SecurityprofilegroupRQueryContext $context) {
+        $secprofgroup = $context->object;
+
+
+        $profiles = $secprofgroup->securityProfiles();
+
+        return empty($profiles);
+    },
+    'arg' => FALSE,
+    'ci' => array(
+        'fString' => '(%PROP%)',
+        'input' => 'input/panorama-8.0.xml'
+    )
+);
+
 RQuery::$defaultFilters['securityprofilegroup']['object']['operators']['has.predefined.secprof'] = array(
     'Function' => function (SecurityprofilegroupRQueryContext $context) {
         $secprofgroup = $context->object;

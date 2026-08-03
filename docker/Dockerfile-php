@@ -1,4 +1,4 @@
-FROM php:8.4.6-cli
+FROM php:8.5-cli
 
 
 SHELL ["/bin/bash", "-c"]
@@ -11,7 +11,7 @@ RUN apt install -y tzdata git
 # libraries for PHP
 RUN apt install -y libcurl3-openssl-dev libxml2-dev libonig-dev libyaml-dev
 # PHP Extensions
-RUN docker-php-ext-install -j$(nproc) curl dom mbstring bcmath
+RUN docker-php-ext-install -j$(nproc) curl mbstring bcmath
 
 
 RUN mkdir /tools; mkdir /tools/pan-os-php; mkdir /tools/pan-os-php/log;

@@ -155,17 +155,111 @@ class VirusAndWildfireProfile extends SecurityProfile2
 
     public function is_best_practice(): bool
     {
-        return false;
+        //Todo - swaschkut 20260629
+        $bp = false;
+        if( $this->owner->owner->version >= 102 )
+        {
+            if ($this->av_action_best_practice()
+                && $this->av_wildfireaction_best_practice()
+                && $this->av_mlavaction_best_practice()
+                && $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file)
+            )
+                $bp = TRUE;
+            else
+                return FALSE;
+        }
+        else
+        {
+            if ($this->av_action_best_practice()
+                && $this->av_wildfireaction_best_practice()
+                && $this->av_mlavaction_best_practice()
+            )
+                $bp = TRUE;
+            else
+                return FALSE;
+        }
+
+        if( $this->owner->owner->version >= 112 )
+        {
+            if( $this->wildfire_rules_best_practice()
+                && $this->cloud_inline_analysis_best_practice($this->owner->bp_json_file)
+            )
+                $bp = TRUE;
+            else
+                return FALSE;
+        }
+        else
+        {
+            if( $this->wildfire_rules_best_practice() )
+                $bp = TRUE;
+            else
+                return FALSE;
+        }
+
+        return $bp;
     }
 
     public function is_visibility(): bool
     {
-        return false;
+        $bp = false;
+        //Todo - swaschkut 20260629
+        if( $this->owner->owner->version >= 102 )
+        {
+            if ($this->av_action_visibility()
+                && $this->av_wildfireaction_visibility()
+                && $this->av_mlavaction_visibility()
+                && $this->cloud_inline_analysis_visibility($this->owner->bp_json_file)
+            )
+                $bp = true;
+            else
+                return FALSE;
+        }
+        else
+        {
+            if ($this->av_action_visibility()
+                && $this->av_wildfireaction_visibility()
+                && $this->av_mlavaction_visibility()
+            )
+                $bp = true;
+            else
+                return FALSE;
+        }
+
+        if( $this->owner->owner->version >= 112 )
+        {
+            if( $this->wildfire_rules_visibility()
+                && $this->cloud_inline_analysis_visibility($this->owner->bp_json_file)
+            )
+                $bp = true;
+            else
+                return FALSE;
+        }
+        else
+        {
+            if( $this->wildfire_rules_visibility()
+            )
+                $bp = true;
+            else
+                return FALSE;
+        }
+
+        return $bp;
     }
 
     public function is_adoption(): bool
     {
-        return false;
+        //Todo - swaschkut 20260629
+        $bp = false;
+
+        //virus is always true
+
+        #if at least one spyware rule is set -> adoption, if not false
+        if( count($this->rules_obj) > 0 )
+            $bp = true;
+        else
+            return false;
+
+        return $bp;
     }
 
     static $templatexml = '<entry name="**temporarynamechangeme**"></entry>';

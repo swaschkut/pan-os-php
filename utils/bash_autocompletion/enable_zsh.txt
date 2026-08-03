@@ -1,0 +1,8 @@
+# some notes how to enable autocompletion in zsh
+source /Users/svenwaschkut/Documents/PAN-scripting/pan-os-php/utils/alias.sh
+
+setopt complete_aliases
+
+
+autoload -Uz compinit && compinit
+source /Users/svenwaschkut/Documents/PAN-scripting/pan-os-php/utils/bash_autocompletion/pan-os-php.sh

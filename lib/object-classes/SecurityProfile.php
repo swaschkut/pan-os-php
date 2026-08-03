@@ -41,6 +41,7 @@ class SecurityProfile
         self::TypeData_filtering => 'data-filtering',
         self::TypeDNS_security => 'dns-security',
         self::TypeSaas_security => 'saas-security'
+        //self::TypeSaas_security => 'saas-security'
     );
 
     public $type = self::TypeTmp;

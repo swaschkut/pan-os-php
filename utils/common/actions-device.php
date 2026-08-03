@@ -1519,7 +1519,7 @@ DeviceCallContext::$supportedActions['exportToExcel'] = array(
 
 
         #$headers = '<th>location</th><th>name</th><th>template</th>';
-        $headers = '<th>ID</th><th>name</th><th>template</th>';
+        $headers = '<th>ID</th><th>name</th><th>managed-device</th><th>device-group</th><th>template-stack</th><th>template</th><th>log-collector</th>';
 
         if( $addWhereUsed )
             $headers .= '<th>where used</th>';
@@ -1545,29 +1545,142 @@ DeviceCallContext::$supportedActions['exportToExcel'] = array(
 
                 $lines .= $context->encloseFunction($object->name());
 
-                if( get_class($object) == "TemplateStack" )
+
+                if( get_class($object) == "ManagedDevice" )
                 {
+                    //serial
+                    $lines .= $context->encloseFunction( "-SELF-" );
+
+                    //dg
+                    $refTextArray = array();
+                    foreach( $object->getReferences() as $ref )
+                    {
+                        if( get_class($ref) == "DeviceGroup" )
+                        {
+                            $devicesInGroup = $ref->getDevicesInGroup();
+                            $vsysName = "---";
+                            if( isset( array_keys($devicesInGroup[$object->name()]['vsyslist'])[0] ) )
+                                $vsysName = array_keys($devicesInGroup[$object->name()]['vsyslist'])[0];
+                            $refTextArray[] = $ref->_PANC_shortName()." [".$vsysName."]";
+                        }
+
+                    }
+                    $lines .= $context->encloseFunction($refTextArray);
+
+
+                    //t-stack
+                    $lines .= $context->encloseFunction( $object->getTemplateStack() );
+                    //template
+                    $lines .= $context->encloseFunction("[template]");
+                    //log-collect
+                    $lines .= $context->encloseFunction("[log-collector]");
+                }
+                elseif( get_class($object) == "DeviceGroup" )
+                {
+                    $devicesInGroup = $object->getDevicesInGroup();
+                    //serial
+                    $tmp_string = "";
+                    foreach( $object->getDevicesInGroup() as $key => $device )
+                    {
+                        if( isset($device['vsyslist']) )
+                            $tmp_string .= $key." [".array_keys($device['vsyslist'])[0]."]\n";
+                        else
+                            $tmp_string .= $key." [vsys1]\n";
+                    }
+
+                    $lines .= $context->encloseFunction($tmp_string);
+
+                    //dg
+                    $lines .= $context->encloseFunction( "-SELF-" );
+
+                    //t-stack
+                    $tmp_string = "";
+                    foreach( $object->getDevicesInGroup() as $key => $device )
+                    {
+                        $managedFirewall = $object->owner->managedFirewallsStore->find($key);
+                        $tmp_string .= $managedFirewall->getTemplateStack()."\n";
+                    }
+                    $lines .= $context->encloseFunction($tmp_string);
+                    //template
+                    $lines .= $context->encloseFunction("[template]");
+                    //log-collect
+                    $lines .= $context->encloseFunction("[log-collector]");
+                }
+                elseif( get_class($object) == "TemplateStack" )
+                {
+                    //serial
+                    $lines .= $context->encloseFunction("[serial]");
+                    //dg
+                    $lines .= $context->encloseFunction("[DG]");
+                    //t-stack
+                    $lines .= $context->encloseFunction( "-SELF-" );
+                    //template
                     $lines .= $context->encloseFunction( array_reverse($object->templates) );
+                    //log-collect
+                    $lines .= $context->encloseFunction("[log-collector]");
+                }
+                elseif( get_class($object) == "Template" )
+                {
+                    //serial
+                    $lines .= $context->encloseFunction("[serial]");
+                    //dg
+                    $lines .= $context->encloseFunction("[DG]");
+
+                    //t-stack
+                    $refTextArray = array();
+                    foreach( $object->getReferences() as $ref )
+                    {
+                        if( get_class($ref) == "TemplateStack" )
+                            $refTextArray[] = $ref->_PANC_shortName();
+                    }
+                    $lines .= $context->encloseFunction($refTextArray);
+                    //template
+                    $lines .= $context->encloseFunction("-SELF-" );
+                    //log-collect
+                    $lines .= $context->encloseFunction("[log-collector]");
+                }
+                elseif( get_class($object) == "LogCollectorGroup" )
+                {
+                    //serial
+                    $lines .= $context->encloseFunction("[serial]");
+                    //dg
+                    $lines .= $context->encloseFunction("[DG]");
+                    //t-stack
+                    $lines .= $context->encloseFunction("[t-stack]");
+                    //template
+                    $lines .= $context->encloseFunction("[template]");
+                    //log-collect
+                    $lines .= $context->encloseFunction("-SELF-" );
                 }
 
                 if( $addWhereUsed )
                 {
-                    $refTextArray = array();
-                    foreach( $object->getReferences() as $ref )
-                        $refTextArray[] = $ref->_PANC_shortName();
+                    if( get_class($object) !== "DeviceGroup" )
+                    {
+                        $refTextArray = array();
+                        foreach( $object->getReferences() as $ref )
+                            $refTextArray[] = $ref->_PANC_shortName()." [".get_class($ref)."]";
 
-                    $lines .= $context->encloseFunction($refTextArray);
+                        $lines .= $context->encloseFunction($refTextArray);
+                    }
+                    else
+                        $lines .= $context->encloseFunction("");
                 }
                 if( $addUsedInLocation )
                 {
-                    $refTextArray = array();
-                    foreach( $object->getReferences() as $ref )
+                    if( get_class($object) !== "DeviceGroup" )
                     {
-                        $location = PH::getLocationString($object->owner);
-                        $refTextArray[$location] = $location;
-                    }
+                        $refTextArray = array();
+                        foreach( $object->getReferences() as $ref )
+                        {
+                            $location = PH::getLocationString($object->owner);
+                            $refTextArray[$location] = $location;
+                        }
 
-                    $lines .= $context->encloseFunction($refTextArray);
+                        $lines .= $context->encloseFunction($refTextArray);
+                    }
+                    else
+                        $lines .= $context->encloseFunction("");
                 }
 
                 $lines .= "</tr>\n";

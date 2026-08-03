@@ -150,7 +150,10 @@ elseif( !isset($_GET['in']) && isset( $_FILES['configInput'] ) ){
 elseif( isset($_GET['in']) )
 {
     if( !isset($_GET['out']) )
+    {
         $argv[] = "out=true";
+    }
+
 }
 elseif( isset($_GET['help']) || isset($_GET['listfilters']) || isset($_GET['listactions']) || $url_pieces[1] == "key-manager" || $url_pieces[1] == "util_get-action-filter" )
 {
@@ -282,6 +285,47 @@ function UTILcaller( $url_pieces, $argv, $argc, $PHP_FILE )
         {
             foreach( $_GET as $key => $get )
             {
+                // --- SECURITY FIX START: Input Validation Gate ---
+
+                // 1. Sanitize the Key to prevent parameter pollution
+                if (!preg_match('/^[a-zA-Z0-9_\-]+$/', $key)) {
+                    throw new Exception("Security Error: Invalid parameter name syntax.", 400);
+                }
+
+                if (is_string($get) && !empty($get)) {
+                    // 2. Strict Alphanumeric Whitelisting for sensitive fields
+                    // Serial numbers, vsys, locations, and devices should NEVER contain quotes or spaces.
+                    if (in_array($key, ['serial', 'vsys', 'device', 'location', 'shadow-json', 'shadow-nojson'])) {
+                        if (!preg_match('/^[a-zA-Z0-9_\-]+$/', $get)) {
+                            throw new Exception("Security Error: Malicious characters detected in field '$key'.", 400);
+                        }
+                    }
+                    // 3. General Validation for standard parameters (in, out, etc.)
+                    // Blocks common breakout tokens like quotes, semicolons, and null bytes.
+                    elseif ($key !== 'filter' && $key !== 'actions') {
+                        if (preg_match('/[\x00\'";`\s]/', $get)) {
+                            throw new Exception("Security Error: Prohibited characters detected in field '$key'.", 400);
+                        }
+                    }
+                    // 4. Expression Validation (for 'filter' and 'actions')
+                    // If your filters genuinely require single quotes (e.g., name contains 'test'),
+                    // we allow quotes here but block high-risk system characters (backticks, pipes, semicolons, null-bytes).
+                    /*
+                    else {
+                        if (preg_match('/[\x00`|;&]/', $get)) {
+                            throw new Exception("Security Error: High-risk command execution sequences blocked in '$key'.", 400);
+                        }
+
+                        // Explicitly intercept the specific logical injection primitive you discovered:
+                        if (preg_match('/\'\s+(or|and)\s+/i', $get) || preg_match('/"\s+(or|and)\s+/i', $get)) {
+                            throw new Exception("Security Error: Logical injection attempt blocked.", 400);
+                        }
+                    }*/
+                }
+
+                // --- SECURITY FIX END ---
+
+
                 if( $key == "in" )
                 {
                     //Todo: swaschkut 20250103 - this was the issue that actions was mostly used with actions=display default

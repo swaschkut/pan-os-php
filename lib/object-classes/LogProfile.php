@@ -32,6 +32,8 @@ class LogProfile
     public $type = null;
     public $type_available = null;
 
+    public $enhanced_application_logging = null;
+
     /**
      * @param string $name
      * @param LogProfileStore|null $owner
@@ -164,10 +166,81 @@ class LogProfile
                     $tmp_quarantine_node = DH::findFirstElement('quarantine', $node);
                     if( $tmp_quarantine_node !== FALSE )
                         $this->type[$log_type_text][$name]['quarantine'] = $tmp_quarantine_node->textContent;
+
+
+                    $tmp_send_snmptrap_node = DH::findFirstElement('send-snmptrap', $node);
+                    if( $tmp_send_snmptrap_node !== FALSE )
+                        foreach( $tmp_send_snmptrap_node->childNodes as $node2 )
+                        {
+                            if ($node2->nodeType != 1)
+                                continue;
+
+                            $this->type[$log_type_text][$name]['send-snmptrap'][$node2->textContent] = $node2->textContent;
+                        }
+
+                    $tmp_send_email_node = DH::findFirstElement('send-email', $node);
+                    if( $tmp_send_email_node !== FALSE )
+                        foreach( $tmp_send_email_node->childNodes as $node2 )
+                        {
+                            if ($node2->nodeType != 1)
+                                continue;
+
+                            $this->type[$log_type_text][$name]['send-email'][$node2->textContent] = $node2->textContent;
+                        }
+
+                    $tmp_send_syslog_node = DH::findFirstElement('send-syslog', $node);
+                    if( $tmp_send_syslog_node !== FALSE )
+                        foreach( $tmp_send_syslog_node->childNodes as $node2 )
+                        {
+                            if ($node2->nodeType != 1)
+                                continue;
+
+                            $this->type[$log_type_text][$name]['send-syslog'][$node2->textContent] = $node2->textContent;
+                        }
+
+                    $tmp_send_http_node = DH::findFirstElement('send-http', $node);
+                    if( $tmp_send_http_node !== FALSE )
+                        foreach( $tmp_send_http_node->childNodes as $node2 )
+                        {
+                            if ($node2->nodeType != 1)
+                                continue;
+
+                            $this->type[$log_type_text][$name]['send-http'][$node2->textContent] = $node2->textContent;
+                        }
                 }
             }
         }
+
+        //          <enhanced-application-logging>yes</enhanced-application-logging>
+        $tmp_enhanced_application_logging = DH::findFirstElement('enhanced-application-logging', $xml);
+        if( $tmp_enhanced_application_logging !== FALSE )
+            $this->enhanced_application_logging = $tmp_enhanced_application_logging->textContent;
+        else
+        {
+            if( $this->owner->owner->version > 81 )
+                $this->enhanced_application_logging = "no";
+        }
+
         /*
+        //Todo: 20260725
+        //additional information needed
+        <entry name="default">
+          <match-list>
+            <entry name="traffic">
+              <send-snmptrap>
+                <member>1.2.3.4</member>
+              </send-snmptrap>
+              <send-email>
+                <member>4.3.2.1</member>
+              </send-email>
+              <send-syslog>
+                <member>1.2.4.3</member>
+              </send-syslog>
+              <send-http>
+                <member>4.3.1.2</member>
+              </send-http>
+            </entry>
+        ====================
          <entry name="Panorama" loc="shared">
              <match-list loc="shared">
               <entry name="traffic" loc="shared">

@@ -190,7 +190,7 @@ class URLProfile extends SecurityProfile2
                     {
                         $is_custom = true;
                         # add references to custom url category
-                        if( isset( $this->owner->owner ) )
+                        if( isset( $this->owner->owner->customURLProfileStore) )
                         {
                             $tmp_obj = $this->owner->owner->customURLProfileStore->find( $url_category );
                             if( $tmp_obj !== null )
@@ -279,7 +279,7 @@ class URLProfile extends SecurityProfile2
                         {
                             $is_custom = true;
                             # add references to custom url category
-                            if( isset( $this->owner->owner ) )
+                            if( isset( $this->owner->owner->customURLProfileStore) )
                             {
                                 $tmp_obj = $this->owner->owner->customURLProfileStore->find( $url_category );
                                 if( $tmp_obj !== null )
@@ -754,10 +754,13 @@ class URLProfile extends SecurityProfile2
 
                 $tmp_name = $allow_node->textContent;
 
-                //Todo: not working correclty
-                $custom_url_category_obj = $this->owner->owner->customURLProfileStore->find($tmp_name);
-                if( $custom_url_category_obj !== NULL )
-                    continue;
+                if( isset( $this->owner->owner->customURLProfileStore) )
+                {
+                    //Todo: not working correclty
+                    $custom_url_category_obj = $this->owner->owner->customURLProfileStore->find($tmp_name);
+                    if ($custom_url_category_obj !== NULL)
+                        continue;
+                }
                 //workaround
                 if(isset( $this->allow_custom[$tmp_name] ) )
                     continue;
@@ -776,10 +779,14 @@ class URLProfile extends SecurityProfile2
 
         foreach( $this->allow as $allow )
         {
-            //Todo: not working correclty
-            $custom_url_category_obj = $this->owner->owner->customURLProfileStore->find($allow);
-            if( $custom_url_category_obj !== NULL )
-                continue;
+
+            if( isset( $this->owner->owner->customURLProfileStore) )
+            {
+                //Todo: not working correclty
+                $custom_url_category_obj = $this->owner->owner->customURLProfileStore->find($allow);
+                if ($custom_url_category_obj !== NULL)
+                    continue;
+            }
             //workaround
             if(isset( $this->allow_custom[$allow] ) )
                 continue;
@@ -806,10 +813,13 @@ class URLProfile extends SecurityProfile2
 
                 $tmp_name = $allow_node->textContent;
 
-                //Todo: not working correclty
-                $custom_url_category_obj = $this->owner->owner->customURLProfileStore->find($tmp_name);
-                if( $custom_url_category_obj !== NULL )
-                    continue;
+                if( isset( $this->owner->owner->customURLProfileStore) )
+                {
+                    //Todo: not working correclty
+                    $custom_url_category_obj = $this->owner->owner->customURLProfileStore->find($tmp_name);
+                    if ($custom_url_category_obj !== NULL)
+                        continue;
+                }
                 //workaround
                 if(isset( $this->allow_credential_custom[$tmp_name] ) )
                     continue;
@@ -828,10 +838,13 @@ class URLProfile extends SecurityProfile2
 
         foreach( $this->allow_credential as $allow )
         {
-            //Todo: not working correclty
-            $custom_url_category_obj = $this->owner->owner->customURLProfileStore->find($allow);
-            if( $custom_url_category_obj !== NULL )
-                continue;
+            if( isset( $this->owner->owner->customURLProfileStore) )
+            {
+                //Todo: not working correclty
+                $custom_url_category_obj = $this->owner->owner->customURLProfileStore->find($allow);
+                if ($custom_url_category_obj !== NULL)
+                    continue;
+            }
             //workaround
             if(isset( $this->allow_credential_custom[$allow] ) )
                 continue;
@@ -1020,7 +1033,7 @@ class URLProfile extends SecurityProfile2
             $sanitized_action = $this->$finding;
             foreach( $sanitized_action as $key => $url_category)
             {
-                if( isset( $this->owner->owner ) && $this->owner->owner->customURLProfileStore !== null )
+                if( isset( $this->owner->owner->customURLProfileStore) )
                 {
                     $custom_url_category_obj = $this->owner->owner->customURLProfileStore->find($url_category);
                     if( $custom_url_category_obj !== NULL )
@@ -1072,9 +1085,12 @@ class URLProfile extends SecurityProfile2
             $sanitized_action = $this->$finding;
             foreach( $sanitized_action as $key => $url_category)
             {
-                $custom_url_category_obj = $this->owner->owner->customURLProfileStore->find($url_category);
-                if( $custom_url_category_obj !== NULL )
-                    unset( $sanitized_action[$key] );
+                if( isset( $this->owner->owner->customURLProfileStore) )
+                {
+                    $custom_url_category_obj = $this->owner->owner->customURLProfileStore->find($url_category);
+                    if( $custom_url_category_obj !== NULL )
+                        unset( $sanitized_action[$key] );
+                }
             }
 
             if( !empty($sanitized_action) )
@@ -1094,9 +1110,12 @@ class URLProfile extends SecurityProfile2
         $sanitized_action = $this->$finding;
         foreach( $sanitized_action as $key => $url_category)
         {
-            $custom_url_category_obj = $this->owner->owner->customURLProfileStore->find($url_category);
-            if( $custom_url_category_obj !== NULL )
-                unset( $sanitized_action[$key] );
+            if( isset($this->owner->owner->customURLProfileStore) )
+            {
+                $custom_url_category_obj = $this->owner->owner->customURLProfileStore->find($url_category);
+                if ($custom_url_category_obj !== NULL)
+                    unset($sanitized_action[$key]);
+            }
         }
 
         if( !empty($sanitized_action) )

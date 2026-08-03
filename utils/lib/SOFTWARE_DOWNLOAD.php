@@ -40,6 +40,7 @@ class SOFTWARE_DOWNLOAD extends UTIL
     public $site_array = array();
     public $folder = null;
 
+    public $folder_latest = null;
 
     public function utilStart()
     {
@@ -620,7 +621,7 @@ class SOFTWARE_DOWNLOAD extends UTIL
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
 
         $response = curl_exec($curl);
-        curl_close($curl);
+        //curl_close($curl);
 
         return $response;
     }
@@ -655,7 +656,7 @@ class SOFTWARE_DOWNLOAD extends UTIL
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
 
         $response = curl_exec($curl);
-        curl_close($curl);
+        //curl_close($curl);
 
         return $response;
     }

@@ -216,7 +216,8 @@ class ZoneRuleContainer extends ObjRuleContainer
                         /* @var ManagedDevice $managedFirewall*/
                         $managedFirewall = $this->owner->owner->owner->owner->managedFirewallsStore->find($deviceObj['serial']);
 
-                        $search_f_TStack[] = $managedFirewall->template_stack;
+                        if( !empty( $managedFirewall->template_stack ) )
+                            $search_f_TStack[] = $managedFirewall->template_stack;
                     }
 
                     if( count($search_f_TStack ) > 0 )

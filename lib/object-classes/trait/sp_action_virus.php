@@ -46,6 +46,7 @@ trait sp_action_virus
                 }
                 else
                 {
+                    //should be not possible
                     $this->$appName['action'] = "----";
                 }
 
@@ -57,6 +58,7 @@ trait sp_action_virus
                 }
                 else
                 {
+                    //should be not possible
                     $this->$appName['wildfire-action'] = "----";
                 }
 
@@ -67,7 +69,17 @@ trait sp_action_virus
                 }
                 else
                 {
-                    $this->$appName['mlav-action'] = "----";
+                    //starting with version PAN-os 11.1 set it to default
+                    if( $this->owner->owner->version >= 111 )
+                    {
+                        //creat mlav-action under $tmp_entry!!!!!
+                        //set it to allow
+                        $action_mlav_action = DH::findFirstElementOrCreate('mlav-action', $tmp_entry);
+                        $action_mlav_action->textContent = "allow";
+                        $this->$appName['mlav-action'] = "allow";
+                    }
+                    else
+                        $this->$appName['mlav-action'] = "----";
                 }
             }
 

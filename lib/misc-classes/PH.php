@@ -165,6 +165,13 @@ class PH
 
                 #PH::$shadow_bp_jsonfilename = $projectFolder.$arg_array[1];
                 PH::$shadow_bp_jsonfilename = $arg_array[1];
+
+                // if $$bp-setting$$/ - replace with full bp settings folder
+                if( strpos( PH::$shadow_bp_jsonfilename, '$$bp-setting$$/') !== FALSE )
+                {
+                    $bpSetting_pathString = dirname(__FILE__)."/../../utils/api/v1/bp";
+                    PH::$shadow_bp_jsonfilename = str_replace( '$$bp-setting$$', $bpSetting_pathString, PH::$shadow_bp_jsonfilename );
+                }
                 $JSONarray = file_get_contents( PH::$shadow_bp_jsonfilename );
 
                 if( $JSONarray === false )
@@ -247,7 +254,8 @@ class PH
 
     private static $library_version_major = 2;
     private static $library_version_sub = 1;
-    private static $library_version_bugfix = 57;
+
+    private static $library_version_bugfix = 58;
     private static $library_version_release = "";
 
     //BASIC AUTH PAN-OS 7.1

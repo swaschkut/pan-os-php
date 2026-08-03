@@ -1128,7 +1128,7 @@ trait fawkes_migration_functions
 
         $stdoutarray['securityProfile Anti-Spyware objects'] = $gnsecprofAS;
         $stdoutarray['securityProfile Vulnerability objects'] = $gnsecprofVB;
-        $stdoutarray['securityProfile WildfireAndAnti-Virus objects'] = $gnsecprofAVWF;
+        $stdoutarray['securityProfile VirusAndWildfire objects'] = $gnsecprofAVWF;
         $stdoutarray['securityProfile DNS objects'] = $gnsecprofDNS;
         $stdoutarray['securityProfile URL objects'] = $gnsecprofURL;
         $stdoutarray['securityProfile File-Blocking objects'] = $gnsecprofFB;
