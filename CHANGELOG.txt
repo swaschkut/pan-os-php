@@ -7,6 +7,7 @@ UTIL:
 
 BUGFIX:
 * type=securityprofile/securityprofilegroup | bugfix to get actions=name-xyz working
+* class ObjRuleContainer | bugfix for adjusted Zone part - type=rule actions=from-remove not working
 
 GENERAL:
 * Device App-ID update to version: 9128-10169
@@ -14,7 +15,7 @@ GENERAL:
 * pan-os-php.sh | autocompletion - support changelog
 
 
-2.1.58 (TBD)
+2.1.58 (20260803)
 UTIL:
 * type=securityprofile actions=exportSPtoHTML:file.html | extend with SCM VirusAndWildfire / DNSSec Profile
 * type=playbook | if json playbook file is using 'shadow-bpjsonfile=file' correctly use it
