@@ -905,6 +905,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 else
                     $lines .= $context->encloseFunction(get_class($object) );
 
+                //column rules
                 $tmp_array = array();
                 if( !empty( $object->rules_obj ) )
                 {
@@ -965,6 +966,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 else
                     $lines .= $context->encloseFunction('');
 
+                //column rules best-practice
                 if( $bestPractice || $visibility || $adoption )
                 {
 

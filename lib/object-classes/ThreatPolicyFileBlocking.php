@@ -104,19 +104,28 @@ class ThreatPolicyFileBlocking extends ThreatPolicy
                     if( $validate == "direction" )
                     {
                         if( $this->direction() !== $values )
+                        {
+                            #print " * failed ".$validate." check\n";
                             return false;
+                        }
                     }
 
                     if( $validate == "application" )
                     {
-                        if( $this->application() !== $values )
+                        if( !in_array($values, $this->application() ) )
+                        {
+                            #print " * failed ".$validate." check\n";
                             return false;
+                        }
                     }
 
                     if( $validate == "filetype" )
                     {
                         if( $this->filetype() !== $values )
+                        {
+                            #print " * failed ".$validate." check\n";
                             return false;
+                        }
                     }
                 }
                 elseif( is_array( $values ) )
@@ -131,7 +140,11 @@ class ThreatPolicyFileBlocking extends ThreatPolicy
                             $bp = true;
                         }
                         elseif( !in_array( $value, $this->$validate ) )
+                        {
+                            print " * failed array ".$validate." check: ".$value."\n";
                             return false;
+                        }
+
                     }
                 }
             }
