@@ -141,7 +141,7 @@ class ThreatPolicyFileBlocking extends ThreatPolicy
                         }
                         elseif( !in_array( $value, $this->$validate ) )
                         {
-                            print " * failed array ".$validate." check: ".$value."\n";
+                            #print " * failed array ".$validate." check: ".$value."\n";
                             return false;
                         }
 
