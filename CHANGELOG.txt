@@ -8,6 +8,7 @@ UTIL:
 BUGFIX:
 * type=securityprofile/securityprofilegroup | bugfix to get actions=name-xyz working
 * class ObjRuleContainer | bugfix for adjusted Zone part - type=rule actions=from-remove not working
+* class URLProfile | bugfix to get custom_url-category object name-addprefix running
 
 GENERAL:
 * Device App-ID update to version: 9128-10169

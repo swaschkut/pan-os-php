@@ -99,6 +99,7 @@ SecurityProfileCallContext::$supportedActions['name-addprefix'] = array(
         $object = $context->object;
         $newName = $context->arguments['prefix'] . $object->name();
 
+        /** @var AntiVirusProfile|AntiSpywareProfile|URLProfile|customURLProfile $object */
         if( $object->isTmp() )
         {
             $string = "not applicable to TMP objects";
