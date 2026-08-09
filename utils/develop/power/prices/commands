@@ -1,0 +1,15 @@
+API restrictive about how often a request is send
+
+
+
+
+https://api.energy-charts.info/price?bzn=DE-LU&start=2025-10-01T00%3A00%2B02%3A00&end=2025-10-31T23%3A59%2B02%3A00
+
+
+
+https://api.energy-charts.info/price?bzn=DE-LU&start=2026-08-01T00%3A00%2B00%3A00&end=2026-08-10T23%3A59%2B00%3A00
+
+
+
+-> file 2025_01-2026-07.json
+https://api.energy-charts.info/price?bzn=DE-LU&start=2025-01-01T00%3A00%2B02%3A00&end=2026-07-31T23%3A59%2B02%3A00

@@ -237,6 +237,8 @@ class SecurityProfileGroup
                         }
                         else
                         {
+                            mwarning( "SecProfGroup: '".$this->name()."' SecurityProfile: '".$tmp_type->nodeValue."' of StoreName: '".$tmp_store_name."' not found.", null, false );
+
                             //Todo: not a profile - default profile
                             if( $tmp_store_name == 'AntiVirusProfileStore')
                                 $profile = $sub->AntiVirusPredefinedStore->createSPTmp( $tmp_type->nodeValue, $this );
@@ -255,7 +257,10 @@ class SecurityProfileGroup
 
                             #PH::print_stdout( "SecurityProfileGroup: ".$this->name()." - proftype: ".$secprof_type." - PROFILE: ".$tmp_type->nodeValue." not found");
 
-                            $this->secprofiles[$secprof_type] = $tmp_type->nodeValue;
+                            #$this->secprofiles[$secprof_type] = $tmp_type->nodeValue;
+                            $this->secprofProfiles_obj[$secprof_type] = $profile;
+
+                            $profile->addReference( $this );
                         }
                     }
 

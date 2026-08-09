@@ -550,6 +550,10 @@ class SecurityRule extends RuleWithUserID
                                 $profile = $sub->UrlFilteringPredefinedStore->createSPTmp( $firstE->textContent, $this );
                             elseif( $tmp_store_name == 'VirusAndWildfireProfileStore' )
                                 $profile = $sub->VirusAndWildfireProfileStore->createSPTmp( $firstE->textContent, $this );
+
+                            $this->secprofProfiles_obj[$prof->nodeName] = $profile;
+
+                            $profile->addReference( $this );
                         }
                     }
                 }
