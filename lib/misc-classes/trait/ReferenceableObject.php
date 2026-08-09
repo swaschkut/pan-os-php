@@ -54,12 +54,13 @@ trait ReferenceableObject
         if( $ref === null )
             return;
 
-        $serial = spl_object_hash($ref);
+        #$serial = spl_object_hash($ref);
+        $pathKey = method_exists($ref, 'toString') ? $ref->toString() : spl_object_hash($ref);
 
-        if( isset($this->refrules[$serial]) )
+        if( isset($this->refrules[$pathKey]) )
             return;
 
-        $this->refrules[$serial] = $ref;
+        $this->refrules[$pathKey] = $ref;
         $this->refcomphash = null;
     }
 
@@ -68,11 +69,12 @@ trait ReferenceableObject
         if( $ref === null )
             return;
 
-        $serial = spl_object_hash($ref);
+        #$serial = spl_object_hash($ref);
+        $pathKey = method_exists($ref, 'toString') ? $ref->toString() : spl_object_hash($ref);
 
-        if( isset($this->refrules[$serial]) )
+        if( isset($this->refrules[$pathKey]) )
         {
-            unset($this->refrules[$serial]);
+            unset($this->refrules[$pathKey]);
             $this->refcomphash = null;
             return;
         }
