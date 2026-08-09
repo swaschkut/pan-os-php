@@ -10579,6 +10579,46 @@ var subjectObject =
                     }
                 }
             },
+            "name-addprefix": {
+                "name": "name-addPrefix",
+                "MainFunction": {},
+                "args": {
+                    "prefix": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                }
+            },
+            "name-addsuffix": {
+                "name": "name-addSuffix",
+                "MainFunction": {},
+                "args": {
+                    "suffix": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                }
+            },
+            "name-removeprefix": {
+                "name": "name-removePrefix",
+                "MainFunction": {},
+                "args": {
+                    "prefix": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                }
+            },
+            "name-removesuffix": {
+                "name": "name-removeSuffix",
+                "MainFunction": {},
+                "args": {
+                    "suffix": {
+                        "type": "string",
+                        "default": "*nodefault*"
+                    }
+                }
+            },
             "securityprofile-remove": {
                 "name": "securityProfile-Remove",
                 "MainFunction": {},
