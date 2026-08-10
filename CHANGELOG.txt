@@ -10,7 +10,6 @@ BUGFIX:
 * class ObjRuleContainer | bugfix for adjusted Zone part - type=rule actions=from-remove not working
 * class URLProfile | bugfix to get custom_url-category object name-addprefix running
 * type=securityprofile securityprofiletype=file-blocking | bugfix to display correct best-practice based on application check
-* type=securityprofile | predefined profiles are now only added once
 
 GENERAL:
 * Device App-ID update to version: 9128-10169
