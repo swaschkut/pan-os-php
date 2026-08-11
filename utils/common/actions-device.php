@@ -94,7 +94,7 @@ DeviceCallContext::$supportedActions['display'] = array(
                     PH::print_stdout( $context->padding." - serial: ".$key." - Template-Stack: ".$managedFirewall->template_stack);
 
 
-                if( isset($device['vsyslist']) )
+                if( isset($device['vsyslist']) && !empty($device['vsyslist']) )
                 {
                     PH::print_stdout($context->padding."  - virtualsystem: '".array_keys($device['vsyslist'])[0]."'");
                     $context->objectList['serial'][$key] = array( 'serial' => $key, 'dg' => $managedFirewall->devicegroup, 'template-stack' => $managedFirewall->template_stack, 'vsys' => array_keys($device['vsyslist'])[0] );
