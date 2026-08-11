@@ -256,11 +256,16 @@ class SecurityProfileGroup
                                 $profile = $sub->VirusAndWildfireProfileStore->createSPTmp( $tmp_type->nodeValue, $this );
 
                             #PH::print_stdout( "SecurityProfileGroup: ".$this->name()." - proftype: ".$secprof_type." - PROFILE: ".$tmp_type->nodeValue." not found");
-
-                            #$this->secprofiles[$secprof_type] = $tmp_type->nodeValue;
-                            $this->secprofProfiles_obj[$secprof_type] = $profile;
-
-                            $profile->addReference( $this );
+                            if( $profile !== null )
+                            {
+                                $this->secprofProfiles_obj[$secprof_type] = $profile;
+                                $profile->addReference( $this );
+                            }
+                            else
+                            {
+                                //this can happen for DataFilteringProfileStore / DLP Plugin
+                                $this->secprofiles[$secprof_type] = $tmp_type->nodeValue;
+                            }
                         }
                     }
 

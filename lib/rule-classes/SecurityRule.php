@@ -534,7 +534,6 @@ class SecurityRule extends RuleWithUserID
                         {
                             //todo: not an object - default object not yet created
                             mwarning( "SecRule: '".$this->name()."' SecurityProfile: '".$firstE->textContent."' of Type: '".$prof->nodeName."' StoreName: '".$tmp_store_name."' not found.", null, false );
-                            #$this->secprofProfiles_obj[$prof->nodeName] = $firstE->textContent;
 
                             if( $tmp_store_name == 'AntiVirusProfileStore')
                                 $profile = $sub->AntiVirusPredefinedStore->createSPTmp( $firstE->textContent, $this );
@@ -551,9 +550,18 @@ class SecurityRule extends RuleWithUserID
                             elseif( $tmp_store_name == 'VirusAndWildfireProfileStore' )
                                 $profile = $sub->VirusAndWildfireProfileStore->createSPTmp( $firstE->textContent, $this );
 
-                            $this->secprofProfiles_obj[$prof->nodeName] = $profile;
 
-                            $profile->addReference( $this );
+
+                            if( $profile !== null )
+                            {
+                                $this->secprofProfiles_obj[$prof->nodeName] = $profile;
+                                $profile->addReference( $this );
+                            }
+                            else
+                            {
+                                //this can happen for DataFilteringProfileStore / DLP Plugin
+                                $this->secprofProfiles_obj[$prof->nodeName] = $firstE->textContent;
+                            }
                         }
                     }
                 }
