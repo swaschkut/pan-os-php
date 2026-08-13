@@ -96,7 +96,7 @@ trait ObjectWithDescription
                 if( $this->_description == null ) //|| strlen($this->_description) < 1 )
                         $con->sendDeleteRequest($xpath);
                 else
-                    $con->sendSetRequest($this->getXPath(), '<' . $tagName . '>' . htmlspecialchars($this->_description) . '</' . $tagName . '>');
+                    $con->sendSetRequest($this->getXPath(), '<' . $tagName . '>' . PH::panosphp_htmlspecialchars($this->_description) . '</' . $tagName . '>');
             }
             elseif( $con->isSaseAPI() || $con->isSCMAPI() )
             {

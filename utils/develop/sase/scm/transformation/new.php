@@ -123,7 +123,7 @@ function arrayToXml($dom, $parentNode, $data)
             if( is_numeric($tagName) )
                 $tagName = "member";
 
-            $element = $dom->createElement($tagName, htmlspecialchars($value));
+            $element = $dom->createElement($tagName, PH::panosphp_htmlspecialchars($value));
             $parentNode->appendChild($element);
         }
     }

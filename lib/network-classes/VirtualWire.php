@@ -150,7 +150,7 @@ class VirtualWire
             $con = findConnector($this);
             $xpath = $this->getXPath();
 
-            $con->sendSetRequest($xpath, "<" . htmlspecialchars($int_num) . ">".htmlspecialchars($if->name())."</" . htmlspecialchars($int_num) . ">");
+            $con->sendSetRequest($xpath, "<" . PH::panosphp_htmlspecialchars($int_num) . ">".PH::panosphp_htmlspecialchars($if->name())."</" . PH::panosphp_htmlspecialchars($int_num) . ">");
         }
 
         return $ret;

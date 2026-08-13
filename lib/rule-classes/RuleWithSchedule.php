@@ -137,7 +137,7 @@ trait RuleWithSchedule
                     $con->sendDeleteRequest($xpath);
 
             if( $con->isAPI() )
-                $con->sendSetRequest($this->getXPath(), '<schedule>' . htmlspecialchars($this->schedule->name()) . '</schedule>');
+                $con->sendSetRequest($this->getXPath(), '<schedule>' . PH::panosphp_htmlspecialchars($this->schedule->name()) . '</schedule>');
 
         }
 

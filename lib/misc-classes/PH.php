@@ -1520,4 +1520,9 @@ class PH
         if( count( array_keys($data) ) == 3)
             $data = array();
     }
+
+    public static function panosphp_htmlspecialchars( $string )
+    {
+        return htmlspecialchars( $string, ENT_QUOTES|ENT_XML1, 'UTF-8' );
+    }
 }

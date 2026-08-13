@@ -214,7 +214,7 @@ class TemplateStack
             $con = findConnector($this);
             $xpath = $this->getXPath();
             if( $con->isAPI() )
-                $con->sendSetRequest($xpath."/templates", "<member>".htmlspecialchars($newObject->name() )."</member>");
+                $con->sendSetRequest($xpath."/templates", "<member>".PH::panosphp_htmlspecialchars($newObject->name() )."</member>");
         }
 
         return $ret;

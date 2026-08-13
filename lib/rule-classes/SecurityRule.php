@@ -1051,7 +1051,7 @@ class SecurityRule extends RuleWithUserID
         $connector = findConnectorOrDie($this);
 
         if( $connector->isAPI() )
-            $connector->sendSetRequest($this->getXPath(), '<action>'.htmlspecialchars($domNode->textContent).'</action>');
+            $connector->sendSetRequest($this->getXPath(), '<action>'.PH::panosphp_htmlspecialchars($domNode->textContent).'</action>');
     }
 
 

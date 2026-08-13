@@ -198,7 +198,7 @@ class RuleWithUserID extends Rule
 
             //$con->sendEditRequest($xpath, '<source-user><member>' . $newUser . '</member></source-user>');
             if( $con->isAPI() )
-                $con->sendSetRequest($xpath, "<member>".htmlspecialchars( $newUser)."</member>");
+                $con->sendSetRequest($xpath, "<member>".PH::panosphp_htmlspecialchars( $newUser)."</member>");
         }
 
         return $ret;

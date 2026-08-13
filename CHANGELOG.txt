@@ -18,6 +18,7 @@ GENERAL:
 * update actions / filters json
 * pan-os-php.sh | autocompletion - support changelog
 * Device App-ID update to version: 9133-10186
+* all class with usage of htmlspecialchars migrated to PH::panosphp_htmlspecialchars
 
 
 2.1.58 (20260803)

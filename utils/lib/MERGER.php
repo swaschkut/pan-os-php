@@ -5136,7 +5136,7 @@ class MERGER extends UTIL
         $lines = '';
         $encloseFunction = function ($value, $nowrap = TRUE) {
             if( is_string($value) )
-                $output = htmlspecialchars($value);
+                $output = PH::panosphp_htmlspecialchars($value);
             elseif( is_array($value) )
             {
                 $output = '';
@@ -5151,9 +5151,9 @@ class MERGER extends UTIL
                         $first = FALSE;
 
                     if( is_string($subValue) )
-                        $output .= htmlspecialchars($subValue);
+                        $output .= PH::panosphp_htmlspecialchars($subValue);
                     else
-                        $output .= htmlspecialchars($subValue->name());
+                        $output .= PH::panosphp_htmlspecialchars($subValue->name());
                 }
             }
             else

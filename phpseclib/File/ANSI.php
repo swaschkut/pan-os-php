@@ -536,7 +536,7 @@ class File_ANSI
             $output.= $close . $open;
         }
 
-        $output.= htmlspecialchars($char);
+        $output.= PH::panosphp_htmlspecialchars($char);
 
         return $output;
     }

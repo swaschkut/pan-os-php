@@ -496,7 +496,7 @@ class XmlArray
         $r['name'] = $node->getName();
 
         //$content="$node";
-        $content = htmlspecialchars((string)$node);
+        $content = PH::panosphp_htmlspecialchars((string)$node);
 
         if( $namespace ) $r['namespace'] = $namespace;
         if( strlen($content) ) $r['content'] = $content;

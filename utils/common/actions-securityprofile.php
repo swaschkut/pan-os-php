@@ -2858,7 +2858,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
         <html lang="en">
         <head>
             <meta charset="utf-8">
-            <title><?php echo htmlspecialchars($reportTitle); ?></title>
+            <title><?php echo PH::panosphp_htmlspecialchars($reportTitle); ?></title>
             <style>
                 :root {
                     --border: #d0d5dd;
@@ -3084,9 +3084,9 @@ SecurityProfileCallContext::$supportedActions[] = array(
         <body>
 
         <header class="spr-header">
-            <h1><?php echo htmlspecialchars($reportTitle); ?></h1>
+            <h1><?php echo PH::panosphp_htmlspecialchars($reportTitle); ?></h1>
             <div class="meta">
-                Source Block Matcher: <?php echo htmlspecialchars($sourceMeta); ?> &middot;
+                Source Block Matcher: <?php echo PH::panosphp_htmlspecialchars($sourceMeta); ?> &middot;
                 Total Match Assessment Context: <?php echo number_format($matchedRulesCount); ?> rules matched.
             </div>
         </header>
@@ -3154,7 +3154,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     }
                     ?>
                     <option value="<?php echo $counter; ?>">
-                        <?php echo htmlspecialchars($dropdownLabel); $counter++;?>
+                        <?php echo PH::panosphp_htmlspecialchars($dropdownLabel); $counter++;?>
                     </option>
                 <?php endforeach; ?>
             </select>
@@ -3240,8 +3240,8 @@ SecurityProfileCallContext::$supportedActions[] = array(
         <hr style="border: 0; border-top: 1px solid var(--border); margin-bottom: 24px;">
 
         <?php foreach ($sections as $id => $section): ?>
-            <section id="<?php echo htmlspecialchars($id); ?>" class="spr-section">
-                <h2><?php echo htmlspecialchars($section['title']); ?></h2>
+            <section id="<?php echo PH::panosphp_htmlspecialchars($id); ?>" class="spr-section">
+                <h2><?php echo PH::panosphp_htmlspecialchars($section['title']); ?></h2>
 
                 <?php if (isset($pillMetaMapping[$id]) && !empty($bp_stats_raw[$firstKey])): ?>
                     <div class="spr-pill-matrix">
@@ -3266,7 +3266,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                     <tr>
                         <?php foreach ($section['headers'] as $header): ?>
                             <th class="<?php echo (strpos($header, 'Info') === false && (strpos($header, '#') !== false || strpos($header, 'Visible') !== false || strpos($header, 'ML') !== false || strpos($header, 'Rules') !== false || strpos($header, 'Access') !== false || strpos($header, 'Submission') !== false || strpos($header, 'Lists') !== false || strpos($header, 'Security') !== false || strpos($header, 'Actions') !== false)) ? 'num' : ''; ?>">
-                                <?php echo htmlspecialchars($header); ?>
+                                <?php echo PH::panosphp_htmlspecialchars($header); ?>
                             </th>
                         <?php endforeach; ?>
                     </tr>
@@ -3277,7 +3277,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
 
                     foreach ($section['rows'] as $row):
                         ?>
-                        <tr data-row-json="<?php echo htmlspecialchars(json_encode($row), ENT_QUOTES, 'UTF-8'); ?>">
+                        <tr data-row-json="<?php echo PH::panosphp_htmlspecialchars(json_encode($row), ENT_QUOTES, 'UTF-8'); ?>">
                             <?php foreach ($section['keys'] as $key): ?>
                                 <?php
                                 $isNumeric = in_array($key, $section['numeric']);
@@ -3291,7 +3291,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                                     if (is_array($cellValue)) {
                                         $cellValue = implode(', ', $cellValue);
                                     }
-                                    echo htmlspecialchars((string)$cellValue);
+                                    echo PH::panosphp_htmlspecialchars((string)$cellValue);
                                     ?>
                                 </td>
                             <?php endforeach; ?>
@@ -3306,7 +3306,7 @@ SecurityProfileCallContext::$supportedActions[] = array(
                             $isNumeric = in_array($key, $section['numeric']);
                             ?>
                             <td class="<?php echo $isNumeric ? 'num' : ''; ?>">
-                                <?php echo $isNumeric ? htmlspecialchars((string)$subtotals[$key]) : ''; ?>
+                                <?php echo $isNumeric ? PH::panosphp_htmlspecialchars((string)$subtotals[$key]) : ''; ?>
                             </td>
                         <?php endfor; ?>
                     </tr>
@@ -3329,9 +3329,9 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 <tbody>
                 <tr>
                     <td>Rules with from-zone != 'any' AND from-visible == '**visible**'</td>
-                    <td class="num" id="net-zone-pass"><?php echo htmlspecialchars((string)$zone_protection_pass); ?></td>
-                    <td class="num" id="net-zone-total"><?php echo htmlspecialchars((string)$zone_protection_total); ?></td>
-                    <td class="num" id="net-zone-coverage" style="font-weight: 600;"><?php echo htmlspecialchars((string)$zone_protection_coverage); ?>%</td>
+                    <td class="num" id="net-zone-pass"><?php echo PH::panosphp_htmlspecialchars((string)$zone_protection_pass); ?></td>
+                    <td class="num" id="net-zone-total"><?php echo PH::panosphp_htmlspecialchars((string)$zone_protection_total); ?></td>
+                    <td class="num" id="net-zone-coverage" style="font-weight: 600;"><?php echo PH::panosphp_htmlspecialchars((string)$zone_protection_coverage); ?>%</td>
                 </tr>
                 </tbody>
             </table>
@@ -3351,9 +3351,9 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 <tbody>
                 <tr>
                     <td>Enabled rules with log_prof == 'yes'</td>
-                    <td class="num" id="net-logfwd-pass"><?php echo htmlspecialchars((string)$log_forwarding_pass); ?></td>
-                    <td class="num" id="net-logfwd-total"><?php echo htmlspecialchars((string)$log_forwarding_total); ?></td>
-                    <td class="num" id="net-logfwd-coverage" style="font-weight: 600;"><?php echo htmlspecialchars((string)$log_forwarding_coverage); ?>%</td>
+                    <td class="num" id="net-logfwd-pass"><?php echo PH::panosphp_htmlspecialchars((string)$log_forwarding_pass); ?></td>
+                    <td class="num" id="net-logfwd-total"><?php echo PH::panosphp_htmlspecialchars((string)$log_forwarding_total); ?></td>
+                    <td class="num" id="net-logfwd-coverage" style="font-weight: 600;"><?php echo PH::panosphp_htmlspecialchars((string)$log_forwarding_coverage); ?>%</td>
                 </tr>
                 </tbody>
             </table>
@@ -3373,9 +3373,9 @@ SecurityProfileCallContext::$supportedActions[] = array(
                 <tbody>
                 <tr>
                     <td>Enabled rules with log_end == 'yes'</td>
-                    <td class="num" id="net-logging-pass"><?php echo htmlspecialchars((string)$logging_pass); ?></td>
-                    <td class="num" id="net-logging-total"><?php echo htmlspecialchars((string)$logging_total); ?></td>
-                    <td class="num" id="net-logging-coverage" style="font-weight: 600;"><?php echo htmlspecialchars((string)$logging_coverage); ?>%</td>
+                    <td class="num" id="net-logging-pass"><?php echo PH::panosphp_htmlspecialchars((string)$logging_pass); ?></td>
+                    <td class="num" id="net-logging-total"><?php echo PH::panosphp_htmlspecialchars((string)$logging_total); ?></td>
+                    <td class="num" id="net-logging-coverage" style="font-weight: 600;"><?php echo PH::panosphp_htmlspecialchars((string)$logging_coverage); ?>%</td>
                 </tr>
                 </tbody>
             </table>

@@ -154,9 +154,9 @@ trait lib_1_rule_marker
             $rule->setDescription($newDescription);
 
             if( $rule->isPostRule() )
-                $xmlPostRules .= "<entry name=\"".htmlspecialchars( $rule->name() )."\"><description>" . htmlspecialchars($rule->description()) . "</description></entry>";
+                $xmlPostRules .= "<entry name=\"".PH::panosphp_htmlspecialchars( $rule->name() )."\"><description>" . PH::panosphp_htmlspecialchars($rule->description()) . "</description></entry>";
             else
-                $xmlPreRules .= "<entry name=\"".htmlspecialchars( $rule->name() )."\"><description>" . htmlspecialchars($rule->description()) . "</description></entry>";
+                $xmlPreRules .= "<entry name=\"".PH::panosphp_htmlspecialchars( $rule->name() )."\"><description>" . PH::panosphp_htmlspecialchars($rule->description()) . "</description></entry>";
         }
 
         PH::print_stdout("\n\nNumber of rules marked: '{$markedRules}'    (vs already marked: '{$alreadyMarked}')");

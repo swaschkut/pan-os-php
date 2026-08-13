@@ -254,7 +254,7 @@ class RuleCallContext extends CallContext
         $output = '';
 
         if( is_string($value) )
-            $output = htmlspecialchars($value);
+            $output = PH::panosphp_htmlspecialchars($value);
         elseif( is_array($value) )
         {
             $output = '';
@@ -269,15 +269,15 @@ class RuleCallContext extends CallContext
                     $first = FALSE;
 
                 if( is_string($subValue) || is_numeric($subValue) )
-                    $output .= htmlspecialchars($subValue);
+                    $output .= PH::panosphp_htmlspecialchars($subValue);
                 elseif( is_object($subValue) )
-                    $output .= htmlspecialchars($subValue->name());
+                    $output .= PH::panosphp_htmlspecialchars($subValue->name());
                 else
                     $output .= "";
             }
         }
         elseif( is_numeric($value) )
-            $output = htmlspecialchars(strval($value));
+            $output = PH::panosphp_htmlspecialchars(strval($value));
         else
         {
             var_dump($value);

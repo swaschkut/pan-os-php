@@ -173,10 +173,10 @@ class IronSkilletManager {
                 // Attempts to append missing profiles where elements belong
                 foreach ($missingCategories as $category) {
                     if (isset($xml->member)) {
-                        $xml->addChild('member', htmlspecialchars($category));
+                        $xml->addChild('member', PH::panosphp_htmlspecialchars($category));
                     } else {
                         $entry = $xml->addChild('entry');
-                        $entry->addAttribute('name', htmlspecialchars($category));
+                        $entry->addAttribute('name', PH::panosphp_htmlspecialchars($category));
                     }
                 }
                 $xml->asXML($targetFile);

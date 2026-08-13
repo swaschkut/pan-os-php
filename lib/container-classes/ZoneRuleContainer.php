@@ -84,7 +84,7 @@ class ZoneRuleContainer extends ObjRuleContainer
             }
             $xpath = &$this->getXPath();
             $con = findConnectorOrDie($this);
-            $con->sendSetRequest($xpath, "<member>".htmlspecialchars($Obj->name() )."</member>");
+            $con->sendSetRequest($xpath, "<member>".PH::panosphp_htmlspecialchars($Obj->name() )."</member>");
 
             return TRUE;
         }
