@@ -12,6 +12,7 @@ BUGFIX:
 * type=securityprofile securityprofiletype=file-blocking | bugfix to display correct best-practice based on application check
 * type=device | bugfix if empty array
 * different classes API method sendSetRequest | optimisation string vulnerability to escaping
+* util actions classes actions-device/-rule | serial# validation | API tool.php - input validation
 
 GENERAL:
 * Device App-ID update to version: 9128-10169

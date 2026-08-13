@@ -344,11 +344,19 @@ function UTILcaller( $url_pieces, $argv, $argc, $PHP_FILE )
                     $get = $projects_folder."/".$get;
                 }
 
-                if( !empty($get) )
-                    $value = $key."=".$get;
+                if( !preg_match('/^[a-zA-Z0-9_\-]+$/', $key) )
+                {
+                    mwarning( "something wrong with key: ".$key." | value: ".$get." | key must be alphanumeric with dashes and underscores only.", null, false );
+                    continue;
+                }
                 else
-                    $value = $key;
-                $argv[] = $value;
+                {
+                    if( !empty($get) )
+                        $value = $key."=".$get;
+                    else
+                        $value = $key;
+                    $argv[] = $value;
+                }
             }
         }
 

@@ -2453,6 +2453,8 @@ RuleCallContext::$supportedActions[] = array(
         if( $context->arguments['vsys'] != '*NULL*' )
             $vsys = $context->arguments['vsys'];
         $serial = $context->arguments['serial'];
+        if( !preg_match('/^[a-zA-Z0-9]+$/', $serial) )
+            derr("Invalid serial number format.");
 
         if( $rule->target_hasDeviceAndVsys($serial, $vsys) )
         {
@@ -2486,6 +2488,8 @@ RuleCallContext::$supportedActions[] = array(
         if( $context->arguments['vsys'] != '*NULL*' )
             $vsys = $context->arguments['vsys'];
         $serial = $context->arguments['serial'];
+        if( !preg_match('/^[a-zA-Z0-9]+$/', $serial) )
+            derr("Invalid serial number format.");
 
         if( !$rule->target_hasDeviceAndVsys($serial, $vsys) )
         {

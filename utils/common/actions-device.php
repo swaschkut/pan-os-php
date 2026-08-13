@@ -469,6 +469,9 @@ DeviceCallContext::$supportedActions['DeviceGroup-addSerial'] = array(
         $dgName = $context->arguments['name'];
         $serial = $context->arguments['serial'];
 
+        if( !preg_match('/^[a-zA-Z0-9]+$/', $serial) )
+            derr("Invalid serial number format.");
+
         $pan = $context->subSystem;
 
         if( !$pan->isPanorama() )
@@ -514,6 +517,9 @@ DeviceCallContext::$supportedActions['DeviceGroup-removeSerial'] = array(
     'GlobalFinishFunction' => function (DeviceCallContext $context) {
         $dgName = $context->arguments['name'];
         $serial = $context->arguments['serial'];
+
+        if( !preg_match('/^[a-zA-Z0-9]+$/', $serial) )
+            derr("Invalid serial number format.");
 
         $pan = $context->subSystem;
 
@@ -932,6 +938,9 @@ DeviceCallContext::$supportedActions['TemplateStack-addSerial'] = array(
         $dgName = $context->arguments['name'];
         $serial = $context->arguments['serial'];
 
+        if( !preg_match('/^[a-zA-Z0-9]+$/', $serial) )
+            derr("Invalid serial number format.");
+
         $pan = $context->subSystem;
 
         if( !$pan->isPanorama() )
@@ -984,6 +993,9 @@ DeviceCallContext::$supportedActions['TemplateStack-removeSerial'] = array(
 
         $dgName = $context->arguments['name'];
         $serial = $context->arguments['serial'];
+
+        if( !preg_match('/^[a-zA-Z0-9]+$/', $serial) )
+            derr("Invalid serial number format.");
 
         $pan = $context->subSystem;
 
@@ -1178,6 +1190,9 @@ DeviceCallContext::$supportedActions['ManagedDevice-create'] = array(
 
         $serialName = $context->arguments['serial'];
 
+        if( !preg_match('/^[a-zA-Z0-9]+$/', $serialName) )
+            derr("Invalid serial number format.");
+
         $pan = $context->subSystem->owner;
 
         if( !$pan->isPanorama() )
@@ -1224,6 +1239,10 @@ DeviceCallContext::$supportedActions['ManagedDevice-delete'] = array(
         }
 
         $serial_tosearch = $context->arguments['serial'];
+
+        if( !preg_match('/^[a-zA-Z0-9]+$/', $serial_tosearch) )
+            derr("Invalid serial number format.");
+
         $force = $context->arguments['force'];
 
         /** @var ManagedDevice $object */
