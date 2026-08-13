@@ -494,7 +494,7 @@ DeviceCallContext::$supportedActions['DeviceGroup-addSerial'] = array(
                 #$con->sendDeleteRequest($xpath);
                 $xpath = DH::elementToPanXPath($tmp_dg->xmlroot);
                 $xpath .= '/devices';
-                $con->sendSetRequest($xpath, "<entry name='{$serial}'/>");
+                $con->sendSetRequest($xpath, "<entry name='".htmlspecialchars( $serial)."'/>");
             }
             else
                 $tmp_dg->addDevice( $serial );
@@ -957,7 +957,7 @@ DeviceCallContext::$supportedActions['TemplateStack-addSerial'] = array(
                 #$con->sendDeleteRequest($xpath);
                 $xpath = DH::elementToPanXPath($tmp_dg->xmlroot);
                 $xpath .= '/devices';
-                $con->sendSetRequest($xpath, "<entry name='{$serial}'/>");
+                $con->sendSetRequest($xpath, "<entry name='".htmlspecialchars( $serial)."'/>");
             }
             else
                 $tmp_dg->addDevice( $serial );
@@ -1197,7 +1197,7 @@ DeviceCallContext::$supportedActions['ManagedDevice-create'] = array(
                 $con = findConnectorOrDie($dg);
 
                 $xpath = '/config/mgt-config/devices';
-                $con->sendSetRequest($xpath, "<entry name='{$serialName}'/>");
+                $con->sendSetRequest($xpath, "<entry name='".htmlspecialchars( $serialName)."'/>");
             }
         }
         else

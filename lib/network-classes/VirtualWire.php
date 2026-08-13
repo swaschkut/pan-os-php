@@ -150,7 +150,7 @@ class VirtualWire
             $con = findConnector($this);
             $xpath = $this->getXPath();
 
-            $con->sendSetRequest($xpath, "<" . $int_num . ">{$if->name()}</" . $int_num . ">");
+            $con->sendSetRequest($xpath, "<" . htmlspecialchars($int_num) . ">".htmlspecialchars($if->name())."</" . htmlspecialchars($int_num) . ">");
         }
 
         return $ret;

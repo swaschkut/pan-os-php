@@ -163,7 +163,7 @@ class GroupTagRuleContainer extends ObjRuleContainer
         {
             $con = findConnectorOrDie($this);
 
-            $con->sendSetRequest($this->getXPath(), $Obj->name());
+            $con->sendSetRequest($this->getXPath(), htmlspecialchars($Obj->name()) );
 
             return TRUE;
         }

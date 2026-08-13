@@ -99,7 +99,7 @@ trait InterfaceType
 
             $xpath .= '/ip';
 
-            $con->sendSetRequest($xpath, "<entry name='{$ip}'/>");
+            $con->sendSetRequest($xpath, "<entry name='".htmlspecialchars( $ip )."'/>");
         }
 
         return $ret;
@@ -234,7 +234,7 @@ trait InterfaceType
 
             $xpath .= '/ipv6/address';
 
-            $con->sendSetRequest($xpath, "<entry name='{$ip}'/>");
+            $con->sendSetRequest($xpath, "<entry name='".htmlspecialchars( $ip )."'/>");
         }
 
         return $ret;

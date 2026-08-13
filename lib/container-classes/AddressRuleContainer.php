@@ -117,7 +117,7 @@ class AddressRuleContainer extends ObjRuleContainer
                 }
                 else
                     if( $con->isAPI() )
-                        $con->sendSetRequest($xpath, "<member>{$Obj->name()}</member>");
+                        $con->sendSetRequest($xpath, "<member>".htmlspecialchars($Obj->name() )."</member>");
             }
 
             return TRUE;

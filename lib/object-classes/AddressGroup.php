@@ -402,7 +402,7 @@ class AddressGroup
                 $xpath .= '/static';
 
             if( $con->isAPI() )
-                $con->sendSetRequest($xpath, "<member>{$newObject->name()}</member>");
+                $con->sendSetRequest($xpath, "<member>".htmlspecialchars( $newObject->name() )."</member>");
         }
 
         return $ret;

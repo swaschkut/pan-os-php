@@ -142,7 +142,7 @@ class LogicalRouterContainer extends ObjRuleContainer
             $networkRoot = DH::findFirstElementOrDie('network', $importRoot);
             $importIfRoot = DH::findFirstElementOrDie('logical-router', $networkRoot);
 
-            $con->sendSetRequest($xpath, "<member>{$if->name()}</member>");
+            $con->sendSetRequest($xpath, "<member>".htmlspecialchars($if->name())."</member>");
         }
 
         return TRUE;

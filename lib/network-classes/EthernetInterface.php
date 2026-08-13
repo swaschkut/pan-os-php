@@ -670,7 +670,7 @@ class EthernetInterface
             else
                 $xpath .= '/layer3/ip';
 
-            $con->sendSetRequest($xpath, "<entry name='{$ip}'/>");
+            $con->sendSetRequest($xpath, "<entry name='".htmlspecialchars($ip)."'/>");
         }
 
         return $ret;
@@ -938,7 +938,7 @@ class EthernetInterface
             else
                 $xpath .= '/layer3/ipv6/address';
 
-            $con->sendSetRequest($xpath, "<entry name='{$ip}'/>");
+            $con->sendSetRequest($xpath, "<entry name='".htmlspecialchars($ip)."'/>");
         }
 
         return $ret;
@@ -1091,7 +1091,7 @@ class EthernetInterface
             $xpath = $this->getXPath();
             $xpath .= "/" . $this->type() . "/units";
 
-            $con->sendSetRequest($xpath, "<entry name='{$this->name}.{$tag}'><tag>{$tag}</tag></entry>");
+            $con->sendSetRequest($xpath, "<entry name='".htmlspecialchars($this->name).".".htmlspecialchars($tag)."'><tag>".htmlspecialchars($tag)."</tag></entry>");
         }
 
         return $ret;

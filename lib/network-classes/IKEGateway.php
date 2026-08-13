@@ -484,7 +484,7 @@ class IKEGateway
         $xpath = DH::findFirstElementOrCreate('pre-shared-key', $tmp_gateway);
         $xpath = $xpath->getNodePath();
 
-        $element = "<key>" . $presharedkey . "</key>";
+        $element = "<key>".htmlspecialchars($presharedkey) . "</key>";
 
         $c->sendSetRequest($xpath, $element);
 
