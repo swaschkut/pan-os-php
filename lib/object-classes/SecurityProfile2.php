@@ -106,16 +106,27 @@ class SecurityProfile2
                 {
                     if( isset($check_array['inline-policy-action'] ) )
                     {
+                        $bp_set = FALSE;
+                        $bp_application_set = FALSE;
+                        $bp_direction_set = FALSE;
+
                         foreach( $check_array['inline-policy-action'] as $validate )
                         {
-                            if( isset($validate['type']) && $validate['type'][0] == 'any' )
+                            if( isset($validate['filetype']) && $validate['filetype'][0] == 'any' )
                             {
                                 $bp_set = $this->bp_stringValidation($name, 'action', $validate['action'][0]);
-                                if (!$bp_set)
+
+                                $bp_direction_set = $this->bp_stringValidation($name, 'direction', $validate['direction']);
+
+                                $bp_application_set = FALSE;
+                                if( isset($validate['application']) && $validate['application'][0] == 'any' )
+                                    $bp_application_set = TRUE;
+
+                                if (!$bp_set || !$bp_direction_set || !$bp_application_set)
                                     return FALSE;
                             }
                         }
-                        if($bp_set == FALSE)
+                        if(!$bp_set || !$bp_direction_set || !$bp_application_set)
                             return false;
                     }
                 }
@@ -232,12 +243,23 @@ class SecurityProfile2
                 {
                     if( isset($check_array['inline-policy-action'] ) )
                     {
+                        $bp_set = FALSE;
+                        $bp_application_set = FALSE;
+                        $bp_direction_set = FALSE;
+
                         foreach ($check_array['inline-policy-action'] as $validate)
                         {
-                            if (isset($validate['type']) && $validate['type'][0] == 'any')
+                            if (isset($validate['filetype']) && $validate['filetype'][0] == 'any')
                             {
                                 $bp_set = $this->visibility_stringValidation($name, 'action', $validate['action'][0]);
-                                if (!$bp_set)
+
+                                $bp_direction_set = $this->visibility_stringValidation($name, 'direction', $validate['direction'][0]);
+
+                                $bp_application_set = FALSE;
+                                if( isset($validate['application']) && $validate['application'][0] == 'any' )
+                                    $bp_application_set = TRUE;
+
+                                if (!$bp_set || !$bp_direction_set || !$bp_application_set)
                                     return FALSE;
                             }
                             else
@@ -247,7 +269,7 @@ class SecurityProfile2
                             }
                         }
 
-                        if ($bp_set == FALSE)
+                        if (!$bp_set || !$bp_direction_set || !$bp_application_set)
                             return FALSE;
                     }
                 }

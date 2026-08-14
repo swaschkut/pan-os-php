@@ -521,9 +521,13 @@
             "bp": {
                 "inline-policy-action": [
                     {
-                        "type": [
+                        "application": [
                             "any"
                         ],
+                        "filetype": [
+                            "any"
+                        ],
+                        "direction": "both",
                         "action": [
                             "block"
                         ]
@@ -533,9 +537,13 @@
             "visibility": {
                 "inline-policy-action": [
                     {
-                        "type": [
+                        "application": [
                             "any"
                         ],
+                        "filetype": [
+                            "any"
+                        ],
+                        "direction": "both",
                         "action": [
                             "!allow"
                         ]

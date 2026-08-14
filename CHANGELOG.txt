@@ -4,6 +4,7 @@ CHANGELOG
 UTIL:
 * pan-os-php changelog[=2.1.56] | introduction of argument changelog
 * playbook | best-practice-set.json | add url and wf
+* type=securityprofile securityprofiletype=wildifre-analysis | extend WF Inline validation with application and direction for visibility and bp
 
 BUGFIX:
 * type=securityprofile/securityprofilegroup | bugfix to get actions=name-xyz working
