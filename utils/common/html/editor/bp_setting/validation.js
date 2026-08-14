@@ -5,36 +5,36 @@ const BP_VALIDATION = {
             "bp": {
                 "action": {
                     "type": { "multi": true, "options": ["ftp", "http", "http2", "smb", "any"] },
-                    "action": { "multi": true, "options": ["reset-both", "default", "allow", "block"] },
+                    "action": { "multi": true, "options": ["reset-both", "default", "alert", "drop", "allow"] },
                     "action-not-matching-type": { "multi": true, "options": ["reset-both", "none"] }
                 },
                 "wildfire-action": {
                     "type": { "multi": true, "options": ["ftp", "http", "http2", "smb", "any"] },
-                    "action": { "multi": true, "options": ["reset-both", "default", "allow", "block"] },
+                    "action": { "multi": true, "options": ["reset-both", "default", "alert", "drop", "allow"] },
                     "action-not-matching-type": { "multi": true, "options": ["reset-both", "none"] }
                 },
                 "mlav-action": {
                     "type": { "multi": true, "options": ["ftp", "http", "http2", "smb", "any"] },
-                    "action": { "multi": true, "options": ["reset-both", "default", "allow", "block"] },
+                    "action": { "multi": true, "options": ["reset-both", "default", "alert", "drop", "allow"] },
                     "action-not-matching-type": { "multi": true, "options": ["reset-both", "none"] }
                 }
             },
             "visibility": {
                 "action": { "multi": false, "options": ["!allow"] },
                 "wildfire-action": { "multi": false, "options": ["!allow"] },
-                "mlav-action": { "multi": false, "options": ["!allow"] },
+                "mlav-action": { "multi": false, "options": ["!allow"] }
             }
         },
         "cloud-inline": {
             "bp": {
                 "inline-policy-action": {
-                    "type": { "multi": true, "options": ["any"] },
-                    "action": { "multi": true, "options": ["enable", "disable"] }
+                    "type": { "multi": true, "options": ["Windows Executables", "PowerShell Script 1", "PowerShell Script 2", "Executable Linked Format", "MSOffice", "Shell", "OOXML", "MachO", "any"] },
+                    "action": { "multi": false, "options": ["enable", "disable"] }
                 }
             },
             "visibility": {
                 "inline-policy-action": {
-                    "type": { "multi": false, "options": ["any"] },
+                    "type": { "multi": true, "options": ["Windows Executables", "PowerShell Script 1", "PowerShell Script 2", "Executable Linked Format", "MSOffice", "Shell", "OOXML", "MachO", "any"] },
                     "action": { "multi": false, "options": ["!disable"] }
                 }
             }
@@ -44,7 +44,7 @@ const BP_VALIDATION = {
         "rule": {
             "bp": {
                 "severity": { "multi": true, "behavior": "inclusive", "options": ["any", "critical", "high", "medium", "low", "informational"] },
-                "action": { "multi": true, "options": ["reset-both", "block-ip", "alert", "allow"] },
+                "action": { "multi": true, "options": ["reset-both", "drop", "block-ip", "default", "alert", "allow"] },
                 "packet-capture": { "multi": true, "options": ["disable", "single-packet", "extended-capture"] }
             },
             "visibility": {
@@ -64,7 +64,6 @@ const BP_VALIDATION = {
             "visibility": {
                 "action": {
                     "type": { "multi": true, "options": ["pan-dns-sec-adtracking", "pan-dns-sec-ddns", "pan-dns-sec-grayware", "pan-dns-sec-malware", "pan-dns-sec-phishing", "pan-dns-sec-proxy", "pan-dns-sec-recent", "pan-dns-sec-cc", "pan-dns-sec-parked"], "allowCustom": true },
-                    "action": { "multi": true, "options": ["!allow"] },
                     "log-level": { "multi": false, "options": ["!none"] }
                 }
             }
@@ -73,14 +72,13 @@ const BP_VALIDATION = {
             "bp": {
                 "action": {
                     "type": { "multi": true, "options": ["pan-adns-sec-dnsmisconfig", "pan-adns-sec-hijacking"], "allowCustom": true },
-                    "action": { "multi": true, "options": ["reset-both"] },
+                    "action": { "multi": true, "options": ["sinkhole"] },
                     "log-level": { "multi": false, "options": ["!none"] }
                 }
             },
             "visibility": {
                 "action": {
                     "type": { "multi": true, "options": ["pan-adns-sec-dnsmisconfig", "pan-adns-sec-hijacking"], "allowCustom": true },
-                    "action": { "multi": true, "options": ["!allow"] },
                     "log-level": { "multi": false, "options": ["!none"] }
                 }
             }
@@ -103,14 +101,14 @@ const BP_VALIDATION = {
         "cloud-inline": {
             "bp": {
                 "inline-policy-action": {
-                    "type": { "multi": true, "options": ["any", "HTTP Command and Control detector", "HTTP2 Command and Control detector"] },
-                    "action": { "multi": true, "options": ["reset-both", "enable", "disable"] },
+                    "type": { "multi": true, "options": ["any", "HTTP Command and Control detector", "HTTP2 Command and Control detector", "SSL Command and Control detector", "Unknown-TCP Command and Control detector", "Unknown-UDP Command and Control detector"] },
+                    "action": { "multi": false, "options": ["alert", "allow", "drop", "reset-both", "reset-client", "reset-server", "block-ip"] },
                     "local-deep-learning": { "multi": false, "options": ["enable", "disable"] }
                 }
             },
             "visibility": {
                 "inline-policy-action": {
-                    "type": { "multi": true, "options": ["any", "HTTP Command and Control detector", "HTTP2 Command and Control detector"] },
+                    "type": { "multi": true, "options": ["any", "HTTP Command and Control detector", "HTTP2 Command and Control detector", "SSL Command and Control detector", "Unknown-TCP Command and Control detector", "Unknown-UDP Command and Control detector"] },
                     "action": { "multi": false, "options": ["!allow"] },
                     "local-deep-learning": { "multi": false, "options": ["enable"] }
                 }
@@ -121,7 +119,7 @@ const BP_VALIDATION = {
         "rule": {
             "bp": {
                 "severity": { "multi": true, "behavior": "inclusive", "options": ["any", "critical", "high", "medium", "low", "informational"] },
-                "action": { "multi": true, "options": ["reset-both", "block-ip", "default"] },
+                "action": { "multi": true, "options": ["reset-both", "drop", "block-ip", "default", "alert", "allow"] },
                 "packet-capture": { "multi": true, "options": ["disable", "single-packet", "extended-capture"] },
                 "category-exclude": { "multi": true, "options": ["brute-force", "app-id-change", "data-theft"] }
             },
@@ -134,7 +132,7 @@ const BP_VALIDATION = {
             "bp": {
                 "inline-policy-action": {
                     "type": { "multi": false, "options": ["any"] },
-                    "action": { "multi": false, "options": ["reset-both", "enable", "disable"] }
+                    "action": { "multi": false, "options": ["alert", "allow", "reset-both", "reset-client", "reset-server"] }
                 }
             },
             "visibility": {
@@ -157,7 +155,7 @@ const BP_VALIDATION = {
             "bp": {
                 "category": {
                     "type": { "multi": true, "options": ["command-and-control", "compromised-website", "grayware", "malware", "phishing", "ransomware", "scanning-activity"], "allowCustom": true },
-                    "action": { "multi": false, "options": ["block", "alert", "allow"] }
+                    "action": { "multi": false, "options": ["block", "alert", "allow", "continue"] }
                 },
                 "tab": {
                     "mode": { "multi": false, "options": ["disabled", "ip-user", "domain-user"] }
@@ -179,7 +177,7 @@ const BP_VALIDATION = {
                     "action": { "multi": false, "options": ["block", "alert", "continue"] },
                     "direction": { "multi": false, "options": ["both", "upload", "download"] },
                     "application": { "multi": true, "behavior": "exclusive", "options": ["any"], "allowCustom": true },
-                    "all_other_filetypes": { "multi": false, "options": ["alert", "block", "allow"] }
+                    "all_other_filetypes": { "multi": false, "options": ["alert", "block", "continue"] }
                 }
             },
             "visibility": {
@@ -204,7 +202,7 @@ const BP_VALIDATION = {
                 "application": { "multi": true, "options": ["any"], "allowCustom": true },
                 "filetype": { "multi": true, "options": ["any"], "allowCustom": true },
                 "direction": { "multi": false, "options": ["both"] },
-                "analysis": { "multi": true, "options": ["public-cloud"] }
+                "analysis": { "multi": true, "options": ["public-cloud", "private-cloud"] }
             }
         },
         "cloud-inline": {
