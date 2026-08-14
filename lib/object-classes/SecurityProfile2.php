@@ -116,7 +116,8 @@ class SecurityProfile2
                             {
                                 $bp_set = $this->bp_stringValidation($name, 'action', $validate['action'][0]);
 
-                                $bp_direction_set = $this->bp_stringValidation($name, 'direction', $validate['direction']);
+                                if( isset($validate['direction']) )
+                                    $bp_direction_set = $this->bp_stringValidation($name, 'direction', $validate['direction']);
 
                                 $bp_application_set = FALSE;
                                 if( isset($validate['application']) && $validate['application'][0] == 'any' )
@@ -253,7 +254,8 @@ class SecurityProfile2
                             {
                                 $bp_set = $this->visibility_stringValidation($name, 'action', $validate['action'][0]);
 
-                                $bp_direction_set = $this->visibility_stringValidation($name, 'direction', $validate['direction'][0]);
+                                if( isset($validate['direction']) )
+                                    $bp_direction_set = $this->visibility_stringValidation($name, 'direction', $validate['direction'][0]);
 
                                 $bp_application_set = FALSE;
                                 if( isset($validate['application']) && $validate['application'][0] == 'any' )
