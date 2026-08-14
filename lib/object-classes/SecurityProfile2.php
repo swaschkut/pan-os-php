@@ -112,7 +112,7 @@ class SecurityProfile2
 
                         foreach( $check_array['inline-policy-action'] as $validate )
                         {
-                            if( isset($validate['filetype']) && $validate['filetype'][0] == 'any' )
+                            if( isset($validate['type']) && $validate['type'][0] == 'any' )
                             {
                                 $bp_set = $this->bp_stringValidation($name, 'action', $validate['action'][0]);
 
@@ -249,7 +249,7 @@ class SecurityProfile2
 
                         foreach ($check_array['inline-policy-action'] as $validate)
                         {
-                            if (isset($validate['filetype']) && $validate['filetype'][0] == 'any')
+                            if (isset($validate['type']) && $validate['type'][0] == 'any')
                             {
                                 $bp_set = $this->visibility_stringValidation($name, 'action', $validate['action'][0]);
 

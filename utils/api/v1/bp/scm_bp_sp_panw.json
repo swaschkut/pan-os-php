@@ -524,7 +524,7 @@
                         "application": [
                             "any"
                         ],
-                        "filetype": [
+                        "type": [
                             "any"
                         ],
                         "direction": "both",
@@ -540,7 +540,7 @@
                         "application": [
                             "any"
                         ],
-                        "filetype": [
+                        "type": [
                             "any"
                         ],
                         "direction": "both",
