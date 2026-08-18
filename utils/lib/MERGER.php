@@ -3467,7 +3467,8 @@ class MERGER extends UTIL
 
                         //validate if object with same name at upperlevel has same type / value
                         //if not it can be a problem if the upperlevel obejct is used in an upperlevel addressgroup and this address-group is used at same level as $object is located
-                        if( isset( $upper_NamehashMap[$object->name()] ) )
+                        #if( isset( $upper_NamehashMap[$object->name()] ) )
+                        if( isset( $upper_NamehashMap[$pickedObject->name()] ) )
                         {
                             $skip2 = FALSE;
                             $skip3 = FALSE;
