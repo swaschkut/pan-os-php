@@ -362,12 +362,12 @@ ZoneProtectionProfileCallContext::$supportedActions['scan.alert-only-set'] = arr
 
         foreach ($object->disabled_scans as $key => $scan)
         {
-            $object->scan_add( $key, $object->scan_alert[$key]);
+            $object->scan_set_add_alert( $key, $object->scan_alert[$key]);
         }
         foreach ($object->scan as $key => $scan)
         {
             if( $scan['action'] == "allow" )
-                $object->scan_add( $key, $object->scan_alert[$key]);
+                $object->scan_set_add_alert( $key, $object->scan_alert[$key]);
         }
 
         if( $context->isAPI )

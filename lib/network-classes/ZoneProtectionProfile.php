@@ -591,7 +591,7 @@ class ZoneProtectionProfile
         return false;
     }
 
-    public function scan_add( $key, $array )
+    public function scan_set_add_alert( $key, $array )
     {
         $xmlString = '    <entry name="dummy">
       <action>
