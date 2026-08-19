@@ -351,3 +351,21 @@ ZoneProtectionProfileCallContext::$supportedActions[] = array(
     )
 );
 ZoneProtectionProfileCallContext::$supportedActions[] = array_merge(ZoneProtectionProfileCallContext::$supportedActions[array_key_last(ZoneProtectionProfileCallContext::$supportedActions)], array('name' => 'exportToHtml'));
+
+ZoneProtectionProfileCallContext::$supportedActions['scan.alert-only-set'] = array(
+    'name' => 'scan.alert-only-set',
+    'MainFunction' => function (ZoneProtectionProfileCallContext $context) {
+        $object = $context->object;
+
+        if (get_class($object) !== "ZoneProtectionProfile" )
+            return null;
+
+        foreach ($object->disabled_scans as $key => $scan)
+        {
+            $object->scan_add( $key, $object->scan_alert[$key]);
+        }
+
+        if( $context->isAPI )
+            $object->API_sync();
+    }
+);

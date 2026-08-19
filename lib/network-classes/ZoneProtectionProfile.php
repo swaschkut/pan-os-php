@@ -109,6 +109,7 @@ class ZoneProtectionProfile
 
     public $disabled_scans = array();
 
+    public $scan_alert = array();
 
     /**
      * ZoneProtectionProfile constructor.
@@ -126,6 +127,20 @@ class ZoneProtectionProfile
 
         if( $this->owner->owner->version >= 111 )
             $this->disabled_scans['8006'] = 'yes';
+
+
+        $this->scan_alert['8001']['interval'] = 2;
+        $this->scan_alert['8001']['threshold'] = 100;
+
+        $this->scan_alert['8002']['interval'] = 10;
+        $this->scan_alert['8002']['threshold'] = 100;
+
+        $this->scan_alert['8003']['interval'] = 2;
+        $this->scan_alert['8003']['threshold'] = 100;
+
+        $this->scan_alert['8006']['interval'] = 2;
+        $this->scan_alert['8006']['threshold'] = 4;
+
     }
 
     /**
@@ -568,6 +583,40 @@ class ZoneProtectionProfile
             return true;
 
         return false;
+    }
+
+    public function scan_add( $key, $array )
+    {
+        $xmlString = '    <entry name="dummy">
+      <action>
+        <alert/>
+      </action>
+      <interval>2</interval>
+      <threshold>4</threshold>
+    </entry>';
+
+        $tmp_decoder = DH::findFirstElement('scan', $this->xmlroot);
+        if( $tmp_decoder === False)
+            $tmp_decoder = DH::findFirstElementorCreate('scan', $this->xmlroot);
+
+
+        $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $xmlString);
+        $xmlElement->setAttribute('name', $key);
+
+        $tmp_interval = DH::findFirstElementOrCreate( 'interval', $xmlElement );
+        $tmp_interval->textContent = $array['interval'];
+
+        $tmp_threshold = DH::findFirstElementOrCreate( 'threshold', $xmlElement );
+        $tmp_threshold->textContent = $array['threshold'];
+
+        $tmp_decoder->appendChild($xmlElement);
+
+
+        //update memory
+        unset( $this->disabled_scans[$key] );
+
+        $this->scan[$key]['interval'] = $array['interval'];
+        $this->scan[$key]['threshold'] = $array['threshold'];
     }
 
     static public $templatexml = '<entry name="**temporarynamechangeme**">

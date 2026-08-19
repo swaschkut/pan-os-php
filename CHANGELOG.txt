@@ -6,6 +6,7 @@ UTIL:
 * playbook | best-practice-set.json | add url and wf
 * type=securityprofile securityprofiletype=wildifre-analysis | extend WF Inline validation with application and direction for visibility and bp
 * type=zone-protection-profile | introduce 'filter=(object is.visibility)'
+* type=zone-protection-profile | introduce 'actions=scan.alert-only-set'
 
 BUGFIX:
 * type=securityprofile/securityprofilegroup | bugfix to get actions=name-xyz working
