@@ -374,3 +374,14 @@ ZoneProtectionProfileCallContext::$supportedActions['scan.alert-only-set'] = arr
             $object->API_sync();
     }
 );
+
+ZoneProtectionProfileCallContext::$supportedActions['alert-only-set'] = array(
+    'name' => 'alert-only-set',
+    'MainFunction' => function (ZoneProtectionProfileCallContext $context) {
+
+        ///////////////////////////////////////////////////////////////
+        $f = ZoneProtectionProfileCallContext::$supportedActions['scan.alert-only-set']['MainFunction'];
+        $f($context);
+
+    }
+);
