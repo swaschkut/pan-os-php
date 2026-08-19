@@ -579,8 +579,14 @@ class ZoneProtectionProfile
 
     public function is_visibility(): bool
     {
+        foreach($this->scan as $scan)
+        {
+            if( $scan['action'] == "allow" )
+                return false;
+        }
         if( empty($this->disabled_scans) )
             return true;
+
 
         return false;
     }
@@ -600,23 +606,39 @@ class ZoneProtectionProfile
             $tmp_decoder = DH::findFirstElementorCreate('scan', $this->xmlroot);
 
 
-        $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $xmlString);
-        $xmlElement->setAttribute('name', $key);
+        $tmp_name = DH::findFirstElementByNameAttr( 'entry', $key, $tmp_decoder);
+        if( $tmp_name === False )
+        {
+            $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $xmlString);
+            $xmlElement->setAttribute('name', $key);
 
-        $tmp_interval = DH::findFirstElementOrCreate( 'interval', $xmlElement );
-        $tmp_interval->textContent = $array['interval'];
+            $tmp_interval = DH::findFirstElementOrCreate( 'interval', $xmlElement );
+            $tmp_interval->textContent = $array['interval'];
 
-        $tmp_threshold = DH::findFirstElementOrCreate( 'threshold', $xmlElement );
-        $tmp_threshold->textContent = $array['threshold'];
+            $tmp_threshold = DH::findFirstElementOrCreate( 'threshold', $xmlElement );
+            $tmp_threshold->textContent = $array['threshold'];
 
-        $tmp_decoder->appendChild($xmlElement);
+            $tmp_decoder->appendChild($xmlElement);
+
+            //update memory
+            unset( $this->disabled_scans[$key] );
+
+            $this->scan[$key]['interval'] = $array['interval'];
+            $this->scan[$key]['threshold'] = $array['threshold'];
+        }
+        else
+        {
+            $tmp_action = DH::findFirstElementOrCreate( 'action', $tmp_name );
+            $tmp_action_allow = DH::findFirstElementOrCreate( 'allow', $tmp_action );
+            $tmp_action->removeChild( $tmp_action_allow );
+            $tmp_action_alert = DH::findFirstElementOrCreate( 'alert', $tmp_action );
+
+            $this->scan[$key]['action'] = 'alert';
+        }
 
 
-        //update memory
-        unset( $this->disabled_scans[$key] );
 
-        $this->scan[$key]['interval'] = $array['interval'];
-        $this->scan[$key]['threshold'] = $array['threshold'];
+
     }
 
     static public $templatexml = '<entry name="**temporarynamechangeme**">
