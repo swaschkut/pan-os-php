@@ -562,6 +562,14 @@ class ZoneProtectionProfile
         return $newProfile;
     }
 
+    public function is_visibility(): bool
+    {
+        if( empty($this->disabled_scans) )
+            return true;
+
+        return false;
+    }
+
     static public $templatexml = '<entry name="**temporarynamechangeme**">
 <esp>
  ..... add missing stuff
