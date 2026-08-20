@@ -18,6 +18,7 @@ BUGFIX:
 * different classes API method sendSetRequest | optimisation string vulnerability to escaping
 * util actions classes actions-device/-rule | serial# validation | API tool.php - input validation
 * type=service-merger | bug wrong validation for array key
+* type=address actions=name-tolowercase | bugfix for Region object
 
 GENERAL:
 * Device App-ID update to version: 9128-10169

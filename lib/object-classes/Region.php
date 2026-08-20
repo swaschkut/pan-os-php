@@ -162,7 +162,7 @@ class Region
      */
     public function &getXPath()
     {
-        $str = $this->owner->getAddressStoreXPath() . "/entry[@name='" . $this->name . "']";
+        $str = $this->owner->getRegionStoreXPath() . "/entry[@name='" . $this->name . "']";
 
         return $str;
     }
