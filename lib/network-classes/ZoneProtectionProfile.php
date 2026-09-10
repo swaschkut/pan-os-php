@@ -607,7 +607,7 @@ class ZoneProtectionProfile
 
 
         $tmp_name = DH::findFirstElementByNameAttr( 'entry', $key, $tmp_decoder);
-        if( $tmp_name === False )
+        if( $tmp_name === False || $tmp_name === null )
         {
             $xmlElement = DH::importXmlStringOrDie($this->xmlroot->ownerDocument, $xmlString);
             $xmlElement->setAttribute('name', $key);

@@ -19,6 +19,7 @@ BUGFIX:
 * util actions classes actions-device/-rule | serial# validation | API tool.php - input validation
 * type=service-merger | bug wrong validation for array key
 * type=address actions=name-tolowercase | bugfix for Region object
+* class ZoneProtection | extend validation | class DH correct return value
 
 GENERAL:
 * Device App-ID update to version: 9128-10169

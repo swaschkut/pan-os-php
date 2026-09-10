@@ -318,7 +318,7 @@ class DH
      * @param string $tagName
      * @param $value
      * @param DOMNode $node
-     * @return DOMNode|bool
+     * @return DOMNode|null
      */
     static function findFirstElementByNameAttr($tagName, $value, DOMNode $node)
     {
