@@ -652,10 +652,10 @@ class SecurityProfile2
             {
                 if( !empty($bp_NOT_sign) && !empty($visible_NOT_sign) )
                 {
-                    #if( $bestPractice )
-                    #    $enabled .= $bp_NOT_sign;
-                    #if( $visibility )
-                    #    $enabled .= $visible_NOT_sign;
+                    if( $bestPractice )
+                        $enabled .= $bp_NOT_sign;
+                    if( $visibility )
+                        $enabled .= $visible_NOT_sign;
                 }
                 else
                     $add_to_array = true;
@@ -685,7 +685,14 @@ class SecurityProfile2
             }
                  */
                 if( !empty($bp_NOT_sign) && !empty($visible_NOT_sign) )
+                {
+                    if( $bestPractice )
+                        $tmp_string .= $bp_NOT_sign;
+                    if( $visibility )
+                        $tmp_string .= $visible_NOT_sign;
+
                     $string_mica_engine[] = $tmp_string;
+                }
                 else
                 {
                     //Todo: validation must be done against BP setting file!!!!

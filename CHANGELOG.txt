@@ -20,6 +20,7 @@ BUGFIX:
 * type=service-merger | bug wrong validation for array key
 * type=address actions=name-tolowercase | bugfix for Region object
 * class ZoneProtection | extend validation | class DH correct return value
+* type=securityprofile securityprofiletype=wildfire-analysis actions=exporttoexcel:wf.html,visibility|bestpractice | add info per rule if visbile/bp
 
 GENERAL:
 * Device App-ID update to version: 9128-10169
