@@ -115,6 +115,36 @@ class Region
         return TRUE;
     }
 
+    public function isTmpAddr()
+    {
+        return FALSE;
+    }
+
+    public function isType_ipNetmask()
+    {
+        return FALSE;
+    }
+
+    public function isType_ipRange()
+    {
+        return TRUE;
+    }
+
+    public function isType_FQDN()
+    {
+        return FALSE;
+    }
+
+    public function isType_TMP()
+    {
+        return FALSE;
+    }
+
+    public function isType_ipWildcard()
+    {
+        return FALSE;
+    }
+
     public function name()
     {
         return $this->name;

@@ -22,6 +22,7 @@ BUGFIX:
 * type=address actions=name-tolowercase | bugfix for Region object
 * class ZoneProtection | extend validation | class DH correct return value
 * type=securityprofile securityprofiletype=wildfire-analysis actions=exporttoexcel:wf.html,visibility|bestpractice | add info per rule if visbile/bp
+* type=address | for region object with 'filter=(name regex /$$ipv4$$/ ) and !(value is.included-in.name)'
 
 GENERAL:
 * Device App-ID update to version: 9128-10169
