@@ -23,6 +23,7 @@ BUGFIX:
 * class ZoneProtection | extend validation | class DH correct return value
 * type=securityprofile securityprofiletype=wildfire-analysis actions=exporttoexcel:wf.html,visibility|bestpractice | add info per rule if visbile/bp
 * type=address | for region object with 'filter=(name regex /$$ipv4$$/ ) and !(value is.included-in.name)'
+* type=securityprofile securityprofiletype=spyware |actions=exporttohtml:spy.html,visibility|bestpractice" | fix for early loop exit
 
 GENERAL:
 * Device App-ID update to version: 9128-10169
