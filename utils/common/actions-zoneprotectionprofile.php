@@ -366,7 +366,7 @@ ZoneProtectionProfileCallContext::$supportedActions['scan.alert-only-set'] = arr
         }
         foreach ($object->scan as $key => $scan)
         {
-            if( $scan['action'] == "allow" )
+            if( !isset($scan['action']) || $scan['action'] == "allow" )
                 $object->scan_set_add_alert( $key, $object->scan_alert[$key]);
         }
 

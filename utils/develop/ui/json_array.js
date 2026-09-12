@@ -10836,6 +10836,19 @@ var subjectObject =
                     }
                 }
             },
+            "refobject": {
+                "operators": {
+                    "rule.is.enabled": {
+                        "Function": {},
+                        "arg": false,
+                        "help": "returns TRUE if refobject is SecurityRule and disabled",
+                        "ci": {
+                            "fString": "(%PROP% shared )",
+                            "input": "input\/panorama-8.0.xml"
+                        }
+                    }
+                }
+            },
             "refstore": {
                 "operators": {
                     "is": {
@@ -13777,6 +13790,10 @@ var subjectObject =
     "zone-protection-profile": {
         "name": "zone-protection-profile",
         "action": {
+            "alert-only-set": {
+                "name": "alert-only-set",
+                "MainFunction": {}
+            },
             "display": {
                 "name": "display",
                 "MainFunction": {}
@@ -13830,6 +13847,10 @@ var subjectObject =
                         "help": "pipe(|) separated list of additional field to include in the report. The following is available:\n  - WhereUsed : list places where object is used (rules, groups ...)\n  - UsedInLocation : list locations (vsys,dg,shared) where object is used\n  - TotalUse : list a counter how often this object is used\n"
                     }
                 }
+            },
+            "scan.alert-only-set": {
+                "name": "scan.alert-only-set",
+                "MainFunction": {}
             }
         },
         "filter": {
@@ -13928,6 +13949,10 @@ var subjectObject =
                             "fString": "(%PROP%)",
                             "input": "input\/panorama-8.0.xml"
                         }
+                    },
+                    "is.visibility": {
+                        "Function": {},
+                        "arg": false
                     }
                 }
             },
