@@ -36,6 +36,14 @@ trait RulewithLogging
         return $this->logSetting;
     }
 
+    public function logSettingObj(): ?LogProfile
+    {
+        $tmp_logprof =  $this->owner->owner->LogProfileStore->find( $this->logSetting );
+        if( is_object( $tmp_logprof ) )
+            return $tmp_logprof;
+
+        return null;
+    }
 
     protected function _readLogSettingFromXml()
     {

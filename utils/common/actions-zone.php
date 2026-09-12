@@ -731,7 +731,7 @@ ZoneCallContext::$supportedActions['exportToExcel'] = array(
         if( isset($optionalFields['NestedMembers']) )
             $addNestedMembers = TRUE;
 
-        $headers = '<th>ID</th><th>template</th><th>location</th><th>name</th><th>type</th><th>interfaces</th><th>log-setting</th><th>zone-protection-profile</th>';
+        $headers = '<th>ID</th><th>template</th><th>location</th><th>name</th><th>type</th><th>interfaces</th><th>log-setting</th><th>lfp-location</th>><th>zone-protection-profile</th>';
 
         if( $addWhereUsed )
             $headers .= '<th>where used</th>';
@@ -757,8 +757,10 @@ ZoneCallContext::$supportedActions['exportToExcel'] = array(
                 else
                     $lines .= "<tr bgcolor=\"#DDDDDD\">";
 
+                //ID
                 $lines .= $context->encloseFunction( (string)$count );
 
+                //template / location
                 if( $object->owner->owner->owner->owner  !== null && get_class( $object->owner->owner->owner->owner ) == "Template" )
                 {
                     $lines .= $context->encloseFunction($object->owner->owner->owner->owner->name());
@@ -770,28 +772,58 @@ ZoneCallContext::$supportedActions['exportToExcel'] = array(
                     $lines .= $context->encloseFunction($object->owner->owner->name());
                 }
 
-
+                //name
                 $lines .= $context->encloseFunction($object->name());
 
                     if( $object->isTmp() )
                     {
+                        //type
                         $lines .= $context->encloseFunction('unknown');
+                        //interface
                         $lines .= $context->encloseFunction('');
+                        //log
                         $lines .= $context->encloseFunction('');
+                        //log-location
+                        $lines .= $context->encloseFunction('');
+                        //ZPP
                         $lines .= $context->encloseFunction('');
                     }
                     else
                     {
+                        //type
                         $lines .= $context->encloseFunction($object->type());
+
+                        //Interface
                         if( $object->attachedInterfaces !==  null )
                             $lines .= $context->encloseFunction( $object->attachedInterfaces->getAll() );
+                        else
+                            $lines .= $context->encloseFunction('');
 
+                        //log-prof-location
                         if( $object->logsetting == null )
                             $tmpLogprof = "";
                         else
                             $tmpLogprof = $object->logsetting;
                         $lines .= $context->encloseFunction( $tmpLogprof );
 
+                        //log-prof-location
+                        if( $object->logsetting == null )
+                            $tmpLogprof = "";
+                        else
+                        {
+                            /** @var LogProfile $tmp_logprof */
+                            $tmp_logprof =  $object->owner->owner->LogProfileStore->find( $object->logsetting );
+                            if( is_object( $tmp_logprof ) )
+                            {
+                                if( get_class( $tmp_logprof->owner->owner ) == "PanoramaConf" )
+                                    $tmpLogprof = "shared";
+                                else
+                                    $tmpLogprof = $tmp_logprof->owner->owner->name();
+                            }
+                        }
+                        $lines .= $context->encloseFunction( $tmpLogprof );
+
+                        //ZPP
                         if( $object->zoneProtectionProfile == null )
                             $tmpZPP = "";
                         else
